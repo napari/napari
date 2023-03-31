@@ -256,7 +256,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         plane=None,
         experimental_clipping_planes=None,
         custom_interpolation_kernel_2d=None,
-        axis_labels: Optional[Sequence[Optional[str]]] = None,
+        axis_labels: Optional[Sequence[str]] = None,
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -764,11 +764,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         response = request()
         self._update_slice_response(response)
 
-    def slice_data(self, dims: Dims) -> np.ndarray:
-        request = self._make_slice_request(dims)
-        response = request()
-        return response.data
-
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
         """Make an image slice request based on the given dims and this image."""
         slice_input = self._make_slice_input(
@@ -784,6 +779,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._make_slice_request_internal(
             slice_input=slice_input,
             indices=indices,
+            lazy=False,
+            dask_indexer=self.dask_optimized_slicing,
         )
 
     def _make_slice_request_internal(

@@ -115,15 +115,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to
         smallest.
-    axis_labels : optional tuple of optional strings
+    axis_labels : optional sequence of strings
         The names of the layer's axes.
-        These are used to make correspondences (by name) between the axes of
-        different layers in the viewer.
-        If an axis is none, that correspondence is not explicitly defined
-        and the viewer may make an arbitrary choice that does not conflict
-        with any other correspondences.
-        If the value of this is none, then a tuple of missing axis labels is
-        generated.
+        If the value of this is none, then a tuple of decreasing negative
+        numbers is generated so that axis correspondence can be like numpy
+        broadcasting (i.e. allow prepending but not appending of singular axes)
+        to match array shapes.
 
     Attributes
     ----------
@@ -213,8 +210,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         depends on the current zoom level.
     source : Source
         source of the layer (such as a plugin or widget)
-    axis_labels : optional tuple of optional strings
-        See parameter description for more details.
+    axis_labels : tuple of strings
+        The names of the layer's axes.
 
     Notes
     -----
@@ -264,7 +261,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
         mode='pan_zoom',
-        axis_labels: Optional[Sequence[Optional[str]]] = None,
+        axis_labels: Optional[Sequence[str]] = None,
     ) -> None:
         super().__init__()
 
@@ -305,7 +302,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._ndim = ndim
 
         self._axis_labels: Optional[
-            Tuple[Optional[str], ...]
+            Tuple[str, ...]
         ] = self._coerce_axis_labels(axis_labels)
 
         self._slice_input = _SliceInput(
@@ -424,17 +421,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._overlays.events.connect(self.events._overlays)
 
     @property
-    def axis_labels(self) -> Tuple[Optional[str], ...]:
+    def axis_labels(self) -> Tuple[str, ...]:
         return self._axis_labels
 
     @axis_labels.setter
-    def axis_labels(
-        self, axis_labels: Optional[Sequence[Optional[str]]]
-    ) -> None:
+    def axis_labels(self, axis_labels: Optional[Sequence[str]]) -> None:
         self._axis_labels = self._coerce_axis_labels(axis_labels)
 
     def _coerce_axis_labels(
-        self, axis_labels: Optional[Sequence[Optional[str]]]
+        self, axis_labels: Optional[Sequence[str]]
     ) -> Tuple[Optional[str], ...]:
         if axis_labels is None:
             return (None,) * self.ndim

@@ -138,7 +138,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
-    axis_labels : tuple of optional strings
+    axis_labels : tuple of strings
         Dimension names.
     """
 
@@ -210,8 +210,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         settings.application.events.grid_height.connect(
             self._update_viewer_grid
         )
-
-        self.events.axis_labels.connect(self._on_axis_labels_changed)
 
         # Add extra events - ideally these will be removed too!
         self.events.add(
@@ -443,9 +441,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         self.events.layers_change()
-
-    def _on_axis_labels_changed(self, event) -> None:
-        self.dims.axis_labels = self.axis_labels
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
@@ -694,7 +689,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         plane=None,
         experimental_clipping_planes=None,
         custom_interpolation_kernel_2d=None,
-        axis_labels: Optional[Sequence[Optional[str]]] = None,
+        axis_labels: Optional[Sequence[str]] = None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
