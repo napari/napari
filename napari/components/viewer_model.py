@@ -167,7 +167,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # different events systems
     mouse_over_canvas: bool = False
 
-    axis_labels: Tuple[Optional[str], ...] = ()
+    axis_labels: Tuple[str, ...] = ()
 
     # Need to use default factory because slicer is not copyable which
     # is required for default values.
@@ -439,7 +439,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.position = tuple(
                 list(self.cursor.position) + [0] * dim_diff
             )
-
         self.events.layers_change()
 
     def _update_interactive(self, event):
