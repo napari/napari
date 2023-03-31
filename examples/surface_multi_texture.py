@@ -56,25 +56,25 @@ import napari
 # ------------------
 download = pooch.DOIDownloader(progressbar=True)
 doi = "10.6084/m9.figshare.22348645.v1"
-tmpdir = pooch.os_cache("napari-surface-texture-example")
-os.makedirs(tmpdir, exist_ok=True)
+tmp_dir = pooch.os_cache("napari-surface-texture-example")
+os.makedirs(tmp_dir, exist_ok=True)
 data_files = {
     "mesh": "PocilloporaDamicornisSkin.obj",
     # "materials": "PocilloporaVerrugosaSkinCrop.mtl",  # not yet supported
     "Texture_0": "PocilloporaDamicornisSkin_Texture_0.jpg",
     "GeneratedMat2": "PocilloporaDamicornisSkin_GeneratedMat2.png",
 }
-print(f"downloading data into {tmpdir}")
+print(f"downloading data into {tmp_dir}")
 for file_name in data_files.values():
-    if not file_name.exists():
+    if not (tmp_dir / file_name).exists():
         print(f"downloading {file_name}")
         download(
             f"doi:{doi}/{file_name}",
-            output_file=tmpdir / file_name,
+            output_file=tmp_dir / file_name,
             pooch=None,
         )
     else:
-        print(f"using cached {tmpdir / file_name}")
+        print(f"using cached {tmp_dir / file_name}")
 
 ###############################################################################
 # Load the model
@@ -83,7 +83,7 @@ for file_name in data_files.values():
 # do not support reading material properties (wavefront .mtl files) nor
 # separate texture and vertex indices (i.e. repeated vertices). Normal vectors
 # read from the file are also ignored and re-calculated from the faces.
-vertices, faces, _normals, texcoords = read_mesh(tmpdir / data_files["mesh"])
+vertices, faces, _normals, texcoords = read_mesh(tmp_dir / data_files["mesh"])
 
 ###############################################################################
 # Load the textures
@@ -100,8 +100,8 @@ vertices, faces, _normals, texcoords = read_mesh(tmpdir / data_files["mesh"])
 #   texels in the lowest row of the texture image, and then in successively
 #   higher rows of the texture image. The final element corresponds to the
 #   upper right corner of the texture image.
-photo_texture = np.flipud(imread(tmpdir / data_files["Texture_0"]))
-generated_texture = np.flipud(imread(tmpdir / data_files["GeneratedMat2"]))
+photo_texture = np.flipud(imread(tmp_dir / data_files["Texture_0"]))
+generated_texture = np.flipud(imread(tmp_dir / data_files["GeneratedMat2"]))
 
 ###############################################################################
 # This is what the texture images look like in 2D:
