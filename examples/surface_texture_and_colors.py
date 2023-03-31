@@ -12,9 +12,6 @@ from vispy.io import imread, load_data_file, read_mesh
 
 import napari
 
-# create the viewer and window
-viewer = napari.Viewer(ndisplay=3)
-
 # load the model and texture
 mesh_path = load_data_file('spot/spot.obj.gz')
 vertices, faces, _normals, texcoords = read_mesh(mesh_path)
@@ -23,15 +20,7 @@ texture_path = load_data_file('spot/spot.png')
 texture = np.flipud(imread(texture_path))
 
 np.random.seed(0)
-viewer.add_surface(
-    (vertices, faces, np.random.random((3, 3, n))),
-    texture=texture,
-    texcoords=texcoords,
-    colormap="plasma",
-    shading="smooth",
-    name="vertex_values and texture",
-)
-viewer.add_surface(
+flat_spot = napari.layers.Surface(
     (vertices, faces),
     translate=(1, 0, 0),
     texture=texture,
@@ -39,7 +28,15 @@ viewer.add_surface(
     shading="flat",
     name="texture only",
 )
-viewer.add_surface(
+plasma_spot = napari.layers.Surface(
+    (vertices, faces, np.random.random((3, 3, n))),
+    texture=texture,
+    texcoords=texcoords,
+    colormap="plasma",
+    shading="smooth",
+    name="vertex_values and texture",
+)
+rainbow_spot = napari.layers.Surface(
     (vertices, faces),
     translate=(-1, 0, 0),
     texture=texture,
@@ -51,6 +48,13 @@ viewer.add_surface(
     name="vertex_colors and texture",
 )
 
+# create the viewer and window
+viewer = napari.Viewer(ndisplay=3)
+viewer.add_layer(flat_spot)
+viewer.add_layer(plasma_spot)
+viewer.add_layer(rainbow_spot)
+
+viewer.camera.center = (0.0, 0.0, 0.0)
 viewer.camera.angles = (25.0, -50.0, -125.0)
 viewer.camera.zoom = 150
 
