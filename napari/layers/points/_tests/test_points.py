@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from vispy.color import get_colormap
 
 from napari._tests.utils import (
+    assert_colors_equal,
     assert_layer_state_equal,
     check_layer_world_data_extent,
 )
@@ -44,6 +45,27 @@ def _make_cycled_properties(values, length):
 def test_empty_points():
     pts = Points()
     assert pts.data.shape == (0, 2)
+
+
+def test_empty_points_with_features():
+    """See the following for the issues this covers:
+    https://github.com/napari/napari/issues/5632
+    https://github.com/napari/napari/issues/5634
+    """
+    points = Points(
+        features={'a': np.empty(0, int)},
+        feature_defaults={'a': 0},
+        face_color='a',
+        face_color_cycle=list('rgb'),
+    )
+
+    points.add([0, 0])
+    points.feature_defaults['a'] = 1
+    points.add([50, 50])
+    points.feature_defaults = {'a': 2}
+    points.add([100, 100])
+
+    assert_colors_equal(points.face_color, list('rgb'))
 
 
 def test_empty_points_with_properties():
@@ -460,6 +482,7 @@ def test_remove_selected_removes_corresponding_attributes():
         symbol=symbol[1:],
         edge_width=size[1:],
         features={'feature': feature[1:]},
+        feature_defaults={'feature': feature[0]},
         face_color=color[1:],
         edge_color=color[1:],
         text=text,  # computed from feature
