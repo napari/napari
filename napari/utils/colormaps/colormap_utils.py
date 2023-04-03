@@ -524,6 +524,9 @@ def _increment_unnamed_colormap(
 ) -> Tuple[str, str]:
     """Increment name for unnamed colormap.
 
+    NOTE: this assumes colormaps are *never* deleted, and does not check
+          for name collision. If colormaps can ever be removed, please update.
+
     Parameters
     ----------
     existing : list of str
