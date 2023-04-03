@@ -44,7 +44,8 @@ def test_add_texture(cube_layer, texture_shape):
     visual = VispySurfaceLayer(cube_layer)
     assert visual._texture_filter is None
 
-    cube_layer.texture = np.random.random(texture_shape).astype(np.float32)
+    texture = np.random.random(texture_shape).astype(np.float32)
+    cube_layer.texture = texture
     # no texture filter initally
     assert visual._texture_filter is None
 
@@ -53,6 +54,12 @@ def test_add_texture(cube_layer, texture_shape):
     cube_layer.texcoords = texcoords
     assert visual._texture_filter.attached
     assert visual._texture_filter.enabled
+
+    # texture is flipped for openGL when setting up TextureFilter
+    np.testing.assert_allclose(
+        visual._texture_filter.texture,
+        np.flipud(texture),
+    )
 
     # setting texture or texcoords to None disables the filter
     cube_layer.texture = None
@@ -67,11 +74,17 @@ def test_change_texture(cube_layer):
 
     texture0 = np.random.random((32, 32, 3)).astype(np.float32)
     cube_layer.texture = texture0
-    np.testing.assert_allclose(visual._texture_filter.texture, texture0)
+    np.testing.assert_allclose(
+        visual._texture_filter.texture,
+        np.flipud(texture0),
+    )
 
     texture1 = np.random.random((32, 32, 3)).astype(np.float32)
     cube_layer.texture = texture1
-    np.testing.assert_allclose(visual._texture_filter.texture, texture1)
+    np.testing.assert_allclose(
+        visual._texture_filter.texture,
+        np.flipud(texture1),
+    )
 
 
 def test_vertex_colors(cube_layer):
