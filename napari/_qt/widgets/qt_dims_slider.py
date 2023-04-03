@@ -230,8 +230,7 @@ class QtDimSliderWidget(QWidget):
 
     def _update_slider(self):
         """Update dimension slider."""
-        with self.dims.events.current_step.blocker():
-            self.slider.setValue(self.dims.current_step[self.axis])
+        self.slider.setValue(self.dims.current_step[self.axis])
         self._update_slice_labels()
 
     def _update_slice_labels(self):

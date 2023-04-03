@@ -77,8 +77,6 @@ class Dims(EventedModel):
         the ``range``.
     thickness : tuple of floats
         Thickness of the slice (sum of both margins) for each dimension in world coordinates.
-    point : tuple of floats
-        Center point of each span in world coordinates.
     displayed : tuple of int
         List of dimensions that are displayed. These are calculated from the
         ``order`` and ``ndisplay``.
@@ -131,11 +129,20 @@ class Dims(EventedModel):
         for start, stop, step in ranges:
             if start > stop:
                 raise ValueError(
-                    f'start and stop must be strictly increasing, but got {(start, stop)}'
+                    trans._(
+                        'start and stop must be strictly increasing, but got ({start}, {stop})',
+                        deferred=True,
+                        start=start,
+                        stop=stop,
+                    )
                 )
             if step <= 0:
                 raise ValueError(
-                    f'step must be strictly positive, but got {step}.'
+                    trans._(
+                        'step must be strictly positive, but got {step}.',
+                        deferred=True,
+                        step=step,
+                    )
                 )
             # ensure step is not bigger than full range thickness and coerce to proper type
             range_.append((start, stop, np.clip(step, 0, stop - start)))
@@ -180,9 +187,10 @@ class Dims(EventedModel):
             prepended_dims = tuple(range(ndim - order_ndim))
             # maintain existing order, but shift accordingly
             existing_order = tuple(o + ndim - order_ndim for o in order)
-            updated['order'] = prepended_dims + existing_order
+            order = prepended_dims + existing_order
         elif len(order) > ndim:
-            updated['order'] = reorder_after_dim_reduction(order[-ndim:])
+            order = reorder_after_dim_reduction(order[-ndim:])
+        updated['order'] = order
 
         # Check the order is a permutation of 0, ..., ndim - 1
         if not set(updated['order']) == set(range(ndim)):
