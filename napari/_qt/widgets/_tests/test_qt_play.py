@@ -149,9 +149,9 @@ def test_playing_hidden_slider_does_nothing(ref_view):
         # if we don't "enable play" again, view.dims won't request a new frame
         view.dims._play_ready = True
 
-    view.dims.dims.events.point_slider.connect(increment)
+    view.dims.dims.events.current_step.connect(increment)
 
     with pytest.warns(UserWarning):
         view.dims.play(2, 20)
-    view.dims.dims.events.point_slider.disconnect(increment)
+    view.dims.dims.events.current_step.disconnect(increment)
     assert not view.dims.is_playing

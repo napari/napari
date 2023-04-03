@@ -65,7 +65,7 @@ def sliding_window_mean(
 
 viewer = napari.view_image(blobs_dask, colormap='green')
 viewer.window.add_dock_widget(magicgui(sliding_window_mean, auto_call=True))
-viewer.dims.point_slider = (32, 0, 0)
+viewer.dims.current_step = (32, 0, 0)
 
 if __name__ == '__main__':
     napari.run()

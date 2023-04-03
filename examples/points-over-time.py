@@ -35,7 +35,7 @@ def set_pts_features(pts_layer, values_table, step):
     pts_layer.face_color = 'value'  # force features refresh
 
 
-viewer.dims.events.point_slider.connect(
+viewer.dims.events.current_step.connect(
         lambda event: set_pts_features(pts_layer, pts_values, event.value)
         )
 

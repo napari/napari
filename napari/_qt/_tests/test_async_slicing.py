@@ -20,15 +20,15 @@ def rng() -> np.random.Generator:
 
 
 @pytest.mark.sync_only
-def test_async_slice_image_on_point_slider_change(
+def test_async_slice_image_on_current_step_change(
     make_napari_viewer, qtbot, rng
 ):
     viewer = make_napari_viewer()
     data = rng.random((3, 4, 5))
     vispy_image = setup_viewer_for_async_slice_image(viewer, data)
-    assert viewer.dims.point_slider != (2, 0, 0)
+    assert viewer.dims.current_step != (2, 0, 0)
 
-    viewer.dims.point_slider = (2, 0, 0)
+    viewer.dims.current_step = (2, 0, 0)
 
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[2, :, :])
 
@@ -66,7 +66,7 @@ def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot, rng):
     # Check that we're initially slicing the middle of the first dimension
     # over the whole of lowest resolution image.
     assert viewer.dims.not_displayed == (0,)
-    assert viewer.dims.point_slider[0] == 2
+    assert viewer.dims.current_step[0] == 2
     image = vispy_image.layer
     assert image._data_level == 1
     np.testing.assert_equal(image.corner_pixels, [[0, 0, 0], [0, 4, 5]])
@@ -88,7 +88,7 @@ def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer, rng):
     # Check that we're initially slicing the middle of the first dimension
     # over the whole of lowest resolution image.
     assert viewer.dims.not_displayed == (0,)
-    assert viewer.dims.point_slider[0] == 2
+    assert viewer.dims.current_step[0] == 2
     image = vispy_image.layer
     assert image._data_level == 1
     np.testing.assert_equal(image.corner_pixels, [[0, 0, 0], [0, 4, 5]])

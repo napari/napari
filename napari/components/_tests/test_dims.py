@@ -98,19 +98,19 @@ def test_point_variable_step_size():
     dims.range = desired_range
     assert dims.range == desired_range
 
-    # set point updates point_slider indirectly
+    # set point updates current_step indirectly
     dims.point = (2.9, 2.9, 2.9)
-    assert dims.point_slider == (6, 3, 1)
+    assert dims.current_step == (6, 3, 1)
     assert dims.point == (2.9, 2.9, 2.9)
 
     # can set step directly as well
     # note that out of range values get clipped
     dims.set_current_step((0, 1, 2), (1, -3, 5))
-    assert dims.point_slider == (1, 0, 3)
+    assert dims.current_step == (1, 0, 3)
     assert dims.point == (0.5, 0, 6)
 
     dims.set_current_step(0, -1)
-    assert dims.point_slider == (0, 0, 3)
+    assert dims.current_step == (0, 0, 3)
     assert dims.point == (0, 0, 6)
 
     # mismatched len(axis) vs. len(value)
