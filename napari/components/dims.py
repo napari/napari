@@ -1,7 +1,7 @@
-import warnings
 from numbers import Integral
 from typing import (
     Any,
+    List,
     Literal,
     NamedTuple,
     Sequence,
@@ -32,17 +32,21 @@ class Dims(EventedModel):
         Number of dimensions.
     ndisplay : int
         Number of displayed dimensions.
-    last_used : int
-        Dimension which was last used.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
         coordinates space.
-    span : tuple of 3-tuple of float
-        Tuple of (low, high) bounds of the currently selected slice in world space.
+    point : tuple of floats
+        Dims position in world coordinates for each dimension.
+    margin_left : tuple of floats
+        Left margin in world pixels of the slice for each dimension.
+    margin_right : tuple of floats
+        Right margin in world pixels of the slice for each dimension.
     order : tuple of int
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
+    last_used : int
+        Dimension which was last interacted with.
 
     Attributes
     ----------
@@ -50,24 +54,29 @@ class Dims(EventedModel):
         Number of dimensions.
     ndisplay : int
         Number of displayed dimensions.
-    last_used : int
-        Dimension which was last used.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
         coordinates space.
-    span : tuple of 3-tuple of float
-        Tuple of (low, high) bounds of the currently selected slice in world space.
+    point : tuple of floats
+        Dims position in world coordinates for each dimension.
+    margin_left : tuple of floats
+        Left margin (=thickness) in world pixels of the slice for each dimension.
+    margin_right : tuple of floats
+        Right margin (=thickness) in world pixels of the slice for each dimension.
     order : tuple of int
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
-    point_slider : tuple of int
+    last_used : int
+        Dimension which was last used.
         Tuple the slider position for each dims slider, in world coordinates.
+    current_step : tuple of int
+        Current step for each dimension (same as point, but in slider coordinates).
     nsteps : tuple of int
         Number of steps available to each slider. These are calculated from
         the ``range``.
     thickness : tuple of floats
-        Thickness of each span in world coordinates.
+        Thickness of the slice (sum of both margins) for each dimension in world coordinates.
     point : tuple of floats
         Center point of each span in world coordinates.
     displayed : tuple of int
@@ -87,8 +96,8 @@ class Dims(EventedModel):
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
     range: Tuple[RangeTuple, ...] = ()
-    left_margin: Tuple[float, ...] = ()
-    right_margin: Tuple[float, ...] = ()
+    margin_left: Tuple[float, ...] = ()
+    margin_right: Tuple[float, ...] = ()
     point: Tuple[float, ...] = ()
 
     last_used: int = 0
@@ -102,8 +111,8 @@ class Dims(EventedModel):
         'order',
         'axis_labels',
         'point',
-        'left_margin',
-        'right_margin',
+        'margin_left',
+        'margin_right',
         pre=True,
         allow_reuse=True,
     )
@@ -111,11 +120,23 @@ class Dims(EventedModel):
         return tuple(v)
 
     @validator('range', pre=True)
-    def _sorted_ranges(v):
+    def _check_ranges(ranges):
+        """
+        Ensure the range values are sane.
+
+        - start < stop
+        - step > 0 and step < (stop - start)
+        """
         range_ = []
-        for rng in v:
-            start, stop = sorted(rng[:2])
-            step = rng[2]
+        for start, stop, step in ranges:
+            if start > stop:
+                raise ValueError(
+                    f'start and stop must be strictly increasing, but got {(start, stop)}'
+                )
+            if step <= 0:
+                raise ValueError(
+                    f'step must be stricly positive, but got {step}.'
+                )
             # ensure step is not bigger than full range thickness and coerce to proper type
             range_.append((start, stop, np.clip(step, 0, stop - start)))
         return range_
@@ -129,28 +150,28 @@ class Dims(EventedModel):
         values : dict
             Values dictionary to update dims model with.
         """
+        updated = {}
+
         ndim = values['ndim']
 
-        range_ = ensure_ndim(values['range'], ndim, default=(0.0, 2.0, 1.0))
-        values['range'] = tuple(RangeTuple(*rng) for rng in range_)
+        range_ = ensure_len(values['range'], ndim, pad_width=(0.0, 2.0, 1.0))
+        updated['range'] = tuple(RangeTuple(*rng) for rng in range_)
 
-        point = ensure_ndim(values['point'], ndim, default=0.0)
+        point = ensure_len(values['point'], ndim, pad_width=0.0)
         # ensure point is limited to range
-        values['point'] = tuple(
+        updated['point'] = tuple(
             np.clip(pt, rng.start, rng.stop)
-            for pt, rng in zip(point, values['range'])
+            for pt, rng in zip(point, updated['range'])
         )
 
-        # TODO: do we need to coerce the margins at all here or are we ok with
-        #       margins going out of the range?
-        values['left_margin'] = ensure_ndim(
-            values['left_margin'], ndim, default=0.0
+        updated['margin_left'] = ensure_len(
+            values['margin_left'], ndim, pad_width=0.0
         )
-        values['right_margin'] = ensure_ndim(
-            values['right_margin'], ndim, default=0.0
+        updated['margin_right'] = ensure_len(
+            values['margin_right'], ndim, pad_width=0.0
         )
 
-        # order and label default computation is too different to include in ensure_ndim()
+        # order and label default computation is too different to include in ensure_len()
         # Check the order tuple has same number of elements as ndim
         order = values['order']
         order_ndim = len(order)
@@ -159,44 +180,39 @@ class Dims(EventedModel):
             prepended_dims = tuple(range(ndim - order_ndim))
             # maintain existing order, but shift accordingly
             existing_order = tuple(o + ndim - order_ndim for o in order)
-            values['order'] = prepended_dims + existing_order
+            updated['order'] = prepended_dims + existing_order
         elif len(order) > ndim:
-            values['order'] = reorder_after_dim_reduction(order[-ndim:])
+            updated['order'] = reorder_after_dim_reduction(order[-ndim:])
 
         # Check the order is a permutation of 0, ..., ndim - 1
-        if not set(values['order']) == set(range(ndim)):
+        if not set(updated['order']) == set(range(ndim)):
             raise ValueError(
                 trans._(
                     "Invalid ordering {order} for {ndim} dimensions",
                     deferred=True,
-                    order=values['order'],
+                    order=updated['order'],
                     ndim=ndim,
                 )
             )
 
         # Check the axis labels tuple has same number of elements as ndim
-        labels_ndim = len(values['axis_labels'])
+        axis_labels = values['axis_labels']
+        labels_ndim = len(axis_labels)
         if labels_ndim < ndim:
             # Append new "default" labels to existing ones
-            if values['axis_labels'] == tuple(map(str, range(labels_ndim))):
-                values['axis_labels'] = tuple(map(str, range(ndim)))
+            if axis_labels == tuple(map(str, range(labels_ndim))):
+                updated['axis_labels'] = tuple(map(str, range(ndim)))
             else:
-                values['axis_labels'] = (
-                    tuple(map(str, range(ndim - labels_ndim)))
-                    + values['axis_labels']
+                updated['axis_labels'] = (
+                    tuple(map(str, range(ndim - labels_ndim))) + axis_labels
                 )
         elif labels_ndim > ndim:
-            values['axis_labels'] = values['axis_labels'][-ndim:]
+            updated['axis_labels'] = axis_labels[-ndim:]
 
-        return values
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        # to be removed if/when deprecating current_step
-        self.events.point_slider.connect(self.events.current_step)
+        return {**values, **updated}
 
     @property
-    def nsteps(self) -> Tuple[float]:
+    def nsteps(self) -> Tuple[float, ...]:
         return tuple(
             # "or 1" ensures degenerate dimension works
             int((rng.stop - rng.start) / (rng.step or 1))
@@ -211,51 +227,29 @@ class Dims(EventedModel):
         ]
 
     @property
-    def current_step(self) -> Tuple[int]:
-        warnings.warn(
-            trans._(
-                'Dims.current_step is deprecated. Use Dims.point_slider instead.'
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.point_slider
-
-    @current_step.setter
-    def current_step(self, value: Tuple[int]):
-        warnings.warn(
-            trans._(
-                'Dims.current_step is deprecated. Use Dims.point_slider instead.'
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self.point_slider = value
-
-    @property
-    def point_slider(self):
+    def current_step(self):
         return tuple(
             int(round((point - rng.start) / (rng.step or 1)))
             for point, rng in zip(self.point, self.range)
         )
 
-    @point_slider.setter
-    def point_slider(self, value):
+    @current_step.setter
+    def current_step(self, value):
         self.point = [
             rng.start + point * rng.step
             for point, rng in zip(value, self.range)
         ]
 
     @property
-    def thickness(self) -> Tuple[float]:
+    def thickness(self) -> Tuple[float, ...]:
         return tuple(
             left + right
-            for left, right in zip(self._left_margin, self._right_margin)
+            for left, right in zip(self._margin_left, self._margin_right)
         )
 
     @thickness.setter
     def thickness(self, value):
-        self._left_margin = self._right_margin = (
+        self._margin_left = self._margin_right = (
             tuple(val / 2) for val in value
         )
 
@@ -324,7 +318,7 @@ class Dims(EventedModel):
             full_point[ax] = val
         self.point = full_point
 
-    def set_point_slider(
+    def set_current_step(
         self,
         axis: Union[int, Sequence[int]],
         value: Union[int, Sequence[int]],
@@ -369,8 +363,8 @@ class Dims(EventedModel):
                 "range": ((0, 2, 1),) * self.ndim,
                 "point": (0,) * self.ndim,
                 "order": tuple(range(self.ndim)),
-                "left_margin": (0,) * self.ndim,
-                "right_margin": (0,) * self.ndim,
+                "margin_left": (0,) * self.ndim,
+                "margin_right": (0,) * self.ndim,
             }
         )
 
@@ -394,7 +388,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_point_slider(axis, self.point_slider[axis] + 1)
+        self.set_current_step(axis, self.current_step[axis] + 1)
 
     def _increment_dims_left(self, axis: int = None):
         """Increment dimensions to the left along given axis, or last used axis if None
@@ -406,7 +400,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_point_slider(axis, self.point_slider[axis] - 1)
+        self.set_current_step(axis, self.current_step[axis] - 1)
 
     def _focus_up(self):
         """Shift focused dimension slider to be the next slider above."""
@@ -433,10 +427,12 @@ class Dims(EventedModel):
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
 
-    def _sanitize_input(self, axis, value, value_is_sequence=False):
+    def _sanitize_input(
+        self, axis, value, value_is_sequence=False
+    ) -> Tuple[List[int], List]:
         """
-        Ensure that axis is and value are the same length, that axis are not
-        out of bounds, and corerces to lists for easier processing.
+        Ensure that axis and value are the same length, that axes are not
+        out of bounds, and coerces to lists for easier processing.
         """
         if isinstance(axis, Integral):
             if (
@@ -463,9 +459,9 @@ class Dims(EventedModel):
         return axis, value
 
 
-def ensure_ndim(value: Tuple, ndim: int, default: Any):
+def ensure_len(value: Tuple, length: int, pad_width: Any):
     """
-    Ensure that the value has same number of elements as ndim.
+    Ensure that the value has the required number of elements.
 
     Right-crop if value is too long; left-pad with default if too short.
 
@@ -478,12 +474,12 @@ def ensure_ndim(value: Tuple, ndim: int, default: Any):
     default : Tuple
         Default element for left-padding.
     """
-    if len(value) < ndim:
+    if len(value) < length:
         # left pad
-        value = (default,) * (ndim - len(value)) + value
-    elif len(value) > ndim:
+        value = (pad_width,) * (length - len(value)) + value
+    elif len(value) > length:
         # right-crop
-        value = value[-ndim:]
+        value = value[-length:]
     return value
 
 

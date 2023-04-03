@@ -355,7 +355,7 @@ class QtDims(QWidget):
         if self._play_ready:
             # disable additional point advance requests until this one draws
             self._play_ready = False
-            self.dims.set_point_slider(axis, frame)
+            self.dims.set_current_step(axis, frame)
 
     def enable_play(self, *args):
         # this is mostly here to connect to the main SceneCanvas.events.draw

@@ -105,11 +105,11 @@ def test_point_variable_step_size():
 
     # can set step directly as well
     # note that out of range values get clipped
-    dims.set_point_slider((0, 1, 2), (1, -3, 5))
+    dims.set_current_step((0, 1, 2), (1, -3, 5))
     assert dims.point_slider == (1, 0, 3)
     assert dims.point == (0.5, 0, 6)
 
-    dims.set_point_slider(0, -1)
+    dims.set_current_step(0, -1)
     assert dims.point_slider == (0, 0, 3)
     assert dims.point == (0, 0, 6)
 
@@ -118,7 +118,7 @@ def test_point_variable_step_size():
         dims.set_point((0, 1), (0, 0, 0))
 
     with pytest.raises(ValueError):
-        dims.set_point_slider((0, 1), (0, 0, 0))
+        dims.set_current_step((0, 1), (0, 0, 0))
 
 
 def test_range():

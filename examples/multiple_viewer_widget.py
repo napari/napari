@@ -93,7 +93,7 @@ def center_cross_on_mouse(
         )
         return
 
-    viewer_model.dims.point_slider = tuple(
+    viewer_model.dims.current_step = tuple(
         np.round(
             [
                 max(min_, min(p, max_)) / step
@@ -326,7 +326,7 @@ class MultipleViewerWidget(QSplitter):
         for model in [self.viewer, self.viewer_model1, self.viewer_model2]:
             if model.dims is event.source:
                 continue
-            model.dims.point_slider = event.value
+            model.dims.current_step = event.value
 
     def _order_update(self):
         order = list(self.viewer.dims.order)

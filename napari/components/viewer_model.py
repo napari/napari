@@ -562,7 +562,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 self.rounded_division(low, high, step)
                 for low, high, step in ranges
             ]
-            self.dims.point_slider = midpoint
+            self.dims.current_step = midpoint
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):

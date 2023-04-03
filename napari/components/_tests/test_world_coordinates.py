@@ -18,7 +18,7 @@ def test_translated_images():
     assert viewer.dims.range[2] == (0, 10, 1)
     assert viewer.dims.nsteps == (20, 10, 10)
     for i in range(viewer.dims.nsteps[0]):
-        viewer.dims.set_point_slider(0, i)
+        viewer.dims.set_current_step(0, i)
         assert viewer.dims.point_slider[0] == i
 
 
@@ -35,7 +35,7 @@ def test_scaled_images():
     assert viewer.dims.range[2] == (0, 10, 1)
     assert viewer.dims.nsteps == (10, 10, 10)
     for i in range(viewer.dims.nsteps[0]):
-        viewer.dims.set_point_slider(0, i)
+        viewer.dims.set_current_step(0, i)
         assert viewer.dims.point_slider[0] == i
 
 
@@ -56,7 +56,7 @@ def test_scaled_and_translated_images():
     assert viewer.dims.range[2] == (0, 10, 1)
     assert viewer.dims.nsteps == (19, 10, 10)
     for i in range(viewer.dims.nsteps[0]):
-        viewer.dims.set_point_slider(0, i)
+        viewer.dims.set_current_step(0, i)
         assert viewer.dims.point_slider[0] == i
 
 
@@ -72,7 +72,7 @@ def test_both_scaled_and_translated_images():
     assert viewer.dims.range[2] == (0, 10, 1)
     assert viewer.dims.nsteps == (20, 10, 10)
     for i in range(viewer.dims.nsteps[0]):
-        viewer.dims.set_point_slider(0, i)
+        viewer.dims.set_current_step(0, i)
         assert viewer.dims.point_slider[0] == i
 
 
