@@ -135,7 +135,7 @@ class Dims(EventedModel):
                 )
             if step <= 0:
                 raise ValueError(
-                    f'step must be stricly positive, but got {step}.'
+                    f'step must be strictly positive, but got {step}.'
                 )
             # ensure step is not bigger than full range thickness and coerce to proper type
             range_.append((start, stop, np.clip(step, 0, stop - start)))
