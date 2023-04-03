@@ -514,7 +514,7 @@ class VispyCanvas:
         """
         self.viewer._canvas_size = tuple(self.size)
 
-    def add_layer_to_visual(self, napari_layer, vispy_layer) -> None:
+    def add_layer_visual_mapping(self, napari_layer, vispy_layer) -> None:
         """Maps a napari layer to its corresponding vispy layer and sets the parent scene of the vispy layer.
 
         Paremeters
