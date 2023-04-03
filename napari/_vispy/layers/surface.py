@@ -47,22 +47,6 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_texture_change(self):
-        """Update or apply the texture filter"""
-        if self.layer._has_texture and self._texture_filter is None:
-            self._texture_filter = TextureFilter(
-                self.layer.texture,
-                self.layer.texcoords,
-            )
-            self.node.attach(self._texture_filter)
-        elif self.layer._has_texture:
-            self._texture_filter.texture = self.layer.texture
-            self._texture_filter.texcoords = self.layer.texcoords
-
-        if self._texture_filter is not None:
-            self._texture_filter.enabled = self.layer._has_texture
-            self.node.update()
-
     def _on_data_change(self):
         vertices = None
         faces = None
@@ -121,6 +105,27 @@ class VispySurfaceLayer(VispyBaseLayer):
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
+
+    def _on_texture_change(self):
+        """Update or apply the texture filter"""
+        # texture images need to be flipped (np.flipud) because of how OpenGL
+        # expects the texture data to be ordered in memory we flip them here
+        # when setting up the TextureFilter so napari users can load images
+        # for textures normally
+        # https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+        if self.layer._has_texture and self._texture_filter is None:
+            self._texture_filter = TextureFilter(
+                np.flipud(self.layer.texture),
+                self.layer.texcoords,
+            )
+            self.node.attach(self._texture_filter)
+        elif self.layer._has_texture:
+            self._texture_filter.texture = np.flipud(self.layer.texture)
+            self._texture_filter.texcoords = self.layer.texcoords
+
+        if self._texture_filter is not None:
+            self._texture_filter.enabled = self.layer._has_texture
+            self.node.update()
 
     def _on_colormap_change(self):
         if self.layer.gamma != 1:

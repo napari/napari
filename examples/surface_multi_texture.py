@@ -19,12 +19,15 @@ A bit about 3D models
 
 A standard way to define a 3D model (mesh, or Surface in napari) is by listing
 vertices (3D point coordinates) and faces (triplets of vertex indices - each
-face is a triangle in 3D space).
+face is a triangle in 3D space). Meshes are often stored in "Wavefront" (.obj)
+files, which may have companion material (.mtl) files that describe some
+shading properties (base color, shinyness, etc.) for different parts of the
+model.
 
 In some cases, the color of a vertex is given by a single point value that is
-then colormapped on the fly. In other cases, each vertex or face may be
-assigned a specific color. These methods are demonstrated in
-:ref:`sphx_glr_gallery_surface_texture_and_colors.py`.
+then colormapped on the fly (`vertex_values`). In other cases, each vertex or
+face may be assigned a specific color (`vertex_colors`). These methods are
+demonstrated in :ref:`sphx_glr_gallery_surface_texture_and_colors.py`.
 
 In the case of "photorealistic" models, the color of each vertex is instead
 determined by mapping a vertex to a point in an image called a texture using 2D
@@ -32,20 +35,17 @@ texture coordinates in the range [0, 1]. The color of each individual pixel is
 smoothly interpolated (sampled) on the fly from the texture (the GPU makes this
 interpolation very fast).
 
-Napari does not (yet) support models with multiple textures or materials.
-If the textures don't overlap, you can display them on separate meshes as shown
-in this demo.
-
-If the textures do overlap, you may instead be able to combine the textures as
-images. This relies on textures having the same texture coordinates, and may
-require resizing the textures to match each other.
+Napari does not (yet) support models with multiple textures or materials. If
+the textures don't overlap, you can display them on separate meshes as shown in
+this demo. If the textures do overlap, you may instead be able to combine the
+textures as images. This relies on textures having the same texture
+coordinates, and may require resizing the textures to match each other.
 
 .. tags:: visualization-nD
 """
 import os
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pooch
 from vispy.io import imread, read_mesh
 
@@ -79,10 +79,10 @@ for file_name in data_files.values():
 ###############################################################################
 # Load the model
 # --------------
-# Next, the model data fron the wavefront (.obj) file. Currently napari/vispy
-# do not support reading material properties (wavefront .mtl files) nor
-# separate texture and vertex indices (i.e. repeated vertices). Normal vectors
-# read from the file are also ignored and re-calculated from the faces.
+# Next, read the model data from the .obj file. Currently napari/vispy do not
+# support reading material properties (.mtl files) nor separate texture and
+# vertex indices (i.e. repeated vertices). Normal vectors read from the file
+# are also ignored and re-calculated from the faces.
 vertices, faces, _normals, texcoords = read_mesh(tmp_dir / data_files["mesh"])
 
 ###############################################################################
@@ -90,18 +90,9 @@ vertices, faces, _normals, texcoords = read_mesh(tmp_dir / data_files["mesh"])
 # -----------------
 # This model comes with two textures: `Texture_0` is generated from
 # photogrammetry of the actual object, and `GeneratedMat2` is a generated
-# material to fill in  parts of the model lacking photographic texture. The
-# texture images need to be flipped because of `how OpenGL expects the texture
-# data to be ordered in memory
-# <https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml>`_:
-#
-#   The first element corresponds to the lower left corner of the texture
-#   image. Subsequent elements progress left-to-right through the remaining
-#   texels in the lowest row of the texture image, and then in successively
-#   higher rows of the texture image. The final element corresponds to the
-#   upper right corner of the texture image.
-photo_texture = np.flipud(imread(tmp_dir / data_files["Texture_0"]))
-generated_texture = np.flipud(imread(tmp_dir / data_files["GeneratedMat2"]))
+# material to fill in  parts of the model lacking photographic texture.
+photo_texture = imread(tmp_dir / data_files["Texture_0"])
+generated_texture = imread(tmp_dir / data_files["GeneratedMat2"])
 
 ###############################################################################
 # This is what the texture images look like in 2D:
@@ -109,11 +100,11 @@ fig, axs = plt.subplots(1, 2)
 axs[0].set_title(f"Texture_0 {photo_texture.shape}")
 axs[0].imshow(photo_texture)
 axs[0].set_xticks((0, photo_texture.shape[1]), labels=(0.0, 1.0))
-axs[0].set_yticks((0, photo_texture.shape[0]), labels=(1.0, 0.0))
+axs[0].set_yticks((0, photo_texture.shape[0]), labels=(0.0, 1.0))
 axs[1].set_title(f"GeneratedMat2 {generated_texture.shape}")
 axs[1].imshow(generated_texture)
 axs[1].set_xticks((0, generated_texture.shape[1]), labels=(0.0, 1.0))
-axs[1].set_yticks((0, generated_texture.shape[0]), labels=(1.0, 0.0))
+axs[1].set_yticks((0, generated_texture.shape[0]), labels=(0.0, 1.0))
 fig.show()
 
 ###############################################################################

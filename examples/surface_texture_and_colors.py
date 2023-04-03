@@ -4,6 +4,15 @@ Surface with texture and vertex_colors
 
 Display a 3D surface with both texture and color maps.
 
+This example demonstrates how surfaces may be colored by:
+    * setting `vertex_values`, which colors the surface with the selected
+      `colormap`
+    * setting `vertex_colors`, which replaces/overrides any color from
+      `vertex_values`
+    * setting both `texture` and `texcoords`, which applies a texture
+      (potentially transparent) on top of the colors from `vertex_values` or
+      `vertex_colors`
+
 .. tags:: visualization-nD
 """
 
@@ -17,9 +26,8 @@ mesh_path = load_data_file('spot/spot.obj.gz')
 vertices, faces, _normals, texcoords = read_mesh(mesh_path)
 n = len(vertices)
 texture_path = load_data_file('spot/spot.png')
-texture = np.flipud(imread(texture_path))
+texture = imread(texture_path)
 
-np.random.seed(0)
 flat_spot = napari.layers.Surface(
     (vertices, faces),
     translate=(1, 0, 0),
@@ -28,6 +36,8 @@ flat_spot = napari.layers.Surface(
     shading="flat",
     name="texture only",
 )
+
+np.random.seed(0)
 plasma_spot = napari.layers.Surface(
     (vertices, faces, np.random.random((3, 3, n))),
     texture=texture,
@@ -36,6 +46,7 @@ plasma_spot = napari.layers.Surface(
     shading="smooth",
     name="vertex_values and texture",
 )
+
 rainbow_spot = napari.layers.Surface(
     (vertices, faces),
     translate=(-1, 0, 0),

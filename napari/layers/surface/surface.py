@@ -30,7 +30,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     Surfaces may be colored by:
         * setting `vertex_values`, which colors the surface with the selected
           `colormap` (default is uniform ones)
-        * setting `vertex_colors`, replaces/overrides any color from
+        * setting `vertex_colors`, which replaces/overrides any color from
           `vertex_values`
         * setting both `texture` and `texcoords`, which applies the texture
           (which may be transparent) on top of the colors from
