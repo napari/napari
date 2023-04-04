@@ -75,7 +75,7 @@ def new_label(layer: Labels):
 @register_label_action(
     trans._("Set the currently selected label to the background."),
 )
-def set_background_label(layer: Labels):
+def set_label_to_background(layer: Labels):
     """Set the currently selected label to the largest used label plus one."""
     layer.selected_label = 0
 
