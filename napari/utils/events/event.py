@@ -1225,7 +1225,7 @@ def _is_pos_arg(param: inspect.Parameter):
     )
 
 
-with contextlib.suppress(ImportError):
+with contextlib.suppress(ModuleNotFoundError):
     # this could move somewhere higher up in napari imports ... but where?
     __import__('dotenv').load_dotenv()
 
