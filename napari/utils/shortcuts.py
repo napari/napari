@@ -14,6 +14,7 @@ default_shortcuts = {
     'napari:transpose_axes': ['Control-T'],
     'napari:toggle_grid': ['Control-G'],
     'napari:toggle_selected_visibility': ['V'],
+    'napari:hold_for_pan_zoom': ['Space'],
     'napari:activate_labels_erase_mode': ['1'],
     'napari:activate_labels_paint_mode': ['2'],
     'napari:activate_labels_fill_mode': ['3'],
