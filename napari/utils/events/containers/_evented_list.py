@@ -161,9 +161,9 @@ class EventedList(TypedMutableSequence[_T]):
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
-        elif isinstance(key, slice):
+        if isinstance(key, slice):
             return [(self, i) for i in range(*key.indices(len(self)))]
-        elif type(key) in self._lookup:
+        if type(key) in self._lookup:
             return [(self, self.index(key))]
 
         valid = {int, slice}.union(set(self._lookup))

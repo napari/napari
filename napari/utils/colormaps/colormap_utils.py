@@ -473,20 +473,18 @@ def vispy_or_mpl_colormap(name):
                         suggestion=suggestion,
                     )
                 ) from e
-            else:
-                colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
-                    set(_MATPLOTLIB_COLORMAP_NAMES)
+
+            colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
+                set(_MATPLOTLIB_COLORMAP_NAMES)
+            )
+            raise KeyError(
+                trans._(
+                    'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
+                    deferred=True,
+                    name=name,
+                    colormaps=", ".join(sorted(f'"{cm}"' for cm in colormaps)),
                 )
-                raise KeyError(
-                    trans._(
-                        'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
-                        deferred=True,
-                        name=name,
-                        colormaps=", ".join(
-                            sorted(f'"{cm}"' for cm in colormaps)
-                        ),
-                    )
-                ) from e
+            ) from e
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         colormap = Colormap(
             name=name, display_name=display_name, colors=mpl_colors

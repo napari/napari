@@ -1,5 +1,5 @@
 from qtpy import QT_VERSION
-from qtpy.QtWidgets import QSlider  # noqa
+from qtpy.QtWidgets import QSlider
 from superqt import QDoubleSlider
 
 # here until we can debug why labeled sliders render differently on 5.12
