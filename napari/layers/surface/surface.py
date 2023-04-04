@@ -1,5 +1,5 @@
 import warnings
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -530,12 +530,12 @@ class Surface(IntensityVisualizationMixin, Layer):
                         "vertex data must be non-displayed dimensions. Data "
                         "may not be visible.",
                         deferred=True,
-                    )
+                    ),
+                    category=UserWarning,
+                    stacklevel=2,
                 )
                 return []
-            return data
-        else:
-            return data
+        return data
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
@@ -559,7 +559,8 @@ class Surface(IntensityVisualizationMixin, Layer):
             self._data_view = np.zeros((0, self._slice_input.ndisplay))
             self._view_faces = np.zeros((0, 3))
             return
-        elif values_ndim > 0:
+
+        if values_ndim > 0:
             indices = np.array(self._slice_indices[-vertex_ndim:])
             disp = [
                 d
