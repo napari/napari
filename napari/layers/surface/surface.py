@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -612,14 +612,14 @@ class Surface(IntensityVisualizationMixin, Layer):
         value : None
             Value of the data at the coord.
         """
-        return None
+        return
 
     def _get_value_3d(
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Tuple[Union[None, float, int], None]:
+    ) -> Tuple[Union[None, float, int], Optional[int]]:
         """Get the layer data value along a ray
 
         Parameters
@@ -636,7 +636,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         value
             The data value along the supplied ray.
         vertex : None
-            Index of vertex if any that is at the coordinates. Always returns `None`.
+            Index of vertex if any that is at the coordinates.
         """
         if len(dims_displayed) != 3:
             # only applies to 3D

@@ -29,7 +29,14 @@ def _linux_sys_name():
                 return f'{data["NAME"]} {data["VERSION_ID"]}'
             return f'{data["NAME"]} (no version)'
 
-    try:
+    return _linux_sys_name_lsb_release()
+
+
+def _linux_sys_name_lsb_release():
+    """
+    Try to discover linux system name base on lsb_release command output
+    """
+    with contextlib.suppress(subprocess.CalledProcessError):
         res = subprocess.run(
             ["lsb_release", "-d", "-r"], check=True, capture_output=True
         )
@@ -42,8 +49,6 @@ def _linux_sys_name():
         if not version_str.endswith(data["Release"]):
             version_str += " " + data["Release"]
         return version_str
-    except subprocess.CalledProcessError:
-        pass
     return ""
 
 

@@ -5,7 +5,7 @@ import re
 import warnings
 from ast import literal_eval
 from contextlib import suppress
-from typing import Union
+from typing import List, Union
 
 import npe2
 from pydantic import validator
@@ -281,7 +281,7 @@ def unregister_theme(theme_id):
     _themes.pop(theme_id, None)
 
 
-def available_themes():
+def available_themes() -> List[str]:
     """List available themes.
 
     Returns
@@ -289,7 +289,7 @@ def available_themes():
     list of str
         ids of available themes.
     """
-    return tuple(_themes) + ("system",)
+    return [*_themes, 'system']
 
 
 def is_theme_available(theme_id):
@@ -389,8 +389,8 @@ def _install_npe2_themes(themes=None):
             theme_dict.update(theme_colors)
             try:
                 register_theme(theme.id, theme_dict, manifest.name)
-            except ValueError as e:
-                logging.exception("Registration theme failed.\n%s", e)
+            except ValueError:
+                logging.exception("Registration theme failed.")
 
 
 _install_npe2_themes(_themes)

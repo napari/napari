@@ -233,14 +233,14 @@ class OctreeLoader:
             best_ancestor_index = level_indices.index(min(level_indices))
             # Take the last common ancestor which will be the most recent
             return [common_ancestors[best_ancestor_index]]
-        else:
-            # No in memory common ancestors were found so return the root tile.
-            # We say create=True because the root is not part of the current
-            # intersection. However since it's permanent once created and
-            # loaded it should always be available. As long as we don't garbage
-            # collect it!
-            root_tile = self._octree.levels[-1].get_chunk(0, 0, create=True)
-            return [root_tile]
+
+        # No in memory common ancestors were found so return the root tile.
+        # We say create=True because the root is not part of the current
+        # intersection. However since it's permanent once created and
+        # loaded it should always be available. As long as we don't garbage
+        # collect it!
+        root_tile = self._octree.levels[-1].get_chunk(0, 0, create=True)
+        return [root_tile]
 
     def _get_permanent_chunks(self) -> List[OctreeChunk]:
         """Get any permanent chunks we want to always draw.
@@ -341,14 +341,14 @@ class OctreeLoader:
             drawn_ancestors = [drawn_ancestors[-1]]
 
         # If the closest ancestor is drawn just take that one
-        if len(ancestors) > 0 and ancestors == drawn_ancestors:  # noqa SIM114
+        if len(ancestors) > 0 and ancestors == drawn_ancestors:
             return children + drawn_ancestors + best_in_memory_chunk
         # If the ideal chunk is in memory take that one
-        elif len(best_in_memory_chunk) > 0:
+        if len(best_in_memory_chunk) > 0:
             return children + drawn_ancestors + best_in_memory_chunk
-        else:
-            # Otherwise that the close in memory ancestor
-            return children + drawn_ancestors + ancestors
+
+        # Otherwise that the close in memory ancestor
+        return children + drawn_ancestors + ancestors
 
     def _load_chunk(self, octree_chunk: OctreeChunk, priority: int) -> bool:
         """Load the data for one OctreeChunk.
