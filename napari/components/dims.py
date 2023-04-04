@@ -123,30 +123,29 @@ class Dims(EventedModel):
         Ensure the range values are sane.
 
         - start < stop
-        - step > 0 and step < (stop - start)
+        - step > 0
         """
-        range_ = []
-        for start, stop, step in ranges:
+        for axis, (start, stop, step) in enumerate(ranges):
             if start > stop:
                 raise ValueError(
                     trans._(
-                        'start and stop must be strictly increasing, but got ({start}, {stop})',
+                        'start and stop must be strictly increasing, but got ({start}, {stop}) for axis {axis}',
                         deferred=True,
                         start=start,
                         stop=stop,
+                        axis=axis,
                     )
                 )
             if step <= 0:
                 raise ValueError(
                     trans._(
-                        'step must be strictly positive, but got {step}.',
+                        'step must be strictly positive, but got {step} for axis {axis}.',
                         deferred=True,
                         step=step,
+                        axis=axis,
                     )
                 )
-            # ensure step is not bigger than full range thickness and coerce to proper type
-            range_.append((start, stop, np.clip(step, 0, stop - start)))
-        return range_
+        return ranges
 
     @root_validator(skip_on_failure=True, allow_reuse=True)
     def _check_dims(cls, values):
