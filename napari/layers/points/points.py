@@ -2,7 +2,7 @@ import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -61,6 +61,8 @@ class Points(Layer):
     features : dict[str, array-like] or DataFrame
         Features table where each row corresponds to a point and each column
         is a feature.
+    feature_defaults : dict[str, Any] or DataFrame
+        The default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -324,6 +326,7 @@ class Points(Layer):
         *,
         ndim=None,
         features=None,
+        feature_defaults=None,
         properties=None,
         text=None,
         symbol='o',
@@ -432,6 +435,7 @@ class Points(Layer):
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
+            feature_defaults=feature_defaults,
             properties=properties,
             property_choices=property_choices,
             num_data=len(self.data),
@@ -471,7 +475,9 @@ class Points(Layer):
         self._status = self.mode
 
         color_properties = (
-            self.properties if self._data.size > 0 else self.property_choices
+            self._feature_table.properties()
+            if self._data.size > 0
+            else self._feature_table.currents()
         )
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(data),
@@ -567,8 +573,13 @@ class Points(Layer):
                     new_symbol = self.current_symbol
                 symbol = np.repeat([new_symbol], adding, axis=0)
 
-                # add new colors
+                # Add new colors, updating the current property value before
+                # to handle any in-place modification of feature_defaults.
+                # Also see: https://github.com/napari/napari/issues/5634
+                current_properties = self._feature_table.currents()
+                self._edge._update_current_properties(current_properties)
                 self._edge._add(n_colors=adding)
+                self._face._update_current_properties(current_properties)
                 self._face._add(n_colors=adding)
 
                 shown = np.repeat([True], adding, axis=0)
@@ -634,6 +645,17 @@ class Points(Layer):
         See `features` for more details on the type of this property.
         """
         return self._feature_table.defaults
+
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        self._feature_table.set_defaults(defaults)
+        current_properties = self.current_properties
+        self._edge._update_current_properties(current_properties)
+        self._face._update_current_properties(current_properties)
+        self.events.current_properties()
+        self.events.feature_defaults()
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
@@ -1241,6 +1263,7 @@ class Points(Layer):
                 'ndim': self.ndim,
                 'data': self.data,
                 'features': self.features,
+                'feature_defaults': self.feature_defaults,
                 'shading': self.shading,
                 'antialiasing': self.antialiasing,
                 'canvas_size_limits': self.canvas_size_limits,
@@ -1508,7 +1531,7 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
-    def _get_value(self, position) -> Union[None, int]:
+    def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.
 
         Parameters
@@ -1549,7 +1572,7 @@ class Points(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Union[int, None]:
+    ) -> Optional[int]:
         """Get the layer data value along a ray
 
         Parameters
@@ -1807,7 +1830,7 @@ class Points(Layer):
                 pos = _create_box_from_corners_3d(
                     self._drag_box, self._drag_normal, self._drag_up
                 )
-            pos = pos[list(range(4)) + [0]]
+            pos = pos[[*range(4), 0]]
         else:
             pos = None
 
@@ -1852,7 +1875,7 @@ class Points(Layer):
             coords = np.clip(coords, 0, thumbnail_shape - 1)
 
             # Draw single pixel points in the colormapped thumbnail.
-            colormapped = np.zeros(tuple(thumbnail_shape) + (4,))
+            colormapped = np.zeros((*thumbnail_shape, 4))
             colormapped[..., 3] = 1
             colors = self._face.colors[thumbnail_indices]
             colormapped[coords[:, 0], coords[:, 1]] = colors

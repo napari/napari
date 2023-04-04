@@ -89,8 +89,13 @@ def _merge_stack(ll: LayerList, rgb=False):
 
 
 def _toggle_visibility(ll: LayerList):
-    for lay in ll.selection:
-        lay.visible = not lay.visible
+    current_visibility_state = []
+    for layer in ll.selection:
+        current_visibility_state.append(layer.visible)
+
+    for visibility, layer in zip(current_visibility_state, ll.selection):
+        if layer.visible == visibility:
+            layer.visible = not visibility
 
 
 def _link_selected_layers(ll: LayerList):
@@ -128,8 +133,8 @@ def _convert_dtype(ll: LayerList, mode='int64'):
                 deferred=True,
             )
         )
-    else:
-        layer.data = layer.data.astype(np.dtype(mode))
+
+    layer.data = layer.data.astype(np.dtype(mode))
 
 
 def _project(ll: LayerList, axis: int = 0, mode='max'):

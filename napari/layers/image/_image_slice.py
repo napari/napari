@@ -32,8 +32,8 @@ def _create_loader_class() -> ImageLoader:
         )
 
         return ChunkedImageLoader()
-    else:
-        return ImageLoader()
+
+    return ImageLoader()
 
 
 class ImageSlice:
