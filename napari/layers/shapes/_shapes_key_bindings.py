@@ -51,7 +51,7 @@ def activate_shapes_transform_mode(layer):
 
 
 @register_shapes_mode_action(trans._('Pan/zoom'))
-def activate_shapes_pan_zoom_mode(layer):
+def activate_shapes_pan_zoom_mode(layer: Shapes):
     layer.mode = Mode.PAN_ZOOM
 
 
