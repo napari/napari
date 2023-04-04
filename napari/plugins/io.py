@@ -196,7 +196,7 @@ def save_layers(
 
     If a ``plugin`` is provided and multiple layers are passed, then
     we call we call ``napari_get_writer`` for that plugin, and if it
-    doesn’t return a WriterFunction we error, otherwise we call it and if
+    doesn`t return a WriterFunction we error, otherwise we call it and if
     that fails if it we error.
 
     Parameters
@@ -299,7 +299,7 @@ def _write_multiple_layers_with_plugins(
     to unique files in the folder.
 
     If a ``plugin_name`` is provided, then call ``napari_get_writer`` for that
-    plugin. If it doesn’t return a ``WriterFunction`` we error, otherwise we
+    plugin. If it doesn`t return a ``WriterFunction`` we error, otherwise we
     call it and if that fails if it we error.
 
     Exceptions will be caught and stored as PluginErrors
@@ -384,7 +384,7 @@ def _write_multiple_layers_with_plugins(
                 layer_types=layer_types,
             )
 
-        raise ValueError(msg)
+        raise TypeError(msg)
 
     try:
         return (

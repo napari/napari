@@ -146,6 +146,7 @@ def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
             # the module_path we didn't use.
             attribute_str = '.'.join(parts[i - 1 :])
             return module, attribute_str
+    return None
 
 
 def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:

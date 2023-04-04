@@ -310,14 +310,14 @@ def test_text_from_property_fstring(properties):
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
-    expected_text_3 = expected_text_2 + ['type-ish: A']
+    expected_text_3 = [*expected_text_2, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
     # add shape
     layer.selected_data = {0}
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
-    expected_text_4 = expected_text_3 + ['type-ish: A']
+    expected_text_4 = [*expected_text_3, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
@@ -1233,7 +1233,7 @@ def test_removing_selected_shapes():
     # Select three shapes and remove them
     layer.selected_data = {1, 7, 8}
     layer.remove_selected()
-    keep = [0] + list(range(2, 7)) + [9]
+    keep = [0, *range(2, 7)] + [9]
     data_keep = [data[i] for i in keep]
     shape_type_keep = [shape_type[i] for i in keep]
     assert len(layer.data) == len(data_keep)
@@ -1802,7 +1802,7 @@ def test_edge_width():
     layer.current_edge_width = 4
     layer.add(new_shape)
     assert len(layer.edge_width) == shape[0] + 1
-    assert layer.edge_width == width_list + [4]
+    assert layer.edge_width == [*width_list, 4]
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
@@ -1847,7 +1847,7 @@ def test_z_index():
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
     assert len(layer.z_index) == shape[0] + 1
-    assert layer.z_index == z_index_list + [4]
+    assert layer.z_index == [*z_index_list, 4]
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}

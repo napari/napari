@@ -315,11 +315,10 @@ class ShortcutEditor(QWidget):
 
                 return False
 
-            else:
-                # This shortcut was here.  Reformat and reset text.
-                format_shortcut = Shortcut(new_shortcut).platform
-                with lock_keybind_update(self):
-                    current_item.setText(format_shortcut)
+            # This shortcut was here.  Reformat and reset text.
+            format_shortcut = Shortcut(new_shortcut).platform
+            with lock_keybind_update(self):
+                current_item.setText(format_shortcut)
 
         return True
 
@@ -549,10 +548,10 @@ class EditorWidget(QLineEdit):
         if event.type() == QEvent.Type.ShortcutOverride:
             self.keyPressEvent(event)
             return True
-        elif event.type() in [QEvent.Type.KeyPress, QEvent.Type.Shortcut]:
+        if event.type() in [QEvent.Type.KeyPress, QEvent.Type.Shortcut]:
             return True
-        else:
-            return super().event(event)
+
+        return super().event(event)
 
     def keyPressEvent(self, event):
         """Qt method override."""

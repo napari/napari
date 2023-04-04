@@ -11,7 +11,7 @@ except Exception as e:
     if 'No Qt bindings could be found' in str(e):
         raise ImportError(
             trans._(
-                "No Qt bindings could be found.\n\nnapari requires either PyQt5 or PySide2 to be installed in the environment.\nTo install the default backend (currently PyQt5), run \"pip install napari[all]\" \nYou may also use \"pip install napari[pyside2]\"for Pyside2, or \"pip install napari[pyqt5]\" for PyQt5",
+                'No Qt bindings could be found.\n\nnapari requires either PyQt5 or PySide2 to be installed in the environment.\nTo install the default backend (currently PyQt5), run "pip install napari[all]" \nYou may also use "pip install napari[pyside2]"for Pyside2, or "pip install napari[pyqt5]" for PyQt5',
                 deferred=True,
             )
         ) from e

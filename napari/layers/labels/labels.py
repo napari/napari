@@ -870,14 +870,14 @@ class Labels(_ImageBase):
         max_nbytes = max(data.nbytes, 1024)
         if data_range * nbytes_low_discrepancy > max_nbytes:
             return self._lookup_with_low_discrepancy_image
-        else:
-            if self._all_vals.size < data_range:
-                new_all_vals = low_discrepancy_image(
-                    np.arange(min_label_val0, max_label_val + 1), self._seed
-                )
-                self._all_vals = np.roll(new_all_vals, min_label_val0)
-                self._all_vals[0] = 0
-            return self._lookup_with_index
+
+        if self._all_vals.size < data_range:
+            new_all_vals = low_discrepancy_image(
+                np.arange(min_label_val0, max_label_val + 1), self._seed
+            )
+            self._all_vals = np.roll(new_all_vals, min_label_val0)
+            self._all_vals[0] = 0
+        return self._lookup_with_index
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.
@@ -1516,8 +1516,8 @@ def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
         # for difference from indexing numpy
         try:
             import xarray as xr
-
-            return tuple(xr.DataArray(i) for i in indices)
         except ModuleNotFoundError:
             pass
+        else:
+            return tuple(xr.DataArray(i) for i in indices)
     return tuple(indices)

@@ -628,10 +628,10 @@ def _sign_cross(x, y):
     """sign of cross product (faster for 2d)"""
     if x.shape[1] == y.shape[1] == 2:
         return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
-    elif x.shape[1] == y.shape[1] == 3:
+    if x.shape[1] == y.shape[1] == 3:
         return _sign_nonzero(np.cross(x, y))
-    else:
-        raise ValueError(x.shape[1], y.shape[1])
+
+    raise ValueError(x.shape[1], y.shape[1])
 
 
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):

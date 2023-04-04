@@ -57,7 +57,7 @@ def test_tiled_screenshot(qtbot, monkeypatch, make_napari_viewer, dtype):
 
     # Take the screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([0, 0, 128, 255], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
@@ -98,7 +98,7 @@ def test_tiled_rgb(qtbot, monkeypatch, make_napari_viewer):
 
     # Take the screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([128, 128, 128, 255], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
@@ -144,7 +144,7 @@ def test_tiled_changing_contrast_limits(
 
     # Take the screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([0, 0, 255, 255], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
@@ -198,7 +198,7 @@ def test_tiled_single_scale(qtbot, monkeypatch, make_napari_viewer):
 
     # Take the screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([128, 128, 128, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
 
@@ -239,7 +239,7 @@ def test_tiled_labels(qtbot, monkeypatch, make_napari_viewer):
 
     # Take the screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     col = layer.get_color(1)
     target_center = np.array([c * 255 for c in col], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')

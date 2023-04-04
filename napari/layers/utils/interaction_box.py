@@ -150,7 +150,7 @@ def get_nearby_handle(
     if np.any(close_to_vertex):
         idx = np.argmax(close_to_vertex)
         return InteractionBoxHandle(idx)
-    elif np.all((position >= top_left) & (position <= bot_right)):
+    if np.all((position >= top_left) & (position <= bot_right)):
         return InteractionBoxHandle.INSIDE
-    else:
-        return None
+
+    return None

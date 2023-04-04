@@ -329,7 +329,7 @@ class Tracks(Layer):
     def _pad_display_data(self, vertices):
         """pad display data when moving between 2d and 3d"""
         if vertices is None:
-            return
+            return None
 
         data = vertices[:, self._slice_input.displayed]
         # if we're only displaying two dimensions, then pad the display dim
@@ -337,8 +337,8 @@ class Tracks(Layer):
         if self._slice_input.ndisplay == 2:
             data = np.pad(data, ((0, 0), (0, 1)), 'constant')
             return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
-        else:
-            return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
+
+        return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
 
     @property
     def current_time(self):
