@@ -316,7 +316,25 @@ def compress_str(gen):
                 acc.append(eval(tokstr))
             else:
                 # b"", f"" ... are Strings
-                acc.append(eval(tokstr[1:]))
+                # the prefix can be more than one letter,
+                # like rf, rb...
+                trailing_quote = tokstr[-1]
+                start_quote_index = tokstr.find(trailing_quote)
+                prefix = tokstr[:start_quote_index]
+                suffix = tokstr[start_quote_index:]
+                assert suffix[0] == suffix[-1]
+                assert suffix[0] in ('"', "'")
+                if 'b' in prefix:
+                    print(
+                        'not translating bytestring', tokstr, file=sys.stderr
+                    )
+                    continue
+                # we remove the f as we do not want to evaluate the string
+                # if it contains variable. IT will crash as it evaluate in
+                # the context of this function.
+                safe_tokstr = prefix.replace('f', '') + suffix
+
+                acc.append(eval(safe_tokstr))
             if not acc_line:
                 acc_line = lineno
         else:
@@ -610,6 +628,14 @@ if __name__ == '__main__':
             data['SKIP_WORDS'][file].remove(to_remove)
 
     break_ = False
+
+    n_issues = sum([len(m) for m in issues.values()])
+
+    print()
+    print(
+        f"{RED}=== About {n_issues} items  in {len(issues)} files to review ==={NORMAL}"
+    )
+    print()
     for file, missing in issues.items():
         code = Path(file).read_text().splitlines()
         if break_:
