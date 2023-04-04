@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import numpy as np
 import pandas as pd
 import pytest
+from psygnal.containers import EventedSet
 from pydantic import ValidationError
 from vispy.color import get_colormap
 
@@ -1731,10 +1732,10 @@ def test_thumbnail_non_square_data():
         layer.thumbnail[: mid_row - 1, :, :3], expected_zeros
     )
     assert (
-        np.count_nonzero(layer.thumbnail[mid_row - 1 : mid_row + 1, :, :3]) > 0
+        np.count_nonzero(layer.thumbnail[mid_row - 1: mid_row + 1, :, :3]) > 0
     )
     np.testing.assert_array_equal(
-        layer.thumbnail[mid_row + 1 :, :, :3], expected_zeros
+        layer.thumbnail[mid_row + 1:, :, :3], expected_zeros
     )
 
 
@@ -2528,3 +2529,12 @@ def test_editable_and_visible_are_independent():
     layer.visible = True
 
     assert not layer.editable
+
+
+def test_point_selection_remains_evented_after_update():
+    """Existing evented point set should be updated when selection changes."""
+    data = np.empty((3, 2))
+    layer = Points(data)
+    assert isinstance(layer.selected_data, EventedSet)
+    layer.selected_data = {0, 1}
+    assert isinstance(layer.selected_data, EventedSet)
