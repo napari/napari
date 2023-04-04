@@ -522,6 +522,9 @@ def _increment_unnamed_colormap(
 ) -> Tuple[str, str]:
     """Increment name for unnamed colormap.
 
+    NOTE: this assumes colormaps are *never* deleted, and does not check
+          for name collision. If colormaps can ever be removed, please update.
+
     Parameters
     ----------
     existing : list of str
@@ -623,15 +626,19 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 AVAILABLE_COLORMAPS[name] = cmap
             else:
                 colormap = _colormap_from_colors(colormap)
-                if colormap is not None:
-                    # Return early because we don't have a name for this colormap.
-                    return colormap
-                raise TypeError(
-                    trans._(
-                        "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
-                        deferred=True,
+                if colormap is None:
+                    raise TypeError(
+                        trans._(
+                            "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
+                            deferred=True,
+                        )
                     )
+
+                name, _display_name = _increment_unnamed_colormap(
+                    AVAILABLE_COLORMAPS
                 )
+                colormap.update({'name': name, '_display_name': _display_name})
+                AVAILABLE_COLORMAPS[name] = colormap
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
@@ -683,19 +690,21 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         else:
             colormap = _colormap_from_colors(colormap)
             if colormap is not None:
-                # Return early because we don't have a name for this colormap.
-                return colormap
-
-            warnings.warn(
-                trans._(
-                    'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
-                    deferred=True,
-                    cm_type=type(colormap),
+                name, _display_name = _increment_unnamed_colormap(
+                    AVAILABLE_COLORMAPS
                 )
-            )
-
-            # Use default colormap
-            name = 'gray'
+                colormap.update({'name': name, '_display_name': _display_name})
+                AVAILABLE_COLORMAPS[name] = colormap
+            else:
+                warnings.warn(
+                    trans._(
+                        'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
+                        deferred=True,
+                        cm_type=type(colormap),
+                    )
+                )
+                # Use default colormap
+                name = 'gray'
 
     return AVAILABLE_COLORMAPS[name]
 
