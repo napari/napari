@@ -303,12 +303,12 @@ def range_to_decimals(range_, dtype):
 
     if np.issubdtype(dtype, np.integer):
         return 0
-    else:
-        # scale precision with the log of the data range order of magnitude
-        # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
-        #       0 - 10  (1 order of mag)  -> 2 decimals
-        #       0 - 100 (2 orders of mag) -> 1 decimal
-        #       ≥ 3 orders of mag -> no decimals
-        # no more than 64 decimals
-        d_range = np.subtract(*range_[::-1])
-        return min(64, max(int(3 - np.log10(d_range)), 0))
+
+    # scale precision with the log of the data range order of magnitude
+    # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
+    #       0 - 10  (1 order of mag)  -> 2 decimals
+    #       0 - 100 (2 orders of mag) -> 1 decimal
+    #       ≥ 3 orders of mag -> no decimals
+    # no more than 64 decimals
+    d_range = np.subtract(*range_[::-1])
+    return min(64, max(int(3 - np.log10(d_range)), 0))

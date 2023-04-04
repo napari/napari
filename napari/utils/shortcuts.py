@@ -9,6 +9,7 @@ default_shortcuts = {
     'napari:toggle_ndisplay': [KeyMod.CtrlCmd | KeyCode.KeyY],
     'napari:toggle_theme': [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyT],
     'napari:reset_view': [KeyMod.CtrlCmd | KeyCode.KeyR],
+    'napari:delete_selected_layers': [KeyMod.CtrlCmd | KeyCode.Delete],
     'napari:show_shortcuts': [KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.Slash],
     'napari:increment_dims_left': [KeyCode.LeftArrow],
     'napari:increment_dims_right': [KeyCode.RightArrow],
@@ -18,6 +19,7 @@ default_shortcuts = {
     'napari:transpose_axes': [KeyMod.CtrlCmd | KeyCode.KeyT],
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyG],
+    'napari:hold_for_pan_zoom': [KeyCode.Space],
     # labels
     'napari:activate_labels_erase_mode': [KeyCode.Digit1],
     'napari:activate_labels_paint_mode': [KeyCode.Digit2],

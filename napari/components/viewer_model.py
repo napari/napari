@@ -328,8 +328,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             return np.vstack(
                 [np.zeros(self.dims.ndim), np.repeat(512, self.dims.ndim)]
             )
-        else:
-            return self.layers.extent.world[:, self.dims.displayed]
+
+        return self.layers.extent.world[:, self.dims.displayed]
 
     def reset_view(self):
         """Reset the camera view."""
@@ -670,6 +670,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         cache=True,
         plane=None,
         experimental_clipping_planes=None,
+        custom_interpolation_kernel_2d=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -801,6 +802,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Each dict defines a clipping plane in 3D in data coordinates.
             Valid dictionary keys are {'position', 'normal', and 'enabled'}.
             Values on the negative side of the normal are discarded if the plane is enabled.
+        custom_interpolation_kernel_2d : np.ndarray
+            Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
 
         Returns
         -------
@@ -844,6 +847,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'cache': cache,
             'plane': plane,
             'experimental_clipping_planes': experimental_clipping_planes,
+            'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -856,6 +860,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'contrast_limits',
             'metadata',
             'experimental_clipping_planes',
+            'custom_interpolation_kernel_2d',
         }
 
         if channel_axis is None:
@@ -876,16 +881,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.layers.append(layer)
 
             return layer
-        else:
-            layerdata_list = split_channels(data, channel_axis, **kwargs)
 
-            layer_list = []
-            for image, i_kwargs, _ in layerdata_list:
-                layer = Image(image, **i_kwargs)
-                self.layers.append(layer)
-                layer_list.append(layer)
+        layerdata_list = split_channels(data, channel_axis, **kwargs)
 
-            return layer_list
+        layer_list = [
+            Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
+        ]
+        self.layers.extend(layer_list)
+
+        return layer_list
 
     def open_sample(
         self,
@@ -969,18 +973,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 for datum in data(**kwargs):
                     added.extend(self._add_layer_from_data(*datum))
                 return added
-            elif isinstance(data, (str, Path)):
+            if isinstance(data, (str, Path)):
                 return self.open(data, plugin=reader_plugin)
-            else:
-                raise TypeError(
-                    trans._(
-                        'Got unexpected type for sample ({plugin!r}, {sample!r}): {data_type}',
-                        deferred=True,
-                        plugin=plugin,
-                        sample=sample,
-                        data_type=type(data),
-                    )
+
+            raise TypeError(
+                trans._(
+                    'Got unexpected type for sample ({plugin!r}, {sample!r}): {data_type}',
+                    deferred=True,
+                    plugin=plugin,
+                    sample=sample,
+                    data_type=type(data),
                 )
+            )
 
     def open(
         self,
@@ -1371,7 +1375,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             layer = add_method(data, **(meta or {}))
         except TypeError as exc:
             if 'unexpected keyword argument' not in str(exc):
-                raise exc
+                raise
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
                 trans._(

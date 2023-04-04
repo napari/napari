@@ -29,6 +29,7 @@ class Interpolation(StringEnum):
     NEAREST = auto()
     SPLINE16 = auto()
     SPLINE36 = auto()
+    CUSTOM = auto()
 
     @classmethod
     def view_subset(cls):

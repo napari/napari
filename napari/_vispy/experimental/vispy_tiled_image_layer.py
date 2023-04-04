@@ -118,7 +118,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         NotImplementedError
             Always raises this.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _update_tile_shape(self) -> None:
         """If the tile shape was changed, update our node."""

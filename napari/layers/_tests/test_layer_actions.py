@@ -7,8 +7,49 @@ from napari.layers._layer_actions import (
     _convert,
     _convert_dtype,
     _duplicate_layer,
+    _link_selected_layers,
     _project,
+    _toggle_visibility,
 )
+
+
+def test_toggle_visibility():
+    """Test toggling visibility of a layer."""
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]]))
+    layer_list[0].visible = False
+
+    layer_list.selection.active = layer_list[0]
+    _toggle_visibility(layer_list)
+
+    assert layer_list[0].visible is True
+
+
+def test_toggle_visibility_with_linked_layers():
+    """Test toggling visibility of a layer."""
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]]))
+    layer_list.append(Points([[0, 0]]))
+    layer_list.append(Points([[0, 0]]))
+    layer_list.append(Points([[0, 0]]))
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+    layer_list.selection.add(layer_list[2])
+
+    _link_selected_layers(layer_list)
+
+    layer_list[3].visible = False
+
+    layer_list.selection.remove(layer_list[0])
+    layer_list.selection.add(layer_list[3])
+
+    _toggle_visibility(layer_list)
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is False
+    assert layer_list[2].visible is False
+    assert layer_list[3].visible is True
 
 
 @pytest.mark.parametrize('layer_type', [Points, Shapes])

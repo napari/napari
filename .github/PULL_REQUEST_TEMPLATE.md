@@ -1,8 +1,17 @@
+# Fixes/Closes
+
+<!-- In general, PRs should fix an existing issue on the repo. -->
+<!-- Please link to that issue here as "Closes #(issue-number)". -->
+Closes #
+
 # Description
 <!-- What does this pull request (PR) do? Why is it necessary? -->
 <!-- Tell us about your new feature, improvement, or fix! -->
 <!-- If your change includes user interface changes, please add an image, or an animation "An image is worth a thousand words!" -->
 <!-- You can use https://www.cockos.com/licecap/ or similar to create animations -->
+
+# References
+<!-- What resources, documentation, and guides were used in the creation of this PR? -->
 
 ## Type of change
 <!-- Please delete options that are not relevant. -->
@@ -10,10 +19,6 @@
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] This change requires a documentation update
-
-# References
-<!-- What resources, documentation, and guides were used in the creation of this PR? -->
-<!-- If this is a bug-fix or otherwise resolves an issue, reference it here with "closes #(issue)" -->
 
 # How has this been tested?
 <!-- Please describe the tests that you ran to verify your changes. -->

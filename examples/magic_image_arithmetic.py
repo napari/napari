@@ -42,6 +42,7 @@ def image_arithmetic(
     """Adds, subtracts, multiplies, or divides two same-shaped image layers."""
     if layerA is not None and layerB is not None:
         return operation.value(layerA, layerB)
+    return None
 
 
 # create a new viewer with a couple image layers

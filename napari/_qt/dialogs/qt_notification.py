@@ -362,7 +362,8 @@ class NapariQtNotification(QDialog):
                 )
                 tbdialog.show()
 
-            actions = tuple(notification.actions) + (
+            actions = (
+                *tuple(notification.actions),
                 (trans._('View Traceback'), show_tb),
             )
         else:
@@ -417,9 +418,7 @@ class TracebackDialog(QDialog):
         self.resize(650, 270)
         text = QTextEdit()
         theme = get_theme(get_settings().appearance.theme, as_dict=False)
-        _highlight = Pylighter(  # noqa: F841
-            text.document(), "python", theme.syntax_style
-        )
+        _highlight = Pylighter(text.document(), "python", theme.syntax_style)
         text.setText(exception.as_text())
         text.setReadOnly(True)
         self.btn = QPushButton(trans._('Enter Debugger'))

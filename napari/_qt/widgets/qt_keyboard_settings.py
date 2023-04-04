@@ -22,7 +22,15 @@ from qtpy.QtWidgets import (
 from vispy.util import keys
 
 from napari._qt.widgets.qt_message_popup import WarnPopup
-from napari.layers import Image, Labels, Points, Shapes, Surface, Vectors
+from napari.layers import (
+    Image,
+    Labels,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
@@ -60,6 +68,7 @@ class ShortcutEditor(QWidget):
             Points,
             Shapes,
             Surface,
+            Tracks,
             Vectors,
         ]
 
@@ -315,11 +324,10 @@ class ShortcutEditor(QWidget):
 
                 return False
 
-            else:
-                # This shortcut was here.  Reformat and reset text.
-                format_shortcut = Shortcut(new_shortcut).platform
-                with lock_keybind_update(self):
-                    current_item.setText(format_shortcut)
+            # This shortcut was here.  Reformat and reset text.
+            format_shortcut = Shortcut(new_shortcut).platform
+            with lock_keybind_update(self):
+                current_item.setText(format_shortcut)
 
         return True
 
@@ -549,10 +557,10 @@ class EditorWidget(QLineEdit):
         if event.type() == QEvent.Type.ShortcutOverride:
             self.keyPressEvent(event)
             return True
-        elif event.type() in [QEvent.Type.KeyPress, QEvent.Type.Shortcut]:
+        if event.type() in [QEvent.Type.KeyPress, QEvent.Type.Shortcut]:
             return True
-        else:
-            return super().event(event)
+
+        return super().event(event)
 
     def keyPressEvent(self, event):
         """Qt method override."""
