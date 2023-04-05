@@ -74,62 +74,44 @@ class _PointSliceRequest:
                 dims=self.dims,
             )
 
-        # We want a numpy array so we can use fancy indexing with the non-displayed
-        # indices, but as self.dims_indices can (and often/always does) contain slice
-        # objects, the array has dtype=object which is then very slow for the
-        # arithmetic below. As Points._round_index is always False, we can safely
-        # convert to float to get a major performance improvement.
         not_disp_indices = np.array(self.dims_indices)[not_disp]
 
-        if 1:
-            slice_indices, scale = self._get_thick_slice_data(
-                not_disp, not_disp_indices
-            )
-
-        elif self.out_of_slice_display and self.dims.ndim > 2:
-            slice_indices, scale = self._get_out_of_display_slice_data(
-                not_disp, not_disp_indices
-            )
-        else:
-            slice_indices, scale = self._get_slice_data(
-                not_disp, not_disp_indices
-            )
+        slice_indices, scale = self._get_slice_data(not_disp, not_disp_indices)
 
         return _PointSliceResponse(
             indices=slice_indices, scale=scale, dims=self.dims
         )
 
-    def _get_out_of_display_slice_data(self, not_disp, not_disp_indices):
-        """This method slices in the out-of-display case."""
-        distances = abs(self.data[:, not_disp] - not_disp_indices)
-        sizes = self.size[:, not_disp] / 2
-        matches = np.all(distances <= sizes, axis=1)
-        size_match = sizes[matches]
-        size_match[size_match == 0] = 1
-        scale_per_dim = (size_match - distances[matches]) / size_match
-        scale_per_dim[size_match == 0] = 1
-        scale = np.prod(scale_per_dim, axis=1)
-        slice_indices = np.where(matches)[0].astype(int)
-        return slice_indices, scale
-
     def _get_slice_data(self, not_disp, not_disp_indices):
-        """This method slices in the simpler case."""
         data = self.data[:, not_disp]
-        distances = np.abs(data - not_disp_indices)
-        matches = np.all(distances <= 0.5, axis=1)
-        slice_indices = np.where(matches)[0].astype(int)
-        return slice_indices, 1
+        scale = 1
 
-    def _get_thick_slice_data(self, not_disp, not_disp_indices):
-        center, low, high = zip(*not_disp_indices)
+        center, low, high = not_disp_indices.T
 
         if np.isclose(high, low):
-            return self._get_slice_data(not_disp, center)
+            # assume slice thickness of 1 (same as before thick slices)
+            high = center + 0.5
+            low = center - 0.5
 
-        not_disp_data = self.data[:, not_disp]
-        inside_slice_each_dim = (not_disp_data >= low) & (
-            not_disp_data <= high
-        )
-        inside_slice = np.all(inside_slice_each_dim, axis=1)
+        inside_slice = np.all((data >= low) & (data <= high), axis=1)
         slice_indices = np.where(inside_slice)[0].astype(int)
-        return slice_indices, 1
+
+        if self.out_of_slice_display and self.dims.ndim > 2:
+            # add out of slice points with progressively lower sizes
+            dist_from_low = np.abs(data - low)
+            dist_from_high = np.abs(data - high)
+            distances = np.minimum(dist_from_low, dist_from_high)
+            # do not rescale/hide things *inside* the slice
+            distances[inside_slice] = 0
+            sizes = self.size[:, not_disp] / 2
+
+            matches = np.all(distances <= sizes, axis=1)
+            size_match = sizes[matches]
+            size_match[size_match == 0] = 1
+            scale_per_dim = (size_match - distances[matches]) / size_match
+            scale_per_dim[size_match == 0] = 1
+            scale = np.prod(scale_per_dim, axis=1)
+
+            slice_indices = np.where(matches)[0].astype(int)
+
+        return slice_indices, scale

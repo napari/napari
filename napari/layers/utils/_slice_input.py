@@ -99,7 +99,7 @@ class _SliceInput:
             data_margin_left = np.round(data_margin_left).astype(int)
             data_margin_right = np.round(data_margin_right).astype(int)
 
-        indices = [[None, None, None] for _ in range(self.ndim)]
+        indices = [[np.nan, np.nan, np.nan] for _ in range(self.ndim)]
         for i, ax in enumerate(self.not_displayed):
             indices[ax] = (
                 data_pts[i],
