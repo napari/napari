@@ -425,12 +425,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.dims.reset()
         else:
             ranges = self.layers._ranges
-            self.dims.update(
-                dict(
-                    ndim=len(ranges),
-                    range=ranges,
-                )
-            )
+            # TODO: can be optimized with dims.update(), but events need fixing
+            self.dims.ndim = len(ranges)
+            self.dims.range = ranges
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)

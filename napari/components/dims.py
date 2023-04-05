@@ -259,17 +259,17 @@ class Dims(EventedModel):
         self.margin_left = self.margin_right = tuple(val / 2 for val in value)
 
     @property
-    def displayed(self) -> Tuple[int]:
+    def displayed(self) -> Tuple[int, ...]:
         """Tuple: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
 
     @property
-    def not_displayed(self) -> Tuple[int]:
+    def not_displayed(self) -> Tuple[int, ...]:
         """Tuple: Dimensions that are not displayed."""
         return self.order[: -self.ndisplay]
 
     @property
-    def displayed_order(self) -> Tuple[int]:
+    def displayed_order(self) -> Tuple[int, ...]:
         return tuple(argsort(self.displayed))
 
     def set_range(
@@ -359,15 +359,13 @@ class Dims(EventedModel):
     def reset(self):
         """Reset dims values to initial states."""
         # Don't reset axis labels
-        self.update(
-            {
-                "range": ((0, 2, 1),) * self.ndim,
-                "point": (0,) * self.ndim,
-                "order": tuple(range(self.ndim)),
-                "margin_left": (0,) * self.ndim,
-                "margin_right": (0,) * self.ndim,
-            }
-        )
+        # TODO: could be optimized with self.update, but need to fix
+        #       event firing in EventedModel first
+        self.range = ((0, 2, 1),) * self.ndim
+        self.point = (0,) * self.ndim
+        self.order = tuple(range(self.ndim))
+        self.margin_left = (0,) * self.ndim
+        self.margin_right = (0,) * self.ndim
 
     def transpose(self):
         """Transpose displayed dimensions.

@@ -47,11 +47,7 @@ def test_scaled_and_translated_images():
     viewer.add_image(data)
     viewer.add_image(data[::2], scale=[2, 1, 1], translate=[10, 0, 0])
     # TODO: non-integer with mixed scale?
-    assert viewer.dims.range[0] == (
-        0,
-        19.5,
-        1,
-    )
+    assert viewer.dims.range[0] == (0, 19.5, 1)
     assert viewer.dims.range[1] == (0, 10, 1)
     assert viewer.dims.range[2] == (0, 10, 1)
     assert viewer.dims.nsteps == (19, 10, 10)

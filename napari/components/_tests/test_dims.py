@@ -72,6 +72,30 @@ def test_keyword_only_dims():
         Dims(3, (1, 2, 3))
 
 
+def test_sanitize_input_setters():
+    dims = Dims()
+
+    # axis out of range
+    with pytest.raises(ValueError):
+        dims._sanitize_input(axis=2, value=3)
+
+    # one value
+    with pytest.raises(ValueError):
+        dims._sanitize_input(axis=0, value=(1, 2, 3))
+    ax, val = dims._sanitize_input(
+        axis=0, value=(1, 2, 3), value_is_sequence=True
+    )
+    assert ax == [0]
+    assert val == [(1, 2, 3)]
+
+    # multiple axes
+    ax, val = dims._sanitize_input(axis=(0, 1), value=(1, 2))
+    assert ax == [1, 2]
+    assert val == [1, 2]
+    with pytest.raises(ValueError):
+        dims._sanitize_input(axis=(0, 1), value=(1, 2), value_is_sequence=True)
+
+
 def test_point():
     """
     Test point setting.
@@ -130,6 +154,16 @@ def test_range():
 
     dims.set_range(3, (0, 4, 2))
     assert dims.range == ((0, 2, 1),) * 3 + ((0, 4, 2),)
+
+    # start must be lower than stop
+    with pytest.raises(ValueError):
+        dims.set_range(0, (1, 0, 1))
+
+    # step must be positive
+    with pytest.raises(ValueError):
+        dims.set_range(0, (0, 2, 0))
+    with pytest.raises(ValueError):
+        dims.set_range(0, (0, 2, -1))
 
 
 def test_range_set_multiple():
@@ -329,3 +363,15 @@ def test_floating_point_edge_case():
 def test_reorder_after_dim_reduction(order, expected):
     actual = reorder_after_dim_reduction(order)
     assert actual == expected
+
+
+def test_nsteps():
+    dims = Dims(range=((0, 5, 1), (0, 10, 0.5)))
+    assert dims.nsteps == (5, 20)
+    dims.nsteps = (10, 10)
+    assert dims.range == ((0, 5, 0.5), (0, 10, 1))
+
+
+def test_thickness():
+    dims = Dims(margin_left=(0, 0.5), margin_right=(1, 1))
+    assert dims.thickness == (1, 1.5)

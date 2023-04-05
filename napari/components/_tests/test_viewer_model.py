@@ -694,7 +694,7 @@ def test_update_scale():
     shape = (10, 15, 20)
     data = np.random.random(shape)
     viewer.add_image(data)
-    assert viewer.dims.range == tuple((0.0, x, 1) for x in shape)
+    assert viewer.dims.range == tuple((0.0, x, 1.0) for x in shape)
     scale = (3.0, 2.0, 1.0)
     viewer.layers[0].scale = scale
     assert viewer.dims.range == tuple(
