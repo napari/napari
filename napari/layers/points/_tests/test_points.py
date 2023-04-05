@@ -1732,10 +1732,10 @@ def test_thumbnail_non_square_data():
         layer.thumbnail[: mid_row - 1, :, :3], expected_zeros
     )
     assert (
-        np.count_nonzero(layer.thumbnail[mid_row - 1: mid_row + 1, :, :3]) > 0
+        np.count_nonzero(layer.thumbnail[mid_row - 1 : mid_row + 1, :, :3]) > 0
     )
     np.testing.assert_array_equal(
-        layer.thumbnail[mid_row + 1:, :, :3], expected_zeros
+        layer.thumbnail[mid_row + 1 :, :, :3], expected_zeros
     )
 
 
