@@ -79,9 +79,14 @@ class _PointSliceRequest:
         # objects, the array has dtype=object which is then very slow for the
         # arithmetic below. As Points._round_index is always False, we can safely
         # convert to float to get a major performance improvement.
-        not_disp_indices = np.array(self.dims_indices)[not_disp].astype(float)
+        not_disp_indices = np.array(self.dims_indices)[not_disp]
 
-        if self.out_of_slice_display and self.dims.ndim > 2:
+        if 1:
+            slice_indices, scale = self._get_thick_slice_data(
+                not_disp, not_disp_indices
+            )
+
+        elif self.out_of_slice_display and self.dims.ndim > 2:
             slice_indices, scale = self._get_out_of_display_slice_data(
                 not_disp, not_disp_indices
             )
@@ -113,4 +118,18 @@ class _PointSliceRequest:
         distances = np.abs(data - not_disp_indices)
         matches = np.all(distances <= 0.5, axis=1)
         slice_indices = np.where(matches)[0].astype(int)
+        return slice_indices, 1
+
+    def _get_thick_slice_data(self, not_disp, not_disp_indices):
+        center, low, high = zip(*not_disp_indices)
+
+        if np.isclose(high, low):
+            return self._get_slice_data(not_disp, center)
+
+        not_disp_data = self.data[:, not_disp]
+        inside_slice_each_dim = (not_disp_data >= low) & (
+            not_disp_data <= high
+        )
+        inside_slice = np.all(inside_slice_each_dim, axis=1)
+        slice_indices = np.where(inside_slice)[0].astype(int)
         return slice_indices, 1

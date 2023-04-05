@@ -1720,7 +1720,11 @@ class Points(Layer):
     def _make_slice_request(self, dims) -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
         slice_input = self._make_slice_input(
-            dims.point, dims.ndisplay, dims.order
+            dims.point,
+            dims.left_margin,
+            dims.right_margin,
+            dims.ndisplay,
+            dims.order,
         )
         # TODO: [see Image]
         #   For the existing sync slicing, slice_indices is passed through

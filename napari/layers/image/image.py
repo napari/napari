@@ -742,7 +742,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Skip if any non-displayed data indices are out of bounds.
         # This can happen when slicing layers with different extents.
-        indices = self._slice_indices
+        slices, indices = self._slice_indices
         for d in self._slice_input.not_displayed:
             if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d]):
                 return
@@ -765,7 +765,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
         """Make an image slice request based on the given dims and this image."""
         slice_input = self._make_slice_input(
-            dims.point, dims.ndisplay, dims.order
+            dims.point,
+            dims.left_margin,
+            dims.right_margin,
+            dims.ndisplay,
+            dims.order,
         )
         # TODO: for the existing sync slicing, indices is passed through
         # to avoid some performance issues related to the evaluation of the

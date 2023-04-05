@@ -295,6 +295,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._slice_input = _SliceInput(
             ndisplay=2,
             point=(0,) * ndim,
+            margin_left=(0,) * ndim,
+            margin_right=(0,) * ndim,
             order=tuple(range(ndim)),
         )
 
@@ -977,7 +979,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         raise NotImplementedError
 
     def _slice_dims(
-        self, point=None, ndisplay=2, order=None, force: bool = False
+        self,
+        point=None,
+        margin_left=None,
+        margin_right=None,
+        ndisplay=2,
+        order=None,
+        force: bool = False,
     ):
         """Slice data with values from a global dims model.
 
@@ -996,24 +1004,37 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             True if slicing should be forced to occur, even when some cache thinks
             it already has a valid slice ready. False otherwise.
         """
-        slice_input = self._make_slice_input(point, ndisplay, order)
+        slice_input = self._make_slice_input(
+            point, margin_left, margin_right, ndisplay, order
+        )
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
             self.refresh()
 
     def _make_slice_input(
-        self, point=None, ndisplay=2, order=None
+        self,
+        point=None,
+        margin_left=None,
+        margin_right=None,
+        ndisplay=2,
+        order=None,
     ) -> _SliceInput:
         point = (0,) * self.ndim if point is None else tuple(point)
+        margin_left = (
+            (0,) * self.ndim if margin_left is None else tuple(margin_left)
+        )
+        margin_right = (
+            (0,) * self.ndim if margin_right is None else tuple(margin_right)
+        )
 
         ndim = len(point)
-
-        if order is None:
-            order = tuple(range(ndim))
+        order = tuple(range(len(point))) if order is None else tuple(order)
 
         # Correspondence between dimensions across all layers and
         # dimensions of this layer.
         point = point[-self.ndim :]
+        margin_left = margin_left[-self.ndim :]
+        margin_right = margin_right[-self.ndim :]
         order = tuple(
             self._world_to_layer_dims(world_dims=order, ndim_world=ndim)
         )
@@ -1021,6 +1042,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return _SliceInput(
             ndisplay=ndisplay,
             point=point,
+            margin_left=margin_left,
+            margin_right=margin_right,
             order=order,
         )
 

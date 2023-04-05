@@ -24,6 +24,8 @@ class _SliceInput:
     # The point in layer world coordinates that defines the slicing plane.
     # Only the elements in the non-displayed dimensions have meaningful values.
     point: Tuple[float, ...]
+    margin_left: Tuple[float, ...]
+    margin_right: Tuple[float, ...]
     # The layer dimension indices in the order they are displayed.
     # A permutation of the ``range(self.ndim)``.
     # The last ``self.ndisplay`` dimensions are displayed in the canvas.
@@ -79,14 +81,31 @@ class _SliceInput:
 
         slice_world_to_data = world_to_data.set_slice(self.not_displayed)
         world_pts = [self.point[ax] for ax in self.not_displayed]
+
+        world_margin_left = [
+            self.point[ax] - self.margin_left[ax] for ax in self.not_displayed
+        ]
+        world_margin_right = [
+            self.point[ax] + self.margin_right[ax] for ax in self.not_displayed
+        ]
+
         data_pts = slice_world_to_data(world_pts)
+        data_margin_left = slice_world_to_data(world_margin_left)
+        data_margin_right = slice_world_to_data(world_margin_right)
+
         if round_index:
             # A round is taken to convert these values to slicing integers
             data_pts = np.round(data_pts).astype(int)
+            data_margin_left = np.round(data_margin_left).astype(int)
+            data_margin_right = np.round(data_margin_right).astype(int)
 
-        indices = [slice(None)] * self.ndim
+        indices = [[None, None, None] for _ in range(self.ndim)]
         for i, ax in enumerate(self.not_displayed):
-            indices[ax] = data_pts[i]
+            indices[ax] = (
+                data_pts[i],
+                data_margin_left[i],
+                data_margin_right[i],
+            )
 
         return tuple(indices)
 
