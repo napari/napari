@@ -251,14 +251,12 @@ class Dims(EventedModel):
     def thickness(self) -> Tuple[float, ...]:
         return tuple(
             left + right
-            for left, right in zip(self._margin_left, self._margin_right)
+            for left, right in zip(self.margin_left, self.margin_right)
         )
 
     @thickness.setter
     def thickness(self, value):
-        self._margin_left = self._margin_right = (
-            tuple(val / 2) for val in value
-        )
+        self.margin_left = self.margin_right = tuple(val / 2 for val in value)
 
     @property
     def displayed(self) -> Tuple[int]:
