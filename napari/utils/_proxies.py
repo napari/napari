@@ -111,6 +111,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             self._private_attr_warning(name, typ)
 
         setattr(self.__wrapped__, name, value)
+        return None
 
     def __getitem__(self, key):
         return self.create(super().__getitem__(key))
@@ -172,7 +173,6 @@ def _in_main_thread() -> bool:
 
         res = in_qt_main_thread()
         in_main_thread = in_qt_main_thread
-        return res
     except ImportError:
         in_main_thread = in_main_thread_py
         return in_main_thread_py()
@@ -181,6 +181,7 @@ def _in_main_thread() -> bool:
             "Qt libs are available but no QtApplication instance is created"
         )
         return in_main_thread_py()
+    return res
 
 
 in_main_thread = _in_main_thread

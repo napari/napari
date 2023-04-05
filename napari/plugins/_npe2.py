@@ -55,10 +55,11 @@ def read(
         layer_data, reader = io_utils.read_get_reader(
             npe1_path, plugin_name=plugin
         )
-        return layer_data, _FakeHookimpl(reader.plugin_name)
     except ValueError as e:
         if 'No readers returned data' not in str(e):
-            raise e from e
+            raise
+    else:
+        return layer_data, _FakeHookimpl(reader.plugin_name)
     return None
 
 
@@ -101,9 +102,10 @@ def write_layers(
             paths, writer = io_utils.write_get_writer(
                 path=path, layer_data=layer_data, plugin_name=plugin_name
             )
-            return (paths, writer.plugin_name)
         except ValueError:
-            return ([], '')
+            return [], ''
+        else:
+            return paths, writer.plugin_name
 
     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
@@ -111,8 +113,8 @@ def write_layers(
     if isinstance(
         res, str
     ):  # pragma: no cover # it shouldn't be... bad plugin.
-        return ([res], writer.plugin_name)
-    return (res or [], writer.plugin_name)
+        return [res], writer.plugin_name
+    return res or [], writer.plugin_name
 
 
 def get_widget_contribution(
