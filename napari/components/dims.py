@@ -265,10 +265,6 @@ class Dims(EventedModel):
         """Tuple: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
 
-    @displayed.setter
-    def displayed(self, value):
-        self.order = value
-
     @property
     def not_displayed(self) -> Tuple[int]:
         """Tuple: Dimensions that are not displayed."""
