@@ -165,8 +165,12 @@ class PreferencesDialog(QDialog):
                 "type": "object",
                 "properties": {
                     "shortcuts": {
-                        "title": "shortcuts",
-                        "description": "Set keyboard shortcuts for actions.",
+                        "title": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.title,
+                        "description": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.description,
                         "type": "object",
                     }
                 },
