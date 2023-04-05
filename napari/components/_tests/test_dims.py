@@ -90,10 +90,11 @@ def test_sanitize_input_setters():
 
     # multiple axes
     ax, val = dims._sanitize_input(axis=(0, 1), value=(1, 2))
-    assert ax == [1, 2]
+    assert ax == [0, 1]
     assert val == [1, 2]
-    with pytest.raises(ValueError):
-        dims._sanitize_input(axis=(0, 1), value=(1, 2), value_is_sequence=True)
+    ax, val = dims._sanitize_input(axis=(0, 1), value=((1, 2), (3, 4)))
+    assert ax == [0, 1]
+    assert val == [(1, 2), (3, 4)]
 
 
 def test_point():
