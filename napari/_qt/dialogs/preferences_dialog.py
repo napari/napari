@@ -174,6 +174,11 @@ class PreferencesDialog(QDialog):
         else:
             schema = json.loads(ftype.schema_json())
 
+        if field.field_info.title:
+            schema["title"] = field.field_info.title
+        if field.field_info.description:
+            schema["description"] = field.field_info.description
+
         # find enums:
         for name, subfield in ftype.__fields__.items():
             if isinstance(subfield.type_, EnumMeta):

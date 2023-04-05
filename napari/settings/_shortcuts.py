@@ -9,10 +9,9 @@ from napari.utils.translations import trans
 
 
 class ShortcutsSettings(EventedModel):
-    # FIXME user with modified shortcut will not see new shortcut
     shortcuts: Dict[str, List[KeyBinding]] = Field(
         default_shortcuts,
-        title=trans._("shortcuts"),
+        title=trans._("s"),
         description=trans._(
             "Set keyboard shortcuts for actions.",
         ),
