@@ -89,7 +89,8 @@ class _PointSliceRequest:
         center, low, high = not_disp_indices.T
 
         if np.isclose(high, low):
-            # assume slice thickness of 1 (same as before thick slices)
+            # assume slice thickness of 1 in data pixels
+            # (same as before thick slices were implemented)
             high = center + 0.5
             low = center - 0.5
 
@@ -97,17 +98,20 @@ class _PointSliceRequest:
         slice_indices = np.where(inside_slice)[0].astype(int)
 
         if self.out_of_slice_display and self.dims.ndim > 2:
+            sizes = self.size[:, not_disp] / 2
+
             # add out of slice points with progressively lower sizes
             dist_from_low = np.abs(data - low)
             dist_from_high = np.abs(data - high)
             distances = np.minimum(dist_from_low, dist_from_high)
-            # do not rescale/hide things *inside* the slice
+            # anything inside the slice is at distance 0
             distances[inside_slice] = 0
-            sizes = self.size[:, not_disp] / 2
 
+            # display points that "spill" into the slice
             matches = np.all(distances <= sizes, axis=1)
             size_match = sizes[matches]
             size_match[size_match == 0] = 1
+            # rescale size of spilling points based on how much they do
             scale_per_dim = (size_match - distances[matches]) / size_match
             scale_per_dim[size_match == 0] = 1
             scale = np.prod(scale_per_dim, axis=1)
