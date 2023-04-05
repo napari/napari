@@ -742,9 +742,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Skip if any non-displayed data indices are out of bounds.
         # This can happen when slicing layers with different extents.
-        slices, indices = self._slice_indices
+        slice_indices = self._slice_indices
         for d in self._slice_input.not_displayed:
-            if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d]):
+            low = slice_indices[d][1]
+            high = slice_indices[d][2]
+            if (high < 0) or (low >= self._extent_data[1][d]):
                 return
 
         # For the old experimental async code.
@@ -755,7 +757,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request_internal(
             slice_input=self._slice_input,
-            indices=indices,
+            indices=slice_indices,
             lazy=True,
             dask_indexer=nullcontext,
         )

@@ -91,7 +91,7 @@ class _ImageSliceRequest:
             )
 
     def _call_single_scale(self) -> _ImageSliceResponse:
-        image = self.data[self.indices]
+        image = self._get_slice_data()
         if not self.lazy:
             image = np.asarray(image)
         # `Layer.multiscale` is mutable so we need to pass back the identity
@@ -174,3 +174,21 @@ class _ImageSliceRequest:
         ds_indices = np.clip(ds_indices, 0, self.level_shapes[level][axes] - 1)
         indices[axes] = ds_indices
         return indices
+
+    def _get_slice_data(self):
+        slices = []
+        for dim_len, (_center, low, high) in zip(
+            self.data.shape, self.indices
+        ):
+            if np.isclose(high, low):
+                # assume slice thickness of 1 in data pixels
+                # (same as before thick slices were implemented)
+                high = low + 1
+
+            slice_ = slice(max(0, low), min(dim_len, high))
+            slices.append(slice_)
+
+        # TODO: for now just average is implemented over thick slice
+        return np.mean(
+            self.data[tuple(slices)], axis=tuple(self.dims.not_displayed)
+        )

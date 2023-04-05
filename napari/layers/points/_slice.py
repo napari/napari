@@ -91,8 +91,8 @@ class _PointSliceRequest:
         if np.isclose(high, low):
             # assume slice thickness of 1 in data pixels
             # (same as before thick slices were implemented)
-            high = center + 0.5
             low = center - 0.5
+            high = center + 0.5
 
         inside_slice = np.all((data >= low) & (data <= high), axis=1)
         slice_indices = np.where(inside_slice)[0].astype(int)
