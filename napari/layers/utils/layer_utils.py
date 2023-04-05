@@ -30,7 +30,7 @@ def register_layer_action(
     Parameters
     ----------
     keymapprovider : KeymapProvider
-        class on which to register the keybindings – this will typically be
+        class on which to register the keybindings - this will typically be
         the instance in focus that will handle the keyboard shortcut.
     description : str
         The description of the action, this will typically be translated and
@@ -86,7 +86,7 @@ def register_layer_attr_action(
     Parameters
     ----------
     keymapprovider : KeymapProvider
-        class on which to register the keybindings – this will typically be
+        class on which to register the keybindings - this will typically be
         the instance in focus that will handle the keyboard shortcut.
     description : str
         The description of the action, this will typically be translated and
@@ -314,15 +314,16 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
                 out_dtype
             )
-        else:
-            np.maximum(data, 0, out=data, dtype=data.dtype)
-            if data.dtype == np.int8:
-                return (data * 2).astype(np.uint8)
-            if data.max() < out_max:
-                return data.astype(out_dtype)
-            return np.right_shift(
-                data, (data.dtype.itemsize - 1) * 8 - 1
-            ).astype(out_dtype)
+
+        np.maximum(data, 0, out=data, dtype=data.dtype)
+        if data.dtype == np.int8:
+            return (data * 2).astype(np.uint8)
+        if data.max() < out_max:
+            return data.astype(out_dtype)
+        return np.right_shift(data, (data.dtype.itemsize - 1) * 8 - 1).astype(
+            out_dtype
+        )
+    return None
 
 
 def get_current_properties(
@@ -697,6 +698,9 @@ class _FeatureTable:
         the number of points, which is used to check that the features
         table has the expected number of rows. If None, then the default
         DataFrame index is used.
+    defaults: Optional[Union[Dict[str, Any], pd.DataFrame]]
+        The default feature values, which if specified should have the same keys
+        as the values provided. If None, will be inferred from the values.
     """
 
     def __init__(
@@ -704,9 +708,10 @@ class _FeatureTable:
         values: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
         *,
         num_data: Optional[int] = None,
+        defaults: Optional[Union[Dict[str, Any], pd.DataFrame]] = None,
     ) -> None:
         self._values = _validate_features(values, num_data=num_data)
-        self._defaults = self._make_defaults()
+        self._defaults = _validate_feature_defaults(defaults, self._values)
 
     @property
     def values(self) -> pd.DataFrame:
@@ -716,23 +721,18 @@ class _FeatureTable:
     def set_values(self, values, *, num_data=None) -> None:
         """Sets the feature values table."""
         self._values = _validate_features(values, num_data=num_data)
-        self._defaults = self._make_defaults()
-
-    def _make_defaults(self) -> pd.DataFrame:
-        """Makes the default values table from the feature values."""
-        return pd.DataFrame(
-            {
-                name: _get_default_column(column)
-                for name, column in self._values.items()
-            },
-            index=range(1),
-            copy=True,
-        )
+        self._defaults = _validate_feature_defaults(None, self._values)
 
     @property
     def defaults(self) -> pd.DataFrame:
         """The default values one-row table."""
         return self._defaults
+
+    def set_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        """Sets the feature default values."""
+        self._defaults = _validate_feature_defaults(defaults, self._values)
 
     def properties(self) -> Dict[str, np.ndarray]:
         """Converts this to a deprecated properties dictionary.
@@ -841,6 +841,7 @@ class _FeatureTable:
         cls,
         *,
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+        feature_defaults: Optional[Union[Dict[str, Any], pd.DataFrame]] = None,
         properties: Optional[
             Union[Dict[str, np.ndarray], pd.DataFrame]
         ] = None,
@@ -878,7 +879,7 @@ class _FeatureTable:
                 property_choices=property_choices,
                 num_data=num_data,
             )
-        return cls(features, num_data=num_data)
+        return cls(features, defaults=feature_defaults, num_data=num_data)
 
 
 def _get_default_column(column: pd.Series) -> pd.Series:
@@ -890,6 +891,13 @@ def _get_default_column(column: pd.Series) -> pd.Series:
         choices = column.dtype.categories
         if choices.size > 0:
             value = choices[0]
+    elif isinstance(column.dtype, np.dtype) and np.issubdtype(
+        column.dtype, np.integer
+    ):
+        # For numpy backed columns that store integers there's no way to
+        # store missing values, so passing None creates an np.float64 series
+        # containing NaN. Therefore, use a default of 0 instead.
+        value = 0
     return pd.Series(data=value, dtype=column.dtype, index=range(1))
 
 
@@ -898,7 +906,7 @@ def _validate_features(
     *,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
-    """Validates and coerces a features table into a pandas DataFrame.
+    """Validates and coerces feature values into a pandas DataFrame.
 
     See Also
     --------
@@ -917,6 +925,53 @@ def _validate_features(
         }
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
+
+
+def _validate_feature_defaults(
+    defaults: Optional[Union[Dict[str, Any], pd.DataFrame]],
+    values: pd.DataFrame,
+) -> pd.DataFrame:
+    """Validates and coerces feature default values into a pandas DataFrame.
+
+    See Also
+    --------
+    :class:`_FeatureTable` : See initialization for parameter descriptions.
+    """
+    if defaults is None:
+        defaults = {c: _get_default_column(values[c]) for c in values.columns}
+    else:
+        default_columns = set(defaults.keys())
+        value_columns = set(values.keys())
+        extra_defaults = default_columns - value_columns
+        if len(extra_defaults) > 0:
+            raise ValueError(
+                trans._(
+                    'Feature defaults contain some extra columns not in feature values: {extra_defaults}',
+                    deferred=True,
+                    extra_defaults=extra_defaults,
+                )
+            )
+        missing_defaults = value_columns - default_columns
+        if len(missing_defaults) > 0:
+            raise ValueError(
+                trans._(
+                    'Feature defaults is missing some columns in feature values: {missing_defaults}',
+                    deferred=True,
+                    missing_defaults=missing_defaults,
+                )
+            )
+        # Convert to series first to capture the per-column dtype from values,
+        # since the DataFrame initializer does not support passing multiple dtypes.
+        defaults = {
+            c: pd.Series(
+                defaults[c],
+                dtype=values.dtypes[c],
+                index=range(1),
+            )
+            for c in defaults
+        }
+
+    return pd.DataFrame(defaults, index=range(1))
 
 
 def _features_from_properties(

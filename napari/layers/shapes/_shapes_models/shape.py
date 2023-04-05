@@ -118,16 +118,16 @@ class Shape(ABC):
     @abstractmethod
     def data(self):
         # user writes own docstring
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @data.setter
     @abstractmethod
     def data(self, data):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def _update_displayed_data(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def ndisplay(self):

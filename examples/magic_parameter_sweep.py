@@ -38,6 +38,7 @@ def gaussian_blur(
     """Apply a gaussian blur to ``layer``."""
     if layer:
         return skimage.filters.gaussian(layer.data, sigma=sigma, mode=mode)
+    return None
 
 
 # create a viewer and add some images
