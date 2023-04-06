@@ -72,7 +72,7 @@ def test_viewer_open_no_plugin(tmp_path):
     viewer = ViewerModel()
     fname = tmp_path / 'gibberish.gbrsh'
     fname.touch()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=".*gibberish.gbrsh.*"):
         # will default to builtins
         viewer.open(fname)
 
