@@ -286,7 +286,7 @@ class QtViewer(QSplitter):
         """
         warnings.warn(
             trans._(
-                "Access to QtViewer.view will become deprecated in the napari 0.6.0. Change to QtViewer.canvas.view instead."
+                "Access to QtViewer.view is deprecated since 0.5.0 and will be removed in the napari 0.6.0. Change to QtViewer.canvas.view instead."
             ),
             FutureWarning,
             stacklevel=2,
