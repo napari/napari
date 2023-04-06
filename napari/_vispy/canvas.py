@@ -175,6 +175,7 @@ class VispyCanvas:
         """
         if self.view in self.central_widget._widgets:
             return self.view.bgcolor.hex
+        return None
 
     @background_color_override.setter
     def background_color_override(
