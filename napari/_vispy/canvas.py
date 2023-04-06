@@ -67,7 +67,7 @@ class VispyCanvas:
         Napari viewer containing the rendered scene, layers, and controls.
     view : vispy.scene.widgets.viewbox.ViewBox
         Rectangular widget in which a subscene is rendered.
-    vispy_camera : napari._vispy.VispyCamera
+    camera : napari._vispy.VispyCamera
         The camera class which contains both the 2d and 3d camera used to describe the perspective by which a
         scene is viewed and interacted with.
     _cursors : QtCursorVisual
@@ -105,7 +105,7 @@ class VispyCanvas:
             *args, keys=None, vsync=True, **kwargs
         )
         self.view = self.central_widget.add_view(border_width=0)
-        self.vispy_camera = VispyCamera(
+        self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
         self.layer_to_visual = {}
@@ -133,7 +133,7 @@ class VispyCanvas:
             self._key_map_handler.on_key_release
         )
         self._scene_canvas.events.draw.connect(self.enable_dims_play)
-        self._scene_canvas.events.draw.connect(self.vispy_camera.on_draw)
+        self._scene_canvas.events.draw.connect(self.camera.on_draw)
 
         self._scene_canvas.events.mouse_double_click.connect(
             self._on_mouse_double_click

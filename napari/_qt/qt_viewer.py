@@ -306,7 +306,7 @@ class QtViewer(QSplitter):
             FutureWarning,
             stacklevel=2,
         )
-        return self.canvas.vispy_camera
+        return self.canvas.camera
 
     @staticmethod
     def _update_dask_cache_settings(
