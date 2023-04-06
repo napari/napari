@@ -301,9 +301,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._ndim = ndim
 
-        self._axis_labels: Optional[
-            Tuple[str, ...]
-        ] = self._coerce_axis_labels(axis_labels)
+        self._axis_labels: Tuple[str, ...] = self._coerce_axis_labels(
+            axis_labels
+        )
 
         self._slice_input = _SliceInput(
             ndisplay=2,
@@ -430,9 +430,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _coerce_axis_labels(
         self, axis_labels: Optional[Sequence[str]]
-    ) -> Tuple[Optional[str], ...]:
+    ) -> Tuple[str, ...]:
         if axis_labels is None:
-            return (None,) * self.ndim
+            return tuple(str(a) for a in range(-self.ndim, 0))
         if len(axis_labels) != self.ndim:
             raise ValueError(
                 "The number of axis labels ({len(axis_labels)}) must match the number of dimensions ({self.ndim})."
