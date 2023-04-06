@@ -5,7 +5,16 @@ from __future__ import annotations
 import types
 import warnings
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    Optional,
+    OrderedDict,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -736,6 +745,38 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         image = raw
         return image
+
+    def get_slice(
+        self, box: OrderedDict[str, Any]
+    ) -> Tuple[np.ndarray, Tuple[str, ...]]:
+        # TODO: transform box world coordinates to layer data coordinates.
+        # This could encompass the correspondence from the world to layer dims.
+
+        # TODO: I think this can be simplified (e.g. by using a tuple to indices, defining
+        # box axes, then working from there).
+
+        # In order of this layer's axes.
+        indices = OrderedDict(
+            {axis: box.get(axis, slice(None)) for axis in self.axis_labels}
+        )
+        layer_axes = tuple(
+            axis for axis, index in indices.items() if isinstance(index, slice)
+        )
+
+        # In order of the given slice box's axes.
+        box_axes = tuple(
+            axis
+            for axis in box
+            if axis in self.axis_labels and axis in layer_axes
+        )
+
+        data = np.asarray(self.data[tuple(indices.values())])
+
+        src_dims = tuple(range(len(layer_axes)))
+        dst_dims = tuple(layer_axes.index(axis) for axis in box_axes)
+        data = np.moveaxis(data, src_dims, dst_dims)
+
+        return data, box_axes
 
     def _set_view_slice(self) -> None:
         """Set the slice output based on this layer's current state."""

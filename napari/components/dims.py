@@ -1,5 +1,6 @@
 from numbers import Integral
 from typing import (
+    Iterable,
     Literal,
     Sequence,
     Tuple,
@@ -73,23 +74,40 @@ class Dims(EventedModel):
     """
 
     # fields
-    ndim: int = 2
+    axis_labels: Tuple[str, ...] = ('-2', '-1')
     ndisplay: Literal[2, 3] = 2
     last_used: int = 0
     range: Tuple[Tuple[float, float, float], ...] = ()
     current_step: Tuple[int, ...] = ()
     order: Tuple[int, ...] = ()
-    axis_labels: Tuple[str, ...] = ()
 
     # private vars
     _scroll_progress: int = 0
 
+    @property
+    def ndim(self) -> int:
+        return len(self.axis_labels)
+
+    @ndim.setter
+    def ndim(self, ndim: int) -> None:
+        if ndim < 2:
+            raise ValueError('At least two dimensions must be specified.')
+        labels = self.axis_labels
+        if ndim < len(labels):
+            labels = labels[-ndim:]
+        else:
+            labels = tuple(range(-ndim, -len(labels))) + labels
+        self.axis_labels = labels
+
     # validators
     @validator('axis_labels', pre=True, allow_reuse=True)
-    def _string_to_list(cls, v):
-        if isinstance(v, str):
-            return list(v)
-        return v
+    def _check_axis_labels(cls, labels: Iterable) -> Tuple[str, ...]:
+        labels = tuple(map(str, labels))
+        if len(labels) < 2:
+            # To support previous behavior.
+            labels = ('-2', '-1')
+            # raise ValueError('At least two axis labels must be specified.')
+        return labels
 
     @root_validator(allow_reuse=True)
     def _check_dims(cls, values):
@@ -100,7 +118,7 @@ class Dims(EventedModel):
         values : dict
             Values dictionary to update dims model with.
         """
-        ndim = values['ndim']
+        ndim = len(values['axis_labels'])
 
         # Check the range tuple has same number of elements as ndim
         if len(values['range']) < ndim:
@@ -138,21 +156,6 @@ class Dims(EventedModel):
                     ndim=ndim,
                 )
             )
-
-        # Check the axis labels tuple has same number of elements as ndim
-        if len(values['axis_labels']) < ndim:
-            # Append new "default" labels to existing ones
-            if values['axis_labels'] == tuple(
-                map(str, range(len(values['axis_labels'])))
-            ):
-                values['axis_labels'] = tuple(map(str, range(ndim)))
-            else:
-                values['axis_labels'] = (
-                    tuple(map(str, range(ndim - len(values['axis_labels']))))
-                    + values['axis_labels']
-                )
-        elif len(values['axis_labels']) > ndim:
-            values['axis_labels'] = values['axis_labels'][-ndim:]
 
         return values
 
