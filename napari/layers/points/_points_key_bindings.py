@@ -26,7 +26,7 @@ def activate_points_transform_mode(layer):
 
 
 @register_points_mode_action(trans._('Pan/zoom'))
-def activate_points_pan_zoom_mode(layer):
+def activate_points_pan_zoom_mode(layer: Points):
     layer.mode = Mode.PAN_ZOOM
 
 

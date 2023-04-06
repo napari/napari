@@ -185,8 +185,8 @@ class Octree:
         # If no parent exists yet then returns None
         if len(ancestors) == 0:
             return None
-        else:
-            return ancestors[0]
+
+        return ancestors[0]
 
     def get_ancestors(
         self,

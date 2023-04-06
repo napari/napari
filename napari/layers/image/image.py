@@ -82,8 +82,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     gamma : float
         Gamma correction for determining colormap linearity. Defaults to 1.
     interpolation : str
-        Interpolation mode used by vispy. Must be one of our supported
-        modes.
+        Interpolation mode used by vispy. Must be one of our supported modes.
+        'custom' is a special mode for 2D interpolation in which a regular grid
+        of samples are taken from the texture around a position using 'linear'
+        interpolation before being multiplied with a custom interpolation kernel
+        (provided with 'custom_interpolation_kernel_2d').
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
@@ -144,6 +147,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
+    custom_interpolation_kernel_2d : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
 
     Attributes
     ----------
@@ -187,8 +192,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     gamma : float
         Gamma correction for determining colormap linearity.
     interpolation : str
-        Interpolation mode used by vispy. Must be one of our supported
-        modes.
+        Interpolation mode used by vispy. Must be one of our supported modes.
+        'custom' is a special mode for 2D interpolation in which a regular grid
+        of samples are taken from the texture around a position using 'linear'
+        interpolation before being multiplied with a custom interpolation kernel
+        (provided with 'custom_interpolation_kernel_2d').
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
@@ -203,6 +211,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         {'position', 'normal', 'thickness'}.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
+    custom_interpolation_kernel_2d : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
 
     Notes
     -----
@@ -245,6 +255,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         depiction='volume',
         plane=None,
         experimental_clipping_planes=None,
+        custom_interpolation_kernel_2d=None,
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -272,7 +283,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     "'rgb' was set to True but data does not have suitable dimensions."
                 )
             )
-        elif rgb is None:
+        if rgb is None:
             rgb = rgb_guess
         self.rgb = rgb
 
@@ -314,6 +325,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             depiction=Event,
             iso_threshold=Event,
             attenuation=Event,
+            custom_interpolation_kernel_2d=Event,
         )
 
         self._array_like = True
@@ -383,6 +395,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if plane is not None:
             self.plane = plane
         connect_no_arg(self.plane.events, self.events, 'plane')
+        self.custom_interpolation_kernel_2d = custom_interpolation_kernel_2d
 
         # Trigger generation of view slice and thumbnail
         self.refresh()
@@ -399,8 +412,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Get empty image to use as the default before data is loaded."""
         if self.rgb:
             return np.zeros((1,) * self._slice_input.ndisplay + (3,))
-        else:
-            return np.zeros((1,) * self._slice_input.ndisplay)
+
+        return np.zeros((1,) * self._slice_input.ndisplay)
 
     def _get_order(self) -> Tuple[int]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
@@ -409,9 +422,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return order + (max(order) + 1,)
-        else:
-            return order
+            return (*order, max(order) + 1)
+
+        return order
 
     @property
     def _data_view(self):
@@ -613,6 +626,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation3d.setter
     def interpolation3d(self, value):
+        if value == 'custom':
+            raise NotImplementedError(
+                'custom interpolation is not implemented yet for 3D rendering'
+            )
         if value == 'bicubic':
             value = 'cubic'
             warnings.warn(
@@ -679,6 +696,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def plane(self, value: Union[dict, SlicingPlane]):
         self._plane.update(value)
         self.events.plane()
+
+    @property
+    def custom_interpolation_kernel_2d(self):
+        return self._custom_interpolation_kernel_2d
+
+    @custom_interpolation_kernel_2d.setter
+    def custom_interpolation_kernel_2d(self, value):
+        if value is None:
+            value = [[1]]
+        self._custom_interpolation_kernel_2d = np.array(value, np.float32)
+        self.events.custom_interpolation_kernel_2d()
 
     @property
     def loaded(self):
@@ -930,7 +958,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 downsampled = (downsampled - low) / color_range
             downsampled = downsampled**self.gamma
             color_array = self.colormap.map(downsampled.ravel())
-            colormapped = color_array.reshape(downsampled.shape + (4,))
+            colormapped = color_array.reshape((*downsampled.shape, 4))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
@@ -1064,6 +1092,7 @@ class Image(_ImageBase):
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
                 'data': self.data,
+                'custom_interpolation_kernel_2d': self.custom_interpolation_kernel_2d,
             }
         )
         return state

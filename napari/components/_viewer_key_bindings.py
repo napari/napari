@@ -76,6 +76,11 @@ def reset_view(viewer: Viewer):
     viewer.reset_view()
 
 
+@register_viewer_action(trans._("Delete selected layers."))
+def delete_selected_layers(viewer: Viewer):
+    viewer.layers.remove_selected()
+
+
 @register_viewer_action(trans._("Increment dimensions slider to the left."))
 def increment_dims_left(viewer: Viewer):
     viewer.dims._increment_dims_left()
@@ -129,3 +134,17 @@ def toggle_selected_visibility(viewer: Viewer):
 )
 def toggle_console_visibility(viewer: Viewer):
     viewer.window._qt_viewer.toggle_console_visibility()
+
+
+@register_viewer_action(trans._("Press and hold for pan/zoom mode"))
+def hold_for_pan_zoom(viewer: ViewerModel):
+    selected_layer = viewer.layers.selection.active
+    if selected_layer is None:
+        yield
+        return
+    previous_mode = selected_layer.mode
+    if previous_mode != selected_layer._modeclass.PAN_ZOOM:
+        selected_layer.mode = selected_layer._modeclass.PAN_ZOOM
+        yield
+
+        selected_layer.mode = previous_mode

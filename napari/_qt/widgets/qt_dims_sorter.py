@@ -32,8 +32,8 @@ class AxisModel:
     def __eq__(self, other: Union[int, str]) -> bool:
         if isinstance(other, int):
             return self.axis == other
-        else:
-            return repr(self) == other
+
+        return repr(self) == other
 
 
 def set_dims_order(dims: Dims, order: Tuple[int, ...]):

@@ -35,7 +35,6 @@ class QtDimSliderWidget(QWidget):
     This widget *must* be instantiated with a parent QtDims.
     """
 
-    axis_label_changed = Signal(int, str)  # axis, label
     fps_changed = Signal(float)
     mode_changed = Signal(str)
     range_changed = Signal(tuple)
@@ -193,13 +192,10 @@ class QtDimSliderWidget(QWidget):
         """Updates the label LineEdit from the dims model."""
         label = self.dims.axis_labels[self.axis]
         self.axis_label.setText(label)
-        self.axis_label_changed.emit(self.axis, label)
 
     def _update_label(self):
         """Update dimension slider label."""
-        with self.dims.events.axis_labels.blocker():
-            self.dims.set_axis_label(self.axis, self.axis_label.text())
-        self.axis_label_changed.emit(self.axis, self.axis_label.text())
+        self.dims.set_axis_label(self.axis, self.axis_label.text())
 
     def _clear_label_focus(self):
         """Clear focus from dimension slider label."""
@@ -406,7 +402,7 @@ class QtDimSliderWidget(QWidget):
 
         # setting fps to 0 just stops the animation
         if fps == 0:
-            return
+            return None
 
         worker, thread = _new_worker_qthread(
             AnimationWorker,
@@ -557,10 +553,11 @@ class QtPlayButton(QPushButton):
         """Toggle play/stop animation control."""
         qt_dims = self.qt_dims_ref()
         if not qt_dims:  # pragma: no cover
-            return
+            return None
         if self.property('playing') == "True":
             return qt_dims.stop()
         self.play_requested.emit(self.axis)
+        return None
 
     def _handle_start(self):
         """On animation start, set playing property to True & update style."""
@@ -658,6 +655,7 @@ class AnimationWorker(QObject):
             return self.finish()
         self.step = 1 if fps > 0 else -1  # negative fps plays in reverse
         self.interval = 1000 / abs(fps)
+        return None
 
     @Slot(tuple)
     def set_frame_range(self, frame_range):
@@ -745,6 +743,7 @@ class AnimationWorker(QObject):
         with self.dims.events.current_step.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
         self.timer.start()
+        return None
 
     def finish(self):
         """Emit the finished event signal."""

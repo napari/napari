@@ -44,7 +44,7 @@ def _user_agent() -> str:
 
 
 class SummaryDict(TypedDict):
-    """Objects returned at https://npe2api.vercel.app/api/summary ."""
+    """Objects returned at https://npe2api.vercel.app/api/extended_summary ."""
 
     name: PyPIname
     version: str
@@ -56,9 +56,9 @@ class SummaryDict(TypedDict):
 
 
 @lru_cache
-def pypi_plugin_summaries() -> List[SummaryDict]:
+def plugin_summaries() -> List[SummaryDict]:
     """Return PackageMetadata object for all known napari plugins."""
-    url = "https://npe2api.vercel.app/api/summary"
+    url = "https://npe2api.vercel.app/api/extended_summary"
     with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
         return json.load(resp)
 
@@ -71,20 +71,31 @@ def conda_map() -> Dict[PyPIname, Optional[str]]:
         return json.load(resp)
 
 
-def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool]]:
+def iter_napari_plugin_info() -> (
+    Iterator[Tuple[PackageMetadata, bool, Dict[str, str]]]
+):
     """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
     with ThreadPoolExecutor() as executor:
-        data = executor.submit(pypi_plugin_summaries)
+        data = executor.submit(plugin_summaries)
         _conda = executor.submit(conda_map)
 
     conda = _conda.result()
     for info in data.result():
         _info = cast(Dict[str, str], dict(info))
+
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
         # receive
         _info.pop("display_name", None)
 
+        # TODO: once the new version of npe2 is out, this can be refactored
+        # to all the metadata includes the conda and pypi versions.
+        extra_info = {
+            "home_page": _info.get("home_page", ""),
+            "pypi_versions": _info.pop("pypi_versions"),
+            "conda_versions": _info.pop("conda_versions"),
+        }
         name = _info.pop("name")
         meta = PackageMetadata(name=normalized_name(name), **_info)
-        yield meta, (name in conda)
+
+        yield meta, (name in conda), extra_info

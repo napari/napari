@@ -693,8 +693,8 @@ class QtViewer(QSplitter):
                         error_messages=error_messages,
                     )
                 )
-            else:
-                update_save_history(saved[0])
+
+            update_save_history(saved[0])
 
     def _update_welcome_screen(self):
         """Update welcome screen display based on layer count."""
