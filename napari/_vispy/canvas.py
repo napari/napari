@@ -25,7 +25,7 @@ from napari.utils.interactions import (
 )
 
 if TYPE_CHECKING:
-    from typing import Callable, List, Tuple, Union
+    from typing import Callable, List, Optional, Tuple, Union
 
     import numpy.typing as npt
     from qtpy.QtCore import Qt, pyqtBoundSignal
@@ -167,7 +167,7 @@ class VispyCanvas:
         return self._scene_canvas._backend.screen_changed
 
     @property
-    def background_color_override(self) -> str:
+    def background_color_override(self) -> Optional[str]:
         """Background color of VispyCanvas.view returned as hex string. When not None, color is shown instead of
         VispyCanvas.bgcolor. The setter expects str (any in vispy.color.get_color_names) or hex starting
         with # or a tuple | np.array ({3,4},) with values between 0 and 1.
@@ -179,7 +179,7 @@ class VispyCanvas:
 
     @background_color_override.setter
     def background_color_override(
-        self, value: Union[str, npt.ArrayLike]
+        self, value: Optional[Union[str, npt.ArrayLike]]
     ) -> None:
         self.view.bgcolor = value
 
@@ -210,7 +210,7 @@ class VispyCanvas:
         return self._scene_canvas.bgcolor.hex
 
     @bgcolor.setter
-    def bgcolor(self, value: npt.ArrayLike) -> None:
+    def bgcolor(self, value: Union[str, npt.ArrayLike]) -> None:
         self._scene_canvas.bgcolor = value
 
     @property
