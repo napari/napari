@@ -29,16 +29,16 @@ def gaussian_kernel(size, sigma):
 
 def sharpen_kernel():
     return np.array([
-        [0, -1, 0],
-        [-1, 5, -1],
-        [0, -1, 0],
+        [ 0, -1,  0],
+        [-1,  5, -1],
+        [ 0, -1,  0],
     ])
 
 
 def ridge_detection_kernel():
     return np.array([
         [-1, -1, -1],
-        [-1, 9, -1],
+        [-1,  9, -1],
         [-1, -1, -1],
     ])
 
@@ -72,6 +72,7 @@ def gpu_kernel(image: napari.layers.Image, kernel_type: str = 'gaussian', kernel
 
 viewer.window.add_dock_widget(gpu_kernel)
 gpu_kernel()
+
 
 if __name__ == '__main__':
     napari.run()
