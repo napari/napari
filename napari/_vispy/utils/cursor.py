@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 from enum import Enum
-from functools import lru_cache
 
 from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QCursor, QPainter, QPen, QPixmap
 
 
-@lru_cache(maxsize=64)
 def circle_pixmap(size: int):
     """Create a white/black hollow circle pixmap. For use as labels cursor."""
     size = max(size, 1)
@@ -22,7 +20,6 @@ def circle_pixmap(size: int):
     return pixmap
 
 
-@lru_cache(maxsize=64)
 def crosshair_pixmap():
     """Create a cross cursor with white/black hollow square pixmap in the middle.
     For use as points cursor."""
@@ -94,7 +91,6 @@ def crosshair_pixmap():
     return pixmap
 
 
-@lru_cache(maxsize=64)
 def square_pixmap(size):
     """Create a white/black hollow square pixmap. For use as labels cursor."""
     size = max(int(size), 1)
