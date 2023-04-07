@@ -193,8 +193,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Displayed in status bar bottom left.
     help : str
         Displayed in status bar bottom right.
-    interactive : bool
-        Determine if canvas pan/zoom interactivity is enabled.
+    mouse_pan : bool
+        Determine if canvas interactive panning is enabled with the mouse.
+    mouse_zoom : bool
+        Determine if canvas interactive zooming is enabled with the mouse.
     cursor : str
         String identifying which cursor displayed over canvas.
     cursor_size : int | None
@@ -283,7 +285,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._help = ''
         self._cursor = 'standard'
         self._cursor_size = 1
-        self._interactive = True
+        self._mouse_pan = True
+        self._mouse_zoom = True
         self._value = None
         self.scale_factor = 1
         self.multiscale = multiscale
@@ -369,7 +372,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             thumbnail=Event,
             status=Event,
             help=Event,
-            interactive=Event,
+            mouse_pan_zoom_toggles=Event,
             cursor=Event,
             cursor_size=Event,
             editable=Event,
@@ -458,7 +461,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        self.interactive = mode == self._modeclass.PAN_ZOOM
+        self.mouse_pan = mode == self._modeclass.PAN_ZOOM
         self._overlays['transform_box'].visible = (
             mode == self._modeclass.TRANSFORM
         )
@@ -904,16 +907,28 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.help(help=help_text)
 
     @property
-    def interactive(self):
-        """bool: Determine if canvas pan/zoom interactivity is enabled."""
-        return self._interactive
+    def mouse_pan(self):
+        """bool: Determine if canvas interactive panning is enabled with the mouse."""
+        return self._mouse_pan
 
-    @interactive.setter
-    def interactive(self, interactive):
-        if interactive == self._interactive:
+    @mouse_pan.setter
+    def mouse_pan(self, mouse_pan):
+        if mouse_pan == self._mouse_pan:
             return
-        self._interactive = interactive
-        self.events.interactive(interactive=interactive)
+        self._mouse_pan = mouse_pan
+        self.events.mouse_pan_zoom_toggles(mouse_pan=mouse_pan, mouse_zoom=self.mouse_zoom)
+
+    @property
+    def mouse_zoom(self):
+        """bool: Determine if canvas interactive zooming is enabled with the mouse."""
+        return self._mouse_zoom
+
+    @mouse_zoom.setter
+    def mouse_zoom(self, mouse_zoom):
+        if mouse_zoom == self._mouse_zoom:
+            return
+        self._mouse_zoom = mouse_zoom
+        self.events.mouse_pan_zoom_toggles(mouse_pan=self.mouse_pan, mouse_zoom=mouse_zoom)
 
     @property
     def cursor(self):

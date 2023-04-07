@@ -23,14 +23,17 @@ class VispyCamera:
         self._dims = dims
 
         # Create 2D camera
-        self._2D_camera = PanZoomCamera(aspect=1)
+        self._2D_camera = add_mouse_pan_zoom_toggles(PanZoomCamera)(aspect=1)
         # flip y-axis to have correct alignment
         self._2D_camera.flip = (0, 1, 0)
         self._2D_camera.viewbox_key_event = viewbox_key_event
 
         # Create 3D camera
-        self._3D_camera = ArcballCamera(fov=0)
+        self._3D_camera = add_mouse_pan_zoom_toggles(ArcballCamera)(fov=0)
         self._3D_camera.viewbox_key_event = viewbox_key_event
+
+        # Set 2D camera by default
+        self._view.camera = self._2D_camera
 
         self._dims.events.ndisplay.connect(
             self._on_ndisplay_change, position='first'
@@ -133,11 +136,33 @@ class VispyCamera:
         self._3D_camera.fov = perspective
         self._view.camera.view_changed()
 
+    @property
+    def mouse_zoom(self):
+        return self._view.camera.mouse_zoom
+
+    @mouse_zoom.setter
+    def mouse_zoom(self, mouse_zoom):
+        self._view.camera.mouse_zoom = mouse_zoom
+
+    @property
+    def mouse_pan(self):
+        return self._view.camera.mouse_pan
+
+    @mouse_pan.setter
+    def mouse_pan(self, mouse_pan):
+        self._view.camera.mouse_pan = mouse_pan
+
     def _on_ndisplay_change(self):
+        mouse_pan, mouse_zoom = self.mouse_pan, self.mouse_zoom
+
         if self._dims.ndisplay == 3:
             self._view.camera = self._3D_camera
         else:
             self._view.camera = self._2D_camera
+
+        # Preserve the mouse behaviour between the cameras
+        self.mouse_pan, self.mouse_zoom = mouse_pan, mouse_zoom
+
         self._on_center_change()
         self._on_zoom_change()
         self._on_angles_change()
@@ -180,3 +205,35 @@ def viewbox_key_event(event):
         The vispy event that triggered this method.
     """
     return
+
+
+def add_mouse_pan_zoom_toggles(vispy_camera_cls):
+    """Adds
+
+    A class decorator for the VisPy cameras that adds toggles
+    for enabling or disabling specific mouse operations like panning and zooming.
+
+    Parameters
+    ----------
+    vispy_camera_cls : Type[vispy.scene.cameras.BaseCamera]
+        A VisPy camera class to decorate.
+
+    Returns
+    -------
+        A decorated VisPy camera class.
+    """
+    class _vispy_camera_cls(vispy_camera_cls):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.mouse_pan = True
+            self.mouse_zoom = True
+
+        def viewbox_mouse_event(self, event):
+            if self.mouse_zoom and event.type == 'mouse_wheel':
+                super().viewbox_mouse_event(event)
+            elif self.mouse_pan and event.type in ['mouse_move', 'mouse_press']:
+                super().viewbox_mouse_event(event)
+            else:
+                event.handled = False
+
+    return _vispy_camera_cls

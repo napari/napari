@@ -26,8 +26,10 @@ class Camera(EventedModel):
         sets of Euler angles may lead to the same view.
     perspective : float
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
-    interactive : bool
-        If the camera interactivity is enabled or not.
+    mouse_pan : bool
+        If the camera interactive panning with the mouse is enabled or not.
+    mouse_zoom : bool
+        If the camera interactive zooming with the mouse is enabled or not.
     """
 
     # fields
@@ -35,7 +37,8 @@ class Camera(EventedModel):
     zoom: float = 1.0
     angles: Tuple[float, float, float] = (0.0, 0.0, 90.0)
     perspective: float = 0
-    interactive: bool = True
+    mouse_pan: bool = True
+    mouse_zoom: bool = True
 
     # validators
     @validator('center', 'angles', pre=True, allow_reuse=True)
