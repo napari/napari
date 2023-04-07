@@ -230,12 +230,12 @@ def add_mouse_pan_zoom_toggles(vispy_camera_cls):
             self.mouse_zoom = True
 
         def viewbox_mouse_event(self, event):
-            if self.mouse_zoom and event.type == 'mouse_wheel':
-                super().viewbox_mouse_event(event)
-            elif self.mouse_pan and event.type in [
-                'mouse_move',
-                'mouse_press',
-            ]:
+            if (
+                self.mouse_zoom
+                and event.type == 'mouse_wheel'
+                or self.mouse_pan
+                and event.type in ('mouse_move', 'mouse_press')
+            ):
                 super().viewbox_mouse_event(event)
             else:
                 event.handled = False
