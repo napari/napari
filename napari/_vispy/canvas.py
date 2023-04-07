@@ -179,9 +179,12 @@ class VispyCanvas:
 
     @background_color_override.setter
     def background_color_override(
-        self, value: Optional[Union[str, npt.ArrayLike]]
+        self, value: Union[str, npt.ArrayLike, None]
     ) -> None:
-        self.view.bgcolor = value
+        if value:
+            self.view.bgcolor = value
+        else:
+            self.view.bgcolor = self.bgcolor
 
     def _on_theme_change(self, event: Event) -> None:
         self._set_theme_change(event.value)
