@@ -93,15 +93,15 @@ class CategoricalColormap(EventedModel):
             return val
         if isinstance(val, (list, np.ndarray)):
             return cls.from_array(val)
-        elif isinstance(val, dict):
+        if isinstance(val, dict):
             return cls.from_dict(val)
-        else:
-            raise TypeError(
-                trans._(
-                    'colormap should be an array or dict',
-                    deferred=True,
-                )
+
+        raise TypeError(
+            trans._(
+                'colormap should be an array or dict',
+                deferred=True,
             )
+        )
 
     def __eq__(self, other):
         if isinstance(other, CategoricalColormap):
@@ -112,5 +112,5 @@ class CategoricalColormap(EventedModel):
             ):
                 return False
             return True
-        else:
-            return False
+
+        return False

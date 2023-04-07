@@ -1,6 +1,7 @@
 import os
 import sys
 from collections import abc
+from contextlib import suppress
 from typing import Any, Dict
 
 import numpy as np
@@ -83,14 +84,12 @@ layer_test_data = [
     ),
 ]
 
-try:
+with suppress(ModuleNotFoundError):
     import tensorstore as ts
 
     m = ts.array(np.random.random((10, 15)))
     p = [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]]
     layer_test_data.extend([(Image, m, 2), (Image, p, 2)])
-except ImportError:
-    pass
 
 classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
 names = [cls.__name__.lower() for cls in classes]
@@ -200,7 +199,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         corresponding to the array of property values
     """
     if layer.multiscale:
-        return None
+        return
 
     # Get an handle on visual layer:
     vis_lyr = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
