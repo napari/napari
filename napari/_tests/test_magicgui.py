@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     import napari.types
 
 try:
-    import qtpy  # noqa
+    import qtpy
 except ModuleNotFoundError:
     pytest.skip('Cannot test magicgui without qtpy.', allow_module_level=True)
 except RuntimeError:

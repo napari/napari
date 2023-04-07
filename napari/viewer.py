@@ -87,8 +87,7 @@ class Viewer(ViewerModel):
         """
         if self.window._qt_viewer._console is None:
             return
-        else:
-            self.window._qt_viewer.console.push(variables)
+        self.window._qt_viewer.console.push(variables)
 
     def screenshot(
         self,
@@ -186,7 +185,7 @@ def current_viewer() -> Optional[Viewer]:
     """Return the currently active napari viewer."""
     try:
         from napari._qt.qt_main_window import _QtMainWindow
-
-        return _QtMainWindow.current_viewer()
     except ImportError:
         return None
+    else:
+        return _QtMainWindow.current_viewer()
