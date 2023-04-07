@@ -222,6 +222,7 @@ def add_mouse_pan_zoom_toggles(vispy_camera_cls):
     -------
         A decorated VisPy camera class.
     """
+
     class _vispy_camera_cls(vispy_camera_cls):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
@@ -231,7 +232,10 @@ def add_mouse_pan_zoom_toggles(vispy_camera_cls):
         def viewbox_mouse_event(self, event):
             if self.mouse_zoom and event.type == 'mouse_wheel':
                 super().viewbox_mouse_event(event)
-            elif self.mouse_pan and event.type in ['mouse_move', 'mouse_press']:
+            elif self.mouse_pan and event.type in [
+                'mouse_move',
+                'mouse_press',
+            ]:
                 super().viewbox_mouse_event(event)
             else:
                 event.handled = False

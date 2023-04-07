@@ -916,7 +916,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if mouse_pan == self._mouse_pan:
             return
         self._mouse_pan = mouse_pan
-        self.events.mouse_pan_zoom_toggles(mouse_pan=mouse_pan, mouse_zoom=self.mouse_zoom)
+        self.events.mouse_pan_zoom_toggles(
+            mouse_pan=mouse_pan, mouse_zoom=self.mouse_zoom
+        )
 
     @property
     def mouse_zoom(self):
@@ -928,7 +930,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if mouse_zoom == self._mouse_zoom:
             return
         self._mouse_zoom = mouse_zoom
-        self.events.mouse_pan_zoom_toggles(mouse_pan=self.mouse_pan, mouse_zoom=mouse_zoom)
+        self.events.mouse_pan_zoom_toggles(
+            mouse_pan=self.mouse_pan, mouse_zoom=mouse_zoom
+        )
 
     @property
     def cursor(self):

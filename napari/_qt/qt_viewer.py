@@ -255,8 +255,12 @@ class QtViewer(QSplitter):
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
-        self.viewer.camera.events.mouse_pan.connect(self._on_mouse_pan_zoom_toggles)
-        self.viewer.camera.events.mouse_zoom.connect(self._on_mouse_pan_zoom_toggles)
+        self.viewer.camera.events.mouse_pan.connect(
+            self._on_mouse_pan_zoom_toggles
+        )
+        self.viewer.camera.events.mouse_zoom.connect(
+            self._on_mouse_pan_zoom_toggles
+        )
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
