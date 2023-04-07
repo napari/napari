@@ -19,7 +19,7 @@ class QtViewerViewVectorSuite:
         self.data = np.random.random((n, 2, 3))
         self.viewer = napari.Viewer()
         self.layer = self.viewer.add_vectors(self.data)
-        self.visual = self.viewer.window._qt_viewer._layer_to_visual[
+        self.visual = self.viewer.window._qt_viewer.canvas.layer_to_visual[
             self.layer
         ]
 
