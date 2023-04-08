@@ -414,7 +414,7 @@ class KeymapHandler:
 
         if func is Ellipsis:  # blocker
             return
-        elif not callable(func):
+        if not callable(func):
             raise TypeError(
                 trans._(
                     "expected {func} to be callable",
