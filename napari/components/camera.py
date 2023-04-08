@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional, Tuple
 
 import numpy as np
@@ -26,6 +27,8 @@ class Camera(EventedModel):
         sets of Euler angles may lead to the same view.
     perspective : float
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
+    interactive : bool [DEPRECATED]
+        If the camera mouse pan is enabled or not.
     mouse_pan : bool
         If the camera interactive panning with the mouse is enabled or not.
     mouse_zoom : bool
@@ -186,3 +189,19 @@ class Camera(EventedModel):
         up_direction_nd = np.zeros(ndim)
         up_direction_nd[list(dims_displayed)] = self.up_direction
         return up_direction_nd
+
+    @property
+    def interactive(self):
+        warnings.warn(
+            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
+            category=DeprecationWarning,
+        )
+        return self.mouse_pan
+
+    @interactive.setter
+    def interactive(self, interactive):
+        warnings.warn(
+            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
+            category=DeprecationWarning,
+        )
+        self.mouse_pan = interactive

@@ -193,6 +193,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Displayed in status bar bottom left.
     help : str
         Displayed in status bar bottom right.
+    interactive : bool [DEPRECATED]
+        Determine if canvas pan interactivity is enabled.
+        Use the mouse_pan attribute instead.
     mouse_pan : bool
         Determine if canvas interactive panning is enabled with the mouse.
     mouse_zoom : bool
@@ -372,6 +375,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             thumbnail=Event,
             status=Event,
             help=Event,
+            interactive=Event,  # Deprecated since 0.5.0
             mouse_pan_zoom_toggles=Event,
             cursor=Event,
             cursor_size=Event,
@@ -907,6 +911,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.help(help=help_text)
 
     @property
+    def interactive(self):
+        warnings.warn(
+            '`Layer.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
+            category=DeprecationWarning,
+        )
+        return self.mouse_pan
+
+    @interactive.setter
+    def interactive(self, interactive):
+        warnings.warn(
+            '`Layer.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
+            category=DeprecationWarning,
+        )
+        self.mouse_pan = interactive
+
+    @property
     def mouse_pan(self):
         """bool: Determine if canvas interactive panning is enabled with the mouse."""
         return self._mouse_pan
@@ -919,6 +939,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.mouse_pan_zoom_toggles(
             mouse_pan=mouse_pan, mouse_zoom=self.mouse_zoom
         )
+        self.events.interactive(interactive=mouse_pan)
 
     @property
     def mouse_zoom(self):
