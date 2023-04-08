@@ -21,7 +21,7 @@ def activate_surface_transform_mode(layer):
 
 
 @register_surface_mode_action(trans._('Pan/zoom'))
-def activate_surface_pan_zoom_mode(layer):
+def activate_surface_pan_zoom_mode(layer: Surface):
     layer.mode = Mode.PAN_ZOOM
 
 

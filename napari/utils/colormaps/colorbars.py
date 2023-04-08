@@ -30,6 +30,6 @@ def make_colorbar(cmap, size=(18, 28), horizontal=True):
         bar = np.tile(np.expand_dims(basic_values, 1), size[1])
 
     color_array = cmap.map(bar.ravel())
-    cbar = color_array.reshape(bar.shape + (4,))
+    cbar = color_array.reshape((*bar.shape, 4))
 
     return np.round(255 * cbar).astype(np.uint8).copy(order='C')

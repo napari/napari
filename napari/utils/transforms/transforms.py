@@ -50,10 +50,10 @@ class Transform:
     def inverse(self) -> 'Transform':
         if self._inverse_func is not None:
             return Transform(self._inverse_func, self.func)
-        else:
-            raise ValueError(
-                trans._('Inverse function was not provided.', deferred=True)
-            )
+
+        raise ValueError(
+            trans._('Inverse function was not provided.', deferred=True)
+        )
 
     def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
@@ -147,8 +147,8 @@ class TransformChain(EventedList, Transform):
             return None
         if len(self) == 1:
             return self[0]
-        else:
-            return tz.pipe(self[0], *[tf.compose for tf in self[1:]])
+
+        return tz.pipe(self[0], *[tf.compose for tf in self[1:]])
 
     def set_slice(self, axes: Sequence[int]) -> 'TransformChain':
         """Return a transform chain subset to the visible dimensions.
@@ -433,10 +433,10 @@ class Affine(Transform):
         """Return the scale of the transform."""
         if self._is_diagonal:
             return np.diag(self._linear_matrix)
-        else:
-            return decompose_linear_matrix(
-                self._linear_matrix, upper_triangular=self._upper_triangular
-            )[1]
+
+        return decompose_linear_matrix(
+            self._linear_matrix, upper_triangular=self._upper_triangular
+        )[1]
 
     @scale.setter
     def scale(self, scale):
