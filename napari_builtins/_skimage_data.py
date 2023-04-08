@@ -15,7 +15,7 @@ def _load_skimage_data(name, **kwargs):
                 },
             )
         ]
-    elif name == 'kidney':
+    if name == 'kidney':
         return [
             (
                 skimage.data.kidney(),
@@ -26,7 +26,7 @@ def _load_skimage_data(name, **kwargs):
                 },
             )
         ]
-    elif name == 'lily':
+    if name == 'lily':
         return [
             (
                 skimage.data.lily(),
@@ -37,7 +37,7 @@ def _load_skimage_data(name, **kwargs):
                 },
             )
         ]
-    elif name == 'binary_blobs_3D':
+    if name == 'binary_blobs_3D':
         kwargs['n_dim'] = 3
         kwargs.setdefault('length', 128)
         kwargs.setdefault('volume_fraction', 0.25)

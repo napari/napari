@@ -97,7 +97,7 @@ def test_docstring(layer):
         assert method_returns == (
             'layer',
             f':class:`napari.layers.{name}` or list',
-            f'The newly-created {name.lower()} layer or list of {name.lower()} layers.',  # noqa: E501
+            f'The newly-created {name.lower()} layer or list of {name.lower()} layers.',
         ), f"improper 'Returns' section of '{method_name}'"
     else:
         assert method_returns == (
