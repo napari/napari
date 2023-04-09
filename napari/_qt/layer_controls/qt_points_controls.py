@@ -165,7 +165,7 @@ class QtPointsControls(QtLayerControls):
         )
         self.panzoom_button = QtModeRadioButton(
             layer,
-            'pan_zoom',
+            'pan',
             Mode.PAN_ZOOM,
             checked=True,
         )
