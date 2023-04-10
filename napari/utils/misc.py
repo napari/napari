@@ -51,18 +51,24 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
         return packaging.version.LegacyVersion(v)
 
 
-def running_as_bundled_app() -> bool:
+def running_as_bundled_app(*, check_conda=True) -> bool:
     """Infer whether we are running as a briefcase bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
-    if (Path(sys.executable).parent / ".napari_is_bundled").exists():
+    if (
+        check_conda
+        and (Path(sys.executable).parent / ".napari_is_bundled").exists()
+    ):
         return True
 
     try:
         app_module = sys.modules['__main__'].__package__
     except AttributeError:
+        return False
+
+    if app_module is None:
         return False
 
     try:
@@ -82,30 +88,40 @@ def running_as_constructor_app() -> bool:
 
 def bundle_bin_dir() -> Optional[str]:
     """Return path to briefcase app_packages/bin if it exists."""
-    bin = os_path.join(os_path.dirname(sys.exec_prefix), 'app_packages', 'bin')
-    if os_path.isdir(bin):
-        return bin
+    bin_path = os_path.join(
+        os_path.dirname(sys.exec_prefix), 'app_packages', 'bin'
+    )
+    if os_path.isdir(bin_path):
+        return bin_path
+    return None
 
 
 def in_jupyter() -> bool:
     """Return true if we're running in jupyter notebook/lab or qtconsole."""
-    try:
+    with contextlib.suppress(ImportError):
         from IPython import get_ipython
 
         return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
-    except Exception:
-        pass
     return False
 
 
 def in_ipython() -> bool:
     """Return true if we're running in an IPython interactive shell."""
-    try:
+    with contextlib.suppress(ImportError):
         from IPython import get_ipython
 
         return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
-    except Exception:
-        pass
+    return False
+
+
+def in_python_repl() -> bool:
+    """Return true if we're running in a Python REPL."""
+    with contextlib.suppress(ImportError):
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'NoneType' and hasattr(
+            sys, 'ps1'
+        )
     return False
 
 
@@ -123,8 +139,8 @@ def ensure_iterable(arg, color=False):
     """
     if is_iterable(arg, color=color):
         return arg
-    else:
-        return itertools.repeat(arg)
+
+    return itertools.repeat(arg)
 
 
 def is_iterable(arg, color=False, allow_none=False):
@@ -132,19 +148,16 @@ def is_iterable(arg, color=False, allow_none=False):
     provided and the argument is a 1-D array of length 3 or 4 then the input
     is taken to not be iterable. If allow_none is True, `None` is considered iterable.
     """
-    if arg is None and not allow_none:
+    if (
+        (arg is None and not allow_none)
+        or isinstance(arg, str)
+        or np.isscalar(arg)
+    ):
         return False
-    elif type(arg) is str:
-        return False
-    elif np.isscalar(arg):
-        return False
-    elif color and isinstance(arg, (list, np.ndarray)):
-        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg) == 4):
-            return False
-        else:
-            return True
-    else:
-        return True
+    if color and isinstance(arg, (list, np.ndarray)):
+        return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
+
+    return True
 
 
 def is_sequence(arg):
@@ -219,18 +232,18 @@ def ensure_sequence_of_iterables(
         obj is not None
         and is_sequence(obj)
         and all(is_iterable(el, allow_none=allow_none) for el in obj)
+        and (not repeat_empty or len(obj) > 0)
     ):
         if length is not None and len(obj) != length:
-            if (len(obj) == 0 and not repeat_empty) or len(obj) > 0:
-                # sequence of iterables of wrong length
-                raise ValueError(
-                    trans._(
-                        "length of {obj} must equal {length}",
-                        deferred=True,
-                        obj=obj,
-                        length=length,
-                    )
+            # sequence of iterables of wrong length
+            raise ValueError(
+                trans._(
+                    "length of {obj} must equal {length}",
+                    deferred=True,
+                    obj=obj,
+                    length=length,
                 )
+            )
 
         if len(obj) > 0 or not repeat_empty:
             return obj
@@ -245,9 +258,9 @@ def formatdoc(obj):
         obj.__doc__ = obj.__doc__.format(
             **{**frame.f_globals, **frame.f_locals}
         )
-        return obj
     finally:
         del frame
+    return obj
 
 
 class StringEnumMeta(EnumMeta):
@@ -265,7 +278,7 @@ class StringEnumMeta(EnumMeta):
         *,
         module=None,
         qualname=None,
-        type=None,
+        type=None,  # noqa: A002
         start=1,
     ):
         """set the item value case to lowercase for value lookup"""
@@ -273,17 +286,17 @@ class StringEnumMeta(EnumMeta):
         if names is None:
             if isinstance(value, str):
                 return super().__call__(value.lower())
-            elif isinstance(value, cls):
+            if isinstance(value, cls):
                 return value
-            else:
-                raise ValueError(
-                    trans._(
-                        '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
-                        deferred=True,
-                        class_name=cls,
-                        dtype=builtins.type(value),
-                    )
+
+            raise ValueError(
+                trans._(
+                    '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
+                    deferred=True,
+                    class_name=cls,
+                    dtype=builtins.type(value),
                 )
+            )
 
         # otherwise create new Enum class
         return cls._create_(
@@ -313,7 +326,7 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
     def __eq__(self, other):
         if type(self) is type(other):
             return self is other
-        elif isinstance(other, str):
+        if isinstance(other, str):
             return str(self) == other
         return NotImplemented
 

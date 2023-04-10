@@ -25,8 +25,8 @@ class Path(PolygonBase):
         z_index=0,
         dims_order=None,
         ndisplay=2,
-    ):
-
+        interpolation_order=1,
+    ) -> None:
         super().__init__(
             data,
             edge_width=edge_width,
@@ -36,4 +36,5 @@ class Path(PolygonBase):
             filled=False,
             closed=False,
             name='path',
+            interpolation_order=interpolation_order,
         )

@@ -18,7 +18,7 @@ class Markers(BaseMarkers):
         'fragment': BaseMarkers._shaders['fragment'],
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self._canvas_size_limits = 0, 10000
         super().__init__(*args, **kwargs)
         self.canvas_size_limits = 0, 10000
@@ -33,8 +33,8 @@ class Markers(BaseMarkers):
             return None
         if pos.shape[1] > axis:
             return (pos[:, axis].min(), pos[:, axis].max())
-        else:
-            return (0, 0)
+
+        return (0, 0)
 
     @property
     def canvas_size_limits(self):

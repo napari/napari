@@ -17,7 +17,7 @@ class VispyCamera:
         napari dims model.
     """
 
-    def __init__(self, view, camera, dims):
+    def __init__(self, view, camera, dims) -> None:
         self._view = view
         self._camera = camera
         self._dims = dims
@@ -80,10 +80,9 @@ class VispyCamera:
             center = tuple(self._view.camera.center)
         else:
             # in 2D, we arbitrarily choose 0.0 as the center in z
-            center = tuple(self._view.camera.center[:2]) + (0.0,)
+            center = (*self._view.camera.center[:2], 0.0)
         # switch from VisPy xyz ordering to NumPy prc ordering
-        center = center[::-1]
-        return center
+        return center[::-1]
 
     @center.setter
     def center(self, center):

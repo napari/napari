@@ -24,7 +24,9 @@ class Event:
         0,
         0,
     )  # world coords
-    pos: np.ndarray = np.zeros(2)  # canvas coords
+    pos: np.ndarray = field(
+        default_factory=lambda: np.zeros(2)
+    )  # canvas coords
     view_direction: Optional[List[float]] = None
     up_direction: Optional[List[float]] = None
     dims_displayed: List[int] = field(default_factory=lambda: [0, 1])
@@ -794,7 +796,7 @@ def test_drag_start_selection(
                 layer.data[0], [offset_position[0], offset_position[1]]
             )
         else:
-            assert False, 'Unreachable code'  # pragma: no cover
+            raise AssertionError("Unreachable code")  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -833,7 +835,7 @@ def test_drag_start_selection(
                 layer.data[0], [offset_position[0], offset_position[1]]
             )
         else:
-            assert False, 'Unreachable code'  # pragma: no cover
+            raise AssertionError("Unreachable code")  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]

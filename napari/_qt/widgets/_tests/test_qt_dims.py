@@ -252,11 +252,18 @@ def test_update_dims_labels(qtbot):
     view.dims.axis_labels = list('TZYX')
     assert [w.axis_label.text() for w in view.slider_widgets] == list('TZYX')
 
+    observed_axis_labels_event = False
+
+    def on_axis_labels_changed():
+        nonlocal observed_axis_labels_event
+        observed_axis_labels_event = True
+
+    view.dims.events.axis_labels.connect(on_axis_labels_changed)
     first_label = view.slider_widgets[0].axis_label
     assert first_label.text() == view.dims.axis_labels[0]
     first_label.setText('napari')
-    # first_label.editingFinished.emit()
     assert first_label.text() == view.dims.axis_labels[0]
+    assert observed_axis_labels_event
 
 
 def test_slider_press_updates_last_used(qtbot):
@@ -279,14 +286,19 @@ def test_play_button(qtbot):
     ndim = 3
     view = QtDims(Dims(ndim=ndim))
     qtbot.addWidget(view)
-    button = view.slider_widgets[0].play_button
-    qtbot.mouseClick(button, Qt.LeftButton)
-    qtbot.waitSignal(view._animation_thread.started, timeout=5000)
+    slider = view.slider_widgets[0]
+    button = slider.play_button
 
-    with qtbot.waitSignal(view._animation_thread.finished, timeout=7000):
-        qtbot.mouseClick(button, Qt.LeftButton)
-
+    # Need looping playback so that it does not stop before we can assert that.
+    assert slider.loop_mode == 'loop'
     assert not view.is_playing
+
+    qtbot.mouseClick(button, Qt.LeftButton)
+    qtbot.waitUntil(lambda: view.is_playing)
+
+    qtbot.mouseClick(button, Qt.LeftButton)
+    qtbot.waitUntil(lambda: not view.is_playing)
+    qtbot.waitUntil(lambda: view._animation_worker is None)
 
     with patch.object(button.popup, 'show_above_mouse') as mock_popup:
         qtbot.mouseClick(button, Qt.RightButton)
@@ -326,6 +338,7 @@ def test_not_playing_after_ndim_changes(qtbot):
     dims.ndim = 2
 
     qtbot.waitUntil(lambda: not view.is_playing)
+    qtbot.waitUntil(lambda: view._animation_worker is None)
 
 
 def test_not_playing_after_ndisplay_changes(qtbot):
@@ -340,6 +353,7 @@ def test_not_playing_after_ndisplay_changes(qtbot):
     dims.ndisplay = 3
 
     qtbot.waitUntil(lambda: not view.is_playing)
+    qtbot.waitUntil(lambda: view._animation_worker is None)
 
 
 def test_set_axis_labels_after_ndim_changes(qtbot):

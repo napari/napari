@@ -229,7 +229,7 @@ class _DerivedStyleEncoding(
     fallback: StyleValue
     _cached: StyleArray
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._cached = _empty_array_like(self.fallback)
 
@@ -262,7 +262,7 @@ class _DerivedStyleEncoding(
                 ),
                 category=RuntimeWarning,
             )
-            shape = (features.shape[0],) + self.fallback.shape
+            shape = (features.shape[0], *self.fallback.shape)
             array = np.broadcast_to(self.fallback, shape)
         return array
 
@@ -291,5 +291,5 @@ def _get_style_values(
 
 def _empty_array_like(value: StyleValue) -> StyleArray:
     """Returns an empty array with the same type and remaining shape of the given value."""
-    shape = (0,) + value.shape
+    shape = (0, *value.shape)
     return np.empty_like(value, shape=shape)

@@ -25,10 +25,12 @@ class QtReaderDialog(QDialog):
         self,
         pth: str = '',
         parent: QWidget = None,
-        readers: Dict[str, str] = {},
+        readers: Dict[str, str] = None,
         error_message: str = '',
         persist_checked: bool = True,
-    ):
+    ) -> None:
+        if readers is None:
+            readers = {}
         super().__init__(parent)
         self.setObjectName('Choose reader')
         self.setWindowTitle(trans._('Choose reader'))
@@ -125,6 +127,7 @@ class QtReaderDialog(QDialog):
         checked_btn = self.reader_btn_group.checkedButton()
         if checked_btn:
             return checked_btn.text()
+        return None
 
     def _get_persist_choice(self):
         """Get persistence checkbox choice"""

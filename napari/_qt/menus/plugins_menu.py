@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class PluginsMenu(NapariMenu):
-    def __init__(self, window: 'Window'):
+    def __init__(self, window: 'Window') -> None:
         self._win = window
         super().__init__(trans._('&Plugins'), window._qt_window)
 
@@ -34,7 +34,7 @@ class PluginsMenu(NapariMenu):
 
     def _build(self, event=None):
         self.clear()
-        action = self.addAction(trans._("Install/Uninstall Plugins..."))
+        action = self.addAction(trans._("Plugin Manager"))
         action.triggered.connect(self._show_plugin_install_dialog)
         action = self.addAction(trans._("Plugin Errors..."))
         action.setStatusTip(
@@ -49,7 +49,6 @@ class PluginsMenu(NapariMenu):
         self._add_registered_widget(call_all=True)
 
     def _remove_unregistered_widget(self, event):
-
         for action in self.actions():
             if event.value in action.text():
                 self.removeAction(action)
@@ -72,7 +71,14 @@ class PluginsMenu(NapariMenu):
 
         multiprovider = len(widgets) > 1
         if multiprovider:
-            menu = NapariMenu(plugin_name, self)
+            # use display_name if npe2 plugin
+            from npe2 import plugin_manager as pm
+
+            try:
+                plugin_display_name = pm.get_manifest(plugin_name).display_name
+            except KeyError:
+                plugin_display_name = plugin_name
+            menu = NapariMenu(plugin_display_name, self)
             self.addMenu(menu)
         else:
             menu = self
@@ -87,7 +93,7 @@ class PluginsMenu(NapariMenu):
 
             def _add_toggle_widget(*, key=key, hook_type=hook_type):
                 full_name = menu_item_template.format(*key)
-                if full_name in self._win._dock_widgets.keys():
+                if full_name in self._win._dock_widgets:
                     dock_widget = self._win._dock_widgets[full_name]
                     if dock_widget.isVisible():
                         dock_widget.hide()

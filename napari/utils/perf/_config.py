@@ -17,24 +17,24 @@ PERFMON_ENV_VAR = "NAPARI_PERFMON"
 class PerfmonConfigError(Exception):
     """Error parsing or interpreting config file."""
 
-    def __init__(self, message):
+    def __init__(self, message) -> None:
         self.message = message
 
 
-def _patch_perf_timer(parent, callable: str, label: str) -> None:
+def _patch_perf_timer(parent, callable_name: str, label: str) -> None:
     """Patches the callable to run it inside a perf_timer.
 
     Parameters
     ----------
     parent
         The module or class that contains the callable.
-    callable : str
+    callable_name : str
         The name of the callable (function or method).
     label : str
         The <function> or <class>.<method> we are patching.
     """
 
-    @wrapt.patch_function_wrapper(parent, callable)
+    @wrapt.patch_function_wrapper(parent, callable_name)
     def perf_time_callable(wrapped, instance, args, kwargs):
         with perf_timer(f"{label}"):
             return wrapped(*args, **kwargs)
@@ -70,7 +70,7 @@ class PerfmonConfig:
     }
     """
 
-    def __init__(self, config_path: Optional[str]):
+    def __init__(self, config_path: Optional[str]) -> None:
         # Should only patch once, but it can't be on module load, user
         # should patch once main() as started running during startup.
         self.patched = False
@@ -105,7 +105,7 @@ class PerfmonConfig:
         """
         try:
             return self.data["callable_lists"][list_name]
-        except KeyError:
+        except KeyError as e:
             raise PerfmonConfigError(
                 trans._(
                     "{path} has no callable list '{list_name}'",
@@ -113,7 +113,7 @@ class PerfmonConfig:
                     path=self.config_path,
                     list_name=list_name,
                 )
-            )
+            ) from e
 
     def _patch_callables(self):
         """Add a perf_timer to every callable.
@@ -138,7 +138,7 @@ class PerfmonConfig:
             return False
 
     @property
-    def trace_file_on_start(self) -> str:
+    def trace_file_on_start(self) -> Optional[str]:
         """Return path of trace file to write or None."""
         if self.config_path is None:
             return None  # don't trace on start in legacy mode
@@ -146,9 +146,10 @@ class PerfmonConfig:
             path = self.data["trace_file_on_start"]
 
             # Return None if it was empty string or false.
-            return path if path else None
         except KeyError:
             return None
+        else:
+            return path or None
 
 
 def _create_perf_config():
@@ -156,10 +157,10 @@ def _create_perf_config():
 
     if value is None or value == "0":
         return None  # Totally disabled
-    elif value == "1":
+    if value == "1":
         return PerfmonConfig(None)  # Legacy no config, Qt events only.
-    else:
-        return PerfmonConfig(value)  # Normal parse the config file.
+
+    return PerfmonConfig(value)  # Normal parse the config file.
 
 
 # The global instance

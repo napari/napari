@@ -18,8 +18,7 @@ from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.utils.action_manager import action_manager
-from napari.utils.interactions import Shortcut
-from napari.utils.misc import in_ipython, in_jupyter
+from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -48,11 +47,15 @@ class QtLayerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel'):
+    def __init__(self, viewer: 'ViewerModel') -> None:
         super().__init__()
 
         self.viewer = viewer
-        self.deleteButton = QtDeleteButton(self.viewer)
+
+        self.deleteButton = QtViewerPushButton(
+            'delete_button', action='napari:delete_selected_layers'
+        )
+
         self.newPointsButton = QtViewerPushButton(
             'new_points',
             trans._('New points layer'),
@@ -112,7 +115,7 @@ class QtViewerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel'):
+    def __init__(self, viewer: 'ViewerModel') -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -121,7 +124,7 @@ class QtViewerButtons(QFrame):
             'console', action='napari:toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
-        if in_ipython() or in_jupyter():
+        if in_ipython() or in_jupyter() or in_python_repl():
             self.consoleButton.setEnabled(False)
 
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')
@@ -337,80 +340,6 @@ class QtViewerButtons(QFrame):
         self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
 
 
-class QtDeleteButton(QPushButton):
-    """Delete button to remove selected layers.
-
-    Parameters
-    ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
-
-    Attributes
-    ----------
-    hover : bool
-        Hover is true while mouse cursor is on the button widget.
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
-    """
-
-    def __init__(self, viewer):
-        super().__init__()
-
-        self.viewer = viewer
-        self.setToolTip(
-            trans._(
-                "Delete selected layers ({shortcut})",
-                shortcut=Shortcut("Control-Backspace"),
-            )
-        )
-        self.setAcceptDrops(True)
-        self.clicked.connect(lambda: self.viewer.layers.remove_selected())
-
-    def dragEnterEvent(self, event):
-        """The cursor enters the widget during a drag and drop operation.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        event.accept()
-        self.hover = True
-        self.update()
-
-    def dragLeaveEvent(self, event):
-        """The cursor leaves the widget during a drag and drop operation.
-
-        Using event.ignore() here allows the event to pass through the
-        parent widget to its child widget, otherwise the parent widget
-        would catch the event and not pass it on to the child widget.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        event.ignore()
-        self.hover = False
-        self.update()
-
-    def dropEvent(self, event):
-        """The drag and drop mouse event is completed.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QDropEvent
-            Event from the Qt context.
-        """
-        event.accept()
-        layer_name = event.mimeData().text()
-        layer = self.viewer.layers[layer_name]
-        if not layer.selected:
-            self.viewer.layers.remove(layer)
-        else:
-            self.viewer.layers.remove_selected()
-
-
 def _omit_viewer_args(constructor):
     @wraps(constructor)
     def _func(*args, **kwargs):
@@ -455,7 +384,7 @@ class QtViewerPushButton(QPushButton):
     @_omit_viewer_args
     def __init__(
         self, button_name: str, tooltip: str = '', slot=None, action: str = ''
-    ):
+    ) -> None:
         super().__init__()
 
         self.setToolTip(tooltip or button_name)
@@ -464,71 +393,3 @@ class QtViewerPushButton(QPushButton):
             self.clicked.connect(slot)
         if action:
             action_manager.bind_button(action, self)
-
-
-class QtStateButton(QtViewerPushButton):
-    """Button to toggle between two states.
-    Parameters
-    ----------
-    button_name : str
-        A string that will be used in qss to style the button with the
-        QtStateButton[mode=...] selector,
-    target : object
-        object on which you want to change the property when button pressed.
-    attribute:
-        name of attribute on `object` you wish to change.
-    events: EventEmitter
-        event emitter that will trigger when value is changed
-    onstate: Any
-        value to use for ``setattr(object, attribute, onstate)`` when clicking
-        this button
-    offstate: Any
-        value to use for ``setattr(object, attribute, offstate)`` when clicking
-        this button.
-    """
-
-    def __init__(
-        self,
-        button_name,
-        target,
-        attribute,
-        events,
-        onstate=True,
-        offstate=False,
-    ):
-        warnings.warn(
-            trans._(
-                "QtStateButton is deprecated and will be removed in 0.4.14"
-            ),
-            stacklevel=2,
-            category=FutureWarning,
-        )
-        super().__init__(button_name)
-        self.setCheckable(True)
-
-        self._target = target
-        self._attribute = attribute
-        self._onstate = onstate
-        self._offstate = offstate
-        self._events = events
-        self._events.connect(self._on_change)
-        self.clicked.connect(self.change)
-        self._on_change()
-
-    def change(self):
-        """Toggle between the multiple states of this button."""
-        newstate = self._onstate if self.isChecked() else self._offstate
-        setattr(self._target, self._attribute, newstate)
-
-    def _on_change(self, event=None):
-        """Called wen mirrored value changes
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        with self._events.blocker():
-            if self.isChecked() != (
-                getattr(self._target, self._attribute) == self._onstate
-            ):
-                self.toggle()

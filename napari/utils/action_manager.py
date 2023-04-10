@@ -80,7 +80,7 @@ class ActionManager:
 
     _actions: Dict[str, Action]
 
-    def __init__(self):
+    def __init__(self) -> None:
         # map associating a name/id with a Comm
         self._actions: Dict[str, Action] = {}
         self._shortcuts: Dict[str, List[str]] = defaultdict(list)
@@ -216,14 +216,13 @@ class ActionManager:
         """
         self._validate_action_name(name)
 
-        if action := self._actions.get(name):
-            if isgeneratorfunction(action):
-                raise ValueError(
-                    trans._(
-                        '`bind_button` cannot be used with generator functions',
-                        deferred=True,
-                    )
+        if (action := self._actions.get(name)) and isgeneratorfunction(action):
+            raise ValueError(
+                trans._(
+                    '`bind_button` cannot be used with generator functions',
+                    deferred=True,
                 )
+            )
 
         button.clicked.connect(lambda: self.trigger(name))
         if name in self._actions:
@@ -351,25 +350,25 @@ class ActionManager:
 
         return layer_shortcuts
 
-    def _get_layer_actions(self, layer) -> dict:
+    def _get_provider_actions(self, provider) -> dict:
         """
-        Get actions filtered by the given layer.
+        Get actions filtered by the given provider.
 
         Parameters
         ----------
-        layer : Layer
-            Layer to use for actions filtering.
+        provider : KeymapProvider
+            Provider to use for actions filtering.
 
         Returns
         -------
-        layer_actions: dict
-            Dictionary of names of actions with action values for a layer.
+        provider_actions: dict
+            Dictionary of names of actions with action values for a provider.
 
         """
         return {
             name: action
             for name, action in self._actions.items()
-            if action and layer == action.keymapprovider
+            if action and provider == action.keymapprovider
         }
 
     def _get_active_shortcuts(self, active_keymap):

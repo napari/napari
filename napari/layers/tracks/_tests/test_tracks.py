@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from napari.layers import Tracks
+from napari.layers.tracks._track_utils import TrackManager
 
 # def test_empty_tracks():
 #     """Test instantiating Tracks layer without data."""
@@ -230,3 +231,49 @@ def test_color_by_same_after_properties_change(color_by):
     }
 
     assert layer.color_by == color_by
+
+
+def test_fast_points_lookup() -> None:
+    # creates sorted points
+    time_points = np.asarray([0, 1, 3, 5, 10])
+    repeats = np.asarray([3, 4, 6, 3, 5])
+    sorted_time = np.repeat(time_points, repeats)
+    end = np.cumsum(repeats)
+    start = np.insert(end[:-1], 0, 0)
+
+    # compute lookup
+    points_lookup = TrackManager._fast_points_lookup(sorted_time)
+
+    assert len(time_points) == len(points_lookup)
+    total_length = 0
+    for s, e, t, r in zip(start, end, time_points, repeats):
+        assert points_lookup[t].start == s
+        assert points_lookup[t].stop == e
+        assert points_lookup[t].stop - points_lookup[t].start == r
+        unique_time = sorted_time[points_lookup[t]]
+        assert np.all(unique_time[0] == unique_time)
+        total_length += len(unique_time)
+
+    assert total_length == len(sorted_time)
+
+
+def test_single_time_tracks() -> None:
+    """Edge case where all tracks belong to a single time"""
+
+    # track_id, t, y, x
+    tracks = [[0, 5, 2, 3], [1, 5, 3, 4], [2, 5, 4, 5]]
+    layer = Tracks(tracks)
+
+    assert np.all(layer.data == tracks)
+
+
+def test_track_ids_ordering() -> None:
+    """Check if tracks ids are correctly set to features when given not-sorted tracks."""
+    # track_id, t, y, x
+    unsorted_data = np.asarray(
+        [[1, 1, 0, 0], [0, 1, 0, 0], [2, 0, 0, 0], [0, 0, 0, 0], [1, 0, 0, 0]]
+    )
+    sorted_track_ids = [0, 0, 1, 1, 2]  # track_ids after sorting
+
+    layer = Tracks(unsorted_data)
+    assert np.all(sorted_track_ids == layer.features["track_id"])

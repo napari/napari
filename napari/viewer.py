@@ -47,7 +47,7 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
-    ):
+    ) -> None:
         super().__init__(
             title=title,
             ndisplay=ndisplay,
@@ -87,8 +87,7 @@ class Viewer(ViewerModel):
         """
         if self.window._qt_viewer._console is None:
             return
-        else:
-            self.window._qt_viewer.console.push(variables)
+        self.window._qt_viewer.console.push(variables)
 
     def screenshot(
         self,
@@ -140,6 +139,8 @@ class Viewer(ViewerModel):
 
     def close(self):
         """Close the viewer window."""
+        # Shutdown the slicer first to avoid processing any more tasks.
+        self._layer_slicer.shutdown()
         # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window
@@ -173,7 +174,7 @@ class Viewer(ViewerModel):
 
         """
         # copy to not iterate while changing.
-        viewers = [v for v in cls._instances]
+        viewers = list(cls._instances)
         ret = len(viewers)
         for viewer in viewers:
             viewer.close()
@@ -184,7 +185,7 @@ def current_viewer() -> Optional[Viewer]:
     """Return the currently active napari viewer."""
     try:
         from napari._qt.qt_main_window import _QtMainWindow
-
-        return _QtMainWindow.current_viewer()
     except ImportError:
         return None
+    else:
+        return _QtMainWindow.current_viewer()

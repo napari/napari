@@ -5,10 +5,12 @@ from unittest.mock import Mock
 import numpy as np
 import pandas as pd
 import pytest
+from psygnal.containers import Selection
 from pydantic import ValidationError
 from vispy.color import get_colormap
 
 from napari._tests.utils import (
+    assert_colors_equal,
     assert_layer_state_equal,
     check_layer_world_data_extent,
 )
@@ -44,6 +46,27 @@ def _make_cycled_properties(values, length):
 def test_empty_points():
     pts = Points()
     assert pts.data.shape == (0, 2)
+
+
+def test_empty_points_with_features():
+    """See the following for the issues this covers:
+    https://github.com/napari/napari/issues/5632
+    https://github.com/napari/napari/issues/5634
+    """
+    points = Points(
+        features={'a': np.empty(0, int)},
+        feature_defaults={'a': 0},
+        face_color='a',
+        face_color_cycle=list('rgb'),
+    )
+
+    points.add([0, 0])
+    points.feature_defaults['a'] = 1
+    points.add([50, 50])
+    points.feature_defaults = {'a': 2}
+    points.add([100, 100])
+
+    assert_colors_equal(points.face_color, list('rgb'))
 
 
 def test_empty_points_with_properties():
@@ -380,7 +403,7 @@ def test_removing_selected_points():
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 2
     assert len(layer.selected_data) == 0
-    keep = [1, 2] + list(range(4, 10))
+    keep = [1, 2, *range(4, 10)]
     assert np.all(layer.data == data[keep])
     assert layer._value is None
 
@@ -436,6 +459,7 @@ def test_remove_selected_removes_corresponding_attributes():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     size = np.random.rand(shape[0])
+    symbol = np.random.choice(['o', 's'], shape[0])
     color = np.random.rand(shape[0], 4)
     feature = np.random.rand(shape[0])
     shown = np.random.randint(2, size=shape[0]).astype(bool)
@@ -445,6 +469,7 @@ def test_remove_selected_removes_corresponding_attributes():
         data,
         size=size,
         edge_width=size,
+        symbol=symbol,
         features={'feature': feature},
         face_color=color,
         edge_color=color,
@@ -455,8 +480,10 @@ def test_remove_selected_removes_corresponding_attributes():
     layer_expected = Points(
         data[1:],
         size=size[1:],
+        symbol=symbol[1:],
         edge_width=size[1:],
         features={'feature': feature[1:]},
+        feature_defaults={'feature': feature[0]},
         face_color=color[1:],
         edge_color=color[1:],
         text=text,  # computed from feature
@@ -588,13 +615,18 @@ def test_symbol():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer.symbol == 'disc'
+    assert np.all(layer.symbol == 'disc')
 
     layer.symbol = 'cross'
-    assert layer.symbol == 'cross'
+    assert np.all(layer.symbol == 'cross')
+
+    symbol = ['o', 's'] * 5
+    expected = ['disc', 'square'] * 5
+    layer.symbol = symbol
+    assert np.all(layer.symbol == expected)
 
     layer = Points(data, symbol='star')
-    assert layer.symbol == 'star'
+    assert np.all(layer.symbol == 'star')
 
 
 properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
@@ -754,7 +786,7 @@ def test_setting_current_properties():
     }
 
     coerced_current_properties = layer.current_properties
-    for k, v in coerced_current_properties.items():
+    for k in coerced_current_properties:
         value = coerced_current_properties[k]
         assert isinstance(value, np.ndarray)
         np.testing.assert_equal(value, expected_current_properties[k])
@@ -797,14 +829,14 @@ def test_text_from_property_fstring(properties):
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
-    expected_text_3 = expected_text_2 + ['type-ish: A']
+    expected_text_3 = [*expected_text_2, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
     # add point
     layer.selected_data = {0}
     new_shape = np.random.random((1, 2))
     layer.add(new_shape)
-    expected_text_4 = expected_text_3 + ['type-ish: A']
+    expected_text_4 = [*expected_text_3, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
@@ -827,10 +859,10 @@ def test_set_text_with_kwarg_dict(properties):
     expected_text = ['type: ' + v for v in properties['point_type']]
     np.testing.assert_equal(layer.text.values, expected_text)
 
-    for property, value in text_kwargs.items():
-        if property == 'string':
+    for property_, value in text_kwargs.items():
+        if property_ == 'string':
             continue
-        layer_value = getattr(layer._text, property)
+        layer_value = getattr(layer._text, property_)
         np.testing.assert_equal(layer_value, value)
 
 
@@ -1056,9 +1088,8 @@ def test_colormap_with_categorical_properties(attribute):
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Points(data, properties=properties)
 
-    with pytest.raises(TypeError):
-        with pytest.warns(UserWarning):
-            setattr(layer, f'{attribute}_color_mode', 'colormap')
+    with pytest.raises(TypeError), pytest.warns(UserWarning):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1743,6 +1774,7 @@ def test_view_data():
 
 
 def test_view_size():
+    """Test out of slice point rendering and slicing with no points."""
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
     layer = Points(coords, size=sizes, out_of_slice_display=False)
@@ -1812,24 +1844,6 @@ def test_world_data_extent():
     layer = Points(data)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
-
-
-def test_slice_data():
-    data = [
-        (10, 2, 4),
-        (10 + 2 * 1e-7, 4, 6),
-        (8, 1, 7),
-        (10.1, 7, 2),
-        (10 - 2 * 1e-7, 1, 6),
-    ]
-    layer = Points(data)
-    assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
-    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 4
-    assert (
-        len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
-        == 4
-    )
-    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 4
 
 
 def test_scale_init():
@@ -2307,40 +2321,6 @@ def test_text_param_and_setter_are_consistent():
     )
 
 
-def test_editable_2d_layer_ndisplay_3():
-    """Interactivity doesn't work for 2D points layers
-    being rendered in 3D. Verify that layer.editable is set
-    to False upon switching to 3D rendering mode.
-
-    See: https://github.com/napari/napari/pull/4184
-    """
-    data = np.random.random((10, 2))
-    layer = Points(data, size=5)
-    assert layer.editable is True
-
-    # simulate switching to 3D rendering
-    # layer should no longer b editable
-    layer._slice_dims([0, 0, 0], ndisplay=3)
-    assert layer.editable is False
-
-
-def test_editable_3d_layer_ndisplay_3():
-    """Interactivity works for 3D points layers
-    being rendered in 3D. Verify that layer.editable remains
-    True upon switching to 3D rendering mode.
-
-    See: https://github.com/napari/napari/pull/4184
-    """
-    data = np.random.random((10, 3))
-    layer = Points(data, size=5)
-    assert layer.editable is True
-
-    # simulate switching to 3D rendering
-    # layer should no longer b editable
-    layer._slice_dims([0, 0, 0], ndisplay=3)
-    assert layer.editable is True
-
-
 def test_shown():
     """Test setting shown property"""
     shape = (10, 2)
@@ -2502,3 +2482,59 @@ def test_set_drag_start():
     np.testing.assert_array_equal(layer._drag_start, position)
     layer._set_drag_start({0}, position=(1, 2))
     np.testing.assert_array_equal(layer._drag_start, position)
+
+
+@pytest.mark.parametrize(
+    "dims_indices,target_indices",
+    [
+        ((8, slice(None), slice(None)), [2]),
+        ((10, slice(None), slice(None)), [0, 1, 3, 4]),
+        ((10 + 2 * 1e-12, slice(None), slice(None)), [0, 1, 3, 4]),
+        ((10.1, slice(None), slice(None)), [0, 1, 3, 4]),
+    ],
+)
+def test_point_slice_request_response(dims_indices, target_indices):
+    """Test points slicing with request and response."""
+    data = [
+        (10, 2, 4),
+        (10 + 2 * 1e-7, 4, 6),
+        (8, 1, 7),
+        (10.1, 7, 2),
+        (10 - 2 * 1e-7, 1, 6),
+    ]
+
+    layer = Points(data)
+
+    request = layer._make_slice_request_internal(
+        layer._slice_input, dims_indices
+    )
+    response = request()
+
+    assert len(response.indices) == len(target_indices)
+    assert all(a == b for a, b in zip(response.indices, target_indices))
+
+
+def test_editable_and_visible_are_independent():
+    """See https://github.com/napari/napari/issues/1346"""
+    data = np.empty((0, 2))
+    layer = Points(data)
+    assert layer.editable
+    assert layer.visible
+
+    layer.editable = False
+    layer.visible = False
+    assert not layer.editable
+    assert not layer.visible
+
+    layer.visible = True
+
+    assert not layer.editable
+
+
+def test_point_selection_remains_evented_after_update():
+    """Existing evented selection model should be updated rather than replaced."""
+    data = np.empty((3, 2))
+    layer = Points(data)
+    assert isinstance(layer.selected_data, Selection)
+    layer.selected_data = {0, 1}
+    assert isinstance(layer.selected_data, Selection)

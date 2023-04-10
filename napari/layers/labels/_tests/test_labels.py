@@ -407,7 +407,7 @@ def test_custom_color_dict():
     # Test to see if our label mapped control points map to those in the colormap
     # with an extra half step.
     local_controls = np.array(
-        sorted(np.unique(list(layer._label_color_index.values()) + [1.0]))
+        sorted(np.unique([*layer._label_color_index.values(), 1.0]))
     )
     colormap_controls = np.array(layer._colormap.controls)
     assert np.max(np.abs(local_controls - colormap_controls)) == pytest.approx(
@@ -444,9 +444,7 @@ def test_large_custom_color_dict():
     label_color_controls = [
         layer._label_color_index[x] for x in range(label_count)
     ]
-    vispy_colors = vispy_colormap.map(
-        np.array([x for x in label_color_controls])
-    )
+    vispy_colors = vispy_colormap.map(np.array(list(label_color_controls)))
 
     assert (label_color == vispy_colors).all()
 
@@ -695,9 +693,7 @@ def test_show_selected_label():
 
     # color of all others is none color
     other_labels = np.unique(layer.data)[2:]
-    other_colors = np.array(
-        list(map(lambda x: layer.get_color(x), other_labels))
-    )
+    other_colors = np.array([layer.get_color(x) for x in other_labels])
     assert np.allclose(other_colors, none_color)
 
 
@@ -1072,7 +1068,7 @@ def test_fill_with_xarray():
 def test_paint_3d_negative_scale(scale):
     labels = np.zeros((3, 5, 11, 11), dtype=int)
     labels_layer = Labels(
-        labels, scale=(1,) + scale, translate=(-200, 100, 100)
+        labels, scale=(1, *scale), translate=(-200, 100, 100)
     )
     labels_layer.n_edit_dimensions = 3
     labels_layer.brush_size = 8

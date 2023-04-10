@@ -104,7 +104,7 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
     for f in reversed(call_stack):
         if 'self' in f.frame.f_locals:
             obj_type = type(f.frame.f_locals['self'])
-            module = getattr(obj_type, '__module__') or ''
+            module = obj_type.__module__ or ''
             if module.startswith("napari"):
                 trigger = f'{obj_type.__name__}.{f.function}()'
                 lines.insert(1, f'  was triggered by {trigger}, via:')
@@ -112,7 +112,7 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
 
     # seperate groups of events
     if not cfg._cur_depth:
-        lines = ["─" * 79, ''] + lines
+        lines = ["─" * 79, "", *lines]
     elif not cfg.nesting_allowance:
         return
 

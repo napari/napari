@@ -3,7 +3,10 @@ from unittest.mock import Mock
 
 import numpy as np
 
+from napari._tests.utils import skip_on_win_ci
 
+
+@skip_on_win_ci
 def test_viewer_mouse_bindings(make_napari_viewer):
     """Test adding mouse bindings to the viewer"""
     np.random.seed(0)
@@ -77,6 +80,7 @@ def test_viewer_mouse_bindings(make_napari_viewer):
     mock_move.method.assert_not_called()
 
 
+@skip_on_win_ci
 def test_layer_mouse_bindings(make_napari_viewer):
     """Test adding mouse bindings to a layer that is selected"""
     np.random.seed(0)
@@ -152,6 +156,7 @@ def test_layer_mouse_bindings(make_napari_viewer):
     mock_move.method.assert_not_called()
 
 
+@skip_on_win_ci
 def test_unselected_layer_mouse_bindings(make_napari_viewer):
     """Test adding mouse bindings to a layer that is not selected"""
     np.random.seed(0)

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 
 class _FakeHookimpl:
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         self.plugin_name = name
 
 
@@ -55,10 +55,11 @@ def read(
         layer_data, reader = io_utils.read_get_reader(
             npe1_path, plugin_name=plugin
         )
-        return layer_data, _FakeHookimpl(reader.plugin_name)
     except ValueError as e:
         if 'No readers returned data' not in str(e):
-            raise e from e
+            raise
+    else:
+        return layer_data, _FakeHookimpl(reader.plugin_name)
     return None
 
 
@@ -101,9 +102,10 @@ def write_layers(
             paths, writer = io_utils.write_get_writer(
                 path=path, layer_data=layer_data, plugin_name=plugin_name
             )
-            return (paths, writer.plugin_name)
         except ValueError:
-            return ([], '')
+            return [], ''
+        else:
+            return paths, writer.plugin_name
 
     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
@@ -111,8 +113,8 @@ def write_layers(
     if isinstance(
         res, str
     ):  # pragma: no cover # it shouldn't be... bad plugin.
-        return ([res], writer.plugin_name)
-    return (res or [], writer.plugin_name)
+        return [res], writer.plugin_name
+    return res or [], writer.plugin_name
 
 
 def get_widget_contribution(
@@ -139,6 +141,13 @@ def get_widget_contribution(
 def populate_qmenu(menu: QMenu, menu_key: str):
     """Populate `menu` from a `menu_key` offering in the manifest."""
     # TODO: declare somewhere what menu_keys are valid.
+
+    def _wrap(cmd_):
+        def _wrapped(*args):
+            cmd_.exec(args=args)
+
+        return _wrapped
+
     for item in pm.iter_menu(menu_key):
         if isinstance(item, contributions.Submenu):
             subm_contrib = pm.get_submenu(item.submenu)
@@ -147,7 +156,7 @@ def populate_qmenu(menu: QMenu, menu_key: str):
         else:
             cmd = pm.get_command(item.command)
             action = menu.addAction(cmd.title)
-            action.triggered.connect(lambda *args: cmd.exec(args=args))  # type: ignore
+            action.triggered.connect(_wrap(cmd))
 
 
 def file_extensions_string_for_layers(
@@ -242,6 +251,7 @@ def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
 def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
     return (
         (
+            # use display_name for user facing display
             plugin_name,
             {
                 c.key: {'data': c.open, 'display_name': c.display_name}

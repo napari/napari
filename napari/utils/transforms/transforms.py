@@ -34,7 +34,7 @@ class Transform:
         A string name for the transform.
     """
 
-    def __init__(self, func=tz.identity, inverse=None, name=None):
+    def __init__(self, func=tz.identity, inverse=None, name=None) -> None:
         self.func = func
         self._inverse_func = inverse
         self.name = name
@@ -50,10 +50,10 @@ class Transform:
     def inverse(self) -> 'Transform':
         if self._inverse_func is not None:
             return Transform(self._inverse_func, self.func)
-        else:
-            raise ValueError(
-                trans._('Inverse function was not provided.', deferred=True)
-            )
+
+        raise ValueError(
+            trans._('Inverse function was not provided.', deferred=True)
+        )
 
     def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
@@ -110,7 +110,7 @@ class Transform:
 
 
 class TransformChain(EventedList, Transform):
-    def __init__(self, transforms=None):
+    def __init__(self, transforms=None) -> None:
         if transforms is None:
             transforms = []
         super().__init__(
@@ -147,8 +147,8 @@ class TransformChain(EventedList, Transform):
             return None
         if len(self) == 1:
             return self[0]
-        else:
-            return tz.pipe(self[0], *[tf.compose for tf in self[1:]])
+
+        return tz.pipe(self[0], *[tf.compose for tf in self[1:]])
 
     def set_slice(self, axes: Sequence[int]) -> 'TransformChain':
         """Return a transform chain subset to the visible dimensions.
@@ -205,7 +205,7 @@ class ScaleTranslate(Transform):
         A string name for the transform.
     """
 
-    def __init__(self, scale=(1.0,), translate=(0.0,), *, name=None):
+    def __init__(self, scale=(1.0,), translate=(0.0,), *, name=None) -> None:
         super().__init__(name=name)
 
         if len(scale) > len(translate):
@@ -369,7 +369,7 @@ class Affine(Transform):
         affine_matrix=None,
         ndim=None,
         name=None,
-    ):
+    ) -> None:
         super().__init__(name=name)
         self._upper_triangular = True
         if ndim is None:
@@ -433,10 +433,10 @@ class Affine(Transform):
         """Return the scale of the transform."""
         if self._is_diagonal:
             return np.diag(self._linear_matrix)
-        else:
-            return decompose_linear_matrix(
-                self._linear_matrix, upper_triangular=self._upper_triangular
-            )[1]
+
+        return decompose_linear_matrix(
+            self._linear_matrix, upper_triangular=self._upper_triangular
+        )[1]
 
     @scale.setter
     def scale(self, scale):
@@ -698,7 +698,7 @@ class CompositeAffine(Affine):
         shear=None,
         ndim=None,
         name=None,
-    ):
+    ) -> None:
         super().__init__(
             scale, translate, rotate=rotate, shear=shear, ndim=ndim, name=name
         )

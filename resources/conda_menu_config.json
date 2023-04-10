@@ -7,6 +7,7 @@
             "name": "napari (__PKG_VERSION__)",
             "description": "a fast n-dimensional image viewer in Python",
             "icon": "{{ MENU_DIR }}/napari.{{ ICON_EXT }}",
+            "precommand": "unset PYTHONHOME && unset PYTHONPATH",
             "command": [
                 "{{ PYTHON }}",
                 "-m",
@@ -16,18 +17,31 @@
             "terminal": false,
             "platforms": {
                 "win": {
+                    "precommand": "set \"PYTHONHOME=\" & set \"PYTHONPATH=\"",
                     "desktop": true
                 },
                 "linux": {
                     "Categories": [
                         "Graphics",
                         "Science"
-                    ]
+                    ],
+                    "StartupWMClass": "napari"
                 },
                 "osx": {
+                    "link_in_bundle": {
+                        "{{ PREFIX }}/bin/python": "{{ MENU_ITEM_LOCATION }}/Contents/Resources/python"
+                    },
+                    "command": ["{{ MENU_ITEM_LOCATION }}/Contents/Resources/python", "-m", "napari"],
                     "CFBundleName": "napari",
                     "CFBundleDisplayName": "napari",
-                    "CFBundleVersion": "__PKG_VERSION__"
+                    "CFBundleVersion": "__PKG_VERSION__",
+                    "entitlements": [
+                        "com.apple.security.files.user-selected.read-write",
+                        "com.apple.security.files.downloads.read-write",
+                        "com.apple.security.assets.pictures.read-write",
+                        "com.apple.security.assets.music.read-write",
+                        "com.apple.security.assets.movies.read-write"
+                    ]
                 }
             }
         }

@@ -67,7 +67,7 @@ class QtActivityDialog(QDialog):
     MIN_WIDTH = 250
     MIN_HEIGHT = 185
 
-    def __init__(self, parent=None, toggle_button=None):
+    def __init__(self, parent=None, toggle_button=None) -> None:
         super().__init__(parent)
         self._toggleButton = toggle_button
 
@@ -233,6 +233,7 @@ class QtActivityDialog(QDialog):
             for potential_parent in pbars:
                 if potential_parent.progress is prog:
                     return potential_parent
+        return None
 
     def close_progress_bar(self, prog):
         """Close `QtLabeledProgressBar` and parent `QtProgressBarGroup` if needed

@@ -91,7 +91,7 @@ class QtPerformance(QWidget):
     # display will look, but the more we will slow things down.
     UPDATE_MS = 250
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create our windgets."""
         super().__init__()
         layout = QVBoxLayout()
@@ -159,7 +159,6 @@ class QtPerformance(QWidget):
         # Updating widgets can create immediate Qt Events which would modify the
         # timers out from under us!
         for name, timer in perf.timers.timers.items():
-
             # The Qt Event "UpdateRequest" is the main "draw" event, so
             # that's what we use for our progress bar.
             if name == "UpdateRequest":

@@ -6,7 +6,7 @@ import socket
 import weakref
 from contextlib import contextmanager
 from functools import lru_cache, partial
-from typing import Sequence, Union
+from typing import Iterable, Sequence, Union
 
 import numpy as np
 import qtpy
@@ -143,12 +143,13 @@ def event_hook_removed():
             QtCore.pyqtRestoreInputHook()
 
 
-def disable_with_opacity(obj, widget_list, enabled):
-    """Set enabled state on a list of widgets. If not enabled, decrease opacity."""
-    for widget_name in widget_list:
-        widget = getattr(obj, widget_name)
+def set_widgets_enabled_with_opacity(
+    parent: QWidget, widgets: Iterable[QWidget], enabled: bool
+):
+    """Set enabled state on some widgets. If not enabled, decrease opacity."""
+    for widget in widgets:
         widget.setEnabled(enabled)
-        op = QGraphicsOpacityEffect(obj)
+        op = QGraphicsOpacityEffect(parent)
         op.setOpacity(1 if enabled else 0.5)
         widget.setGraphicsEffect(op)
 
@@ -325,9 +326,9 @@ def combine_widgets(
         # compatibility with magicgui v0.2.0 which no longer uses QWidgets
         # directly. Like vispy, the backend widget is at widget.native
         return widgets.native  # type: ignore
-    elif isinstance(widgets, QWidget):
+    if isinstance(widgets, QWidget):
         return widgets
-    elif is_sequence(widgets):
+    if is_sequence(widgets):
         # the same as above, compatibility with magicgui v0.2.0
         widgets = [
             i.native if isinstance(getattr(i, 'native', None), QWidget) else i
@@ -463,13 +464,13 @@ def qt_might_be_rich_text(text) -> bool:
     Check if a text might be rich text in a cross-binding compatible way.
     """
     if qtpy.PYSIDE2:
-        from qtpy.QtGui import Qt as _Qt
+        from qtpy.QtGui import Qt as Qt_
     else:
-        from qtpy.QtCore import Qt as _Qt
+        from qtpy.QtCore import Qt as Qt_
 
     try:
-        return _Qt.mightBeRichText(text)
-    except Exception:
+        return Qt_.mightBeRichText(text)
+    except AttributeError:
         return bool(RICH_TEXT_PATTERN.search(text))
 
 
