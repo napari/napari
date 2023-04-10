@@ -502,10 +502,7 @@ ALL_COLORMAPS.update(BOP_COLORMAPS)
 ALL_COLORMAPS.update(INVERSE_COLORMAPS)
 
 # ... sorted alphabetically by name
-AVAILABLE_COLORMAPS = {
-    k: v
-    for k, v in sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
-}
+AVAILABLE_COLORMAPS = dict(sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower()))
 # lock to allow update of AVAILABLE_COLORMAPS in threads
 AVAILABLE_COLORMAPS_LOCK = Lock()
 
