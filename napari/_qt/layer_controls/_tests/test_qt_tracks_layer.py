@@ -1,3 +1,5 @@
+from typing import Dict, List
+
 import numpy as np
 import pytest
 from qtpy.QtCore import Qt
@@ -5,17 +7,26 @@ from qtpy.QtCore import Qt
 from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari.layers import Tracks
 
-_TRACKS = np.zeros((2, 4))
-_PROPERTIES = {'speed': [50, 30], 'time': [0, 1]}
+
+@pytest.fixture
+def data() -> np.ndarray:
+    return np.zeros((2, 4))
 
 
-def test_tracks_controls_color_by(qtbot):
+@pytest.fixture
+def properties() -> Dict[str, List]:
+    return {
+        'track_id': [1, 1],
+        'time': [0, 1],
+        'speed': [50, 30],
+    }
+
+
+def test_tracks_controls_color_by(data, properties, qtbot):
     """Check updating of the color_by combobox."""
     inital_color_by = 'time'
     with pytest.warns(UserWarning) as wrn:
-        layer = Tracks(
-            _TRACKS, properties=_PROPERTIES, color_by=inital_color_by
-        )
+        layer = Tracks(data, properties=properties, color_by=inital_color_by)
     assert "Previous color_by key 'time' not present" in str(wrn[0].message)
     qtctrl = QtTracksControls(layer)
     qtbot.addWidget(qtctrl)
@@ -40,28 +51,12 @@ def test_tracks_controls_color_by(qtbot):
     assert qtctrl.color_by_combobox.currentText() == qt_update_color_by
 
 
-@pytest.mark.parametrize('color_by', ('track_id', 'confidence'))
-def test_color_by_same_after_properties_change(color_by, qtbot):
+@pytest.mark.parametrize('color_by', ('track_id', 'speed'))
+def test_color_by_same_after_properties_change(
+    data, properties, color_by, qtbot
+):
     """See https://github.com/napari/napari/issues/5330"""
-    data = np.array(
-        [
-            [1, 0, 236, 0],
-            [1, 1, 236, 100],
-            [1, 2, 236, 200],
-            [2, 0, 436, 0],
-            [2, 1, 436, 100],
-            [2, 2, 436, 200],
-            [3, 0, 636, 0],
-            [3, 1, 636, 100],
-            [3, 2, 636, 200],
-        ]
-    )
-    initial_properties = {
-        'track_id': data[:, 0],
-        'time': data[:, 1],
-        'confidence': np.ones(data.shape[0]),
-    }
-    layer = Tracks(data, properties=initial_properties)
+    layer = Tracks(data, properties=properties)
     layer.color_by = color_by
     controls = QtTracksControls(layer)
     qtbot.addWidget(controls)
@@ -69,35 +64,17 @@ def test_color_by_same_after_properties_change(color_by, qtbot):
 
     # Change the properties value by removing the time column.
     layer.properties = {
-        'track_id': initial_properties['track_id'],
-        'confidence': initial_properties['confidence'],
+        'track_id': properties['track_id'],
+        'speed': properties['speed'],
     }
 
     assert layer.color_by == color_by
     assert controls.color_by_combobox.currentText() == color_by
 
 
-def test_color_by_missing_after_properties_change(qtbot):
+def test_color_by_missing_after_properties_change(data, properties, qtbot):
     """See https://github.com/napari/napari/issues/5330"""
-    data = np.array(
-        [
-            [1, 0, 236, 0],
-            [1, 1, 236, 100],
-            [1, 2, 236, 200],
-            [2, 0, 436, 0],
-            [2, 1, 436, 100],
-            [2, 2, 436, 200],
-            [3, 0, 636, 0],
-            [3, 1, 636, 100],
-            [3, 2, 636, 200],
-        ]
-    )
-    initial_properties = {
-        'track_id': data[:, 0],
-        'time': data[:, 1],
-        'confidence': np.ones(data.shape[0]),
-    }
-    layer = Tracks(data, properties=initial_properties)
+    layer = Tracks(data, properties=properties)
     layer.color_by = 'time'
     controls = QtTracksControls(layer)
     qtbot.addWidget(controls)
@@ -106,8 +83,8 @@ def test_color_by_missing_after_properties_change(qtbot):
     # Change the properties value by removing the time column.
     with pytest.warns(UserWarning):
         layer.properties = {
-            'track_id': initial_properties['track_id'],
-            'confidence': initial_properties['confidence'],
+            'track_id': properties['track_id'],
+            'speed': properties['speed'],
         }
 
     assert layer.color_by == 'track_id'
