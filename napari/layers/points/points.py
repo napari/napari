@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from psygnal.containers import Selection
 from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
@@ -450,7 +451,7 @@ class Points(Layer):
         self._shown = np.empty(0).astype(bool)
 
         # Indices of selected points
-        self._selected_data = set()
+        self._selected_data: Selection[int] = Selection()
         self._selected_data_stored = set()
         self._selected_data_history = set()
         # Indices of selected points within the currently viewed slice
@@ -1273,13 +1274,14 @@ class Points(Layer):
         return state
 
     @property
-    def selected_data(self) -> set:
+    def selected_data(self) -> Selection[int]:
         """set: set of currently selected points."""
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data):
-        self._selected_data = set(selected_data)
+    def selected_data(self, selected_data: Sequence[int]) -> None:
+        self._selected_data.clear()
+        self._selected_data.update(set(selected_data))
         self._selected_view = list(
             np.intersect1d(
                 np.array(list(self._selected_data)),
