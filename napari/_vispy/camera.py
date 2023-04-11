@@ -43,6 +43,8 @@ class VispyCamera:
         self._camera.events.zoom.connect(self._on_zoom_change)
         self._camera.events.angles.connect(self._on_angles_change)
         self._camera.events.perspective.connect(self._on_perspective_change)
+        self._camera.events.mouse_pan.connect(self._on_mouse_toggles_change)
+        self._camera.events.mouse_zoom.connect(self._on_mouse_toggles_change)
 
         self._on_ndisplay_change()
 
@@ -153,19 +155,19 @@ class VispyCamera:
         self._view.camera.mouse_pan = mouse_pan
 
     def _on_ndisplay_change(self):
-        mouse_pan, mouse_zoom = self.mouse_pan, self.mouse_zoom
-
         if self._dims.ndisplay == 3:
             self._view.camera = self._3D_camera
         else:
             self._view.camera = self._2D_camera
 
-        # Preserve the mouse behaviour between the cameras
-        self.mouse_pan, self.mouse_zoom = mouse_pan, mouse_zoom
-
+        self._on_mouse_toggles_change()
         self._on_center_change()
         self._on_zoom_change()
         self._on_angles_change()
+
+    def _on_mouse_toggles_change(self):
+        self.mouse_pan = self._camera.mouse_pan
+        self.mouse_zoom = self._camera.mouse_zoom
 
     def _on_center_change(self):
         self.center = self._camera.center[-self._dims.ndisplay :]

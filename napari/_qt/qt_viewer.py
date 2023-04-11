@@ -255,12 +255,6 @@ class QtViewer(QSplitter):
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
-        self.viewer.camera.events.mouse_pan.connect(
-            self._on_mouse_pan_zoom_toggles
-        )
-        self.viewer.camera.events.mouse_zoom.connect(
-            self._on_mouse_pan_zoom_toggles
-        )
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
@@ -899,11 +893,6 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             if isinstance(layer, _OctreeImageBase):
                 layer.display.show_grid = not layer.display.show_grid
-
-    def _on_mouse_pan_zoom_toggles(self):
-        """Link mouse interactive attributes of view and viewer."""
-        self.camera.mouse_pan = self.viewer.camera.mouse_pan
-        self.camera_mouse_zoom = self.viewer.camera.mouse_zoom
 
     def _on_cursor(self):
         """Set the appearance of the mouse cursor."""
