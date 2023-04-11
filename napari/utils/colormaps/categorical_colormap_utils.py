@@ -36,10 +36,10 @@ class ColorCycle:
         # turn a generic dict into object
         if isinstance(val, dict):
             return _coerce_colorcycle_from_dict(val)
-        elif isinstance(val, ColorCycle):
+        if isinstance(val, ColorCycle):
             return val
-        else:
-            return _coerce_colorcycle_from_colors(val)
+
+        return _coerce_colorcycle_from_colors(val)
 
     def _json_encode(self):
         return {'values': self.values.tolist()}

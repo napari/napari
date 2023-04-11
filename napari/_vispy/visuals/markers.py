@@ -33,8 +33,8 @@ class Markers(BaseMarkers):
             return None
         if pos.shape[1] > axis:
             return (pos[:, axis].min(), pos[:, axis].max())
-        else:
-            return (0, 0)
+
+        return (0, 0)
 
     @property
     def canvas_size_limits(self):

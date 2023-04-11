@@ -75,8 +75,8 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
 
             if len(moving_indices) == 1:
                 return self._root.move(moving_indices[0], destRow)
-            else:
-                return bool(self._root.move_multiple(moving_indices, destRow))
+
+            return bool(self._root.move_multiple(moving_indices, destRow))
         return False
 
 
