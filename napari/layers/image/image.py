@@ -29,7 +29,7 @@ from napari.layers.image._image_slice_data import ImageSliceData
 from napari.layers.image._image_utils import guess_multiscale, guess_rgb
 from napari.layers.image._slice import _ImageSliceRequest, _ImageSliceResponse
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils import config
@@ -742,10 +742,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Skip if any non-displayed data indices are out of bounds.
         # This can happen when slicing layers with different extents.
-        slice_indices = self._slice_indices
+        data_slice = self._data_slice
         for d in self._slice_input.not_displayed:
-            low = slice_indices[d][1]
-            high = slice_indices[d][2]
+            low = data_slice.margin_left[d]
+            high = data_slice.margin_right[d]
             if (high < 0) or (low >= self._extent_data[1][d]):
                 return
 
@@ -757,7 +757,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request_internal(
             slice_input=self._slice_input,
-            indices=slice_indices,
+            data_slice=data_slice,
             lazy=True,
             dask_indexer=nullcontext,
         )
@@ -782,7 +782,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         indices = slice_input.data_indices(self._data_to_world.inverse)
         return self._make_slice_request_internal(
             slice_input=slice_input,
-            indices=indices,
+            data_slice=indices,
             lazy=False,
             dask_indexer=self.dask_optimized_slicing,
         )
@@ -791,7 +791,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self,
         *,
         slice_input: _SliceInput,
-        indices: Tuple[Union[int, slice], ...],
+        data_slice: _ThickNDSlice,
         lazy: bool,
         dask_indexer: DaskIndexer,
     ) -> _ImageSliceRequest:
@@ -805,7 +805,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             dims=slice_input,
             data=self.data,
             dask_indexer=dask_indexer,
-            indices=indices,
+            data_slice=data_slice,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,
             rgb=self.rgb,
@@ -824,7 +824,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._empty = False
         slice_data = self._SliceDataClass(
             layer=self,
-            indices=response.indices,
+            data_slice=response.data_slice,
             image=response.data,
             thumbnail_source=response.thumbnail,
         )

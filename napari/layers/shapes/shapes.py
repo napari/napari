@@ -487,7 +487,7 @@ class Shapes(Layer):
             self._current_edge_width = 1
 
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
-        self._data_view.slice_key = np.array(self._slice_indices)[
+        self._data_view.slice_key = np.array(self._data_slice)[
             self._slice_input.not_displayed
         ]
 
@@ -659,7 +659,7 @@ class Shapes(Layer):
             )
 
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
-        self._data_view.slice_key = np.array(self._slice_indices)[
+        self._data_view.slice_key = np.array(self._data_slice)[
             self._slice_input.not_displayed
         ]
         self.add(
@@ -2265,9 +2265,7 @@ class Shapes(Layer):
             # Clear clipboard if dimensions swap
             self._clipboard = {}
 
-        slice_key = np.array(self._slice_indices)[
-            self._slice_input.not_displayed
-        ]
+        slice_key = np.array(self._data_slice)[self._slice_input.not_displayed]
         if not np.all(slice_key == self._data_view.slice_key):
             self.selected_data = set()
         self._data_view.slice_key = slice_key
@@ -2849,7 +2847,7 @@ class Shapes(Layer):
                 'edge_color': deepcopy(self._data_view._edge_color[index]),
                 'face_color': deepcopy(self._data_view._face_color[index]),
                 'features': deepcopy(self.features.iloc[index]),
-                'indices': self._slice_indices,
+                'indices': self._data_slice,
                 'text': self.text._copy(index),
             }
         else:
@@ -2861,7 +2859,7 @@ class Shapes(Layer):
         if len(self._clipboard.keys()) > 0:
             # Calculate offset based on dimension shifts
             offset = [
-                self._slice_indices[i] - self._clipboard['indices'][i]
+                self._data_slice[i] - self._clipboard['indices'][i]
                 for i in self._slice_input.not_displayed
             ]
 

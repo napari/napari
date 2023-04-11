@@ -18,7 +18,7 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
 )
@@ -294,9 +294,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._slice_input = _SliceInput(
             ndisplay=2,
-            point=(0,) * ndim,
-            margin_left=(0,) * ndim,
-            margin_right=(0,) * ndim,
+            world_slice=_ThickNDSlice(
+                point=(0,) * ndim,
+                margin_left=(0,) * ndim,
+                margin_right=(0,) * ndim,
+            ),
             order=tuple(range(ndim)),
         )
 
@@ -809,12 +811,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.refresh()
 
     @property
-    def _slice_indices(self):
-        """(D, ) array: Slice indices in data coordinates."""
+    def _data_slice(self) -> _ThickNDSlice:
+        """Slice in data coordinates."""
         if len(self._slice_input.not_displayed) == 0:
             # All dims are displayed dimensions
             return (slice(None),) * self.ndim
-        return self._slice_input.data_indices(
+        return self._slice_input.data_slice(
             self._data_to_world.inverse,
             getattr(self, '_round_index', True),
         )
@@ -1032,18 +1034,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # Correspondence between dimensions across all layers and
         # dimensions of this layer.
-        point = point[-self.ndim :]
-        margin_left = margin_left[-self.ndim :]
-        margin_right = margin_right[-self.ndim :]
+        world_slice = _ThickNDSlice(
+            point=point[-self.ndim :],
+            margin_left=margin_left[-self.ndim :],
+            margin_right=margin_right[-self.ndim :],
+        )
         order = tuple(
             self._world_to_layer_dims(world_dims=order, ndim_world=ndim)
         )
 
         return _SliceInput(
             ndisplay=ndisplay,
-            point=point,
-            margin_left=margin_left,
-            margin_right=margin_right,
+            world_slice=world_slice,
             order=order,
         )
 

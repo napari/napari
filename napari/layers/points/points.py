@@ -25,7 +25,7 @@ from napari.layers.points._points_utils import (
 )
 from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
 from napari.layers.utils._color_manager_constants import ColorMode
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.interactivity_utils import (
@@ -1714,7 +1714,7 @@ class Points(Layer):
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request_internal(
-            self._slice_input, self._slice_indices
+            self._slice_input, self._data_slice
         )
         response = request()
         self._update_slice_response(response)
@@ -1735,16 +1735,16 @@ class Points(Layer):
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_indices(self._data_to_world.inverse)
-        return self._make_slice_request_internal(slice_input, slice_indices)
+        data_slice = slice_input.data_slice(self._data_to_world.inverse)
+        return self._make_slice_request_internal(slice_input, data_slice)
 
     def _make_slice_request_internal(
-        self, slice_input: _SliceInput, dims_indices
+        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
     ):
         return _PointSliceRequest(
             dims=slice_input,
             data=self.data,
-            dims_indices=dims_indices,
+            data_slice=data_slice,
             out_of_slice_display=self.out_of_slice_display,
             size=self.size,
         )
@@ -1991,7 +1991,7 @@ class Points(Layer):
             not_disp = self._slice_input.not_displayed
             data = deepcopy(self._clipboard['data'])
             offset = [
-                self._slice_indices[i] - self._clipboard['indices'][i]
+                self._data_slice[i] - self._clipboard['indices'][i]
                 for i in not_disp
             ]
             data[:, not_disp] = data[:, not_disp] + np.array(offset)
@@ -2049,7 +2049,7 @@ class Points(Layer):
                 'symbol': deepcopy(self.symbol[index]),
                 'edge_width': deepcopy(self.edge_width[index]),
                 'features': deepcopy(self.features.iloc[index]),
-                'indices': self._slice_indices,
+                'indices': self._data_slice,
                 'text': self.text._copy(index),
             }
         else:

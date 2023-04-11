@@ -432,7 +432,7 @@ class _OctreeImageBase(_ImageBase):
             # if we are really changing slices (and need a new octree).
             return
 
-        indices = np.array(self._slice_indices)
+        indices = np.array(self._data_slice)
         if self._outside_data_range(indices):
             return
 
@@ -466,7 +466,7 @@ class _OctreeImageBase(_ImageBase):
 
     def _get_slice_indices(self) -> tuple:
         """Get the slice indices including possible depth for RGB."""
-        indices = tuple(self._slice_indices)
+        indices = tuple(self._data_slice)
 
         if self.rgb:
             indices += (slice(None),)

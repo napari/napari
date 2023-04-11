@@ -3,7 +3,7 @@ from typing import Any
 
 import numpy as np
 
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
 
 @dataclass(frozen=True)
@@ -53,7 +53,7 @@ class _PointSliceRequest:
 
     dims: _SliceInput
     data: Any = field(repr=False)
-    dims_indices: Any = field(repr=False)
+    data_slice: _ThickNDSlice = field(repr=False)
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
 
@@ -74,25 +74,25 @@ class _PointSliceRequest:
                 dims=self.dims,
             )
 
-        not_disp_indices = np.array(self.dims_indices)[not_disp]
-
-        slice_indices, scale = self._get_slice_data(not_disp, not_disp_indices)
+        slice_indices, scale = self._get_slice_data(not_disp)
 
         return _PointSliceResponse(
             indices=slice_indices, scale=scale, dims=self.dims
         )
 
-    def _get_slice_data(self, not_disp, not_disp_indices):
+    def _get_slice_data(self, not_disp):
         data = self.data[:, not_disp]
         scale = 1
 
-        center, low, high = not_disp_indices.T
+        point = np.array(self.data_slice.point)[not_disp]
+        low = np.array(self.data_slice.margin_left)[not_disp]
+        high = np.array(self.data_slice.margin_right)[not_disp]
 
         if np.isclose(high, low):
             # assume slice thickness of 1 in data pixels
             # (same as before thick slices were implemented)
-            low = center - 0.5
-            high = center + 0.5
+            low = point - 0.5
+            high = point + 0.5
 
         inside_slice = np.all((data >= low) & (data <= high), axis=1)
         slice_indices = np.where(inside_slice)[0].astype(int)

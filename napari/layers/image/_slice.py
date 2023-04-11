@@ -4,7 +4,7 @@ from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
@@ -38,7 +38,7 @@ class _ImageSliceResponse:
     thumbnail: Optional[Any] = field(repr=False)
     tile_to_data: Affine = field(repr=False)
     dims: _SliceInput
-    indices: Tuple[Union[int, slice], ...]
+    data_slice: Tuple[Union[int, slice], ...]
 
 
 @dataclass(frozen=True)
@@ -72,7 +72,7 @@ class _ImageSliceRequest:
     dims: _SliceInput
     data: Any = field(repr=False)
     dask_indexer: DaskIndexer
-    indices: Tuple[Union[int, slice], ...]
+    data_slice: _ThickNDSlice
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray
     rgb: bool = field(repr=False)
@@ -105,7 +105,7 @@ class _ImageSliceRequest:
             thumbnail=None,
             tile_to_data=tile_to_data,
             dims=self.dims,
-            indices=self.indices,
+            data_slice=self.data_slice,
         )
 
     def _call_multi_scale(self) -> _ImageSliceResponse:
@@ -161,13 +161,13 @@ class _ImageSliceRequest:
             thumbnail=thumbnail,
             tile_to_data=tile_to_data,
             dims=self.dims,
-            indices=self.indices,
+            data_slice=self.data_slice,
         )
 
     def _slice_indices_at_level(
         self, level: int
     ) -> Tuple[Union[int, float, slice], ...]:
-        indices = np.array(self.indices)
+        indices = np.array(self.data_slice)
         axes = self.dims.not_displayed
         ds_indices = indices[axes] / self.downsample_factors[level][axes]
         ds_indices = np.round(ds_indices.astype(float)).astype(int)
@@ -177,8 +177,11 @@ class _ImageSliceRequest:
 
     def _get_slice_data(self):
         slices = []
-        for dim_len, (_center, low, high) in zip(
-            self.data.shape, self.indices
+        for dim_len, _point, low, high in zip(
+            self.data.shape,
+            self.data_slice.point,
+            self.data_slice.margin_left,
+            self.data_slice.margin_right,
         ):
             if np.isclose(high, low):
                 # assume slice thickness of 1 in data pixels

@@ -2,11 +2,12 @@
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from napari.layers.base import Layer
+from napari.layers.utils._slice_input import _ThickNDSlice
 
 if TYPE_CHECKING:
     from napari.types import ArrayLike
@@ -30,12 +31,12 @@ class ImageSliceData:
     def __init__(
         self,
         layer: Layer,
-        indices: Tuple[Optional[slice], ...],
+        data_slice: _ThickNDSlice,
         image: ArrayLike,
         thumbnail_source: ArrayLike,
     ) -> None:
         self.layer = layer
-        self.indices = indices
+        self.data_slice = data_slice
         self.image = image
         self.thumbnail_source = thumbnail_source
 

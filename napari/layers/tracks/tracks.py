@@ -344,7 +344,7 @@ class Tracks(Layer):
     def current_time(self):
         """current time according to the first dimension"""
         # TODO(arl): get the correct index here
-        time_step = self._slice_indices[0]
+        time_step = self._data_slice[0]
 
         if isinstance(time_step, slice):
             # if we are visualizing all time, then just set to the maximum

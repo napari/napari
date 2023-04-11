@@ -2,13 +2,24 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from typing import List, Tuple, Union
+from typing import Generic, List, Tuple, TypeVar, Union
 
 import numpy as np
 
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
+
+_T = TypeVar('_T')
+
+
+@dataclass(frozen=True)
+class _ThickNDSlice(Generic[_T]):
+    """Holds the point and the left and right margins of a thick nD slice."""
+
+    point: Tuple[_T, ...]
+    margin_left: Tuple[_T, ...]
+    margin_right: Tuple[_T, ...]
 
 
 @dataclass(frozen=True)
@@ -21,11 +32,9 @@ class _SliceInput:
 
     # The number of dimensions to be displayed in the slice.
     ndisplay: int
-    # The point in layer world coordinates that defines the slicing plane.
+    # The thick slice in world coordinates.
     # Only the elements in the non-displayed dimensions have meaningful values.
-    point: Tuple[float, ...]
-    margin_left: Tuple[float, ...]
-    margin_right: Tuple[float, ...]
+    world_slice: _ThickNDSlice[float]
     # The layer dimension indices in the order they are displayed.
     # A permutation of the ``range(self.ndim)``.
     # The last ``self.ndisplay`` dimensions are displayed in the canvas.
@@ -50,22 +59,22 @@ class _SliceInput:
         """Returns a new instance with the given number of layer dimensions."""
         old_ndim = self.ndim
         if old_ndim > ndim:
-            point = self.point[-ndim:]
+            point = self.world_slice.point[-ndim:]
             order = reorder_after_dim_reduction(self.order[-ndim:])
         elif old_ndim < ndim:
-            point = (0,) * (ndim - old_ndim) + self.point
+            point = (0,) * (ndim - old_ndim) + self.world_slice.point
             order = tuple(range(ndim - old_ndim)) + tuple(
                 o + ndim - old_ndim for o in self.order
             )
         else:
-            point = self.point
+            point = self.world_slice.point
             order = self.order
         return _SliceInput(ndisplay=self.ndisplay, point=point, order=order)
 
-    def data_indices(
+    def data_slice(
         self, world_to_data: Affine, round_index: bool = True
-    ) -> Tuple[Union[int, float, slice], ...]:
-        """Transforms this into indices that can be used to slice layer data.
+    ) -> _ThickNDSlice[Union[float, int]]:
+        """Transforms this thick_slice into data coordinates with only relevant dimensions.
 
         The elements in non-displayed dimensions will be real numbers.
         The elements in displayed dimensions will be ``slice(None)``.
@@ -80,13 +89,15 @@ class _SliceInput:
             )
 
         slice_world_to_data = world_to_data.set_slice(self.not_displayed)
-        world_pts = [self.point[ax] for ax in self.not_displayed]
+        world_pts = [self.world_slice.point[ax] for ax in self.not_displayed]
 
         world_margin_left = [
-            self.point[ax] - self.margin_left[ax] for ax in self.not_displayed
+            self.world_slice.point[ax] - self.world_slice.margin_left[ax]
+            for ax in self.not_displayed
         ]
         world_margin_right = [
-            self.point[ax] + self.margin_right[ax] for ax in self.not_displayed
+            self.world_slice.point[ax] + self.world_slice.margin_right[ax]
+            for ax in self.not_displayed
         ]
 
         data_pts = slice_world_to_data(world_pts)
@@ -99,15 +110,20 @@ class _SliceInput:
             data_margin_left = np.round(data_margin_left).astype(int)
             data_margin_right = np.round(data_margin_right).astype(int)
 
-        indices = [[np.nan, np.nan, np.nan] for _ in range(self.ndim)]
-        for i, ax in enumerate(self.not_displayed):
-            indices[ax] = (
-                data_pts[i],
-                data_margin_left[i],
-                data_margin_right[i],
-            )
+        full_pts = [np.nan for ax in range(self.ndim)]
+        full_margin_left = [np.nan for _ in range(self.ndim)]
+        full_margin_right = [np.nan for _ in range(self.ndim)]
 
-        return tuple(indices)
+        for i, ax in enumerate(self.not_displayed):
+            full_pts[ax] = data_pts[i]
+            full_margin_left[ax] = data_margin_left[i]
+            full_margin_right[ax] = data_margin_right[i]
+
+        return _ThickNDSlice(
+            point=full_pts,
+            margin_left=full_margin_left,
+            margin_right=full_margin_right,
+        )
 
     def is_orthogonal(self, world_to_data: Affine) -> bool:
         """Returns True if this slice represents an orthogonal slice through a layer's data, False otherwise."""

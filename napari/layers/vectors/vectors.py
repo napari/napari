@@ -656,7 +656,7 @@ class Vectors(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        indices, alphas = self._slice_data(self._slice_indices)
+        indices, alphas = self._slice_data(self._data_slice)
 
         disp = self._slice_input.displayed
 
@@ -664,7 +664,7 @@ class Vectors(Layer):
             self._view_data = np.empty((0, 2, 2))
             self._view_indices = []
         elif self.ndim > 2:
-            indices, alphas = self._slice_data(self._slice_indices)
+            indices, alphas = self._slice_data(self._data_slice)
             self._view_indices = indices
             self._view_alphas = alphas
             self._view_data = self.data[np.ix_(indices, [0, 1], disp)]
