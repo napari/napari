@@ -208,10 +208,12 @@ def viewbox_key_event(event):
 
 
 def add_mouse_pan_zoom_toggles(vispy_camera_cls):
-    """Adds
+    """Add separate mouse pan and mouse zoom toggles to VisPy.
 
-    A class decorator for the VisPy cameras that adds toggles
-    for enabling or disabling specific mouse operations like panning and zooming.
+    By default, VisPy uses an ``interactive`` toggle that turns *both*
+    panning and zooming on and off. This decorator adds separate toggles,
+    ``mouse_pan`` and ``mouse_zoom``, to enable controlling them
+    separately.
 
     Parameters
     ----------
