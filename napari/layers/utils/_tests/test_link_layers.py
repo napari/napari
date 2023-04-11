@@ -26,6 +26,7 @@ IM_ATTRS = {
 }
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize('key, value', {**BASE_ATTRS, **IM_ATTRS}.items())
 def test_link_image_layers_all_attributes(key, value):
     """Test linking common attributes across layers of similar types."""
@@ -41,6 +42,7 @@ def test_link_image_layers_all_attributes(key, value):
     assert getattr(l1, key) == getattr(l2, key) == value
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize('key, value', BASE_ATTRS.items())
 def test_link_different_type_layers_all_attributes(key, value):
     """Test linking common attributes across layers of different types."""
@@ -63,6 +65,7 @@ def test_link_invalid_param():
     assert "Cannot link attributes that are not shared by all layers" in str(e)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_double_linking_noop():
     """Test that linking already linked layers is a noop."""
     l1 = layers.Points(None)
@@ -80,6 +83,7 @@ def test_double_linking_noop():
     assert len(l1.events.opacity.callbacks) == 2
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_removed_linked_target():
     """Test that linking already linked layers is a noop."""
     l1 = layers.Points(None)
@@ -109,6 +113,7 @@ def test_context_manager():
     assert len(l1.events.opacity.callbacks) == 0
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_unlink_layers():
     """Test that we can unlink layers."""
     l1 = layers.Points(None)
@@ -134,6 +139,7 @@ def test_unlink_layers():
     assert len(l3.events.blending.callbacks) == 0
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_unlink_single_layer():
     """Test that we can unlink a single layer from all others."""
     l1 = layers.Points(None)
@@ -156,6 +162,7 @@ def test_unlink_single_layer():
     assert not l1.events.blending.callbacks
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_mode_recursion():
     l1 = layers.Points(None, name='l1')
     l2 = layers.Points(None, name='l2')

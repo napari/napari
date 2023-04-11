@@ -1,8 +1,9 @@
 """Napari Configuration.
 """
 import os
+import warnings
 
-from napari.utils._octree import get_octree_config
+from napari.utils.translations import trans
 
 
 def _set(env_var: str) -> bool:
@@ -21,27 +22,17 @@ Experimental Features
 
 Async Loading
 -------------
-Image layers will use the ChunkLoader to load data instead of loading
-the data directly. Image layers will not call np.asarray() in the GUI
-thread. The ChunkLoader will call np.asarray() in a worker thread. That
-means any IO or computation done as part of the load will not block the
-GUI thread.
-
-Set NAPARI_ASYNC=1 to turn on async loading with default settings.
+Deprecated. This was used by the old async slicing which was tied to octree.
+There was logic in this file which the old async required. The new async
+slicing has now been implemented and does not require the extra logic. It
+can be turned on via the UI (with no restart) or via the environment
+variable NAPARI_ASYNC=1.
 
 Octree Rendering
 ----------------
-Image layers use an octree for rendering. The octree organizes the image
-into chunks/tiles. Only a subset of those chunks/tiles are loaded and
-drawn at a time. Octree rendering is a work in progress.
-
-Enabled one of two ways:
-
-1) Set NAPARI_OCTREE=1 to enabled octree rendering with defaults.
-
-2) Set NAPARI_OCTREE=/tmp/config.json use a config file.
-
-See napari/utils/_octree.py for the config file format.
+Deprecated. Octree was deprecated in the v0.5 release. A new version of async
+slicing without octree is now available via the Experimental settings UI or the
+environment variable NAPARI_ASYNC=1.
 
 Shared Memory Server
 --------------------
@@ -50,15 +41,38 @@ the path of a config file. See this PR for more info:
 https://github.com/napari/napari/pull/1909.
 """
 
-# Config for async/octree. If octree_config['octree']['enabled'] is False
-# only async is enabled, not the octree.
-octree_config = get_octree_config()
 
-# Shorthand for async loading with or without an octree.
-async_loading = octree_config is not None
+def _warn_about_deprecated_attribute(name) -> None:
+    warnings.warn(
+        trans._(
+            '{name} is deprecated from napari version 0.5 and will be removed in the later version.',
+            name=name,
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
-# Shorthand for async with an octree.
-async_octree = octree_config and octree_config['octree']['enabled']
+
+# Handle old async/octree deprecated attributes by returning their
+# fixed values in the module level __getattr__
+# https://peps.python.org/pep-0562/
+# Other module attributes are defined as normal.
+def __getattr__(name):
+    if name == 'octree_config':
+        _warn_about_deprecated_attribute(name)
+        return None
+    elif name in ('async_loading', 'async_octree'):  # noqa: RET505
+        _warn_about_deprecated_attribute(name)
+        # For async_loading, we could get the value of the remaining
+        # async setting. We do not because that is dynamic, so will not
+        # handle an import of the form
+        #
+        # `from napari.utils.config import async_loading`
+        #
+        # consistently. Instead, we let this attribute effectively
+        # refer to the old async which is always off in napari now.
+        return False
+
 
 # Shared Memory Server
 monitor = _set("NAPARI_MON")

@@ -51,31 +51,10 @@ from IPython.core.history import HistoryManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
-from napari.utils.config import async_loading
 from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
-
-
-def pytest_addoption(parser):
-    """Add napari specific command line options.
-
-    --aysnc_only
-        Run only asynchronous tests, not sync ones.
-
-    Notes
-    -----
-    Due to the placement of this conftest.py file, you must specifically name
-    the napari folder such as "pytest napari --aysnc_only"
-    """
-
-    parser.addoption(
-        "--async_only",
-        action="store_true",
-        default=False,
-        help="run only asynchronous tests",
-    )
 
 
 @pytest.fixture
@@ -178,56 +157,6 @@ def layers():
         Vectors(np.random.rand(10, 2, 2)),
     ]
     return LayerList(list_of_layers)
-
-
-# Currently we cannot run async and async in the invocation of pytest
-# because we get a segfault for unknown reasons. So for now:
-# "pytest" runs sync_only
-# "pytest napari --async_only" runs async only
-@pytest.fixture(scope="session", autouse=True)
-def configure_loading(request):
-    """Configure async/async loading."""
-    if request.config.getoption("--async_only"):
-        # Late import so we don't import experimental code unless using it.
-        from napari.components.experimental.chunk import synchronous_loading
-
-        with synchronous_loading(False):
-            yield
-    else:
-        yield  # Sync so do nothing.
-
-
-def _is_async_mode() -> bool:
-    """Return True if we are currently loading chunks asynchronously
-
-    Returns
-    -------
-    bool
-        True if we are currently loading chunks asynchronously.
-    """
-    if not async_loading:
-        return False  # Not enabled at all.
-
-    # Late import so we don't import experimental code unless using it.
-    from napari.components.experimental.chunk import chunk_loader
-
-    return not chunk_loader.force_synchronous
-
-
-@pytest.fixture(autouse=True)
-def skip_sync_only(request):
-    """Skip async_only tests if running async."""
-    sync_only = request.node.get_closest_marker('sync_only')
-    if _is_async_mode() and sync_only:
-        pytest.skip("running with --async_only")
-
-
-@pytest.fixture(autouse=True)
-def skip_async_only(request):
-    """Skip async_only tests if running sync."""
-    async_only = request.node.get_closest_marker('async_only')
-    if not _is_async_mode() and async_only:
-        pytest.skip("not running with --async_only")
 
 
 @pytest.fixture(autouse=True)

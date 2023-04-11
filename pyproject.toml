@@ -178,7 +178,6 @@ filterwarnings = [
   "error:::napari", # turn warnings from napari into errors
   "error:::test_.*", # turn warnings in our own tests into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
-  "ignore:Restart required for this change:UserWarning:napari",  # triggered by a lot of async tests
   "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
   "ignore::DeprecationWarning:tensorstore",
@@ -193,8 +192,6 @@ filterwarnings = [
   "ignore:There is no current event loop:DeprecationWarning:",
 ]
 markers = [
-    "sync_only: Test should only be run synchronously",
-    "async_only: Test should only be run asynchronously",
     "examples: Test of examples",
     "disable_qthread_start: Disable thread start in this Test",
     "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",

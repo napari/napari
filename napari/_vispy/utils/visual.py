@@ -41,7 +41,6 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.utils.config import async_octree
 from napari.utils.translations import trans
 
 layer_to_visual = {
@@ -63,17 +62,6 @@ overlay_to_visual = {
     TransformBoxOverlay: VispyTransformBoxOverlay,
     SelectionBoxOverlay: VispySelectionBoxOverlay,
 }
-
-if async_octree:
-    from napari._vispy.experimental.vispy_tiled_image_layer import (
-        VispyTiledImageLayer,
-    )
-    from napari.layers.image.experimental.octree_image import _OctreeImageBase
-
-    # Insert _OctreeImageBase in front so it gets picked over plain Image.
-    new_mapping = {_OctreeImageBase: VispyTiledImageLayer}
-    new_mapping.update(layer_to_visual)
-    layer_to_visual = new_mapping
 
 
 def create_vispy_layer(layer: Layer) -> VispyBaseLayer:

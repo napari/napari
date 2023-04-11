@@ -251,12 +251,6 @@ def quit_app():
 
         monitor.stop()
 
-    if config.async_loading:
-        # Shutdown the chunkloader
-        from napari.components.experimental.chunk import chunk_loader
-
-        chunk_loader.shutdown()
-
 
 @contextmanager
 def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):

@@ -37,7 +37,8 @@ def test_toggle_visibility_with_linked_layers():
     layer_list.selection.add(layer_list[1])
     layer_list.selection.add(layer_list[2])
 
-    _link_selected_layers(layer_list)
+    with pytest.warns(DeprecationWarning):
+        _link_selected_layers(layer_list)
 
     layer_list[3].visible = False
 

@@ -531,6 +531,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         This base class says that layers are permanently in the loaded state.
         Derived classes that do asynchronous loading can override this.
         """
+        warnings.warn(
+            trans._(
+                'Layer.loaded is deprecated from napari version 0.5 and will be removed in a later version.'
+            ),
+            DeprecationWarning,
+            stacklevel=1,
+        )
         return True
 
     @property

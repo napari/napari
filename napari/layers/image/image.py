@@ -2,6 +2,7 @@
 """
 from __future__ import annotations
 
+import logging
 import types
 import warnings
 from contextlib import nullcontext
@@ -32,7 +33,6 @@ from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.layers.utils.plane import SlicingPlane
-from napari.utils import config
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
@@ -44,9 +44,10 @@ from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
+logger = logging.getLogger("Layer.Image")
+
 if TYPE_CHECKING:
     from napari.components import Dims
-    from napari.components.experimental.chunk import ChunkRequest
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -708,15 +709,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
         self.events.custom_interpolation_kernel_2d()
 
-    @property
-    def loaded(self):
-        """Has the data for this layer been loaded yet.
-
-        With asynchronous loading the layer might exist but its data
-        for the current slice has not been loaded.
-        """
-        return self._slice.loaded
-
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
 
@@ -767,7 +759,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
         )
-        # TODO: for the existing sync slicing, indices is passed through
+        # For the existing sync slicing, indices is passed through
         # to avoid some performance issues related to the evaluation of the
         # data-to-world transform and its inverse. Async slicing currently
         # absorbs these performance issues here, but we can likely improve
@@ -811,12 +803,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
-        """Update the slice output state currently on the layer."""
+        """Update the slice output state currently on the layer. Currently used
+        for both sync and async slicing.
+        """
         self._slice_input = response.dims
 
-        # For the old experimental async code.
         self._empty = False
-        slice_data = self._SliceDataClass(
+        slice_data = ImageSliceData(
             layer=self,
             indices=response.indices,
             image=response.data,
@@ -825,8 +818,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         self._transforms[0] = response.tile_to_data
 
-        # For the old experimental async code, where loading might be sync
-        # or async.
+        # There are some things down this path that are still needed
+        # by sync and async.
         self._load_slice(slice_data)
 
         # Maybe reset the contrast limits based on the new slice.
@@ -837,49 +830,32 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         elif self._keep_auto_contrast:
             self.reset_contrast_limits()
 
-    @property
-    def _SliceDataClass(self):
-        # Use special ChunkedSlideData for async.
-        if config.async_loading:
-            from napari.layers.image.experimental._chunked_slice_data import (
-                ChunkedSliceData,
-            )
-
-            return ChunkedSliceData
-        return ImageSliceData
-
     def _load_slice(self, data: ImageSliceData):
-        """Load the image and maybe thumbnail source.
+        """Load the image and maybe thumbnail source. Currently used
+        for both sync and async slicing.
 
         Parameters
         ----------
-        data : Slice
+        data : ImageSliceData
+            Image slice
         """
-        if self._slice.load(data):
-            # The load was synchronous.
-            self._on_data_loaded(data, sync=True)
-        else:
-            # The load will be asynchronous. Signal that our self.loaded
-            # property is now false, since the load is in progress.
-            self.events.loaded()
+        self._slice.load(data)
+        self._on_data_loaded(data)
 
-    def _on_data_loaded(self, data: ImageSliceData, sync: bool) -> None:
-        """The given data a was loaded, use it now.
+    def _on_data_loaded(self, data: ImageSliceData) -> None:
+        """The given data was loaded, use it now.
 
-        This routine is called synchronously from _load_async() above, or
-        it is called asynchronously sometime later when the ChunkLoader
-        finishes loading the data in a worker thread or process.
+        This routine is called for both sync and async slicing
 
         Parameters
         ----------
-        data : ChunkRequest
-            The request that was satisfied/loaded.
-        sync : bool
-            If True the chunk was loaded synchronously.
+        data : ImageSliceData
+            Image slice
         """
         # Transpose after the load.
         data.transpose(self._get_order())
 
+        # The following block is still needed for both sync and async
         # Pass the loaded data to the slice.
         if not self._slice.on_loaded(data):
             # Slice rejected it, was it for the wrong indices?
@@ -892,22 +868,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Announcing we are in the loaded state will make our node visible
         # if it was invisible during the load.
+        # This is only needed for sync slicing
         self.events.loaded()
-
-        if not sync:
-            # TODO_ASYNC: Avoid calling self.refresh(), because it would
-            # call our _set_view_slice(). Do we need a "refresh without
-            # set_view_slice()" method that we can call?
-
-            self.events.set_data(value=self._slice)  # update vispy
-            self._update_thumbnail()
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        if not self.loaded:
-            # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
-            # Is there a nicer way to prevent this from getting called?
-            return
 
         image = self._slice.thumbnail.view
 
@@ -1014,21 +979,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         return [p + 0.5 for p in position]
 
-    # For async we add an on_chunk_loaded() method.
-    if config.async_loading:
-
-        def on_chunk_loaded(self, request: ChunkRequest) -> None:
-            """An asynchronous ChunkRequest was loaded.
-
-            Parameters
-            ----------
-            request : ChunkRequest
-                This request was loaded.
-            """
-            # Convert the ChunkRequest to SliceData and use it.
-            data = self._SliceDataClass.from_request(self, request)
-            self._on_data_loaded(data, sync=False)
-
 
 class Image(_ImageBase):
     @property
@@ -1096,13 +1046,6 @@ class Image(_ImageBase):
             }
         )
         return state
-
-
-if config.async_octree:
-    from napari.layers.image.experimental.octree_image import _OctreeImageBase
-
-    class Image(Image, _OctreeImageBase):
-        pass
 
 
 Image.__doc__ = _ImageBase.__doc__

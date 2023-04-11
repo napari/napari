@@ -103,8 +103,7 @@ class VispyImageLayer(VispyBaseLayer):
         else:
             self.node.visible = self.layer.visible
 
-        if self.layer.loaded:
-            self.node.set_data(data)
+        self.node.set_data(data)
 
         self.node.parent = parent
         self.node.order = self.order
@@ -113,11 +112,6 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
 
     def _on_data_change(self):
-        if not self.layer.loaded:
-            # Do nothing if we are not yet loaded. Calling astype below could
-            # be very expensive. Lets not do it until our data has been loaded.
-            return
-
         self._set_node_data(self.node, self.layer._data_view)
 
     def _set_node_data(self, node, data):

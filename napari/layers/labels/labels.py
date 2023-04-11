@@ -27,7 +27,6 @@ from napari.layers.labels._labels_utils import (
 )
 from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
-from napari.utils import config
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import (
     color_dict_to_colormap,
@@ -1499,13 +1498,6 @@ class Labels(_ImageBase):
             and v[idx] is not None
             and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
-
-
-if config.async_octree:
-    from napari.layers.image.experimental.octree_image import _OctreeImageBase
-
-    class Labels(Labels, _OctreeImageBase):
-        pass
 
 
 def _coerce_indices_for_vectorization(array, indices: list) -> tuple:

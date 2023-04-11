@@ -214,9 +214,6 @@ def test_changing_theme(make_napari_viewer):
         viewer.theme = 'nonexistent_theme'
 
 
-# TODO: revisit the need for sync_only here.
-# An async failure was observed here on CI, but was not reproduced locally
-@pytest.mark.sync_only
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""

@@ -10,30 +10,11 @@ import numpy as np
 from napari.layers.image._image_loader import ImageLoader
 from napari.layers.image._image_slice_data import ImageSliceData
 from napari.layers.image._image_view import ImageView
-from napari.utils import config
 
 LOGGER = logging.getLogger("napari.loader")
 
 if TYPE_CHECKING:
     from napari.types import ArrayLike
-
-
-def _create_loader_class() -> ImageLoader:
-    """Return correct ImageLoader for sync or async.
-
-    Returns
-    -------
-    ImageLoader
-        Return ImageLoader for sync or ChunkImageLoader for async.
-    """
-    if config.async_loading:
-        from napari.layers.image.experimental._chunked_image_loader import (
-            ChunkedImageLoader,
-        )
-
-        return ChunkedImageLoader()
-
-    return ImageLoader()
 
 
 class ImageSlice:
@@ -70,7 +51,7 @@ class ImageSlice:
         self.image: ImageView = ImageView(image, image_converter)
         self.thumbnail: ImageView = ImageView(image, image_converter)
         self.rgb = rgb
-        self.loader = _create_loader_class()
+        self.loader = ImageLoader()
 
         # With async there can be a gap between when the ImageSlice is
         # created and the data is actually loaded. However initialize

@@ -17,6 +17,7 @@ from typing import (
 
 from napari.components import Dims
 from napari.layers import Layer
+from napari.settings import get_settings
 from napari.utils.events.event import EmitterGroup, Event
 
 logger = logging.getLogger("napari.components._layer_slicer")
@@ -74,7 +75,7 @@ class _LayerSlicer:
         """
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
-        self._force_sync = True
+        self._force_sync = not get_settings().experimental.async_
         self._layers_to_task: Dict[Tuple[Layer], Future] = {}
         self._lock_layers_to_task = RLock()
 
@@ -166,8 +167,10 @@ class _LayerSlicer:
         sync_layers = []
         for layer in layers:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
+                logger.debug('submitting async slice request')
                 requests[layer] = layer._make_slice_request(dims)
             else:
+                logger.debug('submitting sync slice')
                 sync_layers.append(layer)
 
         # First maybe submit an async slicing task to start it ASAP.
@@ -182,6 +185,7 @@ class _LayerSlicer:
 
         # Then execute sync slicing tasks to run concurrent with async ones.
         for layer in sync_layers:
+            # goes through `slice_dims` to `make_slice_input`, the calls `refresh` which calls `set_view_slic` which calls `make_slic_request_internal` which calls `updatE_slice_response`
             layer._slice_dims(
                 dims.point, dims.ndisplay, dims.order, force=force
             )

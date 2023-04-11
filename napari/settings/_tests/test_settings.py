@@ -302,10 +302,10 @@ def test_get_settings(tmp_path):
 def test_get_settings_fails(monkeypatch, tmp_path):
     p = f'{tmp_path}.yaml'
     settings.get_settings(p)
-    with pytest.raises(Exception) as e:
+    with pytest.raises(
+        RuntimeError, match='The path can only be set once per session'
+    ):
         settings.get_settings(p)
-
-    assert 'The path can only be set once per session' in str(e)
 
 
 def test_first_time():
