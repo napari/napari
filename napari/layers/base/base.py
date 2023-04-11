@@ -941,7 +941,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             mouse_pan=mouse_pan, mouse_zoom=self.mouse_zoom
         )
         self.events.interactive(
-            interactive=self.interactive
+            interactive=self.mouse_pan or self.mouse_zoom
         )  # Deprecated since 0.5.0
 
     @property
