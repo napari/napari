@@ -641,8 +641,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
-                isinstance(colormap['colors'], VispyColormap)
-                or isinstance(colormap['colors'], Colormap)
+                isinstance(colormap['colors'], (VispyColormap, Colormap))
             ):
                 cmap = Colormap(**colormap)
                 name = cmap.name
