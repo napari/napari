@@ -328,8 +328,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             return np.vstack(
                 [np.zeros(self.dims.ndim), np.repeat(512, self.dims.ndim)]
             )
-        else:
-            return self.layers.extent.world[:, self.dims.displayed]
+
+        return self.layers.extent.world[:, self.dims.displayed]
 
     def reset_view(self):
         """Reset the camera view."""
@@ -425,9 +425,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.dims.reset()
         else:
             ranges = self.layers._ranges
-            ndim = len(ranges)
-            self.dims.ndim = ndim
-            self.dims.set_range(range(ndim), ranges)
+            # TODO: can be optimized with dims.update(), but events need fixing
+            self.dims.ndim = len(ranges)
+            self.dims.range = ranges
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -555,8 +555,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(self.layers) == 1:
             self.reset_view()
             ranges = self.layers._ranges
-            midpoint = [self.rounded_division(*_range) for _range in ranges]
-            self.dims.set_point(range(len(ranges)), midpoint)
+            midpoint = [
+                self.rounded_division(low, high, step)
+                for low, high, step in ranges
+            ]
+            self.dims.current_step = midpoint
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):
@@ -881,16 +884,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.layers.append(layer)
 
             return layer
-        else:
-            layerdata_list = split_channels(data, channel_axis, **kwargs)
 
-            layer_list = []
-            for image, i_kwargs, _ in layerdata_list:
-                layer = Image(image, **i_kwargs)
-                self.layers.append(layer)
-                layer_list.append(layer)
+        layerdata_list = split_channels(data, channel_axis, **kwargs)
 
-            return layer_list
+        layer_list = [
+            Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
+        ]
+        self.layers.extend(layer_list)
+
+        return layer_list
 
     def open_sample(
         self,
@@ -974,18 +976,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 for datum in data(**kwargs):
                     added.extend(self._add_layer_from_data(*datum))
                 return added
-            elif isinstance(data, (str, Path)):
+            if isinstance(data, (str, Path)):
                 return self.open(data, plugin=reader_plugin)
-            else:
-                raise TypeError(
-                    trans._(
-                        'Got unexpected type for sample ({plugin!r}, {sample!r}): {data_type}',
-                        deferred=True,
-                        plugin=plugin,
-                        sample=sample,
-                        data_type=type(data),
-                    )
+
+            raise TypeError(
+                trans._(
+                    'Got unexpected type for sample ({plugin!r}, {sample!r}): {data_type}',
+                    deferred=True,
+                    plugin=plugin,
+                    sample=sample,
+                    data_type=type(data),
                 )
+            )
 
     def open(
         self,
@@ -1376,7 +1378,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             layer = add_method(data, **(meta or {}))
         except TypeError as exc:
             if 'unexpected keyword argument' not in str(exc):
-                raise exc
+                raise
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
                 trans._(

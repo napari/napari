@@ -67,7 +67,7 @@ def test_cli_raises(monkeypatch):
         m.setattr(sys, 'argv', ['napari', 'path/to/file', '--nonsense'])
         with pytest.raises(SystemExit) as e:
             __main__._run()
-        assert str(e.value) == 'error: unrecognized arguments: --nonsense'
+        assert str(e.value) == 'error: unrecognized argument: --nonsense'
 
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['napari', 'path/to/file', '--gamma'])

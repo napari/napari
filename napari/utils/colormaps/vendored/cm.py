@@ -24,9 +24,9 @@ import functools
 import numpy as np
 from numpy import ma
 
-from napari.utils.colormaps.vendored import colors
-from napari.utils.colormaps.vendored._cm import datad
-from napari.utils.colormaps.vendored._cm_listed import cmaps as cmaps_listed
+from . import colors
+from ._cm import datad
+from ._cm_listed import cmaps as cmaps_listed
 
 
 cmap_d = {}
