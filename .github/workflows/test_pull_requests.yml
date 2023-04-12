@@ -194,7 +194,7 @@ jobs:
             python -m pytest --pyargs napari --color=yes
             python -m pytest --pyargs napari_builtins --color=yes
         env:
-          PIP_CONSTRAINT: tools/constraints/constraints_py3.9.txt
+          PIP_CONSTRAINT: napari-from-github/tools/constraints/constraints_py3.9.txt
 
   test_examples:
     name: test examples
