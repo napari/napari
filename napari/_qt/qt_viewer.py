@@ -13,7 +13,7 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
-from superqt.utils import QSignalThrottler
+from superqt.utils import qthrottled
 
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
@@ -429,9 +429,6 @@ class QtViewer(QSplitter):
 
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
-        self._mouse_throttler = QSignalThrottler(parent=self)
-        self._mouse_throttler.setTimeout(1)
-
         self.canvas = VispyCanvas(
             keys=None,
             vsync=True,
@@ -443,11 +440,7 @@ class QtViewer(QSplitter):
         self.canvas.events.mouse_double_click.connect(
             self.on_mouse_double_click
         )
-        self._throttled_event = None
-        self.canvas.events.mouse_move.connect(self._throttle_mouse_event)
-        self._mouse_throttler.triggered.connect(
-            self._fire_throttled_mouse_event
-        )
+        self.canvas.events.mouse_move.connect(self.on_mouse_move)
         self.canvas.events.mouse_press.connect(self.on_mouse_press)
         self.canvas.events.mouse_release.connect(self.on_mouse_release)
         self.canvas.events.key_press.connect(
@@ -468,14 +461,6 @@ class QtViewer(QSplitter):
         theme.connect(on_theme_change)
 
         self.canvas.destroyed.connect(self._diconnect_theme)
-
-    def _throttle_mouse_event(self, event=None):
-        self._throttled_event = event
-        self._mouse_throttler.throttle()
-
-    def _fire_throttled_mouse_event(self):
-        if self._throttled_event is not None:
-            self.on_mouse_move(self._throttled_event)
 
     def _diconnect_theme(self):
         self.viewer.events.theme.disconnect(self.canvas._on_theme_change)
@@ -1121,6 +1106,7 @@ class QtViewer(QSplitter):
         """
         self._process_mouse_event(mouse_press_callbacks, event)
 
+    @qthrottled(timeout=5)
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
 
