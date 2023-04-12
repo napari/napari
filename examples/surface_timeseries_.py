@@ -6,6 +6,12 @@ Display a surface timeseries using data from nilearn
 
 .. tags:: experimental
 """
+try:
+    from packaging.version import parse
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
+        "You must have packaging installed to run this example."
+    ) from None
 
 try:
     from nilearn import datasets, surface
@@ -13,6 +19,13 @@ except ModuleNotFoundError:
     raise ModuleNotFoundError(
         "You must have nilearn installed to run this example."
     ) from None
+
+import numpy as np
+if parse(np.__version__) >= parse("1.24"):
+    raise RuntimeError(
+        "Incompatible numpy version. "
+        "You must have numpy <1.24 for nilearn to work and download the example data"
+    )
 
 import napari
 
