@@ -808,12 +808,36 @@ class Points(Layer):
         try:
             self._size = np.broadcast_to(size, len(self.data)).copy()
         except ValueError as e:
-            raise ValueError(
-                trans._(
-                    "Size is not compatible for broadcasting",
-                    deferred=True,
+            if (
+                'input operand has more dimensions than allowed by the axis remapping'
+                in e.args
+            ):
+                try:
+                    self._size = np.broadcast_to(
+                        np.array(size)[:, -1], len(self.data)
+                    )
+                except ValueError as e:
+                    raise ValueError(
+                        trans._(
+                            "Size is not compatible for broadcasting",
+                            deferred=True,
+                        )
+                    ) from e
+                warnings.warn(
+                    trans._(
+                        "Point sizes must be isotropic; only the last given dimension will be used. This will become an error in a future version.",
+                        deferred=True,
+                    ),
+                    category=DeprecationWarning,
+                    stacklevel=2,
                 )
-            ) from e
+            else:
+                raise ValueError(
+                    trans._(
+                        "Size is not compatible for broadcasting",
+                        deferred=True,
+                    )
+                ) from e
         self.refresh()
 
     @property
@@ -823,6 +847,16 @@ class Points(Layer):
 
     @current_size.setter
     def current_size(self, size: Union[None, float]) -> None:
+        if isinstance(size, (list, tuple, np.ndarray)):
+            warnings.warn(
+                trans._(
+                    "Point sizes must be isotropic; only the last given dimension will be used. This will become an error in a future version.",
+                    deferred=True,
+                ),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            size = size[-1]
         if not isinstance(size, numbers.Number):
             raise TypeError(
                 trans._(
