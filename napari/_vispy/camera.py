@@ -23,13 +23,13 @@ class VispyCamera:
         self._dims = dims
 
         # Create 2D camera
-        self._2D_camera = add_mouse_pan_zoom_toggles(PanZoomCamera)(aspect=1)
+        self._2D_camera = MouseToggledPanZoomCamera(aspect=1)
         # flip y-axis to have correct alignment
         self._2D_camera.flip = (0, 1, 0)
         self._2D_camera.viewbox_key_event = viewbox_key_event
 
         # Create 3D camera
-        self._3D_camera = add_mouse_pan_zoom_toggles(ArcballCamera)(fov=0)
+        self._3D_camera = MouseToggledArcballCamera(fov=0)
         self._3D_camera.viewbox_key_event = viewbox_key_event
 
         # Set 2D camera by default
@@ -245,3 +245,7 @@ def add_mouse_pan_zoom_toggles(vispy_camera_cls):
                 event.handled = False
 
     return _vispy_camera_cls
+
+
+MouseToggledPanZoomCamera = add_mouse_pan_zoom_toggles(PanZoomCamera)
+MouseToggledArcballCamera = add_mouse_pan_zoom_toggles(ArcballCamera)
