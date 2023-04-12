@@ -1,4 +1,4 @@
-name: Upgrade test constrains
+name: Upgrade test constraints
 
 on:
   workflow_dispatch: # Allow running on-demand
@@ -44,9 +44,9 @@ jobs:
           python3.9 -m pip install -U pip pip-tools
           python3.10 -m pip install -U pip pip-tools
 
-          python3.8 -m piptools compile --upgrade -o tools/constraints/constraints_py3.8.txt setup.cfg tools/constraints/version_blacklist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
-          python3.9 -m piptools compile --upgrade -o tools/constraints/constraints_py3.9.txt setup.cfg tools/constraints/version_blacklist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
-          python3.10 -m piptools compile --upgrade -o tools/constraints/constraints_py3.10.txt setup.cfg tools/constraints/version_blacklist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
+          python3.8 -m piptools compile --upgrade -o tools/constraints/constraints_py3.8.txt setup.cfg tools/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
+          python3.9 -m piptools compile --upgrade -o tools/constraints/constraints_py3.9.txt setup.cfg tools/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
+          python3.10 -m piptools compile --upgrade -o tools/constraints/constraints_py3.10.txt setup.cfg tools/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
 
       # END PYTHON DEPENDENCIES
 
