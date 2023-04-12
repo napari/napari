@@ -50,23 +50,13 @@ jobs:
 
       # END PYTHON DEPENDENCIES
 
-      - name: Check updated packages
-        id: packages
-        run: |
-          python build_utils/check_updated_packages.py --main-packages
-          python build_utils/check_updated_packages.py
-          echo "main_packages=$(python build_utils/check_updated_packages.py --main-packages)" >> $GITHUB_OUTPUT
-          echo "all_packages<<EOF" >> $GITHUB_OUTPUT
-          echo "$(python build_utils/check_updated_packages.py)" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
       - name: Create PR updating vendored modules
         uses: peter-evans/create-pull-request@v4
         with:
           commit-message: Update bundle dependencies.
           branch: ${{ env.BRANCH_NAME }}
           delete-branch: true
-          title: "dep: [Automatic] Dependency upgrades: ${{ steps.packages.outputs.main_packages }}"
+          title: "dep: [Automatic] constrains update"
           body: |
             This PR is automatically created and updated by PartSeg GitHub
             action cron to keep bundle dependencies modules up to date.
