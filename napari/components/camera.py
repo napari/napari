@@ -27,9 +27,10 @@ class Camera(EventedModel):
         sets of Euler angles may lead to the same view.
     perspective : float
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
-    interactive : bool [DEPRECATED]
+    interactive : bool
         If the camera mouse pan/zoom is enabled or not.
         Use the mouse_pan and mouse_zoom attributes instead.
+        This attribute is deprecated since 0.5.0 and should not be used.
     mouse_pan : bool
         If the camera interactive panning with the mouse is enabled or not.
     mouse_zoom : bool
