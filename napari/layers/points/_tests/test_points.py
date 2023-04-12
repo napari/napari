@@ -233,7 +233,7 @@ def test_integer_points():
     """Test instantiating Points layer with integer data."""
     shape = (10, 2)
     np.random.seed(0)
-    data = np.random.randint(20, size=(10, 2))
+    data = np.random.randint(20, size=shape)
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
@@ -1415,33 +1415,33 @@ def test_size():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.unique(layer.size)[0] == 10
+    assert layer.size.shape == (10,)
+    assert np.unique(layer.size)[0] == [10]
 
     # Add a new point, it should get current size
     coord = [17, 17]
     layer.add(coord)
-    assert layer.size.shape == (11, 2)
+    assert layer.size.shape == (11,)
     assert np.unique(layer.size)[0] == 10
 
     # Setting size affects newly added points not current points
     layer.current_size = 20
     assert layer.current_size == 20
-    assert layer.size.shape == (11, 2)
+    assert layer.size.shape == (11,)
     assert np.unique(layer.size)[0] == 10
 
     # Add new point, should have new size
     coord = [18, 18]
     layer.add(coord)
-    assert layer.size.shape == (12, 2)
+    assert layer.size.shape == (12,)
     assert np.unique(layer.size[:11])[0] == 10
-    assert np.all(layer.size[11] == [20, 20])
+    assert np.all(layer.size[11] == 20)
 
     # Select data and change size
     layer.selected_data = {0, 1}
     assert layer.current_size == 10
     layer.current_size = 16
-    assert layer.size.shape == (12, 2)
+    assert layer.size.shape == (12,)
     assert np.unique(layer.size[2:11])[0] == 10
     assert np.unique(layer.size[:2])[0] == 16
 
@@ -1450,141 +1450,59 @@ def test_size():
     assert layer.current_size == 20
 
 
-def test_size_with_arrays():
+@pytest.mark.parametrize('ndim', [2, 3])
+def test_size_with_arrays(ndim):
     """Test setting size with arrays."""
-    shape = (10, 2)
+    shape = (10, ndim)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    sizes = 5 * np.random.random(shape)
+    sizes = 5 * np.random.random(10)
     layer.size = sizes
     assert np.all(layer.size == sizes)
-
-    # Test broadcasting of sizes
-    sizes = [5, 5]
-    layer.size = sizes
-    assert np.all(layer.size[0] == sizes)
-
-    # Test broadcasting of transposed sizes
-    sizes = np.random.randint(low=1, high=5, size=shape[::-1])
-    layer.size = sizes
-    np.testing.assert_equal(layer.size, sizes.T)
 
     # Un-broadcastable array should raise an exception
-    bad_sizes = np.random.randint(low=1, high=5, size=(3, 8))
-    with pytest.raises(ValueError):
-        layer.size = bad_sizes
-
-    # Create new layer with new size array data
-    sizes = 5 * np.random.random(shape)
-    layer = Points(data, size=sizes)
-    assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.all(layer.size == sizes)
-
-    # Create new layer with new size array data
     sizes = [5, 5]
+    with pytest.raises(ValueError):
+        layer.size = sizes
+
+    # Create new layer with new size array data
+    sizes = 5 * np.random.random(10)
     layer = Points(data, size=sizes)
     assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.all(layer.size[0] == sizes)
+    assert layer.size.shape == (10,)
+    np.testing.assert_array_equal(layer.size, sizes)
 
     # Add new point, should have new size
-    coord = [18, 18]
+    coord = [18] * ndim
     layer.current_size = 13
     layer.add(coord)
-    assert layer.size.shape == (11, 2)
-    assert np.unique(layer.size[:10])[0] == 5
-    assert np.all(layer.size[10] == [13, 13])
+    assert layer.size.shape == (11,)
+    np.testing.assert_array_equal(layer.size[:10], sizes[:10])
+    assert layer.size[10] == 13
 
     # Select data and change size
     layer.selected_data = {0, 1}
-    assert layer.current_size == 5
+    # current_size does not change because idx 0 and 1 are different sizes
+    assert layer.current_size == 13
     layer.current_size = 16
-    assert layer.size.shape == (11, 2)
-    assert np.unique(layer.size[2:10])[0] == 5
-    assert np.unique(layer.size[:2])[0] == 16
+    assert layer.size.shape == (11,)
+    np.testing.assert_array_equal(layer.size[2:10], sizes[2:10])
+    np.testing.assert_array_equal(layer.size[:2], 16)
 
-    # Check removing data adjusts colors correctly
+    # check that current size is correctly set if all points are the same size
+    layer.selected_data = {10}
+    assert layer.current_size == 13
+    layer.selected_data = {0, 1}
+    assert layer.current_size == 16
+
+    # Check removing data adjusts sizes correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == 9
     assert len(layer.size) == 9
-    assert np.all(layer.size[0] == [16, 16])
-    assert np.all(layer.size[1] == [5, 5])
-
-
-def test_size_with_3D_arrays():
-    """Test setting size with 3D arrays."""
-    shape = (10, 3)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    data[:2, 0] = 0
-    layer = Points(data)
-    assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.unique(layer.size)[0] == 10
-
-    sizes = 5 * np.random.random(shape)
-    layer.size = sizes
-    assert np.all(layer.size == sizes)
-
-    # Test broadcasting of sizes
-    sizes = [1, 5, 5]
-    layer.size = sizes
-    assert np.all(layer.size[0] == sizes)
-
-    # Create new layer with new size array data
-    sizes = 5 * np.random.random(shape)
-    layer = Points(data, size=sizes)
-    assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.all(layer.size == sizes)
-
-    # Create new layer with new size array data
-    sizes = [1, 5, 5]
-    layer = Points(data, size=sizes)
-    assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.all(layer.size[0] == sizes)
-
-    # Add new point, should have new size in last dim only
-    coord = [4, 18, 18]
-    layer.current_size = 13
-    layer.add(coord)
-    assert layer.size.shape == (11, 3)
-    assert np.unique(layer.size[:10, 1:])[0] == 5
-    assert np.all(layer.size[10] == [1, 13, 13])
-
-    # Select data and change size
-    layer.selected_data = {0, 1}
-    assert layer.current_size == 5
-    layer.current_size = 16
-    assert layer.size.shape == (11, 3)
-    assert np.unique(layer.size[2:10, 1:])[0] == 5
-    assert np.all(layer.size[0] == [16, 16, 16])
-
-    # Create new 3D layer with new 2D points size data
-    sizes = [0, 5, 5]
-    layer = Points(data, size=sizes)
-    assert layer.current_size == 10
-    assert layer.size.shape == shape
-    assert np.all(layer.size[0] == sizes)
-
-    # Add new point, should have new size only in last 2 dimensions
-    coord = [4, 18, 18]
-    layer.current_size = 13
-    layer.add(coord)
-    assert layer.size.shape == (11, 3)
-    assert np.all(layer.size[10] == [0, 13, 13])
-
-    # Select data and change size
-    layer.selected_data = {0, 1}
-    assert layer.current_size == 5
-    layer.current_size = 16
-    assert layer.size.shape == (11, 3)
-    assert np.unique(layer.size[2:10, 1:])[0] == 5
-    assert np.all(layer.size[0] == [0, 16, 16])
+    assert layer.size[0] == 16
+    assert layer.size[1] == sizes[3]
 
 
 def test_copy_and_paste():
@@ -1776,14 +1694,14 @@ def test_view_data():
 def test_view_size():
     """Test out of slice point rendering and slicing with no points."""
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
-    sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
+    sizes = np.array([5, 5, 3, 3])
     layer = Points(coords, size=sizes, out_of_slice_display=False)
 
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(layer._view_size == sizes[np.ix_([0, 1], [1, 2])])
+    assert np.all(layer._view_size == sizes[[0, 1]])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(layer._view_size == sizes[np.ix_([2], [1, 2])])
+    assert np.all(layer._view_size == sizes[[2]])
 
     layer.out_of_slice_display = True
     assert len(layer._view_size) == 3
@@ -1982,24 +1900,6 @@ def test_to_mask_2d_with_size_4_bottom_right():
             [0, 0, 0, 0, 0, 0, 1],
             [0, 0, 0, 0, 0, 1, 1],
             [0, 0, 0, 0, 1, 1, 1],
-        ],
-        dtype=bool,
-    )
-    np.testing.assert_array_equal(mask, expected_mask)
-
-
-def test_to_mask_2d_with_diff_sizes():
-    points = Points([[2, 2], [1, 4]], size=[[1, 1], [2, 2]])
-
-    mask = points.to_mask(shape=(5, 7))
-
-    expected_mask = np.array(
-        [
-            [0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 1, 1, 1, 0],
-            [0, 0, 1, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0],
         ],
         dtype=bool,
     )
@@ -2344,24 +2244,6 @@ def test_shown():
     assert layer.shown[-1] == True  # noqa
 
 
-def test_selected_data_with_non_uniform_sizes():
-    data = np.zeros((3, 2))
-    size = [[1, 3], [1, 4], [1, 3]]
-    layer = Points(data, size=size)
-    # Current size is the default 10 because passed size is not a scalar.
-    assert layer.current_size == 10
-
-    # The first two points have different mean sizes, so the current size
-    # should not change.
-    layer.selected_data = (0, 1)
-    assert layer.current_size == 10
-
-    # The first and last point have the same mean size, so the current size
-    # should change to that mean.
-    layer.selected_data = (0, 2)
-    assert layer.current_size == 2
-
-
 def test_shown_view_size_and_view_data_have_the_same_dimension():
     data = [[0, 0, 0], [1, 1, 1]]
     # Data with default settings
@@ -2437,7 +2319,7 @@ def test_empty_data_from_tuple():
 @pytest.mark.parametrize(
     'attribute, new_value',
     [
-        ("size", [20, 20]),
+        ("size", 20),
         ("face_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
         ("edge_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
         ("edge_width", np.asarray([0.2])),

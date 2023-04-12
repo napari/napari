@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import pandas as pd
 from psygnal.containers import Selection
+from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
@@ -549,12 +550,7 @@ class Points(Layer):
                 # If there are now more points, add the size and colors of the
                 # new ones
                 adding = len(data) - cur_npoints
-                if len(self._size) > 0:
-                    new_size = self._size[-1]
-                else:
-                    # Add the default size
-                    new_size = self.current_size
-                size = np.repeat(new_size, adding, axis=0)
+                size = np.repeat(self.current_size, adding, axis=0)
 
                 if len(self._edge_width) > 0:
                     new_edge_width = copy(self._edge_width[-1])
@@ -867,16 +863,16 @@ class Points(Layer):
         if size < 0:
             raise ValueError(
                 trans._(
-                    'current_size value must be positive, value will be left at {value}.',
+                    'current_size value must be positive.',
                     deferred=True,
-                    value=self.current_size,
                 ),
             )
 
         self._current_size = size
         if self._update_properties and len(self.selected_data) > 0:
-            for i in self.selected_data:
-                self.size[i, :] = (self.size[i, :] > 0) * size
+            idx = np.fromiter(self.selected_data, dtype=int)
+            # TODO: explain why this check; only if size > 0?
+            self.size[idx] = (self.size[idx] > 0) * size
             self.refresh()
             self.events.size()
 
@@ -2071,6 +2067,7 @@ class Points(Layer):
         *,
         shape: tuple,
         data_to_world: Optional[Affine] = None,
+        isotropic_output: bool = True,
     ):
         """Return a binary mask array of all the points as balls.
 
@@ -2081,6 +2078,12 @@ class Points(Layer):
         data_to_world : Optional[Affine]
             The data-to-world transform of the output mask image. This likely comes from a reference image.
             If None, then this is the same as this layer's data-to-world transform.
+        isotropic_output : bool
+            If True, then force the output mask to always contain isotropic balls in data/pixel coordinates.
+            Otherwise, allow the anisotropy in the data-to-world transform to squash the balls in certain dimensions.
+            By default this is True, but you should set it to False if you are going to create a napari image
+            layer from the result with the same data-to-world transform and want the visualized balls to be
+            roughly isotropic.
 
         Returns
         -------
@@ -2101,9 +2104,16 @@ class Points(Layer):
         # Calculating the radii of the output points in the mask is complex.
         radii = self.size / 2
 
-        # Scale each radius by the scale of the output image mask
-        point_data_to_world_scale = np.abs(self._data_to_world.scale)
-        mask_world_to_data_scale = np.abs(mask_world_to_data.scale)
+        # Scale each radius by the geometric mean scale of the Points layer to
+        # keep the balls isotropic when visualized in world coordinates.
+        # The geometric means are used instead of the arithmetic mean
+        # to maintain the volume scaling factor of the transforms.
+        point_data_to_world_scale = gmean(np.abs(self._data_to_world.scale))
+        mask_world_to_data_scale = (
+            gmean(np.abs(mask_world_to_data.scale))
+            if isotropic_output
+            else np.abs(mask_world_to_data.scale)
+        )
         radii_scale = point_data_to_world_scale * mask_world_to_data_scale
 
         output_data_radii = np.atleast_2d(radii) * np.atleast_2d(radii_scale)

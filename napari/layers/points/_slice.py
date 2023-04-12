@@ -97,8 +97,11 @@ class _PointSliceRequest:
     def _get_out_of_display_slice_data(self, not_disp, not_disp_indices):
         """This method slices in the out-of-display case."""
         distances = abs(self.data[:, not_disp] - not_disp_indices)
-        sizes = self.size[:, not_disp] / 2
-        matches = np.all(distances <= sizes, axis=1)
+        sizes = self.size / 2
+        matches = np.all(distances <= np.expand_dims(sizes, axis=1), axis=1)
+        if not np.any(matches):
+            return np.empty(0, dtype=int), 1
+
         size_match = sizes[matches]
         size_match[size_match == 0] = 1
         scale_per_dim = (size_match - distances[matches]) / size_match
