@@ -21,6 +21,7 @@ except ModuleNotFoundError:
     ) from None
 
 import numpy as np
+
 if parse(np.__version__) >= parse("1.24"):
     raise RuntimeError(
         "Incompatible numpy version. "

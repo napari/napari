@@ -10,6 +10,7 @@ can also be used to render 2d timelapse acquisitions as kymographs.
 from itertools import product
 
 import numpy as np
+
 try:
     from omero.gateway import BlitzGateway
 except ModuleNotFoundError:
