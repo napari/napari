@@ -134,7 +134,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     Attributes
     ----------
-    window : Window
+    window : napari.window.Window
         Parent window.
     layers : LayerList
         List of contained layers.
