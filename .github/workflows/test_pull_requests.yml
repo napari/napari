@@ -155,7 +155,7 @@ jobs:
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
           FORCE_COLOR: 1
-          PIP_CONSTRAINT: tools/constraints/constraints_py${{ matrix.python }}.txt
+          PIP_CONSTRAINT: tools/constraints/constraints_py${{ matrix.python }}${{ matrix.MIN_REQ && '_min_req' }}.txt
       - uses: actions/upload-artifact@v3
         with:
           name: upload pytest timing reports as json
