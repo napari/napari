@@ -439,10 +439,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         self.events.layers_change()
 
-    def _update_mouse_pan_zoom_toggles(self, event):
-        """Set the viewer interactive mouse panning and zooming"""
+    def _update_mouse_pan(self, event):
+        """Set the viewer interactive mouse panning"""
         if event.source is self.layers.selection.active:
             self.camera.mouse_pan = event.mouse_pan
+
+    def _update_mouse_zoom(self, event):
+        """Set the viewer interactive mouse zoom"""
+        if event.source is self.layers.selection.active:
             self.camera.mouse_zoom = event.mouse_zoom
 
     def _update_cursor(self, event):
@@ -532,8 +536,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Connect individual layer events to viewer events
         # TODO: in a future PR, we should now be able to connect viewer *only*
         # to viewer.layers.events... and avoid direct viewer->layer connections
-        layer.events.mouse_pan_zoom_toggles.connect(
-            self._update_mouse_pan_zoom_toggles
+        layer.events.mouse_pan.connect(
+            self._update_mouse_pan
+        )
+        
+        layer.events.mouse_zoom.connect(
+            self._update_mouse_zoom
         )
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)

@@ -376,8 +376,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             thumbnail=Event,
             status=Event,
             help=Event,
-            interactive=Event,
-            mouse_pan_zoom_toggles=Event,
+            interactive=WarningEmitter(
+                trans._("layer.events.interactive is deprecated since 0.5.0 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom", deferred=True), type_name='interactive')
+            mouse_pan=Event,
+            mouse_zoom=Event,
             cursor=Event,
             cursor_size=Event,
             editable=Event,
@@ -913,10 +915,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def interactive(self):
+        warnings.warn(trans._("Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"), FutureWarning, stacklevel=2)
         return self.mouse_pan or self.mouse_zoom
 
     @interactive.setter
     def interactive(self, interactive):
+        warnings.warn(trans._("Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"), FutureWarning, stacklevel=2)
         with self.events.interactive.blocker():
             self.mouse_pan = interactive
         self.mouse_zoom = interactive
@@ -931,9 +935,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if mouse_pan == self._mouse_pan:
             return
         self._mouse_pan = mouse_pan
-        self.events.mouse_pan_zoom_toggles(
-            mouse_pan=mouse_pan, mouse_zoom=self.mouse_zoom
-        )
+        self.events.mouse_pan(mouse_pan=mouse_pan)
         self.events.interactive(
             interactive=self.mouse_pan or self.mouse_zoom
         )  # Deprecated since 0.5.0
@@ -948,9 +950,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if mouse_zoom == self._mouse_zoom:
             return
         self._mouse_zoom = mouse_zoom
-        self.events.mouse_pan_zoom_toggles(
-            mouse_pan=self.mouse_pan, mouse_zoom=mouse_zoom
-        )
+        self.events.mouse_zoom(mouse_zoom=mouse_zoom)
         self.events.interactive(
             interactive=self.mouse_pan or self.mouse_zoom
         )  # Deprecated since 0.5.0
