@@ -40,5 +40,6 @@ dependencies:
 
 # Required for desktop view on mybinder.org
 - websockify
+- pip
 - pip:
   - jupyter-desktop-server
