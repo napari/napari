@@ -165,14 +165,23 @@ class PreferencesDialog(QDialog):
                 "type": "object",
                 "properties": {
                     "shortcuts": {
-                        "title": "shortcuts",
-                        "description": "Set keyboard shortcuts for actions.",
+                        "title": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.title,
+                        "description": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.description,
                         "type": "object",
                     }
                 },
             }
         else:
             schema = json.loads(ftype.schema_json())
+
+        if field.field_info.title:
+            schema["title"] = field.field_info.title
+        if field.field_info.description:
+            schema["description"] = field.field_info.description
 
         # find enums:
         for name, subfield in ftype.__fields__.items():
