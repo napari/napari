@@ -1,5 +1,6 @@
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
+from napari._vispy.utils.gl import BLENDING_MODES
 from napari.components._viewer_constants import CanvasPosition
 from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
@@ -59,6 +60,9 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
         self.node.events.parent_change.connect(self._on_parent_change)
+
+        # canvas overlays are normally not intended to use the depth buffer
+        self.node.set_gl_state(**BLENDING_MODES['translucent_no_depth'])
 
     def _on_parent_change(self, event):
         if event.old is not None:
