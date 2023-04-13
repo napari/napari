@@ -1,6 +1,7 @@
-import numpy as np
 from typing import Type
-from vispy.scene import ArcballCamera, PanZoomCamera, BaseCamera
+
+import numpy as np
+from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 
 from napari._vispy.utils.quaternion import quaternion2euler
 
@@ -210,7 +211,9 @@ def viewbox_key_event(event):
     return
 
 
-def add_mouse_pan_zoom_toggles(vispy_camera_cls: Type[BaseCamera]) -> Type[BaseCamera]:
+def add_mouse_pan_zoom_toggles(
+    vispy_camera_cls: Type[BaseCamera],
+) -> Type[BaseCamera]:
     """Add separate mouse pan and mouse zoom toggles to VisPy.
 
     By default, VisPy uses an ``interactive`` toggle that turns *both*
