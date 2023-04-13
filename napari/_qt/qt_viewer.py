@@ -909,6 +909,13 @@ class QtViewer(QSplitter):
                 size *= self.viewer.camera.zoom
 
             size = int(size)
+            if size > 64:
+                size = 64
+                warnings.warn(
+                    trans._(
+                        "Due to hardware limitations, cursor size is capped at 64 pixels."
+                    )
+                )
 
             # make sure the square fits within the current canvas
             if size < 8 or size > (min(*self.canvas.size) - 4):
