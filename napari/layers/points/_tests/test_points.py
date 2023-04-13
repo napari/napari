@@ -1906,6 +1906,24 @@ def test_to_mask_2d_with_size_4_bottom_right():
     np.testing.assert_array_equal(mask, expected_mask)
 
 
+def test_to_mask_2d_with_diff_sizes():
+    points = Points([[2, 2], [1, 4]], size=[1, 2])
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 1, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
 def test_to_mask_2d_with_overlap():
     points = Points([[1, 3], [1, 4]], size=2)
 
