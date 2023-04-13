@@ -919,7 +919,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.help(help=help_text)
 
     @property
-    def interactive(self):
+    def interactive(self) -> bool:
         warnings.warn(
             trans._(
                 "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
@@ -930,7 +930,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self.mouse_pan or self.mouse_zoom
 
     @interactive.setter
-    def interactive(self, interactive):
+    def interactive(self, interactive: bool):
         warnings.warn(
             trans._(
                 "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
@@ -943,12 +943,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.mouse_zoom = interactive
 
     @property
-    def mouse_pan(self):
+    def mouse_pan(self) -> bool:
         """bool: Determine if canvas interactive panning is enabled with the mouse."""
         return self._mouse_pan
 
     @mouse_pan.setter
-    def mouse_pan(self, mouse_pan):
+    def mouse_pan(self, mouse_pan: bool):
         if mouse_pan == self._mouse_pan:
             return
         self._mouse_pan = mouse_pan
@@ -958,12 +958,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )  # Deprecated since 0.5.0
 
     @property
-    def mouse_zoom(self):
+    def mouse_zoom(self) -> bool:
         """bool: Determine if canvas interactive zooming is enabled with the mouse."""
         return self._mouse_zoom
 
     @mouse_zoom.setter
-    def mouse_zoom(self, mouse_zoom):
+    def mouse_zoom(self, mouse_zoom: bool):
         if mouse_zoom == self._mouse_zoom:
             return
         self._mouse_zoom = mouse_zoom

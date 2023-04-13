@@ -193,7 +193,7 @@ class Camera(EventedModel):
         return up_direction_nd
 
     @property
-    def interactive(self):
+    def interactive(self) -> bool:
         warnings.warn(
             '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
             category=DeprecationWarning,
@@ -201,7 +201,7 @@ class Camera(EventedModel):
         return self.mouse_pan or self.mouse_zoom
 
     @interactive.setter
-    def interactive(self, interactive):
+    def interactive(self, interactive: bool):
         warnings.warn(
             '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
             category=DeprecationWarning,
