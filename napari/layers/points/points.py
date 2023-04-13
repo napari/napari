@@ -801,7 +801,7 @@ class Points(Layer):
 
     @size.setter
     def size(self, size: Union[int, float, np.ndarray, list]) -> None:
-        size = np.array(size)
+        size = np.asarray(size)
         # deprecated anisotropic size
         if size.ndim == 2 and len(size) == len(self.data):
             self._size = np.mean(size, axis=1)
@@ -815,7 +815,7 @@ class Points(Layer):
             )
         else:
             try:
-                self._size = np.broadcast_to(size, len(self.data))
+                self._size = np.broadcast_to(size, len(self.data)).copy()
             except ValueError as e:
                 raise ValueError(
                     trans._(
