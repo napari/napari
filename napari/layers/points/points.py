@@ -801,36 +801,25 @@ class Points(Layer):
 
     @size.setter
     def size(self, size: Union[int, float, np.ndarray, list]) -> None:
-        try:
-            self._size = np.broadcast_to(size, len(self.data)).copy()
-        except ValueError as e:
-            if (
-                'input operand has more dimensions than allowed by the axis remapping'
-                in e.args
-            ):
-                try:
-                    self._size = np.broadcast_to(
-                        np.array(size)[:, -1], len(self.data)
-                    )
-                except ValueError as e:
-                    raise ValueError(
-                        trans._(
-                            "Size is not compatible for broadcasting",
-                            deferred=True,
-                        )
-                    ) from e
-                warnings.warn(
-                    trans._(
-                        "Point sizes must be isotropic; only the last given dimension will be used. This will become an error in a future version.",
-                        deferred=True,
-                    ),
-                    category=DeprecationWarning,
-                    stacklevel=2,
-                )
-            else:
+        size = np.array(size)
+        # deprecated anisotropic size
+        if size.ndim == 2 and len(size) == len(self.data):
+            self._size = np.mean(size, axis=1)
+            warnings.warn(
+                trans._(
+                    "Point sizes must be isotropic; only the last given dimension will be used. This will become an error in a future version.",
+                    deferred=True,
+                ),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            try:
+                self._size = np.broadcast_to(size, len(self.data))
+            except ValueError as e:
                 raise ValueError(
                     trans._(
-                        "Size is not compatible for broadcasting",
+                        "Size is not compatible for broadcasting. Note: anisotropic sizes are no longer supported.",
                         deferred=True,
                     )
                 ) from e
