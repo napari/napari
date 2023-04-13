@@ -499,7 +499,7 @@ def _maybe_rerun_with_macos_fixes():
                 'please install python.app in conda using:\n'
                 'conda install -c conda-forge python.app'
             )
-            warnings.warn(msg)
+            warnings.warn(msg, stacklevel=2)
 
     # 3) Make sure the app name in the menu bar is 'napari', not 'python'
     tempdir = None
