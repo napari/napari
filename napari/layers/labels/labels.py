@@ -924,15 +924,26 @@ class Labels(_ImageBase):
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
         ):
-            u, inv = np.unique(raw_modified, return_inverse=True)
-            image = np.array(
-                [
-                    self._label_color_index[x]
-                    if x in self._label_color_index
-                    else self._label_color_index[None]
-                    for x in u
-                ]
-            )[inv].reshape(raw_modified.shape)
+            min_label_id = raw_modified.min()
+            max_label_id = raw_modified.max()
+            none_color_index = self._label_color_index[None]
+
+            if max_label_id - min_label_id < 1024:
+                mapping = np.array(
+                    [
+                        self._label_color_index.get(label_id, none_color_index)
+                        for label_id in range(min_label_id, max_label_id + 1)
+                    ]
+                )
+                image = mapping[raw_modified - min_label_id]
+            else:
+                unique_ids, inv = np.unique(raw_modified, return_inverse=True)
+                image = np.array(
+                    [
+                        self._label_color_index.get(label_id, none_color_index)
+                        for label_id in unique_ids
+                    ]
+                )[inv].reshape(raw_modified.shape)
         elif (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
