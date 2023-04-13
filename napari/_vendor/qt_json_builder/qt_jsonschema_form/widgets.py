@@ -685,6 +685,20 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
     ) -> Dict[str, QtWidgets.QWidget]:
         raise NotImplementedError
 
+    def _prepare_widget(self, name: str, sub_schema: dict, widget_builder: 'WidgetBuilder', ui_schema: dict):
+        description = sub_schema.get('description', "")
+
+        label = QtWidgets.QLabel(sub_schema.get("title", name))
+
+        sub_ui_schema = ui_schema.get(name, {})
+        widget = widget_builder.create_widget(
+            sub_schema, sub_ui_schema, description=description
+        )  # TODO on changed
+        widget._name = name
+        widget.on_changed.connect(partial(self.widget_on_changed, name))
+
+        return label, widget
+
 class HorizontalObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QWidget):
     def populate_from_schema(
         self,
@@ -697,20 +711,9 @@ class HorizontalObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QWidget):
 
         widgets = {}
         for name, sub_schema in schema['properties'].items():
-            description = sub_schema.get('description', "")
-
-            label = QtWidgets.QLabel(sub_schema.get("title", name))
+            label, widget = self._prepare_widget(name, sub_schema, widget_builder, ui_schema)
             layout.addWidget(label)
-
-            sub_ui_schema = ui_schema.get(name, {})
-            widget = widget_builder.create_widget(
-                sub_schema, sub_ui_schema, description=description
-            )  # TODO onchanged
-            widget._name = name
-            widget.on_changed.connect(partial(self.widget_on_changed, name))
             layout.addWidget(widget)
-
-
             widgets[name] = widget
 
         return widgets
@@ -737,17 +740,11 @@ class ObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QGroupBox):
         widgets = {}
         layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy(1))
         for name, sub_schema in schema['properties'].items():
-            description = sub_schema.get('description', "")
-
-
-            sub_ui_schema = ui_schema.get(name, {})
-            widget = widget_builder.create_widget(
-                sub_schema, sub_ui_schema, description=description
-            )  # TODO onchanged
-            widget._name = name
-            widget.on_changed.connect(partial(self.widget_on_changed, name))
-            label = sub_schema.get("title", name)
-            layout.addRow(label, widget)
+            label, widget = self._prepare_widget(name, sub_schema, widget_builder, ui_schema)
+            if len(schema['properties']) == 1:
+                layout.addRow(widget)
+            else:
+                layout.addRow(label, widget)
             widgets[name] = widget
 
         return widgets
