@@ -1416,7 +1416,7 @@ def test_size():
     layer = Points(data)
     assert layer.current_size == 10
     assert layer.size.shape == (10,)
-    assert np.unique(layer.size)[0] == [10]
+    assert np.unique(layer.size)[0] == 10
 
     # Add a new point, it should get current size
     coord = [17, 17]

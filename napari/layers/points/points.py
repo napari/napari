@@ -2116,7 +2116,7 @@ class Points(Layer):
         )
         radii_scale = point_data_to_world_scale * mask_world_to_data_scale
 
-        output_data_radii = np.atleast_2d(radii) * np.atleast_2d(radii_scale)
+        output_data_radii = radii[:, np.newaxis] * np.atleast_2d(radii_scale)
 
         for coords, radii in zip(
             points_in_mask_data_coords, output_data_radii
