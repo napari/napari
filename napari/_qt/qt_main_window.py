@@ -145,6 +145,10 @@ class _QtMainWindow(QMainWindow):
 
         self.setStatusBar(ViewerStatusBar(self))
 
+        # Prevent QLineEdit based widgets to keep focus even when clicks are
+        # done outside the widget. See #1571
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
         settings = get_settings()
 
         # TODO:
