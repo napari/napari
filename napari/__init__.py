@@ -1,6 +1,6 @@
 import os
 
-from napari._lazy import install_lazy
+from lazy_loader import attach as _attach
 
 try:
     from napari._version import version as __version__
@@ -52,7 +52,7 @@ _submod_attrs = {
 # just to access the CLI (which may not actually need any of the imports)
 
 
-__getattr__, __dir__, __all__ = install_lazy(
-    __name__, _proto_all_, _submod_attrs
+__getattr__, __dir__, __all__ = _attach(
+    __name__, submodules=_proto_all_, submod_attrs=_submod_attrs
 )
-del install_lazy
+del _attach
