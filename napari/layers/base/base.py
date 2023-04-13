@@ -195,8 +195,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Displayed in status bar bottom right.
     interactive : bool
         Determine if canvas pan/zoom interactivity is enabled.
-        Use the mouse_pan and mouse_zoom attributes instead.
         This attribute is deprecated since 0.5.0 and should not be used.
+        Use the mouse_pan and mouse_zoom attributes instead.
     mouse_pan : bool
         Determine if canvas interactive panning is enabled with the mouse.
     mouse_zoom : bool
