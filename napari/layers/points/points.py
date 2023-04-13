@@ -801,29 +801,30 @@ class Points(Layer):
 
     @size.setter
     def size(self, size: Union[int, float, np.ndarray, list]) -> None:
-        size = np.asarray(size)
-        # deprecated anisotropic size
-        if size.ndim == 2 and len(size) == len(self.data):
-            self._size = np.mean(size, axis=1)
-            warnings.warn(
-                trans._(
-                    "Point sizes must be isotropic; only the last given dimension will be used. This will become an error in a future version.",
-                    deferred=True,
-                ),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-        else:
+        try:
+            self._size = np.broadcast_to(size, len(self.data)).copy()
+        except ValueError as e:
+            # deprecated anisotropic sizes; extra check should be removed in future version
             try:
-                self._size = np.broadcast_to(size, len(self.data)).copy()
-            except ValueError as e:
+                size = np.broadcast_to(size, self.data.shape[::-1]).T.copy()
+            except ValueError:
                 raise ValueError(
                     trans._(
-                        "Size is not compatible for broadcasting. Note: anisotropic sizes are no longer supported.",
+                        "Size is not compatible for broadcasting",
                         deferred=True,
                     )
                 ) from e
-        self.refresh()
+            else:
+                self._size = np.mean(size, axis=1)
+                warnings.warn(
+                    trans._(
+                        "Point sizes must be isotropic; the average from each dimension will be used instead. "
+                        "This will become an error in a future version.",
+                        deferred=True,
+                    ),
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
 
     @property
     def current_size(self) -> Union[int, float]:
@@ -835,7 +836,8 @@ class Points(Layer):
         if isinstance(size, (list, tuple, np.ndarray)):
             warnings.warn(
                 trans._(
-                    "Point sizes must be isotropic; only the last given dimension will be used. This will become an error in a future version.",
+                    "Point sizes must be isotropic; the average from each dimension will be used instead. "
+                    "This will become an error in a future version.",
                     deferred=True,
                 ),
                 category=DeprecationWarning,
