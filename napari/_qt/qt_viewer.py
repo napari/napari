@@ -502,7 +502,8 @@ class QtViewer(QSplitter):
                     trans._(
                         'napari-console not found. It can be installed with'
                         ' "pip install napari_console"'
-                    )
+                    ),
+                    stacklevel=1,
                 )
                 self._console = None
             except ImportError:
@@ -510,7 +511,8 @@ class QtViewer(QSplitter):
                 warnings.warn(
                     trans._(
                         'error importing napari-console. See console for full error.'
-                    )
+                    ),
+                    stacklevel=1,
                 )
                 self._console = None
         return self._console
