@@ -440,7 +440,9 @@ class QtViewer(QSplitter):
         self.canvas.events.mouse_double_click.connect(
             self.on_mouse_double_click
         )
-        self.canvas.events.mouse_move.connect(self.on_mouse_move)
+        self.canvas.events.mouse_move.connect(
+            qthrottled(self.on_mouse_move, timeout=5)
+        )
         self.canvas.events.mouse_press.connect(self.on_mouse_press)
         self.canvas.events.mouse_release.connect(self.on_mouse_release)
         self.canvas.events.key_press.connect(
@@ -1106,7 +1108,6 @@ class QtViewer(QSplitter):
         """
         self._process_mouse_event(mouse_press_callbacks, event)
 
-    @qthrottled(timeout=5)
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
 
