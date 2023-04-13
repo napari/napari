@@ -78,8 +78,8 @@ class QtPointsControls(QtLayerControls):
         self.layer.events.out_of_slice_display.connect(
             self._on_out_of_slice_display_change
         )
-        self.layer.events.symbol.connect(self._on_symbol_change)
-        self.layer.events.size.connect(self._on_size_change)
+        self.layer.events.symbol.connect(self._on_current_symbol_change)
+        self.layer.events.size.connect(self._on_current_size_change)
         self.layer.events.current_edge_color.connect(
             self._on_current_edge_color_change
         )
@@ -91,6 +91,9 @@ class QtPointsControls(QtLayerControls):
         )
         self.layer._face.events.current_color.connect(
             self._on_current_face_color_change
+        )
+        self.layer.events.current_symbol.connect(
+            self._on_current_symbol_change
         )
         self.layer.events.editable.connect(self._on_editable_or_visible_change)
         self.layer.events.visible.connect(self._on_editable_or_visible_change)
@@ -112,7 +115,7 @@ class QtPointsControls(QtLayerControls):
         sld.setSingleStep(1)
         value = self.layer.current_size
         sld.setValue(int(value))
-        sld.valueChanged.connect(self.changeSize)
+        sld.valueChanged.connect(self.changeCurrentSize)
         self.sizeSlider = sld
 
         self.faceColorEdit = QColorSwatchEdit(
@@ -123,8 +126,8 @@ class QtPointsControls(QtLayerControls):
             initial_color=self.layer.current_edge_color,
             tooltip=trans._('click to set current edge color'),
         )
-        self.faceColorEdit.color_changed.connect(self.changeFaceColor)
-        self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
+        self.faceColorEdit.color_changed.connect(self.changeCurrentFaceColor)
+        self.edgeColorEdit.color_changed.connect(self.changeCurrentEdgeColor)
 
         sym_cb = QComboBox()
         sym_cb.setToolTip(
@@ -143,7 +146,7 @@ class QtPointsControls(QtLayerControls):
                 current_index = index
 
         sym_cb.setCurrentIndex(current_index)
-        sym_cb.currentTextChanged.connect(self.changeSymbol)
+        sym_cb.currentTextChanged.connect(self.changeCurrentSymbol)
         self.symbolComboBox = sym_cb
 
         self.outOfSliceCheckBox = QCheckBox()
@@ -208,11 +211,15 @@ class QtPointsControls(QtLayerControls):
 
         self.layout().addRow(button_row)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('point size:'), self.sizeSlider)
+        self.layout().addRow(trans._('current point size:'), self.sizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(trans._('symbol:'), self.symbolComboBox)
-        self.layout().addRow(trans._('face color:'), self.faceColorEdit)
-        self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
+        self.layout().addRow(
+            trans._('current face color:'), self.faceColorEdit
+        )
+        self.layout().addRow(
+            trans._('current edge color:'), self.edgeColorEdit
+        )
         self.layout().addRow(trans._('display text:'), self.textDispCheckBox)
         self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
 
@@ -244,7 +251,7 @@ class QtPointsControls(QtLayerControls):
         elif mode != Mode.TRANSFORM:
             raise ValueError(trans._("Mode not recognized {mode}", mode=mode))
 
-    def changeSymbol(self, text):
+    def changeCurrentSymbol(self, text):
         """Change marker symbol of the points on the layer model.
 
         Parameters
@@ -252,9 +259,10 @@ class QtPointsControls(QtLayerControls):
         text : int
             Index of current marker symbol of points, eg: '+', '.', etc.
         """
-        self.layer.current_symbol = SYMBOL_TRANSLATION_INVERTED[text]
+        with self.layer.events.symbol.blocker(self._on_current_symbol_change):
+            self.layer.current_symbol = SYMBOL_TRANSLATION_INVERTED[text]
 
-    def changeSize(self, value):
+    def changeCurrentSize(self, value):
         """Change size of points on the layer model.
 
         Parameters
@@ -262,7 +270,10 @@ class QtPointsControls(QtLayerControls):
         value : float
             Size of points.
         """
-        self.layer.current_size = value
+        with self.layer.events.current_size.blocker(
+            self._on_current_size_change
+        ):
+            self.layer.current_size = value
 
     def change_out_of_slice(self, state):
         """Toggleout of slice display of points layer.
@@ -273,7 +284,10 @@ class QtPointsControls(QtLayerControls):
             Checkbox indicating whether to render out of slice.
         """
         # needs cast to bool for Qt6
-        self.layer.out_of_slice_display = bool(state)
+        with self.layer.events.out_of_slice_display.blocker(
+            self._on_out_of_slice_display_change
+        ):
+            self.layer.out_of_slice_display = bool(state)
 
     def change_text_visibility(self, state):
         """Toggle the visibility of the text.
@@ -283,29 +297,32 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if text is visible.
         """
-        # needs cast to bool for Qt6
-        self.layer.text.visible = bool(state)
+        with self.layer.text.events.visible.blocker(
+            self._on_text_visibility_change
+        ):
+            # needs cast to bool for Qt6
+            self.layer.text.visible = bool(state)
 
     def _on_text_visibility_change(self):
-        """Receive layer model text visibiltiy change change event and update checkbox."""
-        with self.layer.text.events.visible.blocker():
+        """Receive layer model text visibiltiy change event and update checkbox."""
+        with qt_signals_blocked(self.textDispCheckBox):
             self.textDispCheckBox.setChecked(self.layer.text.visible)
 
     def _on_out_of_slice_display_change(self):
         """Receive layer model out_of_slice_display change event and update checkbox."""
-        with self.layer.events.out_of_slice_display.blocker():
+        with qt_signals_blocked(self.outOfSliceCheckBox):
             self.outOfSliceCheckBox.setChecked(self.layer.out_of_slice_display)
 
-    def _on_symbol_change(self):
+    def _on_current_symbol_change(self):
         """Receive marker symbol change event and update the dropdown menu."""
-        with self.layer.events.symbol.blocker():
+        with qt_signals_blocked(self.symbolComboBox):
             self.symbolComboBox.setCurrentIndex(
                 self.symbolComboBox.findData(self.layer.current_symbol.value)
             )
 
-    def _on_size_change(self):
+    def _on_current_size_change(self):
         """Receive layer model size change event and update point size slider."""
-        with self.layer.events.size.blocker():
+        with qt_signals_blocked(self.sizeSlider):
             value = self.layer.current_size
             min_val = min(value) if isinstance(value, list) else value
             max_val = max(value) if isinstance(value, list) else value
@@ -317,15 +334,19 @@ class QtPointsControls(QtLayerControls):
                 self.sizeSlider.setValue(int(value))
 
     @Slot(np.ndarray)
-    def changeFaceColor(self, color: np.ndarray):
+    def changeCurrentFaceColor(self, color: np.ndarray):
         """Update face color of layer model from color picker user input."""
-        with self.layer.events.current_face_color.blocker():
+        with self.layer.events.current_face_color.blocker(
+            self._on_current_face_color_change
+        ):
             self.layer.current_face_color = color
 
     @Slot(np.ndarray)
-    def changeEdgeColor(self, color: np.ndarray):
+    def changeCurrentEdgeColor(self, color: np.ndarray):
         """Update edge color of layer model from color picker user input."""
-        with self.layer.events.current_edge_color.blocker():
+        with self.layer.events.current_edge_color.blocker(
+            self._on_current_edge_color_change
+        ):
             self.layer.current_edge_color = color
 
     def _on_current_face_color_change(self):
