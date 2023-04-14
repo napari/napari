@@ -353,12 +353,15 @@ def test_submit_with_one_3d_image(layer_slicer):
         point=(2, 0, 0),
     )
 
+    assert not layer_slicer.busy
     with lockable_data.lock:
         future = layer_slicer.submit(layers=[layer], dims=dims)
+        assert layer_slicer.busy
         assert not future.done()
-
     layer_result = _wait_for_result(future)[layer]
     np.testing.assert_equal(layer_result.data, data[2, :, :])
+
+    assert not layer_slicer.busy
 
 
 def test_submit_with_one_3d_points(layer_slicer):
@@ -380,9 +383,14 @@ def test_submit_with_one_3d_points(layer_slicer):
         point=(1, 0, 0),
     )
 
+    assert not layer_slicer.busy
     with lockable_internal_data.lock:
         future = layer_slicer.submit(layers=[layer], dims=dims)
+        assert layer_slicer.busy
         assert not future.done()
+
+    _wait_for_result(future)[layer]
+    assert not layer_slicer.busy
 
 
 def test_submit_after_shutdown_raises():
@@ -391,6 +399,22 @@ def test_submit_after_shutdown_raises():
     layer_slicer.shutdown()
     with pytest.raises(RuntimeError):
         layer_slicer.submit(layers=[FakeAsyncLayer()], dims=Dims())
+
+
+def test_busy_after_shutdown(layer_slicer):
+    np.random.seed(0)
+    data = np.random.rand(8, 7, 6)
+    lockable_data = LockableData(data)
+    layer = Image(data=lockable_data, multiscale=False)
+    dims = Dims(
+        ndim=3,
+        ndisplay=2,
+        range=((0, 8, 1), (0, 7, 1), (0, 6, 1)),
+        point=(2, 0, 0),
+    )
+    layer_slicer.submit(layers=[layer], dims=dims)
+    layer_slicer.shutdown()
+    assert not layer_slicer.busy
 
 
 def _wait_until_running(future: Future):

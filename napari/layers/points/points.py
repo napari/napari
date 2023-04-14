@@ -1522,6 +1522,14 @@ class Points(Layer):
         """
         return self.edge_color[self._indices_view]
 
+    @property
+    def loaded(self):
+        """Has the data for this layer been loaded yet.
+        With asynchronous loading the layer might exist but its data
+        for the current slice has not been loaded.
+        """
+        return self._loaded
+
     def _reset_editable(self) -> None:
         """Set editable mode based on layer properties."""
         # interaction currently does not work for 2D layers being rendered in 3D
@@ -1721,6 +1729,8 @@ class Points(Layer):
 
     def _make_slice_request(self, dims) -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
+        # indicate the layer is currently mid-load
+        self._loaded = False
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
         )
@@ -1773,6 +1783,8 @@ class Points(Layer):
         )
         with self.events.highlight.blocker():
             self._set_highlight(force=True)
+
+        self._loaded = True
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,
