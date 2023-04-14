@@ -929,7 +929,7 @@ class Labels(_ImageBase):
             n_unique_labels_upper_bound = max_label_id - min_label_id
             none_color_index = self._label_color_index[None]
 
-            if max_label_id - min_label_id < 1024:
+            if n_unique_labels_upper_bound < 1024:
                 mapping = np.array(
                     [
                         self._label_color_index.get(label_id, none_color_index)
