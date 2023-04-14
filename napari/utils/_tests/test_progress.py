@@ -93,3 +93,37 @@ def test_progrange():
     with progrange(10) as pbr, progress(range(10)) as pbr2:
         assert pbr.iterable == pbr2.iterable
     assert pbr not in progress._all_instances
+
+
+def test_progress_cancellation():
+    """Test cancellation breaks the for loop"""
+    total = 10
+    pbr = progress(range(total))
+    last_loop = -1
+    for i in pbr:
+        last_loop = i
+        # Let's cancel at i=total/2
+        if i == total / 2:
+            pbr.cancel()
+    assert pbr.is_canceled
+    assert last_loop == total / 2
+
+
+def test_progress_cancellation_with_callback():
+    """Test that cancellation runs the callback function"""
+    total = 10
+    last_loop = -1
+    expected_last_loop = -2
+
+    def cancel_callback():
+        nonlocal last_loop
+        last_loop = expected_last_loop
+
+    pbr = progress(range(total), cancel_callback=cancel_callback)
+    for i in pbr:
+        last_loop = i
+        # Let's cancel at i=total/2
+        if i == total / 2:
+            pbr.cancel()
+    assert pbr.is_canceled
+    assert last_loop == expected_last_loop
