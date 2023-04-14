@@ -155,7 +155,7 @@ jobs:
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
           FORCE_COLOR: 1
-          PIP_CONSTRAINT: tools/constraints/constraints_py${{ matrix.python }}${{ matrix.MIN_REQ && '_min_req' }}.txt
+          PIP_CONSTRAINT: resources/constraints/constraints_py${{ matrix.python }}${{ matrix.MIN_REQ && '_min_req' }}.txt
       - uses: actions/upload-artifact@v3
         with:
           name: upload pytest timing reports as json
@@ -194,7 +194,7 @@ jobs:
             python -m pytest --pyargs napari --color=yes
             python -m pytest --pyargs napari_builtins --color=yes
         env:
-          PIP_CONSTRAINT: napari-from-github/tools/constraints/constraints_py3.9.txt
+          PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
 
   test_examples:
     name: test examples
@@ -216,4 +216,4 @@ jobs:
         with:
           run: tox -e py39-linux-pyside2-examples
         env:
-          PIP_CONSTRAINT: tools/constraints/constraints_py3.9.txt
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.9.txt
