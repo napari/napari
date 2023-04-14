@@ -9,10 +9,10 @@ from typing import (
     Dict,
     Iterator,
     List,
+    NotRequired,
     Optional,
     Tuple,
     TypedDict,
-    Union,
     cast,
 )
 from urllib.request import Request, urlopen
@@ -55,9 +55,9 @@ def _user_agent() -> str:
 class SummaryDict(TypedDict):
     """Objects returned at https://npe2api.vercel.app/api/extended_summary ."""
 
-    name: PyPIname
+    name: NotRequired[PyPIname]
     version: str
-    display_name: str
+    display_name: NotRequired[str]
     summary: str
     author: str
     license: str
@@ -90,7 +90,7 @@ def iter_napari_plugin_info() -> (
 
     conda = _conda.result()
     for info in data.result():
-        _info = cast(Dict[str, Union[str, List[str]]], dict(info))
+        _info = cast(SummaryDict, dict(info))
 
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
@@ -104,7 +104,7 @@ def iter_napari_plugin_info() -> (
             "pypi_versions": _info.pop("pypi_versions"),
             "conda_versions": _info.pop("conda_versions"),
         }
-        name = _info.pop("name")
+        name = cast(str, _info.pop("name"))
         meta = PackageMetadata(name=normalized_name(name), **_info)
 
         yield meta, (name in conda), extra_info
