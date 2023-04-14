@@ -5,7 +5,16 @@ that match the plugin naming convention, and retrieving related metadata.
 import json
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
-from typing import Dict, Iterator, List, Optional, Tuple, TypedDict, cast
+from typing import (
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    TypedDict,
+    Union,
+    cast,
+)
 from urllib.request import Request, urlopen
 
 from npe2 import PackageMetadata
@@ -81,7 +90,7 @@ def iter_napari_plugin_info() -> (
 
     conda = _conda.result()
     for info in data.result():
-        _info = cast(Dict[str, str], dict(info))
+        _info = cast(Dict[str, Union[str, List[str]]], dict(info))
 
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
