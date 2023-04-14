@@ -926,6 +926,7 @@ class Labels(_ImageBase):
         ):
             min_label_id = raw_modified.min()
             max_label_id = raw_modified.max()
+            n_unique_labels_upper_bound = max_label_id - min_label_id
             none_color_index = self._label_color_index[None]
 
             if max_label_id - min_label_id < 1024:
