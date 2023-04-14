@@ -135,13 +135,13 @@ def _register_types_with_magicgui():
 
     from napari.utils import _magicgui as _mgui
 
-    for _type in (LayerDataTuple, List[LayerDataTuple]):
+    for type_ in (LayerDataTuple, List[LayerDataTuple]):
         register_type(
-            _type,
+            type_,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
         if sys.version_info >= (3, 9):
-            future_type = Future[_type]
+            future_type = Future[type_]  # type: ignore [valid-type]
             register_type(future_type, return_callback=_mgui.add_future_data)
 
     for data_type in get_args(_LayerData):
@@ -152,7 +152,7 @@ def _register_types_with_magicgui():
         )
         if sys.version_info >= (3, 9):
             register_type(
-                Future[data_type],
+                Future[data_type],  # type: ignore [valid-type]
                 choices=_mgui.get_layers_data,
                 return_callback=partial(
                     _mgui.add_future_data, _from_tuple=False
@@ -165,7 +165,7 @@ def _register_types_with_magicgui():
         )
         if sys.version_info >= (3, 9):
             register_type(
-                Future[Optional[data_type]],
+                Future[Optional[data_type]],  # type: ignore [valid-type]
                 choices=_mgui.get_layers_data,
                 return_callback=partial(
                     _mgui.add_future_data, _from_tuple=False
