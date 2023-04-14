@@ -175,7 +175,7 @@ class QtLabelsControls(QtLayerControls):
 
         self.panzoom_button = QtModeRadioButton(
             layer,
-            'zoom',
+            'pan',
             Mode.PAN_ZOOM,
             checked=True,
         )
