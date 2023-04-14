@@ -476,6 +476,6 @@ class LayerList(SelectableEventedList[Layer]):
         return save_layers(path, layers, plugin=plugin, _writer=_writer)
 
     @property
-    def axis_labels(self) -> Set[Optional[str]]:
+    def axis_labels(self) -> Set[str]:
         layer_labels = (layer.axis_labels for layer in self.layers)
         return reduce(set.union, layer_labels, set())
