@@ -9,7 +9,6 @@ from typing import (
     Dict,
     Iterator,
     List,
-    NotRequired,
     Optional,
     Tuple,
     TypedDict,
@@ -18,6 +17,7 @@ from typing import (
 from urllib.request import Request, urlopen
 
 from npe2 import PackageMetadata
+from typing_extensions import NotRequired
 
 from napari.plugins.utils import normalized_name
 
@@ -62,6 +62,18 @@ class SummaryDict(TypedDict):
     author: str
     license: str
     home_page: str
+    pypi_versions: NotRequired[List[str]]
+    conda_versions: NotRequired[List[str]]
+
+
+class _SummaryDict(TypedDict):
+    """Objects returned at https://npe2api.vercel.app/api/extended_summary ."""
+
+    version: str
+    summary: str
+    author: str
+    license: str
+    home_page: str
 
 
 @lru_cache
@@ -80,8 +92,14 @@ def conda_map() -> Dict[PyPIname, Optional[str]]:
         return json.load(resp)
 
 
+class _ExtraDict(TypedDict):
+    home_page: str
+    pypi_versions: List[str]
+    conda_versions: List[str]
+
+
 def iter_napari_plugin_info() -> (
-    Iterator[Tuple[PackageMetadata, bool, Dict[str, str]]]
+    Iterator[Tuple[PackageMetadata, bool, _ExtraDict]]
 ):
     """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
     with ThreadPoolExecutor() as executor:
@@ -99,12 +117,14 @@ def iter_napari_plugin_info() -> (
 
         # TODO: once the new version of npe2 is out, this can be refactored
         # to all the metadata includes the conda and pypi versions.
-        extra_info = {
-            "home_page": _info.get("home_page", ""),
-            "pypi_versions": _info.pop("pypi_versions"),
-            "conda_versions": _info.pop("conda_versions"),
-        }
-        name = cast(str, _info.pop("name"))
-        meta = PackageMetadata(name=normalized_name(name), **_info)
+        extra_info = _ExtraDict(
+            home_page=_info.get("home_page", ""),
+            pypi_versions=_info.pop("pypi_versions"),
+            conda_versions=_info.pop("conda_versions"),
+        )
+        name = _info.pop("name")
+        meta = PackageMetadata(
+            name=normalized_name(name), **cast(_SummaryDict, _info)
+        )
 
         yield meta, (name in conda), extra_info
