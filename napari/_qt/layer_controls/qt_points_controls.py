@@ -211,15 +211,11 @@ class QtPointsControls(QtLayerControls):
 
         self.layout().addRow(button_row)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('current point size:'), self.sizeSlider)
+        self.layout().addRow(trans._('point size:'), self.sizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(trans._('symbol:'), self.symbolComboBox)
-        self.layout().addRow(
-            trans._('current face color:'), self.faceColorEdit
-        )
-        self.layout().addRow(
-            trans._('current edge color:'), self.edgeColorEdit
-        )
+        self.layout().addRow(trans._('face color:'), self.faceColorEdit)
+        self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
         self.layout().addRow(trans._('display text:'), self.textDispCheckBox)
         self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
 
