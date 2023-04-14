@@ -257,6 +257,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def text_overlay(self):
         return self._overlays['text']
 
+    @property
+    def slicing_in_progress(self):
+        return self._layer_slicer.busy
+
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
