@@ -67,9 +67,11 @@ class Labels2DSuite:
 class Labels2DColorDirectSuite(Labels2DSuite):
     def setup(self, n):
         np.random.seed(0)
-        self.data = np.random.randint(20, size=(n, n))
+        self.data = np.random.randint(low=-10000, high=10000, size=(n, n))
+        random_label_ids = np.random.randint(low=-10000, high=10000, size=20)
         self.layer = Labels(
-            self.data, color={i + 1: np.random.random(4) for i in range(20)}
+            self.data,
+            color={i + 1: np.random.random(4) for i in random_label_ids},
         )
 
 
