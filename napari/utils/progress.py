@@ -100,7 +100,7 @@ class progress(tqdm):
         plain_iterator = super().__iter__()
 
         # Wrap the tqdm iterator to allow e.g. cancellation
-        class Wrapped(Iterable):
+        class Wrapped(Iterator):
             def __iter__(wrapped):
                 return wrapped
 
