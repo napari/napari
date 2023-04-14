@@ -13,6 +13,7 @@ from napari.layers.base._base_mouse_bindings import (
     transform_with_box,
 )
 from napari.layers.image._image_utils import guess_multiscale
+from napari.layers.image._slice import _ImageSliceResponse
 from napari.layers.image.image import _ImageBase
 from napari.layers.labels._labels_constants import (
     LabelColorMode,
@@ -877,6 +878,10 @@ class Labels(_ImageBase):
             self._all_vals = np.roll(new_all_vals, min_label_val0)
             self._all_vals[0] = 0
         return self._lookup_with_index
+
+    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+        response = response.to_displayed(self._raw_to_displayed)
+        super()._update_slice_response(response)
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.
