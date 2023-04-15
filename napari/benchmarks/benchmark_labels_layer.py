@@ -41,6 +41,7 @@ class Labels2DSuite:
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
+        self.layer._slice.image.raw[0, :] += 1  # simulate changes
         self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint_circle(self, n):
@@ -73,6 +74,7 @@ class Labels2DColorDirectSuite(Labels2DSuite):
             self.data,
             color={i + 1: np.random.random(4) for i in random_label_ids},
         )
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
 
 class Labels3DSuite:
@@ -110,6 +112,7 @@ class Labels3DSuite:
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
+        self.layer._slice.image.raw[0, 0, :] += 1  # simulate changes
         self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint_circle(self, n):
