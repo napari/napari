@@ -66,16 +66,6 @@ class SummaryDict(TypedDict):
     conda_versions: NotRequired[List[str]]
 
 
-class _SummaryDict(TypedDict):
-    """Objects returned at https://npe2api.vercel.app/api/extended_summary ."""
-
-    version: str
-    summary: str
-    author: str
-    license: str
-    home_page: str
-
-
 @lru_cache
 def plugin_summaries() -> List[SummaryDict]:
     """Return PackageMetadata object for all known napari plugins."""
@@ -108,23 +98,21 @@ def iter_napari_plugin_info() -> (
 
     conda = _conda.result()
     for info in data.result():
-        _info = cast(SummaryDict, dict(info))
+        info_ = cast(SummaryDict, dict(info))
 
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
         # receive
-        _info.pop("display_name", None)
+        info_.pop("display_name", None)
 
         # TODO: once the new version of npe2 is out, this can be refactored
         # to all the metadata includes the conda and pypi versions.
         extra_info = _ExtraDict(
-            home_page=_info.get("home_page", ""),
-            pypi_versions=_info.pop("pypi_versions"),
-            conda_versions=_info.pop("conda_versions"),
+            home_page=info_.get("home_page", ""),
+            pypi_versions=info_.pop("pypi_versions"),
+            conda_versions=info_.pop("conda_versions"),
         )
-        name = _info.pop("name")
-        meta = PackageMetadata(
-            name=normalized_name(name), **cast(_SummaryDict, _info)
-        )
+        info_["name"] = normalized_name(info_["name"])
+        meta = PackageMetadata(**info_)
 
-        yield meta, (name in conda), extra_info
+        yield meta, (info_["name"] in conda), extra_info
