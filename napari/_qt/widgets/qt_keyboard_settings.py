@@ -220,10 +220,10 @@ class ShortcutEditor(QWidget):
             self._table.setColumnHidden(self._action_col, True)
 
             # Column set up.
-            self._table.setColumnWidth(self._action_name_col, 400)
-            self._table.setColumnWidth(self._shortcut_col, 140)
+            self._table.setColumnWidth(self._action_name_col, 420)
+            self._table.setColumnWidth(self._shortcut_col, 150)
             self._table.setColumnWidth(self._shortcut_col2, 120)
-            self._table.setColumnWidth(self._icon_col, 40)
+            self._table.setColumnWidth(self._icon_col, 50)
             self._table.setWordWrap(True)
 
             # Add some padding to rows
