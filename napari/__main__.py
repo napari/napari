@@ -77,26 +77,22 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 
     out: Dict[str, Any] = {}
     valid = set.union(*valid_add_kwargs().values())
-    for i, arg in enumerate(unknown):
-        if not arg.startswith("--"):
+    for i, raw_arg in enumerate(unknown):
+        if not raw_arg.startswith("--"):
             continue
+        arg = raw_arg.lstrip('-')
 
-        if "=" in arg:
-            key, value = arg.split("=", maxsplit=1)
-        else:
-            key = arg
-        key = key.lstrip('-').replace("-", "_")
-
+        key, *value = arg.split("=", maxsplit=1)
+        key = key.replace('-', '_')
         if key not in valid:
-            sys.exit(f"error: unrecognized arguments: {arg}")
+            sys.exit(f"error: unrecognized argument: {raw_arg}")
 
-        if "=" not in arg:
-            try:
-                value = unknown[i + 1]
-                if value.startswith("--"):
-                    raise IndexError()
-            except IndexError:
-                sys.exit(f"error: argument {arg} expected one argument")
+        if value:
+            value = value[0]
+        else:
+            if len(unknown) <= i + 1 or unknown[i + 1].startswith("--"):
+                sys.exit(f"error: argument {raw_arg} expected one argument")
+            value = unknown[i + 1]
         with contextlib.suppress(Exception):
             value = literal_eval(value)
 
@@ -503,7 +499,7 @@ def _maybe_rerun_with_macos_fixes():
                 'please install python.app in conda using:\n'
                 'conda install -c conda-forge python.app'
             )
-            warnings.warn(msg)
+            warnings.warn(msg, stacklevel=2)
 
     # 3) Make sure the app name in the menu bar is 'napari', not 'python'
     tempdir = None

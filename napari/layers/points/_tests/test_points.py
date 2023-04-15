@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import numpy as np
 import pandas as pd
 import pytest
+from psygnal.containers import Selection
 from pydantic import ValidationError
 from vispy.color import get_colormap
 
@@ -402,7 +403,7 @@ def test_removing_selected_points():
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 2
     assert len(layer.selected_data) == 0
-    keep = [1, 2] + list(range(4, 10))
+    keep = [1, 2, *range(4, 10)]
     assert np.all(layer.data == data[keep])
     assert layer._value is None
 
@@ -526,18 +527,18 @@ def test_changing_modes():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'add'
     assert layer.mode == 'add'
 
     layer.mode = 'select'
     assert layer.mode == 'select'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     with pytest.raises(ValueError):
         layer.mode = 'not_a_mode'
@@ -828,14 +829,14 @@ def test_text_from_property_fstring(properties):
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
-    expected_text_3 = expected_text_2 + ['type-ish: A']
+    expected_text_3 = [*expected_text_2, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
     # add point
     layer.selected_data = {0}
     new_shape = np.random.random((1, 2))
     layer.add(new_shape)
-    expected_text_4 = expected_text_3 + ['type-ish: A']
+    expected_text_4 = [*expected_text_3, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
@@ -2528,3 +2529,12 @@ def test_editable_and_visible_are_independent():
     layer.visible = True
 
     assert not layer.editable
+
+
+def test_point_selection_remains_evented_after_update():
+    """Existing evented selection model should be updated rather than replaced."""
+    data = np.empty((3, 2))
+    layer = Points(data)
+    assert isinstance(layer.selected_data, Selection)
+    layer.selected_data = {0, 1}
+    assert isinstance(layer.selected_data, Selection)

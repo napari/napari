@@ -136,23 +136,23 @@ def test_changing_modes():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'fill'
     assert layer.mode == 'fill'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'paint'
     assert layer.mode == 'paint'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pick'
     assert layer.mode == 'pick'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'paint'
     assert layer.mode == 'paint'
@@ -408,6 +408,16 @@ def test_custom_color_dict():
     assert (layer.get_color(2) == np.array([1.0, 1.0, 1.0, 1.0])).all()
     assert (layer.get_color(4) == layer.get_color(16)).all()
     assert (layer.get_color(8) == layer.get_color(32)).all()
+
+    # Test to see if our label mapped control points map to those in the colormap
+    # with an extra half step.
+    local_controls = np.array(
+        sorted(np.unique([*layer._label_color_index.values(), 1.0]))
+    )
+    colormap_controls = np.array(layer._colormap.controls)
+    assert np.max(np.abs(local_controls - colormap_controls)) == pytest.approx(
+        0.5 / (len(colormap_controls) - 1)
+    )
 
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
@@ -990,7 +1000,7 @@ def test_fill_with_xarray():
 def test_paint_3d_negative_scale(scale):
     labels = np.zeros((3, 5, 11, 11), dtype=int)
     labels_layer = Labels(
-        labels, scale=(1,) + scale, translate=(-200, 100, 100)
+        labels, scale=(1, *scale), translate=(-200, 100, 100)
     )
     labels_layer.n_edit_dimensions = 3
     labels_layer.brush_size = 8

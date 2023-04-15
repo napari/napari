@@ -418,7 +418,7 @@ class Shapes(Layer):
         cache=True,
         experimental_clipping_planes=None,
     ) -> None:
-        if data is None:
+        if data is None or len(data) == 0:
             if ndim is None:
                 ndim = 2
             data = np.empty((0, 0, ndim))
@@ -1118,8 +1118,8 @@ class Shapes(Layer):
                 raise ValueError(
                     trans._('Length of list does not match number of shapes')
                 )
-            else:
-                widths = width
+
+            widths = width
         else:
             widths = [width for _ in range(self.nshapes)]
 
@@ -1147,8 +1147,8 @@ class Shapes(Layer):
                 raise ValueError(
                     trans._('Length of list does not match number of shapes')
                 )
-            else:
-                z_indices = z_index
+
+            z_indices = z_index
         else:
             z_indices = [z_index for _ in range(self.nshapes)]
 
@@ -1478,15 +1478,15 @@ class Shapes(Layer):
         """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             return color in self.properties
-        elif isinstance(color, (list, np.ndarray)):
+        if isinstance(color, (list, np.ndarray)):
             return False
-        else:
-            raise ValueError(
-                trans._(
-                    'face_color should be the name of a color, an array of colors, or the name of an property',
-                    deferred=True,
-                )
+
+        raise ValueError(
+            trans._(
+                'face_color should be the name of a color, an array of colors, or the name of an property',
+                deferred=True,
             )
+        )
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -1497,6 +1497,12 @@ class Shapes(Layer):
             Dictionary of layer state.
         """
         state = self._get_base_state()
+        face_color = self.face_color
+        edge_color = self.edge_color
+        if not face_color.size:
+            face_color = self._current_face_color
+        if not edge_color.size:
+            edge_color = self._current_edge_color
         state.update(
             {
                 'ndim': self.ndim,
@@ -1507,11 +1513,11 @@ class Shapes(Layer):
                 'opacity': self.opacity,
                 'z_index': self.z_index,
                 'edge_width': self.edge_width,
-                'face_color': self.face_color,
+                'face_color': face_color,
                 'face_color_cycle': self.face_color_cycle,
                 'face_colormap': self.face_colormap.name,
                 'face_contrast_limits': self.face_contrast_limits,
-                'edge_color': self.edge_color,
+                'edge_color': edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
@@ -2717,7 +2723,7 @@ class Shapes(Layer):
             dims_displayed=dims_displayed,
         )
 
-        return (value, None)
+        return value, None
 
     def _get_index_and_intersection(
         self,

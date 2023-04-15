@@ -1,5 +1,4 @@
-# closest mpl commit is 3fda6a719d, except it is missing turbo data
-from napari.utils.colormaps.vendored.colors import ListedColormap
+from .colors import ListedColormap
 
 _magma_data = [
     [0.001462, 0.000466, 0.013866],
