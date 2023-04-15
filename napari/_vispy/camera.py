@@ -242,7 +242,8 @@ def add_mouse_pan_zoom_toggles(
                 self.mouse_zoom
                 and event.type == 'mouse_wheel'
                 or self.mouse_pan
-                and event.type in ('mouse_move', 'mouse_press')
+                and event.type
+                in ('mouse_move', 'mouse_press', 'mouse_release')
             ):
                 super().viewbox_mouse_event(event)
             else:
