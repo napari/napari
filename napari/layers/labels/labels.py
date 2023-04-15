@@ -899,6 +899,7 @@ class Labels(_ImageBase):
         """
         raw_modified = raw
 
+        # cache the raw data and keep track of when values are changed
         changed_mask = None
         if (
             self._cached_raw_modified is not None
