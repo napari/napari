@@ -82,15 +82,7 @@ def conda_map() -> Dict[PyPIname, Optional[str]]:
         return json.load(resp)
 
 
-class _ExtraDict(TypedDict):
-    home_page: str
-    pypi_versions: List[str]
-    conda_versions: List[str]
-
-
-def iter_napari_plugin_info() -> (
-    Iterator[Tuple[PackageMetadata, bool, _ExtraDict]]
-):
+def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
     """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
     with ThreadPoolExecutor() as executor:
         data = executor.submit(plugin_summaries)
@@ -107,11 +99,11 @@ def iter_napari_plugin_info() -> (
 
         # TODO: once the new version of npe2 is out, this can be refactored
         # to all the metadata includes the conda and pypi versions.
-        extra_info = _ExtraDict(
-            home_page=info_.get("home_page", ""),
-            pypi_versions=info_.pop("pypi_versions"),
-            conda_versions=info_.pop("conda_versions"),
-        )
+        extra_info = {
+            'home_page': info_.get("home_page", ""),
+            'pypi_versions': info_.pop("pypi_versions"),
+            'conda_versions': info_.pop("conda_versions"),
+        }
         info_["name"] = normalized_name(info_["name"])
         meta = PackageMetadata(**info_)
 
