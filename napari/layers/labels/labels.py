@@ -275,6 +275,8 @@ class Labels(_ImageBase):
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
+        self._cached_raw_modified = None
+        self._cached_image = None
 
         data = self._ensure_int_labels(data)
         self._color_lookup_func = None
@@ -895,8 +897,25 @@ class Labels(_ImageBase):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-
         raw_modified = raw
+
+        changed_mask = None
+        if (
+            self._cached_raw_modified is not None
+            and self._cached_raw_modified.shape == raw_modified.shape
+        ):
+            changed_mask = self._cached_raw_modified != raw_modified
+            # Select only a subset with changes for further computations
+            raw_modified = raw_modified[changed_mask]
+            # Update the cache
+            self._cached_raw_modified[changed_mask] = raw_modified
+        else:
+            self._cached_raw_modified = raw_modified.copy()
+
+        # If there are no any changes, just return the cached image
+        if raw_modified.size == 0:
+            return self._cached_image
+
         if self.contour > 0:
             if raw.ndim == 2:
                 raw_modified = np.zeros_like(raw)
@@ -974,6 +993,13 @@ class Labels(_ImageBase):
             )
         else:
             raise ValueError("Unsupported Color Mode")
+
+        if changed_mask is not None:
+            self._cached_image[changed_mask] = image
+            image = self._cached_image
+        else:
+            self._cached_image = image
+
         return image
 
     def new_colormap(self):
