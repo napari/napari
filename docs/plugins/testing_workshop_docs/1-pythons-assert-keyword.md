@@ -91,4 +91,4 @@ Note that when the assertion fails, a traceback occurs.
 
 This example is a simple way to demonstrate the use of the assert keyword, but it’s not particularly useful for testing a larger codebase. This test function has to be called explicitly to test different marks. There’s not much detail when the code is running. We just get `“All passing.”` and there’s no information about other tests when one of the tests fails.  
   
-Making testing more convenient is where [testing frameworks](./rticle-2-pytest-testing-frameworks), like [pytest](https://docs.pytest.org/) come in.  
+Making testing more convenient is where [testing frameworks](./2-pytest-testing-frameworks), like [pytest](https://docs.pytest.org/) come in.  
