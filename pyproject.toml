@@ -159,6 +159,7 @@ keep-runtime-typing = true
 
 [tool.ruff.isort]
 known-first-party=['napari']
+combine-as-imports = true
 
 [tool.ruff.flake8-import-conventions]
 [tool.ruff.flake8-import-conventions.extend-aliases]
