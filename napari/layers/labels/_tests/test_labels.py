@@ -1394,6 +1394,17 @@ def test_is_default_color():
     assert layer.color_mode == 'direct'
 
 
+def test_large_labels_direct_color():
+    """Make sure direct color works with large label ranges"""
+    data = np.array([[0, 1], [2**16, 2**20]], dtype=np.uint32)
+    colors = {1: 'white', 2**16: 'green', 2**20: 'magenta'}
+    layer = Labels(data)
+    layer.color = colors
+
+    assert layer.color_mode == 'direct'
+    np.testing.assert_allclose(layer.get_color(2**20), [1.0, 0.0, 1.0, 1.0])
+
+
 def test_negative_label():
     """Test negative label values are supported."""
     data = np.random.randint(low=-1, high=20, size=(10, 10))
