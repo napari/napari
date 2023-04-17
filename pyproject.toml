@@ -108,6 +108,7 @@ ignore = [
     "TRY003", # require implement multiple exception class
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
     "B028", # need to be fixed
+    "PYI015", # it produces bad looking files (@jni opinion)
 
 ]
 
