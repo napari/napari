@@ -42,6 +42,9 @@ class Vectors(Layer):
         possible values for each property.
     edge_width : float
         Width for all vectors in pixels.
+    edge_display_style : str
+        Determines how vectors are displayed. Options are 'rectangle', 'triangle',
+        and 'arrow'.
     length : float
         Multiplicative factor on projections for length of all vectors.
     edge_color : str

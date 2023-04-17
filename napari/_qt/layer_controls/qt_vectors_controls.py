@@ -45,6 +45,8 @@ class QtVectorsControls(QtLayerControls):
         Multiplicative factor on projections for length of all vectors.
     widthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
         Spin box widget controlling edge line width of vectors.
+    display_style_comboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select edge_display_style for the vectors.
     """
 
     layer: 'napari.layers.Vectors'
@@ -167,7 +169,7 @@ class QtVectorsControls(QtLayerControls):
         Parameters
         ----------
         style : str
-            Vectors style. Must be: 'rectangle' or 'triangle'
+            Vectors style. Must be: 'rectangle', 'triangle' or 'arrow'
         """
         with self.layer.events.edge_display_style.blocker():
             self.layer.edge_display_style = style
