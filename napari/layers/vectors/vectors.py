@@ -159,6 +159,7 @@ class Vectors(Layer):
         properties=None,
         property_choices=None,
         edge_width=1,
+        edge_display_style='rectangle',
         edge_color='red',
         edge_color_cycle=None,
         edge_colormap='viridis',
@@ -205,6 +206,7 @@ class Vectors(Layer):
             length=Event,
             edge_width=Event,
             edge_color=Event,
+            edge_display_style=Event,
             edge_color_mode=Event,
             properties=Event,
             out_of_slice_display=Event,
@@ -213,6 +215,7 @@ class Vectors(Layer):
         )
 
         # Save the vector style params
+        self._edge_display_style = edge_display_style
         self._edge_width = edge_width
         self._out_of_slice_display = out_of_slice_display
 
@@ -373,6 +376,7 @@ class Vectors(Layer):
             {
                 'length': self.length,
                 'edge_width': self.edge_width,
+                'edge_display_style': self.edge_display_style,
                 'edge_color': self.edge_color
                 if self.data.size
                 else [self._edge.current_color],
@@ -434,6 +438,19 @@ class Vectors(Layer):
         self._edge_width = edge_width
 
         self.events.edge_width()
+        self.refresh()
+
+    @property
+    def edge_display_style(self) -> str:
+        """str: Vectors display style."""
+        return self._edge_display_style
+
+    @edge_display_style.setter
+    def edge_display_style(self, edge_display_style: str):
+        # There should probably be a 'DisplayStyle' class
+        self._edge_display_style = edge_display_style
+
+        self.events.edge_display_style()
         self.refresh()
 
     @property
@@ -588,7 +605,12 @@ class Vectors(Layer):
         """(Mx4) np.ndarray : colors for the M in view vectors"""
         face_color = self.edge_color[self._view_indices]
         face_color[:, -1] *= self._view_alphas
-        face_color = np.repeat(face_color, 2, axis=0)
+
+        if self.edge_display_style == 'rectangle':
+            face_color = np.repeat(face_color, 2, axis=0)
+
+        elif self.edge_display_style == 'arrow':
+            face_color = np.repeat(face_color, 3, axis=0)
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])

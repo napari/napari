@@ -1,5 +1,3 @@
-from copy import copy
-
 import numpy as np
 
 from napari._vispy.layers.base import VispyBaseLayer
@@ -23,6 +21,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             self.layer._view_data,
             self.layer.edge_width,
             self.layer.length,
+            self.layer.edge_display_style,
         )
         face_color = self.layer._view_face_color
         ndisplay = self.layer._slice_input.ndisplay
@@ -49,7 +48,7 @@ class VispyVectorsLayer(VispyBaseLayer):
         self._on_matrix_change()
 
 
-def generate_vector_meshes(vectors, width, length):
+def generate_vector_meshes(vectors, width, length, style):
     """Generates list of mesh vertices and triangles from a list of vectors
 
     Parameters
@@ -71,13 +70,15 @@ def generate_vector_meshes(vectors, width, length):
     """
     ndim = vectors.shape[2]
     if ndim == 2:
-        vertices, triangles = generate_vector_meshes_2D(vectors, width, length)
+        vertices, triangles = generate_vector_meshes_2D(
+            vectors, width, length, style
+        )
     else:
         v_a, t_a = generate_vector_meshes_2D(
-            vectors, width, length, p=(0, 0, 1)
+            vectors, width, length, style, p=(0, 0, 1)
         )
         v_b, t_b = generate_vector_meshes_2D(
-            vectors, width, length, p=(1, 0, 0)
+            vectors, width, length, style, p=(1, 0, 0)
         )
         vertices = np.concatenate([v_a, v_b], axis=0)
         triangles = np.concatenate([t_a, len(v_a) + t_b], axis=0)
@@ -85,7 +86,7 @@ def generate_vector_meshes(vectors, width, length):
     return vertices, triangles
 
 
-def generate_vector_meshes_2D(vectors, width, length, p=(0, 0, 1)):
+def generate_vector_meshes_2D(vectors, width, length, style, p=(0, 0, 1)):
     """Generates list of mesh vertices and triangles from a list of vectors
 
     Parameters
@@ -97,6 +98,8 @@ def generate_vector_meshes_2D(vectors, width, length, p=(0, 0, 1)):
         width of the line to be drawn
     length : float
         length multiplier of the line to be drawn
+    style : str
+        display style of the vectors
     p : 3-tuple, optional
         orthogonal vector for segment calculation in 3D.
 
@@ -107,25 +110,127 @@ def generate_vector_meshes_2D(vectors, width, length, p=(0, 0, 1)):
     triangles : (2N, 3) array
         Vertex indices that form the mesh triangles
     """
-    ndim = vectors.shape[2]
-    vectors = np.reshape(copy(vectors), (-1, ndim))
-    vectors[1::2] = vectors[::2] + length * vectors[1::2]
 
-    centers = np.repeat(vectors, 2, axis=0)
-    offsets = segment_normal(vectors[::2, :], vectors[1::2, :], p=p)
+    nvectors = vectors.shape[0]
+
+    if style == 'rectangle':
+        vertices = generate_meshes_rectangle_2D(vectors, width, length, p)
+        triangles = np.array(
+            [
+                [2 * i, 2 * i + 1, 2 * i + 2]
+                if i % 2 == 0
+                else [2 * i - 1, 2 * i, 2 * i + 1]
+                for i in range(2 * nvectors)
+            ]
+        ).astype(np.uint32)
+
+    elif style == 'triangle':
+        vertices = generate_meshes_triangle_2D(vectors, width, length, p)
+        triangles = np.arange(3 * nvectors).reshape((-1, 3)).astype(np.uint32)
+
+    elif style == 'arrow':
+        vertices = generate_meshes_arrow_2D(vectors, width, length, p)
+        triangles = np.array(
+            [
+                [7 * i / 3, 7 * i / 3 + 1, 7 * i / 3 + 2]
+                if i % 3 == 0
+                else [
+                    7 * (i - 1) / 3 + 1,
+                    7 * (i - 1) / 3 + 2,
+                    7 * (i - 1) / 3 + 3,
+                ]
+                if i % 3 == 1
+                else [
+                    7 * (i - 2) / 3 + 4,
+                    7 * (i - 2) / 3 + 5,
+                    7 * (i - 2) / 3 + 6,
+                ]
+                for i in range(3 * nvectors)
+            ]
+        ).astype(np.uint32)
+
+    else:
+        raise NotImplementedError
+
+    return vertices, triangles
+
+
+def generate_meshes_rectangle_2D(vectors, width, length, p):
+    nvectors, _, ndim = vectors.shape
+
+    vectors_starts = vectors[:, 0]
+    vectors_ends = vectors_starts + length * vectors[:, 1]
+
+    vertices = np.zeros((4 * nvectors, ndim))
+    offsets = segment_normal(vectors_starts, vectors_ends, p=p)
     offsets = np.repeat(offsets, 4, axis=0)
+
     signs = np.ones((len(offsets), ndim))
     signs[::2] = -1
     offsets = offsets * signs
 
-    vertices = centers + width * offsets / 2
-    triangles = np.array(
-        [
-            [2 * i, 2 * i + 1, 2 * i + 2]
-            if i % 2 == 0
-            else [2 * i - 1, 2 * i, 2 * i + 1]
-            for i in range(len(vectors))
-        ]
-    ).astype(np.uint32)
+    vertices[::4] = vectors_starts
+    vertices[1::4] = vectors_starts
+    vertices[2::4] = vectors_ends
+    vertices[3::4] = vectors_ends
 
-    return vertices, triangles
+    vertices = vertices + width * offsets / 2
+
+    return vertices
+
+
+def generate_meshes_triangle_2D(vectors, width, length, p):
+    nvectors, _, ndim = vectors.shape
+
+    vectors_starts = vectors[:, 0]
+    vectors_ends = vectors_starts + length * vectors[:, 1]
+
+    vertices = np.zeros((3 * nvectors, ndim))
+    offsets = segment_normal(vectors_starts, vectors_ends, p=p)
+    offsets = np.repeat(offsets, 3, axis=0)
+
+    signs = np.ones((len(offsets), ndim))
+    signs[::3] = -1
+    multipliers = np.ones((len(offsets), ndim))
+    multipliers[2::3] = 0
+    offsets = offsets * signs * multipliers
+
+    vertices[::3] = vectors_starts
+    vertices[1::3] = vectors_starts
+    vertices[2::3] = vectors_ends
+
+    vertices = vertices + width * offsets / 2
+
+    return vertices
+
+
+def generate_meshes_arrow_2D(vectors, width, length, p):
+    nvectors, _, ndim = vectors.shape
+
+    vectors_starts = vectors[:, 0]
+    vectors_intermediates = vectors_starts + 0.75 * vectors[:, 1]
+    vectors_ends = vectors_starts + length * vectors[:, 1]
+
+    vertices = np.zeros((7 * nvectors, ndim))
+    offsets = segment_normal(vectors_starts, vectors_ends, p=p)
+    offsets = np.repeat(offsets, 7, axis=0)
+
+    signs = np.ones((len(offsets), ndim))
+    signs[::2] = -1
+    multipliers = np.ones((len(offsets), ndim))
+    multipliers[4::7] = 2
+    multipliers[5::7] = 2
+    multipliers[6::7] = 0
+    offsets = offsets * signs * multipliers
+
+    vertices[::7] = vectors_starts
+    vertices[1::7] = vectors_starts
+    vertices[2::7] = vectors_intermediates
+    vertices[3::7] = vectors_intermediates
+    vertices[4::7] = vectors_intermediates
+    vertices[5::7] = vectors_intermediates
+    vertices[6::7] = vectors_ends
+
+    vertices = vertices + width * offsets / 2
+
+    return vertices
