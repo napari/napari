@@ -16,7 +16,6 @@ from typing import (
     Union,
 )
 
-import dask.array as da
 import numpy as np
 from typing_extensions import TypedDict, get_args
 
@@ -24,6 +23,7 @@ if TYPE_CHECKING:
     # dask zarr should be imported as `import dask.array as da` But here it is used only in type annotation to
     # register it as a valid type fom magicgui so is passed as string and requires full qualified name to allow
     # magicgui properly register it.
+    import dask.array  # noqa: ICN001
     import zarr
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 # and should probably be replaced by a typing.Protocol
 # note, numpy.typing.ArrayLike (in v1.20) is not quite what we want either,
 # since it includes all valid arguments for np.array() ( int, float, str...)
-ArrayLike = Union[np.ndarray, da.Array, "zarr.Array"]
+ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
@@ -78,10 +78,8 @@ class SampleDict(TypedDict):
 
 ArrayBase: Type[np.ndarray] = np.ndarray
 
-ImageData_np = NewType("ImageData_np", np.ndarray)
-ImageData_da = NewType("ImageData_da", da.Array)
-# ImageData_zarr = NewType("ImageData_zarr", zarrArray) # Fixme: error: Argument 2 to NewType(...) must be subclassable (got "Any")  [valid-newtype]
-ImageData = Union[ImageData_np, ImageData_da]  # , ImageData_zarr]
+
+ImageData = NewType("ImageData", np.ndarray)
 LabelsData = NewType("LabelsData", np.ndarray)
 PointsData = NewType("PointsData", np.ndarray)
 ShapesData = NewType("ShapesData", List[np.ndarray])
