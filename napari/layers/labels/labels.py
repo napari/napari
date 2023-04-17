@@ -275,8 +275,8 @@ class Labels(_ImageBase):
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
-        self._cached_raw_modified = None
-        self._cached_image = None
+        self._cached_labels = None
+        self._cached_mapped_labels = None
 
         data = self._ensure_int_labels(data)
         self._color_lookup_func = None
@@ -894,24 +894,24 @@ class Labels(_ImageBase):
 
         Returns
         -------
-        image : array
-            Image mapped between 0 and 1 to be displayed.
+        mapped_labels : array
+            Encoded colors mapped between 0 and 1 to be displayed.
         """
-        raw_modified = raw
+        labels = raw  # for readability
 
         if self.contour > 0:
-            if raw.ndim == 2:
-                raw_modified = np.zeros_like(raw)
-                struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
+            if labels.ndim == 2:
+                struct_elem = ndi.generate_binary_structure(labels.ndim, 1)
                 thickness = self.contour
                 thick_struct_elem = ndi.iterate_structure(
                     struct_elem, thickness
                 ).astype(bool)
-                boundaries = ndi.grey_dilation(
-                    raw, footprint=struct_elem
-                ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
-                raw_modified[boundaries] = raw[boundaries]
-            elif raw.ndim > 2:
+                not_boundaries = ndi.grey_dilation(
+                    labels, footprint=struct_elem
+                ) == ndi.grey_erosion(labels, footprint=thick_struct_elem)
+                labels = labels.copy()
+                labels[not_boundaries] = 0
+            elif labels.ndim > 2:
                 warnings.warn(
                     trans._(
                         "Contours are not displayed during 3D rendering",
@@ -919,34 +919,35 @@ class Labels(_ImageBase):
                     )
                 )
 
-        # cache the raw data and keep track of when values are changed
-        changed_mask = None
+        # cache the labels and keep track of when values are changed
+        update_mask = None
         if (
-            self._cached_raw_modified is not None
-            and self._cached_raw_modified.shape == raw_modified.shape
+            self._cached_labels is not None
+            and self._cached_labels.shape == labels.shape
         ):
-            changed_mask = self._cached_raw_modified != raw_modified
+            update_mask = self._cached_labels != labels
             # Select only a subset with changes for further computations
-            raw_modified = raw_modified[changed_mask]
+            labels_to_map = labels[update_mask]
             # Update the cache
-            self._cached_raw_modified[changed_mask] = raw_modified
+            self._cached_labels[update_mask] = labels_to_map
         else:
-            self._cached_raw_modified = raw_modified.copy()
+            self._cached_labels = labels.copy()
+            labels_to_map = labels
 
         # If there are no any changes, just return the cached image
-        if raw_modified.size == 0:
-            return self._cached_image
+        if labels_to_map.size == 0:
+            return self._cached_mapped_labels
 
         if self._color_lookup_func is None:
             self._color_lookup_func = self._get_color_lookup_func(
-                raw_modified, np.min(raw_modified), np.max(raw_modified)
+                labels_to_map, np.min(labels_to_map), np.max(labels_to_map)
             )
         if (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
         ):
-            min_label_id = raw_modified.min()
-            max_label_id = raw_modified.max()
+            min_label_id = labels_to_map.min()
+            max_label_id = labels_to_map.max()
             upper_bound_n_unique_labels = max_label_id - min_label_id
             none_color_index = self._label_color_index[None]
 
@@ -957,25 +958,27 @@ class Labels(_ImageBase):
                         for label_id in range(min_label_id, max_label_id + 1)
                     ]
                 )
-                image = mapping[raw_modified - min_label_id]
+                mapped_labels = mapping[labels_to_map - min_label_id]
             else:
-                unique_ids, inv = np.unique(raw_modified, return_inverse=True)
-                image = np.array(
+                unique_ids, inv = np.unique(labels_to_map, return_inverse=True)
+                mapped_labels = np.array(
                     [
                         self._label_color_index.get(label_id, none_color_index)
                         for label_id in unique_ids
                     ]
-                )[inv].reshape(raw_modified.shape)
+                )[inv].reshape(labels_to_map.shape)
         elif (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            image = self._color_lookup_func(raw_modified)
+            mapped_labels = self._color_lookup_func(labels_to_map)
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            image = self._color_lookup_func(raw_modified, self._selected_label)
+            mapped_labels = self._color_lookup_func(
+                labels_to_map, self._selected_label
+            )
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
@@ -984,11 +987,11 @@ class Labels(_ImageBase):
             if selected not in self._label_color_index:
                 selected = None
             index = self._label_color_index
-            image = np.where(
-                raw_modified == selected,
+            mapped_labels = np.where(
+                labels_to_map == selected,
                 index[selected],
                 np.where(
-                    raw_modified != self._background_label,
+                    labels_to_map != self._background_label,
                     index[None],
                     index[self._background_label],
                 ),
@@ -996,13 +999,13 @@ class Labels(_ImageBase):
         else:
             raise ValueError("Unsupported Color Mode")
 
-        if changed_mask is not None:
-            self._cached_image[changed_mask] = image
-            image = self._cached_image
+        if update_mask is not None:
+            self._cached_mapped_labels[update_mask] = mapped_labels
+            mapped_labels = self._cached_mapped_labels
         else:
-            self._cached_image = image
+            self._cached_mapped_labels = mapped_labels
 
-        return image
+        return mapped_labels
 
     def new_colormap(self):
         self.seed = np.random.rand()
