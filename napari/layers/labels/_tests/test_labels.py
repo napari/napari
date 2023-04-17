@@ -137,23 +137,23 @@ def test_changing_modes():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'fill'
     assert layer.mode == 'fill'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'paint'
     assert layer.mode == 'paint'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pick'
     assert layer.mode == 'pick'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'paint'
     assert layer.mode == 'paint'

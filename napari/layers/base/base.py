@@ -195,6 +195,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Displayed in status bar bottom right.
     interactive : bool
         Determine if canvas pan/zoom interactivity is enabled.
+        This attribute is deprecated since 0.5.0 and should not be used.
+        Use the mouse_pan and mouse_zoom attributes instead.
+    mouse_pan : bool
+        Determine if canvas interactive panning is enabled with the mouse.
+    mouse_zoom : bool
+        Determine if canvas interactive zooming is enabled with the mouse.
     cursor : str
         String identifying which cursor displayed over canvas.
     cursor_size : int | None
@@ -283,7 +289,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._help = ''
         self._cursor = 'standard'
         self._cursor_size = 1
-        self._interactive = True
+        self._mouse_pan = True
+        self._mouse_zoom = True
         self._value = None
         self.scale_factor = 1
         self.multiscale = multiscale
@@ -369,7 +376,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             thumbnail=Event,
             status=Event,
             help=Event,
-            interactive=Event,
+            interactive=WarningEmitter(
+                trans._(
+                    "layer.events.interactive is deprecated since 0.5.0 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom",
+                    deferred=True,
+                ),
+                type_name='interactive',
+            ),
+            mouse_pan=Event,
+            mouse_zoom=Event,
             cursor=Event,
             cursor_size=Event,
             editable=Event,
@@ -458,7 +473,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        self.interactive = mode == self._modeclass.PAN_ZOOM
+        self.mouse_pan = mode == self._modeclass.PAN_ZOOM
         self._overlays['transform_box'].visible = (
             mode == self._modeclass.TRANSFORM
         )
@@ -904,16 +919,58 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.help(help=help_text)
 
     @property
-    def interactive(self):
-        """bool: Determine if canvas pan/zoom interactivity is enabled."""
-        return self._interactive
+    def interactive(self) -> bool:
+        warnings.warn(
+            trans._(
+                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.mouse_pan or self.mouse_zoom
 
     @interactive.setter
-    def interactive(self, interactive):
-        if interactive == self._interactive:
+    def interactive(self, interactive: bool):
+        warnings.warn(
+            trans._(
+                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        with self.events.interactive.blocker():
+            self.mouse_pan = interactive
+        self.mouse_zoom = interactive
+
+    @property
+    def mouse_pan(self) -> bool:
+        """bool: Determine if canvas interactive panning is enabled with the mouse."""
+        return self._mouse_pan
+
+    @mouse_pan.setter
+    def mouse_pan(self, mouse_pan: bool):
+        if mouse_pan == self._mouse_pan:
             return
-        self._interactive = interactive
-        self.events.interactive(interactive=interactive)
+        self._mouse_pan = mouse_pan
+        self.events.mouse_pan(mouse_pan=mouse_pan)
+        self.events.interactive(
+            interactive=self.mouse_pan or self.mouse_zoom
+        )  # Deprecated since 0.5.0
+
+    @property
+    def mouse_zoom(self) -> bool:
+        """bool: Determine if canvas interactive zooming is enabled with the mouse."""
+        return self._mouse_zoom
+
+    @mouse_zoom.setter
+    def mouse_zoom(self, mouse_zoom: bool):
+        if mouse_zoom == self._mouse_zoom:
+            return
+        self._mouse_zoom = mouse_zoom
+        self.events.mouse_zoom(mouse_zoom=mouse_zoom)
+        self.events.interactive(
+            interactive=self.mouse_pan or self.mouse_zoom
+        )  # Deprecated since 0.5.0
 
     @property
     def cursor(self):

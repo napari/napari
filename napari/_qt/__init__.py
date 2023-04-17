@@ -58,7 +58,7 @@ if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
             deferred=True,
             version=QtCore.__version__,
         )
-    warn(message=warn_message)
+    warn(message=warn_message, stacklevel=1)
 
 
 from napari._qt.qt_event_loop import get_app, gui_qt, quit_app, run

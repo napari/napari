@@ -32,7 +32,7 @@ def highlight_box_handles(layer, event):
     nearby_handle = get_nearby_handle(pos, handle_coords)
 
     # set the selected vertex of the box to the nearby_handle (can also be INSIDE or None)
-    layer._overlays['transform_box'].selected_vertex = nearby_handle
+    layer._overlays['transform_box'].selected_handle = nearby_handle
 
 
 def _translate_with_box(
