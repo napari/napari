@@ -450,6 +450,11 @@ class Vectors(Layer):
 
     @edge_display_style.setter
     def edge_display_style(self, edge_display_style: str):
+        if edge_display_style in ['rectangle', 'triangle', 'arrow']:
+            self.layer.edge_display_style = edge_display_style
+        else:
+            raise
+
         # There should probably be a 'DisplayStyle' class
         self._edge_display_style = edge_display_style
 
