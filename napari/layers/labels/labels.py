@@ -983,13 +983,13 @@ class Labels(_ImageBase):
             self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
         ):
-            selected = self._selected_label
-            if selected not in self._label_color_index:
-                selected = None
+            selected_label = self._selected_label
+            if selected_label not in self._label_color_index:
+                selected_label = None
             index = self._label_color_index
             mapped_labels = np.where(
-                labels_to_map == selected,
-                index[selected],
+                labels_to_map == selected_label,
+                index[selected_label],
                 np.where(
                     labels_to_map != self._background_label,
                     index[None],
