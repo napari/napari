@@ -11,7 +11,6 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    TypedDict,
     cast,
 )
 
@@ -392,22 +391,16 @@ def _npe2_manifest_to_actions(
     return actions, submenus
 
 
-class _GroupOrder(TypedDict):
-    group: Optional[str]
-    order: Optional[float]
-    when: Optional[str]
-
-
 def _when_group_order(
     menu_item: contributions.MenuItem,
-) -> _GroupOrder:
+) -> dict:
     """Extract when/group/order from an npe2 Submenu or MenuCommand."""
     group, _, _order = (menu_item.group or '').partition("@")
     try:
         order: Optional[float] = float(_order)
     except ValueError:
         order = None
-    return _GroupOrder(when=menu_item.when, group=group or None, order=order)
+    return {'when': menu_item.when, 'group': group or None, 'order': order}
 
 
 def _npe2_submenu_to_app_model(subm: contributions.Submenu) -> SubmenuItem:
