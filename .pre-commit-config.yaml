@@ -4,13 +4,13 @@ repos:
     hooks:
     - id: pycln
 -   repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 23.3.0
     hooks:
     - id: black
       pass_filenames: true
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.256
+    rev: v0.0.261
     hooks:
       - id: ruff
         exclude: _vendor|vendored
