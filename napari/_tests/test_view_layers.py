@@ -13,8 +13,7 @@ import pytest
 from numpydoc.docscrape import ClassDoc, FunctionDoc
 
 import napari
-from napari import Viewer
-from napari import layers as module
+from napari import Viewer, layers as module
 from napari._tests.utils import check_viewer_functioning, layer_test_data
 from napari.utils.misc import camel_to_snake
 

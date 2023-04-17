@@ -12,8 +12,7 @@ import re
 import sys
 import warnings
 from enum import Enum, EnumMeta
-from os import fspath
-from os import path as os_path
+from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
