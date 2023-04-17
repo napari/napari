@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Final, Optional
 
-from app_model.expressions import Context, get_context
-from app_model.expressions import create_context as _create_context
+from app_model.expressions import (
+    Context,
+    create_context as _create_context,
+    get_context,
+)
 
 from napari.utils.translations import trans
 
