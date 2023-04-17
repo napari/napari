@@ -1,3 +1,4 @@
+from itertools import takewhile
 from typing import Callable, Iterable, Iterator, Optional
 
 from tqdm import tqdm
@@ -169,19 +170,7 @@ class cancelable_progress(progress):
         super().__init__(iterable, desc, total, nest_under, *args, **kwargs)
 
     def __iter__(self) -> Iterator:
-        plain_iterator = super().__iter__()
-
-        # Wrap the tqdm iterator to allow e.g. cancellation
-        class Wrapped(Iterator):
-            def __iter__(wrapped):
-                return wrapped
-
-            def __next__(wrapped):
-                if self.is_canceled:
-                    raise StopIteration
-                return next(plain_iterator)
-
-        return Wrapped()
+        return takewhile(lambda _: not self.is_canceled, self.iterable)
 
     def cancel(self):
         self.is_canceled = True
