@@ -56,7 +56,8 @@ def read(
             npe1_path, plugin_name=plugin
         )
     except ValueError as e:
-        if 'No readers returned data' not in str(e):
+        msg = f"Plugin {plugin!r} was selected to open [{npe1_path!r}], but returned no data."
+        if str(e) != msg:
             raise
     else:
         return layer_data, _FakeHookimpl(reader.plugin_name)
