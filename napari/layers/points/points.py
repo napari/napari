@@ -1566,7 +1566,8 @@ class Points(Layer):
             # unexpected behaviour. See #3734 for details.
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
-                distances <= np.expand_dims(self._view_size, axis=1) / 2,
+                distances
+                <= np.expand_dims(self._view_size, axis=1) / self.scale / 2,
                 axis=1,
             )
             indices = np.where(in_slice_matches)[0]
@@ -1622,7 +1623,8 @@ class Points(Layer):
         # find the points the click intersects
         distances = abs(rotated_points[:, :2] - rotated_click_point[:2])
         in_slice_matches = np.all(
-            distances <= np.expand_dims(self._view_size, axis=1) / 2,
+            distances
+            <= np.expand_dims(self._view_size, axis=1) / self.scale / 2,
             axis=1,
         )
         indices = np.where(in_slice_matches)[0]
