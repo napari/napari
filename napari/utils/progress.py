@@ -70,7 +70,6 @@ class progress(tqdm):
         desc: Optional[str] = None,
         total: Optional[int] = None,
         nest_under: Optional['progress'] = None,
-        cancel_callback: Optional[Callable] = None,
         *args,
         **kwargs,
     ) -> None:
@@ -82,10 +81,7 @@ class progress(tqdm):
             total=Event,
         )
         self.nest_under = nest_under
-        self.cancel_callback = cancel_callback
-        self.is_canceled = False
         self.is_init = True
-
         super().__init__(iterable, desc, total, *args, **kwargs)
 
         if not self.desc:
@@ -95,21 +91,6 @@ class progress(tqdm):
 
     def __repr__(self) -> str:
         return self.desc
-
-    def __iter__(self) -> Iterator:
-        plain_iterator = super().__iter__()
-
-        # Wrap the tqdm iterator to allow e.g. cancellation
-        class Wrapped(Iterator):
-            def __iter__(wrapped):
-                return wrapped
-
-            def __next__(wrapped):
-                if self.is_canceled:
-                    raise StopIteration
-                return next(plain_iterator)
-
-        return Wrapped()
 
     @property
     def total(self):
@@ -155,13 +136,6 @@ class progress(tqdm):
         progress._all_instances.remove(self)
         super().close()
 
-    def cancel(self):
-        self.is_canceled = True
-        # TODO: The callback might want some information,
-        # such as how far along the progress got
-        if self.cancel_callback:
-            self.cancel_callback()
-
 
 def progrange(*args, **kwargs):
     """Shorthand for ``progress(range(*args), **kwargs)``.
@@ -176,3 +150,42 @@ def progrange(*args, **kwargs):
 
     """
     return progress(range(*args), **kwargs)
+
+
+class cancelable_progress(progress):
+    def __init__(
+        self,
+        iterable: Optional[Iterable] = None,
+        desc: Optional[str] = None,
+        total: Optional[int] = None,
+        nest_under: Optional['progress'] = None,
+        cancel_callback: Optional[Callable] = None,
+        *args,
+        **kwargs,
+    ) -> None:
+        self.cancel_callback = cancel_callback
+        self.is_canceled = False
+
+        super().__init__(iterable, desc, total, nest_under, *args, **kwargs)
+
+    def __iter__(self) -> Iterator:
+        plain_iterator = super().__iter__()
+
+        # Wrap the tqdm iterator to allow e.g. cancellation
+        class Wrapped(Iterator):
+            def __iter__(wrapped):
+                return wrapped
+
+            def __next__(wrapped):
+                if self.is_canceled:
+                    raise StopIteration
+                return next(plain_iterator)
+
+        return Wrapped()
+
+    def cancel(self):
+        self.is_canceled = True
+        # TODO: The callback might want some information,
+        # such as how far along the progress got
+        if self.cancel_callback:
+            self.cancel_callback()

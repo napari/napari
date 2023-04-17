@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 import numpy as np
 
-from napari.utils import progrange, progress
+from napari.utils import cancelable_progress, progrange, progress
 
 
 @contextmanager
@@ -98,7 +98,7 @@ def test_progrange():
 def test_progress_cancellation():
     """Test cancellation breaks the for loop"""
     total = 10
-    pbr = progress(range(total))
+    pbr = cancelable_progress(range(total))
     last_loop = -1
     for i in pbr:
         last_loop = i
@@ -119,7 +119,7 @@ def test_progress_cancellation_with_callback():
         nonlocal last_loop
         last_loop = expected_last_loop
 
-    pbr = progress(range(total), cancel_callback=cancel_callback)
+    pbr = cancelable_progress(range(total), cancel_callback=cancel_callback)
     for i in pbr:
         last_loop = i
         # Let's cancel at i=total/2

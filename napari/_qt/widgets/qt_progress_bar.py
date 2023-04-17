@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari.utils.migrations import rename_argument
-from napari.utils.progress import progress
+from napari.utils.progress import cancelable_progress, progress
 from napari.utils.translations import trans
 
 
@@ -31,15 +31,12 @@ class QtLabeledProgressBar(QWidget):
         self.qt_progress_bar = QProgressBar()
         self.description_label = QLabel()
         self.eta_label = QLabel()
-        self.cancel_button = QPushButton(trans._('Cancel'))
-        self.cancel_button.clicked.connect(self._cancel)
         base_layout = QVBoxLayout()
 
         pbar_layout = QHBoxLayout()
         pbar_layout.addWidget(self.description_label)
         pbar_layout.addWidget(self.qt_progress_bar)
         pbar_layout.addWidget(self.eta_label)
-        pbar_layout.addWidget(self.cancel_button)
         base_layout.addLayout(pbar_layout)
 
         line = QFrame(self)
@@ -48,6 +45,11 @@ class QtLabeledProgressBar(QWidget):
         base_layout.addWidget(line)
 
         self.setLayout(base_layout)
+
+        if isinstance(prog, cancelable_progress):
+            self.cancel_button = QPushButton(trans._('Cancel'))
+            self.cancel_button.clicked.connect(self._cancel)
+            pbar_layout.addWidget(self.cancel_button)
 
     @rename_argument("min", "min_val", "0.6.0")
     @rename_argument("max", "max_val", "0.6.0")
