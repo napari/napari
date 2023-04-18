@@ -77,7 +77,7 @@ def test_current_size_display_in_range(qtbot):
     assert slider.maximum() == 201
     assert slider.minimum() == 1
     assert slider.value() == 200
-    assert layer.current_size == [20, 20]
+    assert layer.current_size == 20
 
 
 def test_current_size_slider_properly_initialized(qtbot):
