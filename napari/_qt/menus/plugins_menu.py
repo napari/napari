@@ -1,9 +1,8 @@
 from itertools import chain
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, Union
 
 from qtpy.QtWidgets import QAction
 
-from napari._qt.dialogs.qt_plugin_dialog import QtPluginDialog
 from napari._qt.dialogs.qt_plugin_report import QtPluginErrReporter
 from napari._qt.menus._util import NapariMenu
 from napari.plugins import _npe2
@@ -34,8 +33,9 @@ class PluginsMenu(NapariMenu):
 
     def _build(self, event=None):
         self.clear()
-        action = self.addAction(trans._("Install/Uninstall Plugins..."))
-        action.triggered.connect(self._show_plugin_install_dialog)
+        if self._plugin_manager_dialog_cls() is not None:
+            action = self.addAction(trans._("Install/Uninstall Plugins..."))
+            action.triggered.connect(self._show_plugin_install_dialog)
         action = self.addAction(trans._("Plugin Errors..."))
         action.setStatusTip(
             trans._(
@@ -114,9 +114,21 @@ class PluginsMenu(NapariMenu):
                 menu.addAction(action)
             action.triggered.connect(_add_toggle_widget)
 
+    def _plugin_manager_dialog_cls(self) -> Union[type, None]:
+        """Return the plugin manager class, if available."""
+        try:
+            # TODO: Register via plugin system?
+            from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
+
+            return QtPluginDialog
+        except ImportError:
+            return None
+
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
-        QtPluginDialog(self._win._qt_window).exec_()
+        # We don't check whether the class is not None, because this
+        # function should only be connected in that case.
+        self._plugin_manager_dialog_cls()(self._win._qt_window).exec_()
 
     def _show_plugin_err_reporter(self):
         """Show dialog that allows users to review and report plugin errors."""

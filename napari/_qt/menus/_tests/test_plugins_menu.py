@@ -30,3 +30,21 @@ def test_plugin_display_name_use_for_multiple_widgets(
     plugin_action_menu.actions()[0].trigger()
     assert len(viewer.window._dock_widgets) == 1
     assert list(viewer.window._dock_widgets.data)[0] == 'Widget 1 (tmp_plugin)'
+
+
+def test_plugin_manager(make_napari_viewer):
+    """Test that the plugin manager is accessible from the viewer"""
+    viewer = make_napari_viewer()
+
+    plugins_menu = viewer.window.plugins_menu
+    assert plugins_menu._plugin_manager_dialog_cls is not None
+
+    actions = plugins_menu.actions()
+    for action in actions:
+        if action.text() == 'Install/Uninstall Plugins...':
+            break
+    else:
+        found = [action.text() for action in actions]
+        raise AssertionError(
+            f'Plugin Manager menu item not found. Only found: {", ".join(found)}'
+        )
