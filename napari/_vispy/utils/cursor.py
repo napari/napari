@@ -91,7 +91,7 @@ def crosshair_pixmap():
     return pixmap
 
 
-def square_pixmap(size):
+def square_pixmap(size: int):
     """Create a white/black hollow square pixmap. For use as labels cursor."""
     size = max(int(size), 1)
     pixmap = QPixmap(QSize(size, size))
@@ -105,11 +105,11 @@ def square_pixmap(size):
     return pixmap
 
 
-def create_square_cursor(size):
+def create_square_cursor(size: int):
     return QCursor(square_pixmap(size))
 
 
-def create_circle_cursor(size):
+def create_circle_cursor(size: int):
     return QCursor(circle_pixmap(size))
 
 
