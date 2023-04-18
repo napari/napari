@@ -433,6 +433,7 @@ class QtViewer(QSplitter):
             vsync=True,
             parent=self,
             size=self.viewer._canvas_size[::-1],
+            autoswap=False,  # see #5734
         )
         self.canvas.events.draw.connect(self.dims.enable_play)
 
