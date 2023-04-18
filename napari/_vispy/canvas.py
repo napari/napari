@@ -184,7 +184,7 @@ class VispyCanvas:
         if value:
             self.view.bgcolor = value
         else:
-            self.view.bgcolor = self.bgcolor
+            self.view.bgcolor = None
 
     def _on_theme_change(self, event: Event) -> None:
         self._set_theme_change(event.value)
