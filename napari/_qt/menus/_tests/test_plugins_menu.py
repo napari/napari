@@ -41,7 +41,7 @@ def test_plugin_manager(make_napari_viewer):
 
     actions = plugins_menu.actions()
     for action in actions:
-        if action.text() == 'Install/Uninstall Plugins...':
+        if action.text() == "Plugin Manager":
             break
     else:
         found = [action.text() for action in actions]
