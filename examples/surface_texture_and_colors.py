@@ -9,9 +9,11 @@ This example demonstrates how surfaces may be colored by:
       `colormap`
     * setting `vertex_colors`, which replaces/overrides any color from
       `vertex_values`
-    * setting both `texture` and `texcoords`, which applies a texture
-      (potentially transparent) on top of the colors from `vertex_values` or
-      `vertex_colors`
+    * setting both `texture` and `texcoords`, which blends a the value from
+      a texture (image) with the underlying color from `vertex_values` or
+      `vertex_colors`. Blending is achieved by multiplying the texture color by
+      the underlying color - an underlying value of "white" will result in the
+      unaltered texture color.
 
 .. tags:: visualization-nD
 """
