@@ -1,4 +1,6 @@
-default_shortcuts = {
+from typing import Dict, List
+
+default_shortcuts: Dict[str, List[str]] = {
     'napari:toggle_console_visibility': ['Control-Shift-C'],
     'napari:reset_scroll_progress': ['Control'],
     'napari:toggle_ndisplay': ['Control-Y'],
