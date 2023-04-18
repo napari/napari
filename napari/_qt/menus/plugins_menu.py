@@ -1,4 +1,5 @@
 from itertools import chain
+from logging import getLogger
 from typing import TYPE_CHECKING, Sequence, Union
 
 from qtpy.QtWidgets import QAction
@@ -10,6 +11,9 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import Window
+
+
+logger = getLogger(__name__)
 
 
 class PluginsMenu(NapariMenu):
@@ -118,7 +122,8 @@ class PluginsMenu(NapariMenu):
         try:
             # TODO: Register via plugin system?
             from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
-        except ImportError:
+        except ImportError as exc:
+            logger.debug("QtPluginDialog not available", exc_info=exc)
             return None
         else:
             return QtPluginDialog
