@@ -271,7 +271,7 @@ class Labels(_ImageBase):
         self._background_label = 0
         self._num_colors = num_colors
         self._random_colormap = label_colormap(self.num_colors)
-        self._all_vals = np.array([], dtype=float)
+        self._all_vals = np.array([], dtype=np.float32)
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
@@ -429,7 +429,7 @@ class Labels(_ImageBase):
         self._seed = seed
         # invalidate _all_vals to trigger re-generation
         # in _raw_to_displayed
-        self._all_vals = np.array([])
+        self._all_vals = np.array([], dtype=np.float32)
         self._selected_color = self.get_color(self.selected_label)
         self.refresh()
         self.events.selected_label()
@@ -875,7 +875,8 @@ class Labels(_ImageBase):
 
         if self._all_vals.size < data_range:
             new_all_vals = low_discrepancy_image(
-                np.arange(min_label_val0, max_label_val + 1), self._seed
+                np.arange(min_label_val0, max_label_val + 1, dtype=np.float32),
+                self._seed,
             )
             self._all_vals = np.roll(new_all_vals, min_label_val0)
             self._all_vals[0] = 0

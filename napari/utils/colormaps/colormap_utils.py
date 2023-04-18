@@ -248,7 +248,8 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256):
 
     """
     phi_mod = 0.6180339887498948482
-    image_float = seed + image * phi_mod
+    image_float = np.float32(image)
+    image_float = seed + image_float * phi_mod
     # We now map the floats to the range [0 + margin, 1 - margin]
     image_out = margin + (1 - 2 * margin) * (
         image_float - np.floor(image_float)
