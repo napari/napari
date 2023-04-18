@@ -21,6 +21,7 @@ from napari.layers.labels._labels_constants import (
 )
 from napari.layers.labels._labels_mouse_bindings import draw, pick
 from napari.layers.labels._labels_utils import (
+    get_contours,
     indices_in_shape,
     interpolate_coordinates,
     sphere_indices,
@@ -902,16 +903,9 @@ class Labels(_ImageBase):
 
         if self.contour > 0:
             if labels.ndim == 2:
-                struct_elem = ndi.generate_binary_structure(labels.ndim, 1)
-                thickness = self.contour
-                thick_struct_elem = ndi.iterate_structure(
-                    struct_elem, thickness
-                ).astype(bool)
-                not_boundaries = ndi.grey_dilation(
-                    labels, footprint=struct_elem
-                ) == ndi.grey_erosion(labels, footprint=thick_struct_elem)
-                labels = labels.copy()
-                labels[not_boundaries] = 0
+                labels = get_contours(
+                    labels, self.contour, self._background_label
+                )
             elif labels.ndim > 2:
                 warnings.warn(
                     trans._(
@@ -939,6 +933,27 @@ class Labels(_ImageBase):
         if labels_to_map.size == 0:
             return self._cached_mapped_labels
 
+        mapped_labels = self._map_labels_to_colors(labels_to_map)
+
+        if update_mask is not None:
+            self._cached_mapped_labels[update_mask] = mapped_labels
+            mapped_labels = self._cached_mapped_labels
+        else:
+            self._cached_mapped_labels = mapped_labels
+
+        return mapped_labels
+
+    def _map_labels_to_colors(self, labels_to_map):
+        """Convert an integer labels to a float array of encoded colors.
+
+        Parameters
+        ----------
+        labels_to_map : array
+            Integer input labels.
+        Returns
+        -------
+             Encoded colors mapped between 0 and 1.
+        """
         if self._color_lookup_func is None:
             self._color_lookup_func = self._get_color_lookup_func(
                 labels_to_map, np.min(labels_to_map), np.max(labels_to_map)
@@ -999,12 +1014,6 @@ class Labels(_ImageBase):
             )
         else:
             raise ValueError("Unsupported Color Mode")
-
-        if update_mask is not None:
-            self._cached_mapped_labels[update_mask] = mapped_labels
-            mapped_labels = self._cached_mapped_labels
-        else:
-            self._cached_mapped_labels = mapped_labels
 
         return mapped_labels
 
