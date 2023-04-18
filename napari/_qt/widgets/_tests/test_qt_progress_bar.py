@@ -4,7 +4,6 @@ from napari._qt.widgets.qt_progress_bar import (
     QtLabeledProgressBar,
     QtProgressBarGroup,
 )
-
 from napari.utils.progress import cancelable_progress
 
 

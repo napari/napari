@@ -50,7 +50,6 @@ class QtLabeledProgressBar(QWidget):
 
         self.setLayout(base_layout)
 
-
     @rename_argument("min", "min_val", "0.6.0")
     @rename_argument("max", "max_val", "0.6.0")
     def setRange(self, min_val, max_val):
