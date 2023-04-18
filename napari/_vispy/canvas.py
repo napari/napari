@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
     from qtpy.QtCore import Qt, pyqtBoundSignal
     from qtpy.QtGui import QCursor, QImage
+    from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
 
     from napari.components import ViewerModel
@@ -157,13 +158,13 @@ class VispyCanvas:
         return self._scene_canvas._backend.destroyed
 
     @property
-    def native(self):
+    def native(self) -> CanvasBackendDesktop:
         """Returns the native widget of the Vispy SceneCanvas."""
         return self._scene_canvas.native
 
     @property
-    def screen_changed(self):
-        """Returning signal indicating whether the window screen has changed."""
+    def screen_changed(self) -> Callable:
+        """Bound method returning signal indicating whether the window screen has changed."""
         return self._scene_canvas._backend.screen_changed
 
     @property
