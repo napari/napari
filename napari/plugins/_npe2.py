@@ -15,8 +15,7 @@ from typing import (
 )
 
 from app_model.types import SubmenuItem
-from npe2 import io_utils
-from npe2 import plugin_manager as pm
+from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
 from napari.utils.translations import trans
