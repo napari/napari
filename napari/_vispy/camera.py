@@ -1,5 +1,7 @@
+from typing import Type
+
 import numpy as np
-from vispy.scene import ArcballCamera, PanZoomCamera
+from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 
 from napari._vispy.utils.quaternion import quaternion2euler
 
@@ -23,14 +25,17 @@ class VispyCamera:
         self._dims = dims
 
         # Create 2D camera
-        self._2D_camera = PanZoomCamera(aspect=1)
+        self._2D_camera = MouseToggledPanZoomCamera(aspect=1)
         # flip y-axis to have correct alignment
         self._2D_camera.flip = (0, 1, 0)
         self._2D_camera.viewbox_key_event = viewbox_key_event
 
         # Create 3D camera
-        self._3D_camera = ArcballCamera(fov=0)
+        self._3D_camera = MouseToggledArcballCamera(fov=0)
         self._3D_camera.viewbox_key_event = viewbox_key_event
+
+        # Set 2D camera by default
+        self._view.camera = self._2D_camera
 
         self._dims.events.ndisplay.connect(
             self._on_ndisplay_change, position='first'
@@ -40,6 +45,8 @@ class VispyCamera:
         self._camera.events.zoom.connect(self._on_zoom_change)
         self._camera.events.angles.connect(self._on_angles_change)
         self._camera.events.perspective.connect(self._on_perspective_change)
+        self._camera.events.mouse_pan.connect(self._on_mouse_toggles_change)
+        self._camera.events.mouse_zoom.connect(self._on_mouse_toggles_change)
 
         self._on_ndisplay_change()
 
@@ -133,14 +140,36 @@ class VispyCamera:
         self._3D_camera.fov = perspective
         self._view.camera.view_changed()
 
+    @property
+    def mouse_zoom(self) -> bool:
+        return self._view.camera.mouse_zoom
+
+    @mouse_zoom.setter
+    def mouse_zoom(self, mouse_zoom: bool):
+        self._view.camera.mouse_zoom = mouse_zoom
+
+    @property
+    def mouse_pan(self) -> bool:
+        return self._view.camera.mouse_pan
+
+    @mouse_pan.setter
+    def mouse_pan(self, mouse_pan: bool):
+        self._view.camera.mouse_pan = mouse_pan
+
     def _on_ndisplay_change(self):
         if self._dims.ndisplay == 3:
             self._view.camera = self._3D_camera
         else:
             self._view.camera = self._2D_camera
+
+        self._on_mouse_toggles_change()
         self._on_center_change()
         self._on_zoom_change()
         self._on_angles_change()
+
+    def _on_mouse_toggles_change(self):
+        self.mouse_pan = self._camera.mouse_pan
+        self.mouse_zoom = self._camera.mouse_zoom
 
     def _on_center_change(self):
         self.center = self._camera.center[-self._dims.ndisplay :]
@@ -180,3 +209,48 @@ def viewbox_key_event(event):
         The vispy event that triggered this method.
     """
     return
+
+
+def add_mouse_pan_zoom_toggles(
+    vispy_camera_cls: Type[BaseCamera],
+) -> Type[BaseCamera]:
+    """Add separate mouse pan and mouse zoom toggles to VisPy.
+
+    By default, VisPy uses an ``interactive`` toggle that turns *both*
+    panning and zooming on and off. This decorator adds separate toggles,
+    ``mouse_pan`` and ``mouse_zoom``, to enable controlling them
+    separately.
+
+    Parameters
+    ----------
+    vispy_camera_cls : Type[vispy.scene.cameras.BaseCamera]
+        A VisPy camera class to decorate.
+
+    Returns
+    -------
+        A decorated VisPy camera class.
+    """
+
+    class _vispy_camera_cls(vispy_camera_cls):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.mouse_pan = True
+            self.mouse_zoom = True
+
+        def viewbox_mouse_event(self, event):
+            if (
+                self.mouse_zoom
+                and event.type == 'mouse_wheel'
+                or self.mouse_pan
+                and event.type
+                in ('mouse_move', 'mouse_press', 'mouse_release')
+            ):
+                super().viewbox_mouse_event(event)
+            else:
+                event.handled = False
+
+    return _vispy_camera_cls
+
+
+MouseToggledPanZoomCamera = add_mouse_pan_zoom_toggles(PanZoomCamera)
+MouseToggledArcballCamera = add_mouse_pan_zoom_toggles(ArcballCamera)
