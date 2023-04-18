@@ -7,7 +7,7 @@ import zarr
 from napari.layers import Labels
 from napari.layers.labels._labels_key_bindings import (
     new_label,
-    set_label_to_background,
+    swap_background_color,
 )
 
 
@@ -26,10 +26,13 @@ def test_max_label(labels_data_4d):
     assert labels.selected_label == 4
 
 
-def test_set_label_to_background(labels_data_4d):
+def test_swap_background_color(labels_data_4d):
     labels = Labels(labels_data_4d)
-    set_label_to_background(labels)
-    assert labels.selected_label == 0
+    labels.selected_label = 10
+    swap_background_color(labels)
+    assert labels.selected_label == labels._background_label
+    swap_background_color(labels)
+    assert labels.selected_label == 10
 
 
 def test_max_label_tensorstore(labels_data_4d):
