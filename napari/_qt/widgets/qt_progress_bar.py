@@ -31,12 +31,16 @@ class QtLabeledProgressBar(QWidget):
         self.qt_progress_bar = QProgressBar()
         self.description_label = QLabel()
         self.eta_label = QLabel()
+        self.cancel_button = QPushButton(trans._('Cancel'))
+        self.cancel_button.clicked.connect(self._cancel)
+        self.cancel_button.setVisible(isinstance(prog, cancelable_progress))
         base_layout = QVBoxLayout()
 
         pbar_layout = QHBoxLayout()
         pbar_layout.addWidget(self.description_label)
         pbar_layout.addWidget(self.qt_progress_bar)
         pbar_layout.addWidget(self.eta_label)
+        pbar_layout.addWidget(self.cancel_button)
         base_layout.addLayout(pbar_layout)
 
         line = QFrame(self)
@@ -46,10 +50,6 @@ class QtLabeledProgressBar(QWidget):
 
         self.setLayout(base_layout)
 
-        if isinstance(prog, cancelable_progress):
-            self.cancel_button = QPushButton(trans._('Cancel'))
-            self.cancel_button.clicked.connect(self._cancel)
-            pbar_layout.addWidget(self.cancel_button)
 
     @rename_argument("min", "min_val", "0.6.0")
     @rename_argument("max", "max_val", "0.6.0")
