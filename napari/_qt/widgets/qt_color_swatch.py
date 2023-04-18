@@ -169,7 +169,7 @@ class QColorSwatch(QFrame):
     @Slot(np.ndarray)
     def _update_swatch_style(self, color: np.ndarray) -> None:
         """Convert the current color to rgba() string and update appearance."""
-        rgba = f'rgba({",".join(map(lambda x: str(int(x*255)), self._color))})'
+        rgba = f'rgba({",".join(str(int(x*255)) for x in  self._color)})'
         self.setStyleSheet('#colorSwatch {background-color: ' + rgba + ';}')
 
     def mouseReleaseEvent(self, event: QMouseEvent):
@@ -200,6 +200,8 @@ class QColorSwatch(QFrame):
         self._color = _color
         if emit or np.all(_color == TRANSPARENT):
             self.color_changed.emit(_color)
+            return None
+        return None
 
 
 class QColorLineEdit(QLineEdit):
@@ -213,7 +215,7 @@ class QColorLineEdit(QLineEdit):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self._compl = QCompleter(list(get_color_dict()) + ['transparent'])
+        self._compl = QCompleter([*get_color_dict(), "transparent"])
         self._compl.setCompletionMode(QCompleter.InlineCompletion)
         self.setCompleter(self._compl)
         self.setTextMargins(2, 2, 2, 2)
@@ -311,3 +313,4 @@ class QColorPopup(QtPopup):
         if event.key() == Qt.Key.Key_Escape:
             return self.color_dialog.reject()
         self.color_dialog.keyPressEvent(event)
+        return None

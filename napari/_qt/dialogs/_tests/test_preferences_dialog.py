@@ -6,6 +6,9 @@ from napari._qt.dialogs.preferences_dialog import (
     PreferencesDialog,
     QMessageBox,
 )
+from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
+    HorizontalObjectSchemaWidget,
+)
 from napari.settings import NapariSettings, get_settings
 
 
@@ -26,6 +29,13 @@ def test_prefdialog_populated(pref):
         NapariSettings.__fields__.values(),
     )
     assert pref._stack.count() == len(list(subfields))
+
+
+def test_dask_widget(qtbot, pref):
+    assert isinstance(
+        pref._stack.currentWidget().widget.widgets['dask'],
+        HorizontalObjectSchemaWidget,
+    )
 
 
 def test_preferences_dialog_accept(qtbot, pref):

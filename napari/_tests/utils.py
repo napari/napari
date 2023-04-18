@@ -1,6 +1,7 @@
 import os
 import sys
 from collections import abc
+from contextlib import suppress
 from typing import Any, Dict
 
 import numpy as np
@@ -83,14 +84,12 @@ layer_test_data = [
     ),
 ]
 
-try:
+with suppress(ModuleNotFoundError):
     import tensorstore as ts
 
     m = ts.array(np.random.random((10, 15)))
     p = [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]]
     layer_test_data.extend([(Image, m, 2), (Image, p, 2)])
-except ImportError:
-    pass
 
 classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
 names = [cls.__name__.lower() for cls in classes]
@@ -145,11 +144,6 @@ def are_objects_equal(object1, object2):
         items = [(object1, object2)]
 
     # equal_nan does not exist in array_equal in old numpy
-    npy_major_version = tuple(int(v) for v in np.__version__.split('.')[:2])
-    if npy_major_version < (1, 19):
-        fixed = [(np.nan_to_num(a1), np.nan_to_num(a2)) for a1, a2 in items]
-        return np.all([np.all(a1 == a2) for a1, a2 in fixed])
-
     try:
         return np.all(
             [np.array_equal(a1, a2, equal_nan=True) for a1, a2 in items]
@@ -205,7 +199,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         corresponding to the array of property values
     """
     if layer.multiscale:
-        return None
+        return
 
     # Get an handle on visual layer:
     vis_lyr = viewer.window._qt_viewer.layer_to_visual[layer]

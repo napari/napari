@@ -153,6 +153,11 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
+        if 'minimum' in self.schema:
+            self.setMinimum(self.schema['minimum'])
+        if 'maximum' in self.schema:
+            self.setMaximum(self.schema['maximum'])
+
 
     def setDescription(self, description: str):
         self.description = description
@@ -639,7 +644,7 @@ class Extension2ReaderWidget(SchemaWidgetMixin, Extension2ReaderTable):
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
-class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
+class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
     def __init__(
         self,
         schema: dict,
@@ -678,6 +683,50 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
         ui_schema: dict,
         widget_builder: 'WidgetBuilder',
     ) -> Dict[str, QtWidgets.QWidget]:
+        raise NotImplementedError
+
+    def _prepare_widget(self, name: str, sub_schema: dict, widget_builder: 'WidgetBuilder', ui_schema: dict):
+        description = sub_schema.get('description', "")
+
+        label = QtWidgets.QLabel(sub_schema.get("title", name))
+
+        sub_ui_schema = ui_schema.get(name, {})
+        widget = widget_builder.create_widget(
+            sub_schema, sub_ui_schema, description=description
+        )  # TODO on changed
+        widget._name = name
+        widget.on_changed.connect(partial(self.widget_on_changed, name))
+
+        return label, widget
+
+class HorizontalObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QWidget):
+    def populate_from_schema(
+        self,
+        schema: dict,
+        ui_schema: dict,
+        widget_builder: 'WidgetBuilder',
+    ) -> Dict[str, QtWidgets.QWidget]:
+        layout = QtWidgets.QHBoxLayout()
+        self.setLayout(layout)
+
+        widgets = {}
+        for name, sub_schema in schema['properties'].items():
+            label, widget = self._prepare_widget(name, sub_schema, widget_builder, ui_schema)
+            layout.addWidget(label)
+            layout.addWidget(widget)
+            widgets[name] = widget
+
+        return widgets
+
+
+class ObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QGroupBox):
+
+    def populate_from_schema(
+        self,
+        schema: dict,
+        ui_schema: dict,
+        widget_builder: 'WidgetBuilder',
+    ) -> Dict[str, QtWidgets.QWidget]:
         layout = QtWidgets.QFormLayout()
         self.setLayout(layout)
         layout.setAlignment(QtCore.Qt.AlignTop)
@@ -691,19 +740,11 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
         widgets = {}
         layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy(1))
         for name, sub_schema in schema['properties'].items():
-            if 'description' in sub_schema:
-                description = sub_schema['description']
+            label, widget = self._prepare_widget(name, sub_schema, widget_builder, ui_schema)
+            if len(schema['properties']) == 1:
+                layout.addRow(widget)
             else:
-                description = ""
-
-            sub_ui_schema = ui_schema.get(name, {})
-            widget = widget_builder.create_widget(
-                sub_schema, sub_ui_schema, description=description
-            )  # TODO onchanged
-            widget._name = name
-            widget.on_changed.connect(partial(self.widget_on_changed, name))
-            label = sub_schema.get("title", name)
-            layout.addRow(label, widget)
+                layout.addRow(label, widget)
             widgets[name] = widget
 
         return widgets

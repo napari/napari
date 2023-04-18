@@ -96,7 +96,6 @@ class Shape(ABC):
         dims_order=None,
         ndisplay=2,
     ) -> None:
-
         self._dims_order = dims_order or list(range(2))
         self._ndisplay = ndisplay
         self.slice_key = None
@@ -119,16 +118,16 @@ class Shape(ABC):
     @abstractmethod
     def data(self):
         # user writes own docstring
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @data.setter
     @abstractmethod
     def data(self, data):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def _update_displayed_data(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def ndisplay(self):

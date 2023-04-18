@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Tuple
 
+from psutil import virtual_memory
 from pydantic import Field, validator
 
 from napari.settings._constants import LoopMode
@@ -16,8 +17,28 @@ GridStride = conint(ge=-50, le=50, ne=0)
 GridWidth = conint(ge=-1, ne=0)
 GridHeight = conint(ge=-1, ne=0)
 
+_DEFAULT_MEM_FRACTION = 0.25
+MAX_CACHE = virtual_memory().total * 0.5 / 1e9
+
+
+class DaskSettings(EventedModel):
+    enabled: bool = True
+    cache: float = Field(
+        virtual_memory().total * _DEFAULT_MEM_FRACTION / 1e9,
+        ge=0,
+        le=MAX_CACHE,
+        title="Cache size (GB)",
+    )
+
 
 class ApplicationSettings(EventedModel):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.dask.events.connect(self._dask_changed)
+
+    def _dask_changed(self):
+        self.events.dask(value=self.dask)
+
     first_time: bool = Field(
         True,
         title=trans._('First time'),
@@ -169,8 +190,16 @@ class ApplicationSettings(EventedModel):
             "This affects certain actions where a short press and a long press have different behaviors, such as changing the mode of a layer permanently or only during the long press."
         ),
     )
+    # convert cache (and max cache) from bytes to mb for widget
+    dask: DaskSettings = Field(
+        default=DaskSettings().dict(),
+        title=trans._("Dask cache"),
+        description=trans._(
+            "Settings for dask cache (does not work with distributed arrays)"
+        ),
+    )
 
-    @validator('window_state')
+    @validator('window_state', allow_reuse=True)
     def _validate_qbtye(cls, v):
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
             raise ValueError(

@@ -12,6 +12,7 @@ import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from superqt import ensure_main_thread
 
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
@@ -37,7 +38,8 @@ from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.layers.base.base import Layer
 from napari.plugins import _npe2
 from napari.settings import get_settings
-from napari.utils import config, perf
+from napari.settings._application import DaskSettings
+from napari.utils import config, perf, resize_dask_cache
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.action_manager import action_manager
 from napari.utils.colormaps.standardize_color import transform_color
@@ -74,6 +76,7 @@ if TYPE_CHECKING:
 
     from napari._qt.layer_controls import QtLayerControlsContainer
     from napari.components import ViewerModel
+    from napari.utils.events import Event
 
 
 def _npe2_decode_selected_filter(
@@ -119,7 +122,6 @@ def _extension_string_for_layers(
         selected_layer = layers[0]
         # single selected layer.
         if selected_layer._type_string == 'image':
-
             ext = imsave_extensions()
 
             ext_list = [f"*{val}" for val in ext]
@@ -131,7 +133,6 @@ def _extension_string_for_layers(
             )
 
         elif selected_layer._type_string == 'points':
-
             ext_str = trans._("All Files (*);; *.csv;;")
 
         else:
@@ -190,7 +191,6 @@ class QtViewer(QSplitter):
     def __init__(
         self, viewer: ViewerModel, show_welcome_screen: bool = False
     ) -> None:
-
         super().__init__()
         self._instances.add(self)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -247,15 +247,17 @@ class QtViewer(QSplitter):
             'standard': Qt.CursorShape.ArrowCursor,
         }
 
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
+
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
         self.viewer.layers.events.removed.connect(self._update_welcome_screen)
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
-        self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
+        self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
@@ -292,10 +294,31 @@ class QtViewer(QSplitter):
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
 
+        settings = get_settings()
+        self._update_dask_cache_settings(settings.application.dask)
+
+        settings.application.events.dask.connect(
+            self._update_dask_cache_settings
+        )
+
         for layer in self.viewer.layers:
             self._add_layer(layer)
         for overlay in self.viewer._overlays.values():
             self._add_overlay(overlay)
+
+    @staticmethod
+    def _update_dask_cache_settings(
+        dask_setting: Union[DaskSettings, Event] = None
+    ):
+        """Update dask cache to match settings."""
+        if not dask_setting:
+            return
+        if not isinstance(dask_setting, DaskSettings):
+            dask_setting = dask_setting.value
+
+        enabled = dask_setting.enabled
+        size = dask_setting.cache
+        resize_dask_cache(int(int(enabled) * size * 1e9))
 
     @property
     def controls(self) -> QtLayerControlsContainer:
@@ -482,7 +505,8 @@ class QtViewer(QSplitter):
                     trans._(
                         'napari-console not found. It can be installed with'
                         ' "pip install napari_console"'
-                    )
+                    ),
+                    stacklevel=1,
                 )
                 self._console = None
             except ImportError:
@@ -490,7 +514,8 @@ class QtViewer(QSplitter):
                 warnings.warn(
                     trans._(
                         'error importing napari-console. See console for full error.'
-                    )
+                    ),
+                    stacklevel=1,
                 )
                 self._console = None
         return self._console
@@ -501,6 +526,19 @@ class QtViewer(QSplitter):
         if console is not None:
             self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
+
+    @ensure_main_thread
+    def _on_slice_ready(self, event):
+        responses = event.value
+        for layer, response in responses.items():
+            # Update the layer slice state to temporarily support behavior
+            # that depends on it.
+            layer._update_slice_response(response)
+            # The rest of `Layer.refresh` after `set_view_slice`, where `set_data`
+            # notifies the corresponding vispy layer of the new slice.
+            layer.events.set_data()
+            layer._update_thumbnail()
+            layer._set_highlight(force=True)
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""
@@ -545,6 +583,10 @@ class QtViewer(QSplitter):
 
         vispy_layer.node.parent = self.view.scene
         self.layer_to_visual[layer] = vispy_layer
+
+        # ensure correct canvas blending
+        layer.events.visible.connect(self._reorder_layers)
+
         self._reorder_layers()
 
     def _remove_layer(self, event):
@@ -556,6 +598,7 @@ class QtViewer(QSplitter):
             The napari event that triggered this method.
         """
         layer = event.value
+        layer.events.visible.disconnect(self._reorder_layers)
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.close()
         del vispy_layer
@@ -564,9 +607,19 @@ class QtViewer(QSplitter):
 
     def _reorder_layers(self):
         """When the list is reordered, propagate changes to draw order."""
+        first_visible_found = False
         for i, layer in enumerate(self.viewer.layers):
             vispy_layer = self.layer_to_visual[layer]
             vispy_layer.order = i
+
+            # the bottommost visible layer needs special treatment for blending
+            if layer.visible and not first_visible_found:
+                vispy_layer.first_visible = True
+                first_visible_found = True
+            else:
+                vispy_layer.first_visible = False
+            vispy_layer._on_blending_change()
+
         self.canvas._draw_order.clear()
         self.canvas.update()
 
@@ -642,8 +695,8 @@ class QtViewer(QSplitter):
                         error_messages=error_messages,
                     )
                 )
-            else:
-                update_save_history(saved[0])
+
+            update_save_history(saved[0])
 
     def _update_welcome_screen(self):
         """Update welcome screen display based on layer count."""
@@ -843,16 +896,11 @@ class QtViewer(QSplitter):
             if isinstance(layer, _OctreeImageBase):
                 layer.display.show_grid = not layer.display.show_grid
 
-    def _on_interactive(self):
-        """Link interactive attributes of view and viewer."""
-        self.view.interactive = self.viewer.camera.interactive
-
     def _on_cursor(self):
         """Set the appearance of the mouse cursor."""
 
         cursor = self.viewer.cursor.style
         if cursor in {'square', 'circle'}:
-
             # Scale size by zoom if needed
             size = self.viewer.cursor.size
             if self.viewer.cursor.scaled:

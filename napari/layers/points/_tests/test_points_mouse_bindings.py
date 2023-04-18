@@ -24,7 +24,9 @@ class Event:
         0,
         0,
     )  # world coords
-    pos: np.ndarray = np.zeros(2)  # canvas coords
+    pos: np.ndarray = field(
+        default_factory=lambda: np.zeros(2)
+    )  # canvas coords
     view_direction: Optional[List[float]] = None
     up_direction: Optional[List[float]] = None
     dims_displayed: List[int] = field(default_factory=lambda: [0, 1])
@@ -164,7 +166,7 @@ def test_drag_in_add_mode(create_known_points_layer_2d):
 
     # Add point at location where non exists
     layer.mode = 'add'
-    layer.interactive = True
+    layer.mouse_pan = True
 
     # Simulate click
     event = ReadOnlyWrapper(
