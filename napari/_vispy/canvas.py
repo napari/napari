@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
-from vispy.scene import SceneCanvas as SceneCanvas_
-from vispy.scene import Widget
+from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
 from napari._vispy import VispyCamera
 from napari._vispy.utils.cursor import QtCursorVisual
@@ -149,6 +148,7 @@ class VispyCanvas:
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.theme.connect(self._on_theme_change)
         self.viewer.camera.events.interactive.connect(self._on_interactive)
+        self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.destroyed.connect(self._disconnect_theme)

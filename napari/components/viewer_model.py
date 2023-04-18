@@ -433,12 +433,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if active_layer is None:
             self.help = ''
             self.cursor.style = 'standard'
-            self.camera.interactive = True
         else:
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
-            self.camera.interactive = active_layer.interactive
+            self.camera.mouse_pan = active_layer.mouse_pan
+            self.camera.mouse_zoom = active_layer.mouse_zoom
 
     @staticmethod
     def rounded_division(min_val, max_val, precision):
@@ -450,9 +450,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.dims.reset()
         else:
             ranges = self.layers._ranges
-            ndim = len(ranges)
-            self.dims.ndim = ndim
-            self.dims.set_range(range(ndim), ranges)
+            # TODO: can be optimized with dims.update(), but events need fixing
+            self.dims.ndim = len(ranges)
+            self.dims.range = ranges
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -464,10 +464,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         self.events.layers_change()
 
-    def _update_interactive(self, event):
-        """Set the viewer interactivity with the `event.interactive` bool."""
+    def _update_mouse_pan(self, event):
+        """Set the viewer interactive mouse panning"""
         if event.source is self.layers.selection.active:
-            self.camera.interactive = event.interactive
+            self.camera.mouse_pan = event.mouse_pan
+
+    def _update_mouse_zoom(self, event):
+        """Set the viewer interactive mouse zoom"""
+        if event.source is self.layers.selection.active:
+            self.camera.mouse_zoom = event.mouse_zoom
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
@@ -556,7 +561,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Connect individual layer events to viewer events
         # TODO: in a future PR, we should now be able to connect viewer *only*
         # to viewer.layers.events... and avoid direct viewer->layer connections
-        layer.events.interactive.connect(self._update_interactive)
+        layer.events.mouse_pan.connect(self._update_mouse_pan)
+        layer.events.mouse_zoom.connect(self._update_mouse_zoom)
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
@@ -580,8 +586,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(self.layers) == 1:
             self.reset_view()
             ranges = self.layers._ranges
-            midpoint = [self.rounded_division(*_range) for _range in ranges]
-            self.dims.set_point(range(len(ranges)), midpoint)
+            midpoint = [
+                self.rounded_division(low, high, step)
+                for low, high, step in ranges
+            ]
+            self.dims.current_step = midpoint
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):

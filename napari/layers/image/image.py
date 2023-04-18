@@ -20,8 +20,6 @@ from napari.layers.image._image_constants import (
 )
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
-)
-from napari.layers.image._image_mouse_bindings import (
     set_plane_position as plane_double_click_callback,
 )
 from napari.layers.image._image_slice import ImageSlice

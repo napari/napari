@@ -240,6 +240,7 @@ class QtViewer(QSplitter):
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
+
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
 
         self.setAcceptDrops(True)
@@ -464,7 +465,8 @@ class QtViewer(QSplitter):
                     trans._(
                         'napari-console not found. It can be installed with'
                         ' "pip install napari_console"'
-                    )
+                    ),
+                    stacklevel=1,
                 )
                 self._console = None
             except ImportError:
@@ -472,7 +474,8 @@ class QtViewer(QSplitter):
                 warnings.warn(
                     trans._(
                         'error importing napari-console. See console for full error.'
-                    )
+                    ),
+                    stacklevel=1,
                 )
                 self._console = None
         return self._console

@@ -1,6 +1,8 @@
+from typing import Dict, List
+
 from app_model.types import KeyBinding, KeyCode, KeyMod
 
-default_shortcuts = {
+_default_shortcuts = {
     # viewer
     'napari:toggle_console_visibility': [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
@@ -86,7 +88,7 @@ default_shortcuts = {
     'napari:activate_surface_transform_mode': [KeyCode.Digit2],
 }
 
-default_shortcuts = {
+default_shortcuts: Dict[str, List[KeyBinding]] = {
     name: [KeyBinding.from_int(kb) for kb in value]
-    for name, value in default_shortcuts.items()
+    for name, value in _default_shortcuts.items()
 }

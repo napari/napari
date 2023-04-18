@@ -63,8 +63,10 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
     QtViewerDockWidget,
 )
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
-from napari.plugins import menu_item_template as plugin_menu_item_template
-from napari.plugins import plugin_manager
+from napari.plugins import (
+    menu_item_template as plugin_menu_item_template,
+    plugin_manager,
+)
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy

@@ -1,5 +1,4 @@
-from napari.layers.points import Points
-from napari.layers.points import _points_key_bindings as key_bindings
+from napari.layers.points import Points, _points_key_bindings as key_bindings
 
 
 def test_modes(layer):
