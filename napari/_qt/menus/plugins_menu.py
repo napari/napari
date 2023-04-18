@@ -118,10 +118,10 @@ class PluginsMenu(NapariMenu):
         try:
             # TODO: Register via plugin system?
             from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
-
-            return QtPluginDialog
         except ImportError:
             return None
+        else:
+            return QtPluginDialog
 
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
