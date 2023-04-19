@@ -652,7 +652,7 @@ class Labels(_ImageBase):
             self.refresh()
 
     def swap_selected_and_background_labels(self):
-        """Set the selected label to the background label or vice versa."""
+        """Swap between the selected label and the background label."""
         if self.selected_label != self._background_label:
             self.selected_label = self._background_label
         else:
