@@ -111,43 +111,20 @@ def generate_vector_meshes_2D(vectors, width, length, style, p=(0, 0, 1)):
         Vertex indices that form the mesh triangles
     """
 
-    nvectors = vectors.shape[0]
-
     if style == 'line':
-        vertices = generate_meshes_rectangle_2D(vectors, width, length, p)
-        triangles = np.array(
-            [
-                [2 * i, 2 * i + 1, 2 * i + 2]
-                if i % 2 == 0
-                else [2 * i - 1, 2 * i, 2 * i + 1]
-                for i in range(2 * nvectors)
-            ]
-        ).astype(np.uint32)
+        vertices, triangles = generate_meshes_line_2D(
+            vectors, width, length, p
+        )
 
     elif style == 'triangle':
-        vertices = generate_meshes_triangle_2D(vectors, width, length, p)
-        triangles = np.arange(3 * nvectors).reshape((-1, 3)).astype(np.uint32)
+        vertices, triangles = generate_meshes_triangle_2D(
+            vectors, width, length, p
+        )
 
     elif style == 'arrow':
-        vertices = generate_meshes_arrow_2D(vectors, width, length, p)
-        triangles = np.array(
-            [
-                [7 * i / 3, 7 * i / 3 + 1, 7 * i / 3 + 2]
-                if i % 3 == 0
-                else [
-                    7 * (i - 1) / 3 + 1,
-                    7 * (i - 1) / 3 + 2,
-                    7 * (i - 1) / 3 + 3,
-                ]
-                if i % 3 == 1
-                else [
-                    7 * (i - 2) / 3 + 4,
-                    7 * (i - 2) / 3 + 5,
-                    7 * (i - 2) / 3 + 6,
-                ]
-                for i in range(3 * nvectors)
-            ]
-        ).astype(np.uint32)
+        vertices, triangles = generate_meshes_arrow_2D(
+            vectors, width, length, p
+        )
 
     else:
         raise NotImplementedError
@@ -155,7 +132,32 @@ def generate_vector_meshes_2D(vectors, width, length, style, p=(0, 0, 1)):
     return vertices, triangles
 
 
-def generate_meshes_rectangle_2D(vectors, width, length, p):
+def generate_meshes_line_2D(vectors, width, length, p):
+    """Generates list of mesh vertices and triangles from a list of vectors.
+
+    Vectors are composed of 4 vertices and 2 triangles.
+    Vertices are generated according to the following scheme:
+    1---x---0
+    | .     |
+    |   .   |
+    |     . |
+    3---v---2
+
+    Where x marks the start point of the vector, and v its end point.
+
+    In the case of k 2D vectors, the output 'triangles' is:
+    [
+        [0,1,2],                # vector 0,   triangle i=0
+        [1,2,3],                # vector 0,   triangle i=1
+        [4,5,6],                # vector 1,   triangle i=2
+        [5,6,7],                # vector 1,   triangle i=3
+
+        ...,
+
+        [2i, 2i + 1, 2i + 2],   # vector k-1, triangle i=2k-2 (i%2=0)
+        [2i - 1, 2i, 2i + 1]    # vector k-1, triangle i=2k-1 (i%2=1)
+    ]
+    """
     nvectors, _, ndim = vectors.shape
 
     vectors_starts = vectors[:, 0]
@@ -176,10 +178,43 @@ def generate_meshes_rectangle_2D(vectors, width, length, p):
 
     vertices = vertices + width * offsets / 2
 
-    return vertices
+    triangles = np.array(
+        [
+            [2 * i, 2 * i + 1, 2 * i + 2]
+            if i % 2 == 0
+            else [2 * i - 1, 2 * i, 2 * i + 1]
+            for i in range(2 * nvectors)
+        ]
+    ).astype(np.uint32)
+
+    return vertices, triangles
 
 
 def generate_meshes_triangle_2D(vectors, width, length, p):
+    """Generates list of mesh vertices and triangles from a list of vectors.
+
+    Vectors are composed of 3 vertices and 1 triangles.
+    Vertices are generated according to the following scheme:
+    1---x---0
+     .     .
+      .   .
+       . .
+        2
+
+
+    Where x marks the start point of the vector, and the vertex 2 its end
+    point.
+
+    In the case of k 2D vectors, the output 'triangles' is:
+    [
+        [0,1,2],                # vector 0,   triangle i=0
+        [3,4,5],                # vector 1,   triangle i=1
+
+        ...,
+
+        [3i, 3i + 1, 3i + 2]    # vector k-1, triangle i=k-1
+    ]
+    """
     nvectors, _, ndim = vectors.shape
 
     vectors_starts = vectors[:, 0]
@@ -201,14 +236,55 @@ def generate_meshes_triangle_2D(vectors, width, length, p):
 
     vertices = vertices + width * offsets / 2
 
-    return vertices
+    # faster than using the formula in the docstring
+    triangles = np.arange(3 * nvectors).reshape((-1, 3)).astype(np.uint32)
+
+    return vertices, triangles
 
 
 def generate_meshes_arrow_2D(vectors, width, length, p):
+    """Generates list of mesh vertices and triangles from a list of vectors.
+
+    Vectors are composed of 7 vertices and 3 triangles.
+    Vertices are generated according to the following scheme:
+        1---x---0
+        | .     |
+        |   .   |
+        |     . |
+    5---3-------2---4
+       .         .
+          .   .
+            6
+
+    Where x marks the start point of the vector, and the vertex 6 its end
+    point.
+
+    In the case of k 2D vectors, the output 'triangles' is:
+    [
+        [0,1,2],                # vector 0,   triangle i=0
+        [1,2,3],                # vector 0,   triangle i=1
+        [4,5,6],                # vector 0,   triangle i=2
+        [7,8,9],                # vector 1,   triangle i=3
+        [8,9,10],               # vector 1,   triangle i=4
+        [11,12,13],             # vector 1,   triangle i=5
+
+        ...,
+
+        [7i/3,           7i/3 + 1,       7i/3 + 2],
+            # vector k-1, triangle i=3k-3 (i%3=0)
+        [7(i - 1)/3 + 1, 7(i - 1)/3 + 2, 7(i - 1)/3 + 3],
+            # vector k-1, triangle i=3k-2 (i%3=1)
+        [7(i - 2)/3 + 4, 7(i - 2)/3 + 5, 7(i - 2)/3 + 6]
+            # vector k-1, triangle i=3k-1 (i%3=2)
+    ]
+    """
     nvectors, _, ndim = vectors.shape
 
     vectors_starts = vectors[:, 0]
+
+    # will be used to generate the vertices 2,3,4 and 5
     vectors_intermediates = vectors_starts + 0.75 * vectors[:, 1]
+
     vectors_ends = vectors_starts + length * vectors[:, 1]
 
     vertices = np.zeros((7 * nvectors, ndim))
@@ -233,4 +309,23 @@ def generate_meshes_arrow_2D(vectors, width, length, p):
 
     vertices = vertices + width * offsets / 2
 
-    return vertices
+    triangles = np.array(
+        [
+            [7 * i / 3, 7 * i / 3 + 1, 7 * i / 3 + 2]
+            if i % 3 == 0
+            else [
+                7 * (i - 1) / 3 + 1,
+                7 * (i - 1) / 3 + 2,
+                7 * (i - 1) / 3 + 3,
+            ]
+            if i % 3 == 1
+            else [
+                7 * (i - 2) / 3 + 4,
+                7 * (i - 2) / 3 + 5,
+                7 * (i - 2) / 3 + 6,
+            ]
+            for i in range(3 * nvectors)
+        ]
+    ).astype(np.uint32)
+
+    return vertices, triangles
