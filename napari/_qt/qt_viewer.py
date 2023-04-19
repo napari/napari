@@ -255,9 +255,9 @@ class QtViewer(QSplitter):
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
-        self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
+        self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
@@ -505,7 +505,8 @@ class QtViewer(QSplitter):
                     trans._(
                         'napari-console not found. It can be installed with'
                         ' "pip install napari_console"'
-                    )
+                    ),
+                    stacklevel=1,
                 )
                 self._console = None
             except ImportError:
@@ -513,7 +514,8 @@ class QtViewer(QSplitter):
                 warnings.warn(
                     trans._(
                         'error importing napari-console. See console for full error.'
-                    )
+                    ),
+                    stacklevel=1,
                 )
                 self._console = None
         return self._console
@@ -893,10 +895,6 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             if isinstance(layer, _OctreeImageBase):
                 layer.display.show_grid = not layer.display.show_grid
-
-    def _on_interactive(self):
-        """Link interactive attributes of view and viewer."""
-        self.view.interactive = self.viewer.camera.interactive
 
     def _on_cursor(self):
         """Set the appearance of the mouse cursor."""

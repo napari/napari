@@ -499,7 +499,7 @@ def _maybe_rerun_with_macos_fixes():
                 'please install python.app in conda using:\n'
                 'conda install -c conda-forge python.app'
             )
-            warnings.warn(msg)
+            warnings.warn(msg, stacklevel=2)
 
     # 3) Make sure the app name in the menu bar is 'napari', not 'python'
     tempdir = None
@@ -507,7 +507,7 @@ def _maybe_rerun_with_macos_fixes():
         # When napari is launched from the conda bundle shortcut
         # it already has the right 'napari' name in the app title
         # and __CFBundleIdentifier is set to 'com.napari._(<version>)'
-        "napari" not in os.environ.get("__CFBundleIdentifier", "")
+        "napari" not in os.environ.get("__CFBUNDLEIDENTIFIER", "")
         # with a sys.executable named napari,
         # macOS should have picked the right name already
         or os.path.basename(executable) != "napari"
