@@ -42,6 +42,12 @@ def test_read(mock_pm: 'TestPluginManager'):
     assert _npe2.read(["some.randomext"], stack=True) is None
     mock_pm.commands.get.assert_not_called()
 
+    mock_pm.commands.get.reset_mock()
+    assert (
+        _npe2.read(["some.randomext"], stack=True, plugin=PLUGIN_NAME) is None
+    )
+    mock_pm.commands.get.assert_not_called()
+
 
 def test_write(mock_pm: 'TestPluginManager'):
     # saving an image without a writer goes straight to npe2.write
