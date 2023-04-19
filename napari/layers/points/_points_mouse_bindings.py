@@ -111,14 +111,17 @@ DRAG_DIST_THRESHOLD = 5
 
 def add(layer, event):
     """Add a new point at the clicked position."""
+    start_pos = event.pos
+    dist = 0
+    yield
 
-    if event.type == 'mouse_press':
-        start_pos = event.pos
-
-    while event.type != 'mouse_release':
+    while event.type == 'mouse_move':
+        dist = np.linalg.norm(start_pos - event.pos)
+        if dist < DRAG_DIST_THRESHOLD:
+            # prevent vispy from moving the canvas if we're below threshold
+            event.handled = True
         yield
 
-    dist = np.linalg.norm(start_pos - event.pos)
     if dist < DRAG_DIST_THRESHOLD:
         coordinates = layer.world_to_data(event.position)
         layer.add(coordinates)
