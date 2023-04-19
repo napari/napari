@@ -57,9 +57,9 @@ def read(
     except ValueError as e:
         # Catch both messages raised by npe2
         # https://github.com/napari/npe2/blob/main/src/npe2/io_utils.py#L168-L173
-        plugin_name_msg = f"Plugin {plugin!r} was selected to open [{npe1_path!r}], but returned no data."
-        no_plugin_name_msg = f"No readers returned data for {paths!r}"
-        if str(e) != plugin_name_msg and str(e) != no_plugin_name_msg:
+        plugin_name_msg = f"Plugin {plugin!r} was selected to open"
+        no_plugin_name_msg = "No readers returned data"
+        if plugin_name_msg not in str(e) and no_plugin_name_msg not in str(e):
             raise
     else:
         return layer_data, _FakeHookimpl(reader.plugin_name)
