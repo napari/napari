@@ -170,7 +170,7 @@ class cancelable_progress(progress):
         super().__init__(iterable, desc, total, nest_under, *args, **kwargs)
 
     def __iter__(self) -> Iterator:
-        return takewhile(lambda _: not self.is_canceled, self.iterable)
+        return takewhile(lambda _: not self.is_canceled, super().__iter__())
 
     def cancel(self):
         self.is_canceled = True
