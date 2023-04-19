@@ -147,28 +147,12 @@ class QtViewer(QSplitter):
         Boolean indicating whether to show the welcome screen.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    _console : napari_console.QtConsole
-        IPython console terminal integrated into the napari GUI.
-    _controls : napari._qt.layer_controls.QtLayerControlsContainer
-        Qt view for GUI controls.
-    _dockConsole : napari._qt.widgets.qt_viewer_dock_widget.QtViewerDockWidget
-        QWidget wrapped in a QDockWidget with forwarded viewer events.
-    _dockLayerControls : napari._qt.widgets.qt_viewer_dock_widget.QtViewerDockWidget
-        QWidget wrapped in a QDockWidget with forwarded viewer events.
-    _dockLayerList : napari._qt.widgets.qt_viewer_dock_widget.QtViewerDockWidget
-        QWidget wrapped in a QDockWidget with forwarded viewer events.
     _key_map_handler : napari.utils.key_bindings.KeymapHandler
-        KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
-    _layerButtons : napari._qt.widgets.qt_viewer_buttons.QtLayerButtons
-        Button controls for napari layers.
-    _layers : napari._qt.containers.QtLayerList
-        Qt view for LayerList controls.
+        KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped
     _qt_poll : Optional[napari._qt.experimental.qt_poll.QtPoll]
         A QtPoll object required for octree or monitor.
     _remote_manager : napari.components.experimental.remote.RemoteManager
         A remote manager processing commands from remote clients and sending out messages when polled.
-    _viewerButtons : napari._qt.widgets.qt_viewer_buttons.QtViewerButtons
-        Button controls for the napari viewer.
     _welcome_widget : napari._qt.widgets.qt_welcome.QtWidgetOverlay
         QtWidgetOverlay providing the stacked widgets for the welcome page.
     """
@@ -325,6 +309,7 @@ class QtViewer(QSplitter):
 
     @property
     def controls(self) -> QtLayerControlsContainer:
+        """Qt view for GUI controls."""
         if self._controls is None:
             # Avoid circular import.
             from napari._qt.layer_controls import QtLayerControlsContainer
@@ -334,24 +319,28 @@ class QtViewer(QSplitter):
 
     @property
     def layers(self) -> QtLayerList:
+        """Qt view for LayerList controls."""
         if self._layers is None:
             self._layers = QtLayerList(self.viewer.layers)
         return self._layers
 
     @property
     def layerButtons(self) -> QtLayerButtons:
+        """Button controls for napari layers."""
         if self._layersButtons is None:
             self._layersButtons = QtLayerButtons(self.viewer)
         return self._layersButtons
 
     @property
     def viewerButtons(self) -> QtViewerButtons:
+        """Button controls for the napari viewer."""
         if self._viewerButtons is None:
             self._viewerButtons = QtViewerButtons(self.viewer)
         return self._viewerButtons
 
     @property
     def dockLayerList(self) -> QtViewerDockWidget:
+        """QWidget wrapped in a QDockWidget with forwarded viewer events."""
         if self._dockLayerList is None:
             layerList = QWidget()
             layerList.setObjectName('layerList')
@@ -374,6 +363,7 @@ class QtViewer(QSplitter):
 
     @property
     def dockLayerControls(self) -> QtViewerDockWidget:
+        """QWidget wrapped in a QDockWidget with forwarded viewer events."""
         if self._dockLayerControls is None:
             self._dockLayerControls = QtViewerDockWidget(
                 self,
@@ -388,6 +378,7 @@ class QtViewer(QSplitter):
 
     @property
     def dockConsole(self) -> QtViewerDockWidget:
+        """QWidget wrapped in a QDockWidget with forwarded viewer events."""
         if self._dockConsole is None:
             self._dockConsole = QtViewerDockWidget(
                 self,
