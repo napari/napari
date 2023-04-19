@@ -357,7 +357,21 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @vertex_colors.setter
     def vertex_colors(self, vertex_colors: Optional[np.ndarray]):
-        """Values used to directly color vertices."""
+        """Values used to directly color vertices.
+
+        Note that dims sliders for this layer are based on vertex_values, so
+        make sure the shape of vertex_colors matches the shape of vertex_values
+        for proper slicing. That is: vertex_colors should be None, one set
+        (N, C), or completely match the dimensions of vertex_values
+        (K0, ..., KL, N, C).
+        """
+        if vertex_colors is not None and not isinstance(
+            vertex_colors, np.ndarray
+        ):
+            msg = (
+                f"texture should be None or ndarray; got {type(vertex_colors)}"
+            )
+            raise ValueError(msg)
         self._vertex_colors = vertex_colors
         self._update_dims()
         self.events.data(value=self.data)
@@ -555,8 +569,6 @@ class Surface(IntensityVisualizationMixin, Layer):
             vertex_ndim,
         )
 
-        # TODO: ensure vertex_colors matches dims with vertex_values
-        # OR is None OR is only one set
         self._view_vertex_colors = self._slice_associated_data(
             self.vertex_colors,
             vertex_ndim,
