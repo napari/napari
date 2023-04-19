@@ -155,13 +155,13 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install ./napari-from-github[all,testing]
+        env:
+          PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
 
       - name: Test
         uses: aganders3/headless-gui@v1
         with:
           run: python -m pytest --pyargs napari --color=yes
-        env:
-          PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
 
   test_examples:
     name: test examples
