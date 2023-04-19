@@ -230,6 +230,8 @@ def generate_meshes_triangle_2D(vectors, width, length, p):
     signs[::3] = -1
     multipliers = np.ones((len(offsets), ndim))
     multipliers[2::3] = 0
+
+    # here 'multipliers' is used to prevent vertex 2 from being offset
     offsets = offsets * signs * multipliers
 
     vertices[::3] = vectors_starts
@@ -301,6 +303,9 @@ def generate_meshes_arrow_2D(vectors, width, length, p):
     multipliers[4::7] = 2
     multipliers[5::7] = 2
     multipliers[6::7] = 0
+
+    # here 'multipliers' is used to prevent vertex 6 from being offset,
+    # and to offset vertices 4 and 5 twice as much as vertices 2 and 3
     offsets = offsets * signs * multipliers
 
     vertices[::7] = vectors_starts
