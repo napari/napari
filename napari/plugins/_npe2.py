@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     DefaultDict,
@@ -10,7 +11,6 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Union,
     cast,
 )
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
-    from qtpy.QtWidgets import QMenu
+    from qtpy.QtWidgets import QMenu  # type: ignore [attr-defined]
 
     from napari.layers import Layer
     from napari.types import SampleDict
@@ -245,7 +245,7 @@ def iter_manifests(
 
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     # eg ('dock', ('my_plugin', ('My widget', MyWidget)))
-    wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
+    wdgs: DefaultDict[str, List[str]] = defaultdict(list)
     for wdg_contrib in pm.iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
     return (('dock', x) for x in wdgs.items())
@@ -396,7 +396,7 @@ def _npe2_manifest_to_actions(
 
 def _when_group_order(
     menu_item: contributions.MenuItem,
-) -> dict[str, Union[str, float, None]]:
+) -> dict:
     """Extract when/group/order from an npe2 Submenu or MenuCommand."""
     group, _, _order = (menu_item.group or '').partition("@")
     try:

@@ -54,7 +54,7 @@ class ApplicationSettings(EventedModel):
         ),
     )
     language: Language = Field(
-        _DEFAULT_LOCALE,
+        Language(_DEFAULT_LOCALE),
         title=trans._("Language"),
         description=trans._(
             "Select the display language for the user interface."
@@ -192,7 +192,7 @@ class ApplicationSettings(EventedModel):
     )
     # convert cache (and max cache) from bytes to mb for widget
     dask: DaskSettings = Field(
-        default=DaskSettings().dict(),
+        default=DaskSettings(),
         title=trans._("Dask cache"),
         description=trans._(
             "Settings for dask cache (does not work with distributed arrays)"
