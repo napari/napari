@@ -166,7 +166,7 @@ def test_drag_in_add_mode(create_known_points_layer_2d):
 
     # Add point at location where non exists
     layer.mode = 'add'
-    layer.interactive = True
+    layer.mouse_pan = True
 
     # Simulate click
     event = ReadOnlyWrapper(
