@@ -56,4 +56,4 @@ packages = [
 if updated_core_packages := sorted(set(packages) & set(changed_packages)):
     print(", ".join(f"`{x}`" for x in updated_core_packages))
 else:
-    print("only non direct updates")
+    print("only indirect updates")

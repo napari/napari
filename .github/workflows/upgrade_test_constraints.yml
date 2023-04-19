@@ -69,8 +69,9 @@ jobs:
           delete-branch: true
           title: "test: [Automatic] Constraints upgrades: ${{ steps.packages.outputs.main_packages }}"
           body: |
-            This PR is automatically created and updated by PartSeg GitHub
-            action cron to keep bundle dependencies modules up to date.
+            This PR is automatically created and updated by this napari GitHub Action:
+            https://github.com/napari/napari/tree/main/.github/workflows/upgrade_test_contraints.yml
+            It ensures that dependencies are tested with the most recent version.
 
             The updated packages are:
 
