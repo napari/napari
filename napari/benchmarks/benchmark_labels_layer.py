@@ -64,6 +64,17 @@ class Labels2DSuite:
         return self.data
 
 
+class Labels2DColorDirectSuite(Labels2DSuite):
+    def setup(self, n):
+        np.random.seed(0)
+        self.data = np.random.randint(low=-10000, high=10000, size=(n, n))
+        random_label_ids = np.random.randint(low=-10000, high=10000, size=20)
+        self.layer = Labels(
+            self.data,
+            color={i + 1: np.random.random(4) for i in random_label_ids},
+        )
+
+
 class Labels3DSuite:
     """Benchmarks for the Labels layer with 3D data."""
 
