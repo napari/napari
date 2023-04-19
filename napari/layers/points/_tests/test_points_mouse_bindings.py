@@ -164,14 +164,19 @@ def test_drag_in_add_mode(create_known_points_layer_2d):
     layer.mode = 'add'
 
     # Simulate click
-    event = read_only_event(type='mouse_press', position=known_non_point)
+    event = read_only_event(
+        type='mouse_press', position=known_non_point, pos=np.array([0, 0])
+    )
     mouse_press_callbacks(layer, event)
 
     known_non_point_end = [40, 60]
 
     # Simulate drag end
     event = read_only_event(
-        type='mouse_move', is_dragging=True, position=known_non_point_end
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_point_end,
+        pos=np.array([4, 4]),
     )
     mouse_move_callbacks(layer, event)
 
