@@ -411,7 +411,9 @@ class Points(Layer):
 
         self.events.add(
             size=Event,
+            current_size=Event,
             edge_width=Event,
+            current_edge_width=Event,
             edge_width_is_relative=Event,
             face_color=Event,
             current_face_color=Event,
@@ -420,6 +422,7 @@ class Points(Layer):
             properties=Event,
             current_properties=Event,
             symbol=Event,
+            current_symbol=Event,
             out_of_slice_display=Event,
             n_dimensional=Event,
             highlight=Event,
@@ -793,6 +796,7 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             self.symbol[list(self.selected_data)] = symbol
             self.events.symbol()
+        self.events.current_symbol()
 
     @property
     def size(self) -> np.ndarray:
@@ -866,6 +870,7 @@ class Points(Layer):
             self.size[idx] = (self.size[idx] > 0) * size
             self.refresh()
             self.events.size()
+        self.events.current_size()
 
     @property
     def antialiasing(self) -> float:
@@ -985,6 +990,7 @@ class Points(Layer):
                 self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
             self.refresh()
             self.events.edge_width()
+        self.events.current_edge_width()
 
     @property
     def edge_color(self) -> np.ndarray:
@@ -1386,7 +1392,7 @@ class Points(Layer):
 
         if mode == Mode.ADD:
             self.selected_data = set()
-            self.interactive = True
+            self.mouse_pan = True
         elif mode != Mode.SELECT or self._mode != Mode.SELECT:
             self._selected_data_stored = set()
 

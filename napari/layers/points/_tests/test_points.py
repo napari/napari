@@ -527,18 +527,18 @@ def test_changing_modes():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'add'
     assert layer.mode == 'add'
 
     layer.mode = 'select'
     assert layer.mode == 'select'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     with pytest.raises(ValueError):
         layer.mode = 'not_a_mode'

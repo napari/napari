@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 try:
-    import qtpy
+    import qtpy  # noqa: F401 need to be ignored as qtpy may be available but Qt bindings may not be
 except ModuleNotFoundError:
     pytest.skip('Cannot test magicgui without qtpy.', allow_module_level=True)
 except RuntimeError:
