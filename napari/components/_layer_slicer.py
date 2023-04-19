@@ -68,10 +68,10 @@ class _LayerSlicer:
         _force_sync: bool
             if true, forces slicing to execute synchronously
         _layers_to_task : dict
-            task storage for cancellation logic
+            task storage for cancellation logic, format: {tuple(layers): task}
         _lock_layers_to_task : threading.RLock
             lock to guard against changes to `_layers_to_task` when finding,
-            adding, or removing tasks. Format: {layers: task}
+            adding, or removing tasks.
         """
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
@@ -225,7 +225,9 @@ class _LayerSlicer:
         dict[Layer, SliceResponse]: which contains the results of the slice
         """
         result = {layer: request() for layer, request in requests.items()}
-        self.events.ready(Event('ready', value=result))
+        logger.debug('slice_layers - ready emitter')
+        # self.events.ready(Event('ready', value=result))
+        self.events.ready(value=result)
         return result
 
     def _on_slice_done(self, task: Future[Dict]) -> None:

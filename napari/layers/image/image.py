@@ -50,6 +50,16 @@ if TYPE_CHECKING:
     from napari.components import Dims
 
 
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+console = logging.StreamHandler()
+console.setLevel(level=logging.DEBUG)
+formatter = logging.Formatter("%(levelname)s : %(message)s")
+console.setFormatter(formatter)
+logger.addHandler(console)
+
+
 # It is important to contain at least one abstractmethod to properly exclude this class
 # in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer
@@ -739,6 +749,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _set_view_slice(self) -> None:
         """Set the slice output based on this layer's current state."""
+        logger.debug('set_view_slice')
         # Initializes an ImageSlice for the old experimental async code.
         self._new_empty_slice()
 
@@ -767,6 +778,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
         """Make an image slice request based on the given dims and this image."""
         # indicate the layer is currently mid-load
+        logger.debug('make_slice_request')
         self._loaded = False
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
@@ -799,6 +811,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         This is temporary scaffolding that should go away once we have completed
         the async slicing project: https://github.com/napari/napari/issues/4795
         """
+        logger.debug('make_slice_request_internal')
         return _ImageSliceRequest(
             dims=slice_input,
             data=self.data,
@@ -841,7 +854,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._should_calc_clims = False
         elif self._keep_auto_contrast:
             self.reset_contrast_limits()
-
+        logger.debug('update slice response')
         self._loaded = True
 
     def _load_slice(self, data: ImageSliceData):

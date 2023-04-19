@@ -1,3 +1,9 @@
+# The following fakes are used to control execution of slicing across
+# multiple threads, while also allowing us to mimic real classes
+# (like layers) in the code base. This allows us to assert state and
+# conditions that may only be temporarily true at different stages of
+# an asynchronous task.
+import logging
 import time
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
@@ -14,11 +20,14 @@ from napari.components._layer_slicer import _LayerSlicer
 from napari.layers import Image, Points
 from napari.layers._data_protocols import Index, LayerDataProtocol
 
-# The following fakes are used to control execution of slicing across
-# multiple threads, while also allowing us to mimic real classes
-# (like layers) in the code base. This allows us to assert state and
-# conditions that may only be temporarily true at different stages of
-# an asynchronous task.
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+console = logging.StreamHandler()
+console.setLevel(level=logging.DEBUG)
+formatter = logging.Formatter("%(levelname)s : %(message)s")
+console.setFormatter(formatter)
+logger.addHandler(console)
 
 
 @dataclass(frozen=True)
@@ -352,16 +361,20 @@ def test_submit_with_one_3d_image(layer_slicer):
         range=((0, 8, 1), (0, 7, 1), (0, 6, 1)),
         point=(2, 0, 0),
     )
-
+    logger.debug('before slicing')
     assert not layer_slicer.busy
+    assert layer.loaded
     with lockable_data.lock:
         future = layer_slicer.submit(layers=[layer], dims=dims)
         assert layer_slicer.busy
+        assert not layer.loaded
         assert not future.done()
     layer_result = _wait_for_result(future)[layer]
     np.testing.assert_equal(layer_result.data, data[2, :, :])
 
     assert not layer_slicer.busy
+    logger.debug('before final check')
+    assert layer.loaded
 
 
 def test_submit_with_one_3d_points(layer_slicer):
@@ -384,13 +397,16 @@ def test_submit_with_one_3d_points(layer_slicer):
     )
 
     assert not layer_slicer.busy
+    assert layer.loaded
     with lockable_internal_data.lock:
         future = layer_slicer.submit(layers=[layer], dims=dims)
         assert layer_slicer.busy
+        assert not layer.loaded
         assert not future.done()
 
     _wait_for_result(future)[layer]
     assert not layer_slicer.busy
+    assert layer.loaded
 
 
 def test_submit_after_shutdown_raises():
