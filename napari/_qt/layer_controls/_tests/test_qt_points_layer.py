@@ -64,20 +64,20 @@ def test_current_size_display_in_range(qtbot):
     assert slider.value() == 200
     assert layer.current_size == 200
 
-    layer.current_size = [20, 20]
+    layer.current_size = 20
     layer.events.size()
     assert slider.maximum() == 201
     assert slider.minimum() == 1
-    assert slider.value() == 200
-    assert layer.current_size == [20, 20]
-
-    with pytest.raises(ValueError):
-        layer.current_size = [20, -20]
-    layer.events.size()
-    assert slider.maximum() == 201
-    assert slider.minimum() == 1
-    assert slider.value() == 200
+    assert slider.value() == 20
     assert layer.current_size == 20
+
+    with pytest.warns(DeprecationWarning):
+        layer.current_size = [10, 10]
+    layer.events.size()
+    assert slider.maximum() == 201
+    assert slider.minimum() == 1
+    assert slider.value() == 10
+    assert layer.current_size == 10
 
 
 def test_current_size_slider_properly_initialized(qtbot):
