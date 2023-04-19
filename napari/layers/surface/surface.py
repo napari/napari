@@ -461,6 +461,9 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @texture.setter
     def texture(self, texture: np.ndarray):
+        if texture is not None and not isinstance(texture, np.ndarray):
+            msg = f"texture should be None or ndarray; got {type(texture)}"
+            raise ValueError(msg)
         self._texture = texture
         self.events.texture(value=self._texture)
 
@@ -470,6 +473,9 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @texcoords.setter
     def texcoords(self, texcoords: np.ndarray):
+        if texcoords is not None and not isinstance(texcoords, np.ndarray):
+            msg = f"texcoords should be None or ndarray; got {type(texcoords)}"
+            raise ValueError(msg)
         self._texcoords = texcoords
         self.events.texcoords(value=self._texcoords)
 
