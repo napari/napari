@@ -757,6 +757,7 @@ class EnumSchemaWidget(SchemaWidgetMixin, QtWidgets.QComboBox):
 
     @state.setter
     def state(self, value):
+        value = str(value)
         index = self.findData(value)
         if index == -1:
             raise ValueError(value)
