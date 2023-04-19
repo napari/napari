@@ -43,7 +43,7 @@ class Vectors(Layer):
         possible values for each property.
     edge_width : float
         Width for all vectors in pixels.
-    style : str
+    vector_style : str
         One of a list of preset display modes that determines how vectors are displayed.
         Allowed values are {'line', 'triangle', and 'arrow'}.
     length : float
@@ -112,7 +112,7 @@ class Vectors(Layer):
         where N is the number of vectors.
     edge_width : float
         Width for all vectors in pixels.
-    style : VectorStyle
+    vector_style : VectorStyle
         Determines how vectors are displayed.
 
         * ``VectorStyle.LINE``:
@@ -172,7 +172,7 @@ class Vectors(Layer):
         properties=None,
         property_choices=None,
         edge_width=1,
-        style='line',
+        vector_style='line',
         edge_color='red',
         edge_color_cycle=None,
         edge_colormap='viridis',
@@ -219,7 +219,7 @@ class Vectors(Layer):
             length=Event,
             edge_width=Event,
             edge_color=Event,
-            style=Event,
+            vector_style=Event,
             edge_color_mode=Event,
             properties=Event,
             out_of_slice_display=Event,
@@ -228,7 +228,7 @@ class Vectors(Layer):
         )
 
         # Save the vector style params
-        self._style = VectorStyle(style)
+        self._vector_style = VectorStyle(vector_style)
         self._edge_width = edge_width
         self._out_of_slice_display = out_of_slice_display
 
@@ -389,7 +389,7 @@ class Vectors(Layer):
             {
                 'length': self.length,
                 'edge_width': self.edge_width,
-                'style': self.style,
+                'vector_style': self.vector_style,
                 'edge_color': self.edge_color
                 if self.data.size
                 else [self._edge.current_color],
@@ -454,7 +454,7 @@ class Vectors(Layer):
         self.refresh()
 
     @property
-    def style(self) -> str:
+    def vector_style(self) -> str:
         """Vectors display mode: Determines how vectors are displayed.
 
         VectorStyle.LINE
@@ -464,14 +464,14 @@ class Vectors(Layer):
             VectorStyle.ARROW
                 Displays vectors as arrows.
         """
-        return str(self._style)
+        return str(self._vector_style)
 
-    @style.setter
-    def style(self, style: str):
-        old_style = self._style
-        self._style = VectorStyle(style)
-        if self._style != old_style:
-            self.events.style()
+    @vector_style.setter
+    def vector_style(self, vector_style: str):
+        old_vector_style = self._vector_style
+        self._vector_style = VectorStyle(vector_style)
+        if self._vector_style != old_vector_style:
+            self.events.vector_style()
             self.refresh()
 
     @property
@@ -627,10 +627,10 @@ class Vectors(Layer):
         face_color = self.edge_color[self._view_indices]
         face_color[:, -1] *= self._view_alphas
 
-        if self.style == 'line':
+        if self.vector_style == 'line':
             face_color = np.repeat(face_color, 2, axis=0)
 
-        elif self.style == 'arrow':
+        elif self.vector_style == 'arrow':
             face_color = np.repeat(face_color, 3, axis=0)
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:

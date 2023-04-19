@@ -21,7 +21,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             self.layer._view_data,
             self.layer.edge_width,
             self.layer.length,
-            self.layer.style,
+            self.layer.vector_style,
         )
         face_color = self.layer._view_face_color
         ndisplay = self.layer._slice_input.ndisplay
@@ -48,7 +48,7 @@ class VispyVectorsLayer(VispyBaseLayer):
         self._on_matrix_change()
 
 
-def generate_vector_meshes(vectors, width, length, style):
+def generate_vector_meshes(vectors, width, length, vector_style):
     """Generates list of mesh vertices and triangles from a list of vectors
 
     Parameters
@@ -71,14 +71,14 @@ def generate_vector_meshes(vectors, width, length, style):
     ndim = vectors.shape[2]
     if ndim == 2:
         vertices, triangles = generate_vector_meshes_2D(
-            vectors, width, length, style
+            vectors, width, length, vector_style
         )
     else:
         v_a, t_a = generate_vector_meshes_2D(
-            vectors, width, length, style, p=(0, 0, 1)
+            vectors, width, length, vector_style, p=(0, 0, 1)
         )
         v_b, t_b = generate_vector_meshes_2D(
-            vectors, width, length, style, p=(1, 0, 0)
+            vectors, width, length, vector_style, p=(1, 0, 0)
         )
         vertices = np.concatenate([v_a, v_b], axis=0)
         triangles = np.concatenate([t_a, len(v_a) + t_b], axis=0)
@@ -86,7 +86,9 @@ def generate_vector_meshes(vectors, width, length, style):
     return vertices, triangles
 
 
-def generate_vector_meshes_2D(vectors, width, length, style, p=(0, 0, 1)):
+def generate_vector_meshes_2D(
+    vectors, width, length, vector_style, p=(0, 0, 1)
+):
     """Generates list of mesh vertices and triangles from a list of vectors
 
     Parameters
@@ -98,7 +100,7 @@ def generate_vector_meshes_2D(vectors, width, length, style, p=(0, 0, 1)):
         width of the line to be drawn
     length : float
         length multiplier of the line to be drawn
-    style : str
+    vector_style : str
         display style of the vectors
     p : 3-tuple, optional
         orthogonal vector for segment calculation in 3D.
@@ -111,17 +113,17 @@ def generate_vector_meshes_2D(vectors, width, length, style, p=(0, 0, 1)):
         Vertex indices that form the mesh triangles
     """
 
-    if style == 'line':
+    if vector_style == 'line':
         vertices, triangles = generate_meshes_line_2D(
             vectors, width, length, p
         )
 
-    elif style == 'triangle':
+    elif vector_style == 'triangle':
         vertices, triangles = generate_meshes_triangle_2D(
             vectors, width, length, p
         )
 
-    elif style == 'arrow':
+    elif vector_style == 'arrow':
         vertices, triangles = generate_meshes_arrow_2D(
             vectors, width, length, p
         )
@@ -282,7 +284,9 @@ def generate_meshes_arrow_2D(vectors, width, length, p):
 
     vectors_starts = vectors[:, 0]
 
-    # will be used to generate the vertices 2,3,4 and 5
+    # Will be used to generate the vertices 2,3,4 and 5.
+    # Right now the head of the arrow is put at 75% of the length
+    # of the vector.
     vectors_intermediates = vectors_starts + 0.75 * vectors[:, 1]
 
     vectors_ends = vectors_starts + length * vectors[:, 1]
