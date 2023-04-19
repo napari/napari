@@ -11,6 +11,7 @@ from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.layers.vectors._vector_utils import fix_data_vectors
+from napari.layers.vectors._vectors_constants import VectorStyle
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
@@ -43,8 +44,8 @@ class Vectors(Layer):
     edge_width : float
         Width for all vectors in pixels.
     style : str
-        Determines how vectors are displayed. Options are 'line', 'triangle',
-        and 'arrow'.
+        One of a list of preset display modes that determines how vectors are displayed.
+        Allowed values are {'line', 'triangle', and 'arrow'}.
     length : float
         Multiplicative factor on projections for length of all vectors.
     edge_color : str
@@ -111,6 +112,15 @@ class Vectors(Layer):
         where N is the number of vectors.
     edge_width : float
         Width for all vectors in pixels.
+    style : VectorStyle
+        Determines how vectors are displayed.
+
+        * ``VectorStyle.LINE``:
+        Vectors are displayed as lines.
+        * ``VectorStyle.TRIANGLE``:
+        Vectors are displayed as triangles.
+        * ``VectorStyle.ARROW``:
+        Vectors are displayed as arrows.
     length : float
         Multiplicative factor on projections for length of all vectors.
     edge_color : str
@@ -218,7 +228,7 @@ class Vectors(Layer):
         )
 
         # Save the vector style params
-        self._style = style
+        self._style = VectorStyle(style)
         self._edge_width = edge_width
         self._out_of_slice_display = out_of_slice_display
 
@@ -445,18 +455,24 @@ class Vectors(Layer):
 
     @property
     def style(self) -> str:
-        """str: Vectors display style."""
-        return self._style
+        """Vectors display mode: Determines how vectors are displayed.
+
+        VectorStyle.LINE
+                Displays vectors as rectangular lines.
+            VectorStyle.TRIANGLE
+                Displays vectors as triangles.
+            VectorStyle.ARROW
+                Displays vectors as arrows.
+        """
+        return str(self._style)
 
     @style.setter
     def style(self, style: str):
-        if style in ['line', 'triangle', 'arrow']:
-            self._style = style
-        else:
-            raise
-
-        self.events.style()
-        self.refresh()
+        old_style = self._style
+        self._style = VectorStyle(style)
+        if self._style != old_style:
+            self.events.style()
+            self.refresh()
 
     @property
     def length(self) -> Union[int, float]:

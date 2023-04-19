@@ -8,6 +8,7 @@ from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.vectors._vectors_constants import VECTORSTYLE_TRANSLATIONS
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -76,11 +77,19 @@ class QtVectorsControls(QtLayerControls):
         self._on_edge_color_change()
 
         # dropdown to select the edge display style
-        self.style_comboBox = QComboBox(self)
-        styles = ['line', 'triangle', 'arrow']
-        self.style_comboBox.addItems(styles)
+        style_comboBox = QComboBox(self)
+        for index, (data, text) in enumerate(VECTORSTYLE_TRANSLATIONS.items()):
+            data = data.value
+            style_comboBox.addItem(text, data)
+            if data == self.layer.style:
+                style_comboBox.setCurrentIndex(index)
+
+        self.style_comboBox = style_comboBox
         self.style_comboBox.currentTextChanged.connect(self.change_style)
-        self._on_style_change()
+
+        # I had added the line below to mimic what is done with
+        # color mode, but it leads to a crash. I it necessary?
+        # self._on_style_change()
 
         # dropdown to select the edge color mode
         self.color_mode_comboBox = QComboBox(self)
@@ -165,7 +174,7 @@ class QtVectorsControls(QtLayerControls):
         Parameters
         ----------
         style : str
-            Vectors style. Must be: 'line', 'triangle' or 'arrow'
+            Name of vectors style, eg: 'line', 'triangle' or 'arrow'.
         """
         with self.layer.events.style.blocker():
             self.layer.style = style
