@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import traceback
 import typing
 import warnings
@@ -434,8 +433,7 @@ class QtViewer(QSplitter):
             vsync=True,
             parent=self,
             size=self.viewer._canvas_size[::-1],
-            autoswap=os.environ.get("NAPARI_AUTOSWAP", "0")
-            == "1",  # see #5734
+            autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
         self.canvas.events.draw.connect(self.dims.enable_play)
 
