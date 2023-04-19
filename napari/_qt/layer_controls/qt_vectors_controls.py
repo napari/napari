@@ -28,8 +28,8 @@ class QtVectorsControls(QtLayerControls):
         Label for edgeColorSwatch
     edgeColorEdit : QColorSwatchEdit
         Widget to select display color for vectors.
-    display_style_comboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select edge_display_style for the vectors.
+    style_comboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select style for the vectors.
     color_mode_comboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select edge_color_mode for the vectors.
     color_prop_box : qtpy.QtWidgets.QComboBox
@@ -45,8 +45,8 @@ class QtVectorsControls(QtLayerControls):
         Multiplicative factor on projections for length of all vectors.
     widthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
         Spin box widget controlling edge line width of vectors.
-    display_style_comboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select edge_display_style for the vectors.
+    style_comboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select style for the vectors.
     """
 
     layer: 'napari.layers.Vectors'
@@ -76,13 +76,11 @@ class QtVectorsControls(QtLayerControls):
         self._on_edge_color_change()
 
         # dropdown to select the edge display style
-        self.display_style_comboBox = QComboBox(self)
-        display_styles = ['rectangle', 'triangle', 'arrow']
-        self.display_style_comboBox.addItems(display_styles)
-        self.display_style_comboBox.currentTextChanged.connect(
-            self.change_edge_display_style
-        )
-        self._on_edge_display_style_change()
+        self.style_comboBox = QComboBox(self)
+        styles = ['rectangle', 'triangle', 'arrow']
+        self.style_comboBox.addItems(styles)
+        self.style_comboBox.currentTextChanged.connect(self.change_style)
+        self._on_style_change()
 
         # dropdown to select the edge color mode
         self.color_mode_comboBox = QComboBox(self)
@@ -122,7 +120,7 @@ class QtVectorsControls(QtLayerControls):
         self.layout().addRow(trans._('length:'), self.lengthSpinBox)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(
-            trans._('edge display style:'), self.display_style_comboBox
+            trans._('edge display style:'), self.style_comboBox
         )
         self.layout().addRow(
             trans._('edge color mode:'), self.color_mode_comboBox
@@ -136,9 +134,7 @@ class QtVectorsControls(QtLayerControls):
         self.layer.events.out_of_slice_display.connect(
             self._on_out_of_slice_display_change
         )
-        self.layer.events.edge_display_style.connect(
-            self._on_edge_display_style_change
-        )
+        self.layer.events.style.connect(self._on_style_change)
         self.layer.events.edge_color_mode.connect(
             self._on_edge_color_mode_change
         )
@@ -163,7 +159,7 @@ class QtVectorsControls(QtLayerControls):
             self._on_edge_color_mode_change()
             raise
 
-    def change_edge_display_style(self, style: str):
+    def change_style(self, style: str):
         """Change edge display style of vectors on the layer model.
 
         Parameters
@@ -171,8 +167,8 @@ class QtVectorsControls(QtLayerControls):
         style : str
             Vectors style. Must be: 'rectangle', 'triangle' or 'arrow'
         """
-        with self.layer.events.edge_display_style.blocker():
-            self.layer.edge_display_style = style
+        with self.layer.events.style.blocker():
+            self.layer.style = style
 
     def change_edge_color_mode(self, mode: str):
         """Change edge color mode of vectors on the layer model.
@@ -294,14 +290,12 @@ class QtVectorsControls(QtLayerControls):
         with self.layer.events.edge_width.blocker():
             self.widthSpinBox.setValue(self.layer.edge_width)
 
-    def _on_edge_display_style_change(self):
+    def _on_style_change(self):
         """Receive layer model edge display style change event & update dropdown."""
-        with self.layer.events.edge_display_style.blocker():
-            style = self.layer.edge_display_style
-            index = self.display_style_comboBox.findText(
-                style, Qt.MatchFixedString
-            )
-            self.display_style_comboBox.setCurrentIndex(index)
+        with self.layer.events.style.blocker():
+            style = self.layer.style
+            index = self.style_comboBox.findText(style, Qt.MatchFixedString)
+            self.style_comboBox.setCurrentIndex(index)
 
     def _on_edge_color_mode_change(self):
         """Receive layer model edge color mode change event & update dropdown."""

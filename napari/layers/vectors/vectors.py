@@ -42,7 +42,7 @@ class Vectors(Layer):
         possible values for each property.
     edge_width : float
         Width for all vectors in pixels.
-    edge_display_style : str
+    style : str
         Determines how vectors are displayed. Options are 'rectangle', 'triangle',
         and 'arrow'.
     length : float
@@ -162,7 +162,7 @@ class Vectors(Layer):
         properties=None,
         property_choices=None,
         edge_width=1,
-        edge_display_style='rectangle',
+        style='rectangle',
         edge_color='red',
         edge_color_cycle=None,
         edge_colormap='viridis',
@@ -209,7 +209,7 @@ class Vectors(Layer):
             length=Event,
             edge_width=Event,
             edge_color=Event,
-            edge_display_style=Event,
+            style=Event,
             edge_color_mode=Event,
             properties=Event,
             out_of_slice_display=Event,
@@ -218,7 +218,7 @@ class Vectors(Layer):
         )
 
         # Save the vector style params
-        self._edge_display_style = edge_display_style
+        self._style = style
         self._edge_width = edge_width
         self._out_of_slice_display = out_of_slice_display
 
@@ -379,7 +379,7 @@ class Vectors(Layer):
             {
                 'length': self.length,
                 'edge_width': self.edge_width,
-                'edge_display_style': self.edge_display_style,
+                'style': self.style,
                 'edge_color': self.edge_color
                 if self.data.size
                 else [self._edge.current_color],
@@ -444,19 +444,18 @@ class Vectors(Layer):
         self.refresh()
 
     @property
-    def edge_display_style(self) -> str:
+    def style(self) -> str:
         """str: Vectors display style."""
-        return self._edge_display_style
+        return self._style
 
-    @edge_display_style.setter
-    def edge_display_style(self, edge_display_style: str):
-        if edge_display_style in ['rectangle', 'triangle', 'arrow']:
-            # There should probably be a 'DisplayStyle' class
-            self._edge_display_style = edge_display_style
+    @style.setter
+    def style(self, style: str):
+        if style in ['rectangle', 'triangle', 'arrow']:
+            self._style = style
         else:
             raise
 
-        self.events.edge_display_style()
+        self.events.style()
         self.refresh()
 
     @property
@@ -612,10 +611,10 @@ class Vectors(Layer):
         face_color = self.edge_color[self._view_indices]
         face_color[:, -1] *= self._view_alphas
 
-        if self.edge_display_style == 'rectangle':
+        if self.style == 'rectangle':
             face_color = np.repeat(face_color, 2, axis=0)
 
-        elif self.edge_display_style == 'arrow':
+        elif self.style == 'arrow':
             face_color = np.repeat(face_color, 3, axis=0)
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:

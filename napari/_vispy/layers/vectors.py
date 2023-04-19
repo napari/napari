@@ -21,7 +21,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             self.layer._view_data,
             self.layer.edge_width,
             self.layer.length,
-            self.layer.edge_display_style,
+            self.layer.style,
         )
         face_color = self.layer._view_face_color
         ndisplay = self.layer._slice_input.ndisplay
