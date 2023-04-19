@@ -26,8 +26,10 @@ from npe2 import PluginManager
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 from qtpy.QtWidgets import QTextEdit
 
-from napari._version import version as _napari_version
-from napari._version import version_tuple as _napari_version_tuple
+from napari._version import (
+    version as _napari_version,
+    version_tuple as _napari_version_tuple,
+)
 from napari.plugins import plugin_manager
 from napari.plugins.npe2api import _user_agent
 from napari.utils._appdirs import user_plugin_dir, user_site_packages
@@ -67,19 +69,19 @@ class AbstractInstallerTool:
     @classmethod
     def executable(cls):
         "Path to the executable that will run the task"
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # abstract method
     def arguments(self):
         "Arguments supplied to the executable"
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # abstract method
     def environment(
         self, env: QProcessEnvironment = None
     ) -> QProcessEnvironment:
         "Changes needed in the environment variables."
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @staticmethod
     def constraints() -> Sequence[str]:
@@ -93,7 +95,7 @@ class AbstractInstallerTool:
         """
         Check if the tool is available by performing a little test
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class PipInstallerTool(AbstractInstallerTool):
@@ -212,6 +214,10 @@ class CondaInstallerTool(AbstractInstallerTool):
             if not env.contains("USERPROFILE"):
                 env.insert("HOME", os.path.expanduser("~"))
                 env.insert("USERPROFILE", os.path.expanduser("~"))
+        if sys.platform == 'darwin' and env.contains('PYTHONEXECUTABLE'):
+            # Fix for macOS when napari launched from terminal
+            # related to https://github.com/napari/napari/pull/5531
+            env.remove("PYTHONEXECUTABLE")
         return env
 
     @staticmethod

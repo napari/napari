@@ -88,12 +88,27 @@ select = [
     "PIE", # flake8-pie
     "COM", # flake8-commas
     "SIM", # flake8-simplify
+    "INP", # flake8-no-pep420
+    "PYI", # flake8-pyi
+    "Q", # flake8-quotes
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "TID",  # flake8-tidy-imports # replace absolutify import
+    "TRY", # tryceratops
+    "ICN", # flake8-import-conventions
+    "RUF", # ruff specyfic rules
 ]
 ignore = [
-    "E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003",
+    "E501", "UP006", "TCH001", "TCH002", "TCH003",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
+    "Q000",
+    "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
+    "TRY003", # require implement multiple exception class
+    "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
+    "B028", # need to be fixed
+    "PYI015", # it produces bad looking files (@jni opinion)
 
 ]
 
@@ -124,12 +139,34 @@ fix = true
 
 [tool.ruff.per-file-ignores]
 "napari/_vispy/__init__.py" = ["E402"]
-"**/_tests/*.py" = ["B011"]
+"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018"]
 "napari/utils/_testsupport.py" = ["B011"]
 "tools/test_strings.py" = ["F401"]
+"tools/**" = ["INP001", "T20"]
+"examples/**" = ["INP001", "T20"]
+"bundle.py" = ["T20"]
+"**/vendored/**" = ["TID"]
+
+[tool.ruff.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.ruff.flake8-tidy-imports]
+# Disallow all relative imports.
+ban-relative-imports = "all"
+
+[tool.ruff.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
 
 [tool.ruff.isort]
 known-first-party=['napari']
+combine-as-imports = true
+
+[tool.ruff.flake8-import-conventions]
+[tool.ruff.flake8-import-conventions.extend-aliases]
+# Declare a custom alias for the `matplotlib` module.
+"dask.array" = "da"
+xarray = "xr"
 
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
@@ -179,6 +216,8 @@ no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 check_untyped_defs = true
+plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
+
 # # maybe someday :)
 # disallow_any_generics = true
 # no_implicit_reexport = true

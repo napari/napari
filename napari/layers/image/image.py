@@ -20,8 +20,6 @@ from napari.layers.image._image_constants import (
 )
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
-)
-from napari.layers.image._image_mouse_bindings import (
     set_plane_position as plane_double_click_callback,
 )
 from napari.layers.image._image_slice import ImageSlice
@@ -283,7 +281,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     "'rgb' was set to True but data does not have suitable dimensions."
                 )
             )
-        elif rgb is None:
+        if rgb is None:
             rgb = rgb_guess
         self.rgb = rgb
 
@@ -412,8 +410,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Get empty image to use as the default before data is loaded."""
         if self.rgb:
             return np.zeros((1,) * self._slice_input.ndisplay + (3,))
-        else:
-            return np.zeros((1,) * self._slice_input.ndisplay)
+
+        return np.zeros((1,) * self._slice_input.ndisplay)
 
     def _get_order(self) -> Tuple[int]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
@@ -422,9 +420,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return order + (max(order) + 1,)
-        else:
-            return order
+            return (*order, max(order) + 1)
+
+        return order
 
     @property
     def _data_view(self):
@@ -958,7 +956,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 downsampled = (downsampled - low) / color_range
             downsampled = downsampled**self.gamma
             color_array = self.colormap.map(downsampled.ravel())
-            colormapped = color_array.reshape(downsampled.shape + (4,))
+            colormapped = color_array.reshape((*downsampled.shape, 4))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 

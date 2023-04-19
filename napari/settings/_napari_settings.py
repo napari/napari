@@ -46,21 +46,25 @@ class NapariSettings(EventedConfigFileSettings):
         default_factory=AppearanceSettings,
         title=trans._("Appearance"),
         description=trans._("User interface appearance settings."),
+        allow_mutation=False,
     )
     plugins: PluginsSettings = Field(
         default_factory=PluginsSettings,
         title=trans._("Plugins"),
         description=trans._("Plugins settings."),
+        allow_mutation=False,
     )
     shortcuts: ShortcutsSettings = Field(
         default_factory=ShortcutsSettings,
         title=trans._("Shortcuts"),
         description=trans._("Shortcut settings."),
+        allow_mutation=False,
     )
     experimental: ExperimentalSettings = Field(
         default_factory=ExperimentalSettings,
         title=trans._("Experimental"),
         description=trans._("Experimental settings."),
+        allow_mutation=False,
     )
 
     # private attributes and ClassVars will not appear in the schema
@@ -72,7 +76,6 @@ class NapariSettings(EventedConfigFileSettings):
         # all of these fields are evented models, so we don't want to break
         # connections by setting the top-level field itself
         # (you can still mutate attributes in the subfields)
-        allow_mutation = False
 
         @classmethod
         def _config_file_settings_source(cls, settings) -> dict:
