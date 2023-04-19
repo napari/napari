@@ -122,6 +122,9 @@ def add(layer, event):
             event.handled = True
         yield
 
+    # in some weird cases you might have press and release without move,
+    # so we just make 100% sure dist is correct
+    dist = np.linalg.norm(start_pos - event.pos)
     if dist < DRAG_DIST_THRESHOLD:
         coordinates = layer.world_to_data(event.position)
         layer.add(coordinates)
