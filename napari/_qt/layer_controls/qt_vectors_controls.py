@@ -90,7 +90,7 @@ class QtVectorsControls(QtLayerControls):
         )
 
         # I had added the line below to mimic what is done with
-        # color mode, but it leads to a crash. I it necessary?
+        # color mode, but it leads to a crash. Is it necessary?
         # self._on_vector_style_change()
 
         # dropdown to select the edge color mode
