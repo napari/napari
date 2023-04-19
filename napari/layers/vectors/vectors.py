@@ -43,7 +43,7 @@ class Vectors(Layer):
     edge_width : float
         Width for all vectors in pixels.
     style : str
-        Determines how vectors are displayed. Options are 'rectangle', 'triangle',
+        Determines how vectors are displayed. Options are 'line', 'triangle',
         and 'arrow'.
     length : float
         Multiplicative factor on projections for length of all vectors.
@@ -162,7 +162,7 @@ class Vectors(Layer):
         properties=None,
         property_choices=None,
         edge_width=1,
-        style='rectangle',
+        style='line',
         edge_color='red',
         edge_color_cycle=None,
         edge_colormap='viridis',
@@ -450,7 +450,7 @@ class Vectors(Layer):
 
     @style.setter
     def style(self, style: str):
-        if style in ['rectangle', 'triangle', 'arrow']:
+        if style in ['line', 'triangle', 'arrow']:
             self._style = style
         else:
             raise
@@ -611,7 +611,7 @@ class Vectors(Layer):
         face_color = self.edge_color[self._view_indices]
         face_color[:, -1] *= self._view_alphas
 
-        if self.style == 'rectangle':
+        if self.style == 'line':
             face_color = np.repeat(face_color, 2, axis=0)
 
         elif self.style == 'arrow':

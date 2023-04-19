@@ -113,7 +113,7 @@ def generate_vector_meshes_2D(vectors, width, length, style, p=(0, 0, 1)):
 
     nvectors = vectors.shape[0]
 
-    if style == 'rectangle':
+    if style == 'line':
         vertices = generate_meshes_rectangle_2D(vectors, width, length, p)
         triangles = np.array(
             [

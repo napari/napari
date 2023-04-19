@@ -77,7 +77,7 @@ class QtVectorsControls(QtLayerControls):
 
         # dropdown to select the edge display style
         self.style_comboBox = QComboBox(self)
-        styles = ['rectangle', 'triangle', 'arrow']
+        styles = ['line', 'triangle', 'arrow']
         self.style_comboBox.addItems(styles)
         self.style_comboBox.currentTextChanged.connect(self.change_style)
         self._on_style_change()
@@ -165,7 +165,7 @@ class QtVectorsControls(QtLayerControls):
         Parameters
         ----------
         style : str
-            Vectors style. Must be: 'rectangle', 'triangle' or 'arrow'
+            Vectors style. Must be: 'line', 'triangle' or 'arrow'
         """
         with self.layer.events.style.blocker():
             self.layer.style = style
