@@ -75,12 +75,9 @@ def new_label(layer: Labels):
 @register_label_action(
     trans._("Set the selected label to the background label or vice versa."),
 )
-def swap_background_color(layer: Labels):
+def swap_selected_and_background_labels(layer: Labels):
     """Set the selected label to the background label or vice versa."""
-    if layer.selected_label != layer._background_label:
-        layer.selected_label = layer._background_label
-    else:
-        layer.selected_label = layer.prev_selected_label
+    layer.swap_selected_and_background_labels()
 
 
 @register_label_action(

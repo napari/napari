@@ -28,7 +28,7 @@ default_shortcuts = {
     'napari:activate_labels_pan_zoom_mode': [KeyCode.Digit5],
     'napari:activate_labels_transform_mode': [KeyCode.Digit6],
     'napari:new_label': [KeyCode.KeyM],
-    'napari:swap_background_color': [KeyCode.KeyX],
+    'napari:swap_selected_and_background_labels': [KeyCode.KeyX],
     'napari:decrease_label_id': [KeyCode.Minus],
     'napari:increase_label_id': [KeyCode.Equal],
     'napari:decrease_brush_size': [KeyCode.BracketLeft],

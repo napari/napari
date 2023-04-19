@@ -173,8 +173,6 @@ class Labels(_ImageBase):
         Size of the paint brush in data coordinates.
     selected_label : int
         Index of selected label. Can be greater than the current maximum label.
-    prev_selected_label: Optional[int]
-        Previously selected label. `None` if the selected label has never been changed.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -331,7 +329,7 @@ class Labels(_ImageBase):
         self._brush_size = 10
 
         self._selected_label = 1
-        self.prev_selected_label = None
+        self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
         self.color = color
 
@@ -643,7 +641,7 @@ class Labels(_ImageBase):
         if selected_label == self.selected_label:
             return
 
-        self.prev_selected_label = self.selected_label
+        self._prev_selected_label = self.selected_label
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
@@ -652,6 +650,13 @@ class Labels(_ImageBase):
         # so use self._color_mode
         if self.show_selected_label:
             self.refresh()
+
+    def swap_selected_and_background_labels(self):
+        """Set the selected label to the background label or vice versa."""
+        if self.selected_label != self._background_label:
+            self.selected_label = self._background_label
+        else:
+            self.selected_label = self._prev_selected_label
 
     @property
     def color_mode(self):
