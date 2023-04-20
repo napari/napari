@@ -136,7 +136,7 @@ def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer, rng):
 def test_slicing_in_progress(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = rng.random((3, 4, 5))
-    layer = Image(data)
+    layer = LockableImage(data)
     vispy_layer = setup_viewer_for_async_slice(viewer, layer)
     assert viewer.dims.current_step != (2, 0, 0)
 
