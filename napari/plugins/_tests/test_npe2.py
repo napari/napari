@@ -44,9 +44,15 @@ def test_read(mock_pm: 'TestPluginManager'):
 
     mock_pm.commands.get.reset_mock()
     assert (
-        _npe2.read(["some.randomext"], stack=True, plugin=PLUGIN_NAME) is None
+        _npe2.read(["some.randomext"], stack=True, plugin='not-npe2-plugin')
+        is None
     )
     mock_pm.commands.get.assert_not_called()
+
+    with pytest.raises(
+        ValueError, match=f"Plugin '{PLUGIN_NAME}' was selected"
+    ):
+        _npe2.read(["some.randomext"], stack=True, plugin=PLUGIN_NAME)
 
 
 def test_write(mock_pm: 'TestPluginManager'):
