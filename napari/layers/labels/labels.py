@@ -19,7 +19,11 @@ from napari.layers.labels._labels_constants import (
     LabelsRendering,
     Mode,
 )
-from napari.layers.labels._labels_mouse_bindings import draw, pick
+from napari.layers.labels._labels_mouse_bindings import (
+    BrushSizeOnMouseMove,
+    draw,
+    pick,
+)
 from napari.layers.labels._labels_utils import (
     indices_in_shape,
     interpolate_coordinates,
@@ -219,13 +223,17 @@ class Labels(_ImageBase):
         Mode.ERASE: draw,
     }
 
+    brush_size_on_mouse_move = BrushSizeOnMouseMove(
+        min_brush_size=1, max_brush_size=None
+    )
+
     _move_modes = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
-        Mode.PAINT: no_op,
+        Mode.PAINT: brush_size_on_mouse_move,
         Mode.FILL: no_op,
-        Mode.ERASE: no_op,
+        Mode.ERASE: brush_size_on_mouse_move,
     }
     _cursor_modes = {
         Mode.PAN_ZOOM: 'standard',
