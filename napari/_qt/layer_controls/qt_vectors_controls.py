@@ -153,15 +153,16 @@ class QtVectorsControls(QtLayerControls):
             Edge color for vectors. Must be: 'direct', 'cycle', or 'colormap'
         """
         old_mode = self.layer.edge_color_mode
-        with self.layer.events.edge_color_mode.blocker():
-            try:
-                self.layer.edge_color_mode = mode
-                self._update_edge_color_gui(mode)
+        # with self.layer.events.edge_color_mode.blocker():
+        try:
+            self.layer.edge_color_mode = mode
+            self._update_edge_color_gui(mode)
 
-            except ValueError:
-                # if the color mode was invalid, revert to the old mode
-                self.layer.edge_color_mode = old_mode
-                raise
+        except ValueError:
+            # if the color mode was invalid, revert to the old mode (layer and GUI)
+            self.layer.edge_color_mode = old_mode
+            self.color_mode_comboBox.setCurrentText(old_mode)
+            raise
 
     def change_edge_color_direct(self, color: np.ndarray):
         """Change edge color of vectors on the layer model.

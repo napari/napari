@@ -2,30 +2,197 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
-from qtpy.QtWidgets import QAbstractButton
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (
+    QAbstractButton,
+    QAbstractSlider,
+    QCheckBox,
+    QComboBox,
+    QPushButton,
+    QRadioButton,
+)
 
+from napari._qt.layer_controls.qt_image_controls import QtImageControls
+from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari._qt.layer_controls.qt_layer_controls_container import (
     QtLayerControlsContainer,
     create_qt_layer_controls,
     layer_to_controls,
 )
+from napari._qt.layer_controls.qt_points_controls import QtPointsControls
 from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
+from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
+from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.components import ViewerModel
-from napari.layers import Labels, Points, Shapes
+from napari.layers import Image, Labels, Points, Shapes, Vectors
 
-LayerTypeWithData = namedtuple('LayerTypeWithData', ['type', 'data'])
-_POINTS = LayerTypeWithData(type=Points, data=np.random.random((5, 2)))
-_SHAPES = LayerTypeWithData(type=Shapes, data=np.random.random((10, 4, 2)))
+LayerTypeWithData = namedtuple(
+    'LayerTypeWithData', ['type', 'data', 'color', 'expected_isinstance']
+)
+_POINTS = LayerTypeWithData(
+    type=Points,
+    data=np.random.random((5, 2)),
+    color=None,
+    expected_isinstance=QtPointsControls,
+)
+_SHAPES = LayerTypeWithData(
+    type=Shapes,
+    data=np.random.random((10, 4, 2)),
+    color=None,
+    expected_isinstance=QtShapesControls,
+)
+_IMAGE = LayerTypeWithData(
+    type=Image,
+    data=np.random.rand(8, 8),
+    color=None,
+    expected_isinstance=QtImageControls,
+)
+_LABELS = LayerTypeWithData(
+    type=Labels,
+    data=np.random.randint(5, size=(10, 15)),
+    color={1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'},
+    expected_isinstance=QtLabelsControls,
+)
+_VECTORS = LayerTypeWithData(
+    type=Vectors,
+    data=np.zeros((2, 2, 2)),
+    color=None,
+    expected_isinstance=QtVectorsControls,
+)
 _LINES_DATA = np.random.random((6, 2, 2))
 
 
-def test_create_shape(qtbot):
-    shapes = _SHAPES.type(_SHAPES.data)
+@pytest.mark.parametrize(
+    'layer_type_with_data', [_POINTS, _SHAPES, _IMAGE, _LABELS, _VECTORS]
+)
+@pytest.mark.qt_no_exception_capture
+def test_create_layer_controls(qtbot, layer_type_with_data, capsys):
+    if layer_type_with_data.color:
+        layer = layer_type_with_data.type(
+            layer_type_with_data.data, color=layer_type_with_data.color
+        )
+    else:
+        layer = layer_type_with_data.type(layer_type_with_data.data)
 
-    ctrl = create_qt_layer_controls(shapes)
+    ctrl = create_qt_layer_controls(layer)
     qtbot.addWidget(ctrl)
 
-    assert isinstance(ctrl, QtShapesControls)
+    # Check create widget corresponds to the expected class for each type of
+    # layer
+    assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
+
+    # Check QComboBox by changing current index
+    for qcombobox in ctrl.findChildren(QComboBox):
+        if qcombobox.isVisible():
+            qcombobox_count = qcombobox.count()
+            qcombobox_initial_idx = qcombobox.currentIndex()
+            if qcombobox_count:
+                qcombobox.setCurrentIndex(0)
+            for idx in range(qcombobox_count):
+                previous_qcombobox_text = qcombobox.currentText()
+                qcombobox.setCurrentIndex(idx)
+                # If a value for the QComboBox is an invalid selection check if
+                # it fallbacks to the previous value
+                captured = capsys.readouterr()
+                if "ValueError: " in captured.err:
+                    assert qcombobox.currentText() == previous_qcombobox_text
+            qcombobox.setCurrentIndex(qcombobox_initial_idx)
+
+    # Check QAbstractSlider by changing value with `setValue` from minimum value to maximum
+    for qslider in ctrl.findChildren(QAbstractSlider):
+        if qslider.isVisible():
+            if isinstance(qslider.minimum(), float):
+                if getattr(qslider, "_valuesChanged", None):
+                    # create a list of tuples in the case the slider is ranged
+                    # from (minimum, minimum) to (maximum, maximum) +
+                    # from (minimum, maximum) to (minimum, minimum)
+                    # (minimum, minimum) and (maximum, maximum) values are excluded
+                    # to prevent the sequence not being monotonically increasing
+                    base_value_range = np.linspace(
+                        qslider.minimum(), qslider.maximum()
+                    )
+                    num_values = base_value_range.size
+                    max_value = np.full(num_values, qslider.maximum())
+                    min_value = np.full(num_values, qslider.minimum())
+                    value_range_to_max = list(zip(base_value_range, max_value))
+                    value_range_to_min = list(
+                        zip(min_value, np.flip(base_value_range))
+                    )
+                    value_range = (
+                        value_range_to_max[:-1] + value_range_to_min[:-1]
+                    )
+                else:
+                    value_range = np.linspace(
+                        qslider.minimum(), qslider.maximum()
+                    )
+            else:
+                if getattr(qslider, "_valuesChanged", None):
+                    # create a list of tuples in the case the slider is ranged
+                    # from (minimum, minimum) to (maximum, maximum) +
+                    # from (minimum, maximum) to (minimum, minimum)
+                    # base list created with + 1 to include maximum value
+                    # (minimum, minimum) and (maximum, maximum) values are excluded
+                    # to prevent the sequence not being monotonically increasing
+                    base_value_range = range(
+                        qslider.minimum(), qslider.maximum() + 1
+                    )
+                    num_values = len(base_value_range)
+                    max_value = [qslider.maximum()] * num_values
+                    min_value = [qslider.minimum()] * num_values
+                    value_range_to_max = list(zip(base_value_range, max_value))
+                    base_value_range_copy = base_value_range.copy()
+                    base_value_range_copy.reverse()
+                    value_range_to_min = list(
+                        zip(min_value, base_value_range_copy)
+                    )
+                    value_range = (
+                        value_range_to_max[:-1] + value_range_to_min[:-1]
+                    )
+                else:
+                    # use + 1 to include maximum value
+                    value_range = range(
+                        qslider.minimum(), qslider.maximum() + 1
+                    )
+            for value in value_range:
+                qslider.setValue(value)
+            if getattr(qslider, "_valuesChanged", None):
+                assert qslider.value()[0] == qslider.minimum()
+            else:
+                assert qslider.value() == qslider.maximum()
+
+    # Check QColorSwatchEdit by changing line edit text with a range of predefined values
+    for qcolorswatchedit in ctrl.findChildren(QColorSwatchEdit):
+        if qcolorswatchedit.isVisible():
+            lineedit = qcolorswatchedit.line_edit
+            colorswatch = qcolorswatchedit.color_swatch
+            colors = [
+                ("white", "white", np.array([1.0, 1.0, 1.0, 1.0])),
+                ("black", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+                # Check autocompletion `bla` -> `black`
+                ("bla", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+                # Check that setting an invalid color makes it fallback to the previous value
+                ("invalid_value", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+            ]
+            for color, expected_color, expected_array in colors:
+                lineedit.clear()
+                qtbot.keyClicks(lineedit, color)
+                qtbot.keyClick(lineedit, Qt.Key_Enter)
+                assert lineedit.text() == expected_color
+                assert (colorswatch.color == expected_array).all()
+
+    # Check QCheckBox by clicking with mouse click
+    for qcheckbox in ctrl.findChildren(QCheckBox):
+        if qcheckbox.isVisible():
+            qcheckbox_checked = qcheckbox.isChecked()
+            qtbot.mouseClick(qcheckbox, Qt.LeftButton)
+            assert qcheckbox.isChecked() != qcheckbox_checked
+
+    # Check QPushButton + QRadioButton by clicking with mouse click
+    for button in ctrl.findChildren(QPushButton) + ctrl.findChildren(
+        QRadioButton
+    ):
+        if button.isVisible():
+            qtbot.mouseClick(button, Qt.LeftButton)
 
 
 def test_unknown_raises(qtbot):
