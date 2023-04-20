@@ -561,7 +561,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(self.layers) == 1:
             self.reset_view()
             self.dims.point = [
-                low + ((high - low) / 2) for low, high, _ in self.layers._ranges
+                low + ((high - low) / 2)
+                for low, high, _ in self.layers._ranges
             ]
 
     @staticmethod
