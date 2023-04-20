@@ -48,6 +48,17 @@ jobs:
           python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9.txt setup.cfg resources/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
           python3.10 -m piptools compile --upgrade -o resources/constraints/constraints_py3.10.txt setup.cfg resources/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
 
+          # Explanation of above commands 
+          # python3.8 -m piptools compile - call pip-compile but ensure proper intepretter
+          # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
+          # -o resources/constraints/constraints_py3.8.txt - output file
+          # setup.cfg resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
+          # --extra pyqt5 etc - names of extra sections from setup.cfg that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
+          # --allow-unsafe - allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
+          # --strip-extras - pip constrains format does not allow to specify extras (like dask[array]) so we need to use this option
+          # --resolver=backtracking - future default resolver. It fasters. Lower probability of long CI run.
+
+
       # END PYTHON DEPENDENCIES
 
 
