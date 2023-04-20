@@ -225,8 +225,6 @@ class _LayerSlicer:
         dict[Layer, SliceResponse]: which contains the results of the slice
         """
         result = {layer: request() for layer, request in requests.items()}
-        logger.debug('slice_layers - ready emitter')
-        # self.events.ready(Event('ready', value=result))
         self.events.ready(value=result)
         return result
 

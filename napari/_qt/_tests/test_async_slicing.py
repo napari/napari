@@ -1,3 +1,8 @@
+# The tests in this module for the new style of async slicing in napari:
+# https://napari.org/dev/naps/4-async-slicing.html
+import logging
+from threading import RLock
+
 import numpy as np
 import pytest
 from vispy.visuals import VolumeVisual
@@ -5,11 +10,39 @@ from vispy.visuals import VolumeVisual
 from napari import Viewer
 from napari._vispy.layers.image import VispyImageLayer
 from napari._vispy.visuals.points import PointsVisual
-from napari.layers import Image, Layer
+from napari.layers import Image, Layer, Points
 from napari.utils.events import Event
 
-# The tests in this module for the new style of async slicing in napari:
-# https://napari.org/dev/naps/4-async-slicing.html
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+console = logging.StreamHandler()
+console.setLevel(level=logging.DEBUG)
+formatter = logging.Formatter("%(levelname)s : %(message)s")
+console.setFormatter(formatter)
+logger.addHandler(console)
+
+
+class LockableImage(Image):
+    """Lockage version of Image. This allows us to assert state and
+    conditions that may only be temporarily true at different stages of
+    an asynchronous task.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lock: RLock = RLock()
+
+
+class LockablePoints(Points):
+    """Lockage version of Image. This allows us to assert state and
+    conditions that may only be temporarily true at different stages of
+    an asynchronous task.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lock: RLock = RLock()
 
 
 @pytest.fixture()
@@ -115,6 +148,43 @@ def test_slicing_in_progress(make_napari_viewer, qtbot, rng):
 
     wait_until_vispy_image_data_equal(qtbot, vispy_layer, data[2, :, :])
     assert not viewer.slicing_in_progress
+
+
+def test_async_slice_image_loaded(make_napari_viewer, qtbot, rng):
+    viewer = make_napari_viewer()
+    data = rng.random((3, 4, 5))
+    layer = LockableImage(data)
+    vispy_layer = setup_viewer_for_async_slice(viewer, layer)
+
+    assert layer.loaded
+    assert viewer.dims.current_step != (2, 0, 0)
+
+    with layer.lock:
+        viewer.dims.current_step = (2, 0, 0)
+        assert not layer.loaded
+
+    wait_until_vispy_image_data_equal(qtbot, vispy_layer, data[2, :, :])
+    assert layer.loaded
+
+
+def test_async_slice_points_loaded(make_napari_viewer, qtbot, rng):
+    viewer = make_napari_viewer()
+    shape = (10, 4)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = LockablePoints(data)
+    vispy_layer = setup_viewer_for_async_slice(viewer, layer)
+
+    assert layer.loaded
+    assert viewer.dims.ndisplay != 3
+    with layer.lock:
+        viewer.dims.ndisplay = 3
+        assert not layer.loaded
+
+    wait_until_vispy_image_data_equal(
+        qtbot, vispy_layer, np.flip(data[:, 1:][-3]).reshape(1, 3)
+    )
+    assert layer.loaded
 
 
 def setup_viewer_for_async_slice(
