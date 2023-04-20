@@ -41,6 +41,11 @@ def read(
     paths: Sequence[str], plugin: Optional[str] = None, *, stack: bool
 ) -> Optional[Tuple[List[LayerData], _FakeHookimpl]]:
     """Try to return data for `path`, from reader plugins using a manifest."""
+
+    # do nothing if `plugin` is not an npe2 reader
+    if plugin and plugin not in get_readers():
+        return None
+
     assert stack is not None
     # the goal here would be to make read_get_reader of npe2 aware of "stack",
     # and not have this conditional here.
@@ -55,11 +60,8 @@ def read(
             npe1_path, plugin_name=plugin
         )
     except ValueError as e:
-        # Catch both messages raised by npe2
-        # https://github.com/napari/npe2/blob/main/src/npe2/io_utils.py#L168-L173
-        plugin_name_msg = f"Plugin {plugin!r} was selected to open"
-        no_plugin_name_msg = "No readers returned data"
-        if plugin_name_msg not in str(e) and no_plugin_name_msg not in str(e):
+        # plugin wasn't passed and no reader was found
+        if 'No readers returned data' not in str(e):
             raise
     else:
         return layer_data, _FakeHookimpl(reader.plugin_name)
