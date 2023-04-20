@@ -222,14 +222,14 @@ class Dims(EventedModel):
     def nsteps(self) -> Tuple[float, ...]:
         return tuple(
             # "or 1" ensures degenerate dimension works
-            int((rng.stop - rng.start) / (rng.step or 1))
+            int((rng.stop - rng.start) / (rng.step or 1)) + 1
             for rng in self.range
         )
 
     @nsteps.setter
     def nsteps(self, value):
         self.range = [
-            (rng.start, rng.stop, (rng.stop - rng.start) / nsteps)
+            (rng.start, rng.stop, (rng.stop - rng.start) / nsteps - 1)
             for rng, nsteps in zip(self.range, value)
         ]
 

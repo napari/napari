@@ -489,7 +489,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         extent_data : array, shape (2, D)
         """
         shape = self.level_shapes[0]
-        return np.vstack([np.zeros(len(shape)), shape])
+        return np.vstack([np.zeros(len(shape)), shape - 1])
 
     @property
     def data_level(self):
@@ -742,7 +742,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # This can happen when slicing layers with different extents.
         indices = self._slice_indices
         for d in self._slice_input.not_displayed:
-            if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d]):
+            if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d] + 1):
                 return
 
         # For the old experimental async code.
