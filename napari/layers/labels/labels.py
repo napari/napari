@@ -870,14 +870,14 @@ class Labels(_ImageBase):
         max_nbytes = max(data.nbytes, 1024)
         if data_range * nbytes_low_discrepancy > max_nbytes:
             return self._lookup_with_low_discrepancy_image
-        else:
-            if self._all_vals.size < data_range:
-                new_all_vals = low_discrepancy_image(
-                    np.arange(min_label_val0, max_label_val + 1), self._seed
-                )
-                self._all_vals = np.roll(new_all_vals, min_label_val0)
-                self._all_vals[0] = 0
-            return self._lookup_with_index
+
+        if self._all_vals.size < data_range:
+            new_all_vals = low_discrepancy_image(
+                np.arange(min_label_val0, max_label_val + 1), self._seed
+            )
+            self._all_vals = np.roll(new_all_vals, min_label_val0)
+            self._all_vals[0] = 0
+        return self._lookup_with_index
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.
@@ -924,15 +924,27 @@ class Labels(_ImageBase):
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
         ):
-            u, inv = np.unique(raw_modified, return_inverse=True)
-            image = np.array(
-                [
-                    self._label_color_index[x]
-                    if x in self._label_color_index
-                    else self._label_color_index[None]
-                    for x in u
-                ]
-            )[inv].reshape(raw_modified.shape)
+            min_label_id = raw_modified.min()
+            max_label_id = raw_modified.max()
+            upper_bound_n_unique_labels = max_label_id - min_label_id
+            none_color_index = self._label_color_index[None]
+
+            if upper_bound_n_unique_labels < 65536:
+                mapping = np.array(
+                    [
+                        self._label_color_index.get(label_id, none_color_index)
+                        for label_id in range(min_label_id, max_label_id + 1)
+                    ]
+                )
+                image = mapping[raw_modified - min_label_id]
+            else:
+                unique_ids, inv = np.unique(raw_modified, return_inverse=True)
+                image = np.array(
+                    [
+                        self._label_color_index.get(label_id, none_color_index)
+                        for label_id in unique_ids
+                    ]
+                )[inv].reshape(raw_modified.shape)
         elif (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
@@ -1516,8 +1528,8 @@ def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
         # for difference from indexing numpy
         try:
             import xarray as xr
-
-            return tuple(xr.DataArray(i) for i in indices)
         except ModuleNotFoundError:
             pass
+        else:
+            return tuple(xr.DataArray(i) for i in indices)
     return tuple(indices)

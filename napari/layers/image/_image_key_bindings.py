@@ -63,7 +63,7 @@ def activate_image_transform_mode(layer):
 
 
 @register_image_action(trans._('Pan/zoom'))
-def activate_image_pan_zoom_mode(layer):
+def activate_image_pan_zoom_mode(layer: Image):
     layer.mode = Mode.PAN_ZOOM
 
 
