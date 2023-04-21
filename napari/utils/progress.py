@@ -177,6 +177,7 @@ class cancelable_progress(progress):
     ...     for i in cancelable_progress(range(steps), cancel_callback=on_cancel):
     ...         sleep(delay)
     """
+
     def __init__(
         self,
         iterable: Optional[Iterable] = None,
