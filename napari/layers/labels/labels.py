@@ -665,6 +665,9 @@ class Labels(_ImageBase):
     @color_mode.setter
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
+        if color_mode == self._color_mode:
+            return
+
         if color_mode == LabelColorMode.DIRECT:
             custom_colormap, label_color_index = color_dict_to_colormap(
                 self.color
@@ -678,6 +681,7 @@ class Labels(_ImageBase):
         else:
             raise ValueError(trans._("Unsupported Color Mode"))
 
+        self._cached_labels = None  # invalidates labels cache
         self._color_mode = color_mode
         self._selected_color = self.get_color(self.selected_label)
         self.events.color_mode()
