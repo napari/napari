@@ -24,7 +24,7 @@ logger.addHandler(console)
 
 
 class LockableImage(Image):
-    """Lockage version of Image. This allows us to assert state and
+    """Lockable version of Image. This allows us to assert state and
     conditions that may only be temporarily true at different stages of
     an asynchronous task.
     """
@@ -35,7 +35,7 @@ class LockableImage(Image):
 
 
 class LockablePoints(Points):
-    """Lockage version of Image. This allows us to assert state and
+    """Lockable version of Points. This allows us to assert state and
     conditions that may only be temporarily true at different stages of
     an asynchronous task.
     """
