@@ -82,10 +82,10 @@ def arbitrary_steps():
 
         # sleeping so we can see full completion
         sleep(1)
-    
-    
+
+
 def cancelable_iterable():
-    """We can allow expensive computations to be cancelable 
+    """We can allow expensive computations to be cancelable
     """
     # Note that if canceled, for loop will terminate prematurely
     # You can use cancel_callback to close files, clean up state, etc
@@ -94,7 +94,7 @@ def cancelable_iterable():
         print("Operation canceled - cleaning up!")
     for _ in cancelable_progress(range(100), cancel_callback=cancel_callback):
         np.random.rand(128, 128, 128).mean(0)
-        
+
 viewer = napari.Viewer()
 button_layout = QVBoxLayout()
 
