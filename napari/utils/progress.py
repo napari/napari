@@ -154,6 +154,29 @@ def progrange(*args, **kwargs):
 
 
 class cancelable_progress(progress):
+    """This class inherits from progress, providing the additional
+    ability to cancel expensive executions. When progress is
+    canceled by the user in the napari UI, two things will happen:
+
+    Firstly, the is_canceled attribute will become True, and the
+    for loop will terminate after the current iteration, regardless
+    of whether or not the iterator had more items.
+
+    Secondly, cancel_callback will be called, allowing the computation
+    to close resources, repair state, etc.
+
+    See napari.utils.progress and tqdm.tqdm API for valid args and kwargs:
+    https://tqdm.github.io/docs/tqdm/
+
+    Examples
+    --------
+
+    >>> def long_running(steps=10, delay=0.1):
+    ...     def on_cancel():
+    ...         print("Canceled operation")
+    ...     for i in cancelable_progress(range(steps), cancel_callback=on_cancel):
+    ...         sleep(delay)
+    """
     def __init__(
         self,
         iterable: Optional[Iterable] = None,
