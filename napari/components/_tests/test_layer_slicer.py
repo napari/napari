@@ -3,7 +3,6 @@
 # (like layers) in the code base. This allows us to assert state and
 # conditions that may only be temporarily true at different stages of
 # an asynchronous task.
-import logging
 import time
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
@@ -19,15 +18,6 @@ from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 from napari.layers import Image, Points
 from napari.layers._data_protocols import Index, LayerDataProtocol
-
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-console = logging.StreamHandler()
-console.setLevel(level=logging.DEBUG)
-formatter = logging.Formatter("%(levelname)s : %(message)s")
-console.setFormatter(formatter)
-logger.addHandler(console)
 
 
 @dataclass(frozen=True)

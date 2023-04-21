@@ -50,16 +50,6 @@ if TYPE_CHECKING:
     from napari.components import Dims
 
 
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-console = logging.StreamHandler()
-console.setLevel(level=logging.DEBUG)
-formatter = logging.Formatter("%(levelname)s : %(message)s")
-console.setFormatter(formatter)
-logger.addHandler(console)
-
-
 # It is important to contain at least one abstractmethod to properly exclude this class
 # in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer

@@ -1,6 +1,5 @@
 # The tests in this module for the new style of async slicing in napari:
 # https://napari.org/dev/naps/4-async-slicing.html
-import logging
 from threading import RLock
 
 import numpy as np
@@ -12,15 +11,6 @@ from napari._vispy.layers.image import VispyImageLayer
 from napari._vispy.visuals.points import PointsVisual
 from napari.layers import Image, Layer, Points
 from napari.utils.events import Event
-
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-console = logging.StreamHandler()
-console.setLevel(level=logging.DEBUG)
-formatter = logging.Formatter("%(levelname)s : %(message)s")
-console.setFormatter(formatter)
-logger.addHandler(console)
 
 
 class LockableImage(Image):

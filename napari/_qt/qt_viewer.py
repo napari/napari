@@ -79,16 +79,6 @@ if TYPE_CHECKING:
     from napari.utils.events import Event
 
 
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-console = logging.StreamHandler()
-console.setLevel(level=logging.DEBUG)
-formatter = logging.Formatter("%(levelname)s : %(message)s")
-console.setFormatter(formatter)
-logger.addHandler(console)
-
-
 def _npe2_decode_selected_filter(
     ext_str: str, selected_filter: str, writers: Sequence[WriterContribution]
 ) -> Optional[WriterContribution]:
