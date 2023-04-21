@@ -65,7 +65,7 @@ def guess_multiscale(data) -> Tuple[bool, LayerDataProtocol]:
         return False, data[0]
 
     shapes = [d.shape for d in data]
-    sizes = np.array([np.prod(shape, dtype=np.uint64) for shape in shapes])
+    sizes = np.array([np.prod(shape, dtype='object') for shape in shapes])
     if len(sizes) <= 1:
         return False, data
 
