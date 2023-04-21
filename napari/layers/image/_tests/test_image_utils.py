@@ -74,6 +74,10 @@ def test_guess_multiscale():
     data = [da.ones((s,) * 3), da.ones((s // 2,) * 3), da.ones((s // 4,) * 3)]
     assert guess_multiscale(data)[0]
 
+    # Test for overflow in calculating array sizes
+    s = 17179869184
+    data = [da.ones((s,) * 2), da.ones((s // 2,) * 2)]
+    assert guess_multiscale(data)[0]
 
 def test_guess_multiscale_strip_single_scale():
     data = [np.empty((10, 10))]
