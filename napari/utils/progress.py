@@ -194,11 +194,16 @@ class cancelable_progress(progress):
         super().__init__(iterable, desc, total, nest_under, *args, **kwargs)
 
     def __iter__(self) -> Iterator:
-        return takewhile(lambda _: not self.is_canceled, super().__iter__())
+        def is_canceled(_):
+            if self.is_canceled:
+                # If we've canceled, run the callback and then notify takewhile
+                if self.cancel_callback:
+                    self.cancel_callback()
+                return False
+                # Otherwise, continue
+            return True
+
+        return takewhile(is_canceled, super().__iter__())
 
     def cancel(self):
         self.is_canceled = True
-        # TODO: The callback might want some information,
-        # such as how far along the progress got
-        if self.cancel_callback:
-            self.cancel_callback()
