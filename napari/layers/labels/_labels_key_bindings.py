@@ -10,7 +10,6 @@ from napari.layers.utils.layer_utils import (
 from napari.utils.translations import trans
 
 MIN_BRUSH_SIZE = 1
-MAX_BRUSH_SIZE = 40
 
 
 def register_label_action(description: str, repeatable: bool = False):
@@ -113,11 +112,7 @@ def decrease_brush_size(layer: Labels):
 )
 def increase_brush_size(layer: Labels):
     """Increase the brush size"""
-    if (
-        layer.brush_size < MAX_BRUSH_SIZE
-    ):  # here we should probably add a non-hard-coded
-        # reference to the limit values of brush size?
-        layer.brush_size += 1
+    layer.brush_size += 1
 
 
 @register_layer_attr_action(
