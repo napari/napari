@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional, Tuple
 
 import numpy as np
@@ -27,7 +28,13 @@ class Camera(EventedModel):
     perspective : float
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
     interactive : bool
-        If the camera interactivity is enabled or not.
+        If the camera mouse pan/zoom is enabled or not.
+        This attribute is deprecated since 0.5.0 and should not be used.
+        Use the mouse_pan and mouse_zoom attributes instead.
+    mouse_pan : bool
+        If the camera interactive panning with the mouse is enabled or not.
+    mouse_zoom : bool
+        If the camera interactive zooming with the mouse is enabled or not.
     """
 
     # fields
@@ -35,7 +42,8 @@ class Camera(EventedModel):
     zoom: float = 1.0
     angles: Tuple[float, float, float] = (0.0, 0.0, 90.0)
     perspective: float = 0
-    interactive: bool = True
+    mouse_pan: bool = True
+    mouse_zoom: bool = True
 
     # validators
     @validator('center', 'angles', pre=True, allow_reuse=True)
@@ -192,3 +200,20 @@ class Camera(EventedModel):
         up_direction_nd = np.zeros(ndim)
         up_direction_nd[list(dims_displayed)] = self.up_direction
         return up_direction_nd
+
+    @property
+    def interactive(self) -> bool:
+        warnings.warn(
+            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
+            category=DeprecationWarning,
+        )
+        return self.mouse_pan or self.mouse_zoom
+
+    @interactive.setter
+    def interactive(self, interactive: bool):
+        warnings.warn(
+            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
+            category=DeprecationWarning,
+        )
+        self.mouse_pan = interactive
+        self.mouse_zoom = interactive

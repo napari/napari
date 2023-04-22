@@ -107,6 +107,8 @@ ignore = [
     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
     "TRY003", # require implement multiple exception class
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
+    "B028", # need to be fixed
+    "PYI015", # it produces bad looking files (@jni opinion)
 
 ]
 
@@ -137,7 +139,7 @@ fix = true
 
 [tool.ruff.per-file-ignores]
 "napari/_vispy/__init__.py" = ["E402"]
-"**/_tests/*.py" = ["B011", "INP001", "TRY301"]
+"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018"]
 "napari/utils/_testsupport.py" = ["B011"]
 "tools/test_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20"]
@@ -158,6 +160,7 @@ keep-runtime-typing = true
 
 [tool.ruff.isort]
 known-first-party=['napari']
+combine-as-imports = true
 
 [tool.ruff.flake8-import-conventions]
 [tool.ruff.flake8-import-conventions.extend-aliases]
@@ -213,6 +216,8 @@ no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 check_untyped_defs = true
+plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
+
 # # maybe someday :)
 # disallow_any_generics = true
 # no_implicit_reexport = true

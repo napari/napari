@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from psygnal.containers import Selection
 from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
@@ -411,7 +412,9 @@ class Points(Layer):
 
         self.events.add(
             size=Event,
+            current_size=Event,
             edge_width=Event,
+            current_edge_width=Event,
             edge_width_is_relative=Event,
             face_color=Event,
             current_face_color=Event,
@@ -420,6 +423,7 @@ class Points(Layer):
             properties=Event,
             current_properties=Event,
             symbol=Event,
+            current_symbol=Event,
             out_of_slice_display=Event,
             n_dimensional=Event,
             highlight=Event,
@@ -450,7 +454,7 @@ class Points(Layer):
         self._shown = np.empty(0).astype(bool)
 
         # Indices of selected points
-        self._selected_data = set()
+        self._selected_data: Selection[int] = Selection()
         self._selected_data_stored = set()
         self._selected_data_history = set()
         # Indices of selected points within the currently viewed slice
@@ -802,6 +806,7 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             self.symbol[list(self.selected_data)] = symbol
             self.events.symbol()
+        self.events.current_symbol()
 
     @property
     def size(self) -> np.ndarray:
@@ -851,6 +856,7 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
+        self.events.current_size()
 
     @property
     def antialiasing(self) -> float:
@@ -970,6 +976,7 @@ class Points(Layer):
                 self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
             self.refresh()
             self.events.edge_width()
+        self.events.current_edge_width()
 
     @property
     def edge_color(self) -> np.ndarray:
@@ -1273,13 +1280,14 @@ class Points(Layer):
         return state
 
     @property
-    def selected_data(self) -> set:
+    def selected_data(self) -> Selection[int]:
         """set: set of currently selected points."""
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data):
-        self._selected_data = set(selected_data)
+    def selected_data(self, selected_data: Sequence[int]) -> None:
+        self._selected_data.clear()
+        self._selected_data.update(set(selected_data))
         self._selected_view = list(
             np.intersect1d(
                 np.array(list(self._selected_data)),
@@ -1375,7 +1383,7 @@ class Points(Layer):
 
         if mode == Mode.ADD:
             self.selected_data = set()
-            self.interactive = True
+            self.mouse_pan = True
         elif mode != Mode.SELECT or self._mode != Mode.SELECT:
             self._selected_data_stored = set()
 

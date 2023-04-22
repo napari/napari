@@ -18,8 +18,10 @@ from typing import (
 )
 from warnings import warn
 
-from napari_plugin_engine import HookImplementation
-from napari_plugin_engine import PluginManager as PluginManager
+from napari_plugin_engine import (
+    HookImplementation,
+    PluginManager as PluginManager,
+)
 from napari_plugin_engine.hooks import HookCaller
 from pydantic import ValidationError
 from typing_extensions import TypedDict

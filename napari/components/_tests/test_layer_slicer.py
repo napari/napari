@@ -350,7 +350,7 @@ def test_submit_with_one_3d_image(layer_slicer):
         ndim=3,
         ndisplay=2,
         range=((0, 8, 1), (0, 7, 1), (0, 6, 1)),
-        current_step=(2, 0, 0),
+        point=(2, 0, 0),
     )
 
     with lockable_data.lock:
@@ -377,7 +377,7 @@ def test_submit_with_one_3d_points(layer_slicer):
         ndim=3,
         ndisplay=2,
         range=((0, 3, 1), (0, 3, 1), (0, 3, 1)),
-        current_step=(1, 0, 0),
+        point=(1, 0, 0),
     )
 
     with lockable_internal_data.lock:
