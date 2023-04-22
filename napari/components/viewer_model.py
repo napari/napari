@@ -414,6 +414,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.mouse_pan = active_layer.mouse_pan
             self.camera.mouse_zoom = active_layer.mouse_zoom
+            self._update_status_bar_from_cursor()
 
     @staticmethod
     def rounded_division(min_val, max_val, precision):
