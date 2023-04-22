@@ -1,0 +1,90 @@
+name: Upgrade test constraints
+
+on:
+  workflow_dispatch: # Allow running on-demand
+  schedule:
+    # Runs every Monday at 8:00 UTC (4:00 Eastern)
+    - cron: '0 8 * * 1'
+
+jobs:
+  upgrade:
+    name: Upgrade & Open Pull Request
+    runs-on: ubuntu-latest
+    env:
+      # This branch will receive updates each time the workflow runs
+      # It doesn't matter if it's deleted when merged, it'll be re-created
+      BRANCH_NAME: auto-dependency-upgrades
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # [Optional] Use a separate key to automatically execute checks on the resulting PR
+          # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+
+      # START PYTHON DEPENDENCIES
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+          cache: pip
+          cache-dependency-path: 'setup.cfg'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: pip
+          cache-dependency-path: 'setup.cfg'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: 'setup.cfg'
+      - name: Upgrade Python dependencies
+        # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
+        run: |
+          python3.8 -m pip install -U pip pip-tools
+          python3.9 -m pip install -U pip pip-tools
+          python3.10 -m pip install -U pip pip-tools
+
+          python3.8 -m piptools compile --upgrade -o resources/constraints/constraints_py3.8.txt setup.cfg resources/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
+          python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9.txt setup.cfg resources/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
+          python3.10 -m piptools compile --upgrade -o resources/constraints/constraints_py3.10.txt setup.cfg resources/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
+
+          # Explanation of above commands 
+          # python3.8 -m piptools compile - call pip-compile but ensure proper intepretter
+          # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
+          # -o resources/constraints/constraints_py3.8.txt - output file
+          # setup.cfg resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
+          # --extra pyqt5 etc - names of extra sections from setup.cfg that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
+          # --allow-unsafe - allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
+          # --strip-extras - pip constrains format does not allow to specify extras (like dask[array]) so we need to use this option
+          # --resolver=backtracking - future default resolver. It fasters. Lower probability of long CI run.
+
+
+      # END PYTHON DEPENDENCIES
+
+
+      - name: Check updated packages
+        id: packages
+        run: |
+          python build_utils/check_updated_packages.py --main-packages
+          python build_utils/check_updated_packages.py
+          echo "main_packages=$(python build_utils/check_updated_packages.py --main-packages)" >> $GITHUB_OUTPUT
+          echo "all_packages<<EOF" >> $GITHUB_OUTPUT
+          echo "$(python build_utils/check_updated_packages.py)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create PR updating vendored modules
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: Update bundle dependencies.
+          branch: ${{ env.BRANCH_NAME }}
+          delete-branch: true
+          title: "test: [Automatic] Constraints upgrades: ${{ steps.packages.outputs.main_packages }}"
+          body: |
+            This PR is automatically created and updated by this napari GitHub Action:
+            https://github.com/napari/napari/tree/main/.github/workflows/upgrade_test_contraints.yml
+            It ensures that dependencies are tested with the most recent version.
+
+            The updated packages are:
+
+            ${{ steps.packages.outputs.all_packages }}
+          token: ${{ secrets.GHA_TOKEN }}
