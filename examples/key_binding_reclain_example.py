@@ -6,8 +6,8 @@ Display one 4-D image layer using the add_image API
 """
 
 from skimage import data
-import napari
 
+import napari
 
 blobs = data.binary_blobs(
     length=128, blob_size_fraction=0.05, n_dim=2, volume_fraction=0.25
