@@ -72,11 +72,11 @@ def new_label(layer: Labels):
 
 
 @register_label_action(
-    trans._("Set the currently selected label to the background."),
+    trans._("Swap between the selected label and the background label."),
 )
-def set_label_to_background(layer: Labels):
-    """Set the currently selected label to the largest used label plus one."""
-    layer.selected_label = 0
+def swap_selected_and_background_labels(layer: Labels):
+    """Swap between the selected label and the background label."""
+    layer.swap_selected_and_background_labels()
 
 
 @register_label_action(
