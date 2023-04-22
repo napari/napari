@@ -265,7 +265,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             settings.application.grid_width,
         )
 
-    @validator('theme')
+    @validator('theme', allow_reuse=True)
     def _valid_theme(cls, v):
         if not is_theme_available(v):
             raise ValueError(
@@ -404,6 +404,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.mouse_pan = active_layer.mouse_pan
             self.camera.mouse_zoom = active_layer.mouse_zoom
+            self._update_status_bar_from_cursor()
 
     @staticmethod
     def rounded_division(min_val, max_val, precision):
