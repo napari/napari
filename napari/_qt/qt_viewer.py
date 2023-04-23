@@ -20,7 +20,6 @@ from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
 from napari._qt.perf.qt_performance import QtPerformance
 from napari._qt.utils import (
     QImg2array,
-    circle_pixmap,
     crosshair_pixmap,
     square_pixmap,
 )
@@ -901,26 +900,29 @@ class QtViewer(QSplitter):
         """Set the appearance of the mouse cursor."""
 
         cursor = self.viewer.cursor.style
+
+        circle_cursor = False
         if cursor in {'square', 'circle'}:
             # Scale size by zoom if needed
             size = self.viewer.cursor.size
             if self.viewer.cursor.scaled:
                 size *= self.viewer.camera.zoom
 
-            size = int(size)
-
             # make sure the square fits within the current canvas
             if size < 8 or size > (min(*self.canvas.size) - 4):
                 q_cursor = self._cursors['cross']
             elif cursor == 'circle':
-                q_cursor = QCursor(circle_pixmap(size))
+                circle_cursor = True
+                self.viewer.brush_circle_overlay.size = size
+                q_cursor = QCursor(Qt.BlankCursor)
             else:
-                q_cursor = QCursor(square_pixmap(size))
+                q_cursor = QCursor(square_pixmap(int(size)))
         elif cursor == 'crosshair':
             q_cursor = QCursor(crosshair_pixmap())
         else:
             q_cursor = self._cursors[cursor]
 
+        self.viewer.brush_circle_overlay.visible = circle_cursor
         self.canvas.native.setCursor(q_cursor)
 
     def toggle_console_visibility(self, event=None):
@@ -1112,6 +1114,7 @@ class QtViewer(QSplitter):
         event : vispy.event.Event
             The vispy event that triggered this method.
         """
+        self.viewer.brush_circle_overlay.position = list(event.pos)
         self._process_mouse_event(mouse_move_callbacks, event)
 
     def on_mouse_release(self, event):
