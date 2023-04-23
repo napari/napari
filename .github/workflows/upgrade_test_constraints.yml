@@ -65,11 +65,11 @@ jobs:
       - name: Check updated packages
         id: packages
         run: |
-          python build_utils/check_updated_packages.py --main-packages
-          python build_utils/check_updated_packages.py
-          echo "main_packages=$(python build_utils/check_updated_packages.py --main-packages)" >> $GITHUB_OUTPUT
+          python tools/check_updated_packages.py --main-packages
+          python tools/check_updated_packages.py
+          echo "main_packages=$(python tools/check_updated_packages.py --main-packages)" >> $GITHUB_OUTPUT
           echo "all_packages<<EOF" >> $GITHUB_OUTPUT
-          echo "$(python build_utils/check_updated_packages.py)" >> $GITHUB_OUTPUT
+          echo "$(python tools/check_updated_packages.py)" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create PR updating vendored modules
