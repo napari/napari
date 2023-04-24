@@ -6,10 +6,16 @@ from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def __init__(self, *, viewer, overlay, parent=None):
         self._white_circle = Ellipse(
-            center=(0, 0), color=(0, 0, 0, 0.0), border_color='white'
+            center=(0, 0),
+            color=(0, 0, 0, 0.0),
+            border_color='white',
+            border_method='agg',
         )
         self._black_circle = Ellipse(
-            center=(0, 0), color=(0, 0, 0, 0.0), border_color='black'
+            center=(0, 0),
+            color=(0, 0, 0, 0.0),
+            border_color='black',
+            border_method='agg',
         )
 
         super().__init__(
