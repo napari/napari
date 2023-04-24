@@ -241,21 +241,6 @@ def crosshair_pixmap():
     return pixmap
 
 
-@lru_cache(maxsize=64)
-def circle_pixmap(size: int):
-    """Create a white/black hollow circle pixmap. For use as labels cursor."""
-    size = max(size, 1)
-    pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(pixmap)
-    painter.setPen(Qt.GlobalColor.white)
-    painter.drawEllipse(0, 0, size - 1, size - 1)
-    painter.setPen(Qt.GlobalColor.black)
-    painter.drawEllipse(1, 1, size - 3, size - 3)
-    painter.end()
-    return pixmap
-
-
 def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     """Create a QDrag object with a pixmap of the currently select list item.
 
