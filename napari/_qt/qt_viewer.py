@@ -1114,7 +1114,11 @@ class QtViewer(QSplitter):
         event : vispy.event.Event
             The vispy event that triggered this method.
         """
-        self.viewer.brush_circle_overlay.position = list(event.pos)
+
+        # Update the brush circle position if the brush cursor is used
+        if self.viewer.cursor.style == 'circle':
+            self.viewer.brush_circle_overlay.position = list(event.pos)
+
         self._process_mouse_event(mouse_move_callbacks, event)
 
     def on_mouse_release(self, event):
