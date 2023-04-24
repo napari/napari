@@ -21,55 +21,99 @@ from napari._qt.layer_controls.qt_layer_controls_container import (
 )
 from napari._qt.layer_controls.qt_points_controls import QtPointsControls
 from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
+from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
+from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.components import ViewerModel
-from napari.layers import Image, Labels, Points, Shapes, Vectors
+from napari.layers import (
+    Image,
+    Labels,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 
 LayerTypeWithData = namedtuple(
-    'LayerTypeWithData', ['type', 'data', 'color', 'expected_isinstance']
-)
-_POINTS = LayerTypeWithData(
-    type=Points,
-    data=np.random.random((5, 2)),
-    color=None,
-    expected_isinstance=QtPointsControls,
-)
-_SHAPES = LayerTypeWithData(
-    type=Shapes,
-    data=np.random.random((10, 4, 2)),
-    color=None,
-    expected_isinstance=QtShapesControls,
+    'LayerTypeWithData',
+    ['type', 'data', 'color', 'properties', 'expected_isinstance'],
 )
 _IMAGE = LayerTypeWithData(
     type=Image,
     data=np.random.rand(8, 8),
     color=None,
+    properties=None,
     expected_isinstance=QtImageControls,
 )
 _LABELS = LayerTypeWithData(
     type=Labels,
     data=np.random.randint(5, size=(10, 15)),
     color={1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'},
+    properties=None,
     expected_isinstance=QtLabelsControls,
+)
+_POINTS = LayerTypeWithData(
+    type=Points,
+    data=np.random.random((5, 2)),
+    color=None,
+    properties=None,
+    expected_isinstance=QtPointsControls,
+)
+_SHAPES = LayerTypeWithData(
+    type=Shapes,
+    data=np.random.random((10, 4, 2)),
+    color=None,
+    properties=None,
+    expected_isinstance=QtShapesControls,
+)
+_SURFACE = LayerTypeWithData(
+    type=Surface,
+    data=(
+        np.random.random((10, 2)),
+        np.random.randint(10, size=(6, 3)),
+        np.random.random(10),
+    ),
+    color=None,
+    properties=None,
+    expected_isinstance=QtSurfaceControls,
+)
+_TRACKS = LayerTypeWithData(
+    type=Tracks,
+    data=np.zeros((2, 4)),
+    color=None,
+    properties={
+        'track_id': [0, 0],
+        'time': [0, 0],
+        'speed': [50, 30],
+    },
+    expected_isinstance=QtTracksControls,
 )
 _VECTORS = LayerTypeWithData(
     type=Vectors,
     data=np.zeros((2, 2, 2)),
     color=None,
+    properties=None,
     expected_isinstance=QtVectorsControls,
 )
 _LINES_DATA = np.random.random((6, 2, 2))
 
 
 @pytest.mark.parametrize(
-    'layer_type_with_data', [_POINTS, _SHAPES, _IMAGE, _LABELS, _VECTORS]
+    'layer_type_with_data',
+    [_IMAGE, _LABELS, _POINTS, _SHAPES, _SURFACE, _TRACKS, _VECTORS],
 )
 @pytest.mark.qt_no_exception_capture
 def test_create_layer_controls(qtbot, layer_type_with_data, capsys):
     if layer_type_with_data.color:
         layer = layer_type_with_data.type(
             layer_type_with_data.data, color=layer_type_with_data.color
+        )
+    elif layer_type_with_data.properties:
+        layer = layer_type_with_data.type(
+            layer_type_with_data.data,
+            properties=layer_type_with_data.properties,
         )
     else:
         layer = layer_type_with_data.type(layer_type_with_data.data)
