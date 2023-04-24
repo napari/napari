@@ -76,15 +76,15 @@ def test_viewer_mouse_bindings(qtbot, make_napari_viewer):
     )
     qtbot.wait(10)
     view.canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
+    qtbot.wait(10)
     mock_press.method.assert_called_once()
     mock_drag.method.assert_called_once()
     mock_release.method.assert_called_once()
     mock_move.method.assert_not_called()
-    qtbot.wait(10)  # make sure timer is done
 
 
 @skip_on_win_ci
-def test_layer_mouse_bindings(make_napari_viewer):
+def test_layer_mouse_bindings(qtbot, make_napari_viewer):
     """Test adding mouse bindings to a layer that is selected"""
     np.random.seed(0)
     viewer = make_napari_viewer()
@@ -149,10 +149,13 @@ def test_layer_mouse_bindings(make_napari_viewer):
 
     # Simulate press, drag, release
     view.canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
+    qtbot.wait(10)
     view.canvas.events.mouse_move(
         pos=(0, 0), modifiers=(), button=0, press_event=True
     )
+    qtbot.wait(10)
     view.canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
+    qtbot.wait(10)
     mock_press.method.assert_called_once()
     mock_drag.method.assert_called_once()
     mock_release.method.assert_called_once()
@@ -160,7 +163,7 @@ def test_layer_mouse_bindings(make_napari_viewer):
 
 
 @skip_on_win_ci
-def test_unselected_layer_mouse_bindings(make_napari_viewer):
+def test_unselected_layer_mouse_bindings(qtbot, make_napari_viewer):
     """Test adding mouse bindings to a layer that is not selected"""
     np.random.seed(0)
     viewer = make_napari_viewer()
@@ -222,10 +225,13 @@ def test_unselected_layer_mouse_bindings(make_napari_viewer):
 
     # Simulate press, drag, release
     view.canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
+    qtbot.wait(10)
     view.canvas.events.mouse_move(
         pos=(0, 0), modifiers=(), button=0, press_event=True
     )
+    qtbot.wait(10)
     view.canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
+    qtbot.wait(10)
     mock_press.method.assert_not_called()
     mock_drag.method.assert_not_called()
     mock_release.method.assert_not_called()
