@@ -343,7 +343,7 @@ def test_floating_point_edge_case():
     # see #4889
     dims = Dims(ndim=2)
     dims.set_range(0, (0.0, 17.665, 3.533))
-    assert dims.nsteps[0] == 5
+    assert dims.nsteps[0] == 6
 
 
 @pytest.mark.parametrize(
@@ -368,8 +368,8 @@ def test_reorder_after_dim_reduction(order, expected):
 
 def test_nsteps():
     dims = Dims(range=((0, 5, 1), (0, 10, 0.5)))
-    assert dims.nsteps == (5, 20)
-    dims.nsteps = (10, 10)
+    assert dims.nsteps == (6, 21)
+    dims.nsteps = (11, 11)
     assert dims.range == ((0, 5, 0.5), (0, 10, 1))
 
 

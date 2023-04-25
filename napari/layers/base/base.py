@@ -783,6 +783,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         raise NotImplementedError
 
     @property
+    def _extent_data_augmented(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        return self._extent_data
+
+    @property
     def _extent_world(self) -> np.ndarray:
         """Range of layer in world coordinates.
 
@@ -791,8 +801,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
+        return get_extent_world(self._extent_data, self._data_to_world)
+
+    @property
+    def _extent_world_augmented(self) -> np.ndarray:
+        """Range of layer in world coordinates.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        # Get full nD bounding box
         return get_extent_world(
-            self._extent_data, self._data_to_world, self._array_like
+            self._extent_data_augmented, self._data_to_world
         )
 
     @cached_property
@@ -800,9 +821,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Extent of layer in data and world coordinates."""
         extent_data = self._extent_data
         data_to_world = self._data_to_world
-        extent_world = get_extent_world(
-            extent_data, data_to_world, self._array_like
+        extent_world = get_extent_world(extent_data, data_to_world)
+        return Extent(
+            data=extent_data,
+            world=extent_world,
+            step=abs(data_to_world.scale),
         )
+
+    @cached_property
+    def extent_augmented(self) -> Extent:
+        """Extent of layer in data and world coordinates."""
+        extent_data = self._extent_data_augmented
+        data_to_world = self._data_to_world
+        extent_world = get_extent_world(extent_data, data_to_world)
         return Extent(
             data=extent_data,
             world=extent_world,
@@ -818,6 +849,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         if 'extent' in self.__dict__:
             del self.extent
+        if 'extent_augmented' in self.__dict__:
+            del self.extent_augmented
         self.events.extent()
         self.refresh()
 
@@ -1434,7 +1467,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         This bounding box for includes the "full" size of the layer, including
         for example the size of points or pixels.
         """
-        return self._display_bounding_box(dims_displayed=dims_displayed)
+        return self._extent_data_augmented[:, dims_displayed].T
 
     def click_plane_from_click_data(
         self,

@@ -760,6 +760,17 @@ class Points(Layer):
         return extrema
 
     @property
+    def _extent_data_augmented(self):
+        extent = self._extent_data
+        if len(self._view_size) == 0:
+            return extent
+
+        max_point_size = np.max(self._view_size)
+        extent[0] -= max_point_size / 2
+        extent[1] += max_point_size / 2
+        return extent
+
+    @property
     def out_of_slice_display(self) -> bool:
         """bool: renders points slightly out of slice."""
         return self._out_of_slice_display
@@ -1635,17 +1646,6 @@ class Points(Layer):
         else:
             selection = None
         return selection
-
-    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
-        bounding_box = self._display_bounding_box(dims_displayed)
-        if len(self._view_size) == 0:
-            return bounding_box
-
-        max_point_size = np.max(self._view_size)
-        bounding_box = np.copy(bounding_box).astype(float)
-        bounding_box[:, 0] -= max_point_size / 2
-        bounding_box[:, 1] += max_point_size / 2
-        return bounding_box
 
     def get_ray_intersections(
         self,

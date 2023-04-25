@@ -30,7 +30,7 @@ def test_random_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -42,7 +42,7 @@ def test_all_zeros_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -54,7 +54,7 @@ def test_3D_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -103,7 +103,9 @@ def test_changing_labels():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape_b]
+    )
     assert layer._data_view.shape == shape_b[-2:]
 
     data_c = np.zeros(shape_c, dtype=bool)
@@ -127,7 +129,9 @@ def test_changing_labels_dims():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape_b]
+    )
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -880,8 +884,8 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.randint(20, size=(shape))
     layer = Labels(data)
-    extent = np.array(((0,) * 3, shape))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
+    extent = np.array(((0,) * 3, [s - 1 for s in shape]))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
 @pytest.mark.parametrize(

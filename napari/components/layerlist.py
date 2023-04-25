@@ -100,6 +100,7 @@ class LayerList(SelectableEventedList[Layer]):
         cached_properties = (
             'extent',
             '_extent_world',
+            '_extent_world_augmented',
             '_step_size',
             '_ranges',
         )
@@ -183,6 +184,21 @@ class LayerList(SelectableEventedList[Layer]):
         """
         return self._get_extent_world([layer.extent for layer in self])
 
+    @cached_property
+    def _extent_world_augmented(self) -> np.ndarray:
+        """Extent of layers in world coordinates.
+
+        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
+        Corresponds to pixels centered at [0, ..., 511].
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        return self._get_extent_world(
+            [layer.extent_augmented for layer in self]
+        )
+
     def _get_min_and_max(self, mins_list, maxes_list):
         # Reverse dimensions since it is the last dimensions that are
         # displayed.
@@ -220,16 +236,16 @@ class LayerList(SelectableEventedList[Layer]):
     def _get_extent_world(self, layer_extent_list):
         """Extent of layers in world coordinates.
 
-        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
-        Corresponds to pixels centered at [0, ..., 511].
+        Default to 2D with (0, 511) min/ max values if no data is present.
+        Corresponds to image with dims 512.
 
         Returns
         -------
         extent_world : array, shape (2, D)
         """
         if len(self) == 0:
-            min_v = np.asarray([-0.5] * self.ndim)
-            max_v = np.asarray([511.5] * self.ndim)
+            min_v = np.zeros(self.ndim)
+            max_v = np.full(self.ndim, 511)
         else:
             extrema = [extent.world for extent in layer_extent_list]
             mins = [e[0] for e in extrema]

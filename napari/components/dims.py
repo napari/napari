@@ -229,7 +229,7 @@ class Dims(EventedModel):
     @nsteps.setter
     def nsteps(self, value):
         self.range = [
-            (rng.start, rng.stop, (rng.stop - rng.start) / nsteps - 1)
+            (rng.start, rng.stop, (rng.stop - rng.start) / (nsteps - 1))
             for rng, nsteps in zip(self.range, value)
         ]
 

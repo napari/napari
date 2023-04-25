@@ -632,7 +632,7 @@ def dims_displayed_world_to_layer(
     return dims_displayed
 
 
-def get_extent_world(data_extent, data_to_world, centered=False):
+def get_extent_world(data_extent, data_to_world):
     """Range of layer in world coordinates base on provided data_extent
 
     Parameters
@@ -641,8 +641,6 @@ def get_extent_world(data_extent, data_to_world, centered=False):
         Extent of layer in data coordinates.
     data_to_world : napari.utils.transforms.Affine
         The transform from data to world coordinates.
-    centered : bool
-        If pixels should be centered. By default False.
 
     Returns
     -------
