@@ -62,8 +62,6 @@ class QtLayerButtons(QFrame):
             lambda: self.viewer.add_points(
                 ndim=max(self.viewer.dims.ndim, 2),
                 scale=self.viewer.layers.extent.step,
-                # use last dimension for guessing size, see #5582
-                size=10 * self.viewer.layers.extent.step[-1],
             ),
         )
 

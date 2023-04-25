@@ -60,6 +60,9 @@ class VispyPointsLayer(VispyBaseLayer):
 
         set_data = self.node._subvisuals[0].set_data
 
+        # use only last dimension to scale point sizes, see #5582
+        scale = self.layer.scale[-1]
+
         if self.layer.edge_width_is_relative:
             edge_kw = {
                 'edge_width': None,
@@ -67,13 +70,13 @@ class VispyPointsLayer(VispyBaseLayer):
             }
         else:
             edge_kw = {
-                'edge_width': edge_width,
+                'edge_width': edge_width * scale,
                 'edge_width_rel': None,
             }
 
         set_data(
             data[:, ::-1],
-            size=size,
+            size=size * scale,
             symbol=symbol,
             edge_color=edge_color,
             face_color=face_color,
