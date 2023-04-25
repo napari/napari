@@ -21,7 +21,7 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.overlay.events.point_color.connect(self._on_point_color_change)
 
     def _on_bounds_change(self):
-        bounds = self.layer._display_bounding_box(
+        bounds = self.layer._display_bounding_box_augmented(
             self.layer._slice_input.displayed
         )
         # invert for vispy

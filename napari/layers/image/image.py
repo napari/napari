@@ -1002,6 +1002,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         return value
 
+    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
+        bounding_box = self._display_bounding_box(
+            dims_displayed=dims_displayed
+        )
+        # consider pixels to have size 1 in data space
+        return bounding_box + [[-0.5, +0.5]]
+
     def _get_offset_data_position(self, position: List[float]) -> List[float]:
         """Adjust position for offset between viewer and data coordinates.
 

@@ -1428,6 +1428,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """An axis aligned (ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed].T
 
+    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
+
+        This bounding box for includes the "full" size of the layer, including
+        for example the size of points or pixels.
+        """
+        return self._display_bounding_box(dims_displayed=dims_displayed)
+
     def click_plane_from_click_data(
         self,
         click_position: np.ndarray,
@@ -1500,7 +1508,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return None, None
 
         # create the bounding box in data coordinates
-        bounding_box = self._display_bounding_box(dims_displayed)
+        bounding_box = self._display_bounding_box_augmented(dims_displayed)
 
         start_point, end_point = self._get_ray_intersections(
             position=position,

@@ -72,7 +72,8 @@ def move_plane_along_normal(layer: Image, event: Event):
         )
 
         clamped_plane_position = clamp_point_to_bounding_box(
-            updated_position, layer._display_bounding_box(event.dims_displayed)
+            updated_position,
+            layer._display_bounding_box_augmented(event.dims_displayed),
         )
 
         layer.plane.position = clamped_plane_position
