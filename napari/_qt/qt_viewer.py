@@ -214,7 +214,6 @@ class QtViewer(QSplitter):
         self._dockLayerControls = None
         self._dockConsole = None
         self._dockPerformance = None
-        self._last_mouse_pos = None
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
@@ -915,10 +914,6 @@ class QtViewer(QSplitter):
             elif cursor == 'circle':
                 circle_cursor = True
                 self.viewer.brush_circle_overlay.size = size
-                if self._last_mouse_pos:
-                    self.viewer.brush_circle_overlay.position = (
-                        self._last_mouse_pos
-                    )
                 q_cursor = QCursor(Qt.BlankCursor)
             else:
                 q_cursor = QCursor(square_pixmap(int(size)))
@@ -1119,12 +1114,6 @@ class QtViewer(QSplitter):
         event : vispy.event.Event
             The vispy event that triggered this method.
         """
-        self._last_mouse_pos = list(event.pos)
-
-        # Update the brush circle position if the brush cursor is used
-        if self.viewer.cursor.style == 'circle':
-            self.viewer.brush_circle_overlay.position = self._last_mouse_pos
-
         self._process_mouse_event(mouse_move_callbacks, event)
 
     def on_mouse_release(self, event):
