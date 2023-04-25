@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from numbers import Integral
 from typing import (
     Any,
@@ -5,7 +6,6 @@ from typing import (
     Literal,
     NamedTuple,
     Optional,
-    Sequence,
     Tuple,
     Union,
 )

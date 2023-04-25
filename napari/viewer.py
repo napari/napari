@@ -1,4 +1,3 @@
-import sys
 import typing
 from typing import TYPE_CHECKING, Optional
 from weakref import WeakSet
@@ -34,10 +33,7 @@ class Viewer(ViewerModel):
     """
 
     _window: 'Window' = None  # type: ignore
-    if sys.version_info < (3, 9):
-        _instances: typing.ClassVar[WeakSet] = WeakSet()
-    else:
-        _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
+    _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
 
     def __init__(
         self,

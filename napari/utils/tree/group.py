@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generator, Iterable, List, TypeVar, Union
+from collections.abc import Generator, Iterable
+from typing import TYPE_CHECKING, List, TypeVar, Union
 
 from napari.utils.events.containers._selectable_list import (
     SelectableNestableEventedList,

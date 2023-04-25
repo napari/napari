@@ -1,12 +1,9 @@
 """Evented dictionary"""
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from typing import (
     Any,
     Dict,
-    Iterator,
-    Mapping,
-    MutableMapping,
     Optional,
-    Sequence,
     Type,
     TypeVar,
     Union,

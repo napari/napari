@@ -3,10 +3,11 @@ import os
 import re
 import tempfile
 import urllib.parse
+from collections.abc import Sequence
 from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 from urllib.error import HTTPError, URLError
 
 import dask.array as da

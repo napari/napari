@@ -20,7 +20,8 @@ session due to mis-represented colors.
 import functools
 import types
 import warnings
-from typing import Any, Callable, Dict, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Dict, Optional, Union
 
 import numpy as np
 from vispy.color import ColorArray, get_color_dict, get_color_names

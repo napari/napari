@@ -1,6 +1,7 @@
+from collections.abc import Sequence
 from itertools import chain
 from logging import getLogger
-from typing import TYPE_CHECKING, Sequence, Union
+from typing import TYPE_CHECKING, Union
 
 from qtpy.QtWidgets import QAction
 

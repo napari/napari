@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
+from collections.abc import Iterable, Iterator, MutableSet
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from napari.utils.events import EmitterGroup
 from napari.utils.translations import trans

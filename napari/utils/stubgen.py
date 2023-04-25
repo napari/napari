@@ -28,8 +28,9 @@ import subprocess
 import textwrap
 import typing
 import warnings
+from collections.abc import Iterator
 from types import ModuleType
-from typing import Any, Iterator, List, Set, Tuple, Type, Union, get_type_hints
+from typing import Any, List, Set, Tuple, Type, Union, get_type_hints
 
 from typing_extensions import get_args, get_origin
 

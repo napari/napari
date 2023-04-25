@@ -1,6 +1,7 @@
 """guess_rgb, guess_multiscale, guess_labels.
 """
-from typing import Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Tuple, Union
 
 import numpy as np
 

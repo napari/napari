@@ -47,19 +47,19 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
-        python: ["3.8", "3.9", "3.10", "3.11"]
+        python: ["3.9", "3.10", "3.11"]
         backend: [pyqt5, pyside2]
         include:
           - python: "3.9"
             platform: macos-latest
             backend: pyqt5
           # test with minimum specified requirements
-          - python: "3.8"
+          - python: "3.9"
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
           # test without any Qt backends
-          - python: "3.8"
+          - python: "3.9"
             platform: ubuntu-20.04
             backend: headless
           - python: "3.11"

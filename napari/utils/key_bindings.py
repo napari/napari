@@ -38,8 +38,9 @@ import inspect
 import sys
 import time
 from collections import ChainMap
+from collections.abc import Mapping
 from types import MethodType
-from typing import Callable, Mapping, Union
+from typing import Callable, Union
 
 from app_model.types import KeyBinding, KeyCode, KeyMod
 from vispy.util import keys

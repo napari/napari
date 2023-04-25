@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from contextlib import contextmanager
 from functools import partial
 from itertools import combinations, permutations, product
-from typing import TYPE_CHECKING, Callable, DefaultDict, Iterable, Set, Tuple
+from typing import TYPE_CHECKING, Callable, DefaultDict, Set, Tuple
 from weakref import ReferenceType, ref
 
 if TYPE_CHECKING:

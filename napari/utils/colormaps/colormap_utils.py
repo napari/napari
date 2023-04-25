@@ -1,7 +1,8 @@
 import warnings
 from collections import OrderedDict
+from collections.abc import Iterable
 from threading import Lock
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import skimage.color as colorconv

@@ -53,15 +53,13 @@ import inspect
 import os
 import warnings
 import weakref
-from collections.abc import Sequence
+from collections.abc import Generator, Iterable, Sequence
 from functools import partial
 from typing import (
     Any,
     Callable,
     Dict,
-    Generator,
     Generic,
-    Iterable,
     List,
     Literal,
     Optional,

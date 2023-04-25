@@ -1,6 +1,7 @@
 import logging
 import pickle
-from typing import List, Optional, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import List, Optional, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 

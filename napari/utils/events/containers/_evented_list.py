@@ -24,13 +24,12 @@ cover this in test_evented_list.py)
 
 import contextlib
 import logging
+from collections.abc import Iterable, Sequence
 from typing import (
     Callable,
     Dict,
-    Iterable,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,

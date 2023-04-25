@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import inspect
 import warnings
+from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -10,7 +11,6 @@ from typing import (
     List,
     NamedTuple,
     Optional,
-    Sequence,
     Tuple,
     Union,
 )
@@ -25,7 +25,7 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from typing import Mapping
+    from collections.abc import Mapping
 
     import numpy.typing as npt
 

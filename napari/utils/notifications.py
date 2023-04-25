@@ -4,10 +4,11 @@ import os
 import sys
 import threading
 import warnings
+from collections.abc import Sequence
 from datetime import datetime
 from enum import auto
 from types import TracebackType
-from typing import Callable, List, Optional, Sequence, Set, Tuple, Type, Union
+from typing import Callable, List, Optional, Set, Tuple, Type, Union
 
 from napari.utils.events import Event, EventEmitter
 from napari.utils.misc import StringEnum
@@ -260,13 +261,9 @@ class NotificationManager:
         threading.excepthook to display any message in the UI,
         storing the previous hooks to be restored if necessary.
         """
-        if getattr(threading, 'excepthook', None):
-            # TODO: we might want to display the additional thread information
-            self._originals_thread_except_hooks.append(threading.excepthook)
-            threading.excepthook = self.receive_thread_error
-        else:
-            # Patch for Python < 3.8
-            _setup_thread_excepthook()
+        # TODO: we might want to display the additional thread information
+        self._originals_thread_except_hooks.append(threading.excepthook)
+        threading.excepthook = self.receive_thread_error
 
         install_error_reporter()
         self._originals_except_hooks.append(sys.excepthook)
@@ -279,9 +276,7 @@ class NotificationManager:
         """
         Remove hooks installed by `install_hooks` and restore previous hooks.
         """
-        if getattr(threading, 'excepthook', None):
-            # `threading.excepthook` available only for Python >= 3.8
-            threading.excepthook = self._originals_thread_except_hooks.pop()
+        threading.excepthook = self._originals_thread_except_hooks.pop()
 
         sys.excepthook = self._originals_except_hooks.pop()
         warnings.showwarning = self._original_showwarnings_hooks.pop()
@@ -405,25 +400,3 @@ def show_console_notification(notification: Notification):
         )
         # this will likely get silenced by QT.
         raise
-
-
-def _setup_thread_excepthook():
-    """
-    Workaround for `sys.excepthook` thread bug from:
-    http://bugs.python.org/issue1230540
-    """
-    _init = threading.Thread.__init__
-
-    def init(self, *args, **kwargs):
-        _init(self, *args, **kwargs)
-        _run = self.run
-
-        def run_with_except_hook(*args2, **kwargs2):
-            try:
-                _run(*args2, **kwargs2)
-            except Exception:  # noqa BLE001
-                sys.excepthook(*sys.exc_info())
-
-        self.run = run_with_except_hook
-
-    threading.Thread.__init__ = init

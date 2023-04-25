@@ -1,13 +1,11 @@
 import logging
+from collections.abc import Iterable, MutableSequence, Sequence
 from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
     List,
-    MutableSequence,
     Optional,
-    Sequence,
     Tuple,
     Type,
     TypeVar,

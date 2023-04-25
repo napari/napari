@@ -1,7 +1,8 @@
 import inspect
 import operator
+from collections.abc import Sequence
 from enum import auto
-from typing import ClassVar, List, Protocol, Sequence, Union, runtime_checkable
+from typing import ClassVar, List, Protocol, Union, runtime_checkable
 from unittest.mock import Mock
 
 import dask.array as da

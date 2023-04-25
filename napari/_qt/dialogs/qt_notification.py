@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Callable, Optional, Tuple, Union
 
 from qtpy.QtCore import (
     QEasingCurve,

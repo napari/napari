@@ -243,7 +243,7 @@ packaging==23.2
     #   superqt
     #   vispy
     #   xarray
-pandas==2.1.3 ; python_version >= "3.9"
+pandas==2.1.3
     # via
     #   napari (napari_repo/setup.cfg)
     #   nilearn
@@ -328,7 +328,7 @@ pyqt6-qt6==6.6.0
     # via pyqt6
 pyqt6-sip==13.6.0
     # via pyqt6
-pyside2==5.15.2.1 ; python_version != "3.8"
+pyside2==5.15.2.1
     # via napari (napari_repo/setup.cfg)
 pyside6==6.3.1 ; python_version < "3.10"
     # via
@@ -412,7 +412,7 @@ scikit-image==0.22.0
     #   scikit-image
 scikit-learn==1.3.2
     # via nilearn
-scipy==1.11.3 ; python_version >= "3.9"
+scipy==1.11.3
     # via
     #   napari (napari_repo/setup.cfg)
     #   nilearn

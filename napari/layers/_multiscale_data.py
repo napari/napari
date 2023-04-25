@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import List, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import List, Tuple, Union
 
 import numpy as np
 

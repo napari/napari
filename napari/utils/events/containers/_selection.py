@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Generic, Optional, TypeVar
 
 from napari.utils.events.containers._set import EventedSet
 from napari.utils.events.event import EmitterGroup

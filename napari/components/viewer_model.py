@@ -4,6 +4,7 @@ import inspect
 import itertools
 import os
 import warnings
+from collections.abc import Mapping, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -11,9 +12,7 @@ from typing import (
     Any,
     Dict,
     List,
-    Mapping,
     Optional,
-    Sequence,
     Set,
     Tuple,
     Union,

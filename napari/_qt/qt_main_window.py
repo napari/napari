@@ -9,14 +9,13 @@ import os
 import sys
 import time
 import warnings
+from collections.abc import MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
     List,
-    MutableMapping,
     Optional,
-    Sequence,
     Tuple,
     Union,
     cast,

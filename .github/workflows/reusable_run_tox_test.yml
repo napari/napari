@@ -97,8 +97,8 @@ jobs:
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform
-      # for instance, on ubuntu-latest with python 3.8, it would be equivalent to this command:
-      # `tox -e py38-linux-pyqt,py38-linux-pyside`
+      # for instance, on ubuntu-latest with python 3.9, it would be equivalent to this command:
+      # `tox -e py39-linux-pyqt,py39-linux-pyside`
       # see tox.ini for more
 
       - name: Split qt backend

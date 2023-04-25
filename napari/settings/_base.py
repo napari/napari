@@ -3,10 +3,10 @@ from __future__ import annotations
 import contextlib
 import logging
 import os
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, cast
 from warnings import warn
 
 from napari._pydantic_compat import (

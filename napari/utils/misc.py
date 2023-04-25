@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import warnings
+from collections.abc import Iterable, Iterator, Sequence
 from enum import Enum, EnumMeta
 from os import fspath, path as os_path
 from pathlib import Path
@@ -19,11 +20,8 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
-    Iterator,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     TypeVar,

@@ -6,6 +6,7 @@ import traceback
 import typing
 import warnings
 import weakref
+from collections.abc import Sequence
 from pathlib import Path
 from types import FrameType
 from typing import (
@@ -14,7 +15,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,

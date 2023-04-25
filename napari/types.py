@@ -1,3 +1,4 @@
+from collections.abc import Iterable, Sequence
 from functools import partial, wraps
 from pathlib import Path
 from types import TracebackType
@@ -6,11 +7,9 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
     List,
     NewType,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,
@@ -156,7 +155,6 @@ def image_reader_to_layerdata_reader(
 
 def _register_types_with_magicgui():
     """Register ``napari.types`` objects with magicgui."""
-    import sys
     from concurrent.futures import Future
 
     from magicgui import register_type
@@ -168,9 +166,8 @@ def _register_types_with_magicgui():
             type_,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
-        if sys.version_info >= (3, 9):
-            future_type = Future[type_]  # type: ignore [valid-type]
-            register_type(future_type, return_callback=_mgui.add_future_data)
+        future_type = Future[type_]  # type: ignore [valid-type]
+        register_type(future_type, return_callback=_mgui.add_future_data)
 
     for data_type in get_args(_LayerData):
         register_type(
@@ -178,27 +175,21 @@ def _register_types_with_magicgui():
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
-        if sys.version_info >= (3, 9):
-            register_type(
-                Future[data_type],  # type: ignore [valid-type]
-                choices=_mgui.get_layers_data,
-                return_callback=partial(
-                    _mgui.add_future_data, _from_tuple=False
-                ),
-            )
+        register_type(
+            Future[data_type],  # type: ignore [valid-type]
+            choices=_mgui.get_layers_data,
+            return_callback=partial(_mgui.add_future_data, _from_tuple=False),
+        )
         register_type(
             Optional[data_type],  # type: ignore [call-overload]
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
-        if sys.version_info >= (3, 9):
-            register_type(
-                Future[Optional[data_type]],  # type: ignore [valid-type]
-                choices=_mgui.get_layers_data,
-                return_callback=partial(
-                    _mgui.add_future_data, _from_tuple=False
-                ),
-            )
+        register_type(
+            Future[Optional[data_type]],  # type: ignore [valid-type]
+            choices=_mgui.get_layers_data,
+            return_callback=partial(_mgui.add_future_data, _from_tuple=False),
+        )
 
 
 _register_types_with_magicgui()

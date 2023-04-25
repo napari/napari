@@ -1,4 +1,3 @@
-import sys
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
 from functools import partial
@@ -176,7 +175,6 @@ PROCESSORS: Dict[object, Callable] = {
 for t in types._LayerData.__args__:  # type: ignore [attr-defined]
     PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
-    if sys.version_info >= (3, 9):
-        PROCESSORS[Future[t]] = partial(  # type: ignore [valid-type]
-            _add_future_data, return_type=t, _from_tuple=False
-        )
+    PROCESSORS[Future[t]] = partial(  # type: ignore [valid-type]
+        _add_future_data, return_type=t, _from_tuple=False
+    )

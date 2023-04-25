@@ -1,9 +1,9 @@
+from collections.abc import Generator
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
-    Generator,
     List,
     Optional,
     Type,

@@ -65,7 +65,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: 3.8
+          - python: 3.9
             platform: ubuntu-latest
             backend: pyqt5
             pydantic: "_pydantic_1"
@@ -93,8 +93,8 @@ jobs:
         coverage: [ cov ]
         pydantic: ["_pydantic_1"]
         include:
-          # Windows py38
-          - python: 3.8
+          # Windows py39
+          - python: 3.9
             platform: windows-latest
             backend: pyqt5,pyside2
             coverage: no_cov
@@ -107,7 +107,7 @@ jobs:
             backend: pyqt5
             coverage: no_cov
           # minimum specified requirements
-          - python: 3.8
+          - python: 3.9
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1

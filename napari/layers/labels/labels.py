@@ -1,11 +1,11 @@
 import warnings
 from collections import deque
+from collections.abc import Iterable
 from contextlib import contextmanager
 from typing import (
     Callable,
     ClassVar,
     Dict,
-    Iterable,
     List,
     Optional,
     Tuple,

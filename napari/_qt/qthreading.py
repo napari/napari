@@ -1,5 +1,6 @@
 import inspect
 import warnings
+from collections.abc import Sequence
 from functools import partial, wraps
 from types import FunctionType, GeneratorType
 from typing import (
@@ -7,7 +8,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Sequence,
     Type,
     TypeVar,
     Union,

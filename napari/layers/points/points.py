@@ -1,5 +1,6 @@
 import numbers
 import warnings
+from collections.abc import Sequence
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import (
@@ -9,7 +10,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Sequence,
     Tuple,
     Union,
 )

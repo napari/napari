@@ -3,8 +3,9 @@ from __future__ import annotations
 import itertools
 import typing
 import warnings
+from collections.abc import Iterable
 from functools import cached_property
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 import numpy as np
 

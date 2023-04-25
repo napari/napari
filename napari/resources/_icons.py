@@ -1,8 +1,9 @@
 import re
+from collections.abc import Iterable, Iterator
 from functools import lru_cache
 from itertools import product
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 from napari.utils._appdirs import user_cache_dir
 from napari.utils.translations import trans

@@ -3,8 +3,9 @@ from __future__ import annotations
 import os
 import pathlib
 import warnings
+from collections.abc import Sequence
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 from napari_plugin_engine import HookImplementation, PluginCallError
 

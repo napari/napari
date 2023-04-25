@@ -1,11 +1,12 @@
 import os
 import os.path as osp
 import re
+from collections.abc import Iterable
 from enum import IntFlag
 from fnmatch import fnmatch
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from npe2 import PluginManifest
 

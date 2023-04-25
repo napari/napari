@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
+from collections.abc import Generator
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from napari.utils.translations import trans
 

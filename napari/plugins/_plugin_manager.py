@@ -1,5 +1,6 @@
 import contextlib
 import warnings
+from collections.abc import Iterable, Iterator
 from functools import partial
 from pathlib import Path
 from types import FunctionType
@@ -7,8 +8,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
-    Iterator,
     List,
     Optional,
     Set,

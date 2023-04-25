@@ -1,6 +1,5 @@
-from collections.abc import Collection, Generator
+from collections.abc import Collection, Generator, Iterable
 from itertools import tee
-from typing import Iterable
 
 from napari.utils.translations import trans
 

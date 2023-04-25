@@ -7,11 +7,9 @@ from __future__ import annotations
 import contextlib
 import logging
 from collections import defaultdict
+from collections.abc import Generator, Iterable, MutableSequence
 from typing import (
     DefaultDict,
-    Generator,
-    Iterable,
-    MutableSequence,
     NewType,
     Tuple,
     TypeVar,

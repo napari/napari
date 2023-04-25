@@ -1,6 +1,7 @@
 import re
 import sys
-from typing import Callable, Dict, Generator
+from collections.abc import Generator
+from typing import Callable, Dict
 
 import numpy as np
 

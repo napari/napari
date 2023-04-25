@@ -3,11 +3,11 @@ These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
 import json
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import (
     Dict,
-    Iterator,
     List,
     Optional,
     Tuple,

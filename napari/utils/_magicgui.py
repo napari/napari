@@ -14,7 +14,7 @@ in napari/_tests/test_magicgui.py
 from __future__ import annotations
 
 import weakref
-from functools import lru_cache, partial
+from functools import cache, partial
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
 from typing_extensions import get_args
@@ -322,7 +322,7 @@ def get_layers_data(gui: CategoricalWidget) -> List[Tuple[str, Any]]:
     return choices
 
 
-@lru_cache(maxsize=None)
+@cache
 def _make_choice_data_setter(gui: CategoricalWidget, choice_name: str):
     """Return a function that sets the ``data`` for ``choice_name`` in ``gui``.
 

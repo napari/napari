@@ -9,7 +9,6 @@ import errno
 import json
 import logging
 import os
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -102,13 +101,6 @@ def _get_monitor_config() -> Optional[dict]:
     Optional[dict]
         The configuration for the MonitorService.
     """
-    if sys.version_info[:2] < (3, 9):
-        # We require Python 3.9 for now. The shared memory features we need
-        # were added in 3.8, but the 3.8 implemention was buggy. It's
-        # possible we could backport to or otherwise fix 3.8 or even 3.7,
-        # but for now we're making 3.9 a requirement.
-        print("Monitor: not starting, requires Python 3.9 or newer")
-        return None
 
     if not ENABLE_MONITOR:
         print("Monitor: not starting, disabled")
