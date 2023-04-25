@@ -44,7 +44,6 @@ class QtDims(QWidget):
         # True / False if slider is or is not displayed
         self._displayed_sliders = []
 
-        self._play_ready = True  # False if currently awaiting a draw event
         self._animation_thread = None
         self._animation_worker = None
 
@@ -324,7 +323,7 @@ class QtDims(QWidget):
     def cleaned_worker(self):
         self._animation_thread = None
         self._animation_worker = None
-        self.enable_play()
+        self.dims._play_ready = True
 
     @property
     def is_playing(self):
@@ -352,15 +351,10 @@ class QtDims(QWidget):
         the canvas can draw, this will drop the intermediate frames, keeping
         the effective frame rate constant even if the canvas cannot keep up.
         """
-        if self._play_ready:
+        if self.dims._play_ready:
             # disable additional point advance requests until this one draws
-            self._play_ready = False
+            self.dims._play_ready = False
             self.dims.set_current_step(axis, frame)
-
-    def enable_play(self, *args):
-        # this is mostly here to connect to the main SceneCanvas.events.draw
-        # event in the qt_viewer
-        self._play_ready = True
 
     def closeEvent(self, event):
         [w.deleteLater() for w in self.slider_widgets]
