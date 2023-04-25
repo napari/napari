@@ -757,7 +757,7 @@ class Points(Layer):
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
             extrema = np.vstack([mins, maxs])
-        return extrema
+        return extrema.astype(float)
 
     @property
     def _extent_data_augmented(self):
