@@ -1,0 +1,4 @@
+pytest-cov
+PySide6 < 6.3.2 ; python_version < '3.10'
+PySide6 != 6.4.3, !=6.5.0 ; python_version >= '3.10'
+pytest-json-report
