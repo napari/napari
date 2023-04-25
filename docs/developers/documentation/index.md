@@ -205,9 +205,9 @@ your pull request.
 
 ### 3.1. Building locally
 
-To build the documentation locally, run `make docs` from the root of your local
-clone of the `napari/docs` repository (assuming you've installed the
-[docs prerequisites](#prerequisites)).
+To build the documentation locally from scratch, run `make docs` from the root
+of your local clone of the `napari/docs` repository (assuming you've installed
+the [docs prerequisites](#prerequisites)).
 
 ```bash
 make docs
@@ -260,7 +260,7 @@ There's another `make` task you can use for live previews while editing docs:
 ```shell
 $ make html-live
 # or for faster reloads:
-# make html-live SPHINXOPTS="-j4"
+$ make html-live SPHINXOPTS="-j4"
 ```
 
 The first run will take a bit longer and a few napari instances will pop up
@@ -271,6 +271,19 @@ no need for further action! Edit the documents at will, and the browser will
 auto-reload.
 Once you are done with the live previews, you can exit via <kbd>Ctrl</kbd>+<kbd>C</kbd>
 on your terminal.
+````
+
+````{tip}
+If you have [xvfb](https://www.x.org/releases/X11R7.6/doc/man/man1/Xvfb.1.xhtml)
+installed on your system, you can also run a "headless GUI" build by using the
+`docs-xvfb` command:
+
+```shell
+$ make docs-xvfb
+```
+
+This will prevent all but the first napari window from being shown during the docs
+build.
 ````
 
 ### 3.2. Use the CI artifacts
