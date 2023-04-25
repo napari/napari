@@ -110,6 +110,7 @@ jobs:
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
+          PIP_CONSTRAINT: resources/constraints/constraints_py${{ matrix.python }}.txt
 
       - name: Coverage
         uses: codecov/codecov-action@v3
@@ -150,6 +151,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install ./napari-from-github[all,testing]
+        env:
+          PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
 
       - name: Test
         uses: aganders3/headless-gui@v1
@@ -175,3 +178,5 @@ jobs:
         uses: aganders3/headless-gui@v1
         with:
           run: tox -e py39-linux-pyside2-examples
+        env:
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.9.txt

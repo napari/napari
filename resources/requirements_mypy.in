@@ -1,0 +1,4 @@
+mypy
+types-PyYAML
+types-setuptools
+types-requests

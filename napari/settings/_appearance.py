@@ -8,7 +8,7 @@ from napari.utils.translations import trans
 
 class AppearanceSettings(EventedModel):
     theme: Theme = Field(
-        "dark",
+        Theme("dark"),
         title=trans._("Theme"),
         description=trans._("Select the user interface theme."),
         env="napari_theme",
