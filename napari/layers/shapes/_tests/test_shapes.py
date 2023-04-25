@@ -1251,47 +1251,47 @@ def test_changing_modes():
     data = 20 * np.random.random((10, 4, 2))
     layer = Shapes(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'select'
     assert layer.mode == 'select'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'direct'
     assert layer.mode == 'direct'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'vertex_insert'
     assert layer.mode == 'vertex_insert'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'vertex_remove'
     assert layer.mode == 'vertex_remove'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_rectangle'
     assert layer.mode == 'add_rectangle'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_ellipse'
     assert layer.mode == 'add_ellipse'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_line'
     assert layer.mode == 'add_line'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_path'
     assert layer.mode == 'add_path'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_polygon'
     assert layer.mode == 'add_polygon'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
 
 def test_name():

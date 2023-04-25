@@ -329,6 +329,7 @@ class Labels(_ImageBase):
         self._brush_size = 10
 
         self._selected_label = 1
+        self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
         self.color = color
 
@@ -640,6 +641,7 @@ class Labels(_ImageBase):
         if selected_label == self.selected_label:
             return
 
+        self._prev_selected_label = self.selected_label
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
@@ -648,6 +650,13 @@ class Labels(_ImageBase):
         # so use self._color_mode
         if self.show_selected_label:
             self.refresh()
+
+    def swap_selected_and_background_labels(self):
+        """Swap between the selected label and the background label."""
+        if self.selected_label != self._background_label:
+            self.selected_label = self._background_label
+        else:
+            self.selected_label = self._prev_selected_label
 
     @property
     def color_mode(self):
@@ -924,15 +933,27 @@ class Labels(_ImageBase):
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
         ):
-            u, inv = np.unique(raw_modified, return_inverse=True)
-            image = np.array(
-                [
-                    self._label_color_index[x]
-                    if x in self._label_color_index
-                    else self._label_color_index[None]
-                    for x in u
-                ]
-            )[inv].reshape(raw_modified.shape)
+            min_label_id = raw_modified.min()
+            max_label_id = raw_modified.max()
+            upper_bound_n_unique_labels = max_label_id - min_label_id
+            none_color_index = self._label_color_index[None]
+
+            if upper_bound_n_unique_labels < 65536:
+                mapping = np.array(
+                    [
+                        self._label_color_index.get(label_id, none_color_index)
+                        for label_id in range(min_label_id, max_label_id + 1)
+                    ]
+                )
+                image = mapping[raw_modified - min_label_id]
+            else:
+                unique_ids, inv = np.unique(raw_modified, return_inverse=True)
+                image = np.array(
+                    [
+                        self._label_color_index.get(label_id, none_color_index)
+                        for label_id in unique_ids
+                    ]
+                )[inv].reshape(raw_modified.shape)
         elif (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
@@ -969,7 +990,7 @@ class Labels(_ImageBase):
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""
-        if label == 0:
+        if label == self._background_label:
             col = None
         elif label is None:
             col = self.colormap.map([0, 0, 0, 0])[0]

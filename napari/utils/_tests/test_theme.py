@@ -2,8 +2,7 @@ import os
 import sys
 
 import pytest
-from npe2 import PluginManager, PluginManifest
-from npe2 import __version__ as npe2_version
+from npe2 import PluginManager, PluginManifest, __version__ as npe2_version
 from npe2.manifest.schema import ContributionPoints
 from packaging.version import parse as parse_version
 from pydantic import ValidationError
