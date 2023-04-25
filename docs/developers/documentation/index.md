@@ -11,7 +11,8 @@ The napari documentation is built from sources located at the
 repository is where all the narrative documentation (e.g. tutorials, how-to
 guides) pull requests should be made. Meanwhile, changes to docstrings or to the
 [examples gallery](https://napari.org/gallery) should be made to the
-[napari/napari](https://github.com/napari/napari) repository.
+[napari/napari](https://github.com/napari/napari) repository (see also
+[](add-examples)).
 
 ## Prerequisites
 
