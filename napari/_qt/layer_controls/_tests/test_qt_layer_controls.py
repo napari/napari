@@ -36,6 +36,7 @@ from napari.layers import (
     Vectors,
 )
 
+np.random.seed(0)
 LayerTypeWithData = namedtuple(
     'LayerTypeWithData',
     ['type', 'data', 'color', 'properties', 'expected_isinstance'],
@@ -100,32 +101,44 @@ _VECTORS = LayerTypeWithData(
 _LINES_DATA = np.random.random((6, 2, 2))
 
 
+@pytest.fixture
+def create_layer_controls(qtbot):
+    def _create_layer_controls(layer_type_with_data):
+        if layer_type_with_data.color:
+            layer = layer_type_with_data.type(
+                layer_type_with_data.data, color=layer_type_with_data.color
+            )
+        elif layer_type_with_data.properties:
+            layer = layer_type_with_data.type(
+                layer_type_with_data.data,
+                properties=layer_type_with_data.properties,
+            )
+        else:
+            layer = layer_type_with_data.type(layer_type_with_data.data)
+
+        ctrl = create_qt_layer_controls(layer)
+        qtbot.addWidget(ctrl)
+
+        return ctrl
+
+    return _create_layer_controls
+
+
 @pytest.mark.parametrize(
     'layer_type_with_data',
     [_IMAGE, _LABELS, _POINTS, _SHAPES, _SURFACE, _TRACKS, _VECTORS],
 )
 @pytest.mark.qt_no_exception_capture
-def test_create_layer_controls(qtbot, layer_type_with_data, capsys):
-    if layer_type_with_data.color:
-        layer = layer_type_with_data.type(
-            layer_type_with_data.data, color=layer_type_with_data.color
-        )
-    elif layer_type_with_data.properties:
-        layer = layer_type_with_data.type(
-            layer_type_with_data.data,
-            properties=layer_type_with_data.properties,
-        )
-    else:
-        layer = layer_type_with_data.type(layer_type_with_data.data)
+def test_create_layer_controls(
+    qtbot, create_layer_controls, layer_type_with_data, capsys
+):
+    # create layer controls widget
+    ctrl = create_layer_controls(layer_type_with_data)
 
-    ctrl = create_qt_layer_controls(layer)
-    qtbot.addWidget(ctrl)
-
-    # Check create widget corresponds to the expected class for each type of
-    # layer
+    # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
 
-    # Check QComboBox by changing current index
+    # check QComboBox by changing current index
     for qcombobox in ctrl.findChildren(QComboBox):
         if qcombobox.isVisible():
             qcombobox_count = qcombobox.count()
@@ -142,7 +155,7 @@ def test_create_layer_controls(qtbot, layer_type_with_data, capsys):
                     assert qcombobox.currentText() == previous_qcombobox_text
             qcombobox.setCurrentIndex(qcombobox_initial_idx)
 
-    # Check QAbstractSlider by changing value with `setValue` from minimum value to maximum
+    # check QAbstractSlider by changing value with `setValue` from minimum value to maximum
     for qslider in ctrl.findChildren(QAbstractSlider):
         if qslider.isVisible():
             if isinstance(qslider.minimum(), float):
@@ -204,7 +217,7 @@ def test_create_layer_controls(qtbot, layer_type_with_data, capsys):
             else:
                 assert qslider.value() == qslider.maximum()
 
-    # Check QColorSwatchEdit by changing line edit text with a range of predefined values
+    # check QColorSwatchEdit by changing line edit text with a range of predefined values
     for qcolorswatchedit in ctrl.findChildren(QColorSwatchEdit):
         if qcolorswatchedit.isVisible():
             lineedit = qcolorswatchedit.line_edit
@@ -212,9 +225,9 @@ def test_create_layer_controls(qtbot, layer_type_with_data, capsys):
             colors = [
                 ("white", "white", np.array([1.0, 1.0, 1.0, 1.0])),
                 ("black", "black", np.array([0.0, 0.0, 0.0, 1.0])),
-                # Check autocompletion `bla` -> `black`
+                # check autocompletion `bla` -> `black`
                 ("bla", "black", np.array([0.0, 0.0, 0.0, 1.0])),
-                # Check that setting an invalid color makes it fallback to the previous value
+                # check that setting an invalid color makes it fallback to the previous value
                 ("invalid_value", "black", np.array([0.0, 0.0, 0.0, 1.0])),
             ]
             for color, expected_color, expected_array in colors:
@@ -224,14 +237,14 @@ def test_create_layer_controls(qtbot, layer_type_with_data, capsys):
                 assert lineedit.text() == expected_color
                 assert (colorswatch.color == expected_array).all()
 
-    # Check QCheckBox by clicking with mouse click
+    # check QCheckBox by clicking with mouse click
     for qcheckbox in ctrl.findChildren(QCheckBox):
         if qcheckbox.isVisible():
             qcheckbox_checked = qcheckbox.isChecked()
             qtbot.mouseClick(qcheckbox, Qt.LeftButton)
             assert qcheckbox.isChecked() != qcheckbox_checked
 
-    # Check QPushButton + QRadioButton by clicking with mouse click
+    # check QPushButton and QRadioButton by clicking with mouse click
     for button in ctrl.findChildren(QPushButton) + ctrl.findChildren(
         QRadioButton
     ):
