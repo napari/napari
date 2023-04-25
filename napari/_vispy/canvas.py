@@ -252,6 +252,7 @@ class VispyCanvas:
         """Create a QCursor based on the napari cursor settings and set in Vispy."""
 
         cursor = self.viewer.cursor.style
+        brush_cursor = False
         if cursor in {'square', 'circle'}:
             # Scale size by zoom if needed
             size = self.viewer.cursor.size
@@ -264,13 +265,17 @@ class VispyCanvas:
             if size < 8 or size > (min(*self.size) - 4):
                 self.cursor = QtCursorVisual['cross'].value
             elif cursor == 'circle':
-                self.cursor = QtCursorVisual.circle(size)
+                self.viewer.brush_circle_overlay.size = size
+                self.cursor = QtCursorVisual.blank()
+                brush_cursor = True
             else:
                 self.cursor = QtCursorVisual.square(size)
         elif cursor == 'crosshair':
             self.cursor = QtCursorVisual.crosshair()
         else:
             self.cursor = QtCursorVisual[cursor].value
+
+        self.viewer.brush_circle_overlay.visible = brush_cursor
 
     def delete(self) -> None:
         """Schedules the native widget for deletion"""
