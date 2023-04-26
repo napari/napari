@@ -88,8 +88,7 @@ class Viewer(ViewerModel):
         if self.window._qt_viewer._console is None:
             self.window._qt_viewer.add_to_console_backlog(variables)
             return
-        else:
-            self.window._qt_viewer.console.push(variables)
+        self.window._qt_viewer.console.push(variables)
 
     def screenshot(
         self,
@@ -107,7 +106,7 @@ class Viewer(ViewerModel):
         path : str
             Filename for saving screenshot image.
         size : tuple (int, int)
-            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
         scale : float
             Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
@@ -141,6 +140,8 @@ class Viewer(ViewerModel):
 
     def close(self):
         """Close the viewer window."""
+        # Shutdown the slicer first to avoid processing any more tasks.
+        self._layer_slicer.shutdown()
         # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window
@@ -185,7 +186,7 @@ def current_viewer() -> Optional[Viewer]:
     """Return the currently active napari viewer."""
     try:
         from napari._qt.qt_main_window import _QtMainWindow
-
-        return _QtMainWindow.current_viewer()
     except ImportError:
         return None
+    else:
+        return _QtMainWindow.current_viewer()

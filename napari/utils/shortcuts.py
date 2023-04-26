@@ -1,6 +1,8 @@
+from typing import Dict, List
+
 from app_model.types import KeyBinding, KeyCode, KeyMod
 
-default_shortcuts = {
+_default_shortcuts = {
     # viewer
     'napari:toggle_console_visibility': [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
@@ -9,6 +11,7 @@ default_shortcuts = {
     'napari:toggle_ndisplay': [KeyMod.CtrlCmd | KeyCode.KeyY],
     'napari:toggle_theme': [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyT],
     'napari:reset_view': [KeyMod.CtrlCmd | KeyCode.KeyR],
+    'napari:delete_selected_layers': [KeyMod.CtrlCmd | KeyCode.Delete],
     'napari:show_shortcuts': [KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.Slash],
     'napari:increment_dims_left': [KeyCode.LeftArrow],
     'napari:increment_dims_right': [KeyCode.RightArrow],
@@ -18,6 +21,7 @@ default_shortcuts = {
     'napari:transpose_axes': [KeyMod.CtrlCmd | KeyCode.KeyT],
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyG],
+    'napari:hold_for_pan_zoom': [KeyCode.Space],
     # labels
     'napari:activate_labels_erase_mode': [KeyCode.Digit1],
     'napari:activate_labels_paint_mode': [KeyCode.Digit2],
@@ -26,6 +30,7 @@ default_shortcuts = {
     'napari:activate_labels_pan_zoom_mode': [KeyCode.Digit5],
     'napari:activate_labels_transform_mode': [KeyCode.Digit6],
     'napari:new_label': [KeyCode.KeyM],
+    'napari:swap_selected_and_background_labels': [KeyCode.KeyX],
     'napari:decrease_label_id': [KeyCode.Minus],
     'napari:increase_label_id': [KeyCode.Equal],
     'napari:decrease_brush_size': [KeyCode.BracketLeft],
@@ -83,7 +88,7 @@ default_shortcuts = {
     'napari:activate_surface_transform_mode': [KeyCode.Digit2],
 }
 
-default_shortcuts = {
+default_shortcuts: Dict[str, List[KeyBinding]] = {
     name: [KeyBinding.from_int(kb) for kb in value]
-    for name, value in default_shortcuts.items()
+    for name, value in _default_shortcuts.items()
 }

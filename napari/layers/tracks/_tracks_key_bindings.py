@@ -21,7 +21,7 @@ def activate_tracks_transform_mode(layer):
 
 
 @register_tracks_mode_action(trans._('Pan/zoom'))
-def activate_tracks_pan_zoom_mode(layer):
+def activate_tracks_pan_zoom_mode(layer: Tracks):
     layer.mode = Mode.PAN_ZOOM
 
 

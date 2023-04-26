@@ -15,7 +15,7 @@ def highlight_box_handles(layer, event):
     """
     Highlight the hovered handle of a TransformBox.
     """
-    if not len(event.dims_displayed) == 2:
+    if len(event.dims_displayed) != 2:
         return
 
     # we work in data space so we're axis aligned which simplifies calculation
@@ -32,7 +32,7 @@ def highlight_box_handles(layer, event):
     nearby_handle = get_nearby_handle(pos, handle_coords)
 
     # set the selected vertex of the box to the nearby_handle (can also be INSIDE or None)
-    layer._overlays['transform_box'].selected_vertex = nearby_handle
+    layer._overlays['transform_box'].selected_handle = nearby_handle
 
 
 def _translate_with_box(
@@ -150,7 +150,7 @@ def transform_with_box(layer, event):
     """
     Translate, rescale or rotate a layer by dragging a TransformBox handle.
     """
-    if not len(event.dims_displayed) == 2:
+    if len(event.dims_displayed) != 2:
         return
 
     # we work in data space so we're axis aligned which simplifies calculation

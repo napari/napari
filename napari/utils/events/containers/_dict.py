@@ -33,7 +33,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
 
     # #### START Required Abstract Methods
 
-    def __setitem__(self, key: int, value: _T):  # noqa: F811
+    def __setitem__(self, key: int, value: _T):
         self._dict[key] = self._type_check(value)
 
     def __delitem__(self, key: _K) -> None:

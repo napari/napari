@@ -455,7 +455,6 @@
       "=={item.latest_version}",
       "1.0",
       "shim",
-      "napari_hub",
       "0-{item.text()}",
       "unavailable",
       "current_job_id",
@@ -933,6 +932,7 @@
       "napari:reset_view",
       "napari:toggle_grid",
       "napari:toggle_ndisplay",
+      "napari:delete_selected_layers",
       "perspective",
       "Control-Backspace",
       "console",
@@ -2324,23 +2324,6 @@
       "Neutral"
     ],
     "napari/plugins/hook_specifications.py": [],
-    "napari/plugins/hub.py": [
-      "https://api.napari-hub.org/plugins",
-      "https://api.anaconda.org/package/{channel}/{package_name}",
-      "/",
-      "name",
-      "version",
-      "authors",
-      "summary",
-      "license",
-      "project_site",
-      "conda-forge",
-      "versions",
-      "development_status",
-      "Development Status :: {1}",
-      "1.0",
-      "UNKNOWN"
-    ],
     "napari/plugins/io.py": [
       "napari_write_{layer._type_string}",
       "Falling back to original plugin engine.",
@@ -2478,7 +2461,6 @@
       "disabled_plugins",
       "extension2writer",
       "schema_version",
-      "napari hub",
       "PyPI",
       "plugin_api"
     ],

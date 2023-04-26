@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     DefaultDict,
@@ -10,13 +11,11 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Union,
     cast,
 )
 
 from app_model.types import SubmenuItem
-from npe2 import io_utils
-from npe2 import plugin_manager as pm
+from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
 from napari.utils.translations import trans
@@ -27,7 +26,7 @@ if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
-    from qtpy.QtWidgets import QMenu
+    from qtpy.QtWidgets import QMenu  # type: ignore [attr-defined]
 
     from napari.layers import Layer
     from napari.types import SampleDict
@@ -55,10 +54,11 @@ def read(
         layer_data, reader = io_utils.read_get_reader(
             npe1_path, plugin_name=plugin
         )
-        return layer_data, _FakeHookimpl(reader.plugin_name)
     except ValueError as e:
         if 'No readers returned data' not in str(e):
-            raise e from e
+            raise
+    else:
+        return layer_data, _FakeHookimpl(reader.plugin_name)
     return None
 
 
@@ -101,9 +101,10 @@ def write_layers(
             paths, writer = io_utils.write_get_writer(
                 path=path, layer_data=layer_data, plugin_name=plugin_name
             )
-            return (paths, writer.plugin_name)
         except ValueError:
-            return ([], '')
+            return [], ''
+        else:
+            return paths, writer.plugin_name
 
     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
@@ -111,8 +112,8 @@ def write_layers(
     if isinstance(
         res, str
     ):  # pragma: no cover # it shouldn't be... bad plugin.
-        return ([res], writer.plugin_name)
-    return (res or [], writer.plugin_name)
+        return [res], writer.plugin_name
+    return res or [], writer.plugin_name
 
 
 def get_widget_contribution(
@@ -240,7 +241,7 @@ def iter_manifests(
 
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     # eg ('dock', ('my_plugin', ('My widget', MyWidget)))
-    wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
+    wdgs: DefaultDict[str, List[str]] = defaultdict(list)
     for wdg_contrib in pm.iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
     return (('dock', x) for x in wdgs.items())
@@ -391,7 +392,7 @@ def _npe2_manifest_to_actions(
 
 def _when_group_order(
     menu_item: contributions.MenuItem,
-) -> dict[str, Union[str, float, None]]:
+) -> dict:
     """Extract when/group/order from an npe2 Submenu or MenuCommand."""
     group, _, _order = (menu_item.group or '').partition("@")
     try:

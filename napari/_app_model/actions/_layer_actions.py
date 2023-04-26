@@ -70,6 +70,7 @@ LAYER_ACTIONS: List[Action] = [
                 | (LLCK.num_selected_shapes_layers >= 1)
             )
             & LLCK.all_selected_layers_same_type
+            & ~LLCK.selected_empty_shapes_layer
         ),
         menus=[LAYERCTX_CONVERSION],
     ),

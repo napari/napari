@@ -1,5 +1,5 @@
 import warnings
-from typing import List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -27,15 +27,29 @@ class Surface(IntensityVisualizationMixin, Layer):
     """
     Surface layer renders meshes onto the canvas.
 
+    Surfaces may be colored by:
+        * setting `vertex_values`, which colors the surface with the selected
+          `colormap` (default is uniform ones)
+        * setting `vertex_colors`, which replaces/overrides any color from
+          `vertex_values`
+        * setting both `texture` and `texcoords`, which blends a the value from
+          a texture (image) with the underlying color from `vertex_values` or
+          `vertex_colors`. Blending is achieved by multiplying the texture
+          color by the underlying color - an underlying value of "white" will
+          result in the unaltered texture color.
+
     Parameters
     ----------
     data : 2-tuple or 3-tuple of array
         The first element of the tuple is an (N, D) array of vertices of
-        mesh triangles. The second is an (M, 3) array of int of indices
-        of the mesh triangles. The optional third element is the
-        (K0, ..., KL, N) array of values used to color vertices where the
-        additional L dimensions are used to color the same mesh with
-        different values. If not provided, it defaults to ones.
+        mesh triangles.
+
+        The second is an (M, 3) array of int of indices of the mesh triangles.
+
+        The optional third element is the (K0, ..., KL, N) array of values
+        (vertex_values) used to color vertices where the additional L
+        dimensions are used to color the same mesh with different values. If
+        not provided, it defaults to ones.
     colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -43,6 +57,20 @@ class Surface(IntensityVisualizationMixin, Layer):
         the second item must be a Colormap. If a dict the key must be a
         string to assign as a name to a colormap and the value must be a
         Colormap.
+    texture: (I, J) or (I, J, C) array
+        A 2D texture to be mapped onto the mesh using `texcoords`.
+        C may be 3 (RGB) or 4 (RGBA) channels for a color texture.
+    texcoords: (N, 2) array
+        2D coordinates for each vertex, mapping into the texture.
+        The number of texture coords must match the number of vertices (N).
+        Coordinates should be in [0.0, 1.0] and are scaled to sample the 2D
+        texture. Coordinates outside this range will wrap, but this behavior
+        should be considered an implementation detail: there are no plans to
+        change it, but it's a feature of the underlying vispy visual.
+    vertex_colors: (N, C) or (K0, ..., KL, N, C) array of color values
+        Take care that the (optional) L additional dimensions match those of
+        vertex_values for proper slicing.
+        C may be 3 (RGB) or 4 (RGBA) channels.
     contrast_limits : list (2,)
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
@@ -173,6 +201,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         experimental_clipping_planes=None,
         wireframe=None,
         normals=None,
+        texture=None,
+        texcoords=None,
+        vertex_colors=None,
     ) -> None:
         ndim = data[0].shape[1]
 
@@ -199,6 +230,8 @@ class Surface(IntensityVisualizationMixin, Layer):
             shading=Event,
             wireframe=Event,
             normals=Event,
+            texture=Event,
+            texcoords=Event,
         )
 
         # assign mesh data and establish default behavior
@@ -217,6 +250,10 @@ class Surface(IntensityVisualizationMixin, Layer):
         else:
             self._vertex_values = np.ones(len(self._vertices))
 
+        self._texture = texture
+        self._texcoords = texcoords
+        self._vertex_colors = vertex_colors
+
         # Set contrast_limits and colormaps
         self._gamma = gamma
         if contrast_limits is None:
@@ -231,6 +268,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._data_view = np.zeros((0, self._slice_input.ndisplay))
         self._view_faces = np.zeros((0, 3))
         self._view_vertex_values = []
+        self._view_vertex_colors = []
 
         # Trigger generation of view slice and thumbnail.
         # Use _update_dims instead of refresh here because _get_ndim is
@@ -303,10 +341,38 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @vertex_values.setter
     def vertex_values(self, vertex_values: np.ndarray):
-        """Array of values used to color vertices.."""
+        """Array of values (n, 1) used to color vertices with a colormap."""
+        if vertex_values is None:
+            vertex_values = np.ones(len(self._vertices))
 
         self._vertex_values = vertex_values
 
+        self._update_dims()
+        self.events.data(value=self.data)
+        self._reset_editable()
+
+    @property
+    def vertex_colors(self) -> Optional[np.ndarray]:
+        return self._vertex_colors
+
+    @vertex_colors.setter
+    def vertex_colors(self, vertex_colors: Optional[np.ndarray]):
+        """Values used to directly color vertices.
+
+        Note that dims sliders for this layer are based on vertex_values, so
+        make sure the shape of vertex_colors matches the shape of vertex_values
+        for proper slicing. That is: vertex_colors should be None, one set
+        (N, C), or completely match the dimensions of vertex_values
+        (K0, ..., KL, N, C).
+        """
+        if vertex_colors is not None and not isinstance(
+            vertex_colors, np.ndarray
+        ):
+            msg = (
+                f"texture should be None or ndarray; got {type(vertex_colors)}"
+            )
+            raise ValueError(msg)
+        self._vertex_colors = vertex_colors
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
@@ -317,7 +383,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @faces.setter
     def faces(self, faces: np.ndarray):
-        """Array of indices of mesh triangles.."""
+        """Array of indices of mesh triangles."""
 
         self.faces = faces
 
@@ -348,7 +414,9 @@ class Surface(IntensityVisualizationMixin, Layer):
             # dimensionality of the vertices themselves
             if self.vertex_values.ndim > 1:
                 mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
-                maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
+                maxs = [n - 1 for n in self.vertex_values.shape[:-1]] + list(
+                    maxs
+                )
             extrema = np.vstack([mins, maxs])
         return extrema
 
@@ -401,6 +469,39 @@ class Surface(IntensityVisualizationMixin, Layer):
             self._normals.update(normals)
         self.events.normals(value=self._normals)
 
+    @property
+    def texture(self) -> Optional[np.ndarray]:
+        return self._texture
+
+    @texture.setter
+    def texture(self, texture: np.ndarray):
+        if texture is not None and not isinstance(texture, np.ndarray):
+            msg = f"texture should be None or ndarray; got {type(texture)}"
+            raise ValueError(msg)
+        self._texture = texture
+        self.events.texture(value=self._texture)
+
+    @property
+    def texcoords(self) -> Optional[np.ndarray]:
+        return self._texcoords
+
+    @texcoords.setter
+    def texcoords(self, texcoords: np.ndarray):
+        if texcoords is not None and not isinstance(texcoords, np.ndarray):
+            msg = f"texcoords should be None or ndarray; got {type(texcoords)}"
+            raise ValueError(msg)
+        self._texcoords = texcoords
+        self.events.texcoords(value=self._texcoords)
+
+    @property
+    def _has_texture(self) -> bool:
+        """Whether the layer has sufficient data for texturing"""
+        return bool(
+            self.texture is not None
+            and self.texcoords is not None
+            and len(self.texcoords)
+        )
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -419,37 +520,67 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'data': self.data,
                 'wireframe': self.wireframe.dict(),
                 'normals': self.normals.dict(),
+                'texture': self.texture,
+                'texcoords': self.texcoords,
+                'vertex_colors': self.vertex_colors,
             }
         )
         return state
+
+    def _slice_associated_data(
+        self,
+        data: np.ndarray,
+        vertex_ndim: int,
+        dims: int = 1,
+    ) -> Union[List[Any], np.ndarray]:
+        """Return associated layer data (e.g. vertex values, colors) within
+        the current slice.
+        """
+        if data is None:
+            return []
+
+        data_ndim = data.ndim - 1
+        if data_ndim >= dims:
+            # Get indices for axes corresponding to data dimensions
+            data_indices = self._slice_indices[:-vertex_ndim]
+            data = data[data_indices]
+            if data.ndim > dims:
+                warnings.warn(
+                    trans._(
+                        "Assigning multiple data per vertex after slicing "
+                        "is not allowed. All dimensions corresponding to "
+                        "vertex data must be non-displayed dimensions. Data "
+                        "may not be visible.",
+                        deferred=True,
+                    ),
+                    category=UserWarning,
+                    stacklevel=2,
+                )
+                return []
+        return data
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         N, vertex_ndim = self.vertices.shape
         values_ndim = self.vertex_values.ndim - 1
 
-        # Take vertex_values dimensionality into account if more than one value
-        # is provided per vertex.
-        if values_ndim > 0:
-            # Get indices for axes corresponding to values dimensions
-            values_indices = self._slice_indices[:-vertex_ndim]
-            values = self.vertex_values[values_indices]
-            if values.ndim > 1:
-                warnings.warn(
-                    trans._(
-                        "Assigning multiple values per vertex after slicing is not allowed. All dimensions corresponding to vertex_values must be non-displayed dimensions. Data will not be visible.",
-                        deferred=True,
-                    )
-                )
-                self._data_view = np.zeros((0, self._slice_input.ndisplay))
-                self._view_faces = np.zeros((0, 3))
-                self._view_vertex_values = []
-                return
+        self._view_vertex_values = self._slice_associated_data(
+            self.vertex_values,
+            vertex_ndim,
+        )
 
-            self._view_vertex_values = values
-            # Determine which axes of the vertices data are being displayed
-            # and not displayed, ignoring the additional dimensions
-            # corresponding to the vertex_values.
+        self._view_vertex_colors = self._slice_associated_data(
+            self.vertex_colors,
+            vertex_ndim,
+            dims=2,
+        )
+
+        if len(self._view_vertex_values) == 0:
+            self._data_view = np.zeros((0, self._slice_input.ndisplay))
+            self._view_faces = np.zeros((0, 3))
+            return
+
+        if values_ndim > 0:
             indices = np.array(self._slice_indices[-vertex_ndim:])
             disp = [
                 d
@@ -464,7 +595,6 @@ class Surface(IntensityVisualizationMixin, Layer):
                 if d >= 0
             ]
         else:
-            self._view_vertex_values = self.vertex_values
             indices = np.array(self._slice_indices)
             not_disp = list(self._slice_input.not_displayed)
             disp = list(self._slice_input.displayed)
@@ -503,14 +633,14 @@ class Surface(IntensityVisualizationMixin, Layer):
         value : None
             Value of the data at the coord.
         """
-        return None
+        return
 
     def _get_value_3d(
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Tuple[Union[None, float, int], None]:
+    ) -> Tuple[Union[None, float, int], Optional[int]]:
         """Get the layer data value along a ray
 
         Parameters
@@ -527,7 +657,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         value
             The data value along the supplied ray.
         vertex : None
-            Index of vertex if any that is at the coordinates. Always returns `None`.
+            Index of vertex if any that is at the coordinates.
         """
         if len(dims_displayed) != 3:
             # only applies to 3D

@@ -6,7 +6,10 @@ import pandas as pd
 import pytest
 from pydantic import ValidationError
 
-from napari._tests.utils import check_layer_world_data_extent
+from napari._tests.utils import (
+    assert_colors_equal,
+    check_layer_world_data_extent,
+)
 from napari.components import ViewerModel
 from napari.layers import Shapes
 from napari.layers.utils._text_constants import Anchor
@@ -43,6 +46,27 @@ def test_update_thumbnail_empty_shapes():
     layer = Shapes()
     layer._allow_thumbnail_update = True
     layer._update_thumbnail()
+
+
+def test_empty_shapes_with_features():
+    """See the following for the points issues this covers:
+    https://github.com/napari/napari/issues/5632
+    https://github.com/napari/napari/issues/5634
+    """
+    shapes = Shapes(
+        features={'a': np.empty(0, int)},
+        feature_defaults={'a': 0},
+        face_color='a',
+        face_color_cycle=list('rgb'),
+    )
+
+    shapes.add_rectangles([[0, 0], [1, 1]])
+    shapes.feature_defaults['a'] = 1
+    shapes.add_rectangles([[1, 1], [2, 2]])
+    shapes.feature_defaults = {'a': 2}
+    shapes.add_rectangles([[2, 2], [3, 3]])
+
+    assert_colors_equal(shapes.face_color, list('rgb'))
 
 
 properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
@@ -286,14 +310,14 @@ def test_text_from_property_fstring(properties):
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
-    expected_text_3 = expected_text_2 + ['type-ish: A']
+    expected_text_3 = [*expected_text_2, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
     # add shape
     layer.selected_data = {0}
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
-    expected_text_4 = expected_text_3 + ['type-ish: A']
+    expected_text_4 = [*expected_text_3, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
@@ -1209,7 +1233,7 @@ def test_removing_selected_shapes():
     # Select three shapes and remove them
     layer.selected_data = {1, 7, 8}
     layer.remove_selected()
-    keep = [0] + list(range(2, 7)) + [9]
+    keep = [0, *range(2, 7)] + [9]
     data_keep = [data[i] for i in keep]
     shape_type_keep = [shape_type[i] for i in keep]
     assert len(layer.data) == len(data_keep)
@@ -1227,47 +1251,47 @@ def test_changing_modes():
     data = 20 * np.random.random((10, 4, 2))
     layer = Shapes(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'select'
     assert layer.mode == 'select'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'direct'
     assert layer.mode == 'direct'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'vertex_insert'
     assert layer.mode == 'vertex_insert'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'vertex_remove'
     assert layer.mode == 'vertex_remove'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_rectangle'
     assert layer.mode == 'add_rectangle'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_ellipse'
     assert layer.mode == 'add_ellipse'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_line'
     assert layer.mode == 'add_line'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_path'
     assert layer.mode == 'add_path'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_polygon'
     assert layer.mode == 'add_polygon'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
 
 def test_name():
@@ -1715,9 +1739,8 @@ def test_colormap_with_categorical_properties(attribute):
     properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Shapes(data, properties=properties)
 
-    with pytest.raises(TypeError):
-        with pytest.warns(UserWarning):
-            setattr(layer, f'{attribute}_color_mode', 'colormap')
+    with pytest.raises(TypeError), pytest.warns(UserWarning):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1779,7 +1802,7 @@ def test_edge_width():
     layer.current_edge_width = 4
     layer.add(new_shape)
     assert len(layer.edge_width) == shape[0] + 1
-    assert layer.edge_width == width_list + [4]
+    assert layer.edge_width == [*width_list, 4]
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
@@ -1790,7 +1813,7 @@ def test_edge_width():
 
     # Test setting edge width with number
     layer.edge_width = 4
-    assert all([width == 4 for width in layer.edge_width])
+    assert all(width == 4 for width in layer.edge_width)
 
     # Test setting edge width with list
     new_widths = [2] * 5 + [3] * 4
@@ -1824,7 +1847,7 @@ def test_z_index():
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
     assert len(layer.z_index) == shape[0] + 1
-    assert layer.z_index == z_index_list + [4]
+    assert layer.z_index == [*z_index_list, 4]
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
@@ -1835,7 +1858,7 @@ def test_z_index():
 
     # Test setting index with number
     layer.z_index = 4
-    assert all([idx == 4 for idx in layer.z_index])
+    assert all(idx == 4 for idx in layer.z_index)
 
     # Test setting index with list
     new_z_indices = [2] * 5 + [3] * 4

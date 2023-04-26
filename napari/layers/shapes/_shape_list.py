@@ -279,7 +279,7 @@ class ShapeList:
                 z_refresh=z_refresh,
             )
         else:
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     'Cannot add single nor multiple shape',
                     deferred=True,
@@ -313,7 +313,7 @@ class ShapeList:
             ShapesList._update_z_order() once at the end.
         """
         if not issubclass(type(shape), Shape):
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     'shape must be subclass of Shape',
                     deferred=True,
@@ -711,7 +711,7 @@ class ShapeList:
             cur_shape = self.shapes[index]
             if type(new_type) == str:
                 shape_type = ShapeType(new_type)
-                if shape_type in shape_classes.keys():
+                if shape_type in shape_classes:
                     shape_cls = shape_classes[shape_type]
                 else:
                     raise ValueError(
@@ -833,7 +833,7 @@ class ShapeList:
             Order that the dimensions are rendered in.
         """
         for index in range(len(self.shapes)):
-            if not self.shapes[index].dims_order == dims_order:
+            if self.shapes[index].dims_order != dims_order:
                 shape = self.shapes[index]
                 shape.dims_order = dims_order
                 self.remove(index, renumber=False)
@@ -1034,13 +1034,13 @@ class ShapeList:
         indices = inside_triangles(triangles - coord)
         shapes = self._mesh.displayed_triangles_index[indices, 0]
 
-        if len(shapes) > 0:
-            z_list = self._z_order.tolist()
-            order_indices = np.array([z_list.index(m) for m in shapes])
-            ordered_shapes = shapes[np.argsort(order_indices)]
-            return ordered_shapes[0]
-        else:
+        if len(shapes) == 0:
             return None
+
+        z_list = self._z_order.tolist()
+        order_indices = np.array([z_list.index(m) for m in shapes])
+        ordered_shapes = shapes[np.argsort(order_indices)]
+        return ordered_shapes[0]
 
     def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
         """Determines if any shape is intersected by a ray by looking inside triangle
@@ -1072,20 +1072,20 @@ class ShapeList:
             triangles=triangles,
         )
         intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
-        if len(intersected_shapes) > 0:
-            intersection_points = self._triangle_intersection(
-                triangle_indices=inside,
-                ray_position=ray_position,
-                ray_direction=ray_direction,
-            )
-            start_to_intersection = intersection_points - ray_position
-            distances = np.linalg.norm(start_to_intersection, axis=1)
-            closest_shape_index = np.argmin(distances)
-            shape = intersected_shapes[closest_shape_index]
-            intersection = intersection_points[closest_shape_index]
-            return shape, intersection
-        else:
+        if len(intersected_shapes) == 0:
             return None, None
+
+        intersection_points = self._triangle_intersection(
+            triangle_indices=inside,
+            ray_position=ray_position,
+            ray_direction=ray_direction,
+        )
+        start_to_intersection = intersection_points - ray_position
+        distances = np.linalg.norm(start_to_intersection, axis=1)
+        closest_shape_index = np.argmin(distances)
+        shape = intersected_shapes[closest_shape_index]
+        intersection = intersection_points[closest_shape_index]
+        return shape, intersection
 
     def _triangle_intersection(
         self,
@@ -1181,7 +1181,7 @@ class ShapeList:
             integer up to N for points inside the corresponding shape.
         """
         if labels_shape is None:
-            labels_shape = self.displayed_vertices.max(axis=0).astype(np.int)
+            labels_shape = self.displayed_vertices.max(axis=0).astype(int)
 
         labels = np.zeros(labels_shape, dtype=int)
 
@@ -1226,9 +1226,9 @@ class ShapeList:
             value of the shape for points inside the corresponding shape.
         """
         if colors_shape is None:
-            colors_shape = self.displayed_vertices.max(axis=0).astype(np.int)
+            colors_shape = self.displayed_vertices.max(axis=0).astype(int)
 
-        colors = np.zeros(tuple(colors_shape) + (4,), dtype=float)
+        colors = np.zeros((*colors_shape, 4), dtype=float)
         colors[..., 3] = 1
 
         z_order = self._z_order[::-1]
