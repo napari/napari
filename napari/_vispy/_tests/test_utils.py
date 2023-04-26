@@ -91,8 +91,8 @@ def test_set_cursor(make_napari_viewer):
     viewer.cursor.style = CursorStyle.CIRCLE.value
     viewer.cursor.size = 100
 
-    assert viewer.brush_circle_overlay.visible
-    assert viewer.brush_circle_overlay.size == viewer.cursor.size
+    assert viewer._brush_circle_overlay.visible
+    assert viewer._brush_circle_overlay.size == viewer.cursor.size
 
     with pytest.raises(Exception):
         viewer.cursor.style = "invalid"

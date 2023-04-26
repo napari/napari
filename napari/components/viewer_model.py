@@ -284,7 +284,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return self._overlays['text']
 
     @property
-    def brush_circle_overlay(self):
+    def _brush_circle_overlay(self):
         return self._overlays['brush_circle']
 
     def _tooltip_visible_update(self, event):

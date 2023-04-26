@@ -265,7 +265,7 @@ class VispyCanvas:
             if size < 8 or size > (min(*self.size) - 4):
                 self.cursor = QtCursorVisual['cross'].value
             elif cursor == 'circle':
-                self.viewer.brush_circle_overlay.size = size
+                self.viewer._brush_circle_overlay.size = size
                 self.cursor = QtCursorVisual.blank()
                 brush_cursor = True
             else:
@@ -275,7 +275,7 @@ class VispyCanvas:
         else:
             self.cursor = QtCursorVisual[cursor].value
 
-        self.viewer.brush_circle_overlay.visible = brush_cursor
+        self.viewer._brush_circle_overlay.visible = brush_cursor
 
     def delete(self) -> None:
         """Schedules the native widget for deletion"""
