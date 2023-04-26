@@ -72,12 +72,13 @@ jobs:
           echo "$(python tools/check_updated_packages.py)" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Create PR updating vendored modules
+      - name: Create PR updating test constraints
         uses: peter-evans/create-pull-request@v5
         with:
           commit-message: Update bundle dependencies.
           branch: ${{ env.BRANCH_NAME }}
           delete-branch: true
+          labels: maintenance
           title: "test: [Automatic] Constraints upgrades: ${{ steps.packages.outputs.main_packages }}"
           body: |
             This PR is automatically created and updated by this napari GitHub Action:
