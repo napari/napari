@@ -81,6 +81,7 @@ def check_vendored_module(org: str, reponame: str, tag: str) -> str:
 def main():
     CI = '--ci' in sys.argv
     print("\n\nChecking vendored modules\n")
+    vendored_modules = []
     for org, reponame, tag, source, target in [
         ("albertosottile", "darkdetect", "master", None, None),
         (
@@ -108,15 +109,18 @@ def main():
                 org, reponame, tag, [Path(s) for s in source], Path(target)
             )
 
-        if CI:
-            print(f"::set-output name=vendored::{org}/{reponame}")
-            sys.exit(0)
         if diff:
-            print(diff)
-            print(
-                f"\n * '{org}/{reponame}' vendor code seems to not be up to date!!!\n"
-            )
-            sys.exit(1)
+            vendored_modules.append((org, reponame, diff))
+
+    if vendored_modules:
+        if CI:
+            with open(TOOLS_PATH / "vendored_modules.txt", "w") as f:
+                f.write("\n".join(f"{org}/{reponame}" for org, reponame, _ in vendored_modules))
+        else:
+            print("\n\nThe following vendored modules are not up to date:\n")
+            for org, reponame, _diff in vendored_modules:
+                print(f"\n * {org}/{reponame}\n")
+            sys,exit(1)
 
 
 if __name__ == "__main__":
