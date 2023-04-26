@@ -32,3 +32,7 @@ jobs:
 
             It look like ${{ steps.check_v.outputs.vendored }} has a new version.
           token: ${{ secrets.GHA_TOKEN }}
+          # Token permissions required by the action:
+          # * pull requests: write and read
+          # * repository contents: read and write
+          # for screenshots please see https://github.com/napari/napari/pull/5777
