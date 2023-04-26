@@ -6,6 +6,7 @@ import shutil
 import sys
 from pathlib import Path
 from subprocess import check_output
+from typing import List
 
 
 TOOLS_PATH = Path(__file__).parent
@@ -36,7 +37,7 @@ def _clone(org, reponame, tag):
 
 
 def check_vendored_files(
-    org: str, reponame: str, tag: str, source_paths: Path, target_path: Path
+    org: str, reponame: str, tag: str, source_paths: List[Path], target_path: Path
 ) -> str:
     repo_path = _clone(org, reponame, tag)
     vendor_path = REPO_ROOT_PATH / NAPARI_FOLDER / target_path
