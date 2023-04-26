@@ -589,7 +589,7 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     img = np.ones((512, 256))
     # canvas size must be large enough that img fits in the canvas
     canvas_size = tuple(3 * s for s in img.shape)
-    expected_corner_pixels = np.asarray([[0, 0], [img.shape[0], img.shape[1]]])
+    expected_corner_pixels = np.asarray([[0, 0], [s - 1 for s in img.shape]])
 
     vol = np.stack([img] * 8, axis=0)
     if multiscale:

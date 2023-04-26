@@ -20,7 +20,7 @@ def make_worker(
     qtbot.addWidget(qtdims)
     nz = 8
     step = 1
-    dims.set_range(0, (0, nz, step))
+    dims.set_range(0, (0, nz - 1, step))
     slider_widget = qtdims.slider_widgets[0]
     slider_widget.loop_mode = loop_mode
     slider_widget.fps = fps
@@ -37,7 +37,7 @@ def make_worker(
             worker._stop()
 
     def count_reached():
-        assert worker._count >= nframes
+        return worker._count >= nframes
 
     def go():
         worker.work()
