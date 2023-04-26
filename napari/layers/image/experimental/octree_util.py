@@ -2,7 +2,7 @@
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, NamedTuple
 
 import numpy as np
@@ -70,7 +70,7 @@ class OctreeDisplayOptions:
             self._show_grid = show
             self.loaded_event()  # redraw
 
-    tile_size: int = _get_tile_size()
+    tile_size: int = field(default_factory=_get_tile_size)
     freeze_level: bool = False
     track_view: bool = True
 
