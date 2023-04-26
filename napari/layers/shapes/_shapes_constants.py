@@ -38,7 +38,6 @@ class Mode(StringEnum):
     ADD_LINE = auto()
     ADD_PATH = auto()
     ADD_POLYGON = auto()
-    ADD_POLYGON_LASSO = auto()
     VERTEX_INSERT = auto()
     VERTEX_REMOVE = auto()
 
