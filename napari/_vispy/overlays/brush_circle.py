@@ -65,10 +65,16 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             event.old.events.mouse_move.disconnect(self._on_mouse_move)
 
     def _on_mouse_over_canvas(self):
-        self.node.visible = (
-            self.overlay.visible and self.viewer.mouse_over_canvas
-        )
+        if self.viewer.mouse_over_canvas:
+            # Move the cursor outside the canvas when the mouse leaves it.
+            # It fixes the bug described in PR #5763:
+            # https://github.com/napari/napari/pull/5763#issuecomment-1523182141
+            self._set_position((-1000, -1000))
+            self.node.visible = self.overlay.visible
+        else:
+            self.node.visible = False
 
     def reset(self):
         super().reset()
         self._on_size_change()
+        self._last_mouse_pos = None
