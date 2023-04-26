@@ -31,3 +31,4 @@ jobs:
             action cron to keep vendored modules up to date.
 
             It look like ${{ steps.check_v.outputs.vendored }} has a new version.
+          token: ${{ secrets.GHA_TOKEN }}
