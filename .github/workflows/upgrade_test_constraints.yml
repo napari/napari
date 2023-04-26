@@ -87,4 +87,9 @@ jobs:
             The updated packages are:
 
             ${{ steps.packages.outputs.all_packages }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GHA_TOKEN }}
+          # Token permissions required by the action:
+          # * pull requests: write and read
+          # * repository contents: read and write
+          # for screenshots please see https://github.com/napari/napari/pull/5777
+
