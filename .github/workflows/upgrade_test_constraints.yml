@@ -2,6 +2,9 @@ name: Upgrade test constraints
 
 on:
   workflow_dispatch: # Allow running on-demand
+  push: # Allow running on push
+    branches:
+      - bugfix/constraints_update
   schedule:
     # Runs every Monday at 8:00 UTC (4:00 Eastern)
     - cron: '0 8 * * 1'
