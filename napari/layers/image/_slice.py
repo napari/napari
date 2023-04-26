@@ -13,6 +13,28 @@ from napari.utils.translations import trans
 
 @dataclass(frozen=True)
 class _ImageView:
+    """A raw image and a potentially different viewable version of it.
+
+    This is only needed for labels, and not other image layers, because sliced labels
+    data are passed to vispy as floats in [0, 1] to use continuous colormaps.
+    In that case, a conversion function is defined by `Labels._raw_to_displayed` to
+    handle the desired colormapping behavior.
+
+    For non-labels image layers the raw and viewable images should be the same instance
+    and no conversion should be necessary.
+
+    This is defined for images in general because `Labels` and `_ImageBase` share
+    code through inheritance.
+
+    Attributes
+    ----------
+    raw : array
+        The raw image.
+    view : array
+        The viewable image, which should either be the same instance of raw, or a
+        converted version of it.
+    """
+
     raw: np.ndarray
     view: np.ndarray
 
