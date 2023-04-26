@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
+from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
 from napari._vispy import VispyCamera
@@ -44,6 +45,8 @@ class NapariSceneCanvas(SceneCanvas_):
     def _process_mouse_event(self, event: MouseEvent):
         """Ignore mouse wheel events which have modifiers."""
         if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
+            return
+        if event.handled:
             return
         super()._process_mouse_event(event)
 
@@ -138,7 +141,9 @@ class VispyCanvas:
         self._scene_canvas.events.mouse_double_click.connect(
             self._on_mouse_double_click
         )
-        self._scene_canvas.events.mouse_move.connect(self._on_mouse_move)
+        self._scene_canvas.events.mouse_move.connect(
+            qthrottled(self._on_mouse_move, timeout=5)
+        )
         self._scene_canvas.events.mouse_press.connect(self._on_mouse_press)
         self._scene_canvas.events.mouse_release.connect(self._on_mouse_release)
         self._scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
