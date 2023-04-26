@@ -45,6 +45,8 @@ class NapariSceneCanvas(SceneCanvas_):
         """Ignore mouse wheel events which have modifiers."""
         if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
             return
+        if event.handled:
+            return
         super()._process_mouse_event(event)
 
 
