@@ -46,10 +46,9 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_visible_change(self):
         if self._last_mouse_pos is not None:
             self._set_position(self._last_mouse_pos)
-        if not self.viewer.mouse_over_canvas and self.overlay.visible:
-            # if the mouse is not over canvas, don't make the node visible
-            return
-        super()._on_visible_change()
+        self.node.visible = (
+            self.overlay.visible and self.viewer.mouse_over_canvas
+        )
 
     def _on_mouse_move(self, event):
         self._last_mouse_pos = event.pos
