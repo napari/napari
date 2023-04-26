@@ -1,9 +1,13 @@
 import platform
 from unittest.mock import patch
 
+import numpy as np
 import pytest
+from qtpy.QtGui import QImage
 
 from napari._qt.qt_main_window import Window, _QtMainWindow
+from napari._qt.utils import QImg2array
+from napari._tests.utils import skip_on_win_ci
 from napari.utils.theme import (
     _themes,
     get_theme,
@@ -103,3 +107,42 @@ def test_menubar_shortcut(make_napari_viewer):
     v.window._toggle_menubar_visible()
     assert not v.window.main_menu.isVisible()
     assert v.window._main_menu_shortcut.isEnabled()
+
+
+@skip_on_win_ci
+def test_screenshot_to_file(make_napari_viewer, tmp_path):
+    """
+    Test taking a screenshot using the Window instance and saving it to a file.
+    """
+    viewer = make_napari_viewer()
+    screenshot_dir_path = tmp_path / "screenshots"
+    screenshot_dir_path.mkdir()
+    screenshot_file_path = str(screenshot_dir_path / "screenshot.png")
+
+    np.random.seed(0)
+    # Add image
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+
+    # Add labels
+    data = np.random.randint(20, size=(10, 15))
+    viewer.add_labels(data)
+
+    # Add points
+    data = 20 * np.random.random((10, 2))
+    viewer.add_points(data)
+
+    # Add vectors
+    data = 20 * np.random.random((10, 2, 2))
+    viewer.add_vectors(data)
+
+    # Add shapes
+    data = 20 * np.random.random((10, 4, 2))
+    viewer.add_shapes(data)
+
+    # Take screenshot
+    screenshot_array = viewer.window.screenshot(
+        screenshot_file_path, flash=False, canvas_only=True
+    )
+    screenshot_array_from_file = QImg2array(QImage(screenshot_file_path))
+    assert np.array_equal(screenshot_array, screenshot_array_from_file)
