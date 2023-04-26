@@ -16,7 +16,7 @@ jobs:
     env:
       # This branch will receive updates each time the workflow runs
       # It doesn't matter if it's deleted when merged, it'll be re-created
-      BRANCH_NAME: auto-dependency-upgrades
+      BRANCH_NAME: auto-dependency-upgrades-test
     steps:
       - uses: actions/checkout@v3
         with:
