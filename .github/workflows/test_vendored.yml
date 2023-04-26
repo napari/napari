@@ -20,12 +20,13 @@ jobs:
         run: python tools/check_vendored_modules.py --ci
 
       - name: Create PR updating vendored modules
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         with:
           commit-message: Update vendored modules.
           branch: update-vendored-examples
           delete-branch: true
           title: "[Automatic] Update ${{ steps.check_v.outputs.vendored }} vendored module"
+          labels: maintenance
           body: |
             This PR is automatically created and updated by napari GitHub
             action cron to keep vendored modules up to date.

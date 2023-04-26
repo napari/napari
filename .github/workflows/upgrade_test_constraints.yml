@@ -78,6 +78,7 @@ jobs:
           commit-message: Update bundle dependencies.
           branch: ${{ env.BRANCH_NAME }}
           delete-branch: true
+          labels: maintenance
           title: "test: [Automatic] Constraints upgrades: ${{ steps.packages.outputs.main_packages }}"
           body: |
             This PR is automatically created and updated by this napari GitHub Action:
