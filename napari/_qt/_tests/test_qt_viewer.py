@@ -299,6 +299,7 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
     assert np.allclose(output_data, expected_data)
 
 
+@skip_on_win_ci
 def test_screenshot_to_file(make_napari_viewer, tmp_path):
     """Test taking a screenshot and saving it to a file."""
     viewer = make_napari_viewer()
