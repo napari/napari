@@ -1541,7 +1541,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return None, None
 
         # create the bounding box in data coordinates
-        bounding_box = self._display_bounding_box_augmented(dims_displayed)
+        bounding_box = self._display_bounding_box(dims_displayed)
+        # bounding box is with upper limit excluded in the uses below
+        bounding_box[:, 1] += 1
 
         start_point, end_point = self._get_ray_intersections(
             position=position,

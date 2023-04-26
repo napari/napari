@@ -1029,9 +1029,13 @@ class Labels(_ImageBase):
                 start_point, end_point, n_points, endpoint=True
             )
             im_slice = self._slice.image.raw
+            bounding_box = self._display_bounding_box(dims_displayed)
+            # bounding box is with upper limit excluded in the uses below
+            bounding_box[:, 1] += 1
+
             clamped = clamp_point_to_bounding_box(
                 sample_points,
-                self._display_bounding_box_augmented(dims_displayed),
+                bounding_box,
             ).astype(int)
             values = im_slice[tuple(clamped.T)]
             nonzero_indices = np.flatnonzero(values)

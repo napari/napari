@@ -457,7 +457,7 @@ def test_multiscale_data_protocol():
         ([[5, 5], [15, 15]], 0, [[5, 5], [15, 15]]),
         # Multiscale level selection uses > rather than >= so use -1 and 21
         # instead of 0 and 20 to ensure that the FOV is big enough.
-        ([[-1, -1], [21, 21]], 1, [[0, 0], [10, 10]]),
+        ([[-1, -1], [21, 21]], 1, [[0, 0], [9, 9]]),
         ([[-11, -11], [31, 31]], 2, [[0, 0], [5, 5]]),
     ),
 )
