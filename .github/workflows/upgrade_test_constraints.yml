@@ -78,4 +78,4 @@ jobs:
             The updated packages are:
 
             ${{ steps.packages.outputs.all_packages }}
-          token: ${{ secrets.GHA_TOKEN2 }}
+          token: ${{ secrets.GITHUB_TOKEN }}
