@@ -87,7 +87,7 @@ def main():
         (
             "matplotlib",
             "matplotlib",
-            "v3.2.1",
+            "v3.7.1",
             [
                 # this file seem to be post 3.0.3 but pre 3.1
                 # plus there may have been custom changes.
@@ -96,7 +96,7 @@ def main():
                 # this file seem much more recent, but is touched much more rarely.
                 # it is at least from 3.2.1 as the turbo colormap is present and
                 # was added in matplotlib in 3.2.1
-                #'lib/matplotlib/_cm_listed.py'
+                'lib/matplotlib/_cm_listed.py'
             ],
             'utils/colormaps/vendored/',
         ),
@@ -112,15 +112,15 @@ def main():
         if diff:
             vendored_modules.append((org, reponame, diff))
 
+    if CI:
+        with open(TOOLS_PATH / "vendored_modules.txt", "w") as f:
+            f.write("\n".join(f"{org}/{reponame}" for org, reponame, _ in vendored_modules))
+        sys.exit(0)
     if vendored_modules:
-        if CI:
-            with open(TOOLS_PATH / "vendored_modules.txt", "w") as f:
-                f.write("\n".join(f"{org}/{reponame}" for org, reponame, _ in vendored_modules))
-        else:
-            print("\n\nThe following vendored modules are not up to date:\n")
-            for org, reponame, _diff in vendored_modules:
-                print(f"\n * {org}/{reponame}\n")
-            sys,exit(1)
+        print("\n\nThe following vendored modules are not up to date:\n")
+        for org, reponame, _diff in vendored_modules:
+            print(f"\n * {org}/{reponame}\n")
+        sys,exit(1)
 
 
 if __name__ == "__main__":
