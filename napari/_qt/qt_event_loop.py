@@ -125,14 +125,16 @@ def get_app(
                     "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
                     deferred=True,
                     args=set_values,
-                )
+                ),
+                stacklevel=2,
             )
         if perf_config and perf_config.trace_qt_events:
             warn(
                 trans._(
                     "Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.",
                     deferred=True,
-                )
+                ),
+                stacklevel=2,
             )
 
     else:
@@ -282,6 +284,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
             deferred=True,
         ),
         FutureWarning,
+        stacklevel=2,
     )
 
     app = get_app()
@@ -395,7 +398,8 @@ def run(
                 "Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`",
                 deferred=True,
                 _func_name=_func_name,
-            )
+            ),
+            stacklevel=2,
         )
         return
 
@@ -409,7 +413,8 @@ def run(
                 deferred=True,
                 _func_name=_func_name,
                 max_loop_level=loops + 1,
-            )
+            ),
+            stacklevel=2,
         )
         return
     with notification_manager, _maybe_allow_interrupt(app):

@@ -21,8 +21,6 @@ from napari.layers.image._image_constants import (
 )
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
-)
-from napari.layers.image._image_mouse_bindings import (
     set_plane_position as plane_double_click_callback,
 )
 from napari.layers.image._image_utils import guess_multiscale, guess_rgb
@@ -793,7 +791,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._should_calc_clims = False
         elif self._keep_auto_contrast:
             self.reset_contrast_limits()
-
         self._loaded = True
 
     def _update_thumbnail(self):

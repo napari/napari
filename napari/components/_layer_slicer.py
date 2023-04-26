@@ -68,17 +68,16 @@ class _LayerSlicer:
         _force_sync: bool
             if true, forces slicing to execute synchronously
         _layers_to_task : dict
-            task storage for cancellation logic
+            task storage for cancellation logic, format: {tuple(layers): task}
         _lock_layers_to_task : threading.RLock
             lock to guard against changes to `_layers_to_task` when finding,
-            adding, or removing tasks. Format: {layers: task}
+            adding, or removing tasks.
         """
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._force_sync = not get_settings().experimental.async_
         self._layers_to_task: Dict[Tuple[Layer], Future] = {}
         self._lock_layers_to_task = RLock()
-        self._busy = False
 
     @contextmanager
     def force_sync(self):
@@ -119,8 +118,6 @@ class _LayerSlicer:
             raise TimeoutError(
                 f'Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).'
             )
-
-        self._update_status()
 
     def submit(
         self,
@@ -179,7 +176,6 @@ class _LayerSlicer:
         # First maybe submit an async slicing task to start it ASAP.
         task = None
         if len(requests) > 0:
-            self._busy = True
             task = self._executor.submit(self._slice_layers, requests)
             # Store task before adding done callback to ensure there is always
             # a task to remove in the done callback.
@@ -208,7 +204,6 @@ class _LayerSlicer:
         for task in tasks:
             task.cancel()
         self._executor.shutdown(wait=True)
-        self._busy = False
 
     def _slice_layers(self, requests: Dict) -> Dict:
         """
@@ -225,7 +220,7 @@ class _LayerSlicer:
         dict[Layer, SliceResponse]: which contains the results of the slice
         """
         result = {layer: request() for layer, request in requests.items()}
-        self.events.ready(Event('ready', value=result))
+        self.events.ready(value=result)
         return result
 
     def _on_slice_done(self, task: Future[Dict]) -> None:
@@ -234,25 +229,25 @@ class _LayerSlicer:
         Can be called from the main or slicing thread.
         """
         if self._try_to_remove_task(task):
-            self._update_status()
+            logger.debug('Task complete')
         else:
             logger.debug('Task not found')
             return
 
         if task.cancelled():
             logger.debug('Cancelled task')
-            self._update_status()
             return
 
-    def _update_status(self):
-        if self._layers_to_task:
-            self._busy = True
-        else:
-            self._busy = False
-
     @property
-    def busy(self):
-        return self._busy
+    def busy(self) -> bool:
+        """Busy indicator for the layer slicer as a whole.
+
+        Returns
+        -------
+        True if tasks are submitted and incomplete.
+        """
+        with self._lock_layers_to_task:
+            return len(self._layers_to_task) > 0
 
     def _try_to_remove_task(self, task: Future[Dict]) -> bool:
         """

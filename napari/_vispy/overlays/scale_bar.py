@@ -122,13 +122,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                 # set scale color negative of theme background.
                 # the reason for using the `as_hex` here is to avoid
                 # `UserWarning` which is emitted when RGB values are above 1
-                if (
-                    self.node.parent is not None
-                    and self.node.parent.parent.canvas.background_color_override
-                ):
-                    background_color = transform_color(
-                        self.node.parent.parent.canvas.background_color_override
-                    )[0]
+                if self.node.parent is not None and self.node.parent.bgcolor:
+                    background_color = self.node.parent.bgcolor.rgba
                 else:
                     background_color = get_theme(
                         self.viewer.theme, False

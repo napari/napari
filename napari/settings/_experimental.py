@@ -16,6 +16,15 @@ class ExperimentalSettings(EventedSettings):
         env="napari_async",
         requires_restart=False,
     )
+    autoswap_buffers: bool = Field(
+        False,
+        title=trans._("Enable autoswapping rendering buffers."),
+        description=trans._(
+            "Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance."
+        ),
+        env="napari_autoswap",
+        requires_restart=True,
+    )
 
     class NapariConfig:
         # Napari specific configuration

@@ -37,8 +37,7 @@ def test_toggle_visibility_with_linked_layers():
     layer_list.selection.add(layer_list[1])
     layer_list.selection.add(layer_list[2])
 
-    with pytest.warns(DeprecationWarning):
-        _link_selected_layers(layer_list)
+    _link_selected_layers(layer_list)
 
     layer_list[3].visible = False
 
@@ -53,12 +52,13 @@ def test_toggle_visibility_with_linked_layers():
     assert layer_list[3].visible is True
 
 
-def test_duplicate_layers():
+@pytest.mark.parametrize('layer_type', [Points, Shapes])
+def test_duplicate_layers(layer_type):
     def _dummy():
         pass
 
     layer_list = LayerList()
-    layer_list.append(Points([[0, 0]], name="test"))
+    layer_list.append(layer_type([], name="test"))
     layer_list.selection.active = layer_list[0]
     layer_list[0].events.data.connect(_dummy)
     assert len(layer_list[0].events.data.callbacks) == 2
