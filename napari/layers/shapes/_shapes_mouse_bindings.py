@@ -222,7 +222,10 @@ def add_vertex_to_polygon(
     """
     # Add to an existing path or polygon
     index = layer._moving_value[0]
-    if layer._mode == Mode.ADD_POLYGON:
+    if (
+        layer._mode == Mode.ADD_POLYGON
+        or layer._mode == Mode.ADD_POLYGON_LASSO
+    ):
         new_type = Polygon
     else:
         new_type = None
@@ -675,6 +678,7 @@ def _move(layer, coordinates):
         Mode.DIRECT,
         Mode.ADD_PATH,
         Mode.ADD_POLYGON,
+        Mode.ADD_POLYGON_LASSO,
     ]:
         if vertex is not None:
             layer._moving_coordinates = coordinates
