@@ -16,13 +16,15 @@ def save_image(tmp_path: Path):
 
     def _save(filename: str, data: Optional[np.ndarray] = None):
         dest = tmp_path / filename
-        _data: np.ndarray = np.random.rand(20, 20) if data is None else data
+        data_: np.ndarray = np.random.rand(20, 20) if data is None else data
+        if filename.endswith(("png", "jpg")):
+            data_ = (data_ * 255).astype(np.uint8)
         if dest.suffix in {".tif", ".tiff"}:
-            tifffile.imwrite(str(dest), _data)
+            tifffile.imwrite(str(dest), data_)
         elif dest.suffix in {'.npy'}:
-            np.save(str(dest), _data)
+            np.save(str(dest), data_)
         else:
-            imageio.imsave(str(dest), _data)
+            imageio.imsave(str(dest), data_)
         return dest
 
     return _save
