@@ -66,8 +66,7 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             event.old.events.mouse_move.disconnect(self._on_mouse_move)
 
     def _on_mouse_over_canvas(self):
-        if self.overlay.visible:
-            self.node.visible = self.viewer.mouse_over_canvas
+        self.node.visible = self.overlay.visible and self.viewer.mouse_over_canvas
 
     def reset(self):
         super().reset()
