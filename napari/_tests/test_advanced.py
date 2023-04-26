@@ -217,7 +217,7 @@ def test_update_lazy_console(make_napari_viewer):
     assert 'obj2' in view.console.shell.user_ns
     assert view.console.shell.user_ns['obj2'] == obj2
     del viewer.window._qt_viewer.console.shell.user_ns['obj2']
-    for k in locs.keys():
+    for k in locs:
         del viewer.window._qt_viewer.console.shell.user_ns[k]
 
 
