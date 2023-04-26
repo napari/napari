@@ -114,7 +114,7 @@ def main():
 
     if CI:
         with open(TOOLS_PATH / "vendored_modules.txt", "w") as f:
-            f.write("\n".join(f"{org}/{reponame}" for org, reponame, _ in vendored_modules))
+            f.write(" ".join(f"{org}/{reponame}" for org, reponame, _ in vendored_modules))
         sys.exit(0)
     if vendored_modules:
         print("\n\nThe following vendored modules are not up to date:\n")

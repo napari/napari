@@ -20,6 +20,9 @@ jobs:
         id: check_v
         run: python tools/check_vendored_modules.py --ci
 
+      - name: Set variables
+        run: echo "vendored=$(cat "tools/vendored_modules.txt")" >> $GITHUB_OUTPUT
+
       - name: Create PR updating vendored modules
         uses: peter-evans/create-pull-request@v5
         with:
