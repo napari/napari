@@ -1,9 +1,12 @@
 import numpy as np
 import pytest
+from qtpy.QtCore import Qt
 from vispy.util.quaternion import Quaternion
 
+from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.quaternion import quaternion2euler
 from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
+from napari.components._viewer_constants import CursorStyle
 
 # Euler angles to be tested, in degrees
 angles = [[12, 53, 92], [180, -90, 0], [16, 90, 0]]
@@ -42,7 +45,7 @@ def test_get_view_direction_in_scene_coordinates(make_napari_viewer):
     viewer.dims.ndisplay = 3
 
     # get the viewbox
-    view_box = viewer.window._qt_viewer.view
+    view_box = viewer.window._qt_viewer.canvas.view
 
     # get the view direction
     view_dir = get_view_direction_in_scene_coordinates(
@@ -60,7 +63,7 @@ def test_get_view_direction_in_scene_coordinates_2d(make_napari_viewer):
     viewer.dims.ndisplay = 2
 
     # get the viewbox
-    view_box = viewer.window._qt_viewer.view
+    view_box = viewer.window._qt_viewer.canvas.view
 
     # get the view direction
     view_dir = get_view_direction_in_scene_coordinates(
@@ -68,3 +71,22 @@ def test_get_view_direction_in_scene_coordinates_2d(make_napari_viewer):
     )
 
     assert view_dir is None
+
+
+def test_set_cursor(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.cursor.style = CursorStyle.CIRCLE.value
+    viewer.cursor.size = 10
+    assert (
+        viewer.window._qt_viewer.canvas.cursor.shape()
+        == Qt.CursorShape.BitmapCursor
+    )
+
+    viewer.cursor.size = 5
+    assert (
+        viewer.window._qt_viewer.canvas.cursor.shape()
+        == QtCursorVisual['cross'].value
+    )
+
+    with pytest.raises(Exception):
+        viewer.cursor.style = "invalid"

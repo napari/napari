@@ -134,12 +134,37 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     Attributes
     ----------
-    window : napari.window.Window
-        Parent window.
-    layers : LayerList
-        List of contained layers.
-    dims : Dimensions
+    camera: napari.components.camera.Camera
+        The camera object modeling the position and view.
+    cursor: napari.components.cursor.Cursor
+        The cursor object containing the position and properties of the cursor.
+    dims : napari.components.dims.Dimensions
         Contains axes, indices, dimensions and sliders.
+    grid: napari.components.grid.Gridcanvas
+        Gridcanvas allowing for the current implementation of a gridview of the canvas.
+    help: str
+        A help message of the viewer model
+    layers : napari.components.layerlist.LayerList
+        List of contained layers.
+    mouse_over_canvas: bool
+        Indicating whether the mouse cursor is on the viewer canvas.
+    theme: str
+        Name of the Napari theme of the viewer
+    title: str
+        The title of the viewer model
+    tooltip: napari.components.tooltip.Tooltip
+        A tooltip showing extra information on the cursor
+    window : napari._qt.qt_main_window.Window
+        Parent window.
+    _canvas_size: Tuple[int, int]
+        The canvas size following the Numpy convention of height x width
+    _ctx: Mapping
+        Viewer object context mapping.
+    _layer_slicer: napari.components._layer_slicer._Layer_Slicer
+        A layer slicer object controlling the creation of a slice
+    _overlays: napari.utils.events.containers._evented_dict.EventedDict[str, Overlay]
+        An EventedDict with as keys the string names of different napari overlays and as values the napari.Overlay
+        objects.
     """
 
     # Using allow_mutation=False means these attributes aren't settable and don't
@@ -161,7 +186,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=EventedDict
     )
     # 2-tuple indicating height and width
-    _canvas_size: Tuple[int, int] = (600, 800)
+    _canvas_size: Tuple[int, int] = (800, 600)
     _ctx: Mapping
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
