@@ -295,6 +295,7 @@ def add_path_polygon_lasso_creating(layer, event):
             position_diff = np.linalg.norm(event.pos - _last_cursor_position)
             if position_diff < 10:
                 return
+        # Use screen position instead of world / data position to account for zoom
         _last_cursor_position = np.array(event.pos)
         add_path_polygon(layer, event)
 
