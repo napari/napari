@@ -93,6 +93,7 @@ class Dims(EventedModel):
     ndisplay: Literal[2, 3] = 2
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
+
     range: Tuple[RangeTuple, ...] = ()
     margin_left: Tuple[float, ...] = ()
     margin_right: Tuple[float, ...] = ()
@@ -101,6 +102,7 @@ class Dims(EventedModel):
     last_used: int = 0
 
     # private vars
+    _play_ready: bool = True  # False if currently awaiting a draw event
     _scroll_progress: int = 0
 
     # validators
