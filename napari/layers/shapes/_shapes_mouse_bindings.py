@@ -187,6 +187,51 @@ def finish_drawing_shape(layer, event):
     layer._finish_drawing()
 
 
+def add_path_polygon_tablet(layer, event):
+    """Creating, drawing and finishing the polygon shape while in tablet mode. Reason for separating from
+    add_path_polygon is that a yield is required which turns the whole function into a generator even when the yield
+    is not reached. This breaks the mouse draw polygon functionality."""
+    # on press
+    coordinates = layer.world_to_data(event.position)
+
+    if layer._is_creating is False:
+        # Reset last cursor position in case shapes were drawn in different dimension beforehand.
+        global _last_cursor_position
+        _last_cursor_position = None
+
+        # Start drawing a path
+        data = np.array([coordinates, coordinates])
+        layer.add(data, shape_type='path')
+        layer.selected_data = {layer.nshapes - 1}
+        layer._value = (layer.nshapes - 1, 1)
+        layer._moving_value = copy(layer._value)
+        layer._is_creating = True
+        layer._set_highlight()
+        if layer._mode == Mode.ADD_POLYGON_LASSO_TABLET:
+            yield
+            while event.type == 'mouse_move':
+                # TODO add functionality of adding datapoints only if distance threshold is met. Currently not respected.
+                add_path_polygon_lasso_creating(layer, event)
+                index = layer._moving_value[0]
+                new_type = Polygon
+                vertices = layer._data_view.shapes[index].data
+                vertices = np.concatenate((vertices, [coordinates]), axis=0)
+                # Change the selected vertex
+                value = layer.get_value(event.position, world=True)
+                layer._value = (value[0], value[1] + 1)
+                layer._moving_value = copy(layer._value)
+                layer._data_view.edit(index, vertices, new_type=new_type)
+                layer._selected_box = layer.interaction_box(
+                    layer.selected_data
+                )
+                yield
+            index = layer._moving_value[0]
+            vertices = layer._data_view.shapes[index].data
+            vertices = rdp(vertices, epsilon=0.5)
+            layer._data_view.edit(index, vertices, new_type=Polygon)
+            finish_drawing_shape(layer, event)
+
+
 def add_path_polygon(layer, event):
     """Add a path or polygon."""
     # on press
@@ -204,10 +249,7 @@ def add_path_polygon(layer, event):
         layer._moving_value = copy(layer._value)
         layer._is_creating = True
         layer._set_highlight()
-    elif event.type == 'mouse_press' and layer._mode in {
-        Mode.ADD_POLYGON_LASSO,
-        Mode.ADD_POLYGON_LASSO_TABLET,
-    }:
+    elif event.type == 'mouse_press' and layer._mode == Mode.ADD_POLYGON_LASSO:
         index = layer._moving_value[0]
         vertices = layer._data_view.shapes[index].data
         vertices = rdp(vertices, epsilon=0.5)
@@ -219,7 +261,6 @@ def add_path_polygon(layer, event):
         if layer._mode in {
             Mode.ADD_POLYGON,
             Mode.ADD_POLYGON_LASSO,
-            Mode.ADD_POLYGON_LASSO_TABLET,
         }:
             new_type = Polygon
         else:
@@ -251,13 +292,10 @@ def add_path_polygon_lasso_creating(layer, event):
 
         global _last_cursor_position
         if _last_cursor_position is not None:
-            # TODO: fix issue when annotating 2d and later 3d  operands could not be broadcast together with shapes ...
-            position_diff = np.linalg.norm(
-                event.position - _last_cursor_position
-            )
-            if position_diff < 5:
+            position_diff = np.linalg.norm(event.pos - _last_cursor_position)
+            if position_diff < 10:
                 return
-        _last_cursor_position = np.array(event.position)
+        _last_cursor_position = np.array(event.pos)
         add_path_polygon(layer, event)
 
 

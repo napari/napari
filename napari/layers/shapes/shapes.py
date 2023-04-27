@@ -27,6 +27,7 @@ from napari.layers.shapes._shapes_mouse_bindings import (
     add_path_polygon,
     add_path_polygon_creating,
     add_path_polygon_lasso_creating,
+    add_path_polygon_tablet,
     add_rectangle,
     finish_drawing_shape,
     highlight,
@@ -338,7 +339,7 @@ class Shapes(Layer):
         Mode.ADD_PATH: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
         Mode.ADD_POLYGON_LASSO: add_path_polygon,
-        Mode.ADD_POLYGON_LASSO_TABLET: add_path_polygon,
+        Mode.ADD_POLYGON_LASSO_TABLET: add_path_polygon_tablet,
     }
 
     _move_modes = {
@@ -354,7 +355,7 @@ class Shapes(Layer):
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso_creating,
-        Mode.ADD_POLYGON_LASSO_TABLET: add_path_polygon_lasso_creating,
+        Mode.ADD_POLYGON_LASSO_TABLET: no_op,
     }
 
     _double_click_modes = {
@@ -370,7 +371,7 @@ class Shapes(Layer):
         Mode.ADD_PATH: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
         Mode.ADD_POLYGON_LASSO: finish_drawing_shape,
-        Mode.ADD_POLYGON_LASSO_TABLET: finish_drawing_shape,
+        Mode.ADD_POLYGON_LASSO_TABLET: no_op,
     }
 
     _cursor_modes = {
