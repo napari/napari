@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Tuple
+from typing import Tuple
 
 import numpy as np
 from vispy.scene.widgets.viewbox import ViewBox
@@ -102,9 +102,9 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
     )
 
 
-def create_vispy_overlay(overlay: Overlay, **kwargs) -> List[VispyBaseOverlay]:
+def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
     """
-    Create vispy visuals for each overlay contained in an Overlays model based on their type,
+    Create vispy visual for Overlay  based on its type.
 
     Parameters
     ----------

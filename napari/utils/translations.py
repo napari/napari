@@ -686,7 +686,7 @@ def _load_language(
                     "configuration file could not be read.\n\n"
                     "The default language will be used.\n\n"
                     f"Error:\n{err}"
-                ),
+                )
                 data = {}
 
         locale = data.get("application", {}).get("language", locale)

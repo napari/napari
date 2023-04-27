@@ -54,26 +54,27 @@ class GridCanvas(EventedModel):
         shape : 2-tuple of int
             Number of rows and columns in the grid.
         """
-        if self.enabled:
-            if nlayers == 0:
-                return (1, 1)
-            n_row, n_column = self.shape
-            n_grid_squares = np.ceil(nlayers / abs(self.stride)).astype(int)
-
-            if n_row == -1 and n_column == -1:
-                n_column = np.ceil(np.sqrt(n_grid_squares)).astype(int)
-                n_row = np.ceil(n_grid_squares / n_column).astype(int)
-            elif n_row == -1:
-                n_row = np.ceil(n_grid_squares / n_column).astype(int)
-            elif n_column == -1:
-                n_column = np.ceil(n_grid_squares / n_row).astype(int)
-
-            n_row = max(1, n_row)
-            n_column = max(1, n_column)
-
-            return (n_row, n_column)
-        else:
+        if not self.enabled:
             return (1, 1)
+
+        if nlayers == 0:
+            return (1, 1)
+
+        n_row, n_column = self.shape
+        n_grid_squares = np.ceil(nlayers / abs(self.stride)).astype(int)
+
+        if n_row == -1 and n_column == -1:
+            n_column = np.ceil(np.sqrt(n_grid_squares)).astype(int)
+            n_row = np.ceil(n_grid_squares / n_column).astype(int)
+        elif n_row == -1:
+            n_row = np.ceil(n_grid_squares / n_column).astype(int)
+        elif n_column == -1:
+            n_column = np.ceil(n_grid_squares / n_row).astype(int)
+
+        n_row = max(1, n_row)
+        n_column = max(1, n_column)
+
+        return (n_row, n_column)
 
     def position(self, index: int, nlayers: int) -> Tuple[int, int]:
         """Return the position of a given linear index in grid.
@@ -92,19 +93,16 @@ class GridCanvas(EventedModel):
         position : 2-tuple of int
             Row and column position of current index in the grid.
         """
-        if self.enabled:
-            n_row, n_column = self.actual_shape(nlayers)
-
-            # Adjust for forward or reverse ordering
-            if self.stride < 0:
-                adj_i = nlayers - index - 1
-            else:
-                adj_i = index
-
-            adj_i = adj_i // abs(self.stride)
-            adj_i = adj_i % (n_row * n_column)
-            i_row = adj_i // n_column
-            i_column = adj_i % n_column
-            return (i_row, i_column)
-        else:
+        if not self.enabled:
             return (0, 0)
+
+        n_row, n_column = self.actual_shape(nlayers)
+
+        # Adjust for forward or reverse ordering
+        adj_i = nlayers - index - 1 if self.stride < 0 else index
+
+        adj_i = adj_i // abs(self.stride)
+        adj_i = adj_i % (n_row * n_column)
+        i_row = adj_i // n_column
+        i_column = adj_i % n_column
+        return (i_row, i_column)

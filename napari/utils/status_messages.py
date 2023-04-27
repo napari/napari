@@ -37,10 +37,8 @@ def status_format(value):
         return ''
     if isinstance(value, float) or np.issubdtype(type(value), np.floating):
         return format_float(value)
-    elif isinstance(value, int) or np.issubdtype(type(value), np.integer):
-        return str(value)
-    else:
-        return str(value)
+
+    return str(value)
 
 
 def generate_layer_coords_status(position, value):

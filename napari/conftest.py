@@ -28,6 +28,7 @@ Notes for using the plugin-related fixtures here:
        ...
    ```
 """
+
 from __future__ import annotations
 
 import os
@@ -40,11 +41,8 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 from weakref import WeakKeyDictionary
 
-try:
+with suppress(ModuleNotFoundError):
     __import__('dotenv').load_dotenv()
-except ModuleNotFoundError:
-    pass
-
 
 import dask.threaded
 import numpy as np
@@ -136,13 +134,13 @@ def layer(request):
     if request.param == 'image':
         data = np.random.rand(20, 20)
         return Image(data)
-    elif request.param == 'labels':
+    if request.param == 'labels':
         data = np.random.randint(10, size=(20, 20))
         return Labels(data)
-    elif request.param == 'points':
+    if request.param == 'points':
         data = np.random.rand(20, 2)
         return Points(data)
-    elif request.param == 'shapes':
+    if request.param == 'shapes':
         data = [
             np.random.rand(2, 2),
             np.random.rand(2, 2),
@@ -152,14 +150,14 @@ def layer(request):
         ]
         shape_type = ['ellipse', 'line', 'path', 'polygon', 'rectangle']
         return Shapes(data, shape_type=shape_type)
-    elif request.param == 'shapes-rectangles':
+    if request.param == 'shapes-rectangles':
         data = np.random.rand(7, 4, 2)
         return Shapes(data)
-    elif request.param == 'vectors':
+    if request.param == 'vectors':
         data = np.random.rand(20, 2, 2)
         return Vectors(data)
-    else:
-        return None
+
+    return None
 
 
 @pytest.fixture()
@@ -209,11 +207,11 @@ def _is_async_mode() -> bool:
     """
     if not async_loading:
         return False  # Not enabled at all.
-    else:
-        # Late import so we don't import experimental code unless using it.
-        from napari.components.experimental.chunk import chunk_loader
 
-        return not chunk_loader.force_synchronous
+    # Late import so we don't import experimental code unless using it.
+    from napari.components.experimental.chunk import chunk_loader
+
+    return not chunk_loader.force_synchronous
 
 
 @pytest.fixture(autouse=True)
@@ -320,8 +318,8 @@ def napari_svg_name():
 
     if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
         return 'svg'
-    else:
-        return 'napari-svg'
+
+    return 'napari-svg'
 
 
 @pytest.fixture(autouse=True, scope='session')

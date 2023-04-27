@@ -130,6 +130,10 @@ def _active_is_image_3d(s: LayerSel) -> bool:
     )
 
 
+def _empty_shapes_layer_selected(s: LayerSel) -> bool:
+    return any(x._type_string == "shapes" and not len(x.data) for x in s)
+
+
 class LayerListContextKeys(ContextNamespace['LayerSel']):
     """These are the available context keys relating to a LayerList.
 
@@ -238,4 +242,9 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._("True when all selected layers are labels."),
         _only_labels,
+    )
+    selected_empty_shapes_layer = ContextKey(
+        False,
+        trans._("True when there is a shapes layer without data selected."),
+        _empty_shapes_layer_selected,
     )

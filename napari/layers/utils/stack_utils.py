@@ -94,6 +94,7 @@ def split_channels(
         'metadata',
         'plane',
         'experimental_clipping_planes',
+        'custom_interpolation_kernel_2d',
     }
 
     # turn the kwargs dict into a mapping of {key: iterator}
@@ -124,7 +125,7 @@ def split_channels(
         else:
             kwargs[key] = iter(ensure_iterable(val))
 
-    layerdata_list = list()
+    layerdata_list = []
     for i in range(n_channels):
         if multiscale:
             image = [

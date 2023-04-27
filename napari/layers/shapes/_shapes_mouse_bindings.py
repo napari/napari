@@ -220,6 +220,7 @@ def add_path_polygon(layer, event):
             new_type = Polygon
         else:
             new_type = None
+
         vertices = layer._data_view.shapes[index].data
         vertices = np.concatenate((vertices, [coordinates]), axis=0)
         # Change the selected vertex
@@ -346,7 +347,7 @@ def vertex_remove(layer, event):
         # Removing vertex from ellipse not implemented
         return
     vertices = layer._data_view.shapes[shape_under_cursor].data
-    if len(vertices) <= 2:
+    if len(vertices) <= 2 or (shape_type == Polygon and len(vertices) == 3):
         # If only 2 vertices present, remove whole shape
         with layer.events.set_data.blocker():
             if shape_under_cursor in layer.selected_data:
@@ -354,16 +355,8 @@ def vertex_remove(layer, event):
             layer._data_view.remove(shape_under_cursor)
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
-    elif shape_type == Polygon and len(vertices) == 3:
-        # If only 3 vertices of a polygon present remove
-        with layer.events.set_data.blocker():
-            if shape_under_cursor in layer.selected_data:
-                layer.selected_data.remove(shape_under_cursor)
-            layer._data_view.remove(shape_under_cursor)
-            shapes = layer.selected_data
-            layer._selected_box = layer.interaction_box(shapes)
     else:
-        if shape_type == Rectangle:
+        if shape_type == Rectangle:  # noqa SIM108
             # Deleting vertex from a rectangle creates a polygon
             new_type = Polygon
         else:
@@ -546,28 +539,29 @@ def _move(layer, coordinates):
                 )
             layer._rotate_box(angle, center=layer._fixed_vertex)
             layer.refresh()
-    elif layer._mode in [
-        Mode.DIRECT,
-        Mode.ADD_PATH,
-        Mode.ADD_POLYGON,
-        Mode.ADD_POLYGON_LASSO,
-    ]:
-        if vertex is not None:
-            layer._moving_coordinates = coordinates
-            layer._is_moving = True
-            index = layer._moving_value[0]
-            shape_type = type(layer._data_view.shapes[index])
-            if shape_type == Ellipse:
-                # DIRECT vertex moving of ellipse not implemented
-                pass
-            else:
-                if shape_type == Rectangle:
-                    new_type = Polygon
-                else:
-                    new_type = None
-                vertices = layer._data_view.shapes[index].data
-                vertices[vertex] = coordinates
-                layer._data_view.edit(index, vertices, new_type=new_type)
-                shapes = layer.selected_data
-                layer._selected_box = layer.interaction_box(shapes)
-                layer.refresh()
+
+    elif (
+        layer._mode
+        in [
+            Mode.DIRECT,
+            Mode.ADD_PATH,
+            Mode.ADD_POLYGON,
+            Mode.ADD_POLYGON_LASSO,
+        ]
+        and vertex is not None
+    ):
+        layer._moving_coordinates = coordinates
+        layer._is_moving = True
+        index = layer._moving_value[0]
+        shape_type = type(layer._data_view.shapes[index])
+        if shape_type == Ellipse:
+            # DIRECT vertex moving of ellipse not implemented
+            pass
+        else:
+            new_type = Polygon if shape_type == Rectangle else None
+            vertices = layer._data_view.shapes[index].data
+            vertices[vertex] = coordinates
+            layer._data_view.edit(index, vertices, new_type=new_type)
+            shapes = layer.selected_data
+            layer._selected_box = layer.interaction_box(shapes)
+            layer.refresh()

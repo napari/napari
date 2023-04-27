@@ -2,7 +2,7 @@ import json
 from enum import EnumMeta
 from typing import TYPE_CHECKING, Tuple, cast
 
-from pydantic.main import BaseModel
+from pydantic.main import BaseModel, ModelMetaclass
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (
     QDialog,
@@ -29,6 +29,7 @@ class PreferencesDialog(QDialog):
         "highlight_thickness": {"ui:widget": "highlight"},
         "shortcuts": {"ui:widget": "shortcuts"},
         "extension2reader": {"ui:widget": "extension2reader"},
+        "dask": {"ui:widget": "horizontal_object"},
     }
 
     resized = Signal(QSize)
@@ -164,8 +165,12 @@ class PreferencesDialog(QDialog):
                 "type": "object",
                 "properties": {
                     "shortcuts": {
-                        "title": "shortcuts",
-                        "description": "Set keyboard shortcuts for actions.",
+                        "title": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.title,
+                        "description": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.description,
                         "type": "object",
                     }
                 },
@@ -173,12 +178,23 @@ class PreferencesDialog(QDialog):
         else:
             schema = json.loads(ftype.schema_json())
 
+        if field.field_info.title:
+            schema["title"] = field.field_info.title
+        if field.field_info.description:
+            schema["description"] = field.field_info.description
+
         # find enums:
         for name, subfield in ftype.__fields__.items():
             if isinstance(subfield.type_, EnumMeta):
                 enums = [s.value for s in subfield.type_]  # type: ignore
                 schema["properties"][name]["enum"] = enums
                 schema["properties"][name]["type"] = "string"
+            if isinstance(subfield.type_, ModelMetaclass):
+                local_schema = json.loads(subfield.type_.schema_json())
+                schema["properties"][name]["type"] = "object"
+                schema["properties"][name]["properties"] = local_schema[
+                    "properties"
+                ]
 
         # Need to remove certain properties that will not be displayed on the GUI
         setting = getattr(self._settings, field.name)

@@ -393,7 +393,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
     # Check clicked shape selected
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
-    np.testing.assert_allclose(layer.data[0], orig_data + [10, 5])
+    np.testing.assert_allclose(layer.data[0], orig_data + np.array([10, 5]))
 
 
 def test_rotate_shape(create_known_shapes_layer, Event):
@@ -429,7 +429,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
     mouse_move_callbacks(layer, event)
 
     # drag in the handle to bottom midpoint vertex to rotate 180 degrees
-    position = tuple(tuple(layer._selected_box[3]))
+    position = tuple(layer._selected_box[3])
     # Simulate move, click, and release
     event = ReadOnlyWrapper(
         Event(
@@ -772,7 +772,7 @@ def test_all_modes_covered(attr):
     As we do not need to test whether a key is in a dict or not.
     """
     mode_dict = getattr(Shapes, attr)
-    assert {k.value for k in mode_dict.keys()} == set(Mode.keys())
+    assert {k.value for k in mode_dict} == set(Mode.keys())
 
 
 @pytest.mark.parametrize(

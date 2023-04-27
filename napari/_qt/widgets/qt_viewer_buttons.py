@@ -18,7 +18,6 @@ from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.utils.action_manager import action_manager
-from napari.utils.interactions import Shortcut
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
@@ -52,7 +51,11 @@ class QtLayerButtons(QFrame):
         super().__init__()
 
         self.viewer = viewer
-        self.deleteButton = QtDeleteButton(self.viewer)
+
+        self.deleteButton = QtViewerPushButton(
+            'delete_button', action='napari:delete_selected_layers'
+        )
+
         self.newPointsButton = QtViewerPushButton(
             'new_points',
             trans._('New points layer'),
@@ -335,80 +338,6 @@ class QtViewerButtons(QFrame):
         """
 
         self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
-
-
-class QtDeleteButton(QPushButton):
-    """Delete button to remove selected layers.
-
-    Parameters
-    ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
-
-    Attributes
-    ----------
-    hover : bool
-        Hover is true while mouse cursor is on the button widget.
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
-    """
-
-    def __init__(self, viewer) -> None:
-        super().__init__()
-
-        self.viewer = viewer
-        self.setToolTip(
-            trans._(
-                "Delete selected layers ({shortcut})",
-                shortcut=Shortcut("Control-Backspace"),
-            )
-        )
-        self.setAcceptDrops(True)
-        self.clicked.connect(lambda: self.viewer.layers.remove_selected())
-
-    def dragEnterEvent(self, event):
-        """The cursor enters the widget during a drag and drop operation.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        event.accept()
-        self.hover = True
-        self.update()
-
-    def dragLeaveEvent(self, event):
-        """The cursor leaves the widget during a drag and drop operation.
-
-        Using event.ignore() here allows the event to pass through the
-        parent widget to its child widget, otherwise the parent widget
-        would catch the event and not pass it on to the child widget.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        event.ignore()
-        self.hover = False
-        self.update()
-
-    def dropEvent(self, event):
-        """The drag and drop mouse event is completed.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QDropEvent
-            Event from the Qt context.
-        """
-        event.accept()
-        layer_name = event.mimeData().text()
-        layer = self.viewer.layers[layer_name]
-        if not layer.selected:
-            self.viewer.layers.remove(layer)
-        else:
-            self.viewer.layers.remove_selected()
 
 
 def _omit_viewer_args(constructor):
