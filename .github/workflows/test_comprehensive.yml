@@ -92,8 +92,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions
-          python tools/minreq.py  # no-op if MIN_REQ is not set
+          pip install setuptools tox tox-gh-actions tox-min-req
         env:
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
