@@ -160,9 +160,7 @@ class _QtMainWindow(QMainWindow):
         # we need to manually connect them again.
         handle = self.windowHandle()
         if handle is not None:
-            handle.screenChanged.connect(
-                self._qt_viewer.canvas._backend.screen_changed
-            )
+            handle.screenChanged.connect(self._qt_viewer.canvas.screen_changed)
 
         # this is the line that initializes any Qt-based app-model Actions that
         # were defined somewhere in the `_qt` module and imported in init_qactions
@@ -1334,7 +1332,7 @@ class Window:
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         size : tuple (int, int)
-            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
         scale : float
             Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
@@ -1366,12 +1364,12 @@ class Window:
                     int(dim / self._qt_window.devicePixelRatio())
                     for dim in size
                 )
-                canvas.size = size[::-1]  # invert x ad y for vispy
+                canvas.size = size
             if scale is not None:
                 # multiply canvas dimensions by the scale factor to get new size
                 canvas.size = tuple(int(dim * scale) for dim in canvas.size)
             try:
-                img = self._qt_viewer.canvas.native.grabFramebuffer()
+                img = canvas.screenshot()
                 if flash:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
