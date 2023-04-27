@@ -211,6 +211,12 @@ class QtShapesControls(QtLayerControls):
             Mode.ADD_POLYGON_LASSO,
             "activate_add_polygon_lasso_mode",
         )
+        self.polygon_lasso_tablet_button = _radio_button(
+            layer,
+            'polygon_lasso_tablet',
+            Mode.ADD_POLYGON_LASSO_TABLET,
+            "activate_add_polygon_lasso_tablet_mode",
+        )
         self.vertex_insert_button = _radio_button(
             layer,
             'vertex_insert',
@@ -264,6 +270,7 @@ class QtShapesControls(QtLayerControls):
             self.path_button,
             self.polygon_button,
             self.polygon_lasso_button,
+            self.polygon_lasso_tablet_button,
             self.vertex_remove_button,
             self.vertex_insert_button,
             self.delete_button,
@@ -281,23 +288,25 @@ class QtShapesControls(QtLayerControls):
         self.button_group.addButton(self.path_button)
         self.button_group.addButton(self.polygon_button)
         self.button_group.addButton(self.polygon_lasso_button)
+        self.button_group.addButton(self.polygon_lasso_tablet_button)
         self.button_group.addButton(self.vertex_insert_button)
         self.button_group.addButton(self.vertex_remove_button)
         self._on_editable_or_visible_change()
 
         button_grid = QGridLayout()
-        button_grid.addWidget(self.vertex_remove_button, 0, 2)
-        button_grid.addWidget(self.vertex_insert_button, 0, 3)
-        button_grid.addWidget(self.delete_button, 0, 4)
-        button_grid.addWidget(self.direct_button, 0, 5)
-        button_grid.addWidget(self.select_button, 0, 6)
-        button_grid.addWidget(self.panzoom_button, 0, 7)
-        button_grid.addWidget(self.move_back_button, 1, 0)
-        button_grid.addWidget(self.move_front_button, 1, 1)
-        button_grid.addWidget(self.ellipse_button, 1, 2)
-        button_grid.addWidget(self.rectangle_button, 1, 3)
-        button_grid.addWidget(self.polygon_button, 1, 4)
-        button_grid.addWidget(self.polygon_lasso_button, 1, 5)
+        button_grid.addWidget(self.vertex_remove_button, 0, 1)
+        button_grid.addWidget(self.vertex_insert_button, 0, 2)
+        button_grid.addWidget(self.delete_button, 0, 3)
+        button_grid.addWidget(self.direct_button, 0, 4)
+        button_grid.addWidget(self.select_button, 0, 5)
+        button_grid.addWidget(self.panzoom_button, 0, 6)
+        button_grid.addWidget(self.move_back_button, 0, 7)
+        button_grid.addWidget(self.move_front_button, 1, 0)
+        button_grid.addWidget(self.ellipse_button, 1, 1)
+        button_grid.addWidget(self.rectangle_button, 1, 2)
+        button_grid.addWidget(self.polygon_button, 1, 3)
+        button_grid.addWidget(self.polygon_lasso_button, 1, 4)
+        button_grid.addWidget(self.polygon_lasso_tablet_button, 1, 5)
         button_grid.addWidget(self.line_button, 1, 6)
         button_grid.addWidget(self.path_button, 1, 7)
         button_grid.setContentsMargins(5, 0, 0, 5)
@@ -366,6 +375,7 @@ class QtShapesControls(QtLayerControls):
             Mode.ADD_PATH: self.path_button,
             Mode.ADD_POLYGON: self.polygon_button,
             Mode.ADD_POLYGON_LASSO: self.polygon_lasso_button,
+            Mode.ADD_POLYGON_LASSO_TABLET: self.polygon_lasso_tablet_button,
             Mode.VERTEX_INSERT: self.vertex_insert_button,
             Mode.VERTEX_REMOVE: self.vertex_remove_button,
         }

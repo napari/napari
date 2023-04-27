@@ -129,6 +129,10 @@ QtModeRadioButton[mode="polygon_lasso"]::indicator {
   image: url("theme_{{ id }}:/polygon_lasso.svg");
 }
 
+QtModeRadioButton[mode="polygon_lasso_tablet"]::indicator {
+  image: url("theme_{{ id }}:/polygon_lasso_tablet.svg");
+}
+
 QtModeRadioButton[mode="vertex_insert"]::indicator {
   image: url("theme_{{ id }}:/vertex_insert.svg");
 }

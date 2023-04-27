@@ -204,7 +204,10 @@ def add_path_polygon(layer, event):
         layer._moving_value = copy(layer._value)
         layer._is_creating = True
         layer._set_highlight()
-    elif event.type == 'mouse_press' and layer._mode == Mode.ADD_POLYGON_LASSO:
+    elif event.type == 'mouse_press' and layer._mode in {
+        Mode.ADD_POLYGON_LASSO,
+        Mode.ADD_POLYGON_LASSO_TABLET,
+    }:
         index = layer._moving_value[0]
         vertices = layer._data_view.shapes[index].data
         vertices = rdp(vertices, epsilon=0.5)
@@ -213,10 +216,11 @@ def add_path_polygon(layer, event):
     else:
         # Add to an existing path or polygon
         index = layer._moving_value[0]
-        if (
-            layer._mode == Mode.ADD_POLYGON
-            or layer._mode == Mode.ADD_POLYGON_LASSO
-        ):
+        if layer._mode in {
+            Mode.ADD_POLYGON,
+            Mode.ADD_POLYGON_LASSO,
+            Mode.ADD_POLYGON_LASSO_TABLET,
+        }:
             new_type = Polygon
         else:
             new_type = None
@@ -547,6 +551,7 @@ def _move(layer, coordinates):
             Mode.ADD_PATH,
             Mode.ADD_POLYGON,
             Mode.ADD_POLYGON_LASSO,
+            Mode.ADD_POLYGON_LASSO_TABLET,
         ]
         and vertex is not None
     ):
