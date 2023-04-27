@@ -90,12 +90,14 @@ class _LayerSlicer:
         >>> with layer_slice.force_sync():
         >>>     layer_slicer.submit(layers=[layer], dims=Dims())
         """
+        logger.debug('_LayerSlicer.force_sync: start, %s', self._force_sync)
         prev = self._force_sync
         self._force_sync = True
         try:
             yield None
         finally:
             self._force_sync = prev
+        logger.debug('_LayerSlicer.force_sync: end, %s', self._force_sync)
 
     def wait_until_idle(self, timeout: Optional[float] = None) -> None:
         """Wait for all slicing tasks to complete before returning.
@@ -111,6 +113,7 @@ class _LayerSlicer:
         TimeoutError: when the timeout limit has been exceeded and the task is
             not yet complete
         """
+        logger.debug('_LayerSlicer.wait_until_idle')
         futures = self._layers_to_task.values()
         _, not_done_futures = wait(futures, timeout=timeout)
 
@@ -155,8 +158,14 @@ class _LayerSlicer:
             A future with a result that maps from a layer to an async layer
             slice response. Or none if no async slicing tasks were submitted.
         """
+        logger.debug(
+            '_LayerSlicer.submit: layers=%s, dims=%s, force=%s',
+            layers,
+            dims,
+            force,
+        )
         if existing_task := self._find_existing_task(layers):
-            logger.debug('Cancelling task for %s', layers)
+            logger.debug('Cancelling task %s', id(existing_task))
             existing_task.cancel()
 
         # Not all layer types will initially be asynchronously sliceable.
@@ -176,6 +185,7 @@ class _LayerSlicer:
         # First maybe submit an async slicing task to start it ASAP.
         task = None
         if len(requests) > 0:
+            logger.debug('Submitted task %s', id(task))
             task = self._executor.submit(self._slice_layers, requests)
             # Store task before adding done callback to ensure there is always
             # a task to remove in the done callback.
@@ -197,6 +207,7 @@ class _LayerSlicer:
 
         This should only be called from the main thread.
         """
+        logger.debug('_LayerSlicer.shutdown')
         # Replace with cancel_futures=True in shutdown when we drop support
         # for Python 3.8
         with self._lock_layers_to_task:
@@ -219,6 +230,7 @@ class _LayerSlicer:
         -------
         dict[Layer, SliceResponse]: which contains the results of the slice
         """
+        logger.debug('_LayerSlicer._slice_layers: %s', requests)
         result = {layer: request() for layer, request in requests.items()}
         self.events.ready(value=result)
         return result
@@ -228,14 +240,12 @@ class _LayerSlicer:
         This is the "done_callback" which is added to each task.
         Can be called from the main or slicing thread.
         """
+        logger.debug('_LayerSlicer._on_slice_done: %s', id(task))
         if self._try_to_remove_task(task):
-            logger.debug('Task complete')
-        else:
-            logger.debug('Task not found')
-            return
+            logger.debug('Task not found: %s', id(task))
 
         if task.cancelled():
-            logger.debug('Cancelled task')
+            logger.debug('Cancelled task: %s', id(task))
             return
 
     @property

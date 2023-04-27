@@ -214,52 +214,23 @@ def test_async_slice_image_loaded(make_napari_viewer, qtbot, rng, caplog):
     assert 'Task complete' in caplog.text
 
 
-def test_async_slice_points_loaded(make_napari_viewer, qtbot, rng, caplog):
-    caplog.set_level(logging.DEBUG)
-
+def test_async_slice_points(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
-    shape = (10, 4)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    # lockable_data = LockableData(data)
-    # layer = Points(lockable_data)
-
+    data = np.array((
+        (0, 2, 3),
+        (1, 3, 4),
+        (2, 4, 5),
+        (3, 5, 6),
+        (4, 6, 7),
+    ))
     layer = Points(data=data)
-
-    # Note: We are directly accessing and locking the _data of layer. This
-    #       forces a block to ensure that the async slicing call returns
-    #       before slicing is complete.
-    # lockable_internal_data = LockableData(layer._data)
-    # layer._data = lockable_internal_data
-
+    assert layer.loaded
     vispy_layer = setup_viewer_for_async_slice(viewer, layer)
-
-    caplog.clear()
+    assert viewer.dims.current_step[0] != 3
+    viewer.dims.current_step = (3, 5, 5)
+    
+    wait_until_vispy_points_data_equal(qtbot, vispy_layer, np.array(((6, 5, 0),)))
     assert layer.loaded
-    # if viewer.dims.ndisplay == 2:
-    #     viewer.dims.ndisplay = 3
-    # viewer.dims.ndisplay = 2
-    # with lockable_internal_data.lock:
-
-    #     viewer.dims.current_step = (10, 1, 10, 10)
-    #     assert not layer.loaded
-    #     # assert not 'Task complete' in caplog.text
-
-    # wait_until_vispy_points_data_equal(
-    #     qtbot, vispy_layer, np.flip(data[:, 1:][-3]).reshape(1, 3)
-    # )
-    viewer.dims.current_step = (10, 1, 10, 10)
-    import time
-
-    time.sleep(2)
-    result = vispy_layer.node._subvisuals[0]._data['a_position']
-    print(result)
-    node = vispy_layer.node
-    print(tuple(vertex[0] for vertex in node._subvisuals[0]._data))
-    wait_until_vispy_points_data_equal(qtbot, vispy_layer, data)
-    assert layer.loaded
-    assert 'submitting async slice request'
-    assert 'Task complete' in caplog.text
 
 
 def setup_viewer_for_async_slice(
