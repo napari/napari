@@ -72,6 +72,7 @@ def __getattr__(name):
         # consistently. Instead, we let this attribute effectively
         # refer to the old async which is always off in napari now.
         return False
+    return None
 
 
 # Shared Memory Server

@@ -216,20 +216,24 @@ def test_async_slice_image_loaded(make_napari_viewer, qtbot, rng, caplog):
 
 def test_async_slice_points(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
-    data = np.array((
-        (0, 2, 3),
-        (1, 3, 4),
-        (2, 4, 5),
-        (3, 5, 6),
-        (4, 6, 7),
-    ))
+    data = np.array(
+        (
+            (0, 2, 3),
+            (1, 3, 4),
+            (2, 4, 5),
+            (3, 5, 6),
+            (4, 6, 7),
+        )
+    )
     layer = Points(data=data)
     assert layer.loaded
     vispy_layer = setup_viewer_for_async_slice(viewer, layer)
     assert viewer.dims.current_step[0] != 3
     viewer.dims.current_step = (3, 5, 5)
-    
-    wait_until_vispy_points_data_equal(qtbot, vispy_layer, np.array(((6, 5, 0),)))
+
+    wait_until_vispy_points_data_equal(
+        qtbot, vispy_layer, np.array(((6, 5, 0),))
+    )
     assert layer.loaded
 
 

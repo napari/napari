@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import logging
 import os.path
 import warnings
 from abc import ABC, abstractmethod
@@ -8,7 +9,6 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import cached_property
 from typing import List, Optional, Tuple, Union
-import logging
 
 import magicgui as mgui
 import numpy as np
