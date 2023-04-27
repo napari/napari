@@ -76,7 +76,7 @@ def guess_multiscale(data) -> Tuple[bool, LayerDataProtocol]:
             trans._(
                 'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single size: {size}',
                 deferred=True,
-                size=sized[0],
+                size=sizes[0],
             )
         )
     if not consistent:
