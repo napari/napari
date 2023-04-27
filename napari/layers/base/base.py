@@ -452,18 +452,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 ),
             ),
         ]:
-
-            if not isinstance(mode_dict[self._mode], list):
-                if mode_dict[self._mode] in callback_list:
-                    callback_list.remove(mode_dict[self._mode])
-            else:
-                # While not causing errors, a list comprehension here leads to incorrect functionality
-                for i in mode_dict[self._mode]:
-                    callback_list.remove(i)
-            if isinstance(mode_dict[mode], list):
-                callback_list.extend(mode_dict[mode])
-            else:
-                callback_list.append(mode_dict[mode])
+            if mode_dict[self._mode] in callback_list:
+                callback_list.remove(mode_dict[self._mode])
+            callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
         self.interactive = mode == self._modeclass.PAN_ZOOM
