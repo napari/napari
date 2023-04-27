@@ -210,27 +210,6 @@ def add_path_polygon_tablet(layer, event):
             yield
             while event.type == 'mouse_move':
                 add_path_polygon_lasso_creating(layer, event)
-                index = layer._moving_value[0]
-                new_type = Polygon
-                vertices = layer._data_view.shapes[index].data
-                if _last_cursor_position is not None:
-                    position_diff = np.linalg.norm(
-                        event.pos - _last_cursor_position
-                    )
-                    if position_diff > 10:
-                        vertices = np.concatenate(
-                            (vertices, [coordinates]), axis=0
-                        )
-                        # Change the selected vertex
-                        value = layer.get_value(event.position, world=True)
-                        layer._value = (value[0], value[1] + 1)
-                        layer._moving_value = copy(layer._value)
-                        layer._data_view.edit(
-                            index, vertices, new_type=new_type
-                        )
-                        layer._selected_box = layer.interaction_box(
-                            layer.selected_data
-                        )
                 yield
             index = layer._moving_value[0]
             vertices = layer._data_view.shapes[index].data
@@ -265,13 +244,7 @@ def add_path_polygon(layer, event):
     else:
         # Add to an existing path or polygon
         index = layer._moving_value[0]
-        if layer._mode in {
-            Mode.ADD_POLYGON,
-            Mode.ADD_POLYGON_LASSO,
-        }:
-            new_type = Polygon
-        else:
-            new_type = None
+        new_type = Polygon if layer._mode in {Mode.ADD_POLYGON} else None
 
         vertices = layer._data_view.shapes[index].data
         vertices = np.concatenate((vertices, [coordinates]), axis=0)
