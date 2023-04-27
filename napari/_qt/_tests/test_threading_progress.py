@@ -1,4 +1,5 @@
 import pytest
+from qtpy.QtCore import QThreadPool
 
 from napari._qt import qthreading
 from napari._qt.widgets.qt_progress_bar import QtLabeledProgressBar
@@ -68,6 +69,9 @@ def test_worker_may_exceed_total(qtbot):
     with qtbot.waitSignals([worker.yielded, worker.finished]):
         worker.start()
     assert test_val[0] == 2
+    qtbot.waitUntil(
+        lambda: QThreadPool.globalInstance().activeThreadCount() == 0
+    )
 
 
 def test_generator_worker_with_description():
