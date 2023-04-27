@@ -10,6 +10,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Iterable,
     List,
     Mapping,
     Optional,
@@ -408,6 +409,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self._layer_slicer.submit(
             layers=[event.layer], dims=self.dims, force=True
         )
+
+    def is_slicing_layers(
+        self, layers: Optional[Iterable[Layer]] = None
+    ) -> bool:
+        return self._layer_slicer.busy(layers)
 
     def _update_layers(self, *, layers=None):
         """Updates the contained layers.

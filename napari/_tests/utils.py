@@ -2,11 +2,13 @@ import os
 import sys
 from collections import abc
 from contextlib import suppress
-from typing import Any, Dict
+from threading import RLock
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.typing import DTypeLike
 
 from napari import Viewer
 from napari.layers import (
@@ -18,6 +20,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.utils.color import ColorArray
 
 skip_on_win_ci = pytest.mark.skipif(
@@ -116,6 +119,35 @@ good_layer_data = [
         'surface',
     ),
 ]
+
+
+class LockableData:
+    """A wrapper for napari layer data that blocks read-access with a lock.
+
+    This is useful when testing async slicing with real napari layers because
+    it allows us to control when slicing tasks complete.
+    """
+
+    def __init__(self, data: LayerDataProtocol) -> None:
+        self.data = data
+        self.lock = RLock()
+
+    @property
+    def dtype(self) -> DTypeLike:
+        return self.data.dtype
+
+    @property
+    def shape(self) -> Tuple[int, ...]:
+        return self.data.shape
+
+    def __getitem__(
+        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
+    ) -> LayerDataProtocol:
+        with self.lock:
+            return self.data[key]
+
+    def __len__(self):
+        return len(self.data)
 
 
 def add_layer_by_type(viewer, layer_type, data, visible=True):

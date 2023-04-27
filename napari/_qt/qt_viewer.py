@@ -486,6 +486,7 @@ class QtViewer(QSplitter):
             # Update the layer slice state to temporarily support behavior
             # that depends on it.
             layer._update_slice_response(response)
+            layer._loaded = not self.viewer.is_slicing_layers((layer,))
             # The rest of `Layer.refresh` after `set_view_slice`, where `set_data`
             # notifies the corresponding vispy layer of the new slice.
             layer.events.set_data()

@@ -352,6 +352,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         ][displayed_axes]
 
         self._new_empty_slice()
+        self._loaded: bool = True
 
         # Set contrast limits, colormaps and plane parameters
         self._gamma = gamma
@@ -713,7 +714,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         With asynchronous loading the layer might exist but its data
         for the current slice has not been loaded.
         """
-        return self._slice.loaded
+        return self._loaded
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
