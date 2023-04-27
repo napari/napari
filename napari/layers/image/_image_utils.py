@@ -64,28 +64,27 @@ def guess_multiscale(data) -> Tuple[bool, LayerDataProtocol]:
         # pyramid with only one level, unwrap
         return False, data[0]
 
-    shapes = [d.shape for d in data]
-    sizes = np.array([np.prod(shape, dtype='object') for shape in shapes])
+    sizes = [d.size for d in data]
     if len(sizes) <= 1:
         return False, data
 
-    consistent = bool(np.all(sizes[:-1] > sizes[1:]))
-    if np.all(sizes == sizes[0]):
+    consistent = all(s1 > s2 for s1, s2 in zip(sizes[:-1], sizes[1:]))
+    if all(s == sizes[0] for s in sizes):
         # note: the individual array case should be caught by the first
         # code line in this function, hasattr(ndim) and ndim > 1.
         raise ValueError(
             trans._(
-                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single shape: {shape}',
+                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single size: {size}',
                 deferred=True,
-                shape=shapes[0],
+                size=sized[0],
             )
         )
     if not consistent:
         raise ValueError(
             trans._(
-                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, shapes: {shapes}',
+                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, sizes: {sizes}',
                 deferred=True,
-                shapes=shapes,
+                sizes=sizes,
             )
         )
 
