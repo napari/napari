@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import logging
 import os.path
 import warnings
 from abc import ABC, abstractmethod
@@ -50,6 +51,7 @@ from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 from napari.utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
+logger = logging.getLogger("napari.layers.base.base")
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -1053,6 +1055,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             True if slicing should be forced to occur, even when some cache thinks
             it already has a valid slice ready. False otherwise.
         """
+        logger.debug(
+            'Layer._slice_dims: %s, point=%s, ndisplay=%s, order=%s, force=%s',
+            self,
+            point,
+            ndisplay,
+            order,
+            force,
+        )
         slice_input = self._make_slice_input(point, ndisplay, order)
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
@@ -1265,6 +1275,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
+        logger.debug('Layer.refresh: %s', self)
         if self.visible:
             self.set_view_slice()
             self.events.set_data()
