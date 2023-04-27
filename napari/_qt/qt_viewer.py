@@ -483,16 +483,18 @@ class QtViewer(QSplitter):
             return value
 
     def add_to_console_backlog(self, variables):
-        """Save variables for pushing to console when instantiated, creating
-        weakrefs when possible.
+        """Save variables for pushing to console when it is instantiated.
+
+        This function will create weakrefs when possible to avoid holding on to
+        too much memory unnecessarily.
 
         Parameters
         ----------
         variables : dict, str or list/tuple of str
-            The variables to inject into the console's namespace.  If a dict, a
-            simple update is done.  If a str, the string is assumed to have
-            variable names separated by spaces.  A list/tuple of str can also
-            be used to give the variable names.  If just the variable names are
+            The variables to inject into the console's namespace. If a dict, a
+            simple update is done. If a str, the string is assumed to have
+            variable names separated by spaces. A list/tuple of str can also
+            be used to give the variable names. If just the variable names are
             give (list/tuple/str) then the variable values looked up in the
             callers frame.
         """
