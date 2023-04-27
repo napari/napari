@@ -209,7 +209,6 @@ def add_path_polygon_tablet(layer, event):
         if layer._mode == Mode.ADD_POLYGON_LASSO_TABLET:
             yield
             while event.type == 'mouse_move':
-                # TODO add functionality of adding datapoints only if distance threshold is met. Currently not respected.
                 add_path_polygon_lasso_creating(layer, event)
                 index = layer._moving_value[0]
                 new_type = Polygon
