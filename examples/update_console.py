@@ -79,4 +79,3 @@ viewer.update_console(locals())
 
 if __name__ == '__main__':
     napari.run()
-    print(shapes_layer.data)
