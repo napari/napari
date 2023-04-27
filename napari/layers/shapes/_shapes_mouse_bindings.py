@@ -193,7 +193,6 @@ def add_path_polygon_tablet(layer, event):
     is not reached. This breaks the mouse draw polygon functionality."""
     # on press
     coordinates = layer.world_to_data(event.position)
-
     if layer._is_creating is False:
         # Reset last cursor position in case shapes were drawn in different dimension beforehand.
         global _last_cursor_position
@@ -215,15 +214,24 @@ def add_path_polygon_tablet(layer, event):
                 index = layer._moving_value[0]
                 new_type = Polygon
                 vertices = layer._data_view.shapes[index].data
-                vertices = np.concatenate((vertices, [coordinates]), axis=0)
-                # Change the selected vertex
-                value = layer.get_value(event.position, world=True)
-                layer._value = (value[0], value[1] + 1)
-                layer._moving_value = copy(layer._value)
-                layer._data_view.edit(index, vertices, new_type=new_type)
-                layer._selected_box = layer.interaction_box(
-                    layer.selected_data
-                )
+                if _last_cursor_position is not None:
+                    position_diff = np.linalg.norm(
+                        event.pos - _last_cursor_position
+                    )
+                    if position_diff > 10:
+                        vertices = np.concatenate(
+                            (vertices, [coordinates]), axis=0
+                        )
+                        # Change the selected vertex
+                        value = layer.get_value(event.position, world=True)
+                        layer._value = (value[0], value[1] + 1)
+                        layer._moving_value = copy(layer._value)
+                        layer._data_view.edit(
+                            index, vertices, new_type=new_type
+                        )
+                        layer._selected_box = layer.interaction_box(
+                            layer.selected_data
+                        )
                 yield
             index = layer._moving_value[0]
             vertices = layer._data_view.shapes[index].data
@@ -285,7 +293,6 @@ def add_path_polygon_creating(layer, event):
 
 def add_path_polygon_lasso_creating(layer, event):
     """While a path or polygon move next vertex to be added."""
-    # print(f'add_path_polygon_lasso_creating(): layer._is_creating = {layer._is_creating}, event.type = {event.type}, event.is_dragging = {event.is_dragging}')
     if layer._is_creating:
         coordinates = layer.world_to_data(event.position)
         _move(layer, coordinates)
