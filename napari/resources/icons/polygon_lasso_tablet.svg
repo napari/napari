@@ -26,8 +26,8 @@
    inkscape:deskcolor="#505050"
    showgrid="false"
    inkscape:zoom="8.29"
-   inkscape:cx="50"
-   inkscape:cy="49.939686"
+   inkscape:cx="48.6731"
+   inkscape:cy="49.819059"
    inkscape:window-width="1920"
    inkscape:window-height="1009"
    inkscape:window-x="-8"
@@ -123,12 +123,8 @@
 <polygon
    points="78,46.6 40.9,21 43.7,16.9 80.8,42.5 "
    id="polygon3971" />
-<rect
-   style="fill:#000000;fill-opacity:1;stroke-width:1.24186"
-   id="rect13807"
-   width="10.50491"
-   height="52.46545"
-   x="67.208153"
-   y="-36.86245"
-   ry="3.6705911"
-   transform="matrix(0.86044616,0.50954137,-0.52350343,0.85202357,0,0)" /></svg>
+<path
+   id="rect2702"
+   style="stroke-width:1.00164"
+   transform="matrix(0.86044616,0.50954137,-0.52350343,0.85202357,0,0)"
+   d="m 70.878744,-36.86245 h 3.163728 c 2.033508,0 3.670591,1.637084 3.670591,3.670591 V 11.93241 c 0,2.033507 -1.637083,3.670591 -3.670591,3.670591 h -3.163728 c -2.033508,0 -3.670591,-1.637084 -3.670591,-3.670591 v -45.124269 c 0,-2.033507 1.637083,-3.670591 3.670591,-3.670591 z" /></svg>
