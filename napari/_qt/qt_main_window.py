@@ -63,8 +63,10 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
     QtViewerDockWidget,
 )
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
-from napari.plugins import menu_item_template as plugin_menu_item_template
-from napari.plugins import plugin_manager
+from napari.plugins import (
+    menu_item_template as plugin_menu_item_template,
+    plugin_manager,
+)
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
@@ -158,9 +160,7 @@ class _QtMainWindow(QMainWindow):
         # we need to manually connect them again.
         handle = self.windowHandle()
         if handle is not None:
-            handle.screenChanged.connect(
-                self._qt_viewer.canvas._backend.screen_changed
-            )
+            handle.screenChanged.connect(self._qt_viewer.canvas.screen_changed)
 
         # this is the line that initializes any Qt-based app-model Actions that
         # were defined somewhere in the `_qt` module and imported in init_qactions
@@ -403,6 +403,7 @@ class _QtMainWindow(QMainWindow):
             self._qt_viewer.dims.stop()
             return super().close()
         self._is_close_dialog[quit_app] = True
+        return None
         # here we inform that confirmation dialog is not open
 
     def close_window(self):
@@ -844,7 +845,7 @@ class Window:
         """
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
-            return
+            return None
 
         func = plugin_manager._function_widgets[plugin_name][widget_name]
 
@@ -992,7 +993,7 @@ class Window:
                 dock_widget.show()
                 dock_widget.raise_()
             elif dock_widget.area in ('right', 'left'):
-                _wdg = current_dws_in_area + [dock_widget]
+                _wdg = [*current_dws_in_area, dock_widget]
                 # add sizes to push lower widgets up
                 sizes = list(range(1, len(_wdg) * 4, 4))
                 self._qt_window.resizeDocks(
@@ -1135,13 +1136,13 @@ class Window:
                 allowed_areas=allowed_areas,
                 shortcut=shortcut,
             )
-        else:
-            return self.add_dock_widget(
-                widget,
-                name=name or function.__name__.replace('_', ' '),
-                area=area,
-                allowed_areas=allowed_areas,
-            )
+
+        return self.add_dock_widget(
+            widget,
+            name=name or function.__name__.replace('_', ' '),
+            area=area,
+            allowed_areas=allowed_areas,
+        )
 
     def resize(self, width, height):
         """Resize the window.
@@ -1331,7 +1332,7 @@ class Window:
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         size : tuple (int, int)
-            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
         scale : float
             Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
@@ -1363,12 +1364,12 @@ class Window:
                     int(dim / self._qt_window.devicePixelRatio())
                     for dim in size
                 )
-                canvas.size = size[::-1]  # invert x ad y for vispy
+                canvas.size = size
             if scale is not None:
                 # multiply canvas dimensions by the scale factor to get new size
                 canvas.size = tuple(int(dim * scale) for dim in canvas.size)
             try:
-                img = self._qt_viewer.canvas.native.grabFramebuffer()
+                img = canvas.screenshot()
                 if flash:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
@@ -1410,9 +1411,10 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
+
         img = QImg2array(self._screenshot(size, scale, flash, canvas_only))
         if path is not None:
-            imsave(path, img)  # scikit-image imsave method
+            imsave(path, img)
         return img
 
     def clipboard(self, flash=True, canvas_only=False):

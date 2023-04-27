@@ -28,8 +28,8 @@ parser.add_argument(
 args = parser.parse_args()
 
 logging.info(
-    f'''Running run.py with the following arguments.
-{args}'''
+    "Running run.py with the following arguments.\n{args_}",
+    extra={"args_": args},
 )
 
 perfmon_dir = pathlib.Path(__file__).parent.resolve(strict=True)

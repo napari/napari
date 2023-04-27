@@ -2,10 +2,11 @@ import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from psygnal.containers import Selection
 from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
@@ -61,6 +62,8 @@ class Points(Layer):
     features : dict[str, array-like] or DataFrame
         Features table where each row corresponds to a point and each column
         is a feature.
+    feature_defaults : dict[str, Any] or DataFrame
+        The default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -324,6 +327,7 @@ class Points(Layer):
         *,
         ndim=None,
         features=None,
+        feature_defaults=None,
         properties=None,
         text=None,
         symbol='o',
@@ -408,7 +412,9 @@ class Points(Layer):
 
         self.events.add(
             size=Event,
+            current_size=Event,
             edge_width=Event,
+            current_edge_width=Event,
             edge_width_is_relative=Event,
             face_color=Event,
             current_face_color=Event,
@@ -417,6 +423,7 @@ class Points(Layer):
             properties=Event,
             current_properties=Event,
             symbol=Event,
+            current_symbol=Event,
             out_of_slice_display=Event,
             n_dimensional=Event,
             highlight=Event,
@@ -432,6 +439,7 @@ class Points(Layer):
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
+            feature_defaults=feature_defaults,
             properties=properties,
             property_choices=property_choices,
             num_data=len(self.data),
@@ -446,7 +454,7 @@ class Points(Layer):
         self._shown = np.empty(0).astype(bool)
 
         # Indices of selected points
-        self._selected_data = set()
+        self._selected_data: Selection[int] = Selection()
         self._selected_data_stored = set()
         self._selected_data_history = set()
         # Indices of selected points within the currently viewed slice
@@ -471,7 +479,9 @@ class Points(Layer):
         self._status = self.mode
 
         color_properties = (
-            self.properties if self._data.size > 0 else self.property_choices
+            self._feature_table.properties()
+            if self._data.size > 0
+            else self._feature_table.currents()
         )
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(data),
@@ -521,75 +531,70 @@ class Points(Layer):
         self._data = data
 
         # Add/remove property and style values based on the number of new points.
-        with self.events.blocker_all():
-            with self._edge.events.blocker_all():
-                with self._face.events.blocker_all():
-                    self._feature_table.resize(len(data))
-                    self.text.apply(self.features)
-                    if len(data) < cur_npoints:
-                        # If there are now fewer points, remove the size and colors of the
-                        # extra ones
-                        if len(self._edge.colors) > len(data):
-                            self._edge._remove(
-                                np.arange(len(data), len(self._edge.colors))
-                            )
-                        if len(self._face.colors) > len(data):
-                            self._face._remove(
-                                np.arange(len(data), len(self._face.colors))
-                            )
-                        self._shown = self._shown[: len(data)]
-                        self._size = self._size[: len(data)]
-                        self._edge_width = self._edge_width[: len(data)]
-                        self._symbol = self._symbol[: len(data)]
+        with self.events.blocker_all(), self._edge.events.blocker_all(), self._face.events.blocker_all():
+            self._feature_table.resize(len(data))
+            self.text.apply(self.features)
+            if len(data) < cur_npoints:
+                # If there are now fewer points, remove the size and colors of the
+                # extra ones
+                if len(self._edge.colors) > len(data):
+                    self._edge._remove(
+                        np.arange(len(data), len(self._edge.colors))
+                    )
+                if len(self._face.colors) > len(data):
+                    self._face._remove(
+                        np.arange(len(data), len(self._face.colors))
+                    )
+                self._shown = self._shown[: len(data)]
+                self._size = self._size[: len(data)]
+                self._edge_width = self._edge_width[: len(data)]
+                self._symbol = self._symbol[: len(data)]
 
-                    elif len(data) > cur_npoints:
-                        # If there are now more points, add the size and colors of the
-                        # new ones
-                        adding = len(data) - cur_npoints
-                        if len(self._size) > 0:
-                            new_size = copy(self._size[-1])
-                            for i in self._slice_input.displayed:
-                                new_size[i] = self.current_size
-                        else:
-                            # Add the default size, with a value for each dimension
-                            new_size = np.repeat(
-                                self.current_size, self._size.shape[1]
-                            )
-                        size = np.repeat([new_size], adding, axis=0)
+            elif len(data) > cur_npoints:
+                # If there are now more points, add the size and colors of the
+                # new ones
+                adding = len(data) - cur_npoints
+                if len(self._size) > 0:
+                    new_size = copy(self._size[-1])
+                    for i in self._slice_input.displayed:
+                        new_size[i] = self.current_size
+                else:
+                    # Add the default size, with a value for each dimension
+                    new_size = np.repeat(
+                        self.current_size, self._size.shape[1]
+                    )
+                size = np.repeat([new_size], adding, axis=0)
 
-                        if len(self._edge_width) > 0:
-                            new_edge_width = copy(self._edge_width[-1])
-                        else:
-                            new_edge_width = self.current_edge_width
-                        edge_width = np.repeat(
-                            [new_edge_width], adding, axis=0
-                        )
+                if len(self._edge_width) > 0:
+                    new_edge_width = copy(self._edge_width[-1])
+                else:
+                    new_edge_width = self.current_edge_width
+                edge_width = np.repeat([new_edge_width], adding, axis=0)
 
-                        if len(self._symbol) > 0:
-                            new_symbol = copy(self._symbol[-1])
-                        else:
-                            new_symbol = self.current_symbol
-                        symbol = np.repeat([new_symbol], adding, axis=0)
+                if len(self._symbol) > 0:
+                    new_symbol = copy(self._symbol[-1])
+                else:
+                    new_symbol = self.current_symbol
+                symbol = np.repeat([new_symbol], adding, axis=0)
 
-                        # add new colors
-                        self._edge._add(n_colors=adding)
-                        self._face._add(n_colors=adding)
+                # Add new colors, updating the current property value before
+                # to handle any in-place modification of feature_defaults.
+                # Also see: https://github.com/napari/napari/issues/5634
+                current_properties = self._feature_table.currents()
+                self._edge._update_current_properties(current_properties)
+                self._edge._add(n_colors=adding)
+                self._face._update_current_properties(current_properties)
+                self._face._add(n_colors=adding)
 
-                        shown = np.repeat([True], adding, axis=0)
-                        self._shown = np.concatenate(
-                            (self._shown, shown), axis=0
-                        )
+                shown = np.repeat([True], adding, axis=0)
+                self._shown = np.concatenate((self._shown, shown), axis=0)
 
-                        self.size = np.concatenate((self._size, size), axis=0)
-                        self.edge_width = np.concatenate(
-                            (self._edge_width, edge_width), axis=0
-                        )
-                        self.symbol = np.concatenate(
-                            (self._symbol, symbol), axis=0
-                        )
-                        self.selected_data = set(
-                            np.arange(cur_npoints, len(data))
-                        )
+                self.size = np.concatenate((self._size, size), axis=0)
+                self.edge_width = np.concatenate(
+                    (self._edge_width, edge_width), axis=0
+                )
+                self.symbol = np.concatenate((self._symbol, symbol), axis=0)
+                self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -644,6 +649,17 @@ class Points(Layer):
         See `features` for more details on the type of this property.
         """
         return self._feature_table.defaults
+
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        self._feature_table.set_defaults(defaults)
+        current_properties = self.current_properties
+        self._edge._update_current_properties(current_properties)
+        self._face._update_current_properties(current_properties)
+        self.events.current_properties()
+        self.events.feature_defaults()
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
@@ -790,6 +806,7 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             self.symbol[list(self.selected_data)] = symbol
             self.events.symbol()
+        self.events.current_symbol()
 
     @property
     def size(self) -> np.ndarray:
@@ -839,6 +856,7 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
+        self.events.current_size()
 
     @property
     def antialiasing(self) -> float:
@@ -958,6 +976,7 @@ class Points(Layer):
                 self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
             self.refresh()
             self.events.edge_width()
+        self.events.current_edge_width()
 
     @property
     def edge_color(self) -> np.ndarray:
@@ -1108,7 +1127,6 @@ class Points(Layer):
 
     @current_face_color.setter
     def current_face_color(self, face_color: ColorType) -> None:
-
         if self._update_properties and len(self.selected_data) > 0:
             update_indices = list(self.selected_data)
         else:
@@ -1252,6 +1270,7 @@ class Points(Layer):
                 'ndim': self.ndim,
                 'data': self.data,
                 'features': self.features,
+                'feature_defaults': self.feature_defaults,
                 'shading': self.shading,
                 'antialiasing': self.antialiasing,
                 'canvas_size_limits': self.canvas_size_limits,
@@ -1261,13 +1280,14 @@ class Points(Layer):
         return state
 
     @property
-    def selected_data(self) -> set:
+    def selected_data(self) -> Selection[int]:
         """set: set of currently selected points."""
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data):
-        self._selected_data = set(selected_data)
+    def selected_data(self, selected_data: Sequence[int]) -> None:
+        self._selected_data.clear()
+        self._selected_data.update(set(selected_data))
         self._selected_view = list(
             np.intersect1d(
                 np.array(list(self._selected_data)),
@@ -1363,7 +1383,7 @@ class Points(Layer):
 
         if mode == Mode.ADD:
             self.selected_data = set()
-            self.interactive = True
+            self.mouse_pan = True
         elif mode != Mode.SELECT or self._mode != Mode.SELECT:
             self._selected_data_stored = set()
 
@@ -1519,7 +1539,7 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
-    def _get_value(self, position) -> Union[None, int]:
+    def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.
 
         Parameters
@@ -1560,7 +1580,7 @@ class Points(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Union[int, None]:
+    ) -> Optional[int]:
         """Get the layer data value along a ray
 
         Parameters
@@ -1818,7 +1838,7 @@ class Points(Layer):
                 pos = _create_box_from_corners_3d(
                     self._drag_box, self._drag_normal, self._drag_up
                 )
-            pos = pos[list(range(4)) + [0]]
+            pos = pos[[*range(4), 0]]
         else:
             pos = None
 
@@ -1863,7 +1883,7 @@ class Points(Layer):
             coords = np.clip(coords, 0, thumbnail_shape - 1)
 
             # Draw single pixel points in the colormapped thumbnail.
-            colormapped = np.zeros(tuple(thumbnail_shape) + (4,))
+            colormapped = np.zeros((*thumbnail_shape, 4))
             colormapped[..., 3] = 1
             colors = self._face.colors[thumbnail_indices]
             colormapped[coords[:, 0], coords[:, 1]] = colors

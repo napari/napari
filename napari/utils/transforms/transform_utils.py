@@ -168,7 +168,7 @@ def rotate_to_matrix(rotate, *, ndim):
 def _make_rotate_mat(rotate):
     if np.isscalar(rotate):
         return _make_2d_rotation(rotate)
-    elif np.array(rotate).ndim == 1 and len(rotate) == 3:
+    if np.array(rotate).ndim == 1 and len(rotate) == 3:
         return _make_3d_rotation(*rotate)
     return np.array(rotate)
 
@@ -286,7 +286,7 @@ def expand_upper_triangular(vector):
     """
     n = len(vector)
     N = ((-1 + np.sqrt(8 * n + 1)) / 2.0) + 1  # n+1 th root
-    if N != np.floor(N):
+    if np.floor(N) != N:
         raise ValueError(
             trans._(
                 '{number} is a strange number of shear elements',
@@ -328,10 +328,10 @@ def embed_in_identity_matrix(matrix, ndim):
 
     if matrix.shape[0] == ndim:
         return matrix
-    else:
-        full_matrix = np.eye(ndim)
-        full_matrix[-matrix.shape[0] :, -matrix.shape[1] :] = matrix
-        return full_matrix
+
+    full_matrix = np.eye(ndim)
+    full_matrix[-matrix.shape[0] :, -matrix.shape[1] :] = matrix
+    return full_matrix
 
 
 def decompose_linear_matrix(
@@ -494,5 +494,5 @@ def is_diagonal(matrix, tol=1e-8):
     non_diag = matrix[~np.eye(matrix.shape[0], dtype=bool)]
     if tol == 0:
         return np.count_nonzero(non_diag) == 0
-    else:
-        return np.max(np.abs(non_diag)) <= tol
+
+    return np.max(np.abs(non_diag)) <= tol

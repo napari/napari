@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -155,6 +155,7 @@ class Vectors(Layer):
         *,
         ndim=None,
         features=None,
+        feature_defaults=None,
         properties=None,
         property_choices=None,
         edge_width=1,
@@ -222,6 +223,7 @@ class Vectors(Layer):
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
+            feature_defaults=feature_defaults,
             properties=properties,
             property_choices=property_choices,
             num_data=len(self.data),
@@ -235,7 +237,7 @@ class Vectors(Layer):
             categorical_colormap=edge_color_cycle,
             properties=self.properties
             if self._data.size > 0
-            else self.property_choices,
+            else self._feature_table.currents(),
         )
 
         # Data containing vectors in the currently viewed slice
@@ -261,22 +263,24 @@ class Vectors(Layer):
         n_vectors = len(self.data)
 
         # Adjust the props/color arrays when the number of vectors has changed
-        with self.events.blocker_all():
-            with self._edge.events.blocker_all():
-                self._feature_table.resize(n_vectors)
-                if n_vectors < previous_n_vectors:
-                    # If there are now fewer points, remove the size and colors of the
-                    # extra ones
-                    if len(self._edge.colors) > n_vectors:
-                        self._edge._remove(
-                            np.arange(n_vectors, len(self._edge.colors))
-                        )
+        with self.events.blocker_all(), self._edge.events.blocker_all():
+            self._feature_table.resize(n_vectors)
+            if n_vectors < previous_n_vectors:
+                # If there are now fewer points, remove the size and colors of the
+                # extra ones
+                if len(self._edge.colors) > n_vectors:
+                    self._edge._remove(
+                        np.arange(n_vectors, len(self._edge.colors))
+                    )
 
-                elif n_vectors > previous_n_vectors:
-                    # If there are now more points, add the size and colors of the
-                    # new ones
-                    adding = n_vectors - previous_n_vectors
-                    self._edge._add(n_colors=adding)
+            elif n_vectors > previous_n_vectors:
+                # If there are now more points, add the size and colors of the
+                # new ones
+                adding = n_vectors - previous_n_vectors
+                self._edge._update_current_properties(
+                    self._feature_table.currents()
+                )
+                self._edge._add(n_colors=adding)
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -345,6 +349,13 @@ class Vectors(Layer):
         """
         return self._feature_table.defaults
 
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        self._feature_table.set_defaults(defaults)
+        self.events.feature_defaults()
+
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
         return self._feature_table.choices()
@@ -373,6 +384,7 @@ class Vectors(Layer):
                 'property_choices': self.property_choices,
                 'ndim': self.ndim,
                 'features': self.features,
+                'feature_defaults': self.feature_defaults,
                 'out_of_slice_display': self.out_of_slice_display,
             }
         )
@@ -605,43 +617,41 @@ class Vectors(Layer):
             values, based on how far from the current slice they originate.
         """
 
-        if len(self.data) > 0:
-            dims_not_displayed = self._slice_input.not_displayed
-
-            # We want a numpy array so we can use fancy indexing with the non-displayed
-            # indices, but as dims_indices can (and often/always does) contain slice
-            # objects, the array has dtype=object which is then very slow for the
-            # arithmetic below.
-            # promote slicing plane to array so we can index into it, project as type float
-            not_disp_indices = np.array(dims_indices)[
-                dims_not_displayed
-            ].astype(float)
-            # get the anchor points (starting positions) of the vector layers in not displayed dims
-            data = self.data[:, 0, dims_not_displayed]
-            # calculate distances from anchor points to the slicing plane
-            distances = abs(data - not_disp_indices)
-            # if we need to include vectors that are out of this slice
-            if self.out_of_slice_display is True:
-                # get the scaled projected vectors
-                projected_lengths = abs(
-                    self.data[:, 1, dims_not_displayed] * self.length
-                )
-                # find where the distance to plane is less than the scaled vector
-                matches = np.all(distances <= projected_lengths, axis=1)
-                alpha_match = projected_lengths[matches]
-                alpha_match[alpha_match == 0] = 1
-                alpha_per_dim = (
-                    alpha_match - distances[matches]
-                ) / alpha_match
-                alpha_per_dim[alpha_match == 0] = 1
-                alpha = np.prod(alpha_per_dim, axis=1).astype(float)
-            else:
-                matches = np.all(distances <= 0.5, axis=1)
-                alpha = 1.0
-            slice_indices = np.where(matches)[0].astype(int)
-            return slice_indices, alpha
-        else:
+        if len(self.data) == 0:
             return [], np.empty(0)
+
+        dims_not_displayed = self._slice_input.not_displayed
+
+        # We want a numpy array so we can use fancy indexing with the non-displayed
+        # indices, but as dims_indices can (and often/always does) contain slice
+        # objects, the array has dtype=object which is then very slow for the
+        # arithmetic below.
+        # promote slicing plane to array so we can index into it, project as type float
+        not_disp_indices = np.array(dims_indices)[dims_not_displayed].astype(
+            float
+        )
+        # get the anchor points (starting positions) of the vector layers in not displayed dims
+        data = self.data[:, 0, dims_not_displayed]
+        # calculate distances from anchor points to the slicing plane
+        distances = abs(data - not_disp_indices)
+        # if we need to include vectors that are out of this slice
+        if self.out_of_slice_display is True:
+            # get the scaled projected vectors
+            projected_lengths = abs(
+                self.data[:, 1, dims_not_displayed] * self.length
+            )
+            # find where the distance to plane is less than the scaled vector
+            matches = np.all(distances <= projected_lengths, axis=1)
+            alpha_match = projected_lengths[matches]
+            alpha_match[alpha_match == 0] = 1
+            alpha_per_dim = (alpha_match - distances[matches]) / alpha_match
+            alpha_per_dim[alpha_match == 0] = 1
+            alpha = np.prod(alpha_per_dim, axis=1).astype(float)
+        else:
+            matches = np.all(distances <= 0.5, axis=1)
+            alpha = 1.0
+        slice_indices = np.where(matches)[0].astype(int)
+        return slice_indices, alpha
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
@@ -727,4 +737,4 @@ class Vectors(Layer):
         value : None
             Value of the data at the coord.
         """
-        return None
+        return

@@ -2,7 +2,7 @@ import pytest
 
 from napari.components import Dims
 from napari.components.dims import (
-    assert_axis_in_bounds,
+    ensure_axis_in_bounds,
     reorder_after_dim_reduction,
 )
 
@@ -72,6 +72,31 @@ def test_keyword_only_dims():
         Dims(3, (1, 2, 3))
 
 
+def test_sanitize_input_setters():
+    dims = Dims()
+
+    # axis out of range
+    with pytest.raises(ValueError):
+        dims._sanitize_input(axis=2, value=3)
+
+    # one value
+    with pytest.raises(ValueError):
+        dims._sanitize_input(axis=0, value=(1, 2, 3))
+    ax, val = dims._sanitize_input(
+        axis=0, value=(1, 2, 3), value_is_sequence=True
+    )
+    assert ax == [0]
+    assert val == [(1, 2, 3)]
+
+    # multiple axes
+    ax, val = dims._sanitize_input(axis=(0, 1), value=(1, 2))
+    assert ax == [0, 1]
+    assert val == [1, 2]
+    ax, val = dims._sanitize_input(axis=(0, 1), value=((1, 2), (3, 4)))
+    assert ax == [0, 1]
+    assert val == [(1, 2), (3, 4)]
+
+
 def test_point():
     """
     Test point setting.
@@ -79,7 +104,7 @@ def test_point():
     dims = Dims(ndim=4)
     assert dims.point == (0,) * 4
 
-    dims.set_range(range(dims.ndim), ((0, 5, 1),) * dims.ndim)
+    dims.range = ((0, 5, 1),) * dims.ndim
     dims.set_point(3, 4)
     assert dims.point == (0, 0, 0, 4)
 
@@ -87,7 +112,7 @@ def test_point():
     assert dims.point == (0, 0, 1, 4)
 
     dims.set_point((0, 1, 2), (2.1, 2.6, 0.0))
-    assert dims.point == (2, 3, 0, 4)
+    assert dims.point == (2.1, 2.6, 0.0, 4.0)
 
 
 def test_point_variable_step_size():
@@ -95,24 +120,23 @@ def test_point_variable_step_size():
     assert dims.point == (0,) * 3
 
     desired_range = ((0, 6, 0.5), (0, 6, 1), (0, 6, 2))
-    dims.set_range(range(3), desired_range)
+    dims.range = desired_range
     assert dims.range == desired_range
 
     # set point updates current_step indirectly
-    dims.set_point([0, 1, 2], (2.9, 2.9, 2.9))
+    dims.point = (2.9, 2.9, 2.9)
     assert dims.current_step == (6, 3, 1)
-    # point is a property computed on demand from current_step
-    assert dims.point == (3, 3, 2)
+    assert dims.point == (2.9, 2.9, 2.9)
 
     # can set step directly as well
     # note that out of range values get clipped
     dims.set_current_step((0, 1, 2), (1, -3, 5))
-    assert dims.current_step == (1, 0, 2)
-    assert dims.point == (0.5, 0, 4)
+    assert dims.current_step == (1, 0, 3)
+    assert dims.point == (0.5, 0, 6)
 
     dims.set_current_step(0, -1)
-    assert dims.current_step == (0, 0, 2)
-    assert dims.point == (0, 0, 4)
+    assert dims.current_step == (0, 0, 3)
+    assert dims.point == (0, 0, 6)
 
     # mismatched len(axis) vs. len(value)
     with pytest.raises(ValueError):
@@ -131,6 +155,16 @@ def test_range():
 
     dims.set_range(3, (0, 4, 2))
     assert dims.range == ((0, 2, 1),) * 3 + ((0, 4, 2),)
+
+    # start must be lower than stop
+    with pytest.raises(ValueError):
+        dims.set_range(0, (1, 0, 1))
+
+    # step must be positive
+    with pytest.raises(ValueError):
+        dims.set_range(0, (0, 2, 0))
+    with pytest.raises(ValueError):
+        dims.set_range(0, (0, 2, -1))
 
 
 def test_range_set_multiple():
@@ -208,14 +242,14 @@ def test_labels_order_when_changing_dims():
     "ndim, ax_input, expected", ((2, 1, 1), (2, -1, 1), (4, -3, 1))
 )
 def test_assert_axis_in_bounds(ndim, ax_input, expected):
-    actual = assert_axis_in_bounds(ax_input, ndim)
+    actual = ensure_axis_in_bounds(ax_input, ndim)
     assert actual == expected
 
 
 @pytest.mark.parametrize("ndim, ax_input", ((2, 2), (2, -3)))
 def test_assert_axis_out_of_bounds(ndim, ax_input):
     with pytest.raises(ValueError):
-        assert_axis_in_bounds(ax_input, ndim)
+        ensure_axis_in_bounds(ax_input, ndim)
 
 
 def test_axis_labels_str_to_list():
@@ -330,3 +364,15 @@ def test_floating_point_edge_case():
 def test_reorder_after_dim_reduction(order, expected):
     actual = reorder_after_dim_reduction(order)
     assert actual == expected
+
+
+def test_nsteps():
+    dims = Dims(range=((0, 5, 1), (0, 10, 0.5)))
+    assert dims.nsteps == (5, 20)
+    dims.nsteps = (10, 10)
+    assert dims.range == ((0, 5, 0.5), (0, 10, 1))
+
+
+def test_thickness():
+    dims = Dims(margin_left=(0, 0.5), margin_right=(1, 1))
+    assert dims.thickness == (1, 1.5)

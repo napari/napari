@@ -90,7 +90,6 @@ def test_progress_set_description():
 
 def test_progrange():
     """Test progrange shorthand for progress(range(n))"""
-    with progrange(10) as pbr:
-        with progress(range(10)) as pbr2:
-            assert pbr.iterable == pbr2.iterable
+    with progrange(10) as pbr, progress(range(10)) as pbr2:
+        assert pbr.iterable == pbr2.iterable
     assert pbr not in progress._all_instances

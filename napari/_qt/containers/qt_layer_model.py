@@ -59,7 +59,9 @@ class QtLayerListModel(QtListModel[Layer]):
             # partially checked, but we only use the unchecked and checked
             # to correspond to the layer's visibility.
             # https://doc.qt.io/qt-5/qt.html#CheckState-enum
-            self.getItem(index).visible = value == Qt.CheckState.Checked
+            self.getItem(index).visible = (
+                Qt.CheckState(value) == Qt.CheckState.Checked
+            )
         elif role == Qt.ItemDataRole.EditRole:
             self.getItem(index).name = value
             role = Qt.ItemDataRole.DisplayRole

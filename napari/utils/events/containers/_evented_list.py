@@ -161,9 +161,9 @@ class EventedList(TypedMutableSequence[_T]):
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
-        elif isinstance(key, slice):
+        if isinstance(key, slice):
             return [(self, i) for i in range(*key.indices(len(self)))]
-        elif type(key) in self._lookup:
+        if type(key) in self._lookup:
             return [(self, self.index(key))]
 
         valid = {int, slice}.union(set(self._lookup))
@@ -269,7 +269,8 @@ class EventedList(TypedMutableSequence[_T]):
             are not ``int`` or ``slice``.
         """
         logger.debug(
-            f"move_multiple(sources={sources}, dest_index={dest_index})"
+            "move_multiple(sources={sources}, dest_index={dest_index})",
+            extra={"sources": sources, "dest_index": dest_index},
         )
 
         # calling list here makes sure that there are no index errors up front

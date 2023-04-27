@@ -148,7 +148,7 @@ class QtLayerControlsContainer(QStackedWidget):
         """
         layer = event.value
         controls = create_qt_layer_controls(layer)
-        controls.ndisplay = 3
+        controls.ndisplay = self.viewer.dims.ndisplay
         self.addWidget(controls)
         self.widgets[layer] = controls
 

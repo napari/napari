@@ -18,8 +18,10 @@ from typing import (
 )
 from warnings import warn
 
-from napari_plugin_engine import HookImplementation
-from napari_plugin_engine import PluginManager as PluginManager
+from napari_plugin_engine import (
+    HookImplementation,
+    PluginManager as PluginManager,
+)
 from napari_plugin_engine.hooks import HookCaller
 from pydantic import ValidationError
 from typing_extensions import TypedDict
@@ -130,7 +132,6 @@ class NapariPluginManager(PluginManager):
         self,
         name_or_object: Any,
     ) -> Optional[Any]:
-
         if isinstance(name_or_object, str):
             _name = name_or_object
         else:
@@ -441,7 +442,6 @@ class NapariPluginManager(PluginManager):
         args: Union[AugmentedWidget, List[AugmentedWidget]],
         hookimpl: HookImplementation,
     ):
-
         plugin_name = hookimpl.plugin_name
         hook_name = '`napari_experimental_provide_dock_widget`'
         for arg in args if isinstance(args, list) else [args]:

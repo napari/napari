@@ -265,11 +265,7 @@ def is_collinear(points):
 
     # The collinearity test takes three points, the first two are the first
     # two in the list, and then the third is iterated through in the loop
-    for p in points[2:]:
-        if orientation(points[0], points[1], p) != 0:
-            return False
-
-    return True
+    return all(orientation(points[0], points[1], p) == 0 for p in points[2:])
 
 
 def point_to_lines(point, lines):
@@ -561,7 +557,7 @@ def triangulate_face(data):
         # connect last with first vertex
         edges[-1, 1] = 0
 
-        res = triangulate(dict(vertices=data, segments=edges), "p")
+        res = triangulate({"vertices": data, "segments": edges}, "p")
         vertices, triangles = res['vertices'], res['triangles']
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()
@@ -637,10 +633,10 @@ def _sign_cross(x, y):
     """sign of cross product (faster for 2d)"""
     if x.shape[1] == y.shape[1] == 2:
         return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
-    elif x.shape[1] == y.shape[1] == 3:
+    if x.shape[1] == y.shape[1] == 3:
         return _sign_nonzero(np.cross(x, y))
-    else:
-        raise ValueError(x.shape[1], y.shape[1])
+
+    raise ValueError(x.shape[1], y.shape[1])
 
 
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
@@ -978,7 +974,7 @@ def points_in_poly(points, vertices):
         d = np.where(abs(d) < tolerance, 0, d)
         if d[1] == 0:
             # If y vertices are aligned avoid division by zero
-            cond_4 = 0 < d[0] * (points[:, 1] - vertices[i, 1])
+            cond_4 = d[0] * (points[:, 1] - vertices[i, 1]) > 0
         else:
             cond_4 = points[:, 0] < (
                 d[0] * (points[:, 1] - vertices[i, 1]) / d[1] + vertices[i, 0]
@@ -1174,11 +1170,11 @@ def perpendicular_distance(
 
     if np.array_equal(line_start, line_end):
         return np.linalg.norm(point - line_start)
-    else:
-        t = np.dot(point - line_end, line_start - line_end) / np.dot(
-            line_start - line_end, line_start - line_end
-        )
-        return np.linalg.norm(t * (line_start - line_end) + line_end - point)
+
+    t = np.dot(point - line_end, line_start - line_end) / np.dot(
+        line_start - line_end, line_start - line_end
+    )
+    return np.linalg.norm(t * (line_start - line_end) + line_end - point)
 
 
 def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
@@ -1209,13 +1205,17 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
             max_distance_index = i
             max_distance = d
 
-    if max_distance > epsilon:
-        l1 = rdp(vertices[:max_distance_index], epsilon)
-        l2 = rdp(vertices[max_distance_index:], epsilon)
-        return np.vstack((l1[:-1], l2))
+    if epsilon != 0:
+        if max_distance > epsilon and epsilon:
+            l1 = rdp(vertices[: max_distance_index + 1], epsilon)
+            l2 = rdp(vertices[max_distance_index:], epsilon)
+            return np.vstack((l1[:-1], l2))
 
-    else:
+        # This part of the algorithm is actually responsible for removing the datapoints.
         return np.vstack((vertices[0], vertices[-1]))
+
+    # When epsilon is 0, avoid removing datapoints
+    return vertices
 
 
 def below_distance_threshold(
@@ -1242,5 +1242,5 @@ def below_distance_threshold(
         position_diff = np.linalg.norm(cursor_position - last_vertex_position)
         if position_diff < threshold:
             return True
-        else:
-            return
+        return None
+    return None
