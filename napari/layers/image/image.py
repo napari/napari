@@ -1079,7 +1079,7 @@ class Image(_ImageBase):
             {
                 'rgb': self.rgb,
                 'multiscale': self.multiscale,
-                'colormap': self.colormap.name,
+                'colormap': self.colormap.dict(),
                 'contrast_limits': self.contrast_limits,
                 'interpolation2d': self.interpolation2d,
                 'interpolation3d': self.interpolation3d,
