@@ -275,8 +275,8 @@ class MandlebrotStore(zarr.storage.Store):
 
         from_x, from_y, to_x, to_y = tile_bounds(level, x, y, self.levels)
         out = np.zeros(self.tilesize * self.tilesize, dtype=self.dtype)
-        #tile = mandelbrot(
-        tile = xcoord_image(
+        tile = mandelbrot(
+        # tile = xcoord_image(
                 out, from_x, from_y, to_x, to_y, self.tilesize, self.maxiter
             )
         tile = tile.reshape(self.tilesize, self.tilesize).transpose()

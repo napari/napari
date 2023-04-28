@@ -1,10 +1,23 @@
 import itertools
-
+import logging
+import sys
 from typing import Tuple, Union
+
 import dask.array as da
 import numpy as np
+
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.qt.threading import thread_worker
+
+LOGGER = logging.getLogger("napari.experimental._progressive_loading")
+LOGGER.setLevel(logging.DEBUG)
+
+streamHandler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+streamHandler.setFormatter(formatter)
+LOGGER.addHandler(streamHandler)
 
 
 def get_chunk(
@@ -438,8 +451,6 @@ def render_sequence_3D(
             )
 
 
-
-
 # Code from an earlier stage to support visual debugging
 # @tz.curry
 # def update_point_colors(event, viewer, alpha=1.0):
@@ -491,9 +502,8 @@ def render_sequence_3D(
 #     hi_res_layer.translate = offset
 #     hi_res_layer.refresh()
 
-def interpolated_get_chunk_2D(
-    chunk_slice, array=None
-):
+
+def interpolated_get_chunk_2D(chunk_slice, array=None):
     """Get a specified slice from an array, with interpolation when necessary.
     Interpolation is linear.
     Out of bounds behavior is zeros outside the shape.
@@ -573,6 +583,7 @@ def interpolated_get_chunk_2D(
     return real_array
 
 
+# TODO a VirtualData should only address 1 coordinate system
 class VirtualData:
     """VirtualData is used to use a 2D array to represent
     a larger shape. The purpose of this function is to provide
@@ -584,74 +595,96 @@ class VirtualData:
     NEW: use a translate to define subregion of image
     """
 
-    def __init__(self, dtype, shape, scale_factor=(1, 1)):
-        self.dtype = dtype
+    def __init__(self, array):
+        self.array = array
+        self.dtype = array.dtype
         # This shape is the shape of the true data, but not our data_plane
-        self.shape = shape
-        self.ndim = len(shape)
-        self.translate = tuple([0] * len(shape))
-        self.scale_factor = scale_factor
+        self.shape = array.shape
+        self.ndim = len(self.shape)
+
+        # translate is in the same units as the highest resolution scale
+        self.translate = tuple([0] * len(self.shape))
+
+        self.data_plane = da.zeros(1)
 
         self.d = 2
 
-        # TODO: I don't like that this is making a choice of slicing axis
-        # self.data_plane = np.zeros(self.shape[-1 * self.d :], dtype=self.dtype)
-        self.data_plane = np.zeros(1)
+    def set_interval(self, coords):
+        """coords is a tuple of slices in the same coordinate system as the parent array."""
+        self._max_coord = [sl.stop for sl in coords]
+        self._min_coord = [sl.start for sl in coords]
 
-    def update_with_minmax(self, min_coord, max_coord):
         # Update translate
-        self.translate = min_coord
+        self.translate = self._min_coord
 
-        print(f"update_with_minmax: min {min_coord} max {max_coord}")
+        LOGGER.info(f"update_with_minmax: {self.translate}")
 
         # Update data_plane
-        max_coord = [mx / sf for (mx, sf) in zip(max_coord, self.scale_factor)]
-        min_coord = [mn / sf for (mn, sf) in zip(min_coord, self.scale_factor)]
 
-        new_shape = [int(mx - mn) for (mx, mn) in zip(max_coord, min_coord)]
+        new_shape = [
+            int(mx - mn) for (mx, mn) in zip(self._max_coord, self._min_coord)
+        ]
         self.data_plane = np.zeros(new_shape, dtype=self.dtype)
 
-    def _fix_key(
+    def _data_plane_key(
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
     ):
-        if type(key) is tuple:
+        """The _data_plane_key is the corresponding value of key
+        within plane. The difference between key and data_plane_key is
+        key - translate / scale"""
+        if type(key) is tuple and type(key[0]) is slice:
             if key[0].start is None:
                 return key
-            fixed_key = tuple(
+            data_plane_key = tuple(
                 [
                     slice(
-                        max(
-                            0,
-                            sl.start,
+                        int(
+                            max(
+                                0,
+                                sl.start - self.translate[idx],
+                            )
                         ),
-                        max(
-                            0,
-                            sl.stop,
+                        int(
+                            max(
+                                0,
+                                sl.stop - self.translate[idx],
+                            )
                         ),
                         sl.step,
                     )
                     for (idx, sl) in enumerate(key[-1 * self.d :])
+                    # TODO check out the self.d stuff here and elsewhere
                 ]
             )
-            val_shape = self.data_plane.__getitem__(fixed_key).shape
-            key_size = tuple(
-                [
-                    slice(0, min((sl.stop - sl.start), fk_val))
-                    for sl, fk_val in zip(fixed_key, val_shape)
-                ]
-            )
-            if fixed_key[0].stop == 0:
+            if data_plane_key[0].stop == 0:
                 import pdb
 
                 pdb.set_trace()
-        return fixed_key, key_size
+        elif type(key) is tuple and type(key[0]) is int:
+            data_plane_key = tuple(
+                [
+                    int(v - self.translate[idx])
+                    for idx, v in enumerate(key[-1 * self.d :])
+                ]
+            )
+
+        # Let's get the shape by actually fetching from the data_plane (e.g. ragged shapes)
+        val_shape = self.data_plane.__getitem__(data_plane_key).shape
+        key_size = tuple(
+            [
+                slice(0, int(min((sl.stop - sl.start), fk_val)))
+                for sl, fk_val in zip(data_plane_key, val_shape)
+            ]
+        )
+        chunk_slice = tuple([slice(sl.start + translate, sl.stop + translate) for sl, translate in zip(key_size, self.translate)])
+        return data_plane_key, chunk_slice
 
     def __getitem__(
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
     ) -> LayerDataProtocol:
         """Returns self[key]."""
-        fixed_key, _ = self._fix_key(key)
-        return self.data_plane.__getitem__(fixed_key)
+        data_plane_key, _ = self._data_plane_key(key)
+        return self.data_plane.__getitem__(data_plane_key)
         # if type(key) is tuple:
         #     return self.data_plane.__getitem__(tuple(key[-1 * self.d :]))
         # else:
@@ -661,11 +694,12 @@ class VirtualData:
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol], value
     ) -> LayerDataProtocol:
         """Returns self[key]."""
-        fixed_key, key_size = self._fix_key(key)
+        data_plane_key, chunk_slice = self._data_plane_key(key)
         # print(f"virtualdata setitem {key} fixed to {fixed_key}")
+        LOGGER.info(f"dp_key {data_plane_key} chunk_slice: {chunk_slice}")
         if (
-            self.data_plane.__getitem__(fixed_key).shape[0]
-            != value[key_size].shape[0]
+            self.data_plane.__getitem__(data_plane_key).shape[0]
+            != value[chunk_slice].shape[0]
         ):
             import pdb
 
@@ -674,8 +708,9 @@ class VirtualData:
             # TODO resume here to find out why there are mismatched shapes after update)with_min_max
 
         # TODO trim key_size because min_max size is based on screen and is ragged
-
-        return self.data_plane.__setitem__(fixed_key, value[key_size])
+        # self.data_plane[data_plane_key] = value[key_size]
+        self.data_plane[data_plane_key] = value[chunk_slice]
+        return self.data_plane[data_plane_key]
         # if type(key) is tuple:
         #     return self.data_plane.__setitem__(
         #         tuple(key[-1 * self.d :]), value
@@ -683,3 +718,108 @@ class VirtualData:
         # else:
         #     return self.data_plane.__setitem__(key, value)
 
+
+def test_virtualdata():
+    virtual_data = VirtualData(np.uint16, (100, 100))
+    virtual_data.set_interval((10, 10), (20, 20))
+
+    virtual_data[10:20, 10:20] = np.ones_like(virtual_data[10:20, 10:20])
+    print(virtual_data)
+
+    # TODO pickup here to write better tests to prove that VirtualData works
+    #      consider making it Multiscale
+
+    import pdb
+
+    pdb.set_trace()
+
+
+# TODO MultiScaleVirtualData describes a multiscale relationship between
+# multiple VirtualData, including tracking coordinate systems
+class MultiScaleVirtualData:
+    """VirtualData is used to use a 2D array to represent
+    a larger shape. The purpose of this function is to provide
+    a 2D slice that acts like a canvas for rendering a large ND image.
+
+    When you try to fetch a ND coordinate, only the last 2 dimensions
+    will be used as the (y, x) values.
+
+    NEW: use a translate to define subregion of image
+    """
+
+    def __init__(self, arrays):
+        # TODO arrays should be typed as MultiScaleData
+        self.arrays = arrays
+        highest_res = arrays[0]
+
+        self.dtype = highest_res.dtype
+        # This shape is the shape of the true data, but not our data_plane
+        self.shape = highest_res.shape
+        self.ndim = len(arrays)
+
+        # Keep a VirtualData for each array
+        self._data = []
+
+        self._translate = []
+        self._scale_factors = []
+        for scale in range(len(self.arrays)):
+            virtual_data = VirtualData(self.arrays[scale])
+            self._translate += [tuple([0] * len(self.shape))]
+            self._scale_factors += [
+                [
+                    hr_val / this_val
+                    for hr_val, this_val in zip(
+                        highest_res.shape, self.arrays[scale].shape
+                    )
+                ]
+            ]
+            self._data += [virtual_data]
+
+        # TODO hard coded 2D for now
+        self.d = 2
+
+    def set_interval(self, min_coord, max_coord):
+        """min_coord and max_coord are in the same units as the highest resolution
+        scale."""
+
+        for scale in range(len(self.arrays)):
+            # Update translate
+            # TODO expect rounding errors here
+            scaled_min = [
+                int(min_coord[idx] / self._scale_factors[scale][idx])
+                for idx in range(len(min_coord))
+            ]
+            scaled_max = [
+                int(max_coord[idx] / self._scale_factors[scale][idx])
+                for idx in range(len(max_coord))
+            ]
+
+            self._translate[scale] = scaled_min
+            LOGGER.info(
+                f"update_with_minmax: scale {scale} min {min_coord} : {scaled_min} max {max_coord} : {scaled_max}"
+            )
+
+            # Ask VirtualData to update its interval
+            coords = tuple(
+                [slice(mn, mx) for mn, mx in zip(scaled_min, scaled_max)]
+            )
+            self._data[scale].set_interval(coords)
+
+
+def test_multiscale_virtualdata():
+    virtual_data = VirtualData(np.uint16, (100, 100))
+    virtual_data.set_interval((10, 10), (20, 20))
+
+    virtual_data[10:20, 10:20] = np.ones_like(virtual_data[10:20, 10:20])
+    print(virtual_data)
+
+    # TODO pickup here to write better tests to prove that VirtualData works
+    #      consider making it Multiscale
+
+    import pdb
+
+    pdb.set_trace()
+
+
+if __name__ == "__main__":
+    test_virtualdata()
