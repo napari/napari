@@ -27,3 +27,4 @@ class BrushSizeOnMouseModifiers(str, Enum):
     CTRL = 'Control'
     ALT = 'Alt'
     CTRL_ALT = 'Control+Alt'
+    CTRL_SHIFT = 'Control+Shift'
