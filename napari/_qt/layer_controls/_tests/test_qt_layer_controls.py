@@ -6,6 +6,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QAbstractButton,
     QAbstractSlider,
+    QAbstractSpinBox,
     QCheckBox,
     QComboBox,
     QPushButton,
@@ -48,10 +49,17 @@ _IMAGE = LayerTypeWithData(
     properties=None,
     expected_isinstance=QtImageControls,
 )
-_LABELS = LayerTypeWithData(
+_LABELS_WITH_COLOR = LayerTypeWithData(
     type=Labels,
     data=np.random.randint(5, size=(10, 15)),
     color={1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'},
+    properties=None,
+    expected_isinstance=QtLabelsControls,
+)
+_LABELS = LayerTypeWithData(
+    type=Labels,
+    data=np.random.randint(5, size=(10, 15)),
+    color=None,
     properties=None,
     expected_isinstance=QtLabelsControls,
 )
@@ -126,7 +134,17 @@ def create_layer_controls(qtbot):
 
 @pytest.mark.parametrize(
     'layer_type_with_data',
-    [_IMAGE, _LABELS, _POINTS, _SHAPES, _SURFACE, _TRACKS, _VECTORS],
+    [
+        _LABELS_WITH_COLOR,
+        _LABELS,
+        _IMAGE,
+        _LABELS,
+        _POINTS,
+        _SHAPES,
+        _SURFACE,
+        _TRACKS,
+        _VECTORS,
+    ],
 )
 @pytest.mark.qt_no_exception_capture
 def test_create_layer_controls(
@@ -151,91 +169,116 @@ def test_create_layer_controls(
                 # If a value for the QComboBox is an invalid selection check if
                 # it fallbacks to the previous value
                 captured = capsys.readouterr()
-                if "ValueError: " in captured.err:
+                if captured.err:
                     assert qcombobox.currentText() == previous_qcombobox_text
             qcombobox.setCurrentIndex(qcombobox_initial_idx)
 
+    # check QAbstractSpinBox by changing value with `setValue` from minimum value to maximum
+    for qspinbox in ctrl.findChildren(QAbstractSpinBox):
+        if isinstance(qspinbox.minimum(), float):
+            value_range = np.linspace(qspinbox.minimum(), qspinbox.maximum())
+        else:
+            # use + 1 to include maximum value
+            value_range = range(qspinbox.minimum(), qspinbox.maximum() + 1)
+        if len(value_range) > 100:
+            # prevent trying to check a big range of values
+            import random
+
+            random.seed(0)
+            value_range = random.sample(value_range, 100)
+            value_range = np.insert(value_range, 0, qspinbox.minimum())
+            value_range = np.append(value_range, qspinbox.maximum() - 1)
+        for value in value_range:
+            qspinbox.setValue(value)
+            # capture any output done to sys.stdout or sys.stderr.
+            captured = capsys.readouterr()
+            assert not captured.out
+            assert not captured.err
+
+        if qspinbox.maximum() == 2**31 - 1:
+            assert qspinbox.value() == qspinbox.maximum() - 1
+        else:
+            assert qspinbox.value() == qspinbox.maximum()
+
     # check QAbstractSlider by changing value with `setValue` from minimum value to maximum
     for qslider in ctrl.findChildren(QAbstractSlider):
-        if qslider.isVisible():
-            if isinstance(qslider.minimum(), float):
-                if getattr(qslider, "_valuesChanged", None):
-                    # create a list of tuples in the case the slider is ranged
-                    # from (minimum, minimum) to (maximum, maximum) +
-                    # from (minimum, maximum) to (minimum, minimum)
-                    # (minimum, minimum) and (maximum, maximum) values are excluded
-                    # to prevent the sequence not being monotonically increasing
-                    base_value_range = np.linspace(
-                        qslider.minimum(), qslider.maximum()
-                    )
-                    num_values = base_value_range.size
-                    max_value = np.full(num_values, qslider.maximum())
-                    min_value = np.full(num_values, qslider.minimum())
-                    value_range_to_max = list(zip(base_value_range, max_value))
-                    value_range_to_min = list(
-                        zip(min_value, np.flip(base_value_range))
-                    )
-                    value_range = (
-                        value_range_to_max[:-1] + value_range_to_min[:-1]
-                    )
-                else:
-                    value_range = np.linspace(
-                        qslider.minimum(), qslider.maximum()
-                    )
-            else:
-                if getattr(qslider, "_valuesChanged", None):
-                    # create a list of tuples in the case the slider is ranged
-                    # from (minimum, minimum) to (maximum, maximum) +
-                    # from (minimum, maximum) to (minimum, minimum)
-                    # base list created with + 1 to include maximum value
-                    # (minimum, minimum) and (maximum, maximum) values are excluded
-                    # to prevent the sequence not being monotonically increasing
-                    base_value_range = range(
-                        qslider.minimum(), qslider.maximum() + 1
-                    )
-                    num_values = len(base_value_range)
-                    max_value = [qslider.maximum()] * num_values
-                    min_value = [qslider.minimum()] * num_values
-                    value_range_to_max = list(zip(base_value_range, max_value))
-                    base_value_range_copy = base_value_range.copy()
-                    base_value_range_copy.reverse()
-                    value_range_to_min = list(
-                        zip(min_value, base_value_range_copy)
-                    )
-                    value_range = (
-                        value_range_to_max[:-1] + value_range_to_min[:-1]
-                    )
-                else:
-                    # use + 1 to include maximum value
-                    value_range = range(
-                        qslider.minimum(), qslider.maximum() + 1
-                    )
-            for value in value_range:
-                qslider.setValue(value)
+        if isinstance(qslider.minimum(), float):
             if getattr(qslider, "_valuesChanged", None):
-                assert qslider.value()[0] == qslider.minimum()
+                # create a list of tuples in the case the slider is ranged
+                # from (minimum, minimum) to (maximum, maximum) +
+                # from (minimum, maximum) to (minimum, minimum)
+                # (minimum, minimum) and (maximum, maximum) values are excluded
+                # to prevent the sequence not being monotonically increasing
+                base_value_range = np.linspace(
+                    qslider.minimum(), qslider.maximum()
+                )
+                num_values = base_value_range.size
+                max_value = np.full(num_values, qslider.maximum())
+                min_value = np.full(num_values, qslider.minimum())
+                value_range_to_max = list(zip(base_value_range, max_value))
+                value_range_to_min = list(
+                    zip(min_value, np.flip(base_value_range))
+                )
+                value_range = value_range_to_max[:-1] + value_range_to_min[:-1]
             else:
-                assert qslider.value() == qslider.maximum()
+                value_range = np.linspace(qslider.minimum(), qslider.maximum())
+        else:
+            if getattr(qslider, "_valuesChanged", None):
+                # create a list of tuples in the case the slider is ranged
+                # from (minimum, minimum) to (maximum, maximum) +
+                # from (minimum, maximum) to (minimum, minimum)
+                # base list created with + 1 to include maximum value
+                # (minimum, minimum) and (maximum, maximum) values are excluded
+                # to prevent the sequence not being monotonically increasing
+                base_value_range = range(
+                    qslider.minimum(), qslider.maximum() + 1
+                )
+                num_values = len(base_value_range)
+                max_value = [qslider.maximum()] * num_values
+                min_value = [qslider.minimum()] * num_values
+                value_range_to_max = list(zip(base_value_range, max_value))
+                base_value_range_copy = base_value_range.copy()
+                base_value_range_copy.reverse()
+                value_range_to_min = list(
+                    zip(min_value, base_value_range_copy)
+                )
+                value_range = value_range_to_max[:-1] + value_range_to_min[:-1]
+            else:
+                # use + 1 to include maximum value
+                value_range = range(qslider.minimum(), qslider.maximum() + 1)
+        for value in value_range:
+            qslider.setValue(value)
+            # capture any output done to sys.stdout or sys.stderr.
+            captured = capsys.readouterr()
+            assert not captured.out
+            assert not captured.err
+        if getattr(qslider, "_valuesChanged", None):
+            assert qslider.value()[0] == qslider.minimum()
+        else:
+            assert qslider.value() == qslider.maximum()
 
     # check QColorSwatchEdit by changing line edit text with a range of predefined values
     for qcolorswatchedit in ctrl.findChildren(QColorSwatchEdit):
-        if qcolorswatchedit.isVisible():
-            lineedit = qcolorswatchedit.line_edit
-            colorswatch = qcolorswatchedit.color_swatch
-            colors = [
-                ("white", "white", np.array([1.0, 1.0, 1.0, 1.0])),
-                ("black", "black", np.array([0.0, 0.0, 0.0, 1.0])),
-                # check autocompletion `bla` -> `black`
-                ("bla", "black", np.array([0.0, 0.0, 0.0, 1.0])),
-                # check that setting an invalid color makes it fallback to the previous value
-                ("invalid_value", "black", np.array([0.0, 0.0, 0.0, 1.0])),
-            ]
-            for color, expected_color, expected_array in colors:
-                lineedit.clear()
-                qtbot.keyClicks(lineedit, color)
-                qtbot.keyClick(lineedit, Qt.Key_Enter)
-                assert lineedit.text() == expected_color
-                assert (colorswatch.color == expected_array).all()
+        lineedit = qcolorswatchedit.line_edit
+        colorswatch = qcolorswatchedit.color_swatch
+        colors = [
+            ("white", "white", np.array([1.0, 1.0, 1.0, 1.0])),
+            ("black", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+            # check autocompletion `bla` -> `black`
+            ("bla", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+            # check that setting an invalid color makes it fallback to the previous value
+            ("invalid_value", "black", np.array([0.0, 0.0, 0.0, 1.0])),
+        ]
+        for color, expected_color, expected_array in colors:
+            lineedit.clear()
+            qtbot.keyClicks(lineedit, color)
+            qtbot.keyClick(lineedit, Qt.Key_Enter)
+            assert lineedit.text() == expected_color
+            assert (colorswatch.color == expected_array).all()
+            # capture any output done to sys.stdout or sys.stderr.
+            captured = capsys.readouterr()
+            assert not captured.out
+            assert not captured.err
 
     # check QCheckBox by clicking with mouse click
     for qcheckbox in ctrl.findChildren(QCheckBox):
@@ -243,6 +286,10 @@ def test_create_layer_controls(
             qcheckbox_checked = qcheckbox.isChecked()
             qtbot.mouseClick(qcheckbox, Qt.LeftButton)
             assert qcheckbox.isChecked() != qcheckbox_checked
+            # capture any output done to sys.stdout or sys.stderr.
+            captured = capsys.readouterr()
+            assert not captured.out
+            assert not captured.err
 
     # check QPushButton and QRadioButton by clicking with mouse click
     for button in ctrl.findChildren(QPushButton) + ctrl.findChildren(
@@ -250,6 +297,10 @@ def test_create_layer_controls(
     ):
         if button.isVisible():
             qtbot.mouseClick(button, Qt.LeftButton)
+            # capture any output done to sys.stdout or sys.stderr.
+            captured = capsys.readouterr()
+            assert not captured.out
+            assert not captured.err
 
 
 def test_unknown_raises(qtbot):
