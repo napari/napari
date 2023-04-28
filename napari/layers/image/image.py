@@ -753,7 +753,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # This can happen when slicing layers with different extents.
         indices = self._slice_indices
         for d in self._slice_input.not_displayed:
-            if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d] + 1):
+            if (indices[d] < 0) or (indices[d] > self._extent_data[1][d]):
                 return
 
         # For the old experimental async code.

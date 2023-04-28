@@ -37,7 +37,7 @@ def make_worker(
             worker._stop()
 
     def count_reached():
-        return worker._count >= nframes
+        assert worker._count >= nframes
 
     def go():
         worker.work()
