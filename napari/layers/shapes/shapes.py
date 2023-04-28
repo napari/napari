@@ -30,7 +30,7 @@ from napari.layers.shapes._shapes_mouse_bindings import (
     add_rectangle,
     finish_drawing_shape,
     highlight,
-    polygon_lasso_concatenate_vertex,
+    polygon_lasso_creating,
     select,
     vertex_insert,
     vertex_remove,
@@ -354,7 +354,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
-        Mode.ADD_POLYGON_LASSO: polygon_lasso_concatenate_vertex,
+        Mode.ADD_POLYGON_LASSO: polygon_lasso_creating,
         Mode.ADD_POLYGON_LASSO_TABLET: no_op,
     }
 

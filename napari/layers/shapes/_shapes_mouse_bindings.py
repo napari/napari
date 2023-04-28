@@ -209,7 +209,7 @@ def add_path_polygon_tablet(layer, event):
         if layer._mode == Mode.ADD_POLYGON_LASSO:
             yield
             while event.type == 'mouse_move':
-                polygon_lasso_concatenate_vertex(layer, event)
+                polygon_lasso_creating(layer, event)
                 yield
             index = layer._moving_value[0]
             vertices = layer._data_view.shapes[index].data
@@ -228,21 +228,37 @@ def add_path_polygon_tablet(layer, event):
         finish_drawing_shape(layer, event)
 
 
-def polygon_lasso_concatenate_vertex(layer, event):
+def polygon_lasso_creating(layer, event):
     if layer._is_creating:
         coordinates = layer.world_to_data(event.position)
         move_polygon_lasso_vertex(layer, event, coordinates)
 
         index = layer._moving_value[0]
 
-        vertices = layer._data_view.shapes[index].data
-        vertices = np.concatenate((vertices, [coordinates]), axis=0)
-        # Change the selected vertex
-        value = layer.get_value(event.position, world=True)
-        layer._value = (value[0], value[1] + 1)
-        layer._moving_value = copy(layer._value)
-        layer._data_view.edit(index, vertices, new_type=None)
-        layer._selected_box = layer.interaction_box(layer.selected_data)
+        global _last_cursor_position
+        if _last_cursor_position is not None:
+            position_diff = np.linalg.norm(event.pos - _last_cursor_position)
+            if position_diff > 10:
+                vertices = layer._data_view.shapes[index].data
+                vertices = np.concatenate((vertices, [coordinates]), axis=0)
+                value = layer.get_value(event.position, world=True)
+                layer._value = (value[0], value[1] + 1)
+                layer._moving_value = copy(layer._value)
+                layer._data_view.edit(index, vertices, new_type=None)
+                layer._selected_box = layer.interaction_box(
+                    layer.selected_data
+                )
+                _last_cursor_position = np.array(event.pos)
+        else:
+            vertices = layer._data_view.shapes[index].data
+            vertices = np.concatenate((vertices, [coordinates]), axis=0)
+            #
+            value = layer.get_value(event.position, world=True)
+            layer._value = (value[0], value[1] + 1)
+            layer._moving_value = copy(layer._value)
+            layer._data_view.edit(index, vertices, new_type=None)
+            layer._selected_box = layer.interaction_box(layer.selected_data)
+            _last_cursor_position = np.array(event.pos)
 
 
 def add_path_polygon(layer, event):
@@ -295,13 +311,6 @@ def move_polygon_lasso_vertex(layer, event, coordinates):
     if layer._is_creating:
         _move(layer, coordinates)
 
-        global _last_cursor_position
-        if _last_cursor_position is not None:
-            position_diff = np.linalg.norm(event.pos - _last_cursor_position)
-            if position_diff < 10:
-                return
-        # Use screen position instead of world / data position to account for zoom
-        _last_cursor_position = np.array(event.pos)
         add_path_polygon_tablet(layer, event)
 
 
