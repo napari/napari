@@ -26,11 +26,11 @@ from napari.layers.shapes._shapes_mouse_bindings import (
     add_line,
     add_path_polygon,
     add_path_polygon_creating,
-    add_path_polygon_lasso_creating,
     add_path_polygon_tablet,
     add_rectangle,
     finish_drawing_shape,
     highlight,
+    polygon_lasso_concatenate_vertex,
     select,
     vertex_insert,
     vertex_remove,
@@ -338,7 +338,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: add_line,
         Mode.ADD_PATH: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
-        Mode.ADD_POLYGON_LASSO: add_path_polygon,
+        Mode.ADD_POLYGON_LASSO: add_path_polygon_tablet,
         Mode.ADD_POLYGON_LASSO_TABLET: add_path_polygon_tablet,
     }
 
@@ -354,7 +354,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
-        Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso_creating,
+        Mode.ADD_POLYGON_LASSO: polygon_lasso_concatenate_vertex,
         Mode.ADD_POLYGON_LASSO_TABLET: no_op,
     }
 
