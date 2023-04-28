@@ -1,4 +1,4 @@
-from enum import auto
+from enum import Enum, auto
 
 from napari.utils.misc import StringEnum
 
@@ -20,3 +20,10 @@ class LoopMode(StringEnum):
     ONCE = auto()
     LOOP = auto()
     BACK_AND_FORTH = auto()
+
+
+class BrushSizeOnMouseModifiers(str, Enum):
+    DISABLED = 'Disabled'  # a non-existent modifier that is never activated
+    CTRL = 'Control'
+    ALT = 'Alt'
+    CTRL_ALT = 'Control+Alt'
