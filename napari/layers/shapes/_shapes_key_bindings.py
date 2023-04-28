@@ -89,12 +89,6 @@ def activate_add_polygon_lasso_mode(layer: Shapes):
     layer.mode = Mode.ADD_POLYGON_LASSO
 
 
-# @register_shapes_mode_action(trans._('Add polygons lasso using tablet'))
-# def activate_add_polygon_lasso_tablet_mode(layer: Shapes):
-#     """Activate add polygon tool."""
-#     layer.mode = Mode.ADD_POLYGON_LASSO_TABLET
-
-
 @register_shapes_mode_action(trans._('Select vertices'))
 def activate_direct_mode(layer: Shapes):
     """Activate vertex selection tool."""

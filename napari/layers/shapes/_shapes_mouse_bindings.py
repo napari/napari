@@ -194,7 +194,6 @@ def add_path_polygon_tablet(layer, event):
     # on press
     coordinates = layer.world_to_data(event.position)
     if layer._is_creating is False:
-        print('got here')
         # Reset last cursor position in case shapes were drawn in different dimension beforehand.
         global _last_cursor_position
         _last_cursor_position = None
