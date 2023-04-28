@@ -370,7 +370,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
-        Mode.ADD_POLYGON_LASSO: finish_drawing_shape,
+        Mode.ADD_POLYGON_LASSO: no_op,
         Mode.ADD_POLYGON_LASSO_TABLET: no_op,
     }
 
