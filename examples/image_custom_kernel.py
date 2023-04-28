@@ -1,5 +1,6 @@
 """
-Custom image interpolation kernels.
+Custom image interpolation kernels
+==================================
 
 When interpolation is set to 'custom', the convolution kernel provided by
 `custom_interpolation_kernel_2d` is used to convolve the image on the gpu.
@@ -9,6 +10,9 @@ kernel and a ridge detection kernel.
 Under the hood, this works by by sampling the image texture with `linear`
 interpolation in a regular grid (of size = of the kernel) around each fragment,
 and then using the weights in the kernel to add up the final fragment value.
+
+.. tags:: gui, visualization-nD
+
 """
 
 import numpy as np
