@@ -1,3 +1,4 @@
+import random
 from collections import namedtuple
 
 import numpy as np
@@ -180,14 +181,18 @@ def test_create_layer_controls(
         else:
             # use + 1 to include maximum value
             value_range = range(qspinbox.minimum(), qspinbox.maximum() + 1)
-        if len(value_range) > 100:
-            # prevent trying to check a big range of values
-            import random
-
-            random.seed(0)
-            value_range = random.sample(value_range, 100)
-            value_range = np.insert(value_range, 0, qspinbox.minimum())
-            value_range = np.append(value_range, qspinbox.maximum() - 1)
+            try:
+                value_range_length = len(value_range)
+            except OverflowError:
+                # range too big for even trying to get how big it is.
+                # Set to value that will trigger range sample
+                value_range_length = 101
+            if value_range_length > 100:
+                # prevent iterating over a big range of values
+                random.seed(0)
+                value_range = random.sample(value_range, 100)
+                value_range = np.insert(value_range, 0, qspinbox.minimum())
+                value_range = np.append(value_range, qspinbox.maximum() - 1)
         for value in value_range:
             qspinbox.setValue(value)
             # capture any output done to sys.stdout or sys.stderr.
