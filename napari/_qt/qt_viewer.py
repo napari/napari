@@ -482,6 +482,7 @@ class QtViewer(QSplitter):
     @ensure_main_thread
     def _on_slice_ready(self, event):
         responses = event.value
+        logging.debug('QtViewer._on_slice_ready: %s', responses)
         for layer, response in responses.items():
             # Update the layer slice state to temporarily support behavior
             # that depends on it.
