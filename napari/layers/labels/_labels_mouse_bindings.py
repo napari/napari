@@ -1,5 +1,3 @@
-from typing import Optional
-
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 
@@ -70,24 +68,16 @@ class BrushSizeOnMouseMove:
     ----------
     min_brush_size : int
         The minimum brush size.
-    max_brush_size : int
-        The maximum brush size.
 
     """
 
-    def __init__(
-        self,
-        min_brush_size: int = 1,
-        max_brush_size: Optional[int] = None,
-    ):
+    def __init__(self, min_brush_size: int = 1):
         self.min_brush_size = min_brush_size
-        self.max_brush_size = max_brush_size
         self.init_pos = None
         self.init_brush_size = None
 
     def __call__(self, layer, event):
         if 'Control' in event.modifiers and 'Alt' in event.modifiers:
-            # The Qt cursor is used to keep the cursor position frozen while the callback is active
             pos = event.position
 
             if self.init_pos is None:
@@ -99,10 +89,6 @@ class BrushSizeOnMouseMove:
                 new_brush_size = self.init_brush_size + brush_size_delta
 
                 bounded_brush_size = max(new_brush_size, self.min_brush_size)
-                if self.max_brush_size is not None:
-                    bounded_brush_size = min(
-                        bounded_brush_size, self.max_brush_size
-                    )
                 layer.brush_size = bounded_brush_size
         else:
             self.init_pos = None

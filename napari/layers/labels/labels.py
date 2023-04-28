@@ -223,9 +223,7 @@ class Labels(_ImageBase):
         Mode.ERASE: draw,
     }
 
-    brush_size_on_mouse_move = BrushSizeOnMouseMove(
-        min_brush_size=1, max_brush_size=None
-    )
+    brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
     _move_modes = {
         Mode.PAN_ZOOM: no_op,

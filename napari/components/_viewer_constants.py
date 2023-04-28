@@ -39,7 +39,7 @@ class CursorStyle(str, Enum):
 
     SQUARE = 'square'
     CIRCLE = 'circle'
-    CIRCLE_FROZEN = ('circle_frozen',)
+    CIRCLE_FROZEN = 'circle_frozen'
     CROSS = 'cross'
     FORBIDDEN = 'forbidden'
     POINTING = 'pointing'
