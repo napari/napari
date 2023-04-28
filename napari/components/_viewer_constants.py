@@ -27,6 +27,9 @@ class CursorStyle(str, Enum):
     Sets the style of the cursor
             * square: A square
             * circle: A circle
+            * circle_frozen:
+                A brush circle with a frozen position along with the standard cursor.
+                It is used to show the brush size change while using Ctrl+Alt + mouse move.
             * cross: A cross
             * forbidden: A forbidden symbol
             * pointing: A finger for pointing
@@ -36,6 +39,7 @@ class CursorStyle(str, Enum):
 
     SQUARE = 'square'
     CIRCLE = 'circle'
+    CIRCLE_FROZEN = ('circle_frozen',)
     CROSS = 'cross'
     FORBIDDEN = 'forbidden'
     POINTING = 'pointing'

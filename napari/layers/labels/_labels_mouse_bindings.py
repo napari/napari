@@ -72,8 +72,6 @@ class BrushSizeOnMouseMove:
         The minimum brush size.
     max_brush_size : int
         The maximum brush size.
-    sensitivity : float
-        Controls the sensitivity of the brush's size change to mouse movement.
 
     """
 
@@ -81,34 +79,23 @@ class BrushSizeOnMouseMove:
         self,
         min_brush_size: int = 1,
         max_brush_size: Optional[int] = None,
-        sensitivity: float = 0.2,
     ):
         self.min_brush_size = min_brush_size
         self.max_brush_size = max_brush_size
-        self.sensitivity = sensitivity
         self.init_pos = None
         self.init_brush_size = None
-        self.accumulated_delta = 0
 
     def __call__(self, layer, event):
         if 'Control' in event.modifiers and 'Alt' in event.modifiers:
             # The Qt cursor is used to keep the cursor position frozen while the callback is active
-            qt_cursor = event.source.native.cursor()
-            pos = qt_cursor.pos()
+            pos = event.position
 
             if self.init_pos is None:
                 self.init_pos = pos
                 self.init_brush_size = layer.brush_size
-                self.accumulated_delta = 0
+                layer.cursor = 'circle_frozen'
             else:
-                # To minimize rounding errors after multiplying by the sensitivity,
-                # it is important to aggregate the delta change in a distinct variable
-                self.accumulated_delta += pos.x() - self.init_pos.x()
-                qt_cursor.setPos(self.init_pos)
-
-                brush_size_delta = round(
-                    self.sensitivity * self.accumulated_delta
-                )
+                brush_size_delta = round(pos[1] - self.init_pos[1])
                 new_brush_size = self.init_brush_size + brush_size_delta
 
                 bounded_brush_size = max(new_brush_size, self.min_brush_size)
@@ -116,12 +103,8 @@ class BrushSizeOnMouseMove:
                     bounded_brush_size = min(
                         bounded_brush_size, self.max_brush_size
                     )
-
                 layer.brush_size = bounded_brush_size
-
-                # Reset the delta when the brush size goes outside its limits
-                if new_brush_size != bounded_brush_size:
-                    self.init_brush_size = layer.brush_size
-                    self.accumulated_delta = 0
         else:
             self.init_pos = None
+            if layer.cursor == 'circle_frozen':
+                layer.cursor = 'circle'

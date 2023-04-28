@@ -258,7 +258,7 @@ class VispyCanvas:
 
         cursor = self.viewer.cursor.style
         brush_cursor = False
-        if cursor in {'square', 'circle'}:
+        if cursor in {'square', 'circle', 'circle_frozen'}:
             # Scale size by zoom if needed
             size = self.viewer.cursor.size
             if self.viewer.cursor.scaled:
@@ -267,11 +267,19 @@ class VispyCanvas:
             size = int(size)
 
             # make sure the square fits within the current canvas
-            if size < 8 or size > (min(*self.size) - 4):
+            if (
+                size < 8 or size > (min(*self.size) - 4)
+            ) and cursor != 'circle_frozen':
                 self.cursor = QtCursorVisual['cross'].value
-            elif cursor == 'circle':
+            elif cursor.startswith('circle'):
                 self.viewer._brush_circle_overlay.size = size
-                self.cursor = QtCursorVisual.blank()
+                if cursor == 'circle_frozen':
+                    self.cursor = QtCursorVisual['standard'].value
+                    self.viewer._brush_circle_overlay.frozen_pos = True
+                else:
+                    self.cursor = QtCursorVisual.blank()
+                    self.viewer._brush_circle_overlay.frozen_pos = False
+
                 brush_cursor = True
             else:
                 self.cursor = QtCursorVisual.square(size)
