@@ -477,10 +477,7 @@ class QtViewer(QSplitter):
         unwrapped: object or None
             Returns referenced object, or None if weakref is dead.
         """
-        if isinstance(value, ref):
-            unwrapped = value()
-        else:
-            unwrapped = value
+        unwrapped = value() if isinstance(value, ref) else value
         return unwrapped
 
     def add_to_console_backlog(self, variables):
