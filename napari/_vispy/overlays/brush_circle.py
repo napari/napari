@@ -56,7 +56,7 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             self.overlay.position = event.pos.tolist()
 
     def _set_position(self, pos):
-        if not self.overlay.frozen_pos:
+        if not self.overlay.position_is_frozen:
             self.node.transform.translate = [pos[0], pos[1], 0, 0]
 
     def _on_canvas_change(self, event):
@@ -74,7 +74,7 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             self.node.visible = self.overlay.visible
         else:
             if self.overlay.visible:
-                self.node.visible = self.overlay.frozen_pos
+                self.node.visible = self.overlay.position_is_frozen
             else:
                 self.node.visible = False
 

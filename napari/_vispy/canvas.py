@@ -257,7 +257,9 @@ class VispyCanvas:
         """Create a QCursor based on the napari cursor settings and set in Vispy."""
 
         cursor = self.viewer.cursor.style
-        brush_cursor = False
+        brush_overlay = self.viewer._brush_circle_overlay
+        brush_overlay.visible = False
+
         if cursor in {'square', 'circle', 'circle_frozen'}:
             # Scale size by zoom if needed
             size = self.viewer.cursor.size
@@ -272,23 +274,20 @@ class VispyCanvas:
             ) and cursor != 'circle_frozen':
                 self.cursor = QtCursorVisual['cross'].value
             elif cursor.startswith('circle'):
-                self.viewer._brush_circle_overlay.size = size
+                brush_overlay.size = size
                 if cursor == 'circle_frozen':
                     self.cursor = QtCursorVisual['standard'].value
-                    self.viewer._brush_circle_overlay.frozen_pos = True
+                    brush_overlay.position_is_frozen = True
                 else:
                     self.cursor = QtCursorVisual.blank()
-                    self.viewer._brush_circle_overlay.frozen_pos = False
-
-                brush_cursor = True
+                    brush_overlay.position_is_frozen = False
+                brush_overlay.visible = True
             else:
                 self.cursor = QtCursorVisual.square(size)
         elif cursor == 'crosshair':
             self.cursor = QtCursorVisual.crosshair()
         else:
             self.cursor = QtCursorVisual[cursor].value
-
-        self.viewer._brush_circle_overlay.visible = brush_cursor
 
     def delete(self) -> None:
         """Schedules the native widget for deletion"""
@@ -370,6 +369,9 @@ class VispyCanvas:
         event.up_direction = self.viewer.camera.calculate_nd_up_direction(
             self.viewer.dims.ndim, self.viewer.dims.displayed
         )
+
+        # Add the camera zoom scale to the event
+        event.camera_zoom = self.viewer.camera.zoom
 
         # Update the cursor position
         self.viewer.cursor._view_direction = event.view_direction

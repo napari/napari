@@ -84,14 +84,16 @@ class BrushSizeOnMouseMove:
 
     def __call__(self, layer, event):
         if all(modifier in event.modifiers for modifier in self.modifiers):
-            pos = event.position
+            pos = event.pos  # position in the canvas coordinates (x, y)
 
             if self.init_pos is None:
                 self.init_pos = pos
                 self.init_brush_size = layer.brush_size
                 layer.cursor = 'circle_frozen'
             else:
-                brush_size_delta = round(pos[1] - self.init_pos[1])
+                brush_size_delta = round(
+                    (pos[0] - self.init_pos[0]) / event.camera_zoom
+                )
                 new_brush_size = self.init_brush_size + brush_size_delta
 
                 bounded_brush_size = max(new_brush_size, self.min_brush_size)
