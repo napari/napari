@@ -465,7 +465,7 @@ class QtViewer(QSplitter):
         return newref
 
     def _unwrap_if_weakref(self, value):
-        """Returns value or if that is weakref the object referenced by value.
+        """Return value or if that is weakref the object referenced by value.
 
         Parameters
         ----------
@@ -474,13 +474,14 @@ class QtViewer(QSplitter):
 
         Returns
         -------
-        object or None
-            Returns object or None if weakref is dead.
+        unwrapped: object or None
+            Returns referenced object, or None if weakref is dead.
         """
         if isinstance(value, ref):
-            return value()
+            unwrapped = value()
         else:
-            return value
+            unwrapped = value
+        return unwrapped
 
     def add_to_console_backlog(self, variables):
         """Save variables for pushing to console when it is instantiated.
