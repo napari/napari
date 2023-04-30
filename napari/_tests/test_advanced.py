@@ -229,6 +229,7 @@ def test_update_lazy_console(make_napari_viewer, capsys):
     del viewer.window._qt_viewer.console.shell.user_ns['obj2']
     del viewer.window._qt_viewer.console.shell.user_ns['x']
 
+
 def test_changing_display_surface(make_napari_viewer):
     """Test adding 3D surface and changing its display."""
     viewer = make_napari_viewer()

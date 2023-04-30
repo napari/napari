@@ -508,16 +508,15 @@ class QtViewer(QSplitter):
                 try:
                     vdict[name] = eval(name, cf.f_globals, cf.f_locals)
                 except:
-                    print('Could not get variable %s from %s' %
-                           (name,cf.f_code.co_name))
+                    print(
+                        f'Could not get variable {name} from {cf.f_code.co_name}'
+                    )
         elif isinstance(variables, dict):
             vdict = variables
         else:
             raise ValueError('variables must be a dict/str/list/tuple')
         # weakly reference values if possible
-        new_dict = {
-            k: self._weakref_if_possible(v) for k, v in vdict.items()
-        }
+        new_dict = {k: self._weakref_if_possible(v) for k, v in vdict.items()}
         self.console_backlog.append(new_dict)
 
     @property
