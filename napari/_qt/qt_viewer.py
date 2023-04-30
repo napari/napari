@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 import traceback
 import typing
 import warnings
@@ -496,14 +497,28 @@ class QtViewer(QSplitter):
             give (list/tuple/str) then the variable values looked up in the
             callers frame.
         """
-        if isinstance(variables, dict):
-            # weakly reference values if possible
-            new_dict = {
-                k: self._weakref_if_possible(v) for k, v in variables.items()
-            }
-            self.console_backlog.append(new_dict)
+        if isinstance(variables, (str, list, tuple)):
+            if isinstance(variables, str):
+                vlist = variables.split()
+            else:
+                vlist = variables
+            vdict = {}
+            cf = sys._getframe(2)
+            for name in vlist:
+                try:
+                    vdict[name] = eval(name, cf.f_globals, cf.f_locals)
+                except:
+                    print('Could not get variable %s from %s' %
+                           (name,cf.f_code.co_name))
+        elif isinstance(variables, dict):
+            vdict = variables
         else:
-            self.console_backlog.append(variables)
+            raise ValueError('variables must be a dict/str/list/tuple')
+        # weakly reference values if possible
+        new_dict = {
+            k: self._weakref_if_possible(v) for k, v in vdict.items()
+        }
+        self.console_backlog.append(new_dict)
 
     @property
     def console_backlog(self):
@@ -526,17 +541,14 @@ class QtViewer(QSplitter):
                         {'napari': napari, 'action_manager': action_manager}
                     )
                     for i in self.console_backlog:
-                        if isinstance(i, dict):
-                            # recover weak refs
-                            self.console.push(
-                                {
-                                    k: self._unwrap_if_weakref(v)
-                                    for k, v in i.items()
-                                    if self._unwrap_if_weakref(v) is not None
-                                }
-                            )
-                        else:
-                            self.console.push(i)
+                        # recover weak refs
+                        self.console.push(
+                            {
+                                k: self._unwrap_if_weakref(v)
+                                for k, v in i.items()
+                                if self._unwrap_if_weakref(v) is not None
+                            }
+                        )
                     self._console_backlog = []
             except ModuleNotFoundError:
                 warnings.warn(

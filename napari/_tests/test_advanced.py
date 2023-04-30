@@ -181,7 +181,7 @@ def test_update_console(make_napari_viewer):
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
-def test_update_lazy_console(make_napari_viewer):
+def test_update_lazy_console(make_napari_viewer, capsys):
     """Test updating the console with local variables,
     before console is instantiated."""
     viewer = make_napari_viewer()
@@ -189,8 +189,16 @@ def test_update_lazy_console(make_napari_viewer):
 
     a = 4
     b = 5
-    locs = locals()
-    viewer.update_console(locs)
+    viewer.update_console(["a", "b"])
+
+    x = np.arange(5)
+    viewer.update_console("x")
+
+    viewer.update_console("missing")
+    captured = capsys.readouterr()
+    assert 'Could not get' in captured.out
+    with pytest.raises(ValueError):
+        viewer.update_console(x)
 
     # Create class objects that will have weakrefs
     class Foo:
@@ -213,13 +221,13 @@ def test_update_lazy_console(make_napari_viewer):
     assert view.console.shell.user_ns['a'] == a
     assert 'b' in view.console.shell.user_ns
     assert view.console.shell.user_ns['b'] == b
+    assert 'x' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['x'] is x
     assert 'obj1' not in view.console.shell.user_ns
     assert 'obj2' in view.console.shell.user_ns
     assert view.console.shell.user_ns['obj2'] == obj2
     del viewer.window._qt_viewer.console.shell.user_ns['obj2']
-    for k in locs:
-        del viewer.window._qt_viewer.console.shell.user_ns[k]
-
+    del viewer.window._qt_viewer.console.shell.user_ns['x']
 
 def test_changing_display_surface(make_napari_viewer):
     """Test adding 3D surface and changing its display."""
