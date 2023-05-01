@@ -40,6 +40,19 @@ def test_random_surface_no_values():
     assert layer._view_vertex_values.ndim == 1
 
 
+def test_random_surface_clearing_vertex_values():
+    """Test setting `vertex_values=None` resets values to uniform ones."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 2))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+    layer = Surface(data)
+    assert np.all(layer.vertex_values == values)
+    layer.vertex_values = None
+    assert np.all(layer.vertex_values == np.ones(len(vertices)))
+
+
 def test_random_3D_surface():
     """Test instantiating Surface layer with random 3D data."""
     np.random.seed(0)
@@ -212,6 +225,51 @@ def test_shading():
     # set shading as keyword argument
     layer = Surface(data, shading=shading)
     assert layer.shading == shading
+
+
+def test_texture():
+    """Test setting texture"""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+
+    texture = np.random.random((32, 32, 3)).astype(np.float32)
+    texcoords = vertices[:, :2]
+    layer = Surface(data, texture=texture, texcoords=texcoords)
+
+    np.testing.assert_allclose(layer.texture, texture)
+    np.testing.assert_allclose(layer.texcoords, texcoords)
+    assert layer._has_texture
+
+    layer.texture, layer.texcoords = None, texcoords
+    assert not layer._has_texture
+
+    layer.texture, layer.texcoords = texture, None
+    assert not layer._has_texture
+
+    layer.texture, layer.texcoords = None, None
+    assert not layer._has_texture
+
+    layer.texture, layer.texcoords = texture, texcoords
+    assert layer._has_texture
+
+
+def test_vertex_colors():
+    """Test setting vertex colors"""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+
+    vertex_colors = np.random.random((len(vertices), 3))
+    layer = Surface(data, vertex_colors=vertex_colors)
+    np.testing.assert_allclose(layer.vertex_colors, vertex_colors)
+
+    layer.vertex_colors = vertex_colors**2
+    np.testing.assert_allclose(layer.vertex_colors, vertex_colors**2)
 
 
 @pytest.mark.parametrize(
