@@ -111,7 +111,7 @@ class QtLabelsControls(QtLayerControls):
         # selection spinbox
         self.selectionSpinBox = QLargeIntSpinBox()
         dtype_lims = get_dtype_limits(get_dtype(layer))
-        self.selectionSpinBox.setRange(*dtype_lims)
+        self.selectionSpinBox.setRange(0, dtype_lims[1] // 100)
         self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -143,7 +143,7 @@ class QtLabelsControls(QtLayerControls):
         self._on_n_edit_dimensions_change()
 
         self.contourSpinBox = QLargeIntSpinBox()
-        self.contourSpinBox.setRange(*dtype_lims)
+        self.contourSpinBox.setRange(0, 20)
         self.contourSpinBox.setToolTip(trans._('display contours of labels'))
         self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)

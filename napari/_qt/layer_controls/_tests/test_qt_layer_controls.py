@@ -176,8 +176,25 @@ def test_create_layer_controls(
 
     # check QAbstractSpinBox by changing value with `setValue` from minimum value to maximum
     for qspinbox in ctrl.findChildren(QAbstractSpinBox):
+        qspinbox_initial_value = qspinbox.value()
         if isinstance(qspinbox.minimum(), float):
             value_range = np.linspace(qspinbox.minimum(), qspinbox.maximum())
+            try:
+                value_range_length = len(value_range)
+            except OverflowError:
+                # range too big for even trying to get how big it is.
+                value_range_length = 100
+                np.random.seed(0)
+                value_range = [
+                    np.random.uniform(qspinbox.minimum(), qspinbox.maximum())
+                    for _ in range(value_range_length + 1)
+                ]
+            if value_range_length > 100:
+                # prevent iterating over a big range of values
+                random.seed(0)
+                value_range = random.sample(value_range, 100)
+                value_range = np.insert(value_range, 0, qspinbox.minimum())
+                value_range = np.append(value_range, qspinbox.maximum() - 1)
         else:
             # use + 1 to include maximum value
             value_range = range(qspinbox.minimum(), qspinbox.maximum() + 1)
@@ -185,8 +202,13 @@ def test_create_layer_controls(
                 value_range_length = len(value_range)
             except OverflowError:
                 # range too big for even trying to get how big it is.
-                # Set to value that will trigger range sample
-                value_range_length = 101
+                value_range_length = 100
+                value_range = [
+                    random.randrange(
+                        qspinbox.minimum(), qspinbox.maximum() + 1
+                    )
+                    for _ in range(value_range_length + 1)
+                ]
             if value_range_length > 100:
                 # prevent iterating over a big range of values
                 random.seed(0)
@@ -200,10 +222,8 @@ def test_create_layer_controls(
             assert not captured.out
             assert not captured.err
 
-        if qspinbox.maximum() == 2**31 - 1:
-            assert qspinbox.value() == qspinbox.maximum() - 1
-        else:
-            assert qspinbox.value() == qspinbox.maximum()
+        assert qspinbox.value() in [qspinbox.maximum(), qspinbox.maximum() - 1]
+        qspinbox.setValue(qspinbox_initial_value)
 
     # check QAbstractSlider by changing value with `setValue` from minimum value to maximum
     for qslider in ctrl.findChildren(QAbstractSlider):
