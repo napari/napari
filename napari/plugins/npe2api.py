@@ -5,10 +5,19 @@ that match the plugin naming convention, and retrieving related metadata.
 import json
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
-from typing import Dict, Iterator, List, Optional, Tuple, TypedDict, cast
+from typing import (
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    TypedDict,
+    cast,
+)
 from urllib.request import Request, urlopen
 
 from npe2 import PackageMetadata
+from typing_extensions import NotRequired
 
 from napari.plugins.utils import normalized_name
 
@@ -46,13 +55,15 @@ def _user_agent() -> str:
 class SummaryDict(TypedDict):
     """Objects returned at https://npe2api.vercel.app/api/extended_summary ."""
 
-    name: PyPIname
+    name: NotRequired[PyPIname]
     version: str
-    display_name: str
+    display_name: NotRequired[str]
     summary: str
     author: str
     license: str
     home_page: str
+    pypi_versions: NotRequired[List[str]]
+    conda_versions: NotRequired[List[str]]
 
 
 @lru_cache
@@ -71,9 +82,7 @@ def conda_map() -> Dict[PyPIname, Optional[str]]:
         return json.load(resp)
 
 
-def iter_napari_plugin_info() -> (
-    Iterator[Tuple[PackageMetadata, bool, Dict[str, str]]]
-):
+def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
     """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
     with ThreadPoolExecutor() as executor:
         data = executor.submit(plugin_summaries)
@@ -81,21 +90,21 @@ def iter_napari_plugin_info() -> (
 
     conda = _conda.result()
     for info in data.result():
-        _info = cast(Dict[str, str], dict(info))
+        info_ = cast(SummaryDict, dict(info))
 
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
         # receive
-        _info.pop("display_name", None)
+        info_.pop("display_name", None)
 
         # TODO: once the new version of npe2 is out, this can be refactored
         # to all the metadata includes the conda and pypi versions.
         extra_info = {
-            "home_page": _info.get("home_page", ""),
-            "pypi_versions": _info.pop("pypi_versions"),
-            "conda_versions": _info.pop("conda_versions"),
+            'home_page': info_.get("home_page", ""),
+            'pypi_versions': info_.pop("pypi_versions"),
+            'conda_versions': info_.pop("conda_versions"),
         }
-        name = _info.pop("name")
-        meta = PackageMetadata(name=normalized_name(name), **_info)
+        info_["name"] = normalized_name(info_["name"])
+        meta = PackageMetadata(**info_)
 
-        yield meta, (name in conda), extra_info
+        yield meta, (info_["name"] in conda), extra_info
