@@ -21,6 +21,7 @@ def draw(layer, event):
     pixels will be changed to background and this tool functions like an
     eraser
     """
+    print(type(event))
     coordinates = mouse_event_to_labels_coordinate(layer, event)
     if layer._mode == Mode.ERASE:
         new_label = layer._background_label

@@ -122,7 +122,6 @@ shapes_fun_to_mode = [
     (activate_add_path_mode, Mode.ADD_PATH),
     (activate_add_polygon_mode, Mode.ADD_POLYGON),
     (activate_add_polygon_lasso_mode, Mode.ADD_POLYGON_LASSO),
-    # (activate_add_polygon_lasso_tablet_mode, Mode.ADD_POLYGON_LASSO_TABLET),
     (activate_direct_mode, Mode.DIRECT),
     (activate_select_mode, Mode.SELECT),
     (activate_vertex_insert_mode, Mode.VERTEX_INSERT),
