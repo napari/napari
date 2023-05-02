@@ -35,6 +35,10 @@ QWidget {
   selection-color: {{ text }};
 }
 
+QWidget:disabled {
+  color: {{ opacity(text, 90) }};
+}
+
 QWidget[emphasized="true"] {
     background-color: {{ foreground }};
 }
@@ -601,6 +605,48 @@ QGroupBox::title {
     left: 10px;
     padding: 0 3px;
     background-color: {{ background }};
+}
+
+QGroupBox::indicator {
+  width: 12px;
+  height: 12px;
+  background-color: {{ foreground }};
+  border: 0px;
+  padding: 1px;
+  border-radius: 2px
+}
+
+QGroupBox::indicator:hover {
+  background-color: {{ lighten(foreground, 5) }};
+}
+
+QGroupBox::indicator:unchecked {
+  image: none;
+}
+
+QGroupBox::indicator:checked {
+  image: url("theme_{{ id }}:/check.svg");
+}
+
+QGroupBox::indicator:indeterminate {
+  image: url("theme_{{ id }}:/minus.svg");
+  padding: 2px;
+  width: 14px;
+  height: 14px;
+}
+
+QWidget[emphasized="true"] QGroupBox::indicator {
+  background-color: {{ primary }};
+  border-color: {{ primary }};
+}
+
+QWidget[emphasized="true"] QGroupBox::indicator:hover {
+  background-color: {{ lighten(primary, 5) }};
+}
+
+QWidget[emphasized="true"] QGroupBox::indicator:unchecked:hover {
+  background-color: {{ lighten(primary, 5) }};
+  border-color: {{ lighten(primary, 5) }};
 }
 
 

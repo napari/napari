@@ -5,8 +5,13 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import skimage.color as colorconv
-from vispy.color import BaseColormap as VispyColormap
-from vispy.color import Color, ColorArray, get_colormap, get_colormaps
+from vispy.color import (
+    BaseColormap as VispyColormap,
+    Color,
+    ColorArray,
+    get_colormap,
+    get_colormaps,
+)
 from vispy.color.colormap import LUT_len
 
 from napari.utils.colormaps.bop_colors import bopd
@@ -503,10 +508,9 @@ ALL_COLORMAPS.update(BOP_COLORMAPS)
 ALL_COLORMAPS.update(INVERSE_COLORMAPS)
 
 # ... sorted alphabetically by name
-AVAILABLE_COLORMAPS = {
-    k: v
-    for k, v in sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
-}
+AVAILABLE_COLORMAPS = dict(
+    sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
+)
 # lock to allow update of AVAILABLE_COLORMAPS in threads
 AVAILABLE_COLORMAPS_LOCK = Lock()
 
@@ -643,8 +647,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
-                isinstance(colormap['colors'], VispyColormap)
-                or isinstance(colormap['colors'], Colormap)
+                isinstance(colormap['colors'], (VispyColormap, Colormap))
             ):
                 cmap = Colormap(**colormap)
                 name = cmap.name
