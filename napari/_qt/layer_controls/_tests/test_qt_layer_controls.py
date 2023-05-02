@@ -1,3 +1,4 @@
+import os
 import random
 import sys
 from collections import namedtuple
@@ -149,6 +150,7 @@ def create_layer_controls(qtbot):
     ],
 )
 @pytest.mark.qt_no_exception_capture
+@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
 def test_create_layer_controls(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
