@@ -46,6 +46,7 @@ jobs:
 
           python3.8 -m piptools compile --upgrade -o resources/constraints/constraints_py3.8.txt setup.cfg resources/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
           python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9.txt setup.cfg resources/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
+          python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9_examples.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
           python3.10 -m piptools compile --upgrade -o resources/constraints/constraints_py3.10.txt setup.cfg resources/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
 
           # Explanation of above commands 
