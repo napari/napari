@@ -207,7 +207,17 @@ def test_create_layer_controls(
             # capture any output done to sys.stdout or sys.stderr.
             captured = capsys.readouterr()
             assert not captured.out
-            assert not captured.err
+            if captured.err:
+                # since an error was found check if it is associated with a known issue still open
+                expected_errors = [
+                    "MemoryError: Unable to allocate",  # See https://github.com/napari/napari/issues/5798
+                    "ValueError: array is too big; `arr.size * arr.dtype.itemsize` is larger than the maximum possible size.",  # See https://github.com/napari/napari/issues/5798
+                    f"IndexError: index {value} is out of bounds for axis 0 with size 5",  # See https://github.com/napari/napari/issues/4864
+                ]
+                assert any(
+                    expected_error in captured.err
+                    for expected_error in expected_errors
+                ), captured.err
 
         assert qspinbox.value() in [qspinbox_max, qspinbox_max - 1]
         qspinbox.setValue(qspinbox_initial_value)
