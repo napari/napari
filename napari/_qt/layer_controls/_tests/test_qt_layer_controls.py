@@ -213,7 +213,9 @@ def test_create_layer_controls(
                 expected_errors = [
                     "MemoryError: Unable to allocate",  # See https://github.com/napari/napari/issues/5798
                     "ValueError: array is too big; `arr.size * arr.dtype.itemsize` is larger than the maximum possible size.",  # See https://github.com/napari/napari/issues/5798
+                    "ValueError: Maximum allowed dimension exceeded",  # See https://github.com/napari/napari/issues/5798
                     f"IndexError: index {value} is out of bounds for axis 0 with size 5",  # See https://github.com/napari/napari/issues/4864
+                    "RuntimeWarning: overflow encountered in scalar add",  # See https://github.com/napari/napari/issues/4864
                 ]
                 assert any(
                     expected_error in captured.err
