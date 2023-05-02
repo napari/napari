@@ -193,9 +193,10 @@ def test_create_layer_controls(
                 # range too big for even trying to get how big it is.
                 value_range_length = 100
                 value_range = [
-                    random.randrange(qspinbox_min, qspinbox_max + 1)
-                    for _ in range(value_range_length + 1)
+                    random.randrange(qspinbox_min, qspinbox_max)
+                    for _ in range(value_range_length)
                 ]
+                value_range.append(qspinbox_max)
             if value_range_length > 100:
                 # prevent iterating over a big range of values
                 random.seed(0)
