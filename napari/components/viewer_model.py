@@ -33,6 +33,7 @@ from napari.components.grid import GridCanvas
 from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
+    BrushCircleOverlay,
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
@@ -112,6 +113,7 @@ DEFAULT_OVERLAYS = {
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
+    'brush_circle': BrushCircleOverlay,
 }
 
 
@@ -281,6 +283,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     @property
     def text_overlay(self):
         return self._overlays['text']
+
+    @property
+    def _brush_circle_overlay(self):
+        return self._overlays['brush_circle']
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
