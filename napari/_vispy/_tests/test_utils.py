@@ -75,7 +75,7 @@ def test_get_view_direction_in_scene_coordinates_2d(make_napari_viewer):
 
 def test_set_cursor(make_napari_viewer):
     viewer = make_napari_viewer()
-    viewer.cursor.style = CursorStyle.CIRCLE.value
+    viewer.cursor.style = CursorStyle.SQUARE.value
     viewer.cursor.size = 10
     assert (
         viewer.window._qt_viewer.canvas.cursor.shape()
@@ -87,6 +87,12 @@ def test_set_cursor(make_napari_viewer):
         viewer.window._qt_viewer.canvas.cursor.shape()
         == QtCursorVisual['cross'].value
     )
+
+    viewer.cursor.style = CursorStyle.CIRCLE.value
+    viewer.cursor.size = 100
+
+    assert viewer._brush_circle_overlay.visible
+    assert viewer._brush_circle_overlay.size == viewer.cursor.size
 
     with pytest.raises(Exception):
         viewer.cursor.style = "invalid"
