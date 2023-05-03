@@ -1561,6 +1561,11 @@ class Points(Layer):
             displayed_position = [
                 position[i] for i in self._slice_input.displayed
             ]
+            # positions are scaled anisotropically by scale, but sizes are not,
+            # so we need to calculate the ratio to correctly map to screen coordinates
+            scale_ratio = (
+                self.scale[self._slice_input.displayed] / self.scale[-1]
+            )
             # Get the point sizes
             # TODO: calculate distance in canvas space to account for canvas_size_limits.
             # Without this implementation, point hover and selection (and anything depending
@@ -1568,7 +1573,8 @@ class Points(Layer):
             # unexpected behaviour. See #3734 for details.
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
-                distances <= np.expand_dims(self._view_size / 2, axis=1),
+                distances
+                <= np.expand_dims(self._view_size / scale_ratio / 2, axis=1),
                 axis=1,
             )
             indices = np.where(in_slice_matches)[0]
@@ -1621,10 +1627,14 @@ class Points(Layer):
         )
         rotated_click_point = np.dot(rotation_matrix, plane_point)
 
+        # positions are scaled anisotropically by scale, but sizes are not,
+        # so we need to calculate the ratio to correctly map to screen coordinates
+        scale_ratio = self.scale[self._slice_input.displayed] / self.scale[-1]
         # find the points the click intersects
         distances = abs(rotated_points[:, :2] - rotated_click_point[:2])
         in_slice_matches = np.all(
-            distances <= np.expand_dims(self._view_size / 2, axis=1),
+            distances
+            <= np.expand_dims(self._view_size / scale_ratio / 2, axis=1),
             axis=1,
         )
         indices = np.where(in_slice_matches)[0]
