@@ -298,11 +298,10 @@ def add_path_polygon_lasso(layer: Shapes, event: ReadOnlyWrapper):
     else:
         index = layer._moving_value[0]
         vertices = layer._data_view.shapes[index].data
-        if len(vertices) == 2:
-            finish_drawing_shape(layer)
 
-        vertices = rdp(vertices, epsilon=0.5)
-        layer._data_view.edit(index, vertices, new_type=Polygon)
+        if len(vertices) > 2:
+            vertices = rdp(vertices, epsilon=0.5)
+            layer._data_view.edit(index, vertices, new_type=Polygon)
         finish_drawing_shape(layer)
 
 
