@@ -25,12 +25,11 @@ from napari.layers.shapes._shapes_mouse_bindings import (
     add_ellipse,
     add_line,
     add_path_polygon,
-    add_path_polygon_creating,
-    add_path_polygon_tablet,
+    add_path_polygon_lasso,
     add_rectangle,
     finish_drawing_shape,
     highlight,
-    polygon_lasso_creating,
+    polygon_creating,
     select,
     vertex_insert,
     vertex_remove,
@@ -338,8 +337,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: add_line,
         Mode.ADD_PATH: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
-        Mode.ADD_POLYGON_LASSO: add_path_polygon_tablet,
-        Mode.ADD_POLYGON_LASSO_TABLET: add_path_polygon_tablet,
+        Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
 
     _move_modes = {
@@ -352,10 +350,9 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: no_op,
         Mode.ADD_ELLIPSE: no_op,
         Mode.ADD_LINE: no_op,
-        Mode.ADD_PATH: add_path_polygon_creating,
-        Mode.ADD_POLYGON: add_path_polygon_creating,
-        Mode.ADD_POLYGON_LASSO: polygon_lasso_creating,
-        Mode.ADD_POLYGON_LASSO_TABLET: no_op,
+        Mode.ADD_PATH: polygon_creating,
+        Mode.ADD_POLYGON: polygon_creating,
+        Mode.ADD_POLYGON_LASSO: polygon_creating,
     }
 
     _double_click_modes = {
@@ -371,7 +368,6 @@ class Shapes(Layer):
         Mode.ADD_PATH: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
         Mode.ADD_POLYGON_LASSO: no_op,
-        Mode.ADD_POLYGON_LASSO_TABLET: no_op,
     }
 
     _cursor_modes = {
@@ -387,7 +383,6 @@ class Shapes(Layer):
         Mode.ADD_PATH: 'cross',
         Mode.ADD_POLYGON: 'cross',
         Mode.ADD_POLYGON_LASSO: 'cross',
-        Mode.ADD_POLYGON_LASSO_TABLET: 'cross',
     }
 
     _interactive_modes = {
@@ -508,6 +503,7 @@ class Shapes(Layer):
         self._selected_data_stored = set()
         self._selected_data_history = set()
         self._selected_box = None
+        self._last_cursor_position = None
 
         self._drag_start = None
         self._fixed_vertex = None
@@ -2411,7 +2407,6 @@ class Shapes(Layer):
                     Mode.ADD_PATH,
                     Mode.ADD_POLYGON,
                     Mode.ADD_POLYGON_LASSO,
-                    Mode.ADD_POLYGON_LASSO_TABLET,
                     Mode.ADD_RECTANGLE,
                     Mode.ADD_ELLIPSE,
                     Mode.ADD_LINE,
@@ -2508,7 +2503,6 @@ class Shapes(Layer):
             in {
                 Mode.ADD_POLYGON,
                 Mode.ADD_POLYGON_LASSO,
-                Mode.ADD_POLYGON_LASSO_TABLET,
             }
         ):
             vertices = self._data_view.shapes[index].data
