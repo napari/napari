@@ -84,6 +84,7 @@ class VispyShapesLayer(VispyBaseLayer):
             _,
         ) = self.layer._compute_vertices_and_box()
 
+        # use last dimension of scale like (thickness cannot be anisotropic)
         width = settings.appearance.highlight_thickness / self.layer.scale[-1]
 
         if vertices is None or len(vertices) == 0:
