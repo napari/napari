@@ -377,7 +377,7 @@ class VispyCanvas:
         event.dims_point = list(self.viewer.dims.point)
 
         # Put a read only wrapper on the event
-        event = ReadOnlyWrapper(event)
+        event = ReadOnlyWrapper(event, exceptions=('handled',))
         mouse_callbacks(self.viewer, event)
 
         layer = self.viewer.layers.selection.active
