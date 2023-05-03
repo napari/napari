@@ -2316,7 +2316,11 @@ class Shapes(Layer):
                 box[Box.BOTTOM_LEFT] - box[Box.TOP_LEFT]
             )
             if length_box > 0:
-                r = self._rotation_handle_length * self.scale_factor
+                r = (
+                    self._rotation_handle_length
+                    * self.scale_factor
+                    / self.scale[-1]
+                )
                 rot = (
                     rot
                     - r
@@ -2354,7 +2358,10 @@ class Shapes(Layer):
 
             centers, offsets, triangles = self._data_view.outline(index)
             vertices = centers + (
-                self.scale_factor * self._highlight_width * offsets
+                self.scale_factor
+                * self._highlight_width
+                * offsets
+                / self.scale[-1]
             )
             vertices = vertices[:, ::-1]
         else:
@@ -2598,7 +2605,11 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.array(box * scale)
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            r = self._rotation_handle_length * self.scale_factor
+            r = (
+                self._rotation_handle_length
+                * self.scale_factor
+                / self.scale[-1]
+            )
             handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
@@ -2617,7 +2628,11 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = box @ transform.T
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            r = self._rotation_handle_length * self.scale_factor
+            r = (
+                self._rotation_handle_length
+                * self.scale_factor
+                / self.scale[-1]
+            )
             handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
@@ -2658,7 +2673,9 @@ class Shapes(Layer):
                 distances = abs(box - coord)
 
                 # Get the vertex sizes
-                sizes = self._vertex_size * self.scale_factor / 2
+                sizes = (
+                    self._vertex_size * self.scale_factor / self.scale[-1] / 2
+                )
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()
@@ -2673,7 +2690,9 @@ class Shapes(Layer):
                 distances = abs(vertices - coord)
 
                 # Get the vertex sizes
-                sizes = self._vertex_size * self.scale_factor / 2
+                sizes = (
+                    self._vertex_size * self.scale_factor / self.scale[-1] / 2
+                )
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()[0]

@@ -102,7 +102,7 @@ def select(layer, event):
 
 def add_line(layer, event):
     """Add a line."""
-    size = layer._vertex_size * layer.scale_factor / 4
+    size = layer._vertex_size * layer.scale_factor / layer.scale[-1] / 4
     full_size = np.zeros(layer.ndim, dtype=float)
     for i in layer._slice_input.displayed:
         full_size[i] = size
@@ -119,7 +119,7 @@ def add_line(layer, event):
 
 def add_ellipse(layer, event):
     """Add an ellipse."""
-    size = layer._vertex_size * layer.scale_factor / 4
+    size = layer._vertex_size * layer.scale_factor / layer.scale[-1] / 4
     size_h = np.zeros(layer.ndim, dtype=float)
     size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
@@ -137,7 +137,7 @@ def add_ellipse(layer, event):
 
 def add_rectangle(layer, event):
     """Add a rectangle."""
-    size = layer._vertex_size * layer.scale_factor / 4
+    size = layer._vertex_size * layer.scale_factor / layer.scale[-1] / 4
     size_h = np.zeros(layer.ndim, dtype=float)
     size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
@@ -455,7 +455,9 @@ def _move(layer, coordinates):
                 np.linalg.norm(box[Box.TOP_CENTER] - c),
                 np.linalg.norm(box[Box.LEFT_CENTER] - c),
             ]
-            threshold = layer._vertex_size * layer.scale_factor / 2
+            threshold = (
+                layer._vertex_size * layer.scale_factor / layer.scale[-1] / 2
+            )
             scale[abs(scale * size) < threshold] = 1
 
             # check orientation of box
