@@ -115,4 +115,5 @@ the bug report template. If you think something isn't working, don't hesitate to
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://chanzuckerberg.com/wp-content/themes/czi/img/logo-white.svg">
   <source media="(prefers-color-scheme: light)" srcset="https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg">
+  <img alt="CZI logo" src="https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg">
 </picture>
