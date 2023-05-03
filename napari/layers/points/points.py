@@ -1539,6 +1539,14 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
+    def _update_draw(
+        self, scale_factor, corner_pixels_displayed, shape_threshold
+    ):
+        super()._update_draw(
+            scale_factor, corner_pixels_displayed, shape_threshold
+        )
+        self._set_highlight(force=True)
+
     def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.
 
