@@ -451,14 +451,15 @@ def _move(layer, coordinates):
                 )
 
             # prevent box from shrinking below a threshold size
-            size = [
-                np.linalg.norm(box[Box.TOP_CENTER] - c),
-                np.linalg.norm(box[Box.LEFT_CENTER] - c),
-            ]
+            size = (np.linalg.norm(box[Box.TOP_LEFT] - c),)
             threshold = (
                 layer._vertex_size * layer.scale_factor / layer.scale[-1] / 2
             )
-            scale[abs(scale * size) < threshold] = 1
+            if np.linalg.norm(size * scale) < threshold:
+                scale[:] = 1
+            # on vertical/horizontal drags we get scale of 0
+            # when we actually simply don't want to scale
+            scale[scale == 0] = 1
 
             # check orientation of box
             if abs(handle_offset_norm[0]) == 1:
@@ -490,9 +491,7 @@ def _move(layer, coordinates):
                 np.arctan2(fixed_offset[0], -fixed_offset[1])
             )
 
-            if np.linalg.norm(new_offset) < 1:
-                angle = 0
-            elif layer._fixed_aspect:
+            if layer._fixed_aspect:
                 angle = np.round(new_angle / 45) * 45 - fixed_angle
             else:
                 angle = new_angle - fixed_angle
