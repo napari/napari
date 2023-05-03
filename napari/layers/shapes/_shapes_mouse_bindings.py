@@ -428,12 +428,12 @@ def _move(layer, coordinates):
 
             if layer._fixed_index % 2 == 0:
                 # corner selected
-                scale = (inv_rot @ (new - fixed)) / (
+                drag_scale = (inv_rot @ (new - fixed)) / (
                     inv_rot @ (box[vertex] - fixed)
                 )
             elif layer._fixed_index % 4 == 3:
                 # top or bottom selected
-                scale = np.array(
+                drag_scale = np.array(
                     [
                         (inv_rot @ (new - fixed))[0]
                         / (inv_rot @ (box[vertex] - fixed))[0],
@@ -442,7 +442,7 @@ def _move(layer, coordinates):
                 )
             else:
                 # left or right selected
-                scale = np.array(
+                drag_scale = np.array(
                     [
                         1,
                         (inv_rot @ (new - fixed))[1]
@@ -455,21 +455,21 @@ def _move(layer, coordinates):
             threshold = (
                 layer._vertex_size * layer.scale_factor / layer.scale[-1] / 2
             )
-            if np.linalg.norm(size * scale) < threshold:
-                scale[:] = 1
+            if np.linalg.norm(size * drag_scale) < threshold:
+                drag_scale[:] = 1
             # on vertical/horizontal drags we get scale of 0
             # when we actually simply don't want to scale
-            scale[scale == 0] = 1
+            drag_scale[drag_scale == 0] = 1
 
             # check orientation of box
             if abs(handle_offset_norm[0]) == 1:
                 for index in layer.selected_data:
                     layer._data_view.scale(
-                        index, scale, center=layer._fixed_vertex
+                        index, drag_scale, center=layer._fixed_vertex
                     )
-                layer._scale_box(scale, center=layer._fixed_vertex)
+                layer._scale_box(drag_scale, center=layer._fixed_vertex)
             else:
-                scale_mat = np.array([[scale[0], 0], [0, scale[1]]])
+                scale_mat = np.array([[drag_scale[0], 0], [0, drag_scale[1]]])
                 transform = rot @ scale_mat @ inv_rot
                 for index in layer.selected_data:
                     layer._data_view.shift(index, -layer._fixed_vertex)
