@@ -14,6 +14,7 @@ from napari.layers.shapes._shapes_models import (
     Rectangle,
 )
 from napari.layers.shapes._shapes_utils import point_to_lines, rdp
+from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from typing import List, Optional, Tuple
@@ -341,7 +342,9 @@ def add_path_polygon_lasso(layer: Shapes, event: ReadOnlyWrapper) -> None:
         vertices = layer._data_view.shapes[index].data
         # If number of vertices is higher than 2, tablet draw mode is assumed and shape is finished upon mouse release
         if len(vertices) > 2:
-            vertices = rdp(vertices, epsilon=0.5)
+            vertices = rdp(
+                vertices, epsilon=get_settings().experimental.rdp_epsilon
+            )
             layer._data_view.edit(index, vertices, new_type=Polygon)
             layer._finish_drawing()
     else:
@@ -351,7 +354,9 @@ def add_path_polygon_lasso(layer: Shapes, event: ReadOnlyWrapper) -> None:
 
         # Only if higher than 3 a valid polygon is assumed and shape view is edited.
         if len(vertices) > 3:
-            vertices = rdp(vertices, epsilon=0.5)
+            vertices = rdp(
+                vertices, epsilon=get_settings().experimental.rdp_epsilon
+            )
             layer._data_view.edit(index, vertices, new_type=Polygon)
         layer._finish_drawing()
 

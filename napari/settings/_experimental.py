@@ -37,6 +37,15 @@ class ExperimentalSettings(EventedSettings):
         requires_restart=True,
     )
 
+    rdp_epsilon: float = Field(
+        0.5,
+        title=trans._("RDP epsilon"),
+        description=trans._(
+            "Setting this higher removes more points from polygons. \nSetting this to 0 keeps all vertices of a given polygon"
+        ),
+        type=float,
+    )
+
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = ['schema_version']
