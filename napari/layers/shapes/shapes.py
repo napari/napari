@@ -2681,9 +2681,7 @@ class Shapes(Layer):
                 distances = abs(box - coord)
 
                 # Get the vertex sizes
-                sizes = (
-                    self._vertex_size * self.scale_factor / self.scale[-1] / 2
-                )
+                sizes = self._vertex_size * self.scale_factor / self.scale / 2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()
@@ -2698,9 +2696,7 @@ class Shapes(Layer):
                 distances = abs(vertices - coord)
 
                 # Get the vertex sizes
-                sizes = (
-                    self._vertex_size * self.scale_factor / self.scale[-1] / 2
-                )
+                sizes = self._vertex_size * self.scale_factor / self.scale / 2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()[0]
