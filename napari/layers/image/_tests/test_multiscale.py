@@ -369,7 +369,9 @@ def test_corner_value():
     target_position = (39, 19)
     target_level = 0
     layer.data_level = target_level
-    layer.corner_pixels[1] = shapes[target_level]  # update requested view
+    layer.corner_pixels[1] = (
+        np.array(shapes[target_level]) - 1
+    )  # update requested view
     layer.refresh()
 
     # Test position at corner of image
@@ -457,8 +459,8 @@ def test_multiscale_data_protocol():
         ([[5, 5], [15, 15]], 0, [[5, 5], [15, 15]]),
         # Multiscale level selection uses > rather than >= so use -1 and 21
         # instead of 0 and 20 to ensure that the FOV is big enough.
-        ([[-1, -1], [21, 21]], 1, [[0, 0], [10, 10]]),
-        ([[-11, -11], [31, 31]], 2, [[0, 0], [5, 5]]),
+        ([[-1, -1], [21, 21]], 1, [[0, 0], [9, 9]]),
+        ([[-11, -11], [31, 31]], 2, [[0, 0], [4, 4]]),
     ),
 )
 def test_update_draw_variable_fov_fixed_canvas_size(
@@ -482,9 +484,9 @@ def test_update_draw_variable_fov_fixed_canvas_size(
 @pytest.mark.parametrize(
     ('canvas_size_pixels', 'exp_level', 'exp_corner_pixels_data'),
     (
-        ([16, 16], 0, [[0, 0], [20, 20]]),
-        ([8, 8], 1, [[0, 0], [10, 10]]),
-        ([4, 4], 2, [[0, 0], [5, 5]]),
+        ([16, 16], 0, [[0, 0], [19, 19]]),
+        ([8, 8], 1, [[0, 0], [9, 9]]),
+        ([4, 4], 2, [[0, 0], [4, 4]]),
     ),
 )
 def test_update_draw_variable_canvas_size_fixed_fov(

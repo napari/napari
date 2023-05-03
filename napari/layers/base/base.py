@@ -1696,7 +1696,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             # space of the selected level. Using the level's data
             # shape only works for images, but that's the only case we
             # handle now and downsample_factors is also only on image layers.
-            max_coords = np.take(self.data[level].shape, displayed_axes)
+            max_coords = np.take(self.data[level].shape, displayed_axes) - 1
             corners[:, displayed_axes] = np.clip(scaled_corners, 0, max_coords)
             display_shape = tuple(
                 corners[1, displayed_axes] - corners[0, displayed_axes]
