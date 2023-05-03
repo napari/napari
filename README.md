@@ -112,5 +112,7 @@ the bug report template. If you think something isn't working, don't hesitate to
 
 ## institutional and funding partners
 
-![CZI logo light](https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg#gh-light-mode-only)
-![CZI logo dark](https://chanzuckerberg.com/wp-content/themes/czi/img/logo-white.svg#gh-dark-mode-only)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://chanzuckerberg.com/wp-content/themes/czi/img/logo-white.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg">
+</picture>
