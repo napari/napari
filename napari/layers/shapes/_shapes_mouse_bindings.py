@@ -294,16 +294,16 @@ def add_path_polygon_lasso(layer: Shapes, event: ReadOnlyWrapper):
             if len(vertices) > 2:
                 vertices = rdp(vertices, epsilon=0.5)
                 layer._data_view.edit(index, vertices, new_type=Polygon)
-                finish_drawing_shape(layer, event)
+                finish_drawing_shape(layer)
     else:
         index = layer._moving_value[0]
         vertices = layer._data_view.shapes[index].data
         if len(vertices) == 2:
-            finish_drawing_shape(layer, event)
+            finish_drawing_shape(layer)
 
         vertices = rdp(vertices, epsilon=0.5)
         layer._data_view.edit(index, vertices, new_type=Polygon)
-        finish_drawing_shape(layer, event)
+        finish_drawing_shape(layer)
 
 
 def polygon_lasso_creating(layer: Shapes, event: ReadOnlyWrapper) -> None:
@@ -387,7 +387,7 @@ def add_path_polygon(layer: Shapes, event: ReadOnlyWrapper) -> None:
         vertices = layer._data_view.shapes[index].data
         vertices = rdp(vertices, epsilon=0.5)
         layer._data_view.edit(index, vertices, new_type=Polygon)
-        finish_drawing_shape(layer, event)
+        finish_drawing_shape(layer)
     else:
         # Add to an existing path or polygon
         index = layer._moving_value[0]
