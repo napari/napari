@@ -6,20 +6,6 @@ from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QCursor, QPainter, QPen, QPixmap
 
 
-def circle_pixmap(size: int):
-    """Create a white/black hollow circle pixmap. For use as labels cursor."""
-    size = max(size, 1)
-    pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(pixmap)
-    painter.setPen(Qt.GlobalColor.white)
-    painter.drawEllipse(0, 0, size - 1, size - 1)
-    painter.setPen(Qt.GlobalColor.black)
-    painter.drawEllipse(1, 1, size - 3, size - 3)
-    painter.end()
-    return pixmap
-
-
 def crosshair_pixmap():
     """Create a cross cursor with white/black hollow square pixmap in the middle.
     For use as points cursor."""
@@ -109,17 +95,17 @@ def create_square_cursor(size: int):
     return QCursor(square_pixmap(size))
 
 
-def create_circle_cursor(size: int):
-    return QCursor(circle_pixmap(size))
-
-
 def create_crosshair_cursor():
     return QCursor(crosshair_pixmap())
 
 
+def create_blank_cursor():
+    return QCursor(Qt.BlankCursor)
+
+
 class QtCursorVisual(Enum):
+    blank = staticmethod(create_blank_cursor)
     square = staticmethod(create_square_cursor)
-    circle = staticmethod(create_circle_cursor)
     cross = Qt.CursorShape.CrossCursor
     forbidden = Qt.CursorShape.ForbiddenCursor
     pointing = Qt.CursorShape.PointingHandCursor
