@@ -2638,6 +2638,14 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
+    def _update_draw(
+        self, scale_factor, corner_pixels_displayed, shape_threshold
+    ):
+        super()._update_draw(
+            scale_factor, corner_pixels_displayed, shape_threshold
+        )
+        self._set_highlight(force=True)
+
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.
 
