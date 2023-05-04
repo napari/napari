@@ -59,13 +59,23 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     def _on_color_change(self):
         border_color = self.overlay.color[:3] + (1,)  # always opaque
 
+        polygon_color = self.overlay.color
+
         # Workaround for VisPy's polygon bug: if you set opacity to exactly 0,
         # it keeps the previous visualization of the polygon without cleaning it
-        polygon_color = self.overlay.color[:3] + (
-            max(self.overlay.color[3], 1e-3),
+        make_transparent = (
+            not self._polygon.color.is_blank and polygon_color[-1] == 0
         )
+        # Temporarily set a degenerate polygon to clean its faces
+        if make_transparent:
+            self._polygon.pos = [(0, 0), (1, 1)]
 
         self._polygon.color = polygon_color
+
+        # Restore the original polygon when it is transparent
+        if make_transparent:
+            self._on_points_change()
+
         self._polygon.border_color = border_color
         self._line.set_data(color=border_color)
 
