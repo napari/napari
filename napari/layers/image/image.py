@@ -347,9 +347,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._data_level = 0
             self._thumbnail_level = 0
         displayed_axes = self._slice_input.displayed
-        self.corner_pixels[1][displayed_axes] = self.level_shapes[
-            self._data_level
-        ][displayed_axes]
+        self.corner_pixels[1][displayed_axes] = (
+            np.array(self.level_shapes)[self._data_level][displayed_axes] - 1
+        )
 
         self._new_empty_slice()
 

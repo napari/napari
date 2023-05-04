@@ -1709,7 +1709,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self._data_level = level
                 self.corner_pixels = corners
                 self.events.reload(Event('reload', layer=self))
-
         else:
             # The stored corner_pixels attribute must contain valid indices.
             corners = np.zeros((2, self.ndim), dtype=int)
