@@ -36,6 +36,11 @@ def activate_labels_paint_mode(layer: Labels):
     layer.mode = Mode.PAINT
 
 
+@register_label_mode_action(trans._("Activate the draw polygon mode"))
+def activate_labels_draw_polygon_mode(layer: Labels):
+    layer.mode = Mode.DRAW_POLYGON
+
+
 @register_label_mode_action(trans._("Activate the fill bucket"))
 def activate_labels_fill_mode(layer: Labels):
     layer.mode = Mode.FILL
@@ -137,3 +142,9 @@ def undo(layer: Labels):
 def redo(layer: Labels):
     """Redo any previously undone actions."""
     layer.redo()
+
+
+@Labels.bind_key(KeyCode.Escape, overwrite=True)
+def reset_draw_polygon(layer: Labels):
+    """Reset the current drawing polygon"""
+    layer._reset_draw_polygon()

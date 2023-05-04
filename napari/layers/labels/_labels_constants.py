@@ -36,6 +36,7 @@ class Mode(StringEnum):
     PAINT = auto()
     FILL = auto()
     ERASE = auto()
+    DRAW_POLYGON = auto()
 
 
 class LabelColorMode(StringEnum):

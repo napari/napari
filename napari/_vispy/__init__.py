@@ -19,6 +19,7 @@ from napari._vispy.overlays.interaction_box import (
     VispySelectionBoxOverlay,
     VispyTransformBoxOverlay,
 )
+from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
 from napari._vispy.overlays.text import VispyTextOverlay
 from napari._vispy.utils.quaternion import quaternion2euler
@@ -32,6 +33,7 @@ __all__ = [
     "VispyScaleBarOverlay",
     "VispyTransformBoxOverlay",
     "VispyTextOverlay",
+    "VispyLabelsPolygonOverlay",
     "quaternion2euler",
     "create_vispy_layer",
     "create_vispy_overlay",

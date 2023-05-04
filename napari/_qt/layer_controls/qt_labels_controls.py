@@ -193,6 +193,14 @@ class QtLabelsControls(QtLayerControls):
             'napari:activate_labels_paint_mode', self.paint_button
         )
 
+        self.draw_polygon_button = QtModeRadioButton(
+            layer, 'draw_polygon', Mode.DRAW_POLYGON
+        )
+        action_manager.bind_button(
+            'napari:activate_labels_draw_polygon_mode',
+            self.draw_polygon_button,
+        )
+
         self.fill_button = QtModeRadioButton(
             layer,
             'fill',
@@ -217,6 +225,7 @@ class QtLabelsControls(QtLayerControls):
 
         self._EDIT_BUTTONS = (
             self.paint_button,
+            self.draw_polygon_button,
             self.pick_button,
             self.fill_button,
             self.erase_button,
@@ -225,6 +234,7 @@ class QtLabelsControls(QtLayerControls):
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)
         self.button_group.addButton(self.paint_button)
+        self.button_group.addButton(self.draw_polygon_button)
         self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.fill_button)
         self.button_group.addButton(self.erase_button)
@@ -235,6 +245,7 @@ class QtLabelsControls(QtLayerControls):
         button_row.addWidget(self.colormapUpdate)
         button_row.addWidget(self.erase_button)
         button_row.addWidget(self.paint_button)
+        button_row.addWidget(self.draw_polygon_button)
         button_row.addWidget(self.fill_button)
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.panzoom_button)
@@ -311,6 +322,8 @@ class QtLabelsControls(QtLayerControls):
             self.pick_button.setChecked(True)
         elif mode == Mode.PAINT:
             self.paint_button.setChecked(True)
+        elif mode == Mode.DRAW_POLYGON:
+            self.draw_polygon_button.setChecked(True)
         elif mode == Mode.FILL:
             self.fill_button.setChecked(True)
         elif mode == Mode.ERASE:

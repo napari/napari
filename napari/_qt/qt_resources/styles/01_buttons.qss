@@ -125,6 +125,10 @@ QtModeRadioButton[mode="polygon"]::indicator {
   image: url("theme_{{ id }}:/polygon.svg");
 }
 
+QtModeRadioButton[mode="draw_polygon"]::indicator {
+  image: url("theme_{{ id }}:/new_shapes.svg");
+}
+
 QtModeRadioButton[mode="vertex_insert"]::indicator {
   image: url("theme_{{ id }}:/vertex_insert.svg");
 }

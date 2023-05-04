@@ -42,6 +42,37 @@ def draw(layer, event):
             yield
 
 
+class DrawPolygon:
+    def __init__(self):
+        self._points = []
+
+    def __call__(self, layer, event):
+        polygon_overlay = layer._overlays['draw_polygon']
+        pos = mouse_event_to_labels_coordinate(layer, event)
+        pos = (pos[1] + 0.5, pos[0] + 0.5)  # (y, x) -> (x, y) + offset
+
+        if event.button is None:
+            if self._points:
+                polygon_overlay.points = self._points + [pos]
+        elif event.button == 1 and event.type == 'mouse_press':
+            # recenter the point in the center of the image pixel
+            pos = int(pos[0]) + 0.5, int(pos[1]) + 0.5
+            self._points.append(pos)
+            polygon_overlay.points = self._points
+        elif event.button == 1 and event.type == 'mouse_double_click':
+            if len(self._points) > 2:
+                layer.paint_polygon(self._points, layer.selected_label)
+            layer._reset_draw_polygon()
+        elif event.button == 2 and self._points:
+            self._points.pop()
+            polygon_overlay.points = self._points + [pos]
+
+        polygon_overlay.visible = len(self._points) > 0
+
+    def reset(self):
+        self._points = []
+
+
 def pick(layer, event):
     """Change the selected label to the same as the region clicked."""
     # on press

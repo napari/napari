@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
+from skimage.draw import polygon2mask
 
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
@@ -19,7 +20,7 @@ from napari.layers.labels._labels_constants import (
     LabelsRendering,
     Mode,
 )
-from napari.layers.labels._labels_mouse_bindings import draw, pick
+from napari.layers.labels._labels_mouse_bindings import DrawPolygon, draw, pick
 from napari.layers.labels._labels_utils import (
     indices_in_shape,
     interpolate_coordinates,
@@ -210,6 +211,8 @@ class Labels(_ImageBase):
 
     _modeclass = Mode
 
+    draw_polygon_callback = DrawPolygon()
+
     _drag_modes = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
@@ -217,6 +220,7 @@ class Labels(_ImageBase):
         Mode.PAINT: draw,
         Mode.FILL: draw,
         Mode.ERASE: draw,
+        Mode.DRAW_POLYGON: draw_polygon_callback,
     }
 
     _move_modes = {
@@ -226,7 +230,19 @@ class Labels(_ImageBase):
         Mode.PAINT: no_op,
         Mode.FILL: no_op,
         Mode.ERASE: no_op,
+        Mode.DRAW_POLYGON: draw_polygon_callback,
     }
+
+    _double_click_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
+        Mode.PICK: no_op,
+        Mode.PAINT: no_op,
+        Mode.FILL: no_op,
+        Mode.ERASE: no_op,
+        Mode.DRAW_POLYGON: draw_polygon_callback,
+    }
+
     _cursor_modes = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
@@ -234,6 +250,7 @@ class Labels(_ImageBase):
         Mode.PAINT: 'circle',
         Mode.FILL: 'cross',
         Mode.ERASE: 'circle',
+        Mode.DRAW_POLYGON: 'cross',
     }
 
     _history_limit = 100
@@ -319,6 +336,13 @@ class Labels(_ImageBase):
             paint=Event,
         )
 
+        from napari.components.overlays.labels_polygon import (
+            LabelsPolygonOverlay,
+        )
+
+        self._overlays.update({'draw_polygon': LabelsPolygonOverlay()})
+        self.events.opacity.connect(self._update_draw_polygon_color)
+
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
         )
@@ -331,6 +355,7 @@ class Labels(_ImageBase):
         self._selected_label = 1
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
+        self._on_selected_color_change()
         self.color = color
 
         self._status = self.mode
@@ -430,6 +455,7 @@ class Labels(_ImageBase):
         # in _raw_to_displayed
         self._all_vals = np.array([])
         self._selected_color = self.get_color(self.selected_label)
+        self._on_selected_color_change()
         self.refresh()
         self.events.selected_label()
 
@@ -437,6 +463,7 @@ class Labels(_ImageBase):
     def colormap(self, colormap):
         super()._set_colormap(colormap)
         self._selected_color = self.get_color(self.selected_label)
+        self._on_selected_color_change()
 
     @property
     def num_colors(self):
@@ -449,6 +476,7 @@ class Labels(_ImageBase):
         self.colormap = label_colormap(num_colors)
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
+        self._on_selected_color_change()
         self.events.selected_label()
 
     @property
@@ -644,6 +672,7 @@ class Labels(_ImageBase):
         self._prev_selected_label = self.selected_label
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
+        self._on_selected_color_change()
         self.events.selected_label()
 
         # note: self.color_mode returns a string and this comparison fails,
@@ -686,6 +715,7 @@ class Labels(_ImageBase):
 
         self._color_mode = color_mode
         self._selected_color = self.get_color(self.selected_label)
+        self._on_selected_color_change()
         self.events.color_mode()
         self.events.colormap()
         self.events.selected_label()
@@ -733,10 +763,40 @@ class Labels(_ImageBase):
         if mode == self._mode:
             return mode
 
+        self._overlays['draw_polygon'].visible = mode in {
+            Mode.DRAW_POLYGON,
+            Mode.PAN_ZOOM,
+        }
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 
         return mode
+
+    def _on_selected_color_change(self):
+        self._update_draw_polygon_color()
+
+    def _slice_dims(
+        self, point=None, ndisplay=2, order=None, force: bool = False
+    ):
+        super()._slice_dims(
+            point=point, ndisplay=ndisplay, order=order, force=force
+        )
+        self._overlays['draw_polygon'].dims_order = order
+
+    def _update_draw_polygon_color(self):
+        if self._selected_label == self._background_label:
+            self._overlays['draw_polygon'].color = (1, 0, 0, 0)
+        else:
+            self._overlays[
+                'draw_polygon'
+            ].color = self._selected_color.tolist()[:3] + [self.opacity]
+
+    def _reset_draw_polygon(self):
+        polygon_overlay = self._overlays['draw_polygon']
+        if polygon_overlay.visible:
+            self.draw_polygon_callback.reset()
+            polygon_overlay.points = []
+            polygon_overlay.visible = False
 
     @property
     def preserve_labels(self):
@@ -1303,21 +1363,15 @@ class Labels(_ImageBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
-        shape = self.data.shape
         dims_to_paint = sorted(
             self._slice_input.order[-self.n_edit_dimensions :]
-        )
-        dims_not_painted = sorted(
-            self._slice_input.order[: -self.n_edit_dimensions]
         )
         paint_scale = np.array(
             [self.scale[i] for i in dims_to_paint], dtype=float
         )
 
-        slice_coord = [int(np.round(c)) for c in coord]
         if self.n_edit_dimensions < self.ndim:
             coord_paint = [coord[i] for i in dims_to_paint]
-            shape = [shape[i] for i in dims_to_paint]
         else:
             coord_paint = coord
 
@@ -1330,11 +1384,54 @@ class Labels(_ImageBase):
             int
         )
 
+        self._paint_indices(mask_indices, new_label, refresh)
+
+    def paint_polygon(self, points, new_label):
+        points = np.array(points, dtype=int)
+        shape = self.data.shape
+        dims_to_paint = sorted(
+            self._slice_input.order[-self.n_edit_dimensions :]
+        )
+
+        if self.n_edit_dimensions < self.ndim:
+            shape = [shape[i] for i in dims_to_paint]
+
+        mask_indices = np.argwhere(polygon2mask(shape[::-1], points))[
+            :, [1, 0]
+        ]
+        self._paint_indices(mask_indices, new_label, refresh=True)
+
+    def _paint_indices(self, mask_indices, new_label, refresh=True):
+        """Paint over existing labels with a new label, using the selected
+        mask indices, either only on the visible slice or in all n dimensions.
+
+        Parameters
+        ----------
+        mask_indices : numpy array of integer coordinates
+            Mask to paint represented by an array of its coordinates.
+        new_label : int
+            Value of the new label to be filled in.
+        refresh : bool
+            Whether to refresh view slice or not. Set to False to batch paint
+            calls.
+        """
+        shape = self.data.shape
+        dims_to_paint = sorted(
+            self._slice_input.order[-self.n_edit_dimensions :]
+        )
+        dims_not_painted = sorted(
+            self._slice_input.order[: -self.n_edit_dimensions]
+        )
+
+        if self.n_edit_dimensions < self.ndim:
+            shape = [shape[i] for i in dims_to_paint]
+
         # discard candidate coordinates that are out of bounds
         mask_indices = indices_in_shape(mask_indices, shape)
 
         # Transfer valid coordinates to slice_coord,
         # or expand coordinate if 3rd dim in 2D image
+        slice_coord = [0] * mask_indices.shape[1]
         slice_coord_temp = list(mask_indices.T)
         if self.n_edit_dimensions < self.ndim:
             for j, i in enumerate(dims_to_paint):
