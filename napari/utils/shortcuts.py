@@ -36,6 +36,8 @@ _default_shortcuts = {
     'napari:decrease_brush_size': [KeyCode.BracketLeft],
     'napari:increase_brush_size': [KeyCode.BracketRight],
     'napari:toggle_preserve_labels': [KeyCode.KeyP],
+    'napari:reset_draw_polygon': [KeyCode.Escape],
+    'napari:complete_draw_polygon': [KeyCode.Enter],
     # points
     'napari:activate_points_add_mode': [KeyCode.Digit2],
     'napari:activate_points_select_mode': [KeyCode.Digit3],

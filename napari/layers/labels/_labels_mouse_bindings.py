@@ -43,6 +43,16 @@ def draw(layer, event):
 
 
 class DrawPolygon:
+    """Handles mouse events to draw the polygon and updates the overlay.
+
+    Mouse events handled in call:
+    - Mouse move: Continuously redraw the latest polygon point with the current mouse position.
+    - Mouse press (left button): Adds the current mouse position as a new polygon point.
+    - Mouse double click (left button): If there are at least three points in the polygon,
+                  the polygon is painted on the image using the current label.
+    - Mouse press (right button): Removes the most recent polygon point from the list.
+    """
+
     def __init__(self):
         self._points = []
 
@@ -51,19 +61,21 @@ class DrawPolygon:
         pos = mouse_event_to_labels_coordinate(layer, event)
         pos = (pos[1] + 0.5, pos[0] + 0.5)  # (y, x) -> (x, y) + offset
 
-        if event.button is None:
+        if event.button is None:  # on mouse move
             if self._points:
                 polygon_overlay.points = self._points + [pos]
-        elif event.button == 1 and event.type == 'mouse_press':
+        elif (
+            event.button == 1 and event.type == 'mouse_press'
+        ):  # on mouse left click
             # recenter the point in the center of the image pixel
             pos = int(pos[0]) + 0.5, int(pos[1]) + 0.5
             self._points.append(pos)
             polygon_overlay.points = self._points
-        elif event.button == 1 and event.type == 'mouse_double_click':
-            if len(self._points) > 2:
-                layer.paint_polygon(self._points, layer.selected_label)
-            layer._reset_draw_polygon()
-        elif event.button == 2 and self._points:
+        elif (
+            event.button == 1 and event.type == 'mouse_double_click'
+        ):  # on mouse left double click
+            layer._complete_polygon_drawing()
+        elif event.button == 2 and self._points:  # on mouse right click
             self._points.pop()
             if self._points:
                 polygon_overlay.points = self._points + [pos]

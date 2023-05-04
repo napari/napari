@@ -144,7 +144,17 @@ def redo(layer: Labels):
     layer.redo()
 
 
-@Labels.bind_key(KeyCode.Escape, overwrite=True)
+@register_label_action(
+    trans._("Reset the current polygon"),
+)
 def reset_draw_polygon(layer: Labels):
-    """Reset the current drawing polygon"""
+    """Reset the drawing of the current polygon."""
     layer._reset_draw_polygon()
+
+
+@register_label_action(
+    trans._("Complete the current polygon"),
+)
+def complete_draw_polygon(layer: Labels):
+    """Complete the drawing of the current polygon."""
+    layer._complete_polygon_drawing()

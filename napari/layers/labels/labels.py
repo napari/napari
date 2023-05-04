@@ -778,10 +778,20 @@ class Labels(_ImageBase):
     def _slice_dims(
         self, point=None, ndisplay=2, order=None, force: bool = False
     ):
+        """This method is only overloaded for getting updates on dims order changes
+        and to update the polygon overlay respectively.
+        """
         super()._slice_dims(
             point=point, ndisplay=ndisplay, order=order, force=force
         )
         self._overlays['draw_polygon'].dims_order = order
+
+    def _complete_polygon_drawing(self):
+        polygon_overlay = self._overlays['draw_polygon']
+        if polygon_overlay.visible:
+            if len(polygon_overlay.points) > 2:
+                self.paint_polygon(polygon_overlay.points, self.selected_label)
+            self._reset_draw_polygon()
 
     def _update_draw_polygon_color(self):
         if self._selected_label == self._background_label:
