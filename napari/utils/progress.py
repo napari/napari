@@ -206,4 +206,8 @@ class cancelable_progress(progress):
         return takewhile(is_canceled, super().__iter__())
 
     def cancel(self):
+        """Cancels the execution of the underlying computation.
+        Note that the current iteration will be allowed to complete, however
+        future iterations will not be run.
+        """
         self.is_canceled = True
