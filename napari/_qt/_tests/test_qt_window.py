@@ -115,9 +115,7 @@ def test_screenshot_to_file(make_napari_viewer, tmp_path):
     Test taking a screenshot using the Window instance and saving it to a file.
     """
     viewer = make_napari_viewer()
-    screenshot_dir_path = tmp_path / "screenshots"
-    screenshot_dir_path.mkdir()
-    screenshot_file_path = str(screenshot_dir_path / "screenshot.png")
+    screenshot_file_path = str(tmp_path / "screenshot.png")
 
     np.random.seed(0)
     # Add image
