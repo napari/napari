@@ -9,10 +9,10 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         points = [(0, 0), (1, 1)]
 
         self._nodes_kwargs = {
-            'face_color': (1, 1, 1, 0.5),
+            'face_color': (1, 1, 1, 1),
             'size': 8.0,
-            'edge_width': 0.0,
-            'edge_color': (0, 0, 0, 0.5),
+            'edge_width': 1.0,
+            'edge_color': (0, 0, 0, 1),
         }
 
         self._nodes = Markers(pos=np.array(points), **self._nodes_kwargs)
