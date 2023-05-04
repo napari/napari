@@ -215,7 +215,7 @@ class TextManager(EventedModel):
         """Copies all encoded values at the given indices."""
         return {
             'string': _get_style_values(self.string, indices),
-            'color': _get_style_values(self.color, indices),
+            'color': _get_style_values(self.color, indices, value_ndim=1),
         }
 
     def _paste(self, *, string: StringArray, color: ColorArray):
