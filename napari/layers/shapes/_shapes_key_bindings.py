@@ -33,8 +33,6 @@ def hold_to_lock_aspect_ratio(layer: Shapes):
 
     # on key release
     layer._fixed_aspect = False
-    if layer._is_moving:
-        _move(layer, layer._moving_coordinates)
 
 
 def register_shapes_action(description: str, repeatable: bool = False):
