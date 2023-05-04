@@ -1,5 +1,5 @@
 from itertools import takewhile
-from typing import Callable, Iterable, Iterator, Optional
+from typing import Callable, Generator, Iterable, Iterator, Optional
 
 from tqdm import tqdm
 
@@ -194,16 +194,21 @@ class cancelable_progress(progress):
         super().__init__(iterable, desc, total, nest_under, *args, **kwargs)
 
     def __iter__(self) -> Iterator:
+        itr = super().__iter__()
+
         def is_canceled(_):
             if self.is_canceled:
                 # If we've canceled, run the callback and then notify takewhile
                 if self.cancel_callback:
                     self.cancel_callback()
+                    # Perform additional cleanup for generators
+                    if isinstance(itr, Generator):
+                        itr.close()
                 return False
                 # Otherwise, continue
             return True
 
-        return takewhile(is_canceled, super().__iter__())
+        return takewhile(is_canceled, itr)
 
     def cancel(self):
         """Cancels the execution of the underlying computation.

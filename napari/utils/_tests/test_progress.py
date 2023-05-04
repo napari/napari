@@ -127,3 +127,25 @@ def test_progress_cancellation_with_callback():
             pbr.cancel()
     assert pbr.is_canceled
     assert last_loop == expected_last_loop
+
+
+def test_progress_cancellation_with_generator():
+    """Test that cancellation closes a generator with a finally clause."""
+    closed = False
+
+    def test_generator():
+        try:
+            i = 0
+            while True:
+                yield i
+                i += 1
+        finally:
+            global closed
+            closed = True
+
+    pbr = cancelable_progress(test_generator())
+    for i in pbr:
+        if i == 5:
+            pbr.cancel()
+    assert pbr.is_canceled
+    assert closed
