@@ -1,9 +1,7 @@
 from functools import lru_cache
 
 from npe2 import (
-    PackageMetadata,
     PluginManager as _PluginManager,
-    PluginManifest,
 )
 
 from napari.plugins import _npe2

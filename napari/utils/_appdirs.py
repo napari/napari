@@ -63,6 +63,4 @@ def bundled_site_packages() -> Optional[str]:
         return os.path.join(exe_dir, "Lib", "site-packages")
 
     python_dir = f'python{sys.version_info.major}.{sys.version_info.minor}'
-    return os.path.join(
-        sys.prefix, "lib", python_dir, "site-packages"
-    )
+    return os.path.join(sys.prefix, "lib", python_dir, "site-packages")
