@@ -65,7 +65,10 @@ class DrawPolygon:
             layer._reset_draw_polygon()
         elif event.button == 2 and self._points:
             self._points.pop()
-            polygon_overlay.points = self._points + [pos]
+            if self._points:
+                polygon_overlay.points = self._points + [pos]
+            else:
+                layer._reset_draw_polygon()
 
         polygon_overlay.visible = len(self._points) > 0
 
