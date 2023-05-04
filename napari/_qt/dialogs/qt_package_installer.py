@@ -130,14 +130,6 @@ class PipInstallerTool(AbstractInstallerTool):
             args.append('-vvv')
         if self.prefix is not None:
             args.extend(['--prefix', str(self.prefix)])
-        elif running_as_bundled_app(
-            check_conda=False
-        ) and sys.platform.startswith('linux'):
-            args += [
-                '--no-warn-script-location',
-                '--prefix',
-                user_plugin_dir(),
-            ]
         return (*args, *self.pkgs)
 
     def environment(
@@ -561,7 +553,6 @@ class InstallerQueue(QProcess):
 
 
 def _get_python_exe():
-    # Note: is_bundled_app() returns False even if using a Briefcase bundle...
     # Workaround: see if sys.executable is set to something something napari on Mac
     if (
         sys.executable.endswith("napari")

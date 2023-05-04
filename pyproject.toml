@@ -9,23 +9,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 write_to = "napari/_version.py"
 
-[tool.briefcase]
-project_name = "napari"
-bundle = "com.napari"
-author = "napari"
-url = "https://napari.org/"
-license = "BSD license"
-# version populated in bundle.py
-version = "0.0.1"
-
-[tool.briefcase.app.napari]
-formal_name = "napari"
-description = "napari: a multi-dimensional image viewer"
-sources = ['napari']
-icon = "napari/resources/icon"
-# populated in bundle.py
-requires = []
-
 [tool.black]
 target-version = ['py38', 'py39', 'py310']
 skip-string-normalization = true
@@ -54,7 +37,6 @@ exclude = '''
 
 [tool.check-manifest]
 ignore = [
-  "bundle.py",
   ".cirrus.yml",
   ".pre-commit-config.yaml",
   "asv.conf.json",
@@ -144,7 +126,6 @@ fix = true
 "tools/test_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20"]
 "examples/**" = ["INP001", "T20"]
-"bundle.py" = ["T20"]
 "**/vendored/**" = ["TID"]
 
 [tool.ruff.flake8-quotes]

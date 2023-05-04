@@ -43,6 +43,7 @@ def user_plugin_dir() -> str:
     used on Linux to pip install packages outside of the bundle with:
     ``pip install --prefix user_plugin_dir()``
     """
+    # TODO: Check whether this is needed in `constructor` bundles
     return os.path.join(user_data_dir(), 'plugins')
 
 
@@ -61,11 +62,7 @@ def bundled_site_packages() -> Optional[str]:
     if os.name == 'nt':
         return os.path.join(exe_dir, "Lib", "site-packages")
 
-    if sys.platform.startswith('darwin'):
-        python_dir = f'python{sys.version_info.major}.{sys.version_info.minor}'
-        return os.path.join(
-            os.path.dirname(exe_dir), "lib", python_dir, "site-packages"
-        )
-
-    # briefcase linux bundles cannot install into the AppImage
-    return None
+    python_dir = f'python{sys.version_info.major}.{sys.version_info.minor}'
+    return os.path.join(
+        sys.prefix, "lib", python_dir, "site-packages"
+    )

@@ -24,7 +24,7 @@ need to activate the `conda` environment to ensure all dependencies are importab
 
 ## What does `conda` have to do with `napari`?
 
-The `napari` installer uses `conda` packages to bundle all its dependencies (Python, qt, etc).
+The `napari` installer uses `conda` packages to bundle all its dependencies (Python, Qt, etc).
 This directory is actually a full `conda` installation! If you have used `conda` before, this
 is equivalent to what you usually call the `base` environment.
 

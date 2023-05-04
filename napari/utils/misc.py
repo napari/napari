@@ -51,7 +51,7 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
 
 
 def running_as_bundled_app(*, check_conda=True) -> bool:
-    """Infer whether we are running as a briefcase bundle."""
+    """Infer whether we are running as a bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
@@ -62,6 +62,7 @@ def running_as_bundled_app(*, check_conda=True) -> bool:
     ):
         return True
 
+    # TODO: Remove from here on?
     try:
         app_module = sys.modules['__main__'].__package__
     except AttributeError:
@@ -83,16 +84,6 @@ def running_as_constructor_app() -> bool:
     return (
         Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
     ).exists()
-
-
-def bundle_bin_dir() -> Optional[str]:
-    """Return path to briefcase app_packages/bin if it exists."""
-    bin_path = os_path.join(
-        os_path.dirname(sys.exec_prefix), 'app_packages', 'bin'
-    )
-    if os_path.isdir(bin_path):
-        return bin_path
-    return None
 
 
 def in_jupyter() -> bool:

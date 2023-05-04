@@ -97,9 +97,6 @@ class NapariPluginManager(PluginManager):
         self._function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = {}
         self._theme_data: Dict[str, Dict[str, Theme]] = {}
 
-        if sys.platform.startswith('linux') and running_as_bundled_app():
-            sys.path.append(user_site_packages())
-
     def _initialize(self):
         with self.discovery_blocked():
             from napari.settings import get_settings

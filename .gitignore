@@ -142,11 +142,6 @@ res.qrc
 # ignore all generated themed svgs
 napari/resources/themes
 
-# briefcase
-macOS/
-linux/
-windows/
-
 napari/_version.py
 
 docs/api/napari*
