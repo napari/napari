@@ -341,7 +341,6 @@ class Labels(_ImageBase):
         )
 
         self._overlays.update({'draw_polygon': LabelsPolygonOverlay()})
-        self.events.opacity.connect(self._update_draw_polygon_color)
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -573,6 +572,11 @@ class Labels(_ImageBase):
             color_mode = LabelColorMode.DIRECT
 
         self.color_mode = color_mode
+
+    @_ImageBase.opacity.setter
+    def opacity(self, opacity):
+        _ImageBase.opacity.fset(self, opacity)
+        self._update_draw_polygon_color()
 
     def _is_default_colors(self, color):
         """Returns True if color contains only default colors, otherwise False.
@@ -1379,6 +1383,7 @@ class Labels(_ImageBase):
             [self.scale[i] for i in dims_to_paint], dtype=float
         )
 
+        slice_coord = [int(np.round(c)) for c in coord]
         if self.n_edit_dimensions < self.ndim:
             coord_paint = [coord[i] for i in dims_to_paint]
         else:
@@ -1394,7 +1399,7 @@ class Labels(_ImageBase):
         )
 
         self._paint_indices(
-            mask_indices, new_label, shape, dims_to_paint, refresh
+            mask_indices, new_label, shape, dims_to_paint, slice_coord, refresh
         )
 
     def paint_polygon(self, points, new_label):
@@ -1417,7 +1422,13 @@ class Labels(_ImageBase):
         )
 
     def _paint_indices(
-        self, mask_indices, new_label, shape, dims_to_paint, refresh=True
+        self,
+        mask_indices,
+        new_label,
+        shape,
+        dims_to_paint,
+        slice_coord=None,
+        refresh=True,
     ):
         """Paint over existing labels with a new label, using the selected
         mask indices, either only on the visible slice or in all n dimensions.
@@ -1444,7 +1455,6 @@ class Labels(_ImageBase):
 
         # Transfer valid coordinates to slice_coord,
         # or expand coordinate if 3rd dim in 2D image
-        slice_coord = [0] * mask_indices.shape[1]
         slice_coord_temp = list(mask_indices.T)
         if self.n_edit_dimensions < self.ndim:
             for j, i in enumerate(dims_to_paint):
