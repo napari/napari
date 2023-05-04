@@ -119,7 +119,7 @@ class Colormap(EventedModel):
                 np.interp(values, self.controls, self.colors[:, i])
                 for i in range(4)
             ]
-            cols = np.stack(cols, axis=1)
+            cols = np.stack(cols, axis=-1)
         elif self.interpolation == ColormapInterpolationMode.ZERO:
             # One color per bin
             # Colors beyond max clipped to final bin
