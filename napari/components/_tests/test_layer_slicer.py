@@ -2,15 +2,17 @@ import time
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
-from typing import Any
+from typing import Any, Tuple, Union
 
 import numpy as np
 import pytest
+from numpy.typing import DTypeLike
 
-from napari._tests.utils import DEFAULT_TIMEOUT_SECS, LockableData
+from napari._tests.utils import DEFAULT_TIMEOUT_SECS
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 from napari.layers import Image, Points
+from napari.layers._data_protocols import Index, LayerDataProtocol
 
 # The following fakes are used to control execution of slicing across
 # multiple threads, while also allowing us to mimic real classes
@@ -59,6 +61,35 @@ class FakeSyncLayer:
 
     def _slice_dims(self, *args, **kwargs) -> None:
         self.slice_count += 1
+
+
+class LockableData:
+    """A wrapper for napari layer data that blocks read-access with a lock.
+
+    This is useful when testing async slicing with real napari layers because
+    it allows us to control when slicing tasks complete.
+    """
+
+    def __init__(self, data: LayerDataProtocol) -> None:
+        self.data = data
+        self.lock = RLock()
+
+    @property
+    def dtype(self) -> DTypeLike:
+        return self.data.dtype
+
+    @property
+    def shape(self) -> Tuple[int, ...]:
+        return self.data.shape
+
+    def __getitem__(
+        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
+    ) -> LayerDataProtocol:
+        with self.lock:
+            return self.data[key]
+
+    def __len__(self):
+        return len(self.data)
 
 
 @pytest.fixture()

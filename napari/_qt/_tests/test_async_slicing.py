@@ -3,7 +3,6 @@ import pytest
 from vispy.visuals import VolumeVisual
 
 from napari import Viewer
-from napari._tests.utils import LockableData
 from napari._vispy.layers.image import VispyImageLayer
 from napari.layers import Image, Layer, Points
 from napari.utils.events import Event
@@ -145,42 +144,6 @@ def test_async_slice_points_on_point_change(make_napari_viewer, qtbot):
     viewer.dims.point = (1.6, 0, 0)
 
     wait_until_vispy_points_data_equal(qtbot, vispy_points, np.array([[3, 4]]))
-
-
-def test_async_slicing_in_progress(make_napari_viewer, qtbot, rng):
-    viewer = make_napari_viewer()
-    data = rng.random((3, 4, 5))
-    lockable_data = LockableData(data)
-    layer = Image(data=lockable_data, multiscale=False)
-    vispy_layer = setup_viewer_for_async_slicing(viewer, layer)
-    assert viewer.dims.current_step != (2, 0, 0)
-
-    layer = vispy_layer.layer
-    assert not viewer.is_slicing_layers()
-    with lockable_data.lock:
-        viewer.dims.current_step = (2, 0, 0)
-        assert viewer.is_slicing_layers()
-
-    wait_until_vispy_image_data_equal(qtbot, vispy_layer, data[2, :, :])
-    assert not viewer.is_slicing_layers()
-
-
-def test_async_slice_image_loaded(make_napari_viewer, qtbot, rng):
-    viewer = make_napari_viewer()
-    data = rng.random((3, 4, 5))
-    lockable_data = LockableData(data)
-    layer = Image(lockable_data, multiscale=False)
-    vispy_layer = setup_viewer_for_async_slicing(viewer, layer)
-
-    assert layer.loaded
-    assert viewer.dims.current_step != (2, 0, 0)
-
-    with lockable_data.lock:
-        viewer.dims.current_step = (2, 0, 0)
-        assert not layer.loaded
-
-    wait_until_vispy_image_data_equal(qtbot, vispy_layer, data[2, :, :])
-    assert layer.loaded
 
 
 def setup_viewer_for_async_slicing(

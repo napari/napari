@@ -96,34 +96,10 @@ class _LayerSlicer:
         finally:
             self._force_sync = prev
 
-    def busy(self, layers: Optional[Iterable[Layer]] = None) -> bool:
-        """Checks to see if this is busy slicing layers.
-
-        This temporarily blocks any new tasks being added or finished
-        tasks being removed.
-
-        Parameters
-        ----------
-        layers: iterable of layers, optional
-            If provided, this will only check to see if these layers are being
-            sliced. Otherwise, this will check for any layer.
-
-        bool
-            True if this is busy slicing layers.
-        """
-        with self._lock_layers_to_task:
-            if layers is None:
-                return len(self._layers_to_task) > 0
-            for layer in layers:
-                for task_layers in self._layers_to_task:
-                    if layer in task_layers:
-                        return True
-        return False
-
     def wait_until_idle(self, timeout: Optional[float] = None) -> None:
         """Wait for all slicing tasks to complete before returning.
 
-        Parameters
+        Attributes
         ----------
         timeout: float or None
             (Optional) time in seconds to wait before raising TimeoutError. If set as None,
@@ -198,7 +174,6 @@ class _LayerSlicer:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
                 logger.debug('Making async slice request for %s', layer)
                 requests[layer] = layer._make_slice_request(dims)
-                layer._loaded = False
             else:
                 logger.debug('Sync slicing for %s', layer)
                 sync_layers.append(layer)
@@ -240,7 +215,7 @@ class _LayerSlicer:
         Iterates through a dictionary of request objects and call the slice
         on each individual layer. Can be called from the main or slicing thread.
 
-        Parameters
+        Attributes
         ----------
         requests: dict[Layer, SliceRequest]
             Dictionary of request objects to be used for constructing the slice
