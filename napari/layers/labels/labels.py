@@ -784,7 +784,8 @@ class Labels(_ImageBase):
         super()._slice_dims(
             point=point, ndisplay=ndisplay, order=order, force=force
         )
-        self._overlays['draw_polygon'].dims_order = order
+        if order is not None:
+            self._overlays['draw_polygon'].dims_order = order
 
     def _complete_polygon_drawing(self):
         polygon_overlay = self._overlays['draw_polygon']
