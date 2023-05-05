@@ -354,7 +354,6 @@ class Labels(_ImageBase):
         self._selected_label = 1
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
-        self._on_selected_color_change()
         self.color = color
 
         self._status = self.mode
@@ -454,7 +453,6 @@ class Labels(_ImageBase):
         # in _raw_to_displayed
         self._all_vals = np.array([])
         self._selected_color = self.get_color(self.selected_label)
-        self._on_selected_color_change()
         self.refresh()
         self.events.selected_label()
 
@@ -462,7 +460,6 @@ class Labels(_ImageBase):
     def colormap(self, colormap):
         super()._set_colormap(colormap)
         self._selected_color = self.get_color(self.selected_label)
-        self._on_selected_color_change()
 
     @property
     def num_colors(self):
@@ -475,7 +472,6 @@ class Labels(_ImageBase):
         self.colormap = label_colormap(num_colors)
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
-        self._on_selected_color_change()
         self.events.selected_label()
 
     @property
@@ -572,11 +568,6 @@ class Labels(_ImageBase):
             color_mode = LabelColorMode.DIRECT
 
         self.color_mode = color_mode
-
-    @_ImageBase.opacity.setter
-    def opacity(self, opacity):
-        _ImageBase.opacity.fset(self, opacity)
-        self._update_draw_polygon_color()
 
     def _is_default_colors(self, color):
         """Returns True if color contains only default colors, otherwise False.
@@ -676,7 +667,6 @@ class Labels(_ImageBase):
         self._prev_selected_label = self.selected_label
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
-        self._on_selected_color_change()
         self.events.selected_label()
 
         # note: self.color_mode returns a string and this comparison fails,
@@ -719,7 +709,6 @@ class Labels(_ImageBase):
 
         self._color_mode = color_mode
         self._selected_color = self.get_color(self.selected_label)
-        self._on_selected_color_change()
         self.events.color_mode()
         self.events.colormap()
         self.events.selected_label()
@@ -776,9 +765,6 @@ class Labels(_ImageBase):
 
         return mode
 
-    def _on_selected_color_change(self):
-        self._update_draw_polygon_color()
-
     def _slice_dims(
         self, point=None, ndisplay=2, order=None, force: bool = False
     ):
@@ -802,14 +788,6 @@ class Labels(_ImageBase):
             if len(polygon_overlay.points) > 2:
                 self.paint_polygon(polygon_overlay.points, self.selected_label)
             self._reset_draw_polygon()
-
-    def _update_draw_polygon_color(self):
-        if self._selected_label == self._background_label:
-            self._overlays['draw_polygon'].color = (1, 0, 0, 0)
-        else:
-            self._overlays[
-                'draw_polygon'
-            ].color = self._selected_color.tolist()[:3] + [self.opacity]
 
     def _reset_draw_polygon(self):
         polygon_overlay = self._overlays['draw_polygon']
