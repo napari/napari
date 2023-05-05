@@ -1,8 +1,9 @@
-import napari
-import numpy as np
-from skimage import data
 import os
 
+import numpy as np
+from skimage import data
+
+import napari
 
 os.environ['ALLOW_LAYERGROUPS'] = '1'
 

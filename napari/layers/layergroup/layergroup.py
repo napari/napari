@@ -295,7 +295,6 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
         plugin: Optional[str] = None,
         _writer: Optional[WriterContribution] = None,
     ) -> List[str]:
-
         from napari.plugins.io import save_layers
 
         layers = (
