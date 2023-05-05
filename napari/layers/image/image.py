@@ -23,8 +23,6 @@ from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
     set_plane_position as plane_double_click_callback,
 )
-from napari.layers.image._image_slice import ImageSlice
-from napari.layers.image._image_slice_data import ImageSliceData
 from napari.layers.image._image_utils import guess_multiscale, guess_rgb
 from napari.layers.image._slice import _ImageSliceRequest, _ImageSliceResponse
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
@@ -38,7 +36,6 @@ from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.migrations import rename_argument
-from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
@@ -352,7 +349,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._data_level
         ][displayed_axes]
 
-        self._new_empty_slice()
+        self._slice = _ImageSliceResponse.empty(
+            dims=self._slice_input, rgb=self.rgb
+        )
 
         # Set contrast limits, colormaps and plane parameters
         self._gamma = gamma
@@ -400,32 +399,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.refresh()
 
         self._loaded = True
-
-    def _new_empty_slice(self):
-        """Initialize the current slice to an empty image."""
-        wrapper = _weakref_hide(self)
-        self._slice = ImageSlice(
-            self._get_empty_image(), wrapper._raw_to_displayed, self.rgb
-        )
-        self._empty = True
-
-    def _get_empty_image(self):
-        """Get empty image to use as the default before data is loaded."""
-        if self.rgb:
-            return np.zeros((1,) * self._slice_input.ndisplay + (3,))
-
-        return np.zeros((1,) * self._slice_input.ndisplay)
-
-    def _get_order(self) -> Tuple[int]:
-        """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
-        order = reorder_after_dim_reduction(self._slice_input.displayed)
-        if self.rgb:
-            # if rgb need to keep the final axis fixed during the
-            # transpose. The index of the final axis depends on how many
-            # axes are displayed.
-            return (*order, max(order) + 1)
-
-        return order
 
     @property
     def _data_view(self):
@@ -737,9 +710,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _set_view_slice(self) -> None:
         """Set the slice output based on this layer's current state."""
-        # Initializes an ImageSlice for the old experimental async code.
-        self._new_empty_slice()
-
         # Skip if any non-displayed data indices are out of bounds.
         # This can happen when slicing layers with different extents.
         indices = self._slice_indices
@@ -747,16 +717,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d]):
                 return
 
-        # For the old experimental async code.
-        self._empty = False
-
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request_internal(
             slice_input=self._slice_input,
             indices=indices,
-            lazy=True,
             dask_indexer=nullcontext,
         )
         response = request()
@@ -779,7 +745,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._make_slice_request_internal(
             slice_input=slice_input,
             indices=indices,
-            lazy=False,
             dask_indexer=self.dask_optimized_slicing,
         )
 
@@ -788,7 +753,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         *,
         slice_input: _SliceInput,
         indices: Tuple[Union[int, slice], ...],
-        lazy: bool,
         dask_indexer: DaskIndexer,
     ) -> _ImageSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and
@@ -809,7 +773,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             thumbnail_level=self._thumbnail_level,
             level_shapes=self.level_shapes,
             downsample_factors=self.downsample_factors,
-            lazy=lazy,
         )
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
@@ -817,20 +780,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         for both sync and async slicing.
         """
         self._slice_input = response.dims
-
-        self._empty = False
-        slice_data = ImageSliceData(
-            layer=self,
-            indices=response.indices,
-            image=response.data,
-            thumbnail_source=response.thumbnail,
-        )
-
         self._transforms[0] = response.tile_to_data
-
-        # There are some things down this path that are still needed
-        # by sync and async.
-        self._load_slice(slice_data)
+        self._slice = response
+        self.events.loaded()
 
         # Maybe reset the contrast limits based on the new slice.
         if self._should_calc_clims:
@@ -841,50 +793,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self.reset_contrast_limits()
         self._loaded = True
 
-    def _load_slice(self, data: ImageSliceData):
-        """Load the image and maybe thumbnail source. Currently used
-        for both sync and async slicing.
-
-        Parameters
-        ----------
-        data : ImageSliceData
-            Image slice
-        """
-        self._slice.load(data)
-        self._on_data_loaded(data)
-
-    def _on_data_loaded(self, data: ImageSliceData) -> None:
-        """The given data was loaded, use it now.
-
-        This routine is called for both sync and async slicing
-
-        Parameters
-        ----------
-        data : ImageSliceData
-            Image slice
-        """
-        # Transpose after the load.
-        data.transpose(self._get_order())
-
-        # The following block is still needed for both sync and async
-        # Pass the loaded data to the slice.
-        if not self._slice.on_loaded(data):
-            # Slice rejected it, was it for the wrong indices?
-            return
-
-        # Notify the world.
-        if self.multiscale:
-            self.events.scale()
-            self.events.translate()
-
-        # Announcing we are in the loaded state will make our node visible
-        # if it was invisible during the load.
-        # This is only needed for sync slicing
-        self.events.loaded()
-
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-
         image = self._slice.thumbnail.view
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
@@ -1060,13 +970,3 @@ class Image(_ImageBase):
 
 
 Image.__doc__ = _ImageBase.__doc__
-
-
-class _weakref_hide:
-    def __init__(self, obj) -> None:
-        import weakref
-
-        self.obj = weakref.ref(obj)
-
-    def _raw_to_displayed(self, *args, **kwarg):
-        return self.obj()._raw_to_displayed(*args, **kwarg)

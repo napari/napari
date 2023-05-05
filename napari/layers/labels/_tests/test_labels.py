@@ -1312,7 +1312,7 @@ def test_cursor_ray_3d_rolled():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
 
     # set the slice to one with data and the view to 3D
-    labels._slice_dims([0, 0, 0, 1], ndisplay=3)
+    labels._slice_dims([0, 0, 0, 1], order=[3, 0, 1, 2], ndisplay=3)
 
     start_point, end_point = labels.get_ray_intersections(
         mouse_event_1.position,
@@ -1340,7 +1340,7 @@ def test_cursor_ray_3d_transposed():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
 
     # set the slice to one with data and the view to 3D
-    labels._slice_dims([0, 0, 0, 1], ndisplay=3)
+    labels._slice_dims([0, 0, 0, 1], order=[3, 0, 2, 1], ndisplay=3)
 
     start_point, end_point = labels.get_ray_intersections(
         mouse_event_1.position,

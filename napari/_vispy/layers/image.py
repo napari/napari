@@ -98,10 +98,7 @@ class VispyImageLayer(VispyBaseLayer):
         if data is None:
             data = np.zeros((1,) * ndisplay, dtype=np.float32)
 
-        if self.layer._empty:
-            self.node.visible = False
-        else:
-            self.node.visible = self.layer.visible
+        self.node.visible = self.layer.visible
 
         self.node.set_data(data)
 
@@ -137,10 +134,7 @@ class VispyImageLayer(VispyBaseLayer):
         else:
             node.set_data(data)
 
-        if self.layer._empty:
-            node.visible = False
-        else:
-            node.visible = self.layer.visible
+        node.visible = self.layer.visible
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()

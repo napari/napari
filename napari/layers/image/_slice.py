@@ -1,13 +1,53 @@
 import warnings
 from dataclasses import dataclass, field
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Callable, Tuple, Union
 
 import numpy as np
 
+from napari.components.dims import reorder_after_dim_reduction
 from napari.layers.utils._slice_input import _SliceInput
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
+
+
+@dataclass(frozen=True)
+class _ImageView:
+    """A raw image and a potentially different viewable version of it.
+
+    This is only needed for labels, and not other image layers, because sliced labels
+    data are passed to vispy as floats in [0, 1] to use continuous colormaps.
+    In that case, a conversion function is defined by `Labels._raw_to_displayed` to
+    handle the desired colormapping behavior.
+
+    For non-labels image layers the raw and viewable images should be the same instance
+    and no conversion should be necessary.
+
+    This is defined for images in general because `Labels` and `_ImageBase` share
+    code through inheritance.
+
+    Attributes
+    ----------
+    raw : array
+        The raw image.
+    view : array
+        The viewable image, which should either be the same instance of raw, or a
+        converted version of it.
+    """
+
+    raw: np.ndarray
+    view: np.ndarray
+
+    @classmethod
+    def from_view(cls, view: np.ndarray) -> '_ImageView':
+        return cls(raw=view, view=view)
+
+    @classmethod
+    def from_raw(
+        cls, *, raw: np.ndarray, converter: Callable[[np.ndarray], np.ndarray]
+    ) -> '_ImageView':
+        view = converter(raw)
+        return cls(raw=raw, view=view)
 
 
 @dataclass(frozen=True)
@@ -16,29 +56,56 @@ class _ImageSliceResponse:
 
     Attributes
     ----------
-    data : array like
+    image : _ImageView
         The sliced image data.
-        In general, if you need this to be a `numpy.ndarray` you should call `np.asarray`.
-        Though if the corresponding request was not lazy, this is likely a `numpy.ndarray`.
-    thumbnail: array like or none
-        The thumbnail image data, which may be a different resolution to the sliced image data
-        for multi-scale images.
-        For single-scale images, this will be `None`, which indicates that the thumbnail data
-        is the same as the sliced image data.
+    thumbnail: _ImageView
+        The thumbnail image data. This may come from a different resolution to the sliced image
+        data for multi-scale images. Otherwise, it's the same instance as data.
     tile_to_data: Affine
         The affine transform from the sliced data to the full data at the highest resolution.
         For single-scale images, this will be the identity matrix.
     dims : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
-    indices : tuple of ints or slices
-        The slice indices in the layer's data space.
     """
 
-    data: Any = field(repr=False)
-    thumbnail: Optional[Any] = field(repr=False)
+    image: _ImageView = field(repr=False)
+    thumbnail: _ImageView = field(repr=False)
     tile_to_data: Affine = field(repr=False)
     dims: _SliceInput
-    indices: Tuple[Union[int, slice], ...]
+
+    @classmethod
+    def empty(cls, *, dims: _SliceInput, rgb: bool) -> '_ImageSliceResponse':
+        shape = (1,) * dims.ndisplay
+        if rgb:
+            shape = shape + (3,)
+        data = np.zeros(shape)
+        image = _ImageView.from_view(data)
+        ndim = dims.ndim
+        tile_to_data = Affine(
+            name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
+        )
+        return _ImageSliceResponse(
+            image=image,
+            thumbnail=image,
+            tile_to_data=tile_to_data,
+            dims=dims,
+        )
+
+    def to_displayed(
+        self, converter: Callable[[np.ndarray], np.ndarray]
+    ) -> '_ImageSliceResponse':
+        image = _ImageView.from_raw(raw=self.image.raw, converter=converter)
+        thumbnail = image
+        if self.thumbnail is not self.image:
+            thumbnail = _ImageView.from_raw(
+                raw=self.thumbnail.raw, converter=converter
+            )
+        return _ImageSliceResponse(
+            image=image,
+            thumbnail=thumbnail,
+            tile_to_data=self.tile_to_data,
+            dims=self.dims,
+        )
 
 
 @dataclass(frozen=True)
@@ -60,11 +127,6 @@ class _ImageSliceRequest:
         The layer's data field, which is the main input to slicing.
     indices : tuple of ints or slices
         The slice indices in the layer's data space.
-    lazy : bool
-        If True, do not materialize the data with `np.asarray` during execution.
-        Otherwise, False. This should be True for the experimental async code
-        (as the load occurs on a separate thread) but False for the new async
-        where `execute` is expected to be run on a separate thread.
     others
         See the corresponding attributes in `Layer` and `Image`.
     """
@@ -80,7 +142,6 @@ class _ImageSliceRequest:
     thumbnail_level: int = field(repr=False)
     level_shapes: np.ndarray = field(repr=False)
     downsample_factors: np.ndarray = field(repr=False)
-    lazy: bool = field(default=False, repr=False)
 
     def __call__(self) -> _ImageSliceResponse:
         with self.dask_indexer():
@@ -91,9 +152,10 @@ class _ImageSliceRequest:
             )
 
     def _call_single_scale(self) -> _ImageSliceResponse:
-        image = self.data[self.indices]
-        if not self.lazy:
-            image = np.asarray(image)
+        order = self._get_order()
+        data = np.asarray(self.data[self.indices])
+        data = np.transpose(data, order)
+        image = _ImageView.from_view(data)
         # `Layer.multiscale` is mutable so we need to pass back the identity
         # transform to ensure `tile2data` is properly set on the layer.
         ndim = self.dims.ndim
@@ -101,11 +163,10 @@ class _ImageSliceRequest:
             name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
         )
         return _ImageSliceResponse(
-            data=image,
-            thumbnail=None,
+            image=image,
+            thumbnail=image,
             tile_to_data=tile_to_data,
             dims=self.dims,
-            indices=self.indices,
         )
 
     def _call_multi_scale(self) -> _ImageSliceResponse:
@@ -147,21 +208,27 @@ class _ImageSliceRequest:
             ndim=self.dims.ndim,
         )
 
-        thumbnail_indices = self._slice_indices_at_level(self.thumbnail_level)
+        order = self._get_order()
+        data = np.asarray(self.data[level][tuple(indices)])
+        data = np.transpose(data, order)
+        image = _ImageView.from_view(data)
 
-        image = self.data[level][tuple(indices)]
-        thumbnail = self.data[self.thumbnail_level][tuple(thumbnail_indices)]
-
-        if not self.lazy:
-            image = np.asarray(image)
-            thumbnail = np.asarray(thumbnail)
+        thumbnail = image
+        if self.thumbnail_level != level:
+            thumbnail_indices = self._slice_indices_at_level(
+                self.thumbnail_level
+            )
+            thumbnail_data = np.asarray(
+                self.data[self.thumbnail_level][tuple(thumbnail_indices)]
+            )
+            thumbnail_data = np.transpose(thumbnail_data, order)
+            thumbnail = _ImageView.from_view(thumbnail_data)
 
         return _ImageSliceResponse(
-            data=image,
+            image=image,
             thumbnail=thumbnail,
             tile_to_data=tile_to_data,
             dims=self.dims,
-            indices=self.indices,
         )
 
     def _slice_indices_at_level(
@@ -174,3 +241,13 @@ class _ImageSliceRequest:
         ds_indices = np.clip(ds_indices, 0, self.level_shapes[level][axes] - 1)
         indices[axes] = ds_indices
         return indices
+
+    def _get_order(self) -> Tuple[int, ...]:
+        """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
+        order = reorder_after_dim_reduction(self.dims.displayed)
+        if self.rgb:
+            # if rgb need to keep the final axis fixed during the
+            # transpose. The index of the final axis depends on how many
+            # axes are displayed.
+            return (*order, max(order) + 1)
+        return order
