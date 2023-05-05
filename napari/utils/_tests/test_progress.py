@@ -140,7 +140,7 @@ def test_progress_cancellation_with_generator():
                 yield i
                 i += 1
         finally:
-            global closed
+            nonlocal closed
             closed = True
 
     pbr = cancelable_progress(test_generator())

@@ -201,9 +201,9 @@ class cancelable_progress(progress):
                 # If we've canceled, run the callback and then notify takewhile
                 if self.cancel_callback:
                     self.cancel_callback()
-                    # Perform additional cleanup for generators
-                    if isinstance(itr, Generator):
-                        itr.close()
+                # Perform additional cleanup for generators
+                if isinstance(self.iterable, Generator):
+                    self.iterable.close()
                 return False
                 # Otherwise, continue
             return True
