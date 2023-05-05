@@ -502,6 +502,7 @@ class QtLabelsControls(QtLayerControls):
         self.renderComboBox.setVisible(render_visible)
         self.renderLabel.setVisible(render_visible)
         self._on_editable_or_visible_change()
+        self.draw_polygon_button.setEnabled(self.ndisplay == 2)
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self.colorBox)

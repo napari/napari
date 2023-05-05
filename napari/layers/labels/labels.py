@@ -788,8 +788,12 @@ class Labels(_ImageBase):
         super()._slice_dims(
             point=point, ndisplay=ndisplay, order=order, force=force
         )
-        if order is not None:
-            self._overlays['draw_polygon'].dims_order = order
+        if ndisplay == 2:
+            if order is not None:
+                self._overlays['draw_polygon'].dims_order = order
+        else:
+            if self.mode == Mode.DRAW_POLYGON:
+                self.mode = Mode.PAN_ZOOM
 
     def _complete_polygon_drawing(self):
         polygon_overlay = self._overlays['draw_polygon']
@@ -1413,6 +1417,11 @@ class Labels(_ImageBase):
             Value of the new label to be filled in.
         """
         points = np.array(points, dtype=int)
+        if points.shape[1] != 2:
+            raise NotImplementedError(
+                "Polygon painting is implemented only for 2D."
+            )
+
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
 
         polygon_mask = polygon2mask(shape[::-1], points)
