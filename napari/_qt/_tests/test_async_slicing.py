@@ -1,70 +1,15 @@
 # The tests in this module for the new style of async slicing in napari:
 # https://napari.org/dev/naps/4-async-slicing.html
 
-from threading import RLock
-from typing import Tuple, Union
-
 import numpy as np
 import pytest
-from numpy.typing import DTypeLike
 from vispy.visuals import VolumeVisual
 
 from napari import Viewer
+from napari._tests.utils import LockableData
 from napari._vispy.layers.image import VispyBaseLayer, VispyImageLayer
 from napari.layers import Image, Layer, Points
-from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.utils.events import Event
-
-
-class LockableImage(Image):
-    """Lockable version of Image. This allows us to assert state and
-    conditions that may only be temporarily true at different stages of
-    an asynchronous task.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.lock: RLock = RLock()
-
-
-class LockablePoints(Points):
-    """Lockable version of Points. This allows us to assert state and
-    conditions that may only be temporarily true at different stages of
-    an asynchronous task.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.lock: RLock = RLock()
-
-
-class LockableData:
-    """A wrapper for napari layer data that blocks read-access with a lock.
-
-    This is useful when testing async slicing with real napari layers because
-    it allows us to control when slicing tasks complete.
-    """
-
-    def __init__(self, data: LayerDataProtocol) -> None:
-        self.data = data
-        self.lock = RLock()
-
-    @property
-    def dtype(self) -> DTypeLike:
-        return self.data.dtype
-
-    @property
-    def shape(self) -> Tuple[int, ...]:
-        return self.data.shape
-
-    def __getitem__(
-        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
-    ) -> LayerDataProtocol:
-        with self.lock:
-            return self.data[key]
-
-    def __len__(self):
-        return len(self.data)
 
 
 @pytest.fixture()
