@@ -7,11 +7,12 @@ for moving the plane
 
 .. tags:: experimental
 """
-import napari
 import numpy as np
-from skimage import data
 from scipy import ndimage
+from skimage import data
 from vispy.geometry import create_sphere
+
+import napari
 
 viewer = napari.Viewer(ndisplay=3)
 
@@ -119,7 +120,7 @@ def shift_plane_along_normal(viewer, event):
 
     # Get transform which maps from data (vispy) to canvas
     # note that we're using a private attribute here, which may not be present in future napari versions
-    visual2canvas = viewer.window._qt_viewer.layer_to_visual[volume_layer].node.get_transform(
+    visual2canvas = viewer.window._qt_viewer.canvas.layer_to_visual[volume_layer].node.get_transform(
         map_from="visual", map_to="canvas"
     )
 
@@ -134,13 +135,13 @@ def shift_plane_along_normal(viewer, event):
     )
 
     # Disable interactivity during plane drag
-    volume_layer.interactive = False
-    labels_layer.interactive = False
-    labels_layer.interactive = False
-    points_layer.interactive = False
-    surface_layer.interactive = False
-    shapes_layer.interactive = False
-    vectors_layer.interactive = False
+    volume_layer.mouse_pan = False
+    labels_layer.mouse_pan = False
+    labels_layer.mouse_pan = False
+    points_layer.mouse_pan = False
+    surface_layer.mouse_pan = False
+    shapes_layer.mouse_pan = False
+    vectors_layer.mouse_pan = False
 
     # Store original plane position and start position in canvas coordinates
     original_plane_position = volume_layer.experimental_clipping_planes[0].position
@@ -177,22 +178,22 @@ def shift_plane_along_normal(viewer, event):
         yield
 
     # Re-enable
-    volume_layer.interactive = True
-    labels_layer.interactive = True
-    points_layer.interactive = True
-    surface_layer.interactive = True
-    shapes_layer.interactive = True
-    vectors_layer.interactive = True
+    volume_layer.mouse_pan = True
+    labels_layer.mouse_pan = True
+    points_layer.mouse_pan = True
+    surface_layer.mouse_pan = True
+    shapes_layer.mouse_pan = True
+    vectors_layer.mouse_pan = True
 
 
 viewer.axes.visible = True
 viewer.camera.angles = (45, 45, 45)
 viewer.camera.zoom = 5
-viewer.text_overlay.update(dict(
-    text='Drag the clipping plane surface to move it along its normal.',
-    font_size=20,
-    visible=True,
-))
+viewer.text_overlay.update({
+    "text": 'Drag the clipping plane surface to move it along its normal.',
+    "font_size": 20,
+    "visible": True,
+})
 
 if __name__ == '__main__':
     napari.run()

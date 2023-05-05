@@ -7,17 +7,59 @@ from napari.layers._layer_actions import (
     _convert,
     _convert_dtype,
     _duplicate_layer,
+    _link_selected_layers,
     _project,
+    _toggle_visibility,
 )
 from napari.layers.layergroup import LayerGroup
 
 
-def test_duplicate_layers():
+def test_toggle_visibility():
+    """Test toggling visibility of a layer."""
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]]))
+    layer_list[0].visible = False
+
+    layer_list.selection.active = layer_list[0]
+    _toggle_visibility(layer_list)
+
+    assert layer_list[0].visible is True
+
+
+def test_toggle_visibility_with_linked_layers():
+    """Test toggling visibility of a layer."""
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]]))
+    layer_list.append(Points([[0, 0]]))
+    layer_list.append(Points([[0, 0]]))
+    layer_list.append(Points([[0, 0]]))
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+    layer_list.selection.add(layer_list[2])
+
+    _link_selected_layers(layer_list)
+
+    layer_list[3].visible = False
+
+    layer_list.selection.remove(layer_list[0])
+    layer_list.selection.add(layer_list[3])
+
+    _toggle_visibility(layer_list)
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is False
+    assert layer_list[2].visible is False
+    assert layer_list[3].visible is True
+
+
+@pytest.mark.parametrize('layer_type', [Points, Shapes])
+def test_duplicate_layers(layer_type):
     def _dummy():
         pass
 
     layer_list = LayerList()
-    layer_list.append(Points([[0, 0]], name="test"))
+    layer_list.append(layer_type([], name="test"))
     layer_list.selection.active = layer_list[0]
     layer_list[0].events.data.connect(_dummy)
     assert len(layer_list[0].events.data.callbacks) == 2
@@ -75,7 +117,7 @@ def test_convert_dtype(mode, LayersClass):
 
 
 @pytest.mark.parametrize(
-    'input, type_',
+    'layer, type_',
     [
         (Image(np.random.rand(10, 10)), 'labels'),
         (Labels(np.ones((10, 10), dtype=int)), 'image'),
@@ -83,10 +125,10 @@ def test_convert_dtype(mode, LayersClass):
     ],
 )
 @pytest.mark.parametrize('LayersClass', [LayerList, LayerGroup])
-def test_convert_layer(input, type_, LayersClass):
+def test_convert_layer(layer, type_, LayersClass):
     ll = LayersClass()
-    input.scale *= 1.5
-    original_scale = input.scale.copy()
+    layer.scale *= 1.5
+    original_scale = layer.scale.copy()
     ll.append(input)
     assert ll[0]._type_string != type_
     _convert(ll, type_)

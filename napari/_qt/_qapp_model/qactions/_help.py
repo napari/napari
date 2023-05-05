@@ -8,7 +8,7 @@ from typing import List
 
 from app_model.types import Action, KeyBindingRule, KeyCode, KeyMod
 
-from napari._app_model.constants import CommandId, MenuId
+from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari._qt.dialogs.qt_about import QtAbout
 from napari._qt.qt_main_window import Window
 from napari.utils.translations import trans
@@ -28,7 +28,7 @@ Q_HELP_ACTIONS: List[Action] = [
         id=CommandId.NAPARI_INFO,
         title=CommandId.NAPARI_INFO.title,
         callback=_show_about,
-        menus=[{"id": MenuId.MENUBAR_HELP}],
+        menus=[{"id": MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
         status_tip=trans._('About napari'),
         keybindings=[KeyBindingRule(primary=KeyMod.CtrlCmd | KeyCode.Slash)],
     )

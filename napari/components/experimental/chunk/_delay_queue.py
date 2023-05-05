@@ -80,7 +80,7 @@ class DelayQueue(threading.Thread):
         self,
         delay_queue_ms: float,
         submit_func: Callable[[ChunkRequest], None],
-    ):
+    ) -> None:
         super().__init__(daemon=True)
         self._shutdown = False
         self.delay_seconds: float = delay_queue_ms / 1000

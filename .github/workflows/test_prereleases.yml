@@ -9,9 +9,13 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  COLUMNS: 120
+
 jobs:
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
+    timeout-minutes: 40
     runs-on: ${{ matrix.platform }}
     if: github.repository == 'napari/napari'
     strategy:
@@ -46,7 +50,7 @@ jobs:
 
       - name: Test with tox
         # run tests using pip install --pre
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: python -m tox -v --pre
         env:

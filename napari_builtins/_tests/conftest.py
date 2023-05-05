@@ -21,7 +21,6 @@ def _mock_npe2_pm():
 
 @pytest.fixture(autouse=True)
 def _use_builtins(_mock_npe2_pm: PluginManager):
-
     plugin = DynamicPlugin('napari', plugin_manager=_mock_npe2_pm)
     mf = PluginManifest.from_file(
         Path(napari_builtins.__file__).parent / 'builtins.yaml'

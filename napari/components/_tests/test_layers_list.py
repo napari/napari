@@ -547,7 +547,7 @@ def test_name_uniqueness(LayersClass):
 def test_readd_layers():
     layers = LayerList()
     imgs = []
-    for i in range(5):
+    for _i in range(5):
         img = Image(np.random.rand(10, 10, 10))
         layers.append(img)
         imgs.append(img)

@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import warnings
 from functools import partial
@@ -17,8 +18,10 @@ from typing import (
 )
 from warnings import warn
 
-from napari_plugin_engine import HookImplementation
-from napari_plugin_engine import PluginManager as PluginManager
+from napari_plugin_engine import (
+    HookImplementation,
+    PluginManager as PluginManager,
+)
 from napari_plugin_engine.hooks import HookCaller
 from pydantic import ValidationError
 from typing_extensions import TypedDict
@@ -63,7 +66,7 @@ class NapariPluginManager(PluginManager):
 
     ENTRY_POINT = 'napari.plugin'
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('napari', discover_entry_point=self.ENTRY_POINT)
 
         self.events = EmitterGroup(
@@ -129,7 +132,6 @@ class NapariPluginManager(PluginManager):
         self,
         name_or_object: Any,
     ) -> Optional[Any]:
-
         if isinstance(name_or_object, str):
             _name = name_or_object
         else:
@@ -368,11 +370,11 @@ class NapariPluginManager(PluginManager):
             return
 
         _data = {}
-        for theme_name, theme_colors in data.items():
+        for theme_id, theme_colors in data.items():
             try:
                 theme = Theme.parse_obj(theme_colors)
-                register_theme(theme_name, theme)
-                _data[theme_name] = theme
+                register_theme(theme_id, theme, plugin_name)
+                _data[theme_id] = theme
             except (KeyError, ValidationError) as err:
                 warn_msg = trans._(
                     "In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for creating themes. {err!r}",
@@ -394,8 +396,8 @@ class NapariPluginManager(PluginManager):
             return
 
         # unregister all themes that were provided by the plugins
-        for theme_name in self._theme_data[plugin_name]:
-            unregister_theme(theme_name)
+        for theme_id in self._theme_data[plugin_name]:
+            unregister_theme(theme_id)
 
         # since its possible that disabled/removed plugin was providing the
         # current theme, we check for this explicitly and if this the case,
@@ -440,7 +442,6 @@ class NapariPluginManager(PluginManager):
         args: Union[AugmentedWidget, List[AugmentedWidget]],
         hookimpl: HookImplementation,
     ):
-
         plugin_name = hookimpl.plugin_name
         hook_name = '`napari_experimental_provide_dock_widget`'
         for arg in args if isinstance(args, list) else [args]:
@@ -737,11 +738,10 @@ class NapariPluginManager(PluginManager):
                 ext = f".{ext}"
             ext_map[ext] = plugin
 
+            func = None
             # give warning that plugin *may* not be able to read that extension
-            try:
+            with contextlib.suppress(Exception):
                 func = caller._call_plugin(plugin, path=f'_testing_{ext}')
-            except Exception:
-                pass
             if func is None:
                 msg = trans._(
                     'plugin {plugin!r} did not return a {type_} function when provided a path ending in {ext!r}. This *may* indicate a typo?',

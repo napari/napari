@@ -10,9 +10,11 @@ the "gui_qt()" context manager.
 .. tags:: historical
 """
 
-from skimage import data
-import napari
 from collections import Counter
+
+from skimage import data
+
+import napari
 
 viewer = napari.view_image(data.astronaut(), rgb=True)
 

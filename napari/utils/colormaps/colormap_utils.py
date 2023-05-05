@@ -5,8 +5,13 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import skimage.color as colorconv
-from vispy.color import BaseColormap as VispyColormap
-from vispy.color import Color, ColorArray, get_colormap, get_colormaps
+from vispy.color import (
+    BaseColormap as VispyColormap,
+    Color,
+    ColorArray,
+    get_colormap,
+    get_colormaps,
+)
 from vispy.color.colormap import LUT_len
 
 from napari.utils.colormaps.bop_colors import bopd
@@ -118,12 +123,22 @@ def _all_rgb():
     return np.stack((r, g, b), axis=-1).reshape((-1, 3))
 
 
-# obtained with colorconv.rgb2luv(_all_rgb().reshape((-1, 256, 3)))
+# The following values were precomputed and stored as constants
+# here to avoid heavy computation when importing this module.
+# The following code can be used to reproduce these values.
+#
+# rgb_colors = _all_rgb()
+# luv_colors = colorconv.rgb2luv(rgb_colors)
+# LUVMIN = np.amin(luv_colors, axis=(0,))
+# LUVMAX = np.amax(luv_colors, axis=(0,))
+# lab_colors = colorconv.rgb2lab(rgb_colors)
+# LABMIN = np.amin(lab_colors, axis=(0,))
+# LABMAX = np.amax(lab_colors, axis=(0,))
+
 LUVMIN = np.array([0.0, -83.07790815, -134.09790293])
 LUVMAX = np.array([100.0, 175.01447356, 107.39905336])
 LUVRNG = LUVMAX - LUVMIN
 
-# obtained with colorconv.rgb2lab(_all_rgb().reshape((-1, 256, 3)))
 LABMIN = np.array([0.0, -86.18302974, -107.85730021])
 LABMAX = np.array([100.0, 98.23305386, 94.47812228])
 LABRNG = LABMAX - LABMIN
@@ -358,7 +373,24 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
         elif colorspace == 'rgb':
             raw_rgb = random
         else:  # 'lab' by default
-            raw_rgb = colorconv.lab2rgb(random * LABRNG + LABMIN)
+            # The values in random are in [0, 1], but since the LAB colorspace
+            # is not exactly contained in the unit-box, some 3-tuples might not
+            # be valid LAB color coordinates. scikit-image handles this by projecting
+            # such coordinates into the colorspace, but will also warn when doing this.
+            with warnings.catch_warnings():
+                # skimage 0.20.0rc
+                warnings.filterwarnings(
+                    action='ignore',
+                    message='Conversion from CIE-LAB, via XYZ to sRGB color space resulted in',
+                    category=UserWarning,
+                )
+                # skimage <0.20
+                warnings.filterwarnings(
+                    action='ignore',
+                    message='Color data out of range',
+                    category=UserWarning,
+                )
+                raw_rgb = colorconv.lab2rgb(random * LABRNG + LABMIN)
         rgb = _validate_rgb(raw_rgb, tolerance=tolerance)
         factor *= expand_factor
     return rgb[:n]
@@ -432,14 +464,11 @@ def vispy_or_mpl_colormap(name):
     else:
         try:
             mpl_cmap = getattr(cm, name)
-            if name in _MATPLOTLIB_COLORMAP_NAMES:
-                display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
-            else:
-                display_name = name
-        except AttributeError:
+            display_name = _MATPLOTLIB_COLORMAP_NAMES.get(name, name)
+        except AttributeError as e:
             suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
                 name
-            ) or _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(name)
+            ) or _VISPY_COLORMAPS_TRANSLATIONS_REVERSE.get(name)
             if suggestion:
                 raise KeyError(
                     trans._(
@@ -448,21 +477,19 @@ def vispy_or_mpl_colormap(name):
                         name=name,
                         suggestion=suggestion,
                     )
+                ) from e
+
+            colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
+                set(_MATPLOTLIB_COLORMAP_NAMES)
+            )
+            raise KeyError(
+                trans._(
+                    'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
+                    deferred=True,
+                    name=name,
+                    colormaps=", ".join(sorted(f'"{cm}"' for cm in colormaps)),
                 )
-            else:
-                colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
-                    set(_MATPLOTLIB_COLORMAP_NAMES)
-                )
-                raise KeyError(
-                    trans._(
-                        'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
-                        deferred=True,
-                        name=name,
-                        colormaps=", ".join(
-                            sorted(f'"{cm}"' for cm in colormaps)
-                        ),
-                    )
-                )
+            ) from e
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         colormap = Colormap(
             name=name, display_name=display_name, colors=mpl_colors
@@ -480,10 +507,9 @@ ALL_COLORMAPS.update(BOP_COLORMAPS)
 ALL_COLORMAPS.update(INVERSE_COLORMAPS)
 
 # ... sorted alphabetically by name
-AVAILABLE_COLORMAPS = {
-    k: v
-    for k, v in sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
-}
+AVAILABLE_COLORMAPS = dict(
+    sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
+)
 # lock to allow update of AVAILABLE_COLORMAPS in threads
 AVAILABLE_COLORMAPS_LOCK = Lock()
 
@@ -499,6 +525,9 @@ def _increment_unnamed_colormap(
     existing: List[str], name: str = '[unnamed colormap]'
 ) -> Tuple[str, str]:
     """Increment name for unnamed colormap.
+
+    NOTE: this assumes colormaps are *never* deleted, and does not check
+          for name collision. If colormaps can ever be removed, please update.
 
     Parameters
     ----------
@@ -601,26 +630,29 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 AVAILABLE_COLORMAPS[name] = cmap
             else:
                 colormap = _colormap_from_colors(colormap)
-                if colormap is not None:
-                    # Return early because we don't have a name for this colormap.
-                    return colormap
-                raise TypeError(
-                    trans._(
-                        "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
-                        deferred=True,
+                if colormap is None:
+                    raise TypeError(
+                        trans._(
+                            "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
+                            deferred=True,
+                        )
                     )
+
+                name, _display_name = _increment_unnamed_colormap(
+                    AVAILABLE_COLORMAPS
                 )
+                colormap.update({'name': name, '_display_name': _display_name})
+                AVAILABLE_COLORMAPS[name] = colormap
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
-                isinstance(colormap['colors'], VispyColormap)
-                or isinstance(colormap['colors'], Colormap)
+                isinstance(colormap['colors'], (VispyColormap, Colormap))
             ):
                 cmap = Colormap(**colormap)
                 name = cmap.name
                 AVAILABLE_COLORMAPS[name] = cmap
             elif not all(
-                (isinstance(i, VispyColormap) or isinstance(i, Colormap))
+                (isinstance(i, (VispyColormap, Colormap)))
                 for i in colormap.values()
             ):
                 raise TypeError(
@@ -661,19 +693,21 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         else:
             colormap = _colormap_from_colors(colormap)
             if colormap is not None:
-                # Return early because we don't have a name for this colormap.
-                return colormap
-
-            warnings.warn(
-                trans._(
-                    'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
-                    deferred=True,
-                    cm_type=type(colormap),
+                name, _display_name = _increment_unnamed_colormap(
+                    AVAILABLE_COLORMAPS
                 )
-            )
-
-            # Use default colormap
-            name = 'gray'
+                colormap.update({'name': name, '_display_name': _display_name})
+                AVAILABLE_COLORMAPS[name] = colormap
+            else:
+                warnings.warn(
+                    trans._(
+                        'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
+                        deferred=True,
+                        cm_type=type(colormap),
+                    )
+                )
+                # Use default colormap
+                name = 'gray'
 
     return AVAILABLE_COLORMAPS[name]
 

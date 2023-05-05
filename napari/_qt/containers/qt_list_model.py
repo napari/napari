@@ -67,19 +67,25 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         if isinstance(data, ItemMimeData):
             moving_indices = data.indices
 
-            logger.debug(f"dropMimeData: indices {moving_indices} ➡ {destRow}")
+            logger.debug(
+                "dropMimeData: indices %s ➡ %s",
+                moving_indices,
+                destRow,
+            )
 
             if len(moving_indices) == 1:
                 return self._root.move(moving_indices[0], destRow)
-            else:
-                return bool(self._root.move_multiple(moving_indices, destRow))
+
+            return bool(self._root.move_multiple(moving_indices, destRow))
         return False
 
 
 class ItemMimeData(QMimeData):
     """An object to store list indices data during a drag operation."""
 
-    def __init__(self, items: Sequence[ItemType], indices: Sequence[int]):
+    def __init__(
+        self, items: Sequence[ItemType], indices: Sequence[int]
+    ) -> None:
         super().__init__()
         self.items = items
         self.indices = tuple(sorted(indices))

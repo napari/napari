@@ -59,7 +59,7 @@ def _only_points(s: LayerSel) -> bool:
 
 
 def _n_selected_points(s: LayerSel) -> int:
-    return sum(x._type_string == "labels" for x in s)
+    return sum(x._type_string == "points" for x in s)
 
 
 def _only_shapes(s: LayerSel) -> bool:
@@ -120,6 +120,18 @@ def _active_dtype(s: LayerSel) -> DTypeLike:
 
 def _same_type(s: LayerSel) -> bool:
     return len({x._type_string for x in s}) == 1
+
+
+def _active_is_image_3d(s: LayerSel) -> bool:
+    return (
+        _active_type(s) == "image"
+        and _active_ndim(s) is not None
+        and (_active_ndim(s) > 3 or (_active_ndim(s) > 2 and not _is_rgb(s)))
+    )
+
+
+def _empty_shapes_layer_selected(s: LayerSel) -> bool:
+    return any(x._type_string == "shapes" and not len(x.data) for x in s)
 
 
 class LayerListContextKeys(ContextNamespace['LayerSel']):
@@ -206,6 +218,11 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         trans._("Shape of the active layer, or `None` if nothing is active."),
         _active_shape,
     )
+    active_layer_is_image_3d = ContextKey(
+        False,
+        trans._("True when the active layer is a 3D image."),
+        _active_is_image_3d,
+    )
     active_layer_dtype = ContextKey(
         None,
         trans._("Dtype of the active layer, or `None` if nothing is active."),
@@ -220,4 +237,14 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._("True when all selected layers are of the same type."),
         _same_type,
+    )
+    all_selected_layers_labels = ContextKey(
+        False,
+        trans._("True when all selected layers are labels."),
+        _only_labels,
+    )
+    selected_empty_shapes_layer = ContextKey(
+        False,
+        trans._("True when there is a shapes layer without data selected."),
+        _empty_shapes_layer_selected,
     )

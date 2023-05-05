@@ -1,3 +1,5 @@
+from typing import Set, TypeVar
+
 import numpy as np
 
 from napari.layers.points._points_utils import _points_in_box_3d, points_in_box
@@ -109,13 +111,19 @@ DRAG_DIST_THRESHOLD = 5
 
 def add(layer, event):
     """Add a new point at the clicked position."""
+    start_pos = event.pos
+    dist = 0
+    yield
 
-    if event.type == 'mouse_press':
-        start_pos = event.pos
-
-    while event.type != 'mouse_release':
+    while event.type == 'mouse_move':
+        dist = np.linalg.norm(start_pos - event.pos)
+        if dist < DRAG_DIST_THRESHOLD:
+            # prevent vispy from moving the canvas if we're below threshold
+            event.handled = True
         yield
 
+    # in some weird cases you might have press and release without move,
+    # so we just make 100% sure dist is correct
     dist = np.linalg.norm(start_pos - event.pos)
     if dist < DRAG_DIST_THRESHOLD:
         coordinates = layer.world_to_data(event.position)
@@ -127,27 +135,32 @@ def highlight(layer, event):
     layer._set_highlight()
 
 
-def _toggle_selected(selected_data, value):
-    """Add or remove value from the selected data set.
+_T = TypeVar("_T")
+
+
+def _toggle_selected(selection: Set[_T], value: _T) -> Set[_T]:
+    """Add or remove value from the selection set.
+
+    This function returns a copy of the existing selection.
 
     Parameters
     ----------
-    selected_data : set
+    selection: set
         Set of selected data points to be modified.
     value : int
         Index of point to add or remove from selected data set.
 
     Returns
     -------
-    set
-        Modified selected_data set.
+    selection: set
+        Updated selection.
     """
-    if value in selected_data:
-        selected_data.remove(value)
+    selection = set(selection)
+    if value in selection:
+        selection.remove(value)
     else:
-        selected_data.add(value)
-
-    return selected_data
+        selection.add(value)
+    return selection
 
 
 def _update_drag_vectors_from_event(layer, event):

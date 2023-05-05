@@ -120,20 +120,21 @@ def get_app(
     if app:
         set_values.discard("ipy_interactive")
         if set_values:
-
             warn(
                 trans._(
                     "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
                     deferred=True,
                     args=set_values,
-                )
+                ),
+                stacklevel=2,
             )
         if perf_config and perf_config.trace_qt_events:
             warn(
                 trans._(
                     "Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.",
                     deferred=True,
-                )
+                ),
+                stacklevel=2,
             )
 
     else:
@@ -289,6 +290,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
             deferred=True,
         ),
         FutureWarning,
+        stacklevel=2,
     )
 
     app = get_app()
@@ -300,7 +302,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
         splash.close()
     try:
         yield app
-    except Exception:
+    except Exception:  # noqa: BLE001
         notification_manager.receive_error(*sys.exc_info())
     run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
 
@@ -402,7 +404,8 @@ def run(
                 "Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`",
                 deferred=True,
                 _func_name=_func_name,
-            )
+            ),
+            stacklevel=2,
         )
         return
 
@@ -416,7 +419,8 @@ def run(
                 deferred=True,
                 _func_name=_func_name,
                 max_loop_level=loops + 1,
-            )
+            ),
+            stacklevel=2,
         )
         return
     with notification_manager, _maybe_allow_interrupt(app):

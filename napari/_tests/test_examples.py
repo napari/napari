@@ -1,12 +1,10 @@
-import sys
 import os
-
-import pytest
-
 import runpy
+import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
 import skimage.data
 from qtpy import API_NAME
 
@@ -23,11 +21,10 @@ if '--test-examples' not in sys.argv and fpath not in sys.argv:
 
 # not testing these examples
 skip = [
-    'surface_timeseries_.py',  # needs nilearn
-    '3d_kymograph_.py',  # needs tqdm
+    '3d_kymograph_.py',  # needs tqdm, omero-py and can take some time downloading data
     'live_tiffs_.py',  # requires files
     'tiled-rendering-2d_.py',  # too slow
-    'live_tiffs_generator_.py',
+    'live_tiffs_generator_.py',  # to generate files for live_tiffs_.py
     'points-over-time.py',  # too resource hungry
     'embed_ipython_.py',  # fails without monkeypatch
     'new_theme.py',  # testing theme is extremely slow on CI

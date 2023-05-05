@@ -12,13 +12,14 @@ This script should be run together with live_tiffs_generator.py
 import os
 import sys
 import time
-from skimage.io.collection import alphanumeric_key
-from dask import delayed
+
 import dask.array as da
+from dask import delayed
+from skimage.io.collection import alphanumeric_key
 from tifffile import imread
+
 import napari
 from napari.qt import thread_worker
-
 
 viewer = napari.Viewer(ndisplay=3)
 # pass a directory to monitor or it will monitor current directory.
@@ -44,14 +45,14 @@ def append(delayed_image):
         image_dtype = layer.data.dtype
         image = da.from_delayed(
             delayed_image, shape=image_shape, dtype=image_dtype,
-        ).reshape((1,) + image_shape)
+        ).reshape((1, *image_shape))
         layer.data = da.concatenate((layer.data, image), axis=0)
     else:
         # first run, no layer added yet
         image = delayed_image.compute()
         image = da.from_delayed(
             delayed_image, shape=image.shape, dtype=image.dtype,
-        ).reshape((1,) + image.shape)
+        ).reshape((1, *image.shape))
         layer = viewer.add_image(image, rendering='attenuated_mip')
 
     # we want to show the last file added in the viewer to do so we want to

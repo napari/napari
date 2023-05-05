@@ -37,10 +37,6 @@ LAYERCTX_LINK: MenuRuleDict = {
     'group': MenuGroup.LAYERLIST_CONTEXT.LINK,
 }
 
-_ONLY_LABELS = LLCK.num_selected_labels_layers == LLCK.num_selected_layers
-_IMAGE_IS_3D = (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim > 2
-
-
 # Statically defined Layer actions.
 # modifying this list at runtime has no effect.
 LAYER_ACTIONS: List[Action] = [
@@ -55,7 +51,7 @@ LAYER_ACTIONS: List[Action] = [
         title=CommandId.LAYER_SPLIT_STACK.title,
         callback=_layer_actions._split_stack,
         menus=[{**LAYERCTX_SPLITMERGE, 'when': ~LLCK.active_layer_is_rgb}],
-        enablement=LLCK.active_layer_type == "image",
+        enablement=LLCK.active_layer_is_image_3d,
     ),
     Action(
         id=CommandId.LAYER_SPLIT_RGB,
@@ -74,6 +70,7 @@ LAYER_ACTIONS: List[Action] = [
                 | (LLCK.num_selected_shapes_layers >= 1)
             )
             & LLCK.all_selected_layers_same_type
+            & ~LLCK.selected_empty_shapes_layer
         ),
         menus=[LAYERCTX_CONVERSION],
     ),
@@ -151,7 +148,10 @@ for _dtype in (
             id=cmd,
             title=cmd.title,
             callback=partial(_layer_actions._convert_dtype, mode=_dtype),
-            enablement=(_ONLY_LABELS & (LLCK.active_layer_dtype != _dtype)),
+            enablement=(
+                LLCK.all_selected_layers_labels
+                & (LLCK.active_layer_dtype != _dtype)
+            ),
             menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
         )
     )
@@ -163,7 +163,7 @@ for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
             id=cmd,
             title=cmd.title,
             callback=partial(_layer_actions._project, mode=mode),
-            enablement=_IMAGE_IS_3D,
+            enablement=LLCK.active_layer_is_image_3d,
             menus=[{'id': MenuId.LAYERS_PROJECT}],
         )
     )

@@ -119,14 +119,10 @@ class Tracks(Layer):
         colormaps_dict=None,
         cache=True,
         experimental_clipping_planes=None,
-    ):
-
+    ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
-        if data is None:
-            data = np.empty((0, 4))
-        else:
-            # convert data to a numpy array if it is not already one
-            data = np.asarray(data)
+        # otherwise convert the data to an np.ndarray
+        data = np.empty((0, 4)) if data is None else np.asarray(data)
 
         # set the track data dimensions (remove ID from data)
         ndim = data.shape[1] - 1
@@ -333,7 +329,7 @@ class Tracks(Layer):
     def _pad_display_data(self, vertices):
         """pad display data when moving between 2d and 3d"""
         if vertices is None:
-            return
+            return None
 
         data = vertices[:, self._slice_input.displayed]
         # if we're only displaying two dimensions, then pad the display dim
@@ -341,8 +337,8 @@ class Tracks(Layer):
         if self._slice_input.ndisplay == 2:
             data = np.pad(data, ((0, 0), (0, 1)), 'constant')
             return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
-        else:
-            return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
+
+        return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
 
     @property
     def current_time(self):
@@ -388,7 +384,7 @@ class Tracks(Layer):
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def features(self):
@@ -414,8 +410,8 @@ class Tracks(Layer):
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._manager.features = features
-        self.events.properties()
         self._check_color_by_in_features()
+        self.events.properties()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

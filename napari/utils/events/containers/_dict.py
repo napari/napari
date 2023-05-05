@@ -22,10 +22,10 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
         self,
         data: Mapping[_K, _T] = None,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-    ):
+    ) -> None:
         if data is None:
             data = {}
-        self._dict: Dict[_K, _T] = dict()
+        self._dict: Dict[_K, _T] = {}
         self._basetypes = (
             basetype if isinstance(basetype, Sequence) else (basetype,)
         )
@@ -33,7 +33,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
 
     # #### START Required Abstract Methods
 
-    def __setitem__(self, key: int, value: _T):  # noqa: F811
+    def __setitem__(self, key: int, value: _T):
         self._dict[key] = self._type_check(value)
 
     def __delitem__(self, key: _K) -> None:

@@ -13,7 +13,7 @@ from napari._qt.dialogs.qt_notification import (
     NapariQtNotification,
     TracebackDialog,
 )
-from napari._tests.utils import DEFAULT_TIMEOUT_SECS
+from napari._tests.utils import DEFAULT_TIMEOUT_SECS, skip_on_win_ci
 from napari.utils.notifications import (
     ErrorNotification,
     Notification,
@@ -29,7 +29,7 @@ def _threading_warn():
 
 
 def _warn():
-    warnings.warn('warning!')
+    warnings.warn('warning!', stacklevel=3)
 
 
 def _threading_raise():
@@ -52,7 +52,7 @@ def clean_current(monkeypatch, qtbot):
     qtbot.addWidget(widget)
     mock_window = MagicMock()
     widget.resized = MagicMock()
-    mock_window._qt_viewer._canvas_overlay = widget
+    mock_window._qt_viewer._welcome_widget = widget
 
     def mock_current_main_window(*_, **__):
         """
@@ -97,7 +97,6 @@ def raise_on_show(monkeypatch, qtbot):
 
 @pytest.fixture
 def count_show(monkeypatch, qtbot):
-
     stat = ShowStatus()
 
     def mock_show_notif(_):
@@ -132,7 +131,7 @@ def ensure_qtbot(monkeypatch, qtbot):
 def test_clean_current_path_exist(make_napari_viewer):
     """If this test fail then you need to fix also clean_current fixture"""
     assert isinstance(
-        make_napari_viewer().window._qt_viewer._canvas_overlay, QWidget
+        make_napari_viewer().window._qt_viewer._welcome_widget, QWidget
     )
 
 
@@ -267,6 +266,7 @@ def test_notification_error(count_show, monkeypatch):
     assert count_show.show_traceback_count == 1
 
 
+@skip_on_win_ci
 @pytest.mark.sync_only
 def test_notifications_error_with_threading(
     make_napari_viewer, clean_current, monkeypatch

@@ -17,8 +17,15 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     Disable item and attribute setting with the exception of  ``__wrapped__``.
     """
 
+    def __init__(self, wrapped, exceptions=()):
+        super().__init__(wrapped)
+        self._self_exceptions = exceptions
+
     def __setattr__(self, name, val):
-        if name != '__wrapped__':
+        if (
+            name not in ('__wrapped__', '_self_exceptions')
+            and name not in self._self_exceptions
+        ):
             raise TypeError(
                 trans._(
                     'cannot set attribute {name}',
@@ -30,9 +37,11 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
         super().__setattr__(name, val)
 
     def __setitem__(self, name, val):
-        raise TypeError(
-            trans._('cannot set item {name}', deferred=True, name=name)
-        )
+        if name not in self._self_exceptions:
+            raise TypeError(
+                trans._('cannot set item {name}', deferred=True, name=name)
+            )
+        super().__setitem__(name, val)
 
 
 _SUNDER = re.compile('^_[^_]')
@@ -111,6 +120,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             self._private_attr_warning(name, typ)
 
         setattr(self.__wrapped__, name, value)
+        return None
 
     def __getitem__(self, key):
         return self.create(super().__getitem__(key))
@@ -172,7 +182,6 @@ def _in_main_thread() -> bool:
 
         res = in_qt_main_thread()
         in_main_thread = in_qt_main_thread
-        return res
     except ImportError:
         in_main_thread = in_main_thread_py
         return in_main_thread_py()
@@ -181,6 +190,7 @@ def _in_main_thread() -> bool:
             "Qt libs are available but no QtApplication instance is created"
         )
         return in_main_thread_py()
+    return res
 
 
 in_main_thread = _in_main_thread

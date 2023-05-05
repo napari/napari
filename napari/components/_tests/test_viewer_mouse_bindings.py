@@ -24,7 +24,7 @@ def mouse_event():
 
 
 class WheelEvent:
-    def __init__(self, inverted):
+    def __init__(self, inverted) -> None:
         self._inverted = inverted
 
     def inverted(self):
@@ -43,7 +43,7 @@ class WheelEvent:
         (
             ["Control"],
             WheelEvent(True),
-            [[5, 5, 5], [5, 5, 6], [5, 5, 7], [5, 5, 9]],
+            [[5, 5, 5], [5, 5, 6], [5, 5, 7], [5, 5, 10]],
         ),
     ],
 )

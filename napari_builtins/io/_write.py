@@ -2,13 +2,15 @@ import csv
 import os
 import shutil
 from tempfile import TemporaryDirectory
-from typing import Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import numpy as np
 
-from napari.types import FullLayerData
 from napari.utils.io import imsave
 from napari.utils.misc import abspath_or_url
+
+if TYPE_CHECKING:
+    from napari.types import FullLayerData
 
 
 def write_csv(
@@ -189,9 +191,9 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
         prop_table = []
 
     # add index of each point
-    column_names = ['index'] + column_names
+    column_names = ["index", *column_names]
     indices = np.expand_dims(list(range(data.shape[0])), axis=1)
-    table = np.concatenate([indices, data] + prop_table, axis=1)
+    table = np.concatenate([indices, data, *prop_table], axis=1)
 
     # write table to csv file
     write_csv(path, table, column_names)
@@ -237,7 +239,7 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
     column_names = [f'axis-{str(n)}' for n in range(n_dimensions)]
 
     # add shape id and vertex id of each vertex
-    column_names = ['index', 'shape-type', 'vertex-index'] + column_names
+    column_names = ["index", "shape-type", "vertex-index", *column_names]
 
     # concatenate shape data into 2D array
     len_shapes = [s.shape[0] for s in data]
@@ -266,7 +268,7 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
 
 
 def write_layer_data_with_plugins(
-    path: str, layer_data: List[FullLayerData]
+    path: str, layer_data: List["FullLayerData"]
 ) -> List[str]:
     """Write layer data out into a folder one layer at a time.
 
@@ -315,8 +317,8 @@ def write_layer_data_with_plugins(
             for fname in os.listdir(tmp):
                 written.append(os.path.join(path, fname))
                 shutil.move(os.path.join(tmp, fname), path)
-    except Exception as exc:
+    except Exception:
         if not already_existed:
             shutil.rmtree(path, ignore_errors=True)
-        raise exc
+        raise
     return written

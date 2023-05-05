@@ -78,7 +78,7 @@ class QtViewerDockWidget(QDockWidget):
         object_name: str = '',
         add_vertical_stretch=True,
         close_btn=True,
-    ):
+    ) -> None:
         self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer
@@ -229,16 +229,28 @@ class QtViewerDockWidget(QDockWidget):
         # your method to pass uncaught key-combinations to the viewer.
         return self._ref_qt_viewer().keyPressEvent(event)
 
+    def keyReleaseEvent(self, event):
+        # if you subclass QtViewerDockWidget and override the keyReleaseEvent
+        # method, be sure to call super().keyReleaseEvent(event) at the end of
+        # your method to pass uncaught key-combinations to the viewer.
+        return self._ref_qt_viewer().keyReleaseEvent(event)
+
     def _set_title_orientation(self, area):
         if area in (
             Qt.DockWidgetArea.LeftDockWidgetArea,
             Qt.DockWidgetArea.RightDockWidgetArea,
         ):
             features = self._features
-            if features & self.DockWidgetVerticalTitleBar:
-                features = features ^ self.DockWidgetVerticalTitleBar
+            if features & self.DockWidgetFeature.DockWidgetVerticalTitleBar:
+                features = (
+                    features
+                    ^ self.DockWidgetFeature.DockWidgetVerticalTitleBar
+                )
         else:
-            features = self._features | self.DockWidgetVerticalTitleBar
+            features = (
+                self._features
+                | self.DockWidgetFeature.DockWidgetVerticalTitleBar
+            )
         self.setFeatures(features)
 
     @property
@@ -266,7 +278,6 @@ class QtViewerDockWidget(QDockWidget):
 
                 viewer.window.plugins_menu.actions()[idx].setChecked(visible)
 
-            self.setVisible(visible)
             # AttributeError: This error happens when the plugins menu is not yet built.
             # ValueError: This error is when the action is from the windows menu.
 
@@ -285,6 +296,7 @@ class QtViewerDockWidget(QDockWidget):
 
     def setWidget(self, widget):
         widget._parent = self
+        self.setFocusProxy(widget)
         super().setWidget(widget)
 
 
@@ -306,7 +318,7 @@ class QtCustomTitleBar(QLabel):
 
     def __init__(
         self, parent, title: str = '', vertical=False, close_btn=True
-    ):
+    ) -> None:
         super().__init__(parent)
         self.setObjectName("QtCustomTitleBar")
         self.setProperty('vertical', str(vertical))

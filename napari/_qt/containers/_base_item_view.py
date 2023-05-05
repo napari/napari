@@ -55,7 +55,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         """Delete items with delete key."""
         if e.key() in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
             self._root.remove_selected()
-            return
+            return None
         return super().keyPressEvent(e)
 
     def currentChanged(
@@ -98,14 +98,14 @@ class _BaseEventedItemView(Generic[ItemType]):
             sm.clearCurrentIndex()
         else:
             idx = index_of(self.model(), event.value)
-            sm.setCurrentIndex(idx, sm.Current)
+            sm.setCurrentIndex(idx, sm.SelectionFlag.Current)
 
     def _on_py_selection_change(self, event: Event):
         """The python model selection has changed. Update the Qt view."""
         sm = self.selectionModel()
         for is_selected, idx in chain(
-            zip(repeat(sm.Select), event.added),
-            zip(repeat(sm.Deselect), event.removed),
+            zip(repeat(sm.SelectionFlag.Select), event.added),
+            zip(repeat(sm.SelectionFlag.Deselect), event.removed),
         ):
             model_idx = index_of(self.model(), idx)
             if model_idx.isValid():
@@ -118,7 +118,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         for i in self._root.selection:
             idx = index_of(self.model(), i)
             selection.select(idx, idx)
-        sel_model.select(selection, sel_model.ClearAndSelect)
+        sel_model.select(selection, sel_model.SelectionFlag.ClearAndSelect)
 
 
 def index_of(model: QAbstractItemModel, obj: ItemType) -> QModelIndex:
