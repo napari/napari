@@ -212,4 +212,4 @@ jobs:
         with:
           run: tox -e py39-linux-pyside2-examples
         env:
-          PIP_CONSTRAINT: resources/constraints/constraints_py3.9.txt
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.9_examples.txt

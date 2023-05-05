@@ -1,6 +1,6 @@
 # The tests in this module for the new style of async slicing in napari:
 # https://napari.org/dev/naps/4-async-slicing.html
-import logging
+
 from threading import RLock
 from typing import Tuple, Union
 
@@ -10,7 +10,7 @@ from numpy.typing import DTypeLike
 from vispy.visuals import VolumeVisual
 
 from napari import Viewer
-from napari._vispy.layers.image import VispyImageLayer
+from napari._vispy.layers.image import VispyBaseLayer, VispyImageLayer
 from napari.layers import Image, Layer, Points
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.utils.events import Event
@@ -77,20 +77,18 @@ def test_async_slice_image_on_current_step_change(
 ):
     viewer = make_napari_viewer()
     data = rng.random((3, 4, 5))
-    layer = Image(data)
-    vispy_layer = setup_viewer_for_async_slice(viewer, layer)
-
+    image = Image(data)
+    vispy_image = setup_viewer_for_async_slicing(viewer, image)
     assert viewer.dims.current_step != (2, 0, 0)
 
     viewer.dims.current_step = (2, 0, 0)
 
-    wait_until_vispy_image_data_equal(qtbot, vispy_layer, data[2, :, :])
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, data[2, :, :])
 
 
 def test_sync_slice_image_on_current_step_change(
-    make_napari_viewer, qtbot, rng, caplog
+    make_napari_viewer, qtbot, rng
 ):
-    caplog.set_level(logging.DEBUG)
     viewer = make_napari_viewer()
     viewer._layer_slicer._force_sync = True
     data = rng.random((3, 4, 5))
@@ -99,44 +97,41 @@ def test_sync_slice_image_on_current_step_change(
     assert viewer.dims.current_step != (2, 0, 0)
     viewer.dims.current_step = (2, 0, 0)
 
-    assert 'submitting sync slice' in caplog.text
-
 
 def test_async_slice_image_on_order_change(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = rng.random((3, 4, 5))
-    layer = Image(data)
-    vispy_layer = setup_viewer_for_async_slice(viewer, layer)
+    image = Image(data)
+    vispy_image = setup_viewer_for_async_slicing(viewer, image)
     assert viewer.dims.order != (1, 0, 2)
 
     viewer.dims.order = (1, 0, 2)
 
-    wait_until_vispy_image_data_equal(qtbot, vispy_layer, data[:, 2, :])
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, data[:, 2, :])
 
 
 def test_async_slice_image_on_ndisplay_change(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = rng.random((3, 4, 5))
-    layer = Image(data)
-    vispy_layer = setup_viewer_for_async_slice(viewer, layer)
+    image = Image(data)
+    vispy_image = setup_viewer_for_async_slicing(viewer, image)
     assert viewer.dims.ndisplay != 3
 
     viewer.dims.ndisplay = 3
 
-    wait_until_vispy_image_data_equal(qtbot, vispy_layer, data)
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, data)
 
 
 def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = [rng.random((4, 8, 10)), rng.random((2, 4, 5))]
-    layer = Image(data)
-    vispy_layer = setup_viewer_for_async_slice(viewer, layer)
+    image = Image(data)
+    vispy_image = setup_viewer_for_async_slicing(viewer, image)
 
     # Check that we're initially slicing the middle of the first dimension
     # over the whole of lowest resolution image.
     assert viewer.dims.not_displayed == (0,)
     assert viewer.dims.current_step[0] == 2
-    image = vispy_layer.layer
     assert image._data_level == 1
     np.testing.assert_equal(image.corner_pixels, [[0, 0, 0], [0, 4, 5]])
 
@@ -145,20 +140,19 @@ def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot, rng):
     image.corner_pixels = np.array([[0, 0, 0], [0, 4, 3]])
     image.events.reload(Event('reload', layer=image))
 
-    wait_until_vispy_image_data_equal(qtbot, vispy_layer, data[1][1, 0:4, 0:3])
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, data[1][1, 0:4, 0:3])
 
 
 def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer, rng):
     viewer = make_napari_viewer()
     data = [rng.random((4, 8, 10)), rng.random((2, 4, 5))]
-    layer = Image(data)
-    vispy_layer = setup_viewer_for_async_slice(viewer, layer)
+    image = Image(data)
+    vispy_image = setup_viewer_for_async_slicing(viewer, image)
 
     # Check that we're initially slicing the middle of the first dimension
     # over the whole of lowest resolution image.
     assert viewer.dims.not_displayed == (0,)
     assert viewer.dims.current_step[0] == 2
-    image = vispy_layer.layer
     assert image._data_level == 1
     np.testing.assert_equal(image.corner_pixels, [[0, 0, 0], [0, 4, 5]])
 
@@ -167,39 +161,76 @@ def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer, rng):
     image.corner_pixels = np.array([[0, 2, 3], [0, 6, 7]])
     image.events.reload(Event('reload', layer=image))
 
-    wait_until_vispy_image_data_equal(qtbot, vispy_layer, data[0][2, 2:6, 3:7])
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, data[0][2, 2:6, 3:7])
 
 
-def test_slicing_in_progress(make_napari_viewer, qtbot, rng, caplog):
-    caplog.set_level(logging.DEBUG)
+def test_async_slice_points_on_current_step_change(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    data = np.array(
+        [
+            [0, 2, 3],
+            [1, 3, 4],
+            [2, 4, 5],
+            [3, 5, 6],
+            [4, 6, 7],
+        ]
+    )
+    points = Points(data)
+    vispy_points = setup_viewer_for_async_slicing(viewer, points)
+    assert viewer.dims.current_step != (3, 0, 0)
+
+    viewer.dims.current_step = (3, 0, 0)
+
+    wait_until_vispy_points_data_equal(qtbot, vispy_points, np.array([[5, 6]]))
+
+
+def test_async_slice_points_on_point_change(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    # Define data so that slicing at 1.6 in the first dimension should match the
+    # second point, but won't if that index is prematurely rounded as for other
+    # layers.
+    data = np.array(
+        [
+            [0, 2, 3],
+            [1.4, 3, 4],
+            [2.4, 4, 5],
+            [3.4, 5, 6],
+            [4, 6, 7],
+        ]
+    )
+    points = Points(data)
+    vispy_points = setup_viewer_for_async_slicing(viewer, points)
+    assert viewer.dims.point != (1.6, 0, 0)
+
+    viewer.dims.point = (1.6, 0, 0)
+
+    wait_until_vispy_points_data_equal(qtbot, vispy_points, np.array([[3, 4]]))
+
+
+def test_slicing_in_progress(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = rng.random((3, 4, 5))
     lockable_data = LockableData(data)
     layer = Image(data=lockable_data, multiscale=False)
-    vispy_layer = setup_viewer_for_async_slice(viewer, layer)
+    vispy_layer = setup_viewer_for_async_slicing(viewer, layer)
     assert viewer.dims.current_step != (2, 0, 0)
 
     layer = vispy_layer.layer
     assert not viewer.slicing_in_progress
-    caplog.clear()
     with lockable_data.lock:
         viewer.dims.current_step = (2, 0, 0)
         assert viewer.slicing_in_progress
-        assert 'Task complete' not in caplog.text
 
     wait_until_vispy_image_data_equal(qtbot, vispy_layer, data[2, :, :])
     assert not viewer.slicing_in_progress
-    assert 'submitting async slice request' in caplog.text
-    assert 'Task complete' in caplog.text
 
 
-def test_async_slice_image_loaded(make_napari_viewer, qtbot, rng, caplog):
-    caplog.set_level(logging.DEBUG)
+def test_async_slice_image_loaded(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = rng.random((3, 4, 5))
     lockable_data = LockableData(data)
     layer = Image(lockable_data, multiscale=False)
-    vispy_layer = setup_viewer_for_async_slice(viewer, layer)
+    vispy_layer = setup_viewer_for_async_slicing(viewer, layer)
 
     assert layer.loaded
     assert viewer.dims.current_step != (2, 0, 0)
@@ -207,45 +238,20 @@ def test_async_slice_image_loaded(make_napari_viewer, qtbot, rng, caplog):
     with lockable_data.lock:
         viewer.dims.current_step = (2, 0, 0)
         assert not layer.loaded
-        assert 'Task complete' not in caplog.text
 
     wait_until_vispy_image_data_equal(qtbot, vispy_layer, data[2, :, :])
     assert layer.loaded
-    assert 'Task complete' in caplog.text
 
 
-def test_async_slice_points(make_napari_viewer, qtbot):
-    viewer = make_napari_viewer()
-    data = np.array(
-        (
-            (0, 2, 3),
-            (1, 3, 4),
-            (2, 4, 5),
-            (3, 5, 6),
-            (4, 6, 7),
-        )
-    )
-    layer = Points(data=data)
-    assert layer.loaded
-    vispy_layer = setup_viewer_for_async_slice(viewer, layer)
-    assert viewer.dims.current_step[0] != 3
-    viewer.dims.current_step = (3, 5, 5)
-
-    wait_until_vispy_points_data_equal(
-        qtbot, vispy_layer, np.array(((6, 5, 0),))
-    )
-    assert layer.loaded
-
-
-def setup_viewer_for_async_slice(
+def setup_viewer_for_async_slicing(
     viewer: Viewer,
     layer: Layer,
-) -> VispyImageLayer:
+) -> VispyBaseLayer:
     # Initially force synchronous slicing so any slicing caused
-    # by adding the image finishes before any other slicing starts.
+    # by adding the layer finishes before any other slicing starts.
     viewer._layer_slicer._force_sync = True
-    # add layer and get the corresponding vispy image.
-    viewer.layers.append(layer)
+    # Add the layer and get the corresponding vispy layer.
+    layer = viewer.add_layer(layer)
     vispy_layer = viewer.window._qt_viewer.layer_to_visual[layer]
     # Then allow asynchronous slicing for testing.
     viewer._layer_slicer._force_sync = False
@@ -273,9 +279,10 @@ def wait_until_vispy_points_data_equal(
 ) -> None:
     def assert_vispy_points_data_equal() -> None:
         positions = vispy_layer.node._subvisuals[0]._data['a_position']
-
-        # Vispy node data may have been post-processed (e.g. through a colormap),
-        # so check that values are close rather than exactly equal.
-        np.testing.assert_allclose(positions, expected_data)
+        # Flip the coordinates because vispy uses xy instead of rc ordering.
+        # Also only take the number of dimensions expected since vispy points
+        # are always 3D even when displaying 2D slices.
+        data = positions[:, -expected_data.shape[1] :: -1]
+        np.testing.assert_array_equal(data, expected_data)
 
     qtbot.waitUntil(assert_vispy_points_data_equal)

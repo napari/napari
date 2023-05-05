@@ -176,16 +176,16 @@ class _LayerSlicer:
         sync_layers = []
         for layer in layers:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
-                logger.debug('submitting async slice request')
+                logger.debug('Making async slice request for %s', layer)
                 requests[layer] = layer._make_slice_request(dims)
             else:
-                logger.debug('submitting sync slice')
+                logger.debug('Sync slicing for %s', layer)
                 sync_layers.append(layer)
 
         # First maybe submit an async slicing task to start it ASAP.
         task = None
         if len(requests) > 0:
-            logger.debug('Submitted task %s', id(task))
+            logger.debug('Submitting task %s', id(task))
             task = self._executor.submit(self._slice_layers, requests)
             # Store task before adding done callback to ensure there is always
             # a task to remove in the done callback.
@@ -241,7 +241,7 @@ class _LayerSlicer:
         Can be called from the main or slicing thread.
         """
         logger.debug('_LayerSlicer._on_slice_done: %s', id(task))
-        if self._try_to_remove_task(task):
+        if not self._try_to_remove_task(task):
             logger.debug('Task not found: %s', id(task))
 
         if task.cancelled():

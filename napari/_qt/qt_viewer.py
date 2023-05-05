@@ -484,6 +484,7 @@ class QtViewer(QSplitter):
         updates after slicing using the slice response data.
         This only gets triggered on async path."""
         responses = event.value
+        logging.debug('QtViewer._on_slice_ready: %s', responses)
         for layer, response in responses.items():
             # Update the layer slice state to temporarily support behavior
             # that depends on it.
