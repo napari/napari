@@ -12,6 +12,17 @@ from napari.layers.shapes._shapes_utils import (
 
 W_DATA = [[0, 3], [1, 0], [2, 3], [5, 0], [2.5, 5]]
 
+line_points = [
+    (np.array([0, 0]), np.array([0, 3]), np.array([1, 0])),
+    (np.array([0, 0, 0]), np.array([0, 0, 3]), np.array([1, 0, 0])),
+    (
+        np.array([0, 0, 0, 0]),
+        np.array([0, 0, 3, 0]),
+        np.array([1, 0, 0, 0]),
+    ),
+    (np.array([0, 0, 0]), np.array([0, 0, 0]), np.array([1, 0, 0])),
+]
+
 
 def _regen_testcases():
     """
@@ -406,19 +417,7 @@ def test_rdp(create_complex_shape):
     assert len(rdp_shape_lt) < len(rdp_shape)
 
 
-@pytest.mark.parametrize(
-    'start, end, point',
-    [
-        (np.array([0, 0]), np.array([0, 3]), np.array([1, 0])),
-        (np.array([0, 0, 0]), np.array([0, 0, 3]), np.array([1, 0, 0])),
-        (
-            np.array([0, 0, 0, 0]),
-            np.array([0, 0, 3, 0]),
-            np.array([1, 0, 0, 0]),
-        ),
-        (np.array([0, 0, 0]), np.array([0, 0, 0]), np.array([1, 0, 0])),
-    ],
-)
+@pytest.mark.parametrize('start, end, point', line_points)
 def test_perpendicular_distance(start, end, point):
     # check whether math is correct and works higher than 2D / 3d
     distance = perpendicular_distance(point, start, end)
