@@ -788,8 +788,8 @@ class Labels(_ImageBase):
         super()._slice_dims(
             point=point, ndisplay=ndisplay, order=order, force=force
         )
-        if ndisplay == 2 and len(order) == 2:
-            if order is not None:
+        if ndisplay == 2:
+            if order is not None and len(order) == 2:
                 self._overlays['draw_polygon'].dims_order = order
         else:
             if self.mode == Mode.DRAW_POLYGON:
