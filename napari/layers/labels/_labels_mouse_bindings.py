@@ -1,3 +1,5 @@
+import numpy as np
+
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 
@@ -59,17 +61,23 @@ class DrawPolygon:
     def __call__(self, layer, event):
         polygon_overlay = layer._overlays['draw_polygon']
         pos = mouse_event_to_labels_coordinate(layer, event)
-        pos = (pos[1] + 0.5, pos[0] + 0.5)  # (y, x) -> (x, y) + offset
+        if pos is None:
+            return
+
+        pos = np.array(pos, dtype=float)
+        dims_to_paint = layer._get_dims_to_paint()
+        pos[dims_to_paint] += 0.5
 
         if event.button is None:  # on mouse move
             if self._points:
-                polygon_overlay.points = self._points + [pos]
+                polygon_overlay.points = self._points + [pos.tolist()]
         elif (
             event.button == 1 and event.type == 'mouse_press'
         ):  # on mouse left click
             # recenter the point in the center of the image pixel
-            pos = int(pos[0]) + 0.5, int(pos[1]) + 0.5
-            self._points.append(pos)
+            pos[dims_to_paint] = np.floor(pos[dims_to_paint] + 0.5)
+
+            self._points.append(pos.tolist())
             polygon_overlay.points = self._points
         elif (
             event.button == 1 and event.type == 'mouse_double_click'
@@ -78,7 +86,7 @@ class DrawPolygon:
         elif event.button == 2 and self._points:  # on mouse right click
             self._points.pop()
             if self._points:
-                polygon_overlay.points = self._points + [pos]
+                polygon_overlay.points = self._points + [pos.tolist()]
             else:
                 layer._reset_draw_polygon()
 

@@ -38,8 +38,12 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     def _on_points_change(self):
         num_points = len(self.overlay.points)
-        points = np.array(self.overlay.points).reshape((-1, 2))
-        points = points[:, self.overlay.dims_order]
+        if num_points:
+            points = np.array(self.overlay.points)[
+                :, self.overlay.dims_order[::-1]
+            ]
+        else:
+            points = np.empty((0, 2))
 
         if num_points > 2:
             self._polygon.visible = True

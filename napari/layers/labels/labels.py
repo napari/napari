@@ -789,8 +789,9 @@ class Labels(_ImageBase):
             point=point, ndisplay=ndisplay, order=order, force=force
         )
         if ndisplay == 2:
-            if order is not None and len(order) == 2:
-                self._overlays['draw_polygon'].dims_order = order
+            dims_to_paint = self._get_dims_to_paint()
+            if order is not None and len(dims_to_paint) == 2:
+                self._overlays['draw_polygon'].dims_order = dims_to_paint
         else:
             if self.mode == Mode.DRAW_POLYGON:
                 self.mode = Mode.PAN_ZOOM
@@ -1416,18 +1417,26 @@ class Labels(_ImageBase):
         new_label : int
             Value of the new label to be filled in.
         """
-        points = np.array(points, dtype=int)
-        if points.shape[1] != 2:
-            raise NotImplementedError(
-                "Polygon painting is implemented only for 2D."
-            )
-
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
 
-        polygon_mask = polygon2mask(shape[::-1], points)
-        mask_indices = np.argwhere(polygon_mask)[:, [1, 0]]
+        if len(dims_to_paint) != 2:
+            raise NotImplementedError(
+                "Polygon painting is implemented only in 2D."
+            )
+
+        points = np.array(points, dtype=int)
+        slice_coord = points[0].tolist()
+        points2d = points[:, dims_to_paint]
+
+        polygon_mask = polygon2mask(shape, points2d)
+        mask_indices = np.argwhere(polygon_mask)
         self._paint_indices(
-            mask_indices, new_label, shape, dims_to_paint, refresh=True
+            mask_indices,
+            new_label,
+            shape,
+            dims_to_paint,
+            slice_coord,
+            refresh=True,
         )
 
     def _paint_indices(
@@ -1489,16 +1498,17 @@ class Labels(_ImageBase):
 
         self.data_setitem(slice_coord, new_label, refresh)
 
-    def _get_shape_and_dims_to_paint(self):
+    def _get_shape_and_dims_to_paint(self) -> Tuple[list, list]:
+        dims_to_paint = sorted(self._get_dims_to_paint())
         shape = self.data.shape
-        dims_to_paint = sorted(
-            self._slice_input.order[-self.n_edit_dimensions :]
-        )
 
         if self.n_edit_dimensions < self.ndim:
             shape = [shape[i] for i in dims_to_paint]
 
         return shape, dims_to_paint
+
+    def _get_dims_to_paint(self) -> list:
+        return list(self._slice_input.order[-self.n_edit_dimensions :])
 
     def data_setitem(self, indices, value, refresh=True):
         """Set `indices` in `data` to `value`, while writing to edit history.
