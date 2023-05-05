@@ -111,7 +111,6 @@ class _LayerSlicer:
         TimeoutError: when the timeout limit has been exceeded and the task is
             not yet complete
         """
-        logger.debug('_LayerSlicer.wait_until_idle')
         futures = self._layers_to_task.values()
         _, not_done_futures = wait(futures, timeout=timeout)
 

@@ -304,6 +304,7 @@ def test_get_settings_fails(monkeypatch, tmp_path):
     settings.get_settings(p)
     with pytest.raises(Exception) as e:
         settings.get_settings(p)
+
     assert 'The path can only be set once per session' in str(e)
 
 

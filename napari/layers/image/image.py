@@ -2,7 +2,6 @@
 """
 from __future__ import annotations
 
-import logging
 import types
 import warnings
 from contextlib import nullcontext
@@ -38,8 +37,6 @@ from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.migrations import rename_argument
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
-
-logger = logging.getLogger("Layer.Image")
 
 if TYPE_CHECKING:
     from napari.components import Dims
