@@ -28,6 +28,13 @@ class Mode(StringEnum):
 
     In ERASE mode the cursor functions similarly to PAINT mode, but to paint
     with background label, which effectively removes the label.
+
+    In DRAW_POLYGON mode, the mouse is used to draw a polygon by clicking
+    the left mouse button to place its vertices. Right mouse click removes
+    the latest polygon vertex. Left double-click finishes the polygon drawing
+    and updates the labels pixels. If the background label `0` is selected,
+    any pixels will be changed to background and this tool functions like an eraser.
+    This mode is valid only for 2D images.
     """
 
     PAN_ZOOM = auto()
