@@ -109,12 +109,8 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
 
     def _on_data_change(self):
-        self._set_node_data(self.node, self.layer._data_view)
-
-    def _set_node_data(self, node, data):
-        """Our self.layer._data_view has been updated, update our node."""
-
-        data = fix_data_dtype(data)
+        node = self.node
+        data = fix_data_dtype(self.layer._data_view)
         ndisplay = self.layer._slice_input.ndisplay
 
         if ndisplay == 3 and self.layer.ndim == 2:
@@ -133,8 +129,6 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_display_change(data)
         else:
             node.set_data(data)
-
-        node.visible = self.layer.visible
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()

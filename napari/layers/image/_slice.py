@@ -4,7 +4,6 @@ from typing import Any, Callable, Tuple, Union
 
 import numpy as np
 
-from napari.components.dims import reorder_after_dim_reduction
 from napari.layers.utils._slice_input import _SliceInput
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils.transforms import Affine
@@ -244,6 +243,10 @@ class _ImageSliceRequest:
 
     def _get_order(self) -> Tuple[int, ...]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
+        # TODO: here to avoid circular import due to layerlist importing _ImageBase
+        # and _ImageBase importing this.
+        from napari.components.dims import reorder_after_dim_reduction
+
         order = reorder_after_dim_reduction(self.dims.displayed)
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
