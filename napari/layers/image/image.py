@@ -493,12 +493,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @property
     def _extent_data_augmented(self) -> np.ndarray:
-        """Extent of layer in data coordinates.
-
-        Returns
-        -------
-        extent_data : array, shape (2, D)
-        """
         extent = self._extent_data
         return extent + [[-0.5], [+0.5]]
 

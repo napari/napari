@@ -237,7 +237,7 @@ class LayerList(SelectableEventedList[Layer]):
         """Extent of layers in world coordinates.
 
         Default to 2D with (0, 511) min/ max values if no data is present.
-        Corresponds to image with dims 512.
+        Corresponds to image with 512 pixels in each dimension.
 
         Returns
         -------

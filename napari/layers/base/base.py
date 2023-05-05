@@ -786,6 +786,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _extent_data_augmented(self) -> np.ndarray:
         """Extent of layer in data coordinates.
 
+        Differently from Layer._extent_data, this also includes the "size" of
+        data points; for example, Point sizes and Image pixel width are included.
+
         Returns
         -------
         extent_data : array, shape (2, D)
@@ -806,6 +809,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def _extent_world_augmented(self) -> np.ndarray:
         """Range of layer in world coordinates.
+
+        Differently from Layer._extent_world, this also includes the "size" of
+        data points; for example, Point sizes and Image pixel width are included.
 
         Returns
         -------
@@ -830,7 +836,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @cached_property
     def extent_augmented(self) -> Extent:
-        """Extent of layer in data and world coordinates."""
+        """Augmented extent of layer in data and world coordinates.
+
+        Differently from Layer.extent, this also includes the "size" of data
+        points; for example, Point sizes and Image pixel width are included.
+        """
         extent_data = self._extent_data_augmented
         data_to_world = self._data_to_world
         extent_world = get_extent_world(extent_data, data_to_world)

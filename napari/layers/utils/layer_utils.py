@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import inspect
+import warnings
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 import dask
@@ -632,7 +633,7 @@ def dims_displayed_world_to_layer(
     return dims_displayed
 
 
-def get_extent_world(data_extent, data_to_world):
+def get_extent_world(data_extent, data_to_world, centered=None):
     """Range of layer in world coordinates base on provided data_extent
 
     Parameters
@@ -646,6 +647,16 @@ def get_extent_world(data_extent, data_to_world):
     -------
     extent_world : array, shape (2, D)
     """
+    if centered is not None:
+        warnings.warn(
+            trans._(
+                'The `centered` argument is deprecated. '
+                'Extents are now always centered on data points.',
+                deferred=True,
+            ),
+            stacklevel=2,
+        )
+
     D = data_extent.shape[1]
     full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(-1, D)
     full_world_extent = data_to_world(full_data_extent)

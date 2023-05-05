@@ -404,7 +404,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         shape = [
-            (np.round(s / sc).astype('int') if s > 0 else 1) + 1
+            np.round(s / sc).astype('int') + 1
             for s, sc in zip(scene_size, scale)
         ]
         empty_labels = np.zeros(shape, dtype=int)
