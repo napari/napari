@@ -238,8 +238,6 @@ class QtViewer(QSplitter):
             self.viewer.layers, self._qt_poll
         )
 
-        self.chunk_receiver = None
-
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
 
@@ -283,6 +281,7 @@ class QtViewer(QSplitter):
         )
         return self.canvas.camera
 
+    @property
     def chunk_receiver(self) -> None:
         warnings.warn(
             trans._(
@@ -480,9 +479,11 @@ class QtViewer(QSplitter):
 
     @ensure_main_thread
     def _on_slice_ready(self, event):
-        """Callback connected to `viewer._layer_slicer.events.ready`. Provides
-        updates after slicing using the slice response data.
-        This only gets triggered on async path."""
+        """Callback connected to `viewer._layer_slicer.events.ready`.
+
+        Provides updates after slicing using the slice response data.
+        This only gets triggered on the async slicing path.
+        """
         responses = event.value
         logging.debug('QtViewer._on_slice_ready: %s', responses)
         for layer, response in responses.items():

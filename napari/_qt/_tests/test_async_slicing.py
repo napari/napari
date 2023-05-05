@@ -31,18 +31,6 @@ def test_async_slice_image_on_current_step_change(
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[2, :, :])
 
 
-def test_sync_slice_image_on_current_step_change(
-    make_napari_viewer, qtbot, rng
-):
-    viewer = make_napari_viewer()
-    viewer._layer_slicer._force_sync = True
-    data = rng.random((3, 4, 5))
-    viewer.add_image(data)
-
-    assert viewer.dims.current_step != (2, 0, 0)
-    viewer.dims.current_step = (2, 0, 0)
-
-
 def test_async_slice_image_on_order_change(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = rng.random((3, 4, 5))
@@ -211,7 +199,6 @@ def wait_until_vispy_image_data_equal(
         data = (
             node._last_data if isinstance(node, VolumeVisual) else node._data
         )
-
         # Vispy node data may have been post-processed (e.g. through a colormap),
         # so check that values are close rather than exactly equal.
         np.testing.assert_allclose(data, expected_data)

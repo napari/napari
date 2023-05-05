@@ -67,8 +67,8 @@ class _LayerSlicer:
             manager for the slicing threading
         _force_sync: bool
             if true, forces slicing to execute synchronously
-        _layers_to_task : dict
-            task storage for cancellation logic, format: {tuple(layers): task}
+        _layers_to_task : dict of tuples of layers to futures
+            task storage for cancellation logic
         _lock_layers_to_task : threading.RLock
             lock to guard against changes to `_layers_to_task` when finding,
             adding, or removing tasks.
@@ -76,7 +76,7 @@ class _LayerSlicer:
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._force_sync = not get_settings().experimental.async_
-        self._layers_to_task: Dict[Tuple[Layer], Future] = {}
+        self._layers_to_task: Dict[Tuple[Layer, ...], Future] = {}
         self._lock_layers_to_task = RLock()
 
     @contextmanager
@@ -90,14 +90,12 @@ class _LayerSlicer:
         >>> with layer_slice.force_sync():
         >>>     layer_slicer.submit(layers=[layer], dims=Dims())
         """
-        logger.debug('_LayerSlicer.force_sync: start, %s', self._force_sync)
         prev = self._force_sync
         self._force_sync = True
         try:
             yield None
         finally:
             self._force_sync = prev
-        logger.debug('_LayerSlicer.force_sync: end, %s', self._force_sync)
 
     def wait_until_idle(self, timeout: Optional[float] = None) -> None:
         """Wait for all slicing tasks to complete before returning.
@@ -195,7 +193,6 @@ class _LayerSlicer:
 
         # Then execute sync slicing tasks to run concurrent with async ones.
         for layer in sync_layers:
-            # goes through `slice_dims` to `make_slice_input`, the calls `refresh` which calls `set_view_slic` which calls `make_slic_request_internal` which calls `updatE_slice_response`
             layer._slice_dims(
                 dims.point, dims.ndisplay, dims.order, force=force
             )
