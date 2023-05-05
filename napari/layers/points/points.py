@@ -1528,14 +1528,6 @@ class Points(Layer):
         """
         return self.edge_color[self._indices_view]
 
-    @property
-    def loaded(self):
-        """Has the data for this layer been loaded yet.
-        With asynchronous loading the layer might exist but its data
-        for the current slice has not been loaded.
-        """
-        return self._loaded
-
     def _reset_editable(self) -> None:
         """Set editable mode based on layer properties."""
         # interaction currently does not work for 2D layers being rendered in 3D
@@ -1723,7 +1715,6 @@ class Points(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
@@ -1735,18 +1726,11 @@ class Points(Layer):
 
     def _make_slice_request(self, dims) -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
-        # indicate the layer is currently mid-load
-        self._loaded = False
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
         )
-        # TODO: [see Image]
-        #   For the existing sync slicing, slice_indices is passed through
-        # to avoid some performance issues related to the evaluation of the
-        # data-to-world transform and its inverse. Async slicing currently
-        # absorbs these performance issues here, but we can likely improve
-        # things either by caching the world-to-data transform on the layer
-        # or by lazily evaluating it in the slice task itself.
+        # See Image._make_slice_request to understand why we evaluate this here
+        # instead of using `self._slice_indices`.
         slice_indices = slice_input.data_indices(
             self._data_to_world.inverse, round_index=False
         )
@@ -1791,8 +1775,6 @@ class Points(Layer):
         )
         with self.events.highlight.blocker():
             self._set_highlight(force=True)
-
-        self._loaded = True
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,

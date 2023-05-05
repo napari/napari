@@ -395,8 +395,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # Trigger generation of view slice and thumbnail
         self.refresh()
 
-        self._loaded = True
-
     @property
     def _data_view(self):
         """Viewable image for the current slice. (compatibility)"""
@@ -679,14 +677,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
         self.events.custom_interpolation_kernel_2d()
 
-    @property
-    def loaded(self):
-        """Has the data for this layer been loaded yet.
-        With asynchronous loading the layer might exist but its data
-        for the current slice has not been loaded.
-        """
-        return self._loaded
-
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
 
@@ -727,8 +717,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
         """Make an image slice request based on the given dims and this image."""
-        # indicate the layer is currently mid-load
-        self._loaded = False
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
         )
@@ -779,7 +767,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._slice_input = response.dims
         self._transforms[0] = response.tile_to_data
         self._slice = response
-        self.events.loaded()
 
         # Maybe reset the contrast limits based on the new slice.
         if self._should_calc_clims:
@@ -788,7 +775,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._should_calc_clims = False
         elif self._keep_auto_contrast:
             self.reset_contrast_limits()
-        self._loaded = True
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""

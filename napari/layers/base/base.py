@@ -306,6 +306,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             point=(0,) * ndim,
             order=tuple(range(ndim)),
         )
+        self._loaded: bool = True
 
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
@@ -548,7 +549,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         This base class says that layers are permanently in the loaded state.
         Derived classes that do asynchronous loading can override this.
         """
-        return True
+        return self._loaded
+
+    def _set_loaded(self, loaded: bool) -> None:
+        """Set the loaded state and notify a change with the loaded event.
+
+        This is private to support the previously public loaded property with
+        the new approach to async slicing.
+        """
+        if self._loaded != loaded:
+            self._loaded = loaded
+            self.events.loaded()
 
     @property
     def opacity(self):

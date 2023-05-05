@@ -175,6 +175,7 @@ class _LayerSlicer:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
                 logger.debug('Making async slice request for %s', layer)
                 requests[layer] = layer._make_slice_request(dims)
+                layer._set_loaded(False)
             else:
                 logger.debug('Sync slicing for %s', layer)
                 sync_layers.append(layer)
@@ -243,17 +244,6 @@ class _LayerSlicer:
         if task.cancelled():
             logger.debug('Cancelled task: %s', id(task))
             return
-
-    @property
-    def busy(self) -> bool:
-        """Busy indicator for the layer slicer as a whole.
-
-        Returns
-        -------
-        True if tasks are submitted and incomplete.
-        """
-        with self._lock_layers_to_task:
-            return len(self._layers_to_task) > 0
 
     def _try_to_remove_task(self, task: Future[Dict]) -> bool:
         """
