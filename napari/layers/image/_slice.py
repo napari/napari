@@ -244,7 +244,7 @@ class _ImageSliceRequest:
     def _get_order(self) -> Tuple[int, ...]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
         # TODO: here to avoid circular import due to layerlist importing _ImageBase
-        # and _ImageBase importing this.
+        # and _ImageBase importing this. May go away with https://github.com/napari/napari/pull/5751
         from napari.components.dims import reorder_after_dim_reduction
 
         order = reorder_after_dim_reduction(self.dims.displayed)
