@@ -676,10 +676,14 @@ def test_refresh_with_derived_color():
 
 def test_copy_paste_with_constant_color():
     color = {'constant': 'blue'}
-    features = pd.DataFrame(index=range(3))
+    features = pd.DataFrame(index=range(5))
     text_manager = TextManager(color=color, features=features)
 
-    copied = text_manager._copy([0, 2])
+    # Use an index of 4 to ensure that constant color values, which are
+    # RGBA 4-vectors, are handled correctly when copied, unlike in a
+    # related bug:
+    # https://github.com/napari/napari/issues/5786
+    copied = text_manager._copy([0, 4])
     text_manager._paste(**copied)
 
     actual = text_manager.color._values
