@@ -44,6 +44,7 @@ class ExperimentalSettings(EventedSettings):
             "Setting this higher removes more points from polygons. \nSetting this to 0 keeps all vertices of a given polygon"
         ),
         type=float,
+        ge=0,
     )
 
     class NapariConfig:
