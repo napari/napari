@@ -290,7 +290,6 @@ class QtViewer(QSplitter):
             DeprecationWarning,
             stacklevel=1,
         )
-        return
 
     @staticmethod
     def _update_dask_cache_settings(
