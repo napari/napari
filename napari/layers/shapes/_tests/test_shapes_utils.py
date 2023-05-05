@@ -6,6 +6,7 @@ from napari.layers.shapes._shapes_utils import (
     generate_2D_edge_meshes,
     get_default_shape_type,
     number_of_shapes,
+    perpendicular_distance,
     rdp,
 )
 
@@ -403,3 +404,23 @@ def test_rdp(create_complex_shape):
 
     rdp_shape_lt = rdp(shape, 2)
     assert len(rdp_shape_lt) < len(rdp_shape)
+
+
+@pytest.mark.parametrize(
+    'start, end, point',
+    [
+        (np.array([0, 0]), np.array([0, 3]), np.array([1, 0])),
+        (np.array([0, 0, 0]), np.array([0, 0, 3]), np.array([1, 0, 0])),
+        (
+            np.array([0, 0, 0, 0]),
+            np.array([0, 0, 3, 0]),
+            np.array([1, 0, 0, 0]),
+        ),
+        (np.array([0, 0, 0]), np.array([0, 0, 0]), np.array([1, 0, 0])),
+    ],
+)
+def test_perpendicular_distance(start, end, point):
+    # check whether math is correct and works higher than 2D / 3d
+    distance = perpendicular_distance(point, start, end)
+
+    assert distance == 1
