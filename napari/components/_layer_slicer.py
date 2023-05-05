@@ -41,6 +41,9 @@ class _AsyncSliceable(Protocol[_SliceResponse]):
     def _update_slice_response(self, response: _SliceResponse) -> None:
         ...
 
+    def _set_loaded(self, loaded: bool) -> None:
+        ...
+
 
 class _LayerSlicer:
     """
