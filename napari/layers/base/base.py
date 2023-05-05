@@ -544,18 +544,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def loaded(self) -> bool:
-        """Return True if this layer is fully loaded in memory.
+        """True if this layer is fully loaded in memory, False otherwise.
 
-        This base class says that layers are permanently in the loaded state.
-        Derived classes that do asynchronous loading can override this.
+        Layers that only support sync slicing are always fully loaded.
+        Layers that support async slicing can be temporarily not loaded
+        while slicing is occurring.
         """
         return self._loaded
 
     def _set_loaded(self, loaded: bool) -> None:
         """Set the loaded state and notify a change with the loaded event.
 
-        This is private to support the previously public loaded property with
-        the new approach to async slicing.
+        This is private because there is a long term intent to remove slice
+        state from the layer.
         """
         if self._loaded != loaded:
             self._loaded = loaded
