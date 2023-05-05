@@ -22,7 +22,7 @@ def test_provide_theme_hook_registered_correctly(
 ):
     # make a viewer with a plugin & theme registered
     viewer = make_napari_viewer_with_plugin_theme(
-        make_napari_viewer(),
+        make_napari_viewer,
         napari_plugin_manager,
         theme_type='dark',
         name='dark-test-2',
@@ -53,7 +53,7 @@ def test_plugin_provide_theme_hook_set_settings_correctly(
 ):
     # make a viewer with a plugin & theme registered
     make_napari_viewer_with_plugin_theme(
-        make_napari_viewer(),
+        make_napari_viewer,
         napari_plugin_manager,
         theme_type='dark',
         name='dark-test-2',
@@ -73,7 +73,7 @@ def test_plugin_provide_theme_hook_set_settings_correctly(
 
 
 def make_napari_viewer_with_plugin_theme(
-    viewer, napari_plugin_manager, *, theme_type: str, name: str
+    make_napari_viewer, napari_plugin_manager, *, theme_type: str, name: str
 ) -> Viewer:
     theme = get_theme(theme_type, True)
     theme["name"] = name
@@ -82,6 +82,10 @@ def make_napari_viewer_with_plugin_theme(
         @napari_hook_implementation
         def napari_experimental_provide_theme():
             return {name: theme}
+
+    # create instance of viewer to make sure
+    # registration and unregistration methods are called
+    viewer = make_napari_viewer()
 
     # register theme
     napari_plugin_manager.register(TestPlugin)
