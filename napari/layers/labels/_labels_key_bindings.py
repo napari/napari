@@ -62,6 +62,7 @@ labels_fun_to_mode = [
     (activate_labels_transform_mode, Mode.TRANSFORM),
     (activate_labels_erase_mode, Mode.ERASE),
     (activate_labels_paint_mode, Mode.PAINT),
+    (activate_labels_draw_polygon_mode, Mode.DRAW_POLYGON),
     (activate_labels_fill_mode, Mode.FILL),
     (activate_labels_picker_mode, Mode.PICK),
 ]

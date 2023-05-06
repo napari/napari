@@ -151,6 +151,10 @@ def test_changing_modes():
     assert layer.mode == 'pick'
     assert layer.mouse_pan is False
 
+    layer.mode = 'draw_polygon'
+    assert layer.mode == 'draw_polygon'
+    assert layer.mouse_pan is False
+
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
     assert layer.mouse_pan is True
