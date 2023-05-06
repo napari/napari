@@ -40,6 +40,7 @@ from napari.layers.shapes._shapes_utils import (
     get_default_shape_type,
     get_shape_ndim,
     number_of_shapes,
+    rdp,
     validate_num_vertices,
 )
 from napari.layers.utils.color_manager_utils import (
@@ -56,6 +57,7 @@ from napari.layers.utils.interactivity_utils import (
 )
 from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
 from napari.layers.utils.text_manager import TextManager
+from napari.settings import get_settings
 from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from napari.utils.colormaps.colormap_utils import ColorType
 from napari.utils.colormaps.standardize_color import (
@@ -2508,8 +2510,15 @@ class Shapes(Layer):
             vertices = self._data_view.shapes[index].data
             if len(vertices) <= 3:
                 self._data_view.remove(index)
-            else:
+            elif self._mode == Mode.ADD_POLYGON:
                 self._data_view.edit(index, vertices[:-1])
+            else:
+                vertices = rdp(
+                    vertices, epsilon=get_settings().experimental.rdp_epsilon
+                )
+                self._data_view.edit(
+                    index, vertices, new_type=shape_classes[ShapeType.POLYGON]
+                )
         self._is_creating = False
         self._update_dims()
 
