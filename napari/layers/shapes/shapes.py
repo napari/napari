@@ -2517,7 +2517,9 @@ class Shapes(Layer):
                     vertices, epsilon=get_settings().experimental.rdp_epsilon
                 )
                 self._data_view.edit(
-                    index, vertices, new_type=shape_classes[ShapeType.POLYGON]
+                    index,
+                    vertices[:-1],
+                    new_type=shape_classes[ShapeType.POLYGON],
                 )
         self._is_creating = False
         self._update_dims()
