@@ -4,6 +4,7 @@ from scipy import ndimage as ndi
 from napari.layers import Labels
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
+    mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
@@ -123,6 +124,127 @@ def test_paint_scale(MouseEvent):
     assert np.unique(layer.data[:5, -5:]) == 1
     assert np.unique(layer.data[-5:, :5]) == 1
     assert np.sum(layer.data == 3) == 244
+
+
+def test_paint_polygon(MouseEvent):
+    """Test polygon painting."""
+    np.random.seed(0)
+
+    data = np.zeros((3, 15, 15), dtype=np.int32)
+    layer = Labels(data)
+    layer.mode = 'draw_polygon'
+    layer.selected_label = 1
+
+    # Place some random points and then cancel them all
+    for _ in range(5):
+        position = (0,) + tuple(np.random.randint(20, size=2))
+        event = ReadOnlyWrapper(
+            MouseEvent(
+                type='mouse_press',
+                button=1,
+                position=position,
+                dims_displayed=[1, 2],
+            )
+        )
+        mouse_press_callbacks(layer, event)
+
+    # Cancel all the points
+    for _ in range(5):
+        event = ReadOnlyWrapper(
+            MouseEvent(
+                type='mouse_press',
+                button=2,
+                position=(0, 0, 0),
+                dims_displayed=(1, 2),
+            )
+        )
+        mouse_press_callbacks(layer, event)
+
+    assert np.alltrue(data[0, :] == 0)
+
+    # Draw a rectangle (the latest two points will be cancelled)
+    points = [
+        (1, 1, 1),
+        (1, 1, 10),
+        (1, 10, 10),
+        (1, 10, 1),
+        (1, 12, 0),
+        (1, 0, 0),
+    ]
+    for position in points:
+        event = ReadOnlyWrapper(
+            MouseEvent(
+                type='mouse_move',
+                button=None,
+                position=(1,) + tuple(np.random.randint(20, size=2)),
+                dims_displayed=(1, 2),
+            )
+        )
+        mouse_move_callbacks(layer, event)
+
+        event = ReadOnlyWrapper(
+            MouseEvent(
+                type='mouse_press',
+                button=1,
+                position=position,
+                dims_displayed=[1, 2],
+            )
+        )
+        mouse_press_callbacks(layer, event)
+
+    # Cancel the latest two points
+    for _ in range(2):
+        event = ReadOnlyWrapper(
+            MouseEvent(
+                type='mouse_press',
+                button=2,
+                position=(1, 5, 1),
+                dims_displayed=(1, 2),
+            )
+        )
+        mouse_press_callbacks(layer, event)
+
+    # Finish drawing
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_double_click',
+            button=1,
+            position=(1, 0, 0),
+            dims_displayed=(1, 2),
+        )
+    )
+    mouse_double_click_callbacks(layer, event)
+
+    assert np.alltrue(data[[0, 2], :] == 0)
+    assert np.alltrue(data[1, 1:11, 1:11] == 1)
+    assert np.alltrue(data[1, 0, :] == 0)
+    assert np.alltrue(data[1, :, 0] == 0)
+    assert np.alltrue(data[1, 11:, :] == 0)
+    assert np.alltrue(data[1, :, 11:] == 0)
+
+    # Try to finish with an incomplete polygon (2 points)
+    for position in [(0, 1, 1), (0, 1, 10)]:
+        event = ReadOnlyWrapper(
+            MouseEvent(
+                type='mouse_press',
+                button=1,
+                position=position,
+                dims_displayed=(1, 2),
+            )
+        )
+        mouse_press_callbacks(layer, event)
+
+    # Finish drawing
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_double_click',
+            button=1,
+            position=(1, 0, 0),
+            dims_displayed=(1, 2),
+        )
+    )
+    mouse_double_click_callbacks(layer, event)
+    assert np.alltrue(data[0, :] == 0)
 
 
 def test_erase(MouseEvent):

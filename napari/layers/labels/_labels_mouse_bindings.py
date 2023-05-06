@@ -65,8 +65,8 @@ class DrawPolygon:
             return
 
         pos = np.array(pos, dtype=float)
-        dims_to_paint = layer._get_dims_to_paint()
-        pos[dims_to_paint] += 0.5
+        dims_displayed = list(event.dims_displayed)
+        pos[dims_displayed] += 0.5
 
         if event.button is None:  # on mouse move
             if self._points:
@@ -75,7 +75,7 @@ class DrawPolygon:
             event.button == 1 and event.type == 'mouse_press'
         ):  # on mouse left click
             # recenter the point in the center of the image pixel
-            pos[dims_to_paint] = np.floor(pos[dims_to_paint] + 0.5)
+            pos[dims_displayed] = np.floor(pos[dims_displayed]) + 0.5
 
             self._points.append(pos.tolist())
             polygon_overlay.points = self._points

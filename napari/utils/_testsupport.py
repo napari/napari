@@ -1,10 +1,10 @@
-import collections
 import gc
 import os
 import sys
 import warnings
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, List, Tuple
 from unittest.mock import patch
 from weakref import WeakSet
 
@@ -344,17 +344,18 @@ def MouseEvent():
     Returns
     -------
     Event : Type
-        A new tuple subclass named Event that can be used to create a
-        NamedTuple object with fields "type" and "is_dragging".
+        A new dataclass named Event that can be used to create an
+        object with fields "type" and "is_dragging".
     """
-    return collections.namedtuple(
-        'Event',
-        field_names=[
-            'type',
-            'is_dragging',
-            'position',
-            'view_direction',
-            'dims_displayed',
-            'dims_point',
-        ],
-    )
+
+    @dataclass
+    class Event:
+        type: str
+        position: Tuple[float]
+        is_dragging: bool = False
+        dims_displayed: Tuple[int] = (0, 1)
+        dims_point: List[float] = None
+        view_direction: List[int] = None
+        button: int = None
+
+    return Event
