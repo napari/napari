@@ -809,6 +809,64 @@ def test_paint_3d():
     assert np.sum(layer.data[4:17, 9:32, 9:32] == 5) == 1103
 
 
+def test_paint_polygon():
+    """Test painting labels with polygons."""
+    data = np.zeros((10, 15), dtype=int)
+    data[:10, :10] = 1
+    layer = Labels(data)
+
+    layer.paint_polygon([[0, 0], [0, 5], [5, 5], [5, 0]], 2)
+    assert np.alltrue(layer.data[:5, :5] == 2)
+    assert np.alltrue(layer.data[:10, 6:10] == 1)
+    assert np.alltrue(layer.data[6:10, :10] == 1)
+
+    layer.paint_polygon([[7, 7], [7, 7], [7, 7]], 3)
+    assert layer.data[7, 7] == 3
+    assert np.alltrue(layer.data[[6, 7, 8, 7, 8, 6], [7, 6, 7, 8, 8, 6]] == 1)
+
+    data[:10, :10] = 0
+    gt_pattern = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 1, 1, 0],
+            [0, 1, 1, 0, 0, 1, 1, 0],
+            [0, 1, 1, 0, 0, 1, 1, 0],
+            [0, 1, 1, 0, 0, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    polygon_points = [
+        [1, 1],
+        [1, 6],
+        [5, 6],
+        [5, 5],
+        [2, 5],
+        [2, 2],
+        [5, 2],
+        [5, 1],
+    ]
+    layer.paint_polygon(polygon_points, 1)
+    assert np.allclose(layer.data[:7, :8], gt_pattern)
+
+    data[:10, :10] = 0
+    layer.paint_polygon(polygon_points[::-1], 1)
+    assert np.allclose(layer.data[:7, :8], gt_pattern)
+
+
+def test_paint_polygon_2d_in_3d():
+    """Test painting labels with polygons in a 3D array"""
+    data = np.zeros((3, 10, 10), dtype=int)
+    layer = Labels(data)
+
+    assert layer.n_edit_dimensions == 2
+
+    layer.paint_polygon([[1, 0, 0], [1, 0, 9], [1, 9, 9], [1, 9, 0]], 1)
+
+    assert np.alltrue(data[1, :] == 1)
+    assert np.alltrue(data[[0, 2], :] == 0)
+
+
 def test_fill():
     """Test filling labels with different brush sizes."""
     np.random.seed(0)
