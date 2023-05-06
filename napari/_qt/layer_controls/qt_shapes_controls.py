@@ -171,7 +171,7 @@ class QtShapesControls(QtLayerControls):
 
         self.panzoom_button = _radio_button(
             layer,
-            'zoom',
+            'pan',
             Mode.PAN_ZOOM,
             "activate_shapes_pan_zoom_mode",
             extra_tooltip_text=trans._('(or hold Space)'),

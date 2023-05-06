@@ -49,7 +49,7 @@ def test_run_outside_ipython(qapp, monkeypatch):
     v2.close()
 
 
-def test_shortcut_collision(make_napari_viewer):
+def test_shortcut_collision(qtbot, make_napari_viewer):
     viewer = make_napari_viewer()
     defined_shortcuts = defaultdict(list)
     problematic_shortcuts = []
@@ -71,3 +71,6 @@ def test_shortcut_collision(make_napari_viewer):
             problematic_shortcuts.append(key)
         defined_shortcuts[key].append(key)
     assert not problematic_shortcuts
+    # due to throttled mouse_move, a timer is started by the viewer, so we
+    # need to wait for it to be done
+    qtbot.wait(10)

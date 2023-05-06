@@ -1,3 +1,4 @@
+# mypy: disable-error-code=empty-body
 """
 All napari hook specifications for pluggable functionality are defined here.
 
