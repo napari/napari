@@ -11,21 +11,29 @@ class VispyLabelsLayer(VispyImageLayer):
         if not self.layer.loaded or event.updated_slice is None:
             return
 
-        if self.node._texture.shape[:2] != self.layer.data.shape[:2]:
+        dims_displayed = self.layer._slice_input.displayed
+        raw_displayed = self.layer._slice.image.raw
+        ndims = len(dims_displayed)
+
+        if self.node._texture.shape[:ndims] != raw_displayed.shape[:ndims]:
             self.layer.refresh()
             return
 
         updated_slice = event.updated_slice
+
+        # Keep only the dimensions that correspond to the current view
+        updated_slice = [updated_slice[index] for index in dims_displayed]
+
         offset = [start_index for start_index, _ in updated_slice]
         updated_slice = tuple(
             [slice(start, stop) for start, stop in updated_slice]
         )
 
-        updated_raw = self.layer._raw_to_displayed(
-            self.layer.data, data_slice=updated_slice
+        colors_sliced = self.layer._raw_to_displayed(
+            raw_displayed, data_slice=updated_slice
         )
 
         self.node._texture.scale_and_set_data(
-            updated_raw, copy=False, offset=offset
+            colors_sliced, copy=False, offset=offset
         )
         self.node.update()
