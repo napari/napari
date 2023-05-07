@@ -953,7 +953,7 @@ class Labels(_ImageBase):
             self._cached_labels[data_slice] = sliced_labels.copy()
             labels_to_map = sliced_labels
 
-        # If there are no any changes, just return the cached image
+        # If there are no changes, just return the cached image
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
