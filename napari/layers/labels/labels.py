@@ -466,7 +466,7 @@ class Labels(_ImageBase):
         data = self._ensure_int_labels(data)
         self._data = data
         self._update_dims()
-        # self.events.data(value=self.data)
+        self.events.data(value=self.data)
         self._reset_editable()
 
     @property
