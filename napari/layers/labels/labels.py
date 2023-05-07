@@ -320,6 +320,7 @@ class Labels(_ImageBase):
             contour=Event,
             features=Event,
             paint=Event,
+            labels_update=Event,
         )
 
         self._feature_table = _FeatureTable.from_layer(
@@ -334,6 +335,7 @@ class Labels(_ImageBase):
         self._selected_label = 1
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
+        self._updated_slice = None
         self.color = color
 
         self._status = self.mode
@@ -464,7 +466,7 @@ class Labels(_ImageBase):
         data = self._ensure_int_labels(data)
         self._data = data
         self._update_dims()
-        self.events.data(value=self.data)
+        # self.events.data(value=self.data)
         self._reset_editable()
 
     @property
@@ -896,7 +898,7 @@ class Labels(_ImageBase):
             self._all_vals[0] = 0
         return self._lookup_with_index
 
-    def _raw_to_displayed(self, raw):
+    def _raw_to_displayed(self, raw, data_slice=None):
         """Determine displayed image from a saved raw image and a saved seed.
 
         This function ensures that the 0 label gets mapped to the 0 displayed
@@ -907,11 +909,18 @@ class Labels(_ImageBase):
         raw : array or int
             Raw integer input image.
 
+        data_slice : numpy array slice
+            Slice that specifies the portion of the input image that
+            should be computed and displayed.
+            If None, the whole input image will be processed.
         Returns
         -------
         mapped_labels : array
             Encoded colors mapped between 0 and 1 to be displayed.
         """
+        if data_slice is None:
+            data_slice = tuple(slice(0, size) for size in raw.shape)
+
         labels = raw  # for readability
 
         if self.contour > 0:
@@ -927,34 +936,38 @@ class Labels(_ImageBase):
                     )
                 )
 
+        sliced_labels = labels[data_slice]
         # cache the labels and keep track of when values are changed
         update_mask = None
         if (
             self._cached_labels is not None
             and self._cached_labels.shape == labels.shape
         ):
-            update_mask = self._cached_labels != labels
+            update_mask = self._cached_labels[data_slice] != sliced_labels
             # Select only a subset with changes for further computations
-            labels_to_map = labels[update_mask]
+            labels_to_map = sliced_labels[update_mask]
             # Update the cache
-            self._cached_labels[update_mask] = labels_to_map
+            self._cached_labels[data_slice][update_mask] = labels_to_map
         else:
-            self._cached_labels = labels.copy()
-            labels_to_map = labels
+            self._cached_labels = np.zeros_like(labels)
+            self._cached_labels[data_slice] = sliced_labels.copy()
+            labels_to_map = sliced_labels
 
         # If there are no any changes, just return the cached image
         if labels_to_map.size == 0:
-            return self._cached_mapped_labels
+            return self._cached_mapped_labels[data_slice]
 
         mapped_labels = self._map_labels_to_colors(labels_to_map)
 
         if update_mask is not None:
-            self._cached_mapped_labels[update_mask] = mapped_labels
-            mapped_labels = self._cached_mapped_labels
+            self._cached_mapped_labels[data_slice][update_mask] = mapped_labels
         else:
-            self._cached_mapped_labels = mapped_labels
+            self._cached_mapped_labels = np.zeros_like(
+                labels, dtype=mapped_labels.dtype
+            )
+            self._cached_mapped_labels[data_slice] = mapped_labels
 
-        return mapped_labels
+        return self._cached_mapped_labels[data_slice]
 
     def _map_labels_to_colors(self, labels_to_map):
         """Convert an integer labels to a float array of encoded colors.
@@ -1331,7 +1344,8 @@ class Labels(_ImageBase):
                 self.paint(c, new_label, refresh=False)
             elif self._mode == Mode.FILL:
                 self.fill(c, new_label, refresh=False)
-        self.refresh()
+        self.events.labels_update(updated_slice=self._updated_slice)
+        self._updated_slice = None
 
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected
@@ -1423,6 +1437,9 @@ class Labels(_ImageBase):
         ----------
         ..[1] https://numpy.org/doc/stable/user/basics.indexing.html
         """
+        if not indices or indices[0].size == 0:
+            return
+
         self._save_history(
             (
                 indices,
@@ -1433,8 +1450,24 @@ class Labels(_ImageBase):
 
         # update the labels image
         self.data[indices] = value
+
+        updated_slice = [
+            (min(axis_indices), max(axis_indices) + 1)
+            for axis_indices in indices
+        ]
+
         if refresh is True:
-            self.refresh()
+            self.events.labels_update(updated_slice=updated_slice)
+        else:
+            if self._updated_slice is None:
+                self._updated_slice = updated_slice
+            else:
+                self._updated_slice = [
+                    (min(min1, min2), max(max1, max2))
+                    for (min1, max1), (min2, max2) in zip(
+                        updated_slice, self._updated_slice
+                    )
+                ]
 
     def get_status(
         self,
