@@ -11,6 +11,10 @@ class VispyLabelsLayer(VispyImageLayer):
         if not self.layer.loaded or event.updated_slice is None:
             return
 
+        if self.node._texture.shape[:2] != self.layer.data.shape[:2]:
+            self.layer.refresh()
+            return
+
         updated_slice = event.updated_slice
         offset = [start_index for start_index, _ in updated_slice]
         updated_slice = tuple(
