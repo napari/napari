@@ -139,6 +139,10 @@ def select(layer: Shapes, event: ReadOnlyWrapper) -> None:
 def add_line(layer: Shapes, event: ReadOnlyWrapper) -> None:
     """Add a line.
 
+    Adds a line by connecting 2 ndim points. On press one point is set under the mouse cursor and a second point is
+    created with a very minor offset to the first point. If moving mouse while mouse is pressed the second point will
+    track the cursor. The second point it set upon mouse release.
+
     Parameters
     ----------
     layer: Shapes
@@ -150,6 +154,7 @@ def add_line(layer: Shapes, event: ReadOnlyWrapper) -> None:
     -------
     None
     """
+    # full size is the initial offset of the second point compared to the first point of the line.
     size = layer._vertex_size * layer.scale_factor / 4
     full_size = np.zeros(layer.ndim, dtype=float)
     for i in layer._slice_input.displayed:
@@ -158,8 +163,11 @@ def add_line(layer: Shapes, event: ReadOnlyWrapper) -> None:
     coordinates = layer.world_to_data(event.position)
     layer._moving_coordinates = coordinates
 
+    # corner is first datapoint defining the line
     corner = np.array(coordinates)
     data = np.array([corner, corner + full_size])
+
+    # adds data to layer.data and handles mouse move (cursor tracking) and release event (setting second point)
     yield from _add_line_rectangle_ellipse(
         layer, event, data=data, shape_type='line'
     )
