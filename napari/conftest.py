@@ -581,6 +581,8 @@ def dangling_qthread_pool(monkeypatch, request):
     dangling_threads_pools = []
 
     for thread_pool, calling in threadpool_dict.items():
+        thread_pool.clear()
+        thread_pool.waitForDone(20)
         if thread_pool.activeThreadCount():
             dangling_threads_pools.append((thread_pool, calling))
 
