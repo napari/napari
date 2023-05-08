@@ -702,6 +702,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         indices = self._slice_indices
         for d in self._slice_input.not_displayed:
             if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d]):
+                self._slice = _ImageSliceResponse.empty(
+                    dims=self._slice_input, rgb=self.rgb
+                )
                 return
 
         # The new slicing code makes a request from the existing state and
