@@ -1,17 +1,15 @@
 import itertools
 import warnings
-from collections import namedtuple
 from functools import cached_property
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
 from napari.layers import Layer
+from napari.layers.utils.layer_utils import Extent
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
 from napari.utils.translations import trans
-
-Extent = namedtuple('Extent', 'data world step')
 
 if TYPE_CHECKING:
     from npe2.manifest.io import WriterContribution
