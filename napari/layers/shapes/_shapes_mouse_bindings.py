@@ -259,7 +259,8 @@ def _add_line_rectangle_ellipse(
 
 
 def finish_drawing_shape(layer: Shapes, event: MouseEvent) -> None:
-    """
+    """Finish drawing of shape
+
     Calls the finish drawing method of the shapes layer which resets all the properties used for shape drawing
     and deletes the shape if the number of vertices do not meet the threshold of 3.
 
