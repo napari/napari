@@ -899,7 +899,7 @@ class Labels(_ImageBase):
             self._all_vals[0] = 0
         return self._lookup_with_index
 
-    def _raw_to_displayed(self, raw, data_slice=None):
+    def _raw_to_displayed(self, raw, data_slice: Tuple[slice] = None):
         """Determine displayed image from a saved raw image and a saved seed.
 
         This function ensures that the 0 label gets mapped to the 0 displayed
@@ -923,14 +923,10 @@ class Labels(_ImageBase):
             data_slice = tuple(slice(0, size) for size in raw.shape)
 
         labels = raw  # for readability
+        sliced_labels = None
 
         if self.contour > 0:
             if labels.ndim == 2:
-                # Expand the slice by 1 pixel as the changes can go beyond
-                # the original slice because of the morphological dilation
-                # (1 pixel because get_countours always applies 1 pixel dilation)
-                data_slice = expand_slice(data_slice, labels.shape, 1)
-
                 # Add one more pixel for the correct borders computation
                 expanded_slice = expand_slice(data_slice, labels.shape, 1)
                 sliced_labels = get_contours(
@@ -954,7 +950,8 @@ class Labels(_ImageBase):
                         deferred=True,
                     )
                 )
-        else:
+
+        if sliced_labels is None:
             sliced_labels = labels[data_slice]
 
         # cache the labels and keep track of when values are changed
@@ -1471,10 +1468,18 @@ class Labels(_ImageBase):
         # update the labels image
         self.data[indices] = value
 
-        updated_slice = [
-            (min(axis_indices), max(axis_indices) + 1)
-            for axis_indices in indices
-        ]
+        updated_slice = tuple(
+            [
+                slice(min(axis_indices), max(axis_indices) + 1)
+                for axis_indices in indices
+            ]
+        )
+
+        if self.contour > 0:
+            # Expand the slice by 1 pixel as the changes can go beyond
+            # the original slice because of the morphological dilation
+            # (1 pixel because get_countours always applies 1 pixel dilation)
+            updated_slice = expand_slice(updated_slice, self.data.shape, 1)
 
         if refresh is True:
             self.events.labels_update(updated_slice=updated_slice)
@@ -1482,12 +1487,12 @@ class Labels(_ImageBase):
             if self._updated_slice is None:
                 self._updated_slice = updated_slice
             else:
-                self._updated_slice = [
-                    (min(min1, min2), max(max1, max2))
-                    for (min1, max1), (min2, max2) in zip(
-                        updated_slice, self._updated_slice
-                    )
-                ]
+                self._updated_slice = tuple(
+                    [
+                        slice(min(s1.start, s2.start), max(s1.stop, s2.stop))
+                        for s1, s2 in zip(updated_slice, self._updated_slice)
+                    ]
+                )
 
     def get_status(
         self,

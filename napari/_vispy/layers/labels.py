@@ -22,12 +22,11 @@ class VispyLabelsLayer(VispyImageLayer):
         updated_slice = event.updated_slice
 
         # Keep only the dimensions that correspond to the current view
-        updated_slice = [updated_slice[index] for index in dims_displayed]
-
-        offset = [start_index for start_index, _ in updated_slice]
         updated_slice = tuple(
-            [slice(start, stop) for start, stop in updated_slice]
+            [updated_slice[index] for index in dims_displayed]
         )
+
+        offset = [axis_slice.start for axis_slice in updated_slice]
 
         colors_sliced = self.layer._raw_to_displayed(
             raw_displayed, data_slice=updated_slice
