@@ -11,6 +11,8 @@ from napari._qt.dialogs.qt_package_installer import InstallerActions
 from napari.plugins._tests.test_npe2 import mock_pm  # noqa
 from napari.utils.translations import trans
 
+N_MOCKED_PLUGINS = 2
+
 
 def _iter_napari_pypi_plugin_info(
     conda_forge: bool = True,
@@ -35,7 +37,7 @@ def _iter_napari_pypi_plugin_info(
         "author": "test author",
         "license": "UNKNOWN",
     }
-    for i in range(2):
+    for i in range(N_MOCKED_PLUGINS):
         yield npe2.PackageMetadata(name=f"test-name-{i}", **base_data), bool(
             i
         ), {
@@ -96,15 +98,13 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm, plugins, old_plugins):  # noqa
 
         def enable(self, plugin):
             self.plugins[plugin] = True
-            return
 
         def disable(self, plugin):
             self.plugins[plugin] = False
-            return
 
     class WarnPopupMock:
         def __init__(self, text):
-            return None
+            pass
 
         def exec_(self):
             return None
@@ -192,10 +192,15 @@ def plugin_dialog_constructor(qtbot, monkeypatch):
         "running_as_constructor_app",
         lambda: True,
     )
+
+    def available_list_populated():
+        return widget.available_list.count() == N_MOCKED_PLUGINS
+
     widget = qt_plugin_dialog.QtPluginDialog()
     widget.show()
-    qtbot.wait(300)
     qtbot.add_widget(widget)
+    qtbot.waitUntil(available_list_populated, timeout=1000)
+
     yield widget
     widget.hide()
     widget._add_items_timer.stop()
