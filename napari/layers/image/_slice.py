@@ -75,9 +75,12 @@ class _ImageSliceResponse:
     tile_to_data: Affine = field(repr=False)
     dims: _SliceInput
     request_id: UUID
+    empty: bool = False
 
     @classmethod
-    def empty(cls, *, dims: _SliceInput, rgb: bool) -> '_ImageSliceResponse':
+    def make_empty(
+        cls, *, dims: _SliceInput, rgb: bool
+    ) -> '_ImageSliceResponse':
         shape = (1,) * dims.ndisplay
         if rgb:
             shape = shape + (3,)
@@ -93,6 +96,7 @@ class _ImageSliceResponse:
             tile_to_data=tile_to_data,
             dims=dims,
             request_id=uuid4(),
+            empty=True,
         )
 
     def to_displayed(

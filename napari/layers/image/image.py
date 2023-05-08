@@ -346,7 +346,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._data_level
         ][displayed_axes]
 
-        self._slice = _ImageSliceResponse.empty(
+        self._slice = _ImageSliceResponse.make_empty(
             dims=self._slice_input, rgb=self.rgb
         )
 
@@ -702,7 +702,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         indices = self._slice_indices
         for d in self._slice_input.not_displayed:
             if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d]):
-                self._slice = _ImageSliceResponse.empty(
+                self._slice = _ImageSliceResponse.make_empty(
                     dims=self._slice_input, rgb=self.rgb
                 )
                 return
