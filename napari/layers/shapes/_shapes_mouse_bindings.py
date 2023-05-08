@@ -102,7 +102,7 @@ def select(layer: Shapes, event: ReadOnlyWrapper) -> None:
         if len(layer.selected_data) == 0:
             _drag_selection_box(layer, coordinates)
         else:
-            _move(layer, coordinates)
+            _move_active_element_under_cursor(layer, coordinates)
 
         # if a shape is being moved, update the thumbnail
         if layer._is_moving:
@@ -256,7 +256,7 @@ def _add_line_rectangle_ellipse(
         # Drag any selected shapes
         coordinates = layer.world_to_data(event.position)
         layer._moving_coordinates = coordinates
-        _move(layer, coordinates)
+        _move_active_element_under_cursor(layer, coordinates)
         yield
 
     # on release
@@ -453,7 +453,7 @@ def move_vertex(layer: Shapes, coordinates: Tuple[np.float, ...]) -> None:
     None
     """
     if layer._is_creating:
-        _move(layer, coordinates)
+        _move_active_element_under_cursor(layer, coordinates)
 
 
 def vertex_insert(layer: Shapes, event: ReadOnlyWrapper) -> None:
@@ -648,7 +648,9 @@ def _set_drag_start(
     return coord
 
 
-def _move(layer: Shapes, coordinates: Tuple[np.float, ...]) -> None:
+def _move_active_element_under_cursor(
+    layer: Shapes, coordinates: Tuple[np.float, ...]
+) -> None:
     """Moves object at given mouse position and set of indices.
 
     Parameters
