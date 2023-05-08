@@ -195,6 +195,7 @@ class LayerDelegate(QStyledItemDelegate):
                 return model.setData(
                     index, state, Qt.ItemDataRole.CheckStateRole
                 )
+
         # catch alt-click on the vis checkbox and hide *other* layer visibility
         # on second alt-click, restore the visibility state of the layers
         if event.type() == QMouseEvent.MouseButtonRelease and (
@@ -211,8 +212,43 @@ class LayerDelegate(QStyledItemDelegate):
             if check_rect.contains(event.pos()):
                 return self._show_on_alt_click_hide_others(model, index)
 
+        # on regular click of visibility icon, store state of the layers
+        if event.type() == QMouseEvent.MouseButtonRelease and (
+            event.button() == Qt.MouseButton.LeftButton
+        ):
+            self.initStyleOption(option, index)
+            style = option.widget.style()
+            check_rect = style.subElementRect(
+                style.SubElement.SE_ItemViewItemCheckIndicator,
+                option,
+                option.widget,
+            )
+            if check_rect.contains(event.pos()):
+                self._store_visibility_of_layers(model, index)
+
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)
+
+    def _store_visibility_of_layers(
+        self,
+        model: QtCore.QAbstractItemModel,
+        index: QtCore.QModelIndex,
+    ) -> QtCore.QAbstractItemModel:
+        """When toggling visibility of a later, store the current visibility state of
+        the layers, ensuring that clicked layer is toggled, and any alt-clicked
+        layer states are cleared.
+        """
+        clicked_layer = index.data(ItemRole)
+        layer_list: LayerList = model.sourceModel()._root
+        for layer in layer_list:
+            self._layer_visibility_states[layer] = layer.visible
+
+        # ensure the the stored visibility of clicked layer is toggled
+        self._layer_visibility_states[
+            clicked_layer
+        ] = not clicked_layer.visible
+        # clear any alt click state
+        self._alt_click_layer = lambda: None
 
     def _show_on_alt_click_hide_others(
         self,
@@ -220,38 +256,36 @@ class LayerDelegate(QStyledItemDelegate):
         index: QtCore.QModelIndex,
     ) -> QtCore.QAbstractItemModel:
         """On alt/option click of a layer show the layer, hide other layers,
-        and preserve current visibility of layer list, so it can be restored
-        once a layer is alt/option-clicked a second time.
+        to be restored once a layer is alt/option-clicked a second time.
         """
-        clicked_layer = index.data(ItemRole)
+        alt_clicked_layer = index.data(ItemRole)
         layer_list: LayerList = model.sourceModel()._root
         # show the alt-clicked layer
         state = Qt.CheckState.Checked
         if not self._layer_visibility_states:
-            # first option-click, so store visibility, hide others
+            # first click on visibility, so store visibility & hide others
             for layer in layer_list:
                 self._layer_visibility_states[layer] = layer.visible
-                layer.visible = layer == clicked_layer  # hide others
+                layer.visible = layer == alt_clicked_layer  # hide others
             # make a note that this layer was alt-clicked
-            self._alt_click_layer = ref(clicked_layer)
-        elif self._alt_click_layer() is clicked_layer:
+            self._alt_click_layer = ref(alt_clicked_layer)
+        elif self._alt_click_layer() is alt_clicked_layer:
             # second alt-click on same layer, so restore visibility
             # account for any added/deleted layers when restoring
             for layer in layer_list:
                 if layer in self._layer_visibility_states:
                     layer.visible = self._layer_visibility_states[layer]
             # restore clicked layer to original state
-            if not clicked_layer.visible:
+            if not alt_clicked_layer.visible:
                 state = Qt.CheckState.Unchecked
-            # reset visibility dict and alt-click state
-            self._layer_visibility_states = WeakKeyDictionary()
+            # reset alt-click state
             self._alt_click_layer = lambda: None
         else:
             # option-click on a different layer, hide others, show it
             for layer in layer_list:
-                layer.visible = layer is clicked_layer
+                layer.visible = layer is alt_clicked_layer
             # make a note that this layer was alt-clicked
-            self._alt_click_layer = ref(clicked_layer)
+            self._alt_click_layer = ref(alt_clicked_layer)
 
         return model.setData(index, state, Qt.ItemDataRole.CheckStateRole)
 
