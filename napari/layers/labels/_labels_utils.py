@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Tuple
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -235,3 +236,19 @@ def get_contours(labels, thickness: int, background_label: int):
     contours[not_boundaries] = background_label
 
     return contours
+
+
+def expand_slice(
+    axes_slice: Tuple[slice], shape: tuple, offset: int
+) -> Tuple[slice]:
+    """Expands or shrinks a provided multi-axis slice by a given offset"""
+    return tuple(
+        [
+            slice(
+                max(0, min(max_size, s.start - offset)),
+                max(0, min(max_size, s.stop + offset)),
+                s.step,
+            )
+            for s, max_size in zip(axes_slice, shape)
+        ]
+    )

@@ -21,6 +21,7 @@ from napari.layers.labels._labels_constants import (
 )
 from napari.layers.labels._labels_mouse_bindings import draw, pick
 from napari.layers.labels._labels_utils import (
+    expand_slice,
     get_contours,
     indices_in_shape,
     interpolate_coordinates,
@@ -925,9 +926,27 @@ class Labels(_ImageBase):
 
         if self.contour > 0:
             if labels.ndim == 2:
-                labels = get_contours(
-                    labels, self.contour, self._background_label
+                # Expand the slice by 1 pixel as the changes can go beyond
+                # the original slice because of the morphological dilation
+                # (1 pixel because get_countours always applies 1 pixel dilation)
+                data_slice = expand_slice(data_slice, labels.shape, 1)
+
+                # Add one more pixel for the correct borders computation
+                expanded_slice = expand_slice(data_slice, labels.shape, 1)
+                sliced_labels = get_contours(
+                    labels[expanded_slice],
+                    self.contour,
+                    self._background_label,
                 )
+
+                # Remove the latest one-pixel border from the result
+                delta_slice = tuple(
+                    [
+                        slice(s1.start - s2.start, s1.stop - s2.start)
+                        for s1, s2 in zip(data_slice, expanded_slice)
+                    ]
+                )
+                sliced_labels = sliced_labels[delta_slice]
             elif labels.ndim > 2:
                 warnings.warn(
                     trans._(
@@ -935,8 +954,9 @@ class Labels(_ImageBase):
                         deferred=True,
                     )
                 )
+        else:
+            sliced_labels = labels[data_slice]
 
-        sliced_labels = labels[data_slice]
         # cache the labels and keep track of when values are changed
         update_mask = None
         if (
