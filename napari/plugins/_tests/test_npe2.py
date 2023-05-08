@@ -3,6 +3,7 @@ from types import MethodType
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
+import npe2
 import numpy as np
 import pytest
 from npe2 import PluginManifest
@@ -41,6 +42,23 @@ def test_read(mock_pm: 'TestPluginManager'):
     mock_pm.commands.get.reset_mock()
     assert _npe2.read(["some.randomext"], stack=True) is None
     mock_pm.commands.get.assert_not_called()
+
+    mock_pm.commands.get.reset_mock()
+    assert (
+        _npe2.read(["some.randomext"], stack=True, plugin='not-npe2-plugin')
+        is None
+    )
+    mock_pm.commands.get.assert_not_called()
+
+
+@pytest.mark.skipif(
+    npe2.__version__ < '0.7.0',
+    reason='Older versions of npe2 do not throw specific error.',
+)
+def test_read_with_plugin_failure(mock_pm: 'TestPluginManager'):
+    match = f"Plugin '{PLUGIN_NAME}' was selected"
+    with pytest.raises(ValueError, match=match):
+        _npe2.read(["some.randomext"], stack=True, plugin=PLUGIN_NAME)
 
 
 def test_write(mock_pm: 'TestPluginManager'):
