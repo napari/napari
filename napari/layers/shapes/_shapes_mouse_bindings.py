@@ -259,7 +259,7 @@ def _add_line_rectangle_ellipse(
 
 
 def finish_drawing_shape(layer: Shapes, event: MouseEvent) -> None:
-    """Finish drawing of shape
+    """Finish drawing of shape.
 
     Calls the finish drawing method of the shapes layer which resets all the properties used for shape drawing
     and deletes the shape if the number of vertices do not meet the threshold of 3.
@@ -278,7 +278,9 @@ def finish_drawing_shape(layer: Shapes, event: MouseEvent) -> None:
 def initiate_polygon_draw(
     layer: Shapes, coordinates: Tuple[np.float, ...]
 ) -> None:
-    """Creating the shape when initializing the draw, adding and selecting the initiatlized shape and
+    """Start drawing of polygon.
+
+    Creates the polygon shape when initializing the draw, adding to layer and selecting the initiatlized shape and
     setting required layer attributes for drawing.
 
     Parameters
@@ -298,8 +300,10 @@ def initiate_polygon_draw(
 
 
 def add_path_polygon_lasso(layer: Shapes, event: MouseEvent) -> None:
-    """Function responsible for initiating, drawing and finishing the lasso polygon in drag mode (tablet) or
-    initiating and finishing the lasso polygon when drawing with the mouse.
+    """Add, draw and finish drawing of polygon.
+
+    Initiates, draws and finishes the lasso polygon in drag mode (tablet) or
+    initiates and finishes the lasso polygon when drawing with the mouse.
 
     Parameters
     ----------
@@ -364,8 +368,13 @@ def add_vertex_to_path(
 
 
 def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
-    """Function providing the functionality of moving the vertex when moving the mouse and adding it if the distance
-    threshold criterium is met.
+    """Let active vertex follow cursor while drawing polygon, adding it to polygon after a certain distance.
+
+    When drawing a polygon in lasso mode, a vertex follows the cursor, creating a polygon
+    visually that is *not* the final polygon to be created: it is the polygon if the current
+    mouse position were to be the last position added. After the mouse moves a distance of 10 screen pixels,
+    a new vertex is automatically added and the last cursor position is set to the global screen coordinates
+    at that moment.
 
     Parameters
     ----------
@@ -390,6 +399,9 @@ def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
 
 def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
     """Add a path or polygon or add vertex to an existing one.
+
+    When shape is not yet being created, initiates the drawing of a polygon on mouse press. Else, on subsequent mouse
+    presses, add vertex to polygon being created.
 
     Parameters
     ----------
@@ -582,7 +594,9 @@ def _drag_selection_box(
 def _set_drag_start(
     layer: Shapes, coordinates: Tuple[np.float, ...]
 ) -> List[np.float, ...]:
-    """Sets the coordinates relative to the center of the bounding box of a shape and returns the position
+    """Indicate where in data space a drag event started.
+
+    Sets the coordinates relative to the center of the bounding box of a shape and returns the position
     of where a drag event of a shape started.
 
     Parameters

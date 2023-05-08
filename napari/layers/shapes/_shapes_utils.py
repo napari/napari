@@ -1150,8 +1150,10 @@ def validate_num_vertices(
 def perpendicular_distance(
     point: npt.NDArray, line_start: npt.NDArray, line_end: npt.NDArray
 ) -> npt.float:
-    """Function to calculate the perpendicular distance of a point to a given euclidean line defined
-    by 2 points, line_start and line_end. Works up to any dimension
+    """Calculate the perpendicular distance of a point to a given euclidean line.
+
+    Calculates the shortest distance of a point to a euclidean line defined by a line_start point and a line_end point.
+    Works up to any dimension.
 
     Parameters
     ---------
@@ -1178,7 +1180,8 @@ def perpendicular_distance(
 
 
 def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
-    """
+    """Reduce the number of vertices that make up a polygon.
+
     Implementation of the Ramer-Douglas-Peucker algorithm based on:
     https://github.com/fhirschmann/rdp/blob/master/rdp. This algorithm reduces the amounts of points in a polyline or
     in this case reduces the number of vertices in a polygon shape.
