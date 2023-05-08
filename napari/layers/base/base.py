@@ -9,6 +9,7 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import cached_property
 from typing import List, Optional, Tuple, Union
+from uuid import UUID
 
 import magicgui as mgui
 import numpy as np
@@ -553,14 +554,28 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._loaded
 
     def _set_loaded(self, loaded: bool) -> None:
-        """Set the loaded state and notify a change with the loaded event.
-
-        This is private because there is a long term intent to remove slice
-        state from the layer.
-        """
+        """Set the loaded state and notify a change with the loaded event."""
         if self._loaded != loaded:
             self._loaded = loaded
             self.events.loaded()
+
+    def _set_unloaded_slice_id(self, slice_id: UUID) -> None:
+        """Set this layer to be unloaded and associated with a pending slice ID.
+
+        This is private but accessed externally because it is related to slice
+        state, which is intended to be moved off the layer in the future.
+        """
+        self._last_slice_id = slice_id
+        self._set_loaded(False)
+
+    def _update_loaded_slice_id(self, slice_id: UUID) -> None:
+        """Potentially update the loaded state based on the given completed slice ID.
+
+        This is private but accessed externally because it is related to slice
+        state, which is intended to be moved off the layer in the future.
+        """
+        if self._last_slice_id == slice_id:
+            self._set_loaded(True)
 
     @property
     def opacity(self):

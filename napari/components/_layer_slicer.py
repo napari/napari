@@ -14,6 +14,7 @@ from typing import (
     TypeVar,
     runtime_checkable,
 )
+from uuid import UUID
 
 from napari.components import Dims
 from napari.layers import Layer
@@ -41,7 +42,7 @@ class _AsyncSliceable(Protocol[_SliceResponse]):
     def _update_slice_response(self, response: _SliceResponse) -> None:
         ...
 
-    def _set_loaded(self, loaded: bool) -> None:
+    def _set_unloaded_slice_id(self, slice_id: UUID) -> None:
         ...
 
 
@@ -177,8 +178,9 @@ class _LayerSlicer:
         for layer in layers:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
                 logger.debug('Making async slice request for %s', layer)
-                requests[layer] = layer._make_slice_request(dims)
-                layer._set_loaded(False)
+                request = layer._make_slice_request(dims)
+                requests[layer] = request
+                layer._set_unloaded_slice_id(request.id)
             else:
                 logger.debug('Sync slicing for %s', layer)
                 sync_layers.append(layer)

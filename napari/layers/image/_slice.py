@@ -1,6 +1,7 @@
 import warnings
 from dataclasses import dataclass, field
 from typing import Any, Callable, Tuple, Union
+from uuid import UUID, uuid4
 
 import numpy as np
 
@@ -65,12 +66,15 @@ class _ImageSliceResponse:
         For single-scale images, this will be the identity matrix.
     dims : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
+    request_id : UUID
+        The identifier of the request from which this was generated.
     """
 
     image: _ImageView = field(repr=False)
     thumbnail: _ImageView = field(repr=False)
     tile_to_data: Affine = field(repr=False)
     dims: _SliceInput
+    request_id: UUID
 
     @classmethod
     def empty(cls, *, dims: _SliceInput, rgb: bool) -> '_ImageSliceResponse':
@@ -88,6 +92,7 @@ class _ImageSliceResponse:
             thumbnail=image,
             tile_to_data=tile_to_data,
             dims=dims,
+            request_id=uuid4(),
         )
 
     def to_displayed(
@@ -104,6 +109,7 @@ class _ImageSliceResponse:
             thumbnail=thumbnail,
             tile_to_data=self.tile_to_data,
             dims=self.dims,
+            request_id=self.request_id,
         )
 
 
@@ -128,6 +134,8 @@ class _ImageSliceRequest:
         The slice indices in the layer's data space.
     others
         See the corresponding attributes in `Layer` and `Image`.
+    id : UUID
+        The identifier of this slice request.
     """
 
     dims: _SliceInput
@@ -141,6 +149,7 @@ class _ImageSliceRequest:
     thumbnail_level: int = field(repr=False)
     level_shapes: np.ndarray = field(repr=False)
     downsample_factors: np.ndarray = field(repr=False)
+    id: UUID = field(default_factory=uuid4)
 
     def __call__(self) -> _ImageSliceResponse:
         with self.dask_indexer():
@@ -166,6 +175,7 @@ class _ImageSliceRequest:
             thumbnail=image,
             tile_to_data=tile_to_data,
             dims=self.dims,
+            request_id=self.id,
         )
 
     def _call_multi_scale(self) -> _ImageSliceResponse:
@@ -228,6 +238,7 @@ class _ImageSliceRequest:
             thumbnail=thumbnail,
             tile_to_data=tile_to_data,
             dims=self.dims,
+            request_id=self.id,
         )
 
     def _slice_indices_at_level(

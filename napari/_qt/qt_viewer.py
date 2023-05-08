@@ -495,9 +495,7 @@ class QtViewer(QSplitter):
             layer.events.set_data()
             layer._update_thumbnail()
             layer._set_highlight(force=True)
-            # TODO: this should be false if there is another slicing task in
-            # progress for this layer.
-            layer._set_loaded(True)
+            layer._update_loaded_slice_id(response.request_id)
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""
