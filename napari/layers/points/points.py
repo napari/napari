@@ -2033,9 +2033,9 @@ class Points(Layer):
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
-            self._selected_data = Selection(set(
-                range(totpoints, totpoints + len(self._clipboard['data']))
-            ))
+            self._selected_data = Selection(
+                set(range(totpoints, totpoints + len(self._clipboard['data'])))
+            )
             self.refresh()
 
     def _copy_data(self):
