@@ -174,7 +174,8 @@ def add_ellipse(layer: Shapes, event: ReadOnlyWrapper):
     layer: Shapes
         Napari shapes layer
     event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event"""
+        A proxy read only wrapper around a mouse event.
+    """
     size = layer._vertex_size * layer.scale_factor / 4
     size_h = np.zeros(layer.ndim, dtype=float)
     size_h[layer._slice_input.displayed[0]] = size
