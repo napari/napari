@@ -19,22 +19,24 @@ if TYPE_CHECKING:
     from typing import List, Optional, Tuple
 
     import numpy.typing as npt
+    from vispy.app.canvas import MouseEvent
 
     from napari.layers.shapes.shapes import Shapes
-    from napari.utils._proxies import ReadOnlyWrapper
 
 
-def highlight(layer: Shapes, event: ReadOnlyWrapper) -> None:
-    """Highlight hovered shapes, including boundaries, vertices, interaction boxes, and drag
-        selection box when appropriate.
+def highlight(layer: Shapes, event: MouseEvent) -> None:
+    """Render highlights of shapes.
+
+    Highlight hovered shapes, including boundaries, vertices, interaction boxes, and drag
+    selection box when appropriate.
 
     Parameters
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event. Though not used here it is passed as argument by the shapes
-        layer mouse move callbacks.
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event. Though not used here it is passed as argument by the
+        shapes layer mouse move callbacks.
 
     Returns
     -------
@@ -43,7 +45,7 @@ def highlight(layer: Shapes, event: ReadOnlyWrapper) -> None:
     layer._set_highlight()
 
 
-def select(layer: Shapes, event: ReadOnlyWrapper) -> None:
+def select(layer: Shapes, event: MouseEvent) -> None:
     """Select shapes or vertices either in select or direct select mode.
 
     Once selected shapes can be moved or resized, and vertices can be moved
@@ -54,8 +56,8 @@ def select(layer: Shapes, event: ReadOnlyWrapper) -> None:
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
 
     Returns
     -------
@@ -136,7 +138,7 @@ def select(layer: Shapes, event: ReadOnlyWrapper) -> None:
         layer._update_thumbnail()
 
 
-def add_line(layer: Shapes, event: ReadOnlyWrapper) -> None:
+def add_line(layer: Shapes, event: MouseEvent) -> None:
     """Add a line.
 
     Adds a line by connecting 2 ndim points. On press one point is set under the mouse cursor and a second point is
@@ -147,8 +149,8 @@ def add_line(layer: Shapes, event: ReadOnlyWrapper) -> None:
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
 
     Returns
     -------
@@ -173,7 +175,7 @@ def add_line(layer: Shapes, event: ReadOnlyWrapper) -> None:
     )
 
 
-def add_ellipse(layer: Shapes, event: ReadOnlyWrapper):
+def add_ellipse(layer: Shapes, event: MouseEvent):
     """
     Add an ellipse to the shapes layer.
 
@@ -181,8 +183,8 @@ def add_ellipse(layer: Shapes, event: ReadOnlyWrapper):
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event"""
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event."""
     size = layer._vertex_size * layer.scale_factor / 4
     size_h = np.zeros(layer.ndim, dtype=float)
     size_h[layer._slice_input.displayed[0]] = size
@@ -199,15 +201,15 @@ def add_ellipse(layer: Shapes, event: ReadOnlyWrapper):
     )
 
 
-def add_rectangle(layer: Shapes, event: ReadOnlyWrapper) -> None:
+def add_rectangle(layer: Shapes, event: MouseEvent) -> None:
     """Add a rectangle to the shapes layer.
 
     Parameters
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
 
     Returns
     -------
@@ -231,7 +233,7 @@ def add_rectangle(layer: Shapes, event: ReadOnlyWrapper) -> None:
 
 
 def _add_line_rectangle_ellipse(
-    layer: Shapes, event: ReadOnlyWrapper, data: npt.NDArray, shape_type: str
+    layer: Shapes, event: MouseEvent, data: npt.NDArray, shape_type: str
 ) -> None:
     """Helper function for adding a line, rectangle or ellipse.
 
@@ -239,8 +241,8 @@ def _add_line_rectangle_ellipse(
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
     data: np.NDarray
         Array containing the initial datapoints of the shape in image data space.
     shape_type: str
@@ -271,7 +273,7 @@ def _add_line_rectangle_ellipse(
     layer._finish_drawing()
 
 
-def finish_drawing_shape(layer: Shapes, event: ReadOnlyWrapper) -> None:
+def finish_drawing_shape(layer: Shapes, event: MouseEvent) -> None:
     """
     Calls the finish drawing method of the shapes layer which resets all the properties used for shape drawing
     and deletes the shape if the number of vertices do not meet the threshold of 3.
@@ -280,8 +282,8 @@ def finish_drawing_shape(layer: Shapes, event: ReadOnlyWrapper) -> None:
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event. Not used here, but passed as argument due to being a
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event. Not used here, but passed as argument due to being a
         double click callback of the shapes layer.
 
     Returns
@@ -317,7 +319,7 @@ def initiate_polygon_draw(
     layer._set_highlight()
 
 
-def add_path_polygon_lasso(layer: Shapes, event: ReadOnlyWrapper) -> None:
+def add_path_polygon_lasso(layer: Shapes, event: MouseEvent) -> None:
     """Function responsible for initiating, drawing and finishing the lasso polygon in drag mode (tablet) or
     initiating and finishing the lasso polygon when drawing with the mouse.
 
@@ -325,8 +327,8 @@ def add_path_polygon_lasso(layer: Shapes, event: ReadOnlyWrapper) -> None:
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
 
     Returns
     -------
@@ -357,7 +359,7 @@ def add_path_polygon_lasso(layer: Shapes, event: ReadOnlyWrapper) -> None:
 
 def add_vertex_to_path(
     layer: Shapes,
-    event: ReadOnlyWrapper,
+    event: MouseEvent,
     index: int,
     coordinates: Tuple[np.float, ...],
     new_type: Optional[str],
@@ -368,8 +370,8 @@ def add_vertex_to_path(
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
     index: int
         The index of the shape being added, e.g. first shape in the layer has index 0.
     coordinates: Tuple[np.float, ...]
@@ -391,7 +393,7 @@ def add_vertex_to_path(
     layer._last_cursor_position = np.array(event.pos)
 
 
-def polygon_creating(layer: Shapes, event: ReadOnlyWrapper) -> None:
+def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
     """Function providing the functionality of moving the vertex when moving the mouse and adding it if the distance
     threshold criterium is met.
 
@@ -399,8 +401,8 @@ def polygon_creating(layer: Shapes, event: ReadOnlyWrapper) -> None:
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
 
     Returns
     -------
@@ -420,15 +422,15 @@ def polygon_creating(layer: Shapes, event: ReadOnlyWrapper) -> None:
                 add_vertex_to_path(layer, event, index, coordinates, None)
 
 
-def add_path_polygon(layer: Shapes, event: ReadOnlyWrapper) -> None:
+def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
     """Add a path or polygon or add vertex to an existing one.
 
     Parameters
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
 
     Returns
     -------
@@ -464,7 +466,7 @@ def move_vertex(layer: Shapes, coordinates: Tuple[np.float, ...]) -> None:
         _move_active_element_under_cursor(layer, coordinates)
 
 
-def vertex_insert(layer: Shapes, event: ReadOnlyWrapper) -> None:
+def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
     """Insert a vertex into a selected shape.
 
     The vertex will get inserted in between the vertices of the closest edge
@@ -475,8 +477,8 @@ def vertex_insert(layer: Shapes, event: ReadOnlyWrapper) -> None:
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
 
     Returns
     -------
@@ -546,7 +548,7 @@ def vertex_insert(layer: Shapes, event: ReadOnlyWrapper) -> None:
     layer.refresh()
 
 
-def vertex_remove(layer: Shapes, event: ReadOnlyWrapper) -> None:
+def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
     """Remove a vertex from a selected shape.
 
     If a vertex is clicked on remove it from the shape it is in. If this cause
@@ -557,8 +559,8 @@ def vertex_remove(layer: Shapes, event: ReadOnlyWrapper) -> None:
     ----------
     layer: Shapes
         Napari shapes layer
-    event: ReadOnlyWrapper
-        A proxy read only wrapper around a mouse event
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
 
     Returns
     -------
