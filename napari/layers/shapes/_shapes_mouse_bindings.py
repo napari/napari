@@ -342,7 +342,7 @@ def add_vertex_to_path(
     coordinates: Tuple[np.float, ...],
     new_type: Optional[str],
 ) -> None:
-    """Adds a vertex to an existing path or polygon and edits the layer view.
+    """Add a vertex to an existing path or polygon and edit the layer view.
 
     Parameters
     ----------
@@ -385,7 +385,7 @@ def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
     """
     if layer._is_creating:
         coordinates = layer.world_to_data(event.position)
-        move_vertex(layer, coordinates)
+        move_active_vertex_under_cursor(layer, coordinates)
 
         if layer._mode == Mode.ADD_POLYGON_LASSO:
             index = layer._moving_value[0]
@@ -422,7 +422,9 @@ def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
         add_vertex_to_path(layer, event, index, coordinates, new_type)
 
 
-def move_vertex(layer: Shapes, coordinates: Tuple[np.float, ...]) -> None:
+def move_active_vertex_under_cursor(
+    layer: Shapes, coordinates: Tuple[np.float, ...]
+) -> None:
     """While a path or polygon is being created, move next vertex to be added.
 
     Parameters
@@ -430,7 +432,8 @@ def move_vertex(layer: Shapes, coordinates: Tuple[np.float, ...]) -> None:
     layer: Shapes
         Napari shapes layer
     coordinates: Tuple[np.float, ...]
-        The coordinates of the vertex to be potentially added, e.g. vertex tracks the mouse cursor position.
+        The coordinates in data space of the vertex to be potentially added, e.g. vertex tracks the mouse cursor
+        position.
     """
     if layer._is_creating:
         _move_active_element_under_cursor(layer, coordinates)
