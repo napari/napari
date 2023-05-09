@@ -92,7 +92,7 @@ html_theme_options = {
     "navbar_start": ["navbar-project"],
     "navbar_end": ["version-switcher", "navbar-icon-links"],
     "switcher": {
-        "json_url": "https://napari.org/version_switcher.json",
+        "json_url": json_url,
         "version_match": version_match,
     },
 }
