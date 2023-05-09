@@ -1476,6 +1476,9 @@ class Labels(_ImageBase):
         ----------
         ..[1] https://numpy.org/doc/stable/user/basics.indexing.html
         """
+        changed_indices = self.data[indices] != value
+        indices = tuple([x[changed_indices] for x in indices])
+
         if not indices or indices[0].size == 0:
             return
 
