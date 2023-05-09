@@ -899,6 +899,29 @@ class Labels(_ImageBase):
             self._all_vals[0] = 0
         return self._lookup_with_index
 
+    def _partial_labels_refresh(self):
+        """Prepares and displays only an updated part of the labels."""
+
+        if self._updated_slice is None:
+            return
+
+        dims_displayed = self._slice_input.displayed
+        raw_displayed = self._slice.image.raw
+
+        # Keep only the dimensions that correspond to the current view
+        updated_slice = tuple(
+            [self._updated_slice[index] for index in dims_displayed]
+        )
+
+        offset = [axis_slice.start for axis_slice in updated_slice]
+
+        colors_sliced = self._raw_to_displayed(
+            raw_displayed, data_slice=updated_slice
+        )
+
+        self.events.labels_update(data=colors_sliced, offset=offset)
+        self._updated_slice = None
+
     def _raw_to_displayed(self, raw, data_slice: Tuple[slice] = None):
         """Determine displayed image from a saved raw image and a saved seed.
 
@@ -1361,8 +1384,7 @@ class Labels(_ImageBase):
                 self.paint(c, new_label, refresh=False)
             elif self._mode == Mode.FILL:
                 self.fill(c, new_label, refresh=False)
-        self.events.labels_update(updated_slice=self._updated_slice)
-        self._updated_slice = None
+        self._partial_labels_refresh()
 
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected
@@ -1482,7 +1504,7 @@ class Labels(_ImageBase):
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
 
         if refresh is True:
-            self.events.labels_update(updated_slice=updated_slice)
+            self._partial_labels_refresh()
         else:
             if self._updated_slice is None:
                 self._updated_slice = updated_slice
