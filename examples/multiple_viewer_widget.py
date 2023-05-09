@@ -459,4 +459,6 @@ if __name__ == "__main__":
     view.window.add_dock_widget(dock_widget, name="Sample")
     view.window.add_dock_widget(cross, name="Cross", area="left")
 
+    view.open_sample('napari', 'cells3d')
+
     napari.run()
