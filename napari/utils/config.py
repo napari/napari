@@ -37,8 +37,8 @@ def __getattr__(name):
         warnings.warn(
             trans._(
                 'octree_config is deprecated in napari version 0.5 and will be removed in a later version.'
-                'More generally, the experimental octree feature has been removed in napari version 0.5. '
-                'If you need to use it, continue to use napari version 0.4. '
+                'More generally, the experimental octree feature was removed in napari version 0.5 so this value is always None. '
+                'If you need to use that experimental feature, continue to use napari version 0.4. '
                 'Also look out for announcements regarding similar efforts.'
             ),
             DeprecationWarning,
@@ -48,9 +48,9 @@ def __getattr__(name):
         warnings.warn(
             trans._(
                 'async_octree is deprecated in napari version 0.5 and will be removed in a later version.'
-                'More generally, the experimental octree feature has been removed in napari version 0.5. '
-                'If you need to use it, continue to use napari version 0.4. '
-                'Also look out for announcements regarding similar efforts.'
+                'More generally, the experimental octree feature was removed in napari version 0.5 so this value is always False. '
+                'If you need to use that experimental feature, continue to use napari version 0.4. '
+                'Also look out for announcements regarding similar future efforts.'
             ),
             DeprecationWarning,
         )
@@ -67,7 +67,8 @@ def __getattr__(name):
         warnings.warn(
             trans._(
                 'async_loading is deprecated in napari version 0.5 and will be removed in a later version. '
-                'Instead use napari.settings.get_settings().experimental.async_ .'
+                'The old approach to async loading was removed in napari version 0.5 so this value is always False. '
+                'Instead, please use napari.settings.get_settings().experimental.async_ to use a new approach.'
             ),
             DeprecationWarning,
         )
