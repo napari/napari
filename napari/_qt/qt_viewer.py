@@ -496,6 +496,8 @@ class QtViewer(QSplitter):
             layer.events.set_data()
             layer._update_thumbnail()
             layer._set_highlight(force=True)
+            # Update the layer's loaded state after everything else, so
+            # that a user can rely on the rendered state being updated.
             layer._update_loaded_slice_id(response.request_id)
 
     def _on_active_change(self):

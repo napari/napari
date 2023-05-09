@@ -1715,6 +1715,7 @@ class Points(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
+
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.

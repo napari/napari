@@ -1,8 +1,3 @@
-# The following fakes are used to control execution of slicing across
-# multiple threads, while also allowing us to mimic real classes
-# (like layers) in the code base. This allows us to assert state and
-# conditions that may only be temporarily true at different stages of
-# an asynchronous task.
 import time
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
@@ -16,6 +11,12 @@ from napari._tests.utils import DEFAULT_TIMEOUT_SECS, LockableData
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 from napari.layers import Image, Points
+
+# The following fakes are used to control execution of slicing across
+# multiple threads, while also allowing us to mimic real classes
+# (like layers) in the code base. This allows us to assert state and
+# conditions that may only be temporarily true at different stages of
+# an asynchronous task.
 
 
 @dataclass(frozen=True)
