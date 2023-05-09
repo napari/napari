@@ -285,10 +285,11 @@ class QtViewer(QSplitter):
     def chunk_receiver(self) -> None:
         warnings.warn(
             trans._(
-                'QtViewer.chunk_receiver is deprecated from napari version 0.5 and will be removed in a later version.'
+                'QtViewer.chunk_receiver is deprecated in version 0.5 and will be removed in a later version. '
+                'More generally the old approach to async loading was removed in version 0.5 so this value is always None. '
+                'If you need to specifically use the old approach, continue to use the latest 0.4 release.'
             ),
             DeprecationWarning,
-            stacklevel=1,
         )
 
     @staticmethod
