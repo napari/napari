@@ -1405,6 +1405,28 @@ def test_large_labels_direct_color():
     np.testing.assert_allclose(layer.get_color(2**20), [1.0, 0.0, 1.0, 1.0])
 
 
+def test_invalidate_cache_when_change_color_mode():
+    """Checks if the cache is invalidated when color mode is changed."""
+    data = np.zeros((4, 10), dtype=np.int32)
+    data[1, :] = np.arange(0, 10)
+
+    layer = Labels(data)
+    layer.selected_label = 0
+    gt_auto = layer._raw_to_displayed(layer._slice.image.raw)
+    assert gt_auto.dtype == np.float32
+
+    layer.color_mode = 'direct'
+    layer._cached_labels = None
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+
+    layer.color_mode = 'auto'
+    # If the cache is not invalidated, it returns colors for
+    # the direct color mode instead of the color for the auto mode
+    assert np.allclose(
+        layer._raw_to_displayed(layer._slice.image.raw), gt_auto
+    )
+
+
 def test_negative_label():
     """Test negative label values are supported."""
     data = np.random.randint(low=-1, high=20, size=(10, 10))
