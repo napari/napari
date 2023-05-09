@@ -902,7 +902,7 @@ class Labels(_ImageBase):
     def _partial_labels_refresh(self):
         """Prepares and displays only an updated part of the labels."""
 
-        if self._updated_slice is None:
+        if self._updated_slice is None or not self._slice.loaded:
             return
 
         dims_displayed = self._slice_input.displayed
