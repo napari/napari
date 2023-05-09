@@ -9,7 +9,6 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import cached_property
 from typing import List, Optional, Tuple, Union
-from uuid import UUID
 
 import magicgui as mgui
 import numpy as np
@@ -308,6 +307,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             order=tuple(range(ndim)),
         )
         self._loaded: bool = True
+        self._last_slice_id: int = -1
 
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
@@ -559,7 +559,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._loaded = loaded
             self.events.loaded()
 
-    def _set_unloaded_slice_id(self, slice_id: UUID) -> None:
+    def _set_unloaded_slice_id(self, slice_id: int) -> None:
         """Set this layer to be unloaded and associated with a pending slice ID.
 
         This is private but accessed externally because it is related to slice
@@ -568,7 +568,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._last_slice_id = slice_id
         self._set_loaded(False)
 
-    def _update_loaded_slice_id(self, slice_id: UUID) -> None:
+    def _update_loaded_slice_id(self, slice_id: int) -> None:
         """Potentially update the loaded state based on the given completed slice ID.
 
         This is private but accessed externally because it is related to slice

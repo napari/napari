@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Any
-from uuid import UUID, uuid4
 
 import numpy as np
 
+from napari.layers.base._slice import _next_request_id
 from napari.layers.utils._slice_input import _SliceInput
 
 
@@ -20,14 +20,14 @@ class _PointSliceResponse:
         Should be broadcastable to indices.
     dims : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
-    request_id : UUID
+    request_id : int
         The identifier of the request from which this was generated.
     """
 
     indices: np.ndarray = field(repr=False)
     scale: Any = field(repr=False)
     dims: _SliceInput
-    request_id: UUID
+    request_id: int
 
 
 @dataclass(frozen=True)
@@ -60,7 +60,7 @@ class _PointSliceRequest:
     dims_indices: Any = field(repr=False)
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
-    id: UUID = field(default_factory=uuid4)
+    id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _PointSliceResponse:
         # Return early if no data

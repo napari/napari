@@ -8,7 +8,6 @@ from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
 from typing import Any
-from uuid import UUID
 
 import numpy as np
 import pytest
@@ -38,6 +37,7 @@ class FakeSliceRequest:
 class FakeAsyncLayer:
     def __init__(self) -> None:
         self._loaded: bool = True
+        self._last_slice_id: int = 0
         self._slice_request_count: int = 0
         self.slice_count: int = 0
         self.lock: RLock = RLock()
@@ -56,7 +56,7 @@ class FakeAsyncLayer:
     def _set_loaded(self, loaded: bool) -> None:
         self._loaded = loaded
 
-    def _set_unloaded_slice_id(self, slice_id: UUID) -> None:
+    def _set_unloaded_slice_id(self, slice_id: int) -> None:
         self._last_slice_id = slice_id
 
 

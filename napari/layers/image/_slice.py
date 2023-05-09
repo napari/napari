@@ -1,10 +1,10 @@
 import warnings
 from dataclasses import dataclass, field
 from typing import Any, Callable, Tuple, Union
-from uuid import UUID, uuid4
 
 import numpy as np
 
+from napari.layers.base._slice import _next_request_id
 from napari.layers.utils._slice_input import _SliceInput
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils.transforms import Affine
@@ -66,7 +66,7 @@ class _ImageSliceResponse:
         For single-scale images, this will be the identity matrix.
     dims : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
-    request_id : UUID
+    request_id : int
         The identifier of the request from which this was generated.
     """
 
@@ -74,7 +74,7 @@ class _ImageSliceResponse:
     thumbnail: _ImageView = field(repr=False)
     tile_to_data: Affine = field(repr=False)
     dims: _SliceInput
-    request_id: UUID
+    request_id: int
     empty: bool = False
 
     @classmethod
@@ -95,7 +95,7 @@ class _ImageSliceResponse:
             thumbnail=image,
             tile_to_data=tile_to_data,
             dims=dims,
-            request_id=uuid4(),
+            request_id=_next_request_id(),
             empty=True,
         )
 
@@ -138,7 +138,7 @@ class _ImageSliceRequest:
         The slice indices in the layer's data space.
     others
         See the corresponding attributes in `Layer` and `Image`.
-    id : UUID
+    id : int
         The identifier of this slice request.
     """
 
@@ -153,7 +153,7 @@ class _ImageSliceRequest:
     thumbnail_level: int = field(repr=False)
     level_shapes: np.ndarray = field(repr=False)
     downsample_factors: np.ndarray = field(repr=False)
-    id: UUID = field(default_factory=uuid4)
+    id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _ImageSliceResponse:
         with self.dask_indexer():

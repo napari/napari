@@ -14,7 +14,6 @@ from typing import (
     TypeVar,
     runtime_checkable,
 )
-from uuid import UUID
 
 from napari.components import Dims
 from napari.layers import Layer
@@ -42,7 +41,7 @@ class _AsyncSliceable(Protocol[_SliceResponse]):
     def _update_slice_response(self, response: _SliceResponse) -> None:
         ...
 
-    def _set_unloaded_slice_id(self, slice_id: UUID) -> None:
+    def _set_unloaded_slice_id(self, slice_id: int) -> None:
         ...
 
 
