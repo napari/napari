@@ -990,6 +990,9 @@ class Labels(_ImageBase):
             self._cached_labels[data_slice][update_mask] = labels_to_map
         else:
             self._cached_labels = np.zeros_like(labels)
+            self._cached_mapped_labels = np.zeros_like(
+                labels, dtype=np.float32
+            )
             self._cached_labels[data_slice] = sliced_labels.copy()
             labels_to_map = sliced_labels
 
@@ -1002,9 +1005,6 @@ class Labels(_ImageBase):
         if update_mask is not None:
             self._cached_mapped_labels[data_slice][update_mask] = mapped_labels
         else:
-            self._cached_mapped_labels = np.zeros_like(
-                labels, dtype=mapped_labels.dtype
-            )
             self._cached_mapped_labels[data_slice] = mapped_labels
 
         return self._cached_mapped_labels[data_slice]
@@ -1493,6 +1493,11 @@ class Labels(_ImageBase):
         # update the labels image
         self.data[indices] = value
 
+        # tensorstore and xarray do not return their indices in
+        # np.ndarray format, so they need to be converted explicitly
+        if not isinstance(self.data, np.ndarray):
+            indices = [np.array(x).flatten() for x in indices]
+
         updated_slice = tuple(
             [
                 slice(min(axis_indices), max(axis_indices) + 1)
@@ -1506,18 +1511,18 @@ class Labels(_ImageBase):
             # (1 pixel because get_countours always applies 1 pixel dilation)
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
 
+        if self._updated_slice is None:
+            self._updated_slice = updated_slice
+        else:
+            self._updated_slice = tuple(
+                [
+                    slice(min(s1.start, s2.start), max(s1.stop, s2.stop))
+                    for s1, s2 in zip(updated_slice, self._updated_slice)
+                ]
+            )
+
         if refresh is True:
             self._partial_labels_refresh()
-        else:
-            if self._updated_slice is None:
-                self._updated_slice = updated_slice
-            else:
-                self._updated_slice = tuple(
-                    [
-                        slice(min(s1.start, s2.start), max(s1.stop, s2.stop))
-                        for s1, s2 in zip(updated_slice, self._updated_slice)
-                    ]
-                )
 
     def get_status(
         self,
