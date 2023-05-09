@@ -352,14 +352,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         -------
         sliced_extent_world : array, shape (2, D)
         """
-        if len(self.layers) == 0:
-            # If no data is present and dims model has not been reset to 0
-            # than someone has passed more than two axis labels which are
-            # being saved and so default values are used.
-            return np.vstack(
-                [np.full(self.dims.ndim, -0.5), np.full(self.dims.ndim, 511.5)]
-            )
-
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
     def reset_view(self):

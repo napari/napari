@@ -196,7 +196,8 @@ class LayerList(SelectableEventedList[Layer]):
         extent_world : array, shape (2, D)
         """
         return self._get_extent_world(
-            [layer.extent_augmented for layer in self]
+            [layer.extent_augmented for layer in self],
+            augmented=True,
         )
 
     def _get_min_and_max(self, mins_list, maxes_list):
@@ -233,10 +234,10 @@ class LayerList(SelectableEventedList[Layer]):
         # switch back to original order
         return min_v[::-1], max_v[::-1]
 
-    def _get_extent_world(self, layer_extent_list):
+    def _get_extent_world(self, layer_extent_list, augmented=False):
         """Extent of layers in world coordinates.
 
-        Default to 2D with (0, 511) min/ max values if no data is present.
+        Default to 2D image-like with (0, 511) min/ max values if no data is present.
         Corresponds to image with 512 pixels in each dimension.
 
         Returns
@@ -245,7 +246,11 @@ class LayerList(SelectableEventedList[Layer]):
         """
         if len(self) == 0:
             min_v = np.zeros(self.ndim)
-            max_v = np.full(self.ndim, 511)
+            max_v = np.full(self.ndim, 511.0)
+            # image-like augmented extent is actually expanded by 0.5
+            if augmented:
+                min_v -= 0.5
+                max_v += 0.5
         else:
             extrema = [extent.world for extent in layer_extent_list]
             mins = [e[0] for e in extrema]
