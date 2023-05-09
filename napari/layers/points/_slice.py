@@ -66,7 +66,10 @@ class _PointSliceRequest:
         # Return early if no data
         if len(self.data) == 0:
             return _PointSliceResponse(
-                indices=[], scale=np.empty(0), dims=self.dims
+                indices=[],
+                scale=np.empty(0),
+                dims=self.dims,
+                request_id=self.id,
             )
 
         not_disp = list(self.dims.not_displayed)
