@@ -131,6 +131,7 @@ class _QtMainWindow(QMainWindow):
         self._window_pos = None
         self._old_size = None
         self._positions = []
+        self.toggle_menu_bar = False
 
         self._is_close_dialog = {False: True, True: True}
         # this ia sa workaround for #5335 issue. The dict is used to not
@@ -272,6 +273,27 @@ class _QtMainWindow(QMainWindow):
             )
         else:
             super().showFullScreen()
+
+    def eventFilter(self, source, event):
+        # do not hide menubar when menu shown
+        if QApplication.activePopupWidget() is None and self.toggle_menu_bar:
+            if event.type() == QEvent.MouseMove:
+                if self.menuBar().isHidden():
+                    rect = self.geometry()
+                    # set mouse-sensitive zone
+                    rect.setHeight(25)
+                    if rect.contains(event.globalPos()):
+                        self.menuBar().show()
+                else:
+                    rect = QRect(
+                        self.menuBar().mapToGlobal(QPoint(0, 0)),
+                        self.menuBar().size(),
+                    )
+                    if not rect.contains(event.globalPos()):
+                        self.menuBar().hide()
+            elif event.type() == QEvent.Leave and source is self:
+                self.menuBar().hide()
+        return QMainWindow.eventFilter(self, source, event)
 
     def _load_window_settings(self):
         """
@@ -553,7 +575,7 @@ class Window:
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
-        get_app()
+        qapp = get_app()
 
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[
@@ -563,6 +585,7 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
+        qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
@@ -715,6 +738,7 @@ class Window:
         # items will not have easy access to the methods on this Window obj.
 
         self.main_menu = self._qt_window.menuBar()
+        self.main_menu_toggled = False
         # Menubar shortcuts are only active when the menubar is visible.
         # Therefore, we set a global shortcut not associated with the menubar
         # to toggle visibility, *but*, in order to not shadow the menubar
@@ -753,8 +777,9 @@ class Window:
         show the menubar, since menubar shortcuts are only available while the
         menubar is visible.
         """
-        self.main_menu.setVisible(not self.main_menu.isVisible())
-        self._main_menu_shortcut.setEnabled(not self.main_menu.isVisible())
+        self._qt_window.toggle_menu_bar = not self._qt_window.toggle_menu_bar
+        self.main_menu.setVisible(not self._qt_window.toggle_menu_bar)
+        self._main_menu_shortcut.setEnabled(self._qt_window.toggle_menu_bar)
 
     def _toggle_fullscreen(self):
         """Toggle fullscreen mode."""
