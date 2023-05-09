@@ -150,7 +150,7 @@ class QtViewer(QSplitter):
     _key_map_handler : napari.utils.key_bindings.KeymapHandler
         KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped
     _qt_poll : Optional[napari._qt.experimental.qt_poll.QtPoll]
-        A QtPoll object required for octree or monitor.
+        A QtPoll object required for the monitor.
     _remote_manager : napari.components.experimental.remote.RemoteManager
         A remote manager processing commands from remote clients and sending out messages when polled.
     _welcome_widget : napari._qt.widgets.qt_welcome.QtWidgetOverlay
@@ -230,7 +230,7 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
-        # Create the experimental QtPool for octree and/or monitor.
+        # Create the experimental QtPool for the monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
 
         # Create the experimental RemoteManager for the monitor.
@@ -806,16 +806,6 @@ class QtViewer(QSplitter):
         except MultipleReaderError:
             handle_gui_reading(filenames, self, stack, **kwargs)
 
-    def _toggle_chunk_outlines(self):
-        """Toggle whether we are drawing outlines around the chunks."""
-        from napari.layers.image.experimental.octree_image import (
-            _OctreeImageBase,
-        )
-
-        for layer in self.viewer.layers:
-            if isinstance(layer, _OctreeImageBase):
-                layer.display.show_grid = not layer.display.show_grid
-
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
 
@@ -968,7 +958,7 @@ if TYPE_CHECKING:
 def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     """Create and return a QtPoll instance, if needed.
 
-    Create a QtPoll instance for monitor.
+    Create a QtPoll instance for the monitor.
 
     Monitor needs QtPoll to poll for incoming messages. This might be
     temporary until we can process incoming messages with a dedicated

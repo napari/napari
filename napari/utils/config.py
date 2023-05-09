@@ -79,10 +79,3 @@ def __getattr__(name):
 
 # Shared Memory Server
 monitor = _set("NAPARI_MON")
-
-"""
-Other Config Options
-"""
-# Added this temporarily for octree debugging. The welcome visual causes
-# breakpoints to hit in image visual code. It's easier if we don't show it.
-allow_welcome_visual = True
