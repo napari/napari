@@ -1093,7 +1093,7 @@ class Labels(_ImageBase):
         elif label is None:
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
-            val = self._raw_to_displayed(np.array([label]))
+            val = self._map_labels_to_colors(np.array([label]))
             col = self.colormap.map(val)[0]
         return col
 
