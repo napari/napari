@@ -889,6 +889,7 @@ class Labels(_ImageBase):
         return self._lookup_with_index
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+        """Override to convert raw slice data to displayed label colors."""
         response = response.to_displayed(self._raw_to_displayed)
         super()._update_slice_response(response)
 

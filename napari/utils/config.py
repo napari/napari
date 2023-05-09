@@ -20,20 +20,6 @@ def _set(env_var: str) -> bool:
 """
 Experimental Features
 
-Async Loading
--------------
-Deprecated. This was used by the old async slicing which was tied to octree.
-There was logic in this file which the old async required. The new async
-slicing has now been implemented and does not require the extra logic. It
-can be turned on via the UI (with no restart) or via the environment
-variable NAPARI_ASYNC=1.
-
-Octree Rendering
-----------------
-Deprecated. Octree was deprecated in the v0.5 release. A new version of async
-slicing without octree is now available via the Experimental settings UI or the
-environment variable NAPARI_ASYNC=1.
-
 Shared Memory Server
 --------------------
 Experimental shared memory service. Only enabled if NAPARI_MON is set to
@@ -42,27 +28,34 @@ https://github.com/napari/napari/pull/1909.
 """
 
 
-def _warn_about_deprecated_attribute(name) -> None:
-    warnings.warn(
-        trans._(
-            '{name} is deprecated from napari version 0.5 and will be removed in the later version.',
-            name=name,
-        ),
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-
 # Handle old async/octree deprecated attributes by returning their
 # fixed values in the module level __getattr__
 # https://peps.python.org/pep-0562/
 # Other module attributes are defined as normal.
 def __getattr__(name):
     if name == 'octree_config':
-        _warn_about_deprecated_attribute(name)
+        warnings.warn(
+            trans._(
+                'octree_config is deprecated in napari version 0.5 and will be removed in a later version.'
+                'More generally, the experimental octree feature has been removed in napari version 0.5. '
+                'If you need to use it, continue to use napari version 0.4. '
+                'Also look out for announcements regarding similar efforts.'
+            ),
+            DeprecationWarning,
+        )
         return None
-    elif name in ('async_loading', 'async_octree'):  # noqa: RET505
-        _warn_about_deprecated_attribute(name)
+    if name == 'async_octree':
+        warnings.warn(
+            trans._(
+                'async_octree is deprecated in napari version 0.5 and will be removed in a later version.'
+                'More generally, the experimental octree feature has been removed in napari version 0.5. '
+                'If you need to use it, continue to use napari version 0.4. '
+                'Also look out for announcements regarding similar efforts.'
+            ),
+            DeprecationWarning,
+        )
+        return False
+    if name == 'async_loading':
         # For async_loading, we could get the value of the remaining
         # async setting. We do not because that is dynamic, so will not
         # handle an import of the form
@@ -71,6 +64,13 @@ def __getattr__(name):
         #
         # consistently. Instead, we let this attribute effectively
         # refer to the old async which is always off in napari now.
+        warnings.warn(
+            trans._(
+                'async_loading is deprecated in napari version 0.5 and will be removed in a later version. '
+                'Instead use napari.settings.get_settings().experimental.async_ .'
+            ),
+            DeprecationWarning,
+        )
         return False
     return None
 
