@@ -1,6 +1,7 @@
 import logging
 import sys
 from typing import Tuple, Union
+import itertools
 
 import concurrent.futures
 
@@ -14,7 +15,14 @@ from superqt import ensure_main_thread
 
 import napari
 from napari.experimental._progressive_loading import (
-    ChunkCacheManager, get_chunk, openorganelle_mouse_kidney_em)
+    get_chunk,
+    VirtualData,
+    MultiScaleVirtualData,
+)
+from napari.experimental._progressive_loading_datasets import (
+    openorganelle_mouse_kidney_em,
+    mandelbrot_dataset,
+)
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.qt.threading import thread_worker
 from napari.utils.events import Event
@@ -43,9 +51,7 @@ Current differences between this (2D) and are_the_chunks_in_view (3D):
 """
 
 
-def interpolated_get_chunk(
-    chunk_slice, array=None, container=None, dataset=None, cache_manager=None
-):
+def interpolated_get_chunk(chunk_slice, array=None):
     """Get a specified slice from an array, with interpolation when necessary.
     Interpolation is linear.
     Out of bounds behavior is zeros outside the shape.
@@ -56,19 +62,13 @@ def interpolated_get_chunk(
         a float 3D coordinate into the array like (0.5, 0, 0)
     array : ndarray
         one of the scales from the multiscale image
-    container: str
-        the zarr container name (this is used to disambiguate the cache)
-    dataset: str
-        the group in the zarr (this is used to disambiguate the cache)
-    chunk_size: tuple
-        the size of chunk that you want to fetch
 
     Returns
     -------
     real_array : ndarray
         an ndarray of data sliced with chunk_slice
     """
-    real_array = cache_manager.get(container, dataset, chunk_slice)
+    real_array = get_chunk(chunk_slice, array=array)
     if real_array is None:
         # If we do not need to interpolate
         # TODO this isn't safe enough
@@ -76,9 +76,6 @@ def interpolated_get_chunk(
             real_array = get_chunk(
                 chunk_slice,
                 array=array,
-                container=container,
-                dataset=dataset,
-                cache_manager=cache_manager,
             )
         else:
             # Get left and right keys
@@ -105,9 +102,6 @@ def interpolated_get_chunk(
                 lvalue = get_chunk(
                     lchunk_slice,
                     array=array,
-                    container=container,
-                    dataset=dataset,
-                    cache_manager=cache_manager,
                 )
             except:
                 lvalue = np.zeros([1] + list(array.chunksize[-2:]))
@@ -115,9 +109,6 @@ def interpolated_get_chunk(
                 rvalue = get_chunk(
                     rchunk_slice,
                     array=array,
-                    container=container,
-                    dataset=dataset,
-                    cache_manager=cache_manager,
                 )
             except:
                 rvalue = np.zeros([1] + list(array.chunksize[-2:]))
@@ -130,9 +121,6 @@ def interpolated_get_chunk(
             real_array = (
                 ((1 - w) * lvalue + w * rvalue).astype(np.uint16).squeeze()
             )
-
-        # Save in cache
-        cache_manager.put(container, dataset, chunk_slice, real_array)
     return real_array
 
 
@@ -157,9 +145,9 @@ def chunks_for_scale(corner_pixels, array, scale):
 
     chunk_size = array.chunksize
 
-    # TODO kludge for 3D z-only interpolation
-    zval = mins[-3]
-    
+    # Get the remaining dims
+    otherdims = mins[:-2]
+
     # Find the extent from the current corner pixels, limit by data shape
     # TODO risky int cast
     mins = (np.floor(mins / chunk_size) * chunk_size).astype(int)
@@ -168,64 +156,26 @@ def chunks_for_scale(corner_pixels, array, scale):
         axis=0,
     ).astype(int)
 
-    mins[-3] = maxs[-3] = zval
+    # We'll just use 1 position in each remaining dim
+    mins[:-2] = maxs[:-2] = otherdims
 
     xs = range(mins[-1], maxs[-1], chunk_size[-1])
     ys = range(mins[-2], maxs[-2], chunk_size[-2])
-    zs = [zval]
-    # TODO kludge
 
-    for x in xs:
-        for y in ys:
-            for z in zs:
-                yield (
-                    slice(z, (z + 1)),
-                    slice(y, (y + chunk_size[-2])),
-                    slice(x, (x + chunk_size[-1])),
-                )
-
-
-class VirtualData:
-    """VirtualData is used to use a 2D array to represent
-    a larger shape. The purpose of this function is to provide
-    a 2D slice that acts like a canvas for rendering a large ND image.
-
-    When you try to fetch a ND coordinate, only the last 2 dimensions
-    will be used as the (y, x) values.
-    """
-
-    def __init__(self, dtype, shape):
-        self.dtype = dtype
-        self.shape = shape
-        self.ndim = len(shape)
-
-        self.d = 2
-
-        # TODO: I don't like that this is making a choice of slicing axis
-        self.data_plane = np.zeros(self.shape[-1 * self.d :], dtype=self.dtype)
-
-    def __getitem__(
-        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
-    ) -> LayerDataProtocol:
-        """Returns self[key]."""
-        if type(key) is tuple:
-            return self.data_plane.__getitem__(tuple(key[-1 * self.d :]))
-        else:
-            return self.data_plane.__getitem__(key)
-
-    def __setitem__(
-        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol], value
-    ) -> LayerDataProtocol:
-        """Returns self[key]."""
-        if type(key) is tuple:
-            return self.data_plane.__setitem__(
-                tuple(key[-1 * self.d :]), value
-            )
-        else:
-            return self.data_plane.__setitem__(key, value)
+    for coord in itertools.product(
+        *([[val] for val in otherdims] + [ys] + [xs])
+    ):
+        other_coords = [slice(val, (val + 1)) for val in coord[:-2]]
+        y_min = coord[-2]
+        y_max = y_min + chunk_size[-2]
+        y_coords = slice(y_min, y_max)
+        x_min = coord[-1]
+        x_max = x_min + chunk_size[-2]
+        x_coords = slice(x_min, x_max)
+        yield tuple(other_coords + [y_coords] + [x_coords])
 
 
-def get_and_process_chunk(chunk_slice, scale, array, full_shape, cache_manager=None):
+def get_and_process_chunk(chunk_slice, scale, array, full_shape):
     """Fetch and upscale a chunk
 
     Parameters
@@ -250,13 +200,10 @@ def get_and_process_chunk(chunk_slice, scale, array, full_shape, cache_manager=N
     real_array = interpolated_get_chunk(
         chunk_slice,
         array=array,
-        container=large_image["container"],
-        dataset=dataset,
-        cache_manager=cache_manager,
     )
-    
+
     upscale_factor = [el * 2**scale for el in real_array.shape]
-    
+
     # Upscale the data to highest resolution
     upscaled = resize(
         real_array,
@@ -312,37 +259,8 @@ def get_and_process_chunk(chunk_slice, scale, array, full_shape, cache_manager=N
     )
 
 
-def mutable_chunk_fetcher(
-    results, idx, chunk_slice, scale, array, full_shape, cache_manager=None
-):
-    """A support function for fetching chunks in a mutable way. This is used to support multithreading.
-
-    Parameters
-    ----------
-    results : list
-        a list for storing results
-    idx : int
-        index into results to store this chunk
-    coord : tuple
-        a key corresponding to the chunk to fetch
-    scale : int
-        scale level, assumes power of 2
-    array : arraylike
-        the ND array to fetch a chunk from
-    full_shape : tuple
-        a tuple storing the shape of the highest resolution level
-    """
-    results[idx] = get_and_process_chunk(
-        chunk_slice, scale, array, full_shape, cache_manager=cache_manager
-    )
-
-
-from concurrent.futures import Executor
-
 @thread_worker
-def render_sequence(
-    corner_pixels, full_shape, num_threads=1, cache_manager=None
-):
+def render_sequence_2D(corner_pixels, full_shape, num_threads=1):
     """A generator that yields multiscale chunk tuples from low to high resolution.
 
     Parameters
@@ -360,9 +278,11 @@ def render_sequence(
 
     LOGGER.info(f"render_sequence: inside with corner pixels {corner_pixels}")
 
+    arrays = large_image["arrays"]
+    
     # TODO scale is hardcoded here
-    for scale in reversed(range(4)):
-        array = large_image["arrays"][scale]
+    for scale in reversed(range(len(arrays))):
+        array = arrays[scale]
 
         chunks_to_fetch = list(chunks_for_scale(corner_pixels, array, scale))
 
@@ -378,7 +298,6 @@ def render_sequence(
                     scale,
                     array,
                     full_shape,
-                    cache_manager=cache_manager,
                 )
 
         else:
@@ -393,27 +312,28 @@ def render_sequence(
                     scale,
                     array,
                     full_shape,
-                    cache_manager=cache_manager,
                 )
-            
+
             with concurrent.futures.ProcessPoolExecutor() as executor:
                 # TODO we should really be yielding async instead of in batches
                 # Yield the chunks that are done
-                for idx, result in enumerate(executor.map(mapper, all_job_sets)):
-                        LOGGER.info(
-                            f"jobs done: scale {scale} job_idx {idx} with result {result}"
-                        )
-                
-                        LOGGER.info(
-                            f"scale of {scale} upscaled {result[-2].shape} chunksize {result[-1]} at {result[:3]}"
-                        )
-                
-                        # Return upscaled coordinates, the scale, and chunk
-                        yield result
+                for idx, result in enumerate(
+                    executor.map(mapper, all_job_sets)
+                ):
+                    LOGGER.info(
+                        f"jobs done: scale {scale} job_idx {idx} with result {result}"
+                    )
+
+                    LOGGER.info(
+                        f"scale of {scale} upscaled {result[-2].shape} chunksize {result[-1]} at {result[:3]}"
+                    )
+
+                    # Return upscaled coordinates, the scale, and chunk
+                    yield result
 
 
 @tz.curry
-def dims_update_handler(invar, full_shape=(), cache_manager=None):
+def dims_update_handler(invar, data=None, layers={}):
     """Start a new render sequence with the current viewer state
 
     Parameters
@@ -438,7 +358,7 @@ def dims_update_handler(invar, full_shape=(), cache_manager=None):
         worker.quit()
 
     # Find the corners of visible data in the canvas
-    corner_pixels = viewer.layers[0].corner_pixels
+    corner_pixels = layers[0].corner_pixels
     canvas_corners = viewer.window.qt_viewer._canvas_corners_in_world.astype(
         int
     )
@@ -454,16 +374,21 @@ def dims_update_handler(invar, full_shape=(), cache_manager=None):
 
     LOGGER.info("dims_update_handler: start render_sequence")
 
+    # Get our multiscale data ready
+    data.set_interval(top_left, bottom_right)
+    
     # Start a new multiscale render
-    worker = render_sequence(corners, full_shape, cache_manager=cache_manager)
+    full_shape = data.shape
+    worker = render_sequence_2D(corners, full_shape)
 
     LOGGER.info("dims_update_handler: started render_sequence")
 
     # This will consume our chunks and update the numpy "canvas" and refresh
     def on_yield(coord):
-        layer = viewer.layers[0]
         chunk_slice, scale, chunk = coord
+        layer = layers[scale]
         # chunk_size = chunk.shape
+        import pdb; pdb.set_trace()
         LOGGER.info(
             f"Writing chunk with size {chunk.shape} to: {(viewer.dims.current_step[0], chunk_slice[0].start, chunk_slice[1].start)}"
         )
@@ -475,11 +400,56 @@ def dims_update_handler(invar, full_shape=(), cache_manager=None):
     worker.start()
 
 
+def add_multiscale_image(viewer, data, contrast_limits=[0, 255]):
+    # Get our multiscale data is ready
+    min_coord = [0] * len(data.shape)
+    max_coord = [0] * len(data.shape)
+    
+    data.set_interval(min_coord, max_coord)
+    
+    # Data goes from highest res -> lowest res
+    layers = {}
+    for scale, scale_data in enumerate(data._data):
+        layers[scale] = viewer.add_image(scale_data, name=f"scale{scale}")
+    
+    # Connect to camera
+    viewer.camera.events.connect(
+        debounced(
+            ensure_main_thread(
+                dims_update_handler(
+                    data=data,
+                    layers=layers
+                )
+            ),
+            timeout=1000,
+        )
+    )
+
+    # Connect to dims (to get sliders)
+    viewer.dims.events.connect(
+        debounced(
+            ensure_main_thread(
+                dims_update_handler(
+                    data=data,
+                    layers=layers
+                )
+            ),
+            timeout=1000,
+        )
+    )
+
+    # Trigger first render
+    dims_update_handler(
+        viewer,
+        data=data,
+        layers=layers
+    )
+
+    pass
+    
 if __name__ == "__main__":
     global viewer
     viewer = napari.Viewer()
-
-    cache_manager = ChunkCacheManager()
 
     # Previous
     # large_image = {
@@ -496,46 +466,13 @@ if __name__ == "__main__":
     #     for scale in range(large_image["scale_levels"])
     # ]
 
-    large_image = openorganelle_mouse_kidney_em()
+    # large_image = openorganelle_mouse_kidney_em()
+    large_image = mandelbrot_dataset()
 
     # TODO at least get this size from the image
-    empty = VirtualData(np.uint16, large_image["arrays"][0].shape)
+    data = MultiScaleVirtualData(large_image["arrays"])
 
-    # TODO let's choose a chunk size that matches the axis we'll be looking at
+    add_multiscale_image(viewer, data, contrast_limits=[0, 255])
+    
 
-    LOGGER.info(f"canvas {empty.shape} and interpolated")
 
-    layer = viewer.add_image(empty, contrast_limits=[20000, 30000])
-
-    # Connect to camera
-    viewer.camera.events.connect(
-        debounced(
-            ensure_main_thread(
-                dims_update_handler(
-                    full_shape=large_image["arrays"][0].shape,
-                    cache_manager=cache_manager,
-                )
-            ),
-            timeout=1000,
-        )
-    )
-
-    # Connect to dims (to get sliders)
-    viewer.dims.events.connect(
-        debounced(
-            ensure_main_thread(
-                dims_update_handler(
-                    full_shape=large_image["arrays"][0].shape,
-                    cache_manager=cache_manager,
-                )
-            ),
-            timeout=1000,
-        )
-    )
-
-    # Trigger first render
-    dims_update_handler(
-        viewer,
-        full_shape=large_image["arrays"][0].shape,
-        cache_manager=cache_manager,
-    )

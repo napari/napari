@@ -191,6 +191,7 @@ def create_meta_store(levels, tilesize, compressor, dtype):
     return store
 
 
+# TODO make this function more generic
 @njit
 def mandelbrot(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
     step_x = (to_x - from_x) / grid_size
@@ -249,7 +250,7 @@ def tile_bounds(level, x, y, max_level, min_coord=-2.5, max_coord=2.5):
 
     return from_x, from_y, to_x, to_y
 
-
+# TODO make this Store more generic
 class MandlebrotStore(zarr.storage.Store):
     def __init__(self, levels, tilesize, maxiter=255, compressor=None):
         self.levels = levels
