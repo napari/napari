@@ -632,6 +632,7 @@ class VirtualData:
             self._max_coord[dim] = cumuchunks[lessthan_max_idx] if lessthan_max_idx < cumuchunks[-1] else cumuchunks[-1] - 1
         
         # Update translate
+        # TODO there is a bug here, _min_coord goes to 0 when it shouldnt as the user zooms into the highest resolution
         self.translate = self._min_coord
 
         LOGGER.debug(f"update_with_minmax: {self.translate} max {self._max_coord}")
@@ -741,7 +742,7 @@ class VirtualData:
         """Returns self[key]."""
         data_plane_key = self._data_plane_key(key)
         LOGGER.info(f"set_offset: {data_plane_key} shape in plane: {self.data_plane[data_plane_key].shape} value shape: {value.shape}")
-        if self.data_plane[data_plane_key].shape[0] == 0:
+        if np.any(np.array(self.data_plane[data_plane_key].shape) == 0):
             import pdb; pdb.set_trace()
         self.data_plane[data_plane_key] = value
         return self.data_plane[data_plane_key]
