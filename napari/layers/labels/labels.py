@@ -677,8 +677,6 @@ class Labels(_ImageBase):
     @color_mode.setter
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
-        if color_mode == self._color_mode:
-            return
 
         if color_mode == LabelColorMode.DIRECT:
             custom_colormap, label_color_index = color_dict_to_colormap(

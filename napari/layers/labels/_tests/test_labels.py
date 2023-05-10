@@ -1459,6 +1459,23 @@ def test_invalidate_cache_when_change_color_mode():
     )
 
 
+def test_color_mapping_when_color_is_changed():
+    """Checks if the color mapping is computed correctly when the color palette is changed."""
+
+    data = np.zeros((4, 5), dtype=np.int32)
+    data[1, :] = np.arange(0, 5)
+    layer = Labels(data, color={1: 'green', 2: 'red', 3: 'white'})
+    gt_direct_3colors = layer._raw_to_displayed(layer._slice.image.raw)
+
+    layer = Labels(data, color={1: 'green', 2: 'red'})
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    layer.color = {1: 'green', 2: 'red', 3: 'white'}
+
+    assert np.allclose(
+        layer._raw_to_displayed(layer._slice.image.raw), gt_direct_3colors
+    )
+
+
 def test_negative_label():
     """Test negative label values are supported."""
     data = np.random.randint(low=-1, high=20, size=(10, 10))
