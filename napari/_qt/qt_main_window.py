@@ -131,7 +131,7 @@ class _QtMainWindow(QMainWindow):
         self._window_pos = None
         self._old_size = None
         self._positions = []
-        self.toggle_menu_bar = False
+        self._toggle_menubar_visibility = False
 
         self._is_close_dialog = {False: True, True: True}
         # this ia sa workaround for #5335 issue. The dict is used to not
@@ -275,12 +275,17 @@ class _QtMainWindow(QMainWindow):
             super().showFullScreen()
 
     def eventFilter(self, source, event):
-        # do not hide menubar when menu shown
-        if QApplication.activePopupWidget() is None and self.toggle_menu_bar:
+        # Handle showing hidden menubar on mouse move event.
+        # We do not hide menubar when a menu is being shown or
+        # we are not in menubar toggled state
+        if (
+            QApplication.activePopupWidget() is None
+            and self._toggle_menubar_visibility
+        ):
             if event.type() == QEvent.MouseMove:
                 if self.menuBar().isHidden():
                     rect = self.geometry()
-                    # set mouse-sensitive zone
+                    # set mouse-sensitive zone to trigger showing the menubar
                     rect.setHeight(25)
                     if rect.contains(event.globalPos()):
                         self.menuBar().show()
@@ -543,6 +548,16 @@ class _QtMainWindow(QMainWindow):
         process.startDetached()
         self.close(quit_app=True)
 
+    def toggle_menubar_visibility(self):
+        """
+        Change menubar to be shown or to be hidden and shown on mouse movement.
+
+        For the mouse movement functionality see the `eventFilter` implementation.
+        """
+        self._toggle_menubar_visibility = not self._toggle_menubar_visibility
+        self.menuBar().setVisible(not self._toggle_menubar_visibility)
+        return self._toggle_menubar_visibility
+
     @staticmethod
     @Slot(Notification)
     def show_notification(notification: Notification):
@@ -738,7 +753,6 @@ class Window:
         # items will not have easy access to the methods on this Window obj.
 
         self.main_menu = self._qt_window.menuBar()
-        self.main_menu_toggled = False
         # Menubar shortcuts are only active when the menubar is visible.
         # Therefore, we set a global shortcut not associated with the menubar
         # to toggle visibility, *but*, in order to not shadow the menubar
@@ -777,9 +791,8 @@ class Window:
         show the menubar, since menubar shortcuts are only available while the
         menubar is visible.
         """
-        self._qt_window.toggle_menu_bar = not self._qt_window.toggle_menu_bar
-        self.main_menu.setVisible(not self._qt_window.toggle_menu_bar)
-        self._main_menu_shortcut.setEnabled(self._qt_window.toggle_menu_bar)
+        toggle_menubar_visibility = self._qt_window.toggle_menubar_visibility()
+        self._main_menu_shortcut.setEnabled(toggle_menubar_visibility)
 
     def _toggle_fullscreen(self):
         """Toggle fullscreen mode."""
