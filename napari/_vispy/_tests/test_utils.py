@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from pydantic import ValidationError
 from qtpy.QtCore import Qt
 from vispy.util.quaternion import Quaternion
 
@@ -75,7 +76,7 @@ def test_get_view_direction_in_scene_coordinates_2d(make_napari_viewer):
 
 def test_set_cursor(make_napari_viewer):
     viewer = make_napari_viewer()
-    viewer.cursor.style = CursorStyle.CIRCLE.value
+    viewer.cursor.style = CursorStyle.SQUARE.value
     viewer.cursor.size = 10
     assert (
         viewer.window._qt_viewer.canvas.cursor.shape()
@@ -88,5 +89,11 @@ def test_set_cursor(make_napari_viewer):
         == QtCursorVisual['cross'].value
     )
 
-    with pytest.raises(Exception):
+    viewer.cursor.style = CursorStyle.CIRCLE.value
+    viewer.cursor.size = 100
+
+    assert viewer._brush_circle_overlay.visible
+    assert viewer._brush_circle_overlay.size == viewer.cursor.size
+
+    with pytest.raises(ValidationError):
         viewer.cursor.style = "invalid"
