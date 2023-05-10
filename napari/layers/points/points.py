@@ -2032,8 +2032,8 @@ class Points(Layer):
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
-            self._selected_data.update(set(
-                range(totpoints, totpoints + len(self._clipboard['data'])))
+            self._selected_data.update(
+                set(range(totpoints, totpoints + len(self._clipboard['data'])))
             )
             self.refresh()
 
