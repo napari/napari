@@ -1,5 +1,6 @@
 import time
 
+import dask
 import dask.array as da
 import numpy as np
 import pytest
@@ -72,6 +73,18 @@ def test_guess_multiscale():
     # Check for integer overflow with big data
     s = 8192
     data = [da.ones((s,) * 3), da.ones((s // 2,) * 3), da.ones((s // 4,) * 3)]
+    assert guess_multiscale(data)[0]
+
+    # Test for overflow in calculating array sizes
+    s = 17179869184
+    data = [
+        da.from_delayed(
+            dask.delayed(lambda: None), shape=(s,) * 2, dtype=np.float64
+        ),
+        da.from_delayed(
+            dask.delayed(lambda: None), shape=(s // 2,) * 2, dtype=np.float64
+        ),
+    ]
     assert guess_multiscale(data)[0]
 
 
