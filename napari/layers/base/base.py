@@ -391,6 +391,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             loaded=Event,
             reload=Event,
             extent=Event,
+            extent_augmented=Event,
             _overlays=Event,
             select=WarningEmitter(
                 trans._(
@@ -645,7 +646,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if scale is None:
             scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.scale()
 
     @property
@@ -656,7 +657,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @translate.setter
     def translate(self, translate):
         self._transforms['data2physical'].translate = np.array(translate)
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.translate()
 
     @property
@@ -667,7 +668,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @rotate.setter
     def rotate(self, rotate):
         self._transforms['data2physical'].rotate = rotate
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.rotate()
 
     @property
@@ -678,7 +679,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @shear.setter
     def shear(self, shear):
         self._transforms['data2physical'].shear = shear
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.shear()
 
     @property
@@ -694,7 +695,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.affine()
 
     @property
@@ -758,7 +759,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._ndim = ndim
 
-        self._clear_extent()
+        self._clear_extents_and_refresh()
 
     @property
     @abstractmethod
@@ -851,17 +852,26 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
 
     def _clear_extent(self):
-        """Clears the cached extent.
-
-        This should be called whenever this data or transform information
-        changes, and should be called before any related events get emitted
-        so that they use the updated extent values.
-        """
+        """Clear extent cache and emit extent event."""
         if 'extent' in self.__dict__:
             del self.extent
+        self.events.extent()
+
+    def _clear_extent_agumented(self):
+        """Clear extent_augmented cache and emit extent_augmented event."""
         if 'extent_augmented' in self.__dict__:
             del self.extent_augmented
-        self.events.extent()
+        self.events.extent_augmented()
+
+    def _clear_extents_and_refresh(self):
+        """Clears the cached extents, emits events and refreshes the layer.
+
+        This should be called whenever this data or transform information
+        changes, and should be called before any other related events
+        are emitted so that they use the updated extent values.
+        """
+        self._clear_extent()
+        self._clear_extent_agumented()
         self.refresh()
 
     @property

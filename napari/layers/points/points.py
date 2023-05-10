@@ -840,6 +840,7 @@ class Points(Layer):
                         deferred=True,
                     )
                 ) from e
+        self._clear_extent_agumented()
         self.refresh()
 
     @property
@@ -867,6 +868,7 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
+        self._clear_extent_agumented()
         self.events.current_size()
 
     @property
