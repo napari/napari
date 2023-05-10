@@ -658,6 +658,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
+        # Clean up overlays
+        for overlay in list(layer._overlays):
+            del layer._overlays[overlay]
+
         self._on_layers_change()
         self._on_grid_change()
 
