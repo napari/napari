@@ -37,7 +37,7 @@ class ViewerToggleAction(Action):
     def __init__(
         self,
         *,
-        id: str,
+        id: str,  # noqa: A002
         title: str,
         viewer_attribute: str,
         sub_attribute: str,

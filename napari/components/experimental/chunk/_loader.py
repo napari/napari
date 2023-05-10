@@ -4,9 +4,10 @@ Loads chunks synchronously, or asynchronously using worker threads or
 processes. A chunk could be an OctreeChunk or it could be a pre-Octree
 array from the Image class, time-series or multi-scale.
 """
+
 import logging
 from concurrent.futures import Future
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from typing import Callable, Dict, List, Optional, Tuple
 
 from napari.components.experimental.chunk._cache import ChunkCache
@@ -261,10 +262,8 @@ class ChunkLoader:
         Layer
             The layer that was deleted.
         """
-        try:
+        with suppress(KeyError):
             del self.layer_map[id(layer)]
-        except KeyError:
-            pass  # We weren't tracking that layer yet.
 
     def wait_for_all(self):
         """Wait for all in-progress requests to finish."""
@@ -272,7 +271,8 @@ class ChunkLoader:
 
         for future_list in self._futures.values():
             # Result blocks until the future is done or cancelled
-            map(lambda x: x.result(), future_list)
+            for x in future_list:
+                x.result()
 
     def wait_for_data_id(self, data_id: int) -> None:
         """Wait for the given data to be loaded.
@@ -298,7 +298,8 @@ class ChunkLoader:
 
         # Calling result() will block until the future has finished or was
         # cancelled.
-        map(lambda x: x.result(), future_list)
+        for x in future_list:
+            x.result()
         del self._futures[data_id]
 
     def shutdown(self) -> None:

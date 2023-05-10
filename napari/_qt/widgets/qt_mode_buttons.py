@@ -42,12 +42,12 @@ class QtModeRadioButton(QRadioButton):
         if mode is not None:
             self.toggled.connect(self._set_mode)
 
-    def _set_mode(self, bool):
+    def _set_mode(self, mode_selected):
         """Toggle the mode associated with the layer.
 
         Parameters
         ----------
-        bool : bool
+        mode_selected : bool
             Whether this mode is currently selected or not.
         """
         layer = self.layer_ref()
@@ -55,7 +55,7 @@ class QtModeRadioButton(QRadioButton):
             return
 
         with layer.events.mode.blocker(self._set_mode):
-            if bool:
+            if mode_selected:
                 layer.mode = self.mode
 
 

@@ -209,6 +209,16 @@ def test_feature_table_from_layer_with_num_data_only():
     assert feature_table.defaults.shape == (1, 0)
 
 
+def test_feature_table_from_layer_with_empty_int_features():
+    feature_table = _FeatureTable.from_layer(
+        features={'a': np.empty(0, dtype=np.int64)}
+    )
+    assert feature_table.values['a'].dtype == np.int64
+    assert len(feature_table.values['a']) == 0
+    assert feature_table.defaults['a'].dtype == np.int64
+    assert feature_table.defaults['a'][0] == 0
+
+
 def test_feature_table_from_layer_with_properties_and_num_data():
     properties = {
         'class': np.array(['sky', 'person', 'building', 'person']),
@@ -317,13 +327,12 @@ def test_feature_table_from_layer_with_properties_as_dataframe():
     pd.testing.assert_frame_equal(feature_table.values, TEST_FEATURES)
 
 
-def _make_feature_table():
+@pytest.fixture
+def feature_table():
     return _FeatureTable(TEST_FEATURES.copy(deep=True), num_data=4)
 
 
-def test_feature_table_resize_smaller():
-    feature_table = _make_feature_table()
-
+def test_feature_table_resize_smaller(feature_table: _FeatureTable):
     feature_table.resize(2)
 
     features = feature_table.values
@@ -332,8 +341,7 @@ def test_feature_table_resize_smaller():
     np.testing.assert_array_equal(features['confidence'], [0.2, 0.5])
 
 
-def test_feature_table_resize_larger():
-    feature_table = _make_feature_table()
+def test_feature_table_resize_larger(feature_table: _FeatureTable):
     expected_dtypes = feature_table.values.dtypes
 
     feature_table.resize(6)
@@ -351,8 +359,7 @@ def test_feature_table_resize_larger():
     np.testing.assert_array_equal(features.dtypes, expected_dtypes)
 
 
-def test_feature_table_append():
-    feature_table = _make_feature_table()
+def test_feature_table_append(feature_table: _FeatureTable):
     to_append = pd.DataFrame(
         {
             'class': ['sky', 'building'],
@@ -374,9 +381,7 @@ def test_feature_table_append():
     )
 
 
-def test_feature_table_remove():
-    feature_table = _make_feature_table()
-
+def test_feature_table_remove(feature_table: _FeatureTable):
     feature_table.remove([1, 3])
 
     features = feature_table.values
@@ -417,6 +422,31 @@ def test_feature_table_from_layer_with_unordered_pd_series_features():
     feature_table = _FeatureTable.from_layer(features=features, num_data=2)
     expected = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[0, 1])
     pd.testing.assert_frame_equal(feature_table.values, expected)
+
+
+def test_feature_table_set_defaults_with_same_columns(feature_table):
+    defaults = {'class': 'building', 'confidence': 1}
+    assert feature_table.defaults['class'][0] != defaults['class']
+    assert feature_table.defaults['confidence'][0] != defaults['confidence']
+
+    feature_table.set_defaults(defaults)
+
+    assert feature_table.defaults['class'][0] == defaults['class']
+    assert feature_table.defaults['confidence'][0] == defaults['confidence']
+
+
+def test_feature_table_set_defaults_with_extra_column(feature_table):
+    defaults = {'class': 'building', 'confidence': 0, 'cat': 'kermit'}
+    assert 'cat' not in feature_table.values.columns
+    with pytest.raises(ValueError):
+        feature_table.set_defaults(defaults)
+
+
+def test_feature_table_set_defaults_with_missing_column(feature_table):
+    defaults = {'class': 'building'}
+    assert len(feature_table.values.columns) > 1
+    with pytest.raises(ValueError):
+        feature_table.set_defaults(defaults)
 
 
 def test_register_label_attr_action(monkeypatch):

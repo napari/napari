@@ -45,8 +45,10 @@ def create_func(cls, name=None, doc=None, filename: str = '<string>'):
 
     sig = signature(cls)
     new_sig = sig.replace(
-        parameters=[Parameter('self', Parameter.POSITIONAL_OR_KEYWORD)]
-        + list(sig.parameters.values()),
+        parameters=[
+            Parameter("self", Parameter.POSITIONAL_OR_KEYWORD),
+            *list(sig.parameters.values()),
+        ],
         return_annotation=cls,
     )
     src = template.format(

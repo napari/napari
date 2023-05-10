@@ -124,7 +124,7 @@ class QtPopup(QDialog):
             assert len(position) == 4, '`position` argument must have length 4'
             left, top, width, height = position
         else:
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     "Wrong type of position {position}",
                     deferred=True,

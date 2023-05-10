@@ -352,7 +352,6 @@ class NapariQtNotification(QDialog):
     def from_notification(
         cls, notification: Notification, parent: QWidget = None
     ) -> NapariQtNotification:
-
         from napari.utils.notifications import ErrorNotification
 
         if isinstance(notification, ErrorNotification):
@@ -363,7 +362,8 @@ class NapariQtNotification(QDialog):
                 )
                 tbdialog.show()
 
-            actions = tuple(notification.actions) + (
+            actions = (
+                *tuple(notification.actions),
                 (trans._('View Traceback'), show_tb),
             )
         else:
@@ -392,7 +392,7 @@ class NapariQtNotification(QDialog):
             >= settings.application.gui_notification_level
             and _QtMainWindow.current()
         ):
-            canvas = _QtMainWindow.current()._qt_viewer._canvas_overlay
+            canvas = _QtMainWindow.current()._qt_viewer._welcome_widget
             cls.from_notification(notification, canvas).show()
 
 
@@ -418,9 +418,7 @@ class TracebackDialog(QDialog):
         self.resize(650, 270)
         text = QTextEdit()
         theme = get_theme(get_settings().appearance.theme, as_dict=False)
-        _highlight = Pylighter(  # noqa: F841
-            text.document(), "python", theme.syntax_style
-        )
+        _highlight = Pylighter(text.document(), "python", theme.syntax_style)
         text.setText(exception.as_text())
         text.setReadOnly(True)
         self.btn = QPushButton(trans._('Enter Debugger'))

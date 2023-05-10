@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: ubuntu-18.04
+          - platform: ubuntu-20.04
             python-version: "3.9"
           - platform: macos-latest
             python-version: "3.9"
@@ -70,6 +70,8 @@ jobs:
           sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
             libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
             libxcb-xinerama0 libxcb-xfixes0 libxcb-shape0 libqt5gui5
+          sudo ln -s /usr/lib/x86_64-linux-gnu/libffi.so.7 /usr/lib/x86_64-linux-gnu/libffi.so.6
+          sudo ln -s /usr/lib/x86_64-linux-gnu/libgdbm.so.6 /usr/lib/x86_64-linux-gnu/libgdbm.so.5
           xvfb-run --auto-servernum python bundle.py
       - name: Make Bundle (Windows & MacOS)
         if: runner.os != 'Linux'

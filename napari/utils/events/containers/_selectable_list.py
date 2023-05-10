@@ -83,7 +83,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
             do_add = len(self) > new
         else:
             *root, _idx = idx
-            new = tuple(root) + (_idx - 1,) if _idx >= 1 else tuple(root)
+            new = (*tuple(root), _idx - 1) if _idx >= 1 else tuple(root)
             do_add = len(self) > new[0]
         if do_add:
             self.selection.add(self[new])

@@ -55,21 +55,30 @@
       "current_viewer"
     ],
     "napari/_app_model/_app.py": ["__module__"],
+    "napari/_app_model/actions/_help_actions.py": [
+        "dev",
+        "examples_gallery",
+        "getting_started",
+        "github_issue",
+        "group",
+        "homepage",
+        "https://github.com/napari/napari/issues",
+        "https://napari.org",
+        "https://napari.org/{VERSION}/gallery.html",
+        "https://napari.org/{VERSION}/howtos/layers/index.html",
+        "https://napari.org/{VERSION}/release/release_{VERSION.replace(\".\", \"_\")}.html",
+        "https://napari.org/{VERSION}/tutorials/index.html",
+        "https://napari.org/{VERSION}/tutorials/start_index.html",
+        "id",
+        "layers_guide",
+        "release_notes",
+        "tutorials",
+        "when"
+    ],
     "napari/_app_model/actions/_layer_actions.py": [
-      "id",
-      "group",
-      "id",
-      "group",
-      "id",
-      "group",
-      "image",
-      "when",
-      "image",
       "when",
       "id",
       "group",
-      "when",
-      "when",
       "int8",
       "int16",
       "int32",
@@ -86,8 +95,21 @@
       "sum",
       "mean",
       "median",
-      "LAYER_PROJECT_{mode.upper()}",
-      "id"
+      "LAYER_PROJECT_{mode.upper()}"
+    ],
+    "napari/_app_model/actions/_view_actions.py": [
+        "1_render",
+        "arrows",
+        "axes",
+        "colored",
+        "dashed",
+        "group",
+        "id",
+        "labels",
+        "order",
+        "scale_bar",
+        "ticks",
+        "visible"
     ],
     "napari/_app_model/constants/_commands.py": [
       "napari:layer:duplicate",
@@ -113,7 +135,30 @@
       "napari:layer:project_std",
       "napari:layer:project_sum",
       "napari:layer:project_mean",
-      "napari:layer:project_median"
+      "napari:layer:project_median",
+      "napari:window:help:bug_report_opt_in",
+      "napari:window:help:examples",
+      "napari:window:help:getting_started",
+      "napari:window:help:github_issue",
+      "napari:window:help:homepage",
+      "napari:window:help:info",
+      "napari:window:help:layers_guide",
+      "napari:window:help:release_notes",
+      "napari:window:help:tutorials",
+      "napari:window:view:toggle_activity_dock",
+      "napari:window:view:toggle_fullscreen",
+      "napari:window:view:toggle_layer_tooltips",
+      "napari:window:view:toggle_menubar",
+      "napari:window:view:toggle_octree_chunk_outlines",
+      "napari:window:view:toggle_play",
+      "napari:window:view:toggle_viewer_axes",
+      "napari:window:view:toggle_viewer_axes_arrows",
+      "napari:window:view:toggle_viewer_axes_colored",
+      "napari:window:view:toggle_viewer_axes_labels",
+      "napari:window:view:toggle_viewer_axesdashed",
+      "napari:window:view:toggle_viewer_scale_bar",
+      "napari:window:view:toggle_viewer_scale_bar_colored",
+      "napari:window:view:toggle_viewer_scale_bar_ticks"
     ],
     "napari/_app_model/constants/_menus.py": [
       "napari/layers/context",
@@ -124,7 +169,12 @@
       "9_link",
       "Set of all menu ids that can be contributed to by plugins.",
       "napari/",
-      "navigation"
+      "navigation",
+      "1_render",
+      "napari/help",
+      "napari/view",
+      "napari/view/axes",
+      "napari/view/scalebar"
     ],
     "napari/_app_model/context/_context.py": [
       "settings.",
@@ -156,9 +206,32 @@
       "PySide2",
       "QT_PLUGIN_PATH",
       "Qt",
-      "plugins"
+      "plugins",
+      "6.3.1",
+      "PySide6"
     ],
     "napari/_qt/_constants.py": [],
+    "napari/_qt/_qapp_model/_menus.py": [
+        "QWidget"
+    ],
+    "napari/_qt/_qapp_model/qactions/__init__.py": [
+        "QtViewer",
+        "Window"
+    ],
+    "napari/_qt/_qapp_model/qactions/_help.py": [
+        "group",
+        "id"
+    ],
+    "napari/_qt/_qapp_model/qactions/_view.py": [
+        "darwin",
+        "group",
+        "id",
+        "linux",
+        "order",
+        "primary",
+        "when",
+        "win"
+    ],
     "napari/_qt/code_syntax_highlight.py": [
       "monospace",
       "color",
@@ -203,8 +276,8 @@
       "ItemType",
       "QMimeData",
       "application/x-list-index",
-      "dropMimeData: indices {moving_indices} \u27a1 {destRow}",
-      "text/plain"
+      "text/plain",
+      "dropMimeData: indices %s ➡ %s"
     ],
     "napari/_qt/containers/qt_list_view.py": ["ItemType"],
     "napari/_qt/containers/qt_tree_model.py": [
@@ -221,7 +294,8 @@
       "Ctrl+Q",
       "error_icon_element",
       "Ctrl+W",
-      "warning_icon_element"
+      "warning_icon_element",
+      "error_icon_btn"
     ],
     "napari/_qt/dialogs/preferences_dialog.py": [
       "0",
@@ -229,7 +303,6 @@
       "ModelField",
       "QCloseEvent",
       "QKeyEvent",
-      "_name",
       "preferences_exclude",
       "schema_version",
       "shortcuts",
@@ -246,7 +319,12 @@
       "octree",
       "string",
       "type",
-      "extension2reader"
+      "extension2reader",
+      "Set keyboard shortcuts for actions.",
+      "ShortcutsSettings",
+      "description",
+      "object",
+      "title"
     ],
     "napari/_qt/dialogs/qt_about.py": ["QtAbout", "QtCopyToClipboardButton"],
     "napari/_qt/dialogs/qt_about_key_bindings.py": [
@@ -282,7 +360,6 @@
       "#E3B617",
       "debug",
       "error",
-      "icon",
       "info",
       "none",
       "warning",
@@ -290,44 +367,78 @@
       "geometry",
       "QPushButton{padding: 4px 12px 4px 12px; font-size: 11px;min-height: 18px; border-radius: 0;}",
       "python",
-      "resized"
+      "resized",
+      "NapariQtNotification"
+    ],
+    "napari/_qt/dialogs/qt_package_installer.py": [
+        "\n - ",
+        "&",
+        "--extra-index-url",
+        "--no-warn-script-location",
+        "--override-channels",
+        "--prefix",
+        "--upgrade",
+        "--version",
+        "-c",
+        "-m",
+        "-napari-constraints.txt",
+        "-vvv",
+        "-y",
+        ".bat",
+        "3",
+        "Action '{self.action}' not supported!",
+        "CONDA",
+        "CONDA_EXE",
+        "CONDA_PINNED_PACKAGES",
+        "CONDA_VERBOSITY",
+        "Cannot unregister %s, not a known napari plugin.",
+        "HOME",
+        "InstallerTool {tool} not recognized!",
+        "MAMBA_EXE",
+        "No job with id {job_id}. Current queue:\n - ",
+        "PIP_USER_AGENT_USER_DATA",
+        "PYTHONPATH",
+        "Prefix has not been specified!",
+        "TEMP",
+        "TMP",
+        "USERPROFILE",
+        "bin",
+        "conda-forge",
+        "conda-meta",
+        "condabin",
+        "conda{bat}",
+        "darwin",
+        "dev",
+        "install",
+        "linux",
+        "napari=={_napari_version}",
+        "napari={version}",
+        "nt",
+        "pip",
+        "python3",
+        "rc",
+        "uninstall",
+        "w",
+        "{item.ident} -> {item.executable()} {item.arguments()}",
+        "~"
     ],
     "napari/_qt/dialogs/qt_plugin_dialog.py": [
-      "-c",
-      ".json",
-      "bin",
       "cancel",
       "close_button",
-      "conda-forge",
-      "conda-meta",
-      "darwin",
       "install_button",
       "#33F0FF",
       "help_button",
       "logo_silhouette",
       "npe2",
-      "mamba",
-      "napari-{'.'.join(parts)}-",
-      "python3",
-      "qt-{QT_VERSION}-",
-      "remove",
       "small_italic_text",
-      "--no-warn-script-location",
-      "--prefix",
-      "--upgrade",
-      "-m",
-      "-y",
-      "PYTHONPATH",
       "UNKNOWN",
       "__main__",
       "author",
       "error_label",
       "license",
-      "linux",
       "loading.gif",
       "napari_plugin_engine",
       "outdated",
-      "pip",
       "plugin_manager_process_status",
       "remove_button",
       "small_text",
@@ -336,20 +447,6 @@
       "url",
       "version",
       "warning_icon",
-      "CONDA_PINNED_PACKAGES",
-      "&{env.value('CONDA_PINNED_PACKAGES')}",
-      "CONDA_PINNED_PACKAGES",
-      "napari={napari_version}{system_pins}",
-      "nt",
-      "TEMP",
-      "TMP",
-      "TEMP",
-      "USERPROFILE",
-      "HOME",
-      "~",
-      "USERPROFILE",
-      "~",
-      "shim",
       "shim",
       "warning",
       "#E3B617",
@@ -358,9 +455,10 @@
       "=={item.latest_version}",
       "1.0",
       "shim",
-      "napari_hub",
       "0-{item.text()}",
-      "unavailable"
+      "unavailable",
+      "current_job_id",
+      "success_label"
     ],
     "napari/_qt/dialogs/qt_plugin_report.py": [
       "QtCopyToClipboardButton",
@@ -370,7 +468,8 @@
       "{meta.get(\"url\")}/issues/new?&body={err}",
       "python",
       "NoColor",
-      "<span style=\"color:#999;\">plugin home page:&nbsp;&nbsp;</span><a href=\"{url}\" style=\"color:#999\">{url}</a>"
+      "<span style=\"color:#999;\">plugin home page:&nbsp;&nbsp;</span><a href=\"{url}\" style=\"color:#999\">{url}</a>",
+      "<!--Provide detail on the error here-->\n\n\n\n<details>\n<summary>Traceback from napari</summary>\n\n```\n{err}\n```\n</details>"
     ],
     "napari/_qt/dialogs/qt_reader_dialog.py": [
       "Choose reader",
@@ -416,31 +515,27 @@
     ],
     "napari/_qt/layer_controls/qt_labels_controls.py": [
       "erase",
-      "erase_button",
       "fill",
-      "fill_button",
       "paint",
-      "paint_button",
-      "pick_button",
       "picker",
       "shuffle",
       "zoom",
-      "napari:activate_fill_mode",
-      "napari:activate_label_erase_mode",
-      "napari:activate_label_pan_zoom_mode",
-      "napari:activate_label_picker_mode",
-      "napari:activate_paint_mode",
-      "napari.layers.Labels"
+      "napari.layers.Labels",
+      "napari:activate_labels_erase_mode",
+      "napari:activate_labels_fill_mode",
+      "napari:activate_labels_paint_mode",
+      "napari:activate_labels_pan_zoom_mode",
+      "napari:activate_labels_picker_mode"
     ],
     "napari/_qt/layer_controls/qt_layer_controls_base.py": ["close", "layer"],
-    "napari/_qt/layer_controls/qt_layer_controls_container.py": ["emphasized"],
+    "napari/_qt/layer_controls/qt_layer_controls_container.py": [
+        "emphasized",
+        "empty_controls_widget"
+    ],
     "napari/_qt/layer_controls/qt_points_controls.py": [
       "add_points",
-      "addition_button",
-      "delete_button",
       "delete_shape",
       "pan_zoom",
-      "select_button",
       "select_points",
       "napari:activate_points_add_mode",
       "napari:activate_points_select_mode",
@@ -450,30 +545,18 @@
     ],
     "napari/_qt/layer_controls/qt_shapes_controls.py": [
       "Backspace",
-      "delete_button",
       "delete_shape",
       "direct",
-      "direct_button",
       "ellipse",
-      "ellipse_button",
       "line",
-      "line_button",
       "move_back",
-      "move_back_button",
       "move_front",
-      "move_front_button",
       "path",
-      "path_button",
       "polygon",
-      "polygon_button",
       "rectangle",
-      "rectangle_button",
       "select",
-      "select_button",
       "vertex_insert",
-      "vertex_insert_button",
       "vertex_remove",
-      "vertex_remove_button",
       "zoom",
       "activate_add_ellipse_mode",
       "activate_add_line_mode",
@@ -498,7 +581,7 @@
       "colormap",
       "cycle",
       "direct",
-      "napari.layers.Tracks"
+      "napari.layers.Vectors"
     ],
     "napari/_qt/menus/_util.py": [
       "MenuItem",
@@ -555,7 +638,8 @@
       "Alt+Shift+C",
       "&",
       "&&",
-      "Viewer"
+      "Viewer",
+      "Shortcuts"
     ],
     "napari/_qt/menus/help_menu.py": [
       "Ctrl+/",
@@ -675,7 +759,8 @@
       "layer_base",
       "source_type",
       "plugin",
-      "coordinates"
+      "coordinates",
+      "Window"
     ],
     "napari/_qt/qt_viewer.py": [
       "bottom",
@@ -696,9 +781,16 @@
       "napari",
       "points",
       "*{val}",
-      "Saved {saved}",
+      "Saved %s",
       "crosshair",
-      "ignore"
+      "ignore",
+      "Ready",
+      "caption",
+      "dir",
+      "directory",
+      "options",
+      "parent",
+      "pyside"
     ],
     "napari/_qt/qthreading.py": [
       "_connect",
@@ -754,7 +846,9 @@
       "8",
       "axis_label",
       "last_used",
-      "slice_label"
+      "slice_label",
+      "Internal C++ object",
+      "wrapped C/C++ object of type"
     ],
     "napari/_qt/widgets/qt_dims_slider.py": [
       "False",
@@ -779,7 +873,8 @@
       "*",
       "*{fn_pattern}",
       "{fn_pattern}",
-      "X"
+      "X",
+      "No filename preferences found"
     ],
     "napari/_qt/widgets/qt_highlight_preview.py": [
       "border: 1px solid white;",
@@ -837,6 +932,7 @@
       "napari:reset_view",
       "napari:toggle_grid",
       "napari:toggle_ndisplay",
+      "napari:delete_selected_layers",
       "perspective",
       "Control-Backspace",
       "console",
@@ -878,7 +974,12 @@
     ],
     "napari/_qt/widgets/qt_viewer_status_bar.py": [
       "_QtMainWindow",
-      "{source_type}: "
+      "{source_type}: ",
+      "coordinates status",
+      "help status",
+      "layer_base status",
+      "plugin-reader status",
+      "source-type status"
     ],
     "napari/_qt/widgets/qt_welcome.py": [
       "Ctrl+O",
@@ -939,7 +1040,10 @@
       "use_fade"
     ],
     "napari/_vispy/image.py": [],
-    "napari/_vispy/layers/base.py": ["clipping_planes"],
+    "napari/_vispy/layers/base.py": [
+        "clipping_planes",
+        "experimental_clipping_planes"
+    ],
     "napari/_vispy/layers/image.py": ["auto", "tile2data", "texture_float"],
     "napari/_vispy/layers/points.py": [
       "blending",
@@ -948,7 +1052,8 @@
       "translucent_no_depth",
       "edge_width",
       "edge_width_rel",
-      "values"
+      "values",
+      "o"
     ],
     "napari/_vispy/layers/shapes.py": [
       "blending",
@@ -966,12 +1071,9 @@
     "napari/_vispy/layers/tracks.py": ["white"],
     "napari/_vispy/layers/vectors.py": ["constant"],
     "napari/_vispy/markers.py": ["a_position"],
-    "napari/_vispy/overlays/axes.py": ["center", "gl", "segments"],
-    "napari/_vispy/overlays/interaction_box.py": ["square", "white", "disc"],
+    "napari/_vispy/overlays/axes.py": [],
+    "napari/_vispy/overlays/interaction_box.py": [],
     "napari/_vispy/overlays/scale_bar.py": [
-      "center",
-      "gl",
-      "segments",
       "{new_dim:~}"
     ],
     "napari/_vispy/overlays/text.py": [
@@ -1043,7 +1145,21 @@
       "primary",
       "resources"
     ],
+    "napari/_vispy/visuals/axes.py": [
+        "1",
+        "center",
+        "gl",
+        "segments"
+    ],
+    "napari/_vispy/visuals/bounding_box.py": [
+        "red"
+    ],
     "napari/_vispy/visuals/clipping_planes_mixin.py": ["_PVisual"],
+    "napari/_vispy/visuals/interaction_box.py": [
+        "diamond",
+        "disc",
+        "square"
+    ],
     "napari/_vispy/visuals/markers.py": [
       "a_position",
       "\nfloat clamped_size = clamp($v_size, $canvas_size_min, $canvas_size_max);\nfloat clamped_ratio = clamped_size / $v_size;\n$v_size = clamped_size;\nv_edgewidth = v_edgewidth * clamped_ratio;\ngl_PointSize = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);\n",
@@ -1053,6 +1169,13 @@
       "canvas_size_min",
       "canvas_size_max"
     ],
+    "napari/_vispy/visuals/scale_bar.py": [
+        "1px",
+        "center",
+        "gl",
+        "segments",
+        "top"
+    ],
     "napari/_vispy/visuals/surface.py": ["face", "vertex"],
     "napari/_vispy/visuals/tracks.py": ["white"],
     "napari/_vispy/visuals/volume.py": [
@@ -1061,8 +1184,8 @@
       "void main()",
       "\n// the tolerance for testing equality of floats with floatEqual and floatNotEqual\nconst float equality_tolerance = 1e-8;\n\nbool floatNotEqual(float val1, float val2)\n{\n    // check if val1 and val2 are not equal\n    bool not_equal = abs(val1 - val2) > equality_tolerance;\n\n    return not_equal;\n}\n\nbool floatEqual(float val1, float val2)\n{\n    // check if val1 and val2 are equal\n    bool equal = abs(val1 - val2) < equality_tolerance;\n\n    return equal;\n}\n\n\n// the background value for the iso_categorical shader\nconst float categorical_bg_value = 0;\n\nint detectAdjacentBackground(float val_neg, float val_pos)\n{\n    // determine if the adjacent voxels along an axis are both background\n    int adjacent_bg = int( floatEqual(val_neg, categorical_bg_value) );\n    adjacent_bg = adjacent_bg * int( floatEqual(val_pos, categorical_bg_value) );\n    return adjacent_bg;\n}\n\nvec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)\n{\n    // Calculate color by incorporating ambient and diffuse lighting\n    vec4 color0 = $get_data(loc);\n    vec4 color1;\n    vec4 color2;\n    float val0 = colorToVal(color0);\n    float val1 = 0;\n    float val2 = 0;\n    int n_bg_borders = 0;\n\n    // View direction\n    vec3 V = normalize(view_ray);\n\n    // calculate normal vector from gradient\n    vec3 N; // normal\n    color1 = $get_data(loc+vec3(-step[0],0.0,0.0));\n    color2 = $get_data(loc+vec3(step[0],0.0,0.0));\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[0] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    color1 = $get_data(loc+vec3(0.0,-step[1],0.0));\n    color2 = $get_data(loc+vec3(0.0,step[1],0.0));\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[1] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    color1 = $get_data(loc+vec3(0.0,0.0,-step[2]));\n    color2 = $get_data(loc+vec3(0.0,0.0,step[2]));\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[2] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    // Normalize and flip normal so it points towards viewer\n    N = normalize(N);\n    float Nselect = float(dot(N,V) > 0.0);\n    N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;\n\n    // Init colors\n    vec4 ambient_color = vec4(0.0, 0.0, 0.0, 0.0);\n    vec4 diffuse_color = vec4(0.0, 0.0, 0.0, 0.0);\n    vec4 final_color;\n\n    // todo: allow multiple light, define lights on viewvox or subscene\n    int nlights = 1;\n    for (int i=0; i<nlights; i++)\n    {\n        // Get light direction (make sure to prevent zero devision)\n        vec3 L = normalize(view_ray);  //lightDirs[i];\n        float lightEnabled = float( length(L) > 0.0 );\n        L = normalize(L+(1.0-lightEnabled));\n\n        // Calculate lighting properties\n        float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );\n        if (n_bg_borders > 0) {\n            // to fix dim pixels due to poor normal estimation,\n            // we give a default lambda to pixels surrounded by background\n            lambertTerm = 0.5;\n        }\n\n        // Calculate mask\n        float mask1 = lightEnabled;\n\n        // Calculate colors\n        ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;\n        diffuse_color +=  mask1 * lambertTerm;\n    }\n\n    // Calculate final color by componing different components\n    final_color = betterColor * ( ambient_color + diffuse_color);\n    final_color.a = betterColor.a;\n\n    // Done\n    return final_color;\n}\n",
       "\n        vec4 color3 = vec4(0.0);  // final color\n        vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader\n        gl_FragColor = vec4(0.0);\n        bool discard_fragment = true;\n        ",
-      "\n        // check if value is different from the background value\n        if ( floatNotEqual(val, categorical_bg_value) ) {\n            // Take the last interval in smaller steps\n            vec3 iloc = loc - step;\n            for (int i=0; i<10; i++) {\n                color = $get_data(iloc);\n                if (floatNotEqual(color.g, categorical_bg_value) ) {\n                    // when the non-background value is reached\n                    // calculate the color (apply lighting effects)\n                    color = applyColormap(color.g);\n                    color = calculateCategoricalColor(color, iloc, dstep);\n                    gl_FragColor = color;\n\n                    // set the variables for the depth buffer\n                    frag_depth_point = iloc * u_shape;\n                    discard_fragment = false;\n\n                    iter = nsteps;\n                    break;\n                }\n                iloc += step * 0.1;\n            }\n        }\n        ",
-      "\n        if (discard_fragment)\n            discard;\n        "
+      "\n        if (discard_fragment)\n            discard;\n        ",
+      "\n        // check if value is different from the background value\n        if ( floatNotEqual(val, categorical_bg_value) ) {\n            // Take the last interval in smaller steps\n            vec3 iloc = loc - step;\n            for (int i=0; i<10; i++) {\n                color = $get_data(iloc);\n                color = applyColormap(color.g);\n                if (floatNotEqual(color.a, 0) ) {\n                    // when the value mapped to non-transparent color is reached\n                    // calculate the color (apply lighting effects)\n                    color = calculateCategoricalColor(color, iloc, dstep);\n                    gl_FragColor = color;\n\n                    // set the variables for the depth buffer\n                    frag_depth_point = iloc * u_shape;\n                    discard_fragment = false;\n\n                    iter = nsteps;\n                    break;\n                }\n                iloc += step * 0.1;\n            }\n        }\n        "
     ],
     "napari/_vispy/volume.py": [
       "\n        // Apply colormap on mean value\n        gl_FragColor = applyColormap(meanval);\n        ",
@@ -1084,8 +1207,14 @@
       "u_threshold"
     ],
     "napari/benchmarks/__init__.py": [],
-    "napari/benchmarks/benchmark_image_layer.py": [],
-    "napari/benchmarks/benchmark_labels_layer.py": [],
+    "napari/benchmarks/benchmark_image_layer.py": [
+        "CI",
+        "Skip on CI (not enough memory)"
+    ],
+    "napari/benchmarks/benchmark_labels_layer.py": [
+        "CI",
+        "Skip on CI (not enough memory)"
+    ],
     "napari/benchmarks/benchmark_points_layer.py": [
       "mask_shape",
       "num_points",
@@ -1094,6 +1223,15 @@
     "napari/benchmarks/benchmark_qt_viewer.py": [],
     "napari/benchmarks/benchmark_qt_viewer_image.py": [],
     "napari/benchmarks/benchmark_qt_viewer_labels.py": ["paint", "mouse_move"],
+    "napari/benchmarks/benchmark_qt_slicing.py": [
+        "chunk_shape",
+        "dtype",
+        "jrc_hela-2 (scale 3)",
+        "shape",
+        "skin_data",
+        "uint16",
+        "uint8"
+    ],
     "napari/benchmarks/benchmark_shapes_layer.py": [
       "Event",
       "is_dragging",
@@ -1107,6 +1245,10 @@
       "type"
     ],
     "napari/benchmarks/benchmark_surface_layer.py": [],
+    "napari/benchmarks/benchmark_tracks_layer.py": [
+        "n_tracks",
+        "size"
+    ],
     "napari/benchmarks/benchmark_text_manager.py": [
       "car",
       "cat",
@@ -1130,6 +1272,16 @@
       "pan_zoom",
       "transform"
     ],
+    "napari/components/_layer_slicer.py": [
+        "Cancelled task",
+        "Cancelling task for %s",
+        "Found existing task for %s",
+        "Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).",
+        "Task not found",
+        "_SliceResponse",
+        "napari.components._layer_slicer",
+        "ready"
+    ],
     "napari/components/_viewer_constants.py": [
       "bottom_left",
       "bottom_right",
@@ -1145,7 +1297,10 @@
       "bottom_center",
       "crosshair"
     ],
-    "napari/components/_viewer_key_bindings.py": ["napari:{func.__name__}"],
+    "napari/components/_viewer_key_bindings.py": [
+        "napari:{func.__name__}",
+        "system"
+    ],
     "napari/components/_viewer_mouse_bindings.py": ["Control"],
     "napari/components/axes.py": [],
     "napari/components/camera.py": ["angles", "center", "yzx"],
@@ -1366,6 +1521,10 @@
       "_step_size",
       "_ranges"
     ],
+    "napari/components/overlays/bounding_box.py": [
+        "blue",
+        "red"
+    ],
     "napari/components/scale_bar.py": [],
     "napari/components/text_overlay.py": [],
     "napari/components/viewer_model.py": [
@@ -1434,7 +1593,11 @@
       "translucent_no_depth",
       "uri",
       "builtins",
-      "[{_path}], ...]"
+      "[{_path}], ...]",
+      "Ready",
+      "axes",
+      "scale_bar",
+      "text"
     ],
     "napari/experimental/__init__.py": [],
     "napari/layers/__init__.py": [],
@@ -1459,9 +1622,22 @@
       "shear",
       "affine"
     ],
+    "napari/layers/_multiscale_data.py": [
+        "<MultiScaleData at {hex(id(self))}. {len(self)} levels, '{self.dtype}', shapes: {self.shapes}>"
+    ],
     "napari/layers/_source.py": ["_LAYER_SOURCE", "parent"],
     "napari/layers/base/__init__.py": [],
-    "napari/layers/base/_base_constants.py": [],
+    "napari/layers/base/_base_constants.py": [
+        "{handle} has no opposite handle."
+    ],
+    "napari/layers/base/_base_mouse_bindings.py": [
+        "Control",
+        "Shift",
+        "data2physical",
+        "ignore",
+        "mouse_move",
+        "transform_box"
+    ],
     "napari/layers/base/base.py": [
       "<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>",
       "Extent",
@@ -1500,7 +1676,12 @@
       "sample",
       "widget",
       " : ",
-      "coordinates"
+      "coordinates",
+      "Ready",
+      "bounding_box",
+      "pan_zoom",
+      "selection_box",
+      "transform_box"
     ],
     "napari/layers/image/__init__.py": [],
     "napari/layers/image/_image_loader.py": [],
@@ -1513,6 +1694,9 @@
     "napari/layers/image/_image_slice_data.py": [],
     "napari/layers/image/_image_utils.py": ["dtype", "image", "labels", "ndim"],
     "napari/layers/image/_image_view.py": [],
+    "napari/layers/image/_slice.py": [
+        "tile2data"
+    ],
     "napari/layers/image/experimental/__init__.py": [],
     "napari/layers/image/experimental/_chunk_set.py": [],
     "napari/layers/image/experimental/_chunked_image_loader.py": [
@@ -1593,7 +1777,6 @@
     ],
     "napari/layers/image/experimental/octree_util.py": ["octree", "tile_size"],
     "napari/layers/image/image.py": [
-      "standard",
       "attenuation",
       "colormap",
       "contrast_limits",
@@ -1621,7 +1804,9 @@
       "select",
       "bilinear",
       "interpolation3d",
-      "depiction"
+      "depiction",
+      "bicubic",
+      "cubic"
     ],
     "napari/layers/intensity_mixin.py": ["_contrast_limits", "Image", "slice"],
     "napari/layers/labels/__init__.py": [],
@@ -1629,6 +1814,10 @@
       "backspace",
       "darwin",
       "delete"
+    ],
+    "napari/layers/labels/_labels_key_bindings.py": [
+        "mode",
+        "preserve_labels"
     ],
     "napari/layers/labels/_labels_mouse_bindings.py": ["mouse_move"],
     "napari/layers/labels/_labels_utils.py": ["dtype"],
@@ -1670,9 +1859,6 @@
       "^",
       "o",
       "s",
-      "tailed_arrow",
-      "triangle_down",
-      "triangle_up",
       "v",
       "|"
     ],
@@ -1817,6 +2003,9 @@
       "features"
     ],
     "napari/layers/surface/__init__.py": [],
+    "napari/layers/surface/_surface_key_bindings.py": [
+        "mode"
+    ],
     "napari/layers/surface/normals.py": ["black", "blue", "orange"],
     "napari/layers/surface/surface.py": [
       "colormap",
@@ -1833,6 +2022,9 @@
     ],
     "napari/layers/surface/wireframe.py": ["black"],
     "napari/layers/tracks/__init__.py": [],
+    "napari/layers/tracks/_tracks_key_bindings.py": [
+        "mode"
+    ],
     "napari/layers/tracks/_track_utils.py": ["ID:{i}", "track_id"],
     "napari/layers/tracks/tracks.py": [
       "additive",
@@ -1864,7 +2056,8 @@
       "set_{attr}_on_layer_{id(l2)}",
       "status",
       "thumbnail",
-      "ReferenceType[Layer]"
+      "ReferenceType[Layer]",
+      "extent"
     ],
     "napari/layers/utils/_text_constants.py": [],
     "napari/layers/utils/_text_utils.py": [
@@ -1910,6 +2103,9 @@
       "current_color"
     ],
     "napari/layers/utils/color_transformations.py": [],
+    "napari/layers/utils/interaction_box.py": [
+        "only 2D coordinates are accepted"
+    ],
     "napari/layers/utils/interactivity_utils.py": ["j, ij -> i"],
     "napari/layers/utils/layer_utils.py": ["b", "f", "u", "ui", "napari:"],
     "napari/layers/utils/plane.py": ["normal", "position"],
@@ -1977,6 +2173,9 @@
       "features"
     ],
     "napari/layers/vectors/__init__.py": [],
+    "napari/layers/vectors/_vectors_key_bindings.py": [
+        "mode"
+    ],
     "napari/layers/vectors/_vector_utils.py": ["D"],
     "napari/layers/vectors/vectors.py": [
       "current_value",
@@ -1998,7 +2197,11 @@
       "features",
       "out_of_slice_display"
     ],
-    "napari/plugins/__init__.py": ["{1} ({0})", "0.4.0", "builtins"],
+    "napari/plugins/__init__.py": [
+        "{1} ({0})", "0.4.0", "builtins",
+        "Main Plugin manager instance",
+        "Template to use for namespacing a plugin item in the menu bar"
+    ],
     "napari/plugins/_builtins.py": [
       ".csv",
       ".tif",
@@ -2121,28 +2324,11 @@
       "Neutral"
     ],
     "napari/plugins/hook_specifications.py": [],
-    "napari/plugins/hub.py": [
-      "https://api.napari-hub.org/plugins",
-      "https://api.anaconda.org/package/{channel}/{package_name}",
-      "/",
-      "name",
-      "version",
-      "authors",
-      "summary",
-      "license",
-      "project_site",
-      "conda-forge",
-      "versions",
-      "development_status",
-      "Development Status :: {1}",
-      "1.0",
-      "UNKNOWN"
-    ],
     "napari/plugins/io.py": [
       "napari_write_{layer._type_string}",
       "Falling back to original plugin engine.",
-      "Writing to {path}.  Hook caller: {hook_caller}",
-      "builtins"
+      "builtins",
+      "Writing to %s.  Hook caller: %s"
     ],
     "napari/plugins/pypi.py": [
       "name",
@@ -2176,7 +2362,10 @@
       "icon",
       "warning",
       "logo_silhouette",
-      "background"
+      "background",
+      "error",
+      "plugin.txt",
+      "w"
     ],
     "napari/resources/_qt_resources_0.4.13.dev128+g012fea64.d20211026_pyqt5_5.15.2.py": [
       "\u0000\u0000\u0002u<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<polygon points=\"72,50 13.8,2.6 13.8,97.4 \"/>\n<rect x=\"71\" y=\"2.6\" width=\"12.5\" height=\"94.8\"/>\n</svg>\n\u0000\u0000\u0003W<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M82.1,89.6H34.5c-5.2,0-9.3-3.9-9.3-8.9v-7.3h11.2v5.5h43.9V37.2h-5.6V26.5h7.5c5.2,0,9.3,3.9,9.3,8.9v45.3\n\tC91.4,85.7,87.3,89.6,82.1,89.6z\"/>\n<path d=\"M65.3,73.5H17.9c-5.2,0-9.3-3.9-9.3-8.9V19.3c0-5,4.1-8.9,9.3-8.9h47.5c5.2,0,9.3,3.9,9.3,8.9v45.3\n\tC74.7,69.6,70.6,73.5,65.3,73.5z M19.8,62.8h43.7V21.1H19.8V62.8z\"/>\n</svg>\n\u0000\u0000\u0003i<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<circle cx=\"59.6\" cy=\"42.7\" r=\"4.9\"/>\n<path d=\"M41.1,84.2c-1,0-2-0.4-2.7-1.3l-22-26.7c-1.2-1.5-1-3.7,0.5-4.9l31.9-26.4c0.6-0.5,1.4-0.8,2.2-0.8c0,0,0,0,0,0l27.1,0.1\n\tc1,0,2,0.5,2.7,1.3c0.7,0.8,0.9,1.9,0.7,2.9L76.5,55c-0.2,0.8-0.6,1.5-1.2,2L43.3,83.4C42.7,83.9,41.9,84.2,41.1,84.2z M24,54.5\n\tl17.6,21.3l28.3-23.3l4-21.2l-21.6-0.1L24,54.5z\"/>\n</svg>\n\u0000\u0000\u0003\u00e2<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.1.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<rect x=\"13\" y=\"12\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"41.7\" y=\"12\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"70.4\" y=\"12\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"13\" y=\"41.5\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"41.7\" y=\"41.5\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"70.4\" y=\"41.5\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"12.9\" y=\"71\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"41.6\" y=\"71\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"70.3\" y=\"71\" width=\"16.8\" height=\"16.8\"/>\n</svg>\n\u0000\u0000\u0003S<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g>\n\t<g id=\"reply\">\n\t\t<path d=\"M68.8,15.7l3.4-8.8l-21.4,9.6l9.6,21.4l3.5-9.1c11.1,4.2,17.4,10.7,20,20.6C85.9,37.4,83.5,23.8,68.8,15.7z\"/>\n\t</g>\n</g>\n<path d=\"M52,91.9H17.5c-4.9,0-8.7-3.8-8.7-8.7V48.6c0-4.9,3.8-8.7,8.7-8.7h34.4c4.9,0,8.7,3.8,8.7,8.7v34.4\n\tC60.7,88,56.9,91.9,52,91.9z M19.3,81.3h30.9V50.4H19.3V81.3z\"/>\n</svg>\n\u0000\u0000\u0002\u00c1<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 177.6 94.8\" style=\"enable-background:new 0 0 177.6 94.8;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<polygon points=\"0.5,47.4 58.7,94.8 58.7,0 \"/>\n<rect x=\"58.6\" y=\"31.2\" transform=\"matrix(-1 -1.224647e-16 1.224647e-16 -1 236.1687 94.8)\" width=\"119\" height=\"32.4\"/>\n</svg>\n\u0000\u0000\u0002J<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<rect x=\"22.2\" y=\"22.2\" width=\"55.5\" height=\"55.5\"/>\n</svg>\n\u0000\u0000\u0002E<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<polygon points=\"20.9,50 79.1,97.4 79.1,2.6 \"/>\n</svg>\n\u0000\u0000\u0003><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"180.62mm\" height=\"180.62mm\" viewBox=\"0 0 512 512\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n  <title>Artboard 1</title>\n  <path d=\"M394.56,298.44s-38.45,55.66-38.45,76.89a38.45,38.45,0,1,0,76.89,0C433,354.1,394.56,298.44,394.56,298.44Zm-5.63-61.83L264.17,111.85a19.22,19.22,0,0,0-27.18,0l-49,49-51.77-51.77a9.6,9.6,0,0,0-13.58,0L109,122.67a9.61,9.61,0,0,0,0,13.59L160.81,188,103.89,245a57.65,57.65,0,0,0,0,81.54l70.4,70.4a57.65,57.65,0,0,0,81.54,0l133.09-133.1A19.22,19.22,0,0,0,388.93,236.61Zm-69.81,42.63H126.6a18.74,18.74,0,0,1,4.47-7.11l7.9-7.9,49-49,35.2,35.2a19.22,19.22,0,0,0,27.18-27.17L215.16,188l35.42-35.42,97.57,97.58-29,29Z\"/>\n</svg>\n\u0000\u0000\u0002E<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 24.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<polygon points=\"50,20.9 2.6,79.1 97.4,79.1 \"/>\n</svg>\n\u0000\u0000\u0003]<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M51.3,75.9c-1.9,0-3.8-0.8-5-2.4L18.1,38.4c-2.2-2.8-1.8-6.9,1-9.1c2.8-2.2,6.9-1.8,9.1,1l28.2,35.1c2.2,2.8,1.8,6.9-1,9.1\n\tC54.2,75.5,52.7,75.9,51.3,75.9z\"/>\n<path d=\"M51.3,75.9c-1.4,0-2.9-0.5-4-1.4c-2.8-2.2-3.2-6.3-1-9.1l28.2-35.1c2.2-2.8,6.3-3.2,9.1-1c2.8,2.2,3.2,6.3,1,9.1L56.4,73.5\n\tC55.1,75.1,53.2,75.9,51.3,75.9z\"/>\n</svg>\n\u0000\u0000\u0002\u008c<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<polygon points=\"67.3,73.6 50.6,64.7 33.7,73.4 37,54.8 23.5,41.5 42.3,38.8 50.8,21.9 59.1,38.9 77.8,41.7 64.2,54.9 \"/>\n</svg>\n\u0000\u0000\u0003\u00c1<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g id=\"Solid\">\n\t<g>\n\t\t<path class=\"st0\" d=\"M50,13.6c-20,0-36.3,16.3-36.3,36.3c0,20,16.3,36.3,36.3,36.3C70,86.3,86.3,70,86.3,50\n\t\t\tC86.3,29.9,70,13.6,50,13.6z M50,79c-16,0-29.1-13-29.1-29.1c0-16,13-29.1,29.1-29.1C66,20.9,79,33.9,79,50C79,66,66,79,50,79z\"/>\n\t\t<polygon class=\"st0\" points=\"53.6,31.8 46.3,31.8 46.3,46.3 31.8,46.3 31.8,53.6 46.3,53.6 46.3,68.1 53.6,68.1 53.6,53.6 \n\t\t\t68.1,53.6 68.1,46.3 53.6,46.3 \t\t\"/>\n\t</g>\n</g>\n</svg>\n\u0000\u0000\u0004K<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 440 440\" style=\"enable-background:new 0 0 440 440;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M373.1,344.4V273c-31-27.4-50.3-44.5-58-51.3c-7.5-6.6-18.1-6-24.9,1.4c-13.3,14.4-47,51.1-61.7,67.1\n\tc-2.6,2.8-6.7,3-9.5,0.3c-7-6.8-17.4-16.9-22.9-22.3c-6.8-6.6-17-6.4-23.5,0.6c-10.4,11.1-36.3,38.8-77.9,83.1L373.1,344.4z\"/>\n<path d=\"M358.4,77.8H81.6c-17,0-30.8,13.8-30.8,30.8v222.9c0,17,13.8,30.8,30.8,30.8h276.9c17,0,30.8-13.8,30.8-30.8V108.6\n\tC389.2,91.6,375.5,77.8,358.4,77.8z M365.6,321.2c0,11.1-9,20.1-20.1,20.1H94.8c-11.1,0-20.1-9-20.1-20.1v-202\n\tc0-11.1,9-20.1,20.1-20.1h250.7c11.1,0,20.1,9,20.1,20.1V321.2z\"/>\n<circle cx=\"157.1\" cy=\"164.2\" r=\"30.4\"/>\n</svg>\n\u0000\u0000\u0003S<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(240, 241, 242)}\n    polygon{fill:rgb(240, 241, 242)}\n    circle{fill:rgb(240, 241, 242)}\n    rect{fill:rgb(240, 241, 242)}\n    </style>\n<path d=\"M50.5,77.3C26.7,77.3,8.1,52.1,7.3,51L6,49.2l1.3-1.8C8.1,46.3,26.7,21,50.5,21s42.4,25.3,43.2,26.3l1.3,1.8L93.7,51\n\tC92.9,52.1,74.3,77.3,50.5,77.3z M13.8,49.2c4.6,5.6,19.5,21.9,36.7,21.9s32.1-16.4,36.7-21.9c-4.6-5.6-19.5-21.9-36.7-21.9\n\tC33.3,27.2,18.4,43.6,13.8,49.2z\"/>\n<circle cx=\"50.5\" cy=\"49.2\" r=\"17.3\"/>\n</svg>\n\u0000\u0000\u0002R<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<polygon points=\"22.8,65.8 29.9,18.1 85.7,67.4 51.9,79.5 \"/>\n</svg>\n\u0000\u0000\u0002I<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(134, 142, 147)}\n    polygon{fill:rgb(134, 142, 147)}\n    circle{fill:rgb(134, 142, 147)}\n    rect{fill:rgb(134, 142, 147)}\n    </style>\n<rect x=\"3.4\" y=\"40.6\" width=\"92.9\" height=\"18.6\"/>\n</svg>\n\u0000\u0000\u0002\u00cd<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M74.7,86.9H26.4c-6.9,0-12.2-5.4-12.2-12.2V26.4c0-6.9,5.4-12.2,12.2-12.2h48.1c6.9,0,12.2,5.4,12.2,12.2v48.1\n\tC86.9,81.5,81.5,86.9,74.7,86.9z M28.9,72.1h43.2V28.9H28.9V72.1z\"/>\n</svg>\n\u0000\u0000\u0003\u00c5<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(134, 142, 147)}\n    polygon{fill:rgb(134, 142, 147)}\n    circle{fill:rgb(134, 142, 147)}\n    rect{fill:rgb(134, 142, 147)}\n    </style>\n<path d=\"M50.5,77.3C26.7,77.3,8.1,52.1,7.3,51L6,49.2l1.3-1.8C8.1,46.3,26.7,21,50.5,21s42.4,25.3,43.2,26.3l1.3,1.8L93.7,51\n\tC92.9,52.1,74.3,77.3,50.5,77.3z M13.8,49.2c4.6,5.6,19.5,21.9,36.7,21.9s32.1-16.4,36.7-21.9c-4.6-5.6-19.5-21.9-36.7-21.9\n\tC33.3,27.2,18.4,43.6,13.8,49.2z\"/>\n<circle cx=\"50.5\" cy=\"49.2\" r=\"17.3\"/>\n<rect x=\"1.1\" y=\"44.6\" transform=\"matrix(0.8188 -0.5741 0.5741 0.8188 -19.1291 37.698)\" width=\"98.1\" height=\"9\"/>\n</svg>\n\u0000\u0000\u0003\u00a2<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g id=\"Outline\">\n\t<g>\n\t\t<path d=\"M47.2,86.9c-1.4,0-2.7-0.9-3.3-2.2l-25-60.6c-0.6-1.3-0.2-2.9,0.8-3.9s2.5-1.3,3.9-0.8l60.6,25c1.4,0.6,2.3,2,2.2,3.6\n\t\t\tc-0.1,1.5-1.2,2.8-2.7,3.2l-26.4,6.6l-6.6,26.4c-0.4,1.5-1.7,2.6-3.2,2.7C47.3,86.9,47.2,86.9,47.2,86.9z M28.7,29.3L46.3,72\n\t\t\tl4.5-18c0.3-1.3,1.3-2.3,2.6-2.6l18-4.5L28.7,29.3z\"/>\n\t</g>\n</g>\n<polygon points=\"26.3,27.2 45.7,75.4 53,56.2 75.2,46.8 \"/>\n</svg>\n\u0000\u0000\u0006\u000f<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M58.8,82.6c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S63.5,82.6,58.8,82.6z M58.8,71c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S60.5,71,58.8,71z\"/>\n<path d=\"M39.5,39.8c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S44.2,39.8,39.5,39.8z M39.5,28.2c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S41.2,28.2,39.5,28.2z\"/>\n<path d=\"M19.2,82.6c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S23.9,82.6,19.2,82.6z M19.2,71c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S20.9,71,19.2,71z\"/>\n<path d=\"M83.1,39.8c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S87.8,39.8,83.1,39.8z M83.1,28.2c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S84.8,28.2,83.1,28.2z\"/>\n<rect x=\"51.1\" y=\"49.2\" transform=\"matrix(0.5355 -0.8445 0.8445 0.5355 -11.219 83.5029)\" width=\"38.5\" height=\"5.5\"/>\n<rect x=\"46.4\" y=\"35.3\" transform=\"matrix(0.9001 -0.4356 0.4356 0.9001 -18.0059 26.666)\" width=\"5.5\" height=\"34.7\"/>\n<rect x=\"10\" y=\"51.3\" transform=\"matrix(0.4615 -0.8872 0.8872 0.4615 -32.1006 55.1188)\" width=\"38.8\" height=\"5.5\"/>\n</svg>\n\u0000\u0000\t\u00ab<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g id=\"Layer_17\">\n\t<path d=\"M48.4,34.9c1.4-1.4,3.8-1.4,5.2,0l1.1,1.1l10.4-10.3c2.9-2.9,7.6-2.9,10.5,0c2.9,2.9,2.9,7.6,0,10.5L65.2,46.5l1.1,1.1\n\t\tc1.4,1.4,1.4,3.8,0,5.2c-1.4,1.4-3.8,1.4-5.2,0L48.4,40.2C46.9,38.7,46.9,36.4,48.4,34.9z\"/>\n\t<polygon points=\"47.4,64.3 36.2,75.4 25.8,75.4 25.8,65 26.5,64.3 26.5,64.3 \t\"/>\n\t<path d=\"M76.8,37.4c1.8-1.8,2.8-4.2,2.7-6.5c0-2.4-0.9-4.7-2.7-6.5l0,0c0,0,0,0,0,0c0,0,0,0,0,0l0,0c-1.8-1.8-4.2-2.7-6.5-2.7\n\t\tc-2.4,0-4.7,0.9-6.5,2.7l0,0l-9.1,9.1c-1-0.9-2.4-1.4-3.7-1.4c-1.4,0-2.8,0.5-3.9,1.6c-1.1,1.1-1.6,2.5-1.6,3.9\n\t\tc0,1.3,0.5,2.6,1.4,3.7L25.2,62.9c0,0-0.1,0-0.1,0.1l0,0l-0.7,0.7C24.1,64,24,64.5,24,65v9.7l-3.2,3.2c-0.7,0.7-0.7,1.9,0,2.6\n\t\tc0.7,0.7,1.9,0.7,2.6,0l3.1-3.1l9.7,0c0.5,0,1-0.2,1.3-0.5l11.2-11.1L60,54.3c1,0.9,2.4,1.4,3.7,1.4c1.4,0,2.8-0.5,3.9-1.6\n\t\tc1.1-1.1,1.6-2.5,1.6-3.9c0-1.3-0.5-2.6-1.4-3.7L76.8,37.4L76.8,37.4z M46.1,63L35.5,73.5l-7.8,0v-7.9l0.1-0.1c0,0,0.1,0,0.1-0.1\n\t\tL49.3,44l7.9,7.9L46.1,63z M74.2,34.8L74.2,34.8L63.9,45.2c-0.7,0.7-0.7,1.9,0,2.6c0.2,0.2,0.4,0.3,0.7,0.4\n\t\tc0.1,0.2,0.2,0.5,0.4,0.7c0.4,0.4,0.5,0.8,0.5,1.3c0,0.5-0.2,0.9-0.5,1.3c-0.4,0.4-0.8,0.5-1.3,0.5c-0.5,0-0.9-0.2-1.3-0.5\n\t\tL49.7,38.9c-0.4-0.4-0.5-0.8-0.5-1.3c0-0.5,0.2-0.9,0.5-1.3c0.4-0.4,0.8-0.5,1.3-0.5c0.5,0,0.9,0.2,1.3,0.5\n\t\tc0.2,0.2,0.4,0.3,0.7,0.4c0.1,0.2,0.2,0.5,0.4,0.7c0.7,0.7,1.9,0.7,2.6,0L66.4,27l0,0c1.1-1.1,2.5-1.6,3.9-1.6\n\t\tc1.4,0,2.8,0.5,3.9,1.6l0,0c1.1,1.1,1.6,2.5,1.6,3.9C75.9,32.3,75.3,33.7,74.2,34.8z\"/>\n\t<path d=\"M61.8,45.7l2.1,2.1l1.1,1.1c0.7,0.7,1.9,0.7,2.6,0c0.7-0.7,0.7-1.9,0-2.6l-1.1-1.1l-2.1-2.1c-0.7-0.7-1.9-0.7-2.6,0\n\t\tC61.1,43.8,61.1,45,61.8,45.7L61.8,45.7z\"/>\n\t<path d=\"M52.3,36.2l1.1,1.1l2.1,2.1c0.7,0.7,1.9,0.7,2.6,0c0.7-0.7,0.7-1.9,0-2.6L56,34.7l-1.1-1.1c-0.7-0.7-1.9-0.7-2.6,0\n\t\tC51.6,34.3,51.6,35.5,52.3,36.2L52.3,36.2z\"/>\n\t<path d=\"M26.5,66.1L26.5,66.1h20.9c1,0,1.9-0.8,1.9-1.9c0-1-0.8-1.9-1.9-1.9H26.5h0c-1,0-1.9,0.8-1.9,1.9\n\t\tC24.6,65.3,25.5,66.1,26.5,66.1L26.5,66.1z\"/>\n</g>\n</svg>\n\u0000\u0000\u0002\u00f7<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<circle cx=\"58.1\" cy=\"23.5\" r=\"6.9\"/>\n<circle cx=\"55.8\" cy=\"52.5\" r=\"6.9\"/>\n<circle cx=\"30\" cy=\"39.8\" r=\"6.9\"/>\n<circle cx=\"23.1\" cy=\"62.6\" r=\"6.9\"/>\n<circle cx=\"55.8\" cy=\"77.6\" r=\"6.9\"/>\n<circle cx=\"77.2\" cy=\"46.7\" r=\"6.9\"/>\n</svg>\n\u0000\u0000\u0002\u00ba<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<polygon points=\"25.4,50 83.6,97.4 83.6,2.6 \"/>\n<rect x=\"13.8\" y=\"2.6\" transform=\"matrix(-1 -1.224647e-16 1.224647e-16 -1 40.1826 100)\" width=\"12.5\" height=\"94.8\"/>\n</svg>\n\u0000\u0000\u0002\u00f8<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" focusable=\"false\" preserveAspectRatio=\"xMidYMid meet\" viewBox=\"0 0 14 16\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<!--From GitHub's Octoicons-->\n<!--extra line-->\n<!--extra line2-->\n<path d=\"M2 13h4v1H2v-1zm5-6H2v1h5V7zm2 3V8l-3 3l3 3v-2h5v-2H9zM4.5 9H2v1h2.5V9zM2 12h2.5v-1H2v1zm9 1h1v2c-.02.28-.11.52-.3.7c-.19.18-.42.28-.7.3H1c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h3c0-1.11.89-2 2-2c1.11 0 2 .89 2 2h3c.55 0 1 .45 1 1v5h-1V6H1v9h10v-2zM2 5h8c0-.55-.45-1-1-1H8c-.55 0-1-.45-1-1s-.45-1-1-1s-1 .45-1 1s-.45 1-1 1H3c-.55 0-1 .45-1 1z\" />\n</svg>\u0000\u0000\u0003\u0081<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g id=\"Outline\">\n\t<g>\n\t\t<path d=\"M26.5,74.2c0,3.7,3,6.8,6.8,6.8h33.8c3.7,0,6.8-3,6.8-6.8V33.7H26.5V74.2z M33.3,40.4h33.8v33.8H33.3V40.4z\"/>\n\t\t<polygon points=\"60.3,23.5 60.3,16.8 40.1,16.8 40.1,23.5 19.8,23.5 19.8,30.3 80.6,30.3 80.6,23.5 \t\t\"/>\n\t\t<rect x=\"40.1\" y=\"47.2\" width=\"6.8\" height=\"20.3\"/>\n\t\t<rect x=\"53.6\" y=\"47.2\" width=\"6.8\" height=\"20.3\"/>\n\t</g>\n</g>\n</svg>\n\u0000\u0000\u0003\u00a8<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M32.4,53.5H23c-2.8,0-5-2.2-5-5V23c0-2.8,2.2-5,5-5h25.5c2.8,0,5,2.2,5,5v10.3h-6V24H24v23.5h8.4V53.5z\"/>\n<path d=\"M75.7,81.3H50.1c-2.8,0-5-2.2-5-5V65.2h6v10.1h23.6V51.8h-9.5v-6h10.5c2.8,0,5,2.2,5,5v25.5C80.7,79.1,78.5,81.3,75.7,81.3z\n\t\"/>\n<path d=\"M61.8,67.4H36.3c-2.8,0-5-2.2-5-5V36.9c0-2.8,2.2-5,5-5h25.5c2.8,0,5,2.2,5,5v25.5C66.8,65.2,64.6,67.4,61.8,67.4z\n\t M37.3,61.4h23.5V37.9H37.3V61.4z\"/>\n</svg>\n\u0000\u0000\u0006\u008e<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g>\n\t<path d=\"M34.6,16.5l-12.3-5.1c-0.3-0.1-0.6-0.2-0.9,0c-0.3,0.1-0.5,0.3-0.6,0.6s-0.2,0.6,0,0.9l1.8,4.3l-3.8,1.5\n\t\tc-8,3.3-12.1,7.7-12,13c0,1.8,0.5,3.8,1.5,6c0.8,1.9,2.5,4.2,5.4,6.8c0.1,0.1,0.2,0.2,0.3,0.4c0.1,0.1,0.3,0.3,0.4,0.4\n\t\tc0.1,0.1,0.3,0.3,0.4,0.3c0.2,0.2,0.4,0.2,0.6,0.1c0.2,0,0.3-0.2,0.4-0.3c0-0.2,0-0.4-0.1-0.5s-0.1-0.2-0.2-0.4\n\t\tc-0.1-0.2-0.2-0.3-0.2-0.4c-0.4-0.7-0.7-1.4-1-2c-0.5-1.1-0.8-2.2-1-3.2s-0.2-1.9-0.1-2.7c0-0.8,0.3-1.6,0.6-2.3\n\t\tc0.4-0.7,0.8-1.4,1.3-2c0.5-0.6,1.2-1.1,2-1.7c0.8-0.5,1.6-1,2.4-1.5c0.8-0.4,1.8-0.8,2.9-1.3l3.8-1.5l1.8,4.3\n\t\tc0.1,0.3,0.3,0.5,0.6,0.6c0.3,0.1,0.6,0.2,0.9,0c0.3-0.1,0.5-0.3,0.6-0.6l5.1-12.3c0.1-0.3,0.2-0.6,0-0.9\n\t\tC35.2,16.8,35,16.6,34.6,16.5z\"/>\n</g>\n<path d=\"M60.1,88.6l25.4-13.8V49.5l-25.4,9.2V88.6z M57.6,54.3l27.7-10.1L57.6,34.2L29.9,44.2L57.6,54.3z M90.5,44.3v30.4\n\tc0,0.9-0.2,1.8-0.7,2.6c-0.5,0.8-1.1,1.4-1.9,1.9L60,94.4c-0.7,0.4-1.5,0.6-2.4,0.6c-0.9,0-1.7-0.2-2.4-0.6L27.3,79.2\n\tc-0.8-0.4-1.5-1.1-1.9-1.9c-0.5-0.8-0.7-1.7-0.7-2.6V44.3c0-1.1,0.3-2,0.9-2.9s1.4-1.5,2.4-1.9l27.9-10.1c0.6-0.2,1.2-0.3,1.7-0.3\n\tc0.6,0,1.2,0.1,1.7,0.3l27.9,10.1c1,0.4,1.8,1,2.4,1.9S90.5,43.2,90.5,44.3z\"/>\n</svg>\n\u0000\u0000\u0002E<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 24.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<polygon points=\"50,79.1 97.4,20.9 2.6,20.9 \"/>\n</svg>\n\u0000\u0000\u0006.<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<rect x=\"13.1\" y=\"23.1\" transform=\"matrix(0.7071 -0.7071 0.7071 0.7071 -10.0546 26.0581)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"33.9\" y=\"23.1\" transform=\"matrix(0.8471 -0.5315 0.5315 0.8471 -6.1536 28.9461)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"56.7\" y=\"23.1\" transform=\"matrix(0.9345 -0.356 0.356 0.9345 -4.3723 26.5752)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"13.1\" y=\"47.3\" transform=\"matrix(0.7071 -0.7071 0.7071 0.7071 -27.1546 33.1412)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"33.9\" y=\"47.3\" transform=\"matrix(0.8209 -0.5711 0.5711 0.8209 -19.725 35.8084)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"56.7\" y=\"47.3\" transform=\"matrix(0.9689 -0.2476 0.2476 0.9689 -10.0378 18.8686)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"13.1\" y=\"74\" transform=\"matrix(0.8209 -0.5711 0.5711 0.8209 -38.7071 28.7179)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"33.9\" y=\"74\" transform=\"matrix(0.8471 -0.5315 0.5315 0.8471 -33.2051 36.7299)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"56.7\" y=\"74\" transform=\"matrix(0.9946 -0.1035 0.1035 0.9946 -7.4995 7.6579)\" width=\"26.7\" height=\"4.1\"/>\n</svg>\n\u0000\u0000\u0004L<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g>\n\t<path d=\"M57.3,84.7h-32c-4.6,0-8.2-3.6-8.2-8.2v-32c0-4.6,3.6-8.2,8.2-8.2h32c4.6,0,8.2,3.6,8.2,8.2v32\n\t\tC65.4,81.2,61.9,84.7,57.3,84.7z M26.9,74.9h28.7V46.2H26.9V74.9z\"/>\n\t<path d=\"M74.7,63.6h-32c-4.6,0-8.2-3.6-8.2-8.2v-32c0-4.6,3.6-8.2,8.2-8.2h32c4.6,0,8.2,3.6,8.2,8.2v32\n\t\tC82.9,60,79.3,63.6,74.7,63.6z M44.3,53.8h28.7V25.1H44.3V53.8z\"/>\n\t<path d=\"M81.1,60.6L62.7,82.7l-6.9-6.9l13.8-15.3l5-3.5\"/>\n\t<path d=\"M82,26.8L61.9,46.9l-6.9-7l20.4-20.4l0,0\"/>\n\t<path d=\"M44.7,60.6L24.8,83.1l-6.9-6.9l18.8-22.2h1.6\"/>\n\t<path d=\"M19,39.4L36,18.7l10.3,3L29.2,42l0,0\"/>\n</g>\n</svg>\n\u0000\u0000\u0006\u0013<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M50,30c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S54.7,30,50,30z M50,18.4c-1.7,0-3,1.3-3,3s1.3,3,3,3\n\ts3-1.3,3-3S51.7,18.4,50,18.4z\"/>\n<path d=\"M77.8,58.9c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S82.5,58.9,77.8,58.9z M77.8,47.3c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S79.5,47.3,77.8,47.3z\"/>\n<path d=\"M50,85.6c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S54.7,85.6,50,85.6z M50,74c-1.7,0-3,1.3-3,3s1.3,3,3,3\n\ts3-1.3,3-3S51.7,74,50,74z\"/>\n<path d=\"M22.2,58.6c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S26.9,58.6,22.2,58.6z M22.2,47c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S23.9,47,22.2,47z\"/>\n<path d=\"M26.4,44.5L21,43.5c2.2-11.2,10.7-20.2,21.7-23l1.4,5.4C35.1,28.2,28.2,35.5,26.4,44.5z\"/>\n<path d=\"M43.6,78c-11.5-2.5-20.7-12-22.8-23.6l5.5-1c1.7,9.4,9.1,17.1,18.4,19.2L43.6,78z\"/>\n<path d=\"M56.6,78l-1.3-5.5c9.3-2.2,16.4-9.6,18.2-18.9l5.5,1.1C76.8,66.2,68,75.4,56.6,78z\"/>\n<path d=\"M73.9,46.6c-1.1-9.8-7.9-17.9-17.4-20.5l1.5-5.4C69.8,24,78.2,33.9,79.5,46L73.9,46.6z\"/>\n</svg>\n\u0000\u0000\u0003[<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M51.4,27.9c1.9,0,3.8,0.8,5,2.4l28.2,35.1c2.2,2.8,1.8,6.9-1,9.1c-2.8,2.2-6.9,1.8-9.1-1L46.3,38.4c-2.2-2.8-1.8-6.9,1-9.1\n\tC48.5,28.3,50,27.9,51.4,27.9z\"/>\n<path d=\"M51.4,27.9c1.4,0,2.9,0.5,4,1.4c2.8,2.2,3.2,6.3,1,9.1L28.2,73.5c-2.2,2.8-6.3,3.2-9.1,1c-2.8-2.2-3.2-6.3-1-9.1l28.2-35.1\n\tC47.6,28.7,49.5,27.9,51.4,27.9z\"/>\n</svg>\n\u0000\u0000\u0002E<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(134, 142, 147)}\n    polygon{fill:rgb(134, 142, 147)}\n    circle{fill:rgb(134, 142, 147)}\n    rect{fill:rgb(134, 142, 147)}\n    </style>\n<polygon points=\"50,79.1 97.4,20.9 2.6,20.9 \"/>\n</svg>\n\u0000\u0000\u0002v<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"180.62mm\" height=\"180.62mm\" viewBox=\"0 0 512 512\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n  <title>Artboard 1</title>\n  <path d=\"M424.94,271.36a35.34,35.34,0,0,0,0-50L307.15,103.6a35.32,35.32,0,0,0-50,0L68.72,292.06a35.33,35.33,0,0,0,0,50l70.67,70.67a35.34,35.34,0,0,0,25,10.35H426.46a8.83,8.83,0,0,0,8.83-8.83V398.17c0-4.88-4-5.89-8.83-5.89H302.69L424.94,271.36ZM205.1,198.75,327.29,323.81l-68.47,68.47H159.69L89,314.83,205.1,198.75Z\"/>\n</svg>\n\u0000\u0000\u0002\u00fc<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<rect x=\"45\" y=\"21.3\" transform=\"matrix(0.7112 -0.7029 0.7029 0.7112 -21.6791 50.024)\" width=\"10\" height=\"60.2\"/>\n<rect x=\"19.9\" y=\"46.4\" transform=\"matrix(0.7113 -0.7029 0.7029 0.7113 -21.7284 49.9988)\" width=\"60.2\" height=\"10\"/>\n</svg>\n\u0000\u0000\u0003\u008c<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M41.5,67.6c-14.4,0-26.1-11.7-26.1-26.1s11.7-26.1,26.1-26.1s26.1,11.7,26.1,26.1S55.9,67.6,41.5,67.6z M41.5,22.4\n\tC31,22.4,22.4,31,22.4,41.5c0,10.5,8.6,19.1,19.1,19.1c10.5,0,19.1-8.6,19.1-19.1C60.6,31,52,22.4,41.5,22.4z\"/>\n<path d=\"M84.4,79.8L64.2,60.6c-1.4,1.7-3.1,3.2-4.8,4.6l20.5,19.4c0.6,0.6,1.5,0.9,2.3,0.9c0.9,0,1.8-0.3,2.4-1\n\tC85.8,83.2,85.7,81.1,84.4,79.8z\"/>\n</svg>\n\u0000\u0000\u0003\u00d1<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M66.7,54.4h-6V37.9H45.4v-6h16.3c2.8,0,5,2.2,5,5V54.4z\"/>\n<path d=\"M53.4,67.4H36.3c-2.8,0-5-2.2-5-5V45.1h6v16.3h16.1V67.4z\"/>\n<path d=\"M42.5,47.6H22.9c-2.8,0-5-2.2-5-5V23c0-2.8,2.2-5,5-5h19.6c2.8,0,5,2.2,5,5v19.6C47.5,45.4,45.3,47.6,42.5,47.6z M23.9,41.6\n\th17.6V24H23.9V41.6z\"/>\n<path d=\"M75.7,81.3H56.1c-2.8,0-5-2.2-5-5V56.8c0-2.8,2.2-5,5-5h19.6c2.8,0,5,2.2,5,5v19.6C80.7,79.1,78.5,81.3,75.7,81.3z\n\t M57.1,75.3h17.6V57.8H57.1V75.3z\"/>\n</svg>\n\u0000\u0000\u0002\u0081<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 177.6 94.8\" style=\"enable-background:new 0 0 177.6 94.8;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<polygon points=\"177.6,47.4 119.4,0 119.4,94.8 \"/>\n<rect x=\"0.5\" y=\"31.2\" width=\"119\" height=\"32.4\"/>\n</svg>\n\u0000\u0000\u0003\u00b0<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"180.62mm\" height=\"180.62mm\" viewBox=\"0 0 512 512\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n  <title>Artboard 1</title>\n  <path d=\"M450.18,335.94a18.61,18.61,0,0,1,0,26.34l-62.07,62.06c-11.65,11.65-31.79,3.48-31.79-13.17v-31H310.71a9.29,9.29,0,0,1-6.81-3l-54.75-58.66,41.38-44.34,41,43.88h24.83v-31c0-16.63,20.13-24.83,31.79-13.17Zm-382.51-142h65.18l41,43.88,41.38-44.34-54.75-58.66a9.29,9.29,0,0,0-6.8-3h-86a9.31,9.31,0,0,0-9.31,9.31v43.45A9.31,9.31,0,0,0,67.67,193.93Zm288.65,0v31c0,16.65,20.14,24.81,31.79,13.17l62.07-62.06a18.61,18.61,0,0,0,0-26.34L388.11,87.66C376.45,76,356.32,84.2,356.32,100.83v31H310.71a9.29,9.29,0,0,0-6.81,3l-171,183.26H67.67a9.31,9.31,0,0,0-9.31,9.32v43.45a9.31,9.31,0,0,0,9.31,9.31h86a9.29,9.29,0,0,0,6.8-3L331.49,193.93Z\"/>\n</svg>\n\u0000\u0000\u0003\u00dd<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M30.2,77.7c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S34.9,77.7,30.2,77.7z M30.2,66.1c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S31.9,66.1,30.2,66.1z\"/>\n<path d=\"M70.1,37.8c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S74.8,37.8,70.1,37.8z M70.1,26.2c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S71.8,26.2,70.1,26.2z\"/>\n<rect x=\"28\" y=\"46.7\" transform=\"matrix(0.7027 -0.7115 0.7115 0.7027 -20.1843 50.5928)\" width=\"44.8\" height=\"5.6\"/>\n</svg>\n\u0000\u0000\u0003g<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g id=\"Outline\">\n\t<g>\n\t\t<path d=\"M47.2,86.9c-1.4,0-2.7-0.9-3.3-2.2l-25-60.6c-0.6-1.3-0.2-2.9,0.8-3.9s2.5-1.3,3.9-0.8l60.6,25c1.4,0.6,2.3,2,2.2,3.6\n\t\t\tc-0.1,1.5-1.2,2.8-2.7,3.2l-26.4,6.6l-6.6,26.4c-0.4,1.5-1.7,2.6-3.2,2.7C47.3,86.9,47.2,86.9,47.2,86.9z M28.7,29.3L46.3,72\n\t\t\tl4.5-18c0.3-1.3,1.3-2.3,2.6-2.6l18-4.5L28.7,29.3z\"/>\n\t</g>\n</g>\n</svg>\n\u0000\u0000\u0002\u0090<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style><path d=\"M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z\"/></svg>\u0000\u0000\u0004\u0001<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.4, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M42.1,51l-29-23.2c-2.3-1.8-2.6-5.2-0.8-7.5c1.8-2.3,5.2-2.6,7.5-0.8l28.9,23.2c2.3,1.8,2.6,5.2,0.8,7.5c-1,1.3-2.6,2-4.1,2\n\tC44.3,52.2,43.1,51.8,42.1,51z\"/>\n<path d=\"M12.4,73.4c-1.8-2.3-1.5-5.7,0.8-7.5l28.9-23.2c2.3-1.8,5.7-1.5,7.5,0.8s1.5,5.7-0.8,7.5l-29,23.3c-0.9,0.7-2.1,1.2-3.3,1.2\n\tC14.9,75.5,13.5,74.8,12.4,73.4z\"/>\n<path d=\"M41.4,75.3c0-2.9,2.3-5.4,5.3-5.4l37.1-0.5c2.9,0,5.4,2.3,5.4,5.3c0,2.9-2.3,5.4-5.3,5.4l-37.2,0.5c-1.2,0-2.4-0.4-3.3-1.1\n\tC42.2,78.5,41.4,77.1,41.4,75.3z\"/>\n</svg>\n\u0000\u0000\u0004S<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g id=\"Solid\">\n\t<g>\n\t\t<polygon points=\"70.7,14.7 63.5,14.7 63.5,29.2 48.9,29.2 48.9,36.5 63.5,36.5 63.5,51 70.7,51 70.7,36.5 85.3,36.5 85.3,29.2 \n\t\t\t70.7,29.2 \t\t\"/>\n\t</g>\n</g>\n<g id=\"Outline\">\n\t<g>\n\t\t<path d=\"M35.4,85.9c-0.9,0-1.8-0.6-2.2-1.5L16.8,44.5c-0.4-0.9-0.2-1.9,0.5-2.6c0.7-0.7,1.7-0.9,2.6-0.5l39.9,16.4\n\t\t\tc0.9,0.4,1.5,1.3,1.4,2.3s-0.8,1.9-1.8,2.1L42,66.6L37.6,84c-0.2,1-1.1,1.7-2.1,1.8C35.5,85.9,35.5,85.9,35.4,85.9z M23.3,47.9\n\t\t\tL34.9,76l3-11.9c0.2-0.8,0.9-1.5,1.7-1.7l11.9-3L23.3,47.9z\"/>\n\t</g>\n</g>\n<polygon points=\"21.7,46.6 34.5,78.3 39.3,65.7 53.9,59.5 \"/>\n</svg>\n\u0000\u0000\u0001\u0094<svg version=\"1.1\" id=\"Layer_1\" \n    xmlns=\"http://www.w3.org/2000/svg\" \n    xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 12 16\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n    <g>\n        <path d=\"M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z\"/>\n    </g>\n</svg>\n\u0000\u0000\u0003\u0095<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M84.9,45.3l-6.8-6.8V21.9c0-2.6-2.1-4.7-4.7-4.7h-4.7c-2.6,0-4.7,2.1-4.7,4.7v2.6l-9.4-9.4c-1.3-1.2-2.5-2.6-4.7-2.6\n\ts-3.4,1.4-4.7,2.6L15.1,45.3c-1.5,1.5-2.6,2.6-2.6,4.7c0,2.6,2,4.7,4.7,4.7h4.7v28.1c0,2.6,2.1,4.7,4.7,4.7h14.1V64.1\n\tc0-2.6,2.1-4.7,4.7-4.7h9.4c2.6,0,4.7,2.1,4.7,4.7v23.4h14.1c2.6,0,4.7-2.1,4.7-4.7V54.7h4.7c2.7,0,4.7-2,4.7-4.7\n\tC87.5,47.9,86.4,46.8,84.9,45.3z\"/>\n</svg>\n\u0000\u0000\u0005\u00a9<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g id=\"Solid_1_\">\n\t<path d=\"M72.9,61.1V37.3c3.3-1.2,5.7-4.3,5.7-8c0-4.7-3.8-8.5-8.5-8.5c-3.7,0-6.8,2.4-8,5.7H38.2c-1.2-3.3-4.3-5.7-8-5.7\n\t\tc-4.7,0-8.5,3.8-8.5,8.5c0,3.7,2.4,6.8,5.7,8v23.8c-3.3,1.2-5.7,4.3-5.7,8c0,4.7,3.8,8.5,8.5,8.5c3.7,0,6.8-2.4,8-5.7H62\n\t\tc1.2,3.3,4.3,5.7,8,5.7c4.7,0,8.5-3.8,8.5-8.5C78.6,65.4,76.2,62.2,72.9,61.1z M70.1,26.4c1.6,0,2.8,1.3,2.8,2.8\n\t\tc0,1.6-1.3,2.8-2.8,2.8c-1.6,0-2.8-1.3-2.8-2.8C67.2,27.7,68.5,26.4,70.1,26.4z M30.2,26.4c1.6,0,2.8,1.3,2.8,2.8\n\t\tc0,1.6-1.3,2.8-2.8,2.8c-1.6,0-2.8-1.3-2.8-2.8C27.4,27.7,28.7,26.4,30.2,26.4z M30.2,71.9c-1.6,0-2.8-1.3-2.8-2.8\n\t\tc0-1.6,1.3-2.8,2.8-2.8c1.6,0,2.8,1.3,2.8,2.8C33.1,70.6,31.8,71.9,30.2,71.9z M62.1,66.2H38.2c-0.9-2.4-2.8-4.3-5.2-5.2V37.3\n\t\tc2.4-0.9,4.3-2.8,5.2-5.2H62c0.9,2.4,2.8,4.3,5.2,5.2v23.8C64.8,61.9,62.9,63.8,62.1,66.2z M70.1,71.9c-1.6,0-2.8-1.3-2.8-2.8\n\t\tc0-1.6,1.3-2.8,2.8-2.8c1.6,0,2.8,1.3,2.8,2.8S71.6,71.9,70.1,71.9z\"/>\n</g>\n</svg>\n\u0000\u0000\u0003]<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M31.8,56.4c-1.9,0-3.8-0.8-5-2.4c-2.2-2.8-1.8-6.9,1-9.1l35.1-28.2c2.8-2.2,6.9-1.8,9.1,1c2.2,2.8,1.8,6.9-1,9.1L35.8,54.9\n\tC34.6,55.9,33.2,56.4,31.8,56.4z\"/>\n<path d=\"M66.9,84.6c-1.4,0-2.9-0.5-4-1.4L27.7,54.9c-2.8-2.2-3.2-6.3-1-9.1c2.2-2.8,6.3-3.2,9.1-1l35.1,28.2c2.8,2.2,3.2,6.3,1,9.1\n\tC70.6,83.8,68.8,84.6,66.9,84.6z\"/>\n</svg>\n\u0000\u0000\u0004+<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g id=\"Solid\">\n\t<g>\n\t\t<polygon points=\"70.7,36.5 85.3,36.5 85.3,29.2 70.7,29.2 63.5,29.2 48.9,29.2 48.9,36.5 63.5,36.5 \t\t\"/>\n\t</g>\n</g>\n<g id=\"Outline\">\n\t<g>\n\t\t<path d=\"M35.4,85.9c-0.9,0-1.8-0.6-2.2-1.5L16.8,44.5c-0.4-0.9-0.2-1.9,0.5-2.6c0.7-0.7,1.7-0.9,2.6-0.5l39.9,16.4\n\t\t\tc0.9,0.4,1.5,1.3,1.4,2.3s-0.8,1.9-1.8,2.1L42,66.6L37.6,84c-0.2,1-1.1,1.7-2.1,1.8C35.5,85.9,35.5,85.9,35.4,85.9z M23.3,47.9\n\t\t\tL34.9,76l3-11.9c0.2-0.8,0.9-1.5,1.7-1.7l11.9-3L23.3,47.9z\"/>\n\t</g>\n</g>\n<polygon points=\"21.7,46.6 34.5,78.3 39.3,65.7 53.9,59.5 \"/>\n</svg>\n\u0000\u0000\u0002\u00c5<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(134, 142, 147)}\n    polygon{fill:rgb(134, 142, 147)}\n    circle{fill:rgb(134, 142, 147)}\n    rect{fill:rgb(134, 142, 147)}\n    </style>\n<g id=\"Solid\">\n\t<g>\n\t\t<polygon points=\"59.1,3.4 40.6,3.4 40.6,40.6 3.4,40.6 3.4,59.1 40.6,59.1 40.6,96.3 59.1,96.3 59.1,59.1 96.3,59.1 96.3,40.6 \n\t\t\t59.1,40.6 \t\t\"/>\n\t</g>\n</g>\n</svg>\n\u0000\u0000\u0004Y<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<g id=\"Solid\">\n\t<path d=\"M79.4,30.1c0-2.4-0.9-4.6-2.6-6.3c-3.4-3.4-9.2-3.4-12.6,0L33.9,54.2c-2.8,0.2-5.5,1.3-7.5,3.3c-4.2,4.2-4,7.7-3.9,10.6\n\t\tc0.1,2.4,0.2,4.2-2.7,7.2l-4.3,4.3c5.4,0.7,6.7,1,9.6,1l0,0c4.4,0,12.7-0.8,18.1-6.2c2.1-2.1,3.2-4.7,3.4-7.6l30.2-30.2\n\t\tC78.5,34.7,79.4,32.5,79.4,30.1z M39,70c-3.1,3.1-7.9,4.1-11.5,4.3c1.1-2.6,1-4.8,0.9-6.7c-0.3-5.2,3.2-7.8,6.4-7.8\n\t\tc1.6,0,3.1,0.6,4.2,1.7C41.3,64,41.3,67.7,39,70z M72.6,32.2L45,59.8c-0.5-0.9-1.1-1.7-1.8-2.4s-1.6-1.3-2.4-1.8L68.4,28\n\t\tc1.1-1.1,3.1-1.1,4.2,0c0.6,0.6,0.9,1.3,0.9,2.1C73.5,30.9,73.2,31.7,72.6,32.2z\"/>\n</g>\n</svg>\n\u0000\u0000\u0001\u0081<svg version=\"1.1\" id=\"Layer_1\" \n    xmlns=\"http://www.w3.org/2000/svg\" \n    xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 100 100\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n    <g>\n        <circle cx=\"50\" cy=\"50\" r=\"50\"/>\n    </g>\n</svg>\n\u0000\u0000\u0002E<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<polygon points=\"79.1,50 20.9,2.6 20.9,97.4 \"/>\n</svg>\n\u0000\u0000\u00050<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(209, 210, 212)}\n    polygon{fill:rgb(209, 210, 212)}\n    circle{fill:rgb(209, 210, 212)}\n    rect{fill:rgb(209, 210, 212)}\n    </style>\n<path d=\"M78.9,82.7c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S83.6,82.7,78.9,82.7z M78.9,71.1c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S80.6,71.1,78.9,71.1z\"/>\n<path d=\"M49.1,31c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6c4.7,0,8.6,3.9,8.6,8.6S53.8,31,49.1,31z M49.1,19.4c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S50.8,19.4,49.1,19.4z\"/>\n<path d=\"M19.7,82.7c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S24.4,82.7,19.7,82.7z M19.7,71.1c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S21.4,71.1,19.7,71.1z\"/>\n<rect x=\"26.7\" y=\"71.3\" width=\"45\" height=\"5.6\"/>\n<rect x=\"11.4\" y=\"44.5\" transform=\"matrix(0.4995 -0.8663 0.8663 0.4995 -23.5844 53.777)\" width=\"46.6\" height=\"5.6\"/>\n<rect x=\"61.1\" y=\"24.2\" transform=\"matrix(0.8668 -0.4986 0.4986 0.8668 -15.4303 38.2311)\" width=\"5.6\" height=\"47.5\"/>\n</svg>\n\u0000\u0000\u0002\u00b9<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 576 512\"><style type=\"text/css\">\n    path{fill:rgb(153, 18, 31)}\n    polygon{fill:rgb(153, 18, 31)}\n    circle{fill:rgb(153, 18, 31)}\n    rect{fill:rgb(153, 18, 31)}\n    </style><path d=\"M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z\"/></svg>\u0000\u0000\u0002u<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<polygon points=\"72,50 13.8,2.6 13.8,97.4 \"/>\n<rect x=\"71\" y=\"2.6\" width=\"12.5\" height=\"94.8\"/>\n</svg>\n\u0000\u0000\u0003W<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M82.1,89.6H34.5c-5.2,0-9.3-3.9-9.3-8.9v-7.3h11.2v5.5h43.9V37.2h-5.6V26.5h7.5c5.2,0,9.3,3.9,9.3,8.9v45.3\n\tC91.4,85.7,87.3,89.6,82.1,89.6z\"/>\n<path d=\"M65.3,73.5H17.9c-5.2,0-9.3-3.9-9.3-8.9V19.3c0-5,4.1-8.9,9.3-8.9h47.5c5.2,0,9.3,3.9,9.3,8.9v45.3\n\tC74.7,69.6,70.6,73.5,65.3,73.5z M19.8,62.8h43.7V21.1H19.8V62.8z\"/>\n</svg>\n\u0000\u0000\u0003i<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<circle cx=\"59.6\" cy=\"42.7\" r=\"4.9\"/>\n<path d=\"M41.1,84.2c-1,0-2-0.4-2.7-1.3l-22-26.7c-1.2-1.5-1-3.7,0.5-4.9l31.9-26.4c0.6-0.5,1.4-0.8,2.2-0.8c0,0,0,0,0,0l27.1,0.1\n\tc1,0,2,0.5,2.7,1.3c0.7,0.8,0.9,1.9,0.7,2.9L76.5,55c-0.2,0.8-0.6,1.5-1.2,2L43.3,83.4C42.7,83.9,41.9,84.2,41.1,84.2z M24,54.5\n\tl17.6,21.3l28.3-23.3l4-21.2l-21.6-0.1L24,54.5z\"/>\n</svg>\n\u0000\u0000\u0003\u00e2<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.1.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<rect x=\"13\" y=\"12\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"41.7\" y=\"12\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"70.4\" y=\"12\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"13\" y=\"41.5\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"41.7\" y=\"41.5\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"70.4\" y=\"41.5\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"12.9\" y=\"71\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"41.6\" y=\"71\" width=\"16.8\" height=\"16.8\"/>\n<rect x=\"70.3\" y=\"71\" width=\"16.8\" height=\"16.8\"/>\n</svg>\n\u0000\u0000\u0003S<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g>\n\t<g id=\"reply\">\n\t\t<path d=\"M68.8,15.7l3.4-8.8l-21.4,9.6l9.6,21.4l3.5-9.1c11.1,4.2,17.4,10.7,20,20.6C85.9,37.4,83.5,23.8,68.8,15.7z\"/>\n\t</g>\n</g>\n<path d=\"M52,91.9H17.5c-4.9,0-8.7-3.8-8.7-8.7V48.6c0-4.9,3.8-8.7,8.7-8.7h34.4c4.9,0,8.7,3.8,8.7,8.7v34.4\n\tC60.7,88,56.9,91.9,52,91.9z M19.3,81.3h30.9V50.4H19.3V81.3z\"/>\n</svg>\n\u0000\u0000\u0002\u00c1<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 177.6 94.8\" style=\"enable-background:new 0 0 177.6 94.8;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<polygon points=\"0.5,47.4 58.7,94.8 58.7,0 \"/>\n<rect x=\"58.6\" y=\"31.2\" transform=\"matrix(-1 -1.224647e-16 1.224647e-16 -1 236.1687 94.8)\" width=\"119\" height=\"32.4\"/>\n</svg>\n\u0000\u0000\u0002J<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<rect x=\"22.2\" y=\"22.2\" width=\"55.5\" height=\"55.5\"/>\n</svg>\n\u0000\u0000\u0002E<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<polygon points=\"20.9,50 79.1,97.4 79.1,2.6 \"/>\n</svg>\n\u0000\u0000\u0003><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"180.62mm\" height=\"180.62mm\" viewBox=\"0 0 512 512\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n  <title>Artboard 1</title>\n  <path d=\"M394.56,298.44s-38.45,55.66-38.45,76.89a38.45,38.45,0,1,0,76.89,0C433,354.1,394.56,298.44,394.56,298.44Zm-5.63-61.83L264.17,111.85a19.22,19.22,0,0,0-27.18,0l-49,49-51.77-51.77a9.6,9.6,0,0,0-13.58,0L109,122.67a9.61,9.61,0,0,0,0,13.59L160.81,188,103.89,245a57.65,57.65,0,0,0,0,81.54l70.4,70.4a57.65,57.65,0,0,0,81.54,0l133.09-133.1A19.22,19.22,0,0,0,388.93,236.61Zm-69.81,42.63H126.6a18.74,18.74,0,0,1,4.47-7.11l7.9-7.9,49-49,35.2,35.2a19.22,19.22,0,0,0,27.18-27.17L215.16,188l35.42-35.42,97.57,97.58-29,29Z\"/>\n</svg>\n\u0000\u0000\u0002E<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 24.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<polygon points=\"50,20.9 2.6,79.1 97.4,79.1 \"/>\n</svg>\n\u0000\u0000\u0003]<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M51.3,75.9c-1.9,0-3.8-0.8-5-2.4L18.1,38.4c-2.2-2.8-1.8-6.9,1-9.1c2.8-2.2,6.9-1.8,9.1,1l28.2,35.1c2.2,2.8,1.8,6.9-1,9.1\n\tC54.2,75.5,52.7,75.9,51.3,75.9z\"/>\n<path d=\"M51.3,75.9c-1.4,0-2.9-0.5-4-1.4c-2.8-2.2-3.2-6.3-1-9.1l28.2-35.1c2.2-2.8,6.3-3.2,9.1-1c2.8,2.2,3.2,6.3,1,9.1L56.4,73.5\n\tC55.1,75.1,53.2,75.9,51.3,75.9z\"/>\n</svg>\n\u0000\u0000\u0002\u008c<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<polygon points=\"67.3,73.6 50.6,64.7 33.7,73.4 37,54.8 23.5,41.5 42.3,38.8 50.8,21.9 59.1,38.9 77.8,41.7 64.2,54.9 \"/>\n</svg>\n\u0000\u0000\u0003\u00c1<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g id=\"Solid\">\n\t<g>\n\t\t<path class=\"st0\" d=\"M50,13.6c-20,0-36.3,16.3-36.3,36.3c0,20,16.3,36.3,36.3,36.3C70,86.3,86.3,70,86.3,50\n\t\t\tC86.3,29.9,70,13.6,50,13.6z M50,79c-16,0-29.1-13-29.1-29.1c0-16,13-29.1,29.1-29.1C66,20.9,79,33.9,79,50C79,66,66,79,50,79z\"/>\n\t\t<polygon class=\"st0\" points=\"53.6,31.8 46.3,31.8 46.3,46.3 31.8,46.3 31.8,53.6 46.3,53.6 46.3,68.1 53.6,68.1 53.6,53.6 \n\t\t\t68.1,53.6 68.1,46.3 53.6,46.3 \t\t\"/>\n\t</g>\n</g>\n</svg>\n\u0000\u0000\u0004K<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 440 440\" style=\"enable-background:new 0 0 440 440;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M373.1,344.4V273c-31-27.4-50.3-44.5-58-51.3c-7.5-6.6-18.1-6-24.9,1.4c-13.3,14.4-47,51.1-61.7,67.1\n\tc-2.6,2.8-6.7,3-9.5,0.3c-7-6.8-17.4-16.9-22.9-22.3c-6.8-6.6-17-6.4-23.5,0.6c-10.4,11.1-36.3,38.8-77.9,83.1L373.1,344.4z\"/>\n<path d=\"M358.4,77.8H81.6c-17,0-30.8,13.8-30.8,30.8v222.9c0,17,13.8,30.8,30.8,30.8h276.9c17,0,30.8-13.8,30.8-30.8V108.6\n\tC389.2,91.6,375.5,77.8,358.4,77.8z M365.6,321.2c0,11.1-9,20.1-20.1,20.1H94.8c-11.1,0-20.1-9-20.1-20.1v-202\n\tc0-11.1,9-20.1,20.1-20.1h250.7c11.1,0,20.1,9,20.1,20.1V321.2z\"/>\n<circle cx=\"157.1\" cy=\"164.2\" r=\"30.4\"/>\n</svg>\n\u0000\u0000\u0003G<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(59, 58, 57)}\n    polygon{fill:rgb(59, 58, 57)}\n    circle{fill:rgb(59, 58, 57)}\n    rect{fill:rgb(59, 58, 57)}\n    </style>\n<path d=\"M50.5,77.3C26.7,77.3,8.1,52.1,7.3,51L6,49.2l1.3-1.8C8.1,46.3,26.7,21,50.5,21s42.4,25.3,43.2,26.3l1.3,1.8L93.7,51\n\tC92.9,52.1,74.3,77.3,50.5,77.3z M13.8,49.2c4.6,5.6,19.5,21.9,36.7,21.9s32.1-16.4,36.7-21.9c-4.6-5.6-19.5-21.9-36.7-21.9\n\tC33.3,27.2,18.4,43.6,13.8,49.2z\"/>\n<circle cx=\"50.5\" cy=\"49.2\" r=\"17.3\"/>\n</svg>\n\u0000\u0000\u0002R<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<polygon points=\"22.8,65.8 29.9,18.1 85.7,67.4 51.9,79.5 \"/>\n</svg>\n\u0000\u0000\u0002I<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(150, 146, 144)}\n    polygon{fill:rgb(150, 146, 144)}\n    circle{fill:rgb(150, 146, 144)}\n    rect{fill:rgb(150, 146, 144)}\n    </style>\n<rect x=\"3.4\" y=\"40.6\" width=\"92.9\" height=\"18.6\"/>\n</svg>\n\u0000\u0000\u0002\u00cd<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M74.7,86.9H26.4c-6.9,0-12.2-5.4-12.2-12.2V26.4c0-6.9,5.4-12.2,12.2-12.2h48.1c6.9,0,12.2,5.4,12.2,12.2v48.1\n\tC86.9,81.5,81.5,86.9,74.7,86.9z M28.9,72.1h43.2V28.9H28.9V72.1z\"/>\n</svg>\n\u0000\u0000\u0003\u00c5<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(150, 146, 144)}\n    polygon{fill:rgb(150, 146, 144)}\n    circle{fill:rgb(150, 146, 144)}\n    rect{fill:rgb(150, 146, 144)}\n    </style>\n<path d=\"M50.5,77.3C26.7,77.3,8.1,52.1,7.3,51L6,49.2l1.3-1.8C8.1,46.3,26.7,21,50.5,21s42.4,25.3,43.2,26.3l1.3,1.8L93.7,51\n\tC92.9,52.1,74.3,77.3,50.5,77.3z M13.8,49.2c4.6,5.6,19.5,21.9,36.7,21.9s32.1-16.4,36.7-21.9c-4.6-5.6-19.5-21.9-36.7-21.9\n\tC33.3,27.2,18.4,43.6,13.8,49.2z\"/>\n<circle cx=\"50.5\" cy=\"49.2\" r=\"17.3\"/>\n<rect x=\"1.1\" y=\"44.6\" transform=\"matrix(0.8188 -0.5741 0.5741 0.8188 -19.1291 37.698)\" width=\"98.1\" height=\"9\"/>\n</svg>\n\u0000\u0000\u0003\u00a2<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g id=\"Outline\">\n\t<g>\n\t\t<path d=\"M47.2,86.9c-1.4,0-2.7-0.9-3.3-2.2l-25-60.6c-0.6-1.3-0.2-2.9,0.8-3.9s2.5-1.3,3.9-0.8l60.6,25c1.4,0.6,2.3,2,2.2,3.6\n\t\t\tc-0.1,1.5-1.2,2.8-2.7,3.2l-26.4,6.6l-6.6,26.4c-0.4,1.5-1.7,2.6-3.2,2.7C47.3,86.9,47.2,86.9,47.2,86.9z M28.7,29.3L46.3,72\n\t\t\tl4.5-18c0.3-1.3,1.3-2.3,2.6-2.6l18-4.5L28.7,29.3z\"/>\n\t</g>\n</g>\n<polygon points=\"26.3,27.2 45.7,75.4 53,56.2 75.2,46.8 \"/>\n</svg>\n\u0000\u0000\u0006\u000f<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M58.8,82.6c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S63.5,82.6,58.8,82.6z M58.8,71c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S60.5,71,58.8,71z\"/>\n<path d=\"M39.5,39.8c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S44.2,39.8,39.5,39.8z M39.5,28.2c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S41.2,28.2,39.5,28.2z\"/>\n<path d=\"M19.2,82.6c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S23.9,82.6,19.2,82.6z M19.2,71c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S20.9,71,19.2,71z\"/>\n<path d=\"M83.1,39.8c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S87.8,39.8,83.1,39.8z M83.1,28.2c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S84.8,28.2,83.1,28.2z\"/>\n<rect x=\"51.1\" y=\"49.2\" transform=\"matrix(0.5355 -0.8445 0.8445 0.5355 -11.219 83.5029)\" width=\"38.5\" height=\"5.5\"/>\n<rect x=\"46.4\" y=\"35.3\" transform=\"matrix(0.9001 -0.4356 0.4356 0.9001 -18.0059 26.666)\" width=\"5.5\" height=\"34.7\"/>\n<rect x=\"10\" y=\"51.3\" transform=\"matrix(0.4615 -0.8872 0.8872 0.4615 -32.1006 55.1188)\" width=\"38.8\" height=\"5.5\"/>\n</svg>\n\u0000\u0000\t\u00ab<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g id=\"Layer_17\">\n\t<path d=\"M48.4,34.9c1.4-1.4,3.8-1.4,5.2,0l1.1,1.1l10.4-10.3c2.9-2.9,7.6-2.9,10.5,0c2.9,2.9,2.9,7.6,0,10.5L65.2,46.5l1.1,1.1\n\t\tc1.4,1.4,1.4,3.8,0,5.2c-1.4,1.4-3.8,1.4-5.2,0L48.4,40.2C46.9,38.7,46.9,36.4,48.4,34.9z\"/>\n\t<polygon points=\"47.4,64.3 36.2,75.4 25.8,75.4 25.8,65 26.5,64.3 26.5,64.3 \t\"/>\n\t<path d=\"M76.8,37.4c1.8-1.8,2.8-4.2,2.7-6.5c0-2.4-0.9-4.7-2.7-6.5l0,0c0,0,0,0,0,0c0,0,0,0,0,0l0,0c-1.8-1.8-4.2-2.7-6.5-2.7\n\t\tc-2.4,0-4.7,0.9-6.5,2.7l0,0l-9.1,9.1c-1-0.9-2.4-1.4-3.7-1.4c-1.4,0-2.8,0.5-3.9,1.6c-1.1,1.1-1.6,2.5-1.6,3.9\n\t\tc0,1.3,0.5,2.6,1.4,3.7L25.2,62.9c0,0-0.1,0-0.1,0.1l0,0l-0.7,0.7C24.1,64,24,64.5,24,65v9.7l-3.2,3.2c-0.7,0.7-0.7,1.9,0,2.6\n\t\tc0.7,0.7,1.9,0.7,2.6,0l3.1-3.1l9.7,0c0.5,0,1-0.2,1.3-0.5l11.2-11.1L60,54.3c1,0.9,2.4,1.4,3.7,1.4c1.4,0,2.8-0.5,3.9-1.6\n\t\tc1.1-1.1,1.6-2.5,1.6-3.9c0-1.3-0.5-2.6-1.4-3.7L76.8,37.4L76.8,37.4z M46.1,63L35.5,73.5l-7.8,0v-7.9l0.1-0.1c0,0,0.1,0,0.1-0.1\n\t\tL49.3,44l7.9,7.9L46.1,63z M74.2,34.8L74.2,34.8L63.9,45.2c-0.7,0.7-0.7,1.9,0,2.6c0.2,0.2,0.4,0.3,0.7,0.4\n\t\tc0.1,0.2,0.2,0.5,0.4,0.7c0.4,0.4,0.5,0.8,0.5,1.3c0,0.5-0.2,0.9-0.5,1.3c-0.4,0.4-0.8,0.5-1.3,0.5c-0.5,0-0.9-0.2-1.3-0.5\n\t\tL49.7,38.9c-0.4-0.4-0.5-0.8-0.5-1.3c0-0.5,0.2-0.9,0.5-1.3c0.4-0.4,0.8-0.5,1.3-0.5c0.5,0,0.9,0.2,1.3,0.5\n\t\tc0.2,0.2,0.4,0.3,0.7,0.4c0.1,0.2,0.2,0.5,0.4,0.7c0.7,0.7,1.9,0.7,2.6,0L66.4,27l0,0c1.1-1.1,2.5-1.6,3.9-1.6\n\t\tc1.4,0,2.8,0.5,3.9,1.6l0,0c1.1,1.1,1.6,2.5,1.6,3.9C75.9,32.3,75.3,33.7,74.2,34.8z\"/>\n\t<path d=\"M61.8,45.7l2.1,2.1l1.1,1.1c0.7,0.7,1.9,0.7,2.6,0c0.7-0.7,0.7-1.9,0-2.6l-1.1-1.1l-2.1-2.1c-0.7-0.7-1.9-0.7-2.6,0\n\t\tC61.1,43.8,61.1,45,61.8,45.7L61.8,45.7z\"/>\n\t<path d=\"M52.3,36.2l1.1,1.1l2.1,2.1c0.7,0.7,1.9,0.7,2.6,0c0.7-0.7,0.7-1.9,0-2.6L56,34.7l-1.1-1.1c-0.7-0.7-1.9-0.7-2.6,0\n\t\tC51.6,34.3,51.6,35.5,52.3,36.2L52.3,36.2z\"/>\n\t<path d=\"M26.5,66.1L26.5,66.1h20.9c1,0,1.9-0.8,1.9-1.9c0-1-0.8-1.9-1.9-1.9H26.5h0c-1,0-1.9,0.8-1.9,1.9\n\t\tC24.6,65.3,25.5,66.1,26.5,66.1L26.5,66.1z\"/>\n</g>\n</svg>\n\u0000\u0000\u0002\u00f7<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<circle cx=\"58.1\" cy=\"23.5\" r=\"6.9\"/>\n<circle cx=\"55.8\" cy=\"52.5\" r=\"6.9\"/>\n<circle cx=\"30\" cy=\"39.8\" r=\"6.9\"/>\n<circle cx=\"23.1\" cy=\"62.6\" r=\"6.9\"/>\n<circle cx=\"55.8\" cy=\"77.6\" r=\"6.9\"/>\n<circle cx=\"77.2\" cy=\"46.7\" r=\"6.9\"/>\n</svg>\n\u0000\u0000\u0002\u00ba<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<polygon points=\"25.4,50 83.6,97.4 83.6,2.6 \"/>\n<rect x=\"13.8\" y=\"2.6\" transform=\"matrix(-1 -1.224647e-16 1.224647e-16 -1 40.1826 100)\" width=\"12.5\" height=\"94.8\"/>\n</svg>\n\u0000\u0000\u0002\u00f8<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" focusable=\"false\" preserveAspectRatio=\"xMidYMid meet\" viewBox=\"0 0 14 16\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<!--From GitHub's Octoicons-->\n<!--extra line-->\n<!--extra line2-->\n<path d=\"M2 13h4v1H2v-1zm5-6H2v1h5V7zm2 3V8l-3 3l3 3v-2h5v-2H9zM4.5 9H2v1h2.5V9zM2 12h2.5v-1H2v1zm9 1h1v2c-.02.28-.11.52-.3.7c-.19.18-.42.28-.7.3H1c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h3c0-1.11.89-2 2-2c1.11 0 2 .89 2 2h3c.55 0 1 .45 1 1v5h-1V6H1v9h10v-2zM2 5h8c0-.55-.45-1-1-1H8c-.55 0-1-.45-1-1s-.45-1-1-1s-1 .45-1 1s-.45 1-1 1H3c-.55 0-1 .45-1 1z\" />\n</svg>\u0000\u0000\u0003\u0081<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g id=\"Outline\">\n\t<g>\n\t\t<path d=\"M26.5,74.2c0,3.7,3,6.8,6.8,6.8h33.8c3.7,0,6.8-3,6.8-6.8V33.7H26.5V74.2z M33.3,40.4h33.8v33.8H33.3V40.4z\"/>\n\t\t<polygon points=\"60.3,23.5 60.3,16.8 40.1,16.8 40.1,23.5 19.8,23.5 19.8,30.3 80.6,30.3 80.6,23.5 \t\t\"/>\n\t\t<rect x=\"40.1\" y=\"47.2\" width=\"6.8\" height=\"20.3\"/>\n\t\t<rect x=\"53.6\" y=\"47.2\" width=\"6.8\" height=\"20.3\"/>\n\t</g>\n</g>\n</svg>\n\u0000\u0000\u0003\u00a8<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M32.4,53.5H23c-2.8,0-5-2.2-5-5V23c0-2.8,2.2-5,5-5h25.5c2.8,0,5,2.2,5,5v10.3h-6V24H24v23.5h8.4V53.5z\"/>\n<path d=\"M75.7,81.3H50.1c-2.8,0-5-2.2-5-5V65.2h6v10.1h23.6V51.8h-9.5v-6h10.5c2.8,0,5,2.2,5,5v25.5C80.7,79.1,78.5,81.3,75.7,81.3z\n\t\"/>\n<path d=\"M61.8,67.4H36.3c-2.8,0-5-2.2-5-5V36.9c0-2.8,2.2-5,5-5h25.5c2.8,0,5,2.2,5,5v25.5C66.8,65.2,64.6,67.4,61.8,67.4z\n\t M37.3,61.4h23.5V37.9H37.3V61.4z\"/>\n</svg>\n\u0000\u0000\u0006\u008e<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g>\n\t<path d=\"M34.6,16.5l-12.3-5.1c-0.3-0.1-0.6-0.2-0.9,0c-0.3,0.1-0.5,0.3-0.6,0.6s-0.2,0.6,0,0.9l1.8,4.3l-3.8,1.5\n\t\tc-8,3.3-12.1,7.7-12,13c0,1.8,0.5,3.8,1.5,6c0.8,1.9,2.5,4.2,5.4,6.8c0.1,0.1,0.2,0.2,0.3,0.4c0.1,0.1,0.3,0.3,0.4,0.4\n\t\tc0.1,0.1,0.3,0.3,0.4,0.3c0.2,0.2,0.4,0.2,0.6,0.1c0.2,0,0.3-0.2,0.4-0.3c0-0.2,0-0.4-0.1-0.5s-0.1-0.2-0.2-0.4\n\t\tc-0.1-0.2-0.2-0.3-0.2-0.4c-0.4-0.7-0.7-1.4-1-2c-0.5-1.1-0.8-2.2-1-3.2s-0.2-1.9-0.1-2.7c0-0.8,0.3-1.6,0.6-2.3\n\t\tc0.4-0.7,0.8-1.4,1.3-2c0.5-0.6,1.2-1.1,2-1.7c0.8-0.5,1.6-1,2.4-1.5c0.8-0.4,1.8-0.8,2.9-1.3l3.8-1.5l1.8,4.3\n\t\tc0.1,0.3,0.3,0.5,0.6,0.6c0.3,0.1,0.6,0.2,0.9,0c0.3-0.1,0.5-0.3,0.6-0.6l5.1-12.3c0.1-0.3,0.2-0.6,0-0.9\n\t\tC35.2,16.8,35,16.6,34.6,16.5z\"/>\n</g>\n<path d=\"M60.1,88.6l25.4-13.8V49.5l-25.4,9.2V88.6z M57.6,54.3l27.7-10.1L57.6,34.2L29.9,44.2L57.6,54.3z M90.5,44.3v30.4\n\tc0,0.9-0.2,1.8-0.7,2.6c-0.5,0.8-1.1,1.4-1.9,1.9L60,94.4c-0.7,0.4-1.5,0.6-2.4,0.6c-0.9,0-1.7-0.2-2.4-0.6L27.3,79.2\n\tc-0.8-0.4-1.5-1.1-1.9-1.9c-0.5-0.8-0.7-1.7-0.7-2.6V44.3c0-1.1,0.3-2,0.9-2.9s1.4-1.5,2.4-1.9l27.9-10.1c0.6-0.2,1.2-0.3,1.7-0.3\n\tc0.6,0,1.2,0.1,1.7,0.3l27.9,10.1c1,0.4,1.8,1,2.4,1.9S90.5,43.2,90.5,44.3z\"/>\n</svg>\n\u0000\u0000\u0002E<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 24.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<polygon points=\"50,79.1 97.4,20.9 2.6,20.9 \"/>\n</svg>\n\u0000\u0000\u0006.<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<rect x=\"13.1\" y=\"23.1\" transform=\"matrix(0.7071 -0.7071 0.7071 0.7071 -10.0546 26.0581)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"33.9\" y=\"23.1\" transform=\"matrix(0.8471 -0.5315 0.5315 0.8471 -6.1536 28.9461)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"56.7\" y=\"23.1\" transform=\"matrix(0.9345 -0.356 0.356 0.9345 -4.3723 26.5752)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"13.1\" y=\"47.3\" transform=\"matrix(0.7071 -0.7071 0.7071 0.7071 -27.1546 33.1412)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"33.9\" y=\"47.3\" transform=\"matrix(0.8209 -0.5711 0.5711 0.8209 -19.725 35.8084)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"56.7\" y=\"47.3\" transform=\"matrix(0.9689 -0.2476 0.2476 0.9689 -10.0378 18.8686)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"13.1\" y=\"74\" transform=\"matrix(0.8209 -0.5711 0.5711 0.8209 -38.7071 28.7179)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"33.9\" y=\"74\" transform=\"matrix(0.8471 -0.5315 0.5315 0.8471 -33.2051 36.7299)\" width=\"26.7\" height=\"4.1\"/>\n<rect x=\"56.7\" y=\"74\" transform=\"matrix(0.9946 -0.1035 0.1035 0.9946 -7.4995 7.6579)\" width=\"26.7\" height=\"4.1\"/>\n</svg>\n\u0000\u0000\u0004L<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g>\n\t<path d=\"M57.3,84.7h-32c-4.6,0-8.2-3.6-8.2-8.2v-32c0-4.6,3.6-8.2,8.2-8.2h32c4.6,0,8.2,3.6,8.2,8.2v32\n\t\tC65.4,81.2,61.9,84.7,57.3,84.7z M26.9,74.9h28.7V46.2H26.9V74.9z\"/>\n\t<path d=\"M74.7,63.6h-32c-4.6,0-8.2-3.6-8.2-8.2v-32c0-4.6,3.6-8.2,8.2-8.2h32c4.6,0,8.2,3.6,8.2,8.2v32\n\t\tC82.9,60,79.3,63.6,74.7,63.6z M44.3,53.8h28.7V25.1H44.3V53.8z\"/>\n\t<path d=\"M81.1,60.6L62.7,82.7l-6.9-6.9l13.8-15.3l5-3.5\"/>\n\t<path d=\"M82,26.8L61.9,46.9l-6.9-7l20.4-20.4l0,0\"/>\n\t<path d=\"M44.7,60.6L24.8,83.1l-6.9-6.9l18.8-22.2h1.6\"/>\n\t<path d=\"M19,39.4L36,18.7l10.3,3L29.2,42l0,0\"/>\n</g>\n</svg>\n\u0000\u0000\u0006\u0013<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M50,30c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S54.7,30,50,30z M50,18.4c-1.7,0-3,1.3-3,3s1.3,3,3,3\n\ts3-1.3,3-3S51.7,18.4,50,18.4z\"/>\n<path d=\"M77.8,58.9c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S82.5,58.9,77.8,58.9z M77.8,47.3c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S79.5,47.3,77.8,47.3z\"/>\n<path d=\"M50,85.6c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S54.7,85.6,50,85.6z M50,74c-1.7,0-3,1.3-3,3s1.3,3,3,3\n\ts3-1.3,3-3S51.7,74,50,74z\"/>\n<path d=\"M22.2,58.6c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S26.9,58.6,22.2,58.6z M22.2,47c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S23.9,47,22.2,47z\"/>\n<path d=\"M26.4,44.5L21,43.5c2.2-11.2,10.7-20.2,21.7-23l1.4,5.4C35.1,28.2,28.2,35.5,26.4,44.5z\"/>\n<path d=\"M43.6,78c-11.5-2.5-20.7-12-22.8-23.6l5.5-1c1.7,9.4,9.1,17.1,18.4,19.2L43.6,78z\"/>\n<path d=\"M56.6,78l-1.3-5.5c9.3-2.2,16.4-9.6,18.2-18.9l5.5,1.1C76.8,66.2,68,75.4,56.6,78z\"/>\n<path d=\"M73.9,46.6c-1.1-9.8-7.9-17.9-17.4-20.5l1.5-5.4C69.8,24,78.2,33.9,79.5,46L73.9,46.6z\"/>\n</svg>\n\u0000\u0000\u0003[<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M51.4,27.9c1.9,0,3.8,0.8,5,2.4l28.2,35.1c2.2,2.8,1.8,6.9-1,9.1c-2.8,2.2-6.9,1.8-9.1-1L46.3,38.4c-2.2-2.8-1.8-6.9,1-9.1\n\tC48.5,28.3,50,27.9,51.4,27.9z\"/>\n<path d=\"M51.4,27.9c1.4,0,2.9,0.5,4,1.4c2.8,2.2,3.2,6.3,1,9.1L28.2,73.5c-2.2,2.8-6.3,3.2-9.1,1c-2.8-2.2-3.2-6.3-1-9.1l28.2-35.1\n\tC47.6,28.7,49.5,27.9,51.4,27.9z\"/>\n</svg>\n\u0000\u0000\u0002E<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(150, 146, 144)}\n    polygon{fill:rgb(150, 146, 144)}\n    circle{fill:rgb(150, 146, 144)}\n    rect{fill:rgb(150, 146, 144)}\n    </style>\n<polygon points=\"50,79.1 97.4,20.9 2.6,20.9 \"/>\n</svg>\n\u0000\u0000\u0002v<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"180.62mm\" height=\"180.62mm\" viewBox=\"0 0 512 512\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n  <title>Artboard 1</title>\n  <path d=\"M424.94,271.36a35.34,35.34,0,0,0,0-50L307.15,103.6a35.32,35.32,0,0,0-50,0L68.72,292.06a35.33,35.33,0,0,0,0,50l70.67,70.67a35.34,35.34,0,0,0,25,10.35H426.46a8.83,8.83,0,0,0,8.83-8.83V398.17c0-4.88-4-5.89-8.83-5.89H302.69L424.94,271.36ZM205.1,198.75,327.29,323.81l-68.47,68.47H159.69L89,314.83,205.1,198.75Z\"/>\n</svg>\n\u0000\u0000\u0002\u00fc<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<rect x=\"45\" y=\"21.3\" transform=\"matrix(0.7112 -0.7029 0.7029 0.7112 -21.6791 50.024)\" width=\"10\" height=\"60.2\"/>\n<rect x=\"19.9\" y=\"46.4\" transform=\"matrix(0.7113 -0.7029 0.7029 0.7113 -21.7284 49.9988)\" width=\"60.2\" height=\"10\"/>\n</svg>\n\u0000\u0000\u0003\u008c<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M41.5,67.6c-14.4,0-26.1-11.7-26.1-26.1s11.7-26.1,26.1-26.1s26.1,11.7,26.1,26.1S55.9,67.6,41.5,67.6z M41.5,22.4\n\tC31,22.4,22.4,31,22.4,41.5c0,10.5,8.6,19.1,19.1,19.1c10.5,0,19.1-8.6,19.1-19.1C60.6,31,52,22.4,41.5,22.4z\"/>\n<path d=\"M84.4,79.8L64.2,60.6c-1.4,1.7-3.1,3.2-4.8,4.6l20.5,19.4c0.6,0.6,1.5,0.9,2.3,0.9c0.9,0,1.8-0.3,2.4-1\n\tC85.8,83.2,85.7,81.1,84.4,79.8z\"/>\n</svg>\n\u0000\u0000\u0003\u00d1<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M66.7,54.4h-6V37.9H45.4v-6h16.3c2.8,0,5,2.2,5,5V54.4z\"/>\n<path d=\"M53.4,67.4H36.3c-2.8,0-5-2.2-5-5V45.1h6v16.3h16.1V67.4z\"/>\n<path d=\"M42.5,47.6H22.9c-2.8,0-5-2.2-5-5V23c0-2.8,2.2-5,5-5h19.6c2.8,0,5,2.2,5,5v19.6C47.5,45.4,45.3,47.6,42.5,47.6z M23.9,41.6\n\th17.6V24H23.9V41.6z\"/>\n<path d=\"M75.7,81.3H56.1c-2.8,0-5-2.2-5-5V56.8c0-2.8,2.2-5,5-5h19.6c2.8,0,5,2.2,5,5v19.6C80.7,79.1,78.5,81.3,75.7,81.3z\n\t M57.1,75.3h17.6V57.8H57.1V75.3z\"/>\n</svg>\n\u0000\u0000\u0002\u0081<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 177.6 94.8\" style=\"enable-background:new 0 0 177.6 94.8;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<polygon points=\"177.6,47.4 119.4,0 119.4,94.8 \"/>\n<rect x=\"0.5\" y=\"31.2\" width=\"119\" height=\"32.4\"/>\n</svg>\n\u0000\u0000\u0003\u00b0<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"180.62mm\" height=\"180.62mm\" viewBox=\"0 0 512 512\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n  <title>Artboard 1</title>\n  <path d=\"M450.18,335.94a18.61,18.61,0,0,1,0,26.34l-62.07,62.06c-11.65,11.65-31.79,3.48-31.79-13.17v-31H310.71a9.29,9.29,0,0,1-6.81-3l-54.75-58.66,41.38-44.34,41,43.88h24.83v-31c0-16.63,20.13-24.83,31.79-13.17Zm-382.51-142h65.18l41,43.88,41.38-44.34-54.75-58.66a9.29,9.29,0,0,0-6.8-3h-86a9.31,9.31,0,0,0-9.31,9.31v43.45A9.31,9.31,0,0,0,67.67,193.93Zm288.65,0v31c0,16.65,20.14,24.81,31.79,13.17l62.07-62.06a18.61,18.61,0,0,0,0-26.34L388.11,87.66C376.45,76,356.32,84.2,356.32,100.83v31H310.71a9.29,9.29,0,0,0-6.81,3l-171,183.26H67.67a9.31,9.31,0,0,0-9.31,9.32v43.45a9.31,9.31,0,0,0,9.31,9.31h86a9.29,9.29,0,0,0,6.8-3L331.49,193.93Z\"/>\n</svg>\n\u0000\u0000\u0003\u00dd<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M30.2,77.7c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S34.9,77.7,30.2,77.7z M30.2,66.1c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S31.9,66.1,30.2,66.1z\"/>\n<path d=\"M70.1,37.8c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S74.8,37.8,70.1,37.8z M70.1,26.2c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S71.8,26.2,70.1,26.2z\"/>\n<rect x=\"28\" y=\"46.7\" transform=\"matrix(0.7027 -0.7115 0.7115 0.7027 -20.1843 50.5928)\" width=\"44.8\" height=\"5.6\"/>\n</svg>\n\u0000\u0000\u0003g<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g id=\"Outline\">\n\t<g>\n\t\t<path d=\"M47.2,86.9c-1.4,0-2.7-0.9-3.3-2.2l-25-60.6c-0.6-1.3-0.2-2.9,0.8-3.9s2.5-1.3,3.9-0.8l60.6,25c1.4,0.6,2.3,2,2.2,3.6\n\t\t\tc-0.1,1.5-1.2,2.8-2.7,3.2l-26.4,6.6l-6.6,26.4c-0.4,1.5-1.7,2.6-3.2,2.7C47.3,86.9,47.2,86.9,47.2,86.9z M28.7,29.3L46.3,72\n\t\t\tl4.5-18c0.3-1.3,1.3-2.3,2.6-2.6l18-4.5L28.7,29.3z\"/>\n\t</g>\n</g>\n</svg>\n\u0000\u0000\u0002\u0090<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style><path d=\"M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z\"/></svg>\u0000\u0000\u0004\u0001<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.4, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M42.1,51l-29-23.2c-2.3-1.8-2.6-5.2-0.8-7.5c1.8-2.3,5.2-2.6,7.5-0.8l28.9,23.2c2.3,1.8,2.6,5.2,0.8,7.5c-1,1.3-2.6,2-4.1,2\n\tC44.3,52.2,43.1,51.8,42.1,51z\"/>\n<path d=\"M12.4,73.4c-1.8-2.3-1.5-5.7,0.8-7.5l28.9-23.2c2.3-1.8,5.7-1.5,7.5,0.8s1.5,5.7-0.8,7.5l-29,23.3c-0.9,0.7-2.1,1.2-3.3,1.2\n\tC14.9,75.5,13.5,74.8,12.4,73.4z\"/>\n<path d=\"M41.4,75.3c0-2.9,2.3-5.4,5.3-5.4l37.1-0.5c2.9,0,5.4,2.3,5.4,5.3c0,2.9-2.3,5.4-5.3,5.4l-37.2,0.5c-1.2,0-2.4-0.4-3.3-1.1\n\tC42.2,78.5,41.4,77.1,41.4,75.3z\"/>\n</svg>\n\u0000\u0000\u0004S<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g id=\"Solid\">\n\t<g>\n\t\t<polygon points=\"70.7,14.7 63.5,14.7 63.5,29.2 48.9,29.2 48.9,36.5 63.5,36.5 63.5,51 70.7,51 70.7,36.5 85.3,36.5 85.3,29.2 \n\t\t\t70.7,29.2 \t\t\"/>\n\t</g>\n</g>\n<g id=\"Outline\">\n\t<g>\n\t\t<path d=\"M35.4,85.9c-0.9,0-1.8-0.6-2.2-1.5L16.8,44.5c-0.4-0.9-0.2-1.9,0.5-2.6c0.7-0.7,1.7-0.9,2.6-0.5l39.9,16.4\n\t\t\tc0.9,0.4,1.5,1.3,1.4,2.3s-0.8,1.9-1.8,2.1L42,66.6L37.6,84c-0.2,1-1.1,1.7-2.1,1.8C35.5,85.9,35.5,85.9,35.4,85.9z M23.3,47.9\n\t\t\tL34.9,76l3-11.9c0.2-0.8,0.9-1.5,1.7-1.7l11.9-3L23.3,47.9z\"/>\n\t</g>\n</g>\n<polygon points=\"21.7,46.6 34.5,78.3 39.3,65.7 53.9,59.5 \"/>\n</svg>\n\u0000\u0000\u0001\u0094<svg version=\"1.1\" id=\"Layer_1\" \n    xmlns=\"http://www.w3.org/2000/svg\" \n    xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 12 16\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n    <g>\n        <path d=\"M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z\"/>\n    </g>\n</svg>\n\u0000\u0000\u0003\u0095<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M84.9,45.3l-6.8-6.8V21.9c0-2.6-2.1-4.7-4.7-4.7h-4.7c-2.6,0-4.7,2.1-4.7,4.7v2.6l-9.4-9.4c-1.3-1.2-2.5-2.6-4.7-2.6\n\ts-3.4,1.4-4.7,2.6L15.1,45.3c-1.5,1.5-2.6,2.6-2.6,4.7c0,2.6,2,4.7,4.7,4.7h4.7v28.1c0,2.6,2.1,4.7,4.7,4.7h14.1V64.1\n\tc0-2.6,2.1-4.7,4.7-4.7h9.4c2.6,0,4.7,2.1,4.7,4.7v23.4h14.1c2.6,0,4.7-2.1,4.7-4.7V54.7h4.7c2.7,0,4.7-2,4.7-4.7\n\tC87.5,47.9,86.4,46.8,84.9,45.3z\"/>\n</svg>\n\u0000\u0000\u0005\u00a9<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g id=\"Solid_1_\">\n\t<path d=\"M72.9,61.1V37.3c3.3-1.2,5.7-4.3,5.7-8c0-4.7-3.8-8.5-8.5-8.5c-3.7,0-6.8,2.4-8,5.7H38.2c-1.2-3.3-4.3-5.7-8-5.7\n\t\tc-4.7,0-8.5,3.8-8.5,8.5c0,3.7,2.4,6.8,5.7,8v23.8c-3.3,1.2-5.7,4.3-5.7,8c0,4.7,3.8,8.5,8.5,8.5c3.7,0,6.8-2.4,8-5.7H62\n\t\tc1.2,3.3,4.3,5.7,8,5.7c4.7,0,8.5-3.8,8.5-8.5C78.6,65.4,76.2,62.2,72.9,61.1z M70.1,26.4c1.6,0,2.8,1.3,2.8,2.8\n\t\tc0,1.6-1.3,2.8-2.8,2.8c-1.6,0-2.8-1.3-2.8-2.8C67.2,27.7,68.5,26.4,70.1,26.4z M30.2,26.4c1.6,0,2.8,1.3,2.8,2.8\n\t\tc0,1.6-1.3,2.8-2.8,2.8c-1.6,0-2.8-1.3-2.8-2.8C27.4,27.7,28.7,26.4,30.2,26.4z M30.2,71.9c-1.6,0-2.8-1.3-2.8-2.8\n\t\tc0-1.6,1.3-2.8,2.8-2.8c1.6,0,2.8,1.3,2.8,2.8C33.1,70.6,31.8,71.9,30.2,71.9z M62.1,66.2H38.2c-0.9-2.4-2.8-4.3-5.2-5.2V37.3\n\t\tc2.4-0.9,4.3-2.8,5.2-5.2H62c0.9,2.4,2.8,4.3,5.2,5.2v23.8C64.8,61.9,62.9,63.8,62.1,66.2z M70.1,71.9c-1.6,0-2.8-1.3-2.8-2.8\n\t\tc0-1.6,1.3-2.8,2.8-2.8c1.6,0,2.8,1.3,2.8,2.8S71.6,71.9,70.1,71.9z\"/>\n</g>\n</svg>\n\u0000\u0000\u0003]<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M31.8,56.4c-1.9,0-3.8-0.8-5-2.4c-2.2-2.8-1.8-6.9,1-9.1l35.1-28.2c2.8-2.2,6.9-1.8,9.1,1c2.2,2.8,1.8,6.9-1,9.1L35.8,54.9\n\tC34.6,55.9,33.2,56.4,31.8,56.4z\"/>\n<path d=\"M66.9,84.6c-1.4,0-2.9-0.5-4-1.4L27.7,54.9c-2.8-2.2-3.2-6.3-1-9.1c2.2-2.8,6.3-3.2,9.1-1l35.1,28.2c2.8,2.2,3.2,6.3,1,9.1\n\tC70.6,83.8,68.8,84.6,66.9,84.6z\"/>\n</svg>\n\u0000\u0000\u0004+<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g id=\"Solid\">\n\t<g>\n\t\t<polygon points=\"70.7,36.5 85.3,36.5 85.3,29.2 70.7,29.2 63.5,29.2 48.9,29.2 48.9,36.5 63.5,36.5 \t\t\"/>\n\t</g>\n</g>\n<g id=\"Outline\">\n\t<g>\n\t\t<path d=\"M35.4,85.9c-0.9,0-1.8-0.6-2.2-1.5L16.8,44.5c-0.4-0.9-0.2-1.9,0.5-2.6c0.7-0.7,1.7-0.9,2.6-0.5l39.9,16.4\n\t\t\tc0.9,0.4,1.5,1.3,1.4,2.3s-0.8,1.9-1.8,2.1L42,66.6L37.6,84c-0.2,1-1.1,1.7-2.1,1.8C35.5,85.9,35.5,85.9,35.4,85.9z M23.3,47.9\n\t\t\tL34.9,76l3-11.9c0.2-0.8,0.9-1.5,1.7-1.7l11.9-3L23.3,47.9z\"/>\n\t</g>\n</g>\n<polygon points=\"21.7,46.6 34.5,78.3 39.3,65.7 53.9,59.5 \"/>\n</svg>\n\u0000\u0000\u0002\u00c5<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(150, 146, 144)}\n    polygon{fill:rgb(150, 146, 144)}\n    circle{fill:rgb(150, 146, 144)}\n    rect{fill:rgb(150, 146, 144)}\n    </style>\n<g id=\"Solid\">\n\t<g>\n\t\t<polygon points=\"59.1,3.4 40.6,3.4 40.6,40.6 3.4,40.6 3.4,59.1 40.6,59.1 40.6,96.3 59.1,96.3 59.1,59.1 96.3,59.1 96.3,40.6 \n\t\t\t59.1,40.6 \t\t\"/>\n\t</g>\n</g>\n</svg>\n\u0000\u0000\u0004Y<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<g id=\"Solid\">\n\t<path d=\"M79.4,30.1c0-2.4-0.9-4.6-2.6-6.3c-3.4-3.4-9.2-3.4-12.6,0L33.9,54.2c-2.8,0.2-5.5,1.3-7.5,3.3c-4.2,4.2-4,7.7-3.9,10.6\n\t\tc0.1,2.4,0.2,4.2-2.7,7.2l-4.3,4.3c5.4,0.7,6.7,1,9.6,1l0,0c4.4,0,12.7-0.8,18.1-6.2c2.1-2.1,3.2-4.7,3.4-7.6l30.2-30.2\n\t\tC78.5,34.7,79.4,32.5,79.4,30.1z M39,70c-3.1,3.1-7.9,4.1-11.5,4.3c1.1-2.6,1-4.8,0.9-6.7c-0.3-5.2,3.2-7.8,6.4-7.8\n\t\tc1.6,0,3.1,0.6,4.2,1.7C41.3,64,41.3,67.7,39,70z M72.6,32.2L45,59.8c-0.5-0.9-1.1-1.7-1.8-2.4s-1.6-1.3-2.4-1.8L68.4,28\n\t\tc1.1-1.1,3.1-1.1,4.2,0c0.6,0.6,0.9,1.3,0.9,2.1C73.5,30.9,73.2,31.7,72.6,32.2z\"/>\n</g>\n</svg>\n\u0000\u0000\u0001\u0081<svg version=\"1.1\" id=\"Layer_1\" \n    xmlns=\"http://www.w3.org/2000/svg\" \n    xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 100 100\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n    <g>\n        <circle cx=\"50\" cy=\"50\" r=\"50\"/>\n    </g>\n</svg>\n\u0000\u0000\u0002E<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<polygon points=\"79.1,50 20.9,2.6 20.9,97.4 \"/>\n</svg>\n\u0000\u0000\u00050<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n<svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\"\n\t viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;\" xml:space=\"preserve\"><style type=\"text/css\">\n    path{fill:rgb(107, 105, 103)}\n    polygon{fill:rgb(107, 105, 103)}\n    circle{fill:rgb(107, 105, 103)}\n    rect{fill:rgb(107, 105, 103)}\n    </style>\n<path d=\"M78.9,82.7c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S83.6,82.7,78.9,82.7z M78.9,71.1c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S80.6,71.1,78.9,71.1z\"/>\n<path d=\"M49.1,31c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6c4.7,0,8.6,3.9,8.6,8.6S53.8,31,49.1,31z M49.1,19.4c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S50.8,19.4,49.1,19.4z\"/>\n<path d=\"M19.7,82.7c-4.7,0-8.6-3.9-8.6-8.6s3.9-8.6,8.6-8.6s8.6,3.9,8.6,8.6S24.4,82.7,19.7,82.7z M19.7,71.1c-1.7,0-3,1.3-3,3\n\ts1.3,3,3,3s3-1.3,3-3S21.4,71.1,19.7,71.1z\"/>\n<rect x=\"26.7\" y=\"71.3\" width=\"45\" height=\"5.6\"/>\n<rect x=\"11.4\" y=\"44.5\" transform=\"matrix(0.4995 -0.8663 0.8663 0.4995 -23.5844 53.777)\" width=\"46.6\" height=\"5.6\"/>\n<rect x=\"61.1\" y=\"24.2\" transform=\"matrix(0.8668 -0.4986 0.4986 0.8668 -15.4303 38.2311)\" width=\"5.6\" height=\"47.5\"/>\n</svg>\n\u0000\u0000\u0002\u00b9<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 576 512\"><style type=\"text/css\">\n    path{fill:rgb(255, 18, 31)}\n    polygon{fill:rgb(255, 18, 31)}\n    circle{fill:rgb(255, 18, 31)}\n    rect{fill:rgb(255, 18, 31)}\n    </style><path d=\"M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z\"/></svg>",
@@ -2232,9 +2421,9 @@
       "value",
       "w",
       "yaml",
-      "{_path.stem}.BAK{_path.suffix}",
       "{env_name}_{subf.name}",
-      "{field}{event._type}"
+      "{field}{event._type}",
+      "{path_.stem}.BAK{path_.suffix}"
     ],
     "napari/settings/_experimental.py": [
       "boolean",
@@ -2253,7 +2442,11 @@
       "0.4.0",
       "napari.manifest",
       "Name",
-      "0.5.0"
+      "0.5.0",
+      "Failed to migrate settings from v{migration.from_} to v{migration.to_}. Error: {e}. ",
+      "Migrator must increase the version.",
+      "Settings rollback also failed. Please run `napari --reset`.",
+      "You may need to reset your settings with `napari --reset`. "
     ],
     "napari/settings/_napari_settings.py": [
       "NAPARI_CONFIG",
@@ -2268,7 +2461,6 @@
       "disabled_plugins",
       "extension2writer",
       "schema_version",
-      "napari hub",
       "PyPI",
       "plugin_api"
     ],
@@ -2301,9 +2493,10 @@
       "nt",
       "plugins",
       "site-packages",
-      "python{sys.version_info.major}.{sys.version_info.minor}"
+      "python{sys.version_info.major}.{sys.version_info.minor}",
+      "{os.path.basename(sys.prefix)}_{hashlib.sha1(sys.prefix.encode()).hexdigest()}"
     ],
-    "napari/utils/_base.py": ["Napari", "en", "settings.yaml"],
+    "napari/utils/_base.py": ["en", "settings.yaml"],
     "napari/utils/_dask_utils.py": ["optimization.fuse.active"],
     "napari/utils/_magicgui.py": [
       "Data",
@@ -2336,7 +2529,12 @@
       "__module__",
       "__wrapped__",
       "_getframe",
-      "__"
+      "__",
+      "0",
+      "False",
+      "NAPARI_ENSURE_PLUGIN_MAIN_THREAD",
+      "Qt libs are available but no QtApplication instance is created",
+      "Setting attributes on a napari object is only allowed from the main Qt thread."
     ],
     "napari/utils/_register.py": [
       "\n\tThe newly-created {cls_name.lower()} layer.",
@@ -2391,7 +2589,11 @@
       "yellow",
       "{k}: {v}",
       "{type(arr)} {arr.shape} {arr.dtype}",
-      "\u001b\\[([\\d;]*)([a-zA-z])"
+      "\u001b\\[([\\d;]*)([a-zA-z])",
+      "<br><br><font color=\"#51B432\">During handling of the above exception, another exception occurred:</font><br>",
+      "<br><br><font color=\"#51B432\">The above exception was the direct cause of the following exception:</font><br>",
+      "<p>A problem occurred in a Python script.  Here is the sequence of",
+      "function calls leading up to the error, in the order they occurred.</p>"
     ],
     "napari/utils/action_manager.py": [
       "bind_key",
@@ -2399,7 +2601,10 @@
       "<keysequence> or <keysequence>",
       "[{name}]",
       "destroyed",
-      "{Shortcut(s)}"
+      "{Shortcut(s)}",
+      " ({shorts})",
+      "{event.tooltip} {extra_tooltip_text}",
+      "{self._build_tooltip(name)} {extra_tooltip_text}"
     ],
     "napari/utils/colormaps/__init__.py": [],
     "napari/utils/colormaps/bop_colors.py": [],
@@ -2441,7 +2646,9 @@
       "single_hue",
       "vispy",
       "zero",
-      "\"{cm}\""
+      "\"{cm}\"",
+      "Color data out of range",
+      "ignore"
     ],
     "napari/utils/colormaps/standardize_color.py": [
       "O",
@@ -2569,8 +2776,10 @@
       "ParentIndex",
       "_T",
       "index",
-      "move(src_index={src_index}, dest_index={dest_index})",
-      "new_index"
+      "new_index",
+      "Not supported index type {type(index)}",
+      "index out of range: {key}",
+      "move(src_index=%s, dest_index=%s)"
     ],
     "napari/utils/events/containers/_selectable_list.py": ["_T"],
     "napari/utils/events/containers/_selection.py": [
@@ -2617,7 +2826,6 @@
       "Context",
       "Event",
       "TransformChain",
-      "__module__",
       "event_debug_",
       "position",
       "self",
@@ -2661,7 +2869,8 @@
       "use_enum_values",
       "EventedModel",
       "Unrecognized field dependency: {field}",
-      "dependencies"
+      "dependencies",
+      "Fields with dependencies must be property.setters. {prop!r} is not."
     ],
     "napari/utils/events/types.py": [],
     "napari/utils/geometry.py": [
@@ -2730,7 +2939,10 @@
       "app_model",
       "app-model",
       "npe2",
-      "napari contributors (2019). napari: a multi-dimensional image viewer for python. doi:10.5281/zenodo.3555620"
+      "napari contributors (2019). napari: a multi-dimensional image viewer for python. doi:10.5281/zenodo.3555620",
+      "  - {get_settings().config_path}",
+      "  - {os.getenv('NAPARI_CONFIG', user_config_dir())}",
+      "<br><b>Settings path:</b><br>"
     ],
     "napari/utils/interactions.py": [
       "\u2326",
@@ -2780,7 +2992,14 @@
       ".tif",
       ".tiff",
       "zlib",
-      "{tifffile.__version__:!r}"
+      "{tifffile.__version__:!r}",
+      "csv_to_layer_data",
+      "imsave_extensions",
+      "module {__name__} has no attribute {name}",
+      "np.ndarray",
+      "read_csv",
+      "read_zarr_dataset",
+      "write_csv"
     ],
     "napari/utils/key_bindings.py": [
       "Alt",
@@ -2821,7 +3040,9 @@
       "\u0001_\u0002",
       " \u0001",
       "ignore",
-      "elementwise comparison"
+      "elementwise comparison",
+      "NoneType",
+      "ps1"
     ],
     "napari/utils/mouse_bindings.py": [],
     "napari/utils/naming.py": [
@@ -2833,7 +3054,9 @@
       "png",
       "data:image/png;base64,",
       "utf-8",
-      "<img src=\"{url}\" alt=\"{_alt}\"></img>"
+      "<img src=\"{url}\" alt=\"{_alt}\"></img>",
+      "The lxml library is not installed, and is required to sanitize alt text for napari screenshots. Alt-text will be stripped altogether without lxml.",
+      "The provided alt text does not constitute valid html, so it was discarded."
     ],
     "napari/utils/notifications.py": [
       "1",
@@ -2859,7 +3082,8 @@
       "False",
       "NAPARI_CATCH_ERRORS",
       "{str(self.severity).upper()}: {self.message}",
-      "NoColor"
+      "NoColor",
+      "An error occurred while trying to format an error and show it in console.\nYou can try to uninstall IPython to disable rich traceback formatting\nAnd/or report a bug to napari"
     ],
     "napari/utils/perf/__init__.py": ["0", "NAPARI_PERFMON"],
     "napari/utils/perf/_compat.py": [],
@@ -2910,7 +3134,8 @@
       "s",
       "tid",
       "ts",
-      "w"
+      "w",
+      "PerfEvent"
     ],
     "napari/utils/settings/__init__.py": [],
     "napari/utils/settings/_defaults.py": [
@@ -3009,7 +3234,12 @@
       "{{\\s?opacity\\((\\w+),?\\s?([-\\d]+)?\\)\\s?}}",
       " {', '.join(STYLE_MAP)}",
       "system",
-      "rgb(18, 18, 18)"
+      "rgb(18, 18, 18)",
+      "Default Dark",
+      "Default Light",
+      "builtin",
+      "colors",
+      "rgb(227, 182, 23)"
     ],
     "napari/utils/transforms/__init__.py": [],
     "napari/utils/transforms/transform_utils.py": [],
@@ -3034,7 +3264,8 @@
       "napari",
       "napari.languagepack",
       "nativeName",
-      "{locale}.UTF-8"
+      "{locale}.UTF-8",
+      "The `language` setting defined in the napari configuration file could not be read.\n\nThe default language will be used.\n\nError:\n{err}"
     ],
     "napari/utils/tree/__init__.py": [],
     "napari/utils/tree/group.py": [
@@ -3043,7 +3274,8 @@
       "Group",
       "NodeType",
       "\u2514\u2500\u2500",
-      "\u251c\u2500\u2500"
+      "\u251c\u2500\u2500",
+      "MaybeNestedIndex"
     ],
     "napari/utils/tree/node.py": ["Node"],
     "napari/utils/validators.py": ["__getitem__"],
@@ -3066,13 +3298,11 @@
       "return",
       "self",
       "view_",
-      "viewer",
-      "gray",
       "nearest",
       "linear",
       "mip",
       "volume",
-      "translucent"
+      "Image"
     ],
     "napari/viewer.py": ["Window", "napari", "Viewer"],
     "napari/window.py": []

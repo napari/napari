@@ -16,7 +16,7 @@ import napari
 # create multiscale from astronaut image
 base = np.tile(data.astronaut(), (8, 8, 1))
 multiscale = list(
-    pyramid_gaussian(base, downscale=2, max_layer=4, multichannel=True)
+    pyramid_gaussian(base, downscale=2, max_layer=4, channel_axis=-1)
 )
 print('multiscale level shapes: ', [p.shape[:2] for p in multiscale])
 

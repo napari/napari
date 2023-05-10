@@ -27,7 +27,6 @@ class Path(PolygonBase):
         ndisplay=2,
         interpolation_order=1,
     ) -> None:
-
         super().__init__(
             data,
             edge_width=edge_width,

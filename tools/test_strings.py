@@ -6,9 +6,9 @@ TODO:
   * Find nested funcs inside if/else
 
 
-Rune manually with
+Run manually with
 
-    $ python tools/test_strings.py
+    $ pytest -Wignore tools/ --tb=short
 
 To interactively be prompted whether new strings should be ignored or need translations.
 
@@ -38,6 +38,12 @@ from strings_list import (
     SKIP_FOLDERS,
     SKIP_WORDS,
     SKIP_WORDS_GLOBAL,
+)
+
+# this import is required for octree, but since the env var
+# isn't triggering it properly, I've added it here to avoid errors
+from napari._vispy.experimental.vispy_tiled_image_layer import (
+    VispyTiledImageLayer,
 )
 
 REPO_ROOT = Path(__file__).resolve()
@@ -213,7 +219,7 @@ def find_files(
             if filename.endswith(extensions):
                 found_files.append(fpath)
 
-    return list(sorted(found_files))
+    return sorted(found_files)
 
 
 def find_docstrings(fpath: str) -> Dict[str, str]:
@@ -310,7 +316,25 @@ def compress_str(gen):
                 acc.append(eval(tokstr))
             else:
                 # b"", f"" ... are Strings
-                acc.append(eval(tokstr[1:]))
+                # the prefix can be more than one letter,
+                # like rf, rb...
+                trailing_quote = tokstr[-1]
+                start_quote_index = tokstr.find(trailing_quote)
+                prefix = tokstr[:start_quote_index]
+                suffix = tokstr[start_quote_index:]
+                assert suffix[0] == suffix[-1]
+                assert suffix[0] in ('"', "'")
+                if 'b' in prefix:
+                    print(
+                        'not translating bytestring', tokstr, file=sys.stderr
+                    )
+                    continue
+                # we remove the f as we do not want to evaluate the string
+                # if it contains variable. IT will crash as it evaluate in
+                # the context of this function.
+                safe_tokstr = prefix.replace('f', '') + suffix
+
+                acc.append(eval(safe_tokstr))
             if not acc_line:
                 acc_line = lineno
         else:
@@ -378,7 +402,7 @@ def find_trans_strings(
     trans_strings = {}
     show_trans_strings.visit(module)
     for string in show_trans_strings._found:
-        key = " ".join([it for it in string.split()])
+        key = " ".join(list(string.split()))
         trans_strings[key] = string
 
     errors = list(show_trans_strings._trans_errors)
@@ -407,7 +431,7 @@ def import_module_by_path(fpath: str) -> Optional[ModuleType]:
         spec = importlib.util.spec_from_file_location(module_name, fpath)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-    except ImportError:
+    except ModuleNotFoundError:
         module = None
 
     return module
@@ -589,15 +613,11 @@ NORMAL = "\x1b[1;0m"
 
 
 if __name__ == '__main__':
-
     issues, outdated_strings, trans_errors = _checks()
     import json
     import pathlib
 
-    if len(sys.argv) > 1:
-        edit_cmd = sys.argv[1]
-    else:
-        edit_cmd = None
+    edit_cmd = sys.argv[1] if len(sys.argv) > 1 else None
 
     pth = pathlib.Path(__file__).parent / 'string_list.json'
     data = json.loads(pth.read_text())
@@ -608,6 +628,14 @@ if __name__ == '__main__':
             data['SKIP_WORDS'][file].remove(to_remove)
 
     break_ = False
+
+    n_issues = sum([len(m) for m in issues.values()])
+
+    print()
+    print(
+        f"{RED}=== About {n_issues} items  in {len(issues)} files to review ==={NORMAL}"
+    )
+    print()
     for file, missing in issues.items():
         code = Path(file).read_text().splitlines()
         if break_:
@@ -629,12 +657,12 @@ if __name__ == '__main__':
 
             print()
             print(
-                f"{RED}i{NORMAL} : ignore –  add to ignored localised strings"
+                f"{RED}i{NORMAL} : ignore -  add to ignored localised strings"
             )
-            print(f"{RED}q{NORMAL} : quit –  quit w/o saving")
-            print(f"{RED}c{NORMAL} : continue –  go to next")
+            print(f"{RED}q{NORMAL} : quit -  quit w/o saving")
+            print(f"{RED}c{NORMAL} : continue -  go to next")
             if edit_cmd:
-                print(f"{RED}e{NORMAL} : EDIT – using {edit_cmd!r}")
+                print(f"{RED}e{NORMAL} : EDIT - using {edit_cmd!r}")
             else:
                 print(
                     "- : Edit not available, call with python tools/test_strings.py  '$COMMAND {filename} {linenumber} '"

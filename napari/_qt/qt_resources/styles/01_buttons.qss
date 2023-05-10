@@ -1,15 +1,6 @@
 
 /* ----------------- Buttons -------------------- */
 
-QtDeleteButton {
-   image: url("theme_{{ id }}:/delete.svg");
-   min-width : 28px;
-   max-width : 28px;
-   min-height : 28px;
-   max-height : 28px;
-   padding: 0px;
-}
-
 QtViewerPushButton{
    min-width : 28px;
    max-width : 28px;
@@ -17,6 +8,10 @@ QtViewerPushButton{
    max-height : 28px;
    padding: 0px;
    
+}
+
+QtViewerPushButton[mode="delete_button"] {
+   image: url("theme_{{ id }}:/delete.svg");
 }
 
 QtViewerPushButton[mode="new_points"] {
@@ -97,8 +92,8 @@ QtModeRadioButton::indicator:unchecked:hover {
   background-color: {{ highlight }};
 }
 
-QtModeRadioButton[mode="zoom"]::indicator {
-  image: url("theme_{{ id }}:/zoom.svg");
+QtModeRadioButton[mode="pan"]::indicator {
+  image: url("theme_{{ id }}:/pan_arrows.svg");
 }
 
 QtModeRadioButton[mode="select"]::indicator {

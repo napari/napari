@@ -1,5 +1,7 @@
 """Provides a QtPluginErrReporter that allows the user report plugin errors.
 """
+
+import contextlib
 from typing import Optional
 
 from napari_plugin_engine import standard_metadata
@@ -86,7 +88,7 @@ class QtPluginErrReporter(QDialog):
         self.plugin_combo = QComboBox()
         self.plugin_combo.addItem(self.NULL_OPTION)
         bad_plugins = [e.plugin_name for e in self.plugin_manager.get_errors()]
-        self.plugin_combo.addItems(list(sorted(set(bad_plugins))))
+        self.plugin_combo.addItems(sorted(set(bad_plugins)))
         self.plugin_combo.currentTextChanged.connect(self.set_plugin)
         self.plugin_combo.setCurrentText(self.NULL_OPTION)
 
@@ -149,12 +151,10 @@ class QtPluginErrReporter(QDialog):
         """
         self.github_button.hide()
         self.clipboard_button.hide()
-        try:
+        with contextlib.suppress(RuntimeError, TypeError):
             self.github_button.clicked.disconnect()
-        # when disconnecting a non-existent signal
-        # PySide2 raises runtimeError, PyQt5 raises TypeError
-        except (RuntimeError, TypeError):
-            pass
+            # when disconnecting a non-existent signal
+            # PySide2 raises runtimeError, PyQt5 raises TypeError
 
         if not plugin or (plugin == self.NULL_OPTION):
             self.plugin_meta.setText('')

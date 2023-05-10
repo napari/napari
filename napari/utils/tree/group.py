@@ -73,7 +73,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
     def __getitem__(self, key) -> Union[NodeType, Group[NodeType]]:
         return super().__getitem__(key)
 
-    def __delitem__(self, key: "MaybeNestedIndex"):
+    def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""
         if isinstance(key, (int, tuple)):
             self[key].parent = None  # type: ignore

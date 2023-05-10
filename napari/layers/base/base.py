@@ -13,7 +13,11 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.layers.base._base_constants import Blending
+from napari.layers.base._base_constants import Blending, Mode
+from napari.layers.base._base_mouse_bindings import (
+    highlight_box_handles,
+    transform_with_box,
+)
 from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
@@ -32,7 +36,7 @@ from napari.utils._magicgui import (
     add_layers_to_viewer,
     get_layers,
 )
-from napari.utils.events import EmitterGroup, Event
+from napari.utils.events import EmitterGroup, Event, EventedDict
 from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import (
     find_front_back_face,
@@ -67,7 +71,7 @@ def no_op(layer: Layer, event: Event) -> None:
     None
 
     """
-    return None
+    return
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -191,6 +195,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Displayed in status bar bottom right.
     interactive : bool
         Determine if canvas pan/zoom interactivity is enabled.
+        This attribute is deprecated since 0.5.0 and should not be used.
+        Use the mouse_pan and mouse_zoom attributes instead.
+    mouse_pan : bool
+        Determine if canvas interactive panning is enabled with the mouse.
+    mouse_zoom : bool
+        Determine if canvas interactive zooming is enabled with the mouse.
     cursor : str
         String identifying which cursor displayed over canvas.
     cursor_size : int | None
@@ -214,6 +224,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     * `_basename()`: base/default name of the layer
     """
 
+    _modeclass = Mode
+
+    _drag_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: transform_with_box,
+    }
+
+    _move_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: highlight_box_handles,
+    }
+    _cursor_modes = {
+        Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
+    }
+
     def __init__(
         self,
         data,
@@ -232,6 +258,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         multiscale=False,
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
+        mode='pan_zoom',
     ) -> None:
         super().__init__()
 
@@ -262,11 +289,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._help = ''
         self._cursor = 'standard'
         self._cursor_size = 1
-        self._interactive = True
+        self._mouse_pan = True
+        self._mouse_zoom = True
         self._value = None
         self.scale_factor = 1
         self.multiscale = multiscale
         self._experimental_clipping_planes = ClippingPlaneList()
+        self._mode = self._modeclass('pan_zoom')
 
         self._ndim = ndim
 
@@ -321,6 +350,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._name = ''
         self.experimental_clipping_planes = experimental_clipping_planes
 
+        # circular import
+        from napari.components.overlays.bounding_box import BoundingBoxOverlay
+        from napari.components.overlays.interaction_box import (
+            SelectionBoxOverlay,
+            TransformBoxOverlay,
+        )
+
+        self._overlays = EventedDict()
+
         self.events = EmitterGroup(
             source=self,
             refresh=Event,
@@ -338,28 +376,51 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             thumbnail=Event,
             status=Event,
             help=Event,
-            interactive=Event,
+            interactive=WarningEmitter(
+                trans._(
+                    "layer.events.interactive is deprecated since 0.5.0 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom",
+                    deferred=True,
+                ),
+                type_name='interactive',
+            ),
+            mouse_pan=Event,
+            mouse_zoom=Event,
             cursor=Event,
             cursor_size=Event,
             editable=Event,
             loaded=Event,
+            reload=Event,
             extent=Event,
+            _overlays=Event,
             select=WarningEmitter(
                 trans._(
                     "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
                     deferred=True,
                 ),
-                type='select',
+                type_name='select',
             ),
             deselect=WarningEmitter(
                 trans._(
                     "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
                     deferred=True,
                 ),
-                type='deselect',
+                type_name='deselect',
             ),
+            mode=Event,
         )
         self.name = name
+        self.mode = mode
+        self._overlays.update(
+            {
+                'transform_box': TransformBoxOverlay(),
+                'selection_box': SelectionBoxOverlay(),
+                'bounding_box': BoundingBoxOverlay(),
+            }
+        )
+
+        # TODO: we try to avoid inner event connection, but this might be the only way
+        #       until we figure out nested evented objects
+        self._overlays.events.connect(self.events._overlays)
 
     def __str__(self):
         """Return self.name."""
@@ -369,37 +430,33 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
 
-    def _mode_setter_helper(self, mode, Modeclass):
+    def _mode_setter_helper(self, mode):
         """
         Helper to manage callbacks in multiple layers
 
         Parameters
         ----------
-        mode : Modeclass | str
+        mode : type(self._modeclass) | str
             New mode for the current layer.
-        Modeclass : Enum
-            Enum for the current class representing the modes it can takes,
-            this is usually specific on each subclass.
 
         Returns
         -------
-        tuple (new Mode, mode changed)
+        bool : whether mode changed
 
         """
-        mode = Modeclass(mode)
+        mode = self._modeclass(mode)
         assert mode is not None
         if not self.editable:
-            mode = Modeclass.PAN_ZOOM
+            mode = self._modeclass.PAN_ZOOM
         if mode == self._mode:
-            return mode, False
-        if mode.value not in Modeclass.keys():
+            return mode
+
+        if mode.value not in self._modeclass.keys():
             raise ValueError(
                 trans._(
                     "Mode not recognized: {mode}", deferred=True, mode=mode
                 )
             )
-        old_mode = self._mode
-        self._mode = mode
 
         for callback_list, mode_dict in [
             (self.mouse_drag_callbacks, self._drag_modes),
@@ -411,13 +468,44 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 ),
             ),
         ]:
-            if mode_dict[old_mode] in callback_list:
-                callback_list.remove(mode_dict[old_mode])
+            if mode_dict[self._mode] in callback_list:
+                callback_list.remove(mode_dict[self._mode])
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        self.interactive = mode == Modeclass.PAN_ZOOM
-        return mode, True
+        self.mouse_pan = mode == self._modeclass.PAN_ZOOM
+        self._overlays['transform_box'].visible = (
+            mode == self._modeclass.TRANSFORM
+        )
+
+        if mode == self._modeclass.TRANSFORM:
+            self.help = trans._(
+                'hold <space> to pan/zoom, hold <shift> to preserve aspect ratio and rotate in 45° increments'
+            )
+        elif mode == self._modeclass.PAN_ZOOM:
+            self.help = ''
+
+        return mode
+
+    @property
+    def mode(self) -> str:
+        """str: Interactive mode
+
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        TRANSFORM allows for manipulation of the layer transform.
+        """
+        return str(self._mode)
+
+    @mode.setter
+    def mode(self, mode):
+        mode = self._mode_setter_helper(mode)
+        if mode == self._mode:
+            return
+        self._mode = mode
+
+        self.events.mode(mode=str(mode))
 
     @classmethod
     def _basename(cls):
@@ -517,29 +605,35 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.blending()
 
     @property
-    def visible(self):
+    def visible(self) -> bool:
         """bool: Whether the visual is currently being displayed."""
         return self._visible
 
     @visible.setter
-    def visible(self, visibility):
-        self._visible = visibility
+    def visible(self, visible: bool):
+        self._visible = visible
         self.refresh()
         self.events.visible()
-        self.editable = self._set_editable() if self.visible else False
 
     @property
-    def editable(self):
+    def editable(self) -> bool:
         """bool: Whether the current layer data is editable from the viewer."""
         return self._editable
 
     @editable.setter
-    def editable(self, editable):
+    def editable(self, editable: bool):
         if self._editable == editable:
             return
         self._editable = editable
-        self._set_editable(editable=editable)
+        self._on_editable_changed()
         self.events.editable()
+
+    def _reset_editable(self) -> None:
+        """Reset this layer's editable state based on layer properties."""
+        self.editable = True
+
+    def _on_editable_changed(self) -> None:
+        """Executes side-effects on this layer related to changes of the editable state."""
 
     @property
     def scale(self):
@@ -670,12 +764,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @abstractmethod
     def data(self):
         # user writes own docstring
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @data.setter
     @abstractmethod
     def data(self, data):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -686,7 +780,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         -------
         extent_data : array, shape (2, D)
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def _extent_world(self) -> np.ndarray:
@@ -740,11 +834,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @abstractmethod
     def _get_ndim(self):
-        raise NotImplementedError()
-
-    def _set_editable(self, editable=None):
-        if editable is None:
-            self.editable = True
+        raise NotImplementedError
 
     def _get_base_state(self):
         """Get dictionary of attributes on base layer.
@@ -773,7 +863,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @abstractmethod
     def _get_state(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def _type_string(self):
@@ -794,9 +884,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if 0 in thumbnail.shape:
             thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         if thumbnail.dtype != np.uint8:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                thumbnail = convert_to_uint8(thumbnail)
+            thumbnail = convert_to_uint8(thumbnail)
 
         padding_needed = np.subtract(self._thumbnail_shape, thumbnail.shape)
         pad_amounts = [(p // 2, (p + 1) // 2) for p in padding_needed]
@@ -824,23 +912,65 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._help
 
     @help.setter
-    def help(self, help):
-        if help == self.help:
+    def help(self, help_text):
+        if help_text == self.help:
             return
-        self._help = help
-        self.events.help(help=help)
+        self._help = help_text
+        self.events.help(help=help_text)
 
     @property
-    def interactive(self):
-        """bool: Determine if canvas pan/zoom interactivity is enabled."""
-        return self._interactive
+    def interactive(self) -> bool:
+        warnings.warn(
+            trans._(
+                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.mouse_pan or self.mouse_zoom
 
     @interactive.setter
-    def interactive(self, interactive):
-        if interactive == self._interactive:
+    def interactive(self, interactive: bool):
+        warnings.warn(
+            trans._(
+                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        with self.events.interactive.blocker():
+            self.mouse_pan = interactive
+        self.mouse_zoom = interactive
+
+    @property
+    def mouse_pan(self) -> bool:
+        """bool: Determine if canvas interactive panning is enabled with the mouse."""
+        return self._mouse_pan
+
+    @mouse_pan.setter
+    def mouse_pan(self, mouse_pan: bool):
+        if mouse_pan == self._mouse_pan:
             return
-        self._interactive = interactive
-        self.events.interactive(interactive=interactive)
+        self._mouse_pan = mouse_pan
+        self.events.mouse_pan(mouse_pan=mouse_pan)
+        self.events.interactive(
+            interactive=self.mouse_pan or self.mouse_zoom
+        )  # Deprecated since 0.5.0
+
+    @property
+    def mouse_zoom(self) -> bool:
+        """bool: Determine if canvas interactive zooming is enabled with the mouse."""
+        return self._mouse_zoom
+
+    @mouse_zoom.setter
+    def mouse_zoom(self, mouse_zoom: bool):
+        if mouse_zoom == self._mouse_zoom:
+            return
+        self._mouse_zoom = mouse_zoom
+        self.events.mouse_zoom(mouse_zoom=mouse_zoom)
+        self.events.interactive(
+            interactive=self.mouse_pan or self.mouse_zoom
+        )  # Deprecated since 0.5.0
 
     @property
     def cursor(self):
@@ -891,15 +1021,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             plane.update(new_plane)
             self._experimental_clipping_planes.append(plane)
 
+    @property
+    def bounding_box(self):
+        return self._overlays['bounding_box']
+
     def set_view_slice(self):
         with self.dask_optimized_slicing():
             self._set_view_slice()
 
     @abstractmethod
     def _set_view_slice(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
-    def _slice_dims(self, point=None, ndisplay=2, order=None):
+    def _slice_dims(
+        self, point=None, ndisplay=2, order=None, force: bool = False
+    ):
         """Slice data with values from a global dims model.
 
         Note this will likely be moved off the base layer soon.
@@ -913,21 +1049,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         order : list of int
             Order of dimensions, where last `ndisplay` will be
             rendered in canvas.
+        force: bool
+            True if slicing should be forced to occur, even when some cache thinks
+            it already has a valid slice ready. False otherwise.
         """
         slice_input = self._make_slice_input(point, ndisplay, order)
-        if self._slice_input == slice_input:
-            return
-        self._slice_input = slice_input
-        self.refresh()
-        self._set_editable()
+        if force or (self._slice_input != slice_input):
+            self._slice_input = slice_input
+            self.refresh()
 
     def _make_slice_input(
         self, point=None, ndisplay=2, order=None
     ) -> _SliceInput:
-        if point is None:
-            point = (0,) * self.ndim
-        else:
-            point = tuple(point)
+        point = (0,) * self.ndim if point is None else tuple(point)
 
         ndim = len(point)
 
@@ -949,7 +1083,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @abstractmethod
     def _update_thumbnail(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def _get_value(self, position):
@@ -965,7 +1099,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         value : tuple
             Value of the data.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def get_value(
         self,
@@ -1047,7 +1181,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Union[float, int]:
+    ) -> Union[
+        float, int, None, Tuple[Union[float, int, None], Optional[int]]
+    ]:
         """Get the layer data value along a ray
 
         Parameters
@@ -1063,9 +1199,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         -------
         value
             The data value along the supplied ray.
-
         """
-        return None
 
     def projected_distance_from_mouse_drag(
         self,
@@ -1128,7 +1262,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         force : bool
             Bool that forces a redraw to occur when `True`.
         """
-        pass
 
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
@@ -1288,8 +1421,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         order = np.array(world_dims)
         if offset <= 0:
             return list(range(-offset)) + list(order - offset)
-        else:
-            return list(order[order >= offset] - offset)
+
+        return list(order[order >= offset] - offset)
 
     def _display_bounding_box(self, dims_displayed: np.ndarray):
         """An axis aligned (ndisplay, 2) bounding box around the data"""
@@ -1433,7 +1566,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 position, dims_displayed
             )
         else:
-
             # adjust for any offset between viewer and data coordinates
             position = self._get_offset_data_position(position)
 
@@ -1533,7 +1665,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.refresh()
+                self.events.reload(Event('reload', layer=self))
 
         else:
             # The stored corner_pixels attribute must contain valid indices.
@@ -1562,7 +1694,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 components['plugin'] = self.source.reader_plugin
             return components
 
-        elif self.source.sample:
+        if self.source.sample:
             components['layer_base'] = self.name
             components['source_type'] = 'sample'
             try:
@@ -1573,20 +1705,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 components['plugin'] = self.source.sample[0]
             return components
 
-        elif self.source.widget:
+        if self.source.widget:
             components['layer_base'] = self.name
             components['source_type'] = 'widget'
             components['plugin'] = self.source.widget._function.__name__
             return components
 
-        else:
-            components['layer_base'] = self.name
-            components['source_type'] = ''
-            components['plugin'] = ''
-            return components
+        components['layer_base'] = self.name
+        components['source_type'] = ''
+        components['plugin'] = ''
+        return components
 
     def get_source_str(self):
-
         source_info = self._get_source_info()
 
         return (
@@ -1779,7 +1909,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return Cls(data, **(meta or {}))
         except Exception as exc:  # noqa: BLE001
             if 'unexpected keyword argument' not in str(exc):
-                raise exc
+                raise
 
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(

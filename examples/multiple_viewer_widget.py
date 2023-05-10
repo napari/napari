@@ -182,7 +182,7 @@ class CrossWidget(QCheckBox):
     def _update_extent(self):
         """
         Calculate the extent of the data.
-        
+
         Ignores the the cross layer itself in calculating the extent.
         """
         if NAPARI_GE_4_16:
@@ -326,6 +326,8 @@ class MultipleViewerWidget(QSplitter):
         for model in [self.viewer, self.viewer_model1, self.viewer_model2]:
             if model.dims is event.source:
                 continue
+            if len(self.viewer.layers) != len(model.layers):
+                continue
             model.dims.current_step = event.value
 
     def _order_update(self):
@@ -456,5 +458,7 @@ if __name__ == "__main__":
 
     view.window.add_dock_widget(dock_widget, name="Sample")
     view.window.add_dock_widget(cross, name="Cross", area="left")
+
+    view.open_sample('napari', 'cells3d')
 
     napari.run()
