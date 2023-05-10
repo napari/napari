@@ -368,7 +368,6 @@ class Points(Layer):
         data, ndim = fix_data_points(data, ndim)
 
         # Indices of selected points
-        # self._selected_data = Selection()
         self._selected_data_stored = set()
         self._selected_data_history = set()
         # Indices of selected points within the currently viewed slice
