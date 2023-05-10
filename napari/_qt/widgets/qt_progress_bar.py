@@ -7,12 +7,14 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QProgressBar,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from napari.utils.migrations import rename_argument
-from napari.utils.progress import progress
+from napari.utils.progress import cancelable_progress, progress
+from napari.utils.translations import trans
 
 
 class QtLabeledProgressBar(QWidget):
@@ -29,12 +31,16 @@ class QtLabeledProgressBar(QWidget):
         self.qt_progress_bar = QProgressBar()
         self.description_label = QLabel()
         self.eta_label = QLabel()
+        self.cancel_button = QPushButton(trans._('Cancel'))
+        self.cancel_button.clicked.connect(self._cancel)
+        self.cancel_button.setVisible(isinstance(prog, cancelable_progress))
         base_layout = QVBoxLayout()
 
         pbar_layout = QHBoxLayout()
         pbar_layout.addWidget(self.description_label)
         pbar_layout.addWidget(self.qt_progress_bar)
         pbar_layout.addWidget(self.eta_label)
+        pbar_layout.addWidget(self.cancel_button)
         base_layout.addLayout(pbar_layout)
 
         line = QFrame(self)
@@ -76,6 +82,11 @@ class QtLabeledProgressBar(QWidget):
 
     def _set_total(self, event):
         self.setRange(0, event.value)
+
+    def _cancel(self):
+        self.cancel_button.setText(trans._('Cancelling...'))
+        self.progress.cancel()
+        self.cancel_button.setText(trans._('Canceled'))
 
 
 class QtProgressBarGroup(QWidget):
