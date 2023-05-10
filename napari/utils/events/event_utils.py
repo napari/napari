@@ -39,7 +39,7 @@ def connect_setattr(emitter: Emitter, obj, attr: str):
     # Also there is no option to create weakref to QT Signal
     # but even if keep reference to base object and signal name it is possible to meet
     # problem with C++ "wrapped C/C++ object has been deleted"
-    # weakref.finalize(obj, emitter.disconnect, _cb)
+    weakref.finalize(obj, emitter.disconnect, _cb)
 
 
 def connect_no_arg(emitter: Emitter, obj, attr: str):
@@ -50,7 +50,7 @@ def connect_no_arg(emitter: Emitter, obj, attr: str):
 
     emitter.connect(_cb)
     # as in connect_setattr
-    # weakref.finalize(obj, emitter.disconnect, _cb)
+    weakref.finalize(obj, emitter.disconnect, _cb)
 
 
 def connect_setattr_value(emitter: Emitter, obj, attr: str):
@@ -61,3 +61,4 @@ def connect_setattr_value(emitter: Emitter, obj, attr: str):
         setattr(ref(), attr, value.value)
 
     emitter.connect(_cb)
+    weakref.finalize(obj, emitter.disconnect, _cb)
