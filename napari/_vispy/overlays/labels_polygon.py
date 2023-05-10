@@ -2,6 +2,7 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line, Markers, Polygon
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
+from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 
 
 class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
@@ -30,9 +31,15 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             overlay=overlay,
             parent=parent,
         )
+
+        self.layer.mouse_move_callbacks.append(self._on_mouse_move)
+        self.layer.mouse_drag_callbacks.append(self._on_mouse_press)
+        self.layer.mouse_double_click_callbacks.append(
+            self._on_mouse_double_click
+        )
+
         self.overlay.events.points.connect(self._on_points_change)
         self.overlay.events.color.connect(self._on_color_change)
-        self.overlay.events.dims_order.connect(self._on_points_change)
 
         layer.events.selected_label.connect(self._update_color)
         layer.events.colormap.connect(self._update_color)
@@ -40,12 +47,13 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         layer.events.opacity.connect(self._update_color)
 
         self.reset()
+        self._update_color()
 
     def _on_points_change(self):
         num_points = len(self.overlay.points)
         if num_points:
             points = np.array(self.overlay.points)[
-                :, self.overlay.dims_order[::-1]
+                :, self.layer._slice_input.displayed[::-1]
             ]
         else:
             points = np.empty((0, 2))
@@ -64,6 +72,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             pos=points,
             **self._nodes_kwargs,
         )
+        self.overlay.visible = self._num_points > 0
 
     def _on_color_change(self):
         border_color = self.overlay.color[:3] + (1,)  # always opaque
@@ -97,7 +106,63 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
                 layer.opacity
             ]
 
+    def _on_mouse_move(self, layer, event):
+        """Continuously redraw the latest polygon point with the current mouse position."""
+        if layer.mode != 'draw_polygon' or self._num_points == 0:
+            return
+
+        pos, _ = self._get_mouse_coordinates(event)
+        self.overlay.points = self.overlay.points[:-1] + [pos.tolist()]
+
+    def _on_mouse_press(self, layer, event):
+        if layer.mode != 'draw_polygon' or event.handled:
+            return
+
+        pos, dims_displayed = self._get_mouse_coordinates(event)
+
+        if event.button == 1:  # left mouse click
+            # recenter the point in the center of the image pixel
+            pos[dims_displayed] = np.floor(pos[dims_displayed]) + 0.5
+
+            self.overlay.points = self.overlay.points[:-1] + [
+                pos.tolist(),
+                pos.tolist(),
+            ]
+            self._on_color_change()
+        elif event.button == 2 and self._num_points > 0:  # right mouse click
+            if self._num_points < 3:
+                self.overlay.points = []
+            else:
+                self.overlay.points = self.overlay.points[:-1]
+
+        event.handled = True
+
+    def _on_mouse_double_click(self, layer, event):
+        if event.button == 2:
+            self._on_mouse_press(layer, event)
+            return
+
+        if layer.mode != 'draw_polygon':
+            return
+
+        self.overlay.add_polygon_to_labels(layer)
+
+    def _get_mouse_coordinates(self, event):
+        pos = mouse_event_to_labels_coordinate(self.layer, event)
+        if pos is None:
+            return None
+
+        pos = np.array(pos, dtype=float)
+        dims_displayed = list(event.dims_displayed)
+        pos[dims_displayed] += 0.5
+
+        return pos, dims_displayed
+
+    @property
+    def _num_points(self):
+        return len(self.overlay.points)
+
     def reset(self):
         super().reset()
         self._on_points_change()
-        self._update_color()
+        self._on_color_change()

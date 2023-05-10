@@ -357,5 +357,6 @@ def MouseEvent():
         dims_point: List[float] = None
         view_direction: List[int] = None
         button: int = None
+        handled: bool = False
 
     return Event

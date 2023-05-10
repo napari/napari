@@ -150,7 +150,7 @@ def redo(layer: Labels):
 )
 def reset_draw_polygon(layer: Labels):
     """Reset the drawing of the current polygon."""
-    layer._reset_draw_polygon()
+    layer._overlays["draw_polygon"].points = []
 
 
 @register_label_action(
@@ -158,4 +158,4 @@ def reset_draw_polygon(layer: Labels):
 )
 def complete_draw_polygon(layer: Labels):
     """Complete the drawing of the current polygon."""
-    layer._complete_polygon_drawing()
+    layer._overlays["draw_polygon"].add_polygon_to_labels(layer)

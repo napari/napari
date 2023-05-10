@@ -20,7 +20,7 @@ from napari.layers.labels._labels_constants import (
     LabelsRendering,
     Mode,
 )
-from napari.layers.labels._labels_mouse_bindings import DrawPolygon, draw, pick
+from napari.layers.labels._labels_mouse_bindings import draw, pick
 from napari.layers.labels._labels_utils import (
     indices_in_shape,
     interpolate_coordinates,
@@ -211,8 +211,6 @@ class Labels(_ImageBase):
 
     _modeclass = Mode
 
-    draw_polygon_callback = DrawPolygon()
-
     _drag_modes = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
@@ -220,7 +218,7 @@ class Labels(_ImageBase):
         Mode.PAINT: draw,
         Mode.FILL: draw,
         Mode.ERASE: draw,
-        Mode.DRAW_POLYGON: draw_polygon_callback,
+        Mode.DRAW_POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
     _move_modes = {
@@ -230,17 +228,7 @@ class Labels(_ImageBase):
         Mode.PAINT: no_op,
         Mode.FILL: no_op,
         Mode.ERASE: no_op,
-        Mode.DRAW_POLYGON: draw_polygon_callback,
-    }
-
-    _double_click_modes = {
-        Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: no_op,
-        Mode.PICK: no_op,
-        Mode.PAINT: no_op,
-        Mode.FILL: no_op,
-        Mode.ERASE: no_op,
-        Mode.DRAW_POLYGON: draw_polygon_callback,
+        Mode.DRAW_POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
     _cursor_modes = {
@@ -764,37 +752,6 @@ class Labels(_ImageBase):
             self.cursor_size = self._calculate_cursor_size()
 
         return mode
-
-    def _slice_dims(
-        self, point=None, ndisplay=2, order=None, force: bool = False
-    ):
-        """This method is only overloaded for getting updates on dims order changes
-        and to update the polygon overlay respectively.
-        """
-        super()._slice_dims(
-            point=point, ndisplay=ndisplay, order=order, force=force
-        )
-        if ndisplay == 2:
-            dims_to_paint = self._get_dims_to_paint()
-            if order is not None and len(dims_to_paint) == 2:
-                self._overlays['draw_polygon'].dims_order = dims_to_paint
-        else:
-            if self.mode == Mode.DRAW_POLYGON:
-                self.mode = Mode.PAN_ZOOM
-
-    def _complete_polygon_drawing(self):
-        polygon_overlay = self._overlays['draw_polygon']
-        if polygon_overlay.visible:
-            if len(polygon_overlay.points) > 2:
-                self.paint_polygon(polygon_overlay.points, self.selected_label)
-            self._reset_draw_polygon()
-
-    def _reset_draw_polygon(self):
-        polygon_overlay = self._overlays['draw_polygon']
-        if polygon_overlay.visible:
-            self.draw_polygon_callback.reset()
-            polygon_overlay.points = []
-            polygon_overlay.visible = False
 
     @property
     def preserve_labels(self):

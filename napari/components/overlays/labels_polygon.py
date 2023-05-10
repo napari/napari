@@ -1,8 +1,16 @@
 from napari.components.overlays.base import SceneOverlay
+from napari.layers import Labels
 
 
 class LabelsPolygonOverlay(SceneOverlay):
     """Overlay that displays a polygon on a scene.
+
+        It handles the following mouse events to update the overlay:
+        - Mouse move: Continuously redraw the latest polygon point with the current mouse position.
+        - Mouse press (left button): Adds the current mouse position as a new polygon point.
+        - Mouse double click (left button): If there are at least three points in the polygon,
+                      the polygon is painted in the image using the current label.
+        - Mouse press (right button): Removes the most recent polygon point from the list.
 
     Attributes
     ----------
@@ -12,10 +20,13 @@ class LabelsPolygonOverlay(SceneOverlay):
         A tuple representing the RGBA color of the polygon.
         Opacity only applies to the fill color of the polygon.
         Borders have the same color, but they are always opaque.
-    dims_order : tuple
-        A tuple representing the order of the dimensions in the scene.
     """
 
     points: list = []
     color: tuple = (1, 1, 1, 0.3)
-    dims_order: tuple = (0, 1)
+
+    def add_polygon_to_labels(self, layer: Labels) -> None:
+        if len(self.points) > 3:
+            # The latest point is used for the visualization on mouse move
+            layer.paint_polygon(self.points[:-1], layer.selected_label)
+        self.points = []

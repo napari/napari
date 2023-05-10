@@ -1,5 +1,3 @@
-import numpy as np
-
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 
@@ -42,58 +40,6 @@ def draw(layer, event):
                 layer._draw(new_label, last_cursor_coord, coordinates)
             last_cursor_coord = coordinates
             yield
-
-
-class DrawPolygon:
-    """Handles mouse events to draw the polygon and updates the overlay.
-
-    Mouse events handled in call:
-    - Mouse move: Continuously redraw the latest polygon point with the current mouse position.
-    - Mouse press (left button): Adds the current mouse position as a new polygon point.
-    - Mouse double click (left button): If there are at least three points in the polygon,
-                  the polygon is painted on the image using the current label.
-    - Mouse press (right button): Removes the most recent polygon point from the list.
-    """
-
-    def __init__(self):
-        self._points = []
-
-    def __call__(self, layer, event):
-        polygon_overlay = layer._overlays['draw_polygon']
-        pos = mouse_event_to_labels_coordinate(layer, event)
-        if pos is None:
-            return
-
-        pos = np.array(pos, dtype=float)
-        dims_displayed = list(event.dims_displayed)
-        pos[dims_displayed] += 0.5
-
-        if event.button is None:  # on mouse move
-            if self._points:
-                polygon_overlay.points = self._points + [pos.tolist()]
-        elif (
-            event.button == 1 and event.type == 'mouse_press'
-        ):  # on mouse left click
-            # recenter the point in the center of the image pixel
-            pos[dims_displayed] = np.floor(pos[dims_displayed]) + 0.5
-
-            self._points.append(pos.tolist())
-            polygon_overlay.points = self._points
-        elif (
-            event.button == 1 and event.type == 'mouse_double_click'
-        ):  # on mouse left double click
-            layer._complete_polygon_drawing()
-        elif event.button == 2 and self._points:  # on mouse right click
-            self._points.pop()
-            if self._points:
-                polygon_overlay.points = self._points + [pos.tolist()]
-            else:
-                layer._reset_draw_polygon()
-
-        polygon_overlay.visible = len(self._points) > 0
-
-    def reset(self):
-        self._points = []
 
 
 def pick(layer, event):
