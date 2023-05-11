@@ -744,10 +744,7 @@ class Labels(_ImageBase):
         if mode == self._mode:
             return mode
 
-        self._overlays['draw_polygon'].visible = mode in {
-            Mode.DRAW_POLYGON,
-            Mode.PAN_ZOOM,
-        }
+        self._overlays['draw_polygon'].enabled = mode == Mode.DRAW_POLYGON
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 

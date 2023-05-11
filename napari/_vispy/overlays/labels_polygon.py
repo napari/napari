@@ -2,6 +2,7 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line, Markers, Polygon
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
+from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 
 
@@ -40,6 +41,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         self.overlay.events.points.connect(self._on_points_change)
         self.overlay.events.color.connect(self._on_color_change)
+        self.overlay.events.enabled.connect(self._on_enabled_change)
 
         layer.events.selected_label.connect(self._update_color)
         layer.events.colormap.connect(self._update_color)
@@ -48,6 +50,12 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         self.reset()
         self._update_color()
+        # If there are no points, it won't be visible
+        self.overlay.visible = True
+
+    def _on_enabled_change(self):
+        if self.overlay.enabled:
+            self._on_points_change()
 
     def _on_points_change(self):
         num_points = len(self.overlay.points)
@@ -72,11 +80,9 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             pos=points,
             **self._nodes_kwargs,
         )
-        self.overlay.visible = self._num_points > 0
 
     def _on_color_change(self):
         border_color = self.overlay.color[:3] + (1,)  # always opaque
-
         polygon_color = self.overlay.color
 
         # Workaround for VisPy's polygon bug: if you set opacity to exactly 0,
@@ -106,21 +112,33 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
                 layer.opacity
             ]
 
+    def _only_when_enabled(callback):
+        def decorated_callback(self, layer, event):
+            if not self.overlay.enabled or event.handled:
+                return
+            # The overlay can only work in 2D
+            if layer._slice_input.ndisplay != 2:
+                layer.mode = Mode.PAN_ZOOM
+                return
+            callback(self, layer, event)
+
+        return decorated_callback
+
+    @_only_when_enabled
     def _on_mouse_move(self, layer, event):
         """Continuously redraw the latest polygon point with the current mouse position."""
-        if layer.mode != 'draw_polygon' or self._num_points == 0:
+        if self._num_points == 0:
             return
 
         pos, _ = self._get_mouse_coordinates(event)
         self.overlay.points = self.overlay.points[:-1] + [pos.tolist()]
 
+    @_only_when_enabled
     def _on_mouse_press(self, layer, event):
-        if layer.mode != 'draw_polygon' or event.handled:
-            return
-
         pos, dims_displayed = self._get_mouse_coordinates(event)
 
         if event.button == 1:  # left mouse click
+            orig_pos = pos.copy()
             # recenter the point in the center of the image pixel
             pos[dims_displayed] = np.floor(pos[dims_displayed]) + 0.5
 
@@ -128,25 +146,25 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
                 pos.tolist(),
                 # add some epsilon to avoid points duplication,
                 # the latest point is used only for visualization of the cursor
-                (pos + 1e-3).tolist(),
+                (orig_pos + 1e-3).tolist(),
             ]
             self._on_color_change()
         elif event.button == 2 and self._num_points > 0:  # right mouse click
             if self._num_points < 3:
                 self.overlay.points = []
             else:
-                self.overlay.points = self.overlay.points[:-1]
+                self.overlay.points = self.overlay.points[:-2] + [pos.tolist()]
 
         event.handled = True
 
+    @_only_when_enabled
     def _on_mouse_double_click(self, layer, event):
         if event.button == 2:
             self._on_mouse_press(layer, event)
             return
 
-        if layer.mode != 'draw_polygon':
-            return
-
+        # Remove the latest point as double click always follows a simple click
+        self.overlay.points = self.overlay.points[:-1]
         self.overlay.add_polygon_to_labels(layer)
 
     def _get_mouse_coordinates(self, event):

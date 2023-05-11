@@ -14,6 +14,8 @@ class LabelsPolygonOverlay(SceneOverlay):
 
     Attributes
     ----------
+    enabled : bool
+        Controls whether the overlay is activated.
     points : list
         A list of (x, y) coordinates of the vertices of the polygon.
     color : tuple
@@ -22,11 +24,11 @@ class LabelsPolygonOverlay(SceneOverlay):
         Borders have the same color, but they are always opaque.
     """
 
+    enabled: bool = False
     points: list = []
     color: tuple = (1, 1, 1, 0.3)
 
     def add_polygon_to_labels(self, layer: Labels) -> None:
-        if len(self.points) > 3:
-            # The latest point is used for the visualization on mouse move
-            layer.paint_polygon(self.points[:-1], layer.selected_label)
+        if len(self.points) > 2:
+            layer.paint_polygon(self.points, layer.selected_label)
         self.points = []
