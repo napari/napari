@@ -140,6 +140,7 @@ class QtLabelsControls(QtLayerControls):
         ndim_sb.setMaximum(self.layer.ndim)
         ndim_sb.setSingleStep(1)
         ndim_sb.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._on_n_edit_dimensions_change()
 
         self.contourSpinBox = QLargeIntSpinBox()
         self.contourSpinBox.setRange(*dtype_lims)
@@ -263,7 +264,6 @@ class QtLabelsControls(QtLayerControls):
         self.renderLabel = QLabel(trans._('rendering:'))
 
         self._on_ndisplay_changed()
-        self._on_n_edit_dimensions_change()
 
         color_mode_comboBox = QComboBox(self)
         for index, (data, text) in enumerate(
@@ -463,9 +463,10 @@ class QtLabelsControls(QtLayerControls):
         with self.layer.events.n_edit_dimensions.blocker():
             value = self.layer.n_edit_dimensions
             self.ndimSpinBox.setValue(int(value))
-            self.draw_polygon_button.setEnabled(
-                self._is_draw_polygon_enabled()
-            )
+            if hasattr(self, 'draw_polygon_button'):
+                self.draw_polygon_button.setEnabled(
+                    self._is_draw_polygon_enabled()
+                )
 
     def _on_contiguous_change(self):
         """Receive layer model contiguous change event and update the checkbox."""
