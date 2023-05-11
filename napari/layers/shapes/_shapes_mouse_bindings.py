@@ -276,7 +276,7 @@ def finish_drawing_shape(layer: Shapes, event: MouseEvent) -> None:
 
 
 def initiate_polygon_draw(
-    layer: Shapes, coordinates: Tuple[np.float, ...]
+    layer: Shapes, coordinates: Tuple[float, ...]
 ) -> None:
     """Start drawing of polygon.
 
@@ -287,7 +287,7 @@ def initiate_polygon_draw(
     ----------
     layer: Shapes
         Napari shapes layer
-    coordinates: Tuple[np.float, ...]
+    coordinates: Tuple[float, ...]
         A tuple with the coordinates of the initial vertex in image data space.
     """
     data = np.array([coordinates, coordinates])
@@ -339,7 +339,7 @@ def add_vertex_to_path(
     layer: Shapes,
     event: MouseEvent,
     index: int,
-    coordinates: Tuple[np.float, ...],
+    coordinates: Tuple[float, ...],
     new_type: Optional[str],
 ) -> None:
     """Add a vertex to an existing path or polygon and edit the layer view.
@@ -352,7 +352,7 @@ def add_vertex_to_path(
         A proxy read only wrapper around a vispy mouse event.
     index: int
         The index of the shape being added, e.g. first shape in the layer has index 0.
-    coordinates: Tuple[np.float, ...]
+    coordinates: Tuple[float, ...]
         The coordinates of the vertex being added to the shape being drawn in image data space
     new_type: Optional[str]
         Type of the shape being added.
@@ -423,7 +423,7 @@ def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
 
 
 def move_active_vertex_under_cursor(
-    layer: Shapes, coordinates: Tuple[np.float, ...]
+    layer: Shapes, coordinates: Tuple[float, ...]
 ) -> None:
     """While a path or polygon is being created, move next vertex to be added.
 
@@ -431,7 +431,7 @@ def move_active_vertex_under_cursor(
     ----------
     layer: Shapes
         Napari shapes layer
-    coordinates: Tuple[np.float, ...]
+    coordinates: Tuple[float, ...]
         The coordinates in data space of the vertex to be potentially added, e.g. vertex tracks the mouse cursor
         position.
     """
@@ -569,7 +569,7 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
 
 
 def _drag_selection_box(
-    layer: Shapes, coordinates: Tuple[np.float, ...]
+    layer: Shapes, coordinates: Tuple[float, ...]
 ) -> None:
     """Drag a selection box.
 
@@ -577,7 +577,7 @@ def _drag_selection_box(
     ----------
     layer : napari.layers.Shapes
         Shapes layer.
-    coordinates : Tuple[np.float, ...]
+    coordinates : Tuple[float, ...]
         The current position of the cursor during the mouse move event in image data space.
     """
     # If something selected return
@@ -595,8 +595,8 @@ def _drag_selection_box(
 
 
 def _set_drag_start(
-    layer: Shapes, coordinates: Tuple[np.float, ...]
-) -> List[np.float, ...]:
+    layer: Shapes, coordinates: Tuple[float, ...]
+) -> List[float, ...]:
     """Indicate where in data space a drag event started.
 
     Sets the coordinates relative to the center of the bounding box of a shape and returns the position
@@ -606,12 +606,12 @@ def _set_drag_start(
     ----------
     layer: Shapes
         The napari layer shape
-    coordinates: Tuple[np.float, ...]
+    coordinates: Tuple[float, ...]
         The position in image data space where dragging started.
 
     Returns
     -------
-    coord: List[np.float, ...]
+    coord: List[float, ...]
         The coordinates of where a shape drag event started.
     """
     coord = [coordinates[i] for i in layer._slice_input.displayed]
@@ -622,7 +622,7 @@ def _set_drag_start(
 
 
 def _move_active_element_under_cursor(
-    layer: Shapes, coordinates: Tuple[np.float, ...]
+    layer: Shapes, coordinates: Tuple[float, ...]
 ) -> None:
     """Moves object at given mouse position and set of indices.
 
@@ -630,7 +630,7 @@ def _move_active_element_under_cursor(
     ----------
     layer : napari.layers.Shapes
         Shapes layer.
-    coordinates : Tuple[np.float, ...]
+    coordinates : Tuple[float, ...]
         Position of mouse cursor in data coordinates.
     """
     # If nothing selected return
