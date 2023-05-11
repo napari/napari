@@ -61,7 +61,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         num_points = len(self.overlay.points)
         if num_points:
             points = np.array(self.overlay.points)[
-                :, self.layer._slice_input.displayed[::-1]
+                :, self._dims_displayed[::-1]
             ]
         else:
             points = np.empty((0, 2))
@@ -133,12 +133,13 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         if self._num_points == 0:
             return
 
-        pos, _ = self._get_mouse_coordinates(event)
+        pos = self._get_mouse_coordinates(event)
         self.overlay.points = self.overlay.points[:-1] + [pos.tolist()]
 
     @_only_when_enabled
     def _on_mouse_press(self, layer, event):
-        pos, dims_displayed = self._get_mouse_coordinates(event)
+        pos = self._get_mouse_coordinates(event)
+        dims_displayed = self._dims_displayed
 
         if event.button == 1:  # left mouse click
             orig_pos = pos.copy()
@@ -176,10 +177,13 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             return None
 
         pos = np.array(pos, dtype=float)
-        dims_displayed = list(event.dims_displayed)
-        pos[dims_displayed] += 0.5
+        pos[self._dims_displayed] += 0.5
 
-        return pos, dims_displayed
+        return pos
+
+    @property
+    def _dims_displayed(self):
+        return self.layer._slice_input.displayed
 
     @property
     def _num_points(self):
