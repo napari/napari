@@ -1149,7 +1149,7 @@ def validate_num_vertices(
 
 def perpendicular_distance(
     point: npt.NDArray, line_start: npt.NDArray, line_end: npt.NDArray
-) -> npt.float:
+) -> float:
     """Calculate the perpendicular distance of a point to a given euclidean line.
 
     Calculates the shortest distance of a point to a euclidean line defined by a line_start point and a line_end point.
@@ -1166,7 +1166,7 @@ def perpendicular_distance(
 
     Returns
     -------
-    np.float
+    float
         A float number representing the distance of point to a euclidean line defined by line_start and line_end.
     """
 
