@@ -45,18 +45,21 @@ def test_transform_box_from_layer():
     layer = Points(pts, translate=translate, scale=scale)
     vertices = generate_transform_box_from_layer(layer, dims_displayed=(0, 1))
     # scale/translate should not affect vertices, cause they're in data space
-    expected = np.array(
-        [
-            [0, 0],
-            [10, 0],
-            [0, 10],
-            [10, 10],
-            [0, 5],
-            [5, 0],
-            [5, 10],
-            [10, 5],
-            [-1, 5],
-        ]
+    expected = (
+        np.array(
+            [
+                [0, 0],
+                [10, 0],
+                [0, 10],
+                [10, 10],
+                [0, 5],
+                [5, 0],
+                [5, 10],
+                [10, 5],
+                [-1, 5],
+            ]
+        )
+        + 0.5
     )
     np.testing.assert_allclose(vertices, expected)
 

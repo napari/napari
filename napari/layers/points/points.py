@@ -757,7 +757,8 @@ class Points(Layer):
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
             extrema = np.vstack([mins, maxs])
-        return extrema
+        # Points are placed in the centre of voxels, hence +0.5
+        return extrema + 0.5
 
     @property
     def out_of_slice_display(self) -> bool:

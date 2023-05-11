@@ -281,8 +281,8 @@ def test_single_point_extent():
     shape = (1, 3)
     data = np.zeros(shape)
     layer = Points(data)
-    assert np.all(layer.extent.data == 0)
-    assert np.all(layer.extent.world == 0)
+    assert np.all(layer.extent.data == 0.5)
+    assert np.all(layer.extent.world == 0.5)
     assert np.all(layer.extent.step == 1)
 
 
@@ -1842,7 +1842,8 @@ def test_world_data_extent():
     min_val = (-2, -5, 0)
     max_val = (7, 30, 15)
     layer = Points(data)
-    extent = np.array((min_val, max_val))
+    # Points are placed in the centre of voxels, hence +0.5
+    extent = np.array((min_val, max_val)) + 0.5
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
 
 
