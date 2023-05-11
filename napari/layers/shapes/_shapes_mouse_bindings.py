@@ -772,7 +772,7 @@ def _move_active_element_under_cursor(
         index = layer._moving_value[0]
         shape_type = type(layer._data_view.shapes[index])
         if shape_type == Ellipse:
-            # DIRECT vertex moving of ellipse not implemented
+            # TODO: Implement DIRECT vertex moving of ellipse
             pass
         else:
             new_type = Polygon if shape_type == Rectangle else None
