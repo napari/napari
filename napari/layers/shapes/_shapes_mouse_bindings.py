@@ -568,9 +568,7 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
     layer.refresh()
 
 
-def _drag_selection_box(
-    layer: Shapes, coordinates: Tuple[float, ...]
-) -> None:
+def _drag_selection_box(layer: Shapes, coordinates: Tuple[float, ...]) -> None:
     """Drag a selection box.
 
     Parameters
