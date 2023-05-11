@@ -182,8 +182,8 @@ class Dims(EventedModel):
         # order and label default computation is too different to include in ensure_len()
         # Check the order tuple has same number of elements as ndim
         order = values['order']
-        order_ndim = len(order)
         if len(order) < ndim:
+            order_ndim = len(order)
             # new dims are always prepended
             prepended_dims = tuple(range(ndim - order_ndim))
             # maintain existing order, but shift accordingly
@@ -194,7 +194,7 @@ class Dims(EventedModel):
         updated['order'] = order
 
         # Check the order is a permutation of 0, ..., ndim - 1
-        if not set(updated['order']) == set(range(ndim)):
+        if set(updated['order']) != set(range(ndim)):
             raise ValueError(
                 trans._(
                     "Invalid ordering {order} for {ndim} dimensions",
@@ -230,10 +230,10 @@ class Dims(EventedModel):
 
     @nsteps.setter
     def nsteps(self, value):
-        self.range = [
-            (rng.start, rng.stop, (rng.stop - rng.start) / nsteps)
+        self.range = tuple(
+            RangeTuple(rng.start, rng.stop, (rng.stop - rng.start) / nsteps)
             for rng, nsteps in zip(self.range, value)
-        ]
+        )
 
     @property
     def current_step(self):
@@ -244,10 +244,10 @@ class Dims(EventedModel):
 
     @current_step.setter
     def current_step(self, value):
-        self.point = [
+        self.point = tuple(
             rng.start + point * rng.step
             for point, rng in zip(value, self.range)
-        ]
+        )
 
     @property
     def thickness(self) -> Tuple[float, ...]:
@@ -297,7 +297,7 @@ class Dims(EventedModel):
         full_range = list(self.range)
         for ax, val in zip(axis, value):
             full_range[ax] = val
-        self.range = full_range
+        self.range = tuple(full_range)
 
     def set_point(
         self,
@@ -319,7 +319,7 @@ class Dims(EventedModel):
         full_point = list(self.point)
         for ax, val in zip(axis, value):
             full_point[ax] = val
-        self.point = full_point
+        self.point = tuple(full_point)
 
     def set_current_step(
         self,
