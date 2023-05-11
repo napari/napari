@@ -37,7 +37,6 @@ class FakeSliceRequest:
 
 class FakeAsyncLayer:
     def __init__(self) -> None:
-        self._loaded: bool = True
         self._last_slice_id: int = 0
         self._slice_request_count: int = 0
         self.slice_count: int = 0
