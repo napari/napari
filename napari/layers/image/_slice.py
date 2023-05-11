@@ -40,12 +40,14 @@ class _ImageView:
 
     @classmethod
     def from_view(cls, view: np.ndarray) -> '_ImageView':
+        """Makes an image view from the view where no conversion is needed."""
         return cls(raw=view, view=view)
 
     @classmethod
     def from_raw(
         cls, *, raw: np.ndarray, converter: Callable[[np.ndarray], np.ndarray]
     ) -> '_ImageView':
+        """Makes an image view from the raw image and a conversion function."""
         view = converter(raw)
         return cls(raw=raw, view=view)
 
@@ -81,6 +83,21 @@ class _ImageSliceResponse:
     def make_empty(
         cls, *, dims: _SliceInput, rgb: bool
     ) -> '_ImageSliceResponse':
+        """Returns an empty image slice response.
+
+        An empty slice indicates that there is no valid slice data for an
+        image layer, but allows other functionality that relies on slice
+        data existing to continue to work without special casing.
+
+        Parameters
+        ----------
+        dims : _SliceInput
+            Describes the slicing plane or bounding box in the layer's dimensions.
+        rgb : bool
+            True if the underlying image is an RGB or RGBA image (i.e. that the
+            last dimension represents a color channel that should not be sliced),
+            False otherwise.
+        """
         shape = (1,) * dims.ndisplay
         if rgb:
             shape = shape + (3,)
@@ -102,6 +119,7 @@ class _ImageSliceResponse:
     def to_displayed(
         self, converter: Callable[[np.ndarray], np.ndarray]
     ) -> '_ImageSliceResponse':
+        """Returns a raw slice converted for display, which is needed for Labels."""
         image = _ImageView.from_raw(raw=self.image.raw, converter=converter)
         thumbnail = image
         if self.thumbnail is not self.image:
