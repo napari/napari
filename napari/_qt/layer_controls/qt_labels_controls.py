@@ -140,7 +140,6 @@ class QtLabelsControls(QtLayerControls):
         ndim_sb.setMaximum(self.layer.ndim)
         ndim_sb.setSingleStep(1)
         ndim_sb.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._on_n_edit_dimensions_change()
 
         self.contourSpinBox = QLargeIntSpinBox()
         self.contourSpinBox.setRange(*dtype_lims)
@@ -264,6 +263,7 @@ class QtLabelsControls(QtLayerControls):
         self.renderLabel = QLabel(trans._('rendering:'))
 
         self._on_ndisplay_changed()
+        self._on_n_edit_dimensions_change()
 
         color_mode_comboBox = QComboBox(self)
         for index, (data, text) in enumerate(
@@ -463,6 +463,9 @@ class QtLabelsControls(QtLayerControls):
         with self.layer.events.n_edit_dimensions.blocker():
             value = self.layer.n_edit_dimensions
             self.ndimSpinBox.setValue(int(value))
+            self.draw_polygon_button.setEnabled(
+                self._is_draw_polygon_enabled()
+            )
 
     def _on_contiguous_change(self):
         """Receive layer model contiguous change event and update the checkbox."""
@@ -502,8 +505,15 @@ class QtLabelsControls(QtLayerControls):
         self.renderComboBox.setVisible(render_visible)
         self.renderLabel.setVisible(render_visible)
         self._on_editable_or_visible_change()
-        if self.draw_polygon_button.isEnabled() and self.ndisplay != 2:
-            self.draw_polygon_button.setEnabled(False)
+        self.draw_polygon_button.setEnabled(self._is_draw_polygon_enabled())
+
+    def _is_draw_polygon_enabled(self):
+        return (
+            self.layer.editable
+            and self.layer.visible
+            and self.layer.n_edit_dimensions == 2
+            and self.ndisplay == 2
+        )
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self.colorBox)

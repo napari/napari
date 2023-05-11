@@ -117,7 +117,10 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             if not self.overlay.enabled or event.handled:
                 return
             # The overlay can only work in 2D
-            if layer._slice_input.ndisplay != 2:
+            if (
+                layer._slice_input.ndisplay != 2
+                or layer.n_edit_dimensions != 2
+            ):
                 layer.mode = Mode.PAN_ZOOM
                 return
             callback(self, layer, event)
