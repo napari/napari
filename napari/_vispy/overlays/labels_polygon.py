@@ -126,7 +126,9 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
             self.overlay.points = self.overlay.points[:-1] + [
                 pos.tolist(),
-                pos.tolist(),
+                # add some epsilon to avoid points duplication,
+                # the latest point is used only for visualization of the cursor
+                (pos + 1e-3).tolist(),
             ]
             self._on_color_change()
         elif event.button == 2 and self._num_points > 0:  # right mouse click
