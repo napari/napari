@@ -18,6 +18,8 @@ def test_connect_no_arg():
     assert len(emiter.callbacks) == 1
     del mock
     gc.collect()
+    assert len(emiter.callbacks) == 1
+    emiter(type_name="a", value=1)
     assert len(emiter.callbacks) == 0
 
 
@@ -30,6 +32,8 @@ def test_connect_setattr_value():
     assert len(emiter.callbacks) == 1
     del mock
     gc.collect()
+    assert len(emiter.callbacks) == 1
+    emiter(type_name="a", value=1)
     assert len(emiter.callbacks) == 0
 
 
@@ -43,4 +47,6 @@ def test_connect_setattr():
     assert len(emiter.callbacks) == 1
     del mock
     gc.collect()
+    assert len(emiter.callbacks) == 1
+    emiter(type_name="a", value=1)
     assert len(emiter.callbacks) == 0
