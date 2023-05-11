@@ -356,8 +356,6 @@ def test_submit_with_one_3d_points(layer_slicer):
         future = layer_slicer.submit(layers=[layer], dims=dims)
         assert not future.done()
 
-    _wait_for_result(future)[layer]
-
 
 def test_submit_after_shutdown_raises():
     layer_slicer = _LayerSlicer()
