@@ -436,6 +436,7 @@ class Labels(_ImageBase):
         # in _raw_to_displayed
         self._all_vals = np.array([], dtype=np.float32)
         self._selected_color = self.get_color(self.selected_label)
+        self._cached_labels = None  # invalidate the cached color mapping
         self.refresh()
         self.events.selected_label()
 

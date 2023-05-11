@@ -1476,6 +1476,18 @@ def test_color_mapping_when_color_is_changed():
     )
 
 
+def test_color_mapping_when_seed_is_changed():
+    """Checks if the color mapping is updated when the color palette seed is changed."""
+    np.random.seed(0)
+    layer = Labels(np.random.randint(50, size=(10, 10)))
+    mapped_colors1 = layer._raw_to_displayed(layer._slice.image.raw)
+
+    layer.new_colormap()
+    mapped_colors2 = layer._raw_to_displayed(layer._slice.image.raw)
+
+    assert not np.allclose(mapped_colors1, mapped_colors2)
+
+
 def test_negative_label():
     """Test negative label values are supported."""
     data = np.random.randint(low=-1, high=20, size=(10, 10))
