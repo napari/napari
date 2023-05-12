@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Tuple
+from typing import Tuple
 
 import numpy as np
 from vispy.scene.widgets.viewbox import ViewBox
@@ -16,6 +16,7 @@ from napari._vispy.layers.vectors import VispyVectorsLayer
 from napari._vispy.overlays.axes import VispyAxesOverlay
 from napari._vispy.overlays.base import VispyBaseOverlay
 from napari._vispy.overlays.bounding_box import VispyBoundingBoxOverlay
+from napari._vispy.overlays.brush_circle import VispyBrushCircleOverlay
 from napari._vispy.overlays.interaction_box import (
     VispySelectionBoxOverlay,
     VispyTransformBoxOverlay,
@@ -25,6 +26,7 @@ from napari._vispy.overlays.text import VispyTextOverlay
 from napari.components.overlays import (
     AxesOverlay,
     BoundingBoxOverlay,
+    BrushCircleOverlay,
     Overlay,
     ScaleBarOverlay,
     SelectionBoxOverlay,
@@ -62,6 +64,7 @@ overlay_to_visual = {
     BoundingBoxOverlay: VispyBoundingBoxOverlay,
     TransformBoxOverlay: VispyTransformBoxOverlay,
     SelectionBoxOverlay: VispySelectionBoxOverlay,
+    BrushCircleOverlay: VispyBrushCircleOverlay,
 }
 
 if async_octree:
@@ -102,9 +105,9 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
     )
 
 
-def create_vispy_overlay(overlay: Overlay, **kwargs) -> List[VispyBaseOverlay]:
+def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
     """
-    Create vispy visuals for each overlay contained in an Overlays model based on their type,
+    Create vispy visual for Overlay  based on its type.
 
     Parameters
     ----------
