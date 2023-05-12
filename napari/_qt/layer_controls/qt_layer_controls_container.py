@@ -1,5 +1,6 @@
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
+from napari._qt.layer_controls.qt_graph_controls import QtGraphControls
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari._qt.layer_controls.qt_points_controls import QtPointsControls
@@ -9,6 +10,7 @@ from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
 from napari.layers import (
     Image,
+    Graph,
     Labels,
     Points,
     Shapes,
@@ -21,6 +23,7 @@ from napari.utils.translations import trans
 
 layer_to_controls = {
     Labels: QtLabelsControls,
+    Graph: QtGraphControls,
     Image: QtImageControls,
     Points: QtPointsControls,
     Shapes: QtShapesControls,

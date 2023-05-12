@@ -12,11 +12,12 @@ from napari.utils.events import disconnect_events
 class VispyPointsLayer(VispyBaseLayer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = None
+    _visual = PointsVisual
 
     def __init__(self, layer) -> None:
         self._highlight_width = get_settings().appearance.highlight_thickness
 
-        node = PointsVisual()
+        node = self._visual()
         super().__init__(layer, node)
 
         self.layer.events.symbol.connect(self._on_data_change)
@@ -137,7 +138,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _get_text_node(self):
         """Function to get the text node from the Compound visual"""
-        text_node = self.node._subvisuals[-1]
+        text_node = self.node._subvisuals[3]
         return text_node
 
     def _on_text_change(self, event=None):

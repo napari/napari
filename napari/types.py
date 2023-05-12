@@ -79,6 +79,7 @@ class SampleDict(TypedDict):
 ArrayBase: Type[np.ndarray] = np.ndarray
 
 
+GraphData = NewType("GraphData", tuple)  # FIXME
 ImageData = NewType("ImageData", np.ndarray)
 LabelsData = NewType("LabelsData", np.ndarray)
 PointsData = NewType("PointsData", np.ndarray)

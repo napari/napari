@@ -10,6 +10,7 @@ import pytest
 
 from napari import Viewer
 from napari.layers import (
+    Graph,
     Image,
     Labels,
     Points,
@@ -91,7 +92,7 @@ with suppress(ModuleNotFoundError):
     p = [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]]
     layer_test_data.extend([(Image, m, 2), (Image, p, 2)])
 
-classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
+classes = [Graph, Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
 names = [cls.__name__.lower() for cls in classes]
 layer2addmethod = {
     cls: getattr(Viewer, 'add_' + name) for cls, name in zip(classes, names)

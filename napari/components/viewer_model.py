@@ -1608,6 +1608,7 @@ def valid_add_kwargs() -> Dict[str, Set[str]]:
 
 
 for _layer in (
+    layers.Graph,
     layers.Labels,
     layers.Points,
     layers.Shapes,
