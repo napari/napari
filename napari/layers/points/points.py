@@ -368,11 +368,6 @@ class _BasePoints(Layer):
         antialiasing=1,
         shown=True,
     ) -> None:
-        if ndim is None and scale is not None:
-            ndim = len(scale)
-
-        data, ndim = fix_data_points(data, ndim)
-
         # Indices of selected points
         self._selected_data = set()
         self._selected_data_stored = set()
@@ -440,9 +435,6 @@ class _BasePoints(Layer):
             feature_defaults=Event,
         )
 
-        # Save the point coordinates
-        self._data = np.asarray(data)
-
         self._feature_table = _FeatureTable.from_layer(
             features=features,
             feature_defaults=feature_defaults,
@@ -486,7 +478,7 @@ class _BasePoints(Layer):
 
         color_properties = (
             self._feature_table.properties()
-            if self._data.size > 0
+            if len(self.data)
             else self._feature_table.currents()
         )
         self._edge = ColorManager._from_layer_kwargs(
@@ -2038,6 +2030,95 @@ class _BasePoints(Layer):
 
 
 class Points(_BasePoints):
+    def __init__(
+        self,
+        data=None,
+        *,
+        ndim=None,
+        features=None,
+        feature_defaults=None,
+        properties=None,
+        text=None,
+        symbol='o',
+        size=10,
+        edge_width=0.05,
+        edge_width_is_relative=True,
+        edge_color='dimgray',
+        edge_color_cycle=None,
+        edge_colormap='viridis',
+        edge_contrast_limits=None,
+        face_color='white',
+        face_color_cycle=None,
+        face_colormap='viridis',
+        face_contrast_limits=None,
+        out_of_slice_display=False,
+        n_dimensional=None,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
+        opacity=1,
+        blending='translucent',
+        visible=True,
+        cache=True,
+        property_choices=None,
+        experimental_clipping_planes=None,
+        shading='none',
+        canvas_size_limits=(2, 10000),
+        antialiasing=1,
+        shown=True,
+    ) -> None:
+        if ndim is None and scale is not None:
+            ndim = len(scale)
+
+        data, ndim = fix_data_points(data, ndim)
+
+        # Save the point coordinates
+        self._data = np.asarray(data)
+
+        super().__init__(
+            data,
+            ndim=ndim,
+            features=features,
+            feature_defaults=feature_defaults,
+            properties=properties,
+            text=text,
+            symbol=symbol,
+            size=size,
+            edge_width=edge_width,
+            edge_width_is_relative=edge_width_is_relative,
+            edge_color=edge_color,
+            edge_color_cycle=edge_color_cycle,
+            edge_colormap=edge_colormap,
+            edge_contrast_limits=edge_contrast_limits,
+            face_color=face_color,
+            face_color_cycle=face_color_cycle,
+            face_colormap=face_colormap,
+            face_contrast_limits=face_contrast_limits,
+            out_of_slice_display=out_of_slice_display,
+            n_dimensional=n_dimensional,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+            cache=cache,
+            property_choices=property_choices,
+            experimental_clipping_planes=experimental_clipping_planes,
+            shading=shading,
+            canvas_size_limits=canvas_size_limits,
+            antialiasing=antialiasing,
+            shown=shown,
+        )
+
     @property
     def _points_data(self) -> np.ndarray:
         """Spatialy distributed coordinates."""
