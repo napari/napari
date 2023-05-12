@@ -1,11 +1,13 @@
 import numbers
 import warnings
+from abc import abstractmethod
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from numpy.typing import ArrayLike
 from psygnal.containers import Selection
 from scipy.stats import gmean
 
@@ -49,8 +51,12 @@ from napari.utils.translations import trans
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 
-class Points(Layer):
-    """Points layer.
+class _BasePoints(Layer):
+    """
+    Implements the basic functionality of spatially distributed coordinates.
+    Used by to display points and graph nodes.
+
+    TODO: update documentation and typing
 
     Parameters
     ----------
@@ -520,85 +526,17 @@ class Points(Layer):
         self.refresh()
 
     @property
-    def data(self) -> np.ndarray:
-        """(N, D) array: coordinates for N points in D dimensions."""
-        return self._data
+    def _points_data(self) -> np.ndarray:
+        """Spatialy distributed coordinates."""
+        raise NotImplementedError
+
+    @property
+    def data(self) -> Any:
+        raise NotImplementedError
 
     @data.setter
-    def data(self, data: Optional[np.ndarray]):
-        data, _ = fix_data_points(data, self.ndim)
-        cur_npoints = len(self._data)
-        self._data = data
-
-        # Add/remove property and style values based on the number of new points.
-        with self.events.blocker_all(), self._edge.events.blocker_all(), self._face.events.blocker_all():
-            self._feature_table.resize(len(data))
-            self.text.apply(self.features)
-            if len(data) < cur_npoints:
-                # If there are now fewer points, remove the size and colors of the
-                # extra ones
-                if len(self._edge.colors) > len(data):
-                    self._edge._remove(
-                        np.arange(len(data), len(self._edge.colors))
-                    )
-                if len(self._face.colors) > len(data):
-                    self._face._remove(
-                        np.arange(len(data), len(self._face.colors))
-                    )
-                self._shown = self._shown[: len(data)]
-                self._size = self._size[: len(data)]
-                self._edge_width = self._edge_width[: len(data)]
-                self._symbol = self._symbol[: len(data)]
-
-            elif len(data) > cur_npoints:
-                # If there are now more points, add the size and colors of the
-                # new ones
-                adding = len(data) - cur_npoints
-                if len(self._size) > 0:
-                    new_size = copy(self._size[-1])
-                    for i in self._slice_input.displayed:
-                        new_size[i] = self.current_size
-                else:
-                    # Add the default size, with a value for each dimension
-                    new_size = np.repeat(
-                        self.current_size, self._size.shape[1]
-                    )
-                size = np.repeat([new_size], adding, axis=0)
-
-                if len(self._edge_width) > 0:
-                    new_edge_width = copy(self._edge_width[-1])
-                else:
-                    new_edge_width = self.current_edge_width
-                edge_width = np.repeat([new_edge_width], adding, axis=0)
-
-                if len(self._symbol) > 0:
-                    new_symbol = copy(self._symbol[-1])
-                else:
-                    new_symbol = self.current_symbol
-                symbol = np.repeat([new_symbol], adding, axis=0)
-
-                # Add new colors, updating the current property value before
-                # to handle any in-place modification of feature_defaults.
-                # Also see: https://github.com/napari/napari/issues/5634
-                current_properties = self._feature_table.currents()
-                self._edge._update_current_properties(current_properties)
-                self._edge._add(n_colors=adding)
-                self._face._update_current_properties(current_properties)
-                self._face._add(n_colors=adding)
-
-                shown = np.repeat([True], adding, axis=0)
-                self._shown = np.concatenate((self._shown, shown), axis=0)
-
-                self.size = np.concatenate((self._size, size), axis=0)
-                self.edge_width = np.concatenate(
-                    (self._edge_width, edge_width), axis=0
-                )
-                self.symbol = np.concatenate((self._symbol, symbol), axis=0)
-                self.selected_data = set(np.arange(cur_npoints, len(data)))
-
-        self._update_dims()
-        self.events.data(value=self.data)
-        self._reset_editable()
+    def data(self, data: Any) -> None:
+        raise NotImplementedError
 
     def _on_selection(self, selected):
         if selected:
@@ -1891,7 +1829,8 @@ class Points(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def add(self, coords):
+    @abstractmethod
+    def add(self, coords: ArrayLike) -> None:
         """Adds points at coordinates.
 
         Parameters
@@ -1899,36 +1838,11 @@ class Points(Layer):
         coords : array
             Point or points to add to the layer data.
         """
-        self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
+        raise NotImplementedError
 
-    def remove_selected(self):
+    def remove_selected(self) -> None:
         """Removes selected points if any."""
-        index = list(self.selected_data)
-        index.sort()
-        if len(index):
-            self._shown = np.delete(self._shown, index, axis=0)
-            self._size = np.delete(self._size, index, axis=0)
-            self._symbol = np.delete(self._symbol, index, axis=0)
-            self._edge_width = np.delete(self._edge_width, index, axis=0)
-            with self._edge.events.blocker_all():
-                self._edge._remove(indices_to_remove=index)
-            with self._face.events.blocker_all():
-                self._face._remove(indices_to_remove=index)
-            self._feature_table.remove(index)
-            self.text.remove(index)
-            if self._value in self.selected_data:
-                self._value = None
-            else:
-                if self._value is not None:
-                    # update the index of self._value to account for the
-                    # data being removed
-                    indices_removed = np.array(index) < self._value
-                    offset = np.sum(indices_removed)
-                    self._value -= offset
-                    self._value_stored -= offset
-
-            self.data = np.delete(self.data, index, axis=0)
-            self.selected_data = set()
+        raise NotImplementedError
 
     def _move(
         self,
@@ -1948,13 +1862,27 @@ class Points(Layer):
             selection_indices = list(selection_indices)
             disp = list(self._slice_input.displayed)
             self._set_drag_start(selection_indices, position)
-            center = self.data[np.ix_(selection_indices, disp)].mean(axis=0)
+            ixgrid = np.ix_(selection_indices, disp)
+            center = self.data[ixgrid].mean(axis=0)
             shift = np.array(position)[disp] - center - self._drag_start
-            self.data[np.ix_(selection_indices, disp)] = (
-                self.data[np.ix_(selection_indices, disp)] + shift
-            )
+            self._move_points(ixgrid, shift)
             self.refresh()
         self.events.data(value=self.data)
+
+    @abstractmethod
+    def _move_points(
+        self, ixgrid: Tuple[np.ndarray, np.ndarray], shift: np.ndarray
+    ) -> None:
+        """Move points along a set a coordinates given a shift.
+
+        Parameters
+        ----------
+        ixgrid : Tuple[np.ndarray, np.ndarray]
+            Crossproduct indexing grid of node indices and dimensions, see `np.ix_`
+        shift : np.ndarray
+            Selected coordinates shift
+        """
+        raise NotImplementedError
 
     def _set_drag_start(
         self,
@@ -1984,60 +1912,6 @@ class Points(Layer):
                 ].mean(axis=0)
                 self._drag_start -= center
 
-    def _paste_data(self):
-        """Paste any point from clipboard and select them."""
-        npoints = len(self._view_data)
-        totpoints = len(self.data)
-
-        if len(self._clipboard.keys()) > 0:
-            not_disp = self._slice_input.not_displayed
-            data = deepcopy(self._clipboard['data'])
-            offset = [
-                self._slice_indices[i] - self._clipboard['indices'][i]
-                for i in not_disp
-            ]
-            data[:, not_disp] = data[:, not_disp] + np.array(offset)
-            self._data = np.append(self.data, data, axis=0)
-            self._shown = np.append(
-                self.shown, deepcopy(self._clipboard['shown']), axis=0
-            )
-            self._size = np.append(
-                self.size, deepcopy(self._clipboard['size']), axis=0
-            )
-            self._symbol = np.append(
-                self.symbol, deepcopy(self._clipboard['symbol']), axis=0
-            )
-
-            self._feature_table.append(self._clipboard['features'])
-
-            self.text._paste(**self._clipboard['text'])
-
-            self._edge_width = np.append(
-                self.edge_width,
-                deepcopy(self._clipboard['edge_width']),
-                axis=0,
-            )
-            self._edge._paste(
-                colors=self._clipboard['edge_color'],
-                properties=_features_to_properties(
-                    self._clipboard['features']
-                ),
-            )
-            self._face._paste(
-                colors=self._clipboard['face_color'],
-                properties=_features_to_properties(
-                    self._clipboard['features']
-                ),
-            )
-
-            self._selected_view = list(
-                range(npoints, npoints + len(self._clipboard['data']))
-            )
-            self._selected_data = set(
-                range(totpoints, totpoints + len(self._clipboard['data']))
-            )
-            self.refresh()
-
     def _copy_data(self):
         """Copy selected points to clipboard."""
         if len(self.selected_data) > 0:
@@ -2056,95 +1930,6 @@ class Points(Layer):
             }
         else:
             self._clipboard = {}
-
-    def to_mask(
-        self,
-        *,
-        shape: tuple,
-        data_to_world: Optional[Affine] = None,
-        isotropic_output: bool = True,
-    ):
-        """Return a binary mask array of all the points as balls.
-
-        Parameters
-        ----------
-        shape : tuple
-            The shape of the mask to be generated.
-        data_to_world : Optional[Affine]
-            The data-to-world transform of the output mask image. This likely comes from a reference image.
-            If None, then this is the same as this layer's data-to-world transform.
-        isotropic_output : bool
-            If True, then force the output mask to always contain isotropic balls in data/pixel coordinates.
-            Otherwise, allow the anisotropy in the data-to-world transform to squash the balls in certain dimensions.
-            By default this is True, but you should set it to False if you are going to create a napari image
-            layer from the result with the same data-to-world transform and want the visualized balls to be
-            roughly isotropic.
-
-        Returns
-        -------
-        np.ndarray
-            The output binary mask array of the given shape containing this layer's points as balls.
-        """
-        if data_to_world is None:
-            data_to_world = self._data_to_world
-        mask = np.zeros(shape, dtype=bool)
-        mask_world_to_data = data_to_world.inverse
-        points_data_to_mask_data = self._data_to_world.compose(
-            mask_world_to_data
-        )
-        points_in_mask_data_coords = np.atleast_2d(
-            points_data_to_mask_data(self.data)
-        )
-
-        # Calculating the radii of the output points in the mask is complex.
-
-        # Points.size tells the size of the points in pixels in each dimension,
-        # so we take the arithmetic mean across dimensions to define a scalar size
-        # per point, which is consistent with visualization.
-        mean_radii = np.mean(self.size, axis=1, keepdims=True) / 2
-
-        # Scale each radius by the geometric mean scale of the Points layer to
-        # keep the balls isotropic when visualized in world coordinates.
-        # Then scale each radius by the scale of the output image mask
-        # using the geometric mean if isotropic output is desired.
-        # The geometric means are used instead of the arithmetic mean
-        # to maintain the volume scaling factor of the transforms.
-        point_data_to_world_scale = gmean(np.abs(self._data_to_world.scale))
-        mask_world_to_data_scale = (
-            gmean(np.abs(mask_world_to_data.scale))
-            if isotropic_output
-            else np.abs(mask_world_to_data.scale)
-        )
-        radii_scale = point_data_to_world_scale * mask_world_to_data_scale
-
-        output_data_radii = mean_radii * np.atleast_2d(radii_scale)
-
-        for coords, radii in zip(
-            points_in_mask_data_coords, output_data_radii
-        ):
-            # Define a minimal set of coordinates where the mask could be present
-            # by defining an inclusive lower and exclusive upper bound for each dimension.
-            lower_coords = np.maximum(np.floor(coords - radii), 0).astype(int)
-            upper_coords = np.minimum(
-                np.ceil(coords + radii) + 1, shape
-            ).astype(int)
-            # Generate every possible coordinate within the bounds defined above
-            # in a grid of size D1 x D2 x ... x Dd x D (e.g. for D=2, this might be 4x5x2).
-            submask_coords = [
-                range(lower_coords[i], upper_coords[i])
-                for i in range(self.ndim)
-            ]
-            submask_grids = np.stack(
-                np.meshgrid(*submask_coords, copy=False, indexing='ij'),
-                axis=-1,
-            )
-            # Update the mask coordinates based on the normalized square distance
-            # using a logical or to maintain any existing positive mask locations.
-            normalized_square_distances = np.sum(
-                ((submask_grids - coords) / radii) ** 2, axis=-1
-            )
-            mask[np.ix_(*submask_coords)] |= normalized_square_distances <= 1
-        return mask
 
     def get_status(
         self,
@@ -2270,3 +2055,287 @@ class Points(Layer):
             and v[value] is not None
             and not (isinstance(v[value], float) and np.isnan(v[value]))
         ]
+
+
+class Points(_BasePoints):
+    @property
+    def _points_data(self) -> np.ndarray:
+        """Spatialy distributed coordinates."""
+        return self.data
+
+    @property
+    def data(self) -> np.ndarray:
+        """(N, D) array: coordinates for N points in D dimensions."""
+        return self._data
+
+    @data.setter
+    def data(self, data: Optional[np.ndarray]):
+        data, _ = fix_data_points(data, self.ndim)
+        cur_npoints = len(self._data)
+        self._data = data
+
+        # Add/remove property and style values based on the number of new points.
+        with self.events.blocker_all(), self._edge.events.blocker_all(), self._face.events.blocker_all():
+            self._feature_table.resize(len(data))
+            self.text.apply(self.features)
+            if len(data) < cur_npoints:
+                # If there are now fewer points, remove the size and colors of the
+                # extra ones
+                if len(self._edge.colors) > len(data):
+                    self._edge._remove(
+                        np.arange(len(data), len(self._edge.colors))
+                    )
+                if len(self._face.colors) > len(data):
+                    self._face._remove(
+                        np.arange(len(data), len(self._face.colors))
+                    )
+                self._shown = self._shown[: len(data)]
+                self._size = self._size[: len(data)]
+                self._edge_width = self._edge_width[: len(data)]
+                self._symbol = self._symbol[: len(data)]
+
+            elif len(data) > cur_npoints:
+                # If there are now more points, add the size and colors of the
+                # new ones
+                adding = len(data) - cur_npoints
+                if len(self._size) > 0:
+                    new_size = copy(self._size[-1])
+                    for i in self._slice_input.displayed:
+                        new_size[i] = self.current_size
+                else:
+                    # Add the default size, with a value for each dimension
+                    new_size = np.repeat(
+                        self.current_size, self._size.shape[1]
+                    )
+                size = np.repeat([new_size], adding, axis=0)
+
+                if len(self._edge_width) > 0:
+                    new_edge_width = copy(self._edge_width[-1])
+                else:
+                    new_edge_width = self.current_edge_width
+                edge_width = np.repeat([new_edge_width], adding, axis=0)
+
+                if len(self._symbol) > 0:
+                    new_symbol = copy(self._symbol[-1])
+                else:
+                    new_symbol = self.current_symbol
+                symbol = np.repeat([new_symbol], adding, axis=0)
+
+                # Add new colors, updating the current property value before
+                # to handle any in-place modification of feature_defaults.
+                # Also see: https://github.com/napari/napari/issues/5634
+                current_properties = self._feature_table.currents()
+                self._edge._update_current_properties(current_properties)
+                self._edge._add(n_colors=adding)
+                self._face._update_current_properties(current_properties)
+                self._face._add(n_colors=adding)
+
+                shown = np.repeat([True], adding, axis=0)
+                self._shown = np.concatenate((self._shown, shown), axis=0)
+
+                self.size = np.concatenate((self._size, size), axis=0)
+                self.edge_width = np.concatenate(
+                    (self._edge_width, edge_width), axis=0
+                )
+                self.symbol = np.concatenate((self._symbol, symbol), axis=0)
+                self.selected_data = set(np.arange(cur_npoints, len(data)))
+
+        self._update_dims()
+        self.events.data(value=self.data)
+        self._reset_editable()
+
+    def add(self, coords):
+        """Adds points at coordinates.
+
+        Parameters
+        ----------
+        coords : array
+            Point or points to add to the layer data.
+        """
+        self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
+
+    def remove_selected(self):
+        """Removes selected points if any."""
+        index = list(self.selected_data)
+        index.sort()
+        if len(index):
+            self._shown = np.delete(self._shown, index, axis=0)
+            self._size = np.delete(self._size, index, axis=0)
+            self._symbol = np.delete(self._symbol, index, axis=0)
+            self._edge_width = np.delete(self._edge_width, index, axis=0)
+            with self._edge.events.blocker_all():
+                self._edge._remove(indices_to_remove=index)
+            with self._face.events.blocker_all():
+                self._face._remove(indices_to_remove=index)
+            self._feature_table.remove(index)
+            self.text.remove(index)
+            if self._value in self.selected_data:
+                self._value = None
+            else:
+                if self._value is not None:
+                    # update the index of self._value to account for the
+                    # data being removed
+                    indices_removed = np.array(index) < self._value
+                    offset = np.sum(indices_removed)
+                    self._value -= offset
+                    self._value_stored -= offset
+
+            self.data = np.delete(self.data, index, axis=0)
+            self.selected_data = set()
+
+    def _move_points(
+        self, ixgrid: Tuple[np.ndarray, np.ndarray], shift: np.ndarray
+    ) -> None:
+        """Move points along a set a coordinates given a shift.
+
+        Parameters
+        ----------
+        ixgrid : Tuple[np.ndarray, np.ndarray]
+            Crossproduct indexing grid of node indices and dimensions, see `np.ix_`
+        shift : np.ndarray
+            Selected coordinates shift
+        """
+        self._points_data[ixgrid] = self._points_data[ixgrid] + shift
+
+    def _paste_data(self):
+        """Paste any point from clipboard and select them."""
+        npoints = len(self._view_data)
+        totpoints = len(self.data)
+
+        if len(self._clipboard.keys()) > 0:
+            not_disp = self._slice_input.not_displayed
+            data = deepcopy(self._clipboard['data'])
+            offset = [
+                self._slice_indices[i] - self._clipboard['indices'][i]
+                for i in not_disp
+            ]
+            data[:, not_disp] = data[:, not_disp] + np.array(offset)
+            self._data = np.append(self.data, data, axis=0)
+            self._shown = np.append(
+                self.shown, deepcopy(self._clipboard['shown']), axis=0
+            )
+            self._size = np.append(
+                self.size, deepcopy(self._clipboard['size']), axis=0
+            )
+            self._symbol = np.append(
+                self.symbol, deepcopy(self._clipboard['symbol']), axis=0
+            )
+
+            self._feature_table.append(self._clipboard['features'])
+
+            self.text._paste(**self._clipboard['text'])
+
+            self._edge_width = np.append(
+                self.edge_width,
+                deepcopy(self._clipboard['edge_width']),
+                axis=0,
+            )
+            self._edge._paste(
+                colors=self._clipboard['edge_color'],
+                properties=_features_to_properties(
+                    self._clipboard['features']
+                ),
+            )
+            self._face._paste(
+                colors=self._clipboard['face_color'],
+                properties=_features_to_properties(
+                    self._clipboard['features']
+                ),
+            )
+
+            self._selected_view = list(
+                range(npoints, npoints + len(self._clipboard['data']))
+            )
+            self._selected_data = set(
+                range(totpoints, totpoints + len(self._clipboard['data']))
+            )
+            self.refresh()
+
+    def to_mask(
+        self,
+        *,
+        shape: tuple,
+        data_to_world: Optional[Affine] = None,
+        isotropic_output: bool = True,
+    ):
+        """Return a binary mask array of all the points as balls.
+
+        Parameters
+        ----------
+        shape : tuple
+            The shape of the mask to be generated.
+        data_to_world : Optional[Affine]
+            The data-to-world transform of the output mask image. This likely comes from a reference image.
+            If None, then this is the same as this layer's data-to-world transform.
+        isotropic_output : bool
+            If True, then force the output mask to always contain isotropic balls in data/pixel coordinates.
+            Otherwise, allow the anisotropy in the data-to-world transform to squash the balls in certain dimensions.
+            By default this is True, but you should set it to False if you are going to create a napari image
+            layer from the result with the same data-to-world transform and want the visualized balls to be
+            roughly isotropic.
+
+        Returns
+        -------
+        np.ndarray
+            The output binary mask array of the given shape containing this layer's points as balls.
+        """
+        if data_to_world is None:
+            data_to_world = self._data_to_world
+        mask = np.zeros(shape, dtype=bool)
+        mask_world_to_data = data_to_world.inverse
+        points_data_to_mask_data = self._data_to_world.compose(
+            mask_world_to_data
+        )
+        points_in_mask_data_coords = np.atleast_2d(
+            points_data_to_mask_data(self.data)
+        )
+
+        # Calculating the radii of the output points in the mask is complex.
+
+        # Points.size tells the size of the points in pixels in each dimension,
+        # so we take the arithmetic mean across dimensions to define a scalar size
+        # per point, which is consistent with visualization.
+        mean_radii = np.mean(self.size, axis=1, keepdims=True) / 2
+
+        # Scale each radius by the geometric mean scale of the Points layer to
+        # keep the balls isotropic when visualized in world coordinates.
+        # Then scale each radius by the scale of the output image mask
+        # using the geometric mean if isotropic output is desired.
+        # The geometric means are used instead of the arithmetic mean
+        # to maintain the volume scaling factor of the transforms.
+        point_data_to_world_scale = gmean(np.abs(self._data_to_world.scale))
+        mask_world_to_data_scale = (
+            gmean(np.abs(mask_world_to_data.scale))
+            if isotropic_output
+            else np.abs(mask_world_to_data.scale)
+        )
+        radii_scale = point_data_to_world_scale * mask_world_to_data_scale
+
+        output_data_radii = mean_radii * np.atleast_2d(radii_scale)
+
+        for coords, radii in zip(
+            points_in_mask_data_coords, output_data_radii
+        ):
+            # Define a minimal set of coordinates where the mask could be present
+            # by defining an inclusive lower and exclusive upper bound for each dimension.
+            lower_coords = np.maximum(np.floor(coords - radii), 0).astype(int)
+            upper_coords = np.minimum(
+                np.ceil(coords + radii) + 1, shape
+            ).astype(int)
+            # Generate every possible coordinate within the bounds defined above
+            # in a grid of size D1 x D2 x ... x Dd x D (e.g. for D=2, this might be 4x5x2).
+            submask_coords = [
+                range(lower_coords[i], upper_coords[i])
+                for i in range(self.ndim)
+            ]
+            submask_grids = np.stack(
+                np.meshgrid(*submask_coords, copy=False, indexing='ij'),
+                axis=-1,
+            )
+            # Update the mask coordinates based on the normalized square distance
+            # using a logical or to maintain any existing positive mask locations.
+            normalized_square_distances = np.sum(
+                ((submask_grids - coords) / radii) ** 2, axis=-1
+            )
+            mask[np.ix_(*submask_coords)] |= normalized_square_distances <= 1
+        return mask
