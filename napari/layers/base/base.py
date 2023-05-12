@@ -4,7 +4,7 @@ import itertools
 import os.path
 import warnings
 from abc import ABC, abstractmethod
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from contextlib import contextmanager
 from functools import cached_property
 from typing import List, Optional, Tuple, Union
@@ -23,6 +23,7 @@ from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
 )
 from napari.layers.utils.layer_utils import (
+    Extent,
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
@@ -48,8 +49,6 @@ from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 from napari.utils.translations import trans
-
-Extent = namedtuple('Extent', 'data world step')
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -825,7 +824,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @cached_property
     def extent(self) -> Extent:
-        """Extent of layer in data and world coordinates."""
+        """Extent of layer in data and world coordinates.
+
+        For image-like layers, these coordinates are the locations of the
+        pixels in `Layer.data` which are treated like sample points that are
+        centered in the rendered version of those pixels.
+        For other layers, these coordinates are the points or vertices stored
+        in `Layer.data`.
+        """
         extent_data = self._extent_data
         data_to_world = self._data_to_world
         extent_world = get_extent_world(extent_data, data_to_world)
