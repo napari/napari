@@ -114,7 +114,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     def _only_when_enabled(callback):
         def decorated_callback(self, layer, event):
-            if not self.overlay.enabled or event.handled:
+            if not self.overlay.enabled:
                 return
             # The overlay can only work in 2D
             if (
@@ -158,8 +158,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
                 self.overlay.points = []
             else:
                 self.overlay.points = self.overlay.points[:-2] + [pos.tolist()]
-
-        event.handled = True
 
     @_only_when_enabled
     def _on_mouse_double_click(self, layer, event):
