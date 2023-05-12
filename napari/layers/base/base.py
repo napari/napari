@@ -847,6 +847,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Differently from Layer.extent, this also includes the "size" of data
         points; for example, Point sizes and Image pixel width are included.
+
+        For image-like layers, these coordinates are the locations of the
+        pixels in `Layer.data` which are treated like sample points that are
+        centered in the rendered version of those pixels.
+        For other layers, these coordinates are the points or vertices stored
+        in `Layer.data`.
         """
         extent_data = self._extent_data_augmented
         data_to_world = self._data_to_world

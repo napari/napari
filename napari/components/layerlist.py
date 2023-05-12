@@ -290,6 +290,7 @@ class LayerList(SelectableEventedList[Layer]):
     def get_extent(self, layers: Iterable[Layer]) -> Extent:
         """
         Return extent for a given layer list.
+
         This function is useful for calculating the extent of a subset of layers
         when preparing and updating some supplementary layers.
         For example see the cross Vectors layer in the `multiple_viewer_widget` example.
@@ -313,7 +314,11 @@ class LayerList(SelectableEventedList[Layer]):
 
     @cached_property
     def extent(self) -> Extent:
-        """Extent of layers in data and world coordinates."""
+        """
+        Extent of layers in data and world coordinates.
+
+        See Layer.extent for a detailed explanation of how extents are calculated.
+        """
         return self.get_extent(list(self))
 
     @cached_property
