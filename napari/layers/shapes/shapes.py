@@ -2674,14 +2674,20 @@ class Shapes(Layer):
         # Check selected shapes
         value = None
         selected_index = list(self.selected_data)
+
         if len(selected_index) > 0:
+            # positions are scaled anisotropically by scale, but sizes are not,
+            # so we need to calculate the ratio to correctly map to screen coordinates
+            scale_ratio = (
+                self.scale[self._slice_input.displayed] / self.scale[-1]
+            )
+            # Get the vertex sizes
+            sizes = self._vertex_size * self.scale_factor / scale_ratio / 2
+
             if self._mode == Mode.SELECT:
                 # Check if inside vertex of interaction box or rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
                 distances = abs(box - coord)
-
-                # Get the vertex sizes
-                sizes = self._vertex_size * self.scale_factor / self.scale / 2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()
@@ -2694,9 +2700,6 @@ class Shapes(Layer):
                 inds = np.isin(self._data_view.displayed_index, selected_index)
                 vertices = self._data_view.displayed_vertices[inds]
                 distances = abs(vertices - coord)
-
-                # Get the vertex sizes
-                sizes = self._vertex_size * self.scale_factor / self.scale / 2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()[0]
