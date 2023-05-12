@@ -143,7 +143,7 @@ class QtLabelsControls(QtLayerControls):
         self._on_n_edit_dimensions_change()
 
         self.contourSpinBox = QLargeIntSpinBox()
-        self.contourSpinBox.setRange(*dtype_lims)
+        self.contourSpinBox.setRange(0, dtype_lims[1])
         self.contourSpinBox.setToolTip(trans._('display contours of labels'))
         self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)
