@@ -30,7 +30,7 @@ build==0.10.0
     # via npe2
 cachey==0.2.1
     # via napari (setup.cfg)
-certifi==2022.12.7
+certifi==2023.5.7
     # via
     #   napari (setup.cfg)
     #   requests
@@ -48,11 +48,11 @@ comm==0.1.3
     # via ipykernel
 contourpy==1.0.7
     # via matplotlib
-coverage==7.2.3
+coverage==7.2.5
     # via pytest-cov
 cycler==0.11.0
     # via matplotlib
-dask==2023.4.0
+dask==2023.4.1
     # via napari (setup.cfg)
 debugpy==1.6.7
     # via ipykernel
@@ -81,9 +81,9 @@ filelock==3.12.0
     #   virtualenv
 fonttools==4.39.3
     # via matplotlib
-freetype-py==2.3.0
+freetype-py==2.4.0
     # via vispy
-fsspec==2023.4.0
+fsspec==2023.5.0
     # via
     #   dask
     #   napari (setup.cfg)
@@ -91,11 +91,11 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.3
     # via vispy
-hypothesis==6.74.0
+hypothesis==6.75.2
     # via napari (setup.cfg)
 idna==3.4
     # via requests
-imageio==2.28.0
+imageio==2.28.1
     # via
     #   napari (setup.cfg)
     #   napari-svg
@@ -117,7 +117,7 @@ ipykernel==6.22.0
     # via
     #   napari-console
     #   qtconsole
-ipython==8.12.0
+ipython==8.13.2
     # via
     #   ipykernel
     #   napari (setup.cfg)
@@ -150,7 +150,7 @@ lazy-loader==0.2
     # via
     #   napari (setup.cfg)
     #   scikit-image
-lit==16.0.2
+lit==16.0.3
     # via triton
 locket==1.0.0
     # via partd
@@ -271,9 +271,9 @@ pillow==9.5.0
     #   matplotlib
     #   napari (setup.cfg)
     #   scikit-image
-pint==0.20.1
+pint==0.21
     # via napari (setup.cfg)
-platformdirs==3.3.0
+platformdirs==3.5.0
     # via
     #   jupyter-core
     #   pooch
@@ -386,7 +386,7 @@ pyzmq==25.0.2
     #   ipykernel
     #   jupyter-client
     #   qtconsole
-qtconsole==5.4.1
+qtconsole==5.4.3
     # via
     #   napari (setup.cfg)
     #   napari-console
@@ -397,11 +397,11 @@ qtpy==2.3.1
     #   napari-console
     #   qtconsole
     #   superqt
-requests==2.28.2
+requests==2.30.0
     # via
     #   pooch
     #   sphinx
-rich==13.3.4
+rich==13.3.5
     # via
     #   napari (setup.cfg)
     #   npe2
@@ -489,7 +489,7 @@ traitlets==5.9.0
     #   qtconsole
 triton==2.0.0
     # via torch
-typer==0.7.0
+typer==0.9.0
     # via npe2
 typing-extensions==4.5.0
     # via
@@ -501,11 +501,12 @@ typing-extensions==4.5.0
     #   pydantic
     #   superqt
     #   torch
+    #   typer
 tzdata==2023.3
     # via pandas
-urllib3==1.26.15
+urllib3==2.0.2
     # via requests
-virtualenv==20.22.0
+virtualenv==20.23.0
     # via napari (setup.cfg)
 vispy==0.12.2
     # via
