@@ -352,6 +352,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         -------
         sliced_extent_world : array, shape (2, D)
         """
+        # if not layers are present, assume image-like with dimensions of size 512
+        if len(self.layers) == 0:
+            return np.vstack(
+                [np.full(self.dims.ndim, -0.5), np.full(self.dims.ndim, 511.5)]
+            )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
     def reset_view(self):
