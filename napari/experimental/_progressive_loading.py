@@ -1,6 +1,7 @@
 import itertools
 import logging
 import sys
+import heapq
 from typing import Tuple, Union
 
 import dask
@@ -19,6 +20,9 @@ formatter = logging.Formatter(
 )
 streamHandler.setFormatter(formatter)
 LOGGER.addHandler(streamHandler)
+
+class ChunkFailed(Exception):
+    pass
 
 
 def get_chunk(
@@ -51,14 +55,21 @@ def get_chunk(
     real_array = None
     retry = 0
     while real_array is None and retry < num_retry:
-        try:
-            real_array = np.asarray(array[chunk_slice].compute(), dtype=dtype)
+        #try:
+        if True:
+            # For Dask fetching
+            chunk = array[chunk_slice]
+            if isinstance(chunk, da.Array) or isinstance(chunk, VirtualData):
+                real_array = np.asarray(chunk.compute(), dtype=dtype)
+            else:
+                real_array = np.asarray(chunk, dtype=dtype)
+            
             # TODO check for a race condition that is causing this exception
             #      some dask backends are not thread-safe
-        except ValueError(
-            f"get_chunk failed to fetch data: retry {retry} of {num_retry}"
-        ):
-            pass
+        # except ChunkFailed(
+        #     f"get_chunk failed to fetch data: retry {retry} of {num_retry}"
+        # ):
+        #     pass
         retry += 1
     return real_array
 
@@ -115,7 +126,89 @@ def distance_from_camera_centre_line(points, camera):
     return distances
 
 
-def prioritised_chunk_loading(depth, distance, zoom, alpha=1.0, visible=None):
+def chunk_centers(array: da.Array, ndim=3):
+    """Make a dictionary mapping chunk centers to chunk slices.
+    Note: if array is >3D, then the last 3 dimensions are assumed as ZYX
+    and will be used for calculating centers
+
+
+    Parameters
+    ----------
+    array: dask Array
+        The input array.
+
+    Returns
+    -------
+    chunk_map : dict {tuple of float: tuple of slices}
+        A dictionary mapping chunk centers to chunk slices.
+    """
+    start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
+    middle_pos = [
+        np.cumsum(sizes) - (np.array(sizes) / 2) for sizes in array.chunks
+    ]
+    end_pos = [np.cumsum(sizes) for sizes in array.chunks]
+    all_start_pos = list(itertools.product(*start_pos))
+    # TODO We impose dimensional ordering for ND
+    all_middle_pos = [el[-ndim:] for el in list(itertools.product(*middle_pos))]
+    all_end_pos = list(itertools.product(*end_pos))
+    chunk_slices = []
+    for start, end in zip(all_start_pos, all_end_pos):
+        chunk_slice = [
+            slice(start_i, end_i) for start_i, end_i in zip(start, end)
+        ]
+        # TODO We impose dimensional ordering for ND
+        chunk_slices.append(tuple(chunk_slice[-ndim:]))
+
+    mapping = dict(zip(all_middle_pos, chunk_slices))
+    return mapping
+
+# ---------- 2D specific ----------
+
+def chunk_priority_2D(chunk_keys, corner_pixels, scale):
+    """Return the keys for all chunks at this scale within the corner_pixels
+
+    Parameters
+    ----------
+    corner_pixels : tuple
+        ND top left and bottom right coordinates for the current view
+    scale : int
+        the scale level, assuming powers of 2
+
+    """
+
+    # TODO all of this needs to be generalized to ND or replaced/merged with volume rendering code
+
+    mins = corner_pixels[0, :] / (2**scale)
+    maxs = corner_pixels[1, :] / (2**scale)
+
+    # Check if a key is within mins/maxs
+    def contains(key):
+        # key is a tuple of slices
+        for dim in range(len(key)):
+            below_min = key[dim].start < mins[dim]
+            above_max = key[dim].stop > maxs[dim]
+            # If start and stop are below interval, or
+            #    start and stop are above interval: return False
+            if ( below_min and key[dim].stop < mins[dim] ) or ( above_max and key[dim].start > maxs[dim] ):
+                return False
+        return True
+    
+    priority_map = []
+    
+    for idx, chunk_key in enumerate(chunk_keys):
+        priority = 0
+        if contains(chunk_key):
+            priority = 0
+        else:
+            priority = np.inf
+        if priority < np.inf:
+            heapq.heappush(priority_map, (priority, chunk_key))
+
+    return priority_map
+
+# ---------- 3D specific ----------
+
+def prioritised_chunk_loading_3D(depth, distance, zoom, alpha=1.0, visible=None):
     """Compute a chunk priority based on chunk location relative to camera.
     Lower priority is preferred.
 
@@ -138,51 +231,13 @@ def prioritised_chunk_loading(depth, distance, zoom, alpha=1.0, visible=None):
     -------
     priority : (N,) array of float
         The loading priority of each chunk.
+
+    Note: priority values of np.inf should not be displayed
     """
     chunk_load_priority = depth + alpha * zoom * distance
     if visible is not None:
         chunk_load_priority[np.logical_not(visible)] = np.inf
     return chunk_load_priority
-
-
-# ---------- 3D specific ----------
-
-
-def chunk_centers_3D(array: da.Array):
-    """Make a dictionary mapping chunk centers to chunk slices.
-    Note: if array is >3D, then the last 3 dimensions are assumed as ZYX
-    and will be used for calculating centers
-
-
-    Parameters
-    ----------
-    array: dask Array
-        The input array.
-
-    Returns
-    -------
-    chunk_map : dict {tuple of float: tuple of slices}
-        A dictionary mapping chunk centers to chunk slices.
-    """
-    start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
-    middle_pos = [
-        np.cumsum(sizes) - (np.array(sizes) / 2) for sizes in array.chunks
-    ]
-    end_pos = [np.cumsum(sizes) for sizes in array.chunks]
-    all_start_pos = list(itertools.product(*start_pos))
-    # We impose 3D here
-    all_middle_pos = [el[-3:] for el in list(itertools.product(*middle_pos))]
-    all_end_pos = list(itertools.product(*end_pos))
-    chunk_slices = []
-    for start, end in zip(all_start_pos, all_end_pos):
-        chunk_slice = [
-            slice(start_i, end_i) for start_i, end_i in zip(start, end)
-        ]
-        # We impose 3D here
-        chunk_slices.append(tuple(chunk_slice[-3:]))
-
-    mapping = dict(zip(all_middle_pos, chunk_slices))
-    return mapping
 
 
 @thread_worker
@@ -296,7 +351,7 @@ def render_sequence_3D(
     # Prioritize chunks using world coordinates
     distances = distance_from_camera_centre_line(points_world, camera)
     depth = visual_depth(points_world, camera)
-    priorities = prioritised_chunk_loading(
+    priorities = prioritised_chunk_loading_3D(
         depth, distances, camera.zoom, alpha=alpha, visible=point_mask
     )
 
@@ -633,6 +688,8 @@ class VirtualData:
         
         # Update translate
         # TODO there is a bug here, _min_coord goes to 0 when it shouldnt as the user zooms into the highest resolution
+        # if self.array.shape[0] > 100000 and self._min_coord[0] == 0:
+        #     import pdb; pdb.set_trace()
         self.translate = self._min_coord
 
         LOGGER.debug(f"update_with_minmax: {self.translate} max {self._max_coord}")
@@ -647,7 +704,7 @@ class VirtualData:
         next_data_plane = np.zeros(new_shape, dtype=self.dtype)
 
         
-        if prev_max_coord:            
+        if False:# prev_max_coord:            
             # Get the matching slice from both data planes
             next_slices = []
             prev_slices = []
@@ -712,7 +769,6 @@ class VirtualData:
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
     ) -> LayerDataProtocol:
         # return self.data_plane.__getitem__(key)
-        print(key)
         return self.get_offset(key)
 
     def __setitem__(
@@ -730,7 +786,9 @@ class VirtualData:
             return self.data_plane.__getitem__(data_plane_key)
         except Exception:
             shape = tuple([sl.stop - sl.start for sl in key])
-            return da.zeros(shape)
+            LOGGER.info(f"get_offset failed {key}")
+            import pdb; pdb.set_trace()
+            return np.zeros(shape)
         # if type(key) is tuple:
         #     return self.data_plane.__getitem__(tuple(key[-1 * self.d :]))
         # else:
@@ -752,6 +810,14 @@ class VirtualData:
         #     )
         # else:
         #     return self.data_plane.__setitem__(key, value)
+
+    @property
+    def chunksize(self):
+        return self.array.chunksize
+
+    @property
+    def chunks(self):
+        return self.array.chunks
 
 
 def test_virtualdata():
@@ -836,33 +902,34 @@ class MultiScaleVirtualData:
         # TODO hard coded 2D for now
         self.d = 2
 
-    def set_interval(self, min_coord, max_coord, max_scale=-1):
+    def set_interval(self, min_coord, max_coord, visible_scales=[]):
         """min_coord and max_coord are in the same units as the highest resolution
         scale."""
 
         for scale in range(len(self.arrays)):
-            # Update translate
-            # TODO expect rounding errors here
-            scaled_min = [
-                int(min_coord[idx] / self._scale_factors[scale][idx])
-                for idx in range(len(min_coord))
-            ]
-            scaled_max = [
-                int(max_coord[idx] / self._scale_factors[scale][idx])
-                for idx in range(len(max_coord))
-            ]
+            if not visible_scales or visible_scales[scale]:
+                # Update translate
+                # TODO expect rounding errors here
+                scaled_min = [
+                    int(min_coord[idx] / self._scale_factors[scale][idx])
+                    for idx in range(len(min_coord))
+                ]
+                scaled_max = [
+                    int(max_coord[idx] / self._scale_factors[scale][idx])
+                    for idx in range(len(max_coord))
+                ]
 
-            self._translate[scale] = scaled_min
-            LOGGER.info(
-                f"update_with_minmax: scale {scale} min {min_coord} : {scaled_min} max {max_coord} : {scaled_max}"
-            )
+                self._translate[scale] = scaled_min
+                LOGGER.info(
+                    f"update_with_minmax: scale {scale} min {min_coord} : {scaled_min} max {max_coord} : {scaled_max}"
+                )
 
-            # Ask VirtualData to update its interval
-            coords = tuple(
-                [slice(mn, mx) for mn, mx in zip(scaled_min, scaled_max)]
-            )
+                # Ask VirtualData to update its interval
+                coords = tuple(
+                    [slice(mn, mx) for mn, mx in zip(scaled_min, scaled_max)]
+                )
             
-            self._data[scale].set_interval(coords)
+                self._data[scale].set_interval(coords)
 
 
 if __name__ == "__main__":

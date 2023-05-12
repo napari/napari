@@ -18,9 +18,12 @@ import napari
 from napari.qt.threading import thread_worker
 
 from napari.experimental._progressive_loading import (
-    ChunkCacheManager,
-    luethi_zenodo_7144919,
     get_chunk,
+    chunk_centers,
+)
+
+from napari.experimental._progressive_loading_datasets import (
+    luethi_zenodo_7144919,
 )
 
 LOGGER = logging.getLogger("poor-mans-octree")
@@ -32,44 +35,6 @@ formatter = logging.Formatter(
 )
 streamHandler.setFormatter(formatter)
 LOGGER.addHandler(streamHandler)
-
-
-def chunk_centers(array: da.Array):
-    """Make a dictionary mapping chunk centers to chunk slices.
-    Note: if array is >3D, then the last 3 dimensions are assumed as ZYX
-    and will be used for calculating centers
-
-
-    Parameters
-    ----------
-    array: dask Array
-        The input array.
-
-    Returns
-    -------
-    chunk_map : dict {tuple of float: tuple of slices}
-        A dictionary mapping chunk centers to chunk slices.
-    """
-    start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
-    middle_pos = [
-        np.cumsum(sizes) - (np.array(sizes) / 2) for sizes in array.chunks
-    ]
-    end_pos = [np.cumsum(sizes) for sizes in array.chunks]
-    all_start_pos = list(itertools.product(*start_pos))
-    # We impose 3D here
-    all_middle_pos = [el[-3:] for el in list(itertools.product(*middle_pos))]
-    all_end_pos = list(itertools.product(*end_pos))
-    chunk_slices = []
-    for start, end in zip(all_start_pos, all_end_pos):
-        chunk_slice = [
-            slice(start_i, end_i) for start_i, end_i in zip(start, end)
-        ]
-        # We impose 3D here
-        chunk_slices.append(tuple(chunk_slice[-3:]))
-
-    mapping = dict(zip(all_middle_pos, chunk_slices))
-    return mapping
-
 
 def rotation_matrix_from_camera(
     angles,
@@ -164,11 +129,8 @@ def render_sequence_caller(
     view_slice,
     scale=0,
     camera=None,
-    cache_manager=None,
     arrays=None,
     chunk_maps=None,
-    container="",
-    dataset="",
     alpha=0.8,
     scale_factors=[],
     dtype=np.uint16,
@@ -183,11 +145,8 @@ def render_sequence_caller(
         view_slice,
         scale=scale,
         camera=camera,
-        cache_manager=cache_manager,
         arrays=arrays,
         chunk_maps=chunk_maps,
-        container=container,
-        dataset=dataset,
         alpha=alpha,
         scale_factors=scale_factors,
         dtype=dtype,
@@ -199,11 +158,8 @@ def render_sequence(
     view_slice,
     scale=0,
     camera=None,
-    cache_manager=None,
     arrays=None,
     chunk_maps=None,
-    container="",
-    dataset="",
     alpha=0.8,
     scale_factors=[],
     dtype=np.uint16,
@@ -222,19 +178,11 @@ def render_sequence(
     camera : Camera
         a napari Camera used for prioritizing data loading
         Note: the camera instance should be immutable.
-    cache_manager : ChunkCacheManager
-        An instance of a ChunkCacheManager for data fetching
     arrays : list
         multiscale arrays to display
     chunk_maps : list
         a list of dictionaries mapping chunk coordinates to chunk
         slices
-    container : str
-        the name of a zarr container, used for making unique keys in
-        cache
-    dataset : str
-        the name of a zarr dataset, used for making unique keys in
-        cache
     alpha : float
         a parameter that tunes the behavior of chunk prioritization
         see prioritised_chunk_loading for more info
@@ -244,17 +192,12 @@ def render_sequence(
         dtype of data
     """
 
-    layer_name = f"{container}/{dataset}/s{scale}"
-
     # Get some variables specific to this scale level
     min_coord = [st.start for st in view_slice]
     max_coord = [st.stop for st in view_slice]
     array = arrays[scale]
     chunk_map = chunk_maps[scale]
     scale_factor = scale_factors[scale]
-
-    highres_min = str([el.start * 2**scale for el in view_slice])
-    highres_max = str([el.stop * 2**scale for el in view_slice])
 
     # LOGGER.info(
     #     f"add_subnodes {scale} {str(view_slice)}",
@@ -334,9 +277,6 @@ def render_sequence(
             data = get_chunk(
                 data_slice,
                 array=array,
-                container=container,
-                dataset=scale_dataset,
-                cache_manager=cache_manager,
                 dtype=dtype,
             )
 
@@ -432,11 +372,8 @@ def render_sequence(
                 next_chunk_slice,
                 scale=scale - 1,
                 camera=camera,
-                cache_manager=cache_manager,
                 arrays=arrays,
                 chunk_maps=chunk_maps,
-                container=container,
-                dataset=dataset,
                 scale_factors=scale_factors,
                 dtype=dtype,
                 dims=dims,
@@ -620,11 +557,8 @@ def add_subnodes(
     view_slice,
     scale=0,
     viewer=None,
-    cache_manager=None,
     arrays=None,
     chunk_maps=None,
-    container="",
-    dataset="",
     alpha=0.8,
     scale_factors=[],
     worker_map={},
@@ -642,19 +576,11 @@ def add_subnodes(
         The scale level to display. 0 is highest resolution
     viewer : viewer
         a napari viewer that the nodes will be added to
-    cache_manager : ChunkCacheManager
-        An instance of a ChunkCacheManager for data fetching
     arrays : list
         multiscale arrays to display
     chunk_maps : list
         a list of dictionaries mapping chunk coordinates to chunk
         slices
-    container : str
-        the name of a zarr container, used for making unique keys in
-        cache
-    dataset : str
-        the name of a zarr dataset, used for making unique keys in
-        cache
     alpha : float
         a parameter that tunes the behavior of chunk prioritization
         see prioritised_chunk_loading for more info
@@ -685,11 +611,8 @@ def add_subnodes(
         view_slice,
         scale,
         camera,
-        cache_manager,
         arrays=arrays,
         chunk_maps=chunk_maps,
-        container=container,
-        dataset=dataset,
         scale_factors=scale_factors,
         alpha=alpha,
         dtype=dtype,
@@ -736,8 +659,6 @@ def poor_octree_widget(
     # view_interval = ((0, 0, 0), [3 * el for el in chunk_strides[3]])
     # view_interval = ((0, 0, 0), (6144, 2048, 4096))
 
-    cache_manager = ChunkCacheManager(cache_size=6e9)
-
     # TODO if the lowest scale level of these arrays still exceeds texture memory, this breaks
     multiscale_arrays = large_image["arrays"]
 
@@ -746,7 +667,7 @@ def poor_octree_widget(
     # multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
 
     multiscale_chunk_maps = [
-        chunk_centers(array)
+        chunk_centers(array, ndim=3)
         for scale_level, array in enumerate(multiscale_arrays)
     ]
 
@@ -837,11 +758,8 @@ def poor_octree_widget(
             view_slice,
             scale=len(multiscale_arrays) - 1,
             viewer=viewer,
-            cache_manager=cache_manager,
             arrays=multiscale_arrays,
             chunk_maps=multiscale_chunk_maps,
-            container=large_image["container"],
-            dataset=large_image["dataset"],
             scale_factors=scale_factors,
             worker_map=worker_map,
             viewer_lock=viewer_lock,

@@ -1,5 +1,6 @@
 import logging
 import sys
+import heapq
 from typing import Tuple, Union
 import itertools
 
@@ -16,6 +17,8 @@ from superqt import ensure_main_thread
 import napari
 from napari.experimental._progressive_loading import (
     get_chunk,
+    chunk_centers,
+    chunk_priority_2D,
     VirtualData,
     MultiScaleVirtualData,
 )
@@ -202,15 +205,6 @@ def get_and_process_chunk(chunk_slice, scale, array, full_shape):
         array=array,
     )
 
-    upscale_factor = [el * 2**scale for el in real_array.shape]
-
-    # Upscale the data to highest resolution
-    upscaled = resize(
-        real_array,
-        upscale_factor,
-        preserve_range=True,
-    )
-
     # TODO imposes 3D
     z, y, x = [sl.start for sl in chunk_slice]
 
@@ -218,39 +212,14 @@ def get_and_process_chunk(chunk_slice, scale, array, full_shape):
     # upscaled = np.ones_like(upscaled) * scale
 
     LOGGER.info(
-        f"yielding: {(z * 2**scale, y * 2**scale, x * 2**scale, scale, upscaled.shape)} sample {upscaled[10:20,10]} with sum {upscaled.sum()}"
+        f"yielding: {(z * 2**scale, y * 2**scale, x * 2**scale, scale, real_array.shape)} sample {real_array[0:5,0]} with sum {real_array.sum()}"
     )
     # Return upscaled coordinates, the scale, and chunk
-    chunk_size = upscaled.shape
+    chunk_size = real_array.shape
 
     LOGGER.info(
-        f"yield will be placed at: {(z * 2**scale, y * 2**scale, x * 2**scale, scale, upscaled.shape)}"
+        f"yield will be placed at: {(z * 2**scale, y * 2**scale, x * 2**scale, scale, real_array.shape)}"
     )
-
-    upscaled_chunk_size = [0, 0]
-    upscaled_chunk_size[0] = min(
-        full_shape[-2] - y * 2**scale,
-        chunk_size[-2],
-    )
-    upscaled_chunk_size[1] = min(
-        full_shape[-1] - x * 2**scale,
-        chunk_size[-1],
-    )
-
-    upscaled = upscaled[: upscaled_chunk_size[-2], : upscaled_chunk_size[-1]]
-
-    # TODO This is unclean!
-    upscaled_chunk_slice = [None] * 3
-    for idx, sl in enumerate(chunk_slice):
-        start_coord = sl.start * 2**scale
-        stop_coord = sl.stop * 2**scale
-        # Check for ragged edges
-        if idx > 0:
-            stop_coord = start_coord + min(
-                stop_coord - start_coord, upscaled_chunk_size[idx - 1]
-            )
-
-        upscaled_chunk_slice[idx] = slice(start_coord, stop_coord)
 
     return (
         tuple(upscaled_chunk_slice),
@@ -260,7 +229,7 @@ def get_and_process_chunk(chunk_slice, scale, array, full_shape):
 
 
 @thread_worker
-def render_sequence_2D(corner_pixels, full_shape, num_threads=1):
+def render_sequence_2D(corner_pixels, full_shape):
     """A generator that yields multiscale chunk tuples from low to high resolution.
 
     Parameters
@@ -270,8 +239,6 @@ def render_sequence_2D(corner_pixels, full_shape, num_threads=1):
         current view
     full_shape : tuple
         shape of highest resolution array
-    num_threads : int
-        number of threads for multithreaded fetching
     """
     # NOTE this corner_pixels means something else and should be renamed
     # it is further limited to the visible data on the vispy canvas
@@ -283,53 +250,30 @@ def render_sequence_2D(corner_pixels, full_shape, num_threads=1):
     # TODO scale is hardcoded here
     for scale in reversed(range(len(arrays))):
         array = arrays[scale]
-
-        chunks_to_fetch = list(chunks_for_scale(corner_pixels, array, scale))
+        
+        # TODO change chunks_for_scale to chunk_center
+        chunk_map = chunk_centers(array, ndim=2)
+        chunk_keys = list(chunk_map.values())
+        chunk_queue = chunk_priority_2D(chunk_keys, corner_pixels, scale)
+        # TODO continue here by filtering chunk_keys
+        # chunks_to_fetch = list(chunks_for_scale(chunk_keys, corner_pixels, scale))
+        
+        # Prev
+        # chunks_to_fetch = list(chunks_for_scale(corner_pixels, array, scale))
 
         LOGGER.info(
-            f"render_sequence: {scale}, {array.shape} fetching {len(chunks_to_fetch)} chunks"
+            f"render_sequence: {scale}, {array.shape} fetching {len(chunk_queue)} chunks"
         )
 
-        if num_threads == 1:
-            # Single threaded:
-            for chunk_slice in chunks_to_fetch:
-                yield get_and_process_chunk(
-                    chunk_slice,
-                    scale,
-                    array,
-                    full_shape,
-                )
-
-        else:
-            # Make a list of num_threads length sublists
-            all_job_sets = [
-                chunks_to_fetch[i] for i in range(0, len(chunks_to_fetch))
-            ]
-
-            def mapper(chunk_slice):
-                get_and_process_chunk(
-                    chunk_slice,
-                    scale,
-                    array,
-                    full_shape,
-                )
-
-            with concurrent.futures.ProcessPoolExecutor() as executor:
-                # TODO we should really be yielding async instead of in batches
-                # Yield the chunks that are done
-                for idx, result in enumerate(
-                    executor.map(mapper, all_job_sets)
-                ):
-                    LOGGER.info(
-                        f"jobs done: scale {scale} job_idx {idx} with result {result}"
-                    )
-
-                    LOGGER.info(
-                        f"scale of {scale} upscaled {result[-2].shape} chunksize {result[-1]} at {result[:3]}"
-                    )
-
-                    # Return upscaled coordinates, the scale, and chunk
-                    yield result
+        # for chunk_slice in chunks_to_fetch:
+        while chunk_queue:
+            priority, chunk_slice = heapq.heappop(chunk_queue)
+            yield get_and_process_chunk(
+                chunk_slice,
+                scale,
+                array,
+                full_shape,
+            )
 
 
 @tz.curry
@@ -400,7 +344,11 @@ def dims_update_handler(invar, data=None, layers={}):
     worker.start()
 
 
-def add_multiscale_image(viewer, data, contrast_limits=[0, 255]):
+def add_multiscale_image(viewer, data, contrast_limits=[0, 255], ndisplay=2):
+    if ndisplay != 2:
+        LOGGER.error("add_multiscale_image only supports 2D in this example.")
+        return
+    
     # Get our multiscale data is ready
     min_coord = [0] * len(data.shape)
     max_coord = [0] * len(data.shape)
@@ -444,27 +392,9 @@ def add_multiscale_image(viewer, data, contrast_limits=[0, 255]):
         data=data,
         layers=layers
     )
-
-    pass
     
 if __name__ == "__main__":
-    global viewer
     viewer = napari.Viewer()
-
-    # Previous
-    # large_image = {
-    #     "container": "s3://janelia-cosem-datasets/jrc_macrophage-2/jrc_macrophage-2.n5",
-    #     "dataset": "em/fibsem-uint16",
-    #     "scale_levels": 4,
-    #     "chunk_size": (384, 384, 384),
-    # }
-    # large_image["arrays"] = [
-    #     read_xarray(
-    #         f"{large_image['container']}/{large_image['dataset']}/s{scale}/",
-    #         storage_options={"anon": True},
-    #     )
-    #     for scale in range(large_image["scale_levels"])
-    # ]
 
     # large_image = openorganelle_mouse_kidney_em()
     large_image = mandelbrot_dataset()
