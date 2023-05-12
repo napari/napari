@@ -679,7 +679,7 @@ class _BasePoints(Layer):
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
-        return self.data.shape[1]
+        raise NotImplementedError
 
     @property
     def _extent_data(self) -> np.ndarray:
@@ -692,8 +692,8 @@ class _BasePoints(Layer):
         if len(self.data) == 0:
             extrema = np.full((2, self.ndim), np.nan)
         else:
-            maxs = np.max(self.data, axis=0)
-            mins = np.min(self.data, axis=0)
+            maxs = np.max(self._points_data, axis=0)
+            mins = np.min(self._points_data, axis=0)
             extrema = np.vstack([mins, maxs])
         return extrema
 
@@ -727,7 +727,7 @@ class _BasePoints(Layer):
 
     @symbol.setter
     def symbol(self, symbol: Union[str, np.ndarray, list]) -> None:
-        symbol = np.broadcast_to(symbol, self.data.shape[0])
+        symbol = np.broadcast_to(symbol, len(self.data))
         self._symbol = coerce_symbols(symbol)
         self.events.symbol()
         self.events.highlight()
@@ -754,11 +754,11 @@ class _BasePoints(Layer):
     @size.setter
     def size(self, size: Union[int, float, np.ndarray, list]) -> None:
         try:
-            self._size = np.broadcast_to(size, self.data.shape).copy()
+            self._size = np.broadcast_to(size, self._points_data.shape).copy()
         except ValueError as e:
             try:
                 self._size = np.broadcast_to(
-                    size, self.data.shape[::-1]
+                    size, self._points_data.shape[::-1]
                 ).T.copy()
             except ValueError:
                 raise ValueError(
@@ -847,7 +847,7 @@ class _BasePoints(Layer):
 
     @shown.setter
     def shown(self, shown):
-        self._shown = np.broadcast_to(shown, self.data.shape[0]).astype(bool)
+        self._shown = np.broadcast_to(shown, len(self.data)).astype(bool)
         self.refresh()
 
     @property
@@ -860,7 +860,7 @@ class _BasePoints(Layer):
         self, edge_width: Union[int, float, np.ndarray, list]
     ) -> None:
         # broadcast to np.array
-        edge_width = np.broadcast_to(edge_width, self.data.shape[0]).copy()
+        edge_width = np.broadcast_to(edge_width, len(self.data)).copy()
 
         # edge width cannot be negative
         if np.any(edge_width < 0):
@@ -1179,22 +1179,21 @@ class _BasePoints(Layer):
         state : dict
             Dictionary of layer state.
         """
+        not_empty = len(self.data) > 0
         state = self._get_base_state()
         state.update(
             {
-                'symbol': self.symbol
-                if self.data.size
-                else [self.current_symbol],
+                'symbol': self.symbol if not_empty else [self.current_symbol],
                 'edge_width': self.edge_width,
                 'edge_width_is_relative': self.edge_width_is_relative,
                 'face_color': self.face_color
-                if self.data.size
+                if not_empty
                 else [self.current_face_color],
                 'face_color_cycle': self.face_color_cycle,
                 'face_colormap': self.face_colormap.name,
                 'face_contrast_limits': self.face_contrast_limits,
                 'edge_color': self.edge_color
-                if self.data.size
+                if not_empty
                 else [self.current_edge_color],
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.name,
@@ -1349,7 +1348,7 @@ class _BasePoints(Layer):
             Array of coordinates for the N points in view
         """
         if len(self._indices_view) > 0:
-            data = self.data[
+            data = self._points_data[
                 np.ix_(self._indices_view, self._slice_input.displayed)
             ]
         else:
@@ -1863,7 +1862,7 @@ class _BasePoints(Layer):
             disp = list(self._slice_input.displayed)
             self._set_drag_start(selection_indices, position)
             ixgrid = np.ix_(selection_indices, disp)
-            center = self.data[ixgrid].mean(axis=0)
+            center = self._points_data[ixgrid].mean(axis=0)
             shift = np.array(position)[disp] - center - self._drag_start
             self._move_points(ixgrid, shift)
             self.refresh()
@@ -1907,29 +1906,10 @@ class _BasePoints(Layer):
         if self._drag_start is None:
             self._drag_start = np.array(position, dtype=float)[dims_displayed]
             if len(selection_indices) > 0 and center_by_data:
-                center = self.data[
+                center = self._points_data[
                     np.ix_(selection_indices, dims_displayed)
                 ].mean(axis=0)
                 self._drag_start -= center
-
-    def _copy_data(self):
-        """Copy selected points to clipboard."""
-        if len(self.selected_data) > 0:
-            index = list(self.selected_data)
-            self._clipboard = {
-                'data': deepcopy(self.data[index]),
-                'edge_color': deepcopy(self.edge_color[index]),
-                'face_color': deepcopy(self.face_color[index]),
-                'shown': deepcopy(self.shown[index]),
-                'size': deepcopy(self.size[index]),
-                'symbol': deepcopy(self.symbol[index]),
-                'edge_width': deepcopy(self.edge_width[index]),
-                'features': deepcopy(self.features.iloc[index]),
-                'indices': self._slice_indices,
-                'text': self.text._copy(index),
-            }
-        else:
-            self._clipboard = {}
 
     def get_status(
         self,
@@ -2044,7 +2024,7 @@ class _BasePoints(Layer):
             world=world,
         )
         # if the cursor is not outside the image or on the background
-        if value is None or value > self.data.shape[0]:
+        if value is None or value > len(self.data):
             return []
 
         return [
@@ -2144,6 +2124,10 @@ class Points(_BasePoints):
         self.events.data(value=self.data)
         self._reset_editable()
 
+    def _get_ndim(self) -> int:
+        """Determine number of dimensions of the layer."""
+        return self.data.shape[1]
+
     def add(self, coords):
         """Adds points at coordinates.
 
@@ -2195,7 +2179,7 @@ class Points(_BasePoints):
         shift : np.ndarray
             Selected coordinates shift
         """
-        self._points_data[ixgrid] = self._points_data[ixgrid] + shift
+        self.data[ixgrid] = self.data[ixgrid] + shift
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
@@ -2250,6 +2234,25 @@ class Points(_BasePoints):
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
             self.refresh()
+
+    def _copy_data(self):
+        """Copy selected points to clipboard."""
+        if len(self.selected_data) > 0:
+            index = list(self.selected_data)
+            self._clipboard = {
+                'data': deepcopy(self.data[index]),
+                'edge_color': deepcopy(self.edge_color[index]),
+                'face_color': deepcopy(self.face_color[index]),
+                'shown': deepcopy(self.shown[index]),
+                'size': deepcopy(self.size[index]),
+                'symbol': deepcopy(self.symbol[index]),
+                'edge_width': deepcopy(self.edge_width[index]),
+                'features': deepcopy(self.features.iloc[index]),
+                'indices': self._slice_indices,
+                'text': self.text._copy(index),
+            }
+        else:
+            self._clipboard = {}
 
     def to_mask(
         self,
