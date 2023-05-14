@@ -244,9 +244,7 @@ class QtViewerDockWidget(QDockWidget):
             if features & QDockWidget.DockWidgetVerticalTitleBar:
                 features = features ^ QDockWidget.DockWidgetVerticalTitleBar
         else:
-            features = (
-                self._features | QDockWidget.DockWidgetVerticalTitleBar
-            )
+            features = self._features | QDockWidget.DockWidgetVerticalTitleBar
         self.setFeatures(features)
 
     @property

@@ -3,7 +3,7 @@ from __future__ import annotations
 from itertools import chain, repeat
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from qtpy.QtCore import QItemSelection, QModelIndex, Qt, QItemSelectionModel
+from qtpy.QtCore import QItemSelection, QItemSelectionModel, QModelIndex, Qt
 from qtpy.QtWidgets import QAbstractItemView
 
 from napari._qt.containers._base_item_model import ItemRole
