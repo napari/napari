@@ -39,7 +39,7 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QMouseEvent, QPixmap
-from qtpy.QtWidgets import QStyledItemDelegate
+from qtpy.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
@@ -51,7 +51,7 @@ from napari._qt.qt_resources import QColoredSVGIcon
 if TYPE_CHECKING:
     from qtpy import QtCore
     from qtpy.QtGui import QPainter
-    from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
+    from qtpy.QtWidgets import QWidget
 
     from napari.components.layerlist import LayerList
 
@@ -110,9 +110,9 @@ class LayerDelegate(QStyledItemDelegate):
         option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
         option.decorationSize = QSize(18, 18)
         option.decorationPosition = (
-            option.Position.Right
+            QStyleOptionViewItem.Right
         )  # put icon on the right
-        option.features |= option.ViewItemFeature.HasDecoration
+        option.features |= QStyleOptionViewItem.HasDecoration
 
     def _paint_thumbnail(self, painter, option, index):
         """paint the layer thumbnail."""

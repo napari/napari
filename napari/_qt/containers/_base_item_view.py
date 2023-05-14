@@ -3,7 +3,7 @@ from __future__ import annotations
 from itertools import chain, repeat
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from qtpy.QtCore import QItemSelection, QModelIndex, Qt
+from qtpy.QtCore import QItemSelection, QModelIndex, Qt, QItemSelectionModel
 from qtpy.QtWidgets import QAbstractItemView
 
 from napari._qt.containers._base_item_model import ItemRole
@@ -98,14 +98,14 @@ class _BaseEventedItemView(Generic[ItemType]):
             sm.clearCurrentIndex()
         else:
             idx = index_of(self.model(), event.value)
-            sm.setCurrentIndex(idx, sm.SelectionFlag.Current)
+            sm.setCurrentIndex(idx, QItemSelectionModel.Current)
 
     def _on_py_selection_change(self, event: Event):
         """The python model selection has changed. Update the Qt view."""
         sm = self.selectionModel()
         for is_selected, idx in chain(
-            zip(repeat(sm.SelectionFlag.Select), event.added),
-            zip(repeat(sm.SelectionFlag.Deselect), event.removed),
+            zip(repeat(QItemSelectionModel.Select), event.added),
+            zip(repeat(QItemSelectionModel.Deselect), event.removed),
         ):
             model_idx = index_of(self.model(), idx)
             if model_idx.isValid():
@@ -118,7 +118,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         for i in self._root.selection:
             idx = index_of(self.model(), i)
             selection.select(idx, idx)
-        sel_model.select(selection, sel_model.SelectionFlag.ClearAndSelect)
+        sel_model.select(selection, QItemSelectionModel.ClearAndSelect)
 
 
 def index_of(model: QAbstractItemModel, obj: ItemType) -> QModelIndex:
