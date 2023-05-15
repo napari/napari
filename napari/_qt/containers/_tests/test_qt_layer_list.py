@@ -1,7 +1,7 @@
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
-from qtpy.QtCore import QModelIndex, Qt
+from qtpy.QtCore import QModelIndex, QPoint, Qt
 
 from napari._qt.containers import QtLayerList
 from napari.components import LayerList
@@ -32,12 +32,39 @@ def test_set_item_unchecked_makes_layer_invisible(qtbot):
     assert not image.visible
 
 
+def test_drag_and_drop_layers(qtbot):
+    view, images = make_qt_layer_list_with_layers(qtbot)
+    name = view.model().data(
+        layer_to_model_index(view, 0), Qt.ItemDataRole.DisplayRole
+    )
+    assert name == "image2"
+
+    # drag event
+    qtbot.mousePress(view, Qt.MouseButton.LeftButton, pos=QPoint(10, 10))
+    qtbot.mouseMoved(view, QPoint(100, 100))
+    qtbot.mouseRelease(view, Qt.MouseButton.LeftButton)
+
+    name = view.model().data(
+        layer_to_model_index(view, 0), Qt.ItemDataRole.DisplayRole
+    )
+    assert name == "image1"
+
+
 def make_qt_layer_list_with_layer(qtbot) -> Tuple[QtLayerList, Image]:
     image = Image(np.zeros((4, 3)))
     layers = LayerList([image])
     view = QtLayerList(layers)
     qtbot.addWidget(view)
     return view, image
+
+
+def make_qt_layer_list_with_layers(qtbot) -> Tuple[QtLayerList, List[Image]]:
+    image1 = Image(np.zeros((4, 3)), name="image1")
+    image2 = Image(np.zeros((4, 3)), name="image2")
+    layers = LayerList([image1, image2])
+    view = QtLayerList(layers)
+    qtbot.addWidget(view)
+    return view, [image1, image2]
 
 
 def layer_to_model_index(view: QtLayerList, layer_index: int) -> QModelIndex:
