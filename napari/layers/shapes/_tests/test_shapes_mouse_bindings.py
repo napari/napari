@@ -1,4 +1,5 @@
-import collections
+from dataclasses import dataclass, field
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pytest
@@ -14,19 +15,27 @@ from napari.utils.interactions import (
 )
 
 
-@pytest.fixture
-def Event():
-    """Create a subclass for simulating vispy mouse events.
+@dataclass
+class Event:
+    """Create a subclass for simulating vispy mouse events."""
 
-    Returns
-    -------
-    Event : Type
-        A new tuple subclass named Event that can be used to create a
-        NamedTuple object with fields "type", "is_dragging", and "modifiers".
-    """
-    return collections.namedtuple(
-        'Event', field_names=['type', 'is_dragging', 'modifiers', 'position']
-    )
+    type: str
+    is_dragging: bool = False
+    modifiers: List[str] = field(default_factory=list)
+    position: Union[Tuple[int, int], Tuple[int, int, int]] = (
+        0,
+        0,
+    )  # world coords
+    pos: np.ndarray = field(
+        default_factory=lambda: np.zeros(2)
+    )  # canvas coords
+    view_direction: Optional[List[float]] = None
+    up_direction: Optional[List[float]] = None
+    dims_displayed: List[int] = field(default_factory=lambda: [0, 1])
+
+
+def read_only_event(*args, **kwargs):
+    return ReadOnlyWrapper(Event(*args, **kwargs), exceptions=('handled',))
 
 
 @pytest.fixture
@@ -55,30 +64,20 @@ def create_known_shapes_layer():
     return layer, n_shapes, known_non_shape
 
 
-def test_not_adding_or_selecting_shape(create_known_shapes_layer, Event):
+def test_not_adding_or_selecting_shape(create_known_shapes_layer):
     """Don't add or select a shape by clicking on one in pan_zoom mode."""
     layer, n_shapes, _ = create_known_shapes_layer
     layer.mode = 'pan_zoom'
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=(0, 0),
-        )
+    event = read_only_event(
+        type='mouse_press',
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=False,
-            modifiers=[],
-            position=(0, 0),
-        )
+    event = read_only_event(
+        type='mouse_release',
     )
     mouse_release_callbacks(layer, event)
 
@@ -88,7 +87,7 @@ def test_not_adding_or_selecting_shape(create_known_shapes_layer, Event):
 
 
 @pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse', 'line'])
-def test_add_simple_shape(shape_type, create_known_shapes_layer, Event):
+def test_add_simple_shape(shape_type, create_known_shapes_layer):
     """Add simple shape by clicking in add mode."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
@@ -96,36 +95,25 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer, Event):
     layer.mode = 'add_' + shape_type
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=known_non_shape,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=known_non_shape,
     )
     mouse_press_callbacks(layer, event)
 
     known_non_shape_end = [40, 60]
     # Simulate drag end
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=known_non_shape_end,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape_end,
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=False,
-            modifiers=[],
-            position=known_non_shape_end,
-        )
+    event = read_only_event(
+        type='mouse_release',
+        position=known_non_shape_end,
     )
     mouse_release_callbacks(layer, event)
 
@@ -138,7 +126,7 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer, Event):
 
 
 @pytest.mark.parametrize('shape_type', ['path', 'polygon'])
-def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
+def test_add_complex_shape(shape_type, create_known_shapes_layer):
     """Add simple shape by clicking in add mode."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
@@ -148,42 +136,26 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
 
     for coord in desired_shape:
         # Simulate move, click, and release
-        event = ReadOnlyWrapper(
-            Event(
-                type='mouse_move',
-                is_dragging=False,
-                modifiers=[],
-                position=coord,
-            )
+        event = read_only_event(
+            type='mouse_move',
+            position=coord,
         )
         mouse_move_callbacks(layer, event)
-        event = ReadOnlyWrapper(
-            Event(
-                type='mouse_press',
-                is_dragging=False,
-                modifiers=[],
-                position=coord,
-            )
+        event = read_only_event(
+            type='mouse_press',
+            position=coord,
         )
         mouse_press_callbacks(layer, event)
-        event = ReadOnlyWrapper(
-            Event(
-                type='mouse_release',
-                is_dragging=False,
-                modifiers=[],
-                position=coord,
-            )
+        event = read_only_event(
+            type='mouse_release',
+            position=coord,
         )
         mouse_release_callbacks(layer, event)
 
     # finish drawing
-    end_click = ReadOnlyWrapper(
-        Event(
-            type='mouse_double_click',
-            is_dragging=False,
-            modifiers=[],
-            position=coord,
-        )
+    end_click = read_only_event(
+        type='mouse_double_click',
+        position=coord,
     )
     assert layer.mouse_double_click_callbacks
     mouse_double_click_callbacks(layer, end_click)
@@ -195,7 +167,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
     assert layer.shape_type[-1] == shape_type
 
 
-def test_vertex_insert(create_known_shapes_layer, Event):
+def test_vertex_insert(create_known_shapes_layer):
     """Add vertex to shape."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
@@ -204,24 +176,17 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     layer.selected_data = {0}
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=known_non_shape,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=known_non_shape,
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate drag end
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=known_non_shape,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape,
     )
     mouse_move_callbacks(layer, event)
 
@@ -233,7 +198,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     )
 
 
-def test_vertex_remove(create_known_shapes_layer, Event):
+def test_vertex_remove(create_known_shapes_layer):
     """Remove vertex from shape."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
@@ -243,24 +208,17 @@ def test_vertex_remove(create_known_shapes_layer, Event):
     position = tuple(layer.data[0][0])
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=position,
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate drag end
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=position,
     )
     mouse_move_callbacks(layer, event)
 
@@ -270,7 +228,7 @@ def test_vertex_remove(create_known_shapes_layer, Event):
 
 
 @pytest.mark.parametrize('mode', ['select', 'direct'])
-def test_select_shape(mode, create_known_shapes_layer, Event):
+def test_select_shape(mode, create_known_shapes_layer):
     """Select a shape by clicking on one in select mode."""
     layer, n_shapes, _ = create_known_shapes_layer
 
@@ -278,24 +236,16 @@ def test_select_shape(mode, create_known_shapes_layer, Event):
     position = tuple(layer.data[0][0])
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=position,
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_release',
+        position=position,
     )
     mouse_release_callbacks(layer, event)
 
@@ -304,13 +254,11 @@ def test_select_shape(mode, create_known_shapes_layer, Event):
     assert layer.selected_data == {0}
 
 
-def test_drag_shape(create_known_shapes_layer, Event):
+def test_drag_shape(create_known_shapes_layer):
     """Select and drag vertex."""
     layer, n_shapes, _ = create_known_shapes_layer
 
     layer.mode = 'select'
-    # Zoom in so as to not select any vertices
-    layer.scale_factor = 0.01
     orig_data = layer.data[0].copy()
     assert len(layer.selected_data) == 0
 
@@ -321,23 +269,15 @@ def test_drag_shape(create_known_shapes_layer, Event):
     assert value == (0, None)
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=position,
     )
     mouse_press_callbacks(layer, event)
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_release',
+        position=position,
     )
     mouse_release_callbacks(layer, event)
 
@@ -349,44 +289,32 @@ def test_drag_shape(create_known_shapes_layer, Event):
     assert value == (0, None)
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        is_dragging=True,
+        position=position,
     )
     mouse_press_callbacks(layer, event)
     # start drag event
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=position,
     )
     mouse_move_callbacks(layer, event)
     position = tuple(np.add(position, [10, 5]))
     # Simulate move, click, and release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=position,
     )
     mouse_move_callbacks(layer, event)
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=position,
     )
     mouse_release_callbacks(layer, event)
 
@@ -396,7 +324,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
     np.testing.assert_allclose(layer.data[0], orig_data + np.array([10, 5]))
 
 
-def test_rotate_shape(create_known_shapes_layer, Event):
+def test_rotate_shape(create_known_shapes_layer):
     """Select and drag handle to rotate shape."""
     layer, n_shapes, _ = create_known_shapes_layer
 
@@ -408,46 +336,34 @@ def test_rotate_shape(create_known_shapes_layer, Event):
     original_data = layer.data[1].copy()
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        is_dragging=True,
+        position=position,
     )
     mouse_press_callbacks(layer, event)
     # start drag event
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=position,
     )
     mouse_move_callbacks(layer, event)
 
     # drag in the handle to bottom midpoint vertex to rotate 180 degrees
     position = tuple(layer._selected_box[3])
     # Simulate move, click, and release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=position,
     )
     mouse_move_callbacks(layer, event)
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=position,
     )
     mouse_release_callbacks(layer, event)
 
@@ -455,7 +371,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
     np.testing.assert_allclose(layer.data[1][2], original_data[0])
 
 
-def test_drag_vertex(create_known_shapes_layer, Event):
+def test_drag_vertex(create_known_shapes_layer):
     """Select and drag vertex."""
     layer, n_shapes, _ = create_known_shapes_layer
 
@@ -464,36 +380,26 @@ def test_drag_vertex(create_known_shapes_layer, Event):
     position = tuple(layer.data[0][0])
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=position,
     )
     mouse_press_callbacks(layer, event)
 
     position = [0, 0]
     # Simulate move, click, and release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=position,
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=position,
     )
     mouse_release_callbacks(layer, event)
 
@@ -517,7 +423,7 @@ def test_drag_vertex(create_known_shapes_layer, Event):
         'vertex_remove',
     ],
 )
-def test_after_in_add_mode_shape(mode, create_known_shapes_layer, Event):
+def test_after_in_add_mode_shape(mode, create_known_shapes_layer):
     """Don't add or select a shape by clicking on one in pan_zoom mode."""
     layer, n_shapes, _ = create_known_shapes_layer
 
@@ -526,24 +432,16 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer, Event):
     position = tuple(layer.data[0][0])
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=position,
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_release',
+        position=position,
     )
     mouse_release_callbacks(layer, event)
 
@@ -553,7 +451,7 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer, Event):
 
 
 @pytest.mark.parametrize('mode', ['select', 'direct'])
-def test_unselect_select_shape(mode, create_known_shapes_layer, Event):
+def test_unselect_select_shape(mode, create_known_shapes_layer):
     """Select a shape by clicking on one in select mode."""
     layer, n_shapes, _ = create_known_shapes_layer
 
@@ -562,24 +460,16 @@ def test_unselect_select_shape(mode, create_known_shapes_layer, Event):
     layer.selected_data = {1}
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=position,
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=False,
-            modifiers=[],
-            position=position,
-        )
+    event = read_only_event(
+        type='mouse_release',
+        position=position,
     )
     mouse_release_callbacks(layer, event)
 
@@ -589,31 +479,23 @@ def test_unselect_select_shape(mode, create_known_shapes_layer, Event):
 
 
 @pytest.mark.parametrize('mode', ['select', 'direct'])
-def test_not_selecting_shape(mode, create_known_shapes_layer, Event):
+def test_not_selecting_shape(mode, create_known_shapes_layer):
     """Don't select a shape by not clicking on one in select mode."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
     layer.mode = mode
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=known_non_shape,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=known_non_shape,
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=False,
-            modifiers=[],
-            position=known_non_shape,
-        )
+    event = read_only_event(
+        type='mouse_release',
+        position=known_non_shape,
     )
     mouse_release_callbacks(layer, event)
 
@@ -622,7 +504,7 @@ def test_not_selecting_shape(mode, create_known_shapes_layer, Event):
 
 
 @pytest.mark.parametrize('mode', ['select', 'direct'])
-def test_unselecting_shapes(mode, create_known_shapes_layer, Event):
+def test_unselecting_shapes(mode, create_known_shapes_layer):
     """Unselect shapes by not clicking on one in select mode."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
@@ -631,24 +513,16 @@ def test_unselecting_shapes(mode, create_known_shapes_layer, Event):
     assert len(layer.selected_data) == 2
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=known_non_shape,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=known_non_shape,
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=False,
-            modifiers=[],
-            position=known_non_shape,
-        )
+    event = read_only_event(
+        type='mouse_release',
+        position=known_non_shape,
     )
     mouse_release_callbacks(layer, event)
 
@@ -657,50 +531,35 @@ def test_unselecting_shapes(mode, create_known_shapes_layer, Event):
 
 
 @pytest.mark.parametrize('mode', ['select', 'direct'])
-def test_selecting_shapes_with_drag(mode, create_known_shapes_layer, Event):
+def test_selecting_shapes_with_drag(mode, create_known_shapes_layer):
     """Select all shapes when drag box includes all of them."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
     layer.mode = mode
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=known_non_shape,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=known_non_shape,
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate drag start
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=known_non_shape,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape,
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate drag end
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move', is_dragging=True, modifiers=[], position=(0, 0)
-        )
-    )
+    event = read_only_event(type='mouse_move', is_dragging=True)
     mouse_move_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=True,
-            modifiers=[],
-            position=(0, 0),
-        )
+    event = read_only_event(
+        type='mouse_release',
+        is_dragging=True,
     )
     mouse_release_callbacks(layer, event)
 
@@ -709,53 +568,40 @@ def test_selecting_shapes_with_drag(mode, create_known_shapes_layer, Event):
 
 
 @pytest.mark.parametrize('mode', ['select', 'direct'])
-def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer, Event):
+def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer):
     """Select all shapes when drag box includes all of them."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
     layer.mode = mode
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            is_dragging=False,
-            modifiers=[],
-            position=known_non_shape,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        position=known_non_shape,
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate drag start
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=known_non_shape,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape,
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate drag end
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=(50, 60),
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=(50, 60),
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=True,
-            modifiers=[],
-            position=(50, 60),
-        )
+    event = read_only_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=(50, 60),
     )
     mouse_release_callbacks(layer, event)
 
@@ -783,7 +629,7 @@ def test_all_modes_covered(attr):
     ],
 )
 def test_drag_start_selection(
-    create_known_shapes_layer, Event, pre_selection, on_point, modifier
+    create_known_shapes_layer, pre_selection, on_point, modifier
 ):
     """Check layer drag start and drag box behave as expected."""
     layer, n_points, known_non_point = create_known_shapes_layer
@@ -803,13 +649,11 @@ def test_drag_start_selection(
     assert layer.selected_data == pre_selection
 
     # Simulate click
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_press',
-            position=initial_position,
-            modifiers=modifier,
-            is_dragging=True,
-        )
+    event = read_only_event(
+        type='mouse_press',
+        is_dragging=True,
+        modifiers=modifier,
+        position=initial_position,
     )
     mouse_press_callbacks(layer, event)
 
@@ -849,13 +693,11 @@ def test_drag_start_selection(
 
     # Simulate drag start on a different position
     offset_position = [initial_position[0] + 20, initial_position[1] + 20]
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            position=offset_position,
-            modifiers=modifier,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=offset_position,
+        modifiers=modifier,
     )
     mouse_move_callbacks(layer, event)
 
@@ -878,13 +720,11 @@ def test_drag_start_selection(
 
     # Simulate drag start on new different position
     offset_position = zero_pos
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            position=offset_position,
-            modifiers=modifier,
-        )
+    event = read_only_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=offset_position,
+        modifiers=modifier,
     )
     mouse_move_callbacks(layer, event)
 
@@ -906,13 +746,11 @@ def test_drag_start_selection(
         )
 
     # Simulate release
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_release',
-            is_dragging=True,
-            modifiers=modifier,
-            position=offset_position,
-        )
+    event = read_only_event(
+        type='mouse_release',
+        is_dragging=True,
+        modifiers=modifier,
+        position=offset_position,
     )
     mouse_release_callbacks(layer, event)
 
