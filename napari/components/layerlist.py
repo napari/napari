@@ -194,7 +194,7 @@ class LayerList(SelectableEventedList[Layer]):
         extent_world : array, shape (2, D)
         """
         return self._get_extent_world(
-            [layer.extent_augmented for layer in self],
+            [layer._extent_augmented for layer in self],
             augmented=True,
         )
 

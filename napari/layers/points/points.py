@@ -840,7 +840,7 @@ class Points(Layer):
                         deferred=True,
                     )
                 ) from e
-        self._clear_extent_agumented()
+        self._clear_extent_augmented()
         self.refresh()
 
     @property

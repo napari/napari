@@ -390,7 +390,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             loaded=Event,
             reload=Event,
             extent=Event,
-            extent_augmented=Event,
+            _extent_augmented=Event,
             _overlays=Event,
             select=WarningEmitter(
                 trans._(
@@ -842,7 +842,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
 
     @cached_property
-    def extent_augmented(self) -> Extent:
+    def _extent_augmented(self) -> Extent:
         """Augmented extent of layer in data and world coordinates.
 
         Differently from Layer.extent, this also includes the "size" of data
@@ -869,11 +869,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             del self.extent
         self.events.extent()
 
-    def _clear_extent_agumented(self):
+    def _clear_extent_augmented(self):
         """Clear extent_augmented cache and emit extent_augmented event."""
-        if 'extent_augmented' in self.__dict__:
-            del self.extent_augmented
-        self.events.extent_augmented()
+        if '_extent_augmented' in self.__dict__:
+            del self._extent_augmented
+        self.events._extent_augmented()
 
     def _clear_extents_and_refresh(self):
         """Clears the cached extents, emits events and refreshes the layer.
@@ -883,7 +883,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         are emitted so that they use the updated extent values.
         """
         self._clear_extent()
-        self._clear_extent_agumented()
+        self._clear_extent_augmented()
         self.refresh()
 
     @property
