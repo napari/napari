@@ -762,6 +762,8 @@ class Points(Layer):
     @property
     def _extent_data_augmented(self):
         extent = self._extent_data
+        if len(self.size) == 0:
+            return extent
 
         max_point_size = np.max(self.size)
         extent[0] -= max_point_size / 2
