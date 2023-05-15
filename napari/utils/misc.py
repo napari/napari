@@ -56,6 +56,14 @@ def running_as_bundled_app(*, check_conda=True) -> bool:
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
+    warnings.warn(
+        trans._(
+            "Briefcase installations are no longer supported as of vX.Y.Z. "
+            "running_as_bundled_app() will be removed in a future release.",
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if (
         check_conda
         and (Path(sys.executable).parent / ".napari_is_bundled").exists()
