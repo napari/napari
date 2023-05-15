@@ -1,5 +1,4 @@
 import contextlib
-import sys
 import warnings
 from functools import partial
 from pathlib import Path
@@ -29,9 +28,8 @@ from typing_extensions import TypedDict
 from napari.plugins import hook_specifications
 from napari.settings import get_settings
 from napari.types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
-from napari.utils._appdirs import user_site_packages
 from napari.utils.events import EmitterGroup, EventedSet
-from napari.utils.misc import camel_to_spaces, running_as_bundled_app
+from napari.utils.misc import camel_to_spaces
 from napari.utils.theme import Theme, register_theme, unregister_theme
 from napari.utils.translations import trans
 
