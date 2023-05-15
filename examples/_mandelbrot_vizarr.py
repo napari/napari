@@ -301,9 +301,8 @@ def add_progressive_loading_image(img, viewer=None):
     LOGGER.info(f"MultiscaleData {multiscale_data.shape}")
 
     # Get initial extent for rendering
-    canvas_corners = viewer.window.qt_viewer._canvas_corners_in_world.astype(
-        np.uint64
-    )
+    canvas_corners = viewer.window.qt_viewer._canvas_corners_in_world.astype(np.int64)
+    canvas_corners[canvas_corners < 0] = 0
     top_left = canvas_corners[0, :]
     bottom_right = canvas_corners[1, :]
 
