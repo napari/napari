@@ -1,4 +1,6 @@
 mypy
+numpy
+pydantic
 types-PyYAML
 types-setuptools
 types-requests
