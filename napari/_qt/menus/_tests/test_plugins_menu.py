@@ -43,7 +43,7 @@ def test_plugin_manager(make_napari_viewer):
     for action in actions:
         if action.text() == "Plugin Manager":
             break
-    else:
+    else:  # pragma: no cover
         found = [action.text() for action in actions]
         raise AssertionError(
             f'Plugin Manager menu item not found. Only found: {", ".join(found)}'
