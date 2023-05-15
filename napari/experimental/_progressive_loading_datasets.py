@@ -306,7 +306,8 @@ class MandlebrotStore(zarr.storage.Store):
 
 # https://dask.discourse.group/t/using-da-delayed-for-zarr-processing-memory-overhead-how-to-do-it-better/1007/10
 def mandelbrot_dataset():
-    max_levels = 8
+    # max_levels = 8
+    max_levels = 14
 
     large_image = {
         "container": "mandelbrot.zarr/",
@@ -323,7 +324,7 @@ def mandelbrot_dataset():
         levels=max_levels, tilesize=512, compressor=Blosc()
     )
     # Wrap in a cache so that tiles don't need to be computed as often
-    store = zarr.LRUStoreCache(store, max_size=1e9)
+    store = zarr.LRUStoreCache(store, max_size=8e9)
 
     # This store implements the 'multiscales' zarr specfiication which is recognized by vizarr
     z_grp = zarr.open(store, mode="r")

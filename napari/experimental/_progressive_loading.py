@@ -162,6 +162,39 @@ def chunk_centers(array: da.Array, ndim=3):
     mapping = dict(zip(all_middle_pos, chunk_slices))
     return mapping
 
+
+def chunk_slices(array: da.Array, ndim=3):
+    """Make a dictionary mapping chunk centers to chunk slices.
+    Note: if array is >3D, then the last 3 dimensions are assumed as ZYX
+    and will be used for calculating centers
+
+
+    Parameters
+    ----------
+    array: dask Array
+        The input array.
+
+    Returns
+    -------
+    chunk_map : dict {tuple of float: tuple of slices}
+        A dictionary mapping chunk centers to chunk slices.
+    """
+
+
+    start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
+    end_pos = [np.cumsum(sizes) for sizes in array.chunks]
+    all_start_pos = list(itertools.product(*start_pos))
+    # TODO We impose dimensional ordering for ND
+    all_end_pos = list(itertools.product(*end_pos))
+    chunk_slices = []
+    
+    chunk_slices = [[]] * len(array.chunks)
+    for dim in range(len(array.chunks)):
+        chunk_slices[dim] = [slice(st, end) for st, end in zip(start_pos[dim], end_pos[dim])]
+
+        
+    return chunk_slices
+
 # ---------- 2D specific ----------
 
 def chunk_priority_2D(chunk_keys, corner_pixels, scale):
@@ -176,28 +209,32 @@ def chunk_priority_2D(chunk_keys, corner_pixels, scale):
 
     """
 
+    # NOTE chunk_keys is a list of lists of slices for each dimension
+
     # TODO all of this needs to be generalized to ND or replaced/merged with volume rendering code
 
     mins = corner_pixels[0, :] / (2**scale)
     maxs = corner_pixels[1, :] / (2**scale)
 
-    # Check if a key is within mins/maxs
-    def contains(key):
-        # key is a tuple of slices
-        for dim in range(len(key)):
-            below_min = key[dim].start < mins[dim]
-            above_max = key[dim].stop > maxs[dim]
+    # contained_keys is an array with list of slices contained along each dimension
+    contained_keys = [[]] * len(chunk_keys)
+    for dim, chunk_slices in enumerate(chunk_keys):
+        for sl in chunk_slices:
+            below_min = sl.start < mins[dim]
+            above_max = sl.stop > maxs[dim]
             # If start and stop are below interval, or
             #    start and stop are above interval: return False
-            if ( below_min and key[dim].stop < mins[dim] ) or ( above_max and key[dim].start > maxs[dim] ):
-                return False
-        return True
-    
+            if ( below_min and sl.stop < mins[dim] ) or ( above_max and sl.start > maxs[dim] ):
+                pass
+            else:
+                contained_keys[dim] += [sl]
+                
     priority_map = []
     
-    for idx, chunk_key in enumerate(chunk_keys):
+    for idx, chunk_key in enumerate(list(itertools.product(*contained_keys))):
         priority = 0
-        if contains(chunk_key):
+        # TODO filter priority here
+        if True:
             priority = 0
         else:
             priority = np.inf
@@ -692,7 +729,9 @@ class VirtualData:
         #     import pdb; pdb.set_trace()
         self.translate = self._min_coord
 
-        LOGGER.debug(f"update_with_minmax: {self.translate} max {self._max_coord}")
+        interval_size = [mx - mn for mx, mn in zip(self._max_coord, self._min_coord)]
+        
+        LOGGER.debug(f"update_with_minmax: {self.translate} max {self._max_coord} interval size {interval_size}")
 
         # Update data_plane
         
@@ -700,27 +739,57 @@ class VirtualData:
             int(mx - mn) for (mx, mn) in zip(self._max_coord, self._min_coord)
         ]
 
-        # Try to reuse the data_plane if possible
+        # Try to reuse the previous data_plane if possible (otherwise we get flashing)
         next_data_plane = np.zeros(new_shape, dtype=self.dtype)
-
         
-        if False:# prev_max_coord:            
+        if prev_max_coord:
             # Get the matching slice from both data planes
             next_slices = []
             prev_slices = []
             for dim in range(len(self._max_coord)):
-                prev_start = max(0, self._min_coord[dim] - prev_min_coord[dim])
-                prev_stop = min(prev_start + new_shape[dim], self.data_plane.shape[dim])
                 
-                prev_next_offset = self._min_coord[dim] - prev_min_coord[dim]
-                next_start = 0
-                next_stop = min(next_start + new_shape[dim], self.data_plane.shape[dim] - prev_start)
+                if self._min_coord[dim] < prev_min_coord[dim]:
+                    prev_start = 0
+                    next_start = prev_min_coord[dim] - self._min_coord[dim]
+                else:
+                    prev_start = self._min_coord[dim] - prev_min_coord[dim]
+                    next_start = 0
+
+                # Get smallest width, this is overlap
+                # width = min(self._max_coord[dim] - next_start, prev_max_coord[dim] - prev_start)
+                # width = min(self._max_coord[dim], prev_max_coord[dim]) - max(next_start, prev_start)
+                width = min(self.data_plane.shape[dim], next_data_plane.shape[dim])
+
+                width = min(width, width - ((next_start + width) - next_data_plane.shape[dim]), width - ((prev_start + width) - self.data_plane.shape[dim]))
+
+                prev_stop = prev_start + width
+                next_stop = next_start + width
+                
+                # if self._max_coord[dim] < prev_max_coord[dim]:
+                #     next_stop = self._max_coord[dim]
+                #     prev_stop = prev_start + (next_stop - next_start)
+                # else:
+                #     prev_stop = prev_max_coord[dim]
+                #     next_stop = next_start + (prev_stop - prev_start)
+                    
+                
+                # prev_start = max(prev_next_offset, self._min_coord[dim] - prev_min_coord[dim])
+                # prev_stop = min(prev_start + new_shape[dim], self.data_plane.shape[dim])
+                                
+                # next_start = 0
+                # next_stop = min(next_start + new_shape[dim], self.data_plane.shape[dim])
                 
                 prev_slices += [slice(int(prev_start), int(prev_stop))]
                 next_slices += [slice(int(next_start), int(next_stop))]
 
-            LOGGER.info(f"reusing data plane: prev {prev_slices} next {next_slices} offset {prev_next_offset}")
-            next_data_plane[tuple(next_slices)] = self.data_plane[tuple(prev_slices)]
+                
+            if next_data_plane[tuple(next_slices)].size > 0 and self.data_plane[tuple(prev_slices)].size > 0:
+                LOGGER.info(f"reusing data plane: prev {prev_slices} next {next_slices}")
+                if next_data_plane[tuple(next_slices)].size != self.data_plane[tuple(prev_slices)].size:
+                    import pdb; pdb.set_trace()
+                next_data_plane[tuple(next_slices)] = self.data_plane[tuple(prev_slices)]
+            else:
+                LOGGER.info(f"could not data plane: prev {prev_slices} next {next_slices}")
 
         self.data_plane = next_data_plane
 
@@ -800,9 +869,11 @@ class VirtualData:
         """Returns self[key]."""
         data_plane_key = self._data_plane_key(key)
         LOGGER.info(f"set_offset: {data_plane_key} shape in plane: {self.data_plane[data_plane_key].shape} value shape: {value.shape}")
-        if np.any(np.array(self.data_plane[data_plane_key].shape) == 0):
-            import pdb; pdb.set_trace()
-        self.data_plane[data_plane_key] = value
+        # if np.any(np.array(self.data_plane[data_plane_key].shape) == 0):
+        #     import pdb; pdb.set_trace()
+        # TODO this is evil
+        if self.data_plane[data_plane_key].size > 0:
+            self.data_plane[data_plane_key] = value
         return self.data_plane[data_plane_key]
         # if type(key) is tuple:
         #     return self.data_plane.__setitem__(
@@ -897,10 +968,16 @@ class MultiScaleVirtualData:
                     )
                 ]
             ]
-            self._data += [virtual_data]
+            self._data += [virtual_data]        
 
         # TODO hard coded 2D for now
         self.d = 2
+
+        self._chunk_slices = []
+        for scale, array in enumerate(self.arrays):
+            print(f"init of {scale}")
+            these_slices = chunk_slices(array, ndim=self.d)
+            self._chunk_slices += [these_slices]
 
     def set_interval(self, min_coord, max_coord, visible_scales=[]):
         """min_coord and max_coord are in the same units as the highest resolution
