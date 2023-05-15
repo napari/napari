@@ -430,7 +430,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def __repr__(self):
         cls = type(self)
-        return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
+        return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
 
     def _mode_setter_helper(self, mode):
         """
