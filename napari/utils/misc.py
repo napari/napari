@@ -58,8 +58,8 @@ def running_as_bundled_app(*, check_conda=True) -> bool:
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
     warnings.warn(
         trans._(
-            "Briefcase installations are no longer supported as of vX.Y.Z. "
-            "running_as_bundled_app() will be removed in a future release.",
+            "Briefcase installations are no longer supported as of v0.4.18. "
+            "running_as_bundled_app() will be removed in a 0.6.0 release.",
         ),
         DeprecationWarning,
         stacklevel=2,
