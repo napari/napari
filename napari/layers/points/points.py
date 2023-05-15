@@ -762,10 +762,8 @@ class Points(Layer):
     @property
     def _extent_data_augmented(self):
         extent = self._extent_data
-        if len(self._view_size) == 0:
-            return extent
 
-        max_point_size = np.max(self._view_size)
+        max_point_size = np.max(self.size)
         extent[0] -= max_point_size / 2
         extent[1] += max_point_size / 2
         return extent
@@ -866,9 +864,9 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
                 self.size[i, :] = (self.size[i, :] > 0) * size
+            self._clear_extent_augmented()
             self.refresh()
             self.events.size()
-        self._clear_extent_agumented()
         self.events.current_size()
 
     @property
