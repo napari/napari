@@ -1,3 +1,5 @@
+import sys
+
 from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
 
@@ -32,12 +34,12 @@ def test_plugin_display_name_use_for_multiple_widgets(
     assert list(viewer.window._dock_widgets.data)[0] == 'Widget 1 (tmp_plugin)'
 
 
-def test_plugin_manager(make_napari_viewer):
+def test_plugin_manager(make_napari_viewer, monkeypatch, qtbot):
     """Test that the plugin manager is accessible from the viewer"""
     viewer = make_napari_viewer()
 
     plugins_menu = viewer.window.plugins_menu
-    assert plugins_menu._plugin_manager_dialog_cls is not None
+    assert plugins_menu._plugin_manager_dialog_cls() is not None
 
     actions = plugins_menu.actions()
     for action in actions:
@@ -48,3 +50,20 @@ def test_plugin_manager(make_napari_viewer):
         raise AssertionError(
             f'Plugin Manager menu item not found. Only found: {", ".join(found)}'
         )
+
+
+def test_no_plugin_manager(make_napari_viewer, monkeypatch):
+    """Test that the plugin manager is not accessible from the viewer when not installed"""
+    monkeypatch.setitem(sys.modules, 'napari_plugin_manager', None)
+    monkeypatch.setitem(
+        sys.modules, 'napari_plugin_manager.qt_plugin_dialog', None
+    )
+    viewer = make_napari_viewer()
+
+    plugins_menu = viewer.window.plugins_menu
+    assert plugins_menu._plugin_manager_dialog_cls() is None
+
+    actions = plugins_menu.actions()
+    for action in actions:
+        if action.text() == "Plugin Manager":
+            raise AssertionError(f"Plugin Manager was found: {action}")
