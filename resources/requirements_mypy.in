@@ -1,6 +1,7 @@
 mypy
 numpy
 pydantic
+qtpy
 types-PyYAML
 types-setuptools
 types-requests

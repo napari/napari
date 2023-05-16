@@ -10,7 +10,11 @@ mypy-extensions==1.0.0
     # via mypy
 numpy==1.24.3
     # via -r requirements_mypy.in
+packaging==23.1
+    # via qtpy
 pydantic==1.10.7
+    # via -r requirements_mypy.in
+qtpy==2.3.1
     # via -r requirements_mypy.in
 tomli==2.0.1
     # via mypy
