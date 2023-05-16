@@ -35,7 +35,8 @@ def test_set_item_unchecked_makes_layer_invisible(qtbot):
 
 def test_drag_and_drop_layers(qtbot):
     view, images = make_qt_layer_list_with_layers(qtbot)
-    view.show()
+    with qtbot.waitExposed(view):
+        view.show()
 
     # check initial element is the one expected (last element in the layerlist)
     name = view.model().data(
@@ -43,13 +44,13 @@ def test_drag_and_drop_layers(qtbot):
     )
     assert name == images[-1].name
 
-    # drag event simulation
+    # drag and drop event simulation
     base_pos = view.mapToGlobal(view.rect().topLeft())
-    start_pos = base_pos + QPoint(10, 10)
+    start_pos = base_pos + QPoint(50, 10)
     end_pos = base_pos + QPoint(100, 100)
 
     def on_animation_value_changed(value):
-        pyautogui.moveTo(value.x(), value.y())
+        pyautogui.moveTo(value.x(), value.y(), duration=0.25)
         if value == end_pos:
             pyautogui.mouseUp(button="left")
 
@@ -58,11 +59,12 @@ def test_drag_and_drop_layers(qtbot):
     )
     animation.valueChanged.connect(on_animation_value_changed)
 
-    pyautogui.moveTo(start_pos.x(), start_pos.y())
+    pyautogui.moveTo(start_pos.x(), start_pos.y(), duration=0.25)
     pyautogui.mouseDown(button="left")
     with qtbot.waitSignal(animation.finished, timeout=10000):
         animation.start()
 
+    # check layerlist first element corresponds with first layer in the GUI
     name = view.model().data(
         layer_to_model_index(view, 0), Qt.ItemDataRole.DisplayRole
     )
