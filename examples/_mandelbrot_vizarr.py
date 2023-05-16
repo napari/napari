@@ -30,6 +30,7 @@ from skimage.transform import resize
 from superqt import ensure_main_thread
 from zarr.storage import init_array, init_group
 from zarr.util import json_dumps
+from napari import Viewer
 
 # config.async_loading = True
 
@@ -296,17 +297,24 @@ def dims_update_handler(invar, data=None):
 
 
 def add_progressive_loading_image(img, viewer=None):
+    """Add tiled multiscale image"""
+    # initialize multiscale virtual data (generate scale factors, translations, and chunk slices)
     multiscale_data = MultiScaleVirtualData(img)
+
+    if not viewer:
+        viewer = Viewer()
 
     LOGGER.info(f"MultiscaleData {multiscale_data.shape}")
 
     # Get initial extent for rendering
     canvas_corners = viewer.window.qt_viewer._canvas_corners_in_world.copy()    
-    canvas_corners[canvas_corners < 0] = 0
+    canvas_corners[canvas_corners < 0] = 0  # required to cast from float64 to int64
     canvas_corners = canvas_corners.astype(np.int64)
     top_left = canvas_corners[0, :]
     bottom_right = canvas_corners[1, :]
 
+    # set the extents for each scale in world coordinates
+    # take the currently visible canvas extents and apply them to the individual data scales
     multiscale_data.set_interval(top_left, bottom_right)
 
     # TODO sketchy Disable _update_thumbnail
@@ -361,6 +369,8 @@ def add_progressive_loading_image(img, viewer=None):
     # Trigger first render
     dims_update_handler(viewer, data=multiscale_data)
 
+    return viewer
+
 
 if __name__ == "__main__":
     global viewer
@@ -391,6 +401,8 @@ if __name__ == "__main__":
         
         yappi.get_func_stats().print_all()
         yappi.get_thread_stats().print_all()
+
+    napari.run()
 
 def yappi_stats():
     thread_stats = yappi.get_thread_stats()

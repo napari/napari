@@ -306,8 +306,8 @@ class MandlebrotStore(zarr.storage.Store):
 
 # https://dask.discourse.group/t/using-da-delayed-for-zarr-processing-memory-overhead-how-to-do-it-better/1007/10
 def mandelbrot_dataset():
-    # max_levels = 8
-    max_levels = 14
+    max_levels = 8
+    # max_levels = 14
 
     large_image = {
         "container": "mandelbrot.zarr/",
