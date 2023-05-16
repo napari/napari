@@ -699,6 +699,28 @@ class VirtualData:
     will be used as the (y, x) values.
 
     NEW: use a translate to define subregion of image
+
+    Attributes
+    ----------
+    array: dask.array
+        Dask array of image data for this scale
+    dtype: dtype
+        dtype of the array
+    shape: tuple
+        shape of the true data (not the data_plane)
+    ndim: int
+        Number of dimensions for this scale
+    translate: list[tuple(int)]
+        tuple for the translation
+    d: int
+        Dimension of the chunked slices ??? Hard coded to 2.
+    data_plane: dask.array
+        Array of currently visible data for this layer
+    _min_coord: list 
+        List of the minimum coordinates in each dimension
+    _max_coord: list
+        List of the maximum coordinates in each dimension
+
     """
 
     def __init__(self, array):
@@ -718,15 +740,30 @@ class VirtualData:
         self._min_coord = None
 
     def set_interval(self, coords):
-        """coords is a tuple of slices in the same coordinate system as the 
-        parent array."""        
+        """The interval is the range of the data for this scale that is 
+        currently visible. It is stored in `_min_coord` and `_max_coord` in
+        the coordinates of the original array. 
+
+        This function takes a slice, converts it to a range (stored as 
+        `_min_coord` and `_max_coord`), and extracts a subset of the orginal 
+        data array (stored as `data_plane`)
+
+        Parameters
+        ----------
+        coords: tuple(slice(ndim))
+            tuple of slices in the same coordinate system as the parent array.
+        """
+        # store the last interval
         prev_max_coord = self._max_coord
         prev_min_coord = self._min_coord
         
+        # extract the coordinates as a range
         self._max_coord = [sl.stop for sl in coords]
         self._min_coord = [sl.start for sl in coords]
 
         # Round max and min coord according to self.array.chunks
+        # for each dimension, reset the min/max coords, aka interval to be 
+        # the range of chunk coordinates since we can't partially load a chunk
         for dim in range(len(self._max_coord)):            
             cumuchunks = np.array(self.array.chunks[dim]).cumsum()
 
@@ -984,8 +1021,6 @@ class MultiScaleVirtualData:
         List of list of chunk slices. A slice object for each scale, for each 
         dimension, 
         e.g. [list of scales[list of slice objects[(x, y, z)]]]
-
-
     """
 
     def __init__(self, arrays):
@@ -1029,14 +1064,16 @@ class MultiScaleVirtualData:
             self._chunk_slices += [these_slices]
 
     def set_interval(self, min_coord, max_coord, visible_scales=[]):
-        """Set the extents for each of the scales in world coordinates.
+        """Set the extents for each of the scales in the coordinates of each
+        individual scale array
 
-        visible_scales must be an empty list of a list equal to the number of scales
+        visible_scales must be an empty list of a list equal to the number of 
+        scales
 
         Sets the _min_coord and _max_coord on each individual VirtualData
 
         min_coord and max_coord are in the same units as the highest resolution
-        scale. KCP - is that true? Arent these in world coordinates?
+        scale data.
 
         Parameters
         ----------
@@ -1046,8 +1083,6 @@ class MultiScaleVirtualData:
             bottom right corner of the visible canvas
         visible_scales: list
             Optional. ???
-        
-        
         """
 
         # for each scale, set the interval for the VirtualData

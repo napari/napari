@@ -313,8 +313,9 @@ def add_progressive_loading_image(img, viewer=None):
     top_left = canvas_corners[0, :]
     bottom_right = canvas_corners[1, :]
 
-    # set the extents for each scale in world coordinates
-    # take the currently visible canvas extents and apply them to the individual data scales
+    # set the extents for each scale in data coordinates
+    # take the currently visible canvas extents and apply them to the 
+    # individual data scales
     multiscale_data.set_interval(top_left, bottom_right)
 
     # TODO sketchy Disable _update_thumbnail
