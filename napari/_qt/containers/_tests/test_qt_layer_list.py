@@ -1,7 +1,8 @@
 from typing import List, Tuple
 
 import numpy as np
-from qtpy.QtCore import QModelIndex, QPoint, Qt
+import pyautogui
+from qtpy.QtCore import QModelIndex, QPoint, Qt, QVariantAnimation
 
 from napari._qt.containers import QtLayerList
 from napari.components import LayerList
@@ -34,20 +35,38 @@ def test_set_item_unchecked_makes_layer_invisible(qtbot):
 
 def test_drag_and_drop_layers(qtbot):
     view, images = make_qt_layer_list_with_layers(qtbot)
+    view.show()
+
+    # check initial element is the one expected (last element in the layerlist)
     name = view.model().data(
         layer_to_model_index(view, 0), Qt.ItemDataRole.DisplayRole
     )
-    assert name == "image2"
+    assert name == images[-1].name
 
-    # drag event
-    qtbot.mousePress(view, Qt.MouseButton.LeftButton, pos=QPoint(10, 10))
-    qtbot.mouseMoved(view, QPoint(100, 100))
-    qtbot.mouseRelease(view, Qt.MouseButton.LeftButton)
+    # drag event simulation
+    base_pos = view.mapToGlobal(view.rect().topLeft())
+    start_pos = base_pos + QPoint(10, 10)
+    end_pos = base_pos + QPoint(100, 100)
+
+    def on_animation_value_changed(value):
+        pyautogui.moveTo(value.x(), value.y())
+        if value == end_pos:
+            pyautogui.mouseUp(button="left")
+
+    animation = QVariantAnimation(
+        startValue=start_pos, endValue=end_pos, duration=5000
+    )
+    animation.valueChanged.connect(on_animation_value_changed)
+
+    pyautogui.moveTo(start_pos.x(), start_pos.y())
+    pyautogui.mouseDown(button="left")
+    with qtbot.waitSignal(animation.finished, timeout=10000):
+        animation.start()
 
     name = view.model().data(
         layer_to_model_index(view, 0), Qt.ItemDataRole.DisplayRole
     )
-    assert name == "image1"
+    assert name == images[0].name
 
 
 def make_qt_layer_list_with_layer(qtbot) -> Tuple[QtLayerList, Image]:
