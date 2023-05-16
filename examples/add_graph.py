@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
+from napari_graph import UndirectedGraph
+
 import napari
 from napari.layers import Graph
-from napari_graph import UndirectedGraph
 
 
 def build_graph(n_nodes: int, n_neighbors: int) -> UndirectedGraph:
@@ -22,7 +23,7 @@ if __name__ == "__main__":
 
     viewer = napari.Viewer()
     n_nodes = 1000000
-    graph = build_graph(n_nodes, 5).get_coordinates()
+    graph = build_graph(n_nodes, 5)
     layer = Graph(graph, out_of_slice_display=True)
     viewer.add_layer(layer)
 

@@ -4,7 +4,9 @@ import numpy as np
 from napari_graph import BaseGraph, UndirectedGraph
 from numpy.typing import ArrayLike
 
+from napari.layers.graph._slice import _GraphSliceRequest, _GraphSliceResponse
 from napari.layers.points.points import _BasePoints
+from napari.layers.utils._slice_input import _SliceInput
 from napari.utils.translations import trans
 
 
@@ -46,11 +48,12 @@ class Graph(_BasePoints):
         property_choices=None,
         experimental_clipping_planes=None,
         shading='none',
-        canvas_size_limits=...,
+        canvas_size_limits=(2, 10000),
         antialiasing=1,
         shown=True,
     ) -> None:
-        self._data = self._fix_data(data)
+        self._data = self._fix_data(data, ndim)
+        self._edges_indices_view = []
 
         super().__init__(
             data,
@@ -93,10 +96,12 @@ class Graph(_BasePoints):
         )
 
     @staticmethod
-    def _fix_data(data: Optional[BaseGraph] = None) -> BaseGraph:
+    def _fix_data(
+        data: Optional[BaseGraph] = None, ndim: int = 3
+    ) -> BaseGraph:
         """Checks input data and return a empty graph if is None."""
         if data is None:
-            return UndirectedGraph(n_nodes=100, ndim=3, n_edges=200)
+            return UndirectedGraph(n_nodes=100, ndim=ndim, n_edges=200)
 
         if isinstance(data, BaseGraph):
             return data
@@ -119,6 +124,27 @@ class Graph(_BasePoints):
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return self.data.ndim
+
+    def _make_slice_request_internal(
+        self, slice_input: _SliceInput, dims_indices: ArrayLike
+    ) -> _GraphSliceRequest:
+        return _GraphSliceRequest(
+            dims=slice_input,
+            data=self.data,
+            dims_indices=dims_indices,
+            out_of_slice_display=self.out_of_slice_display,
+            size=self.size,
+        )
+
+    def _update_slice_response(self, response: _GraphSliceResponse) -> None:
+        super()._update_slice_response(response)
+        self._edges_indices_view = response.edges_indices
+
+    @property
+    def _view_edges_coordinates(self) -> np.ndarray:
+        return self.data._coords[self._edges_indices_view][
+            ..., self._slice_input.displayed
+        ]
 
     def add(
         self, coords: ArrayLike, indices: Optional[ArrayLike] = None
@@ -145,12 +171,8 @@ class Graph(_BasePoints):
                 )
             )
 
-        # FIXME: prev_size = self.data.n_allocated_nodes
-
         for idx, coord in zip(indices, coords):
             self.data.add_nodes(idx, coord)
-
-        # FIXME: self._data_changed(prev_size)
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -161,15 +183,12 @@ class Graph(_BasePoints):
 
     def remove(self, indices: ArrayLike) -> None:
         """Removes nodes given their indices."""
-        # FIXME: prev_size = self.data.n_allocated_nodes
         if isinstance(indices, np.ndarray):
             indices = indices.tolist()
 
         indices.sort(reverse=True)
         for idx in indices:
             self.data.remove_node(idx)
-
-        # FIXME: self._data_changed(prev_size)
 
     def _move_points(
         self, ixgrid: Tuple[np.ndarray, np.ndarray], shift: np.ndarray

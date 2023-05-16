@@ -1,14 +1,14 @@
 from vispy import gloo
 
-from ..visuals.graph import GraphVisual
-from .points import VispyPointsLayer
+from napari._vispy.layers.points import VispyPointsLayer
+from napari._vispy.visuals.graph import GraphVisual
 
 
 class VispyGraphLayer(VispyPointsLayer):
     _visual = GraphVisual
 
     def _on_data_change(self):
-        # self._set_graph_edges_data()
+        self._set_graph_edges_data()
         super()._on_data_change()
 
     def _set_graph_edges_data(self):

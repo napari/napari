@@ -668,6 +668,7 @@ class _BasePoints(Layer):
         """
         self.text.refresh(self.features)
 
+    @abstractmethod
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         raise NotImplementedError
@@ -1653,7 +1654,7 @@ class _BasePoints(Layer):
         response = request()
         self._update_slice_response(response)
 
-    def _make_slice_request(self, dims) -> _PointSliceRequest:
+    def _make_slice_request(self, dims) -> Any:
         """Make a Points slice request based on the given dims and these data."""
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
@@ -1670,16 +1671,11 @@ class _BasePoints(Layer):
         )
         return self._make_slice_request_internal(slice_input, slice_indices)
 
+    @abstractmethod
     def _make_slice_request_internal(
-        self, slice_input: _SliceInput, dims_indices
+        self, slice_input: _SliceInput, dims_indices: ArrayLike
     ):
-        return _PointSliceRequest(
-            dims=slice_input,
-            data=self.data,
-            dims_indices=dims_indices,
-            out_of_slice_display=self.out_of_slice_display,
-            size=self.size,
-        )
+        raise NotImplementedError
 
     def _update_slice_response(self, response: _PointSliceResponse):
         """Handle a slicing response."""
@@ -1832,6 +1828,7 @@ class _BasePoints(Layer):
         """
         raise NotImplementedError
 
+    @abstractmethod
     def remove_selected(self) -> None:
         """Removes selected points if any."""
         raise NotImplementedError
@@ -2209,6 +2206,17 @@ class Points(_BasePoints):
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return self.data.shape[1]
+
+    def _make_slice_request_internal(
+        self, slice_input: _SliceInput, dims_indices: ArrayLike
+    ) -> _PointSliceRequest:
+        return _PointSliceRequest(
+            dims=slice_input,
+            data=self.data,
+            dims_indices=dims_indices,
+            out_of_slice_display=self.out_of_slice_display,
+            size=self.size,
+        )
 
     def add(self, coords):
         """Adds points at coordinates.
