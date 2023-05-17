@@ -15,7 +15,8 @@ The latest release candidate can be installed with
 The release will be coordinated by a release manager whose responsibilities include...
 
 ## Two weeks before release (one week before release candidate)
-- Look through currently open PRs and get a sense of what would be good to merge before the first release candidate
+- Look through currently open PRs and get a sense of what would be good to merge before the first release candidate 
+- Ensure `conda-recipe/meta.yaml` in `napari/packaging` is up-to-date (e.g. `run` dependencies match `setup.cfg` requirements).
 - Create a zulip thread in the release channel letting people know the release candidate is coming and pointing out PRs that would be nice to merge before release
 
 At this stage, bug fixes and features that are close to landing should be prioritized. The release manager will follow up with PR authors, reviewing and merging as needed.
@@ -166,3 +167,61 @@ For example:
 git tag vX.Y.Z main
 git push upstream --tags
 ```
+
+## conda-forge packages
+
+The packages on `conda-forge` are not controlled directly by our repositories.
+Instead, they are governed by the `conda-forge/napari-feedstock` repository.
+The essential actions are automated, but there are a few maintenance notes we need to have in mind.
+
+### New releases
+
+Once the PyPI release is available, the `conda-forge` bots will submit a PR to `conda-forge/napari-feedstock` within a few hours.
+Merging that PR to `main` will trigger the `conda-forge` release.
+Accounting for the build times and the CDN sync, this means that the `conda-forge` packages will be available 30-60 mins after the PR is merged.
+
+Before merging, please pay special attention to these aspects:
+
+- Version string has been correctly updated. The build number should have been reset to `0` now.
+- The CI passes correctly. Do check the logs, especially the test section (search for `TEST START`).
+- The `run` dependencies match the runtime requirements of the PyPI release (listed in `setup.cfg`).
+  Watch for modified version constraints, as well as added or removed packages.
+  Note that the `conda-forge` packages include some more dependencies for convenience,
+  so you might need to check the `extras` sections in `setup.cfg`.
+
+```{note}
+See these PRs for examples on previous conda-forge releases:
+- [napari v0.4.16](https://github.com/conda-forge/napari-feedstock/pull/41)
+- [napari v0.4.17](https://github.com/conda-forge/napari-feedstock/pull/42)
+```
+
+### Patch dependencies of previous releases
+
+`conda-forge` offers a mechanism to patch the metadata of existing releases.
+This is useful when a new dependency release breaks `napari` in some way or, in general,
+when the metadata of an existing package is proven wrong after it has been released.
+
+To amend the metadata, we need to:
+
+* Encode the patch instructions as a PR to 
+  [`conda-forge/conda-forge-repodata-patches-feedstock`](https://github.com/conda-forge/conda-forge-repodata-patches-feedstock):
+  - Add the required changes to `recipe/gen_patch_json.py`, under the [`record_name == 'napari'` section](https://github.com/conda-forge/conda-forge-repodata-patches-feedstock/blob/6aa624be7fe4e3627daea095c8d92b7379b3bb66/recipe/gen_patch_json.py#L1562).
+  - Use a [timestamp condition](https://github.com/conda-forge/conda-forge-repodata-patches-feedstock/blob/6aa624be7fe4e3627daea095c8d92b7379b3bb66/recipe/gen_patch_json.py#L1564) to ensure only existing releases are patched.
+* If necessary, make sure the metadata is amended in the feedstock too. 
+  Usually this is not needed until a new release is made, but it's important to remember!
+
+Some previous examples include:
+
+- [Fix `vispy` dependencies](https://github.com/conda-forge/conda-forge-repodata-patches-feedstock/pull/314)
+- [Fix `pillow` dependencies](https://github.com/conda-forge/conda-forge-repodata-patches-feedstock/pull/214)
+
+### Broken packages
+
+In some cases, a wrongly merged PR might cause the release of a broken artifact.
+If this is not fixable with a metadata patch (see above), then the packages can be marked as broken.
+To do so, we can submit a PR to `conda-forge/admin-requests`.
+
+For more details, follow the instructions for 
+["Mark packages as broken on conda-forge"](https://github.com/conda-forge/admin-requests#mark-packages-as-broken-on-conda-forge).
+
+Please make sure a correct build for the problematic release is available before (or shortly after) the `admin-requests` PR is merged!
