@@ -1476,7 +1476,7 @@ def test_color_mapping_when_color_is_changed():
     )
 
 
-def test_color_mapping_with_selected_label():
+def test_color_mapping_with_show_selected_label():
     """Checks if the color mapping is computed correctly when show_selected_label is activated."""
 
     data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
