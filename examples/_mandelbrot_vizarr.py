@@ -18,8 +18,8 @@ from zarr.util import json_dumps
 
 import napari
 from napari.experimental._progressive_loading import (
-    MultiScaleVirtualData, VirtualData, chunk_centers, chunk_priority_2D, chunk_slices,
-    get_chunk, interpolated_get_chunk_2D)
+    MultiScaleVirtualData, VirtualData, chunk_centers, chunk_priority_2D,
+    chunk_slices, get_chunk, interpolated_get_chunk_2D)
 from napari.experimental._progressive_loading_datasets import (
     mandelbrot_dataset, openorganelle_mouse_kidney_em)
 from napari.layers._data_protocols import Index, LayerDataProtocol
@@ -65,7 +65,6 @@ def get_and_process_chunk_2D(
     """
     array = virtual_data.array
 
-    
     # Trigger a fetch of the data
     real_array = interpolated_get_chunk_2D(
         chunk_slice,
@@ -106,7 +105,7 @@ def should_render_scale(scale, viewer):
 
     # TODO max pixel_size chosen by eyeballing
     # return (pixel_size > 0.25) and (pixel_size < 5)
-    return (pixel_size >= 0.5) and (pixel_size <= 4)
+    return (pixel_size >= 0.5) and (pixel_size <= 2)
 
 
 @thread_worker
@@ -145,9 +144,12 @@ def render_sequence(
 
             # these_slices = chunk_slices(array, ndim=self.d)
             # chunk_keys = data._chunk_slices[scale]
-            data_interval = corner_pixels / (2 ** scale)
+            data_interval = corner_pixels / (2**scale)
+            LOGGER.info(
+                f"render_sequence: computing chunk slices for {data_interval}"
+            )
             chunk_keys = chunk_slices(array, ndim=2, interval=data_interval)
-            
+
             LOGGER.info("render_sequence: computing priority")
             chunk_queue = chunk_priority_2D(chunk_keys, corner_pixels, scale)
 
@@ -158,16 +160,19 @@ def render_sequence(
             # Fetch all chunks in priority order
             while chunk_queue:
                 priority, chunk_slice = heapq.heappop(chunk_queue)
-                yield get_and_process_chunk_2D(
-                    chunk_slice,
-                    scale,
-                    array,
-                    full_shape,
+                yield tuple(
+                    list(
+                        get_and_process_chunk_2D(
+                            chunk_slice,
+                            scale,
+                            array,
+                            full_shape,
+                        )
+                    )
+                    + [len(chunk_queue) == 0]
                 )
-                
-            LOGGER.info(
-                f"render_sequence: done fetching {scale}"
-            )
+
+            LOGGER.info(f"render_sequence: done fetching {scale}")
 
 
 def get_layer_name_for_scale(scale):
@@ -198,8 +203,8 @@ def dims_update_handler(invar, data=None):
     # Terminate existing multiscale render pass
     if worker:
         # TODO this might not terminate threads properly
-        worker.await_workers()
-        # worker.await_workers(msecs=10000)
+        # worker.await_workers()
+        worker.await_workers(msecs=30000)
 
     # Find the corners of visible data in the highest resolution
     corner_pixels = viewer.layers[get_layer_name_for_scale(0)].corner_pixels
@@ -275,7 +280,8 @@ def dims_update_handler(invar, data=None):
     # This will consume our chunks and update the numpy "canvas" and refresh
     def on_yield(coord):
         # TODO bad layer access
-        chunk_slice, scale, chunk = coord
+        chunk_slice, scale, chunk, is_last_chunk = coord
+
         layer_name = get_layer_name_for_scale(scale)
         layer = viewer.layers[layer_name]
         image = viewer.window.qt_viewer.layer_to_visual[
@@ -294,10 +300,16 @@ def dims_update_handler(invar, data=None):
             if layer.metadata["prev_layer"]:
                 # We want to keep prev_layer visible because current layer is loading, but hide others
                 if layer.metadata["prev_layer"].metadata["prev_layer"]:
-                    layer.metadata["prev_layer"].metadata["prev_layer"].visible = False
-                #layer.metadata["prev_layer"].opacity = 0.5
+                    layer.metadata["prev_layer"].metadata[
+                        "prev_layer"
+                    ].visible = False
+                # layer.metadata["prev_layer"].opacity = 0.5
             #     layer.metadata["prev_layer"].visible = False
             layer.metadata["translated"] = True
+
+        if is_last_chunk:
+            if layer.metadata["prev_layer"]:
+                layer.metadata["prev_layer"].visible = False
 
         LOGGER.info(f"starting set_offset in thread {threading.get_ident()}")
         # TODO check out set_offset and refresh are blocking

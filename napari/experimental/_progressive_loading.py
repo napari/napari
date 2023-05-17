@@ -2,8 +2,8 @@ import heapq
 import itertools
 import logging
 import sys
-from typing import Tuple, Union
 from collections import defaultdict
+from typing import Tuple, Union
 
 import dask
 import dask.array as da
@@ -185,22 +185,22 @@ def chunk_slices(array: da.Array, ndim=3, interval=None):
     """
 
     start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
-    end_pos = [np.cumsum(sizes) for sizes in array.chunks]    
-    
+    end_pos = [np.cumsum(sizes) for sizes in array.chunks]
+
     if interval is not None:
         # array([[7709.88671875, 5007.1953125 ],[9323.7578125 , 6824.38867188]])
-        # 
+        #
         for dim in range(len(start_pos)):
             # Find first index in end_pos that is greater than corner_pixels
             first_idx = np.searchsorted(end_pos[dim], interval[0, dim])
             # Find the last index in start_pos that is less than corner_pixels[1,dim]
-            last_idx = np.searchsorted(start_pos[dim], interval[1, dim], side='right')
+            last_idx = np.searchsorted(
+                start_pos[dim], interval[1, dim], side='right'
+            )
 
             start_pos[dim] = start_pos[dim][first_idx:last_idx]
             end_pos[dim] = end_pos[dim][first_idx:last_idx]
 
-    
-            
     all_start_pos = list(itertools.product(*start_pos))
     # TODO We impose dimensional ordering for ND
     all_end_pos = list(itertools.product(*end_pos))
@@ -254,7 +254,13 @@ def chunk_priority_2D(chunk_keys, corner_pixels, scale):
 
     priority_map = []
 
-    for idx, chunk_key in enumerate(list(itertools.product(*[contained_keys[k] for k in sorted(contained_keys.keys())]))):
+    for idx, chunk_key in enumerate(
+        list(
+            itertools.product(
+                *[contained_keys[k] for k in sorted(contained_keys.keys())]
+            )
+        )
+    ):
         priority = 0
         # TODO filter priority here
         if True:
