@@ -1,8 +1,28 @@
 from collections import OrderedDict
 from enum import auto
+from typing import Literal
 
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
+
+InterpolationStr = Literal[
+    "bessel",
+    "cubic",
+    "linear",
+    "blackman",
+    "catrom",
+    "gaussian",
+    "hamming",
+    "hanning",
+    "hermite",
+    "kaiser",
+    "lanczos",
+    "mitchell",
+    "nearest",
+    "spline16",
+    "spline36",
+    "custom",
+]
 
 
 class Interpolation(StringEnum):
@@ -41,6 +61,9 @@ class Interpolation(StringEnum):
             cls.SPLINE36,
         )
 
+    def __str__(self) -> InterpolationStr:
+        return self.value
+
 
 class ImageRendering(StringEnum):
     """Rendering: Rendering mode for the layer.
@@ -73,6 +96,17 @@ class ImageRendering(StringEnum):
     MINIP = auto()
     ATTENUATED_MIP = auto()
     AVERAGE = auto()
+
+
+ImageRenderingStr = Literal[
+    "translucent",
+    "additive",
+    "iso",
+    "mip",
+    "minip",
+    "attenuated_mip",
+    "average",
+]
 
 
 class VolumeDepiction(StringEnum):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import functools
 import inspect
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import dask
 import numpy as np
@@ -162,7 +162,7 @@ def _nanmax(array):
     return max_value
 
 
-def calc_data_range(data, rgb=False):
+def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
@@ -183,7 +183,7 @@ def calc_data_range(data, rgb=False):
     returned.
     """
     if data.dtype == np.uint8:
-        return [0, 255]
+        return 0, 255
 
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
@@ -234,10 +234,10 @@ def calc_data_range(data, rgb=False):
     if min_val == max_val:
         min_val = 0
         max_val = 1
-    return [float(min_val), float(max_val)]
+    return float(min_val), float(max_val)
 
 
-def segment_normal(a, b, p=(0, 0, 1)):
+def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     """Determines the unit normal of the vector from a to b.
 
     Parameters
@@ -271,9 +271,7 @@ def segment_normal(a, b, p=(0, 0, 1)):
         norm = np.linalg.norm(normal, axis=1, keepdims=True)
         ind = norm == 0
         norm[ind] = 1
-    unit_norm = normal / norm
-
-    return unit_norm
+    return normal / norm
 
 
 def convert_to_uint8(data: np.ndarray) -> np.ndarray:
@@ -323,7 +321,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
         return np.right_shift(data, (data.dtype.itemsize - 1) * 8 - 1).astype(
             out_dtype
         )
-    return None
+    raise NotImplementedError
 
 
 def get_current_properties(

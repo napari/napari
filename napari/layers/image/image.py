@@ -16,6 +16,7 @@ from napari.layers.base import Layer
 from napari.layers.image._image_constants import (
     ImageRendering,
     Interpolation,
+    InterpolationStr,
     VolumeDepiction,
 )
 from napari.layers.image._image_mouse_bindings import (
@@ -406,30 +407,30 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
         self._empty = True
 
-    def _get_empty_image(self):
+    def _get_empty_image(self) -> np.ndarray:
         """Get empty image to use as the default before data is loaded."""
         if self.rgb:
             return np.zeros((1,) * self._slice_input.ndisplay + (3,))
 
         return np.zeros((1,) * self._slice_input.ndisplay)
 
-    def _get_order(self) -> Tuple[int]:
+    def _get_order(self) -> Tuple[int, ...]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
         order = reorder_after_dim_reduction(self._slice_input.displayed)
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return (*order, max(order) + 1)
+            return *order, max(order) + 1
 
         return order
 
     @property
-    def _data_view(self):
+    def _data_view(self) -> np.ndarray:
         """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
 
-    def _calc_data_range(self, mode='data'):
+    def _calc_data_range(self, mode='data') -> Tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
         or full data array
@@ -454,7 +455,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._data.dtype
 
     @property
-    def data_raw(self):
+    def data_raw(
+        self,
+    ) -> Union[LayerDataProtocol, Sequence[LayerDataProtocol]]:
         """Data, exactly as provided by the user."""
         return self._data_raw
 
@@ -476,7 +479,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self.reset_contrast_limits()
         self._reset_editable()
 
-    def _get_ndim(self):
+    def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return len(self.level_shapes[0])
 
@@ -492,12 +495,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return np.vstack([np.zeros(len(shape)), shape])
 
     @property
-    def data_level(self):
+    def data_level(self) -> int:
         """int: Current level of multiscale, or 0 if image."""
         return self._data_level
 
     @data_level.setter
-    def data_level(self, level):
+    def data_level(self, level: int):
         if self._data_level == level:
             return
         self._data_level = level
@@ -596,11 +599,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self.interpolation2d = interpolation
 
     @property
-    def interpolation2d(self):
+    def interpolation2d(self) -> InterpolationStr:
         return str(self._interpolation2d)
 
     @interpolation2d.setter
-    def interpolation2d(self, value):
+    def interpolation2d(self, value: Union[InterpolationStr, Interpolation]):
         if value == 'bilinear':
             raise ValueError(
                 trans._(
@@ -619,11 +622,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.interpolation(value=self._interpolation2d)
 
     @property
-    def interpolation3d(self):
+    def interpolation3d(self) -> InterpolationStr:
         return str(self._interpolation3d)
 
     @interpolation3d.setter
-    def interpolation3d(self, value):
+    def interpolation3d(self, value: Union[InterpolationStr, Interpolation]):
         if value == 'custom':
             raise NotImplementedError(
                 'custom interpolation is not implemented yet for 3D rendering'
