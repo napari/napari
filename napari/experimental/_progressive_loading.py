@@ -3,6 +3,7 @@ import itertools
 import logging
 import sys
 from typing import Tuple, Union
+from collections import defaultdict
 
 import dask
 import dask.array as da
@@ -166,7 +167,7 @@ def chunk_centers(array: da.Array, ndim=3):
     return mapping
 
 
-def chunk_slices(array: da.Array, ndim=3):
+def chunk_slices(array: da.Array, ndim=3, interval=None):
     """Make a dictionary mapping chunk centers to chunk slices.
     Note: if array is >3D, then the last 3 dimensions are assumed as ZYX
     and will be used for calculating centers
@@ -184,7 +185,22 @@ def chunk_slices(array: da.Array, ndim=3):
     """
 
     start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
-    end_pos = [np.cumsum(sizes) for sizes in array.chunks]
+    end_pos = [np.cumsum(sizes) for sizes in array.chunks]    
+    
+    if interval is not None:
+        # array([[7709.88671875, 5007.1953125 ],[9323.7578125 , 6824.38867188]])
+        # 
+        for dim in range(len(start_pos)):
+            # Find first index in end_pos that is greater than corner_pixels
+            first_idx = np.searchsorted(end_pos[dim], interval[0, dim])
+            # Find the last index in start_pos that is less than corner_pixels[1,dim]
+            last_idx = np.searchsorted(start_pos[dim], interval[1, dim], side='right')
+
+            start_pos[dim] = start_pos[dim][first_idx:last_idx]
+            end_pos[dim] = end_pos[dim][first_idx:last_idx]
+
+    
+            
     all_start_pos = list(itertools.product(*start_pos))
     # TODO We impose dimensional ordering for ND
     all_end_pos = list(itertools.product(*end_pos))
@@ -222,7 +238,7 @@ def chunk_priority_2D(chunk_keys, corner_pixels, scale):
     maxs = corner_pixels[1, :] / (2**scale)
 
     # contained_keys is an array with list of slices contained along each dimension
-    contained_keys = [[]] * len(chunk_keys)
+    contained_keys = defaultdict(list)
     for dim, chunk_slices in enumerate(chunk_keys):
         for sl in chunk_slices:
             below_min = sl.start < mins[dim]
@@ -238,7 +254,7 @@ def chunk_priority_2D(chunk_keys, corner_pixels, scale):
 
     priority_map = []
 
-    for idx, chunk_key in enumerate(list(itertools.product(*contained_keys))):
+    for idx, chunk_key in enumerate(list(itertools.product(*[contained_keys[k] for k in sorted(contained_keys.keys())]))):
         priority = 0
         # TODO filter priority here
         if True:
@@ -1025,11 +1041,12 @@ class MultiScaleVirtualData:
         # TODO hard coded 2D for now
         self.d = 2
 
-        self._chunk_slices = []
-        for scale, array in enumerate(self.arrays):
-            print(f"init of {scale}")
-            these_slices = chunk_slices(array, ndim=self.d)
-            self._chunk_slices += [these_slices]
+        # This is expensive to precompute for large arrays
+        # self._chunk_slices = []
+        # for scale, array in enumerate(self.arrays):
+        #     print(f"init of {scale}")
+        #     these_slices = chunk_slices(array, ndim=self.d)
+        #     self._chunk_slices += [these_slices]
 
     def set_interval(self, min_coord, max_coord, visible_scales=[]):
         """min_coord and max_coord are in the same units as the highest resolution

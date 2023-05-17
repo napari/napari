@@ -18,7 +18,7 @@ from zarr.util import json_dumps
 
 import napari
 from napari.experimental._progressive_loading import (
-    MultiScaleVirtualData, VirtualData, chunk_centers, chunk_priority_2D,
+    MultiScaleVirtualData, VirtualData, chunk_centers, chunk_priority_2D, chunk_slices,
     get_chunk, interpolated_get_chunk_2D)
 from napari.experimental._progressive_loading_datasets import (
     mandelbrot_dataset, openorganelle_mouse_kidney_em)
@@ -65,6 +65,7 @@ def get_and_process_chunk_2D(
     """
     array = virtual_data.array
 
+    
     # Trigger a fetch of the data
     real_array = interpolated_get_chunk_2D(
         chunk_slice,
@@ -141,12 +142,12 @@ def render_sequence(
             # array = data.arrays[scale]
 
             array = data._data[scale]
-            chunk_keys = data._chunk_slices[scale]
 
-            LOGGER.info("render_sequence: starting chunk_centers")
-            # chunk_map = chunk_centers(array, ndim=2)
-            LOGGER.info("render_sequence: getting values")
-            # chunk_keys = list(chunk_map.values())
+            # these_slices = chunk_slices(array, ndim=self.d)
+            # chunk_keys = data._chunk_slices[scale]
+            data_interval = corner_pixels / (2 ** scale)
+            chunk_keys = chunk_slices(array, ndim=2, interval=data_interval)
+            
             LOGGER.info("render_sequence: computing priority")
             chunk_queue = chunk_priority_2D(chunk_keys, corner_pixels, scale)
 
@@ -154,10 +155,8 @@ def render_sequence(
                 f"render_sequence: {scale}, {array.shape} fetching {len(chunk_queue)} chunks"
             )
 
-            # for chunk_slice in chunks_to_fetch:
-
-            # while chunk_queue:
-            for _ in range(len(chunk_queue)):
+            # Fetch all chunks in priority order
+            while chunk_queue:
                 priority, chunk_slice = heapq.heappop(chunk_queue)
                 yield get_and_process_chunk_2D(
                     chunk_slice,
@@ -165,6 +164,10 @@ def render_sequence(
                     array,
                     full_shape,
                 )
+                
+            LOGGER.info(
+                f"render_sequence: done fetching {scale}"
+            )
 
 
 def get_layer_name_for_scale(scale):
@@ -195,8 +198,8 @@ def dims_update_handler(invar, data=None):
     # Terminate existing multiscale render pass
     if worker:
         # TODO this might not terminate threads properly
-        # worker.await_workers()
-        worker.await_workers(msecs=5000)
+        worker.await_workers()
+        # worker.await_workers(msecs=10000)
 
     # Find the corners of visible data in the highest resolution
     corner_pixels = viewer.layers[get_layer_name_for_scale(0)].corner_pixels
@@ -289,7 +292,10 @@ def dims_update_handler(invar, data=None):
 
             # Toggle visibility of lower res layer
             if layer.metadata["prev_layer"]:
-                layer.metadata["prev_layer"].opacity = 0.5
+                # We want to keep prev_layer visible because current layer is loading, but hide others
+                if layer.metadata["prev_layer"].metadata["prev_layer"]:
+                    layer.metadata["prev_layer"].metadata["prev_layer"].visible = False
+                #layer.metadata["prev_layer"].opacity = 0.5
             #     layer.metadata["prev_layer"].visible = False
             layer.metadata["translated"] = True
 

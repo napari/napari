@@ -240,7 +240,7 @@ def xcoord_image(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
     return out
 
 
-@njit(nogil=True)
+@njit()
 def tile_bounds(level, x, y, max_level, min_coord=-2.5, max_coord=2.5):
     max_width = max_coord - min_coord
     tile_width = max_width / 2 ** (max_level - level)
@@ -319,12 +319,12 @@ def mandelbrot_dataset():
         "scale_factors": [
             (2**level, 2**level) for level in range(max_levels)
         ],
-        "chunk_size": (512, 512),
+        "chunk_size": (256, 256),
     }
 
     # Initialize the store
     store = MandlebrotStore(
-        levels=max_levels, tilesize=512, compressor=Blosc()
+        levels=max_levels, tilesize=512, compressor=Blosc(), maxiter=255        
     )
     # Wrap in a cache so that tiles don't need to be computed as often
     store = zarr.LRUStoreCache(store, max_size=8e9)
