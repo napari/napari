@@ -19,7 +19,7 @@
 
 We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still likely be **breaking changes** with each release. You can follow progress on [this repository](https://github.com/napari/napari), test out new versions as we release them, and contribute ideas and code.
 
-If you want to refer to our documentation, please go to [napari.org](https://www.napari.org). 
+If you want to refer to our documentation, please go to [napari.org](https://www.napari.org). If you want to contribute to it, please refer to the *contributing* section below. 
 
 We're working on [tutorials](https://napari.org/tutorials/), but you can also quickly get started by looking below.
 
