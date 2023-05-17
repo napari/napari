@@ -194,7 +194,7 @@ def create_meta_store(levels, tilesize, compressor, dtype):
 
 
 # TODO make this function more generic
-@njit
+@njit(nogil=True)
 def mandelbrot(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
     step_x = (to_x - from_x) / grid_size
     step_y = (to_y - from_y) / grid_size
@@ -217,7 +217,7 @@ def mandelbrot(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
     return out
 
 
-@njit
+@njit(nogil=True)
 def xcoord_image(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
     step_x = (to_x - from_x) / grid_size
     step_y = (to_y - from_y) / grid_size
@@ -240,7 +240,7 @@ def xcoord_image(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
     return out
 
 
-@njit
+@njit(nogil=True)
 def tile_bounds(level, x, y, max_level, min_coord=-2.5, max_coord=2.5):
     max_width = max_coord - min_coord
     tile_width = max_width / 2 ** (max_level - level)
@@ -279,8 +279,8 @@ class MandlebrotStore(zarr.storage.Store):
 
         from_x, from_y, to_x, to_y = tile_bounds(level, x, y, self.levels)
         out = np.zeros(self.tilesize * self.tilesize, dtype=self.dtype)
-        # tile = mandelbrot(
-        tile = xcoord_image(
+        tile = mandelbrot(
+        # tile = xcoord_image(
             out, from_x, from_y, to_x, to_y, self.tilesize, self.maxiter
         )
         tile = tile.reshape(self.tilesize, self.tilesize).transpose()
@@ -309,8 +309,8 @@ class MandlebrotStore(zarr.storage.Store):
 
 # https://dask.discourse.group/t/using-da-delayed-for-zarr-processing-memory-overhead-how-to-do-it-better/1007/10
 def mandelbrot_dataset():
-    max_levels = 8
-    # max_levels = 14
+    # max_levels = 8
+    max_levels = 14
 
     large_image = {
         "container": "mandelbrot.zarr/",

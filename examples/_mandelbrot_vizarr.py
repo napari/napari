@@ -68,7 +68,7 @@ def get_and_process_chunk_2D(
     # Trigger a fetch of the data
     real_array = interpolated_get_chunk_2D(
         chunk_slice,
-        array=array,
+        array=np.asarray(array),
     )
 
     # LOGGER.info(
@@ -356,7 +356,8 @@ def add_progressive_loading_image(img, viewer=None):
     # TODO initial zoom should not be hardcoded
     # for mandelbrot scales=8
     # viewer.camera.zoom = 0.001
-    viewer.camera.zoom = 0.00001
+    # for mandelbrot scales=14
+    viewer.camera.zoom = 0.0001
     canvas_corners = viewer.window.qt_viewer._canvas_corners_in_world.astype(
         np.uint64
     )
