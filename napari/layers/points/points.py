@@ -271,8 +271,8 @@ class Points(Layer):
 
     Notes
     -----
-    _view_data : array (M, 2)
-        2D coordinates of points in the currently viewed slice.
+    _view_data : array (M, D)
+        coordinates of points in the currently viewed slice.
     _view_size : array (M, )
         Size of the point markers in the currently viewed slice.
     _view_symbol : array (M, )
