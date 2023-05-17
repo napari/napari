@@ -328,7 +328,7 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
             return self is other
         if isinstance(other, str):
             return str(self) == other
-        raise NotImplementedError
+        return False
 
     def __hash__(self):
         return hash(str(self))
