@@ -780,9 +780,10 @@ class VirtualData:
         #     import pdb; pdb.set_trace()
         self.translate = self._min_coord
 
+        # interval size may be one or more chunks
         interval_size = [mx - mn for mx, mn in zip(self._max_coord, self._min_coord)]
         
-        LOGGER.debug(f"update_with_minmax: {self.translate} max {self._max_coord} interval size {interval_size}")
+        LOGGER.debug(f"VirtualData: update_with_minmax: {self.translate} max {self._max_coord} interval size {interval_size}")
 
         # Update data_plane
         
@@ -791,6 +792,7 @@ class VirtualData:
         ]
 
         # Try to reuse the previous data_plane if possible (otherwise we get flashing)
+        # shape of the chunks
         next_data_plane = np.zeros(new_shape, dtype=self.dtype)
         
         if prev_max_coord:
@@ -798,7 +800,8 @@ class VirtualData:
             next_slices = []
             prev_slices = []
             for dim in range(len(self._max_coord)):
-                
+                # to ensure that start is non-negative
+                # prev_start is the start of the overlapping region in the previous one
                 if self._min_coord[dim] < prev_min_coord[dim]:
                     prev_start = 0
                     next_start = prev_min_coord[dim] - self._min_coord[dim]
@@ -810,7 +813,7 @@ class VirtualData:
                 # width = min(self._max_coord[dim] - next_start, prev_max_coord[dim] - prev_start)
                 # width = min(self._max_coord[dim], prev_max_coord[dim]) - max(next_start, prev_start)
                 width = min(self.data_plane.shape[dim], next_data_plane.shape[dim])
-
+                # to make sure its not overflowing the shape
                 width = min(width, width - ((next_start + width) - next_data_plane.shape[dim]), width - ((prev_start + width) - self.data_plane.shape[dim]))
 
                 prev_stop = prev_start + width
@@ -1086,6 +1089,9 @@ class MultiScaleVirtualData:
         """
 
         # for each scale, set the interval for the VirtualData
+        # e.g. a high resolution scale may cover [0,1,2,3,4] but a scale
+        # with half of that resolution will cover the same region with 
+        # coords/indices of [0,1,2]
         for scale in range(len(self.arrays)):
             if not visible_scales or visible_scales[scale]:
                 # Update translate
@@ -1101,7 +1107,7 @@ class MultiScaleVirtualData:
 
                 self._translate[scale] = scaled_min
                 LOGGER.info(
-                    f"update_with_minmax: scale {scale} min {min_coord} : {scaled_min} max {max_coord} : {scaled_max}"
+                    f"MultiscaleVirtualData: update_with_minmax: scale {scale} min {min_coord} : {scaled_min} max {max_coord} : scaled max {scaled_max}"
                 )
 
                 # Ask VirtualData to update its interval

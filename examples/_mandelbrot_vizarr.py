@@ -93,7 +93,7 @@ def get_and_process_chunk_2D(
         real_array,
     )
 
-def should_render_scale(scale, viewer):    
+def should_render_scale(scale, viewer, min_scale, max_scale):    
     layer_name = get_layer_name_for_scale(scale)
     layer = viewer.layers[layer_name]
     layer_shape = layer.data.shape
@@ -105,9 +105,14 @@ def should_render_scale(scale, viewer):
     # pixel_size = 2 * np.tan(viewer.camera.angles[-1] / 2) * dist / max(layer_scale)
     pixel_size = viewer.camera.zoom * max(layer_scale)
     
+    # if scale == max_scale:
+    #     return pixel_size >= 5.0
+    # elif scale == min_scale:
+    #     return pixel_size <= 0.25
+
     # TODO max pixel_size chosen by eyeballing
-    # return (pixel_size > 0.25) and (pixel_size < 5)
-    return (pixel_size >= 0.5) and (pixel_size <= 4)
+    return (pixel_size > 0.25) and (pixel_size < 5)
+    # return (pixel_size >= 0.5) and (pixel_size <= 4)
 
 @thread_worker
 def render_sequence(corner_pixels, num_threads=1, visible_scales=[], data=None):
@@ -122,14 +127,14 @@ def render_sequence(corner_pixels, num_threads=1, visible_scales=[], data=None):
         shape of highest resolution array
     num_threads : int
         number of threads for multithreaded fetching
-    max_scale : int
+    visible_scales : list
         this is used to constrain the number of scales that are rendered
     """
     # NOTE this corner_pixels means something else and should be renamed
     # it is further limited to the visible data on the vispy canvas
 
     LOGGER.info(
-        f"render_sequence: inside with corner pixels {corner_pixels} with max_scale {visible_scales}"
+        f"render_sequence: inside with corner pixels {corner_pixels} with visible_scales {visible_scales}"
     )
 
     full_shape = data.arrays[0].shape
@@ -221,6 +226,8 @@ def dims_update_handler(invar, data=None):
 
     # Find the visible scales
     visible_scales = [False] * len(data.arrays)
+    min_scale = 0
+    max_scale = len(data.arrays)
     
     for scale in range(len(data.arrays)):
         layer_name = get_layer_name_for_scale(scale)
@@ -231,7 +238,7 @@ def dims_update_handler(invar, data=None):
         layer.metadata["translated"] = False
         
         # Reenable visibility of layer
-        visible_scales[scale] = should_render_scale(scale, viewer)
+        visible_scales[scale] = should_render_scale(scale, viewer, min_scale, max_scale)
         
         layer.visible = visible_scales[scale]
         layer.opacity = 0.9
@@ -351,11 +358,9 @@ def add_progressive_loading_image(img, viewer=None):
 
     # TODO initial zoom should not be hardcoded
     # for mandelbrot scales=8
-    # viewer.camera.zoom = 0.001
-    viewer.camera.zoom = 0.00001
-    canvas_corners = viewer.window.qt_viewer._canvas_corners_in_world.astype(
-        np.uint64
-    )
+    viewer.camera.zoom = 0.001
+    # viewer.camera.zoom = 0.00001
+
     LOGGER.info(f"viewer canvas corners {canvas_corners}")
 
     # Connect to camera and dims
