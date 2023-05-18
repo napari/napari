@@ -204,13 +204,16 @@ def mandelbrot(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
         cimag = from_y
         for j in range(grid_size):
             nreal = real = imag = n = 0
-            for _ in range(maxiter):
-                nreal = real * real - imag * imag + creal
-                imag = 2 * real * imag + cimag
-                real = nreal
-                if real * real + imag * imag > 4.0:
-                    break
-                n += 1
+            # Use Cardioid / bulb checking for early termination
+            q = (i - 0.25) ** 2 + j**2
+            if q * (q + (i - 0.25)) > 0.25 * j**2:
+                for _ in range(maxiter):
+                    nreal = real * real - imag * imag + creal
+                    imag = 2 * real * imag + cimag
+                    real = nreal
+                    if real * real + imag * imag > 4.0:
+                        break
+                    n += 1            
             out[j * grid_size + i] = n
             cimag += step_y
         creal += step_x
@@ -226,17 +229,6 @@ def xcoord_image(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
     for i in range(grid_size):
         cimag = from_y
         for j in range(grid_size):
-            nreal = real = imag = n = 0
-            # Use Cardioid / bulb checking for early termination
-            q = (i - 0.25) ** 2 + j**2
-            if q * (q + (i - 0.25)) > 0.25 * j**2:
-                for _ in range(maxiter):
-                    nreal = real * real - imag * imag + creal
-                    imag = 2 * real * imag + cimag
-                    real = nreal
-                    if real * real + imag * imag > 4.0:
-                        break
-                    n += 1
             out[j * grid_size + i] = i
             cimag += step_y
         creal += step_x
@@ -282,8 +274,8 @@ class MandlebrotStore(zarr.storage.Store):
 
         from_x, from_y, to_x, to_y = tile_bounds(level, x, y, self.levels)
         out = np.zeros(self.tilesize * self.tilesize, dtype=self.dtype)
-        tile = mandelbrot(
-            # tile = xcoord_image(
+        # tile = mandelbrot(
+        tile = xcoord_image(
             out,
             from_x,
             from_y,
