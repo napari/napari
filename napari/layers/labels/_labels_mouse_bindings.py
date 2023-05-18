@@ -1,4 +1,4 @@
-from napari.components.cursor import CursorStyle
+from napari.components._viewer_constants import CursorStyle
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
