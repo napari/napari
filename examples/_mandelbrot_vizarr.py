@@ -69,10 +69,10 @@ def get_and_process_chunk_2D(
     # Trigger a fetch of the data
     real_array = interpolated_get_chunk_2D(
         chunk_slice,
-        array=np.asarray(array),
+        array=array,
     )
 
-    # LOGGER.info(
+    # LOGGER.info(f"get_and_process_chunk_2D: {(time.time() - start_time)} time, yielding for scale {scale} at slice {chunk_slice}")
     #     f"\tyield will be placed at: {(y * 2**scale, x * 2**scale, scale, real_array.shape)} slice: {(chunk_slice[0].start, chunk_slice[0].stop, chunk_slice[0].step)} {(chunk_slice[1].start, chunk_slice[1].stop, chunk_slice[1].step)}"
     # )
 
@@ -175,6 +175,10 @@ def render_sequence(
             # Fetch all chunks in priority order
             while chunk_queue:
                 priority, chunk_slice = heapq.heappop(chunk_queue)
+
+                # TODO consider 1-2 yields per chunk:
+                # - first for the target chunk
+                # - second for blanking out the lower resolution (is this too wasteful?)                
                 yield tuple(
                     list(
                         get_and_process_chunk_2D(
@@ -294,6 +298,8 @@ def dims_update_handler(invar, data=None):
         # TODO bad layer access
         chunk_slice, scale, chunk, is_last_chunk = coord
 
+        # TODO measure timing within on_yield, find the time consumer
+
         layer_name = get_layer_name_for_scale(scale)
         layer = viewer.layers[layer_name]
         image = viewer.window.qt_viewer.layer_to_visual[
@@ -304,6 +310,7 @@ def dims_update_handler(invar, data=None):
         LOGGER.info(
             f"Writing chunk with size {chunk.shape} to: {(scale, (chunk_slice[0].start, chunk_slice[0].stop), (chunk_slice[1].start, chunk_slice[1].stop))} in layer {scale} with shape {layer.data.shape} and dataplane shape {layer.data.data_plane.shape} sum {chunk.sum()}"
         )
+        
         # TODO hard coded scale factor
         if not layer.metadata["translated"]:
             layer.translate = np.array(layer.data.translate) * 2**scale
@@ -323,15 +330,17 @@ def dims_update_handler(invar, data=None):
             if layer.metadata["prev_layer"]:
                 layer.metadata["prev_layer"].visible = False
 
-        LOGGER.info(f"starting set_offset in thread {threading.get_ident()}")
+        # LOGGER.info(f"{time.time() - start_time} time : starting set_offset in thread {threading.get_ident()}")
         # TODO check out set_offset and refresh are blocking
         layer.data.set_offset(chunk_slice, chunk)
         # layer.data[chunk_slice] = chunk
-        LOGGER.info("done with set_offset of chunk")
+        # LOGGER.info(f"{time.time() - start_time} time : done with set_offset of chunk")
         # Refresh is too slow
         # layer.refresh()
         texture.set_data(layer.data.data_plane)
+        # LOGGER.info(f"{time.time() - start_time} time : done with set_data of chunk")
         image.update()
+        # LOGGER.info(f"{time.time() - start_time} time : done with image update")
 
     worker.yielded.connect(on_yield)
 
