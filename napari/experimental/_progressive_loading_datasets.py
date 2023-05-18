@@ -233,8 +233,7 @@ def xcoord_image(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
             cimag += step_y
         creal += step_x
     return out
-
-
+    
 @njit()
 def tile_bounds(level, x, y, max_level, min_coord=-2.5, max_coord=2.5):
     max_width = max_coord - min_coord
@@ -246,6 +245,41 @@ def tile_bounds(level, x, y, max_level, min_coord=-2.5, max_coord=2.5):
     to_y = min_coord + (y + 1) * tile_width
 
     return from_x, from_y, to_x, to_y
+
+
+def speed_test(level, x, y, max_levels=8):
+    tilesize = 512
+    dtype = np.uint8
+    maxiter = 255
+
+    from_x, from_y, to_x, to_y = tile_bounds(level, x, y, max_levels)
+
+    out = np.zeros(tilesize * tilesize, dtype=dtype)
+    tile = mandelbrot(
+    # tile = xcoord_image(
+        out,
+        from_x,
+        from_y,
+        to_x,
+        to_y,
+        tilesize,
+        maxiter,
+    )
+    tile = tile.reshape(tilesize, tilesize).transpose()
+    
+    # TODO directly call xcoord_image at equivalent scale levels
+
+# For speed testing numba functions across scales
+# import time
+# x = y = 10
+# num_repeats = 1000
+# max_levels = 25
+# for level in range(max_levels):
+#     start = time.time()
+#     for _ in range(num_repeats):
+#         speed_test(level, x, y, max_levels=max_levels)
+#     end = time.time()
+#     print(f"Time for level {level} at {(x, y)} is {(end - start)}")
 
 
 # TODO make this Store more generic
@@ -274,8 +308,8 @@ class MandlebrotStore(zarr.storage.Store):
 
         from_x, from_y, to_x, to_y = tile_bounds(level, x, y, self.levels)
         out = np.zeros(self.tilesize * self.tilesize, dtype=self.dtype)
-        # tile = mandelbrot(
-        tile = xcoord_image(
+        tile = mandelbrot(
+        # tile = xcoord_image(
             out,
             from_x,
             from_y,

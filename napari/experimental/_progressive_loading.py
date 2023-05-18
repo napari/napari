@@ -56,6 +56,7 @@ def get_chunk(
 
     real_array = None
     retry = 0
+
     while real_array is None and retry < num_retry:
         # try:
         if True:
@@ -73,6 +74,7 @@ def get_chunk(
         # ):
         #     pass
         retry += 1
+        
     return real_array
 
 
@@ -656,6 +658,7 @@ def interpolated_get_chunk_2D(chunk_slice, array=None):
         an ndarray of data sliced with chunk_slice
     """
     real_array = None
+
     if real_array is None:
         # If we do not need to interpolate
         # TODO this isn't safe enough
