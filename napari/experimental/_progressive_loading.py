@@ -1,7 +1,8 @@
+import heapq
 import itertools
 import logging
 import sys
-import heapq
+from collections import defaultdict
 from typing import Tuple, Union
 
 import dask
@@ -20,6 +21,7 @@ formatter = logging.Formatter(
 )
 streamHandler.setFormatter(formatter)
 LOGGER.addHandler(streamHandler)
+
 
 class ChunkFailed(Exception):
     pass
@@ -55,7 +57,7 @@ def get_chunk(
     real_array = None
     retry = 0
     while real_array is None and retry < num_retry:
-        #try:
+        # try:
         if True:
             # For Dask fetching
             chunk = array[chunk_slice]
@@ -63,7 +65,7 @@ def get_chunk(
                 real_array = np.asarray(chunk.compute(), dtype=dtype)
             else:
                 real_array = np.asarray(chunk, dtype=dtype)
-            
+
             # TODO check for a race condition that is causing this exception
             #      some dask backends are not thread-safe
         # except ChunkFailed(
@@ -149,7 +151,9 @@ def chunk_centers(array: da.Array, ndim=3):
     end_pos = [np.cumsum(sizes) for sizes in array.chunks]
     all_start_pos = list(itertools.product(*start_pos))
     # TODO We impose dimensional ordering for ND
-    all_middle_pos = [el[-ndim:] for el in list(itertools.product(*middle_pos))]
+    all_middle_pos = [
+        el[-ndim:] for el in list(itertools.product(*middle_pos))
+    ]
     all_end_pos = list(itertools.product(*end_pos))
     chunk_slices = []
     for start, end in zip(all_start_pos, all_end_pos):
@@ -163,7 +167,7 @@ def chunk_centers(array: da.Array, ndim=3):
     return mapping
 
 
-def chunk_slices(array: da.Array, ndim=3):
+def chunk_slices(array: da.Array, ndim=3, interval=None):
     """Make a dictionary mapping chunk centers to chunk slices.
     Note: if array is >3D, then the last 3 dimensions are assumed as ZYX
     and will be used for calculating centers. If array is <3D, the third 
@@ -183,22 +187,39 @@ def chunk_slices(array: da.Array, ndim=3):
         List of slice objects for each chunk for each dimension
     """
 
-
     start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
     end_pos = [np.cumsum(sizes) for sizes in array.chunks]
+
+    if interval is not None:
+        # array([[7709.88671875, 5007.1953125 ],[9323.7578125 , 6824.38867188]])
+        #
+        for dim in range(len(start_pos)):
+            # Find first index in end_pos that is greater than corner_pixels
+            first_idx = np.searchsorted(end_pos[dim], interval[0, dim])
+            # Find the last index in start_pos that is less than corner_pixels[1,dim]
+            last_idx = np.searchsorted(
+                start_pos[dim], interval[1, dim], side='right'
+            )
+
+            start_pos[dim] = start_pos[dim][first_idx:last_idx]
+            end_pos[dim] = end_pos[dim][first_idx:last_idx]
+
     all_start_pos = list(itertools.product(*start_pos))
     # TODO We impose dimensional ordering for ND
     all_end_pos = list(itertools.product(*end_pos))
     chunk_slices = []
-    
+
     chunk_slices = [[]] * len(array.chunks)
     for dim in range(len(array.chunks)):
-        chunk_slices[dim] = [slice(st, end) for st, end in zip(start_pos[dim], end_pos[dim])]
+        chunk_slices[dim] = [
+            slice(st, end) for st, end in zip(start_pos[dim], end_pos[dim])
+        ]
 
-        
     return chunk_slices
 
+
 # ---------- 2D specific ----------
+
 
 def chunk_priority_2D(chunk_keys, corner_pixels, scale):
     """Return the keys for all chunks at this scale within the corner_pixels
@@ -220,21 +241,29 @@ def chunk_priority_2D(chunk_keys, corner_pixels, scale):
     maxs = corner_pixels[1, :] / (2**scale)
 
     # contained_keys is an array with list of slices contained along each dimension
-    contained_keys = [[]] * len(chunk_keys)
+    contained_keys = defaultdict(list)
     for dim, chunk_slices in enumerate(chunk_keys):
         for sl in chunk_slices:
             below_min = sl.start < mins[dim]
             above_max = sl.stop > maxs[dim]
             # If start and stop are below interval, or
             #    start and stop are above interval: return False
-            if ( below_min and sl.stop < mins[dim] ) or ( above_max and sl.start > maxs[dim] ):
+            if (below_min and sl.stop < mins[dim]) or (
+                above_max and sl.start > maxs[dim]
+            ):
                 pass
             else:
                 contained_keys[dim] += [sl]
-                
+
     priority_map = []
-    
-    for idx, chunk_key in enumerate(list(itertools.product(*contained_keys))):
+
+    for idx, chunk_key in enumerate(
+        list(
+            itertools.product(
+                *[contained_keys[k] for k in sorted(contained_keys.keys())]
+            )
+        )
+    ):
         priority = 0
         # TODO filter priority here
         if True:
@@ -246,9 +275,13 @@ def chunk_priority_2D(chunk_keys, corner_pixels, scale):
 
     return priority_map
 
+
 # ---------- 3D specific ----------
 
-def prioritised_chunk_loading_3D(depth, distance, zoom, alpha=1.0, visible=None):
+
+def prioritised_chunk_loading_3D(
+    depth, distance, zoom, alpha=1.0, visible=None
+):
     """Compute a chunk priority based on chunk location relative to camera.
     Lower priority is preferred.
 
@@ -767,13 +800,25 @@ class VirtualData:
         for dim in range(len(self._max_coord)):            
             cumuchunks = np.array(self.array.chunks[dim]).cumsum()
 
-            # First value greater or equal to            
-            greaterthan_min_idx = np.where(cumuchunks > self._min_coord[dim])[0][0]
-            self._min_coord[dim] = cumuchunks[greaterthan_min_idx - 1] if greaterthan_min_idx > 0 else 0
-            
-            lessthan_max_idx = np.where(cumuchunks >= self._max_coord[dim])[0][0]
-            self._max_coord[dim] = cumuchunks[lessthan_max_idx] if lessthan_max_idx < cumuchunks[-1] else cumuchunks[-1] - 1
-        
+            # First value greater or equal to
+            greaterthan_min_idx = np.where(cumuchunks > self._min_coord[dim])[
+                0
+            ][0]
+            self._min_coord[dim] = (
+                cumuchunks[greaterthan_min_idx - 1]
+                if greaterthan_min_idx > 0
+                else 0
+            )
+
+            lessthan_max_idx = np.where(cumuchunks >= self._max_coord[dim])[0][
+                0
+            ]
+            self._max_coord[dim] = (
+                cumuchunks[lessthan_max_idx]
+                if lessthan_max_idx < cumuchunks[-1]
+                else cumuchunks[-1] - 1
+            )
+
         # Update translate
         # TODO there is a bug here, _min_coord goes to 0 when it shouldnt as the user zooms into the highest resolution
         # if self.array.shape[0] > 100000 and self._min_coord[0] == 0:
@@ -786,7 +831,7 @@ class VirtualData:
         LOGGER.debug(f"VirtualData: update_with_minmax: {self.translate} max {self._max_coord} interval size {interval_size}")
 
         # Update data_plane
-        
+
         new_shape = [
             int(mx - mn) for (mx, mn) in zip(self._max_coord, self._min_coord)
         ]
@@ -794,7 +839,7 @@ class VirtualData:
         # Try to reuse the previous data_plane if possible (otherwise we get flashing)
         # shape of the chunks
         next_data_plane = np.zeros(new_shape, dtype=self.dtype)
-        
+
         if prev_max_coord:
             # Get the matching slice from both data planes
             next_slices = []
@@ -812,38 +857,58 @@ class VirtualData:
                 # Get smallest width, this is overlap
                 # width = min(self._max_coord[dim] - next_start, prev_max_coord[dim] - prev_start)
                 # width = min(self._max_coord[dim], prev_max_coord[dim]) - max(next_start, prev_start)
-                width = min(self.data_plane.shape[dim], next_data_plane.shape[dim])
+                width = min(
+                    self.data_plane.shape[dim], next_data_plane.shape[dim]
+                )
                 # to make sure its not overflowing the shape
-                width = min(width, width - ((next_start + width) - next_data_plane.shape[dim]), width - ((prev_start + width) - self.data_plane.shape[dim]))
+                width = min(
+                    width,
+                    width
+                    - ((next_start + width) - next_data_plane.shape[dim]),
+                    width
+                    - ((prev_start + width) - self.data_plane.shape[dim]),
+                )
 
                 prev_stop = prev_start + width
                 next_stop = next_start + width
-                
+
                 # if self._max_coord[dim] < prev_max_coord[dim]:
                 #     next_stop = self._max_coord[dim]
                 #     prev_stop = prev_start + (next_stop - next_start)
                 # else:
                 #     prev_stop = prev_max_coord[dim]
                 #     next_stop = next_start + (prev_stop - prev_start)
-                    
-                
+
                 # prev_start = max(prev_next_offset, self._min_coord[dim] - prev_min_coord[dim])
                 # prev_stop = min(prev_start + new_shape[dim], self.data_plane.shape[dim])
-                                
+
                 # next_start = 0
                 # next_stop = min(next_start + new_shape[dim], self.data_plane.shape[dim])
-                
+
                 prev_slices += [slice(int(prev_start), int(prev_stop))]
                 next_slices += [slice(int(next_start), int(next_stop))]
 
-                
-            if next_data_plane[tuple(next_slices)].size > 0 and self.data_plane[tuple(prev_slices)].size > 0:
-                LOGGER.info(f"reusing data plane: prev {prev_slices} next {next_slices}")
-                if next_data_plane[tuple(next_slices)].size != self.data_plane[tuple(prev_slices)].size:
-                    import pdb; pdb.set_trace()
-                next_data_plane[tuple(next_slices)] = self.data_plane[tuple(prev_slices)]
+            if (
+                next_data_plane[tuple(next_slices)].size > 0
+                and self.data_plane[tuple(prev_slices)].size > 0
+            ):
+                LOGGER.info(
+                    f"reusing data plane: prev {prev_slices} next {next_slices}"
+                )
+                if (
+                    next_data_plane[tuple(next_slices)].size
+                    != self.data_plane[tuple(prev_slices)].size
+                ):
+                    import pdb
+
+                    pdb.set_trace()
+                next_data_plane[tuple(next_slices)] = self.data_plane[
+                    tuple(prev_slices)
+                ]
             else:
-                LOGGER.info(f"could not data plane: prev {prev_slices} next {next_slices}")
+                LOGGER.info(
+                    f"could not data plane: prev {prev_slices} next {next_slices}"
+                )
 
         self.data_plane = next_data_plane
 
@@ -910,7 +975,9 @@ class VirtualData:
         except Exception:
             shape = tuple([sl.stop - sl.start for sl in key])
             LOGGER.info(f"get_offset failed {key}")
-            import pdb; pdb.set_trace()
+            import pdb
+
+            pdb.set_trace()
             return np.zeros(shape)
         # if type(key) is tuple:
         #     return self.data_plane.__getitem__(tuple(key[-1 * self.d :]))
@@ -922,7 +989,9 @@ class VirtualData:
     ) -> LayerDataProtocol:
         """Returns self[key]."""
         data_plane_key = self._data_plane_key(key)
-        LOGGER.info(f"set_offset: {data_plane_key} shape in plane: {self.data_plane[data_plane_key].shape} value shape: {value.shape}")
+        LOGGER.info(
+            f"set_offset: {data_plane_key} shape in plane: {self.data_plane[data_plane_key].shape} value shape: {value.shape}"
+        )
         # if np.any(np.array(self.data_plane[data_plane_key].shape) == 0):
         #     import pdb; pdb.set_trace()
         # TODO this is evil
@@ -946,23 +1015,23 @@ class VirtualData:
 
 
 def test_virtualdata():
-    shape = (100,100)
+    shape = (100, 100)
 
     data = da.from_delayed(
         dask.delayed(lambda: None), shape=shape, dtype=np.int16
-    ).rechunk(chunks=(10,10))
-    
+    ).rechunk(chunks=(10, 10))
+
     virtual_data = VirtualData(data)
 
-    interval = (slice(10,20), slice(10, 20))
-    
+    interval = (slice(10, 20), slice(10, 20))
+
     virtual_data.set_interval(interval)
     dim = 1
 
-
-    
     # Put column indices along rows
-    with np.nditer(virtual_data[interval], flags=['multi_index'], op_flags=['writeonly']) as it:
+    with np.nditer(
+        virtual_data[interval], flags=['multi_index'], op_flags=['writeonly']
+    ) as it:
         for x in it:
             x[...] = it.multi_index[dim] + virtual_data.translate[dim]
 
@@ -970,12 +1039,14 @@ def test_virtualdata():
     assert virtual_data[15, 15] == 15
 
     # Check that data_plane is aligned to the input array's chunks
-    interval = (slice(15,25), slice(15, 25))
+    interval = (slice(15, 25), slice(15, 25))
     virtual_data.set_interval(interval)
-    
-    assert np.all(np.array(virtual_data.translate)==np.array((10, 10)))
-    assert np.all(np.array(virtual_data.data_plane.shape)==np.array((20, 20)))
-    
+
+    assert np.all(np.array(virtual_data.translate) == np.array((10, 10)))
+    assert np.all(
+        np.array(virtual_data.data_plane.shape) == np.array((20, 20))
+    )
+
     print(virtual_data[interval])
 
     import pdb
@@ -1054,17 +1125,17 @@ class MultiScaleVirtualData:
                     )
                 ]
             ]
-            self._data += [virtual_data]        
+            self._data += [virtual_data]
 
         # TODO hard coded 2D for now [kcp] what is this?
         self.d = 2
 
-        self._chunk_slices = []
-        # TODO [kcp] combine with the loop above
-        for scale, array in enumerate(self.arrays):
-            print(f"init of {scale}")
-            these_slices = chunk_slices(array, ndim=self.d)
-            self._chunk_slices += [these_slices]
+        # This is expensive to precompute for large arrays
+        # self._chunk_slices = []
+        # for scale, array in enumerate(self.arrays):
+        #     print(f"init of {scale}")
+        #     these_slices = chunk_slices(array, ndim=self.d)
+        #     self._chunk_slices += [these_slices]
 
     def set_interval(self, min_coord, max_coord, visible_scales=[]):
         """Set the extents for each of the scales in the coordinates of each
@@ -1114,7 +1185,7 @@ class MultiScaleVirtualData:
                 coords = tuple(
                     [slice(mn, mx) for mn, mx in zip(scaled_min, scaled_max)]
                 )
-            
+
                 self._data[scale].set_interval(coords)
             else:
                 LOGGER.debug('visible scales are provided, do nothing')
