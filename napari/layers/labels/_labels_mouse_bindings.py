@@ -1,4 +1,3 @@
-from napari.components._viewer_constants import CursorStyle
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
@@ -25,7 +24,7 @@ def draw(layer, event):
     """
 
     # Do not allow drawing while adjusting the brush size with the mouse
-    if layer.cursor == CursorStyle.CIRCLE_FROZEN:
+    if layer.cursor == 'circle_frozen':
         return
 
     coordinates = mouse_event_to_labels_coordinate(layer, event)
@@ -95,7 +94,7 @@ class BrushSizeOnMouseMove:
             if self.init_pos is None:
                 self.init_pos = pos
                 self.init_brush_size = layer.brush_size
-                layer.cursor = CursorStyle.CIRCLE_FROZEN
+                layer.cursor = 'circle_frozen'
             else:
                 brush_size_delta = round(
                     (pos[0] - self.init_pos[0]) / event.camera_zoom
@@ -106,8 +105,8 @@ class BrushSizeOnMouseMove:
                 layer.brush_size = bounded_brush_size
         else:
             self.init_pos = None
-            if layer.cursor == CursorStyle.CIRCLE_FROZEN:
-                layer.cursor = CursorStyle.CIRCLE
+            if layer.cursor == 'circle_frozen':
+                layer.cursor = 'circle'
 
     def _on_modifiers_change(self):
         modifiers_setting = (
