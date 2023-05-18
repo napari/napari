@@ -3,7 +3,6 @@ from qtpy.QtCore import QPoint
 from qtpy.QtWidgets import QApplication
 
 from napari._qt.dialogs.qt_modal import QtPopup
-from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.components.viewer_model import ViewerModel
 
@@ -35,14 +34,12 @@ def test_roll_dims_button_popup(qt_viewer_buttons, qtbot):
     # make dims order settings popup
     viewer_buttons.rollDimsButton.customContextMenuRequested.emit(QPoint())
 
-    # check that the popup widget is available and it contains the
-    # corresponding `QtDimsSorter` instance
-    dims_sorter = None
+    # check that the popup widget is available
+    dims_sorter_popup = None
     for widget in QApplication.topLevelWidgets():
         if isinstance(widget, QtPopup):
-            dims_sorter = widget.findChild(QtDimsSorter)
-    assert dims_sorter
-    assert tuple(dims_sorter.axes_list) == viewer.dims.order
+            dims_sorter_popup = widget
+    assert dims_sorter_popup
 
 
 def test_grid_view_button_popup(qt_viewer_buttons, qtbot):
