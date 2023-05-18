@@ -104,10 +104,12 @@ def should_render_scale(scale, viewer, min_scale, max_scale):
     pixel_size = viewer.camera.zoom * max(layer_scale)
     
     # TODO max pixel_size chosen by eyeballing
-    max_pixel = 5
-    min_pixel = 0.25
-    max_pixel = 4
-    min_pixel = 0.5
+    if max_scale == 7:
+        max_pixel = 5
+        min_pixel = 0.25
+    else:
+        max_pixel = 4
+        min_pixel = 0.5
     greater_than_min_pixel = pixel_size > min_pixel
     less_than_max_pixel = pixel_size < max_pixel
     render = (greater_than_min_pixel and less_than_max_pixel)
@@ -396,7 +398,7 @@ def add_progressive_loading_image(img, viewer=None):
 
     # TODO initial zoom should not be hardcoded
     # for mandelbrot scales=8
-    viewer.camera.zoom = 0.001
+    # viewer.camera.zoom = 0.001
     # viewer.camera.zoom = 0.00001
 
     LOGGER.info(f"viewer canvas corners {canvas_corners}")
@@ -427,7 +429,7 @@ if __name__ == "__main__":
         yappi.start()
 
     # large_image = openorganelle_mouse_kidney_em()
-    large_image = mandelbrot_dataset()
+    large_image = mandelbrot_dataset(max_levels=8)
 
     multiscale_img = large_image["arrays"]
     viewer._layer_slicer._force_sync = False

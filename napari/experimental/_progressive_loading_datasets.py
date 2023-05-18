@@ -309,9 +309,29 @@ class MandlebrotStore(zarr.storage.Store):
 
 
 # https://dask.discourse.group/t/using-da-delayed-for-zarr-processing-memory-overhead-how-to-do-it-better/1007/10
-def mandelbrot_dataset():
-    max_levels = 8
-    # max_levels = 14
+def mandelbrot_dataset(max_levels=14):
+    """Generate a multiscale image of the mandelbrot set for a given number
+    of levels/scales. Scale 0 will be the highest resolution. 
+
+    This is intended to be used with progressive loading. As such, it returns
+    a dictionary will all the metadata required to load as multiple scaled
+    image layers via add_progressive_loading_image
+
+    >>> large_image = mandelbrot_dataset(max_levels=14)
+    >>> multiscale_img = large_image["arrays"]
+    >>> viewer._layer_slicer._force_sync = False
+    >>> add_progressive_loading_image(multiscale_img, viewer=viewer)
+
+    Parameters
+    ----------
+    max_levels: int
+        Maximum number of levels (scales) to generate
+    
+    Returns
+    -------
+    Dictionary of multiscale data with keys ['container', 'dataset', 
+        'scale levels', 'scale_factors', 'chunk_size', 'arrays']
+    """
 
     large_image = {
         "container": "mandelbrot.zarr/",
