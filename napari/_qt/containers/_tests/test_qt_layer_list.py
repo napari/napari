@@ -58,7 +58,7 @@ def check_state_at_layer_index(
 def test_createEditor(qtbot):
     view, image = make_qt_layer_list_with_layer(qtbot)
     model_index = layer_to_model_index(view, 0)
-    delegate = view.itemDelegateForIndex(model_index)
+    delegate = view.itemDelegate()
     editor = delegate.createEditor(view, QStyleOptionViewItem(), model_index)
     assert isinstance(editor, QLineEdit)
     delegate.setEditorData(editor, model_index)
