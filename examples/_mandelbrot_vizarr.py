@@ -262,7 +262,6 @@ def dims_update_handler(invar, data=None):
 
         # Reenable visibility of layer
         visible_scales[scale] = should_render_scale(scale, viewer, min_scale, max_scale)
-        
         layer.visible = visible_scales[scale]
         layer.opacity = 0.9
 
@@ -277,10 +276,6 @@ def dims_update_handler(invar, data=None):
         LOGGER.info(
             f"scale {scale} name {layer_name}\twith pixel_size {pixel_size}\ttranslate {layer.data.translate}"
         )
-
-    # TODO toggle visibility of layers
-
-    # TODO ensure that visible_scales has at least 1 visible scale
 
     # Update the MultiScaleVirtualData memory backing
     data.set_interval(top_left, bottom_right, visible_scales=visible_scales)
@@ -429,7 +424,7 @@ if __name__ == "__main__":
         yappi.start()
 
     # large_image = openorganelle_mouse_kidney_em()
-    large_image = mandelbrot_dataset(max_levels=8)
+    large_image = mandelbrot_dataset(max_levels=14)
 
     multiscale_img = large_image["arrays"]
     viewer._layer_slicer._force_sync = False
