@@ -103,14 +103,23 @@ def should_render_scale(scale, viewer, min_scale, max_scale):
     # pixel_size = 2 * np.tan(viewer.camera.angles[-1] / 2) * dist / max(layer_scale)
     pixel_size = viewer.camera.zoom * max(layer_scale)
     
-    # if scale == max_scale:
-    #     return pixel_size >= 5.0
-    # elif scale == min_scale:
-    #     return pixel_size <= 0.25
-
     # TODO max pixel_size chosen by eyeballing
-    return (pixel_size > 0.25) and (pixel_size < 5)
-    # return (pixel_size >= 0.5) and (pixel_size <= 4)
+    max_pixel = 5
+    min_pixel = 0.25
+    max_pixel = 4
+    min_pixel = 0.5
+    greater_than_min_pixel = pixel_size > min_pixel
+    less_than_max_pixel = pixel_size < max_pixel
+    render = (greater_than_min_pixel and less_than_max_pixel)
+
+    if not render:
+        if scale == min_scale and pixel_size > max_pixel:
+            render = True
+        elif scale == max_scale and pixel_size < min_pixel:
+            render = True
+
+    return render
+
 
 @thread_worker
 def render_sequence(
@@ -239,7 +248,7 @@ def dims_update_handler(invar, data=None):
     # Find the visible scales
     visible_scales = [False] * len(data.arrays)
     min_scale = 0
-    max_scale = len(data.arrays)
+    max_scale = len(data.arrays) - 1
     
     for scale in range(len(data.arrays)):
         layer_name = get_layer_name_for_scale(scale)
