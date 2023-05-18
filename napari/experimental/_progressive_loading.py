@@ -170,18 +170,21 @@ def chunk_centers(array: da.Array, ndim=3):
 def chunk_slices(array: da.Array, ndim=3, interval=None):
     """Make a dictionary mapping chunk centers to chunk slices.
     Note: if array is >3D, then the last 3 dimensions are assumed as ZYX
-    and will be used for calculating centers
+    and will be used for calculating centers. If array is <3D, the third 
+    dimension is assumed to be None.
 
 
     Parameters
     ----------
     array: dask Array
-        The input array.
+        The input array, a single scale
 
     Returns
     -------
     chunk_map : dict {tuple of float: tuple of slices}
         A dictionary mapping chunk centers to chunk slices.
+    chunk_slices: list of slice objects
+        List of slice objects for each chunk for each dimension
     """
 
     start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
@@ -711,7 +714,17 @@ def interpolated_get_chunk_2D(chunk_slice, array=None):
 
 # TODO a VirtualData should only address 1 coordinate system
 class VirtualData:
-    """VirtualData is used to use a 2D array to represent
+    """`VirtualData` wraps a particular scale level's array. It acts like an 
+    array of that size, but only works within the interval setup by 
+    `set_interval`. Each `VirtualData` uses the scale level's coordinates.
+
+    -- `VirtualData` uses a (poorly named) "data_plane" to store the currently 
+    active interval.
+    -- `VirtualData.translate` specifies the offset of the 
+    `VirtualData.data_plane`'s origin from `VirtualData.array`'s origin, in 
+    `VirtualData`'s coordinate system
+    
+    VirtualData is used to use a 2D array to represent
     a larger shape. The purpose of this function is to provide
     a 2D slice that acts like a canvas for rendering a large ND image.
 
@@ -719,6 +732,28 @@ class VirtualData:
     will be used as the (y, x) values.
 
     NEW: use a translate to define subregion of image
+
+    Attributes
+    ----------
+    array: dask.array
+        Dask array of image data for this scale
+    dtype: dtype
+        dtype of the array
+    shape: tuple
+        shape of the true data (not the data_plane)
+    ndim: int
+        Number of dimensions for this scale
+    translate: list[tuple(int)]
+        tuple for the translation
+    d: int
+        Dimension of the chunked slices ??? Hard coded to 2.
+    data_plane: dask.array
+        Array of currently visible data for this layer
+    _min_coord: list 
+        List of the minimum coordinates in each dimension
+    _max_coord: list
+        List of the maximum coordinates in each dimension
+
     """
 
     def __init__(self, array):
@@ -738,15 +773,31 @@ class VirtualData:
         self._min_coord = None
 
     def set_interval(self, coords):
-        """coords is a tuple of slices in the same coordinate system as the parent array."""
+        """The interval is the range of the data for this scale that is 
+        currently visible. It is stored in `_min_coord` and `_max_coord` in
+        the coordinates of the original array. 
+
+        This function takes a slice, converts it to a range (stored as 
+        `_min_coord` and `_max_coord`), and extracts a subset of the orginal 
+        data array (stored as `data_plane`)
+
+        Parameters
+        ----------
+        coords: tuple(slice(ndim))
+            tuple of slices in the same coordinate system as the parent array.
+        """
+        # store the last interval
         prev_max_coord = self._max_coord
         prev_min_coord = self._min_coord
-
+        
+        # extract the coordinates as a range
         self._max_coord = [sl.stop for sl in coords]
         self._min_coord = [sl.start for sl in coords]
 
         # Round max and min coord according to self.array.chunks
-        for dim in range(len(self._max_coord)):
+        # for each dimension, reset the min/max coords, aka interval to be 
+        # the range of chunk coordinates since we can't partially load a chunk
+        for dim in range(len(self._max_coord)):            
             cumuchunks = np.array(self.array.chunks[dim]).cumsum()
 
             # First value greater or equal to
@@ -774,13 +825,10 @@ class VirtualData:
         #     import pdb; pdb.set_trace()
         self.translate = self._min_coord
 
-        interval_size = [
-            mx - mn for mx, mn in zip(self._max_coord, self._min_coord)
-        ]
-
-        LOGGER.debug(
-            f"update_with_minmax: {self.translate} max {self._max_coord} interval size {interval_size}"
-        )
+        # interval size may be one or more chunks
+        interval_size = [mx - mn for mx, mn in zip(self._max_coord, self._min_coord)]
+        
+        LOGGER.debug(f"VirtualData: update_with_minmax: {self.translate} max {self._max_coord} interval size {interval_size}")
 
         # Update data_plane
 
@@ -789,6 +837,7 @@ class VirtualData:
         ]
 
         # Try to reuse the previous data_plane if possible (otherwise we get flashing)
+        # shape of the chunks
         next_data_plane = np.zeros(new_shape, dtype=self.dtype)
 
         if prev_max_coord:
@@ -796,6 +845,8 @@ class VirtualData:
             next_slices = []
             prev_slices = []
             for dim in range(len(self._max_coord)):
+                # to ensure that start is non-negative
+                # prev_start is the start of the overlapping region in the previous one
                 if self._min_coord[dim] < prev_min_coord[dim]:
                     prev_start = 0
                     next_start = prev_min_coord[dim] - self._min_coord[dim]
@@ -809,7 +860,7 @@ class VirtualData:
                 width = min(
                     self.data_plane.shape[dim], next_data_plane.shape[dim]
                 )
-
+                # to make sure its not overflowing the shape
                 width = min(
                     width,
                     width
@@ -1006,7 +1057,12 @@ def test_virtualdata():
 # TODO MultiScaleVirtualData describes a multiscale relationship between
 # multiple VirtualData, including tracking coordinate systems
 class MultiScaleVirtualData:
-    """VirtualData is used to use a 2D array to represent
+    """MultiScaleVirtualData is a parent that tracks the transformation 
+    between each VirtualData child relative to the highest resolution 
+    VirtualData (which is just a re-scaling transform). It accepts inputs in 
+    the coordinate system of the highest resolution VirtualData.
+    
+    VirtualData is used to use a 2D array to represent
     a larger shape. The purpose of this function is to provide
     a 2D slice that acts like a canvas for rendering a large ND image.
 
@@ -1014,11 +1070,38 @@ class MultiScaleVirtualData:
     will be used as the (y, x) values.
 
     NEW: use a translate to define subregion of image
+
+    Attributes
+    ----------
+    arrays: dask.array
+        List of dask arrays of image data, one for each scale
+    dtype: dtype
+        dtype of the arrays
+    shape: tuple
+        shape of the true data, the highest resolution (x, y)
+    ndim: int
+        Number of dimensions, aka scales
+    _data: list[VirtualData]
+        List of VirtualData objects for each scale
+    _translate: list[tuple(int)]
+        List of tuples, e.g. [(0, 0), (0, 0)] of translations for each scale 
+        array
+    _scale_factors: list[list[float]]
+        List of lists, e.g. [[1.0, 1.0], [2.0, 2.0]], of scale factors between 
+        the highest resolution scale and each subsequent scale, [x, y]
+    d: int
+        Dimension of the chunked slices ???
+    _chunk_slices: list of list of chunk slices
+        List of list of chunk slices. A slice object for each scale, for each 
+        dimension, 
+        e.g. [list of scales[list of slice objects[(x, y, z)]]]
     """
 
     def __init__(self, arrays):
         # TODO arrays should be typed as MultiScaleData
+        # each array represents a scale
         self.arrays = arrays
+        # first array is considered the highest resolution # TODO [kcp] - is that always true?
         highest_res = arrays[0]
 
         self.dtype = highest_res.dtype
@@ -1028,12 +1111,12 @@ class MultiScaleVirtualData:
 
         # Keep a VirtualData for each array
         self._data = []
-
         self._translate = []
         self._scale_factors = []
         for scale in range(len(self.arrays)):
             virtual_data = VirtualData(self.arrays[scale])
-            self._translate += [tuple([0] * len(self.shape))]
+            self._translate += [tuple([0] * len(self.shape))] # Factors to shift the layer by in units of world coordinates.
+            # TODO [kcp] there are assumptions here, expect rounding errors here, or should we force ints?
             self._scale_factors += [
                 [
                     hr_val / this_val
@@ -1044,7 +1127,7 @@ class MultiScaleVirtualData:
             ]
             self._data += [virtual_data]
 
-        # TODO hard coded 2D for now
+        # TODO hard coded 2D for now [kcp] what is this?
         self.d = 2
 
         # This is expensive to precompute for large arrays
@@ -1055,9 +1138,31 @@ class MultiScaleVirtualData:
         #     self._chunk_slices += [these_slices]
 
     def set_interval(self, min_coord, max_coord, visible_scales=[]):
-        """min_coord and max_coord are in the same units as the highest resolution
-        scale."""
+        """Set the extents for each of the scales in the coordinates of each
+        individual scale array
 
+        visible_scales must be an empty list of a list equal to the number of 
+        scales
+
+        Sets the _min_coord and _max_coord on each individual VirtualData
+
+        min_coord and max_coord are in the same units as the highest resolution
+        scale data.
+
+        Parameters
+        ----------
+        min_coord: np.array
+            top left corner of the visible canvas
+        max_coord: np.array
+            bottom right corner of the visible canvas
+        visible_scales: list
+            Optional. ???
+        """
+
+        # for each scale, set the interval for the VirtualData
+        # e.g. a high resolution scale may cover [0,1,2,3,4] but a scale
+        # with half of that resolution will cover the same region with 
+        # coords/indices of [0,1,2]
         for scale in range(len(self.arrays)):
             if not visible_scales or visible_scales[scale]:
                 # Update translate
@@ -1073,7 +1178,7 @@ class MultiScaleVirtualData:
 
                 self._translate[scale] = scaled_min
                 LOGGER.info(
-                    f"update_with_minmax: scale {scale} min {min_coord} : {scaled_min} max {max_coord} : {scaled_max}"
+                    f"MultiscaleVirtualData: update_with_minmax: scale {scale} min {min_coord} : {scaled_min} max {max_coord} : scaled max {scaled_max}"
                 )
 
                 # Ask VirtualData to update its interval
@@ -1082,6 +1187,8 @@ class MultiScaleVirtualData:
                 )
 
                 self._data[scale].set_interval(coords)
+            else:
+                LOGGER.debug('visible scales are provided, do nothing')
 
 
 if __name__ == "__main__":

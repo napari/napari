@@ -15,6 +15,7 @@ from skimage.transform import resize
 from superqt import ensure_main_thread
 from zarr.storage import init_array, init_group
 from zarr.util import json_dumps
+from napari import Viewer
 
 import napari
 from napari.experimental._progressive_loading import (
@@ -90,8 +91,7 @@ def get_and_process_chunk_2D(
         real_array,
     )
 
-
-def should_render_scale(scale, viewer):
+def should_render_scale(scale, viewer, min_scale, max_scale):    
     layer_name = get_layer_name_for_scale(scale)
     layer = viewer.layers[layer_name]
     layer_shape = layer.data.shape
@@ -102,10 +102,23 @@ def should_render_scale(scale, viewer):
 
     # pixel_size = 2 * np.tan(viewer.camera.angles[-1] / 2) * dist / max(layer_scale)
     pixel_size = viewer.camera.zoom * max(layer_scale)
-
+    
     # TODO max pixel_size chosen by eyeballing
-    # return (pixel_size > 0.25) and (pixel_size < 5)
-    return (pixel_size >= 0.5) and (pixel_size <= 2)
+    max_pixel = 5
+    min_pixel = 0.25
+    max_pixel = 4
+    min_pixel = 0.5
+    greater_than_min_pixel = pixel_size > min_pixel
+    less_than_max_pixel = pixel_size < max_pixel
+    render = (greater_than_min_pixel and less_than_max_pixel)
+
+    if not render:
+        if scale == min_scale and pixel_size > max_pixel:
+            render = True
+        elif scale == max_scale and pixel_size < min_pixel:
+            render = True
+
+    return render
 
 
 @thread_worker
@@ -123,14 +136,14 @@ def render_sequence(
         shape of highest resolution array
     num_threads : int
         number of threads for multithreaded fetching
-    max_scale : int
+    visible_scales : list
         this is used to constrain the number of scales that are rendered
     """
     # NOTE this corner_pixels means something else and should be renamed
     # it is further limited to the visible data on the vispy canvas
 
     LOGGER.info(
-        f"render_sequence: inside with corner pixels {corner_pixels} with max_scale {visible_scales} on thread {threading.get_ident()}"
+        f"render_sequence: inside with corner pixels {corner_pixels} with visible_scales {visible_scales}"
     )
 
     full_shape = data.arrays[0].shape
@@ -234,7 +247,9 @@ def dims_update_handler(invar, data=None):
 
     # Find the visible scales
     visible_scales = [False] * len(data.arrays)
-
+    min_scale = 0
+    max_scale = len(data.arrays) - 1
+    
     for scale in range(len(data.arrays)):
         layer_name = get_layer_name_for_scale(scale)
         layer = viewer.layers[layer_name]
@@ -244,8 +259,8 @@ def dims_update_handler(invar, data=None):
         layer.metadata["translated"] = False
 
         # Reenable visibility of layer
-        visible_scales[scale] = should_render_scale(scale, viewer)
-
+        visible_scales[scale] = should_render_scale(scale, viewer, min_scale, max_scale)
+        
         layer.visible = visible_scales[scale]
         layer.opacity = 0.9
 
@@ -327,18 +342,26 @@ def dims_update_handler(invar, data=None):
 
 
 def add_progressive_loading_image(img, viewer=None):
+    """Add tiled multiscale image"""
+    # initialize multiscale virtual data (generate scale factors, translations, and chunk slices)
     multiscale_data = MultiScaleVirtualData(img)
+
+    if not viewer:
+        viewer = Viewer()
 
     LOGGER.info(f"MultiscaleData {multiscale_data.shape}")
 
     # Get initial extent for rendering
-    canvas_corners = viewer.window.qt_viewer._canvas_corners_in_world.copy()
-    canvas_corners[canvas_corners < 0] = 0
+    canvas_corners = viewer.window.qt_viewer._canvas_corners_in_world.copy()    
+    canvas_corners[canvas_corners < 0] = 0  # required to cast from float64 to int64
     canvas_corners = canvas_corners.astype(np.int64)
 
     top_left = canvas_corners[0, :]
     bottom_right = canvas_corners[1, :]
 
+    # set the extents for each scale in data coordinates
+    # take the currently visible canvas extents and apply them to the 
+    # individual data scales
     multiscale_data.set_interval(top_left, bottom_right)
 
     # TODO sketchy Disable _update_thumbnail
@@ -373,12 +396,9 @@ def add_progressive_loading_image(img, viewer=None):
 
     # TODO initial zoom should not be hardcoded
     # for mandelbrot scales=8
-    # viewer.camera.zoom = 0.001
-    # for mandelbrot scales=14
-    viewer.camera.zoom = 0.0001
-    canvas_corners = viewer.window.qt_viewer._canvas_corners_in_world.astype(
-        np.uint64
-    )
+    viewer.camera.zoom = 0.001
+    # viewer.camera.zoom = 0.00001
+
     LOGGER.info(f"viewer canvas corners {canvas_corners}")
 
     # Connect to camera and dims
@@ -392,6 +412,8 @@ def add_progressive_loading_image(img, viewer=None):
 
     # Trigger first render
     dims_update_handler(viewer, data=multiscale_data)
+
+    return viewer
 
 
 if __name__ == "__main__":
@@ -424,6 +446,7 @@ if __name__ == "__main__":
         yappi.get_func_stats().print_all()
         yappi.get_thread_stats().print_all()
 
+    napari.run()
 
 def yappi_stats():
     import time
