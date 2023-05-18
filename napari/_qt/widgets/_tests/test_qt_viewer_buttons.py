@@ -40,8 +40,7 @@ def test_roll_dims_button_popup(qt_viewer_buttons, qtbot):
     dims_sorter = None
     for widget in QApplication.topLevelWidgets():
         if isinstance(widget, QtPopup):
-            dims_sorter = widget.frame.findChild(QtDimsSorter)
-            break
+            dims_sorter = widget.findChild(QtDimsSorter)
     assert dims_sorter
     assert tuple(dims_sorter.axes_list) == viewer.dims.order
 
