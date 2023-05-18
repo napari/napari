@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
 from napari.utils.theme import available_themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari.components.viewer_model import ViewerModel
     from napari.viewer import Viewer
 
 
@@ -18,10 +18,6 @@ def register_viewer_action(description):
     It will use the function name as the action name. We force the description
     to be given instead of function docstring for translation purpose.
     """
-
-    # Workaround for the circular import issue
-    # https://github.com/napari/napari/issues/5846#issuecomment-1552863541
-    from napari.components.viewer_model import ViewerModel
 
     def _inner(func):
         action_manager.register_action(
