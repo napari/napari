@@ -231,6 +231,7 @@ class ShortcutEditor(QWidget):
                 # Set action description.  Make sure its not selectable/editable.
                 item = QTableWidgetItem(action.description)
                 item.setFlags(Qt.ItemFlag.NoItemFlags)
+                item.setFlags(item.flags() | Qt.ItemIsEnabled)
                 self._table.setItem(row, self._action_name_col, item)
 
                 # Create empty item in order to make sure this column is not
