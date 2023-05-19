@@ -1,3 +1,12 @@
+"""
+Add graph
+===================
+
+Display a random undirected graph using the graph layer.
+
+.. tags:: visualization-basic
+"""
+
 import numpy as np
 import pandas as pd
 from napari_graph import UndirectedGraph
