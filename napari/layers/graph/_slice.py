@@ -62,7 +62,7 @@ class _GraphSliceRequest(_PointSliceRequest):
             return _GraphSliceResponse(
                 indices=[],
                 edges_indices=[],
-                edge_scale=np.empty(0),
+                scale=np.empty(0),
                 dims=self.dims,
             )
 

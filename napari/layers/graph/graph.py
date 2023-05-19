@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from napari_graph import BaseGraph, UndirectedGraph
@@ -56,7 +56,7 @@ class Graph(_BasePoints):
         self._edges_indices_view = []
 
         super().__init__(
-            data,
+            self._data,
             ndim=self._data.ndim,
             features=features,
             feature_defaults=feature_defaults,
@@ -97,16 +97,51 @@ class Graph(_BasePoints):
 
     @staticmethod
     def _fix_data(
-        data: Optional[BaseGraph] = None, ndim: int = 3
+        data: Optional[Union[BaseGraph, ArrayLike]] = None,
+        ndim: Optional[int] = None,
     ) -> BaseGraph:
         """Checks input data and return a empty graph if is None."""
+        if ndim is None:
+            ndim = 3
+
         if data is None:
             return UndirectedGraph(n_nodes=100, ndim=ndim, n_edges=200)
 
         if isinstance(data, BaseGraph):
+            if data._coords is None:
+                raise ValueError(
+                    trans._(
+                        "Graph layer must be a spatial graph, have the `coords` attribute."
+                    )
+                )
             return data
 
-        raise NotImplementedError
+        try:
+            arr_data = np.atleast_2d(data)
+        except ValueError as err:
+            raise NotImplementedError(
+                trans._(
+                    "Could not convert to {data} to a napari graph.",
+                    data=data,
+                )
+            ) from err
+
+        if not issubclass(arr_data.dtype.type, np.number):
+            raise TypeError(
+                trans._(
+                    "Expected numeric type. Found{dtype}.",
+                    dtype=arr_data.dtype,
+                )
+            )
+
+        if arr_data.ndim > 2:
+            raise ValueError(
+                trans._(
+                    "Graph layer only supports 2-dim arrays. Found {ndim}.",
+                    ndim=arr_data.ndim,
+                )
+            )
+        return UndirectedGraph(coords=arr_data)
 
     @property
     def _points_data(self) -> np.ndarray:
@@ -120,6 +155,7 @@ class Graph(_BasePoints):
     def data(self, data: Optional[BaseGraph]) -> None:
         # FIXME: might be missing data changed call
         self._data = self._fix_data(data)
+        self._update_dims()
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
@@ -162,6 +198,8 @@ class Graph(_BasePoints):
                 new_starting_idx, new_starting_idx + len(coords)
             )
 
+        indices = np.atleast_1d(indices)
+
         if len(coords) != len(indices):
             raise ValueError(
                 trans._(
@@ -183,10 +221,18 @@ class Graph(_BasePoints):
 
     def remove(self, indices: ArrayLike) -> None:
         """Removes nodes given their indices."""
-        if isinstance(indices, np.ndarray):
-            indices = indices.tolist()
+        indices = np.atleast_1d(indices)
+        if indices.ndim > 1:
+            raise ValueError(
+                trans._(
+                    "Indices for removal must be 1-dim. Found {ndim}",
+                    ndim=indices.ndim,
+                )
+            )
 
-        indices.sort(reverse=True)
+        # descending order
+        indices = np.flip(np.sort(indices))
+
         for idx in indices:
             self.data.remove_node(idx)
 
