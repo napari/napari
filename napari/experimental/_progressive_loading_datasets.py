@@ -1,3 +1,6 @@
+import sys
+import logging
+import time
 import dask.array as da
 import numpy as np
 import zarr
@@ -8,8 +11,18 @@ from ome_zarr.io import parse_url
 from ome_zarr.reader import Reader
 from zarr.storage import init_array, init_group
 from zarr.util import json_dumps
+import xarray
 
-import napari
+LOGGER = logging.getLogger("napari.experimental._progressive_loading_datasets")
+LOGGER.setLevel(logging.DEBUG)
+
+streamHandler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+streamHandler.setFormatter(formatter)
+LOGGER.addHandler(streamHandler)
+
 
 
 # TODO capture some sort of metadata about scale factors
@@ -166,6 +179,18 @@ def luethi_zenodo_7144919():
         )
     return large_image
 
+# ----- zarr extension -----
+
+def zarr_get_chunk(self: "zarr.Array", coords):
+    """Accept a tuple of integers as coordinates.
+    Return a numpy array with the corresponding loaded chunk data."""
+    out = np.zeros(self.chunks)
+    selection = [slice(0, mx, 1) for mx in self._chunks]
+    self._chunk_getitems([coords], [selection], out, [selection])
+    return out
+
+zarr.Array.get_chunk = zarr_get_chunk
+
 
 # ----- mandelbrot -----
 # derived from the mandelbrot example from vizarr: https://colab.research.google.com/github/hms-dbmi/vizarr/blob/main/example/mandelbrot.ipynb
@@ -217,6 +242,7 @@ def mandelbrot(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
             out[j * grid_size + i] = n
             cimag += step_y
         creal += step_x
+
     return out
 
 
@@ -295,6 +321,7 @@ class MandlebrotStore(zarr.storage.Store):
         )
 
     def __getitem__(self, key):
+        
         if key in self._store:
             return self._store[key]
 
@@ -306,6 +333,11 @@ class MandlebrotStore(zarr.storage.Store):
         except:
             raise KeyError
 
+
+        return self.get_chunk(level, y, x).tobytes()
+    
+
+    def get_chunk(self, level, y, x):
         from_x, from_y, to_x, to_y = tile_bounds(level, x, y, self.levels)
         out = np.zeros(self.tilesize * self.tilesize, dtype=self.dtype)
         tile = mandelbrot(
@@ -322,8 +354,8 @@ class MandlebrotStore(zarr.storage.Store):
 
         if self.compressor:
             return self.compressor.encode(tile)
-
-        return tile.tobytes()
+        
+        return tile
 
     def keys(self):
         return self._store.keys()
@@ -344,8 +376,8 @@ class MandlebrotStore(zarr.storage.Store):
 
 # https://dask.discourse.group/t/using-da-delayed-for-zarr-processing-memory-overhead-how-to-do-it-better/1007/10
 def mandelbrot_dataset():
-    max_levels = 8
-    # max_levels = 14
+    # max_levels = 8
+    max_levels = 16
 
     large_image = {
         "container": "mandelbrot.zarr/",
@@ -359,11 +391,58 @@ def mandelbrot_dataset():
 
     # Initialize the store
     store = MandlebrotStore(
+        levels=max_levels, tilesize=512, compressor=None, maxiter=255        
+#        levels=max_levels, tilesize=512, compressor=Blosc(), maxiter=255
+    )
+    # Wrap in a cache so that tiles don't need to be computed as often
+    # store = zarr.LRUStoreCache(store, max_size=8e9)
+    
+    # This store implements the 'multiscales' zarr specfiication which is recognized by vizarr
+    z_grp = zarr.open(store, mode="r")
+
+    multiscale_img = [z_grp[str(k)] for k in range(max_levels)]
+
+    arrays = []
+    for scale, a in enumerate(multiscale_img):
+        chunks = da.core.normalize_chunks(
+            large_image["chunk_size"],
+            a.shape,
+            dtype=np.uint8,
+            previous_chunks=None,
+        )
+
+        # arrays += [da.from_zarr(a, chunks=chunks)]
+
+        setattr(a, "get_zarr_chunk", lambda scale, y, x: store.get_chunk(scale, y, x))
+        
+        arrays += [a]
+
+    large_image["arrays"] = arrays
+
+    # TODO wrap in dask delayed
+
+    return large_image
+
+if __name__ == "__main__":
+    max_levels = 16
+
+    large_image = {
+        "container": "mandelbrot.zarr/",
+        "dataset": "",
+        "scale_levels": max_levels,
+        "scale_factors": [
+            (2**level, 2**level) for level in range(max_levels)
+        ],
+        "chunk_size": (512, 512),
+    }
+
+    # Initialize the store
+    store = MandlebrotStore(
         levels=max_levels, tilesize=512, compressor=Blosc(), maxiter=255
     )
     # Wrap in a cache so that tiles don't need to be computed as often
     store = zarr.LRUStoreCache(store, max_size=8e9)
-
+    
     # This store implements the 'multiscales' zarr specfiication which is recognized by vizarr
     z_grp = zarr.open(store, mode="r")
 
@@ -377,10 +456,7 @@ def mandelbrot_dataset():
             dtype=np.uint8,
             previous_chunks=None,
         )
-        arrays += [da.from_zarr(a, chunks=chunks)]
 
-    large_image["arrays"] = arrays
+        arrays += [a]
 
-    # TODO wrap in dask delayed
-
-    return large_image
+    

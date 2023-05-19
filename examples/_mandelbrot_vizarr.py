@@ -1,3 +1,4 @@
+import time
 import heapq
 import logging
 import sys
@@ -66,13 +67,26 @@ def get_and_process_chunk_2D(
     """
     array = virtual_data.array
 
-    # Trigger a fetch of the data
-    real_array = interpolated_get_chunk_2D(
-        chunk_slice,
-        array=array,
-    )
+    start_time = time.time()
 
-    # LOGGER.info(f"get_and_process_chunk_2D: {(time.time() - start_time)} time, yielding for scale {scale} at slice {chunk_slice}")
+    # Trigger a fetch of the data
+    # TODO this is what should be happening
+    # real_array = interpolated_get_chunk_2D(
+    #     chunk_slice,
+    #     array=array,
+    # )
+
+    # x = (chunk_slice[0].start + virtual_data.translate[0]) / virtual_data.array.chunks[0]
+    # y = (chunk_slice[1].start + virtual_data.translate[1]) / virtual_data.array.chunks[1]
+
+    x = (chunk_slice[0].start) / virtual_data.array.chunks[0]
+    y = (chunk_slice[1].start) / virtual_data.array.chunks[1]
+    
+    # TODO pickup here and to find out why the fractal is offset
+    
+    real_array = array.get_zarr_chunk(scale, y, x)
+
+    LOGGER.info(f"get_and_process_chunk_2D: {(time.time() - start_time)} time, yielding for scale {scale} at slice {chunk_slice}")
     #     f"\tyield will be placed at: {(y * 2**scale, x * 2**scale, scale, real_array.shape)} slice: {(chunk_slice[0].start, chunk_slice[0].stop, chunk_slice[0].step)} {(chunk_slice[1].start, chunk_slice[1].stop, chunk_slice[1].step)}"
     # )
 
@@ -220,8 +234,8 @@ def dims_update_handler(invar, data=None):
     # Terminate existing multiscale render pass
     if worker:
         # TODO this might not terminate threads properly
-        # worker.await_workers()
-        worker.await_workers(msecs=30000)
+        worker.await_workers()
+        # worker.await_workers(msecs=30000)
 
     # Find the corners of visible data in the highest resolution
     corner_pixels = viewer.layers[get_layer_name_for_scale(0)].corner_pixels
@@ -301,6 +315,7 @@ def dims_update_handler(invar, data=None):
         # TODO bad layer access
         chunk_slice, scale, chunk, is_last_chunk = coord
 
+        start_time = time.time()
         # TODO measure timing within on_yield, find the time consumer
 
         layer_name = get_layer_name_for_scale(scale)
@@ -343,7 +358,7 @@ def dims_update_handler(invar, data=None):
         texture.set_data(layer.data.data_plane)
         # LOGGER.info(f"{time.time() - start_time} time : done with set_data of chunk")
         image.update()
-        # LOGGER.info(f"{time.time() - start_time} time : done with image update")
+        LOGGER.info(f"{time.time() - start_time} time : done with image update")
 
     worker.yielded.connect(on_yield)
 
@@ -405,8 +420,8 @@ def add_progressive_loading_image(img, viewer=None):
 
     # TODO initial zoom should not be hardcoded
     # for mandelbrot scales=8
-    viewer.camera.zoom = 0.001
-    # viewer.camera.zoom = 0.00001
+    # viewer.camera.zoom = 0.001
+    viewer.camera.zoom = 0.00001
 
     LOGGER.info(f"viewer canvas corners {canvas_corners}")
 
@@ -415,7 +430,7 @@ def add_progressive_loading_image(img, viewer=None):
         listener.connect(
             debounced(
                 ensure_main_thread(dims_update_handler(data=multiscale_data)),
-                timeout=1000,
+                timeout=2000,
             )
         )
 
@@ -423,7 +438,6 @@ def add_progressive_loading_image(img, viewer=None):
     dims_update_handler(viewer, data=multiscale_data)
 
     return viewer
-
 
 if __name__ == "__main__":
     import yappi
@@ -455,7 +469,7 @@ if __name__ == "__main__":
         yappi.get_func_stats().print_all()
         yappi.get_thread_stats().print_all()
 
-    napari.run()
+    # napari.run()
 
 def yappi_stats():
     import time

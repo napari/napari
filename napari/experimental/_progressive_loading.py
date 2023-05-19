@@ -1,3 +1,4 @@
+import time
 import heapq
 import itertools
 import logging
@@ -5,6 +6,7 @@ import sys
 from collections import defaultdict
 from typing import Tuple, Union
 
+import zarr
 import dask
 import dask.array as da
 import numpy as np
@@ -57,15 +59,25 @@ def get_chunk(
     real_array = None
     retry = 0
 
+    start_time = time.time()
+
     while real_array is None and retry < num_retry:
         # try:
         if True:
-            # For Dask fetching
-            chunk = array[chunk_slice]
-            if isinstance(chunk, da.Array) or isinstance(chunk, VirtualData):
-                real_array = np.asarray(chunk.compute(), dtype=dtype)
+            if isinstance(array, zarr.Array):
+                coords = tuple([int(sl.start / array._chunks[dim]) for dim, sl in enumerate(chunk_slice)])
+                real_array = array.get_chunk(coords)
             else:
-                real_array = np.asarray(chunk, dtype=dtype)
+                # For Dask fetching
+                chunk = array[chunk_slice]
+                LOGGER.info(f"get_chunk (sliced) : {(time.time() - start_time)}")
+
+                if isinstance(chunk, da.Array) or isinstance(chunk, VirtualData):
+                    real_array = chunk.compute()
+                    LOGGER.info(f"get_chunk (compute) : {(time.time() - start_time)} type {type(chunk)}")
+                else:
+                    # real_array = np.asarray(chunk, dtype=dtype)
+                    real_array = chunk
 
             # TODO check for a race condition that is causing this exception
             #      some dask backends are not thread-safe
@@ -74,6 +86,8 @@ def get_chunk(
         # ):
         #     pass
         retry += 1
+
+    LOGGER.info(f"get_chunk (end) : {(time.time() - start_time)}")
         
     return real_array
 
@@ -189,9 +203,20 @@ def chunk_slices(array: da.Array, ndim=3, interval=None):
         List of slice objects for each chunk for each dimension
     """
 
-    start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
-    end_pos = [np.cumsum(sizes) for sizes in array.chunks]
-
+    if isinstance(array, da.Array):        
+        start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]        
+        end_pos = [np.cumsum(sizes) for sizes in array.chunks]
+    else:
+        # For zarr     
+        start_pos = []
+        end_pos = []
+        for dim in range(len(array.chunks)):
+            # Inclusive on the end point
+            cumuchunks = [val for val in range(0, array.shape[dim] + 1, array.chunks[dim])]
+            cumuchunks = np.array(cumuchunks)
+            start_pos += [cumuchunks[:-1]]
+            end_pos += [cumuchunks[1:]]    
+        
     if interval is not None:
         # array([[7709.88671875, 5007.1953125 ],[9323.7578125 , 6824.38867188]])
         #
@@ -659,6 +684,8 @@ def interpolated_get_chunk_2D(chunk_slice, array=None):
     """
     real_array = None
 
+    start_time = time.time()
+    
     if real_array is None:
         # If we do not need to interpolate
         # TODO this isn't safe enough
@@ -709,8 +736,11 @@ def interpolated_get_chunk_2D(chunk_slice, array=None):
             # TODO hardcoded dtype
             # TODO squeeze is a bad sign
             real_array = (
-                ((1 - w) * lvalue + w * rvalue).astype(np.uint16).squeeze()
+                ((1 - w) * lvalue + w * rvalue).squeeze()
+#                ((1 - w) * lvalue + w * rvalue).astype(np.uint16).squeeze()
             )
+
+    LOGGER.info(f"interpolated_get_chunk_2D : {(time.time() - start_time)}")
 
     return real_array
 
@@ -800,22 +830,30 @@ class VirtualData:
         # Round max and min coord according to self.array.chunks
         # for each dimension, reset the min/max coords, aka interval to be 
         # the range of chunk coordinates since we can't partially load a chunk
-        for dim in range(len(self._max_coord)):            
-            cumuchunks = np.array(self.array.chunks[dim]).cumsum()
+        for dim in range(len(self._max_coord)):
+            if isinstance(self.array, da.Array):
+                chunks = self.array.chunks[dim]
+                cumuchunks = np.array(chunks).cumsum()
+            else:
+                # For zarr     
+                cumuchunks = [val for val in range(self.chunks[dim], self.array.shape[dim], self.chunks[dim])]
+                # Add last element
+                cumuchunks += [self.array.shape[dim]]
+                cumuchunks = np.array(cumuchunks)
+                
 
             # First value greater or equal to
-            greaterthan_min_idx = np.where(cumuchunks > self._min_coord[dim])[
-                0
-            ][0]
+            min_where = np.where(cumuchunks > self._min_coord[dim])
+            greaterthan_min_idx = min_where[0][0] if min_where[0] is not None else 0
             self._min_coord[dim] = (
                 cumuchunks[greaterthan_min_idx - 1]
                 if greaterthan_min_idx > 0
                 else 0
             )
 
-            lessthan_max_idx = np.where(cumuchunks >= self._max_coord[dim])[0][
-                0
-            ]
+            
+            max_where = np.where(cumuchunks >= self._max_coord[dim])
+            lessthan_max_idx = max_where[0][0] if max_where[0] is not None else 0
             self._max_coord[dim] = (
                 cumuchunks[lessthan_max_idx]
                 if lessthan_max_idx < cumuchunks[-1]
