@@ -511,7 +511,7 @@ def test_missing_translations(checks):
         unique_values = set()
         for line, value in values:
             unique_values.add(value)
-            print(f"{line}:\t{repr(value)}")
+            print(f"{line}:\t{value!r}")
 
         print("\n")
 
@@ -520,14 +520,14 @@ def test_missing_translations(checks):
                 f"List below can be copied directly to `tools/strings_list.py` file inside the '{fpath}' key:\n"
             )
             for value in sorted(unique_values):
-                print(f"        {repr(value)},")
+                print(f"        {value!r},")
         else:
             print(
                 "List below can be copied directly to `tools/strings_list.py` file:\n"
             )
-            print(f"    {repr(fpath)}: [")
+            print(f"    {fpath!r}: [")
             for value in sorted(unique_values):
-                print(f"        {repr(value)},")
+                print(f"        {value!r},")
             print("    ],")
 
         print("\n")
@@ -560,7 +560,7 @@ def test_translation_errors(checks):
     for fpath, errors in trans_errors.items():
         print(f"{fpath}\n{'*' * len(fpath)}")
         for string, variables in errors:
-            print(f"String:\t\t{repr(string)}")
+            print(f"String:\t\t{string!r}")
             print(
                 f"Variables:\t{', '.join(repr(value) for value in variables)}"
             )
