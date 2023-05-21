@@ -174,7 +174,7 @@ class Labels(_ImageBase):
         The number of dimensions across which labels will be edited.
     contour : int
         If greater than 0, displays contours of labels instead of shaded regions
-        with a thickness equal to its value.
+        with a thickness equal to its value. Must be >= 0.
     brush_size : float
         Size of the paint brush in data coordinates.
     selected_label : int
@@ -400,13 +400,15 @@ class Labels(_ImageBase):
         self.events.n_edit_dimensions()
 
     @property
-    def contour(self):
+    def contour(self) -> int:
         """int: displays contours of labels instead of shaded regions."""
         return self._contour
 
     @contour.setter
-    def contour(self, contour):
-        self._contour = contour
+    def contour(self, contour: int) -> None:
+        if contour < 0:
+            raise ValueError("contour value must be >= 0")
+        self._contour = int(contour)
         self.events.contour()
         self.refresh()
 
