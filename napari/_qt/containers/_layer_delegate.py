@@ -234,7 +234,7 @@ class LayerDelegate(QStyledItemDelegate):
         model: QtCore.QAbstractItemModel,
         index: QtCore.QModelIndex,
     ) -> QtCore.QAbstractItemModel:
-        """When toggling visibility of a later, store the current visibility state of
+        """When toggling visibility of a layer, store the current visibility state of
         the layers, ensuring that clicked layer is toggled, and any alt-clicked
         layer states are cleared.
         """
