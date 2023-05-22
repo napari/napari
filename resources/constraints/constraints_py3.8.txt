@@ -115,7 +115,7 @@ in-n-out==0.1.7
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.23.0
+ipykernel==6.23.1
     # via
     #   napari-console
     #   qtconsole
@@ -152,7 +152,7 @@ lazy-loader==0.2
     # via
     #   napari (setup.cfg)
     #   scikit-image
-lit==16.0.3
+lit==16.0.5
     # via triton
 locket==1.0.0
     # via partd
@@ -541,7 +541,7 @@ zipp==3.15.0
     #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==67.7.2
+setuptools==67.8.0
     # via
     #   nvidia-cublas-cu11
     #   nvidia-cuda-cupti-cu11
