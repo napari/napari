@@ -47,9 +47,7 @@ class BoundingBox(Compound):
         return self._subvisuals[1]
 
     def set_bounds(self, bounds):
-        """
-        Update the bounding box based on a layer's bounds.
-        """
+        """Update the bounding box based on a layer's bounds."""
         if any(b is None for b in bounds):
             return
 

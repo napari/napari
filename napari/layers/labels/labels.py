@@ -1144,7 +1144,9 @@ class Labels(_ImageBase):
             )
             im_slice = self._slice.image.raw
             bounding_box = self._display_bounding_box(dims_displayed)
-            # bounding box is with upper limit excluded in the uses below
+            # the display bounding box is returned as a closed interval
+            # (i.e. the endpoint is included) by the method, but we need
+            # open intervals in the code that follows, so we add 1.
             bounding_box[:, 1] += 1
 
             clamped = clamp_point_to_bounding_box(

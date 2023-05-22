@@ -760,6 +760,8 @@ class Points(Layer):
 
     @property
     def _extent_data_augmented(self):
+        # _extent_data is a property that returns a new/copied array, which
+        # is safe to modify below
         extent = self._extent_data
         if len(self.size) == 0:
             return extent
