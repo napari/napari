@@ -64,7 +64,7 @@ class _GraphSliceRequest:
 
     def __call__(self) -> _GraphSliceResponse:
         # Return early if no data
-        if len(self.data) == 0:
+        if self.data.n_nodes == 0:
             return _GraphSliceResponse(
                 indices=[],
                 edges_indices=[],
@@ -76,7 +76,10 @@ class _GraphSliceRequest:
         if not not_disp:
             # If we want to display everything, then use all indices.
             # scale is only impacted by not displayed data, therefore 1
-            node_indices = np.arange(len(self.data))
+            node_indices = np.arange(self.data.n_allocated_nodes)
+            node_indices = node_indices[
+                self.data._buffer2world != _NODE_EMPTY_PTR
+            ]
             _, edges = self.data.get_edges_buffers(is_buffer_domain=True)
             return _GraphSliceResponse(
                 indices=node_indices,
