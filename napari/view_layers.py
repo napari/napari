@@ -174,9 +174,11 @@ def _make_viewer_then(
 #     viewer.add_image(*args, **kwargs)
 #     return viewer
 
+
 @_merge_layer_viewer_sigs_docs
 def view_graph(*args, **kwargs):
     return _make_viewer_then('add_graph', *args, **kwargs)[0]
+
 
 @_merge_layer_viewer_sigs_docs
 def view_image(*args, **kwargs):

@@ -1,6 +1,6 @@
 from vispy.visuals import LineVisual
 
-from .points import PointsVisual
+from napari._vispy.visuals.points import PointsVisual
 
 
 class GraphVisual(PointsVisual):

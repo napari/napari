@@ -9,8 +9,8 @@ from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
 from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
 from napari.layers import (
-    Image,
     Graph,
+    Image,
     Labels,
     Points,
     Shapes,
