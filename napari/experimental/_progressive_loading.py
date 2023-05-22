@@ -789,7 +789,7 @@ class VirtualData:
 
     """
 
-    def __init__(self, array):
+    def __init__(self, array, scale):
         self.array = array
         self.dtype = array.dtype
         # This shape is the shape of the true data, but not our data_plane
@@ -804,6 +804,7 @@ class VirtualData:
         self.d = 2
         self._max_coord = None
         self._min_coord = None
+        self.scale = scale  # for debugging
 
     def set_interval(self, coords):
         """The interval is the range of the data for this scale that is 
@@ -1062,7 +1063,7 @@ def test_virtualdata():
         dask.delayed(lambda: None), shape=shape, dtype=np.int16
     ).rechunk(chunks=(10, 10))
 
-    virtual_data = VirtualData(data)
+    virtual_data = VirtualData(data, scale=0)
 
     interval = (slice(10, 20), slice(10, 20))
 
@@ -1155,7 +1156,7 @@ class MultiScaleVirtualData:
         self._translate = []
         self._scale_factors = []
         for scale in range(len(self.arrays)):
-            virtual_data = VirtualData(self.arrays[scale])
+            virtual_data = VirtualData(self.arrays[scale], scale=scale)
             self._translate += [tuple([0] * len(self.shape))] # Factors to shift the layer by in units of world coordinates.
             # TODO [kcp] there are assumptions here, expect rounding errors here, or should we force ints?
             self._scale_factors += [
