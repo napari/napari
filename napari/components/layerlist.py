@@ -92,6 +92,7 @@ class LayerList(SelectableEventedList[Layer]):
     def _process_delete_item(self, item: Layer):
         super()._process_delete_item(item)
         item.events.extent.disconnect(self._clean_cache)
+        item.events._extent_augmented.disconnect(self._clean_cache)
         self._clean_cache()
 
     def _clean_cache(self):
@@ -100,7 +101,6 @@ class LayerList(SelectableEventedList[Layer]):
             '_extent_world',
             '_extent_world_augmented',
             '_step_size',
-            '_ranges',
         )
         [self.__dict__.pop(p, None) for p in cached_properties]
 
@@ -162,6 +162,7 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
         new_layer.events.extent.connect(self._clean_cache)
+        new_layer.events._extent_augmented.connect(self._clean_cache)
         super().insert(index, new_layer)
 
     def toggle_selected_visibility(self):
@@ -317,38 +318,16 @@ class LayerList(SelectableEventedList[Layer]):
         """
         Extent of layers in data and world coordinates.
 
-        See Layer.extent for a detailed explanation of how extents are calculated.
+        Extent bounds are inclusive. See Layer.extent for a detailed explanation
+        of how extents are calculated.
         """
         return self.get_extent(list(self))
 
-    @cached_property
+    @property
     def _ranges(self) -> List[Tuple[float, float, float]]:
-        """Get ranges for Dims.range in world coordinates.
-
-        This shares some code in common with the `extent` property, but
-        determines Dims.range settings for each dimension such that each
-        range is aligned to pixel centers at the finest scale.
-        """
-        if len(self) == 0:
-            return [(0, 1, 1)] * self.ndim
-
-        # Determine minimum step size across all layers
-        layer_extent_list = [layer.extent for layer in self]
-        scales = [extent.step for extent in layer_extent_list]
-        min_steps = self._step_size_from_scales(scales)
-
-        # Determine world coordinate extents similarly to
-        # `_get_extent_world`, but including offsets calculated above.
-        extrema = [extent.world for extent in layer_extent_list]
-        mins = [e[0] for e in extrema]
-        maxs = [e[1] for e in extrema]
-        min_v, max_v = self._get_min_and_max(mins, maxs)
-
-        # form range tuples, switching back to original dimension order
-        return [
-            (start, stop, step)
-            for start, stop, step in zip(min_v, max_v, min_steps)
-        ]
+        """Get ranges for Dims.range in world coordinates."""
+        ext = self.extent
+        return tuple(zip(ext.world[0], ext.world[1], ext.step))
 
     @property
     def ndim(self) -> int:
