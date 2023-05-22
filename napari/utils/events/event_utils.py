@@ -43,8 +43,8 @@ def connect_setattr(emitter: Emitter, obj, attr: str):
     # but even if keep reference to base object and signal name it is possible to meet
     # problem with C++ "wrapped C/C++ object has been deleted"
 
-    # In all this 3 functions this should be uncommented instead of if clause in _cb
-    # but it causes segmentation fault in tests
+    # In all of these 3 functions, this should be uncommented instead of using
+    # the if clause in _cb but that causes a segmentation fault in tests
     # weakref.finalize(obj, emitter.disconnect, _cb)
 
 
