@@ -28,12 +28,13 @@ def build_graph(n_nodes: int, n_neighbors: int) -> UndirectedGraph:
     return graph
 
 
-if __name__ == "__main__":
+viewer = napari.Viewer()
+n_nodes = 1000000
+graph = build_graph(n_nodes, 5)
+layer = Graph(graph, out_of_slice_display=True)
+viewer.add_layer(layer)
 
-    viewer = napari.Viewer()
-    n_nodes = 1000000
-    graph = build_graph(n_nodes, 5)
-    layer = Graph(graph, out_of_slice_display=True)
-    viewer.add_layer(layer)
+
+if __name__ == "__main__":
 
     napari.run()
