@@ -1,6 +1,7 @@
 from typing import Type
 
 import numpy as np
+import pandas as pd
 import pytest
 from napari_graph import BaseGraph, DirectedGraph, UndirectedGraph
 
@@ -162,6 +163,31 @@ def test_remove_nodes(graph_class: Type[BaseGraph]) -> None:
 
 
 @pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+def test_remove_nodes_non_sequential_indexing(
+    graph_class: Type[BaseGraph],
+) -> None:
+    # it also tests if original graph object is changed inplace.
+    indices = np.asarray([5, 3, 1])
+    coords = np.asarray([[0, 0], [1, 1], [2, 2]])
+    coords = pd.DataFrame(coords, index=indices)
+
+    graph = graph_class(edges=[[5, 3], [3, 1]], coords=coords)
+    layer = Graph(graph)
+
+    # note that their index doesn't change with removals
+    layer.remove(indices[1])
+    assert len(layer.data) == coords.shape[0] - 1
+    assert graph.n_nodes == coords.shape[0] - 1
+
+    # node 3 (remove above) coordinates are all 1
+    assert not np.any(graph.get_coordinates() == 1)
+
+    layer.remove(indices[[0, 2]])
+    assert len(layer.data) == 0
+    assert graph.n_nodes == 0
+
+
+@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
 def test_graph_out_of_slice_display(graph_class: Type[BaseGraph]) -> None:
     coords = np.asarray([[0, 0, 0, 0], [1, 1, 1, 1], [2, 2, 2, 2]])
 
@@ -172,6 +198,21 @@ def test_graph_out_of_slice_display(graph_class: Type[BaseGraph]) -> None:
 
 def test_graph_from_data_tuple() -> None:
     layer = Graph(name="graph")
+    new_layer = Graph.create(*layer.as_layer_data_tuple())
+    assert layer.name == new_layer.name
+    assert len(layer.data) == len(new_layer.data)
+    assert layer.ndim == new_layer.ndim
+
+
+@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+def test_graph_from_data_tuple_non_empty(graph_class: Type[BaseGraph]) -> None:
+    indices = np.asarray([5, 3, 1])
+    coords = np.asarray([[0, 0], [1, 1], [2, 2]])
+    coords = pd.DataFrame(coords, index=indices)
+
+    graph = graph_class(edges=[[5, 3], [3, 1]], coords=coords)
+    layer = Graph(graph)
+
     new_layer = Graph.create(*layer.as_layer_data_tuple())
     assert layer.name == new_layer.name
     assert len(layer.data) == len(new_layer.data)

@@ -57,10 +57,6 @@ class _PointSliceRequest:
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
 
-    @property
-    def _points_data(self) -> np.ndarray:
-        return self.data
-
     def __call__(self) -> _PointSliceResponse:
         # Return early if no data
         if len(self.data) == 0:
@@ -100,7 +96,7 @@ class _PointSliceRequest:
 
     def _get_out_of_display_slice_data(self, not_disp, not_disp_indices):
         """This method slices in the out-of-display case."""
-        distances = abs(self._points_data[:, not_disp] - not_disp_indices)
+        distances = abs(self.data[:, not_disp] - not_disp_indices)
         sizes = self.size[:, not_disp] / 2
         matches = np.all(distances <= sizes, axis=1)
         size_match = sizes[matches]
@@ -113,7 +109,7 @@ class _PointSliceRequest:
 
     def _get_slice_data(self, not_disp, not_disp_indices):
         """This method slices in the simpler case."""
-        data = self._points_data[:, not_disp]
+        data = self.data[:, not_disp]
         distances = np.abs(data - not_disp_indices)
         matches = np.all(distances <= 0.5, axis=1)
         slice_indices = np.where(matches)[0].astype(int)

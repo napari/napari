@@ -153,9 +153,9 @@ class Graph(_BasePoints):
 
     @data.setter
     def data(self, data: Optional[BaseGraph]) -> None:
-        # FIXME: might be missing data changed call
+        prev_size = self.data.n_allocated_nodes
         self._data = self._fix_data(data)
-        self._update_dims()
+        self._data_changed(prev_size)
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
@@ -209,8 +209,12 @@ class Graph(_BasePoints):
                 )
             )
 
+        prev_size = self.data.n_allocated_nodes
+
         for idx, coord in zip(indices, coords):
             self.data.add_nodes(idx, coord)
+
+        self._data_changed(prev_size)
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -230,11 +234,14 @@ class Graph(_BasePoints):
                 )
             )
 
+        prev_size = self.data.n_allocated_nodes
         # descending order
         indices = np.flip(np.sort(indices))
 
         for idx in indices:
             self.data.remove_node(idx)
+
+        self._data_changed(prev_size)
 
     def _move_points(
         self, ixgrid: Tuple[np.ndarray, np.ndarray], shift: np.ndarray
@@ -249,3 +256,54 @@ class Graph(_BasePoints):
             Selected coordinates shift
         """
         self.data._coords[ixgrid] = self.data._coords[ixgrid] + shift
+
+    def _update_props_and_style(self, data_size: int, prev_size: int) -> None:
+        # Add/remove property and style values based on the number of new points.
+        with self.events.blocker_all(), self._edge.events.blocker_all(), self._face.events.blocker_all():
+            self._feature_table.resize(data_size)
+            self.text.apply(self.features)
+            if data_size < prev_size:
+                # If there are now fewer points, remove the size and colors of the
+                # extra ones
+                if len(self._edge.colors) > data_size:
+                    self._edge._remove(
+                        np.arange(data_size, len(self._edge.colors))
+                    )
+                if len(self._face.colors) > data_size:
+                    self._face._remove(
+                        np.arange(data_size, len(self._face.colors))
+                    )
+                self._shown = self._shown[:data_size]
+                self._size = self._size[:data_size]
+                self._edge_width = self._edge_width[:data_size]
+                self._symbol = self._symbol[:data_size]
+
+            elif data_size > prev_size:
+                adding = data_size - prev_size
+
+                current_properties = self._feature_table.currents()
+                self._edge._update_current_properties(current_properties)
+                self._edge._add(n_colors=adding)
+                self._face._update_current_properties(current_properties)
+                self._face._add(n_colors=adding)
+
+                for attribute in ("shown", "edge_width", "symbol"):
+                    if attribute == "shown":
+                        default_value = True
+                    else:
+                        default_value = getattr(self, f"current_{attribute}")
+                    new_values = np.repeat([default_value], adding, axis=0)
+                    values = np.concatenate(
+                        (getattr(self, f"_{attribute}"), new_values), axis=0
+                    )
+                    setattr(self, attribute, values)
+
+                new_sizes = np.broadcast_to(
+                    self.current_size, (adding, self._size.shape[1])
+                )
+                self.size = np.concatenate((self._size, new_sizes), axis=0)
+
+    def _data_changed(self, prev_size: int) -> None:
+        self._update_props_and_style(self.data.n_allocated_nodes, prev_size)
+        self._update_dims()
+        self.events.data(value=self.data)

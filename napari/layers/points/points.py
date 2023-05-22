@@ -439,7 +439,7 @@ class _BasePoints(Layer):
             feature_defaults=feature_defaults,
             properties=properties,
             property_choices=property_choices,
-            num_data=len(self.data),
+            num_data=len(self._points_data),
         )
 
         self._text = TextManager._from_layer(
@@ -477,7 +477,7 @@ class _BasePoints(Layer):
 
         color_properties = (
             self._feature_table.properties()
-            if len(self.data)
+            if len(self._points_data)
             else self._feature_table.currents()
         )
         self._edge = ColorManager._from_layer_kwargs(
@@ -560,7 +560,9 @@ class _BasePoints(Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._feature_table.set_values(features, num_data=len(self.data))
+        self._feature_table.set_values(
+            features, num_data=len(self._points_data)
+        )
         self._update_color_manager(
             self._face, self._feature_table, "face_color"
         )
@@ -681,7 +683,7 @@ class _BasePoints(Layer):
         -------
         extent_data : array, shape (2, D)
         """
-        if len(self.data) == 0:
+        if len(self._points_data) == 0:
             extrema = np.full((2, self.ndim), np.nan)
         else:
             maxs = np.max(self._points_data, axis=0)
@@ -719,7 +721,7 @@ class _BasePoints(Layer):
 
     @symbol.setter
     def symbol(self, symbol: Union[str, np.ndarray, list]) -> None:
-        symbol = np.broadcast_to(symbol, len(self.data))
+        symbol = np.broadcast_to(symbol, len(self._points_data))
         self._symbol = coerce_symbols(symbol)
         self.events.symbol()
         self.events.highlight()
@@ -755,7 +757,10 @@ class _BasePoints(Layer):
             except ValueError:
                 raise ValueError(
                     trans._(
-                        "Size is not compatible for broadcasting",
+                        "Size of shape {size_shape} is not compatible for broadcasting "
+                        "with shape {points_shape}",
+                        size_shape=size.shape,
+                        points_shape=self._points_data.shape,
                         deferred=True,
                     )
                 ) from e
@@ -839,7 +844,9 @@ class _BasePoints(Layer):
 
     @shown.setter
     def shown(self, shown):
-        self._shown = np.broadcast_to(shown, len(self.data)).astype(bool)
+        self._shown = np.broadcast_to(shown, len(self._points_data)).astype(
+            bool
+        )
         self.refresh()
 
     @property
@@ -852,7 +859,7 @@ class _BasePoints(Layer):
         self, edge_width: Union[int, float, np.ndarray, list]
     ) -> None:
         # broadcast to np.array
-        edge_width = np.broadcast_to(edge_width, len(self.data)).copy()
+        edge_width = np.broadcast_to(edge_width, len(self._points_data)).copy()
 
         # edge width cannot be negative
         if np.any(edge_width < 0):
@@ -917,7 +924,7 @@ class _BasePoints(Layer):
     def edge_color(self, edge_color):
         self._edge._set_color(
             color=edge_color,
-            n_colors=len(self.data),
+            n_colors=len(self._points_data),
             properties=self.properties,
             current_properties=self.current_properties,
         )
@@ -1004,7 +1011,7 @@ class _BasePoints(Layer):
     def face_color(self, face_color):
         self._face._set_color(
             color=face_color,
-            n_colors=len(self.data),
+            n_colors=len(self._points_data),
             properties=self.properties,
             current_properties=self.current_properties,
         )
@@ -1171,6 +1178,9 @@ class _BasePoints(Layer):
         state : dict
             Dictionary of layer state.
         """
+
+        # must be self.data and not self._points_data
+        # self._points_data includes invalid nodes from graph buffer.
         not_empty = len(self.data) > 0
         state = self._get_base_state()
         state.update(
@@ -2014,7 +2024,7 @@ class _BasePoints(Layer):
             world=world,
         )
         # if the cursor is not outside the image or on the background
-        if value is None or value > len(self.data):
+        if value is None or value > len(self._points_data):
             return []
 
         return [
@@ -2274,7 +2284,7 @@ class Points(_BasePoints):
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
         npoints = len(self._view_data)
-        totpoints = len(self.data)
+        totpoints = len(self._points_data)
 
         if len(self._clipboard.keys()) > 0:
             not_disp = self._slice_input.not_displayed
