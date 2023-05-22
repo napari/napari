@@ -203,6 +203,12 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
+  'napari.layers.labels.*',
+]
+ignore_errors = false
+
+[[tool.mypy.overrides]]
+module = [
   'napari.plugins.*',
   'napari.settings.*',
   'napari.types.*',

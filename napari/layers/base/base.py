@@ -8,13 +8,13 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import cached_property
-from typing import List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.layers.base._base_constants import Blending, Mode
+from napari.layers.base._base_constants import BaseMode, Blending, Mode
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -226,18 +226,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     * `_basename()`: base/default name of the layer
     """
 
-    _modeclass = Mode
+    _modeclass: Type[BaseMode] = Mode
 
-    _drag_modes = {
+    _drag_modes: Dict[BaseMode, Callable[[Layer, Event], None]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes = {
+    _move_modes: Dict[BaseMode, Callable[[Layer, Event], None]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
-    _cursor_modes = {
+    _cursor_modes: Dict[BaseMode, str] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
@@ -1144,7 +1144,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def get_value(
         self,
-        position: Tuple[float],
+        position: Tuple[float, ...],
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,

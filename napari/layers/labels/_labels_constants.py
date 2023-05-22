@@ -2,11 +2,12 @@ import sys
 from collections import OrderedDict
 from enum import auto
 
+from napari.layers.base._base_constants import BaseMode
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
 
 
-class Mode(StringEnum):
+class Mode(BaseMode, StringEnum):
     """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
     allows for normal interactivity with the canvas.
 
