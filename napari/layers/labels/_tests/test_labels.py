@@ -632,6 +632,9 @@ def test_contour(input_data, expected_data_view):
         layer._raw_to_displayed(input_data), layer._data_view
     )
 
+    with pytest.raises(ValueError, match='contour value must be >= 0'):
+        layer.contour = -1
+
 
 def test_contour_large_new_labels():
     """Check that new labels larger than the lookup table work in contour mode.
