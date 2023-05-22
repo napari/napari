@@ -834,6 +834,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         centered in the rendered version of those pixels.
         For other layers, these coordinates are the points or vertices stored
         in `Layer.data`.
+        Lower and upper bounds are inclusive.
         """
         extent_data = self._extent_data
         data_to_world = self._data_to_world

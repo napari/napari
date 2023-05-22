@@ -36,7 +36,7 @@ def test_async_slice_image_on_current_step_change(
 @pytest.mark.sync_only
 def test_async_slice_image_on_order_change(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
-    data = rng.random((3, 5, 7))
+    data = rng.random((3, 4, 5))
     image = Image(data)
     vispy_image = setup_viewer_for_async_slicing(viewer, image)
     assert viewer.dims.order != (1, 0, 2)

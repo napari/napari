@@ -291,8 +291,8 @@ class LayerList(SelectableEventedList[Layer]):
         """
         Return extent for a given layer list.
 
-        This function is useful for calculating the extent of a subset of layers
-        when preparing and updating some supplementary layers.
+        Extent bounds are inclusive. This function is useful for calculating the extent
+        of a subset of layers when preparing and updating some supplementary layers.
         For example see the cross Vectors layer in the `multiple_viewer_widget` example.
 
         Parameters

@@ -34,7 +34,7 @@ class Dims(EventedModel):
         Number of displayed dimensions.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
-        coordinates space.
+        coordinates space. Lower and upper bounds are inclusive.
     point : tuple of floats
         Dims position in world coordinates for each dimension.
     margin_left : tuple of floats
@@ -56,7 +56,7 @@ class Dims(EventedModel):
         Number of displayed dimensions.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
-        coordinates space.
+        coordinates space. Lower and upper bounds are inclusive.
     point : tuple of floats
         Dims position in world coordinates for each dimension.
     margin_left : tuple of floats
