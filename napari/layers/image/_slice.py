@@ -164,9 +164,7 @@ class _ImageSliceRequest:
             indices=self.indices,
         )
 
-    def _slice_indices_at_level(
-        self, level: int
-    ) -> Tuple[Union[int, float, slice], ...]:
+    def _slice_indices_at_level(self, level: int) -> np.ndarray:
         indices = np.array(self.indices)
         axes = self.dims.not_displayed
         ds_indices = indices[axes] / self.downsample_factors[level][axes]
