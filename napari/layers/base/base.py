@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import logging
 import os.path
 import warnings
 from abc import ABC, abstractmethod
@@ -50,6 +51,7 @@ from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 from napari.utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
+logger = logging.getLogger("napari.layers.base.base")
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -392,20 +394,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             reload=Event,
             extent=Event,
             _overlays=Event,
-            select=WarningEmitter(
-                trans._(
-                    "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
-                    deferred=True,
-                ),
-                type_name='select',
-            ),
-            deselect=WarningEmitter(
-                trans._(
-                    "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
-                    deferred=True,
-                ),
-                type_name='deselect',
-            ),
             mode=Event,
         )
         self.name = name
@@ -428,7 +416,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def __repr__(self):
         cls = type(self)
-        return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
+        return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
 
     def _mode_setter_helper(self, mode):
         """
@@ -696,28 +684,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
         self._clear_extent()
         self.events.affine()
-
-    @property
-    def translate_grid(self):
-        warnings.warn(
-            trans._(
-                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._translate_grid
-
-    @translate_grid.setter
-    def translate_grid(self, translate_grid):
-        warnings.warn(
-            trans._(
-                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._translate_grid = translate_grid
 
     @property
     def _translate_grid(self):
@@ -1053,6 +1019,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             True if slicing should be forced to occur, even when some cache thinks
             it already has a valid slice ready. False otherwise.
         """
+        logger.debug(
+            'Layer._slice_dims: %s, point=%s, ndisplay=%s, order=%s, force=%s',
+            self,
+            point,
+            ndisplay,
+            order,
+            force,
+        )
         slice_input = self._make_slice_input(point, ndisplay, order)
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
@@ -1265,6 +1239,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
+        logger.debug('Layer.refresh: %s', self)
         if self.visible:
             self.set_view_slice()
             self.events.set_data()
@@ -1827,18 +1802,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         from napari.plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
-
-    def _on_selection(self, selected: bool):
-        # This method is a temporary workaround to the fact that the Points
-        # layer needs to know when its selection state changes so that it can
-        # update the highlight state.  This, along with the events.select and
-        # events.deselect emitters, (and the LayerList._on_selection_event
-        # method) can be removed once highlighting logic has been removed from
-        # the layer model.
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
 
     @classmethod
     def create(

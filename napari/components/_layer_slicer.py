@@ -154,8 +154,14 @@ class _LayerSlicer:
             A future with a result that maps from a layer to an async layer
             slice response. Or none if no async slicing tasks were submitted.
         """
+        logger.debug(
+            '_LayerSlicer.submit: layers=%s, dims=%s, force=%s',
+            layers,
+            dims,
+            force,
+        )
         if existing_task := self._find_existing_task(layers):
-            logger.debug('Cancelling task for %s', layers)
+            logger.debug('Cancelling task %s', id(existing_task))
             existing_task.cancel()
 
         # Not all layer types will initially be asynchronously sliceable.
@@ -166,13 +172,16 @@ class _LayerSlicer:
         sync_layers = []
         for layer in layers:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
+                logger.debug('Making async slice request for %s', layer)
                 requests[layer] = layer._make_slice_request(dims)
             else:
+                logger.debug('Sync slicing for %s', layer)
                 sync_layers.append(layer)
 
         # First maybe submit an async slicing task to start it ASAP.
         task = None
         if len(requests) > 0:
+            logger.debug('Submitting task %s', id(task))
             task = self._executor.submit(self._slice_layers, requests)
             # Store task before adding done callback to ensure there is always
             # a task to remove in the done callback.
@@ -215,8 +224,9 @@ class _LayerSlicer:
         -------
         dict[Layer, SliceResponse]: which contains the results of the slice
         """
+        logger.debug('_LayerSlicer._slice_layers: %s', requests)
         result = {layer: request() for layer, request in requests.items()}
-        self.events.ready(Event('ready', value=result))
+        self.events.ready(value=result)
         return result
 
     def _on_slice_done(self, task: Future[Dict]) -> None:
@@ -224,12 +234,12 @@ class _LayerSlicer:
         This is the "done_callback" which is added to each task.
         Can be called from the main or slicing thread.
         """
+        logger.debug('_LayerSlicer._on_slice_done: %s', id(task))
         if not self._try_to_remove_task(task):
-            logger.debug('Task not found')
-            return
+            logger.debug('Task not found: %s', id(task))
 
         if task.cancelled():
-            logger.debug('Cancelled task')
+            logger.debug('Cancelled task: %s', id(task))
             return
 
     def _try_to_remove_task(self, task: Future[Dict]) -> bool:

@@ -1,5 +1,6 @@
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
+from napari.settings import get_settings
 
 
 def draw(layer, event):
@@ -54,3 +55,56 @@ def pick(layer, event):
         )
         or 0
     )
+
+
+class BrushSizeOnMouseMove:
+    """Enables changing the brush size by moving the mouse while holding down the specified modifiers
+
+    When hold down specified modifiers and move the mouse,
+    the callback will adjust the brush size based on the direction of the mouse movement.
+    Moving the mouse right will increase the brush size, while moving it left will decrease it.
+    The amount of change is proportional to the distance moved by the mouse.
+
+    Parameters
+    ----------
+    min_brush_size : int
+        The minimum brush size.
+
+    """
+
+    def __init__(self, min_brush_size: int = 1):
+        self.min_brush_size = min_brush_size
+        self.init_pos = None
+        self.init_brush_size = None
+
+        get_settings().application.events.brush_size_on_mouse_move_modifiers.connect(
+            self._on_modifiers_change
+        )
+        self._on_modifiers_change()
+
+    def __call__(self, layer, event):
+        if all(modifier in event.modifiers for modifier in self.modifiers):
+            pos = event.pos  # position in the canvas coordinates (x, y)
+
+            if self.init_pos is None:
+                self.init_pos = pos
+                self.init_brush_size = layer.brush_size
+                layer.cursor = 'circle_frozen'
+            else:
+                brush_size_delta = round(
+                    (pos[0] - self.init_pos[0]) / event.camera_zoom
+                )
+                new_brush_size = self.init_brush_size + brush_size_delta
+
+                bounded_brush_size = max(new_brush_size, self.min_brush_size)
+                layer.brush_size = bounded_brush_size
+        else:
+            self.init_pos = None
+            if layer.cursor == 'circle_frozen':
+                layer.cursor = 'circle'
+
+    def _on_modifiers_change(self):
+        modifiers_setting = (
+            get_settings().application.brush_size_on_mouse_move_modifiers
+        )
+        self.modifiers = modifiers_setting.value.split('+')
