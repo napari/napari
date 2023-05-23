@@ -394,20 +394,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             reload=Event,
             extent=Event,
             _overlays=Event,
-            select=WarningEmitter(
-                trans._(
-                    "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
-                    deferred=True,
-                ),
-                type_name='select',
-            ),
-            deselect=WarningEmitter(
-                trans._(
-                    "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
-                    deferred=True,
-                ),
-                type_name='deselect',
-            ),
             mode=Event,
         )
         self.name = name
@@ -430,7 +416,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def __repr__(self):
         cls = type(self)
-        return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
+        return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
 
     def _mode_setter_helper(self, mode):
         """
@@ -698,28 +684,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
         self._clear_extent()
         self.events.affine()
-
-    @property
-    def translate_grid(self):
-        warnings.warn(
-            trans._(
-                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._translate_grid
-
-    @translate_grid.setter
-    def translate_grid(self, translate_grid):
-        warnings.warn(
-            trans._(
-                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._translate_grid = translate_grid
 
     @property
     def _translate_grid(self):
@@ -1838,18 +1802,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         from napari.plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
-
-    def _on_selection(self, selected: bool):
-        # This method is a temporary workaround to the fact that the Points
-        # layer needs to know when its selection state changes so that it can
-        # update the highlight state.  This, along with the events.select and
-        # events.deselect emitters, (and the LayerList._on_selection_event
-        # method) can be removed once highlighting logic has been removed from
-        # the layer model.
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
 
     @classmethod
     def create(

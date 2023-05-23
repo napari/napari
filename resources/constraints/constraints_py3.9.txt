@@ -52,7 +52,7 @@ coverage==7.2.5
     # via pytest-cov
 cycler==0.11.0
     # via matplotlib
-dask==2023.4.1
+dask==2023.5.0
     # via napari (setup.cfg)
 debugpy==1.6.7
     # via ipykernel
@@ -79,7 +79,7 @@ filelock==3.12.0
     #   torch
     #   triton
     #   virtualenv
-fonttools==4.39.3
+fonttools==4.39.4
     # via matplotlib
 freetype-py==2.4.0
     # via vispy
@@ -91,7 +91,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.3
     # via vispy
-hypothesis==6.75.2
+hypothesis==6.75.3
     # via napari (setup.cfg)
 idna==3.4
     # via requests
@@ -113,7 +113,7 @@ in-n-out==0.1.7
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.22.0
+ipykernel==6.23.1
     # via
     #   napari-console
     #   qtconsole
@@ -150,7 +150,7 @@ lazy-loader==0.2
     # via
     #   napari (setup.cfg)
     #   scikit-image
-lit==16.0.3
+lit==16.0.5
     # via triton
 locket==1.0.0
     # via partd
@@ -273,7 +273,7 @@ pillow==9.5.0
     #   scikit-image
 pint==0.21
     # via napari (setup.cfg)
-platformdirs==3.5.0
+platformdirs==3.5.1
     # via
     #   jupyter-core
     #   pooch
@@ -449,7 +449,7 @@ superqt==0.4.1
     # via
     #   magicgui
     #   napari (setup.cfg)
-sympy==1.11.1
+sympy==1.12
     # via torch
 tensorstore==0.1.36
     # via napari (setup.cfg)
@@ -468,11 +468,11 @@ toolz==0.12.0
     #   dask
     #   napari (setup.cfg)
     #   partd
-torch==2.0.0
+torch==2.0.1
     # via
     #   napari (setup.cfg)
     #   triton
-tornado==6.3.1
+tornado==6.3.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -524,7 +524,7 @@ wheel==0.40.0
     #   nvidia-nvtx-cu11
 wrapt==1.15.0
     # via napari (setup.cfg)
-xarray==2023.4.2
+xarray==2023.5.0
     # via napari (setup.cfg)
 zarr==2.14.2
     # via napari (setup.cfg)
@@ -534,7 +534,7 @@ zipp==3.15.0
     #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==67.7.2
+setuptools==67.8.0
     # via
     #   nvidia-cublas-cu11
     #   nvidia-cuda-cupti-cu11

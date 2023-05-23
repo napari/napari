@@ -1,4 +1,9 @@
+magicgui
 mypy
+numpy
+npe2
+pydantic
+qtpy
 types-PyYAML
 types-setuptools
 types-requests
