@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     NewType,
     Optional,
     Sequence,
@@ -37,10 +38,13 @@ if TYPE_CHECKING:
 # since it includes all valid arguments for np.array() ( int, float, str...)
 ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 
+LayerTypeName = Literal[
+    "image", "labels", "points", "shapes", "surface", "tracks", "vectors"
+]
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
-FullLayerData = Tuple[Any, Dict, str]
+FullLayerData = Tuple[Any, Dict, LayerTypeName]
 LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
 PathLike = Union[str, Path]
