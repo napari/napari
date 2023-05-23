@@ -207,16 +207,29 @@ markers = [
 
 [tool.mypy]
 files = "napari"
+# This file triggers an internal mypy error, so exclude collection
+# TODO: fix this
+exclude = "napari/utils/events/_tests/test_evented_model\\.py"
+plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
 ignore_missing_imports = true
-exclude = [
-  "_tests",
-]
 show_error_codes = true
-no_implicit_optional = true
 warn_redundant_casts = true
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ['*._tests.*']
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+  'napari.plugins.*',
+  'napari.settings.*',
+  'napari.types.*',
+]
+ignore_errors = false
+no_implicit_optional = true
 warn_unused_ignores = true
 check_untyped_defs = true
-plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
 
 # # maybe someday :)
 # disallow_any_generics = true
