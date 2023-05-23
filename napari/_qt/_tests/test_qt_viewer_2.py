@@ -6,7 +6,9 @@ from napari._vispy.utils.gl import fix_data_dtype
 BUILTINS_DISP = 'napari'
 BUILTINS_NAME = 'builtins'
 
-
+# Previously tests often segfaulted on CI at the 26th test of test_qt_viewer
+# That test (number 26) was split off to make debugging easier
+# See https://github.com/napari/napari/pull/5676
 @pytest.mark.parametrize(
     "dtype",
     [
