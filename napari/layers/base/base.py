@@ -14,7 +14,7 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.layers.base._base_constants import BaseMode, Blending, Mode
+from napari.layers.base._base_constants import Blending, Mode
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -46,6 +46,7 @@ from napari.utils.geometry import (
 )
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.mouse_bindings import MousemapProvider
+from napari.utils.msic import StringEnum
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
@@ -226,18 +227,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     * `_basename()`: base/default name of the layer
     """
 
-    _modeclass: Type[BaseMode] = Mode
+    _modeclass: Type[StringEnum] = Mode
 
-    _drag_modes: Dict[BaseMode, Callable[[Layer, Event], None]] = {
+    _drag_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes: Dict[BaseMode, Callable[[Layer, Event], None]] = {
+    _move_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
-    _cursor_modes: Dict[BaseMode, str] = {
+    _cursor_modes: Dict[StringEnum, str] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }

@@ -55,13 +55,7 @@ BLENDING_TRANSLATIONS = OrderedDict(
 )
 
 
-class BaseMode:
-    """
-    Base class for Modes. Used to mark all Mode classes as the same base type.
-    """
-
-
-class Mode(BaseMode, StringEnum):
+class Mode(StringEnum):
     """
     Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
     allows for normal interactivity with the canvas.
