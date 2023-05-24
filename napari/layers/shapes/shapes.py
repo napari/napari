@@ -2682,7 +2682,7 @@ class Shapes(Layer):
                 self.scale[self._slice_input.displayed] / self.scale[-1]
             )
             # Get the vertex sizes
-            sizes = self._vertex_size / scale_ratio / 2
+            sizes = self._vertex_size * self.scale_factor / scale_ratio / 2
 
             if self._mode == Mode.SELECT:
                 # Check if inside vertex of interaction box or rotation handle
