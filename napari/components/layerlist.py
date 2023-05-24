@@ -78,20 +78,6 @@ class LayerList(SelectableEventedList[Layer]):
 
             self.selection.events.changed.connect(self._ctx_keys.update)
 
-        # temporary: see note in _on_selection_event
-        self.selection.events.changed.connect(self._on_selection_changed)
-
-    def _on_selection_changed(self, event):
-        # This method is a temporary workaround to the fact that the Points
-        # layer needs to know when its selection state changes so that it can
-        # update the highlight state.  This (and the layer._on_selection
-        # method) can be removed once highlighting logic has been removed from
-        # the layer model.
-        for layer in event.added:
-            layer._on_selection(True)
-        for layer in event.removed:
-            layer._on_selection(False)
-
     def _process_delete_item(self, item: Layer):
         super()._process_delete_item(item)
         item.events.extent.disconnect(self._clean_cache)
