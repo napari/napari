@@ -127,13 +127,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions
-          python tools/minreq.py
-        env:
-          # tools/minreq.py sets all deps to their minumim stated versions
-          # it is a no-op if MIN_REQ is not set
-          MIN_REQ: ${{ matrix.MIN_REQ }}
-
+          pip install setuptools tox tox-gh-actions tox-min-req
 
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
