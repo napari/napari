@@ -222,6 +222,12 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
+  'napari.layers.tracks.*',
+]
+ignore_errors = false
+
+[[tool.mypy.overrides]]
+module = [
   'napari.plugins.*',
   'napari.settings.*',
   'napari.types.*',
