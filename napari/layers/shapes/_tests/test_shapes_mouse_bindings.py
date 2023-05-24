@@ -57,6 +57,8 @@ def create_known_shapes_layer():
     n_shapes = len(data)
 
     layer = Shapes(data)
+    # very zoomed in, guaranteed no overlap between vertices
+    layer.scale_factor = 0.001
     assert layer.ndim == 2
     assert len(layer.data) == n_shapes
     assert len(layer.selected_data) == 0
