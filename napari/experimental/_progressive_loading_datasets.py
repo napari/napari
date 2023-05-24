@@ -433,8 +433,8 @@ def mandelbrot_dataset(max_levels=14):
 
         # arrays += [da.from_zarr(a, chunks=chunks)]
 
-        setattr(a, "get_zarr_chunk", lambda scale, y, x: store.get_chunk(scale, y, x))
-        
+        # setattr(a, "get_zarr_chunk", lambda scale, y, x: store.get_chunk(scale, y, x))
+        setattr(a, "get_zarr_chunk", lambda chunk_slice: a[tuple(chunk_slice)].transpose())
         arrays += [a]
 
     large_image["arrays"] = arrays

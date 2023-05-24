@@ -183,8 +183,10 @@ def chunk_centers(array: da.Array, ndim=3):
     return mapping
 
 
-def chunk_slices(array, ndim=3, interval=None):
-    """Make a dictionary mapping chunk centers to chunk slices.
+def chunk_slices(array: da.Array, ndim=3, interval=None):
+    """Create a list of slice objects for each chunk for each dimension. 
+
+    Make a dictionary mapping chunk centers to chunk slices.
     Note: if array is >3D, then the last 3 dimensions are assumed as ZYX
     and will be used for calculating centers. If array is <3D, the third 
     dimension is assumed to be None.
@@ -197,8 +199,6 @@ def chunk_slices(array, ndim=3, interval=None):
 
     Returns
     -------
-    chunk_map : dict {tuple of float: tuple of slices}
-        A dictionary mapping chunk centers to chunk slices.
     chunk_slices: list of slice objects
         List of slice objects for each chunk for each dimension
     """
@@ -1054,7 +1054,7 @@ class VirtualData:
 
     @property
     def chunksize(self):
-        return self.array.chunksize
+        return self.array.info
 
     @property
     def chunks(self):
@@ -1232,7 +1232,6 @@ class MultiScaleVirtualData:
                 coords = tuple(
                     [slice(mn, mx) for mn, mx in zip(scaled_min, scaled_max)]
                 )
-
                 self._data[scale].set_interval(coords)
             else:
                 LOGGER.debug('visible scales are provided, do nothing')
