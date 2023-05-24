@@ -83,7 +83,7 @@ class PluginsMenu(NapariMenu):
         else:
             menu = self
 
-        for wdg_name in sorted(widgets):
+        for wdg_name in widgets:
             key = (plugin_name, wdg_name)
             if multiprovider:
                 action = QAction(wdg_name.replace("&", "&&"), parent=self)
