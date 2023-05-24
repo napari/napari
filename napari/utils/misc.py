@@ -50,15 +50,27 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
         return packaging.version.LegacyVersion(v)
 
 
-def running_as_bundled_app() -> bool:
-    """Infer whether we are running as a briefcase bundle."""
+def running_as_bundled_app(*, check_conda=True) -> bool:
+    """Infer whether we are running as a bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
-    if (Path(sys.executable).parent / ".napari_is_bundled").exists():
+    warnings.warn(
+        trans._(
+            "Briefcase installations are no longer supported as of v0.4.18. "
+            "running_as_bundled_app() will be removed in a 0.6.0 release.",
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    if (
+        check_conda
+        and (Path(sys.executable).parent / ".napari_is_bundled").exists()
+    ):
         return True
 
+    # TODO: Remove from here on?
     try:
         app_module = sys.modules['__main__'].__package__
     except AttributeError:
