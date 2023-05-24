@@ -1232,7 +1232,6 @@ class MultiScaleVirtualData:
                 coords = tuple(
                     [slice(mn, mx) for mn, mx in zip(scaled_min, scaled_max)]
                 )
-                LOGGER.debug(coords)
                 self._data[scale].set_interval(coords)
             else:
                 LOGGER.debug('visible scales are provided, do nothing')
