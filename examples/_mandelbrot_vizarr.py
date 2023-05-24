@@ -28,7 +28,9 @@ from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.qt.threading import thread_worker
 from napari.utils.events import Event
 
-# config.async_loading = True
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 
 LOGGER = logging.getLogger("mandelbrot_vizarr")
 LOGGER.setLevel(logging.DEBUG)
@@ -84,7 +86,9 @@ def get_and_process_chunk_2D(
     
     # TODO pickup here and to find out why the fractal is offset
     
-    real_array = array.get_zarr_chunk(scale, y, x)
+    # real_array = array.get_zarr_chunk(scale, y, x)
+    # real_array = array.get_zarr_chunk(chunk_slice)
+    real_array = array[chunk_slice].transpose()
 
     LOGGER.info(f"get_and_process_chunk_2D: {(time.time() - start_time)} time, yielding for scale {scale} at slice {chunk_slice}")
     #     f"\tyield will be placed at: {(y * 2**scale, x * 2**scale, scale, real_array.shape)} slice: {(chunk_slice[0].start, chunk_slice[0].stop, chunk_slice[0].step)} {(chunk_slice[1].start, chunk_slice[1].stop, chunk_slice[1].step)}"
