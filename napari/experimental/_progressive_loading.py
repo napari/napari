@@ -183,7 +183,7 @@ def chunk_centers(array: da.Array, ndim=3):
     return mapping
 
 
-def chunk_slices(array: da.Array, ndim=3, interval=None):
+def chunk_slices(array, ndim=3, interval=None):
     """Make a dictionary mapping chunk centers to chunk slices.
     Note: if array is >3D, then the last 3 dimensions are assumed as ZYX
     and will be used for calculating centers. If array is <3D, the third 
@@ -192,7 +192,7 @@ def chunk_slices(array: da.Array, ndim=3, interval=None):
 
     Parameters
     ----------
-    array: dask Array
+    array: dask or zarr Array
         The input array, a single scale
 
     Returns
@@ -211,11 +211,16 @@ def chunk_slices(array: da.Array, ndim=3, interval=None):
         start_pos = []
         end_pos = []
         for dim in range(len(array.chunks)):
+            # TODO: the +1 used on stop_idx is related to searchsorted usage
+            start_idx, stop_idx = 0, (array.shape[dim] + 1)
+            if interval is not None:
+                start_idx = np.floor(interval[0,dim] / array.chunks[dim]) * array.chunks[dim]
+                stop_idx = np.ceil(interval[1,dim] / array.chunks[dim]) * array.chunks[dim] + 1
             # Inclusive on the end point
-            cumuchunks = [val for val in range(0, array.shape[dim] + 1, array.chunks[dim])]
+            cumuchunks = [val for val in range(int(start_idx), int(stop_idx), array.chunks[dim])]
             cumuchunks = np.array(cumuchunks)
             start_pos += [cumuchunks[:-1]]
-            end_pos += [cumuchunks[1:]]    
+            end_pos += [cumuchunks[1:]]
         
     if interval is not None:
         # array([[7709.88671875, 5007.1953125 ],[9323.7578125 , 6824.38867188]])
