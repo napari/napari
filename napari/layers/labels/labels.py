@@ -1008,7 +1008,9 @@ class Labels(_ImageBase):
             _cached_labels = np.zeros_like(labels)
             _cached_labels[data_slice] = sliced_labels.copy()
             self._cached_labels = _cached_labels
-            self._cached_mapped_labels = np.zeros_like(labels, dtype=np.float32)
+            self._cached_mapped_labels = np.zeros_like(
+                labels, dtype=np.float32
+            )
 
             labels_to_map = sliced_labels
 
