@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, List, NamedTuple
 import numpy as np
 
 if TYPE_CHECKING:
-    from ....components.experimental.chunk._request import OctreeLocation
-    from ....types import ArrayLike
+    from napari.components.experimental.chunk._request import OctreeLocation
+    from napari.types import ArrayLike
 
 LOGGER = logging.getLogger("napari.octree")
 
@@ -57,7 +57,7 @@ class OctreeChunk:
 
     def __init__(
         self, data: ArrayLike, location: OctreeLocation, geom: OctreeChunkGeom
-    ):
+    ) -> None:
         self._data = data
         self.location = location
         self.geom = geom

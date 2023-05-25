@@ -5,11 +5,10 @@ import numpy as np
 from pydantic import PrivateAttr, validator
 
 from napari.utils.color import ColorArray
-
-from ..events import EventedModel
-from ..events.custom_types import Array
-from ..translations import trans
-from .colorbars import make_colorbar
+from napari.utils.colormaps.colorbars import make_colorbar
+from napari.utils.events import EventedModel
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 class ColormapInterpolationMode(str, Enum):
@@ -53,7 +52,9 @@ class Colormap(EventedModel):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
     controls: Array[np.float32, (-1,)] = None
 
-    def __init__(self, colors, display_name: Optional[str] = None, **data):
+    def __init__(
+        self, colors, display_name: Optional[str] = None, **data
+    ) -> None:
         if display_name is None:
             display_name = data.get('name', 'custom')
 
@@ -61,7 +62,7 @@ class Colormap(EventedModel):
         self._display_name = display_name
 
     # controls validator must be called even if None for correct initialization
-    @validator('controls', pre=True, always=True)
+    @validator('controls', pre=True, always=True, allow_reuse=True)
     def _check_controls(cls, v, values):
         # If no control points provided generate defaults
         if v is None or len(v) == 0:
@@ -118,13 +119,14 @@ class Colormap(EventedModel):
                 np.interp(values, self.controls, self.colors[:, i])
                 for i in range(4)
             ]
-            cols = np.stack(cols, axis=1)
+            cols = np.stack(cols, axis=-1)
         elif self.interpolation == ColormapInterpolationMode.ZERO:
             # One color per bin
+            # Colors beyond max clipped to final bin
             indices = np.clip(
                 np.searchsorted(self.controls, values, side="right") - 1,
                 0,
-                len(self.colors),
+                len(self.colors) - 1,
             )
             cols = self.colors[indices.astype(np.int32)]
         else:

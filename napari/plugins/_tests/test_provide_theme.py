@@ -13,9 +13,8 @@ if TYPE_CHECKING:
 
 
 def test_provide_theme_hook(napari_plugin_manager: "NapariPluginManager"):
-    with pytest.warns(FutureWarning):
-        dark = get_theme("dark")
-        dark["name"] = "dark-test"
+    dark = get_theme("dark", True)
+    dark["name"] = "dark-test"
 
     class TestPlugin:
         @napari_hook_implementation
@@ -40,10 +39,9 @@ def test_provide_theme_hook(napari_plugin_manager: "NapariPluginManager"):
 def test_provide_theme_hook_bad(napari_plugin_manager: "NapariPluginManager"):
     napari_plugin_manager.discover_themes()
 
-    with pytest.warns(FutureWarning):
-        dark = get_theme("dark")
-        dark.pop("foreground")
-        dark["name"] = "dark-bad"
+    dark = get_theme("dark", True)
+    dark.pop("foreground")
+    dark["name"] = "dark-bad"
 
     class TestPluginBad:
         @napari_hook_implementation
@@ -86,9 +84,8 @@ def test_provide_theme_hook_not_dict(
 def test_provide_theme_hook_unregister(
     napari_plugin_manager: "NapariPluginManager",
 ):
-    with pytest.warns(FutureWarning):
-        dark = get_theme("dark")
-        dark["name"] = "dark-test"
+    dark = get_theme("dark", True)
+    dark["name"] = "dark-test"
 
     class TestPlugin:
         @napari_hook_implementation

@@ -8,7 +8,7 @@ from typing import Optional, Tuple
 from magicgui.widgets import FunctionGui
 from pydantic import BaseModel, validator
 
-from .base.base import Layer
+from napari.layers.base.base import Layer
 
 
 class Source(BaseModel):
@@ -39,7 +39,7 @@ class Source(BaseModel):
         arbitrary_types_allowed = True
         frozen = True
 
-    @validator('parent')
+    @validator('parent', allow_reuse=True)
     def make_weakref(cls, layer: Layer):
         return weakref.ref(layer)
 

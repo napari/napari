@@ -1,8 +1,14 @@
 import sys
 from enum import auto
 
-from ...utils.misc import StringEnum
-from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
+from napari.layers.shapes._shapes_models import (
+    Ellipse,
+    Line,
+    Path,
+    Polygon,
+    Rectangle,
+)
+from napari.utils.misc import StringEnum
 
 
 class Mode(StringEnum):
@@ -24,6 +30,7 @@ class Mode(StringEnum):
     """
 
     PAN_ZOOM = auto()
+    TRANSFORM = auto()
     SELECT = auto()
     DIRECT = auto()
     ADD_RECTANGLE = auto()
@@ -33,7 +40,6 @@ class Mode(StringEnum):
     ADD_POLYGON = auto()
     VERTEX_INSERT = auto()
     VERTEX_REMOVE = auto()
-    TRANSFORM = auto()
 
 
 class ColorMode(StringEnum):

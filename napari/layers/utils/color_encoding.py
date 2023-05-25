@@ -11,19 +11,18 @@ from typing import (
 import numpy as np
 from pydantic import Field, parse_obj_as, validator
 
-from napari.utils.color import ColorArray, ColorValue
-
-from ...utils import Colormap
-from ...utils.colormaps import ValidColormapArg, ensure_colormap
-from ...utils.colormaps.categorical_colormap import CategoricalColormap
-from ...utils.translations import trans
-from .color_transformations import ColorType
-from .style_encoding import (
+from napari.layers.utils.color_transformations import ColorType
+from napari.layers.utils.style_encoding import (
     StyleEncoding,
     _ConstantStyleEncoding,
     _DerivedStyleEncoding,
     _ManualStyleEncoding,
 )
+from napari.utils import Colormap
+from napari.utils.color import ColorArray, ColorValue
+from napari.utils.colormaps import ValidColormapArg, ensure_colormap
+from napari.utils.colormaps.categorical_colormap import CategoricalColormap
+from napari.utils.translations import trans
 
 """The default color to use, which may also be used a safe fallback color."""
 DEFAULT_COLOR = ColorValue.validate('cyan')
@@ -79,13 +78,13 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
             )
         try:
             color_array = ColorArray.validate(value)
-        except (ValueError, AttributeError, KeyError):
+        except (ValueError, AttributeError, KeyError) as e:
             raise TypeError(
                 trans._(
                     'value should be a ColorEncoding, a dict, a color, or a sequence of colors',
                     deferred=True,
                 )
-            )
+            ) from e
         if color_array.shape[0] == 1:
             return ConstantColorEncoding(constant=value)
         return ManualColorEncoding(array=color_array, default=DEFAULT_COLOR)
@@ -205,11 +204,11 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
             values = np.interp(values, contrast_limits, (0, 1))
         return self.colormap.map(values)
 
-    @validator('colormap', pre=True, always=True)
+    @validator('colormap', pre=True, always=True, allow_reuse=True)
     def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
         return ensure_colormap(colormap)
 
-    @validator('contrast_limits', pre=True, always=True)
+    @validator('contrast_limits', pre=True, always=True, allow_reuse=True)
     def _check_contrast_limits(
         cls, contrast_limits
     ) -> Optional[Tuple[float, float]]:
@@ -217,7 +216,10 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
             contrast_limits[0] >= contrast_limits[1]
         ):
             raise ValueError(
-                'contrast_limits must be a strictly increasing pair of values'
+                trans._(
+                    'contrast_limits must be a strictly increasing pair of values',
+                    deferred=True,
+                )
             )
         return contrast_limits
 

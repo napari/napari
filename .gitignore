@@ -70,6 +70,7 @@ docs/source/api/
 docs/source/release/
 docs/source/releases.rst
 docs/build/
+docs/_tags
 
 # PyBuilder
 target/
@@ -141,11 +142,6 @@ res.qrc
 # ignore all generated themed svgs
 napari/resources/themes
 
-# briefcase
-macOS/
-linux/
-windows/
-
 napari/_version.py
 
 docs/api/napari*
@@ -176,3 +172,5 @@ napari/resources/icons/_themes/
 
 # perfmon
 tools/perfmon/*/traces-*.json
+
+github_cache.sqlite

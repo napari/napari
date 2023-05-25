@@ -20,9 +20,8 @@ from napari.plugins.utils import (
     get_filename_patterns_for_reader,
     get_potential_readers,
 )
-
-from ...settings import get_settings
-from ...utils.translations import trans
+from napari.settings import get_settings
+from napari.utils.translations import trans
 
 
 class Extension2ReaderTable(QWidget):
@@ -32,7 +31,9 @@ class Extension2ReaderTable(QWidget):
 
     valueChanged = Signal(int)
 
-    def __init__(self, parent=None, npe2_readers=None, npe1_readers=None):
+    def __init__(
+        self, parent=None, npe2_readers=None, npe1_readers=None
+    ) -> None:
         super().__init__(parent=parent)
 
         npe2, npe1 = get_all_readers()
@@ -120,7 +121,7 @@ class Extension2ReaderTable(QWidget):
         ):
             self._add_reader_choice(i, plugin_name, display_name)
 
-        add_btn = QPushButton('Add')
+        add_btn = QPushButton(trans._('Add'))
         add_btn.setToolTip(trans._('Save reader preference for pattern'))
         add_btn.clicked.connect(self._save_new_preference)
 
@@ -154,9 +155,7 @@ class Extension2ReaderTable(QWidget):
         if '*' in reader_patterns:
             tooltip_text = trans._('Accepts all')
         else:
-            reader_patterns_formatted = ', '.join(
-                sorted(list(reader_patterns))
-            )
+            reader_patterns_formatted = ', '.join(sorted(reader_patterns))
             tooltip_text = trans._(
                 'Accepts: {reader_patterns_formatted}',
                 reader_patterns_formatted=reader_patterns_formatted,
@@ -172,7 +171,7 @@ class Extension2ReaderTable(QWidget):
         readers = self._npe2_readers.copy()
         to_delete = []
         compatible_readers = get_potential_readers(new_pattern)
-        for plugin_name, display_name in readers.items():
+        for plugin_name in readers:
             if plugin_name not in compatible_readers:
                 to_delete.append(plugin_name)
 

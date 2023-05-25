@@ -7,7 +7,7 @@ from qtpy.QtWidgets import (
     QStyleOptionViewItem,
 )
 
-from ...utils.colormaps import (
+from napari.utils.colormaps import (
     display_name_to_name,
     ensure_colormap,
     make_colorbar,
@@ -30,7 +30,7 @@ class ColorStyledDelegate(QStyledItemDelegate):
         Dict mapping name to colors.
     """
 
-    def __init__(self, base_height: int, **kwargs):
+    def __init__(self, base_height: int, **kwargs) -> None:
         super().__init__(**kwargs)
         self.base_height = base_height
 
@@ -82,7 +82,7 @@ class QtColormapComboBox(QComboBox):
         Parent widget of comboxbox.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:
         super().__init__(parent)
         view = QListView()
         view.setMinimumWidth(COLORMAP_WIDTH + TEXT_WIDTH)

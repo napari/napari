@@ -9,8 +9,8 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-from ...utils import citation_text, sys_info
-from ...utils.translations import trans
+from napari.utils import citation_text, sys_info
+from napari.utils.translations import trans
 
 
 class QtAbout(QDialog):
@@ -40,7 +40,7 @@ class QtAbout(QDialog):
         Layout widget for the entire 'About napari' dialog.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
         self.layout = QVBoxLayout()
@@ -122,7 +122,7 @@ class QtCopyToClipboardButton(QPushButton):
         The text box contents linked to copy to clipboard button.
     """
 
-    def __init__(self, text_edit):
+    def __init__(self, text_edit) -> None:
         super().__init__()
         self.setObjectName("QtCopyToClipboardButton")
         self.text_edit = text_edit

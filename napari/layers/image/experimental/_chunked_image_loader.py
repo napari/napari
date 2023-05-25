@@ -5,9 +5,11 @@ This is for pre-Octree Image class only.
 import logging
 from typing import Optional
 
-from .._image_loader import ImageLoader
-from ._chunked_slice_data import ChunkedSliceData
-from ._image_location import ImageLocation
+from napari.layers.image._image_loader import ImageLoader
+from napari.layers.image.experimental._chunked_slice_data import (
+    ChunkedSliceData,
+)
+from napari.layers.image.experimental._image_location import ImageLocation
 
 LOGGER = logging.getLogger("napari.loader")
 
@@ -21,7 +23,7 @@ class ChunkedImageLoader(ImageLoader):
         The location we are currently loading or showing.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # We're showing nothing to start.
         self._current: Optional[ImageLocation] = None
 

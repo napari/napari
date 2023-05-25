@@ -7,15 +7,15 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from ....components.experimental.chunk import ChunkRequest, chunk_loader
-from ...base import Layer
-from .._image_slice_data import ImageSliceData
-from ._image_location import ImageLocation
+from napari.components.experimental.chunk import ChunkRequest, chunk_loader
+from napari.layers.base import Layer
+from napari.layers.image._image_slice_data import ImageSliceData
+from napari.layers.image.experimental._image_location import ImageLocation
 
 LOGGER = logging.getLogger("napari.loader")
 
 if TYPE_CHECKING:
-    from ....types import ArrayLike
+    from napari.types import ArrayLike
 
 
 class ChunkedSliceData(ImageSliceData):
@@ -42,7 +42,7 @@ class ChunkedSliceData(ImageSliceData):
         image: ArrayLike,
         thumbnail_source: ArrayLike,
         request: Optional[ChunkRequest] = None,
-    ):
+    ) -> None:
         super().__init__(layer, indices, image, thumbnail_source)
 
         # When ChunkedSliceData is first created self.request is

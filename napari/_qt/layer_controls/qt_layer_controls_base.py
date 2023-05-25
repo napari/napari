@@ -1,15 +1,20 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame
+from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
 
-from ...layers.base._base_constants import BLENDING_TRANSLATIONS
-from ...utils.events import disconnect_events
-from ..widgets._slider_compat import QDoubleSlider
+from napari._qt.widgets._slider_compat import QDoubleSlider
+from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
+from napari.layers.base.base import Layer
+from napari.utils.events import disconnect_events
+from napari.utils.translations import trans
+
+# opaque and minimum blending do not support changing alpha (opacity)
+NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
 
 
 class LayerFormLayout(QFormLayout):
     """Reusable form layout for subwidgets in each QtLayerControls class"""
 
-    def __init__(self, QWidget=None):
+    def __init__(self, QWidget=None) -> None:
         super().__init__(QWidget)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
@@ -34,10 +39,14 @@ class QtLayerControls(QFrame):
         An instance of a napari layer.
     opacitySlider : qtpy.QtWidgets.QSlider
         Slider controlling opacity of the layer.
+    opacityLabel : qtpy.QtWidgets.QLabel
+        Label for the opacity slider widget.
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer: Layer) -> None:
         super().__init__()
+
+        self._ndisplay: int = 2
 
         self.layer = layer
         self.layer.events.blending.connect(self._on_blending_change)
@@ -55,6 +64,8 @@ class QtLayerControls(QFrame):
         sld.setSingleStep(0.01)
         sld.valueChanged.connect(self.changeOpacity)
         self.opacitySlider = sld
+        self.opacityLabel = QLabel(trans._('opacity:'))
+
         self._on_opacity_change()
 
         blend_comboBox = QComboBox(self)
@@ -66,6 +77,13 @@ class QtLayerControls(QFrame):
 
         blend_comboBox.currentTextChanged.connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
+        # opaque and minimum blending do not support changing alpha
+        self.opacitySlider.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
+        self.opacityLabel.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
@@ -88,6 +106,21 @@ class QtLayerControls(QFrame):
             Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
         """
         self.layer.blending = self.blendComboBox.currentData()
+        # opaque and minimum blending do not support changing alpha
+        self.opacitySlider.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
+        self.opacityLabel.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
+
+        blending_tooltip = ''
+        if self.layer.blending == str(Blending.MINIMUM):
+            blending_tooltip = trans._(
+                '`minimum` blending mode works best with inverted colormaps with a white background.',
+            )
+        self.blendComboBox.setToolTip(blending_tooltip)
+        self.layer.help = blending_tooltip
 
     def _on_opacity_change(self):
         """Receive layer model opacity change event and update opacity slider."""
@@ -100,6 +133,23 @@ class QtLayerControls(QFrame):
             self.blendComboBox.setCurrentIndex(
                 self.blendComboBox.findData(self.layer.blending)
             )
+
+    @property
+    def ndisplay(self) -> int:
+        """The number of dimensions displayed in the canvas."""
+        return self._ndisplay
+
+    @ndisplay.setter
+    def ndisplay(self, ndisplay: int) -> None:
+        self._ndisplay = ndisplay
+        self._on_ndisplay_changed()
+
+    def _on_ndisplay_changed(self) -> None:
+        """Respond to a change to the number of dimensions displayed in the viewer.
+
+        This is needed because some layer controls may have options that are specific
+        to 2D or 3D visualization only.
+        """
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self)

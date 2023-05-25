@@ -4,17 +4,20 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSortFilterProxyModel, Qt
 
-from ...layers import Layer
-from ...utils.translations import trans
-from ._base_item_model import SortRole, _BaseEventedItemModel
-from ._layer_delegate import LayerDelegate
-from .qt_list_view import QtListView
+from napari._qt.containers._base_item_model import (
+    SortRole,
+    _BaseEventedItemModel,
+)
+from napari._qt.containers._layer_delegate import LayerDelegate
+from napari._qt.containers.qt_list_view import QtListView
+from napari.layers import Layer
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from qtpy.QtGui import QKeyEvent
     from qtpy.QtWidgets import QWidget
 
-    from ...components.layerlist import LayerList
+    from napari.components.layerlist import LayerList
 
 
 class ReverseProxyModel(QSortFilterProxyModel):
@@ -39,7 +42,7 @@ class QtLayerList(QtListView[Layer]):
     reversing the view with ReverseProxyModel.
     """
 
-    def __init__(self, root: LayerList, parent: QWidget = None):
+    def __init__(self, root: LayerList, parent: QWidget = None) -> None:
         super().__init__(root, parent)
         self.setItemDelegate(LayerDelegate())
         self.setToolTip(trans._('Layer list'))

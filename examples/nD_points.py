@@ -11,8 +11,8 @@ across the dimensions, specified by their size
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 blobs = np.stack(
     [

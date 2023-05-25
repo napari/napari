@@ -1,3 +1,5 @@
+import contextlib
+
 from pygments import highlight
 from pygments.formatter import Formatter
 from pygments.lexers import get_lexer_by_name
@@ -15,7 +17,12 @@ def get_text_char_format(style):
     """
 
     text_char_format = QtGui.QTextCharFormat()
-    text_char_format.setFontFamily("monospace")
+    try:
+        text_char_format.setFontFamilies(["monospace"])
+    except AttributeError:
+        text_char_format.setFontFamily(
+            "monospace"
+        )  # backward compatibility for pyqt5 5.12.3
     if style.get('color'):
         text_char_format.setForeground(QtGui.QColor(f"#{style['color']}"))
 
@@ -35,7 +42,7 @@ def get_text_char_format(style):
 
 
 class QFormatter(Formatter):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.data = []
         self._style = {
@@ -60,7 +67,7 @@ class QFormatter(Formatter):
 
 
 class Pylighter(QtGui.QSyntaxHighlighter):
-    def __init__(self, parent, lang, theme):
+    def __init__(self, parent, lang, theme) -> None:
         super().__init__(parent)
         self.formatter = QFormatter(style=theme)
         self.lexer = get_lexer_by_name(lang)
@@ -75,7 +82,5 @@ class Pylighter(QtGui.QSyntaxHighlighter):
         # The core problem is that pygemnts by default use string streams,
         # that will not handle QTextCharFormat, so wee need use `data` property to work around this.
         for i in range(len(text)):
-            try:
+            with contextlib.suppress(IndexError):
                 self.setFormat(i, 1, self.formatter.data[p + i])
-            except IndexError:
-                pass

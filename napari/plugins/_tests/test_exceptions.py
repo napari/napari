@@ -29,7 +29,7 @@ def test_format_exceptions(cgitb, as_html, monkeypatch):
                 plugin_name='test_plugin',
                 plugin="mock",
                 cause=e,
-            )
+            ) from e
     except PluginError:
         pass
 

@@ -12,7 +12,6 @@ from napari.layers.utils.layer_utils import (
     dataframe_to_properties,
     dims_displayed_world_to_layer,
     get_current_properties,
-    prepare_properties,
     register_layer_attr_action,
     segment_normal,
 )
@@ -109,71 +108,6 @@ def test_dataframe_to_properties():
     np.testing.assert_equal(converted_properties, properties)
 
 
-def test_prepare_properties_with_empty_properties():
-    assert prepare_properties({}) == ({}, {})
-
-
-def test_prepare_properties_with_empty_properties_and_choices():
-    assert prepare_properties({}, {}) == ({}, {})
-
-
-def test_prepare_properties_with_properties_then_choices_from_properties():
-    properties, choices = prepare_properties({"aa": [1, 2]}, num_data=2)
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 2])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2])
-
-
-def test_prepare_properties_with_choices_then_properties_are_none():
-    properties, choices = prepare_properties({}, {"aa": [1, 2]}, num_data=2)
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [None, None])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2])
-
-
-def test_prepare_properties_with_properties_and_choices():
-    properties, choices = prepare_properties({"aa": [1, 2, 1]}, num_data=3)
-    assert np.array_equal(properties["aa"], [1, 2, 1])
-    assert np.array_equal(choices["aa"], [1, 2])
-
-
-def test_prepare_properties_with_properties_and_choices_then_merge_choice_values():
-    properties, choices = prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2]}, num_data=2
-    )
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-
-
-def test_prepare_properties_with_properties_and_choices_then_skip_choice_keys():
-    properties, choices = prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2], "bb": [7, 6]}, num_data=2
-    )
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-
-
-def test_prepare_properties_with_properties_and_choices_and_save_choices():
-    properties, choices = prepare_properties(
-        {"aa": [1, 3]},
-        {"aa": [1, 2], "bb": [7, 6]},
-        num_data=2,
-        save_choices=True,
-    )
-    assert list(properties.keys()) == ["aa", "bb"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert np.array_equal(properties["bb"], [None, None])
-    assert list(choices.keys()) == ["aa", "bb"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-    assert np.array_equal(choices["bb"], [6, 7])
-
-
 def test_get_current_properties_with_properties_then_last_values():
     properties = {
         "face_color": np.array(["cyan", "red", "red"]),
@@ -224,7 +158,7 @@ def test_coerce_current_properties_valid_values():
     }
     coerced_current_properties = coerce_current_properties(current_properties)
 
-    for k, v in coerced_current_properties.items():
+    for k in coerced_current_properties:
         value = coerced_current_properties[k]
         assert isinstance(value, np.ndarray)
         np.testing.assert_equal(value, expected_current_properties[k])
@@ -273,6 +207,16 @@ def test_feature_table_from_layer_with_num_data_only():
     feature_table = _FeatureTable.from_layer(num_data=5)
     assert feature_table.values.shape == (5, 0)
     assert feature_table.defaults.shape == (1, 0)
+
+
+def test_feature_table_from_layer_with_empty_int_features():
+    feature_table = _FeatureTable.from_layer(
+        features={'a': np.empty(0, dtype=np.int64)}
+    )
+    assert feature_table.values['a'].dtype == np.int64
+    assert len(feature_table.values['a']) == 0
+    assert feature_table.defaults['a'].dtype == np.int64
+    assert feature_table.defaults['a'][0] == 0
 
 
 def test_feature_table_from_layer_with_properties_and_num_data():
@@ -383,13 +327,12 @@ def test_feature_table_from_layer_with_properties_as_dataframe():
     pd.testing.assert_frame_equal(feature_table.values, TEST_FEATURES)
 
 
-def _make_feature_table():
+@pytest.fixture
+def feature_table():
     return _FeatureTable(TEST_FEATURES.copy(deep=True), num_data=4)
 
 
-def test_feature_table_resize_smaller():
-    feature_table = _make_feature_table()
-
+def test_feature_table_resize_smaller(feature_table: _FeatureTable):
     feature_table.resize(2)
 
     features = feature_table.values
@@ -398,8 +341,7 @@ def test_feature_table_resize_smaller():
     np.testing.assert_array_equal(features['confidence'], [0.2, 0.5])
 
 
-def test_feature_table_resize_larger():
-    feature_table = _make_feature_table()
+def test_feature_table_resize_larger(feature_table: _FeatureTable):
     expected_dtypes = feature_table.values.dtypes
 
     feature_table.resize(6)
@@ -417,8 +359,7 @@ def test_feature_table_resize_larger():
     np.testing.assert_array_equal(features.dtypes, expected_dtypes)
 
 
-def test_feature_table_append():
-    feature_table = _make_feature_table()
+def test_feature_table_append(feature_table: _FeatureTable):
     to_append = pd.DataFrame(
         {
             'class': ['sky', 'building'],
@@ -440,9 +381,7 @@ def test_feature_table_append():
     )
 
 
-def test_feature_table_remove():
-    feature_table = _make_feature_table()
-
+def test_feature_table_remove(feature_table: _FeatureTable):
     feature_table.remove([1, 3])
 
     features = feature_table.values
@@ -485,11 +424,36 @@ def test_feature_table_from_layer_with_unordered_pd_series_features():
     pd.testing.assert_frame_equal(feature_table.values, expected)
 
 
+def test_feature_table_set_defaults_with_same_columns(feature_table):
+    defaults = {'class': 'building', 'confidence': 1}
+    assert feature_table.defaults['class'][0] != defaults['class']
+    assert feature_table.defaults['confidence'][0] != defaults['confidence']
+
+    feature_table.set_defaults(defaults)
+
+    assert feature_table.defaults['class'][0] == defaults['class']
+    assert feature_table.defaults['confidence'][0] == defaults['confidence']
+
+
+def test_feature_table_set_defaults_with_extra_column(feature_table):
+    defaults = {'class': 'building', 'confidence': 0, 'cat': 'kermit'}
+    assert 'cat' not in feature_table.values.columns
+    with pytest.raises(ValueError):
+        feature_table.set_defaults(defaults)
+
+
+def test_feature_table_set_defaults_with_missing_column(feature_table):
+    defaults = {'class': 'building'}
+    assert len(feature_table.values.columns) > 1
+    with pytest.raises(ValueError):
+        feature_table.set_defaults(defaults)
+
+
 def test_register_label_attr_action(monkeypatch):
     monkeypatch.setattr(time, "time", lambda: 1)
 
     class Foo(KeymapProvider):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__()
             self.value = 0
 

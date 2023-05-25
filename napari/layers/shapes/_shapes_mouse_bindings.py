@@ -2,9 +2,15 @@ from copy import copy
 
 import numpy as np
 
-from ._shapes_constants import Box, Mode
-from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
-from ._shapes_utils import point_to_lines
+from napari.layers.shapes._shapes_constants import Box, Mode
+from napari.layers.shapes._shapes_models import (
+    Ellipse,
+    Line,
+    Path,
+    Polygon,
+    Rectangle,
+)
+from napari.layers.shapes._shapes_utils import point_to_lines
 
 
 def highlight(layer, event):
@@ -98,7 +104,7 @@ def add_line(layer, event):
     """Add a line."""
     size = layer._vertex_size * layer.scale_factor / 4
     full_size = np.zeros(layer.ndim, dtype=float)
-    for i in layer._dims_displayed:
+    for i in layer._slice_input.displayed:
         full_size[i] = size
 
     coordinates = layer.world_to_data(event.position)
@@ -115,9 +121,9 @@ def add_ellipse(layer, event):
     """Add an ellipse."""
     size = layer._vertex_size * layer.scale_factor / 4
     size_h = np.zeros(layer.ndim, dtype=float)
-    size_h[layer._dims_displayed[0]] = size
+    size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
-    size_v[layer._dims_displayed[1]] = size
+    size_v[layer._slice_input.displayed[1]] = size
 
     coordinates = layer.world_to_data(event.position)
     corner = np.array(coordinates)
@@ -133,9 +139,9 @@ def add_rectangle(layer, event):
     """Add a rectangle."""
     size = layer._vertex_size * layer.scale_factor / 4
     size_h = np.zeros(layer.ndim, dtype=float)
-    size_h[layer._dims_displayed[0]] = size
+    size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
-    size_v[layer._dims_displayed[1]] = size
+    size_v[layer._slice_input.displayed[1]] = size
 
     coordinates = layer.world_to_data(event.position)
     corner = np.array(coordinates)
@@ -195,10 +201,7 @@ def add_path_polygon(layer, event):
     else:
         # Add to an existing path or polygon
         index = layer._moving_value[0]
-        if layer._mode == Mode.ADD_POLYGON:
-            new_type = Polygon
-        else:
-            new_type = None
+        new_type = Polygon if layer._mode == Mode.ADD_POLYGON else None
         vertices = layer._data_view.shapes[index].data
         vertices = np.concatenate((vertices, [coordinates]), axis=0)
         # Change the selected vertex
@@ -258,7 +261,7 @@ def vertex_insert(layer, event):
 
     # Determine the closet edge to the current cursor coordinate
     coordinates = layer.world_to_data(event.position)
-    coord = [coordinates[i] for i in layer._dims_displayed]
+    coord = [coordinates[i] for i in layer._slice_input.displayed]
     ind, loc = point_to_lines(coord, all_edges)
     index = all_edges_shape[ind][0]
     ind = all_edges_shape[ind][1] + 1
@@ -306,7 +309,7 @@ def vertex_remove(layer, event):
         # Removing vertex from ellipse not implemented
         return
     vertices = layer._data_view.shapes[shape_under_cursor].data
-    if len(vertices) <= 2:
+    if len(vertices) <= 2 or (shape_type == Polygon and len(vertices) == 3):
         # If only 2 vertices present, remove whole shape
         with layer.events.set_data.blocker():
             if shape_under_cursor in layer.selected_data:
@@ -314,16 +317,8 @@ def vertex_remove(layer, event):
             layer._data_view.remove(shape_under_cursor)
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
-    elif shape_type == Polygon and len(vertices) == 3:
-        # If only 3 vertices of a polygon present remove
-        with layer.events.set_data.blocker():
-            if shape_under_cursor in layer.selected_data:
-                layer.selected_data.remove(shape_under_cursor)
-            layer._data_view.remove(shape_under_cursor)
-            shapes = layer.selected_data
-            layer._selected_box = layer.interaction_box(shapes)
     else:
-        if shape_type == Rectangle:
+        if shape_type == Rectangle:  # noqa SIM108
             # Deleting vertex from a rectangle creates a polygon
             new_type = Polygon
         else:
@@ -353,7 +348,7 @@ def _drag_selection_box(layer, coordinates):
     if len(layer.selected_data) > 0:
         return
 
-    coord = [coordinates[i] for i in layer._dims_displayed]
+    coord = [coordinates[i] for i in layer._slice_input.displayed]
 
     # Create or extend a selection box
     layer._is_selecting = True
@@ -364,7 +359,7 @@ def _drag_selection_box(layer, coordinates):
 
 
 def _set_drag_start(layer, coordinates):
-    coord = [coordinates[i] for i in layer._dims_displayed]
+    coord = [coordinates[i] for i in layer._slice_input.displayed]
     if layer._drag_start is None and len(layer.selected_data) > 0:
         center = layer._selected_box[Box.CENTER]
         layer._drag_start = coord - center
@@ -482,12 +477,9 @@ def _move(layer, coordinates):
         elif vertex == 8:
             # Rotation handle is being dragged so rotate object
             handle = layer._selected_box[Box.HANDLE]
-            if layer._drag_start is None:
-                layer._fixed_vertex = layer._selected_box[Box.CENTER]
-                offset = handle - layer._fixed_vertex
-                layer._drag_start = -np.degrees(
-                    np.arctan2(offset[0], -offset[1])
-                )
+            layer._fixed_vertex = layer._selected_box[Box.CENTER]
+            offset = handle - layer._fixed_vertex
+            layer._drag_start = -np.degrees(np.arctan2(offset[0], -offset[1]))
 
             new_offset = coord - layer._fixed_vertex
             new_angle = -np.degrees(np.arctan2(new_offset[0], -new_offset[1]))
@@ -509,23 +501,20 @@ def _move(layer, coordinates):
                 )
             layer._rotate_box(angle, center=layer._fixed_vertex)
             layer.refresh()
-    elif layer._mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON]:
-        if vertex is not None:
-            layer._moving_coordinates = coordinates
-            layer._is_moving = True
-            index = layer._moving_value[0]
-            shape_type = type(layer._data_view.shapes[index])
-            if shape_type == Ellipse:
-                # DIRECT vertex moving of ellipse not implemented
-                pass
-            else:
-                if shape_type == Rectangle:
-                    new_type = Polygon
-                else:
-                    new_type = None
-                vertices = layer._data_view.shapes[index].data
-                vertices[vertex] = coordinates
-                layer._data_view.edit(index, vertices, new_type=new_type)
-                shapes = layer.selected_data
-                layer._selected_box = layer.interaction_box(shapes)
-                layer.refresh()
+    elif (
+        layer._mode in {Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON}
+        and vertex is not None
+    ):
+        layer._moving_coordinates = coordinates
+        layer._is_moving = True
+        index = layer._moving_value[0]
+        shape_type = type(layer._data_view.shapes[index])
+        if shape_type != Ellipse:
+            # not DIRECT vertex moving of ellipse not implemented
+            new_type = Polygon if shape_type == Rectangle else None
+            vertices = layer._data_view.shapes[index].data
+            vertices[vertex] = coordinates
+            layer._data_view.edit(index, vertices, new_type=new_type)
+            shapes = layer.selected_data
+            layer._selected_box = layer.interaction_box(shapes)
+            layer.refresh()

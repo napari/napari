@@ -1,6 +1,6 @@
 """ImageLoader class.
 """
-from ._image_slice_data import ImageSliceData
+from napari.layers.image._image_slice_data import ImageSliceData
 
 
 class ImageLoader:

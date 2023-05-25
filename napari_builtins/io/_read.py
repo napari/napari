@@ -6,20 +6,22 @@ import urllib.parse
 from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 from urllib.error import HTTPError, URLError
 
 import dask.array as da
 import numpy as np
 from dask import delayed
 
-from napari.types import FullLayerData, LayerData, ReaderFunction
 from napari.utils.misc import abspath_or_url
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from napari.types import FullLayerData, LayerData, ReaderFunction
+
 try:
     import imageio.v2 as imageio
-except ImportError:
+except ModuleNotFoundError:
     import imageio  # type: ignore
 
 IMAGEIO_EXTENSIONS = {x for f in imageio.formats for x in f.extensions}
@@ -259,7 +261,7 @@ def magic_imread(
 
 def _points_csv_to_layerdata(
     table: np.ndarray, column_names: List[str]
-) -> FullLayerData:
+) -> "FullLayerData":
     """Convert table data and column names from a csv file to Points LayerData.
 
     Parameters
@@ -299,7 +301,7 @@ def _points_csv_to_layerdata(
 
 def _shapes_csv_to_layerdata(
     table: np.ndarray, column_names: List[str]
-) -> FullLayerData:
+) -> "FullLayerData":
     """Convert table data and column names from a csv file to Shapes LayerData.
 
     Parameters
@@ -322,7 +324,7 @@ def _shapes_csv_to_layerdata(
     n_shapes = max(inds) + 1
     # Determine when shape id changes
     transitions = list((np.diff(inds)).nonzero()[0] + 1)
-    shape_boundaries = [0] + transitions + [len(table)]
+    shape_boundaries = [0, *transitions] + [len(table)]
     if n_shapes != len(shape_boundaries) - 1:
         raise ValueError(
             trans._('Expected number of shapes not found', deferred=True)
@@ -357,10 +359,9 @@ def _guess_layer_type_from_column_names(
         column_names
     ):
         return 'shapes'
-    elif {'axis-0', 'axis-1'}.issubset(column_names):
+    if {'axis-0', 'axis-1'}.issubset(column_names):
         return 'points'
-    else:
-        return None
+    return None
 
 
 def read_csv(
@@ -412,7 +413,7 @@ def read_csv(
                         filename=filename,
                     )
                 )
-            elif layer_type != require_type and require_type.lower() != "any":
+            if layer_type != require_type and require_type.lower() != "any":
                 raise ValueError(
                     trans._(
                         'File "{filename}" not recognized as {require_type} data',
@@ -434,7 +435,7 @@ csv_reader_functions = {
 
 def csv_to_layer_data(
     path: str, require_type: Optional[str] = None
-) -> Optional[FullLayerData]:
+) -> Optional["FullLayerData"]:
     """Return layer data from a CSV file if detected as a valid type.
 
     Parameters
@@ -475,7 +476,7 @@ def csv_to_layer_data(
     return None  # only reachable if it is a valid layer type without a reader
 
 
-def _csv_reader(path: Union[str, Sequence[str]]) -> List[LayerData]:
+def _csv_reader(path: Union[str, Sequence[str]]) -> List["LayerData"]:
     if isinstance(path, str):
         layer_data = csv_to_layer_data(path, require_type=None)
         return [layer_data] if layer_data else []
@@ -486,11 +487,13 @@ def _csv_reader(path: Union[str, Sequence[str]]) -> List[LayerData]:
     ]
 
 
-def _magic_imreader(path: str) -> List[LayerData]:
+def _magic_imreader(path: str) -> List["LayerData"]:
     return [(magic_imread(path),)]
 
 
-def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
+def napari_get_reader(
+    path: Union[str, List[str]]
+) -> Optional["ReaderFunction"]:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
     This will assume that the filepath is an image, and will pass all of the

@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
 
 from napari_plugin_engine import HookImplementation, PluginCallError
 
-from ..layers import Layer
-from ..types import LayerData
-from ..utils.misc import abspath_or_url
-from ..utils.translations import trans
-from . import _npe2, plugin_manager
+from napari.layers import Layer
+from napari.plugins import _npe2, plugin_manager
+from napari.types import LayerData
+from napari.utils.misc import abspath_or_url
+from napari.utils.translations import trans
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:
@@ -62,8 +62,10 @@ def read_data_with_plugins(
     """
     if plugin == 'builtins':
         warnings.warn(
-            'The "builtins" plugin name is deprecated and will not work in a future '
-            'version. Please use "napari" instead.',
+            trans._(
+                'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
+                deferred=True,
+            ),
         )
         plugin = 'napari'
 
@@ -75,7 +77,7 @@ def read_data_with_plugins(
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
         _ld, hookimpl = res
-        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl  # type: ignore [return-value]
+        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl
 
     hook_caller = plugin_manager.hook.napari_get_reader
     paths = [abspath_or_url(p, must_exist=True) for p in paths]
@@ -133,7 +135,7 @@ def read_data_with_plugins(
         try:
             layer_data = reader(npe1_path)  # try to read data
             hookimpl = result.implementation
-        except Exception as exc:
+        except Exception as exc:  # noqa BLE001
             raise PluginCallError(result.implementation, cause=exc) from exc
 
     if not layer_data:
@@ -194,7 +196,7 @@ def save_layers(
 
     If a ``plugin`` is provided and multiple layers are passed, then
     we call we call ``napari_get_writer`` for that plugin, and if it
-    doesn’t return a WriterFunction we error, otherwise we call it and if
+    doesn`t return a WriterFunction we error, otherwise we call it and if
     that fails if it we error.
 
     Parameters
@@ -202,10 +204,11 @@ def save_layers(
     path : str
         A filepath, directory, or URL to open.
     layers : List[layers.Layer]
-        List of layers to be saved. If only a single layer is passed then
-        we use the hook specification corresponding to its layer type,
+        Non-empty List of layers to be saved. If only a single layer is passed
+        then we use the hook specification corresponding to its layer type,
         ``napari_write_<layer_type>``. If multiple layers are passed then we
-        use the ``napari_get_writer`` hook specification.
+        use the ``napari_get_writer`` hook specification. Warns when the list
+        of layers is empty.
     plugin : str, optional
         Name of the plugin to use for saving. If None then all plugins
         corresponding to appropriate hook specification will be looped
@@ -216,30 +219,41 @@ def save_layers(
     list of str
         File paths of any files that were written.
     """
+
+    writer_name = ''
     if len(layers) > 1:
-        written = _write_multiple_layers_with_plugins(
+        written, writer_name = _write_multiple_layers_with_plugins(
             path, layers, plugin_name=plugin, _writer=_writer
         )
     elif len(layers) == 1:
-        _written = _write_single_layer_with_plugins(
+        _written, writer_name = _write_single_layer_with_plugins(
             path, layers[0], plugin_name=plugin, _writer=_writer
         )
         written = [_written] if _written else []
     else:
-        written = []
+        warnings.warn(trans._("No layers to write."))
+        return []
 
+    # If written is empty, something went wrong.
+    # Generate a warning to tell the user what it was.
     if not written:
-        # if written is empty, it means no plugin could write the
-        # path/layers combination
-        # we just want to provide some useful feedback
-        warnings.warn(
-            trans._(
-                'No data written! There may be no plugins capable of writing these {length} layers to {path}.',
-                deferred=True,
-                length=len(layers),
-                path=path,
+        if writer_name:
+            warnings.warn(
+                trans._(
+                    "Plugin \'{name}\' was selected but did not return any written paths.",
+                    deferred=True,
+                    name=writer_name,
+                )
             )
-        )
+        else:
+            warnings.warn(
+                trans._(
+                    'No data written! A plugin could not be found to write these {length} layers to {path}.',
+                    deferred=True,
+                    length=len(layers),
+                    path=path,
+                )
+            )
 
     return written
 
@@ -273,7 +287,7 @@ def _write_multiple_layers_with_plugins(
     *,
     plugin_name: Optional[str] = None,
     _writer: Optional[WriterContribution] = None,
-) -> List[str]:
+) -> Tuple[List[str], str]:
     """Write data from multiple layers data with a plugin.
 
     If a ``plugin_name`` is not provided we loop through plugins to find the
@@ -285,7 +299,7 @@ def _write_multiple_layers_with_plugins(
     to unique files in the folder.
 
     If a ``plugin_name`` is provided, then call ``napari_get_writer`` for that
-    plugin. If it doesn’t return a ``WriterFunction`` we error, otherwise we
+    plugin. If it doesn`t return a ``WriterFunction`` we error, otherwise we
     call it and if that fails if it we error.
 
     Exceptions will be caught and stored as PluginErrors
@@ -304,14 +318,21 @@ def _write_multiple_layers_with_plugins(
 
     Returns
     -------
-    list of str
-        A list of filenames, if any, that were written.
+    (written paths, writer name) as Tuple[List[str],str]
+
+    written paths: List[str]
+        Empty list when no plugin was found, otherwise a list of file paths,
+        if any, that were written.
+    writer name: str
+        Name of the plugin selected to write the data.
     """
 
     # Try to use NPE2 first
-    written_paths = _npe2.write_layers(path, layers, plugin_name, _writer)
-    if written_paths:
-        return written_paths
+    written_paths, writer_name = _npe2.write_layers(
+        path, layers, plugin_name, _writer
+    )
+    if written_paths or writer_name:
+        return (written_paths, writer_name)
     logger.debug("Falling back to original plugin engine.")
 
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
@@ -323,7 +344,7 @@ def _write_multiple_layers_with_plugins(
 
     hook_caller = plugin_manager.hook.napari_get_writer
     path = abspath_or_url(path)
-    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
+    logger.debug("Writing to %s.  Hook caller: %s", path, hook_caller)
     if plugin_name:
         # if plugin has been specified we just directly call napari_get_writer
         # with that plugin_name.
@@ -363,12 +384,15 @@ def _write_multiple_layers_with_plugins(
                 layer_types=layer_types,
             )
 
-        raise ValueError(msg)
+        raise TypeError(msg)
 
     try:
-        return writer_function(abspath_or_url(path), layer_data)
-    except Exception as exc:
-        raise PluginCallError(implementation, cause=exc)
+        return (
+            writer_function(abspath_or_url(path), layer_data),
+            implementation.plugin_name,
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise PluginCallError(implementation, cause=exc) from exc
 
 
 def _write_single_layer_with_plugins(
@@ -377,7 +401,7 @@ def _write_single_layer_with_plugins(
     *,
     plugin_name: Optional[str] = None,
     _writer: Optional[WriterContribution] = None,
-) -> Optional[str]:
+) -> Tuple[Optional[str], str]:
     """Write single layer data with a plugin.
 
     If ``plugin_name`` is not provided then we just directly call
@@ -405,15 +429,21 @@ def _write_single_layer_with_plugins(
 
     Returns
     -------
-    path : str or None
+    (written path, writer name) as Tuple[List[str],str]
+
+    written path: Optional[str]
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
+    writer name: str
+        Name of the plugin selected to write the data.
     """
 
     # Try to use NPE2 first
-    written_paths = _npe2.write_layers(path, [layer], plugin_name, _writer)
-    if written_paths:
-        return written_paths[0]
+    written_paths, writer_name = _npe2.write_layers(
+        path, [layer], plugin_name, _writer
+    )
+    if writer_name:
+        return (written_paths[0], writer_name)
     logger.debug("Falling back to original plugin engine.")
 
     hook_caller = getattr(
@@ -424,7 +454,7 @@ def _write_single_layer_with_plugins(
         extension = os.path.splitext(path)[-1]
         plugin_name = plugin_manager.get_writer_for_extension(extension)
 
-    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
+    logger.debug("Writing to %s.  Hook caller: %s", path, hook_caller)
     if plugin_name and (plugin_name not in plugin_manager.plugins):
         names = {i.plugin_name for i in hook_caller.get_hookimpls()}
         raise ValueError(
@@ -437,9 +467,10 @@ def _write_single_layer_with_plugins(
         )
 
     # Call the hook_caller
-    return hook_caller(
+    written_path = hook_caller(
         _plugin=plugin_name,
         path=abspath_or_url(path),
         data=layer.data,
         meta=layer._get_state(),
-    )
+    )  # type: Optional[str]
+    return (written_path, plugin_name or '')

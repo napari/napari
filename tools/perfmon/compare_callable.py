@@ -34,11 +34,11 @@ parser.add_argument(
 args = parser.parse_args()
 
 logging.info(
-    f'''Running compare_callable.py with the following arguments.
-{args}'''
+    "Running compare_callable.py with the following arguments.\n{args_}",
+    extra={"args_": args},
 )
 
-perfmon_dir = pathlib.Path(__file__).parent.parent.resolve(strict=True)
+perfmon_dir = pathlib.Path(__file__).parent.resolve(strict=True)
 config_dir = perfmon_dir / args.config
 
 

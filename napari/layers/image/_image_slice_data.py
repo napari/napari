@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, Optional, Tuple
 
 import numpy as np
 
-from ..base import Layer
+from napari.layers.base import Layer
 
 if TYPE_CHECKING:
-    from ...types import ArrayLike
+    from napari.types import ArrayLike
 
 
 class ImageSliceData:
@@ -33,7 +33,7 @@ class ImageSliceData:
         indices: Tuple[Optional[slice], ...],
         image: ArrayLike,
         thumbnail_source: ArrayLike,
-    ):
+    ) -> None:
         self.layer = layer
         self.indices = indices
         self.image = image

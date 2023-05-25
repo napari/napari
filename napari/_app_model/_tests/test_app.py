@@ -5,7 +5,7 @@ from napari.layers import Points
 def test_app():
     """just make sure our app model is registering menus and commands"""
     app = get_app()
-    assert app.name == 'napari'
+    assert app.name == 'test_app'
     assert list(app.menus)
     assert list(app.commands)
     # assert list(app.keybindings)  # don't have any yet

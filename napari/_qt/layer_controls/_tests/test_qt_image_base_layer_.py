@@ -10,6 +10,7 @@ from napari._qt.layer_controls.qt_image_controls_base import (
     QContrastLimitsPopup,
     QRangeSliderPopup,
     QtBaseImageControls,
+    QtLayerControls,
     range_to_decimals,
 )
 from napari.layers import Image, Surface
@@ -132,3 +133,28 @@ def test_tensorstore_clim_popup():
     ts = pytest.importorskip('tensorstore')
     layer = Image(ts.array(np.random.rand(20, 20)))
     QContrastLimitsPopup(layer)
+
+
+def test_blending_opacity_slider(qtbot):
+    """Tests whether opacity slider is disabled for minimum and opaque blending."""
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtLayerControls(layer)
+    qtbot.addWidget(qtctrl)
+    assert layer.blending == 'translucent'
+    # check that the opacity slider is present by default
+    assert qtctrl.opacitySlider.isEnabled()
+    # set minimum blending, the opacity slider should be disabled
+    layer.blending = 'minimum'
+    assert not qtctrl.opacitySlider.isEnabled()
+    # set the blending to 'additive' confirm the slider is enabled
+    layer.blending = 'additive'
+    assert layer.blending == 'additive'
+    assert qtctrl.opacitySlider.isEnabled()
+    # set opaque blending, the opacity slider should be disabled
+    layer.blending = 'opaque'
+    assert layer.blending == 'opaque'
+    assert not qtctrl.opacitySlider.isEnabled()
+    # set the blending back to 'translucent' confirm the slider is enabled
+    layer.blending = 'translucent'
+    assert layer.blending == 'translucent'
+    assert qtctrl.opacitySlider.isEnabled()

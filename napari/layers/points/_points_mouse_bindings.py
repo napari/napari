@@ -1,6 +1,8 @@
+from typing import Set, TypeVar
+
 import numpy as np
 
-from ._points_utils import _points_in_box_3d, points_in_box
+from napari.layers.points._points_utils import _points_in_box_3d, points_in_box
 
 
 def select(layer, event):
@@ -71,7 +73,7 @@ def select(layer, event):
                 layer._move(layer.selected_data, coordinates)
         else:
             # while dragging, update the drag box
-            coord = [coordinates[i] for i in layer._dims_displayed]
+            coord = [coordinates[i] for i in layer._slice_input.displayed]
             layer._is_selecting = True
             layer._drag_box = np.array([layer._drag_start, coord])
 
@@ -109,13 +111,19 @@ DRAG_DIST_THRESHOLD = 5
 
 def add(layer, event):
     """Add a new point at the clicked position."""
+    start_pos = event.pos
+    dist = 0
+    yield
 
-    if event.type == 'mouse_press':
-        start_pos = event.pos
-
-    while event.type != 'mouse_release':
+    while event.type == 'mouse_move':
+        dist = np.linalg.norm(start_pos - event.pos)
+        if dist < DRAG_DIST_THRESHOLD:
+            # prevent vispy from moving the canvas if we're below threshold
+            event.handled = True
         yield
 
+    # in some weird cases you might have press and release without move,
+    # so we just make 100% sure dist is correct
     dist = np.linalg.norm(start_pos - event.pos)
     if dist < DRAG_DIST_THRESHOLD:
         coordinates = layer.world_to_data(event.position)
@@ -127,27 +135,32 @@ def highlight(layer, event):
     layer._set_highlight()
 
 
-def _toggle_selected(selected_data, value):
-    """Add or remove value from the selected data set.
+_T = TypeVar("_T")
+
+
+def _toggle_selected(selection: Set[_T], value: _T) -> Set[_T]:
+    """Add or remove value from the selection set.
+
+    This function returns a copy of the existing selection.
 
     Parameters
     ----------
-    selected_data : set
+    selection: set
         Set of selected data points to be modified.
     value : int
         Index of point to add or remove from selected data set.
 
     Returns
     -------
-    set
-        Modified selected_data set.
+    selection: set
+        Updated selection.
     """
-    if value in selected_data:
-        selected_data.remove(value)
+    selection = set(selection)
+    if value in selection:
+        selection.remove(value)
     else:
-        selected_data.add(value)
-
-    return selected_data
+        selection.add(value)
+    return selection
 
 
 def _update_drag_vectors_from_event(layer, event):
@@ -168,18 +181,18 @@ def _update_drag_vectors_from_event(layer, event):
         # if in 3D, set the drag normal and up directions
         # get the indices of the displayed dimensions
         ndim_world = len(event.position)
-        dims_displayed_data = layer._world_to_data_dims_displayed(
-            dims_displayed=event.dims_displayed, ndim_world=ndim_world
+        layer_dims_displayed = layer._world_to_layer_dims(
+            world_dims=event.dims_displayed, ndim_world=ndim_world
         )
 
         # get the view direction in displayed data coordinates
         layer._drag_normal = layer._world_to_displayed_data_ray(
-            event.view_direction, dims_displayed_data
+            event.view_direction, layer_dims_displayed
         )
 
         # get the up direction of the camera in displayed data coordinates
         layer._drag_up = layer._world_to_displayed_data_ray(
-            event.up_direction, dims_displayed_data
+            event.up_direction, layer_dims_displayed
         )
 
     else:

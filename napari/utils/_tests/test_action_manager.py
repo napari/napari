@@ -3,7 +3,7 @@ This module test some of the behavior of action manager.
 """
 import pytest
 
-from ..action_manager import ActionManager
+from napari.utils.action_manager import ActionManager
 
 
 @pytest.fixture
@@ -41,7 +41,6 @@ def test_bind_multiple_action(action_manager):
 
 
 def test_bind_unbind_existing_action(action_manager):
-
     action_manager.register_action(
         'napari:test_action_1', lambda: None, 'this is a test action', None
     )

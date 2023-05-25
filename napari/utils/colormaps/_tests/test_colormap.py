@@ -101,3 +101,12 @@ def test_colormap_equality():
 def test_colormap_recreate():
     c_map = Colormap("black")
     Colormap(**c_map.dict())
+
+
+@pytest.mark.parametrize('ndim', range(1, 5))
+def test_mapped_shape(ndim):
+    np.random.seed(0)
+    img = np.random.random((5,) * ndim)
+    cmap = Colormap(colors=['red'])
+    mapped = cmap.map(img)
+    assert mapped.shape == img.shape + (4,)
