@@ -58,7 +58,7 @@ def update_layer(name, data, **kwargs):
             viewer.layers.pop(name)
         viewer.reset_view()
     elif name not in viewer.layers:
-        viewer.add_image(data, name=name, **kwargs)
+        viewer.add_image(data, name=name, interpolation2d='spline36', **kwargs)
         viewer.reset_view()
     else:
         viewer.layers[name].data = data
@@ -82,9 +82,9 @@ def combine_and_set_data(waves):
     else:
         mean = power_spectrum = phase = None
 
-    update_layer('sum', mean)
-    update_layer('power_spectrum', power_spectrum)
     update_layer('phase', phase, colormap=('red', 'black', 'blue'))
+    update_layer('power_spectrum', power_spectrum)
+    update_layer('mean', mean)
 
     for name, data in waves.items():
         update_layer(f'wave {name}', data)
