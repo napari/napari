@@ -4,15 +4,19 @@ from typing import Any, Optional
 
 from pydantic import Field
 
-from ..utils._base import _DEFAULT_CONFIG_PATH
-from ..utils.translations import trans
-from ._appearance import AppearanceSettings
-from ._application import ApplicationSettings
-from ._base import _NOT_SET, EventedConfigFileSettings, _remove_empty_dicts
-from ._experimental import ExperimentalSettings
-from ._fields import Version
-from ._plugins import PluginsSettings
-from ._shortcuts import ShortcutsSettings
+from napari.settings._appearance import AppearanceSettings
+from napari.settings._application import ApplicationSettings
+from napari.settings._base import (
+    _NOT_SET,
+    EventedConfigFileSettings,
+    _remove_empty_dicts,
+)
+from napari.settings._experimental import ExperimentalSettings
+from napari.settings._fields import Version
+from napari.settings._plugins import PluginsSettings
+from napari.settings._shortcuts import ShortcutsSettings
+from napari.utils._base import _DEFAULT_CONFIG_PATH
+from napari.utils.translations import trans
 
 _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 
@@ -42,21 +46,25 @@ class NapariSettings(EventedConfigFileSettings):
         default_factory=AppearanceSettings,
         title=trans._("Appearance"),
         description=trans._("User interface appearance settings."),
+        allow_mutation=False,
     )
     plugins: PluginsSettings = Field(
         default_factory=PluginsSettings,
         title=trans._("Plugins"),
         description=trans._("Plugins settings."),
+        allow_mutation=False,
     )
     shortcuts: ShortcutsSettings = Field(
         default_factory=ShortcutsSettings,
         title=trans._("Shortcuts"),
         description=trans._("Shortcut settings."),
+        allow_mutation=False,
     )
     experimental: ExperimentalSettings = Field(
         default_factory=ExperimentalSettings,
         title=trans._("Experimental"),
         description=trans._("Experimental settings."),
+        allow_mutation=False,
     )
 
     # private attributes and ClassVars will not appear in the schema
@@ -68,7 +76,6 @@ class NapariSettings(EventedConfigFileSettings):
         # all of these fields are evented models, so we don't want to break
         # connections by setting the top-level field itself
         # (you can still mutate attributes in the subfields)
-        allow_mutation = False
 
         @classmethod
         def _config_file_settings_source(cls, settings) -> dict:
@@ -101,7 +108,7 @@ class NapariSettings(EventedConfigFileSettings):
 
     def _maybe_migrate(self):
         if self.schema_version < CURRENT_SCHEMA_VERSION:
-            from ._migrations import do_migrations
+            from napari.settings._migrations import do_migrations
 
             do_migrations(self)
 

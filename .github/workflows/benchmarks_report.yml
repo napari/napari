@@ -1,7 +1,13 @@
+# Report benchmark results to the PR
 # We need a dual workflow to make sure the token has the needed permissions to post comments
 # See https://stackoverflow.com/a/71683208 for more details
 
-name: Report benchmarks
+# When this workflow is triggered, it pulls the latest version of this file on
+# the default branch. Changes to this file won't be reflected until after the
+# PR is merged.
+# https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_run
+
+name: "Benchmarks - Report"
 
 on:
   workflow_run:
@@ -38,9 +44,17 @@ jobs:
       - name: Unzip and prepare data
         run: |
           unzip asv_results.zip
-          sed -i 's/||BENCHMARK_CI_LOGS_URL||/${{ github.event.workflow_run.html_url }}/g' .asv/results/message.txt
-          if [[ -f .asv/results/pr_number ]]; then
-            echo "PR_NUMBER=$(cat .asv/results/pr_number)" >> $GITHUB_ENV
+          # combine the Qt and non-Qt messages
+          cat message_Qt.txt message_non-Qt.txt > message.txt
+
+      - name: Replace URLs
+        run: |
+          sed -i 's@||BENCHMARK_CI_LOGS_URL||@${{ github.event.workflow_run.html_url }}@g' message.txt
+
+      - name: Collect PR number if available
+        run: |
+          if [[ -f pr_number ]]; then
+            echo "PR_NUMBER=$(cat pr_number)" >> $GITHUB_ENV
           fi
 
       - name: "Comment on PR"
@@ -51,10 +65,10 @@ jobs:
           script: |
             let fs = require('fs');
             let issue_number = Number(process.env.PR_NUMBER);
-            let body = fs.readFileSync('.asv/results/message.txt');
+            let body = fs.readFileSync('message.txt', 'utf8');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue_number,
-              body: 'Thank you for the PR!'
+              body: body,
             });

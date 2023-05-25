@@ -6,11 +6,14 @@ import bisect
 from functools import lru_cache
 from typing import TYPE_CHECKING, Callable, Dict, List
 
-from ....utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ._pool import DoneCallback, LoaderPool
-    from ._request import ChunkRequest
+    from napari.components.experimental.chunk._pool import (
+        DoneCallback,
+        LoaderPool,
+    )
+    from napari.components.experimental.chunk._request import ChunkRequest
 
 
 class LoaderPoolGroup:
@@ -27,8 +30,13 @@ class LoaderPoolGroup:
         The mapping from priority to loader pool.
     """
 
-    def __init__(self, octree_config: dict, on_done: DoneCallback = None):
+    def __init__(
+        self, octree_config: dict, on_done: DoneCallback = None
+    ) -> None:
         self._pools = self._create_pools(octree_config, on_done)
+        self._get_loader_priority = lru_cache(maxsize=64)(
+            self._get_loader_priority_impl
+        )
 
     def _create_pools(
         self, octree_config: dict, on_done: DoneCallback
@@ -45,7 +53,7 @@ class LoaderPoolGroup:
         Dict[int, LoaderPool]
             The loader to use for each priority
         """
-        from ._pool import LoaderPool
+        from napari.components.experimental.chunk._pool import LoaderPool
 
         configs = _get_loader_configs(octree_config)
 
@@ -66,8 +74,7 @@ class LoaderPoolGroup:
         use_priority = self._get_loader_priority(priority)
         return self._pools[use_priority]
 
-    @lru_cache(maxsize=64)
-    def _get_loader_priority(self, priority: int) -> int:
+    def _get_loader_priority_impl(self, priority: int) -> int:
         """Return the loader priority to use.
 
         This method is pretty fast, but since the mapping from priority to

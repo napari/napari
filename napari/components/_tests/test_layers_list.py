@@ -146,7 +146,7 @@ def test_remove_selected():
     layers.remove_selected()
     assert list(layers) == [layer_a, layer_b]
 
-    # select and remove all layersay
+    # select and remove all layers
     layers.select_all()
     layers.remove_selected()
     assert len(layers) == 0
@@ -531,7 +531,7 @@ def test_name_uniqueness():
 def test_readd_layers():
     layers = LayerList()
     imgs = []
-    for i in range(5):
+    for _i in range(5):
         img = Image(np.random.rand(10, 10, 10))
         layers.append(img)
         imgs.append(img)

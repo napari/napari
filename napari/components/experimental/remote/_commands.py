@@ -3,8 +3,8 @@
 import json
 import logging
 
-from ....layers.image.experimental.octree_image import _OctreeImageBase
-from ...layerlist import LayerList
+from napari.components.layerlist import LayerList
+from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -36,7 +36,7 @@ class RemoteCommands:
     commands, command implementations should be spread out all over the system.
     """
 
-    def __init__(self, layers: LayerList):
+    def __init__(self, layers: LayerList) -> None:
         self.layers = layers
 
     def show_grid(self, show: bool) -> None:

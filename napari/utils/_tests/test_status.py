@@ -27,7 +27,7 @@ COMBINED_FORMATTED = f"[1e+06, {MISSING_FORMATTED}, {STRING_FORMATTED}]"
 
 
 @pytest.mark.parametrize(
-    'input, expected',
+    'input_data, expected',
     [
         [NUMERIC, NUMERIC_FORMATTED],
         [STRING, STRING_FORMATTED],
@@ -35,7 +35,7 @@ COMBINED_FORMATTED = f"[1e+06, {MISSING_FORMATTED}, {STRING_FORMATTED}]"
         [COMBINED, COMBINED_FORMATTED],
     ],
 )
-def test_status_format(input, expected):
+def test_status_format(input_data, expected):
     """test various formatting cases embodied in utils.status_messages.status_format"""
 
-    assert status_format(input) == expected
+    assert status_format(input_data) == expected

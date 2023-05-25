@@ -10,8 +10,8 @@ Display one points layer ontop of one image layer using the ``add_points`` and
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 print("click to add points; close the window when finished.")
 

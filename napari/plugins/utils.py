@@ -9,9 +9,8 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from npe2 import PluginManifest
 
+from napari.plugins import _npe2, plugin_manager
 from napari.settings import get_settings
-
-from . import _npe2, plugin_manager
 
 
 class MatchFlag(IntFlag):
@@ -85,9 +84,8 @@ def _get_preferred_readers(path: str) -> Iterable[Tuple[str, str]]:
         Filtered patterns and their corresponding readers.
     """
 
-    if osp.isdir(path):
-        if not path.endswith(os.sep):
-            path = path + os.sep
+    if osp.isdir(path) and not path.endswith(os.sep):
+        path = path + os.sep
 
     reader_settings = get_settings().plugins.extension2reader
     return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())

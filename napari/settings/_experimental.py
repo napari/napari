@@ -2,8 +2,8 @@ from typing import Union
 
 from pydantic import Field
 
-from ..utils.translations import trans
-from ._base import EventedSettings
+from napari.settings._base import EventedSettings
+from napari.utils.translations import trans
 
 
 # this class inherits from EventedSettings instead of EventedModel because
@@ -25,6 +25,15 @@ class ExperimentalSettings(EventedSettings):
             "Asynchronous loading of image data. \nThis setting partially loads data while viewing. \nYou must restart napari for changes of this setting to apply."
         ),
         env="napari_async",
+        requires_restart=True,
+    )
+    autoswap_buffers: bool = Field(
+        False,
+        title=trans._("Enable autoswapping rendering buffers."),
+        description=trans._(
+            "Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance."
+        ),
+        env="napari_autoswap",
         requires_restart=True,
     )
 

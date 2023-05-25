@@ -7,8 +7,9 @@ Add points on nD shapes in 3D using a mouse callback
 .. tags:: visualization-nD
 """
 
-import napari
 import numpy as np
+
+import napari
 
 # Create rectangles in 4D
 data = [

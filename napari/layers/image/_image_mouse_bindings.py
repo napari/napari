@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from ...utils.geometry import (
+from napari.utils.geometry import (
     clamp_point_to_bounding_box,
     point_in_bounding_box,
 )
 
 if TYPE_CHECKING:
-    from ...utils.events import Event
-    from .image import Image
+    from napari.layers.image.image import Image
+    from napari.utils.events import Event
 
 
 def move_plane_along_normal(layer: Image, event: Event):
@@ -20,7 +20,7 @@ def move_plane_along_normal(layer: Image, event: Event):
     if (
         'Shift' not in event.modifiers
         or layer.visible is False
-        or layer.interactive is False
+        or layer.mouse_pan is False
         or len(event.dims_displayed) < 3
     ):
         return
@@ -52,7 +52,7 @@ def move_plane_along_normal(layer: Image, event: Event):
 
     # Store original plane position and disable interactivity during plane drag
     original_plane_position = np.copy(layer.plane.position)
-    layer.interactive = False
+    layer.mouse_pan = False
 
     yield
 
@@ -79,7 +79,7 @@ def move_plane_along_normal(layer: Image, event: Event):
         yield
 
     # Re-enable volume_layer interactivity after the drag
-    layer.interactive = True
+    layer.mouse_pan = True
 
 
 def set_plane_position(layer: Image, event: Event):
@@ -87,7 +87,7 @@ def set_plane_position(layer: Image, event: Event):
     # early exit clauses
     if (
         layer.visible is False
-        or layer.interactive is False
+        or layer.mouse_pan is False
         or len(event.dims_displayed) < 3
     ):
         return

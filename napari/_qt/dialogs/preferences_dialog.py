@@ -2,7 +2,7 @@ import json
 from enum import EnumMeta
 from typing import TYPE_CHECKING, Tuple, cast
 
-from pydantic.main import BaseModel
+from pydantic.main import BaseModel, ModelMetaclass
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (
     QDialog,
@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
@@ -29,12 +29,13 @@ class PreferencesDialog(QDialog):
         "highlight_thickness": {"ui:widget": "highlight"},
         "shortcuts": {"ui:widget": "shortcuts"},
         "extension2reader": {"ui:widget": "extension2reader"},
+        "dask": {"ui:widget": "horizontal_object"},
     }
 
     resized = Signal(QSize)
 
-    def __init__(self, parent=None):
-        from ...settings import get_settings
+    def __init__(self, parent=None) -> None:
+        from napari.settings import get_settings
 
         super().__init__(parent)
         self.setWindowTitle(trans._("Preferences"))
@@ -86,7 +87,7 @@ class PreferencesDialog(QDialog):
     def _rebuild_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
         # FIXME: this dialog should not need to know about the plugin manager
-        from ...plugins import plugin_manager
+        from napari.plugins import plugin_manager
 
         self._starting_pm_order = plugin_manager.call_order()
         self._starting_values = self._settings.dict(exclude={'schema_version'})
@@ -111,7 +112,9 @@ class PreferencesDialog(QDialog):
         field : ModelField
             subfield for which to create a page.
         """
-        from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
+        from napari._vendor.qt_json_builder.qt_jsonschema_form import (
+            WidgetBuilder,
+        )
 
         schema, values = self._get_page_dict(field)
         name = field.field_info.title or field.name
@@ -138,7 +141,7 @@ class PreferencesDialog(QDialog):
             form_layout = form.widget.layout()
             for i in range(form_layout.count()):
                 wdg = form_layout.itemAt(i, form_layout.FieldRole).widget()
-                if getattr(wdg, '_name') == 'async_':
+                if wdg._name == 'async_':
                     wdg.opacity.setOpacity(0.3)
                     wdg.setDisabled(True)
                     break
@@ -150,7 +153,35 @@ class PreferencesDialog(QDialog):
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
         ftype = cast('BaseModel', field.type_)
-        schema = json.loads(ftype.schema_json())
+
+        # TODO make custom shortcuts dialog to properly capture new
+        #      functionality once we switch to app-model's keybinding system
+        #      then we can remove the below code used for autogeneration
+        if field.name == 'shortcuts':
+            # hardcode workaround because pydantic's schema generation
+            # does not allow you to specify custom JSON serialization
+            schema = {
+                "title": "ShortcutsSettings",
+                "type": "object",
+                "properties": {
+                    "shortcuts": {
+                        "title": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.title,
+                        "description": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.description,
+                        "type": "object",
+                    }
+                },
+            }
+        else:
+            schema = json.loads(ftype.schema_json())
+
+        if field.field_info.title:
+            schema["title"] = field.field_info.title
+        if field.field_info.description:
+            schema["description"] = field.field_info.description
 
         # find enums:
         for name, subfield in ftype.__fields__.items():
@@ -158,6 +189,12 @@ class PreferencesDialog(QDialog):
                 enums = [s.value for s in subfield.type_]  # type: ignore
                 schema["properties"][name]["enum"] = enums
                 schema["properties"][name]["type"] = "string"
+            if isinstance(subfield.type_, ModelMetaclass):
+                local_schema = json.loads(subfield.type_.schema_json())
+                schema["properties"][name]["type"] = "object"
+                schema["properties"][name]["properties"] = local_schema[
+                    "properties"
+                ]
 
         # Need to remove certain properties that will not be displayed on the GUI
         setting = getattr(self._settings, field.name)
@@ -204,7 +241,7 @@ class PreferencesDialog(QDialog):
 
         # FIXME: this dialog should not need to know about the plugin manager
         if self._starting_pm_order:
-            from ...plugins import plugin_manager
+            from napari.plugins import plugin_manager
 
             plugin_manager.set_call_order(self._starting_pm_order)
         super().reject()

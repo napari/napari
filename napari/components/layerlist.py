@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
-from ..layers import Layer
-from ..layers.image.image import _ImageBase
-from ..utils.events.containers import SelectableEventedList
-from ..utils.naming import inc_name_count
-from ..utils.translations import trans
+from napari.layers import Layer
+from napari.layers.image.image import _ImageBase
+from napari.utils.events.containers import SelectableEventedList
+from napari.utils.naming import inc_name_count
+from napari.utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
 
@@ -56,7 +56,7 @@ class LayerList(SelectableEventedList[Layer]):
 
     """
 
-    def __init__(self, data=()):
+    def __init__(self, data=()) -> None:
         super().__init__(
             data=data,
             basetype=Layer,
@@ -67,8 +67,8 @@ class LayerList(SelectableEventedList[Layer]):
         # Ideally, the app should be aware of the layerlist, but not vice versa.
         # This could probably be done by having the layerlist emit events that the app
         # connects to, then the `_ctx` object would live on the app, (not here)
-        from .._app_model.context import create_context
-        from .._app_model.context._layerlist_context import (
+        from napari._app_model.context import create_context
+        from napari._app_model.context._layerlist_context import (
             LayerListContextKeys,
         )
 
@@ -78,22 +78,9 @@ class LayerList(SelectableEventedList[Layer]):
 
             self.selection.events.changed.connect(self._ctx_keys.update)
 
-        # temporary: see note in _on_selection_event
-        self.selection.events.changed.connect(self._on_selection_changed)
-
-    def _on_selection_changed(self, event):
-        # This method is a temporary workaround to the fact that the Points
-        # layer needs to know when its selection state changes so that it can
-        # update the highlight state.  This (and the layer._on_selection
-        # method) can be removed once highlighting logic has been removed from
-        # the layer model.
-        for layer in event.added:
-            layer._on_selection(True)
-        for layer in event.removed:
-            layer._on_selection(False)
-
     def _process_delete_item(self, item: Layer):
-        item.events.set_data.disconnect(self._clean_cache)
+        super()._process_delete_item(item)
+        item.events.extent.disconnect(self._clean_cache)
         self._clean_cache()
 
     def _clean_cache(self):
@@ -162,7 +149,7 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
-        new_layer.events.set_data.connect(self._clean_cache)
+        new_layer.events.extent.connect(self._clean_cache)
         super().insert(index, new_layer)
 
     def toggle_selected_visibility(self):
@@ -184,7 +171,6 @@ class LayerList(SelectableEventedList[Layer]):
         return self._get_extent_world([layer.extent for layer in self])
 
     def _get_min_and_max(self, mins_list, maxes_list):
-
         # Reverse dimensions since it is the last dimensions that are
         # displayed.
         mins_list = [mins[::-1] for mins in mins_list]
@@ -296,7 +282,7 @@ class LayerList(SelectableEventedList[Layer]):
     @cached_property
     def extent(self) -> Extent:
         """Extent of layers in data and world coordinates."""
-        return self.get_extent([x for x in self])
+        return self.get_extent(list(self))
 
     @cached_property
     def _ranges(self) -> List[Tuple[float, float, float]]:
@@ -308,47 +294,47 @@ class LayerList(SelectableEventedList[Layer]):
         """
         if len(self) == 0:
             return [(0, 1, 1)] * self.ndim
-        else:
-            # Determine minimum step size across all layers
-            layer_extent_list = [layer.extent for layer in self]
-            scales = [extent.step for extent in layer_extent_list]
-            min_steps = self._step_size_from_scales(scales)
 
-            # Pixel-based layers need to be offset by 0.5 * min_steps to align
-            # Dims.range with pixel centers in world coordinates
-            pixel_offsets = [
-                0.5 * min_steps
-                if isinstance(layer, _ImageBase)
-                else [0] * len(min_steps)
-                for layer in self
-            ]
+        # Determine minimum step size across all layers
+        layer_extent_list = [layer.extent for layer in self]
+        scales = [extent.step for extent in layer_extent_list]
+        min_steps = self._step_size_from_scales(scales)
 
-            # Non-pixel layers need an offset of the range stop by min_steps since the upper
-            # limit of Dims.range is non-inclusive.
-            point_offsets = [
-                [0] * len(min_steps)
-                if isinstance(layer, _ImageBase)
-                else min_steps
-                for layer in self
-            ]
+        # Pixel-based layers need to be offset by 0.5 * min_steps to align
+        # Dims.range with pixel centers in world coordinates
+        pixel_offsets = [
+            0.5 * min_steps
+            if isinstance(layer, _ImageBase)
+            else [0] * len(min_steps)
+            for layer in self
+        ]
 
-            # Determine world coordinate extents similarly to
-            # `_get_extent_world`, but including offsets calculated above.
-            extrema = [extent.world for extent in layer_extent_list]
-            mins = [
-                e[0] + o1[: len(e[0])] for e, o1 in zip(extrema, pixel_offsets)
-            ]
-            maxs = [
-                e[1] + o1[: len(e[0])] + o2[: len(e[0])]
-                for e, o1, o2 in zip(extrema, pixel_offsets, point_offsets)
-            ]
-            min_v, max_v = self._get_min_and_max(mins, maxs)
+        # Non-pixel layers need an offset of the range stop by min_steps since the upper
+        # limit of Dims.range is non-inclusive.
+        point_offsets = [
+            [0] * len(min_steps)
+            if isinstance(layer, _ImageBase)
+            else min_steps
+            for layer in self
+        ]
 
-            # form range tuples, switching back to original dimension order
-            return [
-                (start, stop, step)
-                for start, stop, step in zip(min_v, max_v, min_steps)
-            ]
+        # Determine world coordinate extents similarly to
+        # `_get_extent_world`, but including offsets calculated above.
+        extrema = [extent.world for extent in layer_extent_list]
+        mins = [
+            e[0] + o1[: len(e[0])] for e, o1 in zip(extrema, pixel_offsets)
+        ]
+        maxs = [
+            e[1] + o1[: len(e[0])] + o2[: len(e[0])]
+            for e, o1, o2 in zip(extrema, pixel_offsets, point_offsets)
+        ]
+        min_v, max_v = self._get_min_and_max(mins, maxs)
+
+        # form range tuples, switching back to original dimension order
+        return [
+            (start, stop, step)
+            for start, stop, step in zip(min_v, max_v, min_steps)
+        ]
 
     @property
     def ndim(self) -> int:
@@ -371,7 +357,7 @@ class LayerList(SelectableEventedList[Layer]):
         # adding this method here allows us to emit an event when
         # layers in this group are linked/unlinked.  Which is necessary
         # for updating context
-        from ..layers.utils import _link_layers
+        from napari.layers.utils import _link_layers
 
         if layers is not None:
             layers = [self[x] if isinstance(x, str) else x for x in layers]  # type: ignore
@@ -433,7 +419,7 @@ class LayerList(SelectableEventedList[Layer]):
         If ``plugin`` is provided and multiple layers are targeted, then
         we call we call
         :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
-        that plugin, and if it doesn’t return a ``WriterFunction`` we error,
+        that plugin, and if it doesn`t return a ``WriterFunction`` we error,
         otherwise we call it and if that fails if it we error.
 
         Parameters
@@ -456,7 +442,7 @@ class LayerList(SelectableEventedList[Layer]):
         list of str
             File paths of any files that were written.
         """
-        from ..plugins.io import save_layers
+        from napari.plugins.io import save_layers
 
         layers = (
             [x for x in self if x in self.selection]

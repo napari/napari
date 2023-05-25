@@ -6,17 +6,22 @@ import logging
 import math
 from typing import TYPE_CHECKING, List, Optional
 
-from ....utils.perf import block_timer
-from ....utils.translations import trans
-from .octree_level import OctreeLevel, log_levels
-from .octree_tile_builder import create_downsampled_levels
-from .octree_util import OctreeMetadata
+from napari.layers.image.experimental.octree_level import (
+    OctreeLevel,
+    log_levels,
+)
+from napari.layers.image.experimental.octree_tile_builder import (
+    create_downsampled_levels,
+)
+from napari.layers.image.experimental.octree_util import OctreeMetadata
+from napari.utils.perf import block_timer
+from napari.utils.translations import trans
 
 LOGGER = logging.getLogger("napari.octree")
 
 if TYPE_CHECKING:
-    from ....components.experimental.chunk._request import OctreeLocation
-    from .octree_chunk import OctreeChunk
+    from napari.components.experimental.chunk._request import OctreeLocation
+    from napari.layers.image.experimental.octree_chunk import OctreeChunk
 
 
 class Octree:
@@ -54,7 +59,7 @@ class Octree:
         The base shape and other information.
     """
 
-    def __init__(self, slice_id: int, data, meta: OctreeMetadata):
+    def __init__(self, slice_id: int, data, meta: OctreeMetadata) -> None:
         self.slice_id = slice_id
         self.data = data
         self.meta = meta
@@ -180,8 +185,8 @@ class Octree:
         # If no parent exists yet then returns None
         if len(ancestors) == 0:
             return None
-        else:
-            return ancestors[0]
+
+        return ancestors[0]
 
     def get_ancestors(
         self,
@@ -227,7 +232,6 @@ class Octree:
 
         # Search up one level at a time.
         while level_index < stop_level:
-
             # Get the next level up. Coords are halved each level.
             level_index += 1
             row, col = int(row / 2), int(col / 2)

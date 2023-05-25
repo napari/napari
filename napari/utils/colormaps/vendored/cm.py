@@ -1,3 +1,4 @@
+# closes commit to this file is matplotlib's e9cda7fbfb
 """
 Builtin colormaps, colormap handling utilities, and the `ScalarMappable` mixin.
 

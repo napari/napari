@@ -14,15 +14,15 @@ ViewerModel
     layer-related controls.
 """
 
-from .camera import Camera
-from .dims import Dims
-from .layerlist import LayerList
+from napari.components.camera import Camera
+from napari.components.dims import Dims
+from napari.components.layerlist import LayerList
 
 # Note that importing _viewer_key_bindings is needed as the Viewer gets
 # decorated with keybindings during that process, but it is not directly needed
 # by our users and so is deleted below
-from . import _viewer_key_bindings  # isort:skip
-from .viewer_model import ViewerModel  # isort:skip
+from napari.components import _viewer_key_bindings  # isort:skip
+from napari.components.viewer_model import ViewerModel  # isort:skip
 
 del _viewer_key_bindings
 

@@ -8,11 +8,11 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 
-from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
-from ...utils.events import Event
-from ...utils.translations import trans
-from ..base import Layer
-from ._track_utils import TrackManager
+from napari.layers.base import Layer
+from napari.layers.tracks._track_utils import TrackManager
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
+from napari.utils.events import Event
+from napari.utils.translations import trans
 
 
 class Tracks(Layer):
@@ -119,14 +119,10 @@ class Tracks(Layer):
         colormaps_dict=None,
         cache=True,
         experimental_clipping_planes=None,
-    ):
-
+    ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
-        if data is None:
-            data = np.empty((0, 4))
-        else:
-            # convert data to a numpy array if it is not already one
-            data = np.asarray(data)
+        # otherwise convert the data to an np.ndarray
+        data = np.empty((0, 4)) if data is None else np.asarray(data)
 
         # set the track data dimensions (remove ID from data)
         ndim = data.shape[1] - 1
@@ -195,7 +191,7 @@ class Tracks(Layer):
         self.color_by = color_by
         self.colormap = colormap
 
-        self._update_dims()
+        self.refresh()
 
         # reset the display before returning
         self._current_displayed_dims = None
@@ -249,9 +245,10 @@ class Tracks(Layer):
         """Sets the view given the indices to slice with."""
 
         # if the displayed dims have changed, update the shader data
-        if self._dims_displayed != self._current_displayed_dims:
+        dims_displayed = self._slice_input.displayed
+        if dims_displayed != self._current_displayed_dims:
             # store the new dims
-            self._current_displayed_dims = self._dims_displayed
+            self._current_displayed_dims = dims_displayed
             # fire the events to update the shaders
             self.events.rebuild_tracks()
             self.events.rebuild_graph()
@@ -282,9 +279,9 @@ class Tracks(Layer):
 
         if self._view_data is not None and self.track_colors is not None:
             de = self._extent_data
-            min_vals = [de[0, i] for i in self._dims_displayed]
+            min_vals = [de[0, i] for i in self._slice_input.displayed]
             shape = np.ceil(
-                [de[1, i] - de[0, i] + 1 for i in self._dims_displayed]
+                [de[1, i] - de[0, i] + 1 for i in self._slice_input.displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -332,16 +329,16 @@ class Tracks(Layer):
     def _pad_display_data(self, vertices):
         """pad display data when moving between 2d and 3d"""
         if vertices is None:
-            return
+            return None
 
-        data = vertices[:, self._dims_displayed]
+        data = vertices[:, self._slice_input.displayed]
         # if we're only displaying two dimensions, then pad the display dim
         # with zeros
-        if self._ndisplay == 2:
+        if self._slice_input.ndisplay == 2:
             data = np.pad(data, ((0, 0), (0, 1)), 'constant')
             return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
-        else:
-            return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
+
+        return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
 
     @property
     def current_time(self):
@@ -360,7 +357,7 @@ class Tracks(Layer):
     def use_fade(self) -> bool:
         """toggle whether we fade the tail of the track, depending on whether
         the time dimension is displayed"""
-        return 0 in self._dims_not_displayed
+        return 0 in self._slice_input.not_displayed
 
     @property
     def data(self) -> np.ndarray:
@@ -387,7 +384,7 @@ class Tracks(Layer):
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def features(self):
@@ -413,8 +410,8 @@ class Tracks(Layer):
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._manager.features = features
-        self.events.properties()
         self._check_color_by_in_features()
+        self.events.properties()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
 def convert_image_to_coordinates(vectors):
