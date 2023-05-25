@@ -32,9 +32,7 @@ def _user_agent() -> str:
     from napari import __version__
     from napari.utils import misc
 
-    if misc.running_as_bundled_app():
-        env = 'briefcase'
-    elif misc.running_as_constructor_app():
+    if misc.running_as_constructor_app():
         env = 'constructor'
     elif misc.in_jupyter():
         env = 'jupyter'
