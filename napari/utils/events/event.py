@@ -272,7 +272,7 @@ class EventEmitter:
     source : object
         The object that the generated events apply to. All emitted Events will
         have their .source property set to this value.
-    type : str or None
+    type_name: str or None
         String indicating the event type (e.g. mouse_press, key_release)
     event_class : subclass of Event
         The class of events that this emitter will generate.
