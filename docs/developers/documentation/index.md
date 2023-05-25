@@ -290,3 +290,75 @@ You can also reach out to us on [zulip](https://napari.zulipchat.com/#narrow/str
 
 Not sure where to place your document or update `_toc.yml`? Make a best guess and open the pull request - the napari team will
 help you edit your document and find the right spot!
+
+## Building the documentation on Windows
+
+The documentation build requires some Linux specific commands, so some extra steps are required to build the documentation on Windows. There are multiple tools for this, but [Git Bash](https://gitforwindows.org/) or [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) are recommended.
+
+### Git Bash
+
+First, you will need to install `make` on Windows:
+
+1. Install Chocolatey (a Windows package manager) by following the instructions [here](https://chocolatey.org/install).
+2. Install `make` with `choco install make`.
+
+Alternatively, you can download the latest `make` binary without guile from [ezwinports](https://sourceforge.net/projects/ezwinports/) and [add it to your PATH](https://learn.microsoft.com/en-us/previous-versions/office/developer/sharepoint-2010/ee537574(v=office.14)#to-add-a-path-to-the-path-environment-variable).
+
+Then install Git Bash and build the documentation:
+
+1. Install [Git Bash](https://gitforwindows.org/) (you should already have this if you use `git` on Windows).
+2. Activate your virtual environment in Git Bash.
+    - Conda environment: To have your conda environment available in Git Bash, launch Git Bash, then run `conda init bash` from anaconda prompt and restart Git Bash. The conda environment can then be activated from Git Bash with `conda activate <env_name>`.
+    - Virtualenv: To have your virtualenv available in Git Bash, launch Git Bash, then run `source <path_to_virtualenv>/Scripts/activate`.
+3. From Git Bash, `cd` to the napari docs repository and run `make docs` or other `make` commands to build the documentation.
+
+```{tip}
+If you use Git Bash a lot, you may want to set conda to not initialize on bash by default to speed up the launch process. This can be done with `conda config --set auto_activate_base false`. You can then activate conda in Git Bash with `conda activate base`.
+```
+
+````{note}
+If you are using an IDE, it is likely that it will not use Git Bash by default. You may need to configure your IDE to use Git Bash as the default terminal for the napari docs. For example, in VS Code, you can set the default terminal to Git Bash for the napari docs repository by adding the following to your workspace settings:
+
+```json
+"terminal.integrated.defaultProfile.windows": "Git Bash"
+```
+
+````
+
+### Windows Subsystem for Linux (WSL)
+
+Alternatively, you can install WSL, which will allow you to run a Linux environment directly on Windows (without any virtual machines, etc.). You need to have Windows 10 version 2004 and higher or Windows 11. Then you can run scripts and command line utilities, as well as python and napari from for example Ubuntu on your Windows machine.
+
+1. Install the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) and [choose a linux distribution](https://learn.microsoft.com/en-us/windows/wsl/install#change-the-default-linux-distribution-installed).
+We will use Ubuntu for this guide since it is the default WSL distribution, easy to install, and works well with [WSLg](https://github.com/microsoft/wslg). The default method to perform this installation is to run `wsl --install -d Ubuntu` from command prompt as an administrator but you can refer to the [guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10) for other installation methods.
+2. Restart your computer. On restart, you will be prompted to create a user account for WSL. This account is separate from your Windows account, but you can use the same username and password if you wish.
+3. [Open up the Ubuntu distribution](https://learn.microsoft.com/en-us/windows/wsl/install#ways-to-run-multiple-linux-distributions-with-wsl) via the `Ubuntu` command and run `sudo apt update && sudo apt upgrade` to update the distribution.
+4. Install a napari development environment in Ubuntu following the [contributor guide](dev-installation) and activate the virtual environment that napari was installed into.
+5. Install some common QT packages and OpenGL `sudo apt install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0 mesa-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev '^libxcb.*-dev' libx11-xcb-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev`.
+6. You can test that all of this OpenGL setup is working by running `glxgears` from the Ubuntu terminal. You should see a window with some gears spinning.
+7. `sudo apt install fontconfig`.
+8. `pip install pyqt5-tools`.
+9. Fork the napari docs repository and clone it to the same parent folder as the napari repository (see [](#prerequisites)). Then navigate to the napari docs folder via `cd napari-docs`.
+10. Install `make` with `sudo apt install make`.
+11. Run `make docs` or other `make` commands to build the documentation.
+
+````{admonition} Route graphical output to Windows
+:class: tip
+
+By default, the graphical interface to `glxgears` or `napari` from WSL should be visible on Windows via `WSLg` without any configuration.
+However, if you are getting errors running `glxgears` or can't see the interface to graphical applications, then you may need to route the graphical output to Windows. To do this:
+
+1. Install an Xserver for Windows, [Vcxsrv](https://sourceforge.net/projects/vcxsrv/). When launching it, choose the options as default, except tick "disable access control".
+2. Export environment variables (you will need to do this for every new shell you open, unless you add them to your `.bashrc`):
+
+    ```bash
+    mkdir ~/temp
+
+    export DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0
+    export LIBGL_ALWAYS_INDIRECT=0
+    export XDG_RUNTIME_DIR=~/temp
+    export RUNLEVEL=3
+    ```
+3. Run `glxgears` from the Ubuntu terminal. You should see a window with some gears spinning.
+
+````
