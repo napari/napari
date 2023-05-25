@@ -47,7 +47,7 @@ def test_tiled_screenshot(qtbot, monkeypatch, make_napari_viewer, dtype):
         data, multiscale=True, contrast_limits=[0, 200], colormap='blue'
     )
 
-    visual = viewer.window._qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
 
     # Check visual is a tiled image visual
     assert isinstance(visual, VispyTiledImageLayer)
@@ -88,7 +88,7 @@ def test_tiled_rgb(qtbot, monkeypatch, make_napari_viewer):
     data = [128 * np.ones(s, np.uint8) for s in shapes]
     layer = viewer.add_image(data, multiscale=True, rgb=True)
 
-    visual = viewer.window._qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
 
     # Check visual is a tiled image visual
     assert isinstance(visual, VispyTiledImageLayer)
@@ -134,7 +134,7 @@ def test_tiled_changing_contrast_limits(
         data, multiscale=True, contrast_limits=[0, 1000], colormap='blue'
     )
 
-    visual = viewer.window._qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
 
     # Check visual is a tiled image visual
     assert isinstance(visual, VispyTiledImageLayer)
@@ -186,7 +186,7 @@ def test_tiled_single_scale(qtbot, monkeypatch, make_napari_viewer):
     # zoom in so as not to load all the data
     viewer.camera.zoom = 0.5
 
-    visual = viewer.window._qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
 
     # Check visual is a tiled image visual
     assert isinstance(visual, VispyTiledImageLayer)
@@ -229,7 +229,7 @@ def test_tiled_labels(qtbot, monkeypatch, make_napari_viewer):
     data = [np.ones(s, np.uint8) for s in shapes]
     layer = viewer.add_labels(data, multiscale=True, opacity=1)
 
-    visual = viewer.window._qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
 
     # Check visual is a tiled image visual
     assert isinstance(visual, VispyTiledImageLayer)

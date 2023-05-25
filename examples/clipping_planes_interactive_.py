@@ -120,7 +120,7 @@ def shift_plane_along_normal(viewer, event):
 
     # Get transform which maps from data (vispy) to canvas
     # note that we're using a private attribute here, which may not be present in future napari versions
-    visual2canvas = viewer.window._qt_viewer.layer_to_visual[volume_layer].node.get_transform(
+    visual2canvas = viewer.window._qt_viewer.canvas.layer_to_visual[volume_layer].node.get_transform(
         map_from="visual", map_to="canvas"
     )
 

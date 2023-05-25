@@ -18,6 +18,7 @@ from napari._tests.utils import check_layer_world_data_extent
 from napari.components import ViewerModel
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
+from napari.layers.labels._labels_utils import get_contours
 from napari.utils import Colormap
 from napari.utils.colormaps import label_colormap, low_discrepancy_image
 
@@ -30,7 +31,7 @@ def test_random_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -42,7 +43,7 @@ def test_all_zeros_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -54,7 +55,7 @@ def test_3D_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -103,7 +104,9 @@ def test_changing_labels():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape_b]
+    )
     assert layer._data_view.shape == shape_b[-2:]
 
     data_c = np.zeros(shape_c, dtype=bool)
@@ -127,7 +130,9 @@ def test_changing_labels_dims():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape_b]
+    )
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -627,6 +632,9 @@ def test_contour(input_data, expected_data_view):
         layer._raw_to_displayed(input_data), layer._data_view
     )
 
+    with pytest.raises(ValueError, match='contour value must be >= 0'):
+        layer.contour = -1
+
 
 def test_contour_large_new_labels():
     """Check that new labels larger than the lookup table work in contour mode.
@@ -645,6 +653,37 @@ def test_contour_large_new_labels():
     labels_layer.contour = 1
     # This used to fail with IndexError
     viewer.dims.set_point(axis=0, value=4)
+
+
+def test_contour_local_updates():
+    """Checks if contours are rendered correctly with local updates"""
+    data = np.zeros((7, 7), dtype=np.int32)
+
+    layer = Labels(data)
+    layer.contour = 1
+    assert np.allclose(
+        layer._raw_to_displayed(layer._slice.image.raw),
+        np.zeros((7, 7), dtype=np.float32),
+    )
+
+    painting_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=np.int32,
+    )
+
+    layer.data_setitem(np.nonzero(painting_mask), 1, refresh=True)
+
+    assert np.alltrue(
+        (layer._slice.image.view > 0) == get_contours(painting_mask, 1, 0)
+    )
 
 
 def test_selecting_label():
@@ -880,8 +919,8 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.randint(20, size=(shape))
     layer = Labels(data)
-    extent = np.array(((0,) * 3, shape))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
+    extent = np.array(((0,) * 3, [s - 1 for s in shape]))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
 @pytest.mark.parametrize(
@@ -1403,6 +1442,57 @@ def test_large_labels_direct_color():
 
     assert layer.color_mode == 'direct'
     np.testing.assert_allclose(layer.get_color(2**20), [1.0, 0.0, 1.0, 1.0])
+
+
+def test_invalidate_cache_when_change_color_mode():
+    """Checks if the cache is invalidated when color mode is changed."""
+    data = np.zeros((4, 10), dtype=np.int32)
+    data[1, :] = np.arange(0, 10)
+
+    layer = Labels(data)
+    layer.selected_label = 0
+    gt_auto = layer._raw_to_displayed(layer._slice.image.raw)
+    assert gt_auto.dtype == np.float32
+
+    layer.color_mode = 'direct'
+    layer._cached_labels = None
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+
+    layer.color_mode = 'auto'
+    # If the cache is not invalidated, it returns colors for
+    # the direct color mode instead of the color for the auto mode
+    assert np.allclose(
+        layer._raw_to_displayed(layer._slice.image.raw), gt_auto
+    )
+
+
+def test_color_mapping_when_color_is_changed():
+    """Checks if the color mapping is computed correctly when the color palette is changed."""
+
+    data = np.zeros((4, 5), dtype=np.int32)
+    data[1, :] = np.arange(0, 5)
+    layer = Labels(data, color={1: 'green', 2: 'red', 3: 'white'})
+    gt_direct_3colors = layer._raw_to_displayed(layer._slice.image.raw)
+
+    layer = Labels(data, color={1: 'green', 2: 'red'})
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    layer.color = {1: 'green', 2: 'red', 3: 'white'}
+
+    assert np.allclose(
+        layer._raw_to_displayed(layer._slice.image.raw), gt_direct_3colors
+    )
+
+
+def test_color_mapping_when_seed_is_changed():
+    """Checks if the color mapping is updated when the color palette seed is changed."""
+    np.random.seed(0)
+    layer = Labels(np.random.randint(50, size=(10, 10)))
+    mapped_colors1 = layer._raw_to_displayed(layer._slice.image.raw)
+
+    layer.new_colormap()
+    mapped_colors2 = layer._raw_to_displayed(layer._slice.image.raw)
+
+    assert not np.allclose(mapped_colors1, mapped_colors2)
 
 
 def test_negative_label():
