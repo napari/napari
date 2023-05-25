@@ -23,7 +23,7 @@ default_shortcuts = {
     'napari:increase_label_id': ['='],
     'napari:decrease_brush_size': ['['],
     'napari:increase_brush_size': [']'],
-    'napari:toggle_preserve_labels': ['P'],
+    'napari:toggle_preserve_labels': ['B'],
     'napari:activate_points_add_mode': ['2', 'P'],
     'napari:activate_points_select_mode': ['3', 'S'],
     'napari:activate_points_pan_zoom_mode': ['4', 'Z'],
