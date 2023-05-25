@@ -57,7 +57,7 @@ def test_changing_colormap_updates_colorbox(make_labels_controls):
 
     np.testing.assert_equal(
         color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255 * layer.opacity),
+        np.round(np.asarray(layer._selected_color) * 255),
     )
 
     layer.colormap = colormap_utils.label_colormap(num_colors=5)
@@ -67,7 +67,7 @@ def test_changing_colormap_updates_colorbox(make_labels_controls):
 
     np.testing.assert_equal(
         color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255 * layer.opacity),
+        np.round(np.asarray(layer._selected_color) * 255),
     )
 
 
