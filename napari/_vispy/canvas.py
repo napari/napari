@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import time
 from typing import TYPE_CHECKING
-
 from weakref import WeakSet
 
 import numpy as np
@@ -633,7 +632,6 @@ class FramerateMonitor:
         stale_threshold: float = 0.6,
         debounce_threshold: int = 2,
     ):
-
         self.events = EmitterGroup(source=self, fps=Event)
         self._fps_window = fps_window
         self._debounce_counter = 0

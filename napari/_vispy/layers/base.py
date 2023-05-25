@@ -241,7 +241,6 @@ class VispyBaseLayer(ABC):
         quality_change: RenderQualityChange
             how much to increase or decrease the rendering quality of the layer.
         """
-        pass
 
     def reset(self):
         self._on_visible_change()
