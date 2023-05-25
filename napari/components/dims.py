@@ -34,7 +34,7 @@ class Dims(EventedModel):
         Number of displayed dimensions.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
-        coordinates space.
+        coordinates space. Lower and upper bounds are inclusive.
     point : tuple of floats
         Dims position in world coordinates for each dimension.
     margin_left : tuple of floats
@@ -56,7 +56,7 @@ class Dims(EventedModel):
         Number of displayed dimensions.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
-        coordinates space.
+        coordinates space. Lower and upper bounds are inclusive.
     point : tuple of floats
         Dims position in world coordinates for each dimension.
     margin_left : tuple of floats
@@ -224,14 +224,16 @@ class Dims(EventedModel):
     def nsteps(self) -> Tuple[float, ...]:
         return tuple(
             # "or 1" ensures degenerate dimension works
-            int((rng.stop - rng.start) / (rng.step or 1))
+            int((rng.stop - rng.start) / (rng.step or 1)) + 1
             for rng in self.range
         )
 
     @nsteps.setter
     def nsteps(self, value):
         self.range = tuple(
-            RangeTuple(rng.start, rng.stop, (rng.stop - rng.start) / nsteps)
+            RangeTuple(
+                rng.start, rng.stop, (rng.stop - rng.start) / (nsteps - 1)
+            )
             for rng, nsteps in zip(self.range, value)
         )
 
