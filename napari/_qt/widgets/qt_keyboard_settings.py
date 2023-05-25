@@ -214,16 +214,19 @@ class ShortcutEditor(QWidget):
                 self._shortcut_col2, ShortcutDelegate(self._table)
             )
             self._table.setHorizontalHeaderLabels(header_strs)
+            self._table.horizontalHeader().setDefaultAlignment(
+                Qt.AlignmentFlag.AlignLeft
+            )
             self._table.verticalHeader().setVisible(False)
 
             # Hide the column with action names.  These are kept here for reference when needed.
             self._table.setColumnHidden(self._action_col, True)
 
             # Column set up.
-            self._table.setColumnWidth(self._action_name_col, 420)
-            self._table.setColumnWidth(self._shortcut_col, 150)
-            self._table.setColumnWidth(self._shortcut_col2, 120)
-            self._table.setColumnWidth(self._icon_col, 50)
+            self._table.setColumnWidth(self._action_name_col, 370)
+            self._table.setColumnWidth(self._shortcut_col, 190)
+            self._table.setColumnWidth(self._shortcut_col2, 145)
+            self._table.setColumnWidth(self._icon_col, 35)
             self._table.setWordWrap(True)
 
             # Add some padding to rows
@@ -237,9 +240,6 @@ class ShortcutEditor(QWidget):
                 item.setFlags(Qt.ItemFlag.ItemIsEnabled)
                 self._table.setItem(row, self._action_name_col, item)
                 # Ensure long descriptions can be wrapped in cells
-                item.textAlignment = (
-                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-                )
                 self._table.resizeRowToContents(row)
 
                 # Create empty item in order to make sure this column is not
@@ -253,7 +253,6 @@ class ShortcutEditor(QWidget):
                     Shortcut(list(shortcuts)[0]).platform if shortcuts else ""
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
-                item_shortcut.textAlignment = Qt.AlignCenter | Qt.AlignVCenter
 
                 item_shortcut2 = QTableWidgetItem(
                     Shortcut(list(shortcuts)[1]).platform
@@ -261,7 +260,6 @@ class ShortcutEditor(QWidget):
                     else ""
                 )
                 self._table.setItem(row, self._shortcut_col2, item_shortcut2)
-                item_shortcut2.textAlignment = Qt.AlignCenter | Qt.AlignVCenter
 
                 # action_name is stored in the table to use later, but is not shown on dialog.
                 item_action = QTableWidgetItem(action_name)
