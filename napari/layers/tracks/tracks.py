@@ -173,6 +173,11 @@ class Tracks(Layer):
         self._max_length = 300.0
         self._max_width = 20
 
+        # set private properties to infer types
+        self._tail_length = tail_length
+        self._tail_width = tail_width
+        self._head_length = head_length
+
         # track display properties
         self.tail_width = tail_width
         self.tail_length = tail_length
