@@ -27,11 +27,6 @@ x = np.arange(IMAGE_SIZE) - IMAGE_SIZE / 2
 X, Y = np.meshgrid(x, x)
 
 
-# set up viewer with grid-mode enabled
-viewer = napari.Viewer()
-viewer.grid.enabled = True
-
-
 def wave_2d(wavelength, angle, phase_shift, speed):
     """
     Generate a 2D sine wave based on angle and wavelength.
@@ -44,6 +39,11 @@ def wave_2d(wavelength, angle, phase_shift, speed):
     phase_shift = np.deg2rad(phase_shift)
     wave = 2 * np.pi * (X * np.cos(angle) + Y * np.sin(angle)) / wavelength
     return np.sin(wave + phase_shift + (time() * speed))
+
+
+# set up viewer with grid-mode enabled
+viewer = napari.Viewer()
+viewer.grid.enabled = True
 
 
 def update_layer(name, data, **kwargs):
