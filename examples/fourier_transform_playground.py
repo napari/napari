@@ -56,8 +56,10 @@ def update_layer(name, data, **kwargs):
     if data is None:
         if name in viewer.layers:
             viewer.layers.pop(name)
+        viewer.reset_view()
     elif name not in viewer.layers:
         viewer.add_image(data, name=name, **kwargs)
+        viewer.reset_view()
     else:
         viewer.layers[name].data = data
 
@@ -139,7 +141,10 @@ def moving_wave(
         thread.send((wave_id, wavelength, angle, phase_shift, speed))
 
 
-# add the widget to the window
-viewer.window.add_dock_widget(moving_wave())
+wdg = moving_wave()
+
+# add the widget to the window and run it once
+viewer.window.add_dock_widget(wdg, area='bottom')
+wdg()
 
 napari.run()
