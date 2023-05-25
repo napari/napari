@@ -211,26 +211,28 @@ highlights = OrderedDict()
 
 highlights['Highlights'] = {}
 highlights['New Features'] = {}
-highlights['Improvements'] = {}
+highlights['Enhancements'] = {}
 highlights["Performance"] = {}
 highlights['Bug Fixes'] = {}
 highlights['API Changes'] = {}
 highlights['Deprecations'] = {}
-highlights['Build Tools'] = {}
+highlights['Maintenance'] = {}
+highlights['Dependencies'] = {}
 highlights['Documentation'] = {}
 other_pull_requests = {}
 
 label_to_section = {
-    "bug": "Bug Fixes",
     "bugfix": "Bug Fixes",
     "feature": "New Features",
-    "api": "API Changes",
-    "highlight": "Highlights",
     "performance": "Performance",
-    "enhancement": "Improvements",
-    "deprecation": "Deprecations",
-    "dependencies": "Build Tools",
+    "enhancement": "Enhancements",
+    "maintenance": "Maintenance",
     "documentation": "Documentation",
+    # things in here could be duplicates of the above
+    "highlight": "Highlights",
+    "api": "API Changes",
+    "dependencies": "Dependencies",
+    "deprecation": "Deprecations",
 }
 
 pr_count = 0
