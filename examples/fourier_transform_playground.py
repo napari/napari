@@ -97,8 +97,8 @@ def update_viewer():
     while True:
         sleep(1 / FPS)
         # see https://napari.org/stable/guides/threading.html#full-two-way-communication
-        # this receives new_params from thread.send() and yields waves for the `yielded` callback
-        new_params = yield waves
+        # this receives new_params from thread.send() and yields {} for the `yielded` callback
+        new_params = yield {}
         if new_params is not None:
             # note that these come from thread.send() in moving_wave()!
             wave_id, *args = new_params
@@ -141,3 +141,5 @@ def moving_wave(
 
 # add the widget to the window
 viewer.window.add_dock_widget(moving_wave())
+
+napari.run()
