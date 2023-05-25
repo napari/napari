@@ -718,6 +718,7 @@ class Labels(_ImageBase):
         self._show_selected_label = filter_val
         self.refresh()
 
+    # Only overriding to change the docstring
     @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
@@ -745,6 +746,7 @@ class Labels(_ImageBase):
         """
         return Layer.mode.fget(self)
 
+    # Only overriding to change the docstring of the setter above
     @mode.setter
     def mode(self, mode):
         Layer.mode.fset(self, mode)
