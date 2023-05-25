@@ -586,10 +586,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(self.layers) == 1:
             # set dims slider to the middle of all dimensions
             self.reset_view()
-            self.dims.point = [
-                low + ((high - low) / 2)
-                for low, high, _ in self.layers._ranges
-            ]
+            self.dims._go_to_center_step()
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):
