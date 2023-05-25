@@ -343,7 +343,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return f'napari.Viewer: {self.title}'
 
     @property
-    def _sliced_extent_world(self) -> np.ndarray:
+    def _sliced_extent_world_augmented(self) -> np.ndarray:
         """Extent of layers in world coordinates after slicing.
 
         D is either 2 or 3 depending on if the displayed data is 2D or 3D.
@@ -352,20 +352,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         -------
         sliced_extent_world : array, shape (2, D)
         """
-        if len(self.layers) == 0 and self.dims.ndim != 2:
-            # If no data is present and dims model has not been reset to 0
-            # than someone has passed more than two axis labels which are
-            # being saved and so default values are used.
+        # if not layers are present, assume image-like with dimensions of size 512
+        if len(self.layers) == 0:
             return np.vstack(
-                [np.zeros(self.dims.ndim), np.repeat(512, self.dims.ndim)]
+                [np.full(self.dims.ndim, -0.5), np.full(self.dims.ndim, 511.5)]
             )
-
-        return self.layers.extent.world[:, self.dims.displayed]
+        return self.layers._extent_world_augmented[:, self.dims.displayed]
 
     def reset_view(self):
         """Reset the camera view."""
 
-        extent = self._sliced_extent_world
+        extent = self._sliced_extent_world_augmented
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         grid_size = list(self.grid.actual_shape(len(self.layers)))
@@ -402,9 +399,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         extent = layers_extent.world
         scale = layers_extent.step
         scene_size = extent[1] - extent[0]
-        corner = extent[0] + 0.5 * layers_extent.step
+        corner = extent[0]
         shape = [
-            np.round(s / sc).astype('int') if s > 0 else 1
+            np.round(s / sc).astype('int') + 1
             for s, sc in zip(scene_size, scale)
         ]
         empty_labels = np.zeros(shape, dtype=int)
@@ -519,7 +516,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
-        extent = self._sliced_extent_world
+        extent = self._sliced_extent_world_augmented
         n_layers = len(self.layers)
         for i, layer in enumerate(self.layers):
             i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
