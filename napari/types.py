@@ -33,7 +33,7 @@ try:
     from napari_graph import BaseGraph
 
 except ModuleNotFoundError:
-    BaseGraph = None
+    BaseGraph = Any
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
