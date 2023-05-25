@@ -1,18 +1,15 @@
 import itertools
 import warnings
-from collections import namedtuple
 from functools import cached_property
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
 from napari.layers import Layer
-from napari.layers.image.image import _ImageBase
+from napari.layers.utils.layer_utils import Extent
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
 from napari.utils.translations import trans
-
-Extent = namedtuple('Extent', 'data world step')
 
 if TYPE_CHECKING:
     from npe2.manifest.io import WriterContribution
@@ -81,14 +78,15 @@ class LayerList(SelectableEventedList[Layer]):
     def _process_delete_item(self, item: Layer):
         super()._process_delete_item(item)
         item.events.extent.disconnect(self._clean_cache)
+        item.events._extent_augmented.disconnect(self._clean_cache)
         self._clean_cache()
 
     def _clean_cache(self):
         cached_properties = (
             'extent',
             '_extent_world',
+            '_extent_world_augmented',
             '_step_size',
-            '_ranges',
         )
         [self.__dict__.pop(p, None) for p in cached_properties]
 
@@ -150,6 +148,7 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
         new_layer.events.extent.connect(self._clean_cache)
+        new_layer.events._extent_augmented.connect(self._clean_cache)
         super().insert(index, new_layer)
 
     def toggle_selected_visibility(self):
@@ -169,6 +168,22 @@ class LayerList(SelectableEventedList[Layer]):
         extent_world : array, shape (2, D)
         """
         return self._get_extent_world([layer.extent for layer in self])
+
+    @cached_property
+    def _extent_world_augmented(self) -> np.ndarray:
+        """Extent of layers in world coordinates.
+
+        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
+        Corresponds to pixels centered at [0, ..., 511].
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        return self._get_extent_world(
+            [layer._extent_augmented for layer in self],
+            augmented=True,
+        )
 
     def _get_min_and_max(self, mins_list, maxes_list):
         # Reverse dimensions since it is the last dimensions that are
@@ -204,19 +219,23 @@ class LayerList(SelectableEventedList[Layer]):
         # switch back to original order
         return min_v[::-1], max_v[::-1]
 
-    def _get_extent_world(self, layer_extent_list):
+    def _get_extent_world(self, layer_extent_list, augmented=False):
         """Extent of layers in world coordinates.
 
-        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
-        Corresponds to pixels centered at [0, ..., 511].
+        Default to 2D image-like with (0, 511) min/ max values if no data is present.
+        Corresponds to image with 512 pixels in each dimension.
 
         Returns
         -------
         extent_world : array, shape (2, D)
         """
         if len(self) == 0:
-            min_v = np.asarray([-0.5] * self.ndim)
-            max_v = np.asarray([511.5] * self.ndim)
+            min_v = np.zeros(self.ndim)
+            max_v = np.full(self.ndim, 511.0)
+            # image-like augmented extent is actually expanded by 0.5
+            if augmented:
+                min_v -= 0.5
+                max_v += 0.5
         else:
             extrema = [extent.world for extent in layer_extent_list]
             mins = [e[0] for e in extrema]
@@ -258,8 +277,9 @@ class LayerList(SelectableEventedList[Layer]):
     def get_extent(self, layers: Iterable[Layer]) -> Extent:
         """
         Return extent for a given layer list.
-        This function is useful for calculating the extent of a subset of layers
-        when preparing and updating some supplementary layers.
+
+        Extent bounds are inclusive. This function is useful for calculating the extent
+        of a subset of layers when preparing and updating some supplementary layers.
         For example see the cross Vectors layer in the `multiple_viewer_widget` example.
 
         Parameters
@@ -281,60 +301,19 @@ class LayerList(SelectableEventedList[Layer]):
 
     @cached_property
     def extent(self) -> Extent:
-        """Extent of layers in data and world coordinates."""
+        """
+        Extent of layers in data and world coordinates.
+
+        Extent bounds are inclusive. See Layer.extent for a detailed explanation
+        of how extents are calculated.
+        """
         return self.get_extent(list(self))
 
-    @cached_property
+    @property
     def _ranges(self) -> List[Tuple[float, float, float]]:
-        """Get ranges for Dims.range in world coordinates.
-
-        This shares some code in common with the `extent` property, but
-        determines Dims.range settings for each dimension such that each
-        range is aligned to pixel centers at the finest scale.
-        """
-        if len(self) == 0:
-            return [(0, 1, 1)] * self.ndim
-
-        # Determine minimum step size across all layers
-        layer_extent_list = [layer.extent for layer in self]
-        scales = [extent.step for extent in layer_extent_list]
-        min_steps = self._step_size_from_scales(scales)
-
-        # Pixel-based layers need to be offset by 0.5 * min_steps to align
-        # Dims.range with pixel centers in world coordinates
-        pixel_offsets = [
-            0.5 * min_steps
-            if isinstance(layer, _ImageBase)
-            else [0] * len(min_steps)
-            for layer in self
-        ]
-
-        # Non-pixel layers need an offset of the range stop by min_steps since the upper
-        # limit of Dims.range is non-inclusive.
-        point_offsets = [
-            [0] * len(min_steps)
-            if isinstance(layer, _ImageBase)
-            else min_steps
-            for layer in self
-        ]
-
-        # Determine world coordinate extents similarly to
-        # `_get_extent_world`, but including offsets calculated above.
-        extrema = [extent.world for extent in layer_extent_list]
-        mins = [
-            e[0] + o1[: len(e[0])] for e, o1 in zip(extrema, pixel_offsets)
-        ]
-        maxs = [
-            e[1] + o1[: len(e[0])] + o2[: len(e[0])]
-            for e, o1, o2 in zip(extrema, pixel_offsets, point_offsets)
-        ]
-        min_v, max_v = self._get_min_and_max(mins, maxs)
-
-        # form range tuples, switching back to original dimension order
-        return [
-            (start, stop, step)
-            for start, stop, step in zip(min_v, max_v, min_steps)
-        ]
+        """Get ranges for Dims.range in world coordinates."""
+        ext = self.extent
+        return tuple(zip(ext.world[0], ext.world[1], ext.step))
 
     @property
     def ndim(self) -> int:
