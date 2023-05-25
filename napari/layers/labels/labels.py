@@ -656,6 +656,7 @@ class Labels(_ImageBase):
         # note: self.color_mode returns a string and this comparison fails,
         # so use self._color_mode
         if self.show_selected_label:
+            self._cached_labels = None  # invalidates labels cache
             self.refresh()
 
     @property
@@ -701,6 +702,7 @@ class Labels(_ImageBase):
     @show_selected_label.setter
     def show_selected_label(self, filter_val):
         self._show_selected_label = filter_val
+        self._cached_labels = None
         self.refresh()
 
     @Layer.mode.getter
