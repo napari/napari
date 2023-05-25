@@ -3,9 +3,16 @@ from typing import Type
 import numpy as np
 import pandas as pd
 import pytest
-from napari_graph import BaseGraph, DirectedGraph, UndirectedGraph
 
-from napari.layers import Graph
+pytest.importorskip("napari_graph")
+
+from napari_graph import (  # noqa: E402
+    BaseGraph,
+    DirectedGraph,
+    UndirectedGraph,
+)
+
+from napari.layers import Graph  # noqa: E402
 
 
 def test_empty_graph() -> None:

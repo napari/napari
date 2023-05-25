@@ -29,6 +29,11 @@ if TYPE_CHECKING:
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
 
+try:
+    from napari_graph import BaseGraph
+
+except ModuleNotFoundError:
+    BaseGraph = None
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
@@ -83,7 +88,7 @@ class SampleDict(TypedDict):
 ArrayBase: Type[np.ndarray] = np.ndarray
 
 
-GraphData = NewType("GraphData", tuple)  # FIXME
+GraphData = NewType("GraphData", BaseGraph)
 ImageData = NewType("ImageData", np.ndarray)
 LabelsData = NewType("LabelsData", np.ndarray)
 PointsData = NewType("PointsData", np.ndarray)

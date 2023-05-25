@@ -2,10 +2,16 @@ from dataclasses import dataclass, field
 from typing import Any, Sequence, Tuple
 
 import numpy as np
-from napari_graph import BaseGraph
-from napari_graph.base_graph import _NODE_EMPTY_PTR
 
 from napari.layers.utils._slice_input import _SliceInput
+
+try:
+    from napari_graph import BaseGraph
+    from napari_graph.base_graph import _NODE_EMPTY_PTR
+
+except ModuleNotFoundError:
+    BaseGraph = None
+    _NODE_EMPTY_PTR = None
 
 
 @dataclass(frozen=True)

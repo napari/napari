@@ -308,7 +308,7 @@ def test_magicgui_get_viewer(make_napari_viewer):
 
 MGUI_EXPORTS = ['napari.layers.Layer', 'napari.Viewer']
 MGUI_EXPORTS += [f'napari.types.{nm.title()}Data' for nm in layers.NAMES]
-NAMES = ('Image', 'Labels', 'Layer', 'Points', 'Shapes', 'Surface')
+NAMES = ('Graph', 'Image', 'Labels', 'Layer', 'Points', 'Shapes', 'Surface')
 
 
 @pytest.mark.parametrize('name', sorted(MGUI_EXPORTS))

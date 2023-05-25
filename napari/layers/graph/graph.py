@@ -1,13 +1,19 @@
 from typing import Optional, Tuple, Union
 
 import numpy as np
-from napari_graph import BaseGraph, UndirectedGraph
 from numpy.typing import ArrayLike
 
 from napari.layers.graph._slice import _GraphSliceRequest, _GraphSliceResponse
 from napari.layers.points.points import _BasePoints
 from napari.layers.utils._slice_input import _SliceInput
 from napari.utils.translations import trans
+
+try:
+    from napari_graph import BaseGraph, UndirectedGraph
+
+except ModuleNotFoundError:
+    BaseGraph = None
+    UndirectedGraph = None
 
 
 class Graph(_BasePoints):
@@ -52,6 +58,13 @@ class Graph(_BasePoints):
         antialiasing=1,
         shown=True,
     ) -> None:
+        if BaseGraph is None:
+            raise ImportError(
+                trans._(
+                    "`napari-graph` module is required by the graph layer."
+                )
+            )
+
         self._data = self._fix_data(data, ndim)
         self._edges_indices_view = []
 
