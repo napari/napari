@@ -20,8 +20,6 @@ from napari.layers.image._image_constants import (
 )
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
-)
-from napari.layers.image._image_mouse_bindings import (
     set_plane_position as plane_double_click_callback,
 )
 from napari.layers.image._image_slice import ImageSlice
@@ -349,9 +347,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._data_level = 0
             self._thumbnail_level = 0
         displayed_axes = self._slice_input.displayed
-        self.corner_pixels[1][displayed_axes] = self.level_shapes[
-            self._data_level
-        ][displayed_axes]
+        self.corner_pixels[1][displayed_axes] = (
+            np.array(self.level_shapes)[self._data_level][displayed_axes] - 1
+        )
 
         self._new_empty_slice()
 
@@ -491,7 +489,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         extent_data : array, shape (2, D)
         """
         shape = self.level_shapes[0]
-        return np.vstack([np.zeros(len(shape)), shape])
+        return np.vstack([np.zeros(len(shape)), shape - 1])
+
+    @property
+    def _extent_data_augmented(self) -> np.ndarray:
+        extent = self._extent_data
+        return extent + [[-0.5], [+0.5]]
 
     @property
     def data_level(self):
@@ -746,7 +749,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         for d in self._slice_input.not_displayed:
             low = data_slice.margin_left[d]
             high = data_slice.margin_right[d]
-            if (high < 0) or (low >= self._extent_data[1][d]):
+            if (high < 0) or (low > self._extent_data[1][d]):
                 return
 
         # For the old experimental async code.

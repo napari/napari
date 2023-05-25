@@ -133,7 +133,7 @@ class _ImageSliceRequest:
             for d in self.dims.displayed:
                 indices[d] = slice(
                     self.corner_pixels[0, d],
-                    self.corner_pixels[1, d],
+                    self.corner_pixels[1, d] + 1,
                     1,
                 )
             translate = self.corner_pixels[0] * scale

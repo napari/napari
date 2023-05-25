@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import itertools
+import logging
 import os.path
 import warnings
 from abc import ABC, abstractmethod
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from contextlib import contextmanager
 from functools import cached_property
 from typing import List, Optional, Tuple, Union
@@ -23,6 +24,7 @@ from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
 )
 from napari.layers.utils.layer_utils import (
+    Extent,
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
@@ -49,7 +51,7 @@ from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 from napari.utils.translations import trans
 
-Extent = namedtuple('Extent', 'data world step')
+logger = logging.getLogger("napari.layers.base.base")
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -195,6 +197,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Displayed in status bar bottom right.
     interactive : bool
         Determine if canvas pan/zoom interactivity is enabled.
+        This attribute is deprecated since 0.5.0 and should not be used.
+        Use the mouse_pan and mouse_zoom attributes instead.
+    mouse_pan : bool
+        Determine if canvas interactive panning is enabled with the mouse.
+    mouse_zoom : bool
+        Determine if canvas interactive zooming is enabled with the mouse.
     cursor : str
         String identifying which cursor displayed over canvas.
     cursor_size : int | None
@@ -283,7 +291,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._help = ''
         self._cursor = 'standard'
         self._cursor_size = 1
-        self._interactive = True
+        self._mouse_pan = True
+        self._mouse_zoom = True
         self._value = None
         self.scale_factor = 1
         self.multiscale = multiscale
@@ -373,28 +382,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             thumbnail=Event,
             status=Event,
             help=Event,
-            interactive=Event,
+            interactive=WarningEmitter(
+                trans._(
+                    "layer.events.interactive is deprecated since 0.5.0 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom",
+                    deferred=True,
+                ),
+                type_name='interactive',
+            ),
+            mouse_pan=Event,
+            mouse_zoom=Event,
             cursor=Event,
             cursor_size=Event,
             editable=Event,
             loaded=Event,
             reload=Event,
             extent=Event,
+            _extent_augmented=Event,
             _overlays=Event,
-            select=WarningEmitter(
-                trans._(
-                    "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
-                    deferred=True,
-                ),
-                type_name='select',
-            ),
-            deselect=WarningEmitter(
-                trans._(
-                    "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
-                    deferred=True,
-                ),
-                type_name='deselect',
-            ),
             mode=Event,
         )
         self.name = name
@@ -417,7 +421,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def __repr__(self):
         cls = type(self)
-        return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
+        return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
 
     def _mode_setter_helper(self, mode):
         """
@@ -462,7 +466,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        self.interactive = mode == self._modeclass.PAN_ZOOM
+        self.mouse_pan = mode == self._modeclass.PAN_ZOOM
         self._overlays['transform_box'].visible = (
             mode == self._modeclass.TRANSFORM
         )
@@ -634,7 +638,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if scale is None:
             scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.scale()
 
     @property
@@ -645,7 +649,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @translate.setter
     def translate(self, translate):
         self._transforms['data2physical'].translate = np.array(translate)
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.translate()
 
     @property
@@ -656,7 +660,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @rotate.setter
     def rotate(self, rotate):
         self._transforms['data2physical'].rotate = rotate
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.rotate()
 
     @property
@@ -667,7 +671,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @shear.setter
     def shear(self, shear):
         self._transforms['data2physical'].shear = shear
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.shear()
 
     @property
@@ -683,30 +687,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.affine()
-
-    @property
-    def translate_grid(self):
-        warnings.warn(
-            trans._(
-                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._translate_grid
-
-    @translate_grid.setter
-    def translate_grid(self, translate_grid):
-        warnings.warn(
-            trans._(
-                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._translate_grid = translate_grid
 
     @property
     def _translate_grid(self):
@@ -747,7 +729,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._ndim = ndim
 
-        self._clear_extent()
+        self._clear_extents_and_refresh()
 
     @property
     @abstractmethod
@@ -772,6 +754,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         raise NotImplementedError
 
     @property
+    def _extent_data_augmented(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Differently from Layer._extent_data, this also includes the "size" of
+        data points; for example, Point sizes and Image pixel width are included.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        return self._extent_data
+
+    @property
     def _extent_world(self) -> np.ndarray:
         """Range of layer in world coordinates.
 
@@ -780,18 +775,60 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
+        return get_extent_world(self._extent_data, self._data_to_world)
+
+    @property
+    def _extent_world_augmented(self) -> np.ndarray:
+        """Range of layer in world coordinates.
+
+        Differently from Layer._extent_world, this also includes the "size" of
+        data points; for example, Point sizes and Image pixel width are included.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        # Get full nD bounding box
         return get_extent_world(
-            self._extent_data, self._data_to_world, self._array_like
+            self._extent_data_augmented, self._data_to_world
         )
 
     @cached_property
     def extent(self) -> Extent:
-        """Extent of layer in data and world coordinates."""
+        """Extent of layer in data and world coordinates.
+
+        For image-like layers, these coordinates are the locations of the
+        pixels in `Layer.data` which are treated like sample points that are
+        centered in the rendered version of those pixels.
+        For other layers, these coordinates are the points or vertices stored
+        in `Layer.data`.
+        Lower and upper bounds are inclusive.
+        """
         extent_data = self._extent_data
         data_to_world = self._data_to_world
-        extent_world = get_extent_world(
-            extent_data, data_to_world, self._array_like
+        extent_world = get_extent_world(extent_data, data_to_world)
+        return Extent(
+            data=extent_data,
+            world=extent_world,
+            step=abs(data_to_world.scale),
         )
+
+    @cached_property
+    def _extent_augmented(self) -> Extent:
+        """Augmented extent of layer in data and world coordinates.
+
+        Differently from Layer.extent, this also includes the "size" of data
+        points; for example, Point sizes and Image pixel width are included.
+
+        For image-like layers, these coordinates are the locations of the
+        pixels in `Layer.data` which are treated like sample points that are
+        centered in the rendered version of those pixels.
+        For other layers, these coordinates are the points or vertices stored
+        in `Layer.data`.
+        """
+        extent_data = self._extent_data_augmented
+        data_to_world = self._data_to_world
+        extent_world = get_extent_world(extent_data, data_to_world)
         return Extent(
             data=extent_data,
             world=extent_world,
@@ -799,15 +836,26 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
 
     def _clear_extent(self):
-        """Clears the cached extent.
-
-        This should be called whenever this data or transform information
-        changes, and should be called before any related events get emitted
-        so that they use the updated extent values.
-        """
+        """Clear extent cache and emit extent event."""
         if 'extent' in self.__dict__:
             del self.extent
         self.events.extent()
+
+    def _clear_extent_augmented(self):
+        """Clear extent_augmented cache and emit extent_augmented event."""
+        if '_extent_augmented' in self.__dict__:
+            del self._extent_augmented
+        self.events._extent_augmented()
+
+    def _clear_extents_and_refresh(self):
+        """Clears the cached extents, emits events and refreshes the layer.
+
+        This should be called whenever this data or transform information
+        changes, and should be called before any other related events
+        are emitted so that they use the updated extent values.
+        """
+        self._clear_extent()
+        self._clear_extent_augmented()
         self.refresh()
 
     @property
@@ -908,16 +956,58 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.help(help=help_text)
 
     @property
-    def interactive(self):
-        """bool: Determine if canvas pan/zoom interactivity is enabled."""
-        return self._interactive
+    def interactive(self) -> bool:
+        warnings.warn(
+            trans._(
+                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.mouse_pan or self.mouse_zoom
 
     @interactive.setter
-    def interactive(self, interactive):
-        if interactive == self._interactive:
+    def interactive(self, interactive: bool):
+        warnings.warn(
+            trans._(
+                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        with self.events.interactive.blocker():
+            self.mouse_pan = interactive
+        self.mouse_zoom = interactive
+
+    @property
+    def mouse_pan(self) -> bool:
+        """bool: Determine if canvas interactive panning is enabled with the mouse."""
+        return self._mouse_pan
+
+    @mouse_pan.setter
+    def mouse_pan(self, mouse_pan: bool):
+        if mouse_pan == self._mouse_pan:
             return
-        self._interactive = interactive
-        self.events.interactive(interactive=interactive)
+        self._mouse_pan = mouse_pan
+        self.events.mouse_pan(mouse_pan=mouse_pan)
+        self.events.interactive(
+            interactive=self.mouse_pan or self.mouse_zoom
+        )  # Deprecated since 0.5.0
+
+    @property
+    def mouse_zoom(self) -> bool:
+        """bool: Determine if canvas interactive zooming is enabled with the mouse."""
+        return self._mouse_zoom
+
+    @mouse_zoom.setter
+    def mouse_zoom(self, mouse_zoom: bool):
+        if mouse_zoom == self._mouse_zoom:
+            return
+        self._mouse_zoom = mouse_zoom
+        self.events.mouse_zoom(mouse_zoom=mouse_zoom)
+        self.events.interactive(
+            interactive=self.mouse_pan or self.mouse_zoom
+        )  # Deprecated since 0.5.0
 
     @property
     def cursor(self):
@@ -1006,6 +1096,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             True if slicing should be forced to occur, even when some cache thinks
             it already has a valid slice ready. False otherwise.
         """
+        logger.debug(
+            'Layer._slice_dims: %s, point=%s, margin_left=%s, margin_right=%s, ndisplay=%s, order=%s, force=%s',
+            self,
+            point,
+            margin_left,
+            margin_right,
+            ndisplay,
+            order,
+            force,
+        )
         slice_input = self._make_slice_input(
             point, margin_left, margin_right, ndisplay, order
         )
@@ -1233,6 +1333,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
+        logger.debug('Layer.refresh: %s', self)
         if self.visible:
             self.set_view_slice()
             self.events.set_data()
@@ -1396,6 +1497,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """An axis aligned (ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed].T
 
+    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
+
+        This bounding box for includes the "full" size of the layer, including
+        for example the size of points or pixels.
+        """
+        return self._extent_data_augmented[:, dims_displayed].T
+
     def click_plane_from_click_data(
         self,
         click_position: np.ndarray,
@@ -1469,6 +1578,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # create the bounding box in data coordinates
         bounding_box = self._display_bounding_box(dims_displayed)
+        # bounding box is with upper limit excluded in the uses below
+        bounding_box[:, 1] += 1
 
         start_point, end_point = self._get_ray_intersections(
             position=position,
@@ -1621,7 +1732,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             # space of the selected level. Using the level's data
             # shape only works for images, but that's the only case we
             # handle now and downsample_factors is also only on image layers.
-            max_coords = np.take(self.data[level].shape, displayed_axes)
+            max_coords = np.take(self.data[level].shape, displayed_axes) - 1
             corners[:, displayed_axes] = np.clip(scaled_corners, 0, max_coords)
             display_shape = tuple(
                 corners[1, displayed_axes] - corners[0, displayed_axes]
@@ -1634,7 +1745,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self._data_level = level
                 self.corner_pixels = corners
                 self.events.reload(Event('reload', layer=self))
-
         else:
             # The stored corner_pixels attribute must contain valid indices.
             corners = np.zeros((2, self.ndim), dtype=int)
@@ -1795,18 +1905,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         from napari.plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
-
-    def _on_selection(self, selected: bool):
-        # This method is a temporary workaround to the fact that the Points
-        # layer needs to know when its selection state changes so that it can
-        # update the highlight state.  This, along with the events.select and
-        # events.deselect emitters, (and the LayerList._on_selection_event
-        # method) can be removed once highlighting logic has been removed from
-        # the layer model.
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
 
     @classmethod
     def create(
