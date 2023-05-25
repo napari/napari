@@ -428,6 +428,11 @@ class NapariPluginManager(PluginManager):
     def iter_widgets(self) -> Iterator[Tuple[str, Tuple[str, Dict[str, Any]]]]:
         from itertools import chain, repeat
 
+        # The content of contribution dictionaries is name of plugin and
+        # list of its names of widgets contributed by this plugin
+        # as this order do not depend on the order of contributions in file
+        # we sort it to make it easier searchable.
+
         dock_widgets = zip(
             repeat("dock"),
             (
