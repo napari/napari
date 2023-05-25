@@ -1483,6 +1483,32 @@ def test_color_mapping_when_color_is_changed():
     )
 
 
+def test_color_mapping_with_show_selected_label():
+    """Checks if the color mapping is computed correctly when show_selected_label is activated."""
+
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    mapped_colors_all = layer._raw_to_displayed(layer._slice.image.raw).copy()
+
+    layer.selected_label = 1
+    layer.show_selected_label = True
+
+    for selected_label in range(1, 5):
+        layer.selected_label = selected_label
+        label_mask = data == selected_label
+        mapped_colors = layer._raw_to_displayed(layer._slice.image.raw)
+
+        assert np.allclose(
+            mapped_colors[label_mask], mapped_colors_all[label_mask]
+        )
+        assert np.allclose(mapped_colors[np.logical_not(label_mask)], 0)
+
+    layer.show_selected_label = False
+    assert np.allclose(
+        layer._raw_to_displayed(layer._slice.image.raw), mapped_colors_all
+    )
+
+
 def test_color_mapping_when_seed_is_changed():
     """Checks if the color mapping is updated when the color palette seed is changed."""
     np.random.seed(0)
