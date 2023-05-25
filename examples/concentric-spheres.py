@@ -1,11 +1,16 @@
 """
+Concentric spheres
+==================
+
 Display concentric spheres in 3D.
+
+.. tags:: visualization-nD
 """
 
 import numpy as np
-import napari
 from skimage import morphology
 
+import napari
 
 b0 = morphology.ball(5)
 

@@ -8,8 +8,8 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from ..settings import get_settings
-from ..utils.translations import trans
+from napari.settings import get_settings
+from napari.utils.translations import trans
 
 LOGGER = logging.getLogger("napari.loader")
 DEFAULT_OCTREE_CONFIG = {

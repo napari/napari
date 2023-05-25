@@ -1,6 +1,6 @@
 from typing import Optional
 
-from ... import components, layers, viewer
+from napari import components, layers, viewer
 
 
 def _provide_viewer() -> Optional[viewer.Viewer]:

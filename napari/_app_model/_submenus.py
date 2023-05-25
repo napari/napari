@@ -1,7 +1,8 @@
 from app_model.types import SubmenuItem
 
-from ..utils.translations import trans
-from .constants import MenuGroup, MenuId
+from napari._app_model.constants import MenuGroup, MenuId
+from napari._app_model.context import LayerListContextKeys as LLCK
+from napari.utils.translations import trans
 
 SUBMENUS = [
     (
@@ -11,6 +12,7 @@ SUBMENUS = [
             title=trans._('Convert data type'),
             group=MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
             order=None,
+            enablement=LLCK.all_selected_layers_labels,
         ),
     ),
     (
@@ -20,6 +22,7 @@ SUBMENUS = [
             title=trans._('Projections'),
             group=MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
             order=None,
+            enablement=LLCK.active_layer_is_image_3d,
         ),
     ),
     (

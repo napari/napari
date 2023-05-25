@@ -22,7 +22,7 @@ class Stat:
         How many values we've seen.
     """
 
-    def __init__(self, value: int):
+    def __init__(self, value: int) -> None:
         """Create Stat with an initial value.
 
         Parameters

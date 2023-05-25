@@ -34,7 +34,7 @@ def make_worker(
         if worker._count < nframes:
             worker._count += 1
         else:
-            worker.finish()
+            worker._stop()
 
     def count_reached():
         assert worker._count >= nframes
@@ -42,6 +42,7 @@ def make_worker(
     def go():
         worker.work()
         qtbot.waitUntil(count_reached, timeout=6000)
+        worker._stop()
         return worker.current
 
     worker.frame_requested.connect(bump)
@@ -78,12 +79,11 @@ def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
     if rng:
         nrange = rng[1] - rng[0] + 1
         expected = rng[0] + result(nframes, nrange)
-        assert expected - 1 <= current <= expected + 1
     else:
         expected = result(nframes, worker.nz)
         # assert current == expected
         # relaxing for CI OSX tests
-        assert expected - 1 <= current <= expected + 1
+    assert expected - 1 <= current <= expected + 1
 
 
 def test_animation_thread_once(qtbot):

@@ -8,12 +8,15 @@ the napari viewer.
 .. tags:: gui
 """
 
-import napari
-from time import sleep
-from napari.utils import progress
-from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
-import numpy as np
 from random import choice
+from time import sleep
+
+import numpy as np
+from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
+
+import napari
+from napari.utils import cancelable_progress, progress
+
 
 def process(im_slice):
     # do something with your image slice
@@ -80,6 +83,18 @@ def arbitrary_steps():
         # sleeping so we can see full completion
         sleep(1)
 
+
+def cancelable_iterable():
+    """We can allow expensive computations to be cancelable
+    """
+    # Note that if canceled, for loop will terminate prematurely
+    # You can use cancel_callback to close files, clean up state, etc
+    # if the user cancels the operation.
+    def cancel_callback():
+        print("Operation canceled - cleaning up!")
+    for _ in cancelable_progress(range(100), cancel_callback=cancel_callback):
+        np.random.rand(128, 128, 128).mean(0)
+
 viewer = napari.Viewer()
 button_layout = QVBoxLayout()
 
@@ -98,6 +113,10 @@ button_layout.addWidget(indeterminate_btn)
 steps_btn = QPushButton("Arbitrary Steps")
 steps_btn.clicked.connect(arbitrary_steps)
 button_layout.addWidget(steps_btn)
+
+cancel_iter_btn = QPushButton("Cancelable Iterable")
+cancel_iter_btn.clicked.connect(cancelable_iterable)
+button_layout.addWidget(cancel_iter_btn)
 
 pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)

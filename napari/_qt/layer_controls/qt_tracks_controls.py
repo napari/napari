@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QSlider
 
-from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.translations import trans
-from ..utils import qt_signals_blocked
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import qt_signals_blocked
+from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers
@@ -29,7 +29,7 @@ class QtTracksControls(QtLayerControls):
 
     layer: 'napari.layers.Tracks'
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__(layer)
 
         # NOTE(arl): there are no events fired for changing checkboxes
@@ -123,11 +123,10 @@ class QtTracksControls(QtLayerControls):
 
     def _on_properties_change(self):
         """Change the properties that can be used to color the tracks."""
-        with self.layer.events.properties.blocker():
-
-            with qt_signals_blocked(self.color_by_combobox):
-                self.color_by_combobox.clear()
+        with qt_signals_blocked(self.color_by_combobox):
+            self.color_by_combobox.clear()
             self.color_by_combobox.addItems(self.layer.properties_to_color_by)
+        self._on_color_by_change()
 
     def _on_colormap_change(self):
         """Receive layer model colormap change event and update combobox."""

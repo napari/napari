@@ -3,6 +3,8 @@ import pytest
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Surface
+from napari.layers.surface.normals import SurfaceNormals
+from napari.layers.surface.wireframe import SurfaceWireframe
 
 
 def test_random_surface():
@@ -36,6 +38,19 @@ def test_random_surface_no_values():
     assert np.all(layer.vertex_values == np.ones(len(vertices)))
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
+
+
+def test_random_surface_clearing_vertex_values():
+    """Test setting `vertex_values=None` resets values to uniform ones."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 2))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+    layer = Surface(data)
+    assert np.all(layer.vertex_values == values)
+    layer.vertex_values = None
+    assert np.all(layer.vertex_values == np.ones(len(vertices)))
 
 
 def test_random_3D_surface():
@@ -86,7 +101,7 @@ def test_random_3D_timeseries_surface():
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
-    assert layer.extent.data[1][0] == 22
+    assert layer.extent.data[1][0] == 21
 
     layer._slice_dims(ndisplay=3)
     assert layer._data_view.shape[1] == 3
@@ -111,8 +126,8 @@ def test_random_3D_multitimeseries_surface():
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
-    assert layer.extent.data[1][0] == 16
-    assert layer.extent.data[1][1] == 22
+    assert layer.extent.data[1][0] == 15
+    assert layer.extent.data[1][1] == 21
 
     layer._slice_dims(ndisplay=3)
     assert layer._data_view.shape[1] == 3
@@ -212,6 +227,51 @@ def test_shading():
     assert layer.shading == shading
 
 
+def test_texture():
+    """Test setting texture"""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+
+    texture = np.random.random((32, 32, 3)).astype(np.float32)
+    texcoords = vertices[:, :2]
+    layer = Surface(data, texture=texture, texcoords=texcoords)
+
+    np.testing.assert_allclose(layer.texture, texture)
+    np.testing.assert_allclose(layer.texcoords, texcoords)
+    assert layer._has_texture
+
+    layer.texture, layer.texcoords = None, texcoords
+    assert not layer._has_texture
+
+    layer.texture, layer.texcoords = texture, None
+    assert not layer._has_texture
+
+    layer.texture, layer.texcoords = None, None
+    assert not layer._has_texture
+
+    layer.texture, layer.texcoords = texture, texcoords
+    assert layer._has_texture
+
+
+def test_vertex_colors():
+    """Test setting vertex colors"""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+
+    vertex_colors = np.random.random((len(vertices), 3))
+    layer = Surface(data, vertex_colors=vertex_colors)
+    np.testing.assert_allclose(layer.vertex_colors, vertex_colors)
+
+    layer.vertex_colors = vertex_colors**2
+    np.testing.assert_allclose(layer.vertex_colors, vertex_colors**2)
+
+
 @pytest.mark.parametrize(
     "ray_start,ray_direction,expected_value,expected_index",
     [
@@ -286,3 +346,73 @@ def test_get_value_3d_nd(
     )
     assert index == expected_index
     np.testing.assert_allclose(value, expected_value)
+
+
+def test_surface_normals():
+    """Ensure that normals can be set both with dict and SurfaceNormals.
+
+    The model should internally always use SurfaceNormals.
+    """
+    vertices = np.array(
+        [
+            [3, 0, 0],
+            [3, 0, 3],
+            [3, 3, 0],
+            [5, 0, 0],
+            [5, 0, 3],
+            [5, 3, 0],
+            [2, 50, 50],
+            [2, 50, 100],
+            [2, 100, 50],
+        ]
+    )
+    faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
+
+    normals = {"face": {"visible": True, "color": 'red'}}
+    surface_layer = Surface((vertices, faces, values), normals=normals)
+    assert isinstance(surface_layer.normals, SurfaceNormals)
+    assert surface_layer.normals.face.visible is True
+    assert np.all(surface_layer.normals.face.color == (1, 0, 0, 1))
+
+    surface_layer = Surface(
+        (vertices, faces, values), normals=SurfaceNormals(**normals)
+    )
+    assert isinstance(surface_layer.normals, SurfaceNormals)
+    assert surface_layer.normals.face.visible is True
+    assert np.all(surface_layer.normals.face.color == (1, 0, 0, 1))
+
+
+def test_surface_wireframe():
+    """Ensure that wireframe can be set both with dict and SurfaceWireframe.
+
+    The model should internally always use SurfaceWireframe.
+    """
+    vertices = np.array(
+        [
+            [3, 0, 0],
+            [3, 0, 3],
+            [3, 3, 0],
+            [5, 0, 0],
+            [5, 0, 3],
+            [5, 3, 0],
+            [2, 50, 50],
+            [2, 50, 100],
+            [2, 100, 50],
+        ]
+    )
+    faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
+
+    wireframe = {"visible": True, "color": 'red'}
+    surface_layer = Surface((vertices, faces, values), wireframe=wireframe)
+    assert isinstance(surface_layer.wireframe, SurfaceWireframe)
+    assert surface_layer.wireframe.visible is True
+    assert np.all(surface_layer.wireframe.color == (1, 0, 0, 1))
+
+    surface_layer = Surface(
+        (vertices, faces, values), wireframe=SurfaceWireframe(**wireframe)
+    )
+    assert isinstance(surface_layer.wireframe, SurfaceWireframe)
+    assert surface_layer.wireframe.visible is True
+    assert np.all(surface_layer.wireframe.color == (1, 0, 0, 1))

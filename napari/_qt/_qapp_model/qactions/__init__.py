@@ -22,10 +22,11 @@ def init_qactions() -> None:
     - registering Qt-dependent actions with app-model (i.e. Q_*_ACTIONS actions).
     """
 
-    from ...._app_model import get_app
-    from ...qt_main_window import Window, _QtMainWindow
-    from ...qt_viewer import QtViewer
-    from ._view import Q_VIEW_ACTIONS
+    from napari._app_model import get_app
+    from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
+    from napari._qt._qapp_model.qactions._view import Q_VIEW_ACTIONS
+    from napari._qt.qt_main_window import Window, _QtMainWindow
+    from napari._qt.qt_viewer import QtViewer
 
     # update the namespace with the Qt-specific types/providers/processors
     app = get_app()
@@ -41,12 +42,14 @@ def init_qactions() -> None:
     def _provide_window() -> Optional[Window]:
         if _qmainwin := _QtMainWindow.current():
             return _qmainwin._window
+        return None
 
     @store.register_provider
     def _provide_qt_viewer() -> Optional[QtViewer]:
         if _qmainwin := _QtMainWindow.current():
             return _qmainwin._qt_viewer
+        return None
 
     # register actions
-    for action in chain(Q_VIEW_ACTIONS):
+    for action in chain(Q_VIEW_ACTIONS, Q_HELP_ACTIONS):
         app.register_action(action)

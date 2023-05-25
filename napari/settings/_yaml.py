@@ -7,7 +7,7 @@ from app_model.types import KeyBinding
 from pydantic import BaseModel
 from yaml import SafeDumper, dump_all
 
-from ._fields import Version
+from napari.settings._fields import Version
 
 if TYPE_CHECKING:
     from collections.abc import Mapping

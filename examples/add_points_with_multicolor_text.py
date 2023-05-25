@@ -9,6 +9,7 @@ multiple face colors mapped from features for the points and text.
 """
 
 import numpy as np
+
 import napari
 
 # add the image with three points

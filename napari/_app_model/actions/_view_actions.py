@@ -1,16 +1,16 @@
-"""Actions related to the view that require Qt.
+"""Actions related to the 'View' menu that do not require Qt.
 
-View actions that do not require Qt should go in
-napari/_app_model/actions/_view_actions.py.
+View actions that do require Qt should go in
+`napari/_qt/_qapp_model/qactions/_view.py`.
 """
 
 from typing import List
 
 from app_model.types import Action, ToggleRule
 
-from ...settings import get_settings
-from ..constants import CommandId, MenuId
-from ._toggle_action import ViewerToggleAction
+from napari._app_model.actions._toggle_action import ViewerToggleAction
+from napari._app_model.constants import CommandId, MenuId
+from napari.settings import get_settings
 
 VIEW_ACTIONS: List[Action] = []
 

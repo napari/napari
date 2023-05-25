@@ -4,11 +4,11 @@ from typing import Dict, Union
 
 import numpy as np
 
-from ...layers.utils.color_transformations import (
+from napari.layers.utils.color_transformations import (
     transform_color,
     transform_color_cycle,
 )
-from ..translations import trans
+from napari.utils.translations import trans
 
 
 @dataclass(eq=False)
@@ -36,10 +36,10 @@ class ColorCycle:
         # turn a generic dict into object
         if isinstance(val, dict):
             return _coerce_colorcycle_from_dict(val)
-        elif isinstance(val, ColorCycle):
+        if isinstance(val, ColorCycle):
             return val
-        else:
-            return _coerce_colorcycle_from_colors(val)
+
+        return _coerce_colorcycle_from_colors(val)
 
     def _json_encode(self):
         return {'values': self.values.tolist()}
@@ -99,7 +99,6 @@ def _coerce_colorcycle_from_colors(
 
 
 def compare_colormap_dicts(cmap_1, cmap_2):
-
     if len(cmap_1) != len(cmap_2):
         return False
     for k, v in cmap_1.items():

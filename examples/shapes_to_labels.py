@@ -11,9 +11,9 @@ your shapes.
 
 import numpy as np
 from skimage import data
-import napari
 from vispy.color import Colormap
 
+import napari
 
 # create the viewer and window
 viewer = napari.Viewer()

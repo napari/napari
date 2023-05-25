@@ -35,6 +35,7 @@ To create a keymap that will block others, ``bind_key(..., ...)```.
 
 import contextlib
 import inspect
+import sys
 import time
 from collections import ChainMap
 from types import MethodType
@@ -43,11 +44,11 @@ from typing import Callable, Mapping, Union
 from app_model.types import KeyBinding, KeyCode, KeyMod
 from vispy.util import keys
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
-try:  # remove after min py version 3.10+
+if sys.version_info >= (3, 10):
     from types import EllipsisType
-except ImportError:
+else:
     EllipsisType = type(Ellipsis)
 
 KeyBindingLike = Union[KeyBinding, str, int]
@@ -287,7 +288,7 @@ class KeybindingDescriptor:
         Function to bind.
     """
 
-    def __init__(self, func):
+    def __init__(self, func) -> None:
         self.__func__ = func
 
     def __get__(self, instance, cls):
@@ -306,7 +307,7 @@ class KeymapProvider:
         Instance keymap.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.keymap = {}
 
@@ -355,7 +356,7 @@ class KeymapHandler:
         Classes that provide the keymaps for this class to handle.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._key_release_generators = {}
         self.keymap_providers = []
@@ -413,7 +414,7 @@ class KeymapHandler:
 
         if func is Ellipsis:  # blocker
             return
-        elif not callable(func):
+        if not callable(func):
             raise TypeError(
                 trans._(
                     "expected {func} to be callable",
@@ -447,7 +448,7 @@ class KeymapHandler:
         key_bind : keybinding-like
             Key combination.
         """
-        from ..settings import get_settings
+        from napari.settings import get_settings
 
         key_bind = coerce_keybinding(key_bind)
         key = str(key_bind.parts[-1].key)
@@ -474,7 +475,7 @@ class KeymapHandler:
         event : vispy.util.event.Event
             The vispy key press event that triggered this method.
         """
-        from ..utils.action_manager import action_manager
+        from napari.utils.action_manager import action_manager
 
         if event.key is None:
             # TODO determine when None key could be sent.
