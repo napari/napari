@@ -23,7 +23,7 @@ def test_slice_labels(qtbot):
     qtbot.addWidget(view)
 
     # make sure the totslice_label is showing the correct number
-    assert int(view.slider_widgets[0].totslice_label.text()) == 19
+    assert int(view.slider_widgets[0].totslice_label.text()) == 20
 
     # make sure setting the dims.point updates the slice label
     label_edit = view.slider_widgets[0].curslice_label

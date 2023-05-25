@@ -665,6 +665,7 @@ class Labels(_ImageBase):
         # note: self.color_mode returns a string and this comparison fails,
         # so use self._color_mode
         if self.show_selected_label:
+            self._cached_labels = None  # invalidates labels cache
             self.refresh()
 
     def swap_selected_and_background_labels(self):
@@ -718,6 +719,7 @@ class Labels(_ImageBase):
     def show_selected_label(self, filter_val):
         self._show_selected_label = filter_val
         self.events.show_selected_label(show_selected_label=filter_val)
+        self._cached_labels = None
         self.refresh()
 
     @Layer.mode.getter
@@ -1145,8 +1147,15 @@ class Labels(_ImageBase):
                 start_point, end_point, n_points, endpoint=True
             )
             im_slice = self._slice.image.raw
+            bounding_box = self._display_bounding_box(dims_displayed)
+            # the display bounding box is returned as a closed interval
+            # (i.e. the endpoint is included) by the method, but we need
+            # open intervals in the code that follows, so we add 1.
+            bounding_box[:, 1] += 1
+
             clamped = clamp_point_to_bounding_box(
-                sample_points, self._display_bounding_box(dims_displayed)
+                sample_points,
+                bounding_box,
             ).astype(int)
             values = im_slice[tuple(clamped.T)]
             nonzero_indices = np.flatnonzero(values)

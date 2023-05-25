@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import functools
 import inspect
-from typing import Any, Dict, List, Optional, Sequence, Union
+import warnings
+from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Union
 
 import dask
 import numpy as np
@@ -12,6 +13,32 @@ from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
+
+
+class Extent(NamedTuple):
+    """Extent of coordinates in a local data space and world space.
+
+    Each extent is a (2, D) array that stores the minimum and maximum coordinate
+    values in each of D dimensions. Both the minimum and maximum coordinates are
+    inclusive so form an axis-aligned, closed interval or a D-dimensional box
+    around all the coordinates.
+
+    Attributes
+    ----------
+    data : (2, D) array of floats
+        The minimum and maximum raw data coordinates ignoring any transforms like
+        translation or scale.
+    world : (2, D) array of floats
+        The minimum and maximum world coordinates after applying a transform to the
+        raw data coordinates that brings them into a potentially shared world space.
+    step : (D,) array of floats
+        The step in each dimension that when taken from the minimum world coordinate,
+        should form a regular grid that eventually hits the maximum world coordinate.
+    """
+
+    data: np.ndarray
+    world: np.ndarray
+    step: np.ndarray
 
 
 def register_layer_action(
@@ -632,7 +659,7 @@ def dims_displayed_world_to_layer(
     return dims_displayed
 
 
-def get_extent_world(data_extent, data_to_world, centered=False):
+def get_extent_world(data_extent, data_to_world, centered=None):
     """Range of layer in world coordinates base on provided data_extent
 
     Parameters
@@ -641,19 +668,23 @@ def get_extent_world(data_extent, data_to_world, centered=False):
         Extent of layer in data coordinates.
     data_to_world : napari.utils.transforms.Affine
         The transform from data to world coordinates.
-    centered : bool
-        If pixels should be centered. By default False.
 
     Returns
     -------
     extent_world : array, shape (2, D)
     """
-    D = data_extent.shape[1]
-    # subtract 0.5 to get from pixel center to pixel edge
-    offset = 0.5 * bool(centered)
-    pixel_extents = tuple(d - offset for d in data_extent.T)
+    if centered is not None:
+        warnings.warn(
+            trans._(
+                'The `centered` argument is deprecated. '
+                'Extents are now always centered on data points.',
+                deferred=True,
+            ),
+            stacklevel=2,
+        )
 
-    full_data_extent = np.array(np.meshgrid(*pixel_extents)).T.reshape(-1, D)
+    D = data_extent.shape[1]
+    full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(-1, D)
     full_world_extent = data_to_world(full_data_extent)
     world_extent = np.array(
         [
