@@ -1004,12 +1004,11 @@ class Labels(_ImageBase):
             self._cached_labels[data_slice][update_mask] = labels_to_map
         else:
             _cached_labels = np.zeros_like(labels)
-            _cached_mapped_labels = np.zeros_like(labels, dtype=np.float32)
             _cached_labels[data_slice] = sliced_labels.copy()
-            labels_to_map = sliced_labels
-
             self._cached_labels = _cached_labels
-            self._cached_mapped_labels = _cached_mapped_labels
+            self._cached_mapped_labels = np.zeros_like(labels, dtype=np.float32)
+
+            labels_to_map = sliced_labels
 
         # If there are no changes, just return the cached image
         if labels_to_map.size == 0:
