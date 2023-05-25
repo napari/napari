@@ -40,8 +40,6 @@ EXPECTATIONS = [
         {
             'scale': (0.75, 1),
             'blending': 'translucent',
-            'edge_color': 'red',
-            'edge_width': 2,
             'face_color': 'white',
             'name': 'name',
         },

@@ -28,12 +28,12 @@ class Graph(_BasePoints):
         text=None,
         symbol='o',
         size=10,
-        edge_width=0.05,
-        edge_width_is_relative=True,
-        edge_color='dimgray',
-        edge_color_cycle=None,
-        edge_colormap='viridis',
-        edge_contrast_limits=None,
+        border_width=0.05,
+        border_width_is_relative=True,
+        border_color='dimgray',
+        border_color_cycle=None,
+        border_colormap='viridis',
+        border_contrast_limits=None,
         face_color='white',
         face_color_cycle=None,
         face_colormap='viridis',
@@ -77,12 +77,12 @@ class Graph(_BasePoints):
             text=text,
             symbol=symbol,
             size=size,
-            edge_width=edge_width,
-            edge_width_is_relative=edge_width_is_relative,
-            edge_color=edge_color,
-            edge_color_cycle=edge_color_cycle,
-            edge_colormap=edge_colormap,
-            edge_contrast_limits=edge_contrast_limits,
+            border_width=border_width,
+            border_width_is_relative=border_width_is_relative,
+            border_color=border_color,
+            border_color_cycle=border_color_cycle,
+            border_colormap=border_colormap,
+            border_contrast_limits=border_contrast_limits,
             face_color=face_color,
             face_color_cycle=face_color_cycle,
             face_colormap=face_colormap,
@@ -272,15 +272,15 @@ class Graph(_BasePoints):
 
     def _update_props_and_style(self, data_size: int, prev_size: int) -> None:
         # Add/remove property and style values based on the number of new points.
-        with self.events.blocker_all(), self._edge.events.blocker_all(), self._face.events.blocker_all():
+        with self.events.blocker_all(), self._border.events.blocker_all(), self._face.events.blocker_all():
             self._feature_table.resize(data_size)
             self.text.apply(self.features)
             if data_size < prev_size:
                 # If there are now fewer points, remove the size and colors of the
                 # extra ones
-                if len(self._edge.colors) > data_size:
-                    self._edge._remove(
-                        np.arange(data_size, len(self._edge.colors))
+                if len(self._border.colors) > data_size:
+                    self._border._remove(
+                        np.arange(data_size, len(self._border.colors))
                     )
                 if len(self._face.colors) > data_size:
                     self._face._remove(
@@ -288,19 +288,19 @@ class Graph(_BasePoints):
                     )
                 self._shown = self._shown[:data_size]
                 self._size = self._size[:data_size]
-                self._edge_width = self._edge_width[:data_size]
+                self._border_width = self._border_width[:data_size]
                 self._symbol = self._symbol[:data_size]
 
             elif data_size > prev_size:
                 adding = data_size - prev_size
 
                 current_properties = self._feature_table.currents()
-                self._edge._update_current_properties(current_properties)
-                self._edge._add(n_colors=adding)
+                self._border._update_current_properties(current_properties)
+                self._border._add(n_colors=adding)
                 self._face._update_current_properties(current_properties)
                 self._face._add(n_colors=adding)
 
-                for attribute in ("shown", "edge_width", "symbol"):
+                for attribute in ("shown", "border_width", "symbol"):
                     if attribute == "shown":
                         default_value = True
                     else:

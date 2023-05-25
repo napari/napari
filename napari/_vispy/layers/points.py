@@ -22,11 +22,15 @@ class VispyPointsLayer(VispyBaseLayer):
         super().__init__(layer, node)
 
         self.layer.events.symbol.connect(self._on_data_change)
-        self.layer.events.edge_width.connect(self._on_data_change)
-        self.layer.events.edge_width_is_relative.connect(self._on_data_change)
-        self.layer.events.edge_color.connect(self._on_data_change)
-        self.layer._edge.events.colors.connect(self._on_data_change)
-        self.layer._edge.events.color_properties.connect(self._on_data_change)
+        self.layer.events.border_width.connect(self._on_data_change)
+        self.layer.events.border_width_is_relative.connect(
+            self._on_data_change
+        )
+        self.layer.events.border_color.connect(self._on_data_change)
+        self.layer._border.events.colors.connect(self._on_data_change)
+        self.layer._border.events.color_properties.connect(
+            self._on_data_change
+        )
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer._face.events.colors.connect(self._on_data_change)
         self.layer._face.events.color_properties.connect(self._on_data_change)
@@ -48,28 +52,28 @@ class VispyPointsLayer(VispyBaseLayer):
             # always pass one invisible point to avoid issues
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = [0]
-            edge_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
+            border_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
             face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
-            edge_width = [0]
+            border_width = [0]
             symbol = ['o']
         else:
             data = self.layer._view_data
             size = self.layer._view_size
-            edge_color = self.layer._view_edge_color
+            border_color = self.layer._view_border_color
             face_color = self.layer._view_face_color
-            edge_width = self.layer._view_edge_width
+            border_width = self.layer._view_border_width
             symbol = self.layer._view_symbol
 
         set_data = self.node._subvisuals[0].set_data
 
-        if self.layer.edge_width_is_relative:
-            edge_kw = {
+        if self.layer.border_width_is_relative:
+            border_kw = {
                 'edge_width': None,
-                'edge_width_rel': edge_width,
+                'edge_width_rel': border_width,
             }
         else:
-            edge_kw = {
-                'edge_width': edge_width,
+            border_kw = {
+                'edge_width': border_width,
                 'edge_width_rel': None,
             }
 
@@ -77,9 +81,9 @@ class VispyPointsLayer(VispyBaseLayer):
             data[:, ::-1],
             size=size,
             symbol=symbol,
-            edge_color=edge_color,
+            edge_color=border_color,
             face_color=face_color,
-            **edge_kw,
+            **border_kw,
         )
 
         self.reset()

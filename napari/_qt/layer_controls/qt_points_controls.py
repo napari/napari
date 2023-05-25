@@ -45,10 +45,10 @@ class QtPointsControls(QtLayerControls):
         Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete points from layer.
-    edgeColorEdit : QColorSwatchEdit
-        Widget to select display color for shape edges.
+    borderColorEdit : QColorSwatchEdit
+        Widget to select display color for points borders.
     faceColorEdit : QColorSwatchEdit
-        Widget to select display color for shape faces.
+        Widget to select display color for points faces.
     layer : napari.layers.Points
         An instance of a napari Points layer.
     outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
@@ -80,11 +80,11 @@ class QtPointsControls(QtLayerControls):
         )
         self.layer.events.symbol.connect(self._on_current_symbol_change)
         self.layer.events.size.connect(self._on_current_size_change)
-        self.layer.events.current_edge_color.connect(
-            self._on_current_edge_color_change
+        self.layer.events.current_border_color.connect(
+            self._on_current_border_color_change
         )
-        self.layer._edge.events.current_color.connect(
-            self._on_current_edge_color_change
+        self.layer._border.events.current_color.connect(
+            self._on_current_border_color_change
         )
         self.layer.events.current_face_color.connect(
             self._on_current_face_color_change
@@ -122,12 +122,14 @@ class QtPointsControls(QtLayerControls):
             initial_color=self.layer.current_face_color,
             tooltip=trans._('click to set current face color'),
         )
-        self.edgeColorEdit = QColorSwatchEdit(
-            initial_color=self.layer.current_edge_color,
-            tooltip=trans._('click to set current edge color'),
+        self.borderColorEdit = QColorSwatchEdit(
+            initial_color=self.layer.current_border_color,
+            tooltip=trans._('click to set current border color'),
         )
         self.faceColorEdit.color_changed.connect(self.changeCurrentFaceColor)
-        self.edgeColorEdit.color_changed.connect(self.changeCurrentEdgeColor)
+        self.borderColorEdit.color_changed.connect(
+            self.changeCurrentBorderColor
+        )
 
         sym_cb = QComboBox()
         sym_cb.setToolTip(
@@ -215,7 +217,7 @@ class QtPointsControls(QtLayerControls):
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(trans._('symbol:'), self.symbolComboBox)
         self.layout().addRow(trans._('face color:'), self.faceColorEdit)
-        self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
+        self.layout().addRow(trans._('border color:'), self.borderColorEdit)
         self.layout().addRow(trans._('display text:'), self.textDispCheckBox)
         self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
 
@@ -338,22 +340,22 @@ class QtPointsControls(QtLayerControls):
             self.layer.current_face_color = color
 
     @Slot(np.ndarray)
-    def changeCurrentEdgeColor(self, color: np.ndarray):
-        """Update edge color of layer model from color picker user input."""
-        with self.layer.events.current_edge_color.blocker(
-            self._on_current_edge_color_change
+    def changeCurrentBorderColor(self, color: np.ndarray):
+        """Update border color of layer model from color picker user input."""
+        with self.layer.events.current_border_color.blocker(
+            self._on_current_border_color_change
         ):
-            self.layer.current_edge_color = color
+            self.layer.current_border_color = color
 
     def _on_current_face_color_change(self):
         """Receive layer.current_face_color() change event and update view."""
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
 
-    def _on_current_edge_color_change(self):
-        """Receive layer.current_edge_color() change event and update view."""
-        with qt_signals_blocked(self.edgeColorEdit):
-            self.edgeColorEdit.setColor(self.layer.current_edge_color)
+    def _on_current_border_color_change(self):
+        """Receive layer.current_border_color() change event and update view."""
+        with qt_signals_blocked(self.borderColorEdit):
+            self.borderColorEdit.setColor(self.layer.current_border_color)
 
     def _on_ndisplay_changed(self):
         self.layer.editable = not (self.layer.ndim == 2 and self.ndisplay == 3)

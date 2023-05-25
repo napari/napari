@@ -36,8 +36,8 @@ def make_widget(
         points = blobs[:, : image.ndim]
         meta = {
             "size": blobs[:, -1],
-            "edge_color": "red",
-            "edge_width": 2,
+            "border_color": "red",
+            "border_width": 2,
             "face_color": "transparent",
         }
         # return a "LayerDataTuple"
