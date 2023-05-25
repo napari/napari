@@ -92,8 +92,8 @@ QtModeRadioButton::indicator:unchecked:hover {
   background-color: {{ highlight }};
 }
 
-QtModeRadioButton[mode="zoom"]::indicator {
-  image: url("theme_{{ id }}:/zoom.svg");
+QtModeRadioButton[mode="pan"]::indicator {
+  image: url("theme_{{ id }}:/pan_arrows.svg");
 }
 
 QtModeRadioButton[mode="select"]::indicator {

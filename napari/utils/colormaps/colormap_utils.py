@@ -5,8 +5,13 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import skimage.color as colorconv
-from vispy.color import BaseColormap as VispyColormap
-from vispy.color import Color, ColorArray, get_colormap, get_colormaps
+from vispy.color import (
+    BaseColormap as VispyColormap,
+    Color,
+    ColorArray,
+    get_colormap,
+    get_colormaps,
+)
 from vispy.color.colormap import LUT_len
 
 from napari.utils.colormaps.bop_colors import bopd
@@ -248,7 +253,8 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256):
 
     """
     phi_mod = 0.6180339887498948482
-    image_float = seed + image * phi_mod
+    image_float = np.float32(image)
+    image_float = seed + image_float * phi_mod
     # We now map the floats to the range [0 + margin, 1 - margin]
     image_out = margin + (1 - 2 * margin) * (
         image_float - np.floor(image_float)
@@ -502,10 +508,9 @@ ALL_COLORMAPS.update(BOP_COLORMAPS)
 ALL_COLORMAPS.update(INVERSE_COLORMAPS)
 
 # ... sorted alphabetically by name
-AVAILABLE_COLORMAPS = {
-    k: v
-    for k, v in sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
-}
+AVAILABLE_COLORMAPS = dict(
+    sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
+)
 # lock to allow update of AVAILABLE_COLORMAPS in threads
 AVAILABLE_COLORMAPS_LOCK = Lock()
 
@@ -642,8 +647,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
-                isinstance(colormap['colors'], VispyColormap)
-                or isinstance(colormap['colors'], Colormap)
+                isinstance(colormap['colors'], (VispyColormap, Colormap))
             ):
                 cmap = Colormap(**colormap)
                 name = cmap.name

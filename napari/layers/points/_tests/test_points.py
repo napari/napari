@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import numpy as np
 import pandas as pd
 import pytest
+from psygnal.containers import Selection
 from pydantic import ValidationError
 from vispy.color import get_colormap
 
@@ -16,6 +17,7 @@ from napari._tests.utils import (
 from napari.layers import Points
 from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
+from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
@@ -526,18 +528,18 @@ def test_changing_modes():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'add'
     assert layer.mode == 'add'
 
     layer.mode = 'select'
     assert layer.mode == 'select'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     with pytest.raises(ValueError):
         layer.mode = 'not_a_mode'
@@ -1689,6 +1691,9 @@ def test_message_3d():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
+    layer._slice_input = _SliceInput(
+        ndisplay=3, point=(0, 0, 0), order=(0, 1, 2)
+    )
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
@@ -1842,7 +1847,7 @@ def test_world_data_extent():
     max_val = (7, 30, 15)
     layer = Points(data)
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
 def test_scale_init():
@@ -2528,3 +2533,12 @@ def test_editable_and_visible_are_independent():
     layer.visible = True
 
     assert not layer.editable
+
+
+def test_point_selection_remains_evented_after_update():
+    """Existing evented selection model should be updated rather than replaced."""
+    data = np.empty((3, 2))
+    layer = Points(data)
+    assert isinstance(layer.selected_data, Selection)
+    layer.selected_data = {0, 1}
+    assert isinstance(layer.selected_data, Selection)
