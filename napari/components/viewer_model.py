@@ -444,10 +444,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.camera.mouse_zoom = active_layer.mouse_zoom
             self._update_status_bar_from_cursor()
 
-    @staticmethod
-    def rounded_division(min_val, max_val, precision):
-        return int(((min_val + max_val) / 2) / precision) * precision
-
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
