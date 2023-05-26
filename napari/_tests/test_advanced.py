@@ -197,7 +197,7 @@ def test_update_lazy_console(make_napari_viewer, capsys):
     viewer.update_console("missing")
     captured = capsys.readouterr()
     assert 'Could not get' in captured.out
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         viewer.update_console(x)
 
     # Create class objects that will have weakrefs
