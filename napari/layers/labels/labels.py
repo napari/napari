@@ -175,7 +175,7 @@ class Labels(_ImageBase):
         The number of dimensions across which labels will be edited.
     contour : int
         If greater than 0, displays contours of labels instead of shaded regions
-        with a thickness equal to its value.
+        with a thickness equal to its value. Must be >= 0.
     brush_size : float
         Size of the paint brush in data coordinates.
     selected_label : int
@@ -322,6 +322,7 @@ class Labels(_ImageBase):
 
         self.events.add(
             preserve_labels=Event,
+            show_selected_label=Event,
             properties=Event,
             n_edit_dimensions=Event,
             contiguous=Event,
@@ -411,13 +412,15 @@ class Labels(_ImageBase):
         self.events.n_edit_dimensions()
 
     @property
-    def contour(self):
+    def contour(self) -> int:
         """int: displays contours of labels instead of shaded regions."""
         return self._contour
 
     @contour.setter
-    def contour(self, contour):
-        self._contour = contour
+    def contour(self, contour: int) -> None:
+        if contour < 0:
+            raise ValueError("contour value must be >= 0")
+        self._contour = int(contour)
         self.events.contour()
         self.refresh()
 
@@ -673,6 +676,7 @@ class Labels(_ImageBase):
         # note: self.color_mode returns a string and this comparison fails,
         # so use self._color_mode
         if self.show_selected_label:
+            self._cached_labels = None  # invalidates labels cache
             self.refresh()
 
     def swap_selected_and_background_labels(self):
@@ -725,6 +729,8 @@ class Labels(_ImageBase):
     @show_selected_label.setter
     def show_selected_label(self, filter_val):
         self._show_selected_label = filter_val
+        self.events.show_selected_label(show_selected_label=filter_val)
+        self._cached_labels = None
         self.refresh()
 
     @Layer.mode.getter
@@ -1153,8 +1159,15 @@ class Labels(_ImageBase):
                 start_point, end_point, n_points, endpoint=True
             )
             im_slice = self._slice.image.raw
+            bounding_box = self._display_bounding_box(dims_displayed)
+            # the display bounding box is returned as a closed interval
+            # (i.e. the endpoint is included) by the method, but we need
+            # open intervals in the code that follows, so we add 1.
+            bounding_box[:, 1] += 1
+
             clamped = clamp_point_to_bounding_box(
-                sample_points, self._display_bounding_box(dims_displayed)
+                sample_points,
+                bounding_box,
             ).astype(int)
             values = im_slice[tuple(clamped.T)]
             nonzero_indices = np.flatnonzero(values)

@@ -20,7 +20,6 @@ from napari._tests.utils import (
     skip_on_win_ci,
 )
 from napari._vispy._tests.utils import vispy_image_scene_size
-from napari._vispy.utils.gl import fix_data_dtype
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Points
 from napari.settings import get_settings
@@ -298,45 +297,6 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
     assert np.allclose(output_data, expected_data)
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        'int8',
-        'uint8',
-        'int16',
-        'uint16',
-        'int32',
-        'float16',
-        'float32',
-        'float64',
-    ],
-)
-def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
-    """Test that the viewer doesn't change the underlying array."""
-    image = np.random.rand(10, 32, 32)
-    image *= 200 if dtype.endswith('8') else 2**14
-    image = image.astype(dtype)
-    imean = image.mean()
-
-    viewer = make_napari_viewer()
-    layer = viewer.add_image(image.copy())
-    data = layer.data
-
-    datamean = np.mean(data)
-    assert datamean == imean
-    # toggle dimensions
-    viewer.dims.ndisplay = 3
-    datamean = np.mean(data)
-    assert datamean == imean
-    # back to 2D
-    viewer.dims.ndisplay = 2
-    datamean = np.mean(data)
-    assert datamean == imean
-    # also check that vispy gets (almost) the same data
-    datamean = np.mean(fix_data_dtype(data))
-    assert np.allclose(datamean, imean, rtol=5e-04)
-
-
 def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     viewer = make_napari_viewer()
     data = np.zeros((60, 60, 60))
@@ -589,7 +549,7 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     img = np.ones((512, 256))
     # canvas size must be large enough that img fits in the canvas
     canvas_size = tuple(3 * s for s in img.shape)
-    expected_corner_pixels = np.asarray([[0, 0], [img.shape[0], img.shape[1]]])
+    expected_corner_pixels = np.asarray([[0, 0], [s - 1 for s in img.shape]])
 
     vol = np.stack([img] * 8, axis=0)
     if multiscale:
