@@ -9,23 +9,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 write_to = "napari/_version.py"
 
-[tool.briefcase]
-project_name = "napari"
-bundle = "com.napari"
-author = "napari"
-url = "https://napari.org/"
-license = "BSD license"
-# version populated in bundle.py
-version = "0.0.1"
-
-[tool.briefcase.app.napari]
-formal_name = "napari"
-description = "napari: a multi-dimensional image viewer"
-sources = ['napari']
-icon = "napari/resources/icon"
-# populated in bundle.py
-requires = []
-
 [tool.black]
 target-version = ['py38', 'py39', 'py310']
 skip-string-normalization = true
@@ -54,7 +37,6 @@ exclude = '''
 
 [tool.check-manifest]
 ignore = [
-  "bundle.py",
   ".cirrus.yml",
   ".pre-commit-config.yaml",
   "asv.conf.json",
@@ -144,7 +126,6 @@ fix = true
 "tools/test_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20"]
 "examples/**" = ["INP001", "T20"]
-"bundle.py" = ["T20"]
 "**/vendored/**" = ["TID"]
 
 [tool.ruff.flake8-quotes]
@@ -204,16 +185,29 @@ markers = [
 
 [tool.mypy]
 files = "napari"
+# This file triggers an internal mypy error, so exclude collection
+# TODO: fix this
+exclude = "napari/utils/events/_tests/test_evented_model\\.py"
+plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
 ignore_missing_imports = true
-exclude = [
-  "_tests",
-]
 show_error_codes = true
-no_implicit_optional = true
 warn_redundant_casts = true
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ['*._tests.*']
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+  'napari.plugins.*',
+  'napari.settings.*',
+  'napari.types.*',
+]
+ignore_errors = false
+no_implicit_optional = true
 warn_unused_ignores = true
 check_untyped_defs = true
-plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
 
 # # maybe someday :)
 # disallow_any_generics = true

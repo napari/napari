@@ -10,12 +10,12 @@ repos:
       pass_filenames: true
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.265
+    rev: v0.0.267
     hooks:
       - id: ruff
         exclude: _vendor|vendored
 -   repo: https://github.com/seddonym/import-linter
-    rev: v1.8.0
+    rev: v1.9.0
     hooks:
     - id: import-linter
       stages: [manual]

@@ -342,9 +342,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._data_level = 0
             self._thumbnail_level = 0
         displayed_axes = self._slice_input.displayed
-        self.corner_pixels[1][displayed_axes] = self.level_shapes[
-            self._data_level
-        ][displayed_axes]
+        self.corner_pixels[1][displayed_axes] = (
+            np.array(self.level_shapes)[self._data_level][displayed_axes] - 1
+        )
 
         self._slice = _ImageSliceResponse.make_empty(
             dims=self._slice_input, rgb=self.rgb
@@ -460,7 +460,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         extent_data : array, shape (2, D)
         """
         shape = self.level_shapes[0]
-        return np.vstack([np.zeros(len(shape)), shape])
+        return np.vstack([np.zeros(len(shape)), shape - 1])
+
+    @property
+    def _extent_data_augmented(self) -> np.ndarray:
+        extent = self._extent_data
+        return extent + [[-0.5], [+0.5]]
 
     @property
     def data_level(self):
@@ -701,7 +706,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # This can happen when slicing layers with different extents.
         indices = self._slice_indices
         for d in self._slice_input.not_displayed:
-            if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d]):
+            if (indices[d] < 0) or (indices[d] > self._extent_data[1][d]):
                 self._slice = _ImageSliceResponse.make_empty(
                     dims=self._slice_input, rgb=self.rgb
                 )
