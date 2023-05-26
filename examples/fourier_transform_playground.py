@@ -27,9 +27,9 @@ x = np.arange(IMAGE_SIZE) - IMAGE_SIZE / 2
 X, Y = np.meshgrid(x, x)
 
 
-def wave_2d(wavelength, angle, phase_shift, speed):
+def wave_2d(frequency, angle, phase_shift, speed):
     """
-    Generate a 2D sine wave based on angle and wavelength.
+    Generate a 2D sine wave based on angle and frequency.
 
     The wave phase if offset by phase_shift and the current time,
     multiplied by an arbitrary speed value; this generates an animated
@@ -37,7 +37,7 @@ def wave_2d(wavelength, angle, phase_shift, speed):
     """
     angle = np.deg2rad(angle)
     phase_shift = np.deg2rad(phase_shift)
-    wave = 2 * np.pi * (X * np.cos(angle) + Y * np.sin(angle)) / wavelength
+    wave = 2 * np.pi * (X * np.cos(angle) + Y * np.sin(angle)) * frequency
     return np.sin(wave + phase_shift + (time() * speed))
 
 
@@ -105,10 +105,10 @@ def update_viewer():
             # note that these come from thread.send() in moving_wave()!
             wave_id, *args = new_params
             waves[wave_id] = args
-        # remove (set value to None) any wave with wavelength 0, but generate the rest
+        # remove (set value to None) any wave with frequency 0, but generate the rest
         yield {
-            wave_id: wave_2d(wavelength, angle, phase_shift, speed) if wavelength else None
-            for wave_id, (wavelength, angle, phase_shift, speed) in waves.items()
+            wave_id: wave_2d(frequency, angle, phase_shift, speed) if frequency else None
+            for wave_id, (frequency, angle, phase_shift, speed) in waves.items()
         }
 
 
@@ -118,14 +118,14 @@ thread = update_viewer()
 
 @magic_factory(
     auto_call=True,
-    wavelength={'widget_type': 'Slider', 'min': 0, 'max': IMAGE_SIZE},
+    frequency={'widget_type': 'FloatSlider', 'min': 0, 'max': 1, 'step': 0.01},
     angle={'widget_type': 'Slider', 'min': 0, 'max': 180},
     phase_shift={'widget_type': 'Slider', 'min': 0, 'max': 180},
     speed={'widget_type': 'FloatSlider', 'min': -10, 'max': 10, 'step': 0.1},
 )
 def moving_wave(
     wave_id: int = 0,
-    wavelength: int = IMAGE_SIZE // 2,
+    frequency: float = 0.2,
     angle: int = 0,
     phase_shift: int = 0,
     speed: float = 1,
@@ -138,7 +138,7 @@ def moving_wave(
     while changing parameters.
     """
     if run:
-        thread.send((wave_id, wavelength, angle, phase_shift, speed))
+        thread.send((wave_id, frequency, angle, phase_shift, speed))
 
 
 wdg = moving_wave()
