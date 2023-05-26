@@ -49,6 +49,7 @@ from napari_builtins.io import imsave_extensions
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 from napari._vispy.canvas import FramerateMonitor
+from napari._vispy.layers.base import RenderQualityChange
 
 if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
@@ -232,19 +233,13 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
-        self.view = self.canvas.central_widget.add_view(border_width=0)
-        self.camera = VispyCamera(
-            self.view, self.viewer.camera, self.viewer.dims
-        )
-        self.canvas.events.draw.connect(self.camera.on_draw)
-
         # add the FPS monitor
         self._fps_window = 0.5
         stale_threshold = self._fps_window + 0.1
         self._fps_monitor = FramerateMonitor(
             stale_threshold=stale_threshold, debounce_threshold=2
         )
-        self.canvas.measure_fps(
+        self.canvas._scene_canvas.measure_fps(
             window=self._fps_monitor._fps_window,
             callback=self._fps_monitor.update_fps,
         )
@@ -255,9 +250,6 @@ class QtViewer(QSplitter):
         self._redraw_debouncer.triggered.connect(
             self.redraw_at_higher_resolution
         )
-
-        # Add axes, scale bar
-        self._add_visuals()
 
         # Create the experimental QtPool for octree and/or monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)

@@ -17,6 +17,7 @@ from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.overlays import CanvasOverlay, SceneOverlay
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
     mouse_move_callbacks,
@@ -36,7 +37,6 @@ if TYPE_CHECKING:
 
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
-    from napari.utils.events.event import Event
     from napari.utils.key_bindings import KeymapHandler
 
 
@@ -363,8 +363,6 @@ class VispyCanvas:
         if event.pos is None:
             return
 
-        super()._process_mouse_event(event)
-
         # Add the view ray to the event
         event.view_direction = self.viewer.camera.calculate_nd_view_direction(
             self.viewer.dims.ndim, self.viewer.dims.displayed
@@ -684,7 +682,7 @@ class FramerateMonitor:
         if not self._fps_stale():
             # do nothing if the last fps measurement is still valid
             return
-        elif self._measuring is False:
+        if self._measuring is False:
             # if the measurement is stale, start measuring
             self._last_measurement_valid = False
             self._measuring = True
