@@ -125,7 +125,8 @@ class QtLabelsControls(QtLayerControls):
             labels_selection_item.addWidget(self.colorBox)
             labels_selection_item.addWidget(self.selectionSpinBox)
         else:
-            labels_selection_item = QtLabelsCombobox(layer)
+            self.labelsCombobox = QtLabelsCombobox(layer)
+            labels_selection_item = self.labelsCombobox
 
         sld = QSlider(Qt.Orientation.Horizontal)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -570,7 +571,7 @@ class QtLabelsCombobox(QComboBox):
 
         self.layer = layer
         self._height = 24
-        self._last_seed = 0
+        self._last_seed = -1
         self.setFixedHeight(self._height)
 
         self.layer.events.colormap.connect(self.update_items)

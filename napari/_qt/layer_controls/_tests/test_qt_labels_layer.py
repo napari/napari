@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from qtpy.QtGui import QColor
 
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari.layers import Labels
@@ -11,9 +12,13 @@ _COLOR = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'}
 
 
 @pytest.fixture
-def make_labels_controls(qtbot, color=None):
-    def _make_labels_controls(color=color):
-        layer = Labels(_LABELS, color=color)
+def make_labels_controls(qtbot, color=None, predefined_labels=None):
+    def _make_labels_controls(
+        color=color, predefined_labels=predefined_labels
+    ):
+        layer = Labels(
+            _LABELS, color=color, predefined_labels=predefined_labels
+        )
         qtctrl = QtLabelsControls(layer)
         qtbot.add_widget(qtctrl)
         return layer, qtctrl
@@ -102,3 +107,50 @@ def test_preserve_labels_checkbox(make_labels_controls):
     assert not layer.preserve_labels
     qtctrl.preserveLabelsCheckBox.setChecked(True)
     assert layer.preserve_labels
+
+
+def test_labels_combobox(make_labels_controls):
+    """Tests that QtLabelsCombobox interacts correctly with the Labels layer."""
+    predefined_labels = [10, 20, 30, 40, 50]
+    layer, qtctrl = make_labels_controls(predefined_labels=predefined_labels)
+
+    assert hasattr(qtctrl, 'labelsCombobox')
+    assert not hasattr(qtctrl, 'colorBox')
+    assert not hasattr(qtctrl, 'selectionSpinBox')
+
+    assert qtctrl.layout().indexOf(qtctrl.labelsCombobox) != -1
+    assert qtctrl.labelsCombobox.currentIndex() == 1
+
+    qtctrl.labelsCombobox.setCurrentIndex(2)
+    assert layer.selected_label == 20
+
+    # Check that selected labels matches the correct combobox item
+    # and that all the combobox items are created properly
+    for label_id in predefined_labels:
+        layer.selected_label = label_id
+
+        assert qtctrl.labelsCombobox.currentText() == str(label_id)
+
+        icon = qtctrl.labelsCombobox.itemIcon(
+            qtctrl.labelsCombobox.currentIndex()
+        )
+        icon_image = icon.pixmap(qtctrl.labelsCombobox._height).toImage()
+        color = QColor(icon_image.pixel(5, 5)).getRgbF()
+        assert np.allclose(color[:3], layer.get_color(label_id)[:3], rtol=1e-2)
+
+    # Check if the icons are updated after setting a new colormap
+    layer.new_colormap()
+    for label_id in predefined_labels:
+        layer.selected_label = label_id
+        icon = qtctrl.labelsCombobox.itemIcon(
+            qtctrl.labelsCombobox.currentIndex()
+        )
+        icon_image = icon.pixmap(qtctrl.labelsCombobox._height).toImage()
+        color = QColor(icon_image.pixel(5, 5)).getRgbF()
+        assert np.allclose(color[:3], layer.get_color(label_id)[:3], rtol=1e-2)
+
+    layer.selected_label = layer._background_label
+    assert qtctrl.labelsCombobox.currentText().endswith(': background')
+
+    layer.selected_label = 5
+    assert qtctrl.labelsCombobox.currentText() == '5: unspecified'
