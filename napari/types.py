@@ -88,7 +88,7 @@ class SampleDict(TypedDict):
 ArrayBase: Type[np.ndarray] = np.ndarray
 
 
-GraphData = NewType("GraphData", BaseGraph)
+GraphData = NewType("GraphData", BaseGraph)  # type: ignore [valid-newtype]
 ImageData = NewType("ImageData", np.ndarray)
 LabelsData = NewType("LabelsData", np.ndarray)
 PointsData = NewType("PointsData", np.ndarray)
