@@ -76,7 +76,7 @@ def combine_and_set_data(waves):
         mean = np.mean(to_add, axis=0)
         ft = fftshift(fft2(mean))
         power_spectrum = abs(ft)
-        phase = ft.imag
+        phase = np.angle(ft)
     else:
         mean = power_spectrum = phase = None
 
