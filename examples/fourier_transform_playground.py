@@ -78,12 +78,12 @@ def combine_and_set_data(waves):
         mean = np.mean(to_add, axis=0)
         ft = fftshift(fft2(mean))
         power_spectrum = abs(ft)
-        phase = np.angle(ft)
+        phase = np.angle(ft) * power_spectrum
     else:
         mean = power_spectrum = phase = None
 
-    update_layer('phase', phase, colormap=('red', 'black', 'blue'))
-    update_layer('power_spectrum', power_spectrum)
+    update_layer('phase', phase, colormap=('hsv'))
+    update_layer('power_spectrum_log', np.log(power_spectrum + 1))
     update_layer('mean', mean)
 
     for name, data in waves.items():
