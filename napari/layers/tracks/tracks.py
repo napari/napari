@@ -170,13 +170,8 @@ class Tracks(Layer):
         self._current_displayed_dims = None
 
         # track display default limits
-        self._max_length = 300.0
+        self._max_length = 300
         self._max_width = 20
-
-        # set private properties to infer types
-        self._tail_length = tail_length
-        self._tail_width = tail_width
-        self._head_length = head_length
 
         # track display properties
         self.tail_width = tail_width
@@ -459,23 +454,23 @@ class Tracks(Layer):
         self.events.tail_width()
 
     @property
-    def tail_length(self) -> Union[int, float]:
+    def tail_length(self) -> int:
         """float: Width for all vectors in pixels."""
         return self._tail_length
 
     @tail_length.setter
-    def tail_length(self, tail_length: float):
+    def tail_length(self, tail_length: int):
         if tail_length > self._max_length:
             self._max_length = tail_length
         self._tail_length = tail_length
         self.events.tail_length()
 
     @property
-    def head_length(self) -> Union[int, float]:
+    def head_length(self) -> int:
         return self._head_length
 
     @head_length.setter
-    def head_length(self, head_length: Union[int, float]):
+    def head_length(self, head_length: int):
         if head_length > self._max_length:
             self._max_length = head_length
         self._head_length = head_length
