@@ -101,9 +101,9 @@ class Tracks(Layer):
         features=None,
         properties=None,
         graph=None,
-        tail_width=2,
-        tail_length=30,
-        head_length=0,
+        tail_width: int = 2,
+        tail_length: int = 30,
+        head_length: int = 0,
         name=None,
         metadata=None,
         scale=None,
@@ -444,13 +444,13 @@ class Tracks(Layer):
         self.events.rebuild_graph()
 
     @property
-    def tail_width(self) -> Union[int, float]:
+    def tail_width(self) -> int:
         """float: Width for all vectors in pixels."""
         return self._tail_width
 
     @tail_width.setter
-    def tail_width(self, tail_width: Union[int, float]):
-        self._tail_width = np.clip(tail_width, 0.5, self._max_width)
+    def tail_width(self, tail_width: int):
+        self._tail_width: int = np.clip(tail_width, 0.5, self._max_width)
         self.events.tail_width()
 
     @property
@@ -462,7 +462,7 @@ class Tracks(Layer):
     def tail_length(self, tail_length: int):
         if tail_length > self._max_length:
             self._max_length = tail_length
-        self._tail_length = tail_length
+        self._tail_length: int = tail_length
         self.events.tail_length()
 
     @property
@@ -473,7 +473,7 @@ class Tracks(Layer):
     def head_length(self, head_length: int):
         if head_length > self._max_length:
             self._max_length = head_length
-        self._head_length = head_length
+        self._head_length: int = head_length
         self.events.head_length()
 
     @property
