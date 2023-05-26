@@ -696,8 +696,8 @@ class Labels(_ImageBase):
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
-            super()._set_colormap(self._random_colormap)
-
+            with self.events.colormap.blocker():
+                super()._set_colormap(self._random_colormap)
         else:
             raise ValueError(trans._("Unsupported Color Mode"))
 

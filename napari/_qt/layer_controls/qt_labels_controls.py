@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QColor, QPainter
+from qtpy.QtGui import QColor, QIcon, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QButtonGroup,
     QCheckBox,
@@ -273,8 +273,11 @@ class QtLabelsControls(QtLayerControls):
         color_layout.addWidget(self.colorBox)
         color_layout.addWidget(self.selectionSpinBox)
 
+        self.color_combobox = QtColorCombobox(layer)
+
         self.layout().addRow(button_row)
         self.layout().addRow(trans._('label:'), color_layout)
+        self.layout().addRow(trans._('label:'), self.color_combobox)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
@@ -546,17 +549,7 @@ class QtColorBox(QWidget):
         painter = QPainter(self)
         if self.layer._selected_color is None:
             self.color = None
-            for i in range(self._height // 4):
-                for j in range(self._height // 4):
-                    if (i % 2 == 0 and j % 2 == 0) or (
-                        i % 2 == 1 and j % 2 == 1
-                    ):
-                        painter.setPen(QColor(230, 230, 230))
-                        painter.setBrush(QColor(230, 230, 230))
-                    else:
-                        painter.setPen(QColor(25, 25, 25))
-                        painter.setBrush(QColor(25, 25, 25))
-                    painter.drawRect(i * 4, j * 4, 5, 5)
+            paint_checkerboard(painter, self._height)
         else:
             color = np.round(255 * self.layer._selected_color).astype(int)
             painter.setPen(QColor(*list(color)))
@@ -572,3 +565,71 @@ class QtColorBox(QWidget):
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
         super().closeEvent(event)
+
+
+class QtColorCombobox(QComboBox):
+    def __init__(self, layer, parent=None) -> None:
+        super().__init__(parent)
+
+        self.layer = layer
+        self._height = 24
+        self._last_seed = 0
+        self.setFixedHeight(self._height)
+
+        self.layer.events.colormap.connect(self.update_items)
+        self.layer.events.selected_label.connect(
+            self._on_selected_label_change
+        )
+
+        self.currentIndexChanged.connect(self._on_current_index_changed)
+
+        self.update_items()
+
+    def update_items(self):
+        self._last_seed = self.layer.seed
+
+        num_colors = np.random.randint(8, 16)
+
+        for i in range(num_colors):
+            if i >= self.count():
+                self.addItem("")
+
+            color = self.layer.get_color(i)
+            color_pixmap = QPixmap(self._height, self._height)
+
+            if color is None:
+                paint_checkerboard(QPainter(color_pixmap), self._height)
+            else:
+                color = np.round(255 * color[:3]).astype(int)
+                color_pixmap.fill(QColor(*color.tolist()))
+
+            color_icon = QIcon(color_pixmap)
+            self.setItemIcon(i, color_icon)
+            self.setItemText(i, str(i) + ":")
+
+        for _ in range(self.count() - num_colors):
+            self.removeItem(self.count() - 1)
+
+        self._on_selected_label_change()
+
+    def _on_selected_label_change(self):
+        if not np.isclose(self._last_seed, self.layer.seed):
+            self.update_items()
+
+        if 0 <= self.layer.selected_label < 10:
+            self.setCurrentIndex(self.layer.selected_label)
+
+    def _on_current_index_changed(self):
+        self.layer.selected_label = self.currentIndex()
+
+
+def paint_checkerboard(painter: QPainter, height: int) -> None:
+    for i in range(height // 4):
+        for j in range(height // 4):
+            if (i % 2 == 0 and j % 2 == 0) or (i % 2 == 1 and j % 2 == 1):
+                painter.setPen(QColor(230, 230, 230))
+                painter.setBrush(QColor(230, 230, 230))
+            else:
+                painter.setPen(QColor(25, 25, 25))
+                painter.setBrush(QColor(25, 25, 25))
+            painter.drawRect(i * 4, j * 4, 5, 5)
