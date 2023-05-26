@@ -14,6 +14,7 @@ from napari.layers.shapes._shapes_models import (
     Rectangle,
 )
 from napari.layers.shapes._shapes_utils import point_to_lines
+from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from typing import List, Optional, Tuple
@@ -393,7 +394,10 @@ def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
             position_diff = np.linalg.norm(
                 event.pos - layer._last_cursor_position
             )
-            if position_diff > 10:
+            if (
+                position_diff
+                > get_settings().experimental.lasso_vertex_distance
+            ):
                 add_vertex_to_path(layer, event, index, coordinates, None)
 
 
