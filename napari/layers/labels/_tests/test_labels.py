@@ -31,7 +31,7 @@ def test_random_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -43,7 +43,7 @@ def test_all_zeros_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -55,7 +55,7 @@ def test_3D_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -104,7 +104,9 @@ def test_changing_labels():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape_b]
+    )
     assert layer._data_view.shape == shape_b[-2:]
 
     data_c = np.zeros(shape_c, dtype=bool)
@@ -128,7 +130,9 @@ def test_changing_labels_dims():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape_b]
+    )
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -628,6 +632,9 @@ def test_contour(input_data, expected_data_view):
         layer._raw_to_displayed(input_data), layer._data_view
     )
 
+    with pytest.raises(ValueError, match='contour value must be >= 0'):
+        layer.contour = -1
+
 
 def test_contour_large_new_labels():
     """Check that new labels larger than the lookup table work in contour mode.
@@ -912,8 +919,8 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.randint(20, size=(shape))
     layer = Labels(data)
-    extent = np.array(((0,) * 3, shape))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
+    extent = np.array(((0,) * 3, [s - 1 for s in shape]))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
 @pytest.mark.parametrize(
@@ -1476,6 +1483,32 @@ def test_color_mapping_when_color_is_changed():
     )
 
 
+def test_color_mapping_with_show_selected_label():
+    """Checks if the color mapping is computed correctly when show_selected_label is activated."""
+
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    mapped_colors_all = layer._raw_to_displayed(layer._slice.image.raw).copy()
+
+    layer.selected_label = 1
+    layer.show_selected_label = True
+
+    for selected_label in range(1, 5):
+        layer.selected_label = selected_label
+        label_mask = data == selected_label
+        mapped_colors = layer._raw_to_displayed(layer._slice.image.raw)
+
+        assert np.allclose(
+            mapped_colors[label_mask], mapped_colors_all[label_mask]
+        )
+        assert np.allclose(mapped_colors[np.logical_not(label_mask)], 0)
+
+    layer.show_selected_label = False
+    assert np.allclose(
+        layer._raw_to_displayed(layer._slice.image.raw), mapped_colors_all
+    )
+
+
 def test_color_mapping_when_seed_is_changed():
     """Checks if the color mapping is updated when the color palette seed is changed."""
     np.random.seed(0)
@@ -1583,5 +1616,5 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {"seed", "num_colors", "show_selected_label", "color"},
+            {"seed", "num_colors", "color"},
         )

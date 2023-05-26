@@ -2,6 +2,7 @@ from typing import Tuple
 
 import numpy as np
 from qtpy.QtCore import QModelIndex, Qt
+from qtpy.QtWidgets import QLineEdit, QStyleOptionViewItem
 
 from napari._qt.containers import QtLayerList
 from napari.components import LayerList
@@ -52,3 +53,13 @@ def check_state_at_layer_index(
     # The data method returns integer value of the enum in some cases, so
     # ensure it has the enum type for more explicit assertions.
     return Qt.CheckState(value)
+
+
+def test_createEditor(qtbot):
+    view, image = make_qt_layer_list_with_layer(qtbot)
+    model_index = layer_to_model_index(view, 0)
+    delegate = view.itemDelegate()
+    editor = delegate.createEditor(view, QStyleOptionViewItem(), model_index)
+    assert isinstance(editor, QLineEdit)
+    delegate.setEditorData(editor, model_index)
+    assert editor.text() == image.name

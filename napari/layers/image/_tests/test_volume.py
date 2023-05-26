@@ -13,7 +13,7 @@ def test_random_volume():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -25,7 +25,7 @@ def test_switching_displayed_dimensions():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
 
     # check displayed data is initially 2D
     assert layer._data_view.shape == shape[-2:]
@@ -42,7 +42,7 @@ def test_switching_displayed_dimensions():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
 
     # check displayed data is initially 3D
     assert layer._data_view.shape == shape[-3:]
@@ -64,7 +64,7 @@ def test_all_zeros_volume():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -77,7 +77,7 @@ def test_integer_volume():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -90,7 +90,7 @@ def test_3D_volume():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -103,7 +103,7 @@ def test_4D_volume():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -119,7 +119,9 @@ def test_changing_volume():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape_b]
+    )
     assert layer._data_view.shape == shape_b[-3:]
 
 
@@ -135,10 +137,9 @@ def test_scale():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     np.testing.assert_array_equal(
-        layer.extent.world[1] - layer.extent.world[0], full_shape
+        layer.extent.world[1] - layer.extent.world[0],
+        np.asarray(full_shape) - scale,
     )
-    pixel_extent_end = np.asarray(full_shape) - 0.5 * np.asarray(scale)
-    np.testing.assert_array_equal(layer.extent.world[1], pixel_extent_end)
     # Note that the scale appears as the step size in the range
     assert layer._data_view.shape == shape[-3:]
 

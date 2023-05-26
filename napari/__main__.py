@@ -381,10 +381,10 @@ def _run():
         # only necessary in bundled app, but see #3596
         from napari.utils.misc import (
             install_certifi_opener,
-            running_as_bundled_app,
+            running_as_constructor_app,
         )
 
-        if running_as_bundled_app():
+        if running_as_constructor_app():
             install_certifi_opener()
         run(gui_exceptions=True)
 
