@@ -92,9 +92,6 @@ class QtLabelsControls(QtLayerControls):
 
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
-        self.layer.events.selected_label.connect(
-            self._on_selected_label_change
-        )
         self.layer.events.brush_size.connect(self._on_brush_size_change)
         self.layer.events.contiguous.connect(self._on_contiguous_change)
         self.layer.events.n_edit_dimensions.connect(
@@ -108,14 +105,27 @@ class QtLabelsControls(QtLayerControls):
         )
         self.layer.events.color_mode.connect(self._on_color_mode_change)
 
-        # selection spinbox
-        self.selectionSpinBox = QLargeIntSpinBox()
         dtype_lims = get_dtype_limits(get_dtype(layer))
-        self.selectionSpinBox.setRange(*dtype_lims)
-        self.selectionSpinBox.setKeyboardTracking(False)
-        self.selectionSpinBox.valueChanged.connect(self.changeSelection)
-        self.selectionSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._on_selected_label_change()
+
+        if layer._predefined_labels is None:
+            # selection spinbox
+            self.selectionSpinBox = QLargeIntSpinBox()
+            self.selectionSpinBox.setRange(*dtype_lims)
+            self.selectionSpinBox.setKeyboardTracking(False)
+            self.selectionSpinBox.valueChanged.connect(self.changeSelection)
+            self.selectionSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            self.layer.events.selected_label.connect(
+                self._on_selected_label_change
+            )
+            self._on_selected_label_change()
+
+            labels_selection_item = QHBoxLayout()
+            self.colorBox = QtColorBox(layer)
+            labels_selection_item.addWidget(self.colorBox)
+            labels_selection_item.addWidget(self.selectionSpinBox)
+        else:
+            labels_selection_item = QtLabelsCombobox(layer)
 
         sld = QSlider(Qt.Orientation.Horizontal)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -268,16 +278,8 @@ class QtLabelsControls(QtLayerControls):
         self.colorModeComboBox = color_mode_comboBox
         self._on_color_mode_change()
 
-        color_layout = QHBoxLayout()
-        self.colorBox = QtColorBox(layer)
-        color_layout.addWidget(self.colorBox)
-        color_layout.addWidget(self.selectionSpinBox)
-
-        self.color_combobox = QtColorCombobox(layer)
-
         self.layout().addRow(button_row)
-        self.layout().addRow(trans._('label:'), color_layout)
-        self.layout().addRow(trans._('label:'), self.color_combobox)
+        self.layout().addRow(trans._('label:'), labels_selection_item)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
@@ -567,7 +569,7 @@ class QtColorBox(QWidget):
         super().closeEvent(event)
 
 
-class QtColorCombobox(QComboBox):
+class QtLabelsCombobox(QComboBox):
     def __init__(self, layer, parent=None) -> None:
         super().__init__(parent)
 
@@ -582,6 +584,7 @@ class QtColorCombobox(QComboBox):
         )
 
         self.currentIndexChanged.connect(self._on_current_index_changed)
+        self.activated.connect(self._on_activated)
         self._on_selected_label_change()
 
     def update_items(self):
@@ -619,18 +622,22 @@ class QtColorCombobox(QComboBox):
         self.blockSignals(False)
 
     def _on_selected_label_change(self):
-        if not np.isclose(self._last_seed, self.layer.seed):
+        if (
+            not np.isclose(self._last_seed, self.layer.seed)
+            or self.layer.selected_label not in self._labels_list
+        ):
             self.update_items()
 
-        if self.layer.selected_label in self._labels_list:
-            item_index = self._labels_list.index(self.layer.selected_label)
-            self.blockSignals(True)
-            self.setCurrentIndex(item_index)
-            self.blockSignals(False)
+        item_index = self._labels_list.index(self.layer.selected_label)
+        self.blockSignals(True)
+        self.setCurrentIndex(item_index)
+        self.blockSignals(False)
 
     def _on_current_index_changed(self):
         index = self.currentIndex()
         self.layer.selected_label = self._labels_list[index]
+
+    def _on_activated(self):
         self.clearFocus()
 
 

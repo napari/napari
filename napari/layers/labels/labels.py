@@ -64,8 +64,8 @@ class Labels(_ImageBase):
     num_colors : int
         Number of unique colors to use in colormap.
     predefined_labels : list[int] or dict[int, str] or None
-        If it is specified, only labels from this list can be selected.
-        It can also be specified using a dict, which has names for each label.
+        If it is provided, only the specified labels can be selected.
+        They can also be specified using dict, which has names for each label.
         If the background label is not in the set, it will be added automatically.
     features : dict[str, array-like] or DataFrame
         Features table where each row corresponds to a label and each column
@@ -335,14 +335,18 @@ class Labels(_ImageBase):
             labels_update=Event,
         )
 
-        if predefined_labels is not None:
+        if predefined_labels:
             if not isinstance(predefined_labels, dict):
                 predefined_labels = {
                     label: None for label in predefined_labels
                 }
 
+            self._selected_label = sorted(predefined_labels)[0]
             if predefined_labels.get(self._background_label, None) is None:
                 predefined_labels[self._background_label] = 'background'
+        else:
+            self._selected_label = 1
+
         self._predefined_labels = predefined_labels
 
         self._feature_table = _FeatureTable.from_layer(
@@ -354,7 +358,6 @@ class Labels(_ImageBase):
         self._contiguous = True
         self._brush_size = 10
 
-        self._selected_label = 1
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
         self._updated_slice = None
@@ -670,6 +673,12 @@ class Labels(_ImageBase):
     def selected_label(self, selected_label):
         if selected_label == self.selected_label:
             return
+
+        if (
+            self._predefined_labels
+            and selected_label not in self._predefined_labels
+        ):
+            self._predefined_labels[selected_label] = "unspecified"
 
         self._prev_selected_label = self.selected_label
         self._selected_label = selected_label
@@ -1664,8 +1673,7 @@ class Labels(_ImageBase):
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
     ) -> list:
-        if len(self._label_index) == 0 or self.features.shape[1] == 0:
-            return []
+        properties = []
 
         value = self.get_value(
             position,
@@ -1675,14 +1683,21 @@ class Labels(_ImageBase):
         )
         # if the cursor is not outside the image or on the background
         if value is None:
-            return []
+            return properties
 
         label_value = value[1] if self.multiscale else value
+
+        if (label_name := self.get_label_name(label_value)) is not None:
+            properties.append(f"{label_name}")
+
+        if len(self._label_index) == 0 or self.features.shape[1] == 0:
+            return properties
+
         if label_value not in self._label_index:
-            return [trans._('[No Properties]')]
+            return properties + [trans._('[No Properties]')]
 
         idx = self._label_index[label_value]
-        return [
+        return properties + [
             f'{k}: {v[idx]}'
             for k, v in self.features.items()
             if k != 'index'
