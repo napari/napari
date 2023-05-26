@@ -4,10 +4,10 @@ from typing import Any, Callable, Tuple, Union
 
 import numpy as np
 
-from napari.components.dims import reorder_after_dim_reduction
 from napari.layers.base._slice import _next_request_id
 from napari.layers.utils._slice_input import _SliceInput
 from napari.utils._dask_utils import DaskIndexer
+from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
