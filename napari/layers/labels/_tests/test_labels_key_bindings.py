@@ -37,7 +37,7 @@ def test_swap_background_label(labels_data_4d):
     assert labels.selected_label == 10
 
 
-def test_predefined_lables_switching(labels_data_4d):
+def test_predefined_labels_switching(labels_data_4d):
     predefined_labels = [21, 1, 20, 30, 40, 2, 10]
     labels = Labels(labels_data_4d, predefined_labels=predefined_labels)
     predefined_labels = sorted(predefined_labels)
