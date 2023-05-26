@@ -35,9 +35,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         self.layer.mouse_move_callbacks.append(self._on_mouse_move)
         self.layer.mouse_drag_callbacks.append(self._on_mouse_press)
-        self.layer.mouse_double_click_callbacks.append(
-            self._on_mouse_double_click
-        )
+        self.layer.mouse_double_click_callbacks.append(self._on_mouse_press)
 
         self.overlay.events.points.connect(self._on_points_change)
         self.overlay.events.color.connect(self._on_color_change)
@@ -149,16 +147,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
                 self.overlay.points = []
             else:
                 self.overlay.points = self.overlay.points[:-2] + [pos.tolist()]
-
-    @_only_when_enabled
-    def _on_mouse_double_click(self, layer, event):
-        if event.button == 2:
-            self._on_mouse_press(layer, event)
-            return
-
-        # Remove the latest point as double click always follows a simple click
-        self.overlay.points = self.overlay.points[:-1]
-        self.overlay.add_polygon_to_labels(layer)
 
     def _get_mouse_coordinates(self, event):
         pos = mouse_event_to_labels_coordinate(self.layer, event)

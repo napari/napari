@@ -2,14 +2,14 @@ import numpy as np
 
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
 from napari.components.overlays import LabelsPolygonOverlay
+from napari.layers.labels._labels_key_bindings import complete_draw_polygon
 from napari.utils.interactions import (
-    mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
 )
 
 
-def test_vispy_brush_circle_overlay(make_napari_viewer):
+def test_vispy_labels_polygon_overlay(make_napari_viewer):
     viewer = make_napari_viewer()
 
     labels_polygon = LabelsPolygonOverlay()
@@ -113,13 +113,7 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
         mouse_press_callbacks(layer, event)
 
     # Finish drawing
-    event = MouseEvent(
-        type='mouse_double_click',
-        button=1,
-        position=(1, 0, 0),
-        dims_displayed=(1, 2),
-    )
-    mouse_double_click_callbacks(layer, event)
+    complete_draw_polygon(layer)
 
     assert np.alltrue(data[[0, 2], :] == 0)
     assert np.alltrue(data[1, 1:11, 1:11] == 1)
@@ -128,8 +122,8 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
     assert np.alltrue(data[1, 11:, :] == 0)
     assert np.alltrue(data[1, :, 11:] == 0)
 
-    # Try to finish with an incomplete polygon (2 points)
-    for position in [(0, 1, 1), (0, 1, 10)]:
+    # Try to finish with an incomplete polygon
+    for position in [(0, 1, 1)]:
         event = MouseEvent(
             type='mouse_press',
             button=1,
@@ -139,11 +133,5 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
         mouse_press_callbacks(layer, event)
 
     # Finish drawing
-    event = MouseEvent(
-        type='mouse_double_click',
-        button=1,
-        position=(1, 0, 0),
-        dims_displayed=(1, 2),
-    )
-    mouse_double_click_callbacks(layer, event)
+    complete_draw_polygon(layer)
     assert np.alltrue(data[0, :] == 0)
