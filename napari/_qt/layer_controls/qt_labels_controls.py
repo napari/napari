@@ -516,7 +516,6 @@ class QtColorBox(QWidget):
         self.layer.events.selected_label.connect(
             self._on_selected_label_change
         )
-        self.layer.events.opacity.connect(self._on_opacity_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
 
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -529,10 +528,6 @@ class QtColorBox(QWidget):
         self.color = None
 
     def _on_selected_label_change(self):
-        """Receive layer model label selection change event & update colorbox."""
-        self.update()
-
-    def _on_opacity_change(self):
         """Receive layer model label selection change event & update colorbox."""
         self.update()
 
