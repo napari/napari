@@ -27,18 +27,12 @@ x = np.arange(IMAGE_SIZE) - IMAGE_SIZE / 2
 X, Y = np.meshgrid(x, x)
 
 
-def wave_2d(frequency, angle, phase_shift, speed):
-    """
-    Generate a 2D sine wave based on angle and frequency.
-
-    The wave phase if offset by phase_shift and the current time,
-    multiplied by an arbitrary speed value; this generates an animated
-    wave if called repeatedly.
-    """
+def wave_2d(frequency, angle, phase_shift):
+    """Generate a 2D sine wave based on angle, frequency and phase shift."""
     angle = np.deg2rad(angle)
     phase_shift = np.deg2rad(phase_shift)
     wave = 2 * np.pi * (X * np.cos(angle) + Y * np.sin(angle)) * frequency
-    return np.sin(wave + phase_shift + (time() * speed))
+    return np.sin(wave + phase_shift)
 
 
 # set up viewer with grid-mode enabled
@@ -47,8 +41,7 @@ viewer.grid.enabled = True
 
 
 def update_layer(name, data, **kwargs):
-    """
-    Update a layer in the viewer with new data.
+    """Update a layer in the viewer with new data.
 
     If data is None, then the layer is removed.
     If the layer is not present, it's added to the viewer.
@@ -64,26 +57,37 @@ def update_layer(name, data, **kwargs):
         viewer.layers[name].data = data
 
 
-def combine_and_set_data(waves):
+def combine_and_set_data(wave_args):
+    """Merge 2D waves, calculate the FT and update the viewer.
+
+    The wave phases are offset by the current time multiplied by an
+    arbitrary speed value; this generates an animated wave if called repeatedly.
     """
-    Merge 2D waves, calculate the FT and update the viewer.
-    """
-    if not waves:
+    if not wave_args:
         # this happens on yielding from the thread, no need to update anything
         return
 
-    to_add = [d for d in waves.values() if d is not None]
+    t = time()
+    waves = {
+        wave_id: wave_2d(frequency, angle, phase_shift + t * speed * 100) if frequency else None
+        for wave_id, (frequency, angle, phase_shift, speed) in wave_args.items()
+    }
 
+    to_add = [d for d in waves.values() if d is not None]
     if to_add:
         mean = np.mean(to_add, axis=0)
         ft = fftshift(fft2(mean))
         power_spectrum = abs(ft)
         phase = np.angle(ft) * power_spectrum
+        power_spectrum = np.log10(power_spectrum + 10)
     else:
         mean = power_spectrum = phase = None
 
-    update_layer('phase', phase, colormap=('hsv'))
-    update_layer('power_spectrum_log', np.log(power_spectrum + 1))
+    # for visualisation, it's clearer to use:
+    # phase * ps instead of phase
+    # and log10(ps + 1) instead of ps
+    update_layer('phase * power_spectrum', phase, colormap=('blue', 'black', 'red'))
+    update_layer('log10(power_spectrum + 1)', power_spectrum)
     update_layer('mean', mean)
 
     for name, data in waves.items():
@@ -94,22 +98,18 @@ def combine_and_set_data(waves):
 def update_viewer():
     # keep track of each wave in a dictionary by id, this way we can modify/remove
     # existing waves or add new ones
-    waves = {}
+    wave_args = {}
     new_params = None
     while True:
         sleep(1 / FPS)
         # see https://napari.org/stable/guides/threading.html#full-two-way-communication
         # this receives new_params from thread.send() and yields {} for the `yielded` callback
-        new_params = yield {}
+        new_params = yield wave_args
         if new_params is not None:
             # note that these come from thread.send() in moving_wave()!
             wave_id, *args = new_params
-            waves[wave_id] = args
-        # remove (set value to None) any wave with frequency 0, but generate the rest
-        yield {
-            wave_id: wave_2d(frequency, angle, phase_shift, speed) if frequency else None
-            for wave_id, (frequency, angle, phase_shift, speed) in waves.items()
-        }
+            wave_args[wave_id] = args
+        yield wave_args
 
 
 # start the thread responsible for updating the viewer
@@ -131,8 +131,7 @@ def moving_wave(
     speed: float = 1,
     run=True,
 ):
-    """
-    Send new parameters to the listening thread to update the 2D waves.
+    """Send new parameters to the listening thread to update the 2D waves.
 
     The `run` checkbox can be disabled to stop sending values to the thread
     while changing parameters.
