@@ -63,6 +63,10 @@ class Labels(_ImageBase):
         the lowest resolution scale is displayed.
     num_colors : int
         Number of unique colors to use in colormap.
+    predefined_labels : list[int] or dict[int, str] or None
+        If it is specified, only labels from this list can be selected.
+        It can also be specified using a dict, which has names for each label.
+        If the background label is not in the set, it will be added automatically.
     features : dict[str, array-like] or DataFrame
         Features table where each row corresponds to a label and each column
         is a feature. The first row corresponds to the background label.
@@ -251,6 +255,7 @@ class Labels(_ImageBase):
         data,
         *,
         num_colors=50,
+        predefined_labels=None,
         features=None,
         properties=None,
         color=None,
@@ -329,6 +334,16 @@ class Labels(_ImageBase):
             paint=Event,
             labels_update=Event,
         )
+
+        if predefined_labels is not None:
+            if not isinstance(predefined_labels, dict):
+                predefined_labels = {
+                    label: None for label in predefined_labels
+                }
+
+            if predefined_labels.get(self._background_label, None) is None:
+                predefined_labels[self._background_label] = 'background'
+        self._predefined_labels = predefined_labels
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -1105,6 +1120,12 @@ class Labels(_ImageBase):
             val = self._map_labels_to_colors(np.array([label]))
             col = self.colormap.map(val)[0]
         return col
+
+    def get_label_name(self, label: int) -> Optional[str]:
+        """Return the corresponding label name if it is specified."""
+        if self._predefined_labels is not None:
+            return self._predefined_labels.get(label, None)
+        return None
 
     def _get_value_ray(
         self,

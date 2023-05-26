@@ -582,19 +582,22 @@ class QtColorCombobox(QComboBox):
         )
 
         self.currentIndexChanged.connect(self._on_current_index_changed)
-
-        self.update_items()
+        self._on_selected_label_change()
 
     def update_items(self):
+        self.blockSignals(True)
         self._last_seed = self.layer.seed
 
-        num_colors = np.random.randint(8, 16)
+        self._labels_list = sorted(self.layer._predefined_labels)
+        # Initialize color palette
+        self.layer.get_color(max(self._labels_list))
 
-        for i in range(num_colors):
+        for i, label in enumerate(self._labels_list):
             if i >= self.count():
                 self.addItem("")
 
-            color = self.layer.get_color(i)
+            color = self.layer.get_color(label)
+
             color_pixmap = QPixmap(self._height, self._height)
 
             if color is None:
@@ -604,23 +607,31 @@ class QtColorCombobox(QComboBox):
                 color_pixmap.fill(QColor(*color.tolist()))
 
             color_icon = QIcon(color_pixmap)
-            self.setItemIcon(i, color_icon)
-            self.setItemText(i, str(i) + ":")
+            name = self.layer.get_label_name(label)
+            item_text = str(label) + (": " + name if name else "")
 
-        for _ in range(self.count() - num_colors):
+            self.setItemIcon(i, color_icon)
+            self.setItemText(i, item_text)
+
+        for _ in range(self.count() - len(self._labels_list)):
             self.removeItem(self.count() - 1)
 
-        self._on_selected_label_change()
+        self.blockSignals(False)
 
     def _on_selected_label_change(self):
         if not np.isclose(self._last_seed, self.layer.seed):
             self.update_items()
 
-        if 0 <= self.layer.selected_label < 10:
-            self.setCurrentIndex(self.layer.selected_label)
+        if self.layer.selected_label in self._labels_list:
+            item_index = self._labels_list.index(self.layer.selected_label)
+            self.blockSignals(True)
+            self.setCurrentIndex(item_index)
+            self.blockSignals(False)
 
     def _on_current_index_changed(self):
-        self.layer.selected_label = self.currentIndex()
+        index = self.currentIndex()
+        self.layer.selected_label = self._labels_list[index]
+        self.clearFocus()
 
 
 def paint_checkerboard(painter: QPainter, height: int) -> None:
