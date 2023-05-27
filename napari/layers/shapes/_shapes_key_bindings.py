@@ -2,7 +2,9 @@ import numpy as np
 from app_model.types import KeyCode
 
 from napari.layers.shapes._shapes_constants import Box, Mode
-from napari.layers.shapes._shapes_mouse_bindings import _move
+from napari.layers.shapes._shapes_mouse_bindings import (
+    _move_active_element_under_cursor,
+)
 from napari.layers.shapes.shapes import Shapes
 from napari.layers.utils.layer_utils import (
     register_layer_action,
@@ -27,7 +29,7 @@ def hold_to_lock_aspect_ratio(layer: Shapes):
         layer._aspect_ratio = 1
     if layer._is_moving:
         assert layer._moving_coordinates is not None, layer
-        _move(layer, layer._moving_coordinates)
+        _move_active_element_under_cursor(layer, layer._moving_coordinates)
 
     yield
 
@@ -83,6 +85,12 @@ def activate_add_polygon_mode(layer: Shapes):
     layer.mode = Mode.ADD_POLYGON
 
 
+@register_shapes_mode_action(trans._('Add polygons lasso'))
+def activate_add_polygon_lasso_mode(layer: Shapes):
+    """Activate add polygon tool."""
+    layer.mode = Mode.ADD_POLYGON_LASSO
+
+
 @register_shapes_mode_action(trans._('Select vertices'))
 def activate_direct_mode(layer: Shapes):
     """Activate vertex selection tool."""
@@ -115,6 +123,7 @@ shapes_fun_to_mode = [
     (activate_add_line_mode, Mode.ADD_LINE),
     (activate_add_path_mode, Mode.ADD_PATH),
     (activate_add_polygon_mode, Mode.ADD_POLYGON),
+    (activate_add_polygon_lasso_mode, Mode.ADD_POLYGON_LASSO),
     (activate_direct_mode, Mode.DIRECT),
     (activate_select_mode, Mode.SELECT),
     (activate_vertex_insert_mode, Mode.VERTEX_INSERT),

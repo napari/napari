@@ -40,6 +40,7 @@ default_shortcuts: Dict[str, List[str]] = {
     'napari:activate_add_line_mode': ['L'],
     'napari:activate_add_path_mode': ['T'],
     'napari:activate_add_polygon_mode': ['P'],
+    'napari:activate_add_polygon_lasso_mode': ['Shift-P'],
     'napari:activate_direct_mode': ['4'],
     'napari:activate_select_mode': ['5'],
     'napari:activate_shapes_pan_zoom_mode': ['6'],
