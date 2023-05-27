@@ -553,6 +553,8 @@
       "move_front",
       "path",
       "polygon",
+      "polygon_button",
+      "polygon_lasso_button",
       "rectangle",
       "select",
       "vertex_insert",
