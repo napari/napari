@@ -212,7 +212,7 @@ class LayerDelegate(QStyledItemDelegate):
             if check_rect.contains(event.pos()):
                 return self._show_on_alt_click_hide_others(model, index)
 
-        # on regular click of visibility icon, store state of the layers
+        # on regular click of visibility icon, clear alt-click state
         if event.type() == QMouseEvent.MouseButtonRelease and (
             event.button() == Qt.MouseButton.LeftButton
         ):
@@ -224,31 +224,10 @@ class LayerDelegate(QStyledItemDelegate):
                 option.widget,
             )
             if check_rect.contains(event.pos()):
-                self._store_visibility_of_layers(model, index)
+                self._alt_click_layer = lambda: None
 
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)
-
-    def _store_visibility_of_layers(
-        self,
-        model: QtCore.QAbstractItemModel,
-        index: QtCore.QModelIndex,
-    ) -> QtCore.QAbstractItemModel:
-        """When toggling visibility of a layer, store the current visibility state of
-        the layers, ensuring that clicked layer is toggled, and any alt-clicked
-        layer states are cleared.
-        """
-        clicked_layer = index.data(ItemRole)
-        layer_list: LayerList = model.sourceModel()._root
-        for layer in layer_list:
-            self._layer_visibility_states[layer] = layer.visible
-
-        # ensure the the stored visibility of clicked layer is toggled
-        self._layer_visibility_states[
-            clicked_layer
-        ] = not clicked_layer.visible
-        # clear any alt click state
-        self._alt_click_layer = lambda: None
 
     def _show_on_alt_click_hide_others(
         self,
