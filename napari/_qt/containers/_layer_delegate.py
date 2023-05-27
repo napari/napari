@@ -262,7 +262,7 @@ class LayerDelegate(QStyledItemDelegate):
         layer_list: LayerList = model.sourceModel()._root
         # show the alt-clicked layer
         state = Qt.CheckState.Checked
-        if not self._layer_visibility_states:
+        if self._alt_click_layer() is None:
             # first click on visibility, so store visibility & hide others
             for layer in layer_list:
                 self._layer_visibility_states[layer] = layer.visible
