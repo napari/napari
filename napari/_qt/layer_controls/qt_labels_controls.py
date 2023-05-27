@@ -497,7 +497,10 @@ class QtLabelsControls(QtLayerControls):
         self._on_editable_or_visible_change()
 
     def deleteLater(self):
-        disconnect_events(self.layer.events, self.colorBox)
+        if self.layer.predefined_labels is None:
+            disconnect_events(self.layer.events, self.colorBox)
+        else:
+            disconnect_events(self.layer.events, self.labelsCombobox)
         super().deleteLater()
 
 
@@ -636,6 +639,15 @@ class QtLabelsCombobox(QComboBox):
 
     def _on_activated(self):
         self.clearFocus()
+
+    def deleteLater(self):
+        disconnect_events(self.layer.events, self)
+        super().deleteLater()
+
+    def closeEvent(self, event):
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.events, self)
+        super().closeEvent(event)
 
 
 def paint_checkerboard(painter: QPainter, height: int) -> None:

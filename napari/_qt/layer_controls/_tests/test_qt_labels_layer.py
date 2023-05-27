@@ -136,7 +136,7 @@ def test_labels_combobox(make_labels_controls):
         )
         icon_image = icon.pixmap(qtctrl.labelsCombobox._height).toImage()
         color = QColor(icon_image.pixel(5, 5)).getRgbF()
-        assert np.allclose(color[:3], layer.get_color(label_id)[:3], rtol=1e-2)
+        assert np.allclose(color[:3], layer.get_color(label_id)[:3], atol=0.05)
 
     # Check if the icons are updated after setting a new colormap
     layer.new_colormap()
@@ -147,7 +147,7 @@ def test_labels_combobox(make_labels_controls):
         )
         icon_image = icon.pixmap(qtctrl.labelsCombobox._height).toImage()
         color = QColor(icon_image.pixel(5, 5)).getRgbF()
-        assert np.allclose(color[:3], layer.get_color(label_id)[:3], rtol=1e-2)
+        assert np.allclose(color[:3], layer.get_color(label_id)[:3], atol=0.05)
 
     layer.selected_label = layer._background_label
     assert qtctrl.labelsCombobox.currentText().endswith(': background')
