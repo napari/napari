@@ -377,13 +377,12 @@ class Labels(_ImageBase):
                     label: None for label in predefined_labels
                 }
 
-            self._selected_label = sorted(predefined_labels)[0]
+            predefined_labels = predefined_labels.copy()
             if predefined_labels.get(self._background_label, None) is None:
                 predefined_labels[self._background_label] = 'background'
-        elif self.predefined_labels:
-            raise ValueError(
-                'Once specified, predefined_labels cannot be removed.'
-            )
+
+            if self.selected_label not in predefined_labels:
+                self.selected_label = sorted(predefined_labels)[0]
 
         self._predefined_labels = predefined_labels
         self.events.predefined_labels()
