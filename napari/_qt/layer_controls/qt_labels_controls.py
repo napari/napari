@@ -515,6 +515,7 @@ class QtLabelsSpinBox(QtLabelsWidget):
         super().__init__(layer=layer, parent=parent)
 
         self.colorBox = QtColorBox()
+        self.colorBox.setParent(self)
 
         dtype_lims = get_dtype_limits(get_dtype(layer))
         self.selectionSpinBox = QLargeIntSpinBox()
