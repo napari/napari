@@ -53,27 +53,21 @@ def test_rendering_combobox(make_labels_controls):
 def test_changing_colormap_updates_colorbox(make_labels_controls):
     """Test that changing the colormap on a layer will update color swatch in the combo box"""
     layer, qtctrl = make_labels_controls(color=_COLOR)
-    color_box = qtctrl.colorBox
+    color_box = qtctrl.labelsSpinbox.colorBox
 
     layer.selected_label = 1
 
     # For a paint event, which does not occur in a headless qtbot
     color_box.paintEvent(None)
 
-    np.testing.assert_equal(
-        color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255),
-    )
+    np.testing.assert_equal(color_box._color, layer._selected_color)
 
     layer.colormap = colormap_utils.label_colormap(num_colors=5)
 
     # For a paint event, which does not occur in a headless qtbot
     color_box.paintEvent(None)
 
-    np.testing.assert_equal(
-        color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255),
-    )
+    np.testing.assert_equal(color_box._color, layer._selected_color)
 
 
 def test_selected_color_checkbox(make_labels_controls):
@@ -119,7 +113,6 @@ def test_labels_combobox(make_labels_controls):
     assert not hasattr(qtctrl, 'selectionSpinBox')
 
     assert qtctrl.layout().indexOf(qtctrl.labelsCombobox) != -1
-    assert qtctrl.labelsCombobox.currentIndex() == 1
 
     qtctrl.labelsCombobox.setCurrentIndex(2)
     assert layer.selected_label == 20
