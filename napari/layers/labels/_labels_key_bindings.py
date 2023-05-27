@@ -84,10 +84,10 @@ def swap_selected_and_background_labels(layer: Labels):
     trans._("Select the preceding label."),
 )
 def decrease_label_id(layer: Labels):
-    if layer._predefined_labels is None:
+    if layer.predefined_labels is None:
         layer.selected_label -= 1
     else:
-        labels = sorted(layer._predefined_labels.keys())
+        labels = sorted(layer.predefined_labels.keys())
         prev_index = labels.index(layer.selected_label) - 1
         layer.selected_label = labels[max(prev_index, 0)]
 
@@ -96,10 +96,10 @@ def decrease_label_id(layer: Labels):
     trans._("Select the next label."),
 )
 def increase_label_id(layer: Labels):
-    if layer._predefined_labels is None:
+    if layer.predefined_labels is None:
         layer.selected_label += 1
     else:
-        labels = sorted(layer._predefined_labels.keys())
+        labels = sorted(layer.predefined_labels.keys())
         next_index = labels.index(layer.selected_label) + 1
         layer.selected_label = labels[min(next_index, len(labels) - 1)]
 

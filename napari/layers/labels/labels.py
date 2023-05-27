@@ -321,6 +321,7 @@ class Labels(_ImageBase):
         )
 
         self.events.add(
+            predefined_labels=Event,
             preserve_labels=Event,
             properties=Event,
             n_edit_dimensions=Event,
@@ -335,19 +336,9 @@ class Labels(_ImageBase):
             labels_update=Event,
         )
 
-        if predefined_labels:
-            if not isinstance(predefined_labels, dict):
-                predefined_labels = {
-                    label: None for label in predefined_labels
-                }
-
-            self._selected_label = sorted(predefined_labels)[0]
-            if predefined_labels.get(self._background_label, None) is None:
-                predefined_labels[self._background_label] = 'background'
-        else:
-            self._selected_label = 1
-
-        self._predefined_labels = predefined_labels
+        self._selected_label = 1
+        self._predefined_labels = None
+        self.predefined_labels = predefined_labels
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -371,6 +362,31 @@ class Labels(_ImageBase):
         # Trigger generation of view slice and thumbnail
         self.refresh()
         self._reset_editable()
+
+    @property
+    def predefined_labels(self) -> Dict[int, Optional[str]]:
+        return self._predefined_labels
+
+    @predefined_labels.setter
+    def predefined_labels(
+        self, predefined_labels: Union[List[int], Dict[int, str]]
+    ) -> None:
+        if predefined_labels:
+            if not isinstance(predefined_labels, dict):
+                predefined_labels = {
+                    label: None for label in predefined_labels
+                }
+
+            self._selected_label = sorted(predefined_labels)[0]
+            if predefined_labels.get(self._background_label, None) is None:
+                predefined_labels[self._background_label] = 'background'
+        elif self.predefined_labels:
+            raise ValueError(
+                'Once specified, predefined_labels cannot be removed.'
+            )
+
+        self._predefined_labels = predefined_labels
+        self.events.predefined_labels()
 
     @property
     def rendering(self):
@@ -647,6 +663,7 @@ class Labels(_ImageBase):
         state = self._get_base_state()
         state.update(
             {
+                'predefined_labels': self.predefined_labels,
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
                 'properties': self.properties,
@@ -675,10 +692,10 @@ class Labels(_ImageBase):
             return
 
         if (
-            self._predefined_labels
-            and selected_label not in self._predefined_labels
+            self.predefined_labels
+            and selected_label not in self.predefined_labels
         ):
-            self._predefined_labels[selected_label] = "unspecified"
+            self.predefined_labels[selected_label] = "unspecified"
 
         self._prev_selected_label = self.selected_label
         self._selected_label = selected_label
@@ -1132,8 +1149,8 @@ class Labels(_ImageBase):
 
     def get_label_name(self, label: int) -> Optional[str]:
         """Return the corresponding label name if it is specified."""
-        if self._predefined_labels is not None:
-            return self._predefined_labels.get(label, None)
+        if self.predefined_labels is not None:
+            return self.predefined_labels.get(label, None)
         return None
 
     def _get_value_ray(

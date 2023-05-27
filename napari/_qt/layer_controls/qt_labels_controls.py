@@ -107,7 +107,7 @@ class QtLabelsControls(QtLayerControls):
 
         dtype_lims = get_dtype_limits(get_dtype(layer))
 
-        if layer._predefined_labels is None:
+        if layer.predefined_labels is None:
             # selection spinbox
             self.selectionSpinBox = QLargeIntSpinBox()
             self.selectionSpinBox.setRange(*dtype_lims)
@@ -574,6 +574,7 @@ class QtLabelsCombobox(QComboBox):
         self._last_seed = -1
         self.setFixedHeight(self._height)
 
+        self.layer.events.predefined_labels.connect(self.update_items)
         self.layer.events.colormap.connect(self.update_items)
         self.layer.events.selected_label.connect(
             self._on_selected_label_change
@@ -587,7 +588,7 @@ class QtLabelsCombobox(QComboBox):
         self.blockSignals(True)
         self._last_seed = self.layer.seed
 
-        self._labels_list = sorted(self.layer._predefined_labels)
+        self._labels_list = sorted(self.layer.predefined_labels)
         # Initialize color palette
         self.layer.get_color(max(self._labels_list))
 
