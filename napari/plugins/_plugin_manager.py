@@ -1,5 +1,4 @@
 import contextlib
-import sys
 import warnings
 from functools import partial
 from pathlib import Path
@@ -29,9 +28,8 @@ from typing_extensions import TypedDict
 from napari.plugins import hook_specifications
 from napari.settings import get_settings
 from napari.types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
-from napari.utils._appdirs import user_site_packages
 from napari.utils.events import EmitterGroup, EventedSet
-from napari.utils.misc import camel_to_spaces, running_as_bundled_app
+from napari.utils.misc import camel_to_spaces
 from napari.utils.theme import Theme, register_theme, unregister_theme
 from napari.utils.translations import trans
 
@@ -96,9 +94,6 @@ class NapariPluginManager(PluginManager):
         ] = {}
         self._function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = {}
         self._theme_data: Dict[str, Dict[str, Theme]] = {}
-
-        if sys.platform.startswith('linux') and running_as_bundled_app():
-            sys.path.append(user_site_packages())
 
     def _initialize(self):
         with self.discovery_blocked():
@@ -433,8 +428,25 @@ class NapariPluginManager(PluginManager):
     def iter_widgets(self) -> Iterator[Tuple[str, Tuple[str, Dict[str, Any]]]]:
         from itertools import chain, repeat
 
-        dock_widgets = zip(repeat("dock"), self._dock_widgets.items())
-        func_widgets = zip(repeat("func"), self._function_widgets.items())
+        # The content of contribution dictionaries is name of plugin and
+        # list of its names of widgets contributed by this plugin
+        # as this order do not depend on the order of contributions in file
+        # we sort it to make it easier searchable.
+
+        dock_widgets = zip(
+            repeat("dock"),
+            (
+                (name, sorted(cont))
+                for name, cont in self._dock_widgets.items()
+            ),
+        )
+        func_widgets = zip(
+            repeat("func"),
+            (
+                (name, sorted(cont))
+                for name, cont in self._function_widgets.items()
+            ),
+        )
         yield from chain(dock_widgets, func_widgets)
 
     def register_dock_widget(
