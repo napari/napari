@@ -108,12 +108,6 @@ def test_labels_combobox(make_labels_controls):
     predefined_labels = [10, 20, 30, 40, 50]
     layer, qtctrl = make_labels_controls(predefined_labels=predefined_labels)
 
-    assert hasattr(qtctrl, 'labelsCombobox')
-    assert not hasattr(qtctrl, 'colorBox')
-    assert not hasattr(qtctrl, 'selectionSpinBox')
-
-    assert qtctrl.layout().indexOf(qtctrl.labelsCombobox) != -1
-
     qtctrl.labelsCombobox.setCurrentIndex(2)
     assert layer.selected_label == 20
 
@@ -147,3 +141,33 @@ def test_labels_combobox(make_labels_controls):
 
     layer.selected_label = 5
     assert qtctrl.labelsCombobox.currentText() == '5: unspecified'
+
+
+def test_switching_labels_selection_widget(make_labels_controls):
+    """Tests changing the labels selection widget."""
+    predefined_labels = [1, 2, 3]
+    layer, qtctrl = make_labels_controls(predefined_labels=[1, 2, 3])
+
+    assert qtctrl.layout().indexOf(qtctrl.labelsSpinbox) == -1
+    assert qtctrl.layout().indexOf(qtctrl.labelsCombobox) != -1
+
+    layer.predefined_labels = None
+    assert qtctrl.layout().indexOf(qtctrl.labelsCombobox) == -1
+    assert qtctrl.layout().indexOf(qtctrl.labelsSpinbox) != -1
+
+    qtctrl.labelsSpinbox.selectionSpinBox.setValue(3)
+    assert layer.selected_label == 3
+
+    layer.selected_label = 2
+    assert qtctrl.labelsSpinbox.selectionSpinBox.value() == 2
+
+    layer.predefined_labels = predefined_labels
+    assert qtctrl.layout().indexOf(qtctrl.labelsSpinbox) == -1
+    assert qtctrl.layout().indexOf(qtctrl.labelsCombobox) != -1
+
+    layer.selected_label = 3
+    assert qtctrl.labelsCombobox.currentText().startswith("3")
+    assert qtctrl.labelsSpinbox.selectionSpinBox.value() != 3
+
+    qtctrl.labelsCombobox.setCurrentIndex(0)
+    assert layer.selected_label != 3
