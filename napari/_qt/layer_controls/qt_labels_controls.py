@@ -528,7 +528,7 @@ class QtLabelsSpinBox(QtLabelsWidget):
         self.selectionSpinBox.valueChanged.connect(self._on_selection_change)
         self.selectionSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        layout = QHBoxLayout(parent)
+        layout = QHBoxLayout()
         layout.addWidget(self.colorBox)
         layout.addWidget(self.selectionSpinBox)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -570,7 +570,7 @@ class QtLabelsSpinBox(QtLabelsWidget):
 
 class QtLabelsCombobox(QComboBox, QtLabelsWidget):
     def __init__(self, layer, parent=None) -> None:
-        super().__init__(layer=layer, parent=parent)
+        QtLabelsWidget.__init__(self, layer=layer, parent=parent)
 
         self._height = 24
         self._last_seed = -1
