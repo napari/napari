@@ -494,11 +494,6 @@ class QtLabelsControls(QtLayerControls):
             self.labelsCombobox.setVisible(True)
             self.labelsCombobox.connect_to_layer()
 
-    def deleteLater(self):
-        self.labelsSpinbox.deleteLater()
-        self.labelsCombobox.deleteLater()
-        super().deleteLater()
-
 
 class QtLabelsSpinBox(QWidget):
     def __init__(self, layer, parent=None) -> None:
