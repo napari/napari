@@ -500,25 +500,11 @@ class QtLabelsControls(QtLayerControls):
         super().deleteLater()
 
 
-class QtLabelsWidget(QWidget):
-    def __init__(self, layer, parent) -> None:
-        super().__init__(parent=parent)
-        self.layer = layer
-
-    def deleteLater(self):
-        disconnect_events(self.layer.events, self)
-        super().deleteLater()
-
-    def closeEvent(self, event):
-        """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.events, self)
-        super().closeEvent(event)
-
-
-class QtLabelsSpinBox(QtLabelsWidget):
+class QtLabelsSpinBox(QWidget):
     def __init__(self, layer, parent=None) -> None:
-        super().__init__(layer=layer, parent=parent)
+        super().__init__(parent=parent)
 
+        self.layer = layer
         self.colorBox = QtColorBox()
 
         dtype_lims = get_dtype_limits(get_dtype(layer))
@@ -567,11 +553,21 @@ class QtLabelsSpinBox(QtLabelsWidget):
         if self.parent():
             self.parent().setFocus()
 
+    def deleteLater(self):
+        disconnect_events(self.layer.events, self)
+        super().deleteLater()
 
-class QtLabelsCombobox(QComboBox, QtLabelsWidget):
+    def closeEvent(self, event):
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.events, self)
+        super().closeEvent(event)
+
+
+class QtLabelsCombobox(QComboBox):
     def __init__(self, layer, parent=None) -> None:
-        QtLabelsWidget.__init__(self, layer=layer, parent=parent)
+        super().__init__(parent=parent)
 
+        self.layer = layer
         self._height = 24
         self._last_seed = -1
         self.setFixedHeight(self._height)
@@ -642,6 +638,15 @@ class QtLabelsCombobox(QComboBox, QtLabelsWidget):
         self.clearFocus()
         if self.parent():
             self.parent().setFocus()
+
+    def deleteLater(self):
+        disconnect_events(self.layer.events, self)
+        super().deleteLater()
+
+    def closeEvent(self, event):
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.events, self)
+        super().closeEvent(event)
 
 
 class QtColorBox(QWidget):
