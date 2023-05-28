@@ -12,7 +12,7 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
-from superqt.utils import QSignalDebouncer
+from superqt.utils import qdebounced
 
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
@@ -49,7 +49,7 @@ from napari_builtins.io import imsave_extensions
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 from napari._vispy.canvas import FramerateMonitor
-from napari._vispy.layers.base import RenderQualityChange
+from napari.layers.base._base_constants import RenderQualityChange
 
 if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
@@ -244,12 +244,9 @@ class QtViewer(QSplitter):
             callback=self._fps_monitor.update_fps,
         )
         self._fps_monitor.events.fps.connect(self.on_fps_update)
-        self._redraw_debouncer = QSignalDebouncer(parent=self)
-        self._redraw_debouncer.setTimeout(1500)
-        self._fps_monitor.events.fps.connect(self._redraw_debouncer.throttle)
-        self._redraw_debouncer.triggered.connect(
-            self.redraw_at_higher_resolution
-        )
+
+        # connect the redraw event
+        # self._fps_monitor.events.fps.connect(self.redraw_at_higher_resolution)
 
         # Create the experimental QtPool for octree and/or monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
@@ -862,19 +859,21 @@ class QtViewer(QSplitter):
         )
 
     def on_fps_update(self, event):
-        vispy_layers = [
-            self.layer_to_visual[vl] for vl in self.viewer.layers if vl.visible
-        ]
+        # vispy_layers = [
+        #     self.layer_to_visual[vl] for vl in self.viewer.layers if vl.visible
+        # ]
 
         fps = event.fps
         if fps < 30:
-            for v_layer in vispy_layers:
-                v_layer.change_render_quality(RenderQualityChange.DECREASE)
+            for layer in self.viewer.layers:
+                layer.change_render_quality(RenderQualityChange.DECREASE)
         if fps > 45:
-            for v_layer in vispy_layers:
-                v_layer.change_render_quality(RenderQualityChange.INCREASE)
+            for layer in self.viewer.layers:
+                layer.change_render_quality(RenderQualityChange.INCREASE)
 
+    @qdebounced(timeout=1500, leading=False)
     def redraw_at_higher_resolution(self, event=None):
+        print("hello")
         vispy_layers = [
             self.layer_to_visual[vl] for vl in self.viewer.layers if vl.visible
         ]

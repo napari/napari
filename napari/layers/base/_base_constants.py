@@ -116,3 +116,10 @@ class InteractionBoxHandle(IntEnum):
             cls.BOTTOM_LEFT,
             cls.BOTTOM_RIGHT,
         )
+
+
+class RenderQualityChange(StringEnum):
+    INCREASE = auto()
+    DECREASE = auto()
+    MAX = auto()
+    MIN = auto()

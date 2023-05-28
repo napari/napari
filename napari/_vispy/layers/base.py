@@ -1,20 +1,12 @@
 from abc import ABC, abstractmethod
-from enum import auto
 
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
 from napari.components.overlays.base import CanvasOverlay, SceneOverlay
+from napari.layers.base._base_constants import RenderQualityChange
 from napari.utils.events import disconnect_events
-from napari.utils.misc import StringEnum
-
-
-class RenderQualityChange(StringEnum):
-    INCREASE = auto()
-    DECREASE = auto()
-    MAX = auto()
-    MIN = auto()
 
 
 class VispyBaseLayer(ABC):
@@ -81,6 +73,9 @@ class VispyBaseLayer(ABC):
             self._on_experimental_clipping_planes_change
         )
         self.layer.events._overlays.connect(self._on_overlays_change)
+        self.layer.events.render_quality.connect(
+            self._on_render_quality_change
+        )
 
     @property
     def _master_transform(self):
@@ -232,7 +227,7 @@ class VispyBaseLayer(ABC):
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
-    def change_render_quality(self, quality_change):
+    def change_render_quality(self, quality_change: RenderQualityChange):
         """
         Change the render quality of the vispy nodes
 
@@ -242,6 +237,12 @@ class VispyBaseLayer(ABC):
             how much to increase or decrease the rendering quality of the layer.
         """
         return
+
+    def _on_render_quality_change(self, event=None):
+        """
+        Passthrough for the render quality change event.
+        """
+        self.change_render_quality(quality_change=event.render_quality)
 
     def reset(self):
         self._on_visible_change()

@@ -4,11 +4,11 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
-from napari._vispy.layers.base import RenderQualityChange, VispyBaseLayer
+from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import fix_data_dtype, get_gl_extensions
 from napari._vispy.visuals.image import Image as ImageNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
-from napari.layers.base._base_constants import Blending
+from napari.layers.base._base_constants import Blending, RenderQualityChange
 from napari.utils.translations import trans
 
 
@@ -233,17 +233,33 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.plane_normal = self.layer.plane.normal
 
     def change_render_quality(self, quality_change: RenderQualityChange):
+        """
+        Change the render quality of the vispy nodes.
+
+        This changes the step size in the shader when in 3D rendering mode.
+        In 2D rendering mode, this just returns.
+
+        Parameters
+        ----------
+        quality_change: RenderQualityChange
+            how much to increase or decrease the rendering quality of the layer.
+        """
         if not isinstance(self.node, VolumeNode):
             return
-
+        min_step_size = 0.1
+        max_step_size = 10
         if quality_change == RenderQualityChange.DECREASE:
-            new_step_size = min(self.node.relative_step_size * 2, 2)
+            new_step_size = min(
+                self.node.relative_step_size * 2, max_step_size
+            )
         elif quality_change == RenderQualityChange.INCREASE:
-            new_step_size = max(self.node.relative_step_size / 2, 0.1)
+            new_step_size = max(
+                self.node.relative_step_size / 2, min_step_size
+            )
         elif quality_change == RenderQualityChange.MIN:
-            new_step_size = 2
+            new_step_size = max_step_size
         elif quality_change == RenderQualityChange.MAX:
-            new_step_size = 0.1
+            new_step_size = min_step_size
         self.node.relative_step_size = new_step_size
 
     def reset(self, event=None):

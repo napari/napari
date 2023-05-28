@@ -14,7 +14,6 @@ vispy_logger.setLevel(logging.WARNING)
 
 from napari._vispy.camera import VispyCamera
 from napari._vispy.canvas import VispyCanvas
-from napari._vispy.layers.base import RenderQualityChange
 from napari._vispy.overlays.axes import VispyAxesOverlay
 from napari._vispy.overlays.interaction_box import (
     VispySelectionBoxOverlay,
@@ -28,7 +27,6 @@ from napari._vispy.utils.visual import create_vispy_layer, create_vispy_overlay
 __all__ = [
     "VispyCamera",
     "VispyCanvas",
-    "RenderQualityChange",
     "VispyAxesOverlay",
     "VispySelectionBoxOverlay",
     "VispyScaleBarOverlay",
