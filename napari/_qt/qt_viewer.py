@@ -35,6 +35,7 @@ from napari.settings import get_settings
 from napari.settings._application import DaskSettings
 from napari.utils import config, perf, resize_dask_cache
 from napari.utils.action_manager import action_manager
+from napari.utils.events import EmitterGroup, Event
 from napari.utils.history import (
     get_open_history,
     get_save_history,
@@ -56,7 +57,6 @@ if TYPE_CHECKING:
 
     from napari._qt.layer_controls import QtLayerControlsContainer
     from napari.components import ViewerModel
-    from napari.utils.events import Event
 
 
 def _npe2_decode_selected_filter(
@@ -233,11 +233,14 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
+        # add the camera monitor
+        self._camera_monitor = CameraMonitor(camera=self.viewer.camera)
+
         # add the FPS monitor
         self._fps_window = 0.5
         stale_threshold = self._fps_window + 0.1
         self._fps_monitor = FramerateMonitor(
-            stale_threshold=stale_threshold, debounce_threshold=2
+            stale_threshold=stale_threshold, debounce_threshold=0
         )
         self.canvas._scene_canvas.measure_fps(
             window=self._fps_monitor._fps_window,
@@ -246,10 +249,17 @@ class QtViewer(QSplitter):
         self._fps_monitor.events.fps.connect(self.on_fps_update)
 
         # connect the redraw event
-        # self._fps_monitor.events.fps.connect(self.redraw_at_higher_resolution)
+        self._camera_monitor.events.moving_finished.connect(
+            self.redraw_at_higher_resolution
+        )
 
         # Create the experimental QtPool for octree and/or monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
+
+        def test(event=None):
+            pass
+
+        self.viewer.camera.events.connect(test)
 
         # Create the experimental RemoteManager for the monitor.
         self._remote_manager = _create_remote_manager(
@@ -859,10 +869,8 @@ class QtViewer(QSplitter):
         )
 
     def on_fps_update(self, event):
-        # vispy_layers = [
-        #     self.layer_to_visual[vl] for vl in self.viewer.layers if vl.visible
-        # ]
-
+        if not self._camera_monitor.camera_moving:
+            return
         fps = event.fps
         if fps < 30:
             for layer in self.viewer.layers:
@@ -873,12 +881,9 @@ class QtViewer(QSplitter):
 
     @qdebounced(timeout=1500, leading=False)
     def redraw_at_higher_resolution(self, event=None):
-        print("hello")
-        vispy_layers = [
-            self.layer_to_visual[vl] for vl in self.viewer.layers if vl.visible
-        ]
-        for v_layer in vispy_layers:
+        for v_layer in self.viewer.layers:
             v_layer.change_render_quality(RenderQualityChange.MAX)
+        self._fps_monitor._final_redraw = True
         self.canvas._scene_canvas.update()
 
     def set_welcome_visible(self, visible):
@@ -1071,3 +1076,27 @@ def _create_remote_manager(
     qt_poll.events.poll.connect(monitor.on_poll)
 
     return manager
+
+
+class CameraMonitor:
+    def __init__(self, camera: Camera):
+        self.events = EmitterGroup(
+            source=self, moving_started=Event, moving_finished=Event
+        )
+        self._camera_moving = False
+        camera.events.connect(self._on_camera_move)
+
+    def _on_camera_move(self, event=None) -> None:
+        if not self._camera_moving:
+            self._camera_moving = True
+            self.events.moving_started()
+        self._reset_camera_moving()
+
+    @qdebounced(timeout=500, leading=False)
+    def _reset_camera_moving(self) -> None:
+        self._camera_moving = False
+        self.events.moving_finished()
+
+    @property
+    def camera_moving(self) -> bool:
+        return self._camera_moving

@@ -56,6 +56,14 @@ class VispyImageLayer(VispyBaseLayer):
 
         self._array_like = True
 
+        # set the 3D shader step size bounds
+        self.min_step_size = 0.1
+        self.max_step_size = 10
+
+        # set the initial guess for a good step size
+        # while the camera is moving
+        self.initial_moving_step_size = 5
+
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
         self.layer.events.interpolation2d.connect(
@@ -246,21 +254,22 @@ class VispyImageLayer(VispyBaseLayer):
         """
         if not isinstance(self.node, VolumeNode):
             return
-        min_step_size = 0.1
-        max_step_size = 10
         if quality_change == RenderQualityChange.DECREASE:
             new_step_size = min(
-                self.node.relative_step_size * 2, max_step_size
+                self.node.relative_step_size * 4, self.max_step_size
             )
         elif quality_change == RenderQualityChange.INCREASE:
             new_step_size = max(
-                self.node.relative_step_size / 2, min_step_size
+                self.node.relative_step_size / 2, self.min_step_size
             )
         elif quality_change == RenderQualityChange.MIN:
-            new_step_size = max_step_size
+            new_step_size = self.max_step_size
         elif quality_change == RenderQualityChange.MAX:
-            new_step_size = min_step_size
+            new_step_size = self.min_step_size
         self.node.relative_step_size = new_step_size
+
+        # update the minimum step size based on current performance
+        self.min_step_size = max(new_step_size / 4, 0.1)
 
     def reset(self, event=None):
         super().reset()

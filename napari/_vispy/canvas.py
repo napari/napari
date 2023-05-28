@@ -629,16 +629,19 @@ class FramerateMonitor:
         fps_window: float = 0.5,
         stale_threshold: float = 0.6,
         debounce_threshold: int = 2,
+        event_period: float = 0.5,
     ):
         self.events = EmitterGroup(source=self, fps=Event)
+        self._event_period = event_period
         self._fps_window = fps_window
         self._debounce_counter = 0
         self._debounce_threshold = debounce_threshold
+        self._final_redraw = False
         self._last_update = time.time()
+        self._last_event = time.time()
         self._stale_threshold = stale_threshold
 
         self._fps = 0
-        self._measuring = False
 
         self._last_measurement_valid = False
 
@@ -679,13 +682,15 @@ class FramerateMonitor:
         fps : float
             The newly measured framerate in frames per second.
         """
-        if not self._fps_stale():
-            # do nothing if the last fps measurement is still valid
+        if self._final_redraw:
+            # if the last redraw was due to the final
+            # high quality redraw, do not update framerate
+            self._final_redraw = False
             return
-        if self._measuring is False:
-            # if the measurement is stale, start measuring
+
+        if self._fps_stale():
+            # if the measurement is stale, restart measuring
             self._last_measurement_valid = False
-            self._measuring = True
             self._debounce_counter = 0
 
         # debounce and update fps
@@ -693,13 +698,15 @@ class FramerateMonitor:
         # calculated over multiple calls, so the first ones
         # are not very accurate
         self._debounce_counter += 1
+        current_time = time.time()
         if self._debounce_counter > self._debounce_threshold:
             self._fps = fps
 
             # update states
             self._last_measurement_valid = True
-            self._measuring = False
-            self._last_update = time.time()
 
             # emit the event
-            self.events.fps(fps=self.fps)
+            if (current_time - self._last_event) > self._event_period:
+                self.events.fps(fps=self.fps)
+                self._last_event = current_time
+        self._last_update = current_time
