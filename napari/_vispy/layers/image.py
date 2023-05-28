@@ -236,9 +236,9 @@ class VispyImageLayer(VispyBaseLayer):
         if not isinstance(self.node, VolumeNode):
             return
 
-        if quality_change == RenderQualityChange.INCREASE:
+        if quality_change == RenderQualityChange.DECREASE:
             new_step_size = min(self.node.relative_step_size * 2, 2)
-        elif quality_change == RenderQualityChange.DECREASE:
+        elif quality_change == RenderQualityChange.INCREASE:
             new_step_size = max(self.node.relative_step_size / 2, 0.1)
         elif quality_change == RenderQualityChange.MIN:
             new_step_size = 2

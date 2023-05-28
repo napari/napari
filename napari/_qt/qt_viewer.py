@@ -869,10 +869,10 @@ class QtViewer(QSplitter):
         fps = event.fps
         if fps < 30:
             for v_layer in vispy_layers:
-                v_layer.change_render_quality(RenderQualityChange.INCREASE)
+                v_layer.change_render_quality(RenderQualityChange.DECREASE)
         if fps > 45:
             for v_layer in vispy_layers:
-                v_layer.change_render_quality(RenderQualityChange.DECREASE)
+                v_layer.change_render_quality(RenderQualityChange.INCREASE)
 
     def redraw_at_higher_resolution(self, event=None):
         vispy_layers = [
@@ -880,7 +880,7 @@ class QtViewer(QSplitter):
         ]
         for v_layer in vispy_layers:
             v_layer.change_render_quality(RenderQualityChange.MAX)
-        self.canvas.update()
+        self.canvas._scene_canvas.update()
 
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""
