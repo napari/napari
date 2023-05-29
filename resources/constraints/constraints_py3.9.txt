@@ -313,7 +313,7 @@ pygments==2.15.1
     #   rich
     #   sphinx
     #   superqt
-pyopengl==3.1.7
+pyopengl==3.1.6
     # via napari (setup.cfg)
 pyparsing==3.0.9
     # via matplotlib
