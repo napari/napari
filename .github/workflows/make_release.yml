@@ -17,7 +17,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version: 3.9
           cache-dependency-path: setup.cfg
       - name: Install Dependencies
         run: |
