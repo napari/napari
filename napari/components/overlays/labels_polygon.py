@@ -22,11 +22,14 @@ class LabelsPolygonOverlay(SceneOverlay):
         A tuple representing the RGBA color of the polygon.
         Opacity only applies to the fill color of the polygon.
         Borders have the same color, but they are always opaque.
+    double_click_completion : bool
+        Whether drawing the polygon can be completed with a left mouse double-click.
     """
 
     enabled: bool = False
     points: list = []
     color: tuple = (1, 1, 1, 0.3)
+    double_click_completion: bool = False
 
     def add_polygon_to_labels(self, layer: Labels) -> None:
         if len(self.points) > 2:
