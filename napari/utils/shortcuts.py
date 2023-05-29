@@ -60,6 +60,7 @@ _default_shortcuts = {
     'napari:activate_add_line_mode': [KeyCode.KeyL],
     'napari:activate_add_path_mode': [KeyCode.KeyT],
     'napari:activate_add_polygon_mode': [KeyCode.KeyP],
+    'napari:activate_add_polygon_lasso_mode': [KeyMod.Shift | KeyCode.KeyP],
     'napari:activate_direct_mode': [KeyCode.Digit4, KeyCode.KeyD],
     'napari:activate_select_mode': [KeyCode.Digit5, KeyCode.KeyS],
     'napari:activate_shapes_pan_zoom_mode': [KeyCode.Digit6, KeyCode.KeyZ],
