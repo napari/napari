@@ -330,13 +330,13 @@ pyrsistent==0.19.3
     # via jsonschema
 pyside2==5.15.2.1 ; python_version != "3.8"
     # via napari (setup.cfg)
-pyside6==6.5.1 ; python_version >= "3.10"
+pyside6==6.4.2 ; python_version >= "3.10"
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (setup.cfg)
-pyside6-addons==6.5.1
+pyside6-addons==6.4.2
     # via pyside6
-pyside6-essentials==6.5.1
+pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
