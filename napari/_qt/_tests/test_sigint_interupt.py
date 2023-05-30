@@ -14,9 +14,9 @@ def platform_simulate_ctrl_c():
     if hasattr(signal, "CTRL_C_EVENT"):
         win32api = pytest.importorskip('win32api')
         return partial(win32api.GenerateConsoleCtrlEvent, 0, 0)
-    else:
-        # we're not on windows
-        return partial(os.kill, os.getpid(), signal.SIGINT)
+
+    # we're not on windows
+    return partial(os.kill, os.getpid(), signal.SIGINT)
 
 
 @pytest.mark.skipif(os.name != "Windows", reason="Windows specific")

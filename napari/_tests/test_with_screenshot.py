@@ -198,23 +198,23 @@ def test_changing_image_gamma(make_napari_viewer):
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
-    assert 127 <= screenshot[center + (0,)] <= 129
+    assert 127 <= screenshot[(*center, 0)] <= 129
 
     layer.gamma = 0.1
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert screenshot[center + (0,)] > 230
+    assert screenshot[(*center, 0)] > 230
 
     viewer.dims.ndisplay = 3
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert screenshot[center + (0,)] > 230
+    assert screenshot[(*center, 0)] > 230
 
     layer.gamma = 1.9
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert screenshot[center + (0,)] < 80
+    assert screenshot[(*center, 0)] < 80
 
     viewer.dims.ndisplay = 2
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert screenshot[center + (0,)] < 80
+    assert screenshot[(*center, 0)] < 80
 
 
 @skip_on_win_ci
@@ -522,8 +522,7 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     img1_layer = viewer.add_image(img1)
     img2_layer = viewer.add_image(img2)
 
-    # invert shape cause vispy xy is flipped
-    viewer.window._qt_viewer.canvas.size = shape[::-1]
+    viewer.window._qt_viewer.canvas.size = shape
     viewer.camera.zoom = 1
 
     # check that additive behaves correctly with black canvas

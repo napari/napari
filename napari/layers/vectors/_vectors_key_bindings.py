@@ -21,7 +21,7 @@ def activate_vectors_transform_mode(layer):
 
 
 @register_vectors_mode_action(trans._('Pan/zoom'))
-def activate_vectors_pan_zoom_mode(layer):
+def activate_vectors_pan_zoom_mode(layer: Vectors):
     layer.mode = Mode.PAN_ZOOM
 
 

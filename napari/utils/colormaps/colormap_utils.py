@@ -5,8 +5,13 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import skimage.color as colorconv
-from vispy.color import BaseColormap as VispyColormap
-from vispy.color import Color, ColorArray, get_colormap, get_colormaps
+from vispy.color import (
+    BaseColormap as VispyColormap,
+    Color,
+    ColorArray,
+    get_colormap,
+    get_colormaps,
+)
 from vispy.color.colormap import LUT_len
 
 from napari.utils.colormaps.bop_colors import bopd
@@ -248,7 +253,8 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256):
 
     """
     phi_mod = 0.6180339887498948482
-    image_float = seed + image * phi_mod
+    image_float = np.float32(image)
+    image_float = seed + image_float * phi_mod
     # We now map the floats to the range [0 + margin, 1 - margin]
     image_out = margin + (1 - 2 * margin) * (
         image_float - np.floor(image_float)
@@ -473,20 +479,18 @@ def vispy_or_mpl_colormap(name):
                         suggestion=suggestion,
                     )
                 ) from e
-            else:
-                colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
-                    set(_MATPLOTLIB_COLORMAP_NAMES)
+
+            colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
+                set(_MATPLOTLIB_COLORMAP_NAMES)
+            )
+            raise KeyError(
+                trans._(
+                    'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
+                    deferred=True,
+                    name=name,
+                    colormaps=", ".join(sorted(f'"{cm}"' for cm in colormaps)),
                 )
-                raise KeyError(
-                    trans._(
-                        'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
-                        deferred=True,
-                        name=name,
-                        colormaps=", ".join(
-                            sorted(f'"{cm}"' for cm in colormaps)
-                        ),
-                    )
-                ) from e
+            ) from e
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         colormap = Colormap(
             name=name, display_name=display_name, colors=mpl_colors
@@ -504,10 +508,9 @@ ALL_COLORMAPS.update(BOP_COLORMAPS)
 ALL_COLORMAPS.update(INVERSE_COLORMAPS)
 
 # ... sorted alphabetically by name
-AVAILABLE_COLORMAPS = {
-    k: v
-    for k, v in sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
-}
+AVAILABLE_COLORMAPS = dict(
+    sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
+)
 # lock to allow update of AVAILABLE_COLORMAPS in threads
 AVAILABLE_COLORMAPS_LOCK = Lock()
 
@@ -523,6 +526,9 @@ def _increment_unnamed_colormap(
     existing: List[str], name: str = '[unnamed colormap]'
 ) -> Tuple[str, str]:
     """Increment name for unnamed colormap.
+
+    NOTE: this assumes colormaps are *never* deleted, and does not check
+          for name collision. If colormaps can ever be removed, please update.
 
     Parameters
     ----------
@@ -625,20 +631,23 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 AVAILABLE_COLORMAPS[name] = cmap
             else:
                 colormap = _colormap_from_colors(colormap)
-                if colormap is not None:
-                    # Return early because we don't have a name for this colormap.
-                    return colormap
-                raise TypeError(
-                    trans._(
-                        "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
-                        deferred=True,
+                if colormap is None:
+                    raise TypeError(
+                        trans._(
+                            "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
+                            deferred=True,
+                        )
                     )
+
+                name, _display_name = _increment_unnamed_colormap(
+                    AVAILABLE_COLORMAPS
                 )
+                colormap.update({'name': name, '_display_name': _display_name})
+                AVAILABLE_COLORMAPS[name] = colormap
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
-                isinstance(colormap['colors'], VispyColormap)
-                or isinstance(colormap['colors'], Colormap)
+                isinstance(colormap['colors'], (VispyColormap, Colormap))
             ):
                 cmap = Colormap(**colormap)
                 name = cmap.name
@@ -685,19 +694,21 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         else:
             colormap = _colormap_from_colors(colormap)
             if colormap is not None:
-                # Return early because we don't have a name for this colormap.
-                return colormap
-
-            warnings.warn(
-                trans._(
-                    'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
-                    deferred=True,
-                    cm_type=type(colormap),
+                name, _display_name = _increment_unnamed_colormap(
+                    AVAILABLE_COLORMAPS
                 )
-            )
-
-            # Use default colormap
-            name = 'gray'
+                colormap.update({'name': name, '_display_name': _display_name})
+                AVAILABLE_COLORMAPS[name] = colormap
+            else:
+                warnings.warn(
+                    trans._(
+                        'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
+                        deferred=True,
+                        cm_type=type(colormap),
+                    )
+                )
+                # Use default colormap
+                name = 'gray'
 
     return AVAILABLE_COLORMAPS[name]
 

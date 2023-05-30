@@ -181,7 +181,7 @@ class OctreeLevel:
         # Create OctreeChunkGeom used by the visual for rendering this
         # chunk. Size it based on the base image pixels, not based on the
         # data in this level, so it's exact.
-        base = np.array(meta.base_shape[::-1], dtype=np.float)
+        base = np.array(meta.base_shape[::-1], dtype=float)
         remain = base - pos
         size = np.minimum(remain, [scaled_size, scaled_size])
         geom = OctreeChunkGeom(pos, size)

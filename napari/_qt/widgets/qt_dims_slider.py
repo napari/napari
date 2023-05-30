@@ -134,7 +134,7 @@ class QtDimSliderWidget(QWidget):
         label.editingFinished.connect(self._clear_label_focus)
         self.axis_label = label
 
-    def _value_changed(self, value):
+    def _on_value_changed(self, value):
         """Slider changed to this new value.
 
         We split this out as a separate function for perfmon.
@@ -155,7 +155,7 @@ class QtDimSliderWidget(QWidget):
         slider.setValue(self.dims.current_step[self.axis])
 
         # Listener to be used for sending events back to model:
-        slider.valueChanged.connect(self._value_changed)
+        slider.valueChanged.connect(self._on_value_changed)
 
         def slider_focused_listener():
             self.dims.last_used = self.axis
@@ -402,7 +402,7 @@ class QtDimSliderWidget(QWidget):
 
         # setting fps to 0 just stops the animation
         if fps == 0:
-            return
+            return None
 
         worker, thread = _new_worker_qthread(
             AnimationWorker,
@@ -553,10 +553,11 @@ class QtPlayButton(QPushButton):
         """Toggle play/stop animation control."""
         qt_dims = self.qt_dims_ref()
         if not qt_dims:  # pragma: no cover
-            return
+            return None
         if self.property('playing') == "True":
             return qt_dims.stop()
         self.play_requested.emit(self.axis)
+        return None
 
     def _handle_start(self):
         """On animation start, set playing property to True & update style."""
@@ -654,6 +655,7 @@ class AnimationWorker(QObject):
             return self.finish()
         self.step = 1 if fps > 0 else -1  # negative fps plays in reverse
         self.interval = 1000 / abs(fps)
+        return None
 
     @Slot(tuple)
     def set_frame_range(self, frame_range):
@@ -741,6 +743,7 @@ class AnimationWorker(QObject):
         with self.dims.events.current_step.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
         self.timer.start()
+        return None
 
     def finish(self):
         """Emit the finished event signal."""

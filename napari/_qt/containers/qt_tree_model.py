@@ -159,7 +159,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
 
         if isinstance(data, NodeMimeData):
             dest_idx = self.getItem(parent).index_from_root()
-            dest_idx = dest_idx + (destRow,)
+            dest_idx = (*dest_idx, destRow)
             moving_indices = data.node_indices()
 
             logger.debug(

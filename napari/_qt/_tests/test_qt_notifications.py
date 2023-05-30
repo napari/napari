@@ -29,7 +29,7 @@ def _threading_warn():
 
 
 def _warn():
-    warnings.warn('warning!')
+    warnings.warn('warning!', stacklevel=3)
 
 
 def _threading_raise():
