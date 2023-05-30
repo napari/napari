@@ -48,13 +48,12 @@ You will also see some examples of plugins. The core napari viewer focuses on do
 
 ### Installation
 
-- Download the napari {{ napari_version }} bundled app for simple installation:
-
-    {{ '[Linux installation](https://github.com/napari/napari/releases/download/vNAPARI_VER/napari-NAPARI_VER-Linux-x86_64.zip)'.replace('NAPARI_VER', napari_version) }}<br>
-    {{ '[macOS installation](https://github.com/napari/napari/releases/download/vNAPARI_VER/napari-NAPARI_VER-macOS-x86_64.zip)'.replace('NAPARI_VER', napari_version) }}<br>
-    {{ '[Windows installation](https://github.com/napari/napari/releases/download/vNAPARI_VER/napari-NAPARI_VER-Windows-x86_64.zip)'.replace('NAPARI_VER', napari_version) }}<br>
-
-    *Note: for all other releases, please visit [here](https://github.com/napari/napari/releases) and look for Assets.*
+- Download the napari {{ napari_version }} bundled app for a simple installation:
+  - Linux: {{ '[`napari-NAPARI_VER-Linux-x86_64.sh`](https://github.com/napari/napari/releases/download/vNAPARI_VER/napari-NAPARI_VER-Linux-x86_64.sh)'.replace('NAPARI_VER', napari_version) }}.
+  - macOS (Intel): {{ '[`napari-NAPARI_VER-macOS-x86_64.pkg`](https://github.com/napari/napari/releases/download/vNAPARI_VER/napari-NAPARI_VER-macOS-x86_64.pkg)'.replace('NAPARI_VER', napari_version) }}.
+  - macOS (Apple Silicon): {{ '[`napari-NAPARI_VER-macOS-arm64.pkg`](https://github.com/napari/napari/releases/download/vNAPARI_VER/napari-NAPARI_VER-macOS-arm64.pkg)'.replace('NAPARI_VER', napari_version) }}.
+  - Windows: {{ '[`napari-NAPARI_VER-Windows-x86_64.exe`](https://github.com/napari/napari/releases/download/vNAPARI_VER/napari-NAPARI_VER-Windows-x86_64.exe)'.replace('NAPARI_VER', napari_version) }}.
+  - Other artifacts can be found in the {{ '[the Releases page](https://github.com/napari/napari/releases/vNAPARI_VER)'.replace('NAPARI_VER', napari_version) }}, by the Assets section at the bottom.
 
 - For those familiar with Python:
 
@@ -91,7 +90,7 @@ napari
 - If you installed the bundled app:
 
     Click on the app icon to open it.<br>
-    *Note: for mac users, it may require [security setting changes](https://napari.org/tutorials/fundamentals/installation.html).*
+    *Note: macOS users might need to right click on the app icon and select "Open" to bypass the security check. You can also go to System Settings > Privacy & Security and click on "Open Anyway".*
 
 +++
 
