@@ -2,7 +2,7 @@ from enum import Enum, auto
 
 from pydantic import Field
 
-from napari.utils.color import ColorValue
+from napari.utils.color import ColorValueType
 from napari.utils.events import EventedModel
 
 
@@ -32,7 +32,7 @@ class Normals(EventedModel):
 
     mode: NormalMode = Field(NormalMode.FACE, allow_mutation=False)
     visible: bool = False
-    color: ColorValue = 'black'
+    color: ColorValueType = 'black'
     width: float = 1
     length: float = 5
 

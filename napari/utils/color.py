@@ -6,6 +6,8 @@ import numpy as np
 
 from napari.utils.colormaps.standardize_color import transform_color
 
+ColorValueType = Union[np.ndarray, list, tuple, str, None]
+
 
 class ColorValue(np.ndarray):
     """A custom pydantic field type for storing one color value.
@@ -20,9 +22,7 @@ class ColorValue(np.ndarray):
         yield cls.validate
 
     @classmethod
-    def validate(
-        cls, value: Union[np.ndarray, list, tuple, str, None]
-    ) -> np.ndarray:
+    def validate(cls, value: ColorValueType) -> np.ndarray:
         """Validates and coerces the given value into an array storing one color.
 
         Parameters
