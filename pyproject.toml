@@ -226,7 +226,6 @@ check_untyped_defs = true
 # See https://github.com/napari/napari/issues/2751
 [[tool.mypy.overrides]]
 module = [
-    'napari.__main__',
     'napari._app_model._app',
     'napari._app_model.actions._layer_actions',
     'napari._app_model.constants._commands',
