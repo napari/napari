@@ -450,6 +450,20 @@ def single_threaded_executor():
     executor.shutdown()
 
 
+@pytest.fixture()
+def mock_console():
+    """Mock the qtconsole to avoid starting an interactive IPython session.
+    In-process IPython kernels can interfere with other tests and are difficult
+    (impossible?) to shutdown.
+    """
+    from IPython.terminal.interactiveshell import (
+        TerminalInteractiveShell as FakeShell,
+    )
+
+    with patch("IPython.get_ipython", FakeShell):
+        yield
+
+
 @pytest.fixture(autouse=True)
 def _mock_app():
     """Mock clean 'test_app' `NapariApplication` instance.
