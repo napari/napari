@@ -2,10 +2,10 @@ from typing import List
 
 from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
 
-from ...._app_model.constants import CommandId, MenuGroup, MenuId
-from ....utils.translations import trans
-from ...qt_main_window import Window
-from ...qt_viewer import QtViewer
+from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._qt.qt_main_window import Window
+from napari._qt.qt_viewer import QtViewer
+from napari.utils.translations import trans
 
 
 def _restart(window: Window):
