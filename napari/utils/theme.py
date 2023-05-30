@@ -235,17 +235,16 @@ def get_theme(theme_id, as_dict=None) -> Union[Theme, Dict[str, Any]]:
             )
         )
     theme = _themes[theme_id].copy()
-    if as_dict is None:
+    if as_dict is not None:
         warnings.warn(
             trans._(
-                "The `as_dict` kwarg default to False` since Napari 0.4.17, "
-                "and will become a mandatory parameter in the future.",
+                "The `as_dict` kwarg has been deprecated since Napari 0.5.0 and "
+                "will be removed in future version. You can use `get_theme(...).to_dict()`",
                 deferred=True,
             ),
             category=FutureWarning,
             stacklevel=2,
         )
-        as_dict = False
     if as_dict:
         return theme.to_dict()
     return theme

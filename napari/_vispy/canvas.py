@@ -204,7 +204,7 @@ class VispyCanvas:
         # Note 2. the reason for using the `as_hex` here is to avoid
         # `UserWarning` which is emitted when RGB values are above 1
         self._last_theme_color = transform_color(
-            get_theme(theme, False).canvas.as_hex()
+            get_theme(theme).canvas.as_hex()
         )[0]
         self.bgcolor = self._last_theme_color
 
