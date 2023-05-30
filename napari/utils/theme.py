@@ -5,7 +5,7 @@ import re
 import warnings
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Union, overload
 
 import npe2
 from pydantic import validator
@@ -200,7 +200,17 @@ def get_system_theme() -> str:
     return id_
 
 
-def get_theme(theme_id, as_dict=None) -> Union[Theme, Dict[str, Any]]:
+@overload
+def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme:
+    ...
+
+
+@overload
+def get_theme(theme_id: str, as_dict: Literal[True]) -> Dict[str, Any]:
+    ...
+
+
+def get_theme(theme_id, as_dict=None):
     """Get a copy of theme based on it's id.
 
     If you get a copy of the theme, changes to the theme model will not be
@@ -212,6 +222,10 @@ def get_theme(theme_id, as_dict=None) -> Union[Theme, Dict[str, Any]]:
     theme_id : str
         ID of requested theme.
     as_dict : bool
+        .. deprecated:: 0.5.0
+
+            Use ``get_theme(...).to_dict()``
+
         Flag to indicate that the old-style dictionary
         should be returned. This will emit deprecation warning.
 
