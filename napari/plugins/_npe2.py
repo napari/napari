@@ -436,11 +436,13 @@ def _build_samples_menu(mf: PluginManifest) -> None:
     sample_data = mf.contributions.sample_data
     multiprovider = len(sample_data) > 1
     if multiprovider:
-        sub_menu_id = f'napari/file/samples/{mf.name}'
+        sub_menu_id = f'napari/file/samples/{mf.display_name}'
         sub_menu = [
             (
                 MenuId.SAMPLES,
-                SubmenuItem(submenu=sub_menu_id, title=trans._(mf.name)),
+                SubmenuItem(
+                    submenu=sub_menu_id, title=trans._(mf.display_name)
+                ),
             ),
         ]
         app.menus.append_menu_items(sub_menu)
