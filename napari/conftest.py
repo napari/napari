@@ -456,9 +456,10 @@ def mock_console():
     In-process IPython kernels can interfere with other tests and are difficult
     (impossible?) to shutdown.
     """
-    from IPython.terminal.interactiveshell import (
-        TerminalInteractiveShell as FakeShell,
-    )
+    from IPython.terminal.interactiveshell import TerminalInteractiveShell
+
+    class FakeShell(TerminalInteractiveShell):
+        ...
 
     with patch("IPython.get_ipython", FakeShell):
         yield
