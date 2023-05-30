@@ -21,7 +21,7 @@ from typing import (
     Union,
     cast,
 )
-from weakref import WeakValueDictionary
+from weakref import WeakSet, WeakValueDictionary
 
 from qtpy.QtCore import (
     QEvent,
@@ -196,9 +196,8 @@ class _QtMainWindow(QMainWindow):
 
     @classmethod
     def all_open_viewers(cls):
-        viewers = [window._qt_viewer.viewer for window in cls._instances]
-        if viewers != []:
-            return viewers
+        viewers = WeakSet([window._qt_viewer.viewer for window in cls._instances])
+        return viewers
 
     def event(self, e: QEvent) -> bool:
         if (

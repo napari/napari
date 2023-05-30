@@ -1,7 +1,7 @@
 import sys
 import typing
 from typing import TYPE_CHECKING, Optional
-from weakref import WeakSet
+from weakref import proxy, WeakSet
 
 import magicgui as mgui
 
@@ -187,12 +187,12 @@ def current_viewer() -> Optional[Viewer]:
     try:
         from napari._qt.qt_main_window import _QtMainWindow
 
-        return _QtMainWindow.current_viewer()
+        return proxy(_QtMainWindow.current_viewer())
     except ImportError:
         return None
 
 
-def all_open_viewers() -> Optional[List[Viewer]]:
+def all_open_viewers() -> WeakSet[Viewer]:
     """Return a list of all open napari viewers, or None."""
     try:
         from napari._qt.qt_main_window import _QtMainWindow
