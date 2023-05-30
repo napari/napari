@@ -11,7 +11,7 @@ from napari.view_layers import (
     view_tracks,
     view_vectors,
 )
-from napari.viewer import Viewer, current_viewer, all_open_viewers
+from napari.viewer import Viewer, all_open_viewers, current_viewer
 
 __version__: str
 

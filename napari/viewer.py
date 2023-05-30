@@ -1,7 +1,7 @@
 import sys
 import typing
 from typing import TYPE_CHECKING, Optional
-from weakref import proxy, WeakSet
+from weakref import WeakSet, proxy
 
 import magicgui as mgui
 

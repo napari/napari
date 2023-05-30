@@ -196,7 +196,9 @@ class _QtMainWindow(QMainWindow):
 
     @classmethod
     def all_open_viewers(cls):
-        viewers = WeakSet([window._qt_viewer.viewer for window in cls._instances])
+        viewers = WeakSet(
+            [window._qt_viewer.viewer for window in cls._instances]
+        )
         return viewers
 
     def event(self, e: QEvent) -> bool:
