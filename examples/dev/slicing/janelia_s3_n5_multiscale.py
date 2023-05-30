@@ -1,5 +1,6 @@
-import zarr
 import dask.array as da
+import zarr
+
 import napari
 
 """

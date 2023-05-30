@@ -3,29 +3,28 @@ from typing import TYPE_CHECKING
 
 from app_model.types import Action, SubmenuItem
 
+from napari._app_model._submenus import SUBMENUS
+from napari._app_model.constants import MenuGroup, MenuId
+from napari._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
+from napari._qt.menus._util import NapariMenu
+from napari.components._viewer_key_bindings import register_viewer_action
 from napari.errors.reader_errors import MultipleReaderError
-
-from ..._app_model._submenus import SUBMENUS
-from ..._app_model.constants import MenuGroup, MenuId
-from ...components._viewer_key_bindings import register_viewer_action
-from ...utils.translations import trans
-from .._qapp_model.qactions._file import Q_FILE_ACTIONS
-from ._util import NapariMenu
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ... import Viewer
-    from ..qt_main_window import Window
+    from napari import Viewer
+    from napari._qt.qt_main_window import Window
 
 
 class FileMenu(NapariMenu):
-    def __init__(self, window: 'Window'):
+    def __init__(self, window: 'Window') -> None:
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
 
         self._pref_dialog = None
 
-        from ...plugins import plugin_manager
+        from napari.plugins import plugin_manager
 
         plugin_manager.discover_sample_data()
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
@@ -35,7 +34,7 @@ class FileMenu(NapariMenu):
         self.update()
 
     def _rebuild_samples_menu(self):
-        from ...plugins import _npe2, menu_item_template, plugin_manager
+        from napari.plugins import _npe2, menu_item_template, plugin_manager
 
         self.open_sample_menu.clear()
 
@@ -44,11 +43,21 @@ class FileMenu(NapariMenu):
         ):
             multiprovider = len(samples) > 1
             if multiprovider:
-                sub_menu_id = f'napari/file/samples/{plugin_name}'
+                # use display_name for the menu item if npe2
+                from npe2 import plugin_manager as pm
+
+                try:
+                    plugin_display_name = pm.get_manifest(
+                        plugin_name
+                    ).display_name
+                except KeyError:
+                    plugin_display_name = plugin_name
+
+                sub_menu_id = f'napari/file/samples/{plugin_display_name}'
                 sub_menu = (
                     MenuId.SAMPLES,
                     SubmenuItem(
-                        submenu=sub_menu_id, title=trans._(plugin_name)
+                        submenu=sub_menu_id, title=trans._(plugin_display_name)
                     ),
                 )
                 SUBMENUS.append(sub_menu)
@@ -57,14 +66,14 @@ class FileMenu(NapariMenu):
 
             for samp_name, samp_dict in samples.items():
 
-                def _add_sample(*args, plg=plugin_name, smp=samp_name):
+                def _add_sample(*_, plg=plugin_name, smp=samp_name):
                     try:
                         self._win._qt_viewer.viewer.open_sample(plg, smp)
                     except MultipleReaderError as e:
                         handle_gui_reading(
                             e.paths,
                             self._win._qt_viewer,
-                            plugin_name=plugin_name,
+                            plugin_name=plg,
                             stack=False,
                         )
 

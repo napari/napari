@@ -8,8 +8,8 @@ Add small data to examine cursor positions
 """
 
 import numpy as np
-import napari
 
+import napari
 
 viewer = napari.Viewer()
 image = np.array([[1, 0, 0, 1],

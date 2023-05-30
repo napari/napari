@@ -11,24 +11,24 @@ from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from .. import Viewer, __version__
-from ..resources._icons import _theme_path
-from ..settings import get_settings
-from ..utils import config, perf
-from ..utils.notifications import (
-    notification_manager,
-    show_console_notification,
-)
-from ..utils.perf import perf_config
-from ..utils.theme import _themes
-from ..utils.translations import trans
-from .dialogs.qt_notification import NapariQtNotification
-from .qt_event_filters import QtToolTipEventFilter
-from .qthreading import (
+from napari import Viewer, __version__
+from napari._qt.dialogs.qt_notification import NapariQtNotification
+from napari._qt.qt_event_filters import QtToolTipEventFilter
+from napari._qt.qthreading import (
     register_threadworker_processors,
     wait_for_workers_to_quit,
 )
-from .utils import _maybe_allow_interrupt
+from napari._qt.utils import _maybe_allow_interrupt
+from napari.resources._icons import _theme_path
+from napari.settings import get_settings
+from napari.utils import config, perf
+from napari.utils.notifications import (
+    notification_manager,
+    show_console_notification,
+)
+from napari.utils.perf import perf_config
+from napari.utils.theme import _themes
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from IPython import InteractiveShell
@@ -120,20 +120,21 @@ def get_app(
     if app:
         set_values.discard("ipy_interactive")
         if set_values:
-
             warn(
                 trans._(
                     "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
                     deferred=True,
                     args=set_values,
-                )
+                ),
+                stacklevel=2,
             )
         if perf_config and perf_config.trace_qt_events:
             warn(
                 trans._(
                     "Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.",
                     deferred=True,
-                )
+                ),
+                stacklevel=2,
             )
 
     else:
@@ -155,7 +156,9 @@ def get_app(
             argv[0] = "napari"
 
         if perf_config and perf_config.trace_qt_events:
-            from .perf.qt_event_tracing import QApplicationWithTracing
+            from napari._qt.perf.qt_event_tracing import (
+                QApplicationWithTracing,
+            )
 
             app = QApplicationWithTracing(argv)
         else:
@@ -246,13 +249,13 @@ def quit_app():
 
     if config.monitor:
         # Stop the monitor service if we were using it
-        from ..components.experimental.monitor import monitor
+        from napari.components.experimental.monitor import monitor
 
         monitor.stop()
 
     if config.async_loading:
         # Shutdown the chunkloader
-        from ..components.experimental.chunk import chunk_loader
+        from napari.components.experimental.chunk import chunk_loader
 
         chunk_loader.shutdown()
 
@@ -287,18 +290,19 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
             deferred=True,
         ),
         FutureWarning,
+        stacklevel=2,
     )
 
     app = get_app()
     splash = None
     if startup_logo and app.applicationName() == 'napari':
-        from .widgets.qt_splash_screen import NapariSplashScreen
+        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
         splash = NapariSplashScreen()
         splash.close()
     try:
         yield app
-    except Exception:
+    except Exception:  # noqa: BLE001
         notification_manager.receive_error(*sys.exc_info())
     run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
 
@@ -400,7 +404,8 @@ def run(
                 "Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`",
                 deferred=True,
                 _func_name=_func_name,
-            )
+            ),
+            stacklevel=2,
         )
         return
 
@@ -414,7 +419,8 @@ def run(
                 deferred=True,
                 _func_name=_func_name,
                 max_loop_level=loops + 1,
-            )
+            ),
+            stacklevel=2,
         )
         return
     with notification_manager, _maybe_allow_interrupt(app):

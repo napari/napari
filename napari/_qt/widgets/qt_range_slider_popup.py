@@ -2,7 +2,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication, QHBoxLayout
 from superqt import QLabeledDoubleRangeSlider
 
-from ..dialogs.qt_modal import QtPopup
+from napari._qt.dialogs.qt_modal import QtPopup
 
 
 class QRangeSliderPopup(QtPopup):
@@ -20,7 +20,7 @@ class QRangeSliderPopup(QtPopup):
         Slider widget.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
         # create slider

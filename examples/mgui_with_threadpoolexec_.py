@@ -51,12 +51,12 @@ def make_widget(
             threshold=threshold,
         )
         data = blobs[:, : image.ndim]
-        kwargs = dict(
-            size=blobs[:, -1],
-            edge_color="red",
-            edge_width=2,
-            face_color="transparent",
-        )
+        kwargs = {
+            "size": blobs[:, -1],
+            "edge_color": "red",
+            "edge_width": 2,
+            "face_color": "transparent",
+        }
         return (data, kwargs, 'points')
 
     return pool.submit(_make_blob)

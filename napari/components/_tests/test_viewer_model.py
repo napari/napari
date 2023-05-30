@@ -104,6 +104,21 @@ def test_add_multiscale():
     assert viewer.dims.ndim == 2
 
 
+def test_add_multiscale_image_with_negative_floats():
+    """See https://github.com/napari/napari/issues/5257"""
+    viewer = ViewerModel()
+    shapes = [(20, 10), (10, 5)]
+    data = [np.zeros(s, dtype=np.float64) for s in shapes]
+    data[0][-4:, -2:] = -1
+    data[1][-2:, -1:] = -1
+
+    viewer.add_image(data, multiscale=True)
+
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
 def test_add_labels():
     """Test adding labels image."""
     viewer = ViewerModel()
@@ -132,7 +147,7 @@ def test_single_point_dims():
     shape = (1, 3)
     data = np.zeros(shape)
     viewer.add_points(data)
-    assert all(r == (0.0, 1.0, 1.0) for r in viewer.dims.range)
+    assert all(r == (0.0, 0.0, 1.0) for r in viewer.dims.range)
 
 
 def test_add_empty_points_to_empty_viewer():
@@ -303,17 +318,17 @@ def test_view_centering_with_points_add():
 
     viewer = ViewerModel()
     viewer.add_image(image)
-    assert tuple(viewer.dims.point) == (2, 5, 5)
+    assert tuple(viewer.dims.point) == (2, 4, 4)
 
     viewer.dims.set_point(0, 0)
     # viewer point shouldn't change after this
-    assert tuple(viewer.dims.point) == (0, 5, 5)
+    assert tuple(viewer.dims.point) == (0, 4, 4)
 
     pts_layer = viewer.add_points(ndim=3)
-    assert tuple(viewer.dims.point) == (0, 5, 5)
+    assert tuple(viewer.dims.point) == (0, 4, 4)
 
     pts_layer.add([(0, 8, 8)])
-    assert tuple(viewer.dims.point) == (0, 5, 5)
+    assert tuple(viewer.dims.point) == (0, 4, 4)
 
 
 def test_new_shapes():
@@ -343,7 +358,7 @@ def test_swappable_dims():
     image_data = np.random.random((7, 12, 10, 15))
     image_name = viewer.add_image(image_data).name
     assert np.all(
-        viewer.layers[image_name]._data_view == image_data[3, 6, :, :]
+        viewer.layers[image_name]._data_view == image_data[3, 5, :, :]
     )
 
     points_data = np.random.randint(6, size=(10, 4))
@@ -357,17 +372,17 @@ def test_swappable_dims():
     # midpoints indices into the data below depend on the data range.
     # This depends on the values in vectors_data and thus the random seed.
     assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 6, :, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 5, :, :]
     )
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
     assert viewer.dims.order == (0, 2, 1, 3)
     assert np.all(
-        viewer.layers[image_name]._data_view == image_data[3, :, 5, :]
+        viewer.layers[image_name]._data_view == image_data[3, :, 4, :]
     )
     assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 5, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 4, :]
     )
 
 
@@ -377,7 +392,7 @@ def test_grid():
 
     np.random.seed(0)
     # Add image
-    for i in range(6):
+    for _i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
     assert not viewer.grid.enabled
@@ -628,24 +643,38 @@ def test_sliced_world_extent():
     viewer = ViewerModel()
 
     # Empty data is taken to be 512 x 512
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (-0.5, -0.5))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (511.5, 511.5))
+    np.testing.assert_allclose(
+        viewer._sliced_extent_world_augmented[0], (-0.5, -0.5)
+    )
+    np.testing.assert_allclose(
+        viewer._sliced_extent_world_augmented[1], (511.5, 511.5)
+    )
 
     # Add one layer
     viewer.add_image(
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
-    np.testing.assert_allclose(viewer.layers.extent.world[0], (8.5, 19.5, 4.5))
     np.testing.assert_allclose(
-        viewer.layers.extent.world[1], (26.5, 29.5, 19.5)
+        viewer.layers._extent_world_augmented[0], (8.5, 19.5, 4.5)
     )
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (19.5, 4.5))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (29.5, 19.5))
+    np.testing.assert_allclose(
+        viewer.layers._extent_world_augmented[1], (26.5, 29.5, 19.5)
+    )
+    np.testing.assert_allclose(
+        viewer._sliced_extent_world_augmented[0], (19.5, 4.5)
+    )
+    np.testing.assert_allclose(
+        viewer._sliced_extent_world_augmented[1], (29.5, 19.5)
+    )
 
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (4.5, 8.5))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (19.5, 26.5))
+    np.testing.assert_allclose(
+        viewer._sliced_extent_world_augmented[0], (4.5, 8.5)
+    )
+    np.testing.assert_allclose(
+        viewer._sliced_extent_world_augmented[1], (19.5, 26.5)
+    )
 
 
 def test_camera():
@@ -679,11 +708,11 @@ def test_update_scale():
     shape = (10, 15, 20)
     data = np.random.random(shape)
     viewer.add_image(data)
-    assert viewer.dims.range == tuple((0.0, x, 1.0) for x in shape)
+    assert viewer.dims.range == tuple((0.0, x - 1, 1.0) for x in shape)
     scale = (3.0, 2.0, 1.0)
     viewer.layers[0].scale = scale
     assert viewer.dims.range == tuple(
-        (0.0, x * s, s) for x, s in zip(shape, scale)
+        (0.0, (x - 1) * s, s) for x, s in zip(shape, scale)
     )
 
 
@@ -697,7 +726,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     assert layer.ndim == ndim
 
     # Check that no internal callbacks have been registered
-    len(layer.events.callbacks) == 0
+    assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 0
 
@@ -734,7 +763,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     layer.events.connect(my_custom_callback)
 
     # Check that no internal callbacks have been registered
-    len(layer.events.callbacks) == 1
+    assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
             assert len(em.callbacks) == 1
@@ -758,7 +787,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
 
 
 @pytest.mark.parametrize(
-    'field', ['camera', 'cursor', 'dims', 'grid', 'layers', 'scale_bar']
+    'field', ['camera', 'cursor', 'dims', 'grid', 'layers']
 )
 def test_not_mutable_fields(field):
     """Test appropriate fields are not mutable."""
@@ -770,7 +799,7 @@ def test_not_mutable_fields(field):
     assert not hasattr(viewer.events, field)
 
     # Check attribute is not settable
-    with pytest.raises(TypeError) as err:
+    with pytest.raises((TypeError, ValueError)) as err:
         setattr(viewer, field, 'test')
 
     assert 'has allow_mutation set to False and cannot be assigned' in str(

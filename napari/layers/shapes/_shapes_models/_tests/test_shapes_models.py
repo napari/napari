@@ -51,6 +51,22 @@ def test_polygon():
     assert np.all(shape.data == data)
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
+    # should get few triangles
+    assert shape._edge_vertices.shape == (16, 2)
+    assert shape._face_vertices.shape == (8, 2)
+
+    data = np.array([[0, 0], [0, 1], [1, 1], [1, 0]])
+    shape = Polygon(data, interpolation_order=3)
+    # should get many triangles
+    assert shape._edge_vertices.shape == (500, 2)
+    assert shape._face_vertices.shape == (251, 2)
+
+    data = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]])
+    shape = Polygon(data, interpolation_order=3, ndisplay=3)
+    # should get many vertices
+    assert shape._edge_vertices.shape == (2500, 3)
+    # faces are not made for non-coplanar 3d stuff
+    assert shape._face_vertices.shape == (0, 3)
 
 
 def test_nD_polygon():

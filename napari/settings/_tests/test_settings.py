@@ -169,7 +169,7 @@ def test_custom_theme_settings(test_settings):
         primary='rgb(80, 88, 108)',
         current='rgb(184, 112, 0)',
     )
-    register_theme(custom_theme_name, blue_theme)
+    register_theme(custom_theme_name, blue_theme, "test")
 
     # Theme registered, should pass validation
     test_settings.appearance.theme = custom_theme_name
@@ -239,7 +239,6 @@ def test_subfield_env_field(monkeypatch):
 
 # Failing because dark is actually the default...
 def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
-
     # create a settings file with light theme
     data = "appearance:\n   theme: light"
     fake_path = tmp_path / 'fake_path.yml'
