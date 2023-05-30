@@ -190,7 +190,7 @@ class TrackManager:
     @graph.setter
     def graph(self, graph: Dict[int, Union[int, List[int]]]):
         """set the track graph"""
-        self._graph = self._validate_track_graph(graph)
+        self._graph = self._normalize_track_graph(graph)
 
     @property
     def track_ids(self):
@@ -242,7 +242,7 @@ class TrackManager:
 
         return data
 
-    def _validate_track_graph(
+    def _normalize_track_graph(
         self, graph: Dict[int, Union[int, List[int]]]
     ) -> Dict[int, List[int]]:
         """validate the track graph"""
