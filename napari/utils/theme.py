@@ -94,7 +94,10 @@ class Theme(EventedModel):
         )
         return value
 
-    def dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        This differs from baseclass `dict()` by converting colors to rgb.
+        """
         th = super().dict()
         return {
             k: v if not isinstance(v, Color) else v.as_rgb()
@@ -244,7 +247,7 @@ def get_theme(theme_id, as_dict=None) -> Union[Theme, Dict[str, Any]]:
         )
         as_dict = False
     if as_dict:
-        return theme.dict()
+        return theme.to_dict()
     return theme
 
 
