@@ -366,7 +366,6 @@ module = [
     'napari.utils.events.debugging',
     'napari.utils.events.event',
     'napari.utils.events.evented_model',
-    'napari.utils.geometry',
     'napari.utils.interactions',
     'napari.utils.key_bindings',
     'napari.utils.mouse_bindings',
