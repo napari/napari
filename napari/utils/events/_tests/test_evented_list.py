@@ -143,10 +143,13 @@ def test_move(test_list):
 
 def test_cancel_delete_layer(test_list):
     test_list.events = Mock(wraps=test_list.events)
-    test_list.events.removing.connect(
-        lambda a: (setattr(a, 'cancelled', True))
-    )
+
+    def on_removing(event):
+        event.cancelled = True
+
+    test_list.events.removing.connect(on_removing)
     test_list.__delitem__(2)
+
     test_list.events.removing.assert_called_once()
     test_list.events.removed.assert_not_called()
 
