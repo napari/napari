@@ -222,6 +222,9 @@ class VispyBaseLayer(ABC):
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
+    def _on_camera_move(self):
+        return
+
     def reset(self):
         self._on_visible_change()
         self._on_opacity_change()

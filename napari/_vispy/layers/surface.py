@@ -189,6 +189,18 @@ class VispySurfaceLayer(VispyBaseLayer):
                 primitive='vertex',
             )
 
+    def _on_camera_move(self, event):
+        if (
+            event.type == 'up_direction'
+            and self.node.shading_filter is not None
+        ):
+            up = np.array(self.layer.world_to_data(event.value))
+            view = np.array(
+                self.layer.world_to_data(event.source.view_direction)
+            )
+            light_dir = up + -view + np.cross(up, -view)
+            self.node.shading_filter.light_dir = light_dir
+
     def reset(self, event=None):
         super().reset()
         self._on_colormap_change()

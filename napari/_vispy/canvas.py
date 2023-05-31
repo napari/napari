@@ -558,6 +558,7 @@ class VispyCanvas:
         self.layer_to_visual[napari_layer] = vispy_layer
 
         napari_layer.events.visible.connect(self._reorder_layers)
+        self.viewer.camera.events.connect(vispy_layer._on_camera_move)
 
         self._reorder_layers()
 
@@ -576,6 +577,7 @@ class VispyCanvas:
         layer = event.value
         layer.events.visible.disconnect(self._reorder_layers)
         vispy_layer = self.layer_to_visual[layer]
+        self.viewer.camera.events.disconnect(vispy_layer._on_camera_move)
         vispy_layer.close()
         del vispy_layer
         del self.layer_to_visual[layer]
