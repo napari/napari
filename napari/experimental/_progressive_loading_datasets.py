@@ -188,7 +188,7 @@ def zarr_get_chunk(self: "zarr.Array", coords):
     Return a numpy array with the corresponding loaded chunk data."""
     out = np.zeros(self.chunks)
     selection = [slice(0, mx, 1) for mx in self._chunks]
-    self._chunk_getitems([coords], [selection], out, [selection])
+    self._chunk_getitems([coords], tuple(selection), out, tuple(selection))
     return out
 
 

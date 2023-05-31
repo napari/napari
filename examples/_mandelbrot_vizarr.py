@@ -2,29 +2,20 @@ import time
 import heapq
 import logging
 import sys
-import threading
-from typing import Tuple, Union
 
-import dask.array as da
 import numpy as np
 import toolz as tz
-import zarr
-from numba import njit
-from numcodecs import Blosc
+
 from psygnal import debounced
-from skimage.transform import resize
 from superqt import ensure_main_thread
-from zarr.storage import init_array, init_group
-from zarr.util import json_dumps
 from napari import Viewer
 
 import napari
 from napari.experimental._progressive_loading import (
-    MultiScaleVirtualData, VirtualData, chunk_centers, chunk_priority_2D,
-    chunk_slices, get_chunk, interpolated_get_chunk_2D)
+    MultiScaleVirtualData, chunk_priority_2D,
+    chunk_slices, get_chunk)
 from napari.experimental._progressive_loading_datasets import (
-    mandelbrot_dataset, openorganelle_mouse_kidney_em)
-from napari.layers._data_protocols import Index, LayerDataProtocol
+    mandelbrot_dataset)
 from napari.qt.threading import thread_worker
 from napari.utils.events import Event
 
@@ -53,7 +44,7 @@ def get_and_process_chunk_2D(
     virtual_data,
     full_shape,
 ):
-    """Fetch and upscale a chunk
+    """Fetch a chunk.
 
     Parameters
     ----------
@@ -69,39 +60,7 @@ def get_and_process_chunk_2D(
     """
     array = virtual_data.array
 
-    start_time = time.time()
-
-    # Trigger a fetch of the data
-    # TODO this is what should be happening
-    # real_array = interpolated_get_chunk_2D(
-    #     chunk_slice,
-    #     array=array,
-    # )
-
-    # x = (chunk_slice[0].start + virtual_data.translate[0]) / virtual_data.array.chunks[0]
-    # y = (chunk_slice[1].start + virtual_data.translate[1]) / virtual_data.array.chunks[1]
-
-    x = (chunk_slice[0].start) / virtual_data.array.chunks[0]
-    y = (chunk_slice[1].start) / virtual_data.array.chunks[1]
-    
-    # TODO pickup here and to find out why the fractal is offset
-    
-    # real_array = array.get_zarr_chunk(scale, y, x)
-    # real_array = array.get_zarr_chunk(chunk_slice)
-    real_array = array[chunk_slice].transpose()
-
-    LOGGER.info(f"get_and_process_chunk_2D: {(time.time() - start_time)} time, yielding for scale {scale} at slice {chunk_slice}")
-    #     f"\tyield will be placed at: {(y * 2**scale, x * 2**scale, scale, real_array.shape)} slice: {(chunk_slice[0].start, chunk_slice[0].stop, chunk_slice[0].step)} {(chunk_slice[1].start, chunk_slice[1].stop, chunk_slice[1].step)}"
-    # )
-
-    # # Catch slices that will be out of bounds during rendering
-    # if (
-    #     virtual_data.translate[0] + virtual_data.data_plane.shape[0]
-    #     < chunk_slice[0].stop
-    # ):
-    #     import pdb
-
-    #     pdb.set_trace()
+    real_array = np.asarray(array[chunk_slice]).transpose()
 
     return (
         tuple(chunk_slice),
@@ -115,13 +74,8 @@ def should_render_scale(scale, viewer, min_scale, max_scale):
     layer_shape = layer.data.shape
     layer_scale = layer.scale
 
-    # TODO this dist calculation assumes orientation
-    # dist = sum([(t - c)**2 for t, c in zip(layer.translate, viewer.camera.center[1:])]) ** 0.5
-
-    # pixel_size = 2 * np.tan(viewer.camera.angles[-1] / 2) * dist / max(layer_scale)
     pixel_size = viewer.camera.zoom * max(layer_scale)
     
-    # TODO max pixel_size chosen by eyeballing
     if max_scale == 7:
         max_pixel = 5
         min_pixel = 0.25
@@ -145,7 +99,7 @@ def should_render_scale(scale, viewer, min_scale, max_scale):
 def render_sequence(
     corner_pixels, num_threads=1, visible_scales=[], data=None
 ):
-    """A generator that yields multiscale chunk tuples from low to high resolution.
+    """Generator that yields chunk tuples from low to high resolution.
 
     Parameters
     ----------
@@ -170,24 +124,19 @@ def render_sequence(
 
     for scale in reversed(range(len(data.arrays))):
         if visible_scales[scale]:
-            # This is the real array
-            # array = data.arrays[scale]
+            vdata = data._data[scale]
 
-            array = data._data[scale]
-
-            # these_slices = chunk_slices(array, ndim=self.d)
-            # chunk_keys = data._chunk_slices[scale]
             data_interval = corner_pixels / (2**scale)
             LOGGER.info(
                 f"render_sequence: computing chunk slices for {data_interval}"
             )
-            chunk_keys = chunk_slices(array, ndim=2, interval=data_interval)
+            chunk_keys = chunk_slices(vdata, ndim=2, interval=data_interval)
 
             LOGGER.info("render_sequence: computing priority")
             chunk_queue = chunk_priority_2D(chunk_keys, corner_pixels, scale)
 
             LOGGER.info(
-                f"render_sequence: {scale}, {array.shape} fetching {len(chunk_queue)} chunks"
+                f"render_sequence: {scale}, {vdata.shape} fetching {len(chunk_queue)} chunks"
             )
 
             # Fetch all chunks in priority order
@@ -202,7 +151,7 @@ def render_sequence(
                         get_and_process_chunk_2D(
                             chunk_slice,
                             scale,
-                            array,
+                            vdata,
                             full_shape,
                         )
                     )
@@ -218,7 +167,7 @@ def get_layer_name_for_scale(scale):
 
 @tz.curry
 def dims_update_handler(invar, data=None):
-    """Start a new render sequence with the current viewer state
+    """Start a new render sequence with the current viewer state.
 
     Parameters
     ----------
@@ -226,7 +175,6 @@ def dims_update_handler(invar, data=None):
         either an event or a viewer
     full_shape : tuple
         a tuple representing the shape of the highest resolution array
-
     """
     global worker, viewer
 
@@ -287,16 +235,8 @@ def dims_update_handler(invar, data=None):
         layer.visible = visible_scales[scale]
         layer.opacity = 0.9
 
-        scaled_shape = [sh * sc for sh, sc in zip(layer_shape, layer_scale)]
-
-        # TODO this dist calculation assumes orientation
-        # dist = sum([(t - c)**2 for t, c in zip(layer.translate, viewer.camera.center[1:])]) ** 0.5
-
-        # pixel_size = 2 * np.tan(viewer.camera.angles[-1] / 2) * dist / max(layer_scale)
-        pixel_size = viewer.camera.zoom * max(layer_scale)
-
         LOGGER.info(
-            f"scale {scale} name {layer_name}\twith pixel_size {pixel_size}\ttranslate {layer.data.translate}"
+            f"scale {scale} name {layer_name}\twith translate {layer.data.translate}"
         )
 
     # Update the MultiScaleVirtualData memory backing
@@ -341,23 +281,16 @@ def dims_update_handler(invar, data=None):
                     layer.metadata["prev_layer"].metadata[
                         "prev_layer"
                     ].visible = False
-                # layer.metadata["prev_layer"].opacity = 0.5
-            #     layer.metadata["prev_layer"].visible = False
             layer.metadata["translated"] = True
 
         if is_last_chunk:
             if layer.metadata["prev_layer"]:
                 layer.metadata["prev_layer"].visible = False
 
-        # LOGGER.info(f"{time.time() - start_time} time : starting set_offset in thread {threading.get_ident()}")
-        # TODO check out set_offset and refresh are blocking
         layer.data.set_offset(chunk_slice, chunk)
-        # layer.data[chunk_slice] = chunk
-        # LOGGER.info(f"{time.time() - start_time} time : done with set_offset of chunk")
-        # Refresh is too slow
-        # layer.refresh()
+
         texture.set_data(layer.data.data_plane)
-        # LOGGER.info(f"{time.time() - start_time} time : done with set_data of chunk")
+
         image.update()
         LOGGER.info(f"{time.time() - start_time} time : done with image update")
 
@@ -475,12 +408,12 @@ if __name__ == "__main__":
 
     napari.run()
 
-def yappi_stats():
-    import time
+    def yappi_stats():
+        import time
 
-    timestamp = time.time()
+        timestamp = time.time()
 
-    filename = f"/tmp/mandelbrot_vizarr_{timestamp}.prof"
+        filename = f"/tmp/mandelbrot_vizarr_{timestamp}.prof"
 
-    func_stats = yappi.get_func_stats()
-    func_stats.save(filename, type='pstat')
+        func_stats = yappi.get_func_stats()
+        func_stats.save(filename, type='pstat')
