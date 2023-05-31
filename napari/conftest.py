@@ -38,7 +38,7 @@ from contextlib import suppress
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from weakref import WeakKeyDictionary
 
 with suppress(ModuleNotFoundError):
@@ -53,6 +53,7 @@ from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.config import async_loading
 from napari.utils.misc import ROOT_DIR
+from napari.viewer import Viewer
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
@@ -456,12 +457,21 @@ def mock_console():
     In-process IPython kernels can interfere with other tests and are difficult
     (impossible?) to shutdown.
     """
-    from IPython.terminal.interactiveshell import TerminalInteractiveShell
+    from napari_console import QtConsole
+    from qtconsole.rich_jupyter_widget import RichJupyterWidget
 
-    class FakeShell(TerminalInteractiveShell):
-        ...
+    class FakeQtConsole(RichJupyterWidget):
+        def __init__(self, viewer: Viewer):
+            super().__init__()
+            self.viewer = viewer
+            self.kernel_client = None
+            self.kernel_manager = None
 
-    with patch("IPython.get_ipython", FakeShell):
+        _update_theme = Mock()
+        push = Mock()
+        closeEvent = QtConsole.closeEvent
+
+    with patch("napari_console.QtConsole", FakeQtConsole):
         yield
 
 
