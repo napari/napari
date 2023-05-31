@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -241,7 +241,7 @@ class Vectors(Layer):
 
         # Data containing vectors in the currently viewed slice
         self._view_data = np.empty((0, 2, 2))
-        self._view_indices: Union[List[int], np.ndarray] = []
+        self._view_indices = np.array([], dtype=int)
         self._view_alphas: Union[float, np.ndarray] = 1.0
 
         # now that everything is set up, make the layer visible (if set to visible)
@@ -699,9 +699,7 @@ class Vectors(Layer):
                     0, self._view_data.shape[0], self._max_vectors_thumbnail
                 )
                 vectors = copy(self._view_data[thumbnail_indices, :, -2:])
-                thumbnail_color_indices = np.array(self._view_indices)[
-                    thumbnail_indices
-                ]
+                thumbnail_color_indices = self._view_indices[thumbnail_indices]
             else:
                 vectors = copy(self._view_data[:, :, -2:])
                 thumbnail_color_indices = self._view_indices
