@@ -229,7 +229,6 @@ module = [
     'napari._app_model.context._layerlist_context',
     'napari._app_model.injection._processors',
     'napari._event_loop',
-    'napari._qt',
     'napari._qt._qapp_model._menus',
     'napari._qt.code_syntax_highlight',
     'napari._qt.containers._base_item_model',
