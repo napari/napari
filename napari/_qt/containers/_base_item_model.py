@@ -211,7 +211,6 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
             disconnect_events(self._root.events, self)
 
         self._root = root
-        # self._root.events.removing.connect(self._on_begin_removing)
         self._root.events.removed.connect(self._on_end_remove)
         self._root.events.inserting.connect(self._on_begin_inserting)
         self._root.events.inserted.connect(self._on_end_insert)
