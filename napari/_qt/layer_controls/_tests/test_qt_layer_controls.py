@@ -5,6 +5,7 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
+import qtpy
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QAbstractButton,
@@ -141,7 +142,6 @@ def create_layer_controls(qtbot):
         _LABELS_WITH_COLOR,
         _LABELS,
         _IMAGE,
-        _LABELS,
         _POINTS,
         _SHAPES,
         _SURFACE,
@@ -178,19 +178,27 @@ def test_create_layer_controls(
             qcombobox.setCurrentIndex(qcombobox_initial_idx)
 
 
+if sys.version_info[:2] == (3, 11) and qtpy.API == 'pyqt5':
+    test_data = []
+else:
+    # those 2 fail on 3.11 + pyqt5 with a segfault that can't be caught by
+    # pytest in qspinbox.setValue(value)
+    test_data = [_LABELS_WITH_COLOR, _LABELS]
+
+
+test_data += [
+    _IMAGE,
+    _POINTS,
+    _SHAPES,
+    _SURFACE,
+    _TRACKS,
+    _VECTORS,
+]
+
+
 @pytest.mark.parametrize(
     'layer_type_with_data',
-    [
-        _LABELS_WITH_COLOR,
-        _LABELS,
-        _IMAGE,
-        _LABELS,
-        _POINTS,
-        _SHAPES,
-        _SURFACE,
-        _TRACKS,
-        _VECTORS,
-    ],
+    test_data,
 )
 @pytest.mark.qt_no_exception_capture
 @pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
@@ -260,7 +268,6 @@ def test_create_layer_controls_spin(
         _LABELS_WITH_COLOR,
         _LABELS,
         _IMAGE,
-        _LABELS,
         _POINTS,
         _SHAPES,
         _SURFACE,
@@ -343,7 +350,6 @@ def test_create_layer_controls_qslider(
         _LABELS_WITH_COLOR,
         _LABELS,
         _IMAGE,
-        _LABELS,
         _POINTS,
         _SHAPES,
         _SURFACE,
