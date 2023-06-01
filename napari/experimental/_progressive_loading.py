@@ -230,7 +230,7 @@ def chunk_slices(array: da.Array, ndim=3, interval=None) -> list:
 # ---------- 2D specific ----------
 
 
-def chunk_priority_2D(chunk_keys, corner_pixels, scale):
+def chunk_priority_2D(chunk_keys, corner_pixels, scale_factor):
     """Return the keys for all chunks at this scale within the corner_pixels.
 
     Parameters
@@ -239,15 +239,15 @@ def chunk_priority_2D(chunk_keys, corner_pixels, scale):
         a list of list of slices for each dimension
     corner_pixels : tuple
         ND top left and bottom right coordinates for the current view
-    scale : int
-        the scale level, assuming powers of 2
+    scale_factor : float
+        the scale factor for this scale level
 
     """
     # TODO all of this needs to be generalized to ND or replaced/merged with
     # volume rendering code
 
-    mins = corner_pixels[0, :] / (2**scale)
-    maxs = corner_pixels[1, :] / (2**scale)
+    mins = corner_pixels[0, :] / scale_factor
+    maxs = corner_pixels[1, :] / scale_factor
 
     # contained_keys is an array with list of slices contained along each
     # dimension

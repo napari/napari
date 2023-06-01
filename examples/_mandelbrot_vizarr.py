@@ -106,14 +106,14 @@ def render_sequence(
         if visible_scales[scale]:
             vdata = data._data[scale]
 
-            data_interval = corner_pixels / (2**scale)
+            data_interval = corner_pixels / data._scale_factors[scale]
             LOGGER.info(
                 f"render_sequence: computing chunk slices for {data_interval}"
             )
             chunk_keys = chunk_slices(vdata, ndim=2, interval=data_interval)
 
             LOGGER.info("render_sequence: computing priority")
-            chunk_queue = chunk_priority_2D(chunk_keys, corner_pixels, scale)
+            chunk_queue = chunk_priority_2D(chunk_keys, corner_pixels, data._scale_factors[scale])
 
             LOGGER.info(
                 f"render_sequence: {scale}, {vdata.shape} fetching \
@@ -133,6 +133,7 @@ def render_sequence(
                 chunk_result = (
                     tuple(chunk_slice),
                     scale,
+                    data._scale_factors,
                     real_array,
                 )
 
@@ -234,7 +235,7 @@ def dims_update_handler(invar, data=None):
     # This will consume our chunks and update the numpy "canvas" and refresh
     def on_yield(coord):
         # TODO bad layer access
-        chunk_slice, scale, chunk, is_last_chunk = coord
+        chunk_slice, scale, scale_factors, chunk, is_last_chunk = coord
 
         start_time = time.time()
         # TODO measure timing within on_yield, find the time consumer
@@ -255,7 +256,7 @@ def dims_update_handler(invar, data=None):
 
         # TODO hard coded scale factor
         if not layer.metadata["translated"]:
-            layer.translate = np.array(layer.data.translate) * 2**scale
+            layer.translate = np.array(layer.data.translate) * scale_factors[scale]
 
             # Toggle visibility of lower res layer
             if layer.metadata["prev_layer"]:
@@ -300,7 +301,8 @@ def add_progressive_loading_image(img, viewer=None):
     LOGGER.info(f"MultiscaleData {multiscale_data.shape}")
 
     # Get initial extent for rendering
-    canvas_corners = viewer.window.qt_viewer.canvas._canvas_corners_in_world.copy()
+    canvas_corners = \
+        viewer.window.qt_viewer.canvas._canvas_corners_in_world.copy()
     canvas_corners[
         canvas_corners < 0
     ] = 0  # required to cast from float64 to int64
@@ -325,7 +327,6 @@ def add_progressive_loading_image(img, viewer=None):
     # Start from back to start because we build a linked list
 
     for scale, vdata in list(enumerate(multiscale_data._data)):
-        # TODO scale is assumed to be powers of 2
         layer = viewer.add_image(
             vdata,
             contrast_limits=[0, 255],
