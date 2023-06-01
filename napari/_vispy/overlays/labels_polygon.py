@@ -141,7 +141,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
                 self.overlay.points[-2] if self._num_points > 1 else None
             )
             # Add a new point only if it differs from the previous one
-            if not prev_point or np.linalg.norm(pos - prev_point) > 0:
+            if prev_point is None or np.linalg.norm(pos - prev_point) > 0:
                 self.overlay.points = self.overlay.points[:-1] + [
                     pos.tolist(),
                     # add some epsilon to avoid points duplication,
