@@ -742,14 +742,14 @@ class VirtualData:
                 cumuchunks = np.array(chunks).cumsum()
             else:
                 # For zarr
-                cumuchunks = np.array([
+                cumuchunks = [
                     val
                     for val in range(
                         self.chunks[dim],
                         self.array.shape[dim],
                         self.chunks[dim],
                     )
-                ])
+                ]
                 # Add last element
                 cumuchunks += [self.array.shape[dim]]
                 cumuchunks = np.array(cumuchunks)

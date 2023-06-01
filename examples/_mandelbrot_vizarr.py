@@ -250,7 +250,7 @@ def dims_update_handler(invar, data=None):
             f"Writing chunk with size {chunk.shape} to: \
             {(scale, [(sl.start, sl.stop) for sl in chunk_slice])} in layer \
             {scale} with shape {layer.data.shape} and dataplane shape \
-            {layer.data.data_plane.shape} sum {chunk.sum()}"
+            {layer.data.hyperslice.shape} sum {chunk.sum()}"
         )
 
         # TODO hard coded scale factor
@@ -276,7 +276,7 @@ def dims_update_handler(invar, data=None):
 
         layer.data.set_offset(chunk_slice, chunk)
 
-        texture.set_data(layer.data.data_plane)
+        texture.set_data(layer.data.hyperslice)
 
         image.update()
         LOGGER.info(
@@ -376,7 +376,7 @@ if __name__ == "__main__":
         yappi.start()
 
     # large_image = openorganelle_mouse_kidney_em()
-    large_image = mandelbrot_dataset(max_levels=14)
+    large_image = mandelbrot_dataset(max_levels=21)
 
     multiscale_img = large_image["arrays"]
     viewer._layer_slicer._force_sync = False
