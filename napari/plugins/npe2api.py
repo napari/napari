@@ -100,7 +100,6 @@ def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
         # receive
-        # assert 'display_name' not in info_
 
         # TODO: once the new version of npe2 is out, this can be refactored
         # to all the metadata includes the conda and pypi versions.
