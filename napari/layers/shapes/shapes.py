@@ -2700,13 +2700,12 @@ class Shapes(Layer):
         selected_index = list(self.selected_data)
 
         if len(selected_index) > 0:
-            # positions are scaled anisotropically by scale, but sizes are not,
-            # so we need to calculate the ratio to correctly map to screen coordinates
-            scale_ratio = (
-                self.scale[self._slice_input.displayed] / self.scale[-1]
-            )
-            # Get the vertex sizes
-            sizes = self._vertex_size * self.scale_factor / scale_ratio / 2
+            scale = self.scale[self._slice_input.displayed]
+            # Get the vertex sizes. They need to be rescaled by a few parameters:
+            # - scale_factor, because vertex sizes are zoom-invariant
+            # - scale, because vertex sizes are not affected by scale (unlike in Points)
+            # - 2, because the radius is what we need
+            sizes = self._vertex_size * self.scale_factor / scale / 2
 
             if self._mode == Mode.SELECT:
                 # Check if inside vertex of interaction box or rotation handle
