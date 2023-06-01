@@ -18,6 +18,7 @@ class VispySurfaceLayer(VispyBaseLayer):
     def __init__(self, layer) -> None:
         node = SurfaceVisual()
         self._texture_filter = None
+        self._light_direction = (-1, 1, 1)
         self._meshdata = None
         super().__init__(layer, node)
 
@@ -153,6 +154,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         shading = None if self.layer.shading == 'none' else self.layer.shading
         if not self.node.mesh_data.is_empty():
             self.node.shading = shading
+            self._on_camera_move()
         self.node.update()
 
     def _on_wireframe_visible_change(self):
@@ -189,17 +191,16 @@ class VispySurfaceLayer(VispyBaseLayer):
                 primitive='vertex',
             )
 
-    def _on_camera_move(self, event):
-        if (
-            event.type == 'up_direction'
-            and self.node.shading_filter is not None
-        ):
-            up = np.array(self.layer.world_to_data(event.value))
-            view = np.array(
-                self.layer.world_to_data(event.source.view_direction)
-            )
-            light_dir = up + -view + np.cross(up, -view)
-            self.node.shading_filter.light_dir = light_dir
+    def _on_camera_move(self, event=None):
+        if event is not None and event.type == 'angles':
+            # convert to data coords and flip xyz for vispy
+            up = self.layer.world_to_data(event.source.up_direction)[::-1]
+            view = self.layer.world_to_data(event.source.view_direction)[::-1]
+            # combine to get light behind the camera on the top right
+            self._light_direction = np.array(view) - up + np.cross(up, view)
+
+        if self.node.shading_filter is not None:
+            self.node.shading_filter.light_dir = self._light_direction
 
     def reset(self, event=None):
         super().reset()

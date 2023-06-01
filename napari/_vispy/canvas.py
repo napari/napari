@@ -558,7 +558,8 @@ class VispyCanvas:
         self.layer_to_visual[napari_layer] = vispy_layer
 
         napari_layer.events.visible.connect(self._reorder_layers)
-        self.viewer.camera.events.connect(vispy_layer._on_camera_move)
+        self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
+        self.viewer.camera.events.angles(value=self.viewer.camera.angles)
 
         self._reorder_layers()
 
