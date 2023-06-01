@@ -177,6 +177,32 @@ def test_create_layer_controls(
                     assert qcombobox.currentText() == previous_qcombobox_text
             qcombobox.setCurrentIndex(qcombobox_initial_idx)
 
+
+@pytest.mark.parametrize(
+    'layer_type_with_data',
+    [
+        _LABELS_WITH_COLOR,
+        _LABELS,
+        _IMAGE,
+        _LABELS,
+        _POINTS,
+        _SHAPES,
+        _SURFACE,
+        _TRACKS,
+        _VECTORS,
+    ],
+)
+@pytest.mark.qt_no_exception_capture
+@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+def test_create_layer_controls_spin(
+    qtbot, create_layer_controls, layer_type_with_data, capsys
+):
+    # create layer controls widget
+    ctrl = create_layer_controls(layer_type_with_data)
+
+    # check create widget corresponds to the expected class for each type of layer
+    assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
+
     # check QAbstractSpinBox by changing value with `setValue` from minimum value to maximum
     for qspinbox in ctrl.findChildren(QAbstractSpinBox):
         qspinbox_initial_value = qspinbox.value()
@@ -226,6 +252,32 @@ def test_create_layer_controls(
 
         assert qspinbox.value() in [qspinbox_max, qspinbox_max - 1]
         qspinbox.setValue(qspinbox_initial_value)
+
+
+@pytest.mark.parametrize(
+    'layer_type_with_data',
+    [
+        _LABELS_WITH_COLOR,
+        _LABELS,
+        _IMAGE,
+        _LABELS,
+        _POINTS,
+        _SHAPES,
+        _SURFACE,
+        _TRACKS,
+        _VECTORS,
+    ],
+)
+@pytest.mark.qt_no_exception_capture
+@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+def test_create_layer_controls_qslider(
+    qtbot, create_layer_controls, layer_type_with_data, capsys
+):
+    # create layer controls widget
+    ctrl = create_layer_controls(layer_type_with_data)
+
+    # check create widget corresponds to the expected class for each type of layer
+    assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
 
     # check QAbstractSlider by changing value with `setValue` from minimum value to maximum
     for qslider in ctrl.findChildren(QAbstractSlider):
@@ -283,6 +335,32 @@ def test_create_layer_controls(
             assert qslider.value()[0] == qslider.minimum()
         else:
             assert qslider.value() == qslider.maximum()
+
+
+@pytest.mark.parametrize(
+    'layer_type_with_data',
+    [
+        _LABELS_WITH_COLOR,
+        _LABELS,
+        _IMAGE,
+        _LABELS,
+        _POINTS,
+        _SHAPES,
+        _SURFACE,
+        _TRACKS,
+        _VECTORS,
+    ],
+)
+@pytest.mark.qt_no_exception_capture
+@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+def test_create_layer_controls_qcolorswatchedit(
+    qtbot, create_layer_controls, layer_type_with_data, capsys
+):
+    # create layer controls widget
+    ctrl = create_layer_controls(layer_type_with_data)
+
+    # check create widget corresponds to the expected class for each type of layer
+    assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
 
     # check QColorSwatchEdit by changing line edit text with a range of predefined values
     for qcolorswatchedit in ctrl.findChildren(QColorSwatchEdit):
