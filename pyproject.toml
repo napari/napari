@@ -224,6 +224,7 @@ check_untyped_defs = true
 
 # individual ignore error
 # we should strive to remove those
+# See https://github.com/napari/napari/issues/2751
 [[tool.mypy.overrides]]
 module = [
     'napari.__main__',
