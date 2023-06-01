@@ -1590,7 +1590,7 @@ class Points(Layer):
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
                 distances
-                <= np.expand_dims(self._view_size / scale_ratio / 2, axis=1),
+                <= np.expand_dims(self._view_size, axis=1) / scale_ratio / 2,
                 axis=1,
             )
             indices = np.where(in_slice_matches)[0]
@@ -1647,10 +1647,10 @@ class Points(Layer):
         # so we need to calculate the ratio to correctly map to screen coordinates
         scale_ratio = self.scale[self._slice_input.displayed] / self.scale[-1]
         # find the points the click intersects
-        distances = abs(rotated_points[:, :2] - rotated_click_point[:2])
+        distances = abs(rotated_points - rotated_click_point)
         in_slice_matches = np.all(
             distances
-            <= np.expand_dims(self._view_size / scale_ratio / 2, axis=1),
+            <= np.expand_dims(self._view_size, axis=1) / scale_ratio / 2,
             axis=1,
         )
         indices = np.where(in_slice_matches)[0]
