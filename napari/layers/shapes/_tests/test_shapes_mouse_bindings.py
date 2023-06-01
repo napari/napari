@@ -6,6 +6,7 @@ import pytest
 
 from napari.layers import Shapes
 from napari.layers.shapes.shapes import Mode
+from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
@@ -125,6 +126,109 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     new_shape_max = np.max(layer.data[-1], axis=0)
     np.testing.assert_allclose(new_shape_max, known_non_shape_end)
     assert layer.shape_type[-1] == shape_type
+
+
+def test_polygon_lasso_tablet(create_known_shapes_layer):
+    """Draw polygon with tablet simulated by mouse drag event."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
+
+    get_settings().experimental.rdp_epsilon = 0
+    layer.mode = 'add_polygon_lasso'
+
+    event = read_only_event(
+        type='mouse_press',
+        is_dragging=True,
+        position=desired_shape[0],
+        pos=desired_shape[0],
+    )
+    mouse_press_callbacks(layer, event)
+
+    assert layer.shape_type[-1] != 'polygon'
+
+    for coord in desired_shape[1:]:
+        event = read_only_event(
+            type='mouse_move',
+            is_dragging=True,
+            position=coord,
+            pos=coord,
+        )
+        mouse_move_callbacks(layer, event)
+
+    event = read_only_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=desired_shape[-1],
+        pos=desired_shape[-1],
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    assert np.array_equal(desired_shape, layer.data[-1])
+    assert layer.shape_type[-1] == 'polygon'
+    assert not layer._is_creating
+
+
+def test_polygon_lasso_mouse(create_known_shapes_layer):
+    """Draw polygon with mouse. Events in sequence are mouse press, release, move, press, release"""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
+
+    get_settings().experimental.rdp_epsilon = 0
+    layer.mode = 'add_polygon_lasso'
+
+    event = read_only_event(
+        type='mouse_press',
+        position=desired_shape[0],
+        pos=desired_shape[0],
+    )
+    mouse_press_callbacks(layer, event)
+    assert layer.shape_type[-1] != 'polygon'
+
+    for coord in desired_shape[1:]:
+        event = read_only_event(
+            type='mouse_move',
+            position=coord,
+            pos=coord,
+        )
+        mouse_move_callbacks(layer, event)
+
+    event = read_only_event(
+        type='mouse_press',
+        position=desired_shape[-1],
+        pos=desired_shape[-1],
+    )
+    mouse_press_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    assert np.array_equal(desired_shape, layer.data[-1])
+    assert layer.shape_type[-1] == 'polygon'
+    assert not layer._is_creating
+
+
+def test_distance_polygon_creating(create_known_shapes_layer):
+    """Test that distance threshold in polygon creating works as intended"""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    # While drawing only 2 of the vertices should be added to shape data because distance threshold is 10
+    vertices = [[x, 0] for x in range(11)]
+    layer.mode = 'add_polygon_lasso'
+
+    event = read_only_event(
+        type='mouse_press',
+        position=vertices[0],
+        pos=vertices[0],
+    )
+    mouse_press_callbacks(layer, event)
+    for coord in vertices[1:]:
+        event = read_only_event(
+            type='mouse_move',
+            position=coord,
+            pos=coord,
+        )
+        mouse_move_callbacks(layer, event)
+
+    assert len(layer.data[-1] == 2)
 
 
 @pytest.mark.parametrize('shape_type', ['path', 'polygon'])
