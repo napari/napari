@@ -272,7 +272,6 @@ module = [
     'napari._qt.menus._util',
     'napari._qt.menus.debug_menu',
     'napari._qt.menus.file_menu',
-    'napari._qt.menus.window_menu',
     'napari._qt.perf.qt_event_tracing',
     'napari._qt.perf.qt_performance',
     'napari._qt.qt_event_filters',
