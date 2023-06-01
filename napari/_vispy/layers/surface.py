@@ -192,12 +192,20 @@ class VispySurfaceLayer(VispyBaseLayer):
             )
 
     def _on_camera_move(self, event=None):
-        if event is not None and event.type == 'angles':
+        if (
+            event is not None
+            and event.type == 'angles'
+            and self.layer._slice_input.ndisplay == 3
+        ):
             # convert to data coords and flip xyz for vispy
-            up = self.layer.world_to_data(event.source.up_direction)[::-1]
-            view = self.layer.world_to_data(event.source.view_direction)[::-1]
+            camera = event.source
+            up = self.layer.world_to_data(camera.up_direction)[::-1]
+            view = self.layer.world_to_data(camera.view_direction)[::-1]
+            dims_displayed = self.layer._slice_input.displayed
+            up = np.array(up)[dims_displayed]
+            view = np.array(view)[dims_displayed]
             # combine to get light behind the camera on the top right
-            self._light_direction = np.array(view) - up + np.cross(up, view)
+            self._light_direction = view - up + np.cross(up, view)
 
         if self.node.shading_filter is not None:
             self.node.shading_filter.light_dir = self._light_direction
