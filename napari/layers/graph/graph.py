@@ -24,7 +24,6 @@ class Graph(_BasePoints):
         ndim=None,
         features=None,
         feature_defaults=None,
-        properties=None,
         text=None,
         symbol='o',
         size=10,
@@ -51,7 +50,6 @@ class Graph(_BasePoints):
         blending='translucent',
         visible=True,
         cache=True,
-        property_choices=None,
         experimental_clipping_planes=None,
         shading='none',
         canvas_size_limits=(2, 10000),
@@ -73,7 +71,6 @@ class Graph(_BasePoints):
             ndim=self._data.ndim,
             features=features,
             feature_defaults=feature_defaults,
-            properties=properties,
             text=text,
             symbol=symbol,
             size=size,
@@ -100,7 +97,6 @@ class Graph(_BasePoints):
             blending=blending,
             visible=visible,
             cache=cache,
-            property_choices=property_choices,
             experimental_clipping_planes=experimental_clipping_planes,
             shading=shading,
             canvas_size_limits=canvas_size_limits,
@@ -115,9 +111,10 @@ class Graph(_BasePoints):
     ) -> BaseGraph:
         """Checks input data and return a empty graph if is None."""
         if ndim is None:
-            ndim = 3
+            ndim = 2
 
         if data is None:
+            # empty but pre-allocated graph
             return UndirectedGraph(n_nodes=100, ndim=ndim, n_edges=200)
 
         if isinstance(data, BaseGraph):

@@ -44,7 +44,14 @@ except ModuleNotFoundError:
 ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 
 LayerTypeName = Literal[
-    "image", "labels", "points", "shapes", "surface", "tracks", "vectors"
+    "graph",
+    "image",
+    "labels",
+    "points",
+    "shapes",
+    "surface",
+    "tracks",
+    "vectors",
 ]
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
