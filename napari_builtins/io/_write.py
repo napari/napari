@@ -181,7 +181,7 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     properties = meta.get('properties', {})
     # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
-    column_names = [f'axis-{str(n)}' for n in range(data.shape[1])]
+    column_names = [f'axis-{n!s}' for n in range(data.shape[1])]
     if properties:
         column_names += properties.keys()
         prop_table = [
@@ -236,7 +236,7 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
     # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
     n_dimensions = max(s.shape[1] for s in data)
-    column_names = [f'axis-{str(n)}' for n in range(n_dimensions)]
+    column_names = [f'axis-{n!s}' for n in range(n_dimensions)]
 
     # add shape id and vertex id of each vertex
     column_names = ["index", "shape-type", "vertex-index", *column_names]
