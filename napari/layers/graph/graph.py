@@ -165,7 +165,7 @@ class Graph(_BasePoints):
         return self._data
 
     @data.setter
-    def data(self, data: Optional[BaseGraph]) -> None:
+    def data(self, data: Union[BaseGraph, ArrayLike, None]) -> None:
         prev_size = self.data.n_allocated_nodes
         self._data = self._fix_data(data)
         self._data_changed(prev_size)
