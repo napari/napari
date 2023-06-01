@@ -226,9 +226,17 @@ check_untyped_defs = true
 # See https://github.com/napari/napari/issues/2751
 [[tool.mypy.overrides]]
 module = [
+    'napari._app_model._submenus',
+    'napari._app_model.actions._help_actions',
+    'napari._app_model.actions._layer_actions',
+    'napari._app_model.actions._toggle_action',
+    'napari._app_model.actions._view_actions',
     'napari._app_model.context._layerlist_context',
     'napari._app_model.injection._processors',
     'napari._event_loop',
+    'napari._qt._qapp_model._menus',
+    'napari._qt._qapp_model.qactions._help',
+    'napari._qt._qapp_model.qactions._view',
     'napari._qt.code_syntax_highlight',
     'napari._qt.containers._base_item_model',
     'napari._qt.containers._base_item_view',
@@ -344,6 +352,7 @@ module = [
     'napari.layers.utils.style_encoding',
     'napari.layers.utils.text_manager',
     'napari.resources._icons',
+    'napari.settings._yaml.py',
     'napari.utils._magicgui',
     'napari.utils._octree',
     'napari.utils._testsupport',

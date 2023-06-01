@@ -50,16 +50,19 @@ def _user_agent() -> str:
     return ' '.join(f'{k}/{v}' for k, v in parts)
 
 
-class SummaryDict(TypedDict):
+class _ShortSummaryDict(TypedDict):
     """Objects returned at https://npe2api.vercel.app/api/extended_summary ."""
 
     name: NotRequired[PyPIname]
     version: str
-    display_name: NotRequired[str]
     summary: str
     author: str
     license: str
     home_page: str
+
+
+class SummaryDict(_ShortSummaryDict):
+    display_name: NotRequired[str]
     pypi_versions: NotRequired[List[str]]
     conda_versions: NotRequired[List[str]]
 
@@ -88,21 +91,25 @@ def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
 
     conda = _conda.result()
     for info in data.result():
-        info_ = cast(SummaryDict, dict(info))
+        info_copy = dict(info)
+        info_copy.pop("display_name", None)
+        pypi_versions = info_copy.pop("pypi_versions")
+        conda_versions = info_copy.pop("conda_versions")
+        info_ = cast(_ShortSummaryDict, info_copy)
 
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
         # receive
-        info_.pop("display_name", None)
+        # assert 'display_name' not in info_
 
         # TODO: once the new version of npe2 is out, this can be refactored
         # to all the metadata includes the conda and pypi versions.
         extra_info = {
             'home_page': info_.get("home_page", ""),
-            'pypi_versions': info_.pop("pypi_versions"),
-            'conda_versions': info_.pop("conda_versions"),
+            'pypi_versions': pypi_versions,
+            'conda_versions': conda_versions,
         }
         info_["name"] = normalized_name(info_["name"])
-        meta = PackageMetadata(**info_)
+        meta = PackageMetadata(**info_)  # type: ignore [call-arg]
 
         yield meta, (info_["name"] in conda), extra_info
