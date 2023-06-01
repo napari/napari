@@ -147,11 +147,10 @@ def luethi_zenodo_7144919():
     )
     local_container = os.path.split(dest_dir[0])[0]
     print(local_container)
+    
     store = parse_url(local_container, mode="r").store
-    reader = Reader(parse_url(local_container))
-    nodes = list(reader())
-    image_node = nodes[0]
-    dask_data = image_node.data
+    store = zarr.LRUStoreCache(store, max_size=8e9)
+    z_grp = zarr.open(store, mode="r")
 
     large_image = {
         "container": local_container,
@@ -166,17 +165,18 @@ def luethi_zenodo_7144919():
         ],
         "chunk_size": (1, 10, 256, 256),
     }
+
+    multiscale_data = z_grp[large_image["dataset"]]
+    
     large_image["arrays"] = []
     for scale in range(large_image["scale_levels"]):
-        array = dask_data[scale]
+        array = multiscale_data[str(scale)]
 
         # TODO extract scale_factors now
 
         # large_image["arrays"].append(result.data.rechunk((3, 10, 256, 256)))
-        large_image["arrays"].append(
-            array.rechunk((1, 10, 256, 256)).squeeze()
-            # result.data[2, :, :, :].rechunk((10, 256, 256)).squeeze()
-        )
+        large_image["arrays"].append(da.from_array(array, chunks=(1, 10, 256, 256)).squeeze())
+
     return large_image
 
 
