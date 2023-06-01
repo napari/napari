@@ -62,7 +62,7 @@ class Colormap(EventedModel):
         self._display_name = display_name
 
     # controls validator must be called even if None for correct initialization
-    @validator('controls', pre=True, always=True)
+    @validator('controls', pre=True, always=True, allow_reuse=True)
     def _check_controls(cls, v, values):
         # If no control points provided generate defaults
         if v is None or len(v) == 0:
@@ -119,7 +119,7 @@ class Colormap(EventedModel):
                 np.interp(values, self.controls, self.colors[:, i])
                 for i in range(4)
             ]
-            cols = np.stack(cols, axis=1)
+            cols = np.stack(cols, axis=-1)
         elif self.interpolation == ColormapInterpolationMode.ZERO:
             # One color per bin
             # Colors beyond max clipped to final bin

@@ -94,6 +94,7 @@ def split_channels(
         'metadata',
         'plane',
         'experimental_clipping_planes',
+        'custom_interpolation_kernel_2d',
     }
 
     # turn the kwargs dict into a mapping of {key: iterator}

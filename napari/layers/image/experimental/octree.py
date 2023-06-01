@@ -185,8 +185,8 @@ class Octree:
         # If no parent exists yet then returns None
         if len(ancestors) == 0:
             return None
-        else:
-            return ancestors[0]
+
+        return ancestors[0]
 
     def get_ancestors(
         self,
@@ -232,7 +232,6 @@ class Octree:
 
         # Search up one level at a time.
         while level_index < stop_level:
-
             # Get the next level up. Coords are halved each level.
             level_index += 1
             row, col = int(row / 2), int(col / 2)

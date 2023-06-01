@@ -24,9 +24,14 @@
                     "Categories": [
                         "Graphics",
                         "Science"
-                    ]
+                    ],
+                    "StartupWMClass": "napari"
                 },
                 "osx": {
+                    "link_in_bundle": {
+                        "{{ PREFIX }}/bin/python": "{{ MENU_ITEM_LOCATION }}/Contents/Resources/python"
+                    },
+                    "command": ["{{ MENU_ITEM_LOCATION }}/Contents/Resources/python", "-m", "napari"],
                     "CFBundleName": "napari",
                     "CFBundleDisplayName": "napari",
                     "CFBundleVersion": "__PKG_VERSION__",

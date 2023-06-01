@@ -181,7 +181,7 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     properties = meta.get('properties', {})
     # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
-    column_names = [f'axis-{str(n)}' for n in range(data.shape[1])]
+    column_names = [f'axis-{n!s}' for n in range(data.shape[1])]
     if properties:
         column_names += properties.keys()
         prop_table = [
@@ -191,9 +191,9 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
         prop_table = []
 
     # add index of each point
-    column_names = ['index'] + column_names
+    column_names = ["index", *column_names]
     indices = np.expand_dims(list(range(data.shape[0])), axis=1)
-    table = np.concatenate([indices, data] + prop_table, axis=1)
+    table = np.concatenate([indices, data, *prop_table], axis=1)
 
     # write table to csv file
     write_csv(path, table, column_names)
@@ -236,10 +236,10 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
     # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
     n_dimensions = max(s.shape[1] for s in data)
-    column_names = [f'axis-{str(n)}' for n in range(n_dimensions)]
+    column_names = [f'axis-{n!s}' for n in range(n_dimensions)]
 
     # add shape id and vertex id of each vertex
-    column_names = ['index', 'shape-type', 'vertex-index'] + column_names
+    column_names = ["index", "shape-type", "vertex-index", *column_names]
 
     # concatenate shape data into 2D array
     len_shapes = [s.shape[0] for s in data]
@@ -317,8 +317,8 @@ def write_layer_data_with_plugins(
             for fname in os.listdir(tmp):
                 written.append(os.path.join(path, fname))
                 shutil.move(os.path.join(tmp, fname), path)
-    except Exception as exc:
+    except Exception:
         if not already_existed:
             shutil.rmtree(path, ignore_errors=True)
-        raise exc
+        raise
     return written

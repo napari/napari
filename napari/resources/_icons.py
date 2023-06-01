@@ -141,7 +141,6 @@ def write_colorized_svgs(
     opacities: Iterable[float] = (1.0,),
     theme_override: Optional[Dict[str, str]] = None,
 ):
-
     dest = Path(dest)
     dest.mkdir(parents=True, exist_ok=True)
     svgs = generate_colorized_svgs(

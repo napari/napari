@@ -159,7 +159,6 @@ class QtPerformance(QWidget):
         # Updating widgets can create immediate Qt Events which would modify the
         # timers out from under us!
         for name, timer in perf.timers.timers.items():
-
             # The Qt Event "UpdateRequest" is the main "draw" event, so
             # that's what we use for our progress bar.
             if name == "UpdateRequest":

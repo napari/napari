@@ -71,7 +71,6 @@ class VispyTiledImageLayer(VispyImageLayer):
     """
 
     def __init__(self, layer: Image) -> None:
-
         # All tiles are stored in a single TileImageVisual.
         visual = TiledImageVisual(
             tile_shape=layer.tile_shape,
@@ -119,7 +118,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         NotImplementedError
             Always raises this.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _update_tile_shape(self) -> None:
         """If the tile shape was changed, update our node."""

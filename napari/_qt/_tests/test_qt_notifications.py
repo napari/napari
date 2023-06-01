@@ -29,7 +29,7 @@ def _threading_warn():
 
 
 def _warn():
-    warnings.warn('warning!')
+    warnings.warn('warning!', stacklevel=3)
 
 
 def _threading_raise():
@@ -97,7 +97,6 @@ def raise_on_show(monkeypatch, qtbot):
 
 @pytest.fixture
 def count_show(monkeypatch, qtbot):
-
     stat = ShowStatus()
 
     def mock_show_notif(_):

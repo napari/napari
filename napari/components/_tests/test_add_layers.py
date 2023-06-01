@@ -72,7 +72,7 @@ def test_viewer_open_no_plugin(tmp_path):
     viewer = ViewerModel()
     fname = tmp_path / 'gibberish.gbrsh'
     fname.touch()
-    with pytest.raises(ValueError, match='No plugin found capable of reading'):
+    with pytest.raises(ValueError, match=".*gibberish.gbrsh.*"):
         # will default to builtins
         viewer.open(fname)
 
@@ -93,7 +93,6 @@ def test_add_layers_with_plugins_and_kwargs(layer_data, kwargs):
         "napari.plugins.io.read_data_with_plugins",
         MagicMock(return_value=(layer_data, _testimpl)),
     ):
-
         v = ViewerModel()
         v._add_layers_with_plugins(['mock_path'], kwargs=kwargs, stack=False)
         expected_source = Source(path='mock_path', reader_plugin='testimpl')
