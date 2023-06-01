@@ -444,6 +444,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.camera.mouse_zoom = active_layer.mouse_zoom
             self._update_status_bar_from_cursor()
 
+    @staticmethod
+    def rounded_division(min_val, max_val, precision):
+        warnings.warn(
+            trans._(
+                'Viewer.rounded_division is deprecated since v0.4.18 and will soon be removed.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return int(((min_val + max_val) / 2) / precision) * precision
+
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
