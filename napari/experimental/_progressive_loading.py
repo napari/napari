@@ -656,10 +656,9 @@ class VirtualData:
     setup by `set_interval`. Each `VirtualData` uses the scale level's
     coordinates.
 
-    -- `VirtualData` uses a (poorly named) "data_plane" to store the currently
-    active interval.
+    -- `VirtualData` uses a hyperslice to store the currently active interval.
     -- `VirtualData.translate` specifies the offset of the
-    `VirtualData.data_plane`'s origin from `VirtualData.array`'s origin, in
+    `VirtualData.hyperslice`'s origin from `VirtualData.array`'s origin, in
     `VirtualData`'s coordinate system
 
     VirtualData is used to use a ND array to represent
@@ -673,19 +672,19 @@ class VirtualData:
 
     Attributes
     ----------
-    array: dask.array
-        Dask array of image data for this scale
+    array: ndarray-like
+        nd-array like probably a Dask array or a zarr Array
     dtype: dtype
         dtype of the array
     shape: tuple
-        shape of the true data (not the data_plane)
+        shape of the true data (not the hyperslice)
     ndim: int
         Number of dimensions for this scale
     translate: list[tuple(int)]
         tuple for the translation
     d: int
         Dimension of the chunked slices ??? Hard coded to 2.
-    data_plane: dask.array
+    hyperslice: dask.array
         Array of currently visible data for this layer
     _min_coord: list
         List of the minimum coordinates in each dimension
@@ -697,14 +696,14 @@ class VirtualData:
     def __init__(self, array, scale, ndisplay=2):
         self.array = array
         self.dtype = array.dtype
-        # This shape is the shape of the true data, but not our data_plane
+        # This shape is the shape of the true data, but not our hyperslice
         self.shape = array.shape
         self.ndim = len(self.shape)
 
         # translate is in the same units as the highest resolution scale
         self.translate = tuple([0] * len(self.shape))
 
-        self.data_plane = da.zeros(1)
+        self.hyperslice = da.zeros(1)
         self.ndisplay = ndisplay
 
         self._max_coord = None
@@ -719,7 +718,7 @@ class VirtualData:
 
         This function takes a slice, converts it to a range (stored as
         `_min_coord` and `_max_coord`), and extracts a subset of the orginal
-        data array (stored as `data_plane`)
+        data array (stored as `hyperslice`)
 
         Parameters
         ----------
@@ -743,14 +742,14 @@ class VirtualData:
                 cumuchunks = np.array(chunks).cumsum()
             else:
                 # For zarr
-                cumuchunks = [
+                cumuchunks = np.array([
                     val
                     for val in range(
                         self.chunks[dim],
                         self.array.shape[dim],
                         self.chunks[dim],
                     )
-                ]
+                ])
                 # Add last element
                 cumuchunks += [self.array.shape[dim]]
                 cumuchunks = np.array(cumuchunks)
@@ -785,18 +784,18 @@ class VirtualData:
         ]
 
         LOGGER.debug(
-            f"VirtualData: update_with_minmax: {self.translate} max {self._max_coord} interval size {interval_size}"
+            f"VirtualData: update_with_minmax: {self.translate} max \
+            {self._max_coord} interval size {interval_size}"
         )
 
-        # Update data_plane
-
+        # Update hyperslice
         new_shape = [
             int(mx - mn) for (mx, mn) in zip(self._max_coord, self._min_coord)
         ]
 
-        # Try to reuse the previous data_plane if possible (otherwise we get
+        # Try to reuse the previous hyperslice if possible (otherwise we get
         # flashing) shape of the chunks
-        next_data_plane = np.zeros(new_shape, dtype=self.dtype)
+        next_hyperslice = np.zeros(new_shape, dtype=self.dtype)
 
         if prev_max_coord:
             # Get the matching slice from both data planes
@@ -814,15 +813,15 @@ class VirtualData:
                     next_start = 0
 
                 width = min(
-                    self.data_plane.shape[dim], next_data_plane.shape[dim]
+                    self.hyperslice.shape[dim], next_hyperslice.shape[dim]
                 )
                 # to make sure its not overflowing the shape
                 width = min(
                     width,
                     width
-                    - ((next_start + width) - next_data_plane.shape[dim]),
+                    - ((next_start + width) - next_hyperslice.shape[dim]),
                     width
-                    - ((prev_start + width) - self.data_plane.shape[dim]),
+                    - ((prev_start + width) - self.hyperslice.shape[dim]),
                 )
 
                 prev_stop = prev_start + width
@@ -832,41 +831,44 @@ class VirtualData:
                 next_slices += [slice(int(next_start), int(next_stop))]
 
             if (
-                next_data_plane[tuple(next_slices)].size > 0
-                and self.data_plane[tuple(prev_slices)].size > 0
+                next_hyperslice[tuple(next_slices)].size > 0
+                and self.hyperslice[tuple(prev_slices)].size > 0
             ):
                 LOGGER.info(
-                    f"reusing data plane: prev {prev_slices} next {next_slices}"
+                    f"reusing data plane: prev {prev_slices} next \
+                    {next_slices}"
                 )
                 if (
-                    next_data_plane[tuple(next_slices)].size
-                    != self.data_plane[tuple(prev_slices)].size
+                    next_hyperslice[tuple(next_slices)].size
+                    != self.hyperslice[tuple(prev_slices)].size
                 ):
                     import pdb
 
                     pdb.set_trace()
-                next_data_plane[tuple(next_slices)] = self.data_plane[
+                next_hyperslice[tuple(next_slices)] = self.hyperslice[
                     tuple(prev_slices)
                 ]
             else:
                 LOGGER.info(
-                    f"could not data plane: prev {prev_slices} next {next_slices}"
+                    f"could not data plane: prev {prev_slices} next \
+                    {next_slices}"
                 )
 
-        self.data_plane = next_data_plane
+        self.hyperslice = next_hyperslice
 
-    def _data_plane_key(
+    def _hyperslice_key(
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
     ):
-        """Convert a key into a key for the data_plane.
+        """Convert a key into a key for the hyperslice.
 
-        The _data_plane_key is the corresponding value of key
-        within plane. The difference between key and data_plane_key is
-        key - translate / scale"""
+        The _hyperslice_key is the corresponding value of key
+        within plane. The difference between key and hyperslice_key is
+        key - translate / scale
+        """
         if type(key) is tuple and type(key[0]) is slice:
             if key[0].start is None:
                 return key
-            data_plane_key = tuple(
+            hyperslice_key = tuple(
                 [
                     slice(
                         int(
@@ -883,38 +885,49 @@ class VirtualData:
                         ),
                         sl.step,
                     )
-                    for (idx, sl) in enumerate(key[-1 * self.ndisplay :])
+                    for (idx, sl) in enumerate(key[(-1 * self.ndisplay):])
                     # TODO check out the self.d stuff here and elsewhere
                 ]
             )
         elif type(key) is tuple and type(key[0]) is int:
-            data_plane_key = tuple(
+            hyperslice_key = tuple(
                 [
                     int(v - self.translate[idx])
-                    for idx, v in enumerate(key[-1 * self.ndisplay :])
+                    for idx, v in enumerate(key[(-1 * self.ndisplay):])
                 ]
             )
 
-        return data_plane_key
+        return hyperslice_key
 
     def __getitem__(
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
     ) -> LayerDataProtocol:
+        """Return item from array.
+
+        key is in data coordinates
+        """
         return self.get_offset(key)
 
     def __setitem__(
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol], value
     ) -> LayerDataProtocol:
-        self.data_plane[key] = value
-        return self.data_plane[key]
+        """Set an item in the array.
+
+        key is in data coordinates
+        """
+        self.hyperslice[key] = value
+        return self.hyperslice[key]
 
     def get_offset(
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
     ) -> LayerDataProtocol:
-        """Returns self[key]."""
-        data_plane_key = self._data_plane_key(key)
+        """Return item from array.
+
+        key is in data coordinates.
+        """
+        hyperslice_key = self._hyperslice_key(key)
         try:
-            return self.data_plane.__getitem__(data_plane_key)
+            return self.hyperslice.__getitem__(hyperslice_key)
         except Exception:
             shape = tuple([sl.stop - sl.start for sl in key])
             LOGGER.info(f"get_offset failed {key}")
@@ -926,27 +939,35 @@ class VirtualData:
     def set_offset(
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol], value
     ) -> LayerDataProtocol:
-        """Returns self[key]."""
-        data_plane_key = self._data_plane_key(key)
+        """Return self[key]."""
+        hyperslice_key = self._hyperslice_key(key)
         LOGGER.info(
-            f"set_offset: {data_plane_key} shape in plane: {self.data_plane[data_plane_key].shape} value shape: {value.shape}"
+            f"set_offset: {hyperslice_key} shape in plane: \
+            {self.hyperslice[hyperslice_key].shape} value shape: {value.shape}"
         )
 
-        if self.data_plane[data_plane_key].size > 0:
-            self.data_plane[data_plane_key] = value
-        return self.data_plane[data_plane_key]
+        if self.hyperslice[hyperslice_key].size > 0:
+            self.hyperslice[hyperslice_key] = value
+        return self.hyperslice[hyperslice_key]
 
     @property
     def chunksize(self):
+        """Return the size of a chunk."""
         return self.array.info
 
     @property
     def chunks(self):
+        """Return the chunks of the array."""
         return self.array.chunks
 
 
 class MultiScaleVirtualData:
-    """MultiScaleVirtualData is a parent that tracks the transformation
+    """MultiScaleVirtualData encapsulates multiscale arrays.
+
+    The added value is that MultiScaleVirtualData has a small memory
+    footprint.
+
+    MultiScaleVirtualData is a parent that tracks the transformation
     between each VirtualData child relative to the highest resolution
     VirtualData (which is just a re-scaling transform). It accepts inputs in
     the coordinate system of the highest resolution VirtualData.
@@ -979,7 +1000,8 @@ class MultiScaleVirtualData:
         List of lists, e.g. [[1.0, 1.0], [2.0, 2.0]], of scale factors between
         the highest resolution scale and each subsequent scale, [x, y]
     ndisplay: int
-        number of dimensions to display (equivalent to ndisplay in napari.viewer.Viewer)
+        number of dimensions to display (equivalent to ndisplay in
+        napari.viewer.Viewer)
     _chunk_slices: list of list of chunk slices
         List of list of chunk slices. A slice object for each scale, for each
         dimension,
@@ -990,11 +1012,12 @@ class MultiScaleVirtualData:
         # TODO arrays should be typed as MultiScaleData
         # each array represents a scale
         self.arrays = arrays
-        # first array is considered the highest resolution # TODO [kcp] - is that always true?
+        # first array is considered the highest resolution
+        # TODO [kcp] - is that always true?
         highest_res = arrays[0]
 
         self.dtype = highest_res.dtype
-        # This shape is the shape of the true data, but not our data_plane
+        # This shape is the shape of the true data, but not our hyperslice
         self.shape = highest_res.shape
         self.ndim = len(arrays)
 
@@ -1011,7 +1034,8 @@ class MultiScaleVirtualData:
             self._translate += [
                 tuple([0] * len(self.shape))
             ]  # Factors to shift the layer by in units of world coordinates.
-            # TODO [kcp] there are assumptions here, expect rounding errors here, or should we force ints?
+            # TODO [kcp] there are assumptions here, expect rounding errors
+            #      here, or should we force ints?
             self._scale_factors += [
                 [
                     hr_val / this_val
@@ -1023,8 +1047,9 @@ class MultiScaleVirtualData:
             self._data += [virtual_data]
 
     def set_interval(self, min_coord, max_coord, visible_scales=[]):
-        """Set the extents for each of the scales in the coordinates of each
-        individual scale array
+        """Set the extents for each of the scales.
+
+        Extents are set in the coordinates of each individual scale array
 
         visible_scales must be an empty list of a list equal to the number of
         scales
@@ -1043,7 +1068,6 @@ class MultiScaleVirtualData:
         visible_scales: list
             Optional. ???
         """
-
         # for each scale, set the interval for the VirtualData
         # e.g. a high resolution scale may cover [0,1,2,3,4] but a scale
         # with half of that resolution will cover the same region with
@@ -1063,7 +1087,9 @@ class MultiScaleVirtualData:
 
                 self._translate[scale] = scaled_min
                 LOGGER.info(
-                    f"MultiscaleVirtualData: update_with_minmax: scale {scale} min {min_coord} : {scaled_min} max {max_coord} : scaled max {scaled_max}"
+                    f"MultiscaleVirtualData: update_with_minmax: scale {scale}\
+                    min {min_coord} : {scaled_min} max {max_coord} : \
+                    scaled max {scaled_max}"
                 )
 
                 # Ask VirtualData to update its interval
