@@ -137,12 +137,17 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             # recenter the point in the center of the image pixel
             pos[dims_displayed] = np.floor(pos[dims_displayed]) + 0.5
 
-            self.overlay.points = self.overlay.points[:-1] + [
-                pos.tolist(),
-                # add some epsilon to avoid points duplication,
-                # the latest point is used only for visualization of the cursor
-                (orig_pos + 1e-3).tolist(),
-            ]
+            prev_point = (
+                self.overlay.points[-2] if self._num_points > 1 else None
+            )
+            # Add a new point only if it differs from the previous one
+            if not prev_point or np.linalg.norm(pos - prev_point) > 0:
+                self.overlay.points = self.overlay.points[:-1] + [
+                    pos.tolist(),
+                    # add some epsilon to avoid points duplication,
+                    # the latest point is used only for visualization of the cursor
+                    (orig_pos + 1e-3).tolist(),
+                ]
             self._on_color_change()
         elif event.button == 2 and self._num_points > 0:  # right mouse click
             if self._num_points < 3:
