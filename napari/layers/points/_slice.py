@@ -102,9 +102,7 @@ class _PointSliceRequest:
         if not np.any(matches):
             return np.empty(0, dtype=int), 1
         size_match = sizes[matches]
-        size_match[size_match == 0] = 1
         scale_per_dim = (size_match - distances[matches]) / size_match
-        scale_per_dim[size_match == 0] = 1
         scale = np.prod(scale_per_dim, axis=1)
         slice_indices = np.where(matches)[0].astype(int)
         return slice_indices, scale
