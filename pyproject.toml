@@ -207,12 +207,6 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
-  'napari.layers.vectors.*',
-]
-ignore_errors = false
-
-[[tool.mypy.overrides]]
-module = [
   'napari.plugins.*',
   'napari.settings.*',
   'napari.types.*',
@@ -406,9 +400,6 @@ module = [
     'napari.layers.utils.string_encoding',
     'napari.layers.utils.style_encoding',
     'napari.layers.utils.text_manager',
-    'napari.layers.vectors._vector_utils',
-    'napari.layers.vectors._vectors_key_bindings',
-    'napari.layers.vectors.vectors',
     'napari.resources._icons',
     'napari.utils._magicgui',
     'napari.utils._octree',
