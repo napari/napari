@@ -207,12 +207,6 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
-  'napari.layers.labels.*',
-]
-ignore_errors = false
-
-[[tool.mypy.overrides]]
-module = [
   'napari.plugins.*',
   'napari.settings.*',
   'napari.types.*',
@@ -375,8 +369,6 @@ module = [
     'napari.layers.image.experimental.octree_util',
     'napari.layers.image.image',
     'napari.layers.intensity_mixin',
-    'napari.layers.labels._labels_utils',
-    'napari.layers.labels.labels',
     'napari.layers.points._points_key_bindings',
     'napari.layers.points._points_utils',
     'napari.layers.points._slice',
