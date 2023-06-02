@@ -148,3 +148,12 @@ def hold_for_pan_zoom(viewer: ViewerModel):
         yield
 
         selected_layer.mode = previous_mode
+
+
+@register_viewer_action(trans._("Show all key bindings"))
+def show_shortcuts(viewer: Viewer):
+    viewer.window.file_menu._open_preferences()
+    pref_list = viewer.window.file_menu._pref_dialog._list
+    for i in range(pref_list.count()):
+        if pref_list.item(i).text() == "Shortcuts":
+            pref_list.setCurrentRow(i)
