@@ -207,12 +207,6 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
-  'napari.layers.tracks.*',
-]
-ignore_errors = false
-
-[[tool.mypy.overrides]]
-module = [
   'napari.plugins.*',
   'napari.settings.*',
   'napari.types.*',
@@ -390,9 +384,6 @@ module = [
     'napari.layers.surface.normals',
     'napari.layers.surface.surface',
     'napari.layers.surface.wireframe',
-    'napari.layers.tracks._track_utils',
-    'napari.layers.tracks._tracks_key_bindings',
-    'napari.layers.tracks.tracks',
     'napari.layers.utils._link_layers',
     'napari.layers.utils._text_utils',
     'napari.layers.utils.color_encoding',
