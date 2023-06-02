@@ -147,3 +147,5 @@ viewer.window.add_dock_widget(wdg, area='bottom')
 wdg()
 
 napari.run()
+
+thread.quit()
