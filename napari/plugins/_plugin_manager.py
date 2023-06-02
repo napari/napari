@@ -606,7 +606,7 @@ class NapariPluginManager(PluginManager):
         Raises
         ------
         KeyError
-            If plugin `plugin_name` is not installed or does not provide any widgets
+            If plugin `plugin_name` is not installed or does not provide any widgets.
         KeyError
             If plugin does not provide a widget named `widget_name`.
         ValueError
