@@ -6,7 +6,7 @@ localization data.
 import gettext
 import os
 from pathlib import Path
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 from yaml import safe_load
 
@@ -50,11 +50,19 @@ def _get_display_name(
             else _DEFAULT_LOCALE
         )
         loc = babel.Locale.parse(locale)
-        dislay_name = loc.get_display_name(display_locale).capitalize()
-    except ModuleNotFoundError:
-        dislay_name = display_locale.capitalize()
+        display_name = loc.get_display_name(display_locale)
+        if display_name is not None:
+            display_name = display_name.capitalize()
+        else:
+            # to allow raising error inside try: block
+            raise RuntimeError(
+                f"Could not find {display_locale}"
+            )  # ruff: noqa: TRY301
 
-    return dislay_name
+    except ModuleNotFoundError:
+        display_name = display_locale.capitalize()
+
+    return display_name
 
 
 def _is_valid_locale(locale: str) -> bool:
@@ -210,11 +218,11 @@ class TranslationString(str):
 
     def __init__(
         self,
-        domain: Optional[str] = None,
+        domain: str,
         msgctxt: Optional[str] = None,
         msgid: Optional[str] = None,
         msgid_plural: Optional[str] = None,
-        n: Optional[str] = None,
+        n: Optional[int] = None,
         deferred: bool = False,
         **kwargs,
     ) -> None:
@@ -225,7 +233,7 @@ class TranslationString(str):
 
         self._domain = domain
         self._msgctxt = msgctxt
-        self._msgid = msgid
+        self._msgid: str = msgid
         self._msgid_plural = msgid_plural
         self._n = n
         self._deferred = deferred
@@ -274,33 +282,34 @@ class TranslationString(str):
         """
         Return the translated string with interpolated kwargs, if provided.
         """
-
-        if self._n is None and self._msgctxt is None:
-            translation = gettext.dgettext(
-                self._domain,
-                self._msgid,
-            )
-        elif self._n is None:
-            translation = gettext.dpgettext(
-                self._domain,
-                self._msgctxt,
-                self._msgid,
-            )
-        elif self._msgctxt is None:
-            translation = gettext.dngettext(
-                self._domain,
-                self._msgid,
-                self._msgid_plural,
-                self._n,
-            )
-        else:
-            translation = gettext.dnpgettext(
-                self._domain,
-                self._msgctxt,
-                self._msgid,
-                self._msgid_plural,
-                self._n,
-            )
+        if self._n is None:
+            if self._msgctxt is None:
+                translation = gettext.dgettext(
+                    self._domain,
+                    self._msgid,
+                )
+            else:
+                translation = gettext.dpgettext(
+                    self._domain,
+                    self._msgctxt,
+                    self._msgid,
+                )
+        elif self._msgid_plural is not None:
+            if self._msgctxt is None:
+                translation = gettext.dngettext(
+                    self._domain,
+                    self._msgid,
+                    self._msgid_plural,
+                    self._n,
+                )
+            else:
+                translation = gettext.dnpgettext(
+                    self._domain,
+                    self._msgctxt,
+                    self._msgid,
+                    self._msgid_plural,
+                    self._n,
+                )
 
         return translation.format(**self._kwargs)
 
@@ -357,14 +366,18 @@ class TranslationBundle:
                 import importlib
 
                 mod = importlib.import_module(data[locale])
-                localedir = Path(mod.__file__).parent / LOCALE_DIR
+                if mod.__file__ is not None:
+                    localedir = Path(mod.__file__).parent / LOCALE_DIR
+                else:
+                    raise RuntimeError(f"Could not find __file__ for {mod}")
 
         gettext.bindtextdomain(self._domain, localedir=localedir)
 
     def _dnpgettext(
         self,
+        *,
+        msgid: str,
         msgctxt: Optional[str] = None,
-        msgid: Optional[str] = None,
         msgid_plural: Optional[str] = None,
         n: Optional[int] = None,
         **kwargs,
@@ -372,6 +385,12 @@ class TranslationBundle:
         """
         Helper to handle all trans methods and delegate to corresponding
         gettext methods.
+
+        Must provide one of the following sets of arguments:
+        - msgid
+        - msgid, msgctxt
+        - msgid, msgid_plural, n
+        - msgid, msgid_plural, n, msgctxt
 
         Parameters
         ----------
@@ -386,33 +405,27 @@ class TranslationBundle:
         **kwargs : dict, optional
             Any additional arguments to use when formating the string.
         """
-        if msgid is None:
-            trans = self
-            raise ValueError(
-                trans._(
-                    "Must provide at least a `msgid` parameter!", deferred=True
+        if n is None:
+            if msgctxt is None:
+                translation = gettext.dgettext(self._domain, msgid)
+            else:
+                translation = gettext.dpgettext(self._domain, msgctxt, msgid)
+        elif msgid_plural is not None:
+            if msgctxt is None:
+                translation = gettext.dngettext(
+                    self._domain,
+                    msgid,
+                    msgid_plural,
+                    n,
                 )
-            )
-
-        if n is None and msgctxt is None:
-            translation = gettext.dgettext(self._domain, msgid)
-        elif n is None:
-            translation = gettext.dpgettext(self._domain, msgctxt, msgid)
-        elif msgctxt is None:
-            translation = gettext.dngettext(
-                self._domain,
-                msgid,
-                msgid_plural,
-                n,
-            )
-        else:
-            translation = gettext.dnpgettext(
-                self._domain,
-                msgctxt,
-                msgid,
-                msgid_plural,
-                n,
-            )
+            else:
+                translation = gettext.dnpgettext(
+                    self._domain,
+                    msgctxt,
+                    msgid,
+                    msgid_plural,
+                    n,
+                )
 
         kwargs['n'] = n
         return translation.format(**kwargs)
@@ -538,7 +551,7 @@ class TranslationBundle:
         msgctxt: str,
         msgid: str,
         msgid_plural: str,
-        n: str,
+        n: int,
         deferred: Optional[bool] = False,
         **kwargs,
     ) -> Union[TranslationString, str]:
@@ -593,7 +606,7 @@ class _Translator:
     Translations manager.
     """
 
-    _TRANSLATORS = {}
+    _TRANSLATORS: Dict[str, TranslationBundle] = {}
     _LOCALE = _DEFAULT_LOCALE
 
     @staticmethod
@@ -673,9 +686,8 @@ def _load_language(
     str
         The language locale set by napari.
     """
-    default_config_path = Path(default_config_path)
-    if default_config_path.exists():
-        with open(default_config_path) as fh:
+    if (config_path := Path(default_config_path)).exists():
+        with open(config_path) as fh:
             try:
                 data = safe_load(fh) or {}
             except Exception as err:  # noqa BLE001
