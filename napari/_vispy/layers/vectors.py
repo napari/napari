@@ -289,7 +289,7 @@ def generate_meshes_arrow_2D(vectors, width, length, p):
     # Will be used to generate the vertices 2,3,4 and 5.
     # Right now the head of the arrow is put at 75% of the length
     # of the vector.
-    vectors_intermediates = vectors_starts + 0.75 * vectors[:, 1]
+    vectors_intermediates = vectors_starts + 0.75 * length * vectors[:, 1]
 
     vectors_ends = vectors_starts + length * vectors[:, 1]
 
@@ -336,5 +336,7 @@ def generate_meshes_arrow_2D(vectors, width, length, p):
             for i in range(3 * nvectors)
         ]
     ).astype(np.uint32)
+
+    # np.tile([[0,1,2],[1,2,3],[4,5,6]], (nvectors, 1)) + np.repeat(7*np.arange(nvectors), 3)[:,None]
 
     return vertices, triangles
