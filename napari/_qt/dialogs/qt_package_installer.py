@@ -32,8 +32,7 @@ from napari._version import (
 )
 from napari.plugins import plugin_manager
 from napari.plugins.npe2api import _user_agent
-from napari.utils._appdirs import user_plugin_dir, user_site_packages
-from napari.utils.misc import StringEnum, running_as_bundled_app
+from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
 
 JobId = int
@@ -130,14 +129,6 @@ class PipInstallerTool(AbstractInstallerTool):
             args.append('-vvv')
         if self.prefix is not None:
             args.extend(['--prefix', str(self.prefix)])
-        elif running_as_bundled_app(
-            check_conda=False
-        ) and sys.platform.startswith('linux'):
-            args += [
-                '--no-warn-script-location',
-                '--prefix',
-                user_plugin_dir(),
-            ]
         return (*args, *self.pkgs)
 
     def environment(
@@ -145,13 +136,6 @@ class PipInstallerTool(AbstractInstallerTool):
     ) -> QProcessEnvironment:
         if env is None:
             env = QProcessEnvironment.systemEnvironment()
-        combined_paths = os.pathsep.join(
-            [
-                user_site_packages(),
-                env.systemEnvironment().value("PYTHONPATH"),
-            ]
-        )
-        env.insert("PYTHONPATH", combined_paths)
         env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
         return env
 
@@ -561,7 +545,6 @@ class InstallerQueue(QProcess):
 
 
 def _get_python_exe():
-    # Note: is_bundled_app() returns False even if using a Briefcase bundle...
     # Workaround: see if sys.executable is set to something something napari on Mac
     if (
         sys.executable.endswith("napari")
