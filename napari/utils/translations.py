@@ -42,7 +42,9 @@ def _get_display_name(
     try:
         # This is a dependency of the language packs to keep out of core
         import babel
-
+    except ModuleNotFoundError:
+        display_name = display_locale.capitalize()
+    else:
         locale = locale if _is_valid_locale(locale) else _DEFAULT_LOCALE
         display_locale = (
             display_locale
@@ -50,17 +52,10 @@ def _get_display_name(
             else _DEFAULT_LOCALE
         )
         loc = babel.Locale.parse(locale)
-        display_name = loc.get_display_name(display_locale)
-        if display_name is not None:
-            display_name = display_name.capitalize()
-        else:
-            # to allow raising error inside try: block
-            raise RuntimeError(
-                f"Could not find {display_locale}"
-            )  # ruff: noqa: TRY301
-
-    except ModuleNotFoundError:
-        display_name = display_locale.capitalize()
+        display_name_ = loc.get_display_name(display_locale)
+        if display_name_ is None:
+            raise RuntimeError(f"Could not find {display_locale}")
+        display_name = display_name_.capitalize()
 
     return display_name
 
