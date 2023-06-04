@@ -2,12 +2,29 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line, Markers, Polygon
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
+from napari.components.overlays import LabelsPolygonOverlay
+from napari.layers import Labels
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 
 
+def _only_when_enabled(callback):
+    def decorated_callback(self, layer: Labels, event):
+        if not self.overlay.enabled:
+            return
+        # The overlay can only work in 2D
+        if layer._slice_input.ndisplay != 2 or layer.n_edit_dimensions != 2:
+            layer.mode = Mode.PAN_ZOOM
+            return
+        callback(self, layer, event)
+
+    return decorated_callback
+
+
 class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
-    def __init__(self, *, layer, overlay, parent=None):
+    def __init__(
+        self, *, layer: Labels, overlay: LabelsPolygonOverlay, parent=None
+    ):
         points = [(0, 0), (1, 1)]
 
         self._nodes_kwargs = {
@@ -104,21 +121,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             self.overlay.color = layer._selected_color.tolist()[:3] + [
                 layer.opacity
             ]
-
-    def _only_when_enabled(callback):
-        def decorated_callback(self, layer, event):
-            if not self.overlay.enabled:
-                return
-            # The overlay can only work in 2D
-            if (
-                layer._slice_input.ndisplay != 2
-                or layer.n_edit_dimensions != 2
-            ):
-                layer.mode = Mode.PAN_ZOOM
-                return
-            callback(self, layer, event)
-
-        return decorated_callback
 
     @_only_when_enabled
     def _on_mouse_move(self, layer, event):

@@ -35,7 +35,7 @@ class LabelsPolygonOverlay(SceneOverlay):
     points: list = []
     color: tuple = (1, 1, 1, 0.3)
     double_click_completion: bool = True
-    completion_radius: int = 30
+    completion_radius: int = 20
 
     def add_polygon_to_labels(self, layer: Labels) -> None:
         if len(self.points) > 2:
