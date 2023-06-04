@@ -356,6 +356,7 @@ def MouseEvent():
         dims_displayed: Tuple[int] = (0, 1)
         dims_point: List[float] = None
         view_direction: List[int] = None
+        pos: List[int] = (0, 0)
         button: int = None
         handled: bool = False
 
