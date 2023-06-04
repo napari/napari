@@ -682,7 +682,7 @@ def _load_language(
         The language locale set by napari.
     """
     if (config_path := Path(default_config_path)).exists():
-        with open(config_path) as fh:
+        with config_path.open() as fh:
             try:
                 data = safe_load(fh) or {}
             except Exception as err:  # noqa BLE001
