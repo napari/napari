@@ -48,6 +48,8 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         layer.events.color_mode.connect(self._update_color)
         layer.events.opacity.connect(self._update_color)
 
+        self._first_point_pos = np.zeros(2)
+
         self.reset()
         self._update_color()
         # If there are no points, it won't be visible
@@ -137,6 +139,9 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             # recenter the point in the center of the image pixel
             pos[dims_displayed] = np.floor(pos[dims_displayed]) + 0.5
 
+            if not self.overlay.points:
+                self._first_point_pos = np.array(event.pos)
+
             prev_point = (
                 self.overlay.points[-2] if self._num_points > 1 else None
             )
@@ -157,15 +162,20 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     @_only_when_enabled
     def _on_mouse_double_click(self, layer, event):
-        if not self.overlay.double_click_completion:
-            return self._on_mouse_press(layer, event)
-
         if event.button == 2:
             self._on_mouse_press(layer, event)
             return None
 
-        # Remove the latest point as double click always follows a simple click
-        self.overlay.points = self.overlay.points[:-1]
+        first_point_dist = np.linalg.norm(event.pos - self._first_point_pos)
+        if (
+            not self.overlay.double_click_completion
+            or first_point_dist > self.overlay.completion_radius
+        ):
+            return self._on_mouse_press(layer, event)
+
+        # Remove the latest 2 points as double click always follows a simple click
+        # and another point is reserved for the visualization purpose
+        self.overlay.points = self.overlay.points[:-2]
         self.overlay.add_polygon_to_labels(layer)
         return None
 
