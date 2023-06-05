@@ -172,7 +172,7 @@ class Vectors(Layer):
         properties=None,
         property_choices=None,
         edge_width=1,
-        vector_style='line',
+        vector_style='triangle',
         edge_color='red',
         edge_color_cycle=None,
         edge_colormap='viridis',
