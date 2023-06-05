@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -115,7 +115,7 @@ class Graph(_BasePoints):
 
         if data is None:
             # empty but pre-allocated graph
-            return UndirectedGraph(n_nodes=100, ndim=ndim, n_edges=200)
+            return UndirectedGraph(ndim=ndim)
 
         if isinstance(data, BaseGraph):
             if data._coords is None:
@@ -317,3 +317,10 @@ class Graph(_BasePoints):
         self._update_props_and_style(self.data.n_allocated_nodes, prev_size)
         self._update_dims()
         self.events.data(value=self.data)
+
+    def _get_state(self) -> Dict[str, Any]:
+        # FIXME: this method can be removed once 'properties' argument is deprecreated.
+        state = super()._get_state()
+        state.pop("properties", None)
+        state.pop("property_choices", None)
+        return state
