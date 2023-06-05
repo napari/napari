@@ -465,10 +465,10 @@ def _build_samples_menu(mf: PluginManifest) -> None:
         if multiprovider:
             title = display_name
         else:
-            title = menu_item_template.format(mf.name, display_name)
+            title = menu_item_template.format(mf.display_name, display_name)
 
         action: Action = Action(
-            id=f'{mf.name}.{sample.key}',
+            id=f'{mf.display_name}.{sample.key}',
             title=title,
             menus=[{'id': sub_menu_id, 'group': MenuGroup.NAVIGATION}],
             callback=_add_sample,
