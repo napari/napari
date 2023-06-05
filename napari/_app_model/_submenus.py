@@ -28,7 +28,16 @@ SUBMENUS = [
     (
         MenuId.MENUBAR_FILE,
         SubmenuItem(
-            submenu=MenuId.SAMPLES,
+            submenu=MenuId.FILE_OPEN_WITH_PLUGIN,
+            title=trans._('Open with Plugin'),
+            group=MenuGroup.NAVIGATION,
+            order=99,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.FILE_SAMPLES,
             title=trans._('Open Sample'),
             group=MenuGroup.NAVIGATION,
             order=100,

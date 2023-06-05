@@ -12,6 +12,18 @@ def _restart(window: Window):
     window._qt_window.restart()
 
 
+def _open_files_with_plugin(window: Window):
+    window._qt_viewer._open_files_dialog(choose_plugin=True)
+
+
+def _open_files_as_stack_with_plugin(window: Window):
+    window._qt_viewer._open_files_dialog_as_stack_dialog(choose_plugin=True)
+
+
+def _open_folder_with_plugin(window: Window):
+    window._qt_viewer._open_folder_dialog(choose_plugin=True)
+
+
 Q_FILE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.DLG_OPEN_FILES,
@@ -34,6 +46,30 @@ Q_FILE_ACTIONS: List[Action] = [
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
         keybindings=[
             {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyO}
+        ],
+    ),
+    Action(
+        id=CommandId.DLG_OPEN_FILES_WITH_PLUGIN,
+        title=CommandId.DLG_OPEN_FILES_WITH_PLUGIN.title,
+        callback=_open_files_with_plugin,
+        menus=[
+            {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
+        ],
+    ),
+    Action(
+        id=CommandId.DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN,
+        title=CommandId.DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN.title,
+        callback=_open_files_as_stack_with_plugin,
+        menus=[
+            {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
+        ],
+    ),
+    Action(
+        id=CommandId.DLG_OPEN_FOLDER_WITH_PLUGIN,
+        title=CommandId.DLG_OPEN_FOLDER_WITH_PLUGIN.title,
+        callback=_open_folder_with_plugin,
+        menus=[
+            {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
         ],
     ),
     Action(

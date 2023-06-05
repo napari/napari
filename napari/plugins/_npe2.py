@@ -383,7 +383,7 @@ def _build_npe1_samples_menu():
             sub_menu_id = f'napari/file/samples/{plugin_name}'
             sub_menu = [
                 (
-                    MenuId.SAMPLES,
+                    MenuId.FILE_SAMPLES,
                     SubmenuItem(
                         submenu=sub_menu_id, title=trans._(plugin_name)
                     ),
@@ -391,7 +391,7 @@ def _build_npe1_samples_menu():
             ]
             app.menus.append_menu_items(sub_menu)
         else:
-            sub_menu_id = MenuId.SAMPLES
+            sub_menu_id = MenuId.FILE_SAMPLES
 
         for samp_name, samp_dict in samples.items():
 
@@ -439,7 +439,7 @@ def _build_samples_menu(mf: PluginManifest) -> None:
         sub_menu_id = f'napari/file/samples/{mf.display_name}'
         sub_menu = [
             (
-                MenuId.SAMPLES,
+                MenuId.FILE_SAMPLES,
                 SubmenuItem(
                     submenu=sub_menu_id, title=trans._(mf.display_name)
                 ),
@@ -447,7 +447,7 @@ def _build_samples_menu(mf: PluginManifest) -> None:
         ]
         app.menus.append_menu_items(sub_menu)
     else:
-        sub_menu_id = MenuId.SAMPLES
+        sub_menu_id = MenuId.FILE_SAMPLES
 
     for sample in sample_data:
 

@@ -18,8 +18,8 @@ class MenuId(str, Enum):
     """Id representing a menu somewhere in napari."""
 
     MENUBAR_FILE = 'napari/file'
-
-    SAMPLES = 'napari/file/samples'
+    FILE_OPEN_WITH_PLUGIN = 'napari/file/open_with_plugin'
+    FILE_SAMPLES = 'napari/file/samples'
 
     MENUBAR_VIEW = 'napari/view'
     VIEW_AXES = 'napari/view/axes'

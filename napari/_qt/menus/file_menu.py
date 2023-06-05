@@ -55,14 +55,14 @@ class FileMenu(NapariMenu):
 
                 sub_menu_id = f'napari/file/samples/{plugin_display_name}'
                 sub_menu = (
-                    MenuId.SAMPLES,
+                    MenuId.FILE_SAMPLES,
                     SubmenuItem(
                         submenu=sub_menu_id, title=trans._(plugin_display_name)
                     ),
                 )
                 SUBMENUS.append(sub_menu)
             else:
-                sub_menu_id = MenuId.SAMPLES
+                sub_menu_id = MenuId.FILE_SAMPLES
 
             for samp_name, samp_dict in samples.items():
 
