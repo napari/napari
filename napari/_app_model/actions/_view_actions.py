@@ -9,7 +9,7 @@ from typing import List
 from app_model.types import Action, ToggleRule
 
 from napari._app_model.actions._toggle_action import ViewerToggleAction
-from napari._app_model.constants import CommandId, MenuId
+from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari.settings import get_settings
 
 VIEW_ACTIONS: List[Action] = []
@@ -54,7 +54,11 @@ VIEW_ACTIONS.extend(
             id=CommandId.TOGGLE_LAYER_TOOLTIPS,
             title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
             menus=[
-                {'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}
+                {
+                    'id': MenuId.MENUBAR_VIEW,
+                    'group': MenuGroup.RENDER,
+                    'order': 10,
+                }
             ],
             callback=_tooltip_visibility_toggle,
             toggled=ToggleRule(get_current=_get_current_tooltip_visibility),

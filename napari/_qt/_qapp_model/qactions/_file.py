@@ -76,7 +76,7 @@ Q_FILE_ACTIONS: List[Action] = [
         id=CommandId.DLG_SHOW_PREFERENCES,
         title=CommandId.DLG_SHOW_PREFERENCES.title,
         callback=Window._open_preferences_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': '2_'}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.PREFERENCES}],
         # TODO: revert to `StandardKeyBinding.Preferences` after app-model>0.2.0
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.Comma}],
     ),
@@ -96,7 +96,7 @@ Q_FILE_ACTIONS: List[Action] = [
         id=CommandId.DLG_SAVE_LAYERS,
         title=trans._('Save All Layers...'),
         callback=QtViewer._save_layers_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': '3_'}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         # Conflict: ctrl+shift+s typically means "save as ..."
         keybindings=[
             {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyS}
@@ -107,7 +107,7 @@ Q_FILE_ACTIONS: List[Action] = [
         id=CommandId.DLG_SAVE_CANVAS_SCREENSHOT,
         title=CommandId.DLG_SAVE_CANVAS_SCREENSHOT.title,
         callback=QtViewer._screenshot_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': '3_'}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyCode.KeyS}],
         status_tip=trans._('Save screenshot of current display, default .png'),
     ),
@@ -115,7 +115,7 @@ Q_FILE_ACTIONS: List[Action] = [
         id=CommandId.DLG_SAVE_VIEWER_SCREENSHOT,
         title=CommandId.DLG_SAVE_VIEWER_SCREENSHOT.title,
         callback=Window._screenshot_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': '3_'}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyMod.Shift | KeyCode.KeyS}],
         status_tip=trans._('Save screenshot of current display, default .png'),
     ),
@@ -123,7 +123,7 @@ Q_FILE_ACTIONS: List[Action] = [
         id=CommandId.COPY_CANVAS_SCREENSHOT,
         title=CommandId.COPY_CANVAS_SCREENSHOT.title,
         callback=QtViewer.clipboard,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': '3_'}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyCode.KeyC}],
         status_tip=trans._(
             'Copy screenshot of current display to the clipboard'
@@ -133,7 +133,7 @@ Q_FILE_ACTIONS: List[Action] = [
         id=CommandId.COPY_VIEWER_SCREENSHOT,
         title=CommandId.COPY_VIEWER_SCREENSHOT.title,
         callback=Window.clipboard,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': '3_'}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyMod.Shift | KeyCode.KeyC}],
         status_tip=trans._(
             'Copy screenshot of current display with the viewer to the clipboard'
@@ -143,7 +143,7 @@ Q_FILE_ACTIONS: List[Action] = [
         id=CommandId.DLG_CLOSE,
         title=CommandId.DLG_CLOSE.title,
         callback=Window._close_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': '4_'}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
         keybindings=[StandardKeyBinding.Close],
     ),
     Action(
@@ -151,13 +151,17 @@ Q_FILE_ACTIONS: List[Action] = [
         title=CommandId.RESTART.title,
         callback=_restart,
         menus=[
-            {'id': MenuId.MENUBAR_FILE, 'group': '4_', 'when': 'is_bundle'}
+            {
+                'id': MenuId.MENUBAR_FILE,
+                'group': MenuGroup.CLOSE,
+                'when': 'is_bundle',
+            }
         ],
     ),
     Action(
         id=CommandId.DLG_QUIT,
         title=CommandId.DLG_QUIT.title,
         callback=Window._quit_dialog,
-        menus=[{'id': MenuId.MENUBAR_FILE, 'group': '4_'}],
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
     ),
 ]

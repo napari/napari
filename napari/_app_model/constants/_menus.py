@@ -39,6 +39,9 @@ class MenuId(str, Enum):
 class MenuGroup:
     NAVIGATION = 'navigation'  # always the first group in any menu
     RENDER = '1_render'
+    PREFERENCES = '2_preferences'
+    SAVE = '3_save'
+    CLOSE = '4_close'
 
     class LAYERLIST_CONTEXT:
         CONVERSION = '1_conversion'
