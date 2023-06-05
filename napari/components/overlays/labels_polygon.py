@@ -20,10 +20,6 @@ class LabelsPolygonOverlay(SceneOverlay):
         Controls whether the overlay is activated.
     points : list
         A list of (x, y) coordinates of the vertices of the polygon.
-    color : tuple
-        A tuple representing the RGBA color of the polygon.
-        Opacity only applies to the fill color of the polygon.
-        Borders have the same color, but they are always opaque.
     double_click_completion : bool
         Whether drawing the polygon can be completed with a left mouse double-click.
     completion_radius : int
@@ -33,7 +29,6 @@ class LabelsPolygonOverlay(SceneOverlay):
 
     enabled: bool = False
     points: list = []
-    color: tuple = (1, 1, 1, 0.3)
     double_click_completion: bool = True
     completion_radius: int = 20
 

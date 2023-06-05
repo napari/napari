@@ -57,7 +57,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         )
 
         self.overlay.events.points.connect(self._on_points_change)
-        self.overlay.events.color.connect(self._on_color_change)
         self.overlay.events.enabled.connect(self._on_enabled_change)
 
         layer.events.selected_label.connect(self._update_color)
@@ -100,9 +99,9 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             **self._nodes_kwargs,
         )
 
-    def _on_color_change(self):
-        border_color = self.overlay.color[:3] + (1,)  # always opaque
-        polygon_color = self.overlay.color
+    def _set_color(self, color):
+        border_color = tuple(color[:3]) + (1,)  # always opaque
+        polygon_color = color
 
         # Clean up polygon faces before making it transparent, otherwise
         # it keeps the previous visualization of the polygon without cleaning
@@ -116,11 +115,11 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     def _update_color(self):
         layer = self.layer
         if layer._selected_label == layer._background_label:
-            self.overlay.color = (1, 0, 0, 0)
+            self._set_color((1, 0, 0, 0))
         else:
-            self.overlay.color = layer._selected_color.tolist()[:3] + [
-                layer.opacity
-            ]
+            self._set_color(
+                layer._selected_color.tolist()[:3] + [layer.opacity]
+            )
 
     @_only_when_enabled
     def _on_mouse_move(self, layer, event):
@@ -155,7 +154,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
                     # the latest point is used only for visualization of the cursor
                     (orig_pos + 1e-3).tolist(),
                 ]
-            self._on_color_change()
         elif event.button == 2 and self._num_points > 0:  # right mouse click
             if self._num_points < 3:
                 self.overlay.points = []
@@ -202,4 +200,3 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     def reset(self):
         super().reset()
         self._on_points_change()
-        self._on_color_change()
