@@ -139,6 +139,7 @@ def generate_meshes_line_2D(vectors, width, length, p):
 
     Vectors are composed of 4 vertices and 2 triangles.
     Vertices are generated according to the following scheme:
+
     1---x---0
     | .     |
     |   .   |
