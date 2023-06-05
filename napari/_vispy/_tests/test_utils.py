@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from pydantic import ValidationError
 from qtpy.QtCore import Qt
 from vispy.util.quaternion import Quaternion
 
@@ -94,5 +95,5 @@ def test_set_cursor(make_napari_viewer):
     assert viewer._brush_circle_overlay.visible
     assert viewer._brush_circle_overlay.size == viewer.cursor.size
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         viewer.cursor.style = "invalid"

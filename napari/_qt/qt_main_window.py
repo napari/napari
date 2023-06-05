@@ -75,7 +75,7 @@ from napari.utils.misc import (
     in_ipython,
     in_jupyter,
     in_python_repl,
-    running_as_bundled_app,
+    running_as_constructor_app,
 )
 from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
@@ -515,7 +515,7 @@ class _QtMainWindow(QMainWindow):
         process = QProcess()
         process.setProgram(sys.executable)
 
-        if not running_as_bundled_app():
+        if not running_as_constructor_app():
             process.setArguments(sys.argv)
 
         process.startDetached()

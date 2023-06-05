@@ -106,6 +106,9 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.preserve_labels.connect(
             self._on_preserve_labels_change
         )
+        self.layer.events.show_selected_label.connect(
+            self._on_show_selected_label_change
+        )
         self.layer.events.color_mode.connect(self._on_color_mode_change)
 
         # selection spinbox
@@ -143,7 +146,7 @@ class QtLabelsControls(QtLayerControls):
         self._on_n_edit_dimensions_change()
 
         self.contourSpinBox = QLargeIntSpinBox()
-        self.contourSpinBox.setRange(*dtype_lims)
+        self.contourSpinBox.setRange(0, dtype_lims[1])
         self.contourSpinBox.setToolTip(trans._('display contours of labels'))
         self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)
@@ -164,6 +167,7 @@ class QtLabelsControls(QtLayerControls):
         )
         selectedColorCheckbox.stateChanged.connect(self.toggle_selected_mode)
         self.selectedColorCheckbox = selectedColorCheckbox
+        self._on_show_selected_label_change()
 
         # shuffle colormap button
         self.colormapUpdate = QtModePushButton(
@@ -461,6 +465,13 @@ class QtLabelsControls(QtLayerControls):
         with self.layer.events.preserve_labels.blocker():
             self.preserveLabelsCheckBox.setChecked(self.layer.preserve_labels)
 
+    def _on_show_selected_label_change(self):
+        """Receive layer model show_selected_labels event and update the checkbox."""
+        with self.layer.events.show_selected_label.blocker():
+            self.selectedColorCheckbox.setChecked(
+                self.layer.show_selected_label
+            )
+
     def _on_color_mode_change(self):
         """Receive layer model color."""
         with self.layer.events.color_mode.blocker():
@@ -558,8 +569,7 @@ class QtColorBox(QWidget):
                         painter.setBrush(QColor(25, 25, 25))
                     painter.drawRect(i * 4, j * 4, 5, 5)
         else:
-            color = np.multiply(self.layer._selected_color, self.layer.opacity)
-            color = np.round(255 * color).astype(int)
+            color = np.round(255 * self.layer._selected_color).astype(int)
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
