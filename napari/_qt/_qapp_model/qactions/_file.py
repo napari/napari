@@ -41,7 +41,8 @@ Q_FILE_ACTIONS: List[Action] = [
         title=CommandId.DLG_SHOW_PREFERENCES.title,
         callback=Window._open_preferences_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': '2_'}],
-        keybindings=[StandardKeyBinding.Preferences],
+        # TODO: revert to `StandardKeyBinding.Preferences` after app-model>0.2.0
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.Comma}],
     ),
     # TODO!
     # this action would conflict because having the same id as below... but
