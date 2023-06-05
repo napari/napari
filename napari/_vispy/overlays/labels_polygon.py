@@ -9,10 +9,20 @@ from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 
 
 def _only_when_enabled(callback):
+    """Decorator that wraps a callback of VispyLabelsPolygonOverlay.
+
+    It ensures that the callback is only executed when all the conditions are met:
+    1) The overlay is enabled;
+    2) The number of displayed dimensions is 2 (it can only work in 2D);
+    3) The number of dimensions across which labels will be edited is 2.
+
+    If 2, 3 are not met, the Labels mode is automatically switched to PAN_ZOOM.
+    """
+
     def decorated_callback(self, layer: Labels, event):
         if not self.overlay.enabled:
             return
-        # The overlay can only work in 2D
+
         if layer._slice_input.ndisplay != 2 or layer.n_edit_dimensions != 2:
             layer.mode = Mode.PAN_ZOOM
             return
