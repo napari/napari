@@ -207,7 +207,7 @@ def generate_meshes_line_2D(vectors, width, length, p):
     vertices_pattern = np.tile([[0, 1, 2], [1, 2, 3]], (nvectors, 1))
     # 2. Add an offset to differentiate between vectors
     triangles = (
-        vertices_pattern + np.repeat(4 * np.arange(nvectors), 2)[:, None]
+        vertices_pattern + np.repeat(4 * np.arange(nvectors), 2)[:, np.newaxis]
     )
 
     triangles = triangles.astype(np.uint32)
@@ -392,7 +392,7 @@ def generate_meshes_arrow_2D(vectors, width, length, p):
     )
     # 2. Add an offset to differentiate between vectors
     triangles = (
-        vertices_pattern + np.repeat(7 * np.arange(nvectors), 3)[:, None]
+        vertices_pattern + np.repeat(7 * np.arange(nvectors), 3)[:, np.newaxis]
     )
 
     triangles = triangles.astype(np.uint32)
