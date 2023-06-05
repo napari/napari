@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Union
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 from napari.layers.utils._slice_input import _SliceInput
 
@@ -21,8 +22,8 @@ class _PointSliceResponse:
         Describes the slicing plane or bounding box in the layer's dimensions.
     """
 
-    indices: np.ndarray = field(repr=False)
-    scale: Any = field(repr=False)
+    indices: ArrayLike = field(repr=False)
+    scale: Union[ArrayLike, float, int] = field(repr=False)
     dims: _SliceInput
 
 

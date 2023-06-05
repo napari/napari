@@ -2,7 +2,9 @@ from dataclasses import dataclass, field
 from typing import Any, Sequence, Tuple
 
 import numpy as np
+from numpy.typing import ArrayLike
 
+from napari.layers.points._slice import _PointSliceResponse
 from napari.layers.utils._slice_input import _SliceInput
 
 try:
@@ -15,7 +17,7 @@ except ModuleNotFoundError:
 
 
 @dataclass(frozen=True)
-class _GraphSliceResponse:
+class _GraphSliceResponse(_PointSliceResponse):
     """Contains all the output data of slicing an graph layer.
 
     Attributes
@@ -31,10 +33,7 @@ class _GraphSliceResponse:
         Describes the slicing plane or bounding box in the layer's dimensions.
     """
 
-    indices: np.ndarray = field(repr=False)
-    edges_indices: np.ndarray = field(repr=False)
-    scale: Any = field(repr=False)
-    dims: _SliceInput
+    edges_indices: ArrayLike = field(repr=False)
 
 
 @dataclass(frozen=True)
@@ -123,7 +122,7 @@ class _GraphSliceRequest:
         self,
         not_disp: Sequence[int],
         not_disp_indices: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray, ArrayLike]:
         """
         Slices data according to non displayed indices
         and compute scaling factor for out-slice display

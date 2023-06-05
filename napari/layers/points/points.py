@@ -895,7 +895,7 @@ class _BasePoints(Layer):
                 )
             )
 
-        self._border_width = border_width
+        self._border_width: np.ndarray = border_width
         self.refresh()
 
     @property

@@ -64,7 +64,7 @@ class Graph(_BasePoints):
             )
 
         self._data = self._fix_data(data, ndim)
-        self._edges_indices_view = []
+        self._edges_indices_view: ArrayLike = []
 
         super().__init__(
             self._data,
@@ -182,7 +182,7 @@ class Graph(_BasePoints):
             size=self.size,
         )
 
-    def _update_slice_response(self, response: _GraphSliceResponse) -> None:
+    def _update_slice_response(self, response: _GraphSliceResponse) -> None:  # type: ignore[override]
         super()._update_slice_response(response)
         self._edges_indices_view = response.edges_indices
 
@@ -248,7 +248,8 @@ class Graph(_BasePoints):
         # descending order
         indices = np.flip(np.sort(indices))
 
-        for idx in indices:
+        # it got error missing __iter__ attribute, but we guarantee by np.atleast_1d call
+        for idx in indices:  # type: ignore[union-attr]
             self.data.remove_node(idx)
 
         self._data_changed(prev_size)
