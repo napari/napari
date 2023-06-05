@@ -60,6 +60,8 @@ def generate_vector_meshes(vectors, width, length, vector_style):
         width of the line to be drawn
     length : float
         length multiplier of the line to be drawn
+    vector_style : VectorStyle
+        display style of the vectors
 
     Returns
     -------
@@ -100,7 +102,7 @@ def generate_vector_meshes_2D(
         width of the line to be drawn
     length : float
         length multiplier of the line to be drawn
-    vector_style : str
+    vector_style : VectorStyle
         display style of the vectors
     p : 3-tuple, optional
         orthogonal vector for segment calculation in 3D.
@@ -127,9 +129,6 @@ def generate_vector_meshes_2D(
         vertices, triangles = generate_meshes_arrow_2D(
             vectors, width, length, p
         )
-
-    else:
-        raise NotImplementedError
 
     return vertices, triangles
 
