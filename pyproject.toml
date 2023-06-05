@@ -135,10 +135,6 @@ docstring-quotes = "double"
 # Disallow all relative imports.
 ban-relative-imports = "all"
 
-[tool.ruff.pyupgrade]
-# Preserve types, even if a file imports `from __future__ import annotations`.
-keep-runtime-typing = true
-
 [tool.ruff.isort]
 known-first-party=['napari']
 combine-as-imports = true
