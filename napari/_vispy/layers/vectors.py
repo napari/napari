@@ -137,13 +137,13 @@ def generate_meshes_line_2D(vectors, width, length, p):
     """Generates list of mesh vertices and triangles from a list of vectors.
 
     Vectors are composed of 4 vertices and 2 triangles.
-    Vertices are generated according to the following scheme:
+    Vertices are generated according to the following scheme::
 
-    1---x---0
-    | .     |
-    |   .   |
-    |     . |
-    3---v---2
+        1---x---0
+        | .     |
+        |   .   |
+        |     . |
+        3---v---2
 
     Where x marks the start point of the vector, and v its end point.
 
@@ -196,13 +196,13 @@ def generate_meshes_triangle_2D(vectors, width, length, p):
     """Generate meshes forming 2D isosceles triangles to represent input vectors.
 
     Vectors are composed of 3 vertices and 1 triangles.
-    Vertices are generated according to the following scheme:
+    Vertices are generated according to the following scheme::
 
-    1---x---0
-     .     .
-      .   .
-       . .
-        2
+        1---x---0
+         .     .
+          .   .
+           . .
+            2
 
 
     Where x marks the start point of the vector, and the vertex 2 its end
@@ -251,16 +251,16 @@ def generate_meshes_arrow_2D(vectors, width, length, p):
     """Generate mesh forming 2D arrows given input vectors.
 
     Vectors are composed of 7 vertices and 3 triangles.
-    Vertices are generated according to the following scheme:
+    Vertices are generated according to the following scheme::
 
-        1---x---0
-        | .     |
-        |   .   |
-        |     . |
-    5---3-------2---4
-       .         .
-          .   .
-            6
+            1---x---0
+            | .     |
+            |   .   |
+            |     . |
+        5---3-------2---4
+           .         .
+              .   .
+                6
 
     Where x marks the start point of the vector, and the vertex 6 its end
     point.
