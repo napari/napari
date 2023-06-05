@@ -2,7 +2,7 @@ import numpy as np
 
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
 from napari.components.overlays import LabelsPolygonOverlay
-from napari.layers.labels._labels_key_bindings import complete_draw_polygon
+from napari.layers.labels._labels_key_bindings import complete_polygon
 from napari.utils.interactions import (
     mouse_move_callbacks,
     mouse_press_callbacks,
@@ -50,7 +50,7 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
     viewer = make_napari_viewer()
     layer = viewer.add_labels(data)
 
-    layer.mode = 'draw_polygon'
+    layer.mode = 'polygon'
     layer.selected_label = 1
 
     # Place some random points and then cancel them all
@@ -113,7 +113,7 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
         mouse_press_callbacks(layer, event)
 
     # Finish drawing
-    complete_draw_polygon(layer)
+    complete_polygon(layer)
 
     assert np.alltrue(data[[0, 2], :] == 0)
     assert np.alltrue(data[1, 1:11, 1:11] == 1)
@@ -133,5 +133,5 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
         mouse_press_callbacks(layer, event)
 
     # Finish drawing
-    complete_draw_polygon(layer)
+    complete_polygon(layer)
     assert np.alltrue(data[0, :] == 0)

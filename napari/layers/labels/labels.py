@@ -224,7 +224,7 @@ class Labels(_ImageBase):
         Mode.PAINT: draw,
         Mode.FILL: draw,
         Mode.ERASE: draw,
-        Mode.DRAW_POLYGON: no_op,  # the overlay handles mouse events in this mode
+        Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
@@ -236,7 +236,7 @@ class Labels(_ImageBase):
         Mode.PAINT: brush_size_on_mouse_move,
         Mode.FILL: no_op,
         Mode.ERASE: brush_size_on_mouse_move,
-        Mode.DRAW_POLYGON: no_op,  # the overlay handles mouse events in this mode
+        Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
     _cursor_modes = {
@@ -246,7 +246,7 @@ class Labels(_ImageBase):
         Mode.PAINT: 'circle',
         Mode.FILL: 'cross',
         Mode.ERASE: 'circle',
-        Mode.DRAW_POLYGON: 'cross',
+        Mode.POLYGON: 'cross',
     }
 
     _history_limit = 100
@@ -340,7 +340,7 @@ class Labels(_ImageBase):
             LabelsPolygonOverlay,
         )
 
-        self._overlays.update({'draw_polygon': LabelsPolygonOverlay()})
+        self._overlays.update({"polygon": LabelsPolygonOverlay()})
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -765,7 +765,7 @@ class Labels(_ImageBase):
         if mode == self._mode:
             return mode
 
-        self._overlays['draw_polygon'].enabled = mode == Mode.DRAW_POLYGON
+        self._overlays["polygon"].enabled = mode == Mode.POLYGON
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 

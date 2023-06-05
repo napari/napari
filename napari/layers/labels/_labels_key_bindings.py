@@ -36,9 +36,9 @@ def activate_labels_paint_mode(layer: Labels):
     layer.mode = Mode.PAINT
 
 
-@register_label_mode_action(trans._("Activate the draw polygon mode"))
-def activate_labels_draw_polygon_mode(layer: Labels):
-    layer.mode = Mode.DRAW_POLYGON
+@register_label_mode_action(trans._("Activate the polygon tool"))
+def activate_labels_polygon_mode(layer: Labels):
+    layer.mode = Mode.POLYGON
 
 
 @register_label_mode_action(trans._("Activate the fill bucket"))
@@ -62,7 +62,7 @@ labels_fun_to_mode = [
     (activate_labels_transform_mode, Mode.TRANSFORM),
     (activate_labels_erase_mode, Mode.ERASE),
     (activate_labels_paint_mode, Mode.PAINT),
-    (activate_labels_draw_polygon_mode, Mode.DRAW_POLYGON),
+    (activate_labels_polygon_mode, Mode.POLYGON),
     (activate_labels_fill_mode, Mode.FILL),
     (activate_labels_picker_mode, Mode.PICK),
 ]
@@ -148,14 +148,14 @@ def redo(layer: Labels):
 @register_label_action(
     trans._("Reset the current polygon"),
 )
-def reset_draw_polygon(layer: Labels):
+def reset_polygon(layer: Labels):
     """Reset the drawing of the current polygon."""
-    layer._overlays["draw_polygon"].points = []
+    layer._overlays["polygon"].points = []
 
 
 @register_label_action(
     trans._("Complete the current polygon"),
 )
-def complete_draw_polygon(layer: Labels):
+def complete_polygon(layer: Labels):
     """Complete the drawing of the current polygon."""
-    layer._overlays["draw_polygon"].add_polygon_to_labels(layer)
+    layer._overlays["polygon"].add_polygon_to_labels(layer)
