@@ -89,10 +89,6 @@ class QtVectorsControls(QtLayerControls):
             self.change_vector_style
         )
 
-        # I had added the line below to mimic what is done with
-        # color mode, but it leads to a crash. Is it necessary?
-        # self._on_vector_style_change()
-
         # dropdown to select the edge color mode
         self.color_mode_comboBox = QComboBox(self)
         color_modes = [e.value for e in ColorMode]

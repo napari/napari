@@ -249,10 +249,11 @@ def generate_meshes_triangle_2D(vectors, width, length, p):
 
 
 def generate_meshes_arrow_2D(vectors, width, length, p):
-    """Generates list of mesh vertices and triangles from a list of vectors.
+    """Generate mesh forming 2D arrows given input vectors.
 
     Vectors are composed of 7 vertices and 3 triangles.
     Vertices are generated according to the following scheme:
+
         1---x---0
         | .     |
         |   .   |
