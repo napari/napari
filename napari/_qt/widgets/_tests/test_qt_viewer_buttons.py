@@ -52,7 +52,7 @@ def test_grid_view_button_popup(qt_viewer_buttons, qtbot):
     viewer, viewer_buttons = qt_viewer_buttons
     assert viewer_buttons.gridViewButton
 
-    # make grip settings popup
+    # make grid settings popup
     viewer_buttons.gridViewButton.customContextMenuRequested.emit(QPoint())
 
     # check popup widgets were created
