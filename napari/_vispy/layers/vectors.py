@@ -199,14 +199,18 @@ def generate_meshes_line_2D(vectors, width, length, p):
 
     vertices = vertices + width * offsets / 2
 
-    triangles = np.array(
-        [
-            [2 * i, 2 * i + 1, 2 * i + 2]
-            if i % 2 == 0
-            else [2 * i - 1, 2 * i, 2 * i + 1]
-            for i in range(2 * nvectors)
-        ]
-    ).astype(np.uint32)
+    # Generate triangles in two steps:
+    # 1. Repeat the vertices pattern
+    # [[0,1,2],
+    #  [1,2,3]]
+    # as described in the docstring
+    vertices_pattern = np.tile([[0, 1, 2], [1, 2, 3]], (nvectors, 1))
+    # 2. Add an offset to differentiate between vectors
+    triangles = (
+        vertices_pattern + np.repeat(4 * np.arange(nvectors), 2)[:, None]
+    )
+
+    triangles = triangles.astype(np.uint32)
 
     return vertices, triangles
 
@@ -280,7 +284,7 @@ def generate_meshes_triangle_2D(vectors, width, length, p):
     vertices = vertices + width * offsets / 2
 
     # faster than using the formula in the docstring
-    triangles = np.arange(3 * nvectors).reshape((-1, 3)).astype(np.uint32)
+    triangles = np.arange(3 * nvectors, dtype=np.uint32).reshape((-1, 3))
 
     return vertices, triangles
 
@@ -377,25 +381,20 @@ def generate_meshes_arrow_2D(vectors, width, length, p):
 
     vertices = vertices + width * offsets / 2
 
-    triangles = np.array(
-        [
-            [7 * i / 3, 7 * i / 3 + 1, 7 * i / 3 + 2]
-            if i % 3 == 0
-            else [
-                7 * (i - 1) / 3 + 1,
-                7 * (i - 1) / 3 + 2,
-                7 * (i - 1) / 3 + 3,
-            ]
-            if i % 3 == 1
-            else [
-                7 * (i - 2) / 3 + 4,
-                7 * (i - 2) / 3 + 5,
-                7 * (i - 2) / 3 + 6,
-            ]
-            for i in range(3 * nvectors)
-        ]
-    ).astype(np.uint32)
+    # Generate triangles in two steps:
+    # 1. Repeat the vertices pattern
+    # [[0,1,2],
+    #  [1,2,3]
+    #  [4,5,6]]
+    # as described in the docstring
+    vertices_pattern = np.tile(
+        [[0, 1, 2], [1, 2, 3], [4, 5, 6]], (nvectors, 1)
+    )
+    # 2. Add an offset to differentiate between vectors
+    triangles = (
+        vertices_pattern + np.repeat(4 * np.arange(nvectors), 2)[:, None]
+    )
 
-    # np.tile([[0,1,2],[1,2,3],[4,5,6]], (nvectors, 1)) + np.repeat(7*np.arange(nvectors), 3)[:,None]
+    triangles = triangles.astype(np.uint32)
 
     return vertices, triangles
