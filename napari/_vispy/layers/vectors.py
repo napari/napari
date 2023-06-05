@@ -57,7 +57,7 @@ def generate_vector_meshes(vectors, width, length, vector_style):
         A list of N vectors with start point and projections of the vector
         in D dimensions, where D is 2 or 3.
     width : float
-        width of the line to be drawn
+        width of the vectors' bases
     length : float
         length multiplier of the line to be drawn
     vector_style : VectorStyle
@@ -66,7 +66,7 @@ def generate_vector_meshes(vectors, width, length, vector_style):
     Returns
     -------
     vertices : (4N, 2) array for 2D and (8N, 2) array for 3D
-        Vertices of all triangles for the lines
+        Vertices of all triangles
     triangles : (2N, 3) array for 2D or (4N, 3) array for 3D
         Vertex indices that form the mesh triangles
     """
@@ -99,7 +99,7 @@ def generate_vector_meshes_2D(
         A list of N vectors with start point and projections of the vector
         in D dimensions, where D is 2 or 3.
     width : float
-        width of the line to be drawn
+        width of the vectors' bases
     length : float
         length multiplier of the line to be drawn
     vector_style : VectorStyle
@@ -110,7 +110,7 @@ def generate_vector_meshes_2D(
     Returns
     -------
     vertices : (4N, D) array
-        Vertices of all triangles for the lines
+        Vertices of all triangles
     triangles : (2N, 3) array
         Vertex indices that form the mesh triangles
     """
@@ -159,6 +159,25 @@ def generate_meshes_line_2D(vectors, width, length, p):
         [2i, 2i + 1, 2i + 2],   # vector k-1, triangle i=2k-2 (i%2=0)
         [2i - 1, 2i, 2i + 1]    # vector k-1, triangle i=2k-1 (i%2=1)
     ]
+
+    Parameters
+    ----------
+    vectors : (N, 2, D) array
+        A list of N vectors with start point and projections of the vector
+        in D dimensions, where D is 2 or 3.
+    width : float
+        width of the vectors' bases
+    length : float
+        length multiplier of the line to be drawn
+    p : 3-tuple
+        orthogonal vector for segment calculation in 3D.
+
+    Returns
+    -------
+    vertices : (4N, D) array
+        Vertices of all triangles
+    triangles : (2N, 3) array
+        Vertex indices that form the mesh triangles
     """
     nvectors, _, ndim = vectors.shape
 
@@ -217,6 +236,25 @@ def generate_meshes_triangle_2D(vectors, width, length, p):
 
         [3i, 3i + 1, 3i + 2]    # vector k-1, triangle i=k-1
     ]
+
+    Parameters
+    ----------
+    vectors : (N, 2, D) array
+        A list of N vectors with start point and projections of the vector
+        in D dimensions, where D is 2 or 3.
+    width : float
+        width of the vectors' bases
+    length : float
+        length multiplier of the line to be drawn
+    p : 3-tuple
+        orthogonal vector for segment calculation in 3D.
+
+    Returns
+    -------
+    vertices : (3N, D) array
+        Vertices of all triangles
+    triangles : (N, 3) array
+        Vertex indices that form the mesh triangles
     """
     nvectors, _, ndim = vectors.shape
 
@@ -283,6 +321,25 @@ def generate_meshes_arrow_2D(vectors, width, length, p):
         [7(i - 2)/3 + 4, 7(i - 2)/3 + 5, 7(i - 2)/3 + 6]
             # vector k-1, triangle i=3k-1 (i%3=2)
     ]
+
+    Parameters
+    ----------
+    vectors : (N, 2, D) array
+        A list of N vectors with start point and projections of the vector
+        in D dimensions, where D is 2 or 3.
+    width : float
+        width of the vectors' bases
+    length : float
+        length multiplier of the line to be drawn
+    p : 3-tuple
+        orthogonal vector for segment calculation in 3D.
+
+    Returns
+    -------
+    vertices : (7N, D) array
+        Vertices of all triangles
+    triangles : (3N, 3) array
+        Vertex indices that form the mesh triangles
     """
     nvectors, _, ndim = vectors.shape
 
