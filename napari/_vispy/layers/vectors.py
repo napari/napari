@@ -198,6 +198,7 @@ def generate_meshes_triangle_2D(vectors, width, length, p):
 
     Vectors are composed of 3 vertices and 1 triangles.
     Vertices are generated according to the following scheme:
+
     1---x---0
      .     .
       .   .
