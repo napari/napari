@@ -217,21 +217,16 @@ class TranslationString(str):
     def __init__(
         self,
         domain: str,
+        msgid: str,
         msgctxt: Optional[str] = None,
-        msgid: Optional[str] = None,
         msgid_plural: Optional[str] = None,
         n: Optional[int] = None,
         deferred: bool = False,
         **kwargs,
     ) -> None:
-        if msgid is None:
-            raise ValueError(
-                trans._("Must provide at least a `msgid` parameter!")
-            )
-
         self._domain = domain
         self._msgctxt = msgctxt
-        self._msgid: str = msgid
+        self._msgid = msgid
         self._msgid_plural = msgid_plural
         self._n = n
         self._deferred = deferred
@@ -280,34 +275,36 @@ class TranslationString(str):
         """
         Return the translated string with interpolated kwargs, if provided.
         """
-        if self._n is None:
-            if self._msgctxt is None:
-                translation = gettext.dgettext(
-                    self._domain,
-                    self._msgid,
-                )
-            else:
-                translation = gettext.dpgettext(
-                    self._domain,
-                    self._msgctxt,
-                    self._msgid,
-                )
-        elif self._msgid_plural is not None:
-            if self._msgctxt is None:
-                translation = gettext.dngettext(
-                    self._domain,
-                    self._msgid,
-                    self._msgid_plural,
-                    self._n,
-                )
-            else:
-                translation = gettext.dnpgettext(
-                    self._domain,
-                    self._msgctxt,
-                    self._msgid,
-                    self._msgid_plural,
-                    self._n,
-                )
+        if (
+            self._n is not None
+            and self._msgid_plural is not None
+            and self._msgctxt is not None
+        ):
+            translation = gettext.dnpgettext(
+                self._domain,
+                self._msgctxt,
+                self._msgid,
+                self._msgid_plural,
+                self._n,
+            )
+        elif self._n is not None and self._msgid_plural is not None:
+            translation = gettext.dngettext(
+                self._domain,
+                self._msgid,
+                self._msgid_plural,
+                self._n,
+            )
+        elif self._msgctxt is not None:
+            translation = gettext.dpgettext(
+                self._domain,
+                self._msgctxt,
+                self._msgid,
+            )
+        else:
+            translation = gettext.dgettext(
+                self._domain,
+                self._msgid,
+            )
 
         return translation.format(**self._kwargs)
 
