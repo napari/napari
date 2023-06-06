@@ -430,6 +430,9 @@ class Dims(EventedModel):
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
 
+    def _go_to_center_step(self):
+        self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
+
     def _sanitize_input(
         self, axis, value, value_is_sequence=False
     ) -> Tuple[List[int], List]:
