@@ -224,7 +224,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     _colormaps = AVAILABLE_COLORMAPS
 
-    @rename_argument("interpolation", "interpolation2d", "0.6.0")
+    @rename_argument("interpolation", "interpolation2d", "0.6.0", "0.4.17")
     def __init__(
         self,
         data,

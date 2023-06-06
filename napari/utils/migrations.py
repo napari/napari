@@ -4,7 +4,9 @@ from functools import wraps
 from napari.utils.translations import trans
 
 
-def rename_argument(from_name: str, to_name: str, version: str):
+def rename_argument(
+    from_name: str, to_name: str, version: str, since_version: str = "unknown"
+):
     """
     This is decorator for simple rename function argument
     without break backward compatibility.
@@ -17,6 +19,8 @@ def rename_argument(from_name: str, to_name: str, version: str):
         new name of argument
     version : str
         version when old argument will be removed
+    since_version : str
+        version when new argument was added
     """
 
     def _wrapper(func):
@@ -33,10 +37,11 @@ def rename_argument(from_name: str, to_name: str, version: str):
                     )
                 warnings.warn(
                     trans._(
-                        "Argument {from_name} is deprecated, please use {to_name} instead. It will be removed in {version}.",
+                        "Argument {from_name} is deprecated, please use {to_name} instead. The argument {from_name} was deprecated in {since_version} and it will be removed in {version}.",
                         from_name=from_name,
                         to_name=to_name,
                         version=version,
+                        since_version=since_version,
                     ),
                     category=DeprecationWarning,
                     stacklevel=2,
