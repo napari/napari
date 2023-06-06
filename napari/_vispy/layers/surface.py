@@ -198,10 +198,9 @@ class VispySurfaceLayer(VispyBaseLayer):
             and self.layer._slice_input.ndisplay == 3
         ):
             camera = event.source
-            # take only displayed dims and flip zyx for vispy
-            dims_displayed = self.layer._slice_input.displayed
-            up = np.array(camera.up_direction)[dims_displayed][::-1]
-            view = np.array(camera.view_direction)[dims_displayed][::-1]
+            # take displayed up and view directions and flip zyx for vispy
+            up = np.array(camera.up_direction)[::-1]
+            view = np.array(camera.view_direction)[::-1]
             # combine to get light behind the camera on the top right
             self._light_direction = view - up + np.cross(up, view)
 
