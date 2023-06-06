@@ -318,17 +318,30 @@ def test_view_centering_with_points_add():
 
     viewer = ViewerModel()
     viewer.add_image(image)
-    assert tuple(viewer.dims.point) == (2, 5, 5)
+    assert tuple(viewer.dims.point) == (2, 4, 4)
 
     viewer.dims.set_point(0, 0)
     # viewer point shouldn't change after this
-    assert tuple(viewer.dims.point) == (0, 5, 5)
+    assert tuple(viewer.dims.point) == (0, 4, 4)
 
     pts_layer = viewer.add_points(ndim=3)
-    assert tuple(viewer.dims.point) == (0, 5, 5)
+    assert tuple(viewer.dims.point) == (0, 4, 4)
 
     pts_layer.add([(0, 8, 8)])
-    assert tuple(viewer.dims.point) == (0, 5, 5)
+    assert tuple(viewer.dims.point) == (0, 4, 4)
+
+
+def test_view_centering_with_scale():
+    """Regression test for issue #5735"""
+    image = np.zeros((5, 10, 10))
+
+    viewer = ViewerModel()
+    viewer.add_image(image, scale=(1, 1, 1))
+    assert tuple(viewer.dims.point) == (2, 4, 4)
+
+    viewer.layers.pop()
+    viewer.add_image(image, scale=(2, 1, 1))
+    assert tuple(viewer.dims.point) == (4, 4, 4)
 
 
 def test_new_shapes():
@@ -358,7 +371,7 @@ def test_swappable_dims():
     image_data = np.random.random((7, 12, 10, 15))
     image_name = viewer.add_image(image_data).name
     assert np.all(
-        viewer.layers[image_name]._data_view == image_data[3, 6, :, :]
+        viewer.layers[image_name]._data_view == image_data[3, 5, :, :]
     )
 
     points_data = np.random.randint(6, size=(10, 4))
@@ -372,17 +385,17 @@ def test_swappable_dims():
     # midpoints indices into the data below depend on the data range.
     # This depends on the values in vectors_data and thus the random seed.
     assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 6, :, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 5, :, :]
     )
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
     assert viewer.dims.order == (0, 2, 1, 3)
     assert np.all(
-        viewer.layers[image_name]._data_view == image_data[3, :, 5, :]
+        viewer.layers[image_name]._data_view == image_data[3, :, 4, :]
     )
     assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 5, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 4, :]
     )
 
 
