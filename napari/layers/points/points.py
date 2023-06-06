@@ -44,6 +44,7 @@ from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import project_points_onto_plane, rotate_points
+from napari.utils.migrations import rename_argument
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
@@ -2041,6 +2042,14 @@ class _BasePoints(Layer):
 
 
 class Points(_BasePoints):
+    @rename_argument("edge_width", "border_width", "5.1.0")
+    @rename_argument(
+        "edge_width_is_relative", "border_width_is_relative", "5.1.0"
+    )
+    @rename_argument("edge_color", "border_color", "5.1.0")
+    @rename_argument("edge_color_cycle", "border_color_cycle", "5.1.0")
+    @rename_argument("edge_colormap", "border_colormap", "5.1.0")
+    @rename_argument("edge_contrast_limits", "border_contrast_limits", "5.1.0")
     def __init__(
         self,
         data=None,
