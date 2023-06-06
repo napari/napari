@@ -51,7 +51,7 @@ def create_known_points_layer_2d():
         testing when needing to guarantee no point is clicked on.
     """
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
-    known_non_point = [20, 30]
+    known_non_point = [10, 11]
     n_points = len(data)
 
     layer = Points(data, size=1)
@@ -470,6 +470,20 @@ def test_unselecting_points(create_known_points_layer_2d):
     # Check clicked point selected
     assert len(layer.selected_data) == 0
 
+    # check that this also works with scaled data and position near a point (see #5737)
+    # we are taking the first point and shiftling *slightly* more than the point size after rescaling
+    layer.scale = 100, 100
+    pos = np.array(layer.data[0]) * layer.scale
+    pos[1] += layer.size[0] * 2
+
+    event = read_only_event(type='mouse_press', position=pos)
+    mouse_press_callbacks(layer, event)
+    event = read_only_event(type='mouse_release', position=pos)
+    mouse_release_callbacks(layer, event)
+
+    # Check clicked point selected
+    assert len(layer.selected_data) == 0
+
 
 def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
     """Select all points when drag box includes all of them."""
@@ -478,21 +492,25 @@ def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
     layer.mode = 'select'
 
     # Simulate click
-    event = read_only_event(type='mouse_press', position=known_non_point)
+    event = read_only_event(type='mouse_press', position=(20, 20))
     mouse_press_callbacks(layer, event)
 
     # Simulate drag start
     event = read_only_event(
-        type='mouse_move', is_dragging=True, position=known_non_point
+        type='mouse_move', is_dragging=True, position=(20, 20)
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate drag end
-    event = read_only_event(type='mouse_move', is_dragging=True)
+    event = read_only_event(
+        type='mouse_move', is_dragging=True, position=(0, 0)
+    )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
-    event = read_only_event(type='mouse_release', is_dragging=True)
+    event = read_only_event(
+        type='mouse_release', is_dragging=True, position=(0, 0)
+    )
     mouse_release_callbacks(layer, event)
 
     # Check all points selected as drag box contains them
@@ -666,10 +684,7 @@ def test_drag_start_selection(
     layer.mode = 'select'
     layer.selected_data = pre_selection
 
-    if on_point:
-        initial_position = tuple(layer.data[0])
-    else:
-        initial_position = tuple(known_non_point)
+    initial_position = tuple(layer.data[0]) if on_point else (20, 20)
     zero_pos = [0, 0]
     initial_position_1 = tuple(layer.data[1])
     diff_data_1 = [
