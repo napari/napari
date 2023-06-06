@@ -1616,5 +1616,5 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {"seed", "num_colors", "show_selected_label", "color"},
+            {"seed", "num_colors", "color"},
         )
