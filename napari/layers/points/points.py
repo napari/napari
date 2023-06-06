@@ -1586,10 +1586,11 @@ class Points(Layer):
             # Without this implementation, point hover and selection (and anything depending
             # on self.get_value()) won't be aware of the real extent of points, causing
             # unexpected behaviour. See #3734 for details.
+            scale = self.scale[self._slice_input.displayed]
+            sizes = np.expand_dims(self._view_size, axis=1) / scale / 2
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
-                distances
-                <= np.expand_dims(self._view_size, axis=1) / self.scale / 2,
+                distances <= sizes,
                 axis=1,
             )
             indices = np.where(in_slice_matches)[0]
@@ -1643,10 +1644,11 @@ class Points(Layer):
         rotated_click_point = np.dot(rotation_matrix, plane_point)
 
         # find the points the click intersects
+        scale = self.scale[self._slice_input.displayed]
+        sizes = np.expand_dims(self._view_size, axis=1) / scale / 2
         distances = abs(rotated_points[:, :2] - rotated_click_point[:2])
         in_slice_matches = np.all(
-            distances
-            <= np.expand_dims(self._view_size, axis=1) / self.scale / 2,
+            distances <= sizes[:, :2],
             axis=1,
         )
         indices = np.where(in_slice_matches)[0]
