@@ -882,8 +882,8 @@ class Points(Layer):
         self._current_size = size
         if self._update_properties and len(self.selected_data) > 0:
             idx = np.fromiter(self.selected_data, dtype=int)
-            # TODO: explain why this check; only if size > 0?
-            self.size[idx] = (self.size[idx] > 0) * size
+            self.size[idx] = size
+            self._clear_extent_augmented()
             self.refresh()
             self.events.size()
         self.events.current_size()
@@ -1002,8 +1002,8 @@ class Points(Layer):
     def current_edge_width(self, edge_width: Union[None, float]) -> None:
         self._current_edge_width = edge_width
         if self._update_properties and len(self.selected_data) > 0:
-            for i in self.selected_data:
-                self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
+            idx = np.fromiter(self.selected_data, dtype=int)
+            self.edge_width[idx] = edge_width
             self.refresh()
             self.events.edge_width()
         self.events.current_edge_width()
@@ -1331,38 +1331,36 @@ class Points(Layer):
             self._set_highlight()
             return
         index = list(self._selected_data)
-        if (
-            unique_edge_color := _unique_element(self.edge_color[index])
-        ) is not None:
-            with self.block_update_properties():
+        with self.block_update_properties():
+            if (
+                unique_edge_color := _unique_element(self.edge_color[index])
+            ) is not None:
                 self.current_edge_color = unique_edge_color
 
-        if (
-            unique_face_color := _unique_element(self.face_color[index])
-        ) is not None:
-            with self.block_update_properties():
+            if (
+                unique_face_color := _unique_element(self.face_color[index])
+            ) is not None:
                 self.current_face_color = unique_face_color
 
-        if (unique_size := _unique_element(self.size[index])) is not None:
-            with self.block_update_properties():
+            if (unique_size := _unique_element(self.size[index])) is not None:
                 self.current_size = unique_size
 
-        if (
-            unique_edge_width := _unique_element(self.edge_width[index])
-        ) is not None:
-            with self.block_update_properties():
+            if (
+                unique_edge_width := _unique_element(self.edge_width[index])
+            ) is not None:
                 self.current_edge_width = unique_edge_width
-        if (unique_symbol := _unique_element(self.symbol[index])) is not None:
-            with self.block_update_properties():
+            if (
+                unique_symbol := _unique_element(self.symbol[index])
+            ) is not None:
                 self.current_symbol = unique_symbol
 
-        unique_properties = {}
-        for k, v in self.properties.items():
-            unique_properties[k] = _unique_element(v[index])
+            unique_properties = {}
+            for k, v in self.properties.items():
+                unique_properties[k] = _unique_element(v[index])
 
-        if all(p is not None for p in unique_properties.values()):
-            with self.block_update_properties():
+            if all(p is not None for p in unique_properties.values()):
                 self.current_properties = unique_properties
+
         self._set_highlight()
 
     def interaction_box(self, index) -> Optional[np.ndarray]:
