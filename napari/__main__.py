@@ -221,7 +221,7 @@ def _run():
     level = levels[min(2, args.verbose)]  # prevent index error
     logging.basicConfig(
         level=level,
-        format="%(asctime)s %(levelname)s %(message)s",
+        format="%(asctime)s : %(levelname)s : %(threadName)s : %(message)s",
         datefmt='%H:%M:%S',
     )
 
@@ -381,10 +381,10 @@ def _run():
         # only necessary in bundled app, but see #3596
         from napari.utils.misc import (
             install_certifi_opener,
-            running_as_bundled_app,
+            running_as_constructor_app,
         )
 
-        if running_as_bundled_app():
+        if running_as_constructor_app():
             install_certifi_opener()
         run(gui_exceptions=True)
 
