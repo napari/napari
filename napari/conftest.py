@@ -686,8 +686,37 @@ def dangling_qtimers(monkeypatch, request):
         long_desc += "The QTimers were started in:\n"
     else:
         long_desc += "The QTimer was started in:\n"
+
+    def _check_throttle_info(path):
+        if "superqt" in path and "throttler" in path:
+            return (
+                path
+                + " it looks like a problem with not waiting on end of throttler work, you should wait on it or disable it using disable_throttling fixture"
+            )
+        return path
+
     assert not dangling_timers, long_desc + "\n".join(
-        x[1] for x in dangling_timers
+        _check_throttle_info(x[1]) for x in dangling_timers
+    )
+
+
+def _throttle_mock(self):
+    self.triggered.emit()
+
+
+def _flush_mock(self):
+    """There are no waiting events."""
+
+
+@pytest.fixture
+def disable_throttling(monkeypatch):
+    # if this monkeypath fails then you should update path to GenericSignalThrottler
+    monkeypatch.setattr(
+        "superqt.utils._throttler.GenericSignalThrottler.throttle",
+        _throttle_mock,
+    )
+    monkeypatch.setattr(
+        "superqt.utils._throttler.GenericSignalThrottler.flush", _flush_mock
     )
 
 
