@@ -165,6 +165,9 @@ def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
 class TranslationString(str):
     """
     A class that allows to create a deferred translations.
+
+    See https://docs.python.org/3/library/gettext.html for documentation
+    of the arguments to __new__ and __init__ in this class.
     """
 
     def __deepcopy__(self, memo):
