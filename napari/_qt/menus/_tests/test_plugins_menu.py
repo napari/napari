@@ -34,6 +34,12 @@ def test_plugin_display_name_use_for_multiple_widgets(
     assert list(viewer.window._dock_widgets.data)[0] == 'Widget 1 (tmp_plugin)'
 
 
+def test_import_plugin_manager():
+    from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
+
+    assert QtPluginDialog is not None
+
+
 def test_plugin_manager(make_napari_viewer, monkeypatch, qtbot):
     """Test that the plugin manager is accessible from the viewer"""
     viewer = make_napari_viewer()
