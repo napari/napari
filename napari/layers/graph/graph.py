@@ -57,7 +57,7 @@ class Graph(_BasePoints):
         shown=True,
     ) -> None:
         if BaseGraph is None:
-            raise ImportError(
+            raise RuntimeError(
                 trans._(
                     "`napari-graph` module is required by the graph layer."
                 )
