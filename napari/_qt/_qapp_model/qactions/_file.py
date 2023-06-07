@@ -6,6 +6,7 @@ from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari._app_model.context import LayerListContextKeys as LLCK
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
+from napari.utils.misc import running_as_bundled_app
 from napari.utils.translations import trans
 
 
@@ -155,7 +156,7 @@ Q_FILE_ACTIONS: List[Action] = [
             {
                 'id': MenuId.MENUBAR_FILE,
                 'group': MenuGroup.CLOSE,
-                'when': 'is_bundle',
+                'when': running_as_bundled_app(),
             }
         ],
     ),
