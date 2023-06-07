@@ -21,6 +21,12 @@ parser.add_argument(
     default=None,
     type=str,
 )
+parser.add_argument(
+    "--label",
+    help="if present then filter PR with a given label",
+    default=None,
+    type=str,
+)
 args = parser.parse_args()
 
 
@@ -43,6 +49,8 @@ if args.milestone:
     print(f'Filtering PRs with milestone {milestone.title}')
 else:
     milestone = None
+
+label = repository.get_label(args.label) if args.label else None
 
 common_ancestor = get_common_ancestor(args.from_commit, args.to_commit)
 remote_commit = repository.get_commit(common_ancestor.hexsha)
@@ -69,15 +77,25 @@ for pull_issue in tqdm(
         continue
     if milestone is None and (pull.milestone or not pull.merged):
         continue
+    if label is not None and label not in pull.labels:
+        continue
     pr_to_list.append(pull)
 
 if not pr_to_list:
     print('No PRs found')
     exit(0)
 
+
 if milestone:
-    print(f'PRs with milestone {milestone.title}:')
+    text = f'PRs with milestone {milestone.title}'
 else:
-    print('PRs without milestone:')
+    text = 'PRs without milestone'
+
+if label:
+    text += f' and label {label.name}'
+
+text += ":"
+print(text)
+
 for pull in pr_to_list:
     print(f'* [ ] #{pull.number}')
