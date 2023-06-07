@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from napari import Viewer
 from napari._vispy.layers.vectors import (
     generate_vector_meshes,
     generate_vector_meshes_2D,
@@ -94,3 +95,47 @@ def test_generate_vector_meshes_2D(edge_width, length, style, p):
 
     assert vertices_dims == dims
     assert faces_dims == 3
+
+
+@pytest.mark.parametrize(
+    "initial_vector_style, new_vector_style",
+    [
+        ['line', 'line'],
+        ['line', 'triangle'],
+        ['line', 'arrow'],
+        ['triangle', 'line'],
+        ['triangle', 'triangle'],
+        ['triangle', 'arrow'],
+        ['arrow', 'line'],
+        ['arrow', 'triangle'],
+        ['arrow', 'arrow'],
+    ],
+)
+def test_vector_style_change(initial_vector_style, new_vector_style):
+    # initialize viewer
+    viewer = Viewer()
+    # add a vector layer
+    vector_layer = viewer.add_vectors(
+        vector_style=initial_vector_style, name='vectors'
+    )
+
+    class Counter:
+        def __init__(self):
+            self.count = 0
+
+        def increment_count(self, event):
+            self.count += 1
+
+    # initialize counter
+    counter = Counter()
+    # connect counter to vector_style change
+    vector_layer.events.vector_style.connect(counter.increment_count)
+
+    # change vector_style
+    vector_layer.vector_style = new_vector_style
+
+    # check if counter was called
+    if initial_vector_style == new_vector_style:
+        assert counter.count == 0
+    else:
+        assert counter.count == 1
