@@ -1,12 +1,13 @@
 import argparse
 
+from tqdm import tqdm
+
 from release_utils import (
     GH_REPO,
     GH_USER,
     get_github,
     setup_cache,
 )
-from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('milestone', help='The milestone to list')

@@ -119,6 +119,7 @@ exclude = [
 target-version = "py38"
 fix = true
 
+
 [tool.ruff.per-file-ignores]
 "napari/_vispy/__init__.py" = ["E402"]
 "**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018"]
@@ -136,7 +137,7 @@ docstring-quotes = "double"
 ban-relative-imports = "all"
 
 [tool.ruff.isort]
-known-first-party=['napari']
+known-first-party=['napari', 'release_utils']
 combine-as-imports = true
 
 [tool.ruff.flake8-import-conventions]

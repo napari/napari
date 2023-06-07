@@ -1,6 +1,8 @@
 import argparse
 from datetime import datetime
 
+from tqdm import tqdm
+
 from release_utils import (
     GH_REPO,
     GH_USER,
@@ -11,7 +13,6 @@ from release_utils import (
     get_repo,
     setup_cache,
 )
-from tqdm import tqdm
 
 parser = argparse.ArgumentParser(usage=__doc__)
 parser.add_argument('from_commit', help='The starting tag.')

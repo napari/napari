@@ -2,8 +2,9 @@ import argparse
 from contextlib import suppress
 
 from github.GithubException import GithubException
-from release_utils import GH_REPO, GH_USER, get_github, setup_cache
 from tqdm import tqdm
+
+from release_utils import GH_REPO, GH_USER, get_github, setup_cache
 
 parser = argparse.ArgumentParser(usage=__doc__)
 parser.add_argument('user_name', help='name to search fr undeleted branches')
