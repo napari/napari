@@ -678,12 +678,12 @@ def _move_active_element_under_cursor(
             fixed = layer._fixed_vertex
             new = list(coord)
 
-            c = box[Box.CENTER]
+            box_center = box[Box.CENTER]
             if layer._fixed_aspect and layer._fixed_index % 2 == 0:
                 # corner
-                new = (box[vertex] - c) / np.linalg.norm(
-                    box[vertex] - c
-                ) * np.linalg.norm(new - c) + c
+                new = (box[vertex] - box_center) / np.linalg.norm(
+                    box[vertex] - box_center
+                ) * np.linalg.norm(new - box_center) + box_center
 
             if layer._fixed_index % 2 == 0:
                 # corner selected
@@ -710,7 +710,7 @@ def _move_active_element_under_cursor(
                 )
 
             # prevent box from shrinking below a threshold size
-            size = (np.linalg.norm(box[Box.TOP_LEFT] - c),)
+            size = (np.linalg.norm(box[Box.TOP_LEFT] - box_center),)
             threshold = (
                 layer._vertex_size * layer.scale_factor / layer.scale[-1] / 2
             )
