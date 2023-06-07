@@ -174,7 +174,7 @@ class Labels(_ImageBase):
         The number of dimensions across which labels will be edited.
     contour : int
         If greater than 0, displays contours of labels instead of shaded regions
-        with a thickness equal to its value.
+        with a thickness equal to its value. Must be >= 0.
     brush_size : float
         Size of the paint brush in data coordinates.
     selected_label : int
@@ -283,8 +283,8 @@ class Labels(_ImageBase):
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
-        self._cached_labels = None
-        self._cached_mapped_labels = None
+        self._cached_labels: Optional[np.ndarray] = None
+        self._cached_mapped_labels: Optional[np.ndarray] = None
 
         data = self._ensure_int_labels(data)
         self._color_lookup_func = None
@@ -317,6 +317,7 @@ class Labels(_ImageBase):
 
         self.events.add(
             preserve_labels=Event,
+            show_selected_label=Event,
             properties=Event,
             n_edit_dimensions=Event,
             contiguous=Event,
@@ -400,13 +401,15 @@ class Labels(_ImageBase):
         self.events.n_edit_dimensions()
 
     @property
-    def contour(self):
+    def contour(self) -> int:
         """int: displays contours of labels instead of shaded regions."""
         return self._contour
 
     @contour.setter
-    def contour(self, contour):
-        self._contour = contour
+    def contour(self, contour: int) -> None:
+        if contour < 0:
+            raise ValueError("contour value must be >= 0")
+        self._contour = int(contour)
         self.events.contour()
         self.refresh()
 
@@ -662,6 +665,7 @@ class Labels(_ImageBase):
         # note: self.color_mode returns a string and this comparison fails,
         # so use self._color_mode
         if self.show_selected_label:
+            self._cached_labels = None  # invalidates labels cache
             self.refresh()
 
     def swap_selected_and_background_labels(self):
@@ -714,9 +718,12 @@ class Labels(_ImageBase):
     @show_selected_label.setter
     def show_selected_label(self, filter_val):
         self._show_selected_label = filter_val
+        self.events.show_selected_label(show_selected_label=filter_val)
+        self._cached_labels = None
         self.refresh()
 
-    @Layer.mode.getter
+    # Only overriding to change the docstring
+    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -741,7 +748,12 @@ class Labels(_ImageBase):
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
         """
-        return str(self._mode)
+        return Layer.mode.fget(self)
+
+    # Only overriding to change the docstring of the setter above
+    @mode.setter
+    def mode(self, mode):
+        Layer.mode.fset(self, mode)
 
     def _mode_setter_helper(self, mode):
         mode = super()._mode_setter_helper(mode)
@@ -927,7 +939,9 @@ class Labels(_ImageBase):
         self.events.labels_update(data=colors_sliced, offset=offset)
         self._updated_slice = None
 
-    def _raw_to_displayed(self, raw, data_slice: Tuple[slice] = None):
+    def _raw_to_displayed(
+        self, raw, data_slice: Optional[Tuple[slice, ...]] = None
+    ):
         """Determine displayed image from a saved raw image and a saved seed.
 
         This function ensures that the 0 label gets mapped to the 0 displayed
@@ -986,6 +1000,7 @@ class Labels(_ImageBase):
         update_mask = None
         if (
             self._cached_labels is not None
+            and self._cached_mapped_labels is not None
             and self._cached_labels.shape == labels.shape
         ):
             update_mask = self._cached_labels[data_slice] != sliced_labels
@@ -994,11 +1009,13 @@ class Labels(_ImageBase):
             # Update the cache
             self._cached_labels[data_slice][update_mask] = labels_to_map
         else:
-            self._cached_labels = np.zeros_like(labels)
+            _cached_labels = np.zeros_like(labels)
+            _cached_labels[data_slice] = sliced_labels.copy()
+            self._cached_labels = _cached_labels
             self._cached_mapped_labels = np.zeros_like(
                 labels, dtype=np.float32
             )
-            self._cached_labels[data_slice] = sliced_labels.copy()
+
             labels_to_map = sliced_labels
 
         # If there are no changes, just return the cached image
@@ -1141,8 +1158,15 @@ class Labels(_ImageBase):
                 start_point, end_point, n_points, endpoint=True
             )
             im_slice = self._slice.image.raw
+            bounding_box = self._display_bounding_box(np.array(dims_displayed))
+            # the display bounding box is returned as a closed interval
+            # (i.e. the endpoint is included) by the method, but we need
+            # open intervals in the code that follows, so we add 1.
+            bounding_box[:, 1] += 1
+
             clamped = clamp_point_to_bounding_box(
-                sample_points, self._display_bounding_box(dims_displayed)
+                sample_points,
+                bounding_box,
             ).astype(int)
             values = im_slice[tuple(clamped.T)]
             nonzero_indices = np.flatnonzero(values)
@@ -1569,9 +1593,11 @@ class Labels(_ImageBase):
             value = None
 
         source_info = self._get_source_info()
-        source_info['coordinates'] = generate_layer_coords_status(
-            position[-self.ndim :], value
-        )
+
+        pos = position
+        if pos is not None:
+            pos = pos[-self.ndim :]
+        source_info['coordinates'] = generate_layer_coords_status(pos, value)
 
         # if this labels layer has properties
         properties = self._get_properties(
@@ -1663,7 +1689,7 @@ class Labels(_ImageBase):
 if config.async_octree:
     from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
-    class Labels(Labels, _OctreeImageBase):
+    class Labels(Labels, _OctreeImageBase):  # type: ignore[no-redef]
         pass
 
 
