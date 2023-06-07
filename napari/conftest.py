@@ -691,7 +691,9 @@ def dangling_qtimers(monkeypatch, request):
         if "superqt" in path and "throttler" in path:
             return (
                 path
-                + " it looks like a problem with not waiting on end of throttler work, you should wait on it or disable it using disable_throttling fixture"
+                + " it's possible that there was a problem with unfinished work by a "
+                  "qthrottler; to solve this, you can either try to wait (such as with "
+                  "`qtbot.wait`) or disable throttling with the disable_throttling fixture"
             )
         return path
 
@@ -710,6 +712,11 @@ def _flush_mock(self):
 
 @pytest.fixture
 def disable_throttling(monkeypatch):
+    """Disable qthrottler from superqt.
+	
+    This is sometimes necessary to avoid flaky failures in tests
+    due to dangling qt timers.
+    """
     # if this monkeypath fails then you should update path to GenericSignalThrottler
     monkeypatch.setattr(
         "superqt.utils._throttler.GenericSignalThrottler.throttle",
