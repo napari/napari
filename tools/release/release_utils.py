@@ -1,9 +1,11 @@
+import contextlib
 import os
 import re
 import sys
 from contextlib import contextmanager
+from typing import Optional
 
-from github import Github
+from github import Github, Milestone
 
 pr_num_pattern = re.compile(r'\(#(\d+)\)(?:$|\n)')
 
@@ -111,3 +113,18 @@ def get_commit_counts_from_ancestor(release, rev="main"):
         pr_num_pattern.search(c.message) is not None
         for c in get_commits_to_ancestor(ancestor, rev)
     )
+
+
+def get_milestone(
+    milestone_name: Optional[str],
+) -> Optional[Milestone.Milestone]:
+    if milestone_name is None:
+        return None
+    repository = get_repo()
+    with contextlib.suppress(ValueError):
+        return repository.get_milestone(int(milestone_name))
+
+    for milestone in repository.get_milestones():
+        if milestone.title == milestone_name:
+            return milestone
+    raise RuntimeError(f'Milestone {milestone_name} not found')

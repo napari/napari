@@ -7,6 +7,7 @@ from release_utils import (
     get_commit_counts_from_ancestor,
     get_common_ancestor,
     get_github,
+    get_milestone,
     get_repo,
     setup_cache,
 )
@@ -34,21 +35,7 @@ setup_cache()
 
 repository = get_repo()
 
-if args.milestone:
-    try:
-        milestone = repository.get_milestone(int(args.milestone))
-    except ValueError as e:
-        for milestone in repository.get_milestones():
-            if milestone.title == args.milestone:
-                break
-        else:
-            raise RuntimeError(f'Milestone {args.milestone} not found') from e
-
-    if not milestone:
-        raise RuntimeError(f'Milestone {args.milestone} not found')
-    print(f'Filtering PRs with milestone {milestone.title}')
-else:
-    milestone = None
+milestone = get_milestone(args.milestone)
 
 label = repository.get_label(args.label) if args.label else None
 
@@ -87,9 +74,9 @@ if not pr_to_list:
 
 
 if milestone:
-    text = f'PRs with milestone {milestone.title}'
+    text = f'## PRs with milestone {milestone.title}'
 else:
-    text = 'PRs without milestone'
+    text = '## PRs without milestone'
 
 if label:
     text += f' and label {label.name}'
