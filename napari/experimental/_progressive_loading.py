@@ -91,7 +91,7 @@ def visual_depth(points, camera):
     return projected_length
 
 
-def distance_from_camera_centre_line(points, camera):
+def distance_from_camera_center_line(points, camera):
     """Compute distance from a point or array of points to camera center line.
 
     This is the line aligned to the camera view direction and passing through
@@ -306,6 +306,9 @@ def render_sequence(
 
                 yield tuple(list(chunk_result) + [len(chunk_queue) == 0])
 
+                # TODO blank out lower resolution
+                # if lower resolution is visible, send zeros
+
             LOGGER.info(f"render_sequence: done fetching {scale}")
 
 
@@ -496,7 +499,10 @@ def add_progressive_loading_image(img,
         from napari import Viewer
         viewer = Viewer()
 
-    LOGGER.info(f"MultiscaleData {multiscale_data.shape}")
+    # Ensure async slicing is enabled
+    viewer._layer_slicer._force_sync = False
+        
+    LOGGER.info(f"Adding MultiscaleData with shape: {multiscale_data.shape}")
 
     # Get initial extent for rendering
     canvas_corners = \
@@ -727,11 +733,9 @@ def should_render_scale_3D(scale, viewer, min_scale, max_scale):
 
     return render
 
-# ---------------- mostly old code below this
-
 
 # TODO to be deprecated
-def prioritised_chunk_loading_3D(
+def prioritized_chunk_loading_3D(
     depth, distance, zoom, alpha=1.0, visible=None
 ):
     """Compute a chunk priority based on chunk location relative to camera.
@@ -835,7 +839,7 @@ def render_sequence_3D(
         cache
     alpha : float
         a parameter that tunes the behavior of chunk prioritization
-        see prioritised_chunk_loading for more info
+        see prioritized_chunk_loading for more info
     scale_factors : list of tuples
         a list of tuples of scale factors for each array
     dtype : dtype
@@ -864,9 +868,9 @@ def render_sequence_3D(
     points_world = points * np.array(scale_factor)
 
     # Prioritize chunks using world coordinates
-    distances = distance_from_camera_centre_line(points_world, camera)
+    distances = distance_from_camera_center_line(points_world, camera)
     depth = visual_depth(points_world, camera)
-    priorities = prioritised_chunk_loading_3D(
+    priorities = prioritized_chunk_loading_3D(
         depth, distances, camera.zoom, alpha=alpha, visible=point_mask
     )
 
@@ -1292,7 +1296,7 @@ class VirtualData:
                 ]
             else:
                 LOGGER.info(
-                    f"could not data plane: prev {prev_slices} next \
+                    f"could not reuse data plane: prev {prev_slices} next \
                     {next_slices}"
                 )
 
@@ -1342,21 +1346,20 @@ class VirtualData:
                         ),
                         sl.step,
                     )
-                    for (idx, sl) in enumerate(key[(-1 * self.ndisplay):])
-                    # TODO check out the self.d stuff here and elsewhere
+                    for (idx, sl) in enumerate(key[(-self.ndisplay):])
                 ]
             )
         elif type(key) is tuple and type(key[0]) is int:
             hyperslice_key = tuple(
                 [
                     int(v - self.translate[idx])
-                    for idx, v in enumerate(key[(-1 * self.ndisplay):])
+                    for idx, v in enumerate(key[(-self.ndisplay):])
                 ]
             )
         else:
             LOGGER.info(f"_hyperslice_key: funky key {key}")
             hyperslice_key = key
-
+            
         return hyperslice_key
 
     def __getitem__(
@@ -1393,9 +1396,6 @@ class VirtualData:
             shape = tuple([(1 if sl.start is None else sl.stop - sl.start)
                            if type(sl) is slice else 1 for sl in key])
             LOGGER.info(f"get_offset failed {key}")
-            import pdb
-
-            pdb.set_trace()
             return np.zeros(shape)
 
     def set_offset(
@@ -1409,17 +1409,25 @@ class VirtualData:
         )
 
         if self.hyperslice[hyperslice_key].size > 0:
-            self.hyperslice[hyperslice_key] = value
+            try:
+                self.hyperslice[hyperslice_key] = value
+            except Exception:
+                import pdb; pdb.set_trace()
         return self.hyperslice[hyperslice_key]
 
     @property
     def chunksize(self):
         """Return the size of a chunk."""
-        return self.array.info
+        import pdb; pdb.set_trace()
+        if isinstance(self.array, da.Array):
+            return self.chunksize
+        else:
+            return self.array.info
 
     @property
     def chunks(self):
         """Return the chunks of the array."""
+        # TODO this isn't safe because array can be dask or zarr
         return self.array.chunks
 
 

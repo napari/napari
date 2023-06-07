@@ -34,8 +34,14 @@ if __name__ == "__main__":
         yappi.set_clock_type("cpu")  # Use set_clock_type("wall") for wall time
         yappi.start()
 
-    # large_image = openorganelle_mouse_kidney_em()
+    # This dataset is 2D and visualized in 2D
     large_image = mandelbrot_dataset(max_levels=21)
+
+    # This dataset is 3D and visualized in 2D
+    # from napari.experimental._progressive_loading_datasets import openorganelle_mouse_kidney_em
+    # large_image = openorganelle_mouse_kidney_em()
+
+    # This dataset is 3D and visualized in 3D
 
     multiscale_img = large_image["arrays"]
     viewer._layer_slicer._force_sync = False

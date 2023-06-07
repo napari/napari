@@ -65,7 +65,7 @@ def visual_depth(points, camera):
     return projected_length
 
 
-def distance_from_camera_centre_line(points, camera):
+def distance_from_camera_center_line(points, camera):
     """Compute distance from a point or array of points to camera center line.
 
     This is the line aligned to the camera view direction and passing through
@@ -94,7 +94,7 @@ def distance_from_camera_centre_line(points, camera):
     return distances
 
 
-def prioritised_chunk_loading(depth, distance, zoom, alpha=1.0, visible=None):
+def prioritized_chunk_loading(depth, distance, zoom, alpha=1.0, visible=None):
     """Compute a chunk priority based on chunk location relative to camera.
     Lower priority is preferred.
 
@@ -186,6 +186,7 @@ def render_sequence(
     alpha : float
         a parameter that tunes the behavior of chunk prioritization
         see prioritised_chunk_loading for more info
+        see prioritized_chunk_loading for more info
     scale_factors : list of tuples
         a list of tuples of scale factors for each array
     dtype : dtype
@@ -220,9 +221,9 @@ def render_sequence(
     points_world = points * np.array(scale_factor)
 
     # Prioritize chunks using world coordinates
-    distances = distance_from_camera_centre_line(points_world, camera)
+    distances = distance_from_camera_center_line(points_world, camera)
     depth = visual_depth(points_world, camera)
-    priorities = prioritised_chunk_loading(
+    priorities = prioritized_chunk_loading(
         depth, distances, camera.zoom, alpha=alpha, visible=point_mask
     )
 
@@ -266,7 +267,6 @@ def render_sequence(
             #     f"Fetching: {(scale, chunk_slice)} World offset: {node_offset}"
             # )
 
-            scale_dataset = f"{dataset}/s{scale}"
 
             # When we get_chunk chunk_slice needs to be in data space, but chunk slices are 3D
             data_slice = tuple(
@@ -439,8 +439,15 @@ def update_chunk(
             data,
             dtype=dtype,
         )
+        new_texture_data = new_texture_data[
+            : layer.data[texture_slice].shape[0],
+            : layer.data[texture_slice].shape[1],
+            : layer.data[texture_slice].shape[2],
+            : layer.data[texture_slice].shape[3],
+        ]
 
-        # Note: due to odd dimensions in scale pyramids sometimes we have off by 1
+        dest_slice = [slice(sl.start, sl.start + width) for sl, width in zip(texture_slice, new_texture_data.shape)]
+        
         ntd_slice = (
             slice(0, layer.data[texture_slice].shape[1]),
             slice(0, layer.data[texture_slice].shape[2]),
@@ -451,12 +458,7 @@ def update_chunk(
 
             pdb.set_trace()
 
-        layer.data[texture_slice] = new_texture_data[
-            : layer.data[texture_slice].shape[0],
-            : layer.data[texture_slice].shape[1],
-            : layer.data[texture_slice].shape[2],
-            : layer.data[texture_slice].shape[3],
-        ]
+        # layer.data[dest_slice] = new_texture_data
 
         """
     dims.current_step
@@ -583,7 +585,7 @@ def add_subnodes(
         slices
     alpha : float
         a parameter that tunes the behavior of chunk prioritization
-        see prioritised_chunk_loading for more info
+        see prioritized_chunk_loading for more info
     scale_factors : list of tuples
         a list of tuples of scale factors for each array
     """
@@ -625,8 +627,8 @@ def add_subnodes(
         update_chunk(
             viewer_lock=viewer_lock,
             viewer=viewer,
-            container=container,
-            dataset=dataset,
+            container=worker_map["container"],
+            dataset=worker_map["dataset"],
             dtype=dtype,
         )
     )
@@ -702,7 +704,7 @@ def poor_octree_widget(
     scale_factors = large_image["scale_factors"]
 
     # Initialize worker
-    worker_map = {}
+    worker_map = {"container": container, "dataset": dataset}
 
     # from napari.layers.image.image import Image
     # Image._set_view_slice = lambda x: None
@@ -800,7 +802,9 @@ if __name__ == "__main__":
 
     widget = poor_octree_widget()
 
+    widget(viewer, 0.8, "multiscale")
+    
     # widget(viewer)
 
-    viewer.window.add_dock_widget(widget, name="Poor Octree Renderer")
+    # viewer.window.add_dock_widget(widget, name="Poor Octree Renderer")
     # widget_demo.show()
