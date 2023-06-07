@@ -38,6 +38,7 @@ previous_tag_date = datetime.strptime(
 )
 
 probably_solved = repository.get_label("probably solved")
+need_to_reproduce = repository.get_label("need to reproduce")
 
 issue_list = []
 
@@ -52,7 +53,11 @@ for issue in tqdm(
     ),
     desc='issues...',
 ):
+    if "[test-bot]" in issue.title:
+        continue
     if probably_solved in issue.labels:
+        continue
+    if need_to_reproduce in issue.labels:
         continue
     if issue.milestone != milestone:
         continue
