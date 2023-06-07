@@ -23,7 +23,7 @@ def build_graph(n_nodes: int, n_neighbors: int) -> UndirectedGraph:
         400 * np.random.uniform(size=(n_nodes, 4)),
         columns=["t", "z", "y", "x"],
     )
-    graph = UndirectedGraph(edges=edges, coords=nodes_df[["t", "z", "y", "x"]])
+    graph = UndirectedGraph(edges=edges, coords=nodes_df)
 
     return graph
 
