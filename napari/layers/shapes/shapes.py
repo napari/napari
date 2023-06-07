@@ -2263,6 +2263,20 @@ class Shapes(Layer):
         """
         self.text.refresh(self.features)
 
+    @property
+    def _normalized_scale_factor(self):
+        """Scale factor accounting for layer scale.
+
+        This is often needed when calculating screen-space sizes and distances
+        of vertices for interactivity (rescaling, adding vertices, etc).
+        """
+        return self.scale_factor / self.scale[-1]
+
+    @property
+    def _normalized_vertex_radius(self):
+        """Vertex radius normalized to screen space."""
+        return self._vertex_size * self._normalized_scale_factor / 2
+
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
         ndisplay = self._slice_input.ndisplay
@@ -2326,8 +2340,7 @@ class Shapes(Layer):
             if length_box > 0:
                 r = (
                     self._rotation_handle_length
-                    * self.scale_factor
-                    / self.scale[-1]
+                    * self._normalized_scale_factor
                 )
                 rot = (
                     rot
@@ -2366,10 +2379,7 @@ class Shapes(Layer):
 
             centers, offsets, triangles = self._data_view.outline(index)
             vertices = centers + (
-                self.scale_factor
-                * self._highlight_width
-                * offsets
-                / self.scale[-1]
+                self._normalized_scale_factor * self._highlight_width * offsets
             )
             vertices = vertices[:, ::-1]
         else:
@@ -2629,11 +2639,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.array(box * scale)
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            r = (
-                self._rotation_handle_length
-                * self.scale_factor
-                / self.scale[-1]
-            )
+            r = self._rotation_handle_length * self._normalized_scale_factor
             handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
@@ -2652,11 +2658,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = box @ transform.T
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            r = (
-                self._rotation_handle_length
-                * self.scale_factor
-                / self.scale[-1]
-            )
+            r = self._rotation_handle_length * self._normalized_scale_factor
             handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
@@ -2700,12 +2702,11 @@ class Shapes(Layer):
         selected_index = list(self.selected_data)
 
         if len(selected_index) > 0:
-            scale = self.scale[self._slice_input.displayed]
+            self.scale[self._slice_input.displayed]
             # Get the vertex sizes. They need to be rescaled by a few parameters:
             # - scale_factor, because vertex sizes are zoom-invariant
             # - scale, because vertex sizes are not affected by scale (unlike in Points)
             # - 2, because the radius is what we need
-            sizes = self._vertex_size * self.scale_factor / scale / 2
 
             if self._mode == Mode.SELECT:
                 # Check if inside vertex of interaction box or rotation handle
@@ -2713,7 +2714,9 @@ class Shapes(Layer):
                 distances = abs(box - coord)
 
                 # Check if any matching vertices
-                matches = np.all(distances <= sizes, axis=1).nonzero()
+                matches = np.all(
+                    distances <= self._normalized_vertex_radius, axis=1
+                ).nonzero()
                 if len(matches[0]) > 0:
                     value = (selected_index[0], matches[0][-1])
             elif self._mode in (
@@ -2725,7 +2728,9 @@ class Shapes(Layer):
                 distances = abs(vertices - coord)
 
                 # Check if any matching vertices
-                matches = np.all(distances <= sizes, axis=1).nonzero()[0]
+                matches = np.all(
+                    distances <= self._normalized_vertex_radius, axis=1
+                ).nonzero()[0]
                 if len(matches) > 0:
                     index = inds.nonzero()[0][matches[-1]]
                     shape = self._data_view.displayed_index[index]
