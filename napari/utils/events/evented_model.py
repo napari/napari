@@ -425,14 +425,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if not isinstance(other, EventedModel):
             return self.dict() == other
 
-        for f_name, eq in self.__eq_operators__.items():
-            if f_name not in other.__eq_operators__:
-                return False
-            if (
-                hasattr(self, f_name)
-                and hasattr(other, f_name)
-                and not eq(getattr(self, f_name), getattr(other, f_name))
-            ):
+        if set(self.__fields__) != set(other.__fields__):
+            return False
+        for f_name in self.__fields__:
+            eq = self.__eq_operators__[f_name]
+            if not eq(getattr(self, f_name), getattr(other, f_name)):
                 return False
         return True
 
