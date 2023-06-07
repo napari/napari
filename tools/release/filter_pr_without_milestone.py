@@ -1,0 +1,83 @@
+import argparse
+from datetime import datetime
+
+from release_utils import (
+    GH_REPO,
+    GH_USER,
+    get_commit_counts_from_ancestor,
+    get_common_ancestor,
+    get_github,
+    get_repo,
+    setup_cache,
+)
+from tqdm import tqdm
+
+parser = argparse.ArgumentParser(usage=__doc__)
+parser.add_argument('from_commit', help='The starting tag.')
+parser.add_argument('to_commit', help='The head branch.')
+parser.add_argument(
+    "--milestone",
+    help="if present then filter PR with a given milestone",
+    default=None,
+    type=str,
+)
+args = parser.parse_args()
+
+
+setup_cache()
+
+repository = get_repo()
+
+if args.milestone:
+    try:
+        milestone = repository.get_milestone(int(args.milestone))
+    except ValueError as e:
+        for milestone in repository.get_milestones():
+            if milestone.title == args.milestone:
+                break
+        else:
+            raise RuntimeError(f'Milestone {args.milestone} not found') from e
+
+    if not milestone:
+        raise RuntimeError(f'Milestone {args.milestone} not found')
+    print(f'Filtering PRs with milestone {milestone.title}')
+else:
+    milestone = None
+
+common_ancestor = get_common_ancestor(args.from_commit, args.to_commit)
+remote_commit = repository.get_commit(common_ancestor.hexsha)
+previous_tag_date = datetime.strptime(
+    remote_commit.last_modified, '%a, %d %b %Y %H:%M:%S %Z'
+)
+
+pr_count = get_commit_counts_from_ancestor(args.from_commit, args.to_commit)
+
+pr_to_list = []
+
+for pull_issue in tqdm(
+    get_github().search_issues(
+        f'repo:{GH_USER}/{GH_REPO} '
+        f'merged:>{previous_tag_date.isoformat()} '
+        "is:pr "
+        'sort:created-asc'
+    ),
+    desc='Pull Requests...',
+    total=pr_count,
+):
+    pull = pull_issue.as_pull_request()
+    if milestone is not None and pull.milestone != milestone:
+        continue
+    if milestone is None and (pull.milestone or not pull.merged):
+        continue
+    pr_to_list.append(pull)
+
+if not pr_to_list:
+    print('No PRs found')
+    exit(0)
+
+if milestone:
+    print(f'PRs with milestone {milestone.title}:')
+else:
+    print('PRs without milestone:')
+for pull in pr_to_list:
+    print(f'* [ ] #{pull.number}')
