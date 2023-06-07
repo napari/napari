@@ -692,8 +692,8 @@ def dangling_qtimers(monkeypatch, request):
             return (
                 path
                 + " it's possible that there was a problem with unfinished work by a "
-                  "qthrottler; to solve this, you can either try to wait (such as with "
-                  "`qtbot.wait`) or disable throttling with the disable_throttling fixture"
+                "qthrottler; to solve this, you can either try to wait (such as with "
+                "`qtbot.wait`) or disable throttling with the disable_throttling fixture"
             )
         return path
 
@@ -713,7 +713,7 @@ def _flush_mock(self):
 @pytest.fixture
 def disable_throttling(monkeypatch):
     """Disable qthrottler from superqt.
-	
+
     This is sometimes necessary to avoid flaky failures in tests
     due to dangling qt timers.
     """
