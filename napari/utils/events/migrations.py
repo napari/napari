@@ -36,5 +36,6 @@ def deprecation_warning_event(
             f"{previous_path} is deprecated and will be removed in {version}. Please use {new_path}",
             deferred=True,
         ),
+        warn_on_connect=False,
         type_name=previous_name,
     )

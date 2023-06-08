@@ -885,9 +885,10 @@ class WarningEmitter(EventEmitter):
 
     def __init__(
         self,
-        message,
-        category=FutureWarning,
-        stacklevel=3,
+        message: str,
+        category: Type[Warning] = FutureWarning,
+        stacklevel: int = 3,
+        warn_on_connect: bool = True,
         *args,
         **kwargs,
     ) -> None:
@@ -895,10 +896,12 @@ class WarningEmitter(EventEmitter):
         self._warned = False
         self._category = category
         self._stacklevel = stacklevel
+        self._warn_on_connect = warn_on_connect
         EventEmitter.__init__(self, *args, **kwargs)
 
     def connect(self, cb, *args, **kwargs):
-        self._warn(cb)
+        if self._warn_on_connect:
+            self._warn(cb)
         return EventEmitter.connect(self, cb, *args, **kwargs)
 
     def _invoke_callback(self, cb, event):
