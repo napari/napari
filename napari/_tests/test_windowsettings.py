@@ -1,3 +1,5 @@
+import gc
+
 from napari import Viewer
 from napari.settings import get_settings
 
@@ -38,3 +40,6 @@ def test_singlescreen_window_settings(qtbot):
         _,
     ) = viewer.window._qt_window._load_window_settings()
     assert window_position == (0, 0)
+    viewer.close()
+    qtbot.wait(50)
+    gc.collect()
