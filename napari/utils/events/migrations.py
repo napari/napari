@@ -1,0 +1,40 @@
+from napari.utils.events.event import WarningEmitter
+from napari.utils.translations import trans
+
+
+def deprecation_warning_event(
+    prefix: str,
+    previous_name: str,
+    new_name: str,
+    version: str,
+) -> WarningEmitter:
+    """
+    Helper function for event emitter deprecation warning.
+
+    This event still needs to be added to the events group.
+
+    Parameters
+    ----------
+    prefix:
+        Prefix indicating class and event (e.g. layer.event)
+    previous_name : str
+        Name of deprecated event (e.g. edge_width)
+    new_name : str
+        Name of new event (e.g. border_width)
+    version : str
+        Version where deprecated event will be removed.
+
+    Returns
+    -------
+    WarningEmitter
+        Event emitter that prints a deprecation warning.
+    """
+    previous_path = f"{prefix}.{previous_name}"
+    new_path = f"{prefix}.{new_name}"
+    return WarningEmitter(
+        trans._(
+            f"{previous_path} is deprecated and will be removed in {version}. Please use {new_path}",
+            deferred=True,
+        ),
+        type_name=previous_name,
+    )

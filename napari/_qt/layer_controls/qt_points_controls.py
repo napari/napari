@@ -99,6 +99,11 @@ class QtPointsControls(QtLayerControls):
         self.layer.events.visible.connect(self._on_editable_or_visible_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
+        # TODO: deprecated, should be removed in 6.0.0
+        self.layer.events.current_edge_color.connect(
+            self._on_current_border_color_change
+        )
+
         sld = QSlider(Qt.Orientation.Horizontal)
         sld.setToolTip(
             trans._(

@@ -6,6 +6,7 @@ from numpy.typing import ArrayLike
 from napari.layers.graph._slice import _GraphSliceRequest, _GraphSliceResponse
 from napari.layers.points.points import _BasePoints
 from napari.layers.utils._slice_input import _SliceInput
+from napari.utils.events import Event
 from napari.utils.translations import trans
 
 try:
@@ -102,6 +103,17 @@ class Graph(_BasePoints):
             canvas_size_limits=canvas_size_limits,
             antialiasing=antialiasing,
             shown=shown,
+        )
+
+        # TODO:
+        # dummy events because of VispyGraphLayer's VispyPointsLayerinheritance
+        # should be removed in 6.0.0
+        self.events.add(
+            edge_width=Event,
+            current_edge_width=Event,
+            edge_width_is_relative=Event,
+            edge_color=Event,
+            current_edge_color=Event,
         )
 
     @staticmethod

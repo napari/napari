@@ -43,6 +43,7 @@ from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.migrations import deprecation_warning_event
 from napari.utils.geometry import project_points_onto_plane, rotate_points
 from napari.utils.migrations import rename_argument
 from napari.utils.status_messages import generate_layer_coords_status
@@ -2137,6 +2138,33 @@ class Points(_BasePoints):
             canvas_size_limits=canvas_size_limits,
             antialiasing=antialiasing,
             shown=shown,
+        )
+
+        self.events.add(
+            edge_width=deprecation_warning_event(
+                "layer.events", "edge_width", "border_width", "0.6.0"
+            ),
+            current_edge_width=deprecation_warning_event(
+                "layer.events",
+                "current_edge_width",
+                "current_border_width",
+                "0.6.0",
+            ),
+            edge_width_is_relative=deprecation_warning_event(
+                "layer.events",
+                "edge_width_is_relative",
+                "border_width_is_relative",
+                "0.6.0",
+            ),
+            edge_color=deprecation_warning_event(
+                "layer.events", "edge_color", "border_color", "0.6.0"
+            ),
+            current_edge_color=deprecation_warning_event(
+                "layer.events",
+                "current_edge_color",
+                "current_border_color",
+                "0.6.0",
+            ),
         )
 
     @property

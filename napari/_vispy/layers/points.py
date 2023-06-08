@@ -42,6 +42,11 @@ class VispyPointsLayer(VispyBaseLayer):
             self._on_canvas_size_limits_change
         )
 
+        # TODO: deprecated, should be removed in 6.0.0
+        self.layer.events.edge_width.connect(self._on_data_change)
+        self.layer.events.edge_width_is_relative.connect(self._on_data_change)
+        self.layer.events.edge_color.connect(self._on_data_change)
+
         self._on_data_change()
 
     def _on_data_change(self):
