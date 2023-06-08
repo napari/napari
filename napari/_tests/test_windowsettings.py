@@ -1,4 +1,5 @@
 import gc
+import platform
 
 from napari import Viewer
 from napari.settings import get_settings
@@ -6,11 +7,16 @@ from napari.settings import get_settings
 
 def test_singlescreen_window_settings(qtbot):
     """Test whether valid screen position is returned even after disconnected secondary screen."""
+    os = platform.system()
     settings = get_settings()
     viewer = Viewer(show=False)
     default_window_position = (
-        viewer.window._qt_window.y(),
-        viewer.window._qt_window.x(),
+        (viewer.window._qt_window.x(), viewer.window._qt_window.y())
+        if os == "Darwin"
+        else (
+            viewer.window._qt_window.y(),
+            viewer.window._qt_window.x(),
+        )
     )
 
     # Valid position
