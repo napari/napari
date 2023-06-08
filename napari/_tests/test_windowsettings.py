@@ -5,8 +5,13 @@ from napari.settings import get_settings
 
 
 def test_singlescreen_window_settings(qtbot):
+    """Test whether valid screen position is returned even after disconnected secondary screen."""
     settings = get_settings()
     viewer = Viewer(show=False)
+    default_window_position = (
+        viewer.window._qt_window.y(),
+        viewer.window._qt_window.x(),
+    )
 
     # Valid position
     settings.application.window_position = (50, 50)
@@ -28,7 +33,7 @@ def test_singlescreen_window_settings(qtbot):
         _,
         _,
     ) = viewer.window._qt_window._load_window_settings()
-    assert window_position == (0, 0)
+    assert window_position == default_window_position
 
     # Invalid right of screen
     settings.application.window_position = (0, 40000)
@@ -39,7 +44,7 @@ def test_singlescreen_window_settings(qtbot):
         _,
         _,
     ) = viewer.window._qt_window._load_window_settings()
-    assert window_position == (0, 0)
+    assert window_position == default_window_position
     viewer.close()
     qtbot.wait(50)
     gc.collect()

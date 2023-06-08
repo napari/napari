@@ -286,15 +286,9 @@ class _QtMainWindow(QMainWindow):
             window_position = (self.x(), self.y())
         else:
             width, height = window_position
-            screen_geo = QApplication.primaryScreen().geometry()
-            if (
-                screen_geo.width() < width
-                or screen_geo.height() < height
-                or (
-                    any(pos < 0 for pos in window_position)
-                    and len(QApplication.screens()) == 1
-                )
-            ):
+            screen = QApplication.screenAt(QPoint(width, height))
+            screen_geo = screen.geometry() if screen else None
+            if not screen_geo:
                 window_position = (self.x(), self.y())
 
         return (
