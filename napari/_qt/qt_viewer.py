@@ -569,9 +569,10 @@ class QtViewer(QSplitter):
         dlg.setHistory(hist)
 
         filename, selected_filter = dlg.getSaveFileName(
-            parent=self,
-            caption=trans._('Save {msg} layers', msg=msg),
-            directory=hist[0],  # home dir by default,
+            self,  # parent
+            trans._('Save {msg} layers', msg=msg),  # caption
+            # home dir by default
+            hist[0],  # directory in PyQt, dir in PySide
             filter=ext_str,
             options=(
                 QFileDialog.DontUseNativeDialog
