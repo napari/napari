@@ -783,9 +783,6 @@ def pytest_runtest_setup(item):
                 "dangling_qanimations",
                 "dangling_qthreads",
                 "dangling_qtimers",
+                "mock_console", 
             ]
-        )
-
-        # autouse mock_console if qapp is used
-        item.fixturenames.append("mock_console")
-        print(item, item.fixturenames)
+        )        
