@@ -783,6 +783,6 @@ def pytest_runtest_setup(item):
                 "dangling_qanimations",
                 "dangling_qthreads",
                 "dangling_qtimers",
-                "mock_console", 
+                "mock_console",
             ]
-        )        
+        )
