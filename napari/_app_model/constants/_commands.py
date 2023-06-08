@@ -30,9 +30,9 @@ class CommandId(str, Enum):
     DLG_SAVE_VIEWER_SCREENSHOT = 'napari:window:file:save_viewer_screenshot_dialog'
     COPY_CANVAS_SCREENSHOT = 'napari:window:file:copy_canvas_screenshot'
     COPY_VIEWER_SCREENSHOT = 'napari:window:file:copy_viewer_screenshot'
-    DLG_CLOSE = 'napari:window:close_dialog'
-    DLG_QUIT = 'napari:window:quit_dialog'
-    RESTART = 'napari:window:restart'
+    DLG_CLOSE = 'napari:window:file:close_dialog'
+    DLG_QUIT = 'napari:window:file:quit_dialog'
+    RESTART = 'napari:window:file:restart'
 
     # View menubar
     TOGGLE_FULLSCREEN = 'napari:window:view:toggle_fullscreen'
