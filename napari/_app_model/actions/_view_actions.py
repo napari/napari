@@ -41,7 +41,6 @@ def _tooltip_visibility_toggle():
     settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
 
 
-# this can be generalised for all boolean settings, similar to `ViewerToggleAction`
 def _get_current_tooltip_visibility():
     return get_settings().appearance.layer_tooltip_visibility
 
