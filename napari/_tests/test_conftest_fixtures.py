@@ -1,6 +1,9 @@
 import pytest
 from qtpy.QtCore import QMutex, QThread, QTimer
 
+from napari._qt.qt_viewer import QtViewer
+from napari.viewer import ViewerModel
+
 
 class _TestThread(QThread):
     def __init__(self) -> None:
@@ -44,3 +47,8 @@ def test_disable_qtimer(qtbot):
     th.mutex.unlock()
     qtbot.waitUntil(th.isFinished, timeout=2000)
     assert not th.isRunning()
+
+
+def test_console_mock(qapp):
+    qt_viewer = QtViewer(ViewerModel())
+    assert qt_viewer.console.__class__.__name__ == "FakeQtConsole"

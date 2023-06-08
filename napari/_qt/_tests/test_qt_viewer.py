@@ -46,7 +46,7 @@ def test_qt_viewer(make_napari_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_qt_viewer_with_console(make_napari_viewer, mock_console):
+def test_qt_viewer_with_console(make_napari_viewer):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
     view = viewer.window._qt_viewer
@@ -55,7 +55,7 @@ def test_qt_viewer_with_console(make_napari_viewer, mock_console):
     assert view.dockConsole.widget() is view.console
 
 
-def test_qt_viewer_toggle_console(make_napari_viewer, mock_console):
+def test_qt_viewer_toggle_console(make_napari_viewer):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
     view = viewer.window._qt_viewer
@@ -67,7 +67,7 @@ def test_qt_viewer_toggle_console(make_napari_viewer, mock_console):
 
 @skip_local_popups
 @pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
-def test_qt_viewer_console_focus(qtbot, make_napari_viewer, mock_console):
+def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
     """Test console has focus when instantiating from viewer."""
     viewer = make_napari_viewer(show=True)
     view = viewer.window._qt_viewer

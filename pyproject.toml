@@ -180,6 +180,7 @@ markers = [
     "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
+    "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
 ]
 
 [tool.mypy]

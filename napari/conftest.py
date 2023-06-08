@@ -452,11 +452,19 @@ def single_threaded_executor():
 
 
 @pytest.fixture()
-def mock_console():
+def mock_console(request):
     """Mock the qtconsole to avoid starting an interactive IPython session.
     In-process IPython kernels can interfere with other tests and are difficult
     (impossible?) to shutdown.
+
+    This fixture is configured to be applied automatically to tests unless they
+    use the `enable_console` marker. It's not autouse to avoid use on headless
+    tests (without Qt); instead it's enabled in `pytest_runtest_setup`.
     """
+    if "enable_console" in request.keywords:
+        yield
+        return
+
     from napari_console import QtConsole
     from qtconsole.rich_jupyter_widget import RichJupyterWidget
 
@@ -777,3 +785,7 @@ def pytest_runtest_setup(item):
                 "dangling_qtimers",
             ]
         )
+
+        # autouse mock_console if qapp is used
+        item.fixturenames.append("mock_console")
+        print(item, item.fixturenames)
