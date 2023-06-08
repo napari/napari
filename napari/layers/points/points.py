@@ -2042,14 +2042,14 @@ class _BasePoints(Layer):
 
 
 class Points(_BasePoints):
-    @rename_argument("edge_width", "border_width", "5.1.0")
+    @rename_argument("edge_width", "border_width", "6.0.0")
     @rename_argument(
-        "edge_width_is_relative", "border_width_is_relative", "5.1.0"
+        "edge_width_is_relative", "border_width_is_relative", "6.0.0"
     )
-    @rename_argument("edge_color", "border_color", "5.1.0")
-    @rename_argument("edge_color_cycle", "border_color_cycle", "5.1.0")
-    @rename_argument("edge_colormap", "border_colormap", "5.1.0")
-    @rename_argument("edge_contrast_limits", "border_contrast_limits", "5.1.0")
+    @rename_argument("edge_color", "border_color", "6.0.0")
+    @rename_argument("edge_color_cycle", "border_color_cycle", "6.0.0")
+    @rename_argument("edge_colormap", "border_colormap", "6.0.0")
+    @rename_argument("edge_contrast_limits", "border_contrast_limits", "6.0.0")
     def __init__(
         self,
         data=None,
