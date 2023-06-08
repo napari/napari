@@ -424,8 +424,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return True
         if not isinstance(other, EventedModel):
             return self.dict() == other
-
-        if set(self.__fields__) != set(other.__fields__):
+        if self.__class__ != other.__class__:
             return False
         for f_name in self.__fields__:
             eq = self.__eq_operators__[f_name]
