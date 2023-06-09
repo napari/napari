@@ -62,6 +62,15 @@ jobs:
           - python: 3.8
             platform: ubuntu-20.04
             toxenv: headless-py38-linux
+          - python: 3.11
+            platform: ubuntu-latest
+            backend: pyqt6
+          - python: 3.11
+            platform: ubuntu-latest
+            backend: pyside6
+        exclude:
+          - python: "3.11"
+            backend: pyside2
 
 
     steps:
