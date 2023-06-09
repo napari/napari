@@ -364,3 +364,11 @@ class EventedList(TypedMutableSequence[_T]):
         # it would just emit a "changed" event for each moved index in the list
         self._list.reverse()
         self.events.reordered(value=self)
+
+    def shift_left(self) -> None:
+        self._list.append(self._list.pop(0))
+        self.events.reordered(value=self)
+
+    def shift_right(self) -> None:
+        self._list.insert(0, self._list.pop())
+        self.events.reordered(value=self)

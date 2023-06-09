@@ -34,8 +34,9 @@ class VispyCamera:
         self._3D_camera = MouseToggledArcballCamera(fov=0)
         self._3D_camera.viewbox_key_event = viewbox_key_event
 
-        # Set 2D camera by default
-        self._view.camera = self._2D_camera
+        self._view.camera = (
+            self._2D_camera if self._dims.ndisplay == 2 else self._3D_camera
+        )
 
         self._dims.events.ndisplay.connect(
             self._on_ndisplay_change, position='first'

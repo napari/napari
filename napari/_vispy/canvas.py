@@ -158,6 +158,17 @@ class VispyCanvas:
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.destroyed.connect(self._disconnect_theme)
 
+        self.viewer._canvases.events.connect(self._multi_canvas_change)
+
+    def _multi_canvas_change(self, event):
+        print("YOOOO from vispy canvas")
+        self.camera = VispyCamera(
+            self.view, self.viewer.camera, self.viewer.dims
+        )
+        self.viewer.camera.events.interactive.connect(self._on_interactive)
+        self.viewer.camera.events.zoom.connect(self._on_cursor)
+        self._scene_canvas.events.draw.connect(self.camera.on_draw)
+
     @property
     def destroyed(self) -> pyqtBoundSignal:
         return self._scene_canvas._backend.destroyed

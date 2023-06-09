@@ -215,6 +215,7 @@ class QtViewer(QSplitter):
         main_widget.setLayout(main_layout)
 
         self.setOrientation(Qt.Orientation.Vertical)
+        self._main_widget = main_widget
         self.addWidget(main_widget)
 
         self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
@@ -227,6 +228,8 @@ class QtViewer(QSplitter):
         )
 
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
+
+        self.viewer._canvases.events.connect(self._multi_canvas_change)
 
         self.setAcceptDrops(True)
 
@@ -293,6 +296,15 @@ class QtViewer(QSplitter):
             stacklevel=2,
         )
         return self.canvas.camera
+
+    def _multi_canvas_change(self, event):
+        print("YOOOO from qt_viewer")
+        old_dims = self.dims
+        # TODO - update the QtDims instead of creating a new one?
+        self.dims = QtDims(self.viewer.dims)
+        self._main_widget.layout().replaceWidget(old_dims, self.dims)
+        old_dims.stop()
+        old_dims.deleteLater()
 
     @staticmethod
     def _update_dask_cache_settings(

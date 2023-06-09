@@ -58,7 +58,7 @@ class QtDims(QWidget):
         self._update_nsliders()
         self.dims.events.ndim.connect(self._update_nsliders)
         self.dims.events.current_step.connect(self._update_slider)
-        self.dims.events.range.connect(self._update_range)
+        self.dims.events.range.connect(self._update_nsliders)
         self.dims.events.ndisplay.connect(self._update_display)
         self.dims.events.order.connect(self._update_display)
         self.dims.events.last_used.connect(self._on_last_used_changed)

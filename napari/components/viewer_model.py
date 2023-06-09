@@ -71,6 +71,7 @@ from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
     EventedDict,
+    EventedList,
     EventedModel,
     disconnect_events,
 )
@@ -114,6 +115,13 @@ DEFAULT_OVERLAYS = {
     'axes': AxesOverlay,
     'brush_circle': BrushCircleOverlay,
 }
+
+
+class MultiCanvas(EventedModel):
+    parent: Optional[ViewerModel] = None
+    camera: Camera = Field(default_factory=Camera, allow_mutation=False)
+    dims: Dims = Field(default_factory=Dims, allow_mutation=False)
+    # layers: ProxyLayerList = Field(default_factory=ProxyLayerList)
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -171,9 +179,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # Using allow_mutation=False means these attributes aren't settable and don't
     # have an event emitter associated with them
-    camera: Camera = Field(default_factory=Camera, allow_mutation=False)
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
-    dims: Dims = Field(default_factory=Dims, allow_mutation=False)
     grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
     layers: LayerList = Field(
         default_factory=LayerList, allow_mutation=False
@@ -183,6 +189,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
+
+    # keep track of multiple canvases
+    # TODO: make a CanvasList
+    # TODO: make this protected from setting/deleting
+    _canvases: EventedList[MultiCanvas] = PrivateAttr(
+        default_factory=lambda: EventedList([MultiCanvas()]),
+    )
+
     # private track of overlays, only expose the old ones for backward compatibility
     _overlays: EventedDict[str, Overlay] = PrivateAttr(
         default_factory=EventedDict
@@ -269,6 +283,54 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.mouse_wheel_callbacks.append(dims_scroll)
 
         self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
+
+        for canvas in self._canvases:
+            canvas.parent = self
+            canvas.dims.axis_labels = axis_labels
+            canvas.dims.ndisplay = ndisplay
+            canvas.dims.order = order
+
+        self._canvases.events.connect(self._on_canvases_change)
+
+    # properties for backward compatibility
+    @property
+    def camera(self):
+        return self._canvases[0].camera
+
+    @camera.setter
+    def camera(self, cam):
+        self._canvases[0].camera = cam
+
+    @property
+    def dims(self):
+        return self._canvases[0].dims
+
+    @dims.setter
+    def dims(self, dims):
+        self._canvases[0].dims = dims
+
+    def add_canvas(self):
+        new_dims = self.dims.copy()
+        new_dims.events.ndisplay.connect(self._update_layers)
+        new_dims.events.ndisplay.connect(self.reset_view)
+        new_dims.events.order.connect(self._update_layers)
+        new_dims.events.order.connect(self.reset_view)
+        new_dims.events.current_step.connect(self._update_layers)
+        self._canvases.append(
+            MultiCanvas(
+                parent=self,
+                camera=self.camera.copy(),
+                dims=new_dims,
+            )
+        )
+
+    def _on_canvases_change(self, event):
+        print("YOOOO from viewer_model")  # , event.source, event.type)
+        with self.dims.events.ndisplay.blocker(self.reset_view):
+            self.dims.events.ndisplay(value=self.dims.ndisplay)
+        with self.dims.events.order.blocker(self.reset_view):
+            self.dims.events.order(value=self.dims.order)
+        self.dims.events.current_step(value=self.dims.current_step)
 
     # simple properties exposing overlays for backward compatibility
     @property
@@ -361,7 +423,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def reset_view(self):
         """Reset the camera view."""
-
+        print("resetting view")
         extent = self._sliced_extent_world_augmented
         scene_size = extent[1] - extent[0]
         corner = extent[0]
@@ -457,13 +519,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _on_layers_change(self):
         if len(self.layers) == 0:
-            self.dims.ndim = 2
-            self.dims.reset()
+            for canvas in self._canvases:
+                canvas.dims.ndim = 2
+                canvas.dims.reset()
         else:
             ranges = self.layers._ranges
             # TODO: can be optimized with dims.update(), but events need fixing
-            self.dims.ndim = len(ranges)
-            self.dims.range = ranges
+            for canvas in self._canvases:
+                canvas.dims.ndim = len(ranges)
+                canvas.dims.range = ranges
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -509,7 +573,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
-
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
@@ -597,7 +660,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(self.layers) == 1:
             # set dims slider to the middle of all dimensions
             self.reset_view()
-            self.dims._go_to_center_step()
+            for canvas in self._canvases:
+                canvas.dims._go_to_center_step()
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):
@@ -1427,6 +1491,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 )
             ) from exc
         return layer if isinstance(layer, list) else [layer]
+
+
+MultiCanvas.update_forward_refs()
 
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:

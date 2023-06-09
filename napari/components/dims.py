@@ -432,6 +432,7 @@ class Dims(EventedModel):
 
     def _go_to_center_step(self):
         self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
+        print("go to center step", self.current_step)
 
     def _sanitize_input(
         self, axis, value, value_is_sequence=False
