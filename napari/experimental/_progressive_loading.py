@@ -257,6 +257,7 @@ def render_sequence(
         visible_scales {visible_scales}"
     )
 
+    # TODO 3D needs to change the view interval (e.g. zoom more at each scale)
     for scale in reversed(range(len(data.arrays))):
         if visible_scales[scale]:
             vdata = data._data[scale]
@@ -304,6 +305,9 @@ def render_sequence(
                     real_array,
                 )
 
+                if len(chunk_slice) == 2:
+                    import pdb; pdb.set_trace()
+                
                 yield tuple(list(chunk_result) + [len(chunk_queue) == 0])
 
                 # TODO blank out lower resolution
@@ -342,7 +346,7 @@ def get_layer_name_for_scale(scale):
 
 
 @tz.curry
-def dims_update_handler(invar, data=None, viewer=None):
+def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
     """Start a new render sequence with the current viewer state.
 
     Parameters
@@ -372,6 +376,10 @@ def dims_update_handler(invar, data=None, viewer=None):
     top_left = np.max((corner_pixels,), axis=0)[0, :]
     bottom_right = np.min((corner_pixels,), axis=0)[1, :]
 
+    # TODO Added to skip situations when 3D isnt setup on layer yet??
+    if np.any((bottom_right - top_left) == 0):
+        return
+
     # TODO we could add padding around top_left and bottom_right to account
     #      for future camera movement
 
@@ -393,9 +401,11 @@ def dims_update_handler(invar, data=None, viewer=None):
     min_scale = 0
     max_scale = len(data.arrays) - 1
 
+    ndisplay = ndisplay if ndisplay else viewer.dims.ndisplay
+    
     # Get the scale visibility predicate for the correct ndisplay
     should_render_scale = should_render_scale_2D \
-        if viewer.dims.ndisplay == 2 else should_render_scale_3D
+        if ndisplay == 2 else should_render_scale_3D
 
     for scale in range(len(data.arrays)):
         layer_name = get_layer_name_for_scale(scale)
@@ -419,15 +429,16 @@ def dims_update_handler(invar, data=None, viewer=None):
     data.set_interval(top_left, bottom_right,
                       visible_scales=visible_scales)
 
+    
     # Start a new multiscale render
     worker = render_sequence(
         corners,
         data=data,
         visible_scales=visible_scales,
-        ndisplay=viewer.dims.ndisplay,
+        ndisplay=ndisplay,
     )
 
-    LOGGER.info("dims_update_handler: started render_sequence")
+    LOGGER.info(f"dims_update_handler: started render_sequence with corners {corners}")
 
     # This will consume our chunks and update the numpy "canvas" and refresh
     def on_yield(coord):
@@ -489,16 +500,22 @@ def dims_update_handler(invar, data=None, viewer=None):
 def add_progressive_loading_image(img,
                                   viewer=None,
                                   contrast_limits=[0, 255],
-                                  colormap='PiYG'):
+                                  colormap='PiYG',
+                                  ndisplay=2):
     """Add tiled multiscale image."""
     # initialize multiscale virtual data (generate scale factors, translations,
     # and chunk slices)
-    multiscale_data = MultiScaleVirtualData(img)
+    multiscale_data = MultiScaleVirtualData(img, ndisplay=ndisplay)
 
     if not viewer:
         from napari import Viewer
         viewer = Viewer()
 
+    # The scale bar will help this be more dramatic
+    viewer.scale_bar.visible = True
+    viewer.scale_bar.unit = "m"
+    
+    viewer.dims.ndim = ndisplay
     # Ensure async slicing is enabled
     viewer._layer_slicer._force_sync = False
         
@@ -514,6 +531,11 @@ def add_progressive_loading_image(img,
 
     top_left = canvas_corners[0, :]
     bottom_right = canvas_corners[1, :]
+
+    # TODO hack for 3D setup
+    # top_left = [viewer.dims.point[-3]] + top_left.tolist()
+    # bottom_right = [viewer.dims.point[-3]] + bottom_right.tolist()
+    
     LOGGER.debug(f'>>> top left: {top_left}, bottom_right: {bottom_right}')
     # set the extents for each scale in data coordinates
     # take the currently visible canvas extents and apply them to the
@@ -533,6 +555,8 @@ def add_progressive_loading_image(img,
     layers = {}
     # Start from back to start because we build a linked list
 
+    viewer.dims.ndim = ndisplay
+    
     for scale, vdata in list(enumerate(multiscale_data._data)):
         layer = viewer.add_image(
             vdata,
@@ -561,13 +585,18 @@ def add_progressive_loading_image(img,
         listener.connect(
             debounced(
                 ensure_main_thread(dims_update_handler(data=multiscale_data,
-                                                       viewer=viewer)),
+                                                       viewer=viewer,
+                                                       ndisplay=ndisplay,
+                                                       )),
                 timeout=2000,
             )
         )
 
     # Trigger first render
-    dims_update_handler(None, data=multiscale_data, viewer=viewer)
+    dims_update_handler(None,
+                        data=multiscale_data,
+                        viewer=viewer,
+                        ndisplay=ndisplay)
 
     return viewer
 
@@ -1201,7 +1230,9 @@ class VirtualData:
                 cumuchunks = np.array(cumuchunks)
 
             # First value greater or equal to
-            min_where = np.where(cumuchunks > self._min_coord[dim])
+            min_where = np.where(cumuchunks >= self._min_coord[dim])
+            if min_where[0].size == 0:
+                import pdb; pdb.set_trace()
             greaterthan_min_idx = (
                 min_where[0][0] if min_where[0] is not None else 0
             )
@@ -1212,6 +1243,8 @@ class VirtualData:
             )
 
             max_where = np.where(cumuchunks >= self._max_coord[dim])
+            if max_where[0].size == 0:
+                import pdb; pdb.set_trace()
             lessthan_max_idx = (
                 max_where[0][0] if max_where[0] is not None else 0
             )
@@ -1322,9 +1355,9 @@ class VirtualData:
                                    index.stop - self.translate[i])
             elif np.issubdtype(int, type(index)):
                 indices[i] = index - self.translate[i]
-            else:
-                LOGGER.info(f"_hyperslice_key: unexpected type {type(index)}\
-                with value {index}")
+            # else:
+            #     LOGGER.info(f"_hyperslice_key: unexpected type {type(index)}\
+            #     with value {index}")
 
         if type(key) is tuple and type(key[0]) == slice:
             if key[0].start is None:
@@ -1538,6 +1571,10 @@ class MultiScaleVirtualData:
         visible_scales: list
             Optional. ???
         """
+        # Bound min_coord and max_coord
+        max_coord = np.min((max_coord, self._data[0].shape), axis=0)
+        min_coord = np.max((min_coord, np.zeros_like(min_coord)), axis=0)
+
         # for each scale, set the interval for the VirtualData
         # e.g. a high resolution scale may cover [0,1,2,3,4] but a scale
         # with half of that resolution will cover the same region with

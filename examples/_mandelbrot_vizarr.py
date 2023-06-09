@@ -8,6 +8,9 @@ from napari.experimental._progressive_loading import \
     add_progressive_loading_image
 from napari.experimental._progressive_loading_datasets import \
     mandelbrot_dataset
+from napari.experimental._progressive_loading_3d_gen import \
+    mandelbulb_dataset
+
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -26,15 +29,13 @@ LOGGER.addHandler(streamHandler)
 if __name__ == "__main__":
     import yappi
 
-    global viewer
-    viewer = Viewer()
-
     def start_yappi():
         """Start yappi."""
         yappi.set_clock_type("cpu")  # Use set_clock_type("wall") for wall time
         yappi.start()
 
     # This dataset is 2D and visualized in 2D
+    ndisplay = 2
     large_image = mandelbrot_dataset(max_levels=21)
 
     # This dataset is 3D and visualized in 2D
@@ -42,7 +43,12 @@ if __name__ == "__main__":
     # large_image = openorganelle_mouse_kidney_em()
 
     # This dataset is 3D and visualized in 3D
+    # ndisplay = 3
+    # large_image = mandelbulb_dataset(max_levels=3)
 
+    global viewer
+    viewer = Viewer(ndisplay=ndisplay)
+    
     multiscale_img = large_image["arrays"]
     viewer._layer_slicer._force_sync = False
 
@@ -55,6 +61,7 @@ if __name__ == "__main__":
             viewer=viewer,
             contrast_limits=[0, 255],
             colormap='PiYG',
+            ndisplay=ndisplay,
         )
     else:
         layer = viewer.add_image(multiscale_img)
