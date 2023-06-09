@@ -340,9 +340,10 @@ The console (when available) appears at the bottom of the viewer as shown below:
 
 +++
 
-#### 2D/3D button  
+#### Toggle ndisplay (2D/3D) button  
 
-The second button from the left is the 2D/3D button which toggles between `2D` and `3D` renderings of the data. Run the following code:
+The second button from the left is the 2D/3D button which toggles between `2D` and `3D` renderings of the data. 
+For example, run the following code:
 
 
 ```{code-cell} python
@@ -359,11 +360,19 @@ labeled = ndi.label(blobs)[0]
 viewer.add_labels(labeled, name='blob ID')
 ```
 
-then, by clicking the 2D/3D button, you can rotate the image (the camera view of the image) with the mouse to see what it looks like from the side, back, or a different angle. To do this, click on the image and drag the cursor to a new position. This gives something like the following view: 
+then, by clicking the 2D/3D button, you can switch to viewing the 3D rendering. Note that the icon will change to
+the following, to indicate 3D mode: 
 
 ![image: 3D_button](../assets/tutorials/3D_button.png)
 
-and rotating the camera view with the mouse gives something like the following view:
+This mode can be entered programmatically using:
+```python
+viewer.dims.ndisplay = 3
+```
+
+In this mode, when you can drag with the mouse you will rotate the 3D rendering (change the camera view of the
+image) and see what it looks like from the side, back, or a different angle. To do this, click on the image and
+drag the cursor to a new position, which will give something like the following view:
 
 ```{code-cell} python
 :tags: [hide-input]  
@@ -374,7 +383,15 @@ viewer.camera.zoom = 2
 viewer.camera.angles = (3, 38, 53)
 nbscreenshot(viewer, alt_text="A rotated 3D view")
 ```
-<!-- This is commented out. ![image: Rotated image](../assets/tutorials/rotated-image.png) -->  
+
+Note that if you want to drag the canvas/rendering itself, instead of rotating the view, you have to hold down the 
+Shift key while dragging with the mouse. Finally, while in 3D mode you can change the perspective of the 
+3D view by holding Shift, pressing the right mouse button (on macOS holding Control) and
+dragging the mouse or by right-clicking (on macOS holding Control and clicking) on the 2D/3D mode
+button, which will bring up the perspective slider. The camera perspective can also be altered programmatically:
+```python
+viewer.camera.perspective = 45
+```
 
 #### Roll dimensions  
 
