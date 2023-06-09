@@ -7,7 +7,7 @@ import pandas as pd
 
 from napari.layers.base import Layer
 from napari.layers.utils._color_manager_constants import ColorMode
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.layer_utils import _FeatureTable
@@ -611,10 +611,14 @@ class Vectors(Layer):
         self._update_slice_response(response)
 
     def _make_slice_request(self, dims) -> _VectorSliceRequest:
-        """Make a Vectors slice request based on the given dims and these data."""
         slice_input = self._make_slice_input(
-            dims.point, dims.ndisplay, dims.order
+            dims.point,
+            dims.left_margin,
+            dims.right_margin,
+            dims.ndisplay,
+            dims.order,
         )
+        """Make a Vectors slice request based on the given dims and these data."""
         # TODO: [see Image]
         #   For the existing sync slicing, slice_indices is passed through
         # to avoid some performance issues related to the evaluation of the
@@ -623,17 +627,17 @@ class Vectors(Layer):
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
         slice_indices = slice_input.data_indices(
-            self._data_to_world.inverse, round_index=False
+            self._data_to_world.inverse, round_index=True
         )
         return self._make_slice_request_internal(slice_input, slice_indices)
 
     def _make_slice_request_internal(
-        self, slice_input: _SliceInput, dims_indices
+        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
     ):
         return _VectorSliceRequest(
             dims=slice_input,
             data=self.data,
-            dims_indices=dims_indices,
+            data_slice=data_slice,
             out_of_slice_display=self.out_of_slice_display,
             length=self.length,
         )

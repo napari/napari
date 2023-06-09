@@ -3,7 +3,7 @@ from typing import Any, Union
 
 import numpy as np
 
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
 
 @dataclass(frozen=True)
@@ -43,7 +43,7 @@ class _VectorSliceRequest:
         Describes the slicing plane or bounding box in the layer's dimensions.
     data : Any
         The layer's data field, which is the main input to slicing.
-    dims_indices : tuple of ints or slices
+    data_slice : tuple of ints or slices
         The slice indices in the layer's data space.
     others
         See the corresponding attributes in `Layer` and `Vectors`.
@@ -51,7 +51,7 @@ class _VectorSliceRequest:
 
     dims: _SliceInput
     data: Any = field(repr=False)
-    dims_indices: Any = field(repr=False)
+    data_slice: _ThickNDSlice = field(repr=False)
     length: float = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
 
@@ -74,21 +74,7 @@ class _VectorSliceRequest:
                 dims=self.dims,
             )
 
-        # We want a numpy array so we can use fancy indexing with the non-displayed
-        # indices, but as self.dims_indices can (and often/always does) contain slice
-        # objects, the array has dtype=object which is then very slow for the
-        # arithmetic below. As Vectors._round_index is always False, we can safely
-        # convert to float to get a major performance improvement.
-        not_disp_indices = np.array(self.dims_indices)[not_disp].astype(float)
-
-        if self.out_of_slice_display and self.dims.ndim > 2:
-            slice_indices, alphas = self._get_out_of_display_slice_data(
-                not_disp, not_disp_indices
-            )
-        else:
-            slice_indices, alphas = self._get_slice_data(
-                not_disp, not_disp_indices
-            )
+        slice_indices, alphas = self._get_slice_data(not_disp)
 
         return _VectorSliceResponse(
             indices=slice_indices, alphas=alphas, dims=self.dims
@@ -110,10 +96,42 @@ class _VectorSliceRequest:
         slice_indices = np.where(matches)[0].astype(int)
         return slice_indices, alpha
 
-    def _get_slice_data(self, not_disp, not_disp_indices):
-        """This method slices in the simpler case."""
+    def _get_slice_data(self, not_disp):
         data = self.data[:, 0, not_disp]
-        distances = np.abs(data - not_disp_indices)
-        matches = np.all(distances <= 0.5, axis=1)
-        slice_indices = np.where(matches)[0].astype(int)
-        return slice_indices, 1
+        alphas = 1
+
+        point = np.array(self.data_slice.point)[not_disp]
+        low = np.array(self.data_slice.margin_left)[not_disp]
+        high = np.array(self.data_slice.margin_right)[not_disp]
+
+        if np.isclose(high, low):
+            # assume slice thickness of 1 in data pixels
+            # (same as before thick slices were implemented)
+            low = point - 0.5
+            high = point + 0.5
+
+        inside_slice = np.all((data >= low) & (data <= high), axis=1)
+        slice_indices = np.where(inside_slice)[0].astype(int)
+
+        if self.out_of_slice_display and self.dims.ndim > 2:
+            projected_lengths = abs(self.data[:, 1, not_disp] * self.length)
+
+            # add out of slice points with progressively lower sizes
+            dist_from_low = np.abs(data - low)
+            dist_from_high = np.abs(data - high)
+            distances = np.minimum(dist_from_low, dist_from_high)
+            # anything inside the slice is at distance 0
+            distances[inside_slice] = 0
+
+            # display vectors that "spill" into the slice
+            matches = np.all(distances <= projected_lengths, axis=1)
+            length_match = projected_lengths[matches]
+            length_match[length_match == 0] = 1
+            # rescale alphas of spilling vectors based on how much they do
+            alphas_per_dim = (length_match - distances[matches]) / length_match
+            alphas_per_dim[length_match == 0] = 1
+            alphas = np.prod(alphas_per_dim, axis=1)
+
+            slice_indices = np.where(matches)[0].astype(int)
+
+        return slice_indices, alphas
