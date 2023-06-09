@@ -59,7 +59,9 @@ class _VectorSliceRequest:
         # Return early if no data
         if len(self.data) == 0:
             return _VectorSliceResponse(
-                indices=[], alphas=np.empty(0), dims=self.dims
+                indices=np.empty(0, dtype=int),
+                alphas=np.empty(0),
+                dims=self.dims,
             )
 
         not_disp = list(self.dims.not_displayed)
