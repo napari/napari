@@ -183,10 +183,11 @@ class QtViewerButtons(QFrame):
         # make slider connected to perspective parameter
         sld = QSlider(Qt.Orientation.Horizontal, self)
         sld.setRange(0, max(90, int(self.viewer.camera.perspective)))
-        sld.setValue(self.viewer.camera.perspective)
+        sld.setValue(int(self.viewer.camera.perspective))
         sld.valueChanged.connect(
             lambda v: setattr(self.viewer.camera, 'perspective', v)
         )
+        self.perspective_slider = sld
 
         # make layout
         layout = QHBoxLayout()
