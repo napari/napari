@@ -303,3 +303,13 @@ def test_play_button(qtbot):
     with patch.object(button.popup, 'show_above_mouse') as mock_popup:
         qtbot.mouseClick(button, Qt.RightButton)
         mock_popup.assert_called_once()
+
+    # Check popup updates widget properties (fps, play mode and loop mode)
+    button.fpsspin.clear()
+    qtbot.keyClicks(button.fpsspin, "11")
+    qtbot.keyClick(button.fpsspin, Qt.Key_Enter)
+    assert slider.fps == button.fpsspin.value() == 11
+    button.reverse_check.setChecked(True)
+    assert slider.fps == -button.fpsspin.value() == -11
+    button.mode_combo.setCurrentText('once')
+    assert slider.loop_mode == button.mode_combo.currentText() == 'once'
