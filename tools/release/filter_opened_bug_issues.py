@@ -22,6 +22,12 @@ parser.add_argument(
     default=None,
     type=str,
 )
+parser.add_argument(
+    "--skip-triaged",
+    action="store_true",
+    default=False,
+    help="if present then skip triaged PRs",
+)
 
 args = parser.parse_args()
 
@@ -39,6 +45,11 @@ previous_tag_date = datetime.strptime(
 
 probably_solved = repository.get_label("probably solved")
 need_to_reproduce = repository.get_label("need to reproduce")
+
+if args.skip_triaged:
+    triage_label = repository.get_label("triaged-0.4.18")
+else:
+    triage_label = None
 
 issue_list = []
 
@@ -61,15 +72,19 @@ for issue in tqdm(
         continue
     if issue.milestone != milestone:
         continue
+    if args.skip_triaged and triage_label in issue.labels:
+        continue
 
     issue_list.append(issue)
 
-print(f"Found {len(issue_list)} issues")
-
 if milestone:
-    print(f"## Opened Issues with bug label and milestone {milestone.title}:")
+    print(
+        f"## {len(issue_list)} Opened Issues with bug label and milestone {milestone.title}:"
+    )
 else:
-    print("## Opened Issues with bug label and no milestone:")
+    print(
+        f"## {len(issue_list)} Opened Issues with bug label and no milestone:"
+    )
 
 for issue in issue_list:
     print(f" * [ ] #{issue.number}")

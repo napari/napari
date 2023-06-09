@@ -29,6 +29,12 @@ parser.add_argument(
     default=None,
     type=str,
 )
+parser.add_argument(
+    "--skip-triaged",
+    action="store_true",
+    default=False,
+    help="if present then skip triaged PRs",
+)
 args = parser.parse_args()
 
 
@@ -39,6 +45,11 @@ repository = get_repo()
 milestone = get_milestone(args.milestone)
 
 label = repository.get_label(args.label) if args.label else None
+
+if args.skip_triaged:
+    triage_label = repository.get_label("triaged-0.4.18")
+else:
+    triage_label = None
 
 common_ancestor = get_common_ancestor(args.from_commit, args.to_commit)
 remote_commit = repository.get_commit(common_ancestor.hexsha)
@@ -67,6 +78,8 @@ for pull_issue in tqdm(
         continue
     if label is not None and label not in pull.labels:
         continue
+    if args.skip_triaged and triage_label in pull.labels:
+        continue
     pr_to_list.append(pull)
 
 if not pr_to_list:
@@ -75,9 +88,9 @@ if not pr_to_list:
 
 
 if milestone:
-    text = f'## PRs with milestone {milestone.title}'
+    text = f'## {len(pr_to_list)} PRs with milestone {milestone.title}'
 else:
-    text = '## PRs without milestone'
+    text = f'## {len(pr_to_list)} PRs without milestone'
 
 if label:
     text += f' and label {label.name}'
@@ -85,5 +98,5 @@ if label:
 text += ":"
 print(text)
 
-for pull in pr_to_list:
-    print(f'* [ ] #{pull.number}')
+for pull in sorted(pr_to_list, key=lambda x: x.closed_at):
+    print(f' * [ ] #{pull.number}')

@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+tools/release/issue.md
+
 # C extensions
 *.so
 
