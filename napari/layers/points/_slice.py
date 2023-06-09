@@ -8,7 +8,7 @@ from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
 @dataclass(frozen=True)
 class _PointSliceResponse:
-    """Contains all the output data of slicing an image layer.
+    """Contains all the output data of slicing an points layer.
 
     Attributes
     ----------
@@ -48,7 +48,7 @@ class _PointSliceRequest:
     size : array like
         Size of each point. This is used in calculating visibility.
     others
-        See the corresponding attributes in `Layer` and `Image`.
+        See the corresponding attributes in `Layer` and `Points`.
     """
 
     dims: _SliceInput
