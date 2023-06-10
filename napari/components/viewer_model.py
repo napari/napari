@@ -447,6 +447,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     @staticmethod
     def rounded_division(min_val, max_val, precision):
+        warnings.warn(
+            trans._(
+                'Viewer.rounded_division is deprecated since v0.4.18 and will soon be removed.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return int(((min_val + max_val) / 2) / precision) * precision
 
     def _on_layers_change(self):
@@ -593,13 +600,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
+            # set dims slider to the middle of all dimensions
             self.reset_view()
-            ranges = self.layers._ranges
-            midpoint = [
-                self.rounded_division(low, high, step)
-                for low, high, step in ranges
-            ]
-            self.dims.current_step = midpoint
+            self.dims._go_to_center_step()
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):
