@@ -148,7 +148,9 @@ def get_app(
             QApplication.setAttribute(
                 Qt.ApplicationAttribute.AA_EnableHighDpiScaling
             )
-            QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
+            QApplication.setAttribute(
+                Qt.ApplicationAttribute.AA_UseHighDpiPixmaps
+            )
 
         argv = sys.argv.copy()
         if sys.platform == "darwin" and not argv[0].endswith("napari"):
