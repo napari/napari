@@ -1271,10 +1271,12 @@ class Window:
         with contextlib.suppress(AttributeError, RuntimeError):
             value = event.value if event else settings.appearance.theme
             self._qt_viewer.viewer.theme = value
+            actual_theme_name = value
             if value == "system":
-                # system isn't a theme, so get the name and set style sheet
-                value = get_system_theme()
-            self._qt_window.setStyleSheet(get_stylesheet(value))
+                # system isn't a theme, so get the name
+                actual_theme_name = get_system_theme()
+            # set the style sheet with the theme name
+            self._qt_window.setStyleSheet(get_stylesheet(actual_theme_name))
 
     def _status_changed(self, event):
         """Update status bar.
