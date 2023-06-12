@@ -349,6 +349,7 @@ module = [
     'napari.layers.utils.string_encoding',
     'napari.layers.utils.style_encoding',
     'napari.layers.utils.text_manager',
+    'napari.plugins._npe2',
     'napari.resources._icons',
     'napari.settings._yaml.py',
     'napari.utils._magicgui',
