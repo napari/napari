@@ -33,6 +33,10 @@ def test_windows_grouping_overwrite(qapp):
 
 def test_run_outside_ipython(qapp, monkeypatch):
     """Test that we don't incorrectly give ipython the event loop."""
+    from IPython.core.interactiveshell import InteractiveShell
+
+    InteractiveShell._instance = None
+
     assert not _ipython_has_eventloop()
     v1 = Viewer(show=False)
     assert not _ipython_has_eventloop()

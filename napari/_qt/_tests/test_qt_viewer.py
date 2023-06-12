@@ -46,7 +46,7 @@ def test_qt_viewer(make_napari_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_qt_viewer_with_console(make_napari_viewer):
+def test_qt_viewer_with_console(make_napari_viewer, dangerous_destroy_ipython):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
     view = viewer.window._qt_viewer

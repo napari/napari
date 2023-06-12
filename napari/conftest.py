@@ -737,6 +737,25 @@ def dangling_qanimations(monkeypatch, request):
     )
 
 
+@pytest.fixture
+def dangerous_destroy_ipython():
+    """
+    Use this fixture for your test if you want for the test to exit as if IPython was not loaded.
+    """
+    loaded_mods = [k for k in sys.modules if k.startswith('IPython')]
+
+    yield
+    from IPython.core.interactiveshell import InteractiveShell
+
+    InteractiveShell._instance = None
+
+    mods = list(sys.modules.keys())
+
+    for mod_name in mods:
+        if mod_name.startswith('IPython') and mod_name not in loaded_mods:
+            del sys.modules[mod_name]
+
+
 def pytest_runtest_setup(item):
     if "qapp" in item.fixturenames:
         # here we do autouse for dangling fixtures only if qapp is used
