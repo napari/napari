@@ -76,7 +76,7 @@ jobs:
           done
 
           python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9_examples.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
-          python3.11 -m piptools compile --upgrade -o resources/requirements_mypy.txt resources/requirements_mypy.ini --resolver=backtracking
+          python3.11 -m piptools compile --upgrade -o resources/requirements_mypy.txt resources/requirements_mypy.in --resolver=backtracking
 
       # END PYTHON DEPENDENCIES
 
