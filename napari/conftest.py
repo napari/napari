@@ -757,6 +757,8 @@ def dangerous_destroy_ipython():
 
 
 def pytest_runtest_setup(item):
+    if 'dangerous_destroy_ipython' not in item.fixturenames:
+        item.fixturenames.append('dangerous_destroy_ipython')
     if "qapp" in item.fixturenames:
         # here we do autouse for dangling fixtures only if qapp is used
         if "qtbot" not in item.fixturenames:
