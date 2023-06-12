@@ -224,9 +224,10 @@ check_untyped_defs = true
 # individual ignore error
 # we should strive to remove those
 # See https://github.com/napari/napari/issues/2751
+# you can regenerate this list with the following command \047 is single quote. 
+# mypy napari | cut -f1 -d: | sort | uniq  | tr '/' '.'  | sed 's/\.py//' | awk '{ print "    \047" $0 "\047," }'
 [[tool.mypy.overrides]]
 module = [
-    'napari._app_model.actions._layer_actions',
     'napari._app_model.context._layerlist_context',
     'napari._app_model.injection._processors',
     'napari._event_loop',
@@ -271,7 +272,6 @@ module = [
     'napari._qt.qt_event_filters',
     'napari._qt.qt_event_loop',
     'napari._qt.qt_main_window',
-    'napari._qt.qt_resources',
     'napari._qt.qt_resources._svg',
     'napari._qt.qt_viewer',
     'napari._qt.qthreading',
@@ -343,7 +343,6 @@ module = [
     'napari.layers.utils.string_encoding',
     'napari.layers.utils.style_encoding',
     'napari.layers.utils.text_manager',
-    'napari.plugins._npe2',
     'napari.resources._icons',
     'napari.utils._magicgui',
     'napari.utils._octree',
