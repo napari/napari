@@ -29,7 +29,7 @@ def test_default_themes():
 
 def test_get_theme():
     # get theme in the old-style dict format
-    theme = get_theme("dark").to_dict()
+    theme = get_theme("dark").to_rgb_dict()
     assert isinstance(theme, dict)
 
     # get theme in the new model-based format
@@ -50,7 +50,7 @@ def test_register_theme():
     assert 'test_blue' not in themes
 
     # Create new blue theme based on dark theme
-    blue_theme = get_theme('dark').to_dict()
+    blue_theme = get_theme('dark').to_rgb_dict()
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
@@ -66,11 +66,11 @@ def test_register_theme():
     assert 'test_blue' in themes
 
     # Check that the dark theme has not been overwritten
-    dark_theme = get_theme('dark').to_dict()
+    dark_theme = get_theme('dark').to_rgb_dict()
     assert dark_theme['background'] != blue_theme['background']
 
     # Check that blue theme can be gotten from available themes
-    theme = get_theme('test_blue').to_dict()
+    theme = get_theme('test_blue').to_rgb_dict()
     assert theme['background'] == blue_theme['background']
 
     theme = get_theme("test_blue")
@@ -79,7 +79,7 @@ def test_register_theme():
 
 def test_unregister_theme():
     # Create new blue theme based on dark theme
-    blue_theme = get_theme('dark').to_dict()
+    blue_theme = get_theme('dark').to_rgb_dict()
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
@@ -106,7 +106,7 @@ def test_rebuild_theme_settings():
     # theme is not updated
     with pytest.raises(ValidationError):
         settings.appearance.theme = "another-theme"
-    blue_theme = get_theme("dark").to_dict()
+    blue_theme = get_theme("dark").to_rgb_dict()
     register_theme("another-theme", blue_theme, "test")
     settings.appearance.theme = "another-theme"
 
@@ -149,7 +149,7 @@ def test_is_theme_available(tmp_path, monkeypatch):
     n_themes = len(available_themes())
 
     def mock_install_theme(_themes):
-        theme_dict = _themes["dark"].to_dict()
+        theme_dict = _themes["dark"].to_rgb_dict()
         theme_dict["id"] = "test_blue"
         register_theme("test_blue", theme_dict, "test")
 

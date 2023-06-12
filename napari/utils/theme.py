@@ -94,7 +94,7 @@ class Theme(EventedModel):
         )
         return value
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_rgb_dict(self) -> Dict[str, Any]:
         """
         This differs from baseclass `dict()` by converting colors to rgb.
         """
@@ -224,7 +224,7 @@ def get_theme(theme_id, as_dict=None):
     as_dict : bool
         .. deprecated:: 0.5.0
 
-            Use ``get_theme(...).to_dict()``
+            Use ``get_theme(...).to_rgb_dict()``
 
         Flag to indicate that the old-style dictionary
         should be returned. This will emit deprecation warning.
@@ -253,14 +253,14 @@ def get_theme(theme_id, as_dict=None):
         warnings.warn(
             trans._(
                 "The `as_dict` kwarg has been deprecated since Napari 0.5.0 and "
-                "will be removed in future version. You can use `get_theme(...).to_dict()`",
+                "will be removed in future version. You can use `get_theme(...).to_rgb_dict()`",
                 deferred=True,
             ),
             category=FutureWarning,
             stacklevel=2,
         )
     if as_dict:
-        return theme.to_dict()
+        return theme.to_rgb_dict()
     return theme
 
 
