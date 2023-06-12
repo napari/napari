@@ -178,7 +178,11 @@ def test_create_layer_controls(
             qcombobox.setCurrentIndex(qcombobox_initial_idx)
 
 
-if sys.version_info[:2] == (3, 11) and qtpy.API == 'pyqt5' or qtpy.API == 'pyqt6':
+if (
+    sys.version_info[:2] == (3, 11)
+    and qtpy.API == 'pyqt5'
+    or qtpy.API == 'pyqt6'
+):
     test_data = []
 else:
     # those 2 fail on 3.11 + pyqt5 and pyqt6 with a segfault that can't be caught by
