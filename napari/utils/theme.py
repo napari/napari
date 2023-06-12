@@ -96,7 +96,7 @@ class Theme(EventedModel):
 
     @validator("font_size", pre=True)
     def _ensure_font_size(value: str) -> str:
-        assert "pt" in value, trans._(
+        assert value.endswith('pt'), trans._(
             "Font size must be in points (pt).", deferred=True
         )
         assert int(value[:-2]) > 0, trans._(
