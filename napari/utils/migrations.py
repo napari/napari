@@ -5,7 +5,7 @@ from napari.utils.translations import trans
 
 
 def rename_argument(
-    from_name: str, to_name: str, version: str, since_version: str = None
+    from_name: str, to_name: str, version: str, since_version: str = ""
 ):
     """
     This is decorator for simple rename function argument
@@ -23,7 +23,7 @@ def rename_argument(
         version when new argument was added
     """
 
-    if since_version is None:
+    if not since_version:
         since_version = "unknown"
         warnings.warn(
             "The since_version argument was added in napari 0.4.18 and will be mandatory since 0.6.0 release.",
