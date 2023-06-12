@@ -25,7 +25,11 @@ def rename_argument(
 
     if since_version is None:
         since_version = "unknown"
-        warnings.warn("The since_version argument was added in napari 0.4.18 and will be mandatory since 0.6.0 release.", stacklevel=2, category=FutureWarning)
+        warnings.warn(
+            "The since_version argument was added in napari 0.4.18 and will be mandatory since 0.6.0 release.",
+            stacklevel=2,
+            category=FutureWarning,
+        )
 
     def _wrapper(func):
         @wraps(func)
