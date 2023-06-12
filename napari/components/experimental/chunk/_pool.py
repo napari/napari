@@ -54,7 +54,9 @@ class LoaderPool:
         Requests sit in here for a bit before submission.
     """
 
-    def __init__(self, config: dict, on_done_loader: DoneCallback = None):
+    def __init__(
+        self, config: dict, on_done_loader: DoneCallback = None
+    ) -> None:
         from napari.components.experimental.chunk._delay_queue import (
             DelayQueue,
         )

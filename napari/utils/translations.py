@@ -217,7 +217,7 @@ class TranslationString(str):
         n: Optional[str] = None,
         deferred: bool = False,
         **kwargs,
-    ):
+    ) -> None:
         if msgid is None:
             raise ValueError(
                 trans._("Must provide at least a `msgid` parameter!")
@@ -320,7 +320,7 @@ class TranslationBundle:
         The locale for this bundle. Examples include "en_US", "en_CO".
     """
 
-    def __init__(self, domain: str, locale: str):
+    def __init__(self, domain: str, locale: str) -> None:
         self._domain = domain
         self._locale = locale
 
@@ -678,7 +678,7 @@ def _load_language(
         with open(default_config_path) as fh:
             try:
                 data = safe_load(fh) or {}
-            except Exception as err:
+            except Exception as err:  # noqa BLE001
                 import warnings
 
                 warnings.warn(
@@ -686,7 +686,7 @@ def _load_language(
                     "configuration file could not be read.\n\n"
                     "The default language will be used.\n\n"
                     f"Error:\n{err}"
-                ),
+                )
                 data = {}
 
         locale = data.get("application", {}).get("language", locale)

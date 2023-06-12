@@ -9,9 +9,13 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  COLUMNS: 120
+
 jobs:
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
+    timeout-minutes: 40
     runs-on: ${{ matrix.platform }}
     if: github.repository == 'napari/napari'
     strategy:

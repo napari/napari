@@ -42,7 +42,7 @@ class QtGuiEvent(QObject):
 
     signal = Signal(Event)
 
-    def __init__(self, parent: QObject, emitter: EventEmitter):
+    def __init__(self, parent: QObject, emitter: EventEmitter) -> None:
         super().__init__(parent)
 
         emitter.connect(self._on_event)
@@ -103,7 +103,7 @@ class QtChunkReceiver:
     100% in the GUI thread.
     """
 
-    def __init__(self, parent: QObject):
+    def __init__(self, parent: QObject) -> None:
         listen_event = chunk_loader.events.chunk_loaded
         self.gui_event = QtGuiEvent(parent, listen_event)
         self.gui_event.events.gui_event.connect(self._on_chunk_loaded_gui)

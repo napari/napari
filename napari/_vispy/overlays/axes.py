@@ -1,21 +1,22 @@
 import numpy as np
 
-from napari._vispy.overlays.base import VispySceneOverlay
+from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.axes import Axes
 from napari.utils.theme import get_theme
 
 
-class VispyAxesOverlay(VispySceneOverlay):
+class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     """Axes indicating world coordinate origin and orientation."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, viewer, overlay, parent=None) -> None:
         self._scale = 1
 
         # Target axes length in canvas pixels
         self._target_length = 80
 
-        super().__init__(node=Axes(), **kwargs)
-        self.overlay.events.visible.connect(self._on_visible_change)
+        super().__init__(
+            node=Axes(), viewer=viewer, overlay=overlay, parent=parent
+        )
         self.overlay.events.colored.connect(self._on_data_change)
         self.overlay.events.dashed.connect(self._on_data_change)
         self.overlay.events.labels.connect(self._on_labels_visible_change)
@@ -50,6 +51,8 @@ class VispyAxesOverlay(VispySceneOverlay):
             arrows=self.overlay.arrows,
         )
 
+        self._on_labels_text_change()
+
     def _on_labels_visible_change(self):
         self.node.text.visible = self.overlay.labels
 
@@ -74,5 +77,4 @@ class VispyAxesOverlay(VispySceneOverlay):
         super().reset()
         self._on_data_change()
         self._on_labels_visible_change()
-        self._on_labels_text_change()
         self._on_zoom_change()

@@ -9,6 +9,7 @@ from napari._tests.utils import DEFAULT_TIMEOUT_SECS
 from napari.utils.notifications import (
     Notification,
     notification_manager,
+    show_debug,
     show_error,
     show_info,
     show_warning,
@@ -90,6 +91,10 @@ def test_notification_manager_no_gui(monkeypatch):
         show_warning('This is a warning')
         assert len(notification_manager.records) == 6
         assert store[-1].type == 'warning'
+
+        show_debug('This is a debug')
+        assert len(notification_manager.records) == 7
+        assert store[-1].type == 'debug'
 
     # make sure we've restored the except hook
     assert sys.excepthook == previous_exhook

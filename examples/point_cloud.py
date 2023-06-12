@@ -8,6 +8,7 @@ Display 3D points with combinations of different renderings.
 """
 
 import numpy as np
+
 import napari
 
 n_points = 100

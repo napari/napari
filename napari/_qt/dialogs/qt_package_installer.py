@@ -26,12 +26,13 @@ from npe2 import PluginManager
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 from qtpy.QtWidgets import QTextEdit
 
-from napari._version import version as _napari_version
-from napari._version import version_tuple as _napari_version_tuple
+from napari._version import (
+    version as _napari_version,
+    version_tuple as _napari_version_tuple,
+)
 from napari.plugins import plugin_manager
-from napari.plugins.pypi import _user_agent
-from napari.utils._appdirs import user_plugin_dir, user_site_packages
-from napari.utils.misc import StringEnum, running_as_bundled_app
+from napari.plugins.npe2api import _user_agent
+from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
 
 JobId = int
@@ -43,6 +44,7 @@ class InstallerActions(StringEnum):
     INSTALL = auto()
     UNINSTALL = auto()
     CANCEL = auto()
+    UPGRADE = auto()
 
 
 class InstallerTools(StringEnum):
@@ -66,33 +68,33 @@ class AbstractInstallerTool:
     @classmethod
     def executable(cls):
         "Path to the executable that will run the task"
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # abstract method
     def arguments(self):
         "Arguments supplied to the executable"
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # abstract method
     def environment(
         self, env: QProcessEnvironment = None
     ) -> QProcessEnvironment:
         "Changes needed in the environment variables."
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @staticmethod
     def constraints() -> Sequence[str]:
         """
         Version constraints to limit unwanted changes in installation.
         """
-        return [f"napari=={_napari_version}"]
+        return [f"napari=={_napari_version}", "pydantic<2"]
 
     @classmethod
     def available(cls) -> bool:
         """
         Check if the tool is available by performing a little test
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class PipInstallerTool(AbstractInstallerTool):
@@ -107,7 +109,16 @@ class PipInstallerTool(AbstractInstallerTool):
     def arguments(self) -> Tuple[str, ...]:
         args = ['-m', 'pip']
         if self.action == InstallerActions.INSTALL:
-            args += ['install', '--upgrade', '-c', self._constraints_file()]
+            args += ['install', '-c', self._constraints_file()]
+            for origin in self.origins:
+                args += ['--extra-index-url', origin]
+        elif self.action == InstallerActions.UPGRADE:
+            args += [
+                'install',
+                '--upgrade',
+                '-c',
+                self._constraints_file(),
+            ]
             for origin in self.origins:
                 args += ['--extra-index-url', origin]
         elif self.action == InstallerActions.UNINSTALL:
@@ -118,14 +129,6 @@ class PipInstallerTool(AbstractInstallerTool):
             args.append('-vvv')
         if self.prefix is not None:
             args.extend(['--prefix', str(self.prefix)])
-        elif running_as_bundled_app(
-            check_conda=False
-        ) and sys.platform.startswith('linux'):
-            args += [
-                '--no-warn-script-location',
-                '--prefix',
-                user_plugin_dir(),
-            ]
         return (*args, *self.pkgs)
 
     def environment(
@@ -133,13 +136,6 @@ class PipInstallerTool(AbstractInstallerTool):
     ) -> QProcessEnvironment:
         if env is None:
             env = QProcessEnvironment.systemEnvironment()
-        combined_paths = os.pathsep.join(
-            [
-                user_site_packages(),
-                env.systemEnvironment().value("PYTHONPATH"),
-            ]
-        )
-        env.insert("PYTHONPATH", combined_paths)
         env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
         return env
 
@@ -169,15 +165,18 @@ class CondaInstallerTool(AbstractInstallerTool):
 
     @classmethod
     def available(cls):
+        executable = cls.executable()
         try:
-            executable = cls.executable()
+            return call([executable, "--version"]) == 0
         except FileNotFoundError:  # pragma: no cover
             return False
-        return call([executable, "--version"]) == 0
 
     def arguments(self) -> Tuple[str, ...]:
         prefix = self.prefix or self._default_prefix()
-        args = [self.action.value, '-y', '--prefix', prefix]
+        if self.action == InstallerActions.UPGRADE:
+            args = ['update', '-y', '--prefix', prefix]
+        else:
+            args = [self.action.value, '-y', '--prefix', prefix]
         args.append('--override-channels')
         for channel in (*self.origins, *self._default_channels()):
             args.extend(["-c", channel])
@@ -199,6 +198,10 @@ class CondaInstallerTool(AbstractInstallerTool):
             if not env.contains("USERPROFILE"):
                 env.insert("HOME", os.path.expanduser("~"))
                 env.insert("USERPROFILE", os.path.expanduser("~"))
+        if sys.platform == 'darwin' and env.contains('PYTHONEXECUTABLE'):
+            # Fix for macOS when napari launched from terminal
+            # related to https://github.com/napari/napari/pull/5531
+            env.remove("PYTHONEXECUTABLE")
         return env
 
     @staticmethod
@@ -214,7 +217,7 @@ class CondaInstallerTool(AbstractInstallerTool):
         pin_level = 2 if is_dev else 3
         version = ".".join([str(x) for x in _napari_version_tuple[:pin_level]])
 
-        return [f"napari={version}"]
+        return [f"napari={version}", "pydantic<2.0a0"]
 
     def _add_constraints_to_env(
         self, env: QProcessEnvironment
@@ -286,6 +289,44 @@ class InstallerQueue(QProcess):
         item = self._build_queue_item(
             tool=tool,
             action=InstallerActions.INSTALL,
+            pkgs=pkgs,
+            prefix=prefix,
+            origins=origins,
+            **kwargs,
+        )
+        return self._queue_item(item)
+
+    def upgrade(
+        self,
+        tool: InstallerTools,
+        pkgs: Sequence[str],
+        *,
+        prefix: Optional[str] = None,
+        origins: Sequence[str] = (),
+        **kwargs,
+    ) -> JobId:
+        """Upgrade packages in `pkgs` into `prefix` using `tool` with additional
+        `origins` as source for `pkgs`.
+
+        Parameters
+        ----------
+        tool : InstallerTools
+            Which type of installation tool to use.
+        pkgs : Sequence[str]
+            List of packages to install.
+        prefix : Optional[str], optional
+            Optional prefix to install packages into.
+        origins : Optional[Sequence[str]], optional
+            Additional sources for packages to be downloaded from.
+
+        Returns
+        -------
+        JobId : int
+            ID that can be used to cancel the process.
+        """
+        item = self._build_queue_item(
+            tool=tool,
+            action=InstallerActions.UPGRADE,
             pkgs=pkgs,
             prefix=prefix,
             origins=origins,
@@ -399,7 +440,11 @@ class InstallerQueue(QProcess):
         **kwargs,
     ) -> AbstractInstallerTool:
         return self._get_tool(tool)(
-            pkgs=pkgs, action=action, origins=origins, prefix=prefix, **kwargs
+            pkgs=pkgs,
+            action=action,
+            origins=origins,
+            prefix=prefix,
+            **kwargs,
         )
 
     def _queue_item(self, item: AbstractInstallerTool) -> JobId:
@@ -500,10 +545,12 @@ class InstallerQueue(QProcess):
 
 
 def _get_python_exe():
-    # Note: is_bundled_app() returns False even if using a Briefcase bundle...
     # Workaround: see if sys.executable is set to something something napari on Mac
-    if sys.executable.endswith("napari") and sys.platform == 'darwin':
+    if (
+        sys.executable.endswith("napari")
+        and sys.platform == 'darwin'
+        and (python := Path(sys.prefix) / "bin" / "python3").is_file()
+    ):
         # sys.prefix should be <napari.app>/Contents/Resources/Support/Python/Resources
-        if (python := Path(sys.prefix) / "bin" / "python3").is_file():
-            return str(python)
+        return str(python)
     return sys.executable

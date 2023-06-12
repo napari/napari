@@ -24,7 +24,7 @@ def test_spiral_index_against_linear(ranges):
     row_range, col_range = ranges
     row_range = range(*row_range)
     col_range = range(*col_range)
-    spiral = set(list(spiral_index(row_range, col_range)))
-    linear = set(list(linear_index(row_range, col_range)))
+    spiral = set(spiral_index(row_range, col_range))
+    linear = set(linear_index(row_range, col_range))
 
     assert spiral == linear

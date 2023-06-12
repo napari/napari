@@ -31,7 +31,9 @@ class Extension2ReaderTable(QWidget):
 
     valueChanged = Signal(int)
 
-    def __init__(self, parent=None, npe2_readers=None, npe1_readers=None):
+    def __init__(
+        self, parent=None, npe2_readers=None, npe1_readers=None
+    ) -> None:
         super().__init__(parent=parent)
 
         npe2, npe1 = get_all_readers()
@@ -153,9 +155,7 @@ class Extension2ReaderTable(QWidget):
         if '*' in reader_patterns:
             tooltip_text = trans._('Accepts all')
         else:
-            reader_patterns_formatted = ', '.join(
-                sorted(list(reader_patterns))
-            )
+            reader_patterns_formatted = ', '.join(sorted(reader_patterns))
             tooltip_text = trans._(
                 'Accepts: {reader_patterns_formatted}',
                 reader_patterns_formatted=reader_patterns_formatted,
@@ -171,7 +171,7 @@ class Extension2ReaderTable(QWidget):
         readers = self._npe2_readers.copy()
         to_delete = []
         compatible_readers = get_potential_readers(new_pattern)
-        for plugin_name, display_name in readers.items():
+        for plugin_name in readers:
             if plugin_name not in compatible_readers:
                 to_delete.append(plugin_name)
 

@@ -37,7 +37,7 @@ class TileSet:
         The chunks we have in the set, for fast membership tests.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._tiles: Dict[int, TileData] = {}
         self._chunks: Set[OctreeChunk] = set()
 

@@ -76,7 +76,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
 
     def __init__(
         self, root: SelectableEventedList[ItemType], parent: QWidget = None
-    ):
+    ) -> None:
         super().__init__(parent=parent)
         self.setRoot(root)
 

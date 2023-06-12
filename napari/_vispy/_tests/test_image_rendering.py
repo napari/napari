@@ -14,6 +14,7 @@ def test_image_rendering(make_napari_viewer):
 
     data = np.random.random((20, 20, 20))
     layer = viewer.add_image(data)
+    vispy_layer = viewer.window._qt_viewer.layer_to_visual[layer]
 
     assert layer.rendering == 'mip'
 
@@ -44,6 +45,13 @@ def test_image_rendering(make_napari_viewer):
     # Change rendering property
     layer.rendering = 'additive'
     assert layer.rendering == 'additive'
+
+    # check custom interpolation works on the 2D node
+    with pytest.raises(NotImplementedError):
+        layer.interpolation3d = 'custom'
+    viewer.dims.ndisplay = 2
+    layer.interpolation2d = 'custom'
+    assert vispy_layer.node.interpolation == 'custom'
 
 
 @skip_on_win_ci

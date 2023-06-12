@@ -19,7 +19,7 @@ class ChunkSet:
     in the set.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._dict: Dict[OctreeChunk, int] = {}
         self._locations: Set[OctreeLocation] = set()
 

@@ -42,7 +42,7 @@ class QtLayerList(QtListView[Layer]):
     reversing the view with ReverseProxyModel.
     """
 
-    def __init__(self, root: LayerList, parent: QWidget = None):
+    def __init__(self, root: LayerList, parent: QWidget = None) -> None:
         super().__init__(root, parent)
         self.setItemDelegate(LayerDelegate())
         self.setToolTip(trans._('Layer list'))

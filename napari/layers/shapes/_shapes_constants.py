@@ -30,6 +30,7 @@ class Mode(StringEnum):
     """
 
     PAN_ZOOM = auto()
+    TRANSFORM = auto()
     SELECT = auto()
     DIRECT = auto()
     ADD_RECTANGLE = auto()
@@ -37,9 +38,9 @@ class Mode(StringEnum):
     ADD_LINE = auto()
     ADD_PATH = auto()
     ADD_POLYGON = auto()
+    ADD_POLYGON_LASSO = auto()
     VERTEX_INSERT = auto()
     VERTEX_REMOVE = auto()
-    TRANSFORM = auto()
 
 
 class ColorMode(StringEnum):

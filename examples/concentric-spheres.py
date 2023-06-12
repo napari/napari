@@ -8,9 +8,9 @@ Display concentric spheres in 3D.
 """
 
 import numpy as np
-import napari
 from skimage import morphology
 
+import napari
 
 b0 = morphology.ball(5)
 

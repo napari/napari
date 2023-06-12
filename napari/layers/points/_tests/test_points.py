@@ -5,16 +5,19 @@ from unittest.mock import Mock
 import numpy as np
 import pandas as pd
 import pytest
+from psygnal.containers import Selection
 from pydantic import ValidationError
 from vispy.color import get_colormap
 
 from napari._tests.utils import (
+    assert_colors_equal,
     assert_layer_state_equal,
     check_layer_world_data_extent,
 )
 from napari.layers import Points
 from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
+from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
@@ -44,6 +47,27 @@ def _make_cycled_properties(values, length):
 def test_empty_points():
     pts = Points()
     assert pts.data.shape == (0, 2)
+
+
+def test_empty_points_with_features():
+    """See the following for the issues this covers:
+    https://github.com/napari/napari/issues/5632
+    https://github.com/napari/napari/issues/5634
+    """
+    points = Points(
+        features={'a': np.empty(0, int)},
+        feature_defaults={'a': 0},
+        face_color='a',
+        face_color_cycle=list('rgb'),
+    )
+
+    points.add([0, 0])
+    points.feature_defaults['a'] = 1
+    points.add([50, 50])
+    points.feature_defaults = {'a': 2}
+    points.add([100, 100])
+
+    assert_colors_equal(points.face_color, list('rgb'))
 
 
 def test_empty_points_with_properties():
@@ -380,7 +404,7 @@ def test_removing_selected_points():
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 2
     assert len(layer.selected_data) == 0
-    keep = [1, 2] + list(range(4, 10))
+    keep = [1, 2, *range(4, 10)]
     assert np.all(layer.data == data[keep])
     assert layer._value is None
 
@@ -460,6 +484,7 @@ def test_remove_selected_removes_corresponding_attributes():
         symbol=symbol[1:],
         edge_width=size[1:],
         features={'feature': feature[1:]},
+        feature_defaults={'feature': feature[0]},
         face_color=color[1:],
         edge_color=color[1:],
         text=text,  # computed from feature
@@ -503,18 +528,18 @@ def test_changing_modes():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'add'
     assert layer.mode == 'add'
 
     layer.mode = 'select'
     assert layer.mode == 'select'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     with pytest.raises(ValueError):
         layer.mode = 'not_a_mode'
@@ -762,7 +787,7 @@ def test_setting_current_properties():
     }
 
     coerced_current_properties = layer.current_properties
-    for k, v in coerced_current_properties.items():
+    for k in coerced_current_properties:
         value = coerced_current_properties[k]
         assert isinstance(value, np.ndarray)
         np.testing.assert_equal(value, expected_current_properties[k])
@@ -805,14 +830,14 @@ def test_text_from_property_fstring(properties):
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
-    expected_text_3 = expected_text_2 + ['type-ish: A']
+    expected_text_3 = [*expected_text_2, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
     # add point
     layer.selected_data = {0}
     new_shape = np.random.random((1, 2))
     layer.add(new_shape)
-    expected_text_4 = expected_text_3 + ['type-ish: A']
+    expected_text_4 = [*expected_text_3, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
@@ -835,10 +860,10 @@ def test_set_text_with_kwarg_dict(properties):
     expected_text = ['type: ' + v for v in properties['point_type']]
     np.testing.assert_equal(layer.text.values, expected_text)
 
-    for property, value in text_kwargs.items():
-        if property == 'string':
+    for property_, value in text_kwargs.items():
+        if property_ == 'string':
             continue
-        layer_value = getattr(layer._text, property)
+        layer_value = getattr(layer._text, property_)
         np.testing.assert_equal(layer_value, value)
 
 
@@ -1064,9 +1089,8 @@ def test_colormap_with_categorical_properties(attribute):
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Points(data, properties=properties)
 
-    with pytest.raises(TypeError):
-        with pytest.warns(UserWarning):
-            setattr(layer, f'{attribute}_color_mode', 'colormap')
+    with pytest.raises(TypeError), pytest.warns(UserWarning):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1667,6 +1691,9 @@ def test_message_3d():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
+    layer._slice_input = _SliceInput(
+        ndisplay=3, point=(0, 0, 0), order=(0, 1, 2)
+    )
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
@@ -1820,7 +1847,7 @@ def test_world_data_extent():
     max_val = (7, 30, 15)
     layer = Points(data)
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
 def test_scale_init():
@@ -2298,40 +2325,6 @@ def test_text_param_and_setter_are_consistent():
     )
 
 
-def test_editable_2d_layer_ndisplay_3():
-    """Interactivity doesn't work for 2D points layers
-    being rendered in 3D. Verify that layer.editable is set
-    to False upon switching to 3D rendering mode.
-
-    See: https://github.com/napari/napari/pull/4184
-    """
-    data = np.random.random((10, 2))
-    layer = Points(data, size=5)
-    assert layer.editable is True
-
-    # simulate switching to 3D rendering
-    # layer should no longer b editable
-    layer._slice_dims([0, 0, 0], ndisplay=3)
-    assert layer.editable is False
-
-
-def test_editable_3d_layer_ndisplay_3():
-    """Interactivity works for 3D points layers
-    being rendered in 3D. Verify that layer.editable remains
-    True upon switching to 3D rendering mode.
-
-    See: https://github.com/napari/napari/pull/4184
-    """
-    data = np.random.random((10, 3))
-    layer = Points(data, size=5)
-    assert layer.editable is True
-
-    # simulate switching to 3D rendering
-    # layer should no longer b editable
-    layer._slice_dims([0, 0, 0], ndisplay=3)
-    assert layer.editable is True
-
-
 def test_shown():
     """Test setting shown property"""
     shape = (10, 2)
@@ -2522,4 +2515,30 @@ def test_point_slice_request_response(dims_indices, target_indices):
     response = request()
 
     assert len(response.indices) == len(target_indices)
-    assert all([a == b for a, b in zip(response.indices, target_indices)])
+    assert all(a == b for a, b in zip(response.indices, target_indices))
+
+
+def test_editable_and_visible_are_independent():
+    """See https://github.com/napari/napari/issues/1346"""
+    data = np.empty((0, 2))
+    layer = Points(data)
+    assert layer.editable
+    assert layer.visible
+
+    layer.editable = False
+    layer.visible = False
+    assert not layer.editable
+    assert not layer.visible
+
+    layer.visible = True
+
+    assert not layer.editable
+
+
+def test_point_selection_remains_evented_after_update():
+    """Existing evented selection model should be updated rather than replaced."""
+    data = np.empty((3, 2))
+    layer = Points(data)
+    assert isinstance(layer.selected_data, Selection)
+    layer.selected_data = {0, 1}
+    assert isinstance(layer.selected_data, Selection)

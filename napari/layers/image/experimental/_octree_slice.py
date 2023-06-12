@@ -57,7 +57,7 @@ class OctreeSlice:
         data,
         layer_ref: LayerRef,
         meta: OctreeMetadata,
-    ):
+    ) -> None:
         self.data = data
         self._meta = meta
 

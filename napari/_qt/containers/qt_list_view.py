@@ -35,7 +35,7 @@ class QtListView(_BaseEventedItemView[ItemType], QListView):
 
     def __init__(
         self, root: SelectableEventedList[ItemType], parent: QWidget = None
-    ):
+    ) -> None:
         super().__init__(parent)
         self.setDragDropMode(QListView.InternalMove)
         self.setDragDropOverwriteMode(False)

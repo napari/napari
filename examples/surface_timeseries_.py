@@ -6,17 +6,34 @@ Display a surface timeseries using data from nilearn
 
 .. tags:: experimental
 """
-
 try:
-    from nilearn import datasets
-    from nilearn import surface
+    from packaging.version import parse
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
-        "You must have nilearn installed to run this example."
+        "You must have packaging installed to run this example. "
+        "For that you will need to run, depending on your package manager, "
+        "something like 'pip install packaging' or 'conda install packaging'"
+    ) from None
+
+try:
+    from nilearn import datasets, surface
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
+        "You must have nilearn installed to run this example. "
+        "For that you will need to run, depending on your package manager, "
+        "something like 'pip install nilearn' or 'conda install nilearn'"
+    ) from None
+
+import numpy as np
+
+if parse(np.__version__) >= parse("1.24"):
+    raise RuntimeError(
+        "Incompatible numpy version. "
+        "You must have numpy less than 1.24 for nilearn 0.10.1 and below to "
+        "work and download the example data"
     )
 
 import napari
-
 
 # Fetch datasets - this will download dataset if datasets are not found
 nki_dataset = datasets.fetch_surf_nki_enhanced(n_subjects=1)

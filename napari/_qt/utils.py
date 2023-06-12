@@ -5,22 +5,20 @@ import signal
 import socket
 import weakref
 from contextlib import contextmanager
-from functools import lru_cache, partial
-from typing import Sequence, Union
+from functools import partial
+from typing import Iterable, Sequence, Union
 
 import numpy as np
 import qtpy
 from qtpy.QtCore import (
     QByteArray,
     QCoreApplication,
-    QPoint,
     QPropertyAnimation,
-    QSize,
     QSocketNotifier,
     Qt,
     QThread,
 )
-from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPen, QPixmap
+from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
@@ -143,116 +141,15 @@ def event_hook_removed():
             QtCore.pyqtRestoreInputHook()
 
 
-def disable_with_opacity(obj, widget_list, enabled):
-    """Set enabled state on a list of widgets. If not enabled, decrease opacity."""
-    for widget_name in widget_list:
-        widget = getattr(obj, widget_name)
+def set_widgets_enabled_with_opacity(
+    parent: QWidget, widgets: Iterable[QWidget], enabled: bool
+):
+    """Set enabled state on some widgets. If not enabled, decrease opacity."""
+    for widget in widgets:
         widget.setEnabled(enabled)
-        op = QGraphicsOpacityEffect(obj)
+        op = QGraphicsOpacityEffect(parent)
         op.setOpacity(1 if enabled else 0.5)
         widget.setGraphicsEffect(op)
-
-
-@lru_cache(maxsize=64)
-def square_pixmap(size):
-    """Create a white/black hollow square pixmap. For use as labels cursor."""
-    size = max(int(size), 1)
-    pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(pixmap)
-    painter.setPen(Qt.GlobalColor.white)
-    painter.drawRect(0, 0, size - 1, size - 1)
-    painter.setPen(Qt.GlobalColor.black)
-    painter.drawRect(1, 1, size - 3, size - 3)
-    painter.end()
-    return pixmap
-
-
-@lru_cache(maxsize=64)
-def crosshair_pixmap():
-    """Create a cross cursor with white/black hollow square pixmap in the middle.
-    For use as points cursor."""
-
-    size = 25
-
-    pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(pixmap)
-
-    # Base measures
-    width = 1
-    center = 3  # Must be odd!
-    rect_size = center + 2 * width
-    square = rect_size + width * 4
-
-    pen = QPen(Qt.GlobalColor.white, 1)
-    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
-    painter.setPen(pen)
-
-    # # Horizontal rectangle
-    painter.drawRect(0, (size - rect_size) // 2, size - 1, rect_size - 1)
-
-    # Vertical rectangle
-    painter.drawRect((size - rect_size) // 2, 0, rect_size - 1, size - 1)
-
-    # Square
-    painter.drawRect(
-        (size - square) // 2, (size - square) // 2, square - 1, square - 1
-    )
-
-    pen = QPen(Qt.GlobalColor.black, 2)
-    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
-    painter.setPen(pen)
-
-    # # Square
-    painter.drawRect(
-        (size - square) // 2 + 2,
-        (size - square) // 2 + 2,
-        square - 4,
-        square - 4,
-    )
-
-    pen = QPen(Qt.GlobalColor.black, 3)
-    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
-    painter.setPen(pen)
-
-    # # # Horizontal lines
-    mid_vpoint = QPoint(2, size // 2)
-    painter.drawLine(
-        mid_vpoint, QPoint(((size - center) // 2) - center + 1, size // 2)
-    )
-    mid_vpoint = QPoint(size - 3, size // 2)
-    painter.drawLine(
-        mid_vpoint, QPoint(((size - center) // 2) + center + 1, size // 2)
-    )
-
-    # # # Vertical lines
-    mid_hpoint = QPoint(size // 2, 2)
-    painter.drawLine(
-        QPoint(size // 2, ((size - center) // 2) - center + 1), mid_hpoint
-    )
-    mid_hpoint = QPoint(size // 2, size - 3)
-    painter.drawLine(
-        QPoint(size // 2, ((size - center) // 2) + center + 1), mid_hpoint
-    )
-
-    painter.end()
-    return pixmap
-
-
-@lru_cache(maxsize=64)
-def circle_pixmap(size: int):
-    """Create a white/black hollow circle pixmap. For use as labels cursor."""
-    size = max(size, 1)
-    pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(pixmap)
-    painter.setPen(Qt.GlobalColor.white)
-    painter.drawEllipse(0, 0, size - 1, size - 1)
-    painter.setPen(Qt.GlobalColor.black)
-    painter.drawEllipse(1, 1, size - 3, size - 3)
-    painter.end()
-    return pixmap
 
 
 def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
@@ -325,9 +222,9 @@ def combine_widgets(
         # compatibility with magicgui v0.2.0 which no longer uses QWidgets
         # directly. Like vispy, the backend widget is at widget.native
         return widgets.native  # type: ignore
-    elif isinstance(widgets, QWidget):
+    if isinstance(widgets, QWidget):
         return widgets
-    elif is_sequence(widgets):
+    if is_sequence(widgets):
         # the same as above, compatibility with magicgui v0.2.0
         widgets = [
             i.native if isinstance(getattr(i, 'native', None), QWidget) else i
@@ -463,13 +360,13 @@ def qt_might_be_rich_text(text) -> bool:
     Check if a text might be rich text in a cross-binding compatible way.
     """
     if qtpy.PYSIDE2:
-        from qtpy.QtGui import Qt as _Qt
+        from qtpy.QtGui import Qt as Qt_
     else:
-        from qtpy.QtCore import Qt as _Qt
+        from qtpy.QtCore import Qt as Qt_
 
     try:
-        return _Qt.mightBeRichText(text)
-    except Exception:
+        return Qt_.mightBeRichText(text)
+    except AttributeError:
         return bool(RICH_TEXT_PATTERN.search(text))
 
 

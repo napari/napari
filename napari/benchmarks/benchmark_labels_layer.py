@@ -41,6 +41,7 @@ class Labels2DSuite:
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
+        self.layer._slice.image.raw[0, :] += 1  # simulate changes
         self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint_circle(self, n):
@@ -62,6 +63,53 @@ class Labels2DSuite:
     def mem_data(self, n):
         """Memory used by raw data."""
         return self.data
+
+
+class LabelsDrawing2DSuite:
+    """Benchmark for brush drawing in the Labels layer with 2D data."""
+
+    param_names = ['n', 'brush_size', 'color_mode', 'contour']
+    params = ([512, 3072], [8, 64, 256], ['auto', 'direct'], [0, 1])
+
+    def setup(self, n, brush_size, color_mode, contour):
+        np.random.seed(0)
+        self.data = np.random.randint(64, size=(n, n), dtype=np.int32)
+
+        colors = None
+        if color_mode == 'direct':
+            random_label_ids = np.random.randint(64, size=50)
+            colors = {i + 1: np.random.random(4) for i in random_label_ids}
+
+        self.layer = Labels(self.data, color=colors)
+
+        self.layer.brush_size = brush_size
+        self.layer.contour = contour
+        self.layer.mode = 'paint'
+
+    def time_draw(self, n, brush_size, color_mode, contour):
+        new_label = self.layer._slice.image.raw[0, 0] + 1
+
+        with self.layer.block_history():
+            last_coord = (0, 0)
+            for x in np.linspace(0, n - 1, num=30)[1:]:
+                self.layer._draw(
+                    new_label=new_label,
+                    last_cursor_coord=last_coord,
+                    coordinates=(x, x),
+                )
+                last_coord = (x, x)
+
+
+class Labels2DColorDirectSuite(Labels2DSuite):
+    def setup(self, n):
+        np.random.seed(0)
+        self.data = np.random.randint(low=-10000, high=10000, size=(n, n))
+        random_label_ids = np.random.randint(low=-10000, high=10000, size=20)
+        self.layer = Labels(
+            self.data,
+            color={i + 1: np.random.random(4) for i in random_label_ids},
+        )
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
 
 class Labels3DSuite:
@@ -99,6 +147,7 @@ class Labels3DSuite:
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
+        self.layer._slice.image.raw[0, 0, :] += 1  # simulate changes
         self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint_circle(self, n):

@@ -12,7 +12,7 @@ from napari.components._viewer_key_bindings import register_viewer_action
 from napari.errors.reader_errors import MultipleReaderError
 from napari.settings import get_settings
 from napari.utils.history import get_save_history, update_save_history
-from napari.utils.misc import running_as_bundled_app
+from napari.utils.misc import running_as_constructor_app
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 class FileMenu(NapariMenu):
-    def __init__(self, window: 'Window'):
+    def __init__(self, window: 'Window') -> None:
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
         self.open_sample_menu = NapariMenu(trans._('Open Sample'), self)
@@ -123,7 +123,7 @@ class FileMenu(NapariMenu):
                 'shortcut': 'Ctrl+W',
             },
             {
-                'when': running_as_bundled_app(),
+                'when': running_as_constructor_app(),
                 'text': trans._('Restart'),
                 'slot': window._qt_window.restart,
             },
@@ -224,14 +224,14 @@ class FileMenu(NapariMenu):
                     )
                     action = QAction(full_name, parent=self)
 
-                def _add_sample(*args, plg=plugin_name, smp=samp_name):
+                def _add_sample(*_, plg=plugin_name, smp=samp_name):
                     try:
                         self._win._qt_viewer.viewer.open_sample(plg, smp)
                     except MultipleReaderError as e:
                         handle_gui_reading(
                             e.paths,
                             self._win._qt_viewer,
-                            plugin_name=plugin_name,
+                            plugin_name=plg,
                             stack=False,
                         )
 

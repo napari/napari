@@ -184,7 +184,7 @@ def test_screenshot(make_napari_viewer, qtbot):
     # signal as _flash_animation may be already removed when calling wait.
     qtbot.waitUntil(
         lambda: not hasattr(
-            viewer.window._qt_viewer._canvas_overlay, '_flash_animation'
+            viewer.window._qt_viewer._welcome_widget, '_flash_animation'
         )
     )
 

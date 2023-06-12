@@ -549,6 +549,50 @@ NapariQtNotification #severity_icon {
 
 /* ------------ Plugin Dialog ------------ */
 
+QCollapsible#install_info_button {
+  background-color: {{ darken(foreground, 20) }};
+  color: {{ darken(text, 15) }};
+}
+QWidget#info_widget {
+  background-color: {{ darken(foreground, 20) }};
+  margin: 0px;
+  padding: 0px;
+  font: 11px;
+}
+
+QLabel#author_text {
+  color: {{ darken(text, 35) }};
+}
+
+QPushButton#install_choice {
+  background-color: {{ current }};
+  color: {{ darken(text, 35) }};
+}
+
+QPushButton#plugin_name_web {
+  background-color: {{ darken(foreground, 20) }};
+}
+
+QPushButton#plugin_name_web:hover {
+  background-color: {{ foreground }}
+}
+
+QPushButton#plugin_name {
+  background-color: {{ darken(foreground, 20) }};
+}
+QPushButton#plugin_name:hover {
+  background-color: {{ darken(foreground, 20) }};
+}
+
+
+QWidget#install_choice_widget {
+  background-color: {{ darken(foreground, 20) }};
+  color: {{ darken(text, 35) }};
+  margin: 0px;
+  padding: 0px;
+  font: 11px;
+}
+
 QPluginList {
   background: {{ console }};
 }

@@ -36,7 +36,7 @@ class RemoteCommands:
     commands, command implementations should be spread out all over the system.
     """
 
-    def __init__(self, layers: LayerList):
+    def __init__(self, layers: LayerList) -> None:
         self.layers = layers
 
     def show_grid(self, show: bool) -> None:

@@ -6,8 +6,9 @@ Display a 3D volume and the scale bar
 
 .. tags:: experimental
 """
-import napari
 from skimage import data
+
+import napari
 
 cells = data.cells3d()
 

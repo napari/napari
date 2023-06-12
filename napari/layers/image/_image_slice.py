@@ -32,8 +32,8 @@ def _create_loader_class() -> ImageLoader:
         )
 
         return ChunkedImageLoader()
-    else:
-        return ImageLoader()
+
+    return ImageLoader()
 
 
 class ImageSlice:
@@ -65,7 +65,7 @@ class ImageSlice:
         image: ArrayLike,
         image_converter: Callable[[ArrayLike], ArrayLike],
         rgb: bool = False,
-    ):
+    ) -> None:
         LOGGER.debug("ImageSlice.__init__")
         self.image: ImageView = ImageView(image, image_converter)
         self.thumbnail: ImageView = ImageView(image, image_converter)
