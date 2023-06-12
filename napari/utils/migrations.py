@@ -37,7 +37,7 @@ def rename_argument(
                     )
                 warnings.warn(
                     trans._(
-                        "Argument {from_name} is deprecated, please use {to_name} instead. The argument {from_name} was deprecated in {since_version} and it will be removed in {version}.",
+                        "Argument {from_name!r} is deprecated, please use {to_name!r} instead. The argument {from_name!r} was deprecated in {since_version} and it will be removed in {version}.",
                         from_name=from_name,
                         to_name=to_name,
                         version=version,
