@@ -35,8 +35,7 @@ class QtLayerListModel(QtListModel[Layer]):
                     f"{options_message}"
                     "</p>"
                 )
-            else:
-                return layer.get_source_str()
+            return layer.get_source_str()
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
