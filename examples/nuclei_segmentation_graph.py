@@ -18,11 +18,13 @@ import napari
 
 def delaunay_edges(points: np.ndarray) -> np.ndarray:
     delaunay = Delaunay(points)
-    edges = []
+    edges = set()
     for simplex in delaunay.simplices:
-        edges += list(combinations(simplex, 2))
+        # each simplex is represented as a list of four points.
+        # we add all edges between the points to the edge list
+        edges |= set(combinations(simplex, 2))
 
-    return edges
+    return np.asarray(list(edges))
 
 
 cells = data.cells3d()
