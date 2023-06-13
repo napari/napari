@@ -428,8 +428,25 @@ class NapariPluginManager(PluginManager):
     def iter_widgets(self) -> Iterator[Tuple[str, Tuple[str, Dict[str, Any]]]]:
         from itertools import chain, repeat
 
-        dock_widgets = zip(repeat("dock"), self._dock_widgets.items())
-        func_widgets = zip(repeat("func"), self._function_widgets.items())
+        # The content of contribution dictionaries is name of plugin and
+        # list of its names of widgets contributed by this plugin
+        # as this order do not depend on the order of contributions in file
+        # we sort it to make it easier searchable.
+
+        dock_widgets = zip(
+            repeat("dock"),
+            (
+                (name, sorted(cont))
+                for name, cont in self._dock_widgets.items()
+            ),
+        )
+        func_widgets = zip(
+            repeat("func"),
+            (
+                (name, sorted(cont))
+                for name, cont in self._function_widgets.items()
+            ),
+        )
         yield from chain(dock_widgets, func_widgets)
 
     def register_dock_widget(
@@ -589,7 +606,7 @@ class NapariPluginManager(PluginManager):
         Raises
         ------
         KeyError
-            If plugin `plugin_name` does not provide any widgets
+            If plugin `plugin_name` is not installed or does not provide any widgets.
         KeyError
             If plugin does not provide a widget named `widget_name`.
         ValueError
@@ -599,7 +616,7 @@ class NapariPluginManager(PluginManager):
         plg_wdgs = self._dock_widgets.get(plugin_name)
         if not plg_wdgs:
             msg = trans._(
-                'Plugin {plugin_name!r} does not provide any dock widgets',
+                'Plugin {plugin_name!r} is not installed or does not provide any dock widgets',
                 plugin_name=plugin_name,
                 deferred=True,
             )

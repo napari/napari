@@ -5,10 +5,10 @@ import logging
 import os.path
 import warnings
 from abc import ABC, abstractmethod
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from contextlib import contextmanager
 from functools import cached_property
-from typing import List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import magicgui as mgui
 import numpy as np
@@ -24,6 +24,7 @@ from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
 )
 from napari.layers.utils.layer_utils import (
+    Extent,
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
@@ -44,13 +45,13 @@ from napari.utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from napari.utils.key_bindings import KeymapProvider
+from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 from napari.utils.translations import trans
 
-Extent = namedtuple('Extent', 'data world step')
 logger = logging.getLogger("napari.layers.base.base")
 
 
@@ -226,18 +227,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     * `_basename()`: base/default name of the layer
     """
 
-    _modeclass = Mode
+    _modeclass: Type[StringEnum] = Mode
 
-    _drag_modes = {
+    _drag_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes = {
+    _move_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
-    _cursor_modes = {
+    _cursor_modes: Dict[StringEnum, str] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
@@ -393,6 +394,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             loaded=Event,
             reload=Event,
             extent=Event,
+            _extent_augmented=Event,
             _overlays=Event,
             mode=Event,
         )
@@ -633,7 +635,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if scale is None:
             scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.scale()
 
     @property
@@ -644,7 +646,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @translate.setter
     def translate(self, translate):
         self._transforms['data2physical'].translate = np.array(translate)
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.translate()
 
     @property
@@ -655,7 +657,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @rotate.setter
     def rotate(self, rotate):
         self._transforms['data2physical'].rotate = rotate
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.rotate()
 
     @property
@@ -666,7 +668,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @shear.setter
     def shear(self, shear):
         self._transforms['data2physical'].shear = shear
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.shear()
 
     @property
@@ -682,7 +684,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._clear_extent()
+        self._clear_extents_and_refresh()
         self.events.affine()
 
     @property
@@ -724,7 +726,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._ndim = ndim
 
-        self._clear_extent()
+        self._clear_extents_and_refresh()
 
     @property
     @abstractmethod
@@ -749,6 +751,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         raise NotImplementedError
 
     @property
+    def _extent_data_augmented(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Differently from Layer._extent_data, this also includes the "size" of
+        data points; for example, Point sizes and Image pixel width are included.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        return self._extent_data
+
+    @property
     def _extent_world(self) -> np.ndarray:
         """Range of layer in world coordinates.
 
@@ -757,18 +772,60 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
+        return get_extent_world(self._extent_data, self._data_to_world)
+
+    @property
+    def _extent_world_augmented(self) -> np.ndarray:
+        """Range of layer in world coordinates.
+
+        Differently from Layer._extent_world, this also includes the "size" of
+        data points; for example, Point sizes and Image pixel width are included.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        # Get full nD bounding box
         return get_extent_world(
-            self._extent_data, self._data_to_world, self._array_like
+            self._extent_data_augmented, self._data_to_world
         )
 
     @cached_property
     def extent(self) -> Extent:
-        """Extent of layer in data and world coordinates."""
+        """Extent of layer in data and world coordinates.
+
+        For image-like layers, these coordinates are the locations of the
+        pixels in `Layer.data` which are treated like sample points that are
+        centered in the rendered version of those pixels.
+        For other layers, these coordinates are the points or vertices stored
+        in `Layer.data`.
+        Lower and upper bounds are inclusive.
+        """
         extent_data = self._extent_data
         data_to_world = self._data_to_world
-        extent_world = get_extent_world(
-            extent_data, data_to_world, self._array_like
+        extent_world = get_extent_world(extent_data, data_to_world)
+        return Extent(
+            data=extent_data,
+            world=extent_world,
+            step=abs(data_to_world.scale),
         )
+
+    @cached_property
+    def _extent_augmented(self) -> Extent:
+        """Augmented extent of layer in data and world coordinates.
+
+        Differently from Layer.extent, this also includes the "size" of data
+        points; for example, Point sizes and Image pixel width are included.
+
+        For image-like layers, these coordinates are the locations of the
+        pixels in `Layer.data` which are treated like sample points that are
+        centered in the rendered version of those pixels.
+        For other layers, these coordinates are the points or vertices stored
+        in `Layer.data`.
+        """
+        extent_data = self._extent_data_augmented
+        data_to_world = self._data_to_world
+        extent_world = get_extent_world(extent_data, data_to_world)
         return Extent(
             data=extent_data,
             world=extent_world,
@@ -776,15 +833,26 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
 
     def _clear_extent(self):
-        """Clears the cached extent.
-
-        This should be called whenever this data or transform information
-        changes, and should be called before any related events get emitted
-        so that they use the updated extent values.
-        """
+        """Clear extent cache and emit extent event."""
         if 'extent' in self.__dict__:
             del self.extent
         self.events.extent()
+
+    def _clear_extent_augmented(self):
+        """Clear extent_augmented cache and emit extent_augmented event."""
+        if '_extent_augmented' in self.__dict__:
+            del self._extent_augmented
+        self.events._extent_augmented()
+
+    def _clear_extents_and_refresh(self):
+        """Clears the cached extents, emits events and refreshes the layer.
+
+        This should be called whenever this data or transform information
+        changes, and should be called before any other related events
+        are emitted so that they use the updated extent values.
+        """
+        self._clear_extent()
+        self._clear_extent_augmented()
         self.refresh()
 
     @property
@@ -1077,7 +1145,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def get_value(
         self,
-        position: Tuple[float],
+        position: Tuple[float, ...],
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
@@ -1403,6 +1471,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """An axis aligned (ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed].T
 
+    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
+
+        This bounding box for includes the "full" size of the layer, including
+        for example the size of points or pixels.
+        """
+        return self._extent_data_augmented[:, dims_displayed].T
+
     def click_plane_from_click_data(
         self,
         click_position: np.ndarray,
@@ -1476,6 +1552,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # create the bounding box in data coordinates
         bounding_box = self._display_bounding_box(dims_displayed)
+        # bounding box is with upper limit excluded in the uses below
+        bounding_box[:, 1] += 1
 
         start_point, end_point = self._get_ray_intersections(
             position=position,
@@ -1628,7 +1706,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             # space of the selected level. Using the level's data
             # shape only works for images, but that's the only case we
             # handle now and downsample_factors is also only on image layers.
-            max_coords = np.take(self.data[level].shape, displayed_axes)
+            max_coords = np.take(self.data[level].shape, displayed_axes) - 1
             corners[:, displayed_axes] = np.clip(scaled_corners, 0, max_coords)
             display_shape = tuple(
                 corners[1, displayed_axes] - corners[0, displayed_axes]
@@ -1641,7 +1719,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self._data_level = level
                 self.corner_pixels = corners
                 self.events.reload(Event('reload', layer=self))
-
         else:
             # The stored corner_pixels attribute must contain valid indices.
             corners = np.zeros((2, self.ndim), dtype=int)

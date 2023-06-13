@@ -144,7 +144,7 @@ class LayerDelegate(QStyledItemDelegate):
         editor = super().createEditor(parent, option, index)
         # make sure editor has same alignment as the display name
         editor.setAlignment(
-            Qt.Alignment(index.data(Qt.ItemDataRole.TextAlignmentRole))
+            Qt.AlignmentFlag(index.data(Qt.ItemDataRole.TextAlignmentRole))
         )
         return editor
 
