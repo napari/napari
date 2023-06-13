@@ -73,6 +73,14 @@ def new_label(layer: Labels):
 
 
 @register_label_action(
+    trans._("Swap between the selected label and the background label."),
+)
+def swap_selected_and_background_labels(layer: Labels):
+    """Swap between the selected label and the background label."""
+    layer.swap_selected_and_background_labels()
+
+
+@register_label_action(
     trans._("Decrease the currently selected label by one."),
 )
 def decrease_label_id(layer: Labels):
@@ -119,13 +127,13 @@ def toggle_preserve_labels(layer: Labels):
     layer.preserve_labels = not layer.preserve_labels
 
 
-@Labels.bind_key(KeyMod.CtrlCmd | KeyCode.KeyZ)
+@Labels.bind_key(KeyMod.CtrlCmd | KeyCode.KeyZ, overwrite=True)
 def undo(layer: Labels):
     """Undo the last paint or fill action since the view slice has changed."""
     layer.undo()
 
 
-@Labels.bind_key(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ)
+@Labels.bind_key(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ, overwrite=True)
 def redo(layer: Labels):
     """Redo any previously undone actions."""
     layer.redo()

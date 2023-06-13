@@ -175,7 +175,6 @@ def test_filtering_readers_complex_pattern(
 def test_adding_new_preference(
     extension2reader_widget, tif_reader, npy_reader
 ):
-
     widget = extension2reader_widget(npe1_readers={})
     widget._fn_pattern_edit.setText('*.tif')
     # will be filtered and tif-reader will be only item
@@ -198,7 +197,6 @@ def test_adding_new_preference(
 def test_adding_new_preference_no_asterisk(
     extension2reader_widget, tif_reader, npy_reader
 ):
-
     widget = extension2reader_widget(npe1_readers={})
     widget._fn_pattern_edit.setText('.tif')
     # will be filtered and tif-reader will be only item

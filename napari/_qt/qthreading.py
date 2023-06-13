@@ -203,7 +203,6 @@ def thread_worker(
     ] = None,
     ignore_errors: bool = False,
 ):
-
     """Decorator that runs a function in a separate thread when called.
 
     When called, the decorated function returns a :class:`WorkerBase`.  See

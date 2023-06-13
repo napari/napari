@@ -77,7 +77,6 @@ class _OctreeImageBase(_ImageBase):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-
         self._view: OctreeView = None
         self._slice: OctreeSlice = None
         self._intersection: OctreeIntersection = None
@@ -168,10 +167,7 @@ class _OctreeImageBase(_ImageBase):
         tuple
             The shape of a single tile.
         """
-        if self.multiscale:
-            init_shape = self.data[0].shape
-        else:
-            init_shape = self.data.shape
+        init_shape = self.data[0].shape if self.multiscale else self.data.shape
 
         tile_shape = (self.tile_size, self.tile_size)
 

@@ -1,14 +1,9 @@
-from enum import Enum
 from typing import Dict, List, Set
 
 from pydantic import Field
 from typing_extensions import TypedDict
 
 from napari.settings._base import EventedSettings
-from napari.utils.misc import (
-    running_as_bundled_app,
-    running_as_constructor_app,
-)
 from napari.utils.translations import trans
 
 
@@ -22,11 +17,6 @@ class PluginHookOption(TypedDict):
 CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
-class PluginAPI(str, Enum):
-    napari_hub = 'napari hub'
-    pypi = 'PyPI'
-
-
 class PluginsSettings(EventedSettings):
     use_npe2_adaptor: bool = Field(
         False,
@@ -36,13 +26,7 @@ class PluginsSettings(EventedSettings):
         ),
         requires_restart=True,
     )
-    plugin_api: PluginAPI = Field(
-        PluginAPI.pypi,
-        title=trans._("Plugin API"),
-        description=trans._(
-            "Use the following API for querying plugin information.",
-        ),
-    )
+
     call_order: CallOrderDict = Field(
         default_factory=dict,
         title=trans._("Plugin sort order"),
@@ -82,6 +66,3 @@ class PluginsSettings(EventedSettings):
             'disabled_plugins',
             'extension2writer',
         ]
-
-        if running_as_bundled_app() or running_as_constructor_app():
-            preferences_exclude.append('plugin_api')

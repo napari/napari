@@ -22,7 +22,15 @@ from qtpy.QtWidgets import (
 from vispy.util import keys
 
 from napari._qt.widgets.qt_message_popup import WarnPopup
-from napari.layers import Image, Labels, Points, Shapes, Surface, Vectors
+from napari.layers import (
+    Image,
+    Labels,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
@@ -47,7 +55,6 @@ class ShortcutEditor(QWidget):
         description: str = "",
         value: dict = None,
     ) -> None:
-
         super().__init__(parent=parent)
 
         # Flag to not run _set_keybinding method after setting special symbols.
@@ -61,6 +68,7 @@ class ShortcutEditor(QWidget):
             Points,
             Shapes,
             Surface,
+            Tracks,
             Vectors,
         ]
 
@@ -84,7 +92,7 @@ class ShortcutEditor(QWidget):
                 actions = {}
             else:
                 actions = action_manager._get_provider_actions(layer)
-                for name in actions.keys():
+                for name in actions:
                     all_actions.pop(name)
             self.key_bindings_strs[f"{layer.__name__} layer"] = actions
 
@@ -195,7 +203,6 @@ class ShortcutEditor(QWidget):
         actions = self.key_bindings_strs[layer_str]
 
         if len(actions) > 0:
-
             # Set up table based on number of actions and needed columns.
             self._table.setRowCount(len(actions))
             self._table.setColumnCount(5)
@@ -207,25 +214,33 @@ class ShortcutEditor(QWidget):
                 self._shortcut_col2, ShortcutDelegate(self._table)
             )
             self._table.setHorizontalHeaderLabels(header_strs)
+            self._table.horizontalHeader().setDefaultAlignment(
+                Qt.AlignmentFlag.AlignLeft
+            )
             self._table.verticalHeader().setVisible(False)
 
             # Hide the column with action names.  These are kept here for reference when needed.
             self._table.setColumnHidden(self._action_col, True)
 
             # Column set up.
-            self._table.setColumnWidth(self._action_name_col, 250)
-            self._table.setColumnWidth(self._shortcut_col, 200)
-            self._table.setColumnWidth(self._shortcut_col2, 200)
-            self._table.setColumnWidth(self._icon_col, 50)
+            self._table.setColumnWidth(self._action_name_col, 370)
+            self._table.setColumnWidth(self._shortcut_col, 190)
+            self._table.setColumnWidth(self._shortcut_col2, 145)
+            self._table.setColumnWidth(self._icon_col, 35)
+            self._table.setWordWrap(True)
+
+            # Add some padding to rows
+            self._table.setStyleSheet("QTableView::item { padding: 6px; }")
 
             # Go through all the actions in the layer and add them to the table.
             for row, (action_name, action) in enumerate(actions.items()):
-
                 shortcuts = action_manager._shortcuts.get(action_name, [])
                 # Set action description.  Make sure its not selectable/editable.
                 item = QTableWidgetItem(action.description)
-                item.setFlags(Qt.ItemFlag.NoItemFlags)
+                item.setFlags(Qt.ItemFlag.ItemIsEnabled)
                 self._table.setItem(row, self._action_name_col, item)
+                # Ensure long descriptions can be wrapped in cells
+                self._table.resizeRowToContents(row)
 
                 # Create empty item in order to make sure this column is not
                 # selectable/editable.
@@ -318,11 +333,10 @@ class ShortcutEditor(QWidget):
 
                 return False
 
-            else:
-                # This shortcut was here.  Reformat and reset text.
-                format_shortcut = Shortcut(new_shortcut).platform
-                with lock_keybind_update(self):
-                    current_item.setText(format_shortcut)
+            # This shortcut was here.  Reformat and reset text.
+            format_shortcut = Shortcut(new_shortcut).platform
+            with lock_keybind_update(self):
+                current_item.setText(format_shortcut)
 
         return True
 
@@ -513,7 +527,7 @@ class ShortcutEditor(QWidget):
 
         value = {}
 
-        for action_name in action_manager._actions.keys():
+        for action_name in action_manager._actions:
             shortcuts = action_manager._shortcuts.get(action_name, [])
             value[action_name] = list(shortcuts)
 
@@ -552,10 +566,10 @@ class EditorWidget(QLineEdit):
         if event.type() == QEvent.Type.ShortcutOverride:
             self.keyPressEvent(event)
             return True
-        elif event.type() in [QEvent.Type.KeyPress, QEvent.Type.Shortcut]:
+        if event.type() in [QEvent.Type.KeyPress, QEvent.Type.Shortcut]:
             return True
-        else:
-            return super().event(event)
+
+        return super().event(event)
 
     def keyPressEvent(self, event):
         """Qt method override."""
@@ -603,7 +617,7 @@ class EditorWidget(QLineEdit):
         keys_li = []
         # Format how the shortcut is written (ex. 'Ctrl+B' is changed to 'Control-B')
         for val in parsed:
-            if val in KEY_SUBS.keys():
+            if val in KEY_SUBS:
                 keys_li.append(KEY_SUBS[val])
             else:
                 keys_li.append(val)

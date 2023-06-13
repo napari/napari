@@ -445,13 +445,27 @@ class T(EventedModel):
     def c(self, val: Sequence[int]):
         self.a, self.b = val
 
+    @property
+    def d(self) -> int:
+        return sum(self.c)
+
+    @d.setter
+    def d(self, val: int):
+        # note that d only uses c, which in turns affects in a and b
+        self.c = [val // 2, val // 2]
+
+    @property
+    def e(self) -> int:
+        # should also work without setter
+        return self.a * 10
+
 
 def test_evented_model_with_property_setters():
     t = T()
 
-    assert list(T.__property_setters__) == ['c']
+    assert list(T.__properties__) == ['c', 'd', 'e']
     # the metaclass should have figured out that both a and b affect c
-    assert T.__field_dependents__ == {'a': {'c'}, 'b': {'c'}}
+    assert T.__field_dependents__ == {'a': {'c', 'd', 'e'}, 'b': {'c', 'd'}}
 
     # all the fields and properties behave as expected
     assert t.c == [1, 1]
@@ -461,31 +475,101 @@ def test_evented_model_with_property_setters():
     assert t.c == [2, 3]
     assert t.a == 2
     assert t.b == 3
+    t.d = 4
+    assert t.a == 2
+    assert t.b == 2
+
+    with pytest.raises(AttributeError):
+        t.e = 100
 
 
-def test_evented_model_with_property_setters_events():
+@pytest.fixture()
+def mocked_object():
     t = T()
-    assert 'c' in t.events  # the setter has an event
     t.events.a = Mock(t.events.a)
     t.events.b = Mock(t.events.b)
     t.events.c = Mock(t.events.c)
+    t.events.d = Mock(t.events.d)
+    t.events.e = Mock(t.events.e)
+    return t
 
-    # setting t.c emits events for all three a, b, and c
-    t.c = [10, 20]
-    t.events.a.assert_called_with(value=10)
-    t.events.b.assert_called_with(value=20)
-    t.events.c.assert_called_with(value=[10, 20])
-    assert t.a == 10
-    assert t.b == 20
 
-    t.events.a.reset_mock()
-    t.events.b.reset_mock()
-    t.events.c.reset_mock()
+@pytest.mark.parametrize(
+    'attribute,value,expected_event_values',
+    [
+        ('a', 5, {'a': 5, 'b': None, 'c': [5, 1], 'd': 6, 'e': 50}),
+        ('b', 5, {'a': None, 'b': 5, 'c': [1, 5], 'd': 6, 'e': None}),
+        ('c', [10, 20], {'a': 10, 'b': 20, 'c': [10, 20], 'd': 30, 'e': 100}),
+        ('d', 8, {'a': 4, 'b': 4, 'c': [4, 4], 'd': 8, 'e': 40}),
+    ],
+)
+def test_evented_model_with_property_setter_events(
+    mocked_object, attribute, value, expected_event_values
+):
+    """Test that setting connected fields and properties fires the right events.
 
-    # setting t.a emits events for a and c, but not b
-    # this is because we declared c to be dependent on ['a', 'b']
-    t.a = 5
-    t.events.a.assert_called_with(value=5)
-    t.events.c.assert_called_with(value=[5, 20])
-    t.events.b.assert_not_called()
-    assert t.c == [5, 20]
+    For each field and property, set a new value and check that all the
+    dependent fields/properties fire events with the correct value,
+    and that non-connected properties fire no event.
+    """
+    assert attribute in mocked_object.events
+
+    setattr(mocked_object, attribute, value)
+    for attr, val in expected_event_values.items():
+        emitter = getattr(mocked_object.events, attr)
+        if val is None:
+            emitter.assert_not_called()
+        else:
+            emitter.assert_called_with(value=val)
+
+
+def test_evented_model_with_property_without_setter(mocked_object):
+    with pytest.raises(AttributeError):
+        # no setter provided for T.e
+        mocked_object.e = 2
+
+
+def test_evented_model_with_provided_dependencies():
+    class T(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self):
+            return self.a * 2
+
+        class Config:
+            dependencies = {'b': ['a']}
+
+    t = T()
+    t.events.a = Mock(t.events.a)
+    t.events.b = Mock(t.events.b)
+
+    t.a = 2
+    t.events.a.assert_called_with(value=2)
+    t.events.b.assert_called_with(value=4)
+
+    # should fail if property does not exist
+    with pytest.raises(ValueError):
+
+        class T(EventedModel):
+            a: int = 1
+
+            @property
+            def b(self):  # pragma: no cover
+                return self.a * 2
+
+            class Config:
+                dependencies = {'x': ['a']}
+
+    # should warn if field does not exist
+    with pytest.warns(match="Unrecognized field dependency"):
+
+        class T(EventedModel):
+            a: int = 1
+
+            @property
+            def b(self):  # pragma: no cover
+                return self.a * 2
+
+            class Config:
+                dependencies = {'b': ['x']}

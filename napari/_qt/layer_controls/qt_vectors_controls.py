@@ -159,8 +159,9 @@ class QtVectorsControls(QtLayerControls):
                 self._update_edge_color_gui(mode)
 
             except ValueError:
-                # if the color mode was invalid, revert to the old mode
+                # if the color mode was invalid, revert to the old mode (layer and GUI)
                 self.layer.edge_color_mode = old_mode
+                self.color_mode_comboBox.setCurrentText(old_mode)
                 raise
 
     def change_edge_color_direct(self, color: np.ndarray):
@@ -204,10 +205,12 @@ class QtVectorsControls(QtLayerControls):
 
         Parameters
         ----------
-        state : QCheckBox
-            Checkbox to indicate whether to render out of slice.
+        state : int
+             Integer value of Qt.CheckState that indicates the check state of outOfSliceCheckBox
         """
-        self.layer.out_of_slice_display = state == Qt.CheckState.Checked
+        self.layer.out_of_slice_display = (
+            Qt.CheckState(state) == Qt.CheckState.Checked
+        )
 
     def _update_edge_color_gui(self, mode: str):
         """Update the GUI element associated with edge_color.

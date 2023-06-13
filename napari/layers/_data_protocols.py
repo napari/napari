@@ -19,7 +19,7 @@ _OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})
 if TYPE_CHECKING:
     from enum import Enum
 
-    from napari.types import DTypeLike
+    from numpy.typing import DTypeLike
 
     # https://github.com/python/typing/issues/684#issuecomment-548203158
     class ellipsis(Enum):

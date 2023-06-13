@@ -20,7 +20,7 @@ def test_attrs_arrays(Layer, data, ndim):
     signature = inspect.signature(Layer)
 
     # Check every property is also a parameter.
-    for prop in properties.keys():
+    for prop in properties:
         assert prop in signature.parameters
 
     # Check number of properties is same as number in signature
@@ -31,7 +31,7 @@ def test_attrs_arrays(Layer, data, ndim):
     new_layer = Layer(**properties)
 
     # Check that new layer matches old on all properties:
-    for prop in properties.keys():
+    for prop in properties:
         assert are_objects_equal(
             getattr(layer, prop), getattr(new_layer, prop)
         )

@@ -216,14 +216,13 @@ class ActionManager:
         """
         self._validate_action_name(name)
 
-        if action := self._actions.get(name):
-            if isgeneratorfunction(action):
-                raise ValueError(
-                    trans._(
-                        '`bind_button` cannot be used with generator functions',
-                        deferred=True,
-                    )
+        if (action := self._actions.get(name)) and isgeneratorfunction(action):
+            raise ValueError(
+                trans._(
+                    '`bind_button` cannot be used with generator functions',
+                    deferred=True,
                 )
+            )
 
         button.clicked.connect(lambda: self.trigger(name))
         if name in self._actions:

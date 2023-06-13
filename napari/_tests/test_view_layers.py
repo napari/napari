@@ -13,8 +13,7 @@ import pytest
 from numpydoc.docscrape import ClassDoc, FunctionDoc
 
 import napari
-from napari import Viewer
-from napari import layers as module
+from napari import Viewer, layers as module
 from napari._tests.utils import check_viewer_functioning, layer_test_data
 from napari.utils.misc import camel_to_snake
 
@@ -97,7 +96,7 @@ def test_docstring(layer):
         assert method_returns == (
             'layer',
             f':class:`napari.layers.{name}` or list',
-            f'The newly-created {name.lower()} layer or list of {name.lower()} layers.',  # noqa: E501
+            f'The newly-created {name.lower()} layer or list of {name.lower()} layers.',
         ), f"improper 'Returns' section of '{method_name}'"
     else:
         assert method_returns == (
@@ -119,8 +118,8 @@ def test_signature(layer):
     fail_msg = f"signatures don't match for class {name}"
     if name == 'Image':
         # If Image just test that class params appear in method
-        for class_param in class_parameters.keys():
-            assert class_param in method_parameters.keys(), fail_msg
+        for class_param in class_parameters:
+            assert class_param in method_parameters, fail_msg
     else:
         assert class_parameters == method_parameters, fail_msg
 
