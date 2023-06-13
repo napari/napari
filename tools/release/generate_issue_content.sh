@@ -4,6 +4,8 @@ LAST_TAG="v0.4.17"
 NEW_RELEASE="0.4.18"
 FUTURE_RELEASE="0.5.0"
 
+echo "## :wrench: Issue to trace v${NEW_RELEASE} release process"
+echo
 
 python list_opened_pr.py $NEW_RELEASE
 
