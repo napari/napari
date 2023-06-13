@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Tuple, Union
 
+import networkx as nx
 import numpy as np
 from numpy.typing import ArrayLike
 
@@ -10,11 +11,12 @@ from napari.utils.events import Event
 from napari.utils.translations import trans
 
 try:
-    from napari_graph import BaseGraph, UndirectedGraph
+    from napari_graph import BaseGraph, UndirectedGraph, from_networkx
 
 except ModuleNotFoundError:
     BaseGraph = None
     UndirectedGraph = None
+    from_networkx = None
 
 
 class Graph(_BasePoints):
@@ -336,18 +338,20 @@ class Graph(_BasePoints):
         ndim: Optional[int] = None,
     ) -> BaseGraph:
         """Checks input data and return a empty graph if is None."""
-        if ndim is None:
-            ndim = 2
-
         if data is None:
+            if ndim is None:
+                ndim = 2
             # empty but pre-allocated graph
             return UndirectedGraph(ndim=ndim)
+
+        if isinstance(data, nx.Graph):
+            data = from_networkx(data)
 
         if isinstance(data, BaseGraph):
             if data._coords is None:
                 raise ValueError(
                     trans._(
-                        "Graph layer must be a spatial graph, have the `coords` attribute."
+                        "Graph layer must be a spatial graph, have the `coords` attribute (`pos` in NetworkX)."
                     )
                 )
             return data

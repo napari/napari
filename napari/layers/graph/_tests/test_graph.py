@@ -1,5 +1,6 @@
 from typing import Type
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
@@ -56,6 +57,36 @@ def test_non_spatial_graph() -> None:
     non_spatial_graph = UndirectedGraph(edges=[[0, 0], [0, 1], [1, 1]])
     with pytest.raises(ValueError):
         Graph(non_spatial_graph)
+
+
+def test_networkx_graph() -> None:
+    m = 5
+    n = 5
+    graph = nx.grid_2d_graph(m=m, n=n)
+
+    mapping = {}
+    for i, j in graph.nodes:
+        graph.nodes[i, j]["pos"] = (i, j)
+        mapping[i, j] = i * m + j
+
+    nx.relabel_nodes(graph, mapping, copy=False)
+
+    layer = Graph(graph)
+
+    assert len(layer.data) == m * n
+    assert layer.ndim == 2
+
+
+def test_networkx_nonspatial_graph() -> None:
+    m = 5
+    n = 5
+    graph = nx.grid_2d_graph(m=m, n=n)
+
+    mapping = {(i, j): i * m + j for i, j in graph.nodes}
+    nx.relabel_nodes(graph, mapping, copy=False)
+
+    with pytest.raises(ValueError):
+        Graph(graph)
 
 
 @pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
