@@ -45,7 +45,7 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.events.migrations import deprecation_warning_event
 from napari.utils.geometry import project_points_onto_plane, rotate_points
-from napari.utils.migrations import rename_argument
+from napari.utils.migrations import add_deprecated_property, rename_argument
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
@@ -2165,6 +2165,24 @@ class Points(_BasePoints):
                 "0.6.0",
             ),
         )
+
+        deprecated_properties = [
+            "edge_width",
+            "edge_width_is_relative",
+            "current_edge_width",
+            "edge_color",
+            "edge_color_cycle",
+            "edge_colormap",
+            "edge_contrast_limits",
+            "current_edge_color",
+            "edge_color_mode",
+        ]
+        for old_property in deprecated_properties:
+            new_property = old_property.replace("edge", "border")
+            add_deprecated_property(self, old_property, new_property, "0.6.0")
+            print(new_property)
+            print(getattr(self, old_property))
+            print(getattr(self, new_property))
 
     @property
     def _points_data(self) -> np.ndarray:
