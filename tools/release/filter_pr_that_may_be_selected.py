@@ -47,9 +47,11 @@ milestone = get_milestone(args.milestone)
 label = repository.get_label(args.label) if args.label else None
 
 if args.skip_triaged:
-    triage_label = repository.get_label("triaged-0.4.18")
+    triage_labels = [
+        x for x in repository.get_labels() if x.name.startswith("triaged")
+    ]
 else:
-    triage_label = None
+    triage_labels = []
 
 common_ancestor = get_common_ancestor(args.from_commit, args.to_commit)
 remote_commit = repository.get_commit(common_ancestor.hexsha)
@@ -78,7 +80,7 @@ for pull_issue in tqdm(
         continue
     if label is not None and label not in pull.labels:
         continue
-    if args.skip_triaged and triage_label in pull.labels:
+    if args.skip_triaged and any(x in pull.labels for x in triage_labels):
         continue
     pr_to_list.append(pull)
 
