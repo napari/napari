@@ -2166,6 +2166,9 @@ class Points(_BasePoints):
             ),
         )
 
+    @classmethod
+    def _add_deprecated_properties(cls) -> None:
+        """Adds deprecated properties to class."""
         deprecated_properties = [
             "edge_width",
             "edge_width_is_relative",
@@ -2179,10 +2182,7 @@ class Points(_BasePoints):
         ]
         for old_property in deprecated_properties:
             new_property = old_property.replace("edge", "border")
-            add_deprecated_property(self, old_property, new_property, "0.6.0")
-            print(new_property)
-            print(getattr(self, old_property))
-            print(getattr(self, new_property))
+            add_deprecated_property(cls, old_property, new_property, "0.6.0")
 
     @property
     def _points_data(self) -> np.ndarray:
@@ -2499,3 +2499,6 @@ class Points(_BasePoints):
             )
             mask[np.ix_(*submask_coords)] |= normalized_square_distances <= 1
         return mask
+
+
+Points._add_deprecated_properties()
