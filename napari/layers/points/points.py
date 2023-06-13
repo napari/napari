@@ -2,10 +2,11 @@ import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from psygnal.containers import Selection
 from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
@@ -61,6 +62,8 @@ class Points(Layer):
     features : dict[str, array-like] or DataFrame
         Features table where each row corresponds to a point and each column
         is a feature.
+    feature_defaults : dict[str, Any] or DataFrame
+        The default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -230,7 +233,7 @@ class Points(Layer):
     out_of_slice_display : bool
         If True, renders points not just in central plane but also slightly out of slice
         according to specified point marker size.
-    selected_data : set
+    selected_data : Selection
         Integer indices of any selected points.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
@@ -268,8 +271,8 @@ class Points(Layer):
 
     Notes
     -----
-    _view_data : array (M, 2)
-        2D coordinates of points in the currently viewed slice.
+    _view_data : array (M, D)
+        coordinates of points in the currently viewed slice.
     _view_size : array (M, )
         Size of the point markers in the currently viewed slice.
     _view_symbol : array (M, )
@@ -324,6 +327,7 @@ class Points(Layer):
         *,
         ndim=None,
         features=None,
+        feature_defaults=None,
         properties=None,
         text=None,
         symbol='o',
@@ -364,7 +368,6 @@ class Points(Layer):
         data, ndim = fix_data_points(data, ndim)
 
         # Indices of selected points
-        self._selected_data = set()
         self._selected_data_stored = set()
         self._selected_data_history = set()
         # Indices of selected points within the currently viewed slice
@@ -408,7 +411,9 @@ class Points(Layer):
 
         self.events.add(
             size=Event,
+            current_size=Event,
             edge_width=Event,
+            current_edge_width=Event,
             edge_width_is_relative=Event,
             face_color=Event,
             current_face_color=Event,
@@ -417,6 +422,7 @@ class Points(Layer):
             properties=Event,
             current_properties=Event,
             symbol=Event,
+            current_symbol=Event,
             out_of_slice_display=Event,
             n_dimensional=Event,
             highlight=Event,
@@ -432,6 +438,7 @@ class Points(Layer):
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
+            feature_defaults=feature_defaults,
             properties=properties,
             property_choices=property_choices,
             num_data=len(self.data),
@@ -446,7 +453,7 @@ class Points(Layer):
         self._shown = np.empty(0).astype(bool)
 
         # Indices of selected points
-        self._selected_data = set()
+        self._selected_data: Selection[int] = Selection()
         self._selected_data_stored = set()
         self._selected_data_history = set()
         # Indices of selected points within the currently viewed slice
@@ -471,7 +478,9 @@ class Points(Layer):
         self._status = self.mode
 
         color_properties = (
-            self.properties if self._data.size > 0 else self.property_choices
+            self._feature_table.properties()
+            if self._data.size > 0
+            else self._feature_table.currents()
         )
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(data),
@@ -567,8 +576,13 @@ class Points(Layer):
                     new_symbol = self.current_symbol
                 symbol = np.repeat([new_symbol], adding, axis=0)
 
-                # add new colors
+                # Add new colors, updating the current property value before
+                # to handle any in-place modification of feature_defaults.
+                # Also see: https://github.com/napari/napari/issues/5634
+                current_properties = self._feature_table.currents()
+                self._edge._update_current_properties(current_properties)
                 self._edge._add(n_colors=adding)
+                self._face._update_current_properties(current_properties)
                 self._face._add(n_colors=adding)
 
                 shown = np.repeat([True], adding, axis=0)
@@ -634,6 +648,17 @@ class Points(Layer):
         See `features` for more details on the type of this property.
         """
         return self._feature_table.defaults
+
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        self._feature_table.set_defaults(defaults)
+        current_properties = self.current_properties
+        self._edge._update_current_properties(current_properties)
+        self._face._update_current_properties(current_properties)
+        self.events.current_properties()
+        self.events.feature_defaults()
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
@@ -731,7 +756,20 @@ class Points(Layer):
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
             extrema = np.vstack([mins, maxs])
-        return extrema
+        return extrema.astype(float)
+
+    @property
+    def _extent_data_augmented(self):
+        # _extent_data is a property that returns a new/copied array, which
+        # is safe to modify below
+        extent = self._extent_data
+        if len(self.size) == 0:
+            return extent
+
+        max_point_size = np.max(self.size)
+        extent[0] -= max_point_size / 2
+        extent[1] += max_point_size / 2
+        return extent
 
     @property
     def out_of_slice_display(self) -> bool:
@@ -780,6 +818,7 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             self.symbol[list(self.selected_data)] = symbol
             self.events.symbol()
+        self.events.current_symbol()
 
     @property
     def size(self) -> np.ndarray:
@@ -802,6 +841,7 @@ class Points(Layer):
                         deferred=True,
                     )
                 ) from e
+        self._clear_extent_augmented()
         self.refresh()
 
     @property
@@ -827,8 +867,10 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
                 self.size[i, :] = (self.size[i, :] > 0) * size
+            self._clear_extent_augmented()
             self.refresh()
             self.events.size()
+        self.events.current_size()
 
     @property
     def antialiasing(self) -> float:
@@ -948,6 +990,7 @@ class Points(Layer):
                 self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
             self.refresh()
             self.events.edge_width()
+        self.events.current_edge_width()
 
     @property
     def edge_color(self) -> np.ndarray:
@@ -1241,6 +1284,7 @@ class Points(Layer):
                 'ndim': self.ndim,
                 'data': self.data,
                 'features': self.features,
+                'feature_defaults': self.feature_defaults,
                 'shading': self.shading,
                 'antialiasing': self.antialiasing,
                 'canvas_size_limits': self.canvas_size_limits,
@@ -1250,13 +1294,14 @@ class Points(Layer):
         return state
 
     @property
-    def selected_data(self) -> set:
+    def selected_data(self) -> Selection[int]:
         """set: set of currently selected points."""
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data):
-        self._selected_data = set(selected_data)
+    def selected_data(self, selected_data: Sequence[int]) -> None:
+        self._selected_data.clear()
+        self._selected_data.update(set(selected_data))
         self._selected_view = list(
             np.intersect1d(
                 np.array(list(self._selected_data)),
@@ -1352,7 +1397,7 @@ class Points(Layer):
 
         if mode == Mode.ADD:
             self.selected_data = set()
-            self.interactive = True
+            self.mouse_pan = True
         elif mode != Mode.SELECT or self._mode != Mode.SELECT:
             self._selected_data_stored = set()
 
@@ -1508,7 +1553,7 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
-    def _get_value(self, position) -> Union[None, int]:
+    def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.
 
         Parameters
@@ -1549,7 +1594,7 @@ class Points(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Union[int, None]:
+    ) -> Optional[int]:
         """Get the layer data value along a ray
 
         Parameters
@@ -1604,22 +1649,6 @@ class Points(Layer):
         else:
             selection = None
         return selection
-
-    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
-        """An augmented, axis-aligned (ndisplay, 2) bounding box.
-
-        This bounding box for includes the full size of displayed points
-        and enables calculation of intersections in `Layer._get_value_3d()`.
-        """
-        if len(self._view_size) == 0:
-            return None
-        max_point_size = np.max(self._view_size)
-        bounding_box = np.copy(
-            self._display_bounding_box(dims_displayed)
-        ).astype(float)
-        bounding_box[:, 0] -= max_point_size / 2
-        bounding_box[:, 1] += max_point_size / 2
-        return bounding_box
 
     def get_ray_intersections(
         self,
@@ -1706,7 +1735,9 @@ class Points(Layer):
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_indices(self._data_to_world.inverse)
+        slice_indices = slice_input.data_indices(
+            self._data_to_world.inverse, round_index=False
+        )
         return self._make_slice_request_internal(slice_input, slice_indices)
 
     def _make_slice_request_internal(
@@ -1807,7 +1838,7 @@ class Points(Layer):
                 pos = _create_box_from_corners_3d(
                     self._drag_box, self._drag_normal, self._drag_up
                 )
-            pos = pos[list(range(4)) + [0]]
+            pos = pos[[*range(4), 0]]
         else:
             pos = None
 
@@ -1852,7 +1883,7 @@ class Points(Layer):
             coords = np.clip(coords, 0, thumbnail_shape - 1)
 
             # Draw single pixel points in the colormapped thumbnail.
-            colormapped = np.zeros(tuple(thumbnail_shape) + (4,))
+            colormapped = np.zeros((*thumbnail_shape, 4))
             colormapped[..., 3] = 1
             colors = self._face.colors[thumbnail_indices]
             colormapped[coords[:, 0], coords[:, 1]] = colors
@@ -2002,8 +2033,8 @@ class Points(Layer):
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
-            self._selected_data = set(
-                range(totpoints, totpoints + len(self._clipboard['data']))
+            self._selected_data.update(
+                set(range(totpoints, totpoints + len(self._clipboard['data'])))
             )
             self.refresh()
 

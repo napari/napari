@@ -335,7 +335,7 @@ class Shortcut:
         return ' '.join(
             joinchar.join(
                 KEY_SYMBOLS.get(x, x)
-                for x in (_kb2mods(part) + [str(part.key)])
+                for x in ([*_kb2mods(part), str(part.key)])
             )
             for part in self._kb.parts
         )

@@ -61,7 +61,7 @@ multi_channel_test_data = [
     ((), {'translate': MULTI_TUPLES}),
     ((), {'blending': 'translucent'}),
     ((), {'metadata': {'hi': 'there'}}),
-    ((), {'metadata': {k: v for k, v in MULTI_TUPLES}}),
+    ((), {'metadata': dict(MULTI_TUPLES)}),
     ((), {'experimental_clipping_planes': []}),
 ]
 

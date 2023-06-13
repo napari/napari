@@ -25,7 +25,7 @@ def test_worker_with_progress(qtbot):
         start_thread=False,
     )
     worker = thread_func()
-    with qtbot.waitSignal(worker.yielded), qtbot.waitSignal(worker.finished):
+    with qtbot.waitSignals([worker.yielded, worker.finished]):
         worker.start()
         assert worker.pbar.n == test_val[0]
     assert test_val[0] == 2
@@ -65,9 +65,7 @@ def test_worker_may_exceed_total(qtbot):
     )
     worker = thread_func()
     worker.yielded.connect(test_yield)
-    with qtbot.waitSignal(worker.yielded) and qtbot.waitSignal(
-        worker.finished
-    ):
+    with qtbot.waitSignals([worker.yielded, worker.finished]):
         worker.start()
     assert test_val[0] == 2
 

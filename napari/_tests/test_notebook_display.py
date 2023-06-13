@@ -37,7 +37,7 @@ def test_nbscreenshot(make_napari_viewer):
         ("Good alt text", "Good alt text"),
         # Naughty strings https://github.com/minimaxir/big-list-of-naughty-strings
         # ASCII punctuation
-        (r",./;'[]\-=", ',./;&#x27;[]\\-='),  # noqa: W605
+        (r",./;'[]\-=", ',./;&#x27;[]\\-='),
         # ASCII punctuation 2, skipping < because that is interpreted as the start
         # of an HTML element.
         ('>?:"{}|_+', '&gt;?:&quot;{}|_+'),
@@ -45,10 +45,13 @@ def test_nbscreenshot(make_napari_viewer):
         # # Emojis
         ("😍", "😍"),  # emoji 1
         ("👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️", "👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️"),  # emoji 2
-        (r"¯\_(ツ)_/¯", '¯\\_(ツ)_/¯'),  # Japanese emoticon  # noqa: W605
+        (r"¯\_(ツ)_/¯", '¯\\_(ツ)_/¯'),  # Japanese emoticon
         # # Special characters
         ("田中さんにあげて下さい", "田中さんにあげて下さい"),  # two-byte characters
-        ("表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀", "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀"),  # special unicode chars
+        (
+            "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀",  # noqa: RUF001
+            "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀",  # noqa: RUF001
+        ),  # special unicode chars
         ("گچپژ", "گچپژ"),  # Persian special characters
         # # Script injection
         ("<script>alert(0)</script>", None),  # script injection 1

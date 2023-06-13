@@ -111,7 +111,7 @@ class VispyBaseLayer(ABC):
 
     @abstractmethod
     def _on_data_change(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _on_refresh_change(self):
         self.node.update()

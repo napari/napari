@@ -1,5 +1,11 @@
-from napari.components._viewer_key_bindings import toggle_theme
+import pytest
+
+from napari.components._viewer_key_bindings import (
+    hold_for_pan_zoom,
+    toggle_theme,
+)
 from napari.components.viewer_model import ViewerModel
+from napari.layers.points import Points
 from napari.settings import get_settings
 from napari.utils.theme import available_themes, get_system_theme
 
@@ -50,3 +56,20 @@ def test_theme_toggle_from_system_theme():
         assert viewer.theme != 'system'
     # ensure we have looped back to whatever system was
     assert viewer.theme == actual_initial_theme
+
+
+def test_hold_for_pan_zoom():
+    viewer = ViewerModel()
+    data = [[1, 3], [8, 4], [10, 10], [15, 4]]
+    layer = Points(data, size=1)
+    viewer.layers.append(layer)
+    layer.mode = 'transform'
+
+    viewer.layers.selection.active = viewer.layers[0]
+    gen = hold_for_pan_zoom(viewer)
+    assert layer.mode == 'transform'
+    next(gen)
+    assert layer.mode == 'pan_zoom'
+    with pytest.raises(StopIteration):
+        next(gen)
+    assert layer.mode == 'transform'

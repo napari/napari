@@ -359,7 +359,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if isinstance(values, self.__class__):
             values = values.dict()
         if not isinstance(values, dict):
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     "Unsupported update from {values}",
                     deferred=True,

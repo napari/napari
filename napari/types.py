@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     NewType,
     Optional,
     Sequence,
@@ -20,11 +21,40 @@ import numpy as np
 from typing_extensions import TypedDict, get_args
 
 if TYPE_CHECKING:
-    import dask.array
+    # dask zarr should be imported as `import dask.array as da` But here it is used only in type annotation to
+    # register it as a valid type fom magicgui so is passed as string and requires full qualified name to allow
+    # magicgui properly register it.
+    import dask.array  # noqa: ICN001
     import zarr
     from magicgui.widgets import FunctionGui
-    from qtpy.QtWidgets import QWidget
+    from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
 
+
+__all__ = [
+    'ArrayLike',
+    'LayerTypeName',
+    'FullLayerData',
+    'LayerData',
+    'PathLike',
+    'PathOrPaths',
+    'ReaderFunction',
+    'WriterFunction',
+    'ExcInfo',
+    'WidgetCallable',
+    'AugmentedWidget',
+    'SampleData',
+    'SampleDict',
+    'ArrayBase',
+    'ImageData',
+    'LabelsData',
+    'PointsData',
+    'ShapesData',
+    'SurfaceData',
+    'TracksData',
+    'VectorsData',
+    'LayerDataTuple',
+    'image_reader_to_layerdata_reader',
+]
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
@@ -34,10 +64,13 @@ if TYPE_CHECKING:
 # since it includes all valid arguments for np.array() ( int, float, str...)
 ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 
+LayerTypeName = Literal[
+    "image", "labels", "points", "shapes", "surface", "tracks", "vectors"
+]
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
-FullLayerData = Tuple[Any, Dict, str]
+FullLayerData = Tuple[Any, Dict, LayerTypeName]
 LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
 PathLike = Union[str, Path]
@@ -73,16 +106,16 @@ class SampleDict(TypedDict):
 # while their names should not change (without deprecation), their typing
 # implementations may... or may be rolled over to napari/image-types
 
-ArrayBase = np.ndarray
+ArrayBase: Type[np.ndarray] = np.ndarray
 
 
-ImageData = NewType("ImageData", ArrayBase)
-LabelsData = NewType("LabelsData", ArrayBase)
-PointsData = NewType("PointsData", ArrayBase)
-ShapesData = NewType("ShapesData", List[ArrayBase])
-SurfaceData = NewType("SurfaceData", Tuple[ArrayBase, ArrayBase, ArrayBase])
-TracksData = NewType("TracksData", ArrayBase)
-VectorsData = NewType("VectorsData", ArrayBase)
+ImageData = NewType("ImageData", np.ndarray)
+LabelsData = NewType("LabelsData", np.ndarray)
+PointsData = NewType("PointsData", np.ndarray)
+ShapesData = NewType("ShapesData", List[np.ndarray])
+SurfaceData = NewType("SurfaceData", Tuple[np.ndarray, np.ndarray, np.ndarray])
+TracksData = NewType("TracksData", np.ndarray)
+VectorsData = NewType("VectorsData", np.ndarray)
 _LayerData = Union[
     ImageData,
     LabelsData,
@@ -132,13 +165,13 @@ def _register_types_with_magicgui():
 
     from napari.utils import _magicgui as _mgui
 
-    for _type in (LayerDataTuple, List[LayerDataTuple]):
+    for type_ in (LayerDataTuple, List[LayerDataTuple]):
         register_type(
-            _type,
+            type_,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
         if sys.version_info >= (3, 9):
-            future_type = Future[_type]  # type: ignore
+            future_type = Future[type_]  # type: ignore [valid-type]
             register_type(future_type, return_callback=_mgui.add_future_data)
 
     for data_type in get_args(_LayerData):
@@ -149,20 +182,20 @@ def _register_types_with_magicgui():
         )
         if sys.version_info >= (3, 9):
             register_type(
-                Future[data_type],  # type: ignore
+                Future[data_type],  # type: ignore [valid-type]
                 choices=_mgui.get_layers_data,
                 return_callback=partial(
                     _mgui.add_future_data, _from_tuple=False
                 ),
             )
         register_type(
-            Optional[data_type],  # type: ignore
+            Optional[data_type],  # type: ignore [call-overload]
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
         if sys.version_info >= (3, 9):
             register_type(
-                Future[Optional[data_type]],  # type: ignore
+                Future[Optional[data_type]],  # type: ignore [valid-type]
                 choices=_mgui.get_layers_data,
                 return_callback=partial(
                     _mgui.add_future_data, _from_tuple=False

@@ -264,7 +264,7 @@ class TrackManager:
 
         # check that graph nodes exist in the track id lookup
         for node_idx, parents_idx in graph.items():
-            nodes = [node_idx] + parents_idx
+            nodes = [node_idx, *parents_idx]
             for node in nodes:
                 if node not in unique_track_ids:
                     raise ValueError(
@@ -345,7 +345,7 @@ class TrackManager:
     def get_value(self, coords):
         """use a kd-tree to lookup the ID of the nearest tree"""
         if self._kdtree is None:
-            return
+            return None
 
         # query can return indices to points that do not exist, trim that here
         # then prune to only those in the current frame/time
@@ -356,7 +356,8 @@ class TrackManager:
 
         # if we have found a point, return it
         if pruned and self._points_id is not None:
-            return self._points_id[pruned[0]]  # return the track ID
+            return self._points_id[pruned[0]]
+        return None  # return the track ID
 
     @property
     def ndim(self) -> int:
