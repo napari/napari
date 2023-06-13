@@ -48,6 +48,7 @@ from qtpy.QtWidgets import (
 from superqt.utils import QSignalThrottler
 
 from napari._app_model.constants import MenuId
+from napari._app_model.context import get_context
 from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
@@ -709,6 +710,12 @@ class Window:
         # TODO: remove from window
         return self._qt_window.statusBar()
 
+    def _update_enabled(self, menu):
+        """Update enabled state of menu item with context."""
+        layerlist = self._qt_viewer._layers.model().sourceModel()._root
+        menu_model = getattr(self, menu)
+        menu_model.update_from_context(get_context(layerlist))
+
     def _add_menus(self):
         """Add menubar to napari app."""
         # TODO: move this to _QMainWindow... but then all of the Menu()
@@ -729,6 +736,10 @@ class Window:
 
         self.file_menu = build_qmodel_menu(
             MenuId.MENUBAR_FILE, title=trans._('&File'), parent=self._qt_window
+        )
+        # self.file_menu.aboutToShow.connect(self._update_enabled)
+        self.file_menu.aboutToShow.connect(
+            lambda: self._update_enabled('file_menu')
         )
         self.main_menu.addMenu(self.file_menu)
         self.view_menu = build_qmodel_menu(

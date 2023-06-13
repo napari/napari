@@ -67,13 +67,19 @@ class LayerList(SelectableEventedList[Layer]):
         from napari._app_model.context import create_context
         from napari._app_model.context._layerlist_context import (
             LayerListContextKeys,
+            LayerListSelectionContextKeys,
         )
 
-        self._ctx = create_context(self)
-        if self._ctx is not None:  # happens during Viewer type creation
-            self._ctx_keys = LayerListContextKeys(self._ctx)
+        self._ll_ctx = create_context(self)
+        self._lls_ctx = create_context(self)
+        if self._ll_ctx is not None:  # happens during Viewer type creation
+            self._ll_ctx_keys = LayerListContextKeys(self._ll_ctx)
+        if self._lls_ctx is not None:  # happens during Viewer type creation
+            self._lls_ctx_keys = LayerListSelectionContextKeys(self._lls_ctx)
 
-            self.selection.events.changed.connect(self._ctx_keys.update)
+            self.selection.events.changed.connect(self._lls_ctx_keys.update)
+            self.events.inserted.connect(self._ll_ctx_keys.update)
+            self.events.removed.connect(self._ll_ctx_keys.update)
 
     def _process_delete_item(self, item: Layer):
         super()._process_delete_item(item)
