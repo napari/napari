@@ -120,7 +120,7 @@ class LayerDelegate(QStyledItemDelegate):
         try:
             icon = QColoredSVGIcon.from_resources(icon_name)
         except ValueError:
-            return
+            return None
         # guessing theme rather than passing it through.
         red_color_component = palette.color(palette.ColorRole.Window).red()
         return icon.colored(
