@@ -18,6 +18,220 @@ except ModuleNotFoundError:
 
 
 class Graph(_BasePoints):
+    """
+    Graph layer used to display spatial graphs.
+
+    Parameters
+    ----------
+    data : GraphLike
+        A napari-graph compatible data, for example, networkx graph, 2D array of
+        coordinates or a napari-graph object.
+    ndim : int
+        Number of dimensions for shapes. When data is not None, ndim must be D.
+        An empty points layer can be instantiated with arbitrary ndim.
+    features : dict[str, array-like] or DataFrame
+        Features table where each row corresponds to a point and each column
+        is a feature.
+    feature_defaults : dict[str, Any] or DataFrame
+        The default value of each feature in a table with one row.
+    text : str, dict
+        Text to be displayed with the points. If text is set to a key in properties,
+        the value of that property will be displayed. Multiple properties can be
+        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        A dictionary can be provided with keyword arguments to set the text values
+        and display properties. See TextManager.__init__() for the valid keyword arguments.
+        For example usage, see /napari/examples/add_points_with_text.py.
+    symbol : str, array
+        Symbols to be used for the point markers. Must be one of the
+        following: arrow, clobber, cross, diamond, disc, hbar, ring,
+        square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
+    size : float, array
+        Size of the point marker in data pixels. If given as a scalar, all points are made
+        the same size. If given as an array, size must be the same or broadcastable
+        to the same shape as the data.
+    border_width : float, array
+        Width of the symbol border in pixels.
+    border_width_is_relative : bool
+        If enabled, border_width is interpreted as a fraction of the point size.
+    border_color : str, array-like, dict
+        Color of the point marker border. Numeric color values should be RGB(A).
+    border_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to border_color if a
+        categorical attribute is used color the vectors.
+    border_colormap : str, napari.utils.Colormap
+        Colormap to set border_color if a continuous attribute is used to set face_color.
+    border_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
+    face_color : str, array-like, dict
+        Color of the point marker body. Numeric color values should be RGB(A).
+    face_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
+        categorical attribute is used color the vectors.
+    face_colormap : str, napari.utils.Colormap
+        Colormap to set face_color if a continuous attribute is used to set face_color.
+    face_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
+    out_of_slice_display : bool
+        If True, renders points not just in central plane but also slightly out of slice
+        according to specified point marker size.
+    n_dimensional : bool
+        This property will soon be deprecated in favor of 'out_of_slice_display'.
+        Use that instead.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine : n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
+    shading : str, Shading
+        Render lighting and shading on points. Options are:
+
+        * 'none'
+          No shading is added to the points.
+        * 'spherical'
+          Shading and depth buffer are changed to give a 3D spherical look to the points
+    antialiasing: float
+        Amount of antialiasing in canvas pixels.
+    canvas_size_limits : tuple of float
+        Lower and upper limits for the size of points in canvas pixels.
+    shown : 1-D array of bool
+        Whether to show each point.
+
+    Attributes
+    ----------
+    data : array (N, D)
+        Coordinates for N points in D dimensions.
+    features : DataFrame-like
+        Features table where each row corresponds to a point and each column
+        is a feature.
+    feature_defaults : DataFrame-like
+        Stores the default value of each feature in a table with one row.
+    text : str
+        Text to be displayed with the points. If text is set to a key in properties, the value of
+        that property will be displayed. Multiple properties can be composed using f-string-like
+        syntax (e.g., '{property_1}, {float_property:.2f}).
+        For example usage, see /napari/examples/add_points_with_text.py.
+    symbol : array of str
+        Array of symbols for each point.
+    size : array (N, D)
+        Array of sizes for each point in each dimension. Must have the same
+        shape as the layer `data`.
+    border_width : array (N,)
+        Width of the marker borders in pixels for all points
+    border_width : array (N,)
+        Width of the marker borders for all points as a fraction of their size.
+    border_color : Nx4 numpy array
+        Array of border color RGBA values, one for each point.
+    border_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to border_color if a
+        categorical attribute is used color the vectors.
+    border_colormap : str, napari.utils.Colormap
+        Colormap to set border_color if a continuous attribute is used to set face_color.
+    border_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
+    face_color : Nx4 numpy array
+        Array of face color RGBA values, one for each point.
+    face_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
+        categorical attribute is used color the vectors.
+    face_colormap : str, napari.utils.Colormap
+        Colormap to set face_color if a continuous attribute is used to set face_color.
+    face_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
+    current_symbol : Symbol
+        Symbol for the next point to be added or the currently selected points.
+    current_size : float
+        Size of the marker for the next point to be added or the currently
+        selected point.
+    current_border_width : float
+        border width of the marker for the next point to be added or the currently
+        selected point.
+    current_border_color : str
+        border color of the marker border for the next point to be added or the currently
+        selected point.
+    current_face_color : str
+        Face color of the marker border for the next point to be added or the currently
+        selected point.
+    out_of_slice_display : bool
+        If True, renders points not just in central plane but also slightly out of slice
+        according to specified point marker size.
+    selected_data : Selection
+        Integer indices of any selected points.
+    mode : str
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        In ADD mode clicks of the cursor add points at the clicked location.
+
+        In SELECT mode the cursor can select points by clicking on them or
+        by dragging a box around them. Once selected points can be moved,
+        have their properties edited, or be deleted.
+    face_color_mode : str
+        Face color setting mode.
+
+        DIRECT (default mode) allows each point to be set arbitrarily
+
+        CYCLE allows the color to be set via a color cycle over an attribute
+
+        COLORMAP allows color to be set via a color map over an attribute
+    border_color_mode : str
+        border color setting mode.
+
+        DIRECT (default mode) allows each point to be set arbitrarily
+
+        CYCLE allows the color to be set via a color cycle over an attribute
+
+        COLORMAP allows color to be set via a color map over an attribute
+    shading : Shading
+        Shading mode.
+    antialiasing: float
+        Amount of antialiasing in canvas pixels.
+    canvas_size_limits : tuple of float
+        Lower and upper limits for the size of points in canvas pixels.
+    shown : 1-D array of bool
+        Whether each node is shown.
+    """
+
     def __init__(
         self,
         data=None,
