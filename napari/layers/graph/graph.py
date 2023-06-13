@@ -200,7 +200,7 @@ class Graph(_BasePoints):
 
     @property
     def _view_edges_coordinates(self) -> np.ndarray:
-        return self.data._coords[self._edges_indices_view][
+        return self.data.coords_buffer[self._edges_indices_view][
             ..., self._slice_input.displayed
         ]
 
@@ -233,8 +233,7 @@ class Graph(_BasePoints):
 
         prev_size = self.data.n_allocated_nodes
 
-        for idx, coord in zip(indices, coords):
-            self.data.add_nodes(idx, coord)
+        self.data.add_nodes(indices, coords)
 
         self._data_changed(prev_size)
 
@@ -278,7 +277,9 @@ class Graph(_BasePoints):
         shift : np.ndarray
             Selected coordinates shift
         """
-        self.data._coords[ixgrid] = self.data._coords[ixgrid] + shift
+        self.data.coords_buffer[ixgrid] = (
+            self.data.coords_buffer[ixgrid] + shift
+        )
 
     def _update_props_and_style(self, data_size: int, prev_size: int) -> None:
         # Add/remove property and style values based on the number of new points.

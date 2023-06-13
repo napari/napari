@@ -9,11 +9,9 @@ from napari.layers.utils._slice_input import _SliceInput
 
 try:
     from napari_graph import BaseGraph
-    from napari_graph.base_graph import _NODE_EMPTY_PTR
 
 except ModuleNotFoundError:
     BaseGraph = None
-    _NODE_EMPTY_PTR = None
 
 
 @dataclass(frozen=True)
@@ -82,9 +80,7 @@ class _GraphSliceRequest:
             # If we want to display everything, then use all indices.
             # scale is only impacted by not displayed data, therefore 1
             node_indices = np.arange(self.data.n_allocated_nodes)
-            node_indices = node_indices[
-                self.data._buffer2world != _NODE_EMPTY_PTR
-            ]
+            node_indices = node_indices[self.data.initialized_buffer_mask()]
             _, edges = self.data.get_edges_buffers(is_buffer_domain=True)
             return _GraphSliceResponse(
                 indices=node_indices,
@@ -128,9 +124,9 @@ class _GraphSliceRequest:
         and compute scaling factor for out-slice display
         while ignoring not initialized nodes from graph.
         """
-        valid_nodes = self.data._buffer2world != _NODE_EMPTY_PTR
+        valid_nodes = self.data.initialized_buffer_mask()
         ixgrid = np.ix_(valid_nodes, not_disp)
-        data = self.data._coords[ixgrid]
+        data = self.data.coords_buffer[ixgrid]
         sizes = self.size[ixgrid] / 2
         distances = abs(data - not_disp_indices)
         matches = np.all(distances <= sizes, axis=1)
@@ -153,8 +149,8 @@ class _GraphSliceRequest:
         Slices data according to non displayed indices
         while ignoring not initialized nodes from graph.
         """
-        valid_nodes = self.data._buffer2world != _NODE_EMPTY_PTR
-        data = self.data._coords[np.ix_(valid_nodes, not_disp)]
+        valid_nodes = self.data.initialized_buffer_mask()
+        data = self.data.coords_buffer[np.ix_(valid_nodes, not_disp)]
         distances = np.abs(data - not_disp_indices)
         matches = np.all(distances <= 0.5, axis=1)
         valid_nodes[valid_nodes] = matches
