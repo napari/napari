@@ -520,7 +520,7 @@ class _BasePoints(Layer):
 
     @property
     def _points_data(self) -> np.ndarray:
-        """Spatialy distributed coordinates."""
+        """Spatially distributed coordinates."""
         raise NotImplementedError
 
     @property
@@ -1926,25 +1926,25 @@ class _BasePoints(Layer):
     ) -> dict:
         """Status message information of the data at a coordinate position.
 
-        # Parameters
-        # ----------
-        # position : tuple
-        #     Position in either data or world coordinates.
-        # view_direction : Optional[np.ndarray]
-        #     A unit vector giving the direction of the ray in nD world coordinates.
-        #     The default value is None.
-        # dims_displayed : Optional[List[int]]
-        #     A list of the dimensions currently being displayed in the viewer.
-        #     The default value is None.
-        # world : bool
-        #     If True the position is taken to be in world coordinates
-        #     and converted into data coordinates. False by default.
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
 
-        # Returns
-        # -------
-        # source_info : dict
-        #     Dict containing information that can be used in a status update.
-        #"""
+        Returns
+        -------
+        source_info : dict
+            Dict containing information that can be used in a status update.
+        """
         if position is not None:
             value = self.get_value(
                 position,
@@ -1980,8 +1980,7 @@ class _BasePoints(Layer):
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
     ):
-        """
-        tooltip message of the data at a coordinate position.
+        """Tooltip message of the data at a coordinate position.
 
         Parameters
         ----------
@@ -2043,14 +2042,14 @@ class _BasePoints(Layer):
 
 
 class Points(_BasePoints):
-    @rename_argument("edge_width", "border_width", "6.0.0")
+    @rename_argument("edge_width", "border_width", "0.6.0")
     @rename_argument(
-        "edge_width_is_relative", "border_width_is_relative", "6.0.0"
+        "edge_width_is_relative", "border_width_is_relative", "0.6.0"
     )
-    @rename_argument("edge_color", "border_color", "6.0.0")
-    @rename_argument("edge_color_cycle", "border_color_cycle", "6.0.0")
-    @rename_argument("edge_colormap", "border_colormap", "6.0.0")
-    @rename_argument("edge_contrast_limits", "border_contrast_limits", "6.0.0")
+    @rename_argument("edge_color", "border_color", "0.6.0")
+    @rename_argument("edge_color_cycle", "border_color_cycle", "0.6.0")
+    @rename_argument("edge_colormap", "border_colormap", "0.6.0")
+    @rename_argument("edge_contrast_limits", "border_contrast_limits", "0.6.0")
     def __init__(
         self,
         data=None,
@@ -2169,7 +2168,7 @@ class Points(_BasePoints):
 
     @property
     def _points_data(self) -> np.ndarray:
-        """Spatialy distributed coordinates."""
+        """Spatially distributed coordinates."""
         return self.data
 
     @property

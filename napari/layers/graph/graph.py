@@ -107,7 +107,7 @@ class Graph(_BasePoints):
 
         # TODO:
         # dummy events because of VispyGraphLayer's VispyPointsLayerinheritance
-        # should be removed in 6.0.0
+        # should be removed in 0.6.0
         self.events.add(
             edge_width=Event,
             current_edge_width=Event,
