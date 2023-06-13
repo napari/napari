@@ -4,8 +4,12 @@ from napari.utils.events.migrations import deprecation_warning_event
 
 
 def test_deprecation_warning_event() -> None:
-    event = deprecation_warning_event("obj.events", "old", "new", "0.0.1")
-    event.connect(lambda x: print(x))
+    event = deprecation_warning_event("obj.events", "old", "new", "0.0.0")
 
-    with pytest.deprecated_call():
-        event("test")
+    def _print(msg: str) -> None:
+        print(msg)
+
+    event.connect(_print)
+
+    with pytest.warns(FutureWarning):
+        event(msg="test")
