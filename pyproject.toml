@@ -420,7 +420,6 @@ module = [
     'napari.utils.geometry',
     'napari.utils.interactions',
     'napari.utils.key_bindings',
-    'napari.utils.misc',
     'napari.utils.mouse_bindings',
     'napari.utils.naming',
     'napari.utils.notifications',
