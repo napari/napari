@@ -400,27 +400,25 @@ class TranslationBundle:
         **kwargs : dict, optional
             Any additional arguments to use when formating the string.
         """
-        if n is None:
-            if msgctxt is None:
-                translation = gettext.dgettext(self._domain, msgid)
-            else:
-                translation = gettext.dpgettext(self._domain, msgctxt, msgid)
-        elif msgid_plural is not None:
-            if msgctxt is None:
-                translation = gettext.dngettext(
-                    self._domain,
-                    msgid,
-                    msgid_plural,
-                    n,
-                )
-            else:
-                translation = gettext.dnpgettext(
-                    self._domain,
-                    msgctxt,
-                    msgid,
-                    msgid_plural,
-                    n,
-                )
+        if msgctxt is not None and n is not None and msgid_plural is not None:
+            translation = gettext.dnpgettext(
+                self._domain,
+                msgctxt,
+                msgid,
+                msgid_plural,
+                n,
+            )
+        elif n is not None and msgid_plural is not None:
+            translation = gettext.dngettext(
+                self._domain,
+                msgid,
+                msgid_plural,
+                n,
+            )
+        elif msgctxt is not None:
+            translation = gettext.dpgettext(self._domain, msgctxt, msgid)
+        else:
+            translation = gettext.dgettext(self._domain, msgid)
 
         kwargs['n'] = n
         return translation.format(**kwargs)
