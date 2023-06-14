@@ -47,7 +47,7 @@ def generate_layer_coords_status(
     position: Optional[npt.ArrayLike], value: Optional[tuple]
 ) -> str:
     if position is not None:
-        full_coord = map(str, np.round(position).astype(int))
+        full_coord = map(str, np.round(np.array(position)).astype(int))
         msg = f" [{' '.join(full_coord)}]"
     else:
         msg = ""
