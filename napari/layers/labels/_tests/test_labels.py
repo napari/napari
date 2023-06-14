@@ -403,8 +403,8 @@ def test_custom_color_dict():
     )
 
     # test with custom color dict
-    assert type(layer.get_color(2)) == np.ndarray
-    assert type(layer.get_color(1)) == np.ndarray
+    assert isinstance(layer.get_color(2), np.ndarray)
+    assert isinstance(layer.get_color(1), np.ndarray)
     assert (layer.get_color(2) == np.array([1.0, 1.0, 1.0, 1.0])).all()
     assert (layer.get_color(4) == layer.get_color(16)).all()
     assert (layer.get_color(8) == layer.get_color(32)).all()

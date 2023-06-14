@@ -199,7 +199,7 @@ def _nanmax(array):
 
 
 def calc_data_range(data, rgb=False) -> Tuple[float, float]:
-    """Calculate range of data values. If all values are equal return [0, 1].
+    """Calculate range of data values. If all values are equal return (0, 1).
 
     Parameters
     ----------
@@ -210,8 +210,8 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
 
     Returns
     -------
-    values : tuple[float, float]
-        Range of values.
+    values : pair of floats
+        Minimum and maximum values in that order.
 
     Notes
     -----
