@@ -11,5 +11,5 @@ def test_qt_tooltip_label(qtbot):
     widget.show()
 
     assert QToolTip.text() == ""
-    qtbot.mouseMove(widget)
+    qtbot.mouseMove(widget, delay=1000)
     qtbot.waitUntil(lambda: QToolTip.text() == tooltip_text)
