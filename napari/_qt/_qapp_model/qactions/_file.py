@@ -102,10 +102,7 @@ Q_FILE_ACTIONS: List[Action] = [
         title=trans._('Save All Layers...'),
         callback=QtViewer._save_layers_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
-        # Conflict: ctrl+shift+s typically means "save as ..."
-        keybindings=[
-            {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyS}
-        ],
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyS}],
         enablement=(LLCK.num_layers > 0),
     ),
     Action(
