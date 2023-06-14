@@ -99,3 +99,49 @@ def test_create_qt_plugin_sorter(qtbot):
         'write_surface',
         'write_vectors',
     ]
+
+
+@pytest.mark.parametrize(
+    "hook_name,help_info",
+    [
+        ('select hook... ', ''),
+        (
+            'get_reader',
+            'This is the primary "<strong>reader plugin</strong>" function.  It accepts a path or<br>    list of paths, and returns a list of data to be added to the <code>Viewer</code>.<br>',
+        ),
+        (
+            'get_writer',
+            'This function will be called whenever the user attempts to save multiple<br>    layers (e.g. via <code>File -> Save Layers</code>, or<br>    <code>save_layers</code>).<br>',
+        ),
+        (
+            'write_labels',
+            'It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.',
+        ),
+        (
+            'write_points',
+            'It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.',
+        ),
+        (
+            'write_shapes',
+            'It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.',
+        ),
+        (
+            'write_surface',
+            'It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.',
+        ),
+        (
+            'write_vectors',
+            'It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.',
+        ),
+    ],
+)
+def test_qt_plugin_sorter_help_info(qtbot, hook_name, help_info):
+    plugin_sorter = QtPluginSorter()
+    qtbot.addWidget(plugin_sorter)
+
+    # Check hook combobox items help tooltip in the info widget
+    info_widget = plugin_sorter.info
+    hook_combo_box = plugin_sorter.hook_combo_box
+    hook_combo_box.setCurrentText(hook_name)
+
+    assert help_info in info_widget.toolTip()
