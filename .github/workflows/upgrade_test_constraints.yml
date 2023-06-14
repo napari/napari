@@ -72,10 +72,11 @@ jobs:
 
           for pyv in 3.8 3.9 3.10 3.11; do
             python${pyv}  -m pip install -U pip pip-tools
-            python${pyv}  -m piptools compile --upgrade -o resources/constraints/constraints_${pyv}.txt  setup.cfg resources/constraints/version_denylist.txt ${flags}
+            python${pyv}  -m piptools compile --upgrade -o resources/constraints/constraints_py${pyv}.txt  setup.cfg resources/constraints/version_denylist.txt ${flags}
           done
 
           python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9_examples.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
+          python3.11 -m piptools compile --upgrade -o resources/requirements_mypy.txt resources/requirements_mypy.in --resolver=backtracking
 
       # END PYTHON DEPENDENCIES
 
@@ -96,6 +97,7 @@ jobs:
           commit-message: Update bundle dependencies.
           branch: ${{ env.BRANCH_NAME }}
           delete-branch: true
+          labels: maintenance
           title: "test: [Automatic] Constraints upgrades: ${{ steps.packages.outputs.main_packages }}"
           body: |
             This PR is automatically created and updated by this napari GitHub Action:
