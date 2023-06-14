@@ -57,7 +57,7 @@ QTextEdit {
   color: {{ text }};
   selection-background-color: {{ foreground }};
   padding: 4px 2px 4px 4px;
-  font-size: {{ font_size }};
+  font-size: {{ increase(font_size, 1) }};
 }
 
 /* the area behind the scrollbar */
@@ -72,7 +72,7 @@ QPushButton {
   border-radius: 2px;
   padding: 4px;
   border: 0px;
-  font-size: {{ font_size }};
+  font-size: {{ increase(font_size, 1) }};
 }
 
 QPushButton:hover {
@@ -121,7 +121,7 @@ QComboBox {
   border-radius: 2px;
   background-color: {{ foreground }};
   padding: 3px 10px 3px 8px; /* top right bottom left */
-  font-size: {{ font_size }};
+  font-size: {{ increase(font_size, 1) }};
 }
 
 QComboBox:disabled {
@@ -179,7 +179,7 @@ QLineEdit {
   min-height: 20px;
   padding: 2px;
   border-radius: 2px;
-  font-size: {{ font_size }};
+  font-size: {{ decrease(font_size, 1) }};
 }
 
 QWidget[emphasized="true"] QLineEdit {
@@ -201,6 +201,7 @@ QAbstractSpinBox {
 QLabeledSlider > QAbstractSpinBox {
   min-width: 10px;
   padding: 0px;
+  font-size: {{ decrease(font_size, 1) }};
 }
 
 QWidget[emphasized="true"] QAbstractSpinBox {
@@ -273,7 +274,7 @@ QCheckBox {
   spacing: 5px;
   color: {{ text }};
   background-color: none;
-  font-size: {{ font_size }};
+  font-size: {{ increase(font_size, 1) }};
 }
 
 QCheckBox::indicator {
@@ -323,7 +324,7 @@ QWidget[emphasized="true"] QCheckBox::indicator:unchecked:hover {
 
 QRadioButton {
   background: none;
-  font-size: {{ font_size }};
+  font-size: {{ increase(font_size, 1) }};
 }
 
 QRadioButton::indicator{
@@ -605,7 +606,7 @@ QGroupBox {
     border: 1px solid {{ foreground }};
     border-radius: 5px;
     margin-top: 1ex; /* leave space at the top for the title */
-    font-size: {{ font_size }};
+    font-size: {{ increase(font_size, 1) }};
 }
 
 QGroupBox::title {
@@ -614,7 +615,7 @@ QGroupBox::title {
     left: 10px;
     padding: 0 3px;
     background-color: {{ background }};
-    font-size: {{ font_size }};
+    font-size: {{ increase(font_size, 1) }};
 }
 
 QGroupBox::indicator {
@@ -702,7 +703,7 @@ QWidget[emphasized="true"] QTabBar::tab:selected {
 
 QLabel {
   background-color: none;
-  font-size: {{ font_size }};
+  font-size: {{ increase(font_size, 1) }};
 }
 
 /* ----------------- QMenuBar ------------------ */

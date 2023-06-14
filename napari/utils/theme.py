@@ -84,7 +84,7 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
-    font_size: str = '13pt' if sys.platform == 'darwin' else '9pt'
+    font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
     @validator("syntax_style", pre=True, allow_reuse=True)
     def _ensure_syntax_style(value: str) -> str:
@@ -383,7 +383,7 @@ DARK = Theme(
     syntax_style='native',
     console='rgb(18, 18, 18)',
     canvas='black',
-    font_size='13pt' if sys.platform == 'darwin' else '9pt',
+    font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 LIGHT = Theme(
     id='light',
@@ -401,7 +401,7 @@ LIGHT = Theme(
     syntax_style='default',
     console='rgb(255, 255, 255)',
     canvas='white',
-    font_size='13pt' if sys.platform == 'darwin' else '9pt',
+    font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 
 register_theme('dark', DARK, "builtin")
