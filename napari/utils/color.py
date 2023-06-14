@@ -129,5 +129,5 @@ class ColorArray(np.ndarray):
         # Special case an empty supported sequence because transform_color
         # warns and returns an array containing a default color in that case.
         if isinstance(value, (np.ndarray, list, tuple)) and len(value) == 0:
-            return np.empty((0, 4), np.float32)
+            return np.empty((0, 4), np.float32).view(cls)
         return transform_color(value).view(cls)
