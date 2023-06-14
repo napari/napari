@@ -117,7 +117,7 @@ _COMMAND_INFO = {
     CommandId.DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN: _i(trans._('Open Files as Stack...')),
     CommandId.DLG_OPEN_FOLDER_WITH_PLUGIN: _i(trans._('Open Folder...')),
     CommandId.DLG_SHOW_PREFERENCES: _i(trans._('Preferences')),
-    CommandId.DLG_SAVE_LAYERS: _i(trans._('Save Selected Layer(s)...')),
+    CommandId.DLG_SAVE_LAYERS: _i(trans._('Save All Layers...')),
     CommandId.DLG_SAVE_CANVAS_SCREENSHOT: _i(trans._('Save Screenshot...')),
     CommandId.DLG_SAVE_VIEWER_SCREENSHOT: _i(trans._('Save Screenshot with Viewer...')),
     CommandId.COPY_CANVAS_SCREENSHOT: _i(trans._('Copy Screenshot to Clipboard')),

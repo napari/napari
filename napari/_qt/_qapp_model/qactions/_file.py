@@ -5,6 +5,7 @@ from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
 from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari._app_model.context import (
     LayerListContextKeys as LLCK,
+    LayerListSelectionContextKeys as LLSCK,
 )
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
@@ -84,18 +85,18 @@ Q_FILE_ACTIONS: List[Action] = [
         # TODO: revert to `StandardKeyBinding.Preferences` after app-model>0.2.0
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.Comma}],
     ),
-    # TODO!
-    # this action would conflict because having the same id as below... but
-    # we could check whether the args are the same and if not, then allow registration
-    # Action(
-    #     id=CommandId.DLG_SAVE_LAYERS,
-    #     title=CommandId.DLG_SAVE_LAYERS.title,
-    #     callback=QtViewer._save_layers_dialog,
-    #     kwargs={'selected': True},  # <<<<< TODO!
-    #     menus=[{'id': MenuId.MENUBAR_FILE, 'group': '3_'}],
-    #     keybindings=[StandardKeyBinding.Save],
-    #     enablement='num_selected_layers > 0'
-    # ),
+    # TODO:
+    # If app-model supports a `kwargs` field, remove the lambda in the callback.
+    # If it also allows registration of the same `id` when args are different,
+    # we can remove the f string in `id`
+    Action(
+        id=f"{CommandId.DLG_SAVE_LAYERS}.selected",
+        title=trans._('Save Selected Layers...'),
+        callback=lambda: QtViewer._save_layers_dialog(selected=True),
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
+        keybindings=[StandardKeyBinding.Save],
+        enablement=(LLSCK.num_selected_layers > 0),
+    ),
     Action(
         id=CommandId.DLG_SAVE_LAYERS,
         title=trans._('Save All Layers...'),
@@ -105,7 +106,7 @@ Q_FILE_ACTIONS: List[Action] = [
         keybindings=[
             {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyS}
         ],
-        enablement=(LLCK.num_layers >= 1),
+        enablement=(LLCK.num_layers > 0),
     ),
     Action(
         id=CommandId.DLG_SAVE_CANVAS_SCREENSHOT,
