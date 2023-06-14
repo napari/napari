@@ -597,7 +597,6 @@ class Window:
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
-        # viewer.layers.events.connect(self.file_menu.update)
         viewer.events.status.connect(self._status_changed)
 
         if show:

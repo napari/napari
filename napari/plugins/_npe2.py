@@ -344,28 +344,6 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
     _build_npe1_samples_menu()
 
 
-# def _get_sample_data_id(
-#     sample: Union[_SampleDataContribution, SampleDict],
-#     plugin: Optional[str] = '',
-# ) -> str:
-#     """Get `Action` ID for `SampleDataGenerator` or `SampleDataURI`."""
-#     if isinstance(sample, SampleDataGenerator):
-#         return sample.command
-#     elif isinstance(sample, SampleDataURI):
-#         URI_filename = Path(unquote_plus(urlparse(sample.uri).path)).name
-#         return f"{plugin}.{URI_filename}"
-#     elif isinstance(sample, SampleDict):
-#         if isinstance(sample['data'], PathLike):
-#             return f"{plugin}.{sample['data']}"
-#         else:
-#             return f"{plugin}.{sample['data'].__name__}"
-#     else:
-#         raise TypeError(
-#             f"""'Sample' needs to be of type: 'SampleDataGenerator",
-#             'SampleDataURI' or '', got: {type(sample)}"""
-#         )
-
-
 # TODO: This is a separate function from `_build_samples_menu` so it can be
 # easily deleted once npe1 is no longer supported.
 def _build_npe1_samples_menu():

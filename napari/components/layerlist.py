@@ -72,7 +72,7 @@ class LayerList(SelectableEventedList[Layer]):
         # TODO: figure out how to move this context creation bit.
         # Ideally, the app should be aware of the layerlist, but not vice versa.
         # This could probably be done by having the layerlist emit events that
-        # the app # connects to, then the `_ctx` object would live on the app,
+        # the app connects to, then the `_ctx` object would live on the app,
         # (not here)
         from napari._app_model.context import create_context
         from napari._app_model.context._layerlist_context import (
