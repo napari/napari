@@ -733,25 +733,34 @@ class Window:
         self._main_menu_shortcut.activated.connect(
             self._toggle_menubar_visible
         )
-
+        # file menu
         self.file_menu = build_qmodel_menu(
             MenuId.MENUBAR_FILE, title=trans._('&File'), parent=self._qt_window
         )
-        # self.file_menu.aboutToShow.connect(self._update_enabled)
         self.file_menu.aboutToShow.connect(
             lambda: self._update_enabled('file_menu')
         )
         self.main_menu.addMenu(self.file_menu)
+        # view menu
         self.view_menu = build_qmodel_menu(
             MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
         )
+        self.view_menu.aboutToShow.connect(
+            lambda: self._update_enabled('view_menu')
+        )
         self.main_menu.addMenu(self.view_menu)
+        # plugin menu
         self.plugins_menu = menus.PluginsMenu(self)
         self.main_menu.addMenu(self.plugins_menu)
+        # window menu
         self.window_menu = menus.WindowMenu(self)
         self.main_menu.addMenu(self.window_menu)
+        # help menu
         self.help_menu = build_qmodel_menu(
             MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
+        )
+        self.help_menu.aboutToShow.connect(
+            lambda: self._update_enabled('help_menu')
         )
         self.main_menu.addMenu(self.help_menu)
 

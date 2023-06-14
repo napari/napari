@@ -59,27 +59,43 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
+        self._create_contexts()
+
+    def _create_contexts(self):
+        """Create contexts to manage enabled/visible action/menu states.
+
+        Connects LayerList and Selection[Layer] to their context keys to allow
+        actions and menu items (in the GUI) to be dynamically enabled/disabled
+        and visible/hidden based on the state of layers in the list.
+        """
 
         # TODO: figure out how to move this context creation bit.
         # Ideally, the app should be aware of the layerlist, but not vice versa.
-        # This could probably be done by having the layerlist emit events that the app
-        # connects to, then the `_ctx` object would live on the app, (not here)
+        # This could probably be done by having the layerlist emit events that
+        # the app # connects to, then the `_ctx` object would live on the app,
+        # (not here)
         from napari._app_model.context import create_context
         from napari._app_model.context._layerlist_context import (
             LayerListContextKeys,
             LayerListSelectionContextKeys,
         )
 
-        self._ll_ctx = create_context(self)
-        self._lls_ctx = create_context(self)
-        if self._ll_ctx is not None:  # happens during Viewer type creation
-            self._ll_ctx_keys = LayerListContextKeys(self._ll_ctx)
-        if self._lls_ctx is not None:  # happens during Viewer type creation
-            self._lls_ctx_keys = LayerListSelectionContextKeys(self._lls_ctx)
+        self._ctx = create_context(self)
+        if self._ctx is not None:  # happens during Viewer type creation
+            self._ctx_keys = LayerListContextKeys(self._ctx)
+            self.events.inserted.connect(self._ctx_keys.update)
+            self.events.removed.connect(self._ctx_keys.update)
 
-            self.selection.events.changed.connect(self._lls_ctx_keys.update)
-            self.events.inserted.connect(self._ll_ctx_keys.update)
-            self.events.removed.connect(self._ll_ctx_keys.update)
+        self._selection_ctx = create_context(self)
+        if (
+            self._selection_ctx is not None
+        ):  # happens during Viewer type creation
+            self._selection_ctx_keys = LayerListSelectionContextKeys(
+                self._selection_ctx
+            )
+            self.selection.events.changed.connect(
+                self._selection_ctx_keys.update
+            )
 
     def _process_delete_item(self, item: Layer):
         super()._process_delete_item(item)
