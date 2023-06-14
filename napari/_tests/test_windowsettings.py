@@ -17,13 +17,7 @@ def test_singlescreen_window_settings(make_napari_viewer):
 
     # Invalid left of screen
     settings.application.window_position = (0, -400)
-    (
-        _,
-        _,
-        window_position,
-        _,
-        _,
-    ) = viewer.window._qt_window._load_window_settings()
+    window_position = viewer.window._qt_window._load_window_settings()[2]
     assert window_position == default_window_position
 
     # Invalid right of screen
