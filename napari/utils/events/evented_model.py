@@ -104,6 +104,18 @@ class EventedMetaclass(main.ModelMetaclass):
         for name, attr in namespace.items():
             if isinstance(attr, property):
                 cls.__properties__[name] = attr
+                # determine compare operator
+                if (
+                    hasattr(attr.fget, "__annotations__")
+                    and "return" in attr.fget.__annotations__
+                    and not isinstance(
+                        attr.fget.__annotations__["return"], str
+                    )
+                ):
+                    cls.__eq_operators__[name] = pick_equality_operator(
+                        attr.fget.__annotations__["return"]
+                    )
+
         cls.__field_dependents__ = _get_field_dependents(cls)
         return cls
 
@@ -271,12 +283,32 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return
 
         # grab current value
+        field_dep = self.__field_dependents__.get(name, {})
+        has_callbacks = {
+            name: bool(getattr(self.events, name).callbacks)
+            for name in field_dep
+        }
+        emitter = getattr(self.events, name)
+        # equality comparisons may be expensive, so just avoid them if
+        # event has no callbacks connected
+        if not (
+            emitter.callbacks
+            or self._events.callbacks
+            or any(has_callbacks.values())
+        ):
+            self._super_setattr_(name, value)
+            return
+
+        dep_with_callbacks = [
+            dep for dep, has_cb in has_callbacks.items() if has_cb
+        ]
+
         before = getattr(self, name, object())
         before_deps = {}
         with warnings.catch_warnings():
             # we still need to check for deprecated properties
             warnings.simplefilter("ignore", DeprecationWarning)
-            for dep in self.__field_dependents__.get(name, {}):
+            for dep in dep_with_callbacks:
                 before_deps[dep] = getattr(self, dep, object())
 
         # set value using original setter
@@ -288,21 +320,23 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         with warnings.catch_warnings():
             # we still need to check for deprecated properties
             warnings.simplefilter("ignore", DeprecationWarning)
-            for dep in self.__field_dependents__.get(name, {}):
+            for dep in dep_with_callbacks:
                 after_deps[dep] = getattr(self, dep, object())
 
         are_equal = self.__eq_operators__.get(name, operator.eq)
-        if not are_equal(after, before):
-            getattr(self.events, name)(value=after)  # emit event
+        if are_equal(after, before):
+            # no change
+            return
+        emitter(value=after)  # emit event
 
-            # emit events for any dependent computed properties as well
-            for dep in before_deps:
-                # NOTE: this comparison might be expensive! If it is too much, we
-                #       can always remove the are_equal check and fire events for
-                #       all dependents indiscriminately
+        # emit events for any dependent computed properties as well
+        for dep, value_ in before_deps.items():
+            if dep in self.__eq_operators__:
+                are_equal = self.__eq_operators__[dep]
+            else:
                 are_equal = pick_equality_operator(after_deps[dep])
-                if not are_equal(after_deps[dep], before_deps[dep]):
-                    getattr(self.events, dep)(value=after_deps[dep])
+            if not are_equal(after_deps[dep], value_):
+                getattr(self.events, dep)(value=after_deps[dep])
 
     # expose the private EmitterGroup publically
     @property
@@ -390,15 +424,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return True
         if not isinstance(other, EventedModel):
             return self.dict() == other
-
-        for f_name, eq in self.__eq_operators__.items():
-            if f_name not in other.__eq_operators__:
-                return False
-            if (
-                hasattr(self, f_name)
-                and hasattr(other, f_name)
-                and not eq(getattr(self, f_name), getattr(other, f_name))
-            ):
+        if self.__class__ != other.__class__:
+            return False
+        for f_name in self.__fields__:
+            eq = self.__eq_operators__[f_name]
+            if not eq(getattr(self, f_name), getattr(other, f_name)):
                 return False
         return True
 
