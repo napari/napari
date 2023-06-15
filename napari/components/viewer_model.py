@@ -970,9 +970,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         from napari.plugins import _npe2, plugin_manager
 
+        plugin_spec_reader = None
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
-
         # then try with npe1
         if data is None:
             try:
@@ -981,6 +981,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 available += list(plugin_manager.available_samples())
         # npe2 uri sample data, extract the path so we can use viewer.open
         elif hasattr(data.__self__, 'uri'):
+            if hasattr(data.__self__, 'reader_plugin'):
+                # if the user chose a reader_plugin, we use their choice
+                # but we remember what the plugin declared so we can inform the user if it fails
+                plugin_spec_reader = data.__self__.reader_plugin
+                reader_plugin = reader_plugin or plugin_spec_reader
             data = data.__self__.uri
 
         if data is None:
@@ -1015,7 +1020,25 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     added.extend(self._add_layer_from_data(*datum))
                 return added
             if isinstance(data, (str, Path)):
-                return self.open(data, plugin=reader_plugin)
+                try:
+                    return self.open(data, plugin=reader_plugin)
+                except Exception as e:
+                    # user chose a different reader to the one specified by the plugin
+                    # and it failed - let them know the plugin declared something else
+                    if (
+                        plugin_spec_reader is not None
+                        and reader_plugin != plugin_spec_reader
+                    ):
+                        raise ValueError(
+                            trans._(
+                                "Chosen reader {chosen_reader} failed to open sample. Plugin {plugin} declares {original_reader} as the reader for this sample - try calling `open_sample` with no `reader_plugin` or passing {original_reader} explicitly.",
+                                deferred=True,
+                                plugin=plugin,
+                                chosen_reader=reader_plugin,
+                                original_reader=plugin_spec_reader,
+                            )
+                        ) from e
+                    raise e  # noqa: TRY201
 
             raise TypeError(
                 trans._(
