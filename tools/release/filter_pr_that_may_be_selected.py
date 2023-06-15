@@ -1,5 +1,4 @@
 import argparse
-from datetime import datetime
 
 from tqdm import tqdm
 
@@ -7,14 +6,14 @@ from release_utils import (
     GH_REPO,
     GH_USER,
     get_commit_counts_from_ancestor,
-    get_common_ancestor,
     get_github,
     get_milestone,
     get_repo,
+    get_split_date,
     setup_cache,
 )
 
-parser = argparse.ArgumentParser(usage=__doc__)
+parser = argparse.ArgumentParser()
 parser.add_argument('from_commit', help='The starting tag.')
 parser.add_argument('to_commit', help='The head branch.')
 parser.add_argument(
@@ -53,11 +52,8 @@ if args.skip_triaged:
 else:
     triage_labels = []
 
-common_ancestor = get_common_ancestor(args.from_commit, args.to_commit)
-remote_commit = repository.get_commit(common_ancestor.hexsha)
-previous_tag_date = datetime.strptime(
-    remote_commit.last_modified, '%a, %d %b %Y %H:%M:%S %Z'
-)
+previous_tag_date = get_split_date(args.from_commit, args.to_commit)
+
 
 pr_count = get_commit_counts_from_ancestor(args.from_commit, args.to_commit)
 

@@ -3,6 +3,7 @@ import os
 import re
 import sys
 from contextlib import contextmanager
+from datetime import datetime
 from typing import Optional
 
 from github import Github, Milestone
@@ -128,3 +129,11 @@ def get_milestone(
         if milestone.title == milestone_name:
             return milestone
     raise RuntimeError(f'Milestone {milestone_name} not found')
+
+
+def get_split_date(previous_release, rev="main"):
+    common_ancestor = get_common_ancestor(previous_release, rev)
+    remote_commit = get_repo().get_commit(common_ancestor.hexsha)
+    return datetime.strptime(
+        remote_commit.last_modified, '%a, %d %b %Y %H:%M:%S %Z'
+    )
