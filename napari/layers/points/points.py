@@ -2045,14 +2045,36 @@ class Points(_BasePoints):
         None after dragging is done.
     """
 
-    @rename_argument("edge_width", "border_width", "0.6.0")
     @rename_argument(
-        "edge_width_is_relative", "border_width_is_relative", "0.6.0"
+        "edge_width", "border_width", since_version="0.5.0", version="0.6.0"
     )
-    @rename_argument("edge_color", "border_color", "0.6.0")
-    @rename_argument("edge_color_cycle", "border_color_cycle", "0.6.0")
-    @rename_argument("edge_colormap", "border_colormap", "0.6.0")
-    @rename_argument("edge_contrast_limits", "border_contrast_limits", "0.6.0")
+    @rename_argument(
+        "edge_width_is_relative",
+        "border_width_is_relative",
+        since_version="0.5.0",
+        version="0.6.0",
+    )
+    @rename_argument(
+        "edge_color", "border_color", since_version="0.5.0", version="0.6.0"
+    )
+    @rename_argument(
+        "edge_color_cycle",
+        "border_color_cycle",
+        since_version="0.5.0",
+        version="0.6.0",
+    )
+    @rename_argument(
+        "edge_colormap",
+        "border_colormap",
+        since_version="0.5.0",
+        version="0.6.0",
+    )
+    @rename_argument(
+        "edge_contrast_limits",
+        "border_contrast_limits",
+        since_version="0.5.0",
+        version="0.6.0",
+    )
     def __init__(
         self,
         data=None,
@@ -2144,28 +2166,39 @@ class Points(_BasePoints):
 
         self.events.add(
             edge_width=deprecation_warning_event(
-                "layer.events", "edge_width", "border_width", "0.6.0"
+                "layer.events",
+                "edge_width",
+                "border_width",
+                since_version="0.5.0",
+                version="0.6.0",
             ),
             current_edge_width=deprecation_warning_event(
                 "layer.events",
                 "current_edge_width",
                 "current_border_width",
-                "0.6.0",
+                since_version="0.5.0",
+                version="0.6.0",
             ),
             edge_width_is_relative=deprecation_warning_event(
                 "layer.events",
                 "edge_width_is_relative",
                 "border_width_is_relative",
-                "0.6.0",
+                since_version="0.5.0",
+                version="0.6.0",
             ),
             edge_color=deprecation_warning_event(
-                "layer.events", "edge_color", "border_color", "0.6.0"
+                "layer.events",
+                "edge_color",
+                "border_color",
+                since_version="0.5.0",
+                version="0.6.0",
             ),
             current_edge_color=deprecation_warning_event(
                 "layer.events",
                 "current_edge_color",
                 "current_border_color",
-                "0.6.0",
+                since_version="0.5.0",
+                version="0.6.0",
             ),
         )
 
@@ -2185,7 +2218,13 @@ class Points(_BasePoints):
         ]
         for old_property in deprecated_properties:
             new_property = old_property.replace("edge", "border")
-            add_deprecated_property(cls, old_property, new_property, "0.6.0")
+            add_deprecated_property(
+                cls,
+                old_property,
+                new_property,
+                since_version="0.5.0",
+                version="0.6.0",
+            )
 
     @property
     def _points_data(self) -> np.ndarray:

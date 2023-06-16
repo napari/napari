@@ -69,6 +69,7 @@ def add_deprecated_property(
     previous_name: str,
     new_name: str,
     version: str,
+    since_version: str,
 ) -> None:
     """
     Adds deprecated property and links to new property name setter and getter.
@@ -83,6 +84,8 @@ def add_deprecated_property(
         Name of new property, must have its setter and getter implemented.
     version : str
         Version where deprecated property will be removed.
+    since_version : str
+        version when new property was added
     """
 
     if hasattr(obj, previous_name):
@@ -92,7 +95,7 @@ def add_deprecated_property(
         raise RuntimeError(f"{new_name} property must exists.")
 
     msg = trans._(
-        f"{previous_name} is deprecated and will be removed in {version}. Please use {new_name}",
+        f"{previous_name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}",
         deferred=True,
     )
 

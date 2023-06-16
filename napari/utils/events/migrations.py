@@ -7,6 +7,7 @@ def deprecation_warning_event(
     previous_name: str,
     new_name: str,
     version: str,
+    since_version: str,
 ) -> WarningEmitter:
     """
     Helper function for event emitter deprecation warning.
@@ -23,6 +24,8 @@ def deprecation_warning_event(
         Name of new event (e.g. border_width)
     version : str
         Version where deprecated event will be removed.
+    since_version : str
+        Version when new event name was added.
 
     Returns
     -------
@@ -33,7 +36,7 @@ def deprecation_warning_event(
     new_path = f"{prefix}.{new_name}"
     return WarningEmitter(
         trans._(
-            f"{previous_path} is deprecated and will be removed in {version}. Please use {new_path}",
+            f"{previous_path} is deprecated since {since_version} and will be removed in {version}. Please use {new_path}",
             deferred=True,
         ),
         warn_on_connect=False,
