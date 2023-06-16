@@ -19,6 +19,7 @@ Closes #
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Maintenence (changes required to run napari, tests, & CI smoothly)
 - [ ] Enhancement (non-breaking improvements of an existing feature)
+- [ ] Documentation (update of docstrings and deprecation informations)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] This change requires a documentation update
 
