@@ -11,7 +11,7 @@ python list_opened_pr.py $NEW_RELEASE
 
 echo
 
-python filter_pr_that_may_be_selected.py $LAST_TAG main --milestone $NEW_RELEASE
+python filter_pr_that_may_be_selected.py $LAST_TAG main --milestone $NEW_RELEASE --target-branch refs/heads/v0.4.18x
 
 echo
 

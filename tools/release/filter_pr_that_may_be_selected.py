@@ -1,10 +1,13 @@
 import argparse
+import sys
 
 from release_utils import (
+    get_local_repo,
     get_milestone,
     get_repo,
     get_split_date,
     iter_pull_request,
+    pr_num_pattern,
     setup_cache,
     short_cache,
 )
@@ -30,6 +33,8 @@ parser.add_argument(
     default=False,
     help="if present then skip triaged PRs",
 )
+parser.add_argument("--target-branch", help="The target branch", default="")
+
 args = parser.parse_args()
 
 
@@ -41,6 +46,16 @@ milestone = get_milestone(args.milestone)
 
 label = repository.get_label(args.label) if args.label else None
 
+consumed_pr = set()
+
+if args.target_branch:
+    for commit in get_local_repo().iter_commits(args.target_branch):
+        if (match := pr_num_pattern.search(commit.message)) is not None:
+            pr_num = int(match[1])
+            consumed_pr.add(pr_num)
+
+print(consumed_pr, file=sys.stderr)
+
 if args.skip_triaged:
     triage_labels = [
         x for x in repository.get_labels() if x.name.startswith("triaged")
@@ -50,13 +65,16 @@ else:
 
 previous_tag_date = get_split_date(args.from_commit, args.to_commit)
 
+if milestone is not None:
+    query = f"milestone:{milestone.title} is:merged "
+else:
+    query = f"merged:>{previous_tag_date.isoformat()} no:milestone "
+
+if label is not None:
+    query += f" label:{label.name} "
+
 with short_cache(60):
-    if milestone is not None:
-        iterable = iter_pull_request(f"milestone:{milestone.title} is:merged")
-    else:
-        iterable = iter_pull_request(
-            f'merged:>{previous_tag_date.isoformat()} no:milestone'
-        )
+    iterable = iter_pull_request(query)
 
 pr_to_list = []
 
@@ -85,4 +103,4 @@ text += ":"
 print(text)
 
 for pull in sorted(pr_to_list, key=lambda x: x.closed_at):
-    print(f' * [ ] #{pull.number}')
+    print(f' * [{"x" if pull.number in consumed_pr else " "}] #{pull.number}')
