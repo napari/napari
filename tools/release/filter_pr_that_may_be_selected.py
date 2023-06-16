@@ -81,11 +81,12 @@ for pull_issue in tqdm(
     pr_to_list.append(pull)
 
 if not pr_to_list:
-    print('No PRs found')
-    exit(0)
-
-
-if milestone:
+    text = (
+        f'## No PRs found with milestone {milestone.title}'
+        if milestone
+        else '## No PRs found without milestone'
+    )
+elif milestone:
     text = f'## {len(pr_to_list)} PRs with milestone {milestone.title}'
 else:
     text = f'## {len(pr_to_list)} PRs without milestone'
