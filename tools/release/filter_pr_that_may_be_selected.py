@@ -1,5 +1,4 @@
 import argparse
-import sys
 
 from release_utils import (
     get_local_repo,
@@ -53,8 +52,6 @@ if args.target_branch:
         if (match := pr_num_pattern.search(commit.message)) is not None:
             pr_num = int(match[1])
             consumed_pr.add(pr_num)
-
-print(consumed_pr, file=sys.stderr)
 
 if args.skip_triaged:
     triage_labels = [
