@@ -17,6 +17,8 @@ Closes #
 <!-- Please delete options that are not relevant. -->
 - [ ] Bug-fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
+- [ ] Maintenence (changes requuired to napari run smothly)
+- [ ] Enhancement (non-breaking improvements of existing featire)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] This change requires a documentation update
 
