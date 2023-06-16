@@ -1,0 +1,28 @@
+From 9de48393889994c7cb36ea4bd668129d50160c8a Mon Sep 17 00:00:00 2001
+From: Grzegorz Bokota <bokota+github@gmail.com>
+Date: Wed, 2 Nov 2022 15:04:01 +0100
+Subject: [PATCH] remove circular import (#5276)
+
+---
+ napari/_vispy/__init__.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/napari/_vispy/__init__.py b/napari/_vispy/__init__.py
+index 365afdb7..9f70bf57 100644
+--- a/napari/_vispy/__init__.py
++++ b/napari/_vispy/__init__.py
+@@ -1,10 +1,10 @@
+ import logging
+ 
+-import qtpy
++from qtpy import API_NAME
+ from vispy import app
+ 
+ # set vispy application to the appropriate qt backend
+-app.use_app(qtpy.API_NAME)
++app.use_app(API_NAME)
+ del app
+ 
+ # set vispy logger to show warning and errors only
+-- 
+2.34.1
