@@ -343,7 +343,10 @@ class Graph(_BasePoints):
             # empty but pre-allocated graph
             return UndirectedGraph(ndim=ndim)
 
-        data = to_napari_graph(data)
+        try:
+            data = to_napari_graph(data)
+        except NotImplementedError as e:
+            raise TypeError from e
 
         if isinstance(data, BaseGraph):
             if data._coords is None:

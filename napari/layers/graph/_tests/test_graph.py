@@ -21,15 +21,6 @@ def test_empty_graph() -> None:
     assert len(graph.data) == 0
 
 
-def test_1_dim_array_graph() -> None:
-    shape = (2,)
-
-    graph = Graph(np.random.random(shape))
-
-    assert len(graph.data) == 1
-    assert graph.ndim == shape[0]
-
-
 def test_2_dim_array_graph() -> None:
     shape = (5, 2)
 
