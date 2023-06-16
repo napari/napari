@@ -1,12 +1,9 @@
 import argparse
 
-from tqdm import tqdm
-
 from release_utils import (
-    GH_REPO,
-    GH_USER,
-    get_github,
+    iter_pull_request,
     setup_cache,
+    short_cache,
 )
 
 parser = argparse.ArgumentParser()
@@ -18,16 +15,11 @@ setup_cache()
 
 pull_list = []
 
+with short_cache(60):
+    iterable = iter_pull_request(f'is:pr is:open milestone:{args.milestone}')
 
-for pull_issue in tqdm(
-    get_github().search_issues(
-        f'repo:{GH_USER}/{GH_REPO} is:pr is:open sort:created-asc'
-    ),
-    desc='Pull Requests...',
-):
-    pull = pull_issue.as_pull_request()
-    if pull.milestone and pull.milestone.title == args.milestone:
-        pull_list.append(pull)
+for pull in iterable:
+    pull_list.append(pull)
 
 print(f"## {len(pull_list)} opened PRs for milestone {args.milestone}")
 for pull in pull_list:

@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 tools/release/issue.md
-
+tools/release/napari_repo
 # C extensions
 *.so
 

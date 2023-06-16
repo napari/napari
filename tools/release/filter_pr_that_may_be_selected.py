@@ -1,16 +1,12 @@
 import argparse
 
-from tqdm import tqdm
-
 from release_utils import (
-    GH_REPO,
-    GH_USER,
-    get_commit_counts_from_ancestor,
-    get_github,
     get_milestone,
     get_repo,
     get_split_date,
+    iter_pull_request,
     setup_cache,
+    short_cache,
 )
 
 parser = argparse.ArgumentParser()
@@ -54,26 +50,17 @@ else:
 
 previous_tag_date = get_split_date(args.from_commit, args.to_commit)
 
-
-pr_count = get_commit_counts_from_ancestor(args.from_commit, args.to_commit)
+with short_cache(60):
+    if milestone is not None:
+        iterable = iter_pull_request(f"milestone:{milestone.title} is:merged")
+    else:
+        iterable = iter_pull_request(
+            f'merged:>{previous_tag_date.isoformat()} no:milestone'
+        )
 
 pr_to_list = []
 
-for pull_issue in tqdm(
-    get_github().search_issues(
-        f'repo:{GH_USER}/{GH_REPO} '
-        f'merged:>{previous_tag_date.isoformat()} '
-        "is:pr "
-        'sort:created-asc'
-    ),
-    desc='Pull Requests...',
-    total=pr_count,
-):
-    pull = pull_issue.as_pull_request()
-    if milestone is not None and pull.milestone != milestone:
-        continue
-    if milestone is None and (pull.milestone or not pull.merged):
-        continue
+for pull in iterable:
     if label is not None and label not in pull.labels:
         continue
     if args.skip_triaged and any(x in pull.labels for x in triage_labels):
