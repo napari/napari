@@ -658,6 +658,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
+        # Clean up overlays
+        for overlay in list(layer._overlays):
+            del layer._overlays[overlay]
+
         self._on_layers_change()
         self._on_grid_change()
 
@@ -681,7 +685,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.append(layer)
         return layer
 
-    @rename_argument("interpolation", "interpolation2d", "0.6.0")
+    @rename_argument(
+        from_name="interpolation",
+        to_name="interpolation2d",
+        version="0.6.0",
+        since_version="0.4.17",
+    )
     def add_image(
         self,
         data=None,
