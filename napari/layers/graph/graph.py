@@ -1,6 +1,5 @@
 from typing import Any, Dict, Optional, Tuple, Union
 
-import networkx as nx
 import numpy as np
 from numpy.typing import ArrayLike
 
@@ -11,12 +10,12 @@ from napari.utils.events import Event
 from napari.utils.translations import trans
 
 try:
-    from napari_graph import BaseGraph, UndirectedGraph, from_networkx
+    from napari_graph import BaseGraph, UndirectedGraph, to_napari_graph
 
 except ModuleNotFoundError:
     BaseGraph = None
     UndirectedGraph = None
-    from_networkx = None
+    to_napari_graph = None
 
 
 class Graph(_BasePoints):
@@ -344,8 +343,7 @@ class Graph(_BasePoints):
             # empty but pre-allocated graph
             return UndirectedGraph(ndim=ndim)
 
-        if isinstance(data, nx.Graph):
-            data = from_networkx(data)
+        data = to_napari_graph(data)
 
         if isinstance(data, BaseGraph):
             if data._coords is None:
@@ -356,32 +354,7 @@ class Graph(_BasePoints):
                 )
             return data
 
-        try:
-            arr_data = np.atleast_2d(data)
-        except ValueError as err:
-            raise NotImplementedError(
-                trans._(
-                    "Could not convert to {data} to a napari graph.",
-                    data=data,
-                )
-            ) from err
-
-        if not issubclass(arr_data.dtype.type, np.number):
-            raise TypeError(
-                trans._(
-                    "Expected numeric type. Found{dtype}.",
-                    dtype=arr_data.dtype,
-                )
-            )
-
-        if arr_data.ndim > 2:
-            raise ValueError(
-                trans._(
-                    "Graph layer only supports 2-dim arrays. Found {ndim}.",
-                    ndim=arr_data.ndim,
-                )
-            )
-        return UndirectedGraph(coords=arr_data)
+        return data
 
     @property
     def _points_data(self) -> np.ndarray:
