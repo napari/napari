@@ -138,7 +138,7 @@ def test_theme(color):
     "Skip for now until we find the reason",
 )
 def test_theme_font_size():
-    theme = get_theme("dark", False)
+    theme = get_theme("dark")
     theme.font_size = "15pt"
     assert theme.font_size == "15pt"
 
