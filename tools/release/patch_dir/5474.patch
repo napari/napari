@@ -1,0 +1,228 @@
+From dc40ac0df922186878e9a0a4bb76314bafb19c75 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Daniel=20Althviz=20Mor=C3=A9?= <d.althviz10@uniandes.edu.co>
+Date: Mon, 23 Jan 2023 05:52:07 -0500
+Subject: [PATCH] Allow layers control section to resize to contents (#5474)
+
+Co-authored-by: Peter Sobolewski <76622105+psobolewskiPhD@users.noreply.github.com>
+closes https://github.com/napari/napari/issues/2337
+closes https://github.com/napari/napari/issues/5472
+---
+ napari/_qt/_tests/test_qt_notifications.py    |  3 +-
+ napari/_qt/_tests/test_qt_provide_theme.py    | 79 +++++++++++++++----
+ napari/_qt/_tests/test_qt_viewer.py           |  2 +
+ .../qt_layer_controls_container.py            |  1 +
+ napari/_qt/qt_resources/styles/02_custom.qss  |  7 +-
+ .../experimental/_tests/test_octree_import.py |  3 +
+ 6 files changed, 78 insertions(+), 17 deletions(-)
+
+diff --git a/napari/_qt/_tests/test_qt_notifications.py b/napari/_qt/_tests/test_qt_notifications.py
+index e1ef20e0..a879d2c9 100644
+--- a/napari/_qt/_tests/test_qt_notifications.py
++++ b/napari/_qt/_tests/test_qt_notifications.py
+@@ -13,7 +13,7 @@ from napari._qt.dialogs.qt_notification import (
+     NapariQtNotification,
+     TracebackDialog,
+ )
+-from napari._tests.utils import DEFAULT_TIMEOUT_SECS
++from napari._tests.utils import DEFAULT_TIMEOUT_SECS, skip_on_win_ci
+ from napari.utils.notifications import (
+     ErrorNotification,
+     Notification,
+@@ -267,6 +267,7 @@ def test_notification_error(count_show, monkeypatch):
+     assert count_show.show_traceback_count == 1
+ 
+ 
++@skip_on_win_ci
+ @pytest.mark.sync_only
+ def test_notifications_error_with_threading(
+     make_napari_viewer, clean_current, monkeypatch
+diff --git a/napari/_qt/_tests/test_qt_provide_theme.py b/napari/_qt/_tests/test_qt_provide_theme.py
+index 2d44fd69..127ba98d 100644
+--- a/napari/_qt/_tests/test_qt_provide_theme.py
++++ b/napari/_qt/_tests/test_qt_provide_theme.py
+@@ -1,12 +1,17 @@
++import warnings
+ from unittest.mock import patch
+ 
+ import pytest
+ from napari_plugin_engine import napari_hook_implementation
+ 
++from napari import Viewer
+ from napari._qt import Window
++from napari._tests.utils import skip_on_win_ci
++from napari.settings import get_settings
+ from napari.utils.theme import Theme, get_theme
+ 
+ 
++@skip_on_win_ci
+ @patch.object(Window, "_remove_theme")
+ @patch.object(Window, "_add_theme")
+ def test_provide_theme_hook_registered_correctly(
+@@ -15,30 +20,76 @@ def test_provide_theme_hook_registered_correctly(
+     make_napari_viewer,
+     napari_plugin_manager,
+ ):
+-    dark = get_theme("dark", True)
+-    dark["name"] = "dark-test-2"
++    # make a viewer with a plugin & theme registered
++    viewer = make_napari_viewer_with_plugin_theme(
++        make_napari_viewer,
++        napari_plugin_manager,
++        theme_type='dark',
++        name='dark-test-2',
++    )
+ 
+-    class TestPlugin:
+-        @napari_hook_implementation
+-        def napari_experimental_provide_theme():
+-            return {"dark-test-2": dark}
++    # set the viewer theme to the plugin theme
++    viewer.theme = "dark-test-2"
+ 
+-    # create instance of viewer to make sure
+-    # registration and unregistration methods are called
+-    viewer = make_napari_viewer()
++    # triggered when theme was added
++    mock_add_theme.assert_called()
++    mock_remove_theme.assert_not_called()
+ 
+-    # register theme
+-    napari_plugin_manager.register(TestPlugin)
+-    reg = napari_plugin_manager._theme_data["TestPlugin"]
+-    assert isinstance(reg["dark-test-2"], Theme)
++    # now, lets unregister the theme
++    # We didn't set the setting, so ensure that no warning
++    with warnings.catch_warnings():
++        warnings.simplefilter("error")
++        napari_plugin_manager.unregister("TestPlugin")
++    mock_remove_theme.assert_called()
+ 
+-    viewer.theme = "dark-test-2"
++
++@patch.object(Window, "_remove_theme")
++@patch.object(Window, "_add_theme")
++def test_plugin_provide_theme_hook_set_settings_correctly(
++    mock_add_theme,
++    mock_remove_theme,
++    make_napari_viewer,
++    napari_plugin_manager,
++):
++    # make a viewer with a plugin & theme registered
++    make_napari_viewer_with_plugin_theme(
++        make_napari_viewer,
++        napari_plugin_manager,
++        theme_type='dark',
++        name='dark-test-2',
++    )
++    # set the plugin theme as a setting
++    get_settings().appearance.theme = "dark-test-2"
+ 
+     # triggered when theme was added
+     mock_add_theme.assert_called()
+     mock_remove_theme.assert_not_called()
+ 
+     # now, lets unregister the theme
++    # We *did* set the setting, so there should be a warning
+     with pytest.warns(UserWarning, match="The current theme "):
+         napari_plugin_manager.unregister("TestPlugin")
+     mock_remove_theme.assert_called()
++
++
++def make_napari_viewer_with_plugin_theme(
++    make_napari_viewer, napari_plugin_manager, *, theme_type: str, name: str
++) -> Viewer:
++    theme = get_theme(theme_type, True)
++    theme["name"] = name
++
++    class TestPlugin:
++        @napari_hook_implementation
++        def napari_experimental_provide_theme():
++            return {name: theme}
++
++    # create instance of viewer to make sure
++    # registration and unregistration methods are called
++    viewer = make_napari_viewer()
++
++    # register theme
++    napari_plugin_manager.register(TestPlugin)
++    reg = napari_plugin_manager._theme_data["TestPlugin"]
++    assert isinstance(reg[name], Theme)
++
++    return viewer
+diff --git a/napari/_qt/_tests/test_qt_viewer.py b/napari/_qt/_tests/test_qt_viewer.py
+index 72d76382..25bc4bcb 100644
+--- a/napari/_qt/_tests/test_qt_viewer.py
++++ b/napari/_qt/_tests/test_qt_viewer.py
+@@ -514,6 +514,7 @@ def test_memory_leaking(qtbot, make_napari_viewer):
+     assert labels() is None
+ 
+ 
++@skip_on_win_ci
+ @skip_local_popups
+ def test_leaks_image(qtbot, make_napari_viewer):
+ 
+@@ -529,6 +530,7 @@ def test_leaks_image(qtbot, make_napari_viewer):
+     assert not dr()
+ 
+ 
++@skip_on_win_ci
+ @skip_local_popups
+ def test_leaks_labels(qtbot, make_napari_viewer):
+     viewer = make_napari_viewer(show=True)
+diff --git a/napari/_qt/layer_controls/qt_layer_controls_container.py b/napari/_qt/layer_controls/qt_layer_controls_container.py
+index f1b0b482..67187ad6 100644
+--- a/napari/_qt/layer_controls/qt_layer_controls_container.py
++++ b/napari/_qt/layer_controls/qt_layer_controls_container.py
+@@ -101,6 +101,7 @@ class QtLayerControlsContainer(QStackedWidget):
+ 
+         self.setMouseTracking(True)
+         self.empty_widget = QFrame()
++        self.empty_widget.setObjectName("empty_controls_widget")
+         self.widgets = {}
+         self.addWidget(self.empty_widget)
+         self.setCurrentWidget(self.empty_widget)
+diff --git a/napari/_qt/qt_resources/styles/02_custom.qss b/napari/_qt/qt_resources/styles/02_custom.qss
+index 457ed900..3a99fedc 100644
+--- a/napari/_qt/qt_resources/styles/02_custom.qss
++++ b/napari/_qt/qt_resources/styles/02_custom.qss
+@@ -267,12 +267,15 @@ QLabel#logo_silhouette {
+ 
+ /* ------------------------------------------------------ */
+ 
++QFrame#empty_controls_widget {
++    min-height: 225px;
++    min-width: 240px;
++}
++
+ QtLayerControlsContainer {
+     border-radius: 2px;
+     padding: 0px;
+     margin: 10px;
+-    min-height: 295px;
+-    min-width: 240px;
+     margin-left: 10px;
+     margin-right: 8px;
+     margin-bottom: 4px;
+diff --git a/napari/layers/image/experimental/_tests/test_octree_import.py b/napari/layers/image/experimental/_tests/test_octree_import.py
+index 3b7f06ec..4abca1e0 100644
+--- a/napari/layers/image/experimental/_tests/test_octree_import.py
++++ b/napari/layers/image/experimental/_tests/test_octree_import.py
+@@ -2,6 +2,8 @@ import os
+ import subprocess
+ import sys
+ 
++from napari._tests.utils import skip_on_win_ci
++
+ CREATE_VIEWER_SCRIPT = """
+ import numpy as np
+ import napari
+@@ -9,6 +11,7 @@ v = napari.view_image(np.random.rand(512, 512))
+ """
+ 
+ 
++@skip_on_win_ci
+ def test_octree_import():
+     """Test we can create a viewer with NAPARI_OCTREE."""
+ 
+-- 
+2.34.1

@@ -1,0 +1,76 @@
+From 0b65e91a4bb1bd97f26aa6f24b61cbcd33b53bc3 Mon Sep 17 00:00:00 2001
+From: "pre-commit-ci[bot]"
+ <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Date: Tue, 13 Dec 2022 11:33:29 +0100
+Subject: [PATCH] [pre-commit.ci] pre-commit autoupdate (#5403)
+
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Co-authored-by: Grzegorz Bokota <bokota+github@gmail.com>
+---
+ .pre-commit-config.yaml              | 11 ++++++-----
+ napari/_qt/widgets/_slider_compat.py |  3 +++
+ 2 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
+index effb3734..52e4b395 100644
+--- a/.pre-commit-config.yaml
++++ b/.pre-commit-config.yaml
+@@ -3,24 +3,25 @@ repos:
+     rev: v0.3.1
+     hooks:
+     -   id: absolufy-imports
++        exclude: _vendor|vendored|examples
+ -   repo: https://github.com/pycqa/isort
+     rev: 5.10.1
+     hooks:
+     - id: isort
+       exclude: _vendor|vendored|examples
+ -   repo: https://github.com/psf/black
+-    rev: 22.8.0
++    rev: 22.12.0
+     hooks:
+     - id: black
+       pass_filenames: true
+       exclude: _vendor|vendored|examples
+ -   repo: https://github.com/charliermarsh/ruff-pre-commit
+-    rev: v0.0.128
++    rev: v0.0.176
+     hooks:
+       - id: ruff
+         exclude: _vendor|vendored
+ -   repo: https://github.com/PyCQA/flake8
+-    rev: 5.0.4
++    rev: 6.0.0
+     hooks:
+     - id: flake8
+       additional_dependencies: [flake8-typing-imports]
+@@ -28,13 +29,13 @@ repos:
+       # this seems to need to be here in addition to setup.cfg
+       exclude: _vendor|vendored|__init__.py|examples
+ -   repo: https://github.com/asottile/pyupgrade
+-    rev: v2.37.3
++    rev: v3.3.1
+     hooks:
+     - id: pyupgrade
+       args: ["--py38-plus", "--keep-runtime-typing"]
+       exclude: _vendor|vendored|examples
+ -   repo: https://github.com/seddonym/import-linter
+-    rev: v1.3.0
++    rev: v1.6.0
+     hooks:
+     - id: import-linter
+       stages: [manual]
+diff --git a/napari/_qt/widgets/_slider_compat.py b/napari/_qt/widgets/_slider_compat.py
+index 99c3faca..fd4fa5d7 100644
+--- a/napari/_qt/widgets/_slider_compat.py
++++ b/napari/_qt/widgets/_slider_compat.py
+@@ -6,3 +6,6 @@ from superqt import QDoubleSlider
+ if tuple(int(x) for x in QT_VERSION.split(".")) >= (5, 14):
+     from superqt import QLabeledDoubleSlider as QDoubleSlider  # noqa
+     from superqt import QLabeledSlider as QSlider  # noqa
++
++
++__all__ = ["QSlider", "QDoubleSlider"]
+-- 
+2.34.1
+

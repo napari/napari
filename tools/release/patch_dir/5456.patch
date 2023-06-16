@@ -1,0 +1,55 @@
+From b45f3ee4e53be480053dd61b0e676db58bab9630 Mon Sep 17 00:00:00 2001
+From: Peter Sobolewski <76622105+psobolewskiPhD@users.noreply.github.com>
+Date: Sun, 8 Jan 2023 09:12:58 -0500
+Subject: [PATCH] Bugfix: Fix test_get_system_theme test for `name` to `id`
+ change (#5456)
+
+* fix test name -> id
+
+* fix theme example
+---
+ examples/new_theme.py             | 2 +-
+ napari/utils/_tests/test_theme.py | 8 ++++++++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/examples/new_theme.py b/examples/new_theme.py
+index 6b92ec1e..66efcb7a 100644
+--- a/examples/new_theme.py
++++ b/examples/new_theme.py
+@@ -19,7 +19,7 @@ viewer = napari.view_image(data.astronaut(), rgb=True, name='astronaut')
+ print('Originally themes', available_themes())
+ 
+ blue_theme = get_theme('dark', False)
+-blue_theme.name = "blue"
++blue_theme.id = "blue"
+ blue_theme.icon = (
+     'rgb(0, 255, 255)'  # you can provide colors as rgb(XXX, YYY, ZZZ)
+ )
+diff --git a/napari/utils/_tests/test_theme.py b/napari/utils/_tests/test_theme.py
+index e11b33c9..8ab037a7 100644
+--- a/napari/utils/_tests/test_theme.py
++++ b/napari/utils/_tests/test_theme.py
+@@ -20,6 +20,7 @@ def test_default_themes():
+     themes = available_themes()
+     assert 'dark' in themes
+     assert 'light' in themes
++    assert 'system' in themes
+ 
+ 
+ def test_get_theme():
+@@ -32,6 +33,13 @@ def test_get_theme():
+     assert isinstance(theme, Theme)
+ 
+ 
++def test_get_system_theme(monkeypatch):
++    monkeypatch.setattr('napari.utils.theme.get_system_theme', lambda: 'light')
++    theme = get_theme('system', as_dict=False)
++    # should return the theme specified by get_system_theme
++    assert theme.id == 'light'
++
++
+ def test_register_theme():
+     # Check that blue theme is not listed in available themes
+     themes = available_themes()
+-- 
+2.34.1

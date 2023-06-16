@@ -1,0 +1,605 @@
+From 40104ac9113e42716eb64d60b96d94fde8e7d813 Mon Sep 17 00:00:00 2001
+From: Grzegorz Bokota <bokota+github@gmail.com>
+Date: Thu, 1 Dec 2022 17:27:10 +0100
+Subject: [PATCH] :Add ruff linter to pre-commit (#5275)
+
+---
+ .pre-commit-config.yaml                       |  5 +++++
+ examples/3d_kymograph_.py                     |  2 +-
+ examples/dev/gui_notifications.py             |  1 +
+ examples/dynamic-projections-dask.py          |  2 +-
+ examples/inherit_viewer_style.py              |  3 +++
+ examples/interaction_box_image.py             |  2 --
+ examples/interaction_box_points.py            |  1 -
+ examples/points-over-time.py                  |  1 -
+ examples/progress_bar_segmentation_.py        |  2 ++
+ examples/scale_bar.py                         |  1 -
+ examples/surface_timeseries_.py               |  1 -
+ examples/tiled-rendering-2d_.py               |  4 ++--
+ napari/__init__.py                            |  3 ++-
+ napari/_qt/__init__.py                        |  2 ++
+ napari/_qt/layer_controls/__init__.py         |  2 ++
+ napari/_tests/test_examples.py                | 14 +++++++-------
+ napari/_vispy/__init__.py                     | 11 +++++++++++
+ .../experimental/chunk/_commands/__init__.py  |  2 ++
+ .../experimental/monitor/__init__.py          |  2 ++
+ .../experimental/remote/__init__.py           |  2 ++
+ napari/components/overlays/__init__.py        | 10 ++++++++++
+ napari/errors/__init__.py                     |  6 ++++++
+ napari/layers/base/__init__.py                |  2 ++
+ napari/layers/image/__init__.py               |  3 +++
+ napari/layers/image/experimental/__init__.py  |  7 +++++++
+ napari/layers/labels/__init__.py              |  3 +++
+ napari/layers/points/__init__.py              |  3 +++
+ napari/layers/shapes/__init__.py              |  3 +++
+ .../layers/shapes/_shapes_models/__init__.py  |  2 ++
+ napari/layers/surface/__init__.py             |  2 ++
+ napari/layers/tracks/__init__.py              |  2 ++
+ napari/layers/vectors/__init__.py             |  2 ++
+ napari/resources/__init__.py                  |  1 -
+ napari/utils/__init__.py                      | 10 ++++++++++
+ napari/utils/colormaps/__init__.py            | 19 +++++++++++++++++++
+ napari/utils/events/__init__.py               |  1 +
+ napari/utils/perf/__init__.py                 | 12 ++++++++++++
+ napari/utils/settings/__init__.py             |  2 +-
+ napari/utils/transforms/__init__.py           |  9 +++++++++
+ pyproject.toml                                |  6 ++++++
+ 40 files changed, 148 insertions(+), 20 deletions(-)
+
+diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
+index 61d03106..effb3734 100644
+--- a/.pre-commit-config.yaml
++++ b/.pre-commit-config.yaml
+@@ -14,6 +14,11 @@ repos:
+     - id: black
+       pass_filenames: true
+       exclude: _vendor|vendored|examples
++-   repo: https://github.com/charliermarsh/ruff-pre-commit
++    rev: v0.0.128
++    hooks:
++      - id: ruff
++        exclude: _vendor|vendored
+ -   repo: https://github.com/PyCQA/flake8
+     rev: 5.0.4
+     hooks:
+diff --git a/examples/3d_kymograph_.py b/examples/3d_kymograph_.py
+index 6ae3d66e..d5109e7e 100644
+--- a/examples/3d_kymograph_.py
++++ b/examples/3d_kymograph_.py
+@@ -15,7 +15,7 @@ from itertools import product
+ 
+ try:
+     from omero.gateway import BlitzGateway
+-except:
++except ModuleNotFoundError:
+     print("Could not import BlitzGateway which is")
+     print("required to download the sample datasets.")
+     print("Please install omero-py:")
+diff --git a/examples/dev/gui_notifications.py b/examples/dev/gui_notifications.py
+index 41f01738..59e6e6bb 100644
+--- a/examples/dev/gui_notifications.py
++++ b/examples/dev/gui_notifications.py
+@@ -7,6 +7,7 @@ def raise_():
+     x = 1
+     y = 'a string'
+     import something_that_does_not_exist
++    return something_that_does_not_exist.fun(x, y)
+ 
+ 
+ def warn_():
+diff --git a/examples/dynamic-projections-dask.py b/examples/dynamic-projections-dask.py
+index 03a07432..e9bd3e66 100644
+--- a/examples/dynamic-projections-dask.py
++++ b/examples/dynamic-projections-dask.py
+@@ -37,7 +37,7 @@ if __name__ == '__main__':
+ ##############################################################################
+ # Part 2: using magicgui to vary the slice thickness.
+ 
+-from magicgui import magicgui
++from magicgui import magicgui  # noqa: E402
+ 
+ def sliding_window_mean(
+     arr: napari.types.ImageData, size: int = 1
+diff --git a/examples/inherit_viewer_style.py b/examples/inherit_viewer_style.py
+index c4aca965..88c85d7e 100644
+--- a/examples/inherit_viewer_style.py
++++ b/examples/inherit_viewer_style.py
+@@ -6,8 +6,11 @@ Example how to embed magicgui widget in dialog to inherit style
+ from main napari window.
+ """
+ 
++<<<<<<< HEAD
+ from typing import Callable
+ 
++=======
++>>>>>>> 5ca30ea2 (Add ruff linter to pre-commit (#5275))
+ from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton, QGridLayout, QLabel, QSpinBox
+ 
+ from magicgui import magicgui
+diff --git a/examples/interaction_box_image.py b/examples/interaction_box_image.py
+index 620bdfdf..b5cd0ee6 100644
+--- a/examples/interaction_box_image.py
++++ b/examples/interaction_box_image.py
+@@ -10,9 +10,7 @@ This allows the user to manipulate the image via the interaction box
+ """
+ 
+ from skimage import data
+-import numpy as np
+ import napari
+-from napari.utils.transforms import Affine
+ 
+ viewer = napari.view_image(data.astronaut(), rgb=True)
+ viewer.layers.selection.active.mode = 'transform'
+diff --git a/examples/interaction_box_points.py b/examples/interaction_box_points.py
+index d22ee86a..da98545c 100644
+--- a/examples/interaction_box_points.py
++++ b/examples/interaction_box_points.py
+@@ -7,7 +7,6 @@ Demonstrate interaction box on points layer
+ .. tags:: experimental
+ """
+ 
+-from skimage import data
+ import napari
+ import numpy as np
+ from napari.layers.points._points_utils import points_in_box
+diff --git a/examples/points-over-time.py b/examples/points-over-time.py
+index b3b0e81f..cd016037 100644
+--- a/examples/points-over-time.py
++++ b/examples/points-over-time.py
+@@ -7,7 +7,6 @@ Points over time
+ import napari
+ import numpy as np
+ import dask.array as da
+-from skimage import data
+ 
+ 
+ image4d = da.random.random(
+diff --git a/examples/progress_bar_segmentation_.py b/examples/progress_bar_segmentation_.py
+index d9308756..34d930b6 100644
+--- a/examples/progress_bar_segmentation_.py
++++ b/examples/progress_bar_segmentation_.py
+@@ -54,6 +54,7 @@ def try_thresholds():
+         thresholded_nuclei.append(binarised_im)
+ 
+         # uncomment if processing is too fast
++        # from time import sleep
+         # sleep(0.5)
+ 
+     # working with a wrapped iterable, the progress bar will be closed
+@@ -99,6 +100,7 @@ def segment_binarised_ims():
+             segmented_nuclei.append(labelled_im)
+ 
+             # uncomment if processing is too fast
++            # from time import sleep
+             # sleep(0.5)
+ 
+     # progress bar is still automatically closed
+diff --git a/examples/scale_bar.py b/examples/scale_bar.py
+index 60f55c28..b63a5b76 100644
+--- a/examples/scale_bar.py
++++ b/examples/scale_bar.py
+@@ -6,7 +6,6 @@ Display a 3D volume and the scale bar
+ 
+ .. tags:: experimental
+ """
+-import numpy as np
+ import napari
+ from skimage import data
+ 
+diff --git a/examples/surface_timeseries_.py b/examples/surface_timeseries_.py
+index db7cffd0..9baa9107 100644
+--- a/examples/surface_timeseries_.py
++++ b/examples/surface_timeseries_.py
+@@ -15,7 +15,6 @@ except ModuleNotFoundError:
+         "You must have nilearn installed to run this example."
+     )
+ 
+-import numpy as np
+ import napari
+ 
+ 
+diff --git a/examples/tiled-rendering-2d_.py b/examples/tiled-rendering-2d_.py
+index b7b5673d..7627f8f9 100644
+--- a/examples/tiled-rendering-2d_.py
++++ b/examples/tiled-rendering-2d_.py
+@@ -24,8 +24,8 @@ import os
+ # important: if this is not set, the entire ~4GB array will be created!
+ os.environ.setdefault('NAPARI_OCTREE', '1')
+ 
+-import dask.array as da
+-import napari
++import dask.array as da # noqa: E402
++import napari   # noqa: E402
+ 
+ 
+ ndim = 2
+diff --git a/napari/__init__.py b/napari/__init__.py
+index 4d43725c..c31f5b25 100644
+--- a/napari/__init__.py
++++ b/napari/__init__.py
+@@ -1,5 +1,7 @@
+ import os
+ 
++from napari._lazy import install_lazy
++
+ try:
+     from napari._version import version as __version__
+ except ImportError:
+@@ -49,7 +51,6 @@ _submod_attrs = {
+ # potential to take a second or more, so we definitely don't want to import it
+ # just to access the CLI (which may not actually need any of the imports)
+ 
+-from napari._lazy import install_lazy
+ 
+ __getattr__, __dir__, __all__ = install_lazy(
+     __name__, _proto_all_, _submod_attrs
+diff --git a/napari/_qt/__init__.py b/napari/_qt/__init__.py
+index 12519373..fbe8db9a 100644
+--- a/napari/_qt/__init__.py
++++ b/napari/_qt/__init__.py
+@@ -52,3 +52,5 @@ if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
+ 
+ from napari._qt.qt_event_loop import get_app, gui_qt, quit_app, run
+ from napari._qt.qt_main_window import Window
++
++__all__ = ["get_app", "gui_qt", "quit_app", "run", "Window"]
+diff --git a/napari/_qt/layer_controls/__init__.py b/napari/_qt/layer_controls/__init__.py
+index 190580f3..799bf735 100644
+--- a/napari/_qt/layer_controls/__init__.py
++++ b/napari/_qt/layer_controls/__init__.py
+@@ -1,3 +1,5 @@
+ from napari._qt.layer_controls.qt_layer_controls_container import (
+     QtLayerControlsContainer,
+ )
++
++__all__ = ["QtLayerControlsContainer"]
+diff --git a/napari/_tests/test_examples.py b/napari/_tests/test_examples.py
+index d04ba16f..67fc0ab8 100644
+--- a/napari/_tests/test_examples.py
++++ b/napari/_tests/test_examples.py
+@@ -3,13 +3,6 @@ import os
+ 
+ import pytest
+ 
+-# check if this module has been explicitly requested or `--test-examples` is included
+-fpath = os.path.join(*__file__.split(os.path.sep)[-3:])
+-if '--test-examples' not in sys.argv and fpath not in sys.argv:
+-    pytest.skip(
+-        'Use `--test-examples` to test examples', allow_module_level=True
+-    )
+-
+ import runpy
+ from pathlib import Path
+ 
+@@ -21,6 +14,13 @@ import napari
+ from napari._qt.qt_main_window import Window
+ from napari.utils.notifications import notification_manager
+ 
++# check if this module has been explicitly requested or `--test-examples` is included
++fpath = os.path.join(*__file__.split(os.path.sep)[-3:])
++if '--test-examples' not in sys.argv and fpath not in sys.argv:
++    pytest.skip(
++        'Use `--test-examples` to test examples', allow_module_level=True
++    )
++
+ # not testing these examples
+ skip = [
+     'surface_timeseries_.py',  # needs nilearn
+diff --git a/napari/_vispy/__init__.py b/napari/_vispy/__init__.py
+index a32d70dc..beb41cb9 100644
+--- a/napari/_vispy/__init__.py
++++ b/napari/_vispy/__init__.py
+@@ -20,3 +20,14 @@ from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
+ from napari._vispy.overlays.text import VispyTextOverlay
+ from napari._vispy.utils.quaternion import quaternion2euler
+ from napari._vispy.utils.visual import create_vispy_layer
++
++__all__ = [
++    "VispyCamera",
++    "VispyCanvas",
++    "VispyAxesOverlay",
++    "VispyInteractionBox",
++    "VispyScaleBarOverlay",
++    "VispyTextOverlay",
++    "quaternion2euler",
++    "create_vispy_layer",
++]
+diff --git a/napari/components/experimental/chunk/_commands/__init__.py b/napari/components/experimental/chunk/_commands/__init__.py
+index da352e06..347b341a 100644
+--- a/napari/components/experimental/chunk/_commands/__init__.py
++++ b/napari/components/experimental/chunk/_commands/__init__.py
+@@ -3,3 +3,5 @@
+ from napari.components.experimental.chunk._commands._loader import (
+     LoaderCommands,
+ )
++
++__all__ = ["LoaderCommands"]
+diff --git a/napari/components/experimental/monitor/__init__.py b/napari/components/experimental/monitor/__init__.py
+index 6168e42a..a29f2427 100644
+--- a/napari/components/experimental/monitor/__init__.py
++++ b/napari/components/experimental/monitor/__init__.py
+@@ -1,3 +1,5 @@
+ """Monitor service."""
+ from napari.components.experimental.monitor._monitor import monitor
+ from napari.components.experimental.monitor._utils import numpy_dumps
++
++__all__ = ["monitor", "numpy_dumps"]
+diff --git a/napari/components/experimental/remote/__init__.py b/napari/components/experimental/remote/__init__.py
+index 0e5ddb51..eb3523b2 100644
+--- a/napari/components/experimental/remote/__init__.py
++++ b/napari/components/experimental/remote/__init__.py
+@@ -1 +1,3 @@
+ from napari.components.experimental.remote._manager import RemoteManager
++
++__all__ = ["RemoteManager"]
+diff --git a/napari/components/overlays/__init__.py b/napari/components/overlays/__init__.py
+index 66edf5e0..0873edea 100644
+--- a/napari/components/overlays/__init__.py
++++ b/napari/components/overlays/__init__.py
+@@ -7,3 +7,13 @@ from napari.components.overlays.base import (
+ from napari.components.overlays.overlays import Overlays
+ from napari.components.overlays.scale_bar import ScaleBarOverlay
+ from napari.components.overlays.text import TextOverlay
++
++__all__ = [
++    "AxesOverlay",
++    "BaseOverlay",
++    "CanvasOverlay",
++    "Overlays",
++    "ScaleBarOverlay",
++    "SceneOverlay",
++    "TextOverlay",
++]
+diff --git a/napari/errors/__init__.py b/napari/errors/__init__.py
+index 1346d140..b4050c51 100644
+--- a/napari/errors/__init__.py
++++ b/napari/errors/__init__.py
+@@ -3,3 +3,9 @@ from napari.errors.reader_errors import (
+     NoAvailableReaderError,
+     ReaderPluginError,
+ )
++
++__all__ = [
++    "MultipleReaderError",
++    "NoAvailableReaderError",
++    "ReaderPluginError",
++]
+diff --git a/napari/layers/base/__init__.py b/napari/layers/base/__init__.py
+index 83bc1f8c..68dc8e63 100644
+--- a/napari/layers/base/__init__.py
++++ b/napari/layers/base/__init__.py
+@@ -1 +1,3 @@
+ from napari.layers.base.base import Layer, no_op
++
++__all__ = ['Layer', 'no_op']
+diff --git a/napari/layers/image/__init__.py b/napari/layers/image/__init__.py
+index cc35b9a0..7447dff2 100644
+--- a/napari/layers/image/__init__.py
++++ b/napari/layers/image/__init__.py
+@@ -5,3 +5,6 @@ from napari.layers.image.image import Image
+ # decorated with keybindings during that process, but it is not directly needed
+ # by our users and so is deleted below
+ del _image_key_bindings
++
++
++__all__ = ['Image']
+diff --git a/napari/layers/image/experimental/__init__.py b/napari/layers/image/experimental/__init__.py
+index 8641f236..03465526 100644
+--- a/napari/layers/image/experimental/__init__.py
++++ b/napari/layers/image/experimental/__init__.py
+@@ -8,3 +8,10 @@ from napari.layers.image.experimental.octree_intersection import (
+     OctreeIntersection,
+ )
+ from napari.layers.image.experimental.octree_level import OctreeLevel
++
++__all__ = [
++    "OctreeChunk",
++    "OctreeChunkGeom",
++    "OctreeIntersection",
++    "OctreeLevel",
++]
+diff --git a/napari/layers/labels/__init__.py b/napari/layers/labels/__init__.py
+index 069ed094..5ef2fcef 100644
+--- a/napari/layers/labels/__init__.py
++++ b/napari/layers/labels/__init__.py
+@@ -5,3 +5,6 @@ from napari.layers.labels.labels import Labels
+ # decorated with keybindings during that process, but it is not directly needed
+ # by our users and so is deleted below
+ del _labels_key_bindings
++
++
++__all__ = ['Labels']
+diff --git a/napari/layers/points/__init__.py b/napari/layers/points/__init__.py
+index 9a1e27a5..fbbb98b2 100644
+--- a/napari/layers/points/__init__.py
++++ b/napari/layers/points/__init__.py
+@@ -5,3 +5,6 @@ from napari.layers.points.points import Points
+ # decorated with keybindings during that process, but it is not directly needed
+ # by our users and so is deleted below
+ del _points_key_bindings
++
++
++__all__ = ['Points']
+diff --git a/napari/layers/shapes/__init__.py b/napari/layers/shapes/__init__.py
+index d39aa73d..cbeeeb07 100644
+--- a/napari/layers/shapes/__init__.py
++++ b/napari/layers/shapes/__init__.py
+@@ -5,3 +5,6 @@ from napari.layers.shapes.shapes import Shapes
+ # decorated with keybindings during that process, but it is not directly needed
+ # by our users and so is deleted below
+ del _shapes_key_bindings
++
++
++__all__ = ['Shapes']
+diff --git a/napari/layers/shapes/_shapes_models/__init__.py b/napari/layers/shapes/_shapes_models/__init__.py
+index 1691b24f..98d8d5f6 100644
+--- a/napari/layers/shapes/_shapes_models/__init__.py
++++ b/napari/layers/shapes/_shapes_models/__init__.py
+@@ -4,3 +4,5 @@ from napari.layers.shapes._shapes_models.path import Path
+ from napari.layers.shapes._shapes_models.polygon import Polygon
+ from napari.layers.shapes._shapes_models.rectangle import Rectangle
+ from napari.layers.shapes._shapes_models.shape import Shape
++
++__all__ = ["Ellipse", "Line", "Path", "Polygon", "Rectangle", "Shape"]
+diff --git a/napari/layers/surface/__init__.py b/napari/layers/surface/__init__.py
+index 3a1f9c49..6f48735f 100644
+--- a/napari/layers/surface/__init__.py
++++ b/napari/layers/surface/__init__.py
+@@ -1 +1,3 @@
+ from napari.layers.surface.surface import Surface
++
++__all__ = ['Surface']
+diff --git a/napari/layers/tracks/__init__.py b/napari/layers/tracks/__init__.py
+index 944768f3..b4168b21 100644
+--- a/napari/layers/tracks/__init__.py
++++ b/napari/layers/tracks/__init__.py
+@@ -1 +1,3 @@
+ from napari.layers.tracks.tracks import Tracks
++
++__all__ = ['Tracks']
+diff --git a/napari/layers/vectors/__init__.py b/napari/layers/vectors/__init__.py
+index 20661e1c..1fe1be2c 100644
+--- a/napari/layers/vectors/__init__.py
++++ b/napari/layers/vectors/__init__.py
+@@ -1 +1,3 @@
+ from napari.layers.vectors.vectors import Vectors
++
++__all__ = ['Vectors']
+diff --git a/napari/resources/__init__.py b/napari/resources/__init__.py
+index 684be763..044f33ef 100644
+--- a/napari/resources/__init__.py
++++ b/napari/resources/__init__.py
+@@ -6,7 +6,6 @@ from napari.resources._icons import (
+     get_colorized_svg,
+     get_icon_path,
+ )
+-from napari.utils.translations import trans
+ 
+ __all__ = ['get_colorized_svg', 'get_icon_path', 'ICON_PATH', 'ICONS']
+ 
+diff --git a/napari/utils/__init__.py b/napari/utils/__init__.py
+index 56c1fcc9..e356ad7f 100644
+--- a/napari/utils/__init__.py
++++ b/napari/utils/__init__.py
+@@ -3,3 +3,13 @@ from napari.utils.colormaps import Colormap
+ from napari.utils.info import citation_text, sys_info
+ from napari.utils.notebook_display import nbscreenshot
+ from napari.utils.progress import progrange, progress
++
++__all__ = (
++    "Colormap",
++    "resize_dask_cache",
++    "citation_text",
++    "sys_info",
++    "nbscreenshot",
++    "progrange",
++    "progress",
++)
+diff --git a/napari/utils/colormaps/__init__.py b/napari/utils/colormaps/__init__.py
+index a9ac2b10..d204d0dd 100644
+--- a/napari/utils/colormaps/__init__.py
++++ b/napari/utils/colormaps/__init__.py
+@@ -16,3 +16,22 @@ from napari.utils.colormaps.colormap_utils import (
+     low_discrepancy_image,
+     matplotlib_colormaps,
+ )
++
++__all__ = [
++    "make_colorbar",
++    "Colormap",
++    "ALL_COLORMAPS",
++    "AVAILABLE_COLORMAPS",
++    "CYMRGB",
++    "INVERSE_COLORMAPS",
++    "MAGENTA_GREEN",
++    "RGB",
++    "SIMPLE_COLORMAPS",
++    "ValidColormapArg",
++    "color_dict_to_colormap",
++    "display_name_to_name",
++    "ensure_colormap",
++    "label_colormap",
++    "low_discrepancy_image",
++    "matplotlib_colormaps",
++]
+diff --git a/napari/utils/events/__init__.py b/napari/utils/events/__init__.py
+index 647f600f..8771ab02 100644
+--- a/napari/utils/events/__init__.py
++++ b/napari/utils/events/__init__.py
+@@ -21,6 +21,7 @@ __all__ = [
+     'disconnect_events',
+     'EmitterGroup',
+     'Event',
++    'EventedDict',
+     'EventedList',
+     'EventedModel',
+     'EventedSet',
+diff --git a/napari/utils/perf/__init__.py b/napari/utils/perf/__init__.py
+index 453abfe3..6f664159 100644
+--- a/napari/utils/perf/__init__.py
++++ b/napari/utils/perf/__init__.py
+@@ -61,3 +61,15 @@ from napari.utils.perf._timers import (
+ )
+ 
+ USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
++
++
++__all__ = [
++    "perf_config",
++    "USE_PERFMON",
++    "add_counter_event",
++    "add_instant_event",
++    "block_timer",
++    "perf_timer",
++    "timers",
++    "PerfEvent",
++]
+diff --git a/napari/utils/settings/__init__.py b/napari/utils/settings/__init__.py
+index 918aa452..494337d1 100644
+--- a/napari/utils/settings/__init__.py
++++ b/napari/utils/settings/__init__.py
+@@ -1,6 +1,6 @@
+ import warnings
+ 
+-from napari.settings import *
++from napari.settings import *  # noqa: F403
+ from napari.utils.translations import trans
+ 
+ warnings.warn(
+diff --git a/napari/utils/transforms/__init__.py b/napari/utils/transforms/__init__.py
+index 1ba64005..e77bd23c 100644
+--- a/napari/utils/transforms/__init__.py
++++ b/napari/utils/transforms/__init__.py
+@@ -6,3 +6,12 @@ from napari.utils.transforms.transforms import (
+     Transform,
+     TransformChain,
+ )
++
++__all__ = [
++    "shear_matrix_from_angle",
++    "Affine",
++    "CompositeAffine",
++    "ScaleTranslate",
++    "Transform",
++    "TransformChain",
++]
+diff --git a/pyproject.toml b/pyproject.toml
+index 7f67af6f..d1e6aac4 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -76,6 +76,12 @@ profile = "black"
+ line_length = 79
+ skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
+ 
++[tool.ruff]
++line-length = 120
++ignore = ["E501"]
++per-file-ignores = {"napari/_vispy/__init__.py" = ["E402"]}
++target-version = "py38"
++
+ [tool.pytest.ini_options]
+ # These follow standard library warnings filters syntax.  See more here:
+ # https://docs.python.org/3/library/warnings.html#describing-warning-filters
+-- 
+2.34.1
+

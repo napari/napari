@@ -1,0 +1,34 @@
+From e156ffffdb63e790088bff10aeea8fcef7977e0a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Daniel=20Althviz=20Mor=C3=A9?= <d.althviz10@uniandes.edu.co>
+Date: Thu, 5 Jan 2023 12:28:32 -0500
+Subject: [PATCH] Fix theme id reference to get image for 'success_label' style
+ (#5447)
+
+---
+ napari/_qt/qt_resources/styles/02_custom.qss | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/napari/_qt/qt_resources/styles/02_custom.qss b/napari/_qt/qt_resources/styles/02_custom.qss
+index 7b8c7974..5aa7051c 100644
+--- a/napari/_qt/qt_resources/styles/02_custom.qss
++++ b/napari/_qt/qt_resources/styles/02_custom.qss
+@@ -672,6 +672,17 @@ QPushButton#close_button:disabled {
+   padding: 2px;
+ }
+ 
++#success_label {
++  image: url("theme_{{ name }}:/check.svg");
++  max-width: 18px;
++  max-height: 18px;
++  min-width: 18px;
++  min-height: 18px;
++  margin: 0px;
++  margin-left: 1px;
++  padding: 2px;
++}
++
+ #help_label {
+   image: url("theme_{{ id }}:/help.svg");
+   max-width: 18px;
+-- 
+2.34.1

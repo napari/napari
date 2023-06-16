@@ -1,0 +1,217 @@
+From bcbf13bc7e648c2bb9953f7cccf0ed8c1e543d49 Mon Sep 17 00:00:00 2001
+From: Lorenzo Gaifas <brisvag@gmail.com>
+Date: Fri, 16 Dec 2022 15:42:28 +0100
+Subject: [PATCH] Fix test keybinding for layer actions (#5406)
+
+Fixes https://github.com/napari/napari/issues/5404
+---
+ napari/_qt/widgets/qt_keyboard_settings.py |  6 +-
+ napari/_tests/test_viewer.py               | 86 ++++++++++++----------
+ napari/utils/action_manager.py             | 14 ++--
+ napari/utils/shortcuts.py                  |  4 +
+ 4 files changed, 63 insertions(+), 47 deletions(-)
+
+diff --git a/napari/_qt/widgets/qt_keyboard_settings.py b/napari/_qt/widgets/qt_keyboard_settings.py
+index cd4f652e..9f3f4087 100644
+--- a/napari/_qt/widgets/qt_keyboard_settings.py
++++ b/napari/_qt/widgets/qt_keyboard_settings.py
+@@ -83,8 +83,8 @@ class ShortcutEditor(QWidget):
+             if len(layer.class_keymap) == 0:
+                 actions = {}
+             else:
+-                actions = action_manager._get_layer_actions(layer)
+-                for name, action in actions.items():
++                actions = action_manager._get_provider_actions(layer)
++                for name in actions.keys():
+                     all_actions.pop(name)
+             self.key_bindings_strs[f"{layer.__name__} layer"] = actions
+ 
+@@ -513,7 +513,7 @@ class ShortcutEditor(QWidget):
+ 
+         value = {}
+ 
+-        for action_name, action in action_manager._actions.items():
++        for action_name in action_manager._actions.keys():
+             shortcuts = action_manager._shortcuts.get(action_name, [])
+             value[action_name] = list(shortcuts)
+ 
+diff --git a/napari/_tests/test_viewer.py b/napari/_tests/test_viewer.py
+index fdd702af..bfe281e5 100644
+--- a/napari/_tests/test_viewer.py
++++ b/napari/_tests/test_viewer.py
+@@ -12,33 +12,45 @@ from napari._tests.utils import (
+     skip_local_popups,
+     skip_on_win_ci,
+ )
++from napari.settings import get_settings
+ from napari.utils._tests.test_naming import eval_with_filename
+ from napari.utils.action_manager import action_manager
+ 
+ 
+-def _get_all_keybinding_methods(type_):
+-    obj_methods = set(super(type_, type_).class_keymap.values())
+-    obj_methods.update({v.__name__ for v in type_.class_keymap.values()})
+-    obj_methods.update(
+-        {
+-            a.command.__name__
+-            for a in action_manager._get_layer_actions(type_).values()
+-        }
+-    )
+-    return obj_methods
++def _get_provider_actions(type_):
++    actions = set()
++    for superclass in type_.mro():
++        actions.update(
++            action.command
++            for action in action_manager._get_provider_actions(
++                superclass
++            ).values()
++        )
++    return actions
++
++
++def _assert_shortcuts_exist_for_each_action(type_):
++    actions = _get_provider_actions(type_)
++    shortcuts = {
++        name.partition(':')[-1] for name in get_settings().shortcuts.shortcuts
++    }
++    shortcuts.update(func.__name__ for func in type_.class_keymap.values())
++    for action in actions:
++        assert (
++            action.__name__ in shortcuts
++        ), f"missing shortcut for action '{action.__name__}' on '{type_.__name__}' is missing"
+ 
+ 
+-viewer_methods = _get_all_keybinding_methods(Viewer)
+-EXPECTED_NUMBER_OF_VIEWER_METHODS = 14
++viewer_actions = _get_provider_actions(Viewer)
+ 
+ 
+-def test_len_methods_viewer(make_napari_viewer):
++def test_all_viewer_actions_are_accessible_via_shortcut(make_napari_viewer):
+     """
+-    Make sure we do find all the methods attached to a viewer via keybindings
++    Make sure we do find all the actions attached to a viewer via keybindings
+     """
++    # instantiate to make sure everything is initialized correctly
+     _ = make_napari_viewer()
+-    viewer_methods = _get_all_keybinding_methods(Viewer)
+-    assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
++    _assert_shortcuts_exist_for_each_action(Viewer)
+ 
+ 
+ @pytest.mark.xfail
+@@ -47,13 +59,12 @@ def test_non_existing_bindings():
+     Those are condition tested in next unittest; but do not exists; this is
+     likely due to an oversight somewhere.
+     """
+-    assert 'play' in [x.__name__ for x in viewer_methods]
+-    assert 'toggle_fullscreen' in [x.__name__ for x in viewer_methods]
++    assert 'play' in [func.__name__ for func in viewer_actions]
++    assert 'toggle_fullscreen' in [func.__name__ for func in viewer_actions]
+ 
+ 
+-@pytest.mark.parametrize('func', viewer_methods)
+-def test_viewer_methods(make_napari_viewer, func):
+-    """Test instantiating viewer."""
++@pytest.mark.parametrize('func', viewer_actions)
++def test_viewer_actions(make_napari_viewer, func):
+     viewer = make_napari_viewer()
+ 
+     if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
+@@ -95,26 +106,27 @@ def test_add_layer(make_napari_viewer, layer_class, data, ndim):
+         func(layer)
+ 
+ 
+-EXPECTED_NUMBER_OF_LAYER_METHODS = {
+-    'Image': 5,
+-    'Vectors': 0,
+-    'Surface': 0,
+-    'Tracks': 0,
+-    'Points': 9,
+-    'Labels': 14,
+-    'Shapes': 17,
+-}
++layer_types = (
++    'Image',
++    'Vectors',
++    'Surface',
++    'Tracks',
++    'Points',
++    'Labels',
++    'Shapes',
++)
+ 
+ 
+-@pytest.mark.parametrize(
+-    'cls, expectation', EXPECTED_NUMBER_OF_LAYER_METHODS.items()
+-)
+-def test_expected_number_of_layer_methods(cls, expectation):
++@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
++def test_all_layer_actions_are_accessible_via_shortcut(
++    layer_class, data, ndim
++):
+     """
+-    Make sure we do find all the methods attached to a layer via keybindings
++    Make sure we do find all the actions attached to a layer via keybindings
+     """
+-    layer_methods = _get_all_keybinding_methods(getattr(layers, cls))
+-    assert len(layer_methods) == expectation
++    # instantiate to make sure everything is initialized correctly
++    _ = layer_class(data)
++    _assert_shortcuts_exist_for_each_action(layer_class)
+ 
+ 
+ @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
+diff --git a/napari/utils/action_manager.py b/napari/utils/action_manager.py
+index 1c44c193..e12159e5 100644
+--- a/napari/utils/action_manager.py
++++ b/napari/utils/action_manager.py
+@@ -351,25 +351,25 @@ class ActionManager:
+ 
+         return layer_shortcuts
+ 
+-    def _get_layer_actions(self, layer) -> dict:
++    def _get_provider_actions(self, provider) -> dict:
+         """
+-        Get actions filtered by the given layer.
++        Get actions filtered by the given provider.
+ 
+         Parameters
+         ----------
+-        layer : Layer
+-            Layer to use for actions filtering.
++        provider : KeymapProvider
++            Provider to use for actions filtering.
+ 
+         Returns
+         -------
+-        layer_actions: dict
+-            Dictionary of names of actions with action values for a layer.
++        provider_actions: dict
++            Dictionary of names of actions with action values for a provider.
+ 
+         """
+         return {
+             name: action
+             for name, action in self._actions.items()
+-            if action and layer == action.keymapprovider
++            if action and provider == action.keymapprovider
+         }
+ 
+     def _get_active_shortcuts(self, active_keymap):
+diff --git a/napari/utils/shortcuts.py b/napari/utils/shortcuts.py
+index 2332d32e..45895f96 100644
+--- a/napari/utils/shortcuts.py
++++ b/napari/utils/shortcuts.py
+@@ -47,4 +47,8 @@ default_shortcuts = {
+     'napari:finish_drawing_shape': ['Escape'],
+     'napari:reset_active_layer_affine': ['Control-Shift-R'],
+     'napari:transform_active_layer': ['Control-Shift-A'],
++    'napari:move_shapes_selection_to_front': ['f'],
++    'napari:move_shapes_selection_to_back': ['f'],
++    'napari:activate_image_pan_zoom_mode': ['f'],
++    'napari:activate_image_transform_mode': ['f'],
+ }
+-- 
+2.34.1

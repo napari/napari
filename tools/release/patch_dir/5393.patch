@@ -1,0 +1,23 @@
+From c18904b4c5f7455ed2bb1c7d39f12493d078100c Mon Sep 17 00:00:00 2001
+From: Grzegorz Bokota <bokota+github@gmail.com>
+Date: Wed, 7 Dec 2022 09:53:53 -0800
+Subject: [PATCH] Update `MANIFEST.in` to remove warning when run tox (#5393)
+
+---
+ MANIFEST.in | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/MANIFEST.in b/MANIFEST.in
+index ad1b18cb..3f61d52a 100644
+--- a/MANIFEST.in
++++ b/MANIFEST.in
+@@ -18,6 +18,7 @@ recursive-exclude napari *.pyc
+ exclude napari/benchmarks/*
+ recursive-exclude resources *
+ recursive-exclude binder *
++recursive-exclude examples *
+ exclude bundle.py bundle_conda.py
+ exclude dockerfile
+ exclude EULA.md
+-- 
+2.34.1

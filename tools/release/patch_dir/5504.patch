@@ -1,0 +1,90 @@
+From cce7109fac781eb28188b328803a04ee376528ee Mon Sep 17 00:00:00 2001
+From: Matthias Bussonnier <bussonniermatthias@gmail.com>
+Date: Fri, 27 Jan 2023 17:04:27 +0100
+Subject: [PATCH] MAINT: Don't format logs in log call (#5504)
+
+There are many reason not to use f-string in logs,
+- Performance, F-strings are eager, so might be slow. Though with
+logging, you can filter before formatting.
+ - prevent structured logging or handlers to highlight.
+- Security (untrusted input can lead to DOS on formatting,
+https://discuss.python.org/t/safer-logging-methods-for-f-strings-and-new-style-formatting/13802)
+---
+ napari/_qt/containers/qt_list_model.py         | 6 +++++-
+ napari/_qt/qt_viewer.py                        | 2 +-
+ napari/plugins/io.py                           | 4 ++--
+ napari/utils/events/containers/_nested_list.py | 6 +++++-
+ 4 files changed, 13 insertions(+), 5 deletions(-)
+
+diff --git a/napari/_qt/containers/qt_list_model.py b/napari/_qt/containers/qt_list_model.py
+index 240d6da9..2503ab77 100644
+--- a/napari/_qt/containers/qt_list_model.py
++++ b/napari/_qt/containers/qt_list_model.py
+@@ -67,7 +67,11 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
+         if isinstance(data, ItemMimeData):
+             moving_indices = data.indices
+ 
+-            logger.debug(f"dropMimeData: indices {moving_indices} ➡ {destRow}")
++            logger.debug(
++                "dropMimeData: indices %s ➡ %s",
++                moving_indices,
++                destRow,
++            )
+ 
+             if len(moving_indices) == 1:
+                 return self._root.move(moving_indices[0], destRow)
+diff --git a/napari/_qt/qt_viewer.py b/napari/_qt/qt_viewer.py
+index a24f72db..134366ed 100644
+--- a/napari/_qt/qt_viewer.py
++++ b/napari/_qt/qt_viewer.py
+@@ -651,7 +651,7 @@ class QtViewer(QSplitter):
+                 saved = self.viewer.layers.save(
+                     filename, selected=selected, _writer=writer
+                 )
+-                logging.debug(f'Saved {saved}')
++                logging.debug('Saved %s', saved)
+                 error_messages = "\n".join(str(x.message.args[0]) for x in wa)
+ 
+             if not saved:
+diff --git a/napari/plugins/io.py b/napari/plugins/io.py
+index 9adcc82c..142164bb 100644
+--- a/napari/plugins/io.py
++++ b/napari/plugins/io.py
+@@ -344,7 +344,7 @@ def _write_multiple_layers_with_plugins(
+ 
+     hook_caller = plugin_manager.hook.napari_get_writer
+     path = abspath_or_url(path)
+-    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
++    logger.debug("Writing to %s.  Hook caller: %s", path, hook_caller)
+     if plugin_name:
+         # if plugin has been specified we just directly call napari_get_writer
+         # with that plugin_name.
+@@ -454,7 +454,7 @@ def _write_single_layer_with_plugins(
+         extension = os.path.splitext(path)[-1]
+         plugin_name = plugin_manager.get_writer_for_extension(extension)
+ 
+-    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
++    logger.debug("Writing to %s.  Hook caller: %s", path, hook_caller)
+     if plugin_name and (plugin_name not in plugin_manager.plugins):
+         names = {i.plugin_name for i in hook_caller.get_hookimpls()}
+         raise ValueError(
+diff --git a/napari/utils/events/containers/_nested_list.py b/napari/utils/events/containers/_nested_list.py
+index 86b820b7..89436a3a 100644
+--- a/napari/utils/events/containers/_nested_list.py
++++ b/napari/utils/events/containers/_nested_list.py
+@@ -390,7 +390,11 @@ class NestableEventedList(EventedList[_T]):
+             If the terminal source is a slice, or if the source is this root
+             object
+         """
+-        logger.debug(f"move(src_index={src_index}, dest_index={dest_index})")
++        logger.debug(
++            "move(src_index=%s, dest_index=%s)",
++            src_index,
++            dest_index,
++        )
+         src_par_i, src_i = split_nested_index(src_index)
+         dest_par_i, dest_i = split_nested_index(dest_index)
+         dest_i = self._non_negative_index(dest_par_i, dest_i)
+-- 
+2.34.1
+

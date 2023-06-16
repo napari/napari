@@ -1,0 +1,231 @@
+From 1fe0b8e842e55fd8449ea77ca62ddeea5b6e62b2 Mon Sep 17 00:00:00 2001
+From: Peter Sobolewski <76622105+psobolewskiPhD@users.noreply.github.com>
+Date: Wed, 25 Jan 2023 20:40:14 +0100
+Subject: [PATCH] Bugfix: Add missing Enums and Flags required by PySide6 > 6.4
+ (#5480)
+
+Co-authored-by: Grzegorz Bokota <bokota+github@gmail.com>
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Closes https://github.com/napari/napari/issues/5479
+---
+ .github/workflows/test_pull_requests.yml     |  8 ++++++++
+ napari/_qt/code_syntax_highlight.py          |  7 ++++++-
+ napari/_qt/containers/_base_item_view.py     |  8 ++++----
+ napari/_qt/containers/_layer_delegate.py     | 16 ++++++++++------
+ napari/_qt/containers/_tests/test_qt_list.py |  2 +-
+ napari/_qt/containers/_tests/test_qt_tree.py |  2 +-
+ napari/_qt/widgets/qt_plugin_sorter.py       |  6 ++++--
+ napari/_qt/widgets/qt_viewer_dock_widget.py  | 12 +++++++++---
+ 8 files changed, 43 insertions(+), 18 deletions(-)
+
+diff --git a/.github/workflows/test_pull_requests.yml b/.github/workflows/test_pull_requests.yml
+index 57890284..a16f4600 100644
+--- a/.github/workflows/test_pull_requests.yml
++++ b/.github/workflows/test_pull_requests.yml
+@@ -5,9 +5,14 @@ on:
+   pull_request:
+     branches:
+       - main
++      - "v*x"
+     paths-ignore:
+       - 'docs/**'
+ 
++concurrency:
++  group: test-${{ github.ref }}
++  cancel-in-progress: true
++
+ jobs:
+   manifest:
+     # make sure all necessary files will be bundled in the release
+@@ -81,6 +86,9 @@ jobs:
+           - python: 3.9
+             platform: ubuntu-latest
+             backend: pyside6
++          - python: '3.10'
++            platform: ubuntu-latest
++            backend: pyside6
+ 
+     steps:
+       - name: Cancel Previous Runs
+diff --git a/napari/_qt/code_syntax_highlight.py b/napari/_qt/code_syntax_highlight.py
+index dd265fe2..81106532 100644
+--- a/napari/_qt/code_syntax_highlight.py
++++ b/napari/_qt/code_syntax_highlight.py
+@@ -15,7 +15,12 @@ def get_text_char_format(style):
+     """
+ 
+     text_char_format = QtGui.QTextCharFormat()
+-    text_char_format.setFontFamily("monospace")
++    try:
++        text_char_format.setFontFamilies(["monospace"])
++    except AttributeError:
++        text_char_format.setFontFamily(
++            "monospace"
++        )  # backward compatibility for pyqt5 5.12.3
+     if style.get('color'):
+         text_char_format.setForeground(QtGui.QColor(f"#{style['color']}"))
+ 
+diff --git a/napari/_qt/containers/_base_item_view.py b/napari/_qt/containers/_base_item_view.py
+index 251c2cf2..313c247c 100644
+--- a/napari/_qt/containers/_base_item_view.py
++++ b/napari/_qt/containers/_base_item_view.py
+@@ -98,14 +98,14 @@ class _BaseEventedItemView(Generic[ItemType]):
+             sm.clearCurrentIndex()
+         else:
+             idx = index_of(self.model(), event.value)
+-            sm.setCurrentIndex(idx, sm.Current)
++            sm.setCurrentIndex(idx, sm.SelectionFlag.Current)
+ 
+     def _on_py_selection_change(self, event: Event):
+         """The python model selection has changed. Update the Qt view."""
+         sm = self.selectionModel()
+         for is_selected, idx in chain(
+-            zip(repeat(sm.Select), event.added),
+-            zip(repeat(sm.Deselect), event.removed),
++            zip(repeat(sm.SelectionFlag.Select), event.added),
++            zip(repeat(sm.SelectionFlag.Deselect), event.removed),
+         ):
+             model_idx = index_of(self.model(), idx)
+             if model_idx.isValid():
+@@ -118,7 +118,7 @@ class _BaseEventedItemView(Generic[ItemType]):
+         for i in self._root.selection:
+             idx = index_of(self.model(), i)
+             selection.select(idx, idx)
+-        sel_model.select(selection, sel_model.ClearAndSelect)
++        sel_model.select(selection, sel_model.SelectionFlag.ClearAndSelect)
+ 
+ 
+ def index_of(model: QAbstractItemModel, obj: ItemType) -> QModelIndex:
+diff --git a/napari/_qt/containers/_layer_delegate.py b/napari/_qt/containers/_layer_delegate.py
+index 920f4cfc..f6adf71e 100644
+--- a/napari/_qt/containers/_layer_delegate.py
++++ b/napari/_qt/containers/_layer_delegate.py
+@@ -38,7 +38,7 @@ from __future__ import annotations
+ from typing import TYPE_CHECKING
+ 
+ from qtpy.QtCore import QPoint, QSize, Qt
+-from qtpy.QtGui import QPixmap
++from qtpy.QtGui import QMouseEvent, QPixmap
+ from qtpy.QtWidgets import QStyledItemDelegate
+ 
+ from napari._app_model.constants import MenuId
+@@ -109,8 +109,10 @@ class LayerDelegate(QStyledItemDelegate):
+         bg = option.palette.color(option.palette.ColorRole.Window).red()
+         option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
+         option.decorationSize = QSize(18, 18)
+-        option.decorationPosition = option.Right  # put icon on the right
+-        option.features |= option.HasDecoration
++        option.decorationPosition = (
++            option.Position.Right
++        )  # put icon on the right
++        option.features |= option.ViewItemFeature.HasDecoration
+ 
+     def _paint_thumbnail(self, painter, option, index):
+         """paint the layer thumbnail."""
+@@ -152,7 +154,7 @@ class LayerDelegate(QStyledItemDelegate):
+         This can be used to customize how the delegate handles mouse/key events
+         """
+         if (
+-            event.type() == event.MouseButtonRelease
++            event.type() == QMouseEvent.MouseButtonRelease
+             and event.button() == Qt.MouseButton.RightButton
+         ):
+             pnt = (
+@@ -166,11 +168,13 @@ class LayerDelegate(QStyledItemDelegate):
+         # if the user clicks quickly on the visibility checkbox, we *don't*
+         # want it to be interpreted as a double-click.  We want the visibilty
+         # to simply be toggled.
+-        if event.type() == event.MouseButtonDblClick:
++        if event.type() == QMouseEvent.MouseButtonDblClick:
+             self.initStyleOption(option, index)
+             style = option.widget.style()
+             check_rect = style.subElementRect(
+-                style.SE_ItemViewItemCheckIndicator, option, option.widget
++                style.SubElement.SE_ItemViewItemCheckIndicator,
++                option,
++                option.widget,
+             )
+             if check_rect.contains(event.pos()):
+                 cur_state = index.data(Qt.ItemDataRole.CheckStateRole)
+diff --git a/napari/_qt/containers/_tests/test_qt_list.py b/napari/_qt/containers/_tests/test_qt_list.py
+index 03211f9d..2d5f201c 100644
+--- a/napari/_qt/containers/_tests/test_qt_list.py
++++ b/napari/_qt/containers/_tests/test_qt_list.py
+@@ -75,7 +75,7 @@ def test_list_view(qtbot):
+     assert qmodel.getItem(qsel.currentIndex()) == root[3]
+ 
+     # clear current in Qt
+-    qsel.setCurrentIndex(QModelIndex(), qsel.Current)
++    qsel.setCurrentIndex(QModelIndex(), qsel.SelectionFlag.Current)
+     # check current in python
+     assert root.selection._current is None
+ 
+diff --git a/napari/_qt/containers/_tests/test_qt_tree.py b/napari/_qt/containers/_tests/test_qt_tree.py
+index 53aee9d0..722800d8 100644
+--- a/napari/_qt/containers/_tests/test_qt_tree.py
++++ b/napari/_qt/containers/_tests/test_qt_tree.py
+@@ -145,7 +145,7 @@ def test_node_tree_view(qtbot):
+     assert qmodel.getItem(qsel.currentIndex()).index_from_root() == (2, 1, 0)
+ 
+     # clear current in Qt
+-    qsel.setCurrentIndex(QModelIndex(), qsel.Current)
++    qsel.setCurrentIndex(QModelIndex(), qsel.SelectionFlag.Current)
+     # check current in python
+     assert root.selection._current is None
+ 
+diff --git a/napari/_qt/widgets/qt_plugin_sorter.py b/napari/_qt/widgets/qt_plugin_sorter.py
+index 2a014a48..d9d9c2ea 100644
+--- a/napari/_qt/widgets/qt_plugin_sorter.py
++++ b/napari/_qt/widgets/qt_plugin_sorter.py
+@@ -8,12 +8,14 @@ from typing import TYPE_CHECKING, List, Optional, Union
+ from napari_plugin_engine import HookCaller, HookImplementation
+ from qtpy.QtCore import QEvent, Qt, Signal, Slot
+ from qtpy.QtWidgets import (
++    QAbstractItemView,
+     QCheckBox,
+     QComboBox,
+     QFrame,
+     QGraphicsOpacityEffect,
+     QHBoxLayout,
+     QLabel,
++    QListView,
+     QListWidget,
+     QListWidgetItem,
+     QSizePolicy,
+@@ -167,8 +169,8 @@ class QtHookImplementationListWidget(QListWidget):
+         super().__init__(parent)
+         self.setDefaultDropAction(Qt.DropAction.MoveAction)
+         self.setDragEnabled(True)
+-        self.setDragDropMode(self.InternalMove)
+-        self.setSelectionMode(self.SingleSelection)
++        self.setDragDropMode(QListView.InternalMove)
++        self.setSelectionMode(QAbstractItemView.SingleSelection)
+         self.setAcceptDrops(True)
+         self.setSpacing(1)
+         self.setMinimumHeight(1)
+diff --git a/napari/_qt/widgets/qt_viewer_dock_widget.py b/napari/_qt/widgets/qt_viewer_dock_widget.py
+index e992df66..868e6abf 100644
+--- a/napari/_qt/widgets/qt_viewer_dock_widget.py
++++ b/napari/_qt/widgets/qt_viewer_dock_widget.py
+@@ -235,10 +235,16 @@ class QtViewerDockWidget(QDockWidget):
+             Qt.DockWidgetArea.RightDockWidgetArea,
+         ):
+             features = self._features
+-            if features & self.DockWidgetVerticalTitleBar:
+-                features = features ^ self.DockWidgetVerticalTitleBar
++            if features & self.DockWidgetFeature.DockWidgetVerticalTitleBar:
++                features = (
++                    features
++                    ^ self.DockWidgetFeature.DockWidgetVerticalTitleBar
++                )
+         else:
+-            features = self._features | self.DockWidgetVerticalTitleBar
++            features = (
++                self._features
++                | self.DockWidgetFeature.DockWidgetVerticalTitleBar
++            )
+         self.setFeatures(features)
+ 
+     @property
+-- 
+2.34.1

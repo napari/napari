@@ -1,0 +1,461 @@
+From 4893c1462bdf226038e6ef566a8c7916c3aa0ce9 Mon Sep 17 00:00:00 2001
+From: Grzegorz Bokota <bokota+github@gmail.com>
+Date: Wed, 14 Dec 2022 10:48:28 +0100
+Subject: [PATCH] Add checks for pending Qt threads and timers in tests (#5373)
+
+Co-authored-by: Andy Sweet <andrew.d.sweet@gmail.com>
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+---
+ napari/_qt/qt_main_window.py              |  5 +++
+ napari/_qt/widgets/_tests/test_qt_dims.py |  2 +
+ napari/_qt/widgets/_tests/test_qt_play.py |  6 +--
+ napari/_qt/widgets/qt_dims.py             | 13 +++++--
+ napari/_qt/widgets/qt_dims_slider.py      | 46 ++++++++++++++++++++---
+ napari/_tests/test_conftest_fixtures.py   | 46 +++++++++++++++++++++++
+ napari/_tests/test_viewer.py              |  9 ++++-
+ napari/conftest.py                        | 21 ++++++++---
+ napari/utils/_testsupport.py              | 18 ++++++++-
+ pyproject.toml                            |  6 ++-
+ 10 files changed, 151 insertions(+), 21 deletions(-)
+ create mode 100644 napari/_tests/test_conftest_fixtures.py
+
+diff --git a/napari/_qt/qt_main_window.py b/napari/_qt/qt_main_window.py
+index d0470884..eef66d23 100644
+--- a/napari/_qt/qt_main_window.py
++++ b/napari/_qt/qt_main_window.py
+@@ -158,7 +158,9 @@ class _QtMainWindow(QMainWindow):
+ 
+         self.status_throttler = QSignalThrottler(parent=self)
+         self.status_throttler.setTimeout(50)
++        self._throttle_cursor_to_status_connection(viewer)
+ 
++    def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
+         # In the GUI we expect lots of changes to the cursor position, so
+         # replace the direct connection with a throttled one.
+         with contextlib.suppress(IndexError):
+@@ -333,6 +335,7 @@ class _QtMainWindow(QMainWindow):
+             self._quit_app = quit_app
+             self._is_close_dialog[quit_app] = True
+             # here we inform that confirmation dialog is not open
++            self._qt_viewer.dims.stop()
+             return super().close()
+         self._is_close_dialog[quit_app] = True
+         # here we inform that confirmation dialog is not open
+@@ -434,6 +437,8 @@ class _QtMainWindow(QMainWindow):
+                 time.sleep(0.1)
+                 QApplication.processEvents()
+ 
++        self._qt_viewer.dims.stop()
++
+         if self._quit_app:
+             quit_app()
+ 
+diff --git a/napari/_qt/widgets/_tests/test_qt_dims.py b/napari/_qt/widgets/_tests/test_qt_dims.py
+index 07f30219..12bffa05 100644
+--- a/napari/_qt/widgets/_tests/test_qt_dims.py
++++ b/napari/_qt/widgets/_tests/test_qt_dims.py
+@@ -326,6 +326,7 @@ def test_not_playing_after_ndim_changes(qtbot):
+     dims.ndim = 2
+ 
+     qtbot.waitUntil(lambda: not view.is_playing)
++    qtbot.waitUntil(lambda: view._animation_worker is None)
+ 
+ 
+ def test_not_playing_after_ndisplay_changes(qtbot):
+@@ -340,6 +341,7 @@ def test_not_playing_after_ndisplay_changes(qtbot):
+     dims.ndisplay = 3
+ 
+     qtbot.waitUntil(lambda: not view.is_playing)
++    qtbot.waitUntil(lambda: view._animation_worker is None)
+ 
+ 
+ def test_set_axis_labels_after_ndim_changes(qtbot):
+diff --git a/napari/_qt/widgets/_tests/test_qt_play.py b/napari/_qt/widgets/_tests/test_qt_play.py
+index 6d16accd..73ed8f0d 100644
+--- a/napari/_qt/widgets/_tests/test_qt_play.py
++++ b/napari/_qt/widgets/_tests/test_qt_play.py
+@@ -34,7 +34,7 @@ def make_worker(
+         if worker._count < nframes:
+             worker._count += 1
+         else:
+-            worker.finish()
++            worker._stop()
+ 
+     def count_reached():
+         assert worker._count >= nframes
+@@ -42,6 +42,7 @@ def make_worker(
+     def go():
+         worker.work()
+         qtbot.waitUntil(count_reached, timeout=6000)
++        worker._stop()
+         return worker.current
+ 
+     worker.frame_requested.connect(bump)
+@@ -78,12 +79,11 @@ def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
+     if rng:
+         nrange = rng[1] - rng[0] + 1
+         expected = rng[0] + result(nframes, nrange)
+-        assert expected - 1 <= current <= expected + 1
+     else:
+         expected = result(nframes, worker.nz)
+         # assert current == expected
+         # relaxing for CI OSX tests
+-        assert expected - 1 <= current <= expected + 1
++    assert expected - 1 <= current <= expected + 1
+ 
+ 
+ def test_animation_thread_once(qtbot):
+diff --git a/napari/_qt/widgets/qt_dims.py b/napari/_qt/widgets/qt_dims.py
+index fe264998..b9456b0b 100644
+--- a/napari/_qt/widgets/qt_dims.py
++++ b/napari/_qt/widgets/qt_dims.py
+@@ -2,6 +2,7 @@ import warnings
+ from typing import Optional, Tuple
+ 
+ import numpy as np
++from qtpy.QtCore import Slot
+ from qtpy.QtGui import QFont, QFontMetrics
+ from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
+ 
+@@ -46,6 +47,7 @@ class QtDims(QWidget):
+ 
+         self._play_ready = True  # False if currently awaiting a draw event
+         self._animation_thread = None
++        self._animation_worker = None
+ 
+         # Initialises the layout:
+         layout = QVBoxLayout()
+@@ -298,11 +300,16 @@ class QtDims(QWidget):
+                 )
+             )
+ 
++    @Slot()
+     def stop(self):
+         """Stop axis animation"""
+-        if self._animation_thread:
+-            self._animation_thread.quit()
+-            self._animation_thread.wait()
++        if self._animation_worker is not None:
++            # Thread will be stop by the worker
++            self._animation_worker._stop()
++
++    @Slot()
++    def cleaned_worker(self):
++        print("aaaa")
+         self._animation_thread = None
+         self._animation_worker = None
+         self.enable_play()
+diff --git a/napari/_qt/widgets/qt_dims_slider.py b/napari/_qt/widgets/qt_dims_slider.py
+index 6ec59e81..fd62d346 100644
+--- a/napari/_qt/widgets/qt_dims_slider.py
++++ b/napari/_qt/widgets/qt_dims_slider.py
+@@ -1,7 +1,7 @@
+ from typing import Optional, Tuple
+ 
+ import numpy as np
+-from qtpy.QtCore import QObject, Qt, QTimer, Signal, Slot
++from qtpy.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
+ from qtpy.QtGui import QIntValidator
+ from qtpy.QtWidgets import (
+     QApplication,
+@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
+     QPushButton,
+     QWidget,
+ )
++from superqt import ensure_object_thread
+ 
+ from napari._qt.dialogs.qt_modal import QtPopup
+ from napari._qt.qthreading import _new_worker_qthread
+@@ -412,7 +413,7 @@ class QtDimSliderWidget(QWidget):
+             _start_thread=True,
+             _connect={'frame_requested': self.qt_dims._set_frame},
+         )
+-        worker.finished.connect(self.qt_dims.stop)
++        worker.finished.connect(self.qt_dims.cleaned_worker)
+         thread.finished.connect(self.play_stopped)
+         self.play_started.emit()
+         self.thread = thread
+@@ -581,11 +582,16 @@ class AnimationWorker(QObject):
+     started = Signal()
+ 
+     def __init__(self, slider):
++        # FIXME there are attributes defined outsid of __init__.
+         super().__init__()
++        self._interval = 1
+         self.slider = slider
+         self.dims = slider.dims
+         self.axis = slider.axis
+         self.loop_mode = slider.loop_mode
++
++        self.timer = QTimer()
++
+         slider.fps_changed.connect(self.set_fps)
+         slider.mode_changed.connect(self.set_loop_mode)
+         slider.range_changed.connect(self.set_frame_range)
+@@ -598,7 +604,18 @@ class AnimationWorker(QObject):
+         self.dims.events.current_step.connect(self._on_axis_changed)
+         self.current = max(self.dims.current_step[self.axis], self.min_point)
+         self.current = min(self.current, self.max_point)
+-        self.timer = QTimer()
++
++        self.timer.setSingleShot(True)
++        self.timer.timeout.connect(self.advance)
++
++    @property
++    def interval(self):
++        return self._interval
++
++    @interval.setter
++    def interval(self, value):
++        self._interval = value
++        self.timer.setInterval(int(self._interval))
+ 
+     @Slot()
+     def work(self):
+@@ -610,12 +627,19 @@ class AnimationWorker(QObject):
+                 self.frame_requested.emit(self.axis, self.min_point)
+             elif self.step < 0 and self.current <= self.min_point + 1:
+                 self.frame_requested.emit(self.axis, self.max_point)
+-            self.timer.singleShot(int(self.interval), self.advance)
++            self.timer.start()
+         else:
+             # immediately advance one frame
+             self.advance()
+         self.started.emit()
+ 
++    @ensure_object_thread
++    def _stop(self):
++        """Stop the animation."""
++        if self.timer.isActive():
++            self.timer.stop()
++            self.finish()
++
+     @Slot(float)
+     def set_fps(self, fps):
+         """Set the frames per second value for the animation.
+@@ -683,6 +707,7 @@ class AnimationWorker(QObject):
+         """
+         self.loop_mode = LoopMode(mode)
+ 
++    @Slot()
+     def advance(self):
+         """Advance the current frame in the animation.
+ 
+@@ -716,7 +741,7 @@ class AnimationWorker(QObject):
+             self.frame_requested.emit(self.axis, self.current)
+         # using a singleShot timer here instead of timer.start() because
+         # it makes it easier to update the interval using signals/slots
+-        self.timer.singleShot(int(self.interval), self.advance)
++        self.timer.start()
+ 
+     def finish(self):
+         """Emit the finished event signal."""
+@@ -726,3 +751,14 @@ class AnimationWorker(QObject):
+         """Update the current frame if the axis has changed."""
+         # slot for external events to update the current frame
+         self.current = self.dims.current_step[self.axis]
++
++    def moveToThread(self, thread: QThread):
++        """Move the animation to a given thread.
++
++        Parameters
++        ----------
++        thread : QThread
++            The thread to move the animation to.
++        """
++        super().moveToThread(thread)
++        self.timer.moveToThread(thread)
+diff --git a/napari/_tests/test_conftest_fixtures.py b/napari/_tests/test_conftest_fixtures.py
+new file mode 100644
+index 00000000..c06b8919
+--- /dev/null
++++ b/napari/_tests/test_conftest_fixtures.py
+@@ -0,0 +1,46 @@
++import pytest
++from qtpy.QtCore import QMutex, QThread, QTimer
++
++
++class _TestThread(QThread):
++    def __init__(self):
++        super().__init__()
++        self.mutex = QMutex()
++
++    def run(self):
++        self.mutex.lock()
++
++
++@pytest.mark.disable_qthread_start
++def test_disable_qthread(qapp):
++    t = _TestThread()
++    t.mutex.lock()
++    t.start()
++    assert not t.isRunning()
++    t.mutex.unlock()
++
++
++def test_qthread_running(qtbot):
++    t = _TestThread()
++    t.mutex.lock()
++    t.start()
++    assert t.isRunning()
++    t.mutex.unlock()
++    qtbot.waitUntil(t.isFinished, timeout=2000)
++
++
++@pytest.mark.disable_qtimer_start
++def test_disable_qtimer(qtbot):
++    t = QTimer()
++    t.setInterval(100)
++    t.start()
++    assert not t.isActive()
++
++    # As qtbot uses a QTimer in waitUntil, we also test if timer disable does not break it
++    th = _TestThread()
++    th.mutex.lock()
++    th.start()
++    assert th.isRunning()
++    th.mutex.unlock()
++    qtbot.waitUntil(th.isFinished, timeout=2000)
++    assert not th.isRunning()
+diff --git a/napari/_tests/test_viewer.py b/napari/_tests/test_viewer.py
+index ff193324..fdd702af 100644
+--- a/napari/_tests/test_viewer.py
++++ b/napari/_tests/test_viewer.py
+@@ -132,7 +132,7 @@ def test_add_layer_magic_name(
+ 
+ 
+ @skip_on_win_ci
+-def test_screenshot(make_napari_viewer):
++def test_screenshot(make_napari_viewer, qtbot):
+     """Test taking a screenshot."""
+     viewer = make_napari_viewer()
+ 
+@@ -168,6 +168,13 @@ def test_screenshot(make_napari_viewer):
+     # test size argument (and ensure it coerces to int)
+     screenshot = viewer.screenshot(canvas_only=True, size=(20, 20.0))
+     assert screenshot.shape == (20, 20, 4)
++    # Here we wait until the flash animation will be over. We cannot wait on finished
++    # signal as _flash_animation may be already removed when calling wait.
++    qtbot.waitUntil(
++        lambda: not hasattr(
++            viewer.window._qt_viewer._canvas_overlay, '_flash_animation'
++        )
++    )
+ 
+ 
+ @skip_on_win_ci
+diff --git a/napari/conftest.py b/napari/conftest.py
+index 15a545d2..613a947b 100644
+--- a/napari/conftest.py
++++ b/napari/conftest.py
+@@ -30,19 +30,21 @@ Notes for using the plugin-related fixtures here:
+ """
+ from __future__ import annotations
+ 
++import os
++import sys
++from concurrent.futures import ThreadPoolExecutor
+ from contextlib import suppress
++from itertools import chain
++from multiprocessing.pool import ThreadPool
++from typing import TYPE_CHECKING
++from unittest.mock import patch
++from weakref import WeakKeyDictionary
+ 
+ try:
+     __import__('dotenv').load_dotenv()
+ except ModuleNotFoundError:
+     pass
+ 
+-import os
+-from itertools import chain
+-from multiprocessing.pool import ThreadPool
+-from typing import TYPE_CHECKING
+-from unittest.mock import patch
+-
+ import dask.threaded
+ import numpy as np
+ import pytest
+@@ -441,6 +443,13 @@ def disable_notification_dismiss_timer(monkeypatch):
+         monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
+ 
+ 
++@pytest.fixture()
++def single_threaded_executor():
++    executor = ThreadPoolExecutor(max_workers=1)
++    yield executor
++    executor.shutdown()
++
++
+ @pytest.fixture(autouse=True)
+ def _mock_app():
+     """Mock clean 'test_app' `NapariApplication` instance.
+diff --git a/napari/utils/_testsupport.py b/napari/utils/_testsupport.py
+index a96b283c..71ed02a4 100644
+--- a/napari/utils/_testsupport.py
++++ b/napari/utils/_testsupport.py
+@@ -16,6 +16,10 @@ if TYPE_CHECKING:
+ _SAVE_GRAPH_OPNAME = "--save-leaked-object-graph"
+ 
+ 
++def _empty(*_, **__):
++    """Empty function for mocking"""
++
++
+ def pytest_addoption(parser):
+     parser.addoption(
+         "--show-napari-viewer",
+@@ -127,7 +131,11 @@ def pytest_runtest_makereport(item, call):
+ 
+ @pytest.fixture
+ def make_napari_viewer(
+-    qtbot, request: 'FixtureRequest', napari_plugin_manager, clean_themes
++    qtbot,
++    request: 'FixtureRequest',
++    napari_plugin_manager,
++    monkeypatch,
++    clean_themes,
+ ):
+     """A fixture function that creates a napari viewer for use in testing.
+ 
+@@ -207,6 +215,12 @@ def make_napari_viewer(
+     prior_exception = getattr(sys, 'last_value', None)
+     is_internal_test = request.module.__name__.startswith("napari.")
+ 
++    # disable throttling cursor event in tests
++    monkeypatch.setattr(
++        "napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection",
++        _empty,
++    )
++
+     def actual_factory(
+         *model_args,
+         ViewerClass=Viewer,
+@@ -286,7 +300,7 @@ def make_napari_viewer(
+             # in particular with VisPyCanvas, it looks like if a traceback keeps
+             # contains the type, then instances are still attached to the type.
+             # I'm not too sure why this is the case though.
+-            if _strict == 'raise':
++            if _strict:
+                 raise AssertionError(msg)
+             else:
+                 warnings.warn(msg)
+diff --git a/pyproject.toml b/pyproject.toml
+index d1e6aac4..3bc315ad 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -112,7 +112,11 @@ filterwarnings = [
+ markers = [
+     "sync_only: Test should only be run synchronously",
+     "async_only: Test should only be run asynchronously",
+-    "examples: Test of examples"
++    "examples: Test of examples",
++    "disable_qthread_start: Disable thread start in this Test",
++    "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
++    "disable_qtimer_start: Disable timer start in this Test",
++    "disable_qanimation_start: Disable animation start in this Test",
+ ]
+ 
+ [tool.mypy]
+-- 
+2.34.1

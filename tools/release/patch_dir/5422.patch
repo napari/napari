@@ -1,0 +1,50 @@
+From c8967ad6d08c7c2bd3087aeb69167029fa0596d0 Mon Sep 17 00:00:00 2001
+From: "pre-commit-ci[bot]"
+ <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Date: Wed, 4 Jan 2023 21:00:59 +0100
+Subject: [PATCH] [pre-commit.ci] pre-commit autoupdate (#5422)
+
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Co-authored-by: Grzegorz Bokota <bokota+github@gmail.com>
+---
+ .pre-commit-config.yaml | 4 ++--
+ napari/utils/stubgen.py | 1 -
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
+index 52e4b395..b189b76e 100644
+--- a/.pre-commit-config.yaml
++++ b/.pre-commit-config.yaml
+@@ -5,7 +5,7 @@ repos:
+     -   id: absolufy-imports
+         exclude: _vendor|vendored|examples
+ -   repo: https://github.com/pycqa/isort
+-    rev: 5.10.1
++    rev: 5.11.4
+     hooks:
+     - id: isort
+       exclude: _vendor|vendored|examples
+@@ -16,7 +16,7 @@ repos:
+       pass_filenames: true
+       exclude: _vendor|vendored|examples
+ -   repo: https://github.com/charliermarsh/ruff-pre-commit
+-    rev: v0.0.176
++    rev: v0.0.206
+     hooks:
+       - id: ruff
+         exclude: _vendor|vendored
+diff --git a/napari/utils/stubgen.py b/napari/utils/stubgen.py
+index 8a7fc6ae..1cbbc865 100644
+--- a/napari/utils/stubgen.py
++++ b/napari/utils/stubgen.py
+@@ -24,7 +24,6 @@ callable methods will be stubbed.
+ """
+ import importlib
+ import inspect
+-import sys
+ import textwrap
+ import typing
+ import warnings
+-- 
+2.34.1
+
