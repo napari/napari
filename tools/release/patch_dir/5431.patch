@@ -1,4 +1,4 @@
-From 85a3d808607067d0b7bc1fcbda15d0c55b539793 Mon Sep 17 00:00:00 2001
+From 1c6cb722d19e1c11216ee0ef5d3b9133013ff03c Mon Sep 17 00:00:00 2001
 From: Matthias Bussonnier <bussonniermatthias@gmail.com>
 Date: Thu, 22 Dec 2022 19:25:46 +0100
 Subject: [PATCH] Maint: Typing and ImportError -> ModuleNotFoundError. (#5431)
@@ -11,12 +11,11 @@ import, as it may hide errors in Python install, using a explicit
 compare with sys.version_info, can allow some tools (like pyupgrade) to
 detect dead branches.
 ---
- napari/utils/_testsupport.py |  2 +-
- napari/utils/key_bindings.py | 13 +++++++------
- napari/utils/naming.py       |  8 +++++---
- napari/utils/translations.py |  4 ++--
- napari_builtins/io/_read.py  |  2 +-
- 5 files changed, 16 insertions(+), 13 deletions(-)
+ napari/utils/_testsupport.py | 2 +-
+ napari/utils/naming.py       | 8 +++++---
+ napari/utils/translations.py | 4 ++--
+ napari_builtins/io/_read.py  | 2 +-
+ 4 files changed, 9 insertions(+), 7 deletions(-)
 
 diff --git a/napari/utils/_testsupport.py b/napari/utils/_testsupport.py
 index 71ed02a4..4a2efeff 100644
@@ -31,42 +30,6 @@ index 71ed02a4..4a2efeff 100644
          return
  
      if not len(Klass._instances) == 0:
-diff --git a/napari/utils/key_bindings.py b/napari/utils/key_bindings.py
-index 84190499..4f16dd4b 100644
---- a/napari/utils/key_bindings.py
-+++ b/napari/utils/key_bindings.py
-@@ -35,17 +35,14 @@ To create a keymap that will block others, ``bind_key(..., ...)```.
- 
- import contextlib
- import inspect
--import re
- import time
--import types
- from collections import ChainMap
--from typing import Callable, Dict
-+from types import MethodType
-+from typing import Callable, Mapping, Union
-+
- 
--from app_model.types import KeyBinding, KeyCode, KeyMod
- from vispy.util import keys
- 
--from napari.settings import get_settings
--from napari.utils.action_manager import action_manager
- from napari.utils.translations import trans
- 
- SPECIAL_KEYS = [
-@@ -366,6 +363,10 @@ class KeymapProvider:
-         if 'class_keymap' not in cls.__dict__:
-             # if in __dict__, was defined in class and not inherited
-             cls.class_keymap = {}
-+        else:
-+            cls.class_keymap = {
-+                coerce_keybinding(k): v for k, v in cls.class_keymap.items()
-+            }
- 
-     bind_key = KeybindingDescriptor(bind_key)
- 
 diff --git a/napari/utils/naming.py b/napari/utils/naming.py
 index 1acacc4c..6e35674f 100644
 --- a/napari/utils/naming.py
