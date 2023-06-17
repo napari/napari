@@ -1,4 +1,4 @@
-From bcbf13bc7e648c2bb9953f7cccf0ed8c1e543d49 Mon Sep 17 00:00:00 2001
+From a859a8d3b1eb4c621a092bc9645ef9432ca5f2e9 Mon Sep 17 00:00:00 2001
 From: Lorenzo Gaifas <brisvag@gmail.com>
 Date: Fri, 16 Dec 2022 15:42:28 +0100
 Subject: [PATCH] Fix test keybinding for layer actions (#5406)
@@ -7,9 +7,10 @@ Fixes https://github.com/napari/napari/issues/5404
 ---
  napari/_qt/widgets/qt_keyboard_settings.py |  6 +-
  napari/_tests/test_viewer.py               | 86 ++++++++++++----------
+ napari/layers/image/_image_key_bindings.py | 12 +--
  napari/utils/action_manager.py             | 14 ++--
  napari/utils/shortcuts.py                  |  4 +
- 4 files changed, 63 insertions(+), 47 deletions(-)
+ 5 files changed, 64 insertions(+), 58 deletions(-)
 
 diff --git a/napari/_qt/widgets/qt_keyboard_settings.py b/napari/_qt/widgets/qt_keyboard_settings.py
 index cd4f652e..9f3f4087 100644
@@ -163,6 +164,36 @@ index fdd702af..bfe281e5 100644
  
  
  @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
+diff --git a/napari/layers/image/_image_key_bindings.py b/napari/layers/image/_image_key_bindings.py
+index ed801ded..e825d707 100644
+--- a/napari/layers/image/_image_key_bindings.py
++++ b/napari/layers/image/_image_key_bindings.py
+@@ -34,16 +34,6 @@ def orient_plane_normal_along_x(layer: Image):
+ 
+ @register_image_action(trans._('orient plane normal along view direction'))
+ def orient_plane_normal_along_view_direction(layer: Image):
+-    viewer = napari.viewer.current_viewer()
+-    if viewer.dims.ndisplay != 3:
+-        return
+-    layer.plane.normal = layer._world_to_displayed_data_ray(
+-        viewer.camera.view_direction, dims_displayed=[-3, -2, -1]
+-    )
+-
+-
+-@Image.bind_key('o')
+-def synchronise_plane_normal_with_view_direction(layer: Image):
+     viewer = napari.viewer.current_viewer()
+     if viewer.dims.ndisplay != 3:
+         return
+@@ -79,7 +69,7 @@ def hold_to_pan_zoom(layer):
+ 
+ 
+ @register_image_action(trans._('Transform'))
+-def activate_image_select_mode(layer):
++def activate_image_transform_mode(layer):
+     layer.mode = Mode.TRANSFORM
+ 
+ 
 diff --git a/napari/utils/action_manager.py b/napari/utils/action_manager.py
 index 1c44c193..e12159e5 100644
 --- a/napari/utils/action_manager.py
@@ -201,17 +232,22 @@ index 1c44c193..e12159e5 100644
  
      def _get_active_shortcuts(self, active_keymap):
 diff --git a/napari/utils/shortcuts.py b/napari/utils/shortcuts.py
-index 2332d32e..45895f96 100644
+index 2332d32e..cb3b20ee 100644
 --- a/napari/utils/shortcuts.py
 +++ b/napari/utils/shortcuts.py
-@@ -47,4 +47,8 @@ default_shortcuts = {
+@@ -42,9 +42,13 @@ default_shortcuts = {
+     'napari:activate_vertex_remove_mode': ['1'],
+     'napari:copy_selected_shapes': ['Control-C'],
+     'napari:paste_shape': ['Control-V'],
++    'napari:move_shapes_selection_to_front': ['f'],
++    'napari:move_shapes_selection_to_back': ['b'],
+     'napari:select_all_shapes': ['A'],
+     'napari:delete_selected_shapes': ['Backspace', 'Delete', '3'],
      'napari:finish_drawing_shape': ['Escape'],
      'napari:reset_active_layer_affine': ['Control-Shift-R'],
      'napari:transform_active_layer': ['Control-Shift-A'],
-+    'napari:move_shapes_selection_to_front': ['f'],
-+    'napari:move_shapes_selection_to_back': ['f'],
-+    'napari:activate_image_pan_zoom_mode': ['f'],
-+    'napari:activate_image_transform_mode': ['f'],
++    'napari:activate_image_pan_zoom_mode': ['2'],
++    'napari:activate_image_transform_mode': ['1'],
  }
 -- 
 2.34.1
