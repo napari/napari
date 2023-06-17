@@ -1,4 +1,4 @@
-From 1be7756f72c6fc570098748f6be0c26f4b449cec Mon Sep 17 00:00:00 2001
+From 81b19025f4505e603609e19208a17322adbf2c98 Mon Sep 17 00:00:00 2001
 From: Grzegorz Bokota <bokota+github@gmail.com>
 Date: Tue, 31 Jan 2023 15:09:13 +0100
 Subject: [PATCH] Replace flake8, isort and pyupgrade by ruff, enable
@@ -7,344 +7,345 @@ Subject: [PATCH] Replace flake8, isort and pyupgrade by ruff, enable
 Co-authored-by: Lorenzo Gaifas <brisvag@gmail.com>
 Co-authored-by: Matthias Bussonnier <bussonniermatthias@gmail.com>
 ---
- .pre-commit-config.yaml                       |  21 +-
- examples/3D_paths.py                          |   2 +-
- examples/3Dimage_plane_rendering.py           |   5 +-
- examples/3d_kymograph_.py                     |   9 +-
- examples/add_3D_image.py                      |   2 +-
- examples/add_grayscale_image.py               |   4 +-
- examples/add_image.py                         |   1 +
- examples/add_image_transformed.py             |   1 +
- examples/add_labels.py                        |   6 +-
- examples/add_labels_with_features.py          |   8 +-
- examples/add_multiscale_image.py              |   4 +-
- examples/add_points.py                        |   2 +-
- examples/add_points_on_nD_shapes.py           |   3 +-
- examples/add_points_with_features.py          |   2 +-
- examples/add_points_with_multicolor_text.py   |   1 +
- examples/add_points_with_text.py              |   2 +-
- examples/add_shapes.py                        |   2 +-
- examples/add_shapes_with_features.py          |   2 +-
- examples/add_shapes_with_text.py              |   2 +-
- examples/add_surface_2D.py                    |   2 +-
- examples/add_vectors.py                       |   4 +-
- examples/add_vectors_color_by_angle.py        |   4 +-
- examples/add_vectors_image.py                 |   2 +-
- examples/affine_transforms.py                 |   3 +-
- examples/annotate-2d.py                       |   2 +-
- examples/annotate_segmentation_with_text.py   |   5 +-
- examples/bbox_annotator.py                    |   4 +-
- examples/clipboard_.py                        |   5 +-
- examples/clipping_planes_interactive_.py      |   5 +-
- examples/cursor_position.py                   |   2 +-
- examples/cursor_ray.py                        |   1 +
- examples/custom_key_bindings.py               |   2 +-
- examples/custom_mouse_functions.py            |   6 +-
- examples/dask_nD_image.py                     |   4 +-
- examples/dev/gui_notifications.py             |   3 +-
- examples/dev/leaking_check.py                 |   9 +-
- examples/dev/plot_2d_edge_meshes.py           |   7 +-
- examples/dev/q_list_view.py                   |   5 +-
- examples/dev/q_node_tree.py                   |   4 +-
- examples/dynamic-projections-dask.py          |   6 +-
- examples/embed_ipython_.py                    |   3 +-
- examples/image_depth.py                       |   3 +-
- examples/inherit_viewer_style.py              |  19 +-
- examples/interaction_box_image.py             |   1 +
- examples/interaction_box_points.py            |   3 +-
- examples/interactive_move_rectangle_3d.py     |   3 +-
- examples/interactive_scripting.py             |   7 +-
- examples/labels-2d.py                         |   2 +-
- examples/layers.py                            |   4 +-
- examples/linked_layers.py                     |   4 +-
- examples/live_tiffs_.py                       |   7 +-
- examples/live_tiffs_generator_.py             |   5 +-
- examples/magic_image_arithmetic.py            |   2 +
- examples/magic_parameter_sweep.py             |   4 +-
- examples/magic_viewer.py                      |   1 +
- examples/minimum_blending.py                  |   1 +
- examples/mixed-dimensions-labels.py           |   5 +-
- examples/mouse_drag_callback.py               |   4 +-
- examples/multiple_viewer_widget.py            |  18 +-
- examples/multiple_viewers.py                  |   2 +-
- examples/multithreading_simple_.py            |   4 +-
- examples/multithreading_two_way_.py           |   4 +-
- examples/nD_image.py                          |   2 +-
- examples/nD_labels.py                         |   4 +-
- examples/nD_multiscale_image.py               |   4 +-
- examples/nD_multiscale_image_non_uniform.py   |   4 +-
- examples/nD_points.py                         |   2 +-
- examples/nD_points_with_features.py           |   2 +-
- examples/nD_shapes.py                         |   2 +-
- examples/nD_shapes_with_text.py               |   2 +-
- examples/nD_surface.py                        |   2 +-
- examples/nD_vectors.py                        |   2 +-
- examples/nD_vectors_image.py                  |   2 +-
- examples/new_theme.py                         |   2 +-
- examples/paint-nd.py                          |   2 +-
- examples/pass_colormaps.py                    |   2 +-
- examples/point_cloud.py                       |   1 +
- examples/points-over-time.py                  |   4 +-
- examples/progress_bar_minimal_.py             |  11 +-
- examples/progress_bar_segmentation_.py        |   9 +-
- examples/progress_bar_threading_.py           |   2 +
- examples/reader_plugin.py                     |   3 +-
- examples/scale_bar.py                         |   3 +-
- examples/set_colormaps.py                     |   2 +-
- examples/set_theme.py                         |   2 +-
- examples/shapes_to_labels.py                  |   2 +-
- examples/show_points_based_on_feature.py      |   2 +-
- examples/spheres_.py                          |   3 +-
- examples/spherical_points.py                  |   2 +-
- examples/surface_normals_wireframe.py         |   4 +-
- examples/surface_timeseries_.py               |   6 +-
- examples/swap_dims.py                         |   2 +-
- examples/tiled-rendering-2d_.py               |   4 +-
- examples/to_screenshot.py                     |   2 +-
- examples/tracks_2d.py                         |   3 +-
- examples/tracks_3d.py                         |   3 +-
- examples/tracks_3d_with_graph.py              |   3 +-
- examples/update_console.py                    |   2 +-
- examples/viewer_fps_label.py                  |   1 +
- examples/without_gui_qt.py                    |   4 +-
- examples/xarray_nD_image_.py                  |   3 +-
- examples/zarr_nD_image_.py                    |   3 +-
- napari/__main__.py                            |   5 +-
- napari/_app_model/actions/_toggle_action.py   |   2 +-
- napari/_app_model/context/_context.py         |   5 +-
- napari/_qt/_tests/test_plugin_widgets.py      |  24 +-
- napari/_qt/code_syntax_highlight.py           |   4 +-
- napari/_qt/containers/_base_item_model.py     |   2 +-
- napari/_qt/containers/_tests/test_factory.py  |   2 +-
- napari/_qt/containers/_tests/test_qt_list.py  |   4 +-
- napari/_qt/containers/qt_layer_list.py        |   2 +-
- napari/_qt/containers/qt_list_model.py        |   4 +-
- napari/_qt/containers/qt_list_view.py         |   2 +-
- napari/_qt/containers/qt_tree_model.py        |   7 +-
- napari/_qt/containers/qt_tree_view.py         |   2 +-
- napari/_qt/dialogs/confirm_close_dialog.py    |   2 +-
- napari/_qt/dialogs/preferences_dialog.py      |   4 +-
- napari/_qt/dialogs/qt_about.py                |   4 +-
- napari/_qt/dialogs/qt_activity_dialog.py      |   2 +-
- napari/_qt/dialogs/qt_modal.py                |   2 +-
- napari/_qt/dialogs/qt_notification.py         |  10 +-
- napari/_qt/dialogs/qt_plugin_dialog.py        | 425 ++++--------------
- napari/_qt/dialogs/qt_reader_dialog.py        |   6 +-
- napari/_qt/dialogs/screenshot_dialog.py       |   6 +-
- napari/_qt/experimental/qt_chunk_receiver.py  |   4 +-
- napari/_qt/experimental/qt_poll.py            |   4 +-
- .../layer_controls/qt_colormap_combobox.py    |   4 +-
- .../_qt/layer_controls/qt_image_controls.py   |   2 +-
- .../layer_controls/qt_image_controls_base.py  |   4 +-
- .../_qt/layer_controls/qt_labels_controls.py  |   4 +-
- .../layer_controls/qt_layer_controls_base.py  |  25 +-
- .../qt_layer_controls_container.py            |   2 +-
- .../_qt/layer_controls/qt_points_controls.py  |   2 +-
- .../_qt/layer_controls/qt_shapes_controls.py  |   2 +-
- .../_qt/layer_controls/qt_surface_controls.py |   2 +-
- .../_qt/layer_controls/qt_tracks_controls.py  |   2 +-
- .../_qt/layer_controls/qt_vectors_controls.py |   2 +-
- napari/_qt/menus/_util.py                     |   2 +-
- napari/_qt/menus/debug_menu.py                |   2 +-
- napari/_qt/menus/file_menu.py                 |   6 +-
- napari/_qt/menus/plugins_menu.py              |   2 +-
- napari/_qt/menus/window_menu.py               |   2 +-
- napari/_qt/perf/qt_event_tracing.py           |   2 +-
- napari/_qt/perf/qt_performance.py             |   2 +-
- napari/_qt/qt_event_loop.py                   |   2 +-
- napari/_qt/qt_main_window.py                  |  12 +-
- napari/_qt/qt_resources/_svg.py               |   3 -
- napari/_qt/qt_resources/_tests/test_svg.py    |   8 -
- napari/_qt/qt_viewer.py                       |   4 +-
- napari/_qt/utils.py                           |   8 +-
- napari/_qt/widgets/qt_color_swatch.py         |   8 +-
- napari/_qt/widgets/qt_dict_table.py           |   2 +-
- napari/_qt/widgets/qt_dims.py                 |   4 +-
- napari/_qt/widgets/qt_dims_slider.py          |   8 +-
- napari/_qt/widgets/qt_dims_sorter.py          |   4 +-
- napari/_qt/widgets/qt_extension2reader.py     |   6 +-
- napari/_qt/widgets/qt_highlight_preview.py    |   6 +-
- napari/_qt/widgets/qt_keyboard_settings.py    |   6 +-
- napari/_qt/widgets/qt_message_popup.py        |   2 +-
- napari/_qt/widgets/qt_mode_buttons.py         |   4 +-
- napari/_qt/widgets/qt_plugin_sorter.py        |   6 +-
- napari/_qt/widgets/qt_range_slider_popup.py   |   2 +-
- napari/_qt/widgets/qt_size_preview.py         |   4 +-
- napari/_qt/widgets/qt_splash_screen.py        |   2 +-
- napari/_qt/widgets/qt_theme_sample.py         |   4 +-
- napari/_qt/widgets/qt_viewer_buttons.py       |   8 +-
- napari/_qt/widgets/qt_viewer_dock_widget.py   |   4 +-
- napari/_qt/widgets/qt_viewer_status_bar.py    |   2 +-
- napari/_qt/widgets/qt_welcome.py              |   4 +-
- napari/_tests/test_conftest_fixtures.py       |   2 +-
- napari/_tests/test_examples.py                |   6 +-
- napari/_tests/test_interactive_transforms.py  |   2 +-
- napari/_vispy/camera.py                       |   2 +-
- napari/_vispy/canvas.py                       |   2 +-
- napari/_vispy/experimental/texture_atlas.py   |   2 +-
- napari/_vispy/experimental/tile_grid.py       |   2 +-
- napari/_vispy/experimental/tile_set.py        |   2 +-
- .../_vispy/experimental/tiled_image_visual.py |   2 +-
- .../experimental/vispy_tiled_image_layer.py   |   2 +-
- napari/_vispy/filters/tracks.py               |   2 +-
- napari/_vispy/layers/base.py                  |   4 +-
- napari/_vispy/layers/image.py                 |   4 +-
- napari/_vispy/layers/labels.py                |   2 +-
- napari/_vispy/layers/points.py                |   2 +-
- napari/_vispy/layers/shapes.py                |   2 +-
- napari/_vispy/layers/surface.py               |   2 +-
- napari/_vispy/layers/tracks.py                |   2 +-
- napari/_vispy/layers/vectors.py               |   2 +-
- napari/_vispy/overlays/axes.py                |   2 +-
- napari/_vispy/overlays/base.py                |   6 +-
- napari/_vispy/overlays/interaction_box.py     |   2 +-
- napari/_vispy/overlays/scale_bar.py           |   2 +-
- napari/_vispy/overlays/text.py                |   2 +-
- napari/_vispy/utils/gl.py                     |   4 +-
- napari/_vispy/visuals/axes.py                 |   2 +-
- .../_vispy/visuals/clipping_planes_mixin.py   |   2 +-
- napari/_vispy/visuals/markers.py              |   2 +-
- napari/_vispy/visuals/points.py               |   2 +-
- napari/_vispy/visuals/scale_bar.py            |   2 +-
- napari/_vispy/visuals/shapes.py               |   2 +-
- napari/_vispy/visuals/surface.py              |   2 +-
- napari/_vispy/visuals/tracks.py               |   2 +-
- napari/components/_tests/test_layers_list.py  |   2 +-
- napari/components/_tests/test_viewer_model.py |   6 +-
- .../_tests/test_viewer_mouse_bindings.py      |   2 +-
- napari/components/dims.py                     |   8 +-
- .../components/experimental/chunk/_cache.py   |   2 +-
- .../experimental/chunk/_commands/_loader.py   |   8 +-
- .../experimental/chunk/_commands/_tables.py   |   4 +-
- .../experimental/chunk/_delay_queue.py        |   2 +-
- napari/components/experimental/chunk/_info.py |   8 +-
- .../components/experimental/chunk/_loader.py  |   2 +-
- napari/components/experimental/chunk/_pool.py |   4 +-
- .../experimental/chunk/_pool_group.py         |  10 +-
- .../components/experimental/chunk/_request.py |   6 +-
- .../experimental/chunk/_tests/test_loader.py  |   4 +-
- .../components/experimental/chunk/_utils.py   |   2 +-
- napari/components/experimental/commands.py    |   4 +-
- .../components/experimental/monitor/_api.py   |   2 +-
- .../experimental/monitor/_monitor.py          |   2 +-
- .../experimental/monitor/_service.py          |   2 +-
- .../experimental/remote/_commands.py          |   2 +-
- .../experimental/remote/_manager.py           |   2 +-
- .../experimental/remote/_messages.py          |   2 +-
- napari/components/layerlist.py                |   2 +-
- .../_interaction_box_mouse_bindings.py        |   2 +-
- napari/components/viewer_model.py             |  10 +-
- napari/errors/reader_errors.py                |   2 +-
- napari/layers/_tests/test_serialize.py        |   2 +-
- napari/layers/base/base.py                    |   4 +-
- napari/layers/image/_image_slice.py           |   2 +-
- napari/layers/image/_image_slice_data.py      |   2 +-
- napari/layers/image/_image_view.py            |   2 +-
- .../layers/image/experimental/_chunk_set.py   |   2 +-
- .../experimental/_chunked_image_loader.py     |   2 +-
- .../image/experimental/_chunked_slice_data.py |   2 +-
- .../image/experimental/_image_location.py     |   2 +-
- .../image/experimental/_octree_loader.py      |   2 +-
- .../image/experimental/_octree_slice.py       |   2 +-
- napari/layers/image/experimental/octree.py    |   2 +-
- .../layers/image/experimental/octree_chunk.py |   2 +-
- .../layers/image/experimental/octree_image.py |   2 +-
- .../image/experimental/octree_intersection.py |   2 +-
- .../layers/image/experimental/octree_level.py |   4 +-
- .../layers/image/experimental/octree_util.py  |   4 +-
- napari/layers/image/image.py                  |   4 +-
- napari/layers/intensity_mixin.py              |   2 +-
- napari/layers/labels/labels.py                |   2 +-
- napari/layers/points/_tests/test_points.py    |   2 +-
- .../_tests/test_points_mouse_bindings.py      |   4 +-
- napari/layers/points/points.py                |   8 +-
- napari/layers/shapes/_mesh.py                 |   2 +-
- napari/layers/shapes/_shape_list.py           |   8 +-
- .../shapes/_shapes_models/_polgyon_base.py    |   2 +-
- .../layers/shapes/_shapes_models/ellipse.py   |   2 +-
- napari/layers/shapes/_shapes_models/line.py   |   2 +-
- napari/layers/shapes/_shapes_models/path.py   |   2 +-
- .../layers/shapes/_shapes_models/polygon.py   |   2 +-
- .../layers/shapes/_shapes_models/rectangle.py |   2 +-
- napari/layers/shapes/_shapes_models/shape.py  |   4 +-
- napari/layers/shapes/_tests/test_shapes.py    |   2 +-
- .../_tests/test_shapes_mouse_bindings.py      |   4 +-
- napari/layers/shapes/shapes.py                |   8 +-
- napari/layers/surface/surface.py              |   2 +-
- napari/layers/tracks/_track_utils.py          |   2 +-
- napari/layers/tracks/tracks.py                |   2 +-
- napari/layers/utils/_link_layers.py           |   8 +-
- .../layers/utils/_tests/test_layer_utils.py   |   4 +-
- .../layers/utils/_tests/test_stack_utils.py   |   2 +-
- napari/layers/utils/color_encoding.py         |   4 +-
- napari/layers/utils/color_manager.py          |  17 +-
- napari/layers/utils/layer_utils.py            |   6 +-
- napari/layers/utils/stack_utils.py            |   4 +-
- napari/layers/utils/style_encoding.py         |   2 +-
- napari/layers/utils/text_manager.py           |   2 +-
- napari/layers/vectors/vectors.py              |   2 +-
- napari/plugins/__init__.py                    |   3 +-
- napari/plugins/_npe2.py                       |  11 +-
- napari/plugins/_plugin_manager.py             |   8 +-
- napari/plugins/_tests/test_exceptions.py      |   2 +-
- napari/plugins/_tests/test_hub.py             |   2 +-
- napari/plugins/hub.py                         |   4 +-
- napari/plugins/io.py                          |   6 +-
- napari/settings/_base.py                      |  25 +-
- napari/settings/_migrations.py                |   4 +-
- napari/settings/_tests/test_migrations.py     |   4 +-
- napari/utils/_tests/test_key_bindings.py      |   2 +-
- napari/utils/_tests/test_migrations.py        |   2 +-
- napari/utils/_tests/test_misc.py              |   4 +-
- napari/utils/_tests/test_proxies.py           |   2 +-
- napari/utils/_testsupport.py                  |   4 +-
- napari/utils/action_manager.py                |   2 +-
- napari/utils/colormaps/colormap.py            |   4 +-
- napari/utils/colormaps/colormap_utils.py      |   4 +-
- napari/utils/colormaps/standardize_color.py   |   4 +-
- .../utils/events/_tests/test_event_emitter.py |   4 +-
- .../utils/events/_tests/test_evented_dict.py  |   2 +-
- .../utils/events/_tests/test_evented_list.py  |   5 +-
- napari/utils/events/_tests/test_typed_list.py |   4 +-
- napari/utils/events/containers/_dict.py       |   2 +-
- .../utils/events/containers/_evented_dict.py  |   4 +-
- .../utils/events/containers/_evented_list.py  |   8 +-
- napari/utils/events/containers/_selection.py  |   8 +-
- napari/utils/events/containers/_set.py        |   8 +-
- napari/utils/events/containers/_typed.py      |   6 +-
- napari/utils/events/debugging.py              |   2 +-
- napari/utils/events/event.py                  |  16 +-
- napari/utils/events/evented_model.py          |   2 +-
- napari/utils/info.py                          |  15 +-
- napari/utils/io.py                            |  10 +-
- napari/utils/key_bindings.py                  |   6 +-
- napari/utils/misc.py                          |  12 +-
- napari/utils/mouse_bindings.py                |   2 +-
- napari/utils/naming.py                        |   4 +-
- napari/utils/notebook_display.py              |   2 +-
- napari/utils/notifications.py                 |  14 +-
- napari/utils/perf/_config.py                  |   8 +-
- napari/utils/perf/_event.py                   |   2 +-
- napari/utils/perf/_patcher.py                 |  14 +-
- napari/utils/perf/_stat.py                    |   2 +-
- napari/utils/perf/_timers.py                  |   2 +-
- napari/utils/perf/_trace_file.py              |  13 +-
- napari/utils/stubgen.py                       |  12 +-
- napari/utils/theme.py                         |  13 +-
- napari/utils/transforms/transforms.py         |  10 +-
- napari/utils/translations.py                  |   6 +-
- napari/utils/tree/group.py                    |  10 +-
- napari/utils/tree/node.py                     |   2 +-
- napari/view_layers.py                         |   2 +-
- napari/viewer.py                              |   2 +-
- napari/window.py                              |   2 +-
- napari_builtins/io/_read.py                   |  20 +-
- napari_builtins/io/_write.py                  |   8 +-
- pyproject.toml                                |  43 +-
- setup.cfg                                     |  15 +-
- tools/test_strings.py                         |  31 +-
- tox.ini                                       |  11 +-
- 337 files changed, 873 insertions(+), 1045 deletions(-)
+ .pre-commit-config.yaml                       | 21 +--------
+ examples/3D_paths.py                          |  2 +-
+ examples/3Dimage_plane_rendering.py           |  5 ++-
+ examples/3d_kymograph_.py                     |  9 ++--
+ examples/add_3D_image.py                      |  2 +-
+ examples/add_grayscale_image.py               |  4 +-
+ examples/add_image.py                         |  1 +
+ examples/add_image_transformed.py             |  1 +
+ examples/add_labels.py                        |  6 +--
+ examples/add_labels_with_features.py          |  8 ++--
+ examples/add_multiscale_image.py              |  4 +-
+ examples/add_points.py                        |  2 +-
+ examples/add_points_on_nD_shapes.py           |  3 +-
+ examples/add_points_with_features.py          |  2 +-
+ examples/add_points_with_multicolor_text.py   |  1 +
+ examples/add_points_with_text.py              |  2 +-
+ examples/add_shapes.py                        |  2 +-
+ examples/add_shapes_with_features.py          |  2 +-
+ examples/add_shapes_with_text.py              |  2 +-
+ examples/add_surface_2D.py                    |  2 +-
+ examples/add_vectors.py                       |  4 +-
+ examples/add_vectors_color_by_angle.py        |  4 +-
+ examples/add_vectors_image.py                 |  2 +-
+ examples/affine_transforms.py                 |  3 +-
+ examples/annotate-2d.py                       |  2 +-
+ examples/annotate_segmentation_with_text.py   |  5 ++-
+ examples/bbox_annotator.py                    |  4 +-
+ examples/clipboard_.py                        |  5 ++-
+ examples/clipping_planes_interactive_.py      |  5 ++-
+ examples/cursor_position.py                   |  2 +-
+ examples/cursor_ray.py                        |  1 +
+ examples/custom_key_bindings.py               |  2 +-
+ examples/custom_mouse_functions.py            |  6 +--
+ examples/dask_nD_image.py                     |  4 +-
+ examples/dev/gui_notifications.py             |  3 +-
+ examples/dev/leaking_check.py                 |  9 ++--
+ examples/dev/plot_2d_edge_meshes.py           |  7 +--
+ examples/dev/q_list_view.py                   |  5 +--
+ examples/dev/q_node_tree.py                   |  4 +-
+ examples/dynamic-projections-dask.py          |  6 ++-
+ examples/embed_ipython_.py                    |  3 +-
+ examples/image_depth.py                       |  3 +-
+ examples/inherit_viewer_style.py              | 20 +++++----
+ examples/interaction_box_image.py             |  1 +
+ examples/interaction_box_points.py            |  3 +-
+ examples/interactive_move_rectangle_3d.py     |  3 +-
+ examples/interactive_scripting.py             |  7 +--
+ examples/labels-2d.py                         |  2 +-
+ examples/layers.py                            |  4 +-
+ examples/linked_layers.py                     |  4 +-
+ examples/live_tiffs_.py                       |  7 +--
+ examples/live_tiffs_generator_.py             |  5 +--
+ examples/magic_image_arithmetic.py            |  2 +
+ examples/magic_parameter_sweep.py             |  4 +-
+ examples/magic_viewer.py                      |  1 +
+ examples/minimum_blending.py                  |  1 +
+ examples/mixed-dimensions-labels.py           |  5 ++-
+ examples/mouse_drag_callback.py               |  4 +-
+ examples/multiple_viewer_widget.py            | 18 ++++----
+ examples/multiple_viewers.py                  |  2 +-
+ examples/multithreading_simple_.py            |  4 +-
+ examples/multithreading_two_way_.py           |  4 +-
+ examples/nD_image.py                          |  2 +-
+ examples/nD_labels.py                         |  4 +-
+ examples/nD_multiscale_image.py               |  4 +-
+ examples/nD_multiscale_image_non_uniform.py   |  4 +-
+ examples/nD_points.py                         |  2 +-
+ examples/nD_points_with_features.py           |  2 +-
+ examples/nD_shapes.py                         |  2 +-
+ examples/nD_shapes_with_text.py               |  2 +-
+ examples/nD_surface.py                        |  2 +-
+ examples/nD_vectors.py                        |  2 +-
+ examples/nD_vectors_image.py                  |  2 +-
+ examples/new_theme.py                         |  2 +-
+ examples/paint-nd.py                          |  2 +-
+ examples/pass_colormaps.py                    |  2 +-
+ examples/point_cloud.py                       |  1 +
+ examples/points-over-time.py                  |  4 +-
+ examples/progress_bar_minimal_.py             | 11 +++--
+ examples/progress_bar_segmentation_.py        |  8 ++--
+ examples/progress_bar_threading_.py           |  2 +
+ examples/reader_plugin.py                     |  3 +-
+ examples/scale_bar.py                         |  3 +-
+ examples/set_colormaps.py                     |  2 +-
+ examples/set_theme.py                         |  2 +-
+ examples/shapes_to_labels.py                  |  2 +-
+ examples/show_points_based_on_feature.py      |  2 +-
+ examples/spheres_.py                          |  3 +-
+ examples/spherical_points.py                  |  2 +-
+ examples/surface_normals_wireframe.py         |  4 +-
+ examples/surface_timeseries_.py               |  6 +--
+ examples/swap_dims.py                         |  2 +-
+ examples/tiled-rendering-2d_.py               |  4 +-
+ examples/to_screenshot.py                     |  2 +-
+ examples/tracks_2d.py                         |  3 +-
+ examples/tracks_3d.py                         |  3 +-
+ examples/tracks_3d_with_graph.py              |  3 +-
+ examples/update_console.py                    |  2 +-
+ examples/viewer_fps_label.py                  |  1 +
+ examples/without_gui_qt.py                    |  4 +-
+ examples/xarray_nD_image_.py                  |  3 +-
+ examples/zarr_nD_image_.py                    |  3 +-
+ napari/__main__.py                            |  5 +--
+ napari/_app_model/actions/_toggle_action.py   |  2 +-
+ napari/_app_model/context/_context.py         |  5 +--
+ napari/_qt/_tests/test_plugin_widgets.py      | 24 +++--------
+ napari/_qt/code_syntax_highlight.py           |  4 +-
+ napari/_qt/containers/_base_item_model.py     |  2 +-
+ napari/_qt/containers/_tests/test_factory.py  |  2 +-
+ napari/_qt/containers/_tests/test_qt_list.py  |  4 +-
+ napari/_qt/containers/qt_layer_list.py        |  2 +-
+ napari/_qt/containers/qt_list_model.py        |  4 +-
+ napari/_qt/containers/qt_list_view.py         |  2 +-
+ napari/_qt/containers/qt_tree_model.py        |  7 +--
+ napari/_qt/containers/qt_tree_view.py         |  2 +-
+ napari/_qt/dialogs/confirm_close_dialog.py    |  2 +-
+ napari/_qt/dialogs/preferences_dialog.py      |  4 +-
+ napari/_qt/dialogs/qt_about.py                |  4 +-
+ napari/_qt/dialogs/qt_activity_dialog.py      |  2 +-
+ napari/_qt/dialogs/qt_modal.py                |  2 +-
+ napari/_qt/dialogs/qt_notification.py         | 10 ++---
+ napari/_qt/dialogs/qt_plugin_dialog.py        | 11 +++--
+ napari/_qt/dialogs/qt_reader_dialog.py        |  6 ++-
+ napari/_qt/dialogs/screenshot_dialog.py       |  6 ++-
+ napari/_qt/experimental/qt_chunk_receiver.py  |  4 +-
+ napari/_qt/experimental/qt_poll.py            |  4 +-
+ .../layer_controls/qt_colormap_combobox.py    |  4 +-
+ .../_qt/layer_controls/qt_image_controls.py   |  2 +-
+ .../layer_controls/qt_image_controls_base.py  |  4 +-
+ .../_qt/layer_controls/qt_labels_controls.py  |  4 +-
+ .../layer_controls/qt_layer_controls_base.py  | 25 ++++++++++-
+ .../qt_layer_controls_container.py            |  2 +-
+ .../_qt/layer_controls/qt_points_controls.py  |  2 +-
+ .../_qt/layer_controls/qt_shapes_controls.py  |  2 +-
+ .../_qt/layer_controls/qt_surface_controls.py |  2 +-
+ .../_qt/layer_controls/qt_tracks_controls.py  |  2 +-
+ .../_qt/layer_controls/qt_vectors_controls.py |  2 +-
+ napari/_qt/menus/_util.py                     |  2 +-
+ napari/_qt/menus/debug_menu.py                |  2 +-
+ napari/_qt/menus/file_menu.py                 |  6 +--
+ napari/_qt/menus/plugins_menu.py              |  2 +-
+ napari/_qt/menus/window_menu.py               |  2 +-
+ napari/_qt/perf/qt_event_tracing.py           |  2 +-
+ napari/_qt/perf/qt_performance.py             |  2 +-
+ napari/_qt/qt_event_loop.py                   |  2 +-
+ napari/_qt/qt_main_window.py                  | 12 +++---
+ napari/_qt/qt_resources/_svg.py               |  3 --
+ napari/_qt/qt_resources/_tests/test_svg.py    |  8 ----
+ napari/_qt/qt_viewer.py                       |  4 +-
+ napari/_qt/utils.py                           |  8 ++--
+ napari/_qt/widgets/qt_color_swatch.py         |  8 ++--
+ napari/_qt/widgets/qt_dict_table.py           |  2 +-
+ napari/_qt/widgets/qt_dims.py                 |  4 +-
+ napari/_qt/widgets/qt_dims_slider.py          |  8 ++--
+ napari/_qt/widgets/qt_dims_sorter.py          |  4 +-
+ napari/_qt/widgets/qt_extension2reader.py     |  6 ++-
+ napari/_qt/widgets/qt_highlight_preview.py    |  6 +--
+ napari/_qt/widgets/qt_keyboard_settings.py    |  6 +--
+ napari/_qt/widgets/qt_message_popup.py        |  2 +-
+ napari/_qt/widgets/qt_mode_buttons.py         |  4 +-
+ napari/_qt/widgets/qt_plugin_sorter.py        |  6 +--
+ napari/_qt/widgets/qt_range_slider_popup.py   |  2 +-
+ napari/_qt/widgets/qt_size_preview.py         |  4 +-
+ napari/_qt/widgets/qt_splash_screen.py        |  2 +-
+ napari/_qt/widgets/qt_theme_sample.py         |  4 +-
+ napari/_qt/widgets/qt_viewer_buttons.py       |  8 ++--
+ napari/_qt/widgets/qt_viewer_dock_widget.py   |  4 +-
+ napari/_qt/widgets/qt_viewer_status_bar.py    |  2 +-
+ napari/_qt/widgets/qt_welcome.py              |  4 +-
+ napari/_tests/test_conftest_fixtures.py       |  2 +-
+ napari/_tests/test_examples.py                |  6 +--
+ napari/_tests/test_interactive_transforms.py  |  2 +-
+ napari/_vispy/camera.py                       |  2 +-
+ napari/_vispy/canvas.py                       |  2 +-
+ napari/_vispy/experimental/texture_atlas.py   |  2 +-
+ napari/_vispy/experimental/tile_grid.py       |  2 +-
+ napari/_vispy/experimental/tile_set.py        |  2 +-
+ .../_vispy/experimental/tiled_image_visual.py |  2 +-
+ .../experimental/vispy_tiled_image_layer.py   |  2 +-
+ napari/_vispy/filters/tracks.py               |  2 +-
+ napari/_vispy/layers/base.py                  |  4 +-
+ napari/_vispy/layers/image.py                 |  4 +-
+ napari/_vispy/layers/labels.py                |  2 +-
+ napari/_vispy/layers/points.py                |  2 +-
+ napari/_vispy/layers/shapes.py                |  2 +-
+ napari/_vispy/layers/surface.py               |  2 +-
+ napari/_vispy/layers/tracks.py                |  2 +-
+ napari/_vispy/layers/vectors.py               |  2 +-
+ napari/_vispy/overlays/axes.py                |  2 +-
+ napari/_vispy/overlays/base.py                |  6 +--
+ napari/_vispy/overlays/interaction_box.py     |  2 +-
+ napari/_vispy/overlays/scale_bar.py           |  2 +-
+ napari/_vispy/overlays/text.py                |  2 +-
+ napari/_vispy/utils/gl.py                     |  4 +-
+ napari/_vispy/visuals/axes.py                 |  2 +-
+ .../_vispy/visuals/clipping_planes_mixin.py   |  2 +-
+ napari/_vispy/visuals/markers.py              |  2 +-
+ napari/_vispy/visuals/points.py               |  2 +-
+ napari/_vispy/visuals/scale_bar.py            |  2 +-
+ napari/_vispy/visuals/shapes.py               |  2 +-
+ napari/_vispy/visuals/surface.py              |  2 +-
+ napari/_vispy/visuals/tracks.py               |  2 +-
+ napari/components/_tests/test_layers_list.py  |  2 +-
+ .../_tests/test_viewer_keybindings.py         |  4 +-
+ napari/components/_tests/test_viewer_model.py |  6 +--
+ .../_tests/test_viewer_mouse_bindings.py      |  2 +-
+ napari/components/dims.py                     |  8 +++-
+ .../components/experimental/chunk/_cache.py   |  2 +-
+ .../experimental/chunk/_commands/_loader.py   |  8 ++--
+ .../experimental/chunk/_commands/_tables.py   |  4 +-
+ .../experimental/chunk/_delay_queue.py        |  2 +-
+ napari/components/experimental/chunk/_info.py |  8 ++--
+ .../components/experimental/chunk/_loader.py  |  2 +-
+ napari/components/experimental/chunk/_pool.py |  4 +-
+ .../experimental/chunk/_pool_group.py         | 10 +++--
+ .../components/experimental/chunk/_request.py |  6 +--
+ .../experimental/chunk/_tests/test_loader.py  |  4 +-
+ .../components/experimental/chunk/_utils.py   |  2 +-
+ napari/components/experimental/commands.py    |  4 +-
+ .../components/experimental/monitor/_api.py   |  2 +-
+ .../experimental/monitor/_monitor.py          |  2 +-
+ .../experimental/monitor/_service.py          |  2 +-
+ .../experimental/remote/_commands.py          |  2 +-
+ .../experimental/remote/_manager.py           |  2 +-
+ .../experimental/remote/_messages.py          |  2 +-
+ napari/components/layerlist.py                |  2 +-
+ .../_interaction_box_mouse_bindings.py        |  2 +-
+ napari/components/viewer_model.py             | 10 ++---
+ napari/errors/reader_errors.py                |  2 +-
+ napari/layers/_tests/test_serialize.py        |  2 +-
+ napari/layers/base/base.py                    |  4 +-
+ napari/layers/image/_image_slice.py           |  2 +-
+ napari/layers/image/_image_slice_data.py      |  2 +-
+ napari/layers/image/_image_view.py            |  2 +-
+ .../layers/image/experimental/_chunk_set.py   |  2 +-
+ .../experimental/_chunked_image_loader.py     |  2 +-
+ .../image/experimental/_chunked_slice_data.py |  2 +-
+ .../image/experimental/_image_location.py     |  2 +-
+ .../image/experimental/_octree_loader.py      |  2 +-
+ .../image/experimental/_octree_slice.py       |  2 +-
+ napari/layers/image/experimental/octree.py    |  2 +-
+ .../layers/image/experimental/octree_chunk.py |  2 +-
+ .../layers/image/experimental/octree_image.py |  2 +-
+ .../image/experimental/octree_intersection.py |  2 +-
+ .../layers/image/experimental/octree_level.py |  4 +-
+ .../layers/image/experimental/octree_util.py  |  4 +-
+ napari/layers/image/image.py                  |  4 +-
+ napari/layers/intensity_mixin.py              |  2 +-
+ napari/layers/labels/labels.py                |  2 +-
+ napari/layers/points/_tests/test_points.py    |  2 +-
+ .../_tests/test_points_mouse_bindings.py      |  4 +-
+ napari/layers/points/points.py                |  8 ++--
+ napari/layers/shapes/_mesh.py                 |  2 +-
+ napari/layers/shapes/_shape_list.py           |  8 ++--
+ .../shapes/_shapes_models/_polgyon_base.py    |  2 +-
+ .../layers/shapes/_shapes_models/ellipse.py   |  2 +-
+ napari/layers/shapes/_shapes_models/line.py   |  2 +-
+ napari/layers/shapes/_shapes_models/path.py   |  2 +-
+ .../layers/shapes/_shapes_models/polygon.py   |  2 +-
+ .../layers/shapes/_shapes_models/rectangle.py |  2 +-
+ napari/layers/shapes/_shapes_models/shape.py  |  4 +-
+ napari/layers/shapes/_tests/test_shapes.py    |  2 +-
+ .../_tests/test_shapes_mouse_bindings.py      |  4 +-
+ napari/layers/shapes/shapes.py                |  8 ++--
+ napari/layers/surface/surface.py              |  2 +-
+ napari/layers/tracks/_track_utils.py          |  2 +-
+ napari/layers/tracks/tracks.py                |  2 +-
+ napari/layers/utils/_link_layers.py           |  8 ++--
+ .../layers/utils/_tests/test_layer_utils.py   |  4 +-
+ .../layers/utils/_tests/test_stack_utils.py   |  2 +-
+ napari/layers/utils/color_encoding.py         |  4 +-
+ napari/layers/utils/color_manager.py          | 17 +++++---
+ napari/layers/utils/layer_utils.py            |  6 +--
+ napari/layers/utils/stack_utils.py            |  4 +-
+ napari/layers/utils/style_encoding.py         |  2 +-
+ napari/layers/utils/text_manager.py           |  2 +-
+ napari/layers/vectors/vectors.py              |  2 +-
+ napari/plugins/__init__.py                    |  3 +-
+ napari/plugins/_npe2.py                       | 11 ++++-
+ napari/plugins/_plugin_manager.py             |  8 ++--
+ napari/plugins/_tests/test_exceptions.py      |  2 +-
+ napari/plugins/_tests/test_hub.py             |  2 +-
+ napari/plugins/hub.py                         |  4 +-
+ napari/plugins/io.py                          |  6 +--
+ napari/settings/_base.py                      | 25 ++++++-----
+ napari/settings/_migrations.py                |  4 +-
+ napari/settings/_tests/test_migrations.py     |  4 +-
+ napari/utils/_tests/test_key_bindings.py      |  2 +-
+ napari/utils/_tests/test_migrations.py        |  2 +-
+ napari/utils/_tests/test_misc.py              |  4 +-
+ napari/utils/_tests/test_proxies.py           |  2 +-
+ napari/utils/_testsupport.py                  |  4 +-
+ napari/utils/action_manager.py                |  2 +-
+ napari/utils/colormaps/colormap.py            |  4 +-
+ napari/utils/colormaps/colormap_utils.py      |  4 +-
+ napari/utils/colormaps/standardize_color.py   |  4 +-
+ .../utils/events/_tests/test_event_emitter.py |  4 +-
+ .../utils/events/_tests/test_evented_dict.py  |  2 +-
+ .../utils/events/_tests/test_evented_list.py  |  5 ++-
+ napari/utils/events/_tests/test_typed_list.py |  4 +-
+ napari/utils/events/containers/_dict.py       |  2 +-
+ .../utils/events/containers/_evented_dict.py  |  4 +-
+ .../utils/events/containers/_evented_list.py  |  8 ++--
+ napari/utils/events/containers/_selection.py  |  8 +++-
+ napari/utils/events/containers/_set.py        |  8 +++-
+ napari/utils/events/containers/_typed.py      |  6 ++-
+ napari/utils/events/debugging.py              |  2 +-
+ napari/utils/events/event.py                  | 16 +++----
+ napari/utils/events/evented_model.py          |  2 +-
+ napari/utils/info.py                          | 15 +++----
+ napari/utils/io.py                            | 10 +++--
+ napari/utils/key_bindings.py                  |  6 +--
+ napari/utils/misc.py                          | 12 ++----
+ napari/utils/mouse_bindings.py                |  2 +-
+ napari/utils/naming.py                        |  4 +-
+ napari/utils/notebook_display.py              |  2 +-
+ napari/utils/notifications.py                 | 14 +++---
+ napari/utils/perf/_config.py                  |  8 ++--
+ napari/utils/perf/_event.py                   |  2 +-
+ napari/utils/perf/_patcher.py                 | 14 +++---
+ napari/utils/perf/_stat.py                    |  2 +-
+ napari/utils/perf/_timers.py                  |  2 +-
+ napari/utils/perf/_trace_file.py              | 13 +++---
+ napari/utils/stubgen.py                       | 12 ++++--
+ napari/utils/theme.py                         | 13 +++---
+ napari/utils/transforms/transforms.py         | 10 ++---
+ napari/utils/translations.py                  |  6 +--
+ napari/utils/tree/group.py                    | 10 +++--
+ napari/utils/tree/node.py                     |  2 +-
+ napari/view_layers.py                         |  2 +-
+ napari/viewer.py                              |  2 +-
+ napari/window.py                              |  2 +-
+ napari_builtins/io/_read.py                   | 20 +++++----
+ napari_builtins/io/_write.py                  |  8 ++--
+ pyproject.toml                                | 43 +++++++++++++++----
+ setup.cfg                                     | 15 +------
+ tools/test_strings.py                         | 31 ++++++-------
+ tox.ini                                       | 11 +----
+ 338 files changed, 796 insertions(+), 712 deletions(-)
 
 diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
 index 925d47d3..1d682278 100644
@@ -1082,10 +1083,10 @@ index 7c4492f0..cc23d2ce 100644
  im_data[30:40, 25:35, 25:35] = 1
  viewer = napari.view_image(im_data, colormap='magenta', rendering='iso')
 diff --git a/examples/inherit_viewer_style.py b/examples/inherit_viewer_style.py
-index b58a6058..c8fbee53 100644
+index b58a6058..59920903 100644
 --- a/examples/inherit_viewer_style.py
 +++ b/examples/inherit_viewer_style.py
-@@ -8,19 +8,24 @@ from main napari window.
+@@ -8,14 +8,16 @@ from main napari window.
  .. tags::  gui, interactivity
  """
  
@@ -1094,8 +1095,8 @@ index b58a6058..c8fbee53 100644
 -
 -=======
 ->>>>>>> 5ca30ea2 (Add ruff linter to pre-commit (#5275))
- from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton, QGridLayout, QLabel, QSpinBox
- 
+-from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton, QGridLayout, QLabel, QSpinBox
+-
  from magicgui import magicgui
 +from qtpy.QtWidgets import (
 +    QDialog,
@@ -1109,13 +1110,7 @@ index b58a6058..c8fbee53 100644
  
  import napari
  from napari.qt import get_stylesheet
- from napari.settings import get_settings
- 
-+
- # The magicgui widget shown by selecting the 'Show widget' button of MyWidget
- @magicgui
- def sample_add(a: int, b: int) -> int:
-@@ -35,7 +40,7 @@ change_style()
+@@ -35,7 +37,7 @@ change_style()
  
  
  class MyDialog(QDialog):
@@ -1124,7 +1119,7 @@ index b58a6058..c8fbee53 100644
          super().__init__(parent)
          self.first_input = QSpinBox()
          self.second_input = QSpinBox()
-@@ -54,7 +59,7 @@ class MyDialog(QDialog):
+@@ -54,7 +56,7 @@ class MyDialog(QDialog):
          self.close()
  
  class MyWidget(QWidget):
@@ -1793,10 +1788,10 @@ index 86c9346a..1c7c6911 100644
  def process(im_slice):
      # do something with your image slice
 diff --git a/examples/progress_bar_segmentation_.py b/examples/progress_bar_segmentation_.py
-index 34d930b6..dbe65250 100644
+index 34d930b6..08ca1460 100644
 --- a/examples/progress_bar_segmentation_.py
 +++ b/examples/progress_bar_segmentation_.py
-@@ -8,12 +8,7 @@ in the viewer.
+@@ -8,10 +8,6 @@ in the viewer.
  .. tags:: gui
  """
  import numpy as np
@@ -1805,11 +1800,9 @@ index 34d930b6..dbe65250 100644
 -from time import sleep
 -from napari.utils import progress
  from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
--
+ 
  from skimage.filters import (
-     threshold_isodata,
-     threshold_li,
-@@ -23,6 +18,9 @@ from skimage.filters import (
+@@ -23,6 +19,9 @@ from skimage.filters import (
  )
  from skimage.measure import label
  
@@ -1819,7 +1812,7 @@ index 34d930b6..dbe65250 100644
  # we will try each of these thresholds on our image
  all_thresholds = [
      threshold_isodata,
-@@ -141,6 +139,7 @@ def process_ims():
+@@ -141,6 +140,7 @@ def process_ims():
          pbar.update(1)
  
          # uncomment this line to see the 100% progress bar
@@ -2583,351 +2576,18 @@ index e89b91cc..ce93dd7d 100644
          self.exception = exception
          self.setModal(True)
 diff --git a/napari/_qt/dialogs/qt_plugin_dialog.py b/napari/_qt/dialogs/qt_plugin_dialog.py
-index b8361f30..ec1301bb 100644
+index b8361f30..cf6d560e 100644
 --- a/napari/_qt/dialogs/qt_plugin_dialog.py
 +++ b/napari/_qt/dialogs/qt_plugin_dialog.py
-@@ -1,24 +1,12 @@
--import contextlib
+@@ -2,6 +2,7 @@ import contextlib
  import os
--import sys
+ import sys
  from enum import Enum, auto
 +from functools import partial
  from importlib.metadata import PackageNotFoundError, metadata
  from pathlib import Path
--from tempfile import gettempdir
--from typing import Callable, Dict, List, Literal, Optional, Sequence, Tuple
-+from typing import Optional, Sequence, Tuple
- 
- from npe2 import PackageMetadata, PluginManager
--from qtpy.QtCore import (
--    QEvent,
--    QObject,
--    QPoint,
--    QProcess,
--    QProcessEnvironment,
--    QSize,
--    Qt,
--    Signal,
--    Slot,
--)
-+from qtpy.QtCore import QEvent, QPoint, QSize, Qt, Slot
- from qtpy.QtGui import QFont, QMovie
- from qtpy.QtWidgets import (
-     QCheckBox,
-@@ -39,16 +27,20 @@ from qtpy.QtWidgets import (
- from superqt import QElidingLabel
- 
- import napari.resources
-+from napari._qt.dialogs.qt_package_installer import (
-+    InstallerActions,
-+    InstallerQueue,
-+    InstallerTools,
-+)
- from napari._qt.qt_resources import QColoredSVGIcon
- from napari._qt.qthreading import create_worker
- from napari._qt.widgets.qt_message_popup import WarnPopup
- from napari._qt.widgets.qt_tooltip import QtToolTipLabel
- from napari.plugins import plugin_manager
- from napari.plugins.hub import iter_hub_plugin_info
--from napari.plugins.pypi import _user_agent, iter_napari_plugin_info
-+from napari.plugins.pypi import iter_napari_plugin_info
- from napari.plugins.utils import normalized_name
- from napari.settings import get_settings
--from napari.utils._appdirs import user_plugin_dir, user_site_packages
- from napari.utils.misc import (
-     parse_version,
-     running_as_bundled_app,
-@@ -56,289 +48,6 @@ from napari.utils.misc import (
- )
- from napari.utils.translations import trans
- 
--InstallerTypes = Literal['pip', 'mamba']
--
--
--# TODO: add error icon and handle pip install errors
--class Installer(QObject):
--    started = Signal()
--    finished = Signal(int)
--
--    def __init__(
--        self,
--        output_widget: QTextEdit = None,
--        installer: InstallerTypes = "pip",
--    ):
--        super().__init__()
--        self._queue: List[Tuple[Tuple[str, ...], Callable[[], QProcess]]] = []
--        self._processes: Dict[Tuple[str, ...], QProcess] = {}
--        self._exit_code = 0
--        self._conda_env_path = None
--        self._installer_type = installer
--
--        if installer != "pip" and (Path(sys.prefix) / "conda-meta").is_dir():
--            self._conda_env_path = sys.prefix
--
--        # create install process
--        self._output_widget = output_widget
--        self.process = None
--
--    def _create_process(
--        self,
--        installer: InstallerTypes = "pip",
--    ):
--        process = QProcess()
--        process.setProcessChannelMode(QProcess.MergedChannels)
--        process.readyReadStandardOutput.connect(
--            lambda process=process: self._on_stdout_ready(process)
--        )
--        env = QProcessEnvironment.systemEnvironment()
--
--        if installer == "pip":
--            process.setProgram(self._sys_executable_or_bundled_python())
--            # patch process path
--            combined_paths = os.pathsep.join(
--                [
--                    user_site_packages(),
--                    env.systemEnvironment().value("PYTHONPATH"),
--                ]
--            )
--            env.insert("PYTHONPATH", combined_paths)
--            env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
--        else:
--            process.setProgram(installer)
--
--        if installer == "mamba":
--            from napari._version import version_tuple
--
--            # To avoid napari version changing when installing a plugin, we
--            # add a pin to the current napari version, that way we can
--            # restrict any changes to the actual napari application.
--            # Conda/mamba also pin python by default, so we effectively
--            # constrain python and napari versions from changing, when
--            # installing plugins inside the constructor bundled application.
--            # See: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-pkgs.html#preventing-packages-from-updating-pinning
--            napari_version = ".".join(str(v) for v in version_tuple[:3])
--            if env.contains("CONDA_PINNED_PACKAGES"):
--                # str delimiter is '&'
--                system_pins = f"&{env.value('CONDA_PINNED_PACKAGES')}"
--            else:
--                system_pins = ""
--            env.insert(
--                "CONDA_PINNED_PACKAGES",
--                f"napari={napari_version}{system_pins}",
--            )
--            if os.name == "nt":
--                # workaround https://github.com/napari/napari/issues/4247, 4484
--                if not env.contains("TEMP"):
--                    temp = gettempdir()
--                    env.insert("TMP", temp)
--                    env.insert("TEMP", temp)
--                if not env.contains("USERPROFILE"):
--                    env.insert("HOME", os.path.expanduser("~"))
--                    env.insert("USERPROFILE", os.path.expanduser("~"))
--
--        process.setProcessEnvironment(env)
--        self.set_output_widget(self._output_widget)
--        process.finished.connect(
--            lambda ec, es: self._on_process_finished(process, ec, es)
--        )  # FIXME connecting lambda to finished signal is bug creating and may end with segfault when garbage
--        # collection will consume Installer object before process end.
--        return process
--
--    def _sys_executable_or_bundled_python(self):
--        # Note: is_bundled_app() returns False even if using a Briefcase bundle...
--        # Workaround: see if sys.executable is set to something something napari on Mac
--        if sys.executable.endswith("napari") and sys.platform == 'darwin':
--            # sys.prefix should be <napari.app>/Contents/Resources/Support/Python/Resources
--            python = os.path.join(sys.prefix, "bin", "python3")
--            if os.path.isfile(python):
--                return python
--        return sys.executable
--
--    def set_output_widget(self, output_widget: QTextEdit):
--        if output_widget:
--            self._output_widget = output_widget
--
--    def _on_process_finished(self, process, exit_code, exit_status):
--        if exit_code != 0:
--            self._exit_code = 0
--
--        process_to_terminate = [
--            pkg_list
--            for pkg_list, proc in self._processes.items()
--            if proc == process
--        ]
--
--        for pkg_list in process_to_terminate:
--            process = self._processes.pop(pkg_list)
--            process.terminate()
--
--        self._handle_action()
--
--    def _on_stdout_ready(self, process):
--        if self._output_widget:
--            text = process.readAllStandardOutput().data().decode()
--            self._output_widget.append(text)
--
--    def _handle_action(self):
--        if self._queue:
--            pkg_list, func = self._queue.pop()
--            self.started.emit()
--            process = func()
--            self._processes[pkg_list] = process
--
--        if not self._processes:
--            from napari.plugins import plugin_manager
--
--            plugin_manager.discover()
--            plugin_manager.prune()
--            self.finished.emit(self._exit_code)
--
--    def install(
--        self,
--        pkg_list: Sequence[str],
--        installer: Optional[InstallerTypes] = None,
--        channels: Sequence[str] = ("conda-forge",),
--    ):
--        installer = installer or self._installer_type
--        self._queue.insert(
--            0,
--            (
--                tuple(pkg_list),
--                lambda: self._install(pkg_list, installer, channels),
--            ),
--        )
--        self._handle_action()
--
--    def _install(
--        self,
--        pkg_list: Sequence[str],
--        installer: Optional[InstallerTypes] = None,
--        channels: Sequence[str] = ("conda-forge",),
--    ):
--        installer = installer or self._installer_type
--        process = self._create_process(installer)
--        if installer != "pip":
--            cmd = [
--                'install',
--                '-y',
--                '--prefix',
--                self._conda_env_path,
--            ]
--            for channel in channels:
--                cmd.extend(["-c", channel])
--        else:
--            cmd = ['-m', 'pip', 'install', '--upgrade']
--
--        if (
--            running_as_bundled_app()
--            and sys.platform.startswith('linux')
--            and not self._conda_env_path
--        ):
--            cmd += [
--                '--no-warn-script-location',
--                '--prefix',
--                user_plugin_dir(),
--            ]
--
--        process.setArguments(cmd + list(pkg_list))
--        if self._output_widget and self._queue:
--            self._output_widget.clear()
--
--        process.start()
--        return process
--
--    def uninstall(
--        self,
--        pkg_list: Sequence[str],
--        installer: Optional[InstallerTypes] = None,
--        channels: Sequence[str] = ("conda-forge",),
--    ):
--        installer = installer or self._installer_type
--        self._queue.insert(
--            0,
--            (
--                tuple(pkg_list),
--                lambda: self._uninstall(pkg_list, installer, channels),
--            ),
--        )
--        self._handle_action()
--
--    def _uninstall(
--        self,
--        pkg_list: Sequence[str],
--        installer: Optional[InstallerTypes] = None,
--        channels: Sequence[str] = ("conda-forge",),
--    ):
--        installer = installer or self._installer_type
--        if installer != "pip":
--            args = [
--                'remove',
--                '-y',
--                '--prefix',
--                self._conda_env_path,
--            ]
--
--            for channel in channels:
--                args.extend(["-c", channel])
--        else:
--            args = ['-m', 'pip', 'uninstall', '-y']
--
--        process = self._create_process(installer)
--        process.setArguments(args + list(pkg_list))
--        if self._output_widget and self._queue:
--            self._output_widget.clear()
--
--        process.start()
--
--        pm2 = PluginManager.instance()
--
--        for pkg in pkg_list:
--            if pkg in pm2:
--                pm2.unregister(pkg)
--            else:
--                plugin_manager.unregister(pkg)
--
--        return process
--
--    def cancel(
--        self,
--        pkg_list: Sequence[str] = None,
--    ):
--        if pkg_list is None:
--            for _, process in self._processes.items():
--                process.terminate()
--
--            self._processes = {}
--        else:
--            with contextlib.suppress(KeyError):
--                process = self._processes.pop(tuple(pkg_list))
--                process.terminate()
--
--    @staticmethod
--    def _is_installed_with_conda():
--        """
--        Check if conda was used to install qt and napari.
--        """
--        from qtpy import QT_VERSION
--
--        from napari._version import version_tuple
--
--        parts = [str(part) for part in version_tuple[:3]]
--        napari_version_string = f"napari-{'.'.join(parts)}-"
--        qt_version_string = f"qt-{QT_VERSION}-"
--        conda_meta_path = Path(sys.prefix) / "conda-meta"
--        if conda_meta_path.is_dir():
--            for file in conda_meta_path.iterdir():
--                fname = file.parts[-1]
--                if (
--                    fname.startswith(napari_version_string)
--                    or fname.startswith(qt_version_string)
--                ) and fname.endswith(".json"):
--                    return True
--        return False
--
- 
- class PluginListItem(QFrame):
-     def __init__(
-@@ -355,7 +64,7 @@ class PluginListItem(QFrame):
+ from tempfile import gettempdir
+@@ -355,7 +356,7 @@ class PluginListItem(QFrame):
          enabled: bool = True,
          installed: bool = False,
          npe_version=1,
@@ -2936,7 +2596,7 @@ index b8361f30..ec1301bb 100644
          super().__init__(parent)
          self.setup_ui(enabled)
          self.plugin_name.setText(package_name)
-@@ -378,7 +87,7 @@ class PluginListItem(QFrame):
+@@ -378,7 +379,7 @@ class PluginListItem(QFrame):
              self.action_button.setObjectName("install_button")
  
      def _handle_npe2_plugin(self, npe_version):
@@ -2945,254 +2605,33 @@ index b8361f30..ec1301bb 100644
              return
          opacity = 0.4 if npe_version == 'shim' else 1
          lbl = trans._('npe1 (adapted)') if npe_version == 'shim' else 'npe2'
-@@ -538,7 +247,7 @@ class PluginListItem(QFrame):
+@@ -538,7 +539,7 @@ class PluginListItem(QFrame):
  
  
  class QPluginList(QListWidget):
 -    def __init__(self, parent: QWidget, installer: Installer):
-+    def __init__(self, parent: QWidget, installer: InstallerQueue) -> None:
++    def __init__(self, parent: QWidget, installer: Installer) -> None:
          super().__init__(parent)
          self.installer = installer
          self.setSortingEnabled(True)
-@@ -565,7 +274,7 @@ class QPluginList(QListWidget):
-         installed=False,
-         plugin_name=None,
-         enabled=True,
--        npe_version=1,
-+        npe_version=None,
-     ):
-         pkg_name = project_info.name
-         # don't add duplicates
-@@ -603,36 +312,55 @@ class QPluginList(QListWidget):
-             import webbrowser
+@@ -737,7 +738,7 @@ class RefreshState(Enum):
  
-             widg.help_button.clicked.connect(
--                lambda: webbrowser.open(project_info.home_page)
-+                partial(webbrowser.open, project_info.home_page)
-             )
-         else:
-             widg.help_button.setVisible(False)
-         widg.action_button.clicked.connect(
--            lambda: self.handle_action(item, pkg_name, action_name)
-+            partial(self.handle_action, item, pkg_name, action_name)
-         )
-         widg.update_btn.clicked.connect(
--            lambda: self.handle_action(item, pkg_name, "install", update=True)
-+            partial(
-+                self.handle_action,
-+                item,
-+                pkg_name,
-+                InstallerActions.INSTALL,
-+                update=True,
-+            )
-         )
-         widg.cancel_btn.clicked.connect(
--            lambda: self.handle_action(item, pkg_name, "cancel")
-+            partial(
-+                self.handle_action, item, pkg_name, InstallerActions.CANCEL
-+            )
-         )
-         item.setSizeHint(widg.sizeHint())
-         self.setItemWidget(item, widg)
  
--    def handle_action(self, item, pkg_name, action_name, update=False):
-+    def handle_action(
-+        self,
-+        item: QListWidgetItem,
-+        pkg_name: str,
-+        action_name: InstallerActions,
-+        update: bool = False,
-+    ):
-+        # TODO: 'tool' should be configurable per item, depending on dropdown
-+        tool = (
-+            InstallerTools.CONDA
-+            if running_as_constructor_app()
-+            else InstallerTools.PIP
-+        )
-         widget = item.widget
-         item.setText(f"0-{item.text()}")
--        method = getattr(self.installer, action_name)
-         self._remove_list.append((pkg_name, item))
-         self._warn_dialog = None
--        if item.npe_version != 1:
-+        # TODO: NPE version unknown before installing
-+        if item.npe_version != 1 and action_name == InstallerActions.UNINSTALL:
-             # show warning pop up dialog
-             message = trans._(
--                'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
--            )
--            self._warn_dialog = WarnPopup(
--                text=message,
-+                'When installing/uninstalling npe2 plugins, you must '
-+                'restart napari for UI changes to take effect.'
-             )
-+            self._warn_dialog = WarnPopup(text=message)
- 
-             delta_x = 75
-             global_point = widget.action_button.mapToGlobal(
-@@ -641,7 +369,7 @@ class QPluginList(QListWidget):
-             global_point = QPoint(global_point.x() - delta_x, global_point.y())
-             self._warn_dialog.move(global_point)
- 
--        if action_name == "install":
-+        if action_name == InstallerActions.INSTALL:
-             if update:
-                 if hasattr(item, 'latest_version'):
-                     pkg_name += f"=={item.latest_version}"
-@@ -651,20 +379,34 @@ class QPluginList(QListWidget):
-             else:
-                 widget.set_busy(trans._("installing..."), update)
- 
--            method([pkg_name])
-+            job_id = self.installer.install(
-+                tool=tool,
-+                pkgs=[pkg_name],
-+                # origins="TODO",
-+            )
-+            widget.setProperty("current_job_id", job_id)
-             if self._warn_dialog:
-                 self._warn_dialog.exec_()
-             self.scrollToTop()
--        elif action_name == "uninstall":
-+        elif action_name == InstallerActions.UNINSTALL:
-             widget.set_busy(trans._("uninstalling..."), update)
-             widget.update_btn.setDisabled(True)
--            method([pkg_name])
-+            job_id = self.installer.uninstall(
-+                tool=tool,
-+                pkgs=[pkg_name],
-+                # origins="TODO",
-+            )
-+            widget.setProperty("current_job_id", job_id)
-             if self._warn_dialog:
-                 self._warn_dialog.exec_()
-             self.scrollToTop()
--        elif action_name == "cancel":
-+        elif action_name == InstallerActions.CANCEL:
-             widget.set_busy(trans._("cancelling..."), update)
--            method((pkg_name,))
-+            try:
-+                job_id = widget.property("current_job_id")
-+                self.installer.cancel(job_id)
-+            finally:
-+                widget.setProperty("current_job_id", None)
- 
-     @Slot(PackageMetadata, bool)
-     def tag_outdated(self, project_info: PackageMetadata, is_available: bool):
-@@ -742,9 +484,8 @@ class QtPluginDialog(QDialog):
+ class QtPluginDialog(QDialog):
+-    def __init__(self, parent=None):
++    def __init__(self, parent=None) -> None:
+         super().__init__(parent)
          self.refresh_state = RefreshState.DONE
          self.already_installed = set()
- 
--        installer_type = "mamba" if running_as_constructor_app() else "pip"
--
--        self.installer = Installer(installer=installer_type)
-+        self.installer = InstallerQueue()
-+        self.setWindowTitle(trans._('Plugin Manager'))
-         self.setup_ui()
-         self.installer.set_output_widget(self.stdout_text)
-         self.installer.started.connect(self._on_installer_start)
-@@ -754,6 +495,7 @@ class QtPluginDialog(QDialog):
-     def _on_installer_start(self):
-         self.cancel_all_btn.setVisible(True)
-         self.working_indicator.show()
-+        self.process_success_indicator.hide()
-         self.process_error_indicator.hide()
-         self.close_btn.setDisabled(True)
- 
-@@ -761,7 +503,8 @@ class QtPluginDialog(QDialog):
-         self.working_indicator.hide()
-         if exit_code:
-             self.process_error_indicator.show()
--
-+        else:
-+            self.process_success_indicator.show()
-         self.cancel_all_btn.setVisible(False)
-         self.close_btn.setDisabled(False)
-         self.refresh()
-@@ -829,11 +572,7 @@ class QtPluginDialog(QDialog):
-             _add_to_installed(distname, enabled, npe_version=npev)
- 
-         plugin_manager.discover()  # since they might not be loaded yet
--        for (
--            plugin_name,
--            _mod_name,
--            distname,
--        ) in plugin_manager.iter_available():
-+        for plugin_name, _, distname in plugin_manager.iter_available():
-             # not showing these in the plugin dialog
-             if plugin_name in ('napari_plugin_engine',):
-                 continue
-@@ -872,11 +611,15 @@ class QtPluginDialog(QDialog):
-         self.worker.start()
-         if discovered:
-             message = trans._(
--                'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
-+                'When installing/uninstalling npe2 plugins, '
-+                'you must restart napari for UI changes to take effect.'
-             )
--            self._warn_dialog = WarnPopup(
--                text=message,
-+            self._warn_dialog = WarnPopup(text=message)
-+            global_point = self.process_error_indicator.mapToGlobal(
-+                self.process_error_indicator.rect().topLeft()
+@@ -877,6 +878,8 @@ class QtPluginDialog(QDialog):
+             self._warn_dialog = WarnPopup(
+                 text=message,
              )
 +            global_point = QPoint(global_point.x(), global_point.y() - 75)
 +            self._warn_dialog.move(global_point)
              self._warn_dialog.exec_()
  
      def setup_ui(self):
-@@ -920,7 +663,7 @@ class QtPluginDialog(QDialog):
- 
-         self.stdout_text = QTextEdit(self.v_splitter)
-         self.stdout_text.setReadOnly(True)
--        self.stdout_text.setObjectName("pip_install_status")
-+        self.stdout_text.setObjectName("plugin_manager_process_status")
-         self.stdout_text.hide()
- 
-         buttonBox = QHBoxLayout()
-@@ -931,6 +674,9 @@ class QtPluginDialog(QDialog):
-         self.process_error_indicator = QLabel(self)
-         self.process_error_indicator.setObjectName("error_label")
-         self.process_error_indicator.hide()
-+        self.process_success_indicator = QLabel(self)
-+        self.process_success_indicator.setObjectName("success_label")
-+        self.process_success_indicator.hide()
-         load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
-         mov = QMovie(load_gif)
-         mov.setScaledSize(QSize(18, 18))
-@@ -954,7 +700,7 @@ class QtPluginDialog(QDialog):
-         self.cancel_all_btn = QPushButton(trans._("cancel all actions"), self)
-         self.cancel_all_btn.setObjectName("remove_button")
-         self.cancel_all_btn.setVisible(False)
--        self.cancel_all_btn.clicked.connect(lambda: self.installer.cancel())
-+        self.cancel_all_btn.clicked.connect(self.installer.cancel)
- 
-         self.close_btn = QPushButton(trans._("Close"), self)
-         self.close_btn.clicked.connect(self.accept)
-@@ -965,6 +711,7 @@ class QtPluginDialog(QDialog):
-         buttonBox.addWidget(self.direct_entry_btn)
-         if not visibility_direct_entry:
-             buttonBox.addStretch()
-+        buttonBox.addWidget(self.process_success_indicator)
-         buttonBox.addWidget(self.process_error_indicator)
-         buttonBox.addSpacing(20)
-         buttonBox.addWidget(self.cancel_all_btn)
-@@ -1018,12 +765,10 @@ class QtPluginDialog(QDialog):
-     def _install_packages(self, packages: Sequence[str] = ()):
-         if not packages:
-             _packages = self.direct_entry_edit.text()
--            if os.path.exists(_packages):
--                packages = [_packages]
--            else:
--                packages = _packages.split()
-+            packages = (
-+                [_packages] if os.path.exists(_packages) else _packages.split()
-+            )
-             self.direct_entry_edit.clear()
--
-         if packages:
-             self.installer.install(packages)
- 
 diff --git a/napari/_qt/dialogs/qt_reader_dialog.py b/napari/_qt/dialogs/qt_reader_dialog.py
 index eb305200..f9dc0713 100644
 --- a/napari/_qt/dialogs/qt_reader_dialog.py
@@ -3619,7 +3058,7 @@ index 4590d10b..f1664b60 100644
      run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
  
 diff --git a/napari/_qt/qt_main_window.py b/napari/_qt/qt_main_window.py
-index eef66d23..4e163b66 100644
+index e92a1801..d52a4a77 100644
 --- a/napari/_qt/qt_main_window.py
 +++ b/napari/_qt/qt_main_window.py
 @@ -485,7 +485,7 @@ class Window:
@@ -4693,6 +4132,28 @@ index 39de5785..273973be 100644
          img = Image(np.random.rand(10, 10, 10))
          layers.append(img)
          imgs.append(img)
+diff --git a/napari/components/_tests/test_viewer_keybindings.py b/napari/components/_tests/test_viewer_keybindings.py
+index d061c5e2..490fc0f6 100644
+--- a/napari/components/_tests/test_viewer_keybindings.py
++++ b/napari/components/_tests/test_viewer_keybindings.py
+@@ -18,7 +18,7 @@ def test_theme_toggle_keybinding():
+     number_of_actual_themes = len(available_themes())
+     if 'system' in available_themes():
+         number_of_actual_themes = len(available_themes()) - 1
+-    for i in range(number_of_actual_themes):
++    for _i in range(number_of_actual_themes):
+         current_theme = viewer.theme
+         toggle_theme(viewer)
+         # theme should have changed
+@@ -41,7 +41,7 @@ def test_theme_toggle_from_system_theme():
+     number_of_actual_themes = len(available_themes())
+     if 'system' in available_themes():
+         number_of_actual_themes = len(available_themes()) - 1
+-    for i in range(number_of_actual_themes - 1):  # we've already toggled once
++    for _i in range(number_of_actual_themes - 1):  # we've already toggled once
+         current_theme = viewer.theme
+         toggle_theme(viewer)
+         # theme should have changed
 diff --git a/napari/components/_tests/test_viewer_model.py b/napari/components/_tests/test_viewer_model.py
 index fa2af176..55ef0148 100644
 --- a/napari/components/_tests/test_viewer_model.py
@@ -6436,10 +5897,10 @@ index 9c2a4243..3c5e1f35 100644
              display_name = data.get('name', 'custom')
  
 diff --git a/napari/utils/colormaps/colormap_utils.py b/napari/utils/colormaps/colormap_utils.py
-index 80d98915..e9f4e710 100644
+index f8055a96..b8d1f8fd 100644
 --- a/napari/utils/colormaps/colormap_utils.py
 +++ b/napari/utils/colormaps/colormap_utils.py
-@@ -436,7 +436,7 @@ def vispy_or_mpl_colormap(name):
+@@ -463,7 +463,7 @@ def vispy_or_mpl_colormap(name):
                  display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
              else:
                  display_name = name
@@ -6448,7 +5909,7 @@ index 80d98915..e9f4e710 100644
              suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
                  name
              ) or _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(name)
-@@ -448,7 +448,7 @@ def vispy_or_mpl_colormap(name):
+@@ -475,7 +475,7 @@ def vispy_or_mpl_colormap(name):
                          name=name,
                          suggestion=suggestion,
                      )
@@ -6883,10 +6344,10 @@ index 59cab056..996c2fbb 100644
              # like repackaging on linux or anything else we fallback to
              # using compress
 diff --git a/napari/utils/key_bindings.py b/napari/utils/key_bindings.py
-index 4f16dd4b..28240f5d 100644
+index 84190499..f1d724b6 100644
 --- a/napari/utils/key_bindings.py
 +++ b/napari/utils/key_bindings.py
-@@ -334,7 +334,7 @@ class KeybindingDescriptor:
+@@ -337,7 +337,7 @@ class KeybindingDescriptor:
          Function to bind.
      """
  
@@ -6895,7 +6356,7 @@ index 4f16dd4b..28240f5d 100644
          self.__func__ = func
  
      def __get__(self, instance, cls):
-@@ -353,7 +353,7 @@ class KeymapProvider:
+@@ -356,7 +356,7 @@ class KeymapProvider:
          Instance keymap.
      """
  
@@ -6904,7 +6365,7 @@ index 4f16dd4b..28240f5d 100644
          super().__init__(*args, **kwargs)
          self.keymap = {}
  
-@@ -402,7 +402,7 @@ class KeymapHandler:
+@@ -401,7 +401,7 @@ class KeymapHandler:
          Classes that provide the keymaps for this class to handle.
      """
  
