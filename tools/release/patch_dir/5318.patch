@@ -6874,7 +6874,7 @@ diff --git a/napari/settings/_shortcuts.py b/napari/settings/_shortcuts.py
 index 7685a203..8ee7304b 100644
 --- a/napari/settings/_shortcuts.py
 +++ b/napari/settings/_shortcuts.py
-@@ -2,9 +2,10 @@ from typing import Dict, List
+@@ -2,9 +2,9 @@ from typing import Dict, List
  
  from pydantic import Field, validator
  
@@ -6882,7 +6882,6 @@ index 7685a203..8ee7304b 100644
 -from ..utils.shortcuts import default_shortcuts
 -from ..utils.translations import trans
 +from napari.utils.events.evented_model import EventedModel
-+from napari.utils.key_bindings import KeyBinding, coerce_keybinding
 +from napari.utils.shortcuts import default_shortcuts
 +from napari.utils.translations import trans
  
@@ -7646,21 +7645,15 @@ diff --git a/napari/utils/interactions.py b/napari/utils/interactions.py
 index 40f2a0d6..47cfc969 100644
 --- a/napari/utils/interactions.py
 +++ b/napari/utils/interactions.py
-@@ -1,11 +1,16 @@
+@@ -1,11 +1,11 @@
  import inspect
--import re
+ import re
  import sys
  import warnings
-+from typing import List
  
  from numpydoc.docscrape import FunctionDoc
  
 -from ..utils.translations import trans
-+from napari.utils.key_bindings import (
-+    KeyBinding,
-+    KeyBindingLike,
-+    coerce_keybinding,
-+)
 +from napari.utils.translations import trans
  
  

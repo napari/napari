@@ -16,14 +16,43 @@ from release_utils import (
     short_cache,
 )
 
+
+def get_pr_commits_dict():
+    res = {}
+
+    for commit in repo.iter_commits("main"):
+        if (match := pr_num_pattern.search(commit.message)) is not None:
+            pr_num = int(match[1])
+            res[pr_num] = commit.hexsha
+
+    return res
+
+
+def get_consumed_pr():
+    res = set()
+
+    for commit in repo.iter_commits(target_branch):
+        if (match := pr_num_pattern.search(commit.message)) is not None:
+            pr_num = int(match[1])
+            res.add(pr_num)
+    return res
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('base_branch', help='The base branch.')
 parser.add_argument('milestone', help='The milestone to list')
+parser.add_argument(
+    '--first-commits', help='file with list of first commits to cherry pick'
+)
+parser.add_argument(
+    '--stop-after', help='Stop after this commit', default=0, type=int
+)
 
 LOCAL_DIR = Path(__file__).parent
 
 if not (LOCAL_DIR / "patch_dir").exists():
     (LOCAL_DIR / "patch_dir").mkdir()
+
 
 args = parser.parse_args()
 
@@ -49,21 +78,25 @@ setup_cache()
 with short_cache(60):
     iterable = iter_pull_request(f"milestone:{args.milestone} is:merged")
 
-pr_list = sorted(iterable, key=lambda x: x.closed_at)
+if args.first_commits is not None:
+    with open(args.first_commits) as f:
+        first_commits = {int(el) for el in f.read().splitlines()}
+else:
+    first_commits = {}
 
-pr_commits_dict = {}
+pr_commits_dict = get_pr_commits_dict()
+consumed_pr = get_consumed_pr()
 
-for commit in repo.iter_commits("main"):
-    if (match := pr_num_pattern.search(commit.message)) is not None:
-        pr_num = int(match[1])
-        pr_commits_dict[pr_num] = commit.hexsha
+pr_list_base = sorted(
+    iterable, key=lambda x: (x.number not in first_commits, x.closed_at)
+)
 
-consumed_pr = set()
+pr_list = []
 
-for commit in repo.iter_commits(target_branch):
-    if (match := pr_num_pattern.search(commit.message)) is not None:
-        pr_num = int(match[1])
-        consumed_pr.add(pr_num)
+for pr in pr_list_base:
+    pr_list.append(pr)
+    if pr.number == args.stop_after:
+        break
 
 for el in pr_list:
     if el.number in consumed_pr:
