@@ -47,6 +47,7 @@ import dask.threaded
 import numpy as np
 import pytest
 from IPython.core.history import HistoryManager
+from packaging.version import parse as parse_version
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -312,9 +313,9 @@ HistoryManager.enabled = False
 @pytest.fixture
 def napari_svg_name():
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
-    from importlib.metadata import metadata
+    from importlib.metadata import version
 
-    if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
+    if parse_version(version('napari-svg')) < parse_version('0.1.6'):
         return 'svg'
     else:
         return 'napari-svg'
