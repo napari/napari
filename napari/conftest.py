@@ -317,7 +317,7 @@ def napari_svg_name():
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
     from importlib.metadata import version
 
-    if parse_version(parse_version('napari-svg')) < parse_version('0.1.6'):
+    if parse_version(version('napari-svg')) < parse_version('0.1.6'):
         return 'svg'
 
     return 'napari-svg'
