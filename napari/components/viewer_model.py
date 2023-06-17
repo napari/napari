@@ -416,9 +416,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def rounded_division(min_val, max_val, precision):
         warnings.warn(
             trans._(
-                'Viewer.rounded_division is deprecated since v0.4.18 and will soon be removed.'
+                'Viewer.rounded_division is deprecated since v0.4.18 and will be removed in 0.6.0.'
             ),
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return int(((min_val + max_val) / 2) / precision) * precision
