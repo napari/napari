@@ -75,7 +75,7 @@ with short_cache(60):
 
 pr_to_list = []
 
-for pull in iterable:
+for pull in sorted(iterable, key=lambda x: x.closed_at):
     if label is not None and label not in pull.labels:
         continue
     if args.skip_triaged and any(x in pull.labels for x in triage_labels):
