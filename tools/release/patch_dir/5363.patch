@@ -1,0 +1,313 @@
+From 1419451f28b30d384d949bcb14146c2892011b4c Mon Sep 17 00:00:00 2001
+From: Andy Sweet <andrew.d.sweet@gmail.com>
+Date: Wed, 30 Nov 2022 09:00:39 -0800
+Subject: [PATCH] Distinguish between update_dims, extent changes, and refresh
+ (#5363)
+
+* Replace some usage of _update_dims with refresh
+
+* Use extent event instead of set_data
+---
+ examples/interaction_box_points.py  |  2 +-
+ napari/components/layerlist.py      |  4 ++--
+ napari/layers/base/base.py          | 37 +++++++++++++++++------------
+ napari/layers/image/image.py        |  4 ++--
+ napari/layers/labels/labels.py      |  2 +-
+ napari/layers/points/points.py      |  2 +-
+ napari/layers/shapes/shapes.py      |  2 +-
+ napari/layers/surface/surface.py    |  9 +++----
+ napari/layers/tracks/tracks.py      |  2 +-
+ napari/layers/utils/_link_layers.py |  2 +-
+ napari/layers/vectors/vectors.py    |  2 +-
+ 11 files changed, 38 insertions(+), 30 deletions(-)
+
+diff --git a/examples/interaction_box_points.py b/examples/interaction_box_points.py
+index d22ee86a..149f6e8b 100644
+--- a/examples/interaction_box_points.py
++++ b/examples/interaction_box_points.py
+@@ -36,7 +36,7 @@ def on_transform_changed_drag(event):
+ 
+     for i, index in enumerate(sel_i):
+         viewer.layers.selection.active._data[index] = viewer.layers.selection.active.world_to_data(event.value(points[i]))
+-    viewer.layers.selection.active._update_dims()
++    viewer.layers.selection.active._clear_extent()
+     viewer.layers.selection.active.events.data(value=viewer.layers.selection.active.data)
+ 
+ X, Y = np.mgrid[-500:500:50, -500:500:50]
+diff --git a/napari/components/layerlist.py b/napari/components/layerlist.py
+index 61f38466..60fff0d3 100644
+--- a/napari/components/layerlist.py
++++ b/napari/components/layerlist.py
+@@ -94,7 +94,7 @@ class LayerList(SelectableEventedList[Layer]):
+ 
+     def _process_delete_item(self, item: Layer):
+         super()._process_delete_item(item)
+-        item.events.set_data.disconnect(self._clean_cache)
++        item.events.extent.disconnect(self._clean_cache)
+         self._clean_cache()
+ 
+     def _clean_cache(self):
+@@ -163,7 +163,7 @@ class LayerList(SelectableEventedList[Layer]):
+         new_layer = self._type_check(value)
+         new_layer.name = self._coerce_name(new_layer.name)
+         self._clean_cache()
+-        new_layer.events.set_data.connect(self._clean_cache)
++        new_layer.events.extent.connect(self._clean_cache)
+         super().insert(index, new_layer)
+ 
+     def toggle_selected_visibility(self):
+diff --git a/napari/layers/base/base.py b/napari/layers/base/base.py
+index bf2e9be4..f07cfd42 100644
+--- a/napari/layers/base/base.py
++++ b/napari/layers/base/base.py
+@@ -343,6 +343,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+             cursor_size=Event,
+             editable=Event,
+             loaded=Event,
++            extent=Event,
+             _ndisplay=Event,
+             select=WarningEmitter(
+                 trans._(
+@@ -551,7 +552,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+         if scale is None:
+             scale = [1] * self.ndim
+         self._transforms['data2physical'].scale = np.array(scale)
+-        self._update_dims()
++        self._clear_extent()
+         self.events.scale()
+ 
+     @property
+@@ -562,7 +563,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+     @translate.setter
+     def translate(self, translate):
+         self._transforms['data2physical'].translate = np.array(translate)
+-        self._update_dims()
++        self._clear_extent()
+         self.events.translate()
+ 
+     @property
+@@ -573,7 +574,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+     @rotate.setter
+     def rotate(self, rotate):
+         self._transforms['data2physical'].rotate = rotate
+-        self._update_dims()
++        self._clear_extent()
+         self.events.rotate()
+ 
+     @property
+@@ -584,7 +585,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+     @shear.setter
+     def shear(self, shear):
+         self._transforms['data2physical'].shear = shear
+-        self._update_dims()
++        self._clear_extent()
+         self.events.shear()
+ 
+     @property
+@@ -600,7 +601,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+         self._transforms[2] = coerce_affine(
+             affine, ndim=self.ndim, name='physical2world'
+         )
+-        self._update_dims()
++        self._clear_extent()
+         self.events.affine()
+ 
+     @property
+@@ -648,12 +649,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+             assert self._moving_coordinates is not None
+         self._private_is_moving = value
+ 
+-    def _update_dims(self, event=None):
+-        """Update the dims model and clear the extent cache.
+-
+-        This function needs to be called whenever data or transform information
+-        changes, and should be called before events get emitted.
+-        """
++    def _update_dims(self):
++        """Update the dimensionality of transforms and slices when data changes."""
+         ndim = self._get_ndim()
+ 
+         old_ndim = self._ndim
+@@ -667,10 +664,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+         self._slice_input = self._slice_input.with_ndim(ndim)
+ 
+         self._ndim = ndim
+-        if 'extent' in self.__dict__:
+-            del self.extent
+ 
+-        self.refresh()  # This call is need for invalidate cache of extent in LayerList. If you remove it pleas ad another workaround.
++        self._clear_extent()
+ 
+     @property
+     @abstractmethod
+@@ -721,6 +716,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+             step=abs(data_to_world.scale),
+         )
+ 
++    def _clear_extent(self):
++        """Clears the cached extent.
++
++        This should be called whenever this data or transform information
++        changes, and should be called before any related events get emitted
++        so that they use the updated extent values.
++        """
++        if 'extent' in self.__dict__:
++            del self.extent
++        self.events.extent()
++        self.refresh()
++
+     @property
+     def _slice_indices(self):
+         """(D, ) array: Slice indices in data coordinates."""
+@@ -1131,7 +1138,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+         """Refresh all layer data based on current view slice."""
+         if self.visible:
+             self.set_view_slice()
+-            self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
++            self.events.set_data()
+             self._update_thumbnail()
+             self._set_highlight(force=True)
+ 
+diff --git a/napari/layers/image/image.py b/napari/layers/image/image.py
+index 1bc2bc0e..319131df 100644
+--- a/napari/layers/image/image.py
++++ b/napari/layers/image/image.py
+@@ -369,7 +369,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
+         # where the intention here is to use the base setter, so we use the
+         # _set_colormap method. This is important for Labels layers, because
+         # we don't want to use get_color before set_view_slice has been
+-        # triggered (self._update_dims(), below).
++        # triggered (self.refresh(), below).
+         self._set_colormap(colormap)
+         self.contrast_limits = self._contrast_limits
+         self._interpolation2d = Interpolation.NEAREST
+@@ -383,7 +383,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
+         connect_no_arg(self.plane.events, self.events, 'plane')
+ 
+         # Trigger generation of view slice and thumbnail
+-        self._update_dims()
++        self.refresh()
+ 
+     def _new_empty_slice(self):
+         """Initialize the current slice to an empty image."""
+diff --git a/napari/layers/labels/labels.py b/napari/layers/labels/labels.py
+index 390f9f92..b1e430f1 100644
+--- a/napari/layers/labels/labels.py
++++ b/napari/layers/labels/labels.py
+@@ -307,7 +307,7 @@ class Labels(_ImageBase):
+         self._reset_history()
+ 
+         # Trigger generation of view slice and thumbnail
+-        self._update_dims()
++        self.refresh()
+         self._set_editable()
+ 
+     @property
+diff --git a/napari/layers/points/points.py b/napari/layers/points/points.py
+index 13dd9f39..d739a9a0 100644
+--- a/napari/layers/points/points.py
++++ b/napari/layers/points/points.py
+@@ -465,7 +465,7 @@ class Points(Layer):
+         self.antialiasing = antialiasing
+ 
+         # Trigger generation of view slice and thumbnail
+-        self._update_dims()
++        self.refresh()
+ 
+     @property
+     def data(self) -> np.ndarray:
+diff --git a/napari/layers/shapes/shapes.py b/napari/layers/shapes/shapes.py
+index 20c42b8e..717e2a59 100644
+--- a/napari/layers/shapes/shapes.py
++++ b/napari/layers/shapes/shapes.py
+@@ -558,7 +558,7 @@ class Shapes(Layer):
+         )
+ 
+         # Trigger generation of view slice and thumbnail
+-        self._update_dims()
++        self.refresh()
+ 
+     def _initialize_current_color_for_empty_layer(
+         self, color: ColorType, attribute: str
+diff --git a/napari/layers/surface/surface.py b/napari/layers/surface/surface.py
+index a9dca015..1863c677 100644
+--- a/napari/layers/surface/surface.py
++++ b/napari/layers/surface/surface.py
+@@ -203,7 +203,7 @@ class Surface(IntensityVisualizationMixin, Layer):
+         if len(data) not in (2, 3):
+             raise ValueError(
+                 trans._(
+-                    'Surface data tuple must be 2 or 3, specifying verictes, faces, and optionally vertex values, instead got length {length}.',
++                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {length}.',
+                     deferred=True,
+                     length=len(data),
+                 )
+@@ -230,7 +230,9 @@ class Surface(IntensityVisualizationMixin, Layer):
+         self._view_faces = np.zeros((0, 3))
+         self._view_vertex_values = []
+ 
+-        # Trigger generation of view slice and thumbnail
++        # Trigger generation of view slice and thumbnail.
++        # Use _update_dims instead of refresh here because _get_ndim is
++        # dependent on vertex_values as well as vertices.
+         self._update_dims()
+ 
+         # Shading mode
+@@ -283,7 +285,6 @@ class Surface(IntensityVisualizationMixin, Layer):
+         self._vertices = vertices
+ 
+         self._update_dims()
+-        self.refresh()
+         self.events.data(value=self.data)
+         self._set_editable()
+ 
+@@ -297,7 +298,7 @@ class Surface(IntensityVisualizationMixin, Layer):
+ 
+         self._vertex_values = vertex_values
+ 
+-        self.refresh()
++        self._update_dims()
+         self.events.data(value=self.data)
+         self._set_editable()
+ 
+diff --git a/napari/layers/tracks/tracks.py b/napari/layers/tracks/tracks.py
+index 64cfb7e5..3ac20cef 100644
+--- a/napari/layers/tracks/tracks.py
++++ b/napari/layers/tracks/tracks.py
+@@ -195,7 +195,7 @@ class Tracks(Layer):
+         self.color_by = color_by
+         self.colormap = colormap
+ 
+-        self._update_dims()
++        self.refresh()
+ 
+         # reset the display before returning
+         self._current_displayed_dims = None
+diff --git a/napari/layers/utils/_link_layers.py b/napari/layers/utils/_link_layers.py
+index 2aeba204..4f1e4238 100644
+--- a/napari/layers/utils/_link_layers.py
++++ b/napari/layers/utils/_link_layers.py
+@@ -188,7 +188,7 @@ def layers_linked(layers: Iterable[Layer], attributes: Iterable[str] = ()):
+ 
+ def _get_common_evented_attributes(
+     layers: Iterable[Layer],
+-    exclude: set[str] = {'thumbnail', 'status', 'name', 'data'},
++    exclude: set[str] = {'thumbnail', 'status', 'name', 'data', 'extent'},
+     with_private=False,
+ ) -> set[str]:
+     """Get the set of common, non-private evented attributes in ``layers``.
+diff --git a/napari/layers/vectors/vectors.py b/napari/layers/vectors/vectors.py
+index 098208c0..e2edaeac 100644
+--- a/napari/layers/vectors/vectors.py
++++ b/napari/layers/vectors/vectors.py
+@@ -245,7 +245,7 @@ class Vectors(Layer):
+         self._view_alphas = []
+ 
+         # now that everything is set up, make the layer visible (if set to visible)
+-        self._update_dims()
++        self.refresh()
+         self.visible = visible
+ 
+     @property
+-- 
+2.34.1
