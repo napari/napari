@@ -465,18 +465,6 @@ index 20661e1c..1fe1be2c 100644
  from napari.layers.vectors.vectors import Vectors
 +
 +__all__ = ['Vectors']
-diff --git a/napari/resources/__init__.py b/napari/resources/__init__.py
-index 684be763..044f33ef 100644
---- a/napari/resources/__init__.py
-+++ b/napari/resources/__init__.py
-@@ -6,7 +6,6 @@ from napari.resources._icons import (
-     get_colorized_svg,
-     get_icon_path,
- )
--from napari.utils.translations import trans
- 
- __all__ = ['get_colorized_svg', 'get_icon_path', 'ICON_PATH', 'ICONS']
- 
 diff --git a/napari/utils/__init__.py b/napari/utils/__init__.py
 index 56c1fcc9..e356ad7f 100644
 --- a/napari/utils/__init__.py

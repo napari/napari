@@ -5389,11 +5389,10 @@ diff --git a/napari/layers/points/_points_key_bindings.py b/napari/layers/points
 index b6e3906c..1995d131 100644
 --- a/napari/layers/points/_points_key_bindings.py
 +++ b/napari/layers/points/_points_key_bindings.py
-@@ -1,14 +1,15 @@
+@@ -1,14 +1,14 @@
  from __future__ import annotations
  
 -from napari.utils.notifications import show_info
-+from app_model.types import KeyCode, KeyMod
  
 -from ...layers.utils.layer_utils import (
 +from napari.layers.points._points_constants import Mode
@@ -7675,11 +7674,10 @@ diff --git a/napari/utils/key_bindings.py b/napari/utils/key_bindings.py
 index efca07f4..84190499 100644
 --- a/napari/utils/key_bindings.py
 +++ b/napari/utils/key_bindings.py
-@@ -41,11 +41,12 @@ import types
+@@ -41,11 +41,11 @@ import types
  from collections import ChainMap
  from typing import Callable, Dict
- 
-+from app_model.types import KeyBinding, KeyCode, KeyMod
+
  from vispy.util import keys
  
 -from ..settings import get_settings

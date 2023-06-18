@@ -1,0 +1,137 @@
+From 79c8faca90ef477297eabeeb2d290db5c585fe2e Mon Sep 17 00:00:00 2001
+From: Grzegorz Bokota <bokota+github@gmail.com>
+Date: Wed, 8 Feb 2023 10:25:00 +0100
+Subject: [PATCH] Use pytest-pretty for better log readability (#5525)
+
+---
+ .github/workflows/test_comprehensive.yml | 3 +++
+ .github/workflows/test_prereleases.yml   | 3 +++
+ .github/workflows/test_pull_requests.yml | 4 ++++
+ napari/_tests/test_pytest_plugin.py      | 6 +++---
+ setup.cfg                                | 1 +
+ tox.ini                                  | 7 ++++---
+ 6 files changed, 18 insertions(+), 6 deletions(-)
+
+diff --git a/.github/workflows/test_comprehensive.yml b/.github/workflows/test_comprehensive.yml
+index 17f8eeba..b2efa9f0 100644
+--- a/.github/workflows/test_comprehensive.yml
++++ b/.github/workflows/test_comprehensive.yml
+@@ -11,6 +11,9 @@ on:
+   # Allows you to run this workflow manually from the Actions tab
+   workflow_dispatch:
+ 
++env:
++  COLUMNS: 120
++
+ concurrency:
+   group: comprehensive-test
+ 
+diff --git a/.github/workflows/test_prereleases.yml b/.github/workflows/test_prereleases.yml
+index c2331ada..96a6d7e2 100644
+--- a/.github/workflows/test_prereleases.yml
++++ b/.github/workflows/test_prereleases.yml
+@@ -9,6 +9,9 @@ on:
+   # Allows you to run this workflow manually from the Actions tab
+   workflow_dispatch:
+ 
++env:
++  COLUMNS: 120
++
+ jobs:
+   test:
+     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
+diff --git a/.github/workflows/test_pull_requests.yml b/.github/workflows/test_pull_requests.yml
+index a16f4600..a2c8ee64 100644
+--- a/.github/workflows/test_pull_requests.yml
++++ b/.github/workflows/test_pull_requests.yml
+@@ -13,6 +13,9 @@ concurrency:
+   group: test-${{ github.ref }}
+   cancel-in-progress: true
+ 
++env:
++  COLUMNS: 120
++
+ jobs:
+   manifest:
+     # make sure all necessary files will be bundled in the release
+@@ -145,6 +148,7 @@ jobs:
+           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
+           PYVISTA_OFF_SCREEN: True
+           MIN_REQ: ${{ matrix.MIN_REQ }}
++          FORCE_COLOR: 1
+       - uses: actions/upload-artifact@v3
+         with:
+           name: upload pytest timing reports as json
+diff --git a/napari/_tests/test_pytest_plugin.py b/napari/_tests/test_pytest_plugin.py
+index 89cc1bb0..f7483705 100644
+--- a/napari/_tests/test_pytest_plugin.py
++++ b/napari/_tests/test_pytest_plugin.py
+@@ -11,11 +11,11 @@ pytest_plugins = "pytester"
+ 
+ @pytest.mark.filterwarnings("ignore:`type` argument to addoption()::")
+ @pytest.mark.filterwarnings("ignore:The TerminalReporter.writer::")
+-def test_make_napari_viewer(testdir):
++def test_make_napari_viewer(pytester_pretty):
+     """Make sure that our make_napari_viewer plugin works."""
+ 
+     # create a temporary pytest test file
+-    testdir.makepyfile(
++    pytester_pretty.makepyfile(
+         """
+         def test_make_viewer(make_napari_viewer):
+             viewer = make_napari_viewer()
+@@ -26,7 +26,7 @@ def test_make_napari_viewer(testdir):
+     """
+     )
+     # run all tests with pytest
+-    result = testdir.runpytest()
++    result = pytester_pretty.runpytest()
+ 
+     # check that all 1 test passed
+     result.assert_outcomes(passed=1)
+diff --git a/setup.cfg b/setup.cfg
+index 662e1454..a2f4448b 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -116,6 +116,7 @@ testing =
+     pooch>=1.3.0
+     pytest-cov
+     pytest-qt
++    pytest-pretty>=1.1.0
+     pytest>=7.0.0
+     tensorstore>=0.1.13
+     torch>=1.7
+diff --git a/tox.ini b/tox.ini
+index a7b6ee89..1b6d4a91 100644
+--- a/tox.ini
++++ b/tox.ini
+@@ -25,6 +25,7 @@ python =
+     3.9: py39
+     3.9.0: py390
+     3.10: py310
++fail_on_no_env = True
+ 
+ # This section turns environment variables from github actions
+ # into tox environment factors. This, combined with the [gh-actions]
+@@ -64,6 +65,9 @@ passenv =
+     NUMPY_EXPERIMENTAL_ARRAY_FUNCTION
+     PYVISTA_OFF_SCREEN
+     MIN_REQ
++    CONDA_EXE
++    CONDA
++    FORCE_COLOR
+ # Set various environment variables, depending on the factors in
+ # the tox environment being run
+ setenv =
+@@ -71,9 +75,6 @@ setenv =
+     async: NAPARI_ASYNC = 1
+     async: PYTEST_ADDOPTS = --async_only
+     async: PYTEST_PATH = napari
+-# PySide6 6.4.0 broke Python 3.9 and under.
+-# See the napari issue for more details:
+-# https://github.com/napari/napari/issues/5217
+ deps =
+     pytest-cov
+     pyqt6: PyQt6
+-- 
+2.34.1

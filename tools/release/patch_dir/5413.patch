@@ -1,0 +1,833 @@
+From c79c2da3d94a2968e34b54b83bcbc888bc7fa83e Mon Sep 17 00:00:00 2001
+From: Andy Sweet <andrew.d.sweet@gmail.com>
+Date: Fri, 3 Feb 2023 16:11:36 -0800
+Subject: [PATCH] Clarify layer's editable property and separate interaction
+ with visible property (#5413)
+
+This started off as a way to help me clarify `Layer._set_editable` and
+why it's called in `Layer._slice_dims` and lots of places near
+`Layer.refresh` or `Layer._update_dims` (as part of the async slicing
+work). Then it snowballed a bit into a bug fix for #1346, with some
+tests to prove that, which results in some refactoring and clean up on
+the layer controls.
+
+I also fixed some Qt6 compatibility issues related to `Qt.CheckState`.
+
+- [x] Bug-fix (non-breaking change which fixes an issue)
+- [x] Breaking change (fix or feature that would cause existing
+functionality to not work as expected)
+
+I think this really a bug fix, but want to flag that it does remove the
+side-effect of changing `Layer.editable` when changing `Layer.visible`,
+so will break anyone depending on that.
+
+Closes #1346
+
+- [x] added new tests to cover expected behavior
+- [x] all existing tests pass with my change
+
+---------
+
+Co-authored-by: Ashley Anderson <aganders3@gmail.com>
+---
+ .../containers/_tests/test_qt_layer_list.py   | 54 ++++++++++++
+ napari/_qt/containers/qt_layer_model.py       | 12 ++-
+ .../_tests/test_qt_layer_controls.py          | 88 ++++++++++++++++++-
+ .../_qt/layer_controls/qt_labels_controls.py  | 60 +++++--------
+ .../_qt/layer_controls/qt_points_controls.py  | 25 ++++--
+ .../_qt/layer_controls/qt_shapes_controls.py  | 47 +++++-----
+ napari/_qt/utils.py                           | 13 +--
+ napari/layers/base/base.py                    | 25 +++---
+ napari/layers/image/image.py                  |  2 +-
+ napari/layers/labels/labels.py                | 11 ++-
+ napari/layers/points/_tests/test_points.py    | 18 ++++
+ napari/layers/points/points.py                | 19 ++--
+ napari/layers/shapes/shapes.py                | 12 +--
+ napari/layers/surface/surface.py              |  7 +-
+ napari/layers/tracks/tracks.py                |  2 +-
+ napari/layers/vectors/vectors.py              |  2 +-
+ 16 files changed, 284 insertions(+), 113 deletions(-)
+ create mode 100644 napari/_qt/containers/_tests/test_qt_layer_list.py
+
+diff --git a/napari/_qt/containers/_tests/test_qt_layer_list.py b/napari/_qt/containers/_tests/test_qt_layer_list.py
+new file mode 100644
+index 00000000..7561181b
+--- /dev/null
++++ b/napari/_qt/containers/_tests/test_qt_layer_list.py
+@@ -0,0 +1,54 @@
++from typing import Tuple
++
++import numpy as np
++from qtpy.QtCore import QModelIndex, Qt
++
++from napari._qt.containers import QtLayerList
++from napari.components import LayerList
++from napari.layers import Image
++
++
++def test_set_layer_invisible_makes_item_unchecked(qtbot):
++    view, image = make_qt_layer_list_with_layer(qtbot)
++    assert image.visible
++    assert check_state_at_layer_index(view, 0) == Qt.CheckState.Checked
++
++    image.visible = False
++
++    assert check_state_at_layer_index(view, 0) == Qt.CheckState.Unchecked
++
++
++def test_set_item_unchecked_makes_layer_invisible(qtbot):
++    view, image = make_qt_layer_list_with_layer(qtbot)
++    assert check_state_at_layer_index(view, 0) == Qt.CheckState.Checked
++    assert image.visible
++
++    view.model().setData(
++        layer_to_model_index(view, 0),
++        Qt.CheckState.Unchecked,
++        Qt.ItemDataRole.CheckStateRole,
++    )
++
++    assert not image.visible
++
++
++def make_qt_layer_list_with_layer(qtbot) -> Tuple[QtLayerList, Image]:
++    image = Image(np.zeros((4, 3)))
++    layers = LayerList([image])
++    view = QtLayerList(layers)
++    qtbot.addWidget(view)
++    return view, image
++
++
++def layer_to_model_index(view: QtLayerList, layer_index: int) -> QModelIndex:
++    return view.model().index(layer_index, 0, view.rootIndex())
++
++
++def check_state_at_layer_index(
++    view: QtLayerList, layer_index: int
++) -> Qt.CheckState:
++    model_index = layer_to_model_index(view, layer_index)
++    value = view.model().data(model_index, Qt.ItemDataRole.CheckStateRole)
++    # The data method returns integer value of the enum in some cases, so
++    # ensure it has the enum type for more explicit assertions.
++    return Qt.CheckState(value)
+diff --git a/napari/_qt/containers/qt_layer_model.py b/napari/_qt/containers/qt_layer_model.py
+index 43fca1bb..f2c49952 100644
+--- a/napari/_qt/containers/qt_layer_model.py
++++ b/napari/_qt/containers/qt_layer_model.py
+@@ -27,7 +27,11 @@ class QtLayerListModel(QtListModel[Layer]):
+         if (
+             role == Qt.ItemDataRole.CheckStateRole
+         ):  # the "checked" state of this item
+-            return Qt.Checked if layer.visible else Qt.Unchecked
++            return (
++                Qt.CheckState.Checked
++                if layer.visible
++                else Qt.CheckState.Unchecked
++            )
+         if role == Qt.ItemDataRole.SizeHintRole:  # determines size of item
+             return QSize(200, 34)
+         if role == ThumbnailRole:  # return the thumbnail
+@@ -51,7 +55,11 @@ class QtLayerListModel(QtListModel[Layer]):
+         role: int = Qt.ItemDataRole.EditRole,
+     ) -> bool:
+         if role == Qt.ItemDataRole.CheckStateRole:
+-            self.getItem(index).visible = value
++            # The item model stores a Qt.CheckState enum value that can be
++            # partially checked, but we only use the unchecked and checked
++            # to correspond to the layer's visibility.
++            # https://doc.qt.io/qt-5/qt.html#CheckState-enum
++            self.getItem(index).visible = value == Qt.CheckState.Checked
+         elif role == Qt.ItemDataRole.EditRole:
+             self.getItem(index).name = value
+             role = Qt.ItemDataRole.DisplayRole
+diff --git a/napari/_qt/layer_controls/_tests/test_qt_layer_controls.py b/napari/_qt/layer_controls/_tests/test_qt_layer_controls.py
+index 326ec909..39ed62cb 100644
+--- a/napari/_qt/layer_controls/_tests/test_qt_layer_controls.py
++++ b/napari/_qt/layer_controls/_tests/test_qt_layer_controls.py
+@@ -2,13 +2,14 @@ from collections import namedtuple
+ 
+ import numpy as np
+ import pytest
++from qtpy.QtWidgets import QAbstractButton
+ 
+ from napari._qt.layer_controls.qt_layer_controls_container import (
+     create_qt_layer_controls,
+     layer_to_controls,
+ )
+ from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
+-from napari.layers import Points, Shapes
++from napari.layers import Labels, Points, Shapes
+ 
+ LayerTypeWithData = namedtuple('LayerTypeWithData', ['type', 'data'])
+ _POINTS = LayerTypeWithData(type=Points, data=np.random.random((5, 2)))
+@@ -79,3 +80,88 @@ def test_set_text_then_set_visible_updates_checkbox(
+     layer.text.visible = True
+ 
+     assert ctrl.textDispCheckBox.isChecked()
++
++
++# The following tests handle changes to the layer's visible and
++# editable state for layer control types that have controls to edit
++# the layer. For more context see:
++# https://github.com/napari/napari/issues/1346
++
++
++@pytest.fixture(
++    params=(
++        (Labels, np.zeros((3, 4), dtype=int)),
++        (Points, np.empty((0, 2))),
++        (Shapes, np.empty((0, 2, 4))),
++    )
++)
++def editable_layer(request):
++    LayerType, data = request.param
++    return LayerType(data)
++
++
++def test_make_visible_when_editable_enables_edit_buttons(
++    qtbot, editable_layer
++):
++    editable_layer.editable = True
++    editable_layer.visible = False
++    controls = make_layer_controls(qtbot, editable_layer)
++    assert_no_edit_buttons_enabled(controls)
++
++    editable_layer.visible = True
++
++    assert_all_edit_buttons_enabled(controls)
++
++
++def test_make_not_visible_when_editable_disables_edit_buttons(
++    qtbot, editable_layer
++):
++    editable_layer.editable = True
++    editable_layer.visible = True
++    controls = make_layer_controls(qtbot, editable_layer)
++    assert_all_edit_buttons_enabled(controls)
++
++    editable_layer.visible = False
++
++    assert_no_edit_buttons_enabled(controls)
++
++
++def test_make_editable_when_visible_enables_edit_buttons(
++    qtbot, editable_layer
++):
++    editable_layer.editable = False
++    editable_layer.visible = True
++    controls = make_layer_controls(qtbot, editable_layer)
++    assert_no_edit_buttons_enabled(controls)
++
++    editable_layer.editable = True
++
++    assert_all_edit_buttons_enabled(controls)
++
++
++def test_make_not_editable_when_visible_disables_edit_buttons(
++    qtbot, editable_layer
++):
++    editable_layer.editable = True
++    editable_layer.visible = True
++    controls = make_layer_controls(qtbot, editable_layer)
++    assert_all_edit_buttons_enabled(controls)
++
++    editable_layer.editable = False
++
++    assert_no_edit_buttons_enabled(controls)
++
++
++def make_layer_controls(qtbot, layer):
++    QtLayerControlsType = layer_to_controls[type(layer)]
++    controls = QtLayerControlsType(layer)
++    qtbot.addWidget(controls)
++    return controls
++
++
++def assert_all_edit_buttons_enabled(controls) -> None:
++    assert all(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
++
++
++def assert_no_edit_buttons_enabled(controls) -> None:
++    assert not any(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
+diff --git a/napari/_qt/layer_controls/qt_labels_controls.py b/napari/_qt/layer_controls/qt_labels_controls.py
+index 0cd34750..1659ca5f 100644
+--- a/napari/_qt/layer_controls/qt_labels_controls.py
++++ b/napari/_qt/layer_controls/qt_labels_controls.py
+@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (
+ from superqt import QLargeIntSpinBox
+ 
+ from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+-from napari._qt.utils import disable_with_opacity
++from napari._qt.utils import set_widgets_enabled_with_opacity
+ from napari._qt.widgets._slider_compat import QSlider
+ from napari._qt.widgets.qt_mode_buttons import (
+     QtModePushButton,
+@@ -87,7 +87,6 @@ class QtLabelsControls(QtLayerControls):
+         super().__init__(layer)
+ 
+         self.layer.events.mode.connect(self._on_mode_change)
+-        self.layer.events._ndisplay.connect(self._on_ndisplay_change)
+         self.layer.events.rendering.connect(self._on_rendering_change)
+         self.layer.events.selected_label.connect(
+             self._on_selected_label_change
+@@ -98,7 +97,8 @@ class QtLabelsControls(QtLayerControls):
+             self._on_n_edit_dimensions_change
+         )
+         self.layer.events.contour.connect(self._on_contour_change)
+-        self.layer.events.editable.connect(self._on_editable_change)
++        self.layer.events.editable.connect(self._on_editable_or_visible_change)
++        self.layer.events.visible.connect(self._on_editable_or_visible_change)
+         self.layer.events.preserve_labels.connect(
+             self._on_preserve_labels_change
+         )
+@@ -211,13 +211,20 @@ class QtLabelsControls(QtLayerControls):
+ 
+         # don't bind with action manager as this would remove "Toggle with {shortcut}"
+ 
++        self._EDIT_BUTTONS = (
++            self.paint_button,
++            self.pick_button,
++            self.fill_button,
++            self.erase_button,
++        )
++
+         self.button_group = QButtonGroup(self)
+         self.button_group.addButton(self.panzoom_button)
+         self.button_group.addButton(self.paint_button)
+         self.button_group.addButton(self.pick_button)
+         self.button_group.addButton(self.fill_button)
+         self.button_group.addButton(self.erase_button)
+-        self._on_editable_change()
++        self._on_editable_or_visible_change()
+ 
+         button_row = QHBoxLayout()
+         button_row.addStretch(1)
+@@ -240,7 +247,8 @@ class QtLabelsControls(QtLayerControls):
+         renderComboBox.currentTextChanged.connect(self.changeRendering)
+         self.renderComboBox = renderComboBox
+         self.renderLabel = QLabel(trans._('rendering:'))
+-        self._on_ndisplay_change()
++
++        self._on_ndisplay_changed()
+ 
+         color_mode_comboBox = QComboBox(self)
+         for index, (data, text) in enumerate(
+@@ -445,29 +453,12 @@ class QtLabelsControls(QtLayerControls):
+                 self.colorModeComboBox.findData(self.layer.color_mode)
+             )
+ 
+-    def _on_editable_change(self):
+-        """Receive layer model editable change event & enable/disable buttons."""
+-        # In 3D mode, we need to disable all buttons other than picking
+-        # (only picking works in 3D)
+-        widget_list = [
+-            'pick_button',
+-            'fill_button',
+-            'paint_button',
+-            'erase_button',
+-        ]
+-        widgets_to_toggle = {
+-            (2, True): widget_list,
+-            (2, False): widget_list,
+-            (3, True): widget_list,
+-            (3, False): widget_list,
+-        }
+-
+-        disable_with_opacity(
++    def _on_editable_or_visible_change(self):
++        """Receive layer model editable/visible change event & enable/disable buttons."""
++        set_widgets_enabled_with_opacity(
+             self,
+-            widgets_to_toggle[
+-                (self.layer._slice_input.ndisplay, self.layer.editable)
+-            ],
+-            self.layer.editable,
++            self._EDIT_BUTTONS,
++            self.layer.editable and self.layer.visible,
+         )
+ 
+     def _on_rendering_change(self):
+@@ -478,16 +469,11 @@ class QtLabelsControls(QtLayerControls):
+             )
+             self.renderComboBox.setCurrentIndex(index)
+ 
+-    def _on_ndisplay_change(self):
+-        """Toggle between 2D and 3D visualization modes."""
+-        if self.layer._slice_input.ndisplay == 2:
+-            self.renderComboBox.hide()
+-            self.renderLabel.hide()
+-        else:
+-            self.renderComboBox.show()
+-            self.renderLabel.show()
+-
+-        self._on_editable_change()
++    def _on_ndisplay_changed(self):
++        render_visible = self.ndisplay == 3
++        self.renderComboBox.setVisible(render_visible)
++        self.renderLabel.setVisible(render_visible)
++        self._on_editable_or_visible_change()
+ 
+     def deleteLater(self):
+         disconnect_events(self.layer.events, self.colorBox)
+diff --git a/napari/_qt/layer_controls/qt_points_controls.py b/napari/_qt/layer_controls/qt_points_controls.py
+index b41b224a..d2a8d2f8 100644
+--- a/napari/_qt/layer_controls/qt_points_controls.py
++++ b/napari/_qt/layer_controls/qt_points_controls.py
+@@ -5,7 +5,10 @@ from qtpy.QtCore import Qt, Slot
+ from qtpy.QtWidgets import QButtonGroup, QCheckBox, QComboBox, QHBoxLayout
+ 
+ from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+-from napari._qt.utils import disable_with_opacity, qt_signals_blocked
++from napari._qt.utils import (
++    qt_signals_blocked,
++    set_widgets_enabled_with_opacity,
++)
+ from napari._qt.widgets._slider_compat import QSlider
+ from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+ from napari._qt.widgets.qt_mode_buttons import (
+@@ -88,7 +91,8 @@ class QtPointsControls(QtLayerControls):
+         self.layer._face.events.current_color.connect(
+             self._on_current_face_color_change
+         )
+-        self.layer.events.editable.connect(self._on_editable_change)
++        self.layer.events.editable.connect(self._on_editable_or_visible_change)
++        self.layer.events.visible.connect(self._on_editable_or_visible_change)
+         self.layer.text.events.visible.connect(self._on_text_visibility_change)
+ 
+         sld = QSlider(Qt.Orientation.Horizontal)
+@@ -180,10 +184,17 @@ class QtPointsControls(QtLayerControls):
+         self.textDispCheckBox.setChecked(self.layer.text.visible)
+         self.textDispCheckBox.stateChanged.connect(self.change_text_visibility)
+ 
++        self._EDIT_BUTTONS = (
++            self.select_button,
++            self.addition_button,
++            self.delete_button,
++        )
++
+         self.button_group = QButtonGroup(self)
+         self.button_group.addButton(self.select_button)
+         self.button_group.addButton(self.addition_button)
+         self.button_group.addButton(self.panzoom_button)
++        self._on_editable_or_visible_change()
+ 
+         button_row = QHBoxLayout()
+         button_row.addStretch(1)
+@@ -328,12 +339,12 @@ class QtPointsControls(QtLayerControls):
+         with qt_signals_blocked(self.edgeColorEdit):
+             self.edgeColorEdit.setColor(self.layer.current_edge_color)
+ 
+-    def _on_editable_change(self):
+-        """Receive layer model editable change event & enable/disable buttons."""
+-        disable_with_opacity(
++    def _on_editable_or_visible_change(self):
++        """Receive layer model editable/visible change event & enable/disable buttons."""
++        set_widgets_enabled_with_opacity(
+             self,
+-            ['select_button', 'addition_button', 'delete_button'],
+-            self.layer.editable,
++            self._EDIT_BUTTONS,
++            self.layer.editable and self.layer.visible,
+         )
+ 
+     def close(self):
+diff --git a/napari/_qt/layer_controls/qt_shapes_controls.py b/napari/_qt/layer_controls/qt_shapes_controls.py
+index 9698bb16..efc3c63a 100644
+--- a/napari/_qt/layer_controls/qt_shapes_controls.py
++++ b/napari/_qt/layer_controls/qt_shapes_controls.py
+@@ -6,7 +6,10 @@ from qtpy.QtCore import Qt
+ from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout
+ 
+ from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+-from napari._qt.utils import disable_with_opacity, qt_signals_blocked
++from napari._qt.utils import (
++    qt_signals_blocked,
++    set_widgets_enabled_with_opacity,
++)
+ from napari._qt.widgets._slider_compat import QSlider
+ from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+ from napari._qt.widgets.qt_mode_buttons import (
+@@ -91,7 +94,8 @@ class QtShapesControls(QtLayerControls):
+         self.layer.events.current_face_color.connect(
+             self._on_current_face_color_change
+         )
+-        self.layer.events.editable.connect(self._on_editable_change)
++        self.layer.events.editable.connect(self._on_editable_or_visible_change)
++        self.layer.events.visible.connect(self._on_editable_or_visible_change)
+         self.layer.text.events.visible.connect(self._on_text_visibility_change)
+ 
+         sld = QSlider(Qt.Orientation.Horizontal)
+@@ -241,6 +245,21 @@ class QtShapesControls(QtLayerControls):
+             ),
+         )
+ 
++        self._EDIT_BUTTONS = (
++            self.select_button,
++            self.direct_button,
++            self.rectangle_button,
++            self.ellipse_button,
++            self.line_button,
++            self.path_button,
++            self.polygon_button,
++            self.vertex_remove_button,
++            self.vertex_insert_button,
++            self.delete_button,
++            self.move_back_button,
++            self.move_front_button,
++        )
++
+         self.button_group = QButtonGroup(self)
+         self.button_group.addButton(self.select_button)
+         self.button_group.addButton(self.direct_button)
+@@ -252,6 +271,7 @@ class QtShapesControls(QtLayerControls):
+         self.button_group.addButton(self.polygon_button)
+         self.button_group.addButton(self.vertex_insert_button)
+         self.button_group.addButton(self.vertex_remove_button)
++        self._on_editable_or_visible_change()
+ 
+         button_grid = QGridLayout()
+         button_grid.addWidget(self.vertex_remove_button, 0, 2)
+@@ -409,25 +429,12 @@ class QtShapesControls(QtLayerControls):
+         with qt_signals_blocked(self.faceColorEdit):
+             self.faceColorEdit.setColor(self.layer.current_face_color)
+ 
+-    def _on_editable_change(self):
+-        """Receive layer model editable change event & enable/disable buttons."""
+-        disable_with_opacity(
++    def _on_editable_or_visible_change(self):
++        """Receive layer model editable/visible change event & enable/disable buttons."""
++        set_widgets_enabled_with_opacity(
+             self,
+-            [
+-                'select_button',
+-                'direct_button',
+-                'rectangle_button',
+-                'ellipse_button',
+-                'line_button',
+-                'path_button',
+-                'polygon_button',
+-                'vertex_remove_button',
+-                'vertex_insert_button',
+-                'delete_button',
+-                'move_back_button',
+-                'move_front_button',
+-            ],
+-            self.layer.editable,
++            self._EDIT_BUTTONS,
++            self.layer.editable and self.layer.visible,
+         )
+ 
+     def close(self):
+diff --git a/napari/_qt/utils.py b/napari/_qt/utils.py
+index 22080364..f66e248c 100644
+--- a/napari/_qt/utils.py
++++ b/napari/_qt/utils.py
+@@ -6,7 +6,7 @@ import socket
+ import weakref
+ from contextlib import contextmanager
+ from functools import lru_cache, partial
+-from typing import Sequence, Union
++from typing import Iterable, Sequence, Union
+ 
+ import numpy as np
+ import qtpy
+@@ -141,12 +141,13 @@ def event_hook_removed():
+             QtCore.pyqtRestoreInputHook()
+ 
+ 
+-def disable_with_opacity(obj, widget_list, enabled):
+-    """Set enabled state on a list of widgets. If not enabled, decrease opacity."""
+-    for widget_name in widget_list:
+-        widget = getattr(obj, widget_name)
++def set_widgets_enabled_with_opacity(
++    parent: QWidget, widgets: Iterable[QWidget], enabled: bool
++):
++    """Set enabled state on some widgets. If not enabled, decrease opacity."""
++    for widget in widgets:
+         widget.setEnabled(enabled)
+-        op = QGraphicsOpacityEffect(obj)
++        op = QGraphicsOpacityEffect(parent)
+         op.setOpacity(1 if enabled else 0.5)
+         widget.setGraphicsEffect(op)
+ 
+diff --git a/napari/layers/base/base.py b/napari/layers/base/base.py
+index 85a0cf2c..f53d42c3 100644
+--- a/napari/layers/base/base.py
++++ b/napari/layers/base/base.py
+@@ -518,30 +518,37 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+         self.events.blending()
+ 
+     @property
+-    def visible(self):
++    def visible(self) -> bool:
+         """bool: Whether the visual is currently being displayed."""
+         return self._visible
+ 
+     @visible.setter
+-    def visible(self, visibility):
+-        self._visible = visibility
++    def visible(self, visible: bool):
++        self._visible = visible
+         self.refresh()
+         self.events.visible()
+-        self.editable = self._set_editable() if self.visible else False
+ 
+     @property
+-    def editable(self):
++    def editable(self) -> bool:
+         """bool: Whether the current layer data is editable from the viewer."""
+         return self._editable
+ 
+     @editable.setter
+-    def editable(self, editable):
++    def editable(self, editable: bool):
+         if self._editable == editable:
+             return
+         self._editable = editable
+-        self._set_editable(editable=editable)
++        self._on_editable_changed()
+         self.events.editable()
+ 
++    def _reset_editable(self) -> None:
++        """Reset this layer's editable state based on layer properties."""
++        self.editable = True
++
++    def _on_editable_changed(self) -> None:
++        """Executes side-effects on this layer related to changes of the editable state."""
++        pass
++
+     @property
+     def scale(self):
+         """list: Anisotropy factors to scale data into world coordinates."""
+@@ -743,10 +750,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+     def _get_ndim(self):
+         raise NotImplementedError()
+ 
+-    def _set_editable(self, editable=None):
+-        if editable is None:
+-            self.editable = True
+-
+     def _get_base_state(self):
+         """Get dictionary of attributes on base layer.
+ 
+diff --git a/napari/layers/image/image.py b/napari/layers/image/image.py
+index f7eb1422..28a8df2b 100644
+--- a/napari/layers/image/image.py
++++ b/napari/layers/image/image.py
+@@ -461,7 +461,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
+         self.events.data(value=self.data)
+         if self._keep_auto_contrast:
+             self.reset_contrast_limits()
+-        self._set_editable()
++        self._reset_editable()
+ 
+     def _get_ndim(self):
+         """Determine number of dimensions of the layer."""
+diff --git a/napari/layers/labels/labels.py b/napari/layers/labels/labels.py
+index 954fd820..b8f43a93 100644
+--- a/napari/layers/labels/labels.py
++++ b/napari/layers/labels/labels.py
+@@ -308,7 +308,7 @@ class Labels(_ImageBase):
+ 
+         # Trigger generation of view slice and thumbnail
+         self.refresh()
+-        self._set_editable()
++        self._reset_editable()
+ 
+     @property
+     def rendering(self):
+@@ -430,7 +430,7 @@ class Labels(_ImageBase):
+         self._data = data
+         self._update_dims()
+         self.events.data(value=self.data)
+-        self._set_editable()
++        self._reset_editable()
+ 
+     @property
+     def features(self):
+@@ -756,11 +756,10 @@ class Labels(_ImageBase):
+             )
+         self._contrast_limits = (0, 1)
+ 
+-    def _set_editable(self, editable=None):
+-        """Set editable mode based on layer properties."""
+-        if editable is None:
+-            self.editable = not self.multiscale
++    def _reset_editable(self) -> None:
++        self.editable = not self.multiscale
+ 
++    def _on_editable_changed(self) -> None:
+         if not self.editable:
+             self.mode = Mode.PAN_ZOOM
+             self._reset_history()
+diff --git a/napari/layers/points/_tests/test_points.py b/napari/layers/points/_tests/test_points.py
+index 3883eaeb..af58a57b 100644
+--- a/napari/layers/points/_tests/test_points.py
++++ b/napari/layers/points/_tests/test_points.py
+@@ -1751,6 +1751,7 @@ def test_view_data():
+ 
+ 
+ def test_view_size():
++    """Test out of slice point rendering and slicing with no points."""
+     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
+     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
+     layer = Points(coords, size=sizes, out_of_slice_display=False)
+@@ -2510,3 +2511,20 @@ def test_set_drag_start():
+     np.testing.assert_array_equal(layer._drag_start, position)
+     layer._set_drag_start({0}, position=(1, 2))
+     np.testing.assert_array_equal(layer._drag_start, position)
++
++
++def test_editable_and_visible_are_independent():
++    """See https://github.com/napari/napari/issues/1346"""
++    data = np.empty((0, 2))
++    layer = Points(data)
++    assert layer.editable
++    assert layer.visible
++
++    layer.editable = False
++    layer.visible = False
++    assert not layer.editable
++    assert not layer.visible
++
++    layer.visible = True
++
++    assert not layer.editable
+diff --git a/napari/layers/points/points.py b/napari/layers/points/points.py
+index 321712d9..ca70f545 100644
+--- a/napari/layers/points/points.py
++++ b/napari/layers/points/points.py
+@@ -1417,7 +1417,9 @@ class Points(Layer):
+             The vispy text anchor for the y axis
+         """
+         return self.text.compute_text_coords(
+-            self._view_data, self._slice_input.ndisplay
++            self._view_data,
++            self._slice_input.ndisplay,
++            self._slice_input.order,
+         )
+ 
+     @property
+@@ -1495,18 +1497,17 @@ class Points(Layer):
+         """
+         return self.edge_color[self._indices_view]
+ 
+-    def _set_editable(self, editable=None):
++    def _reset_editable(self) -> None:
+         """Set editable mode based on layer properties."""
+-        if editable is None:
+-            self.editable = True
++        # interaction currently does not work for 2D layers being rendered in 3D
++        self.editable = not (
++            self.ndim == 2 and self._slice_input.ndisplay == 3
++        )
++
++    def _on_editable_changed(self) -> None:
+         if not self.editable:
+             self.mode = Mode.PAN_ZOOM
+ 
+-        if self.ndim < 3 and self._slice_input.ndisplay == 3:
+-            # interaction currently does not work for 2D
+-            # layers being rendered in 3D.
+-            self.editable = False
+-
+     def _slice_data(
+         self, dims_indices
+     ) -> Tuple[List[int], Union[float, np.ndarray]]:
+diff --git a/napari/layers/shapes/shapes.py b/napari/layers/shapes/shapes.py
+index 5830b0b7..c6fbc9cb 100644
+--- a/napari/layers/shapes/shapes.py
++++ b/napari/layers/shapes/shapes.py
+@@ -669,7 +669,7 @@ class Shapes(Layer):
+ 
+         self._update_dims()
+         self.events.data(value=self.data)
+-        self._set_editable()
++        self._reset_editable()
+ 
+     def _on_selection(self, selected: bool):
+         # this method is slated for removal.  don't add anything new.
+@@ -1628,14 +1628,10 @@ class Shapes(Layer):
+             else:
+                 self.refresh()
+ 
+-    def _set_editable(self, editable=None):
+-        """Set editable mode based on layer properties."""
+-        if editable is None:
+-            if self._slice_input.ndisplay == 3:
+-                self.editable = False
+-            else:
+-                self.editable = True
++    def _reset_editable(self) -> None:
++        self.editable = self._slice_input.ndisplay == 2
+ 
++    def _on_editable_changed(self) -> None:
+         if not self.editable:
+             self.mode = Mode.PAN_ZOOM
+ 
+diff --git a/napari/layers/surface/surface.py b/napari/layers/surface/surface.py
+index c6008ac0..5b9fe7ae 100644
+--- a/napari/layers/surface/surface.py
++++ b/napari/layers/surface/surface.py
+@@ -271,6 +271,7 @@ class Surface(IntensityVisualizationMixin, Layer):
+ 
+         self._update_dims()
+         self.events.data(value=self.data)
++        self._reset_editable()
+         if self._keep_auto_contrast:
+             self.reset_contrast_limits()
+ 
+@@ -286,7 +287,7 @@ class Surface(IntensityVisualizationMixin, Layer):
+ 
+         self._update_dims()
+         self.events.data(value=self.data)
+-        self._set_editable()
++        self._reset_editable()
+ 
+     @property
+     def vertex_values(self) -> np.ndarray:
+@@ -300,7 +301,7 @@ class Surface(IntensityVisualizationMixin, Layer):
+ 
+         self._update_dims()
+         self.events.data(value=self.data)
+-        self._set_editable()
++        self._reset_editable()
+ 
+     @property
+     def faces(self) -> np.ndarray:
+@@ -314,7 +315,7 @@ class Surface(IntensityVisualizationMixin, Layer):
+ 
+         self.refresh()
+         self.events.data(value=self.data)
+-        self._set_editable()
++        self._reset_editable()
+ 
+     def _get_ndim(self):
+         """Determine number of dimensions of the layer."""
+diff --git a/napari/layers/tracks/tracks.py b/napari/layers/tracks/tracks.py
+index 13351f14..6cfa78af 100644
+--- a/napari/layers/tracks/tracks.py
++++ b/napari/layers/tracks/tracks.py
+@@ -388,7 +388,7 @@ class Tracks(Layer):
+         self.events.rebuild_tracks()
+         self.events.rebuild_graph()
+         self.events.data(value=self.data)
+-        self._set_editable()
++        self._reset_editable()
+ 
+     @property
+     def features(self):
+diff --git a/napari/layers/vectors/vectors.py b/napari/layers/vectors/vectors.py
+index c70fc0c1..381e82ec 100644
+--- a/napari/layers/vectors/vectors.py
++++ b/napari/layers/vectors/vectors.py
+@@ -280,7 +280,7 @@ class Vectors(Layer):
+ 
+         self._update_dims()
+         self.events.data(value=self.data)
+-        self._set_editable()
++        self._reset_editable()
+ 
+     @property
+     def features(self):
+-- 
+2.34.1

@@ -1,0 +1,1091 @@
+From 0489cd7f20959625d4ec18329beeeefb454048f6 Mon Sep 17 00:00:00 2001
+From: "pre-commit-ci[bot]"
+ <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Date: Sat, 18 Feb 2023 11:34:29 +0100
+Subject: [PATCH] [pre-commit.ci] pre-commit autoupdate (#5534)
+
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Co-authored-by: Grzegorz Bokota <bokota+github@gmail.com>
+---
+ .pre-commit-config.yaml                        |  8 ++++----
+ napari/_event_loop.py                          |  1 -
+ napari/_qt/_tests/test_qt_notifications.py     |  1 -
+ napari/_qt/_tests/test_qt_viewer.py            |  2 --
+ .../_qt/dialogs/_tests/test_reader_dialog.py   |  2 --
+ napari/_qt/dialogs/qt_notification.py          |  1 -
+ .../_qt/layer_controls/qt_tracks_controls.py   |  1 -
+ napari/_qt/menus/_tests/test_file_menu.py      |  1 -
+ napari/_qt/menus/plugins_menu.py               |  3 +--
+ napari/_qt/perf/qt_performance.py              |  1 -
+ napari/_qt/qt_event_loop.py                    |  1 -
+ napari/_qt/qt_viewer.py                        |  4 ----
+ napari/_qt/qthreading.py                       |  1 -
+ .../widgets/_tests/test_qt_extension2reader.py |  2 --
+ napari/_qt/widgets/qt_dims.py                  |  3 +--
+ napari/_qt/widgets/qt_highlight_preview.py     |  1 -
+ napari/_qt/widgets/qt_keyboard_settings.py     |  3 ---
+ napari/_vispy/canvas.py                        |  1 -
+ .../experimental/vispy_tiled_image_layer.py    |  1 -
+ napari/_vispy/filters/tracks.py                |  1 -
+ napari/_vispy/layers/image.py                  |  2 --
+ napari/_vispy/layers/vectors.py                |  1 -
+ napari/components/_tests/test_add_layers.py    |  1 -
+ napari/components/_viewer_key_bindings.py      |  1 -
+ .../experimental/chunk/_commands/_tables.py    |  1 -
+ napari/components/layerlist.py                 |  1 -
+ napari/layers/base/base.py                     |  2 --
+ napari/layers/image/experimental/octree.py     |  1 -
+ .../layers/image/experimental/octree_image.py  |  1 -
+ napari/layers/labels/_labels_mouse_bindings.py |  1 -
+ napari/layers/points/_points_key_bindings.py   |  1 -
+ .../points/_tests/test_points_key_bindings.py  |  5 -----
+ napari/layers/points/points.py                 |  1 -
+ napari/layers/shapes/_mesh.py                  |  1 -
+ napari/layers/shapes/_shape_list.py            |  2 --
+ .../shapes/_shapes_models/_polgyon_base.py     |  1 -
+ napari/layers/shapes/_shapes_models/ellipse.py |  1 -
+ napari/layers/shapes/_shapes_models/line.py    |  1 -
+ napari/layers/shapes/_shapes_models/path.py    |  1 -
+ napari/layers/shapes/_shapes_models/polygon.py |  1 -
+ .../layers/shapes/_shapes_models/rectangle.py  |  1 -
+ napari/layers/shapes/_shapes_models/shape.py   |  1 -
+ napari/layers/shapes/shapes.py                 |  2 --
+ napari/layers/surface/surface.py               |  1 -
+ napari/layers/tracks/_track_utils.py           |  1 -
+ napari/layers/tracks/tracks.py                 |  1 -
+ napari/layers/utils/_link_layers.py            |  1 -
+ .../layers/utils/_tests/test_color_manager.py  |  1 -
+ napari/layers/utils/_text_utils.py             |  2 --
+ napari/plugins/_plugin_manager.py              |  2 --
+ napari/plugins/_tests/test_sample_data.py      |  1 -
+ napari/plugins/hook_specifications.py          | 18 +++++++++---------
+ napari/resources/_icons.py                     |  1 -
+ napari/settings/_tests/test_settings.py        |  1 -
+ napari/utils/_tests/test_action_manager.py     |  1 -
+ napari/utils/_tests/test_geometry.py           |  1 -
+ .../_tests/test_categorical_colormap.py        |  1 -
+ .../colormaps/categorical_colormap_utils.py    |  1 -
+ napari/utils/colormaps/colormap_utils.py       |  2 +-
+ napari/utils/events/containers/_set.py         |  1 -
+ napari/utils/events/event.py                   |  1 -
+ napari/utils/naming.py                         |  1 -
+ napari/utils/tree/group.py                     |  2 +-
+ napari/window.py                               |  1 -
+ napari_builtins/_tests/conftest.py             |  1 -
+ napari_builtins/_tests/test_io.py              |  1 -
+ tools/test_strings.py                          |  1 -
+ 67 files changed, 17 insertions(+), 98 deletions(-)
+
+diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
+index 1d682278..f1f7339f 100644
+--- a/.pre-commit-config.yaml
++++ b/.pre-commit-config.yaml
+@@ -5,22 +5,22 @@ repos:
+     -   id: absolufy-imports
+         exclude: _vendor|vendored|examples
+ -   repo: https://github.com/psf/black
+-    rev: 22.12.0
++    rev: 23.1.0
+     hooks:
+     - id: black
+       pass_filenames: true
+       exclude: _vendor|vendored|examples
+ -   repo: https://github.com/charliermarsh/ruff-pre-commit
+-    rev: v0.0.235
++    rev: v0.0.247
+     hooks:
+       - id: ruff
+         exclude: _vendor|vendored
+ -   repo: https://github.com/seddonym/import-linter
+-    rev: v1.6.0
++    rev: v1.7.0
+     hooks:
+     - id: import-linter
+       stages: [manual]
+ -   repo: https://github.com/python-jsonschema/check-jsonschema
+-    rev: 0.20.0
++    rev: 0.21.0
+     hooks:
+       - id: check-github-workflows
+diff --git a/napari/_event_loop.py b/napari/_event_loop.py
+index 7caae84d..46d592a5 100644
+--- a/napari/_event_loop.py
++++ b/napari/_event_loop.py
+@@ -3,7 +3,6 @@ try:
+ 
+ # qtpy raises a RuntimeError if no Qt bindings can be found
+ except (ImportError, RuntimeError) as e:
+-
+     exc = e
+ 
+     def gui_qt(**kwargs):
+diff --git a/napari/_qt/_tests/test_qt_notifications.py b/napari/_qt/_tests/test_qt_notifications.py
+index a69a4db1..ab4a8a0a 100644
+--- a/napari/_qt/_tests/test_qt_notifications.py
++++ b/napari/_qt/_tests/test_qt_notifications.py
+@@ -97,7 +97,6 @@ def raise_on_show(monkeypatch, qtbot):
+ 
+ @pytest.fixture
+ def count_show(monkeypatch, qtbot):
+-
+     stat = ShowStatus()
+ 
+     def mock_show_notif(_):
+diff --git a/napari/_qt/_tests/test_qt_viewer.py b/napari/_qt/_tests/test_qt_viewer.py
+index bbdd3580..16da6f1a 100644
+--- a/napari/_qt/_tests/test_qt_viewer.py
++++ b/napari/_qt/_tests/test_qt_viewer.py
+@@ -84,7 +84,6 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
+ 
+ @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+ def test_add_layer(make_napari_viewer, layer_class, data, ndim):
+-
+     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
+     view = viewer.window._qt_viewer
+ 
+@@ -517,7 +516,6 @@ def test_memory_leaking(qtbot, make_napari_viewer):
+ @skip_on_win_ci
+ @skip_local_popups
+ def test_leaks_image(qtbot, make_napari_viewer):
+-
+     viewer = make_napari_viewer(show=True)
+     lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
+     dr = weakref.ref(lr().data)
+diff --git a/napari/_qt/dialogs/_tests/test_reader_dialog.py b/napari/_qt/dialogs/_tests/test_reader_dialog.py
+index adea7017..211662fa 100644
+--- a/napari/_qt/dialogs/_tests/test_reader_dialog.py
++++ b/napari/_qt/dialogs/_tests/test_reader_dialog.py
+@@ -58,7 +58,6 @@ def test_reader_dir_with_extension(tmpdir, reader_dialog):
+ 
+ 
+ def test_reader_dir(tmpdir, reader_dialog):
+-
+     dir_name = tmpdir.mkdir('my_dir')
+     widg = reader_dialog(pth=dir_name, readers={'p1': 'p1', 'p2': 'p2'})
+     assert (
+@@ -89,7 +88,6 @@ def test_get_persist_choice(tmpdir, reader_dialog):
+ 
+ 
+ def test_prepare_dialog_options_no_readers():
+-
+     with pytest.raises(ReaderPluginError) as e:
+         prepare_remaining_readers(
+             ['my-file.fake'], 'fake-reader', RuntimeError('Reading failed')
+diff --git a/napari/_qt/dialogs/qt_notification.py b/napari/_qt/dialogs/qt_notification.py
+index 02c6a649..aa5d5d35 100644
+--- a/napari/_qt/dialogs/qt_notification.py
++++ b/napari/_qt/dialogs/qt_notification.py
+@@ -352,7 +352,6 @@ class NapariQtNotification(QDialog):
+     def from_notification(
+         cls, notification: Notification, parent: QWidget = None
+     ) -> NapariQtNotification:
+-
+         from napari.utils.notifications import ErrorNotification
+ 
+         if isinstance(notification, ErrorNotification):
+diff --git a/napari/_qt/layer_controls/qt_tracks_controls.py b/napari/_qt/layer_controls/qt_tracks_controls.py
+index f34de367..992d5165 100644
+--- a/napari/_qt/layer_controls/qt_tracks_controls.py
++++ b/napari/_qt/layer_controls/qt_tracks_controls.py
+@@ -124,7 +124,6 @@ class QtTracksControls(QtLayerControls):
+     def _on_properties_change(self):
+         """Change the properties that can be used to color the tracks."""
+         with self.layer.events.properties.blocker():
+-
+             with qt_signals_blocked(self.color_by_combobox):
+                 self.color_by_combobox.clear()
+             self.color_by_combobox.addItems(self.layer.properties_to_color_by)
+diff --git a/napari/_qt/menus/_tests/test_file_menu.py b/napari/_qt/menus/_tests/test_file_menu.py
+index cb997c77..af2d919e 100644
+--- a/napari/_qt/menus/_tests/test_file_menu.py
++++ b/napari/_qt/menus/_tests/test_file_menu.py
+@@ -130,7 +130,6 @@ def test_open_with_plugin(
+     filename_call,
+     stack,
+ ):
+-
+     viewer = make_napari_viewer()
+     action, _a = get_open_with_plugin_action(viewer, menu_str)
+     with mock.patch(
+diff --git a/napari/_qt/menus/plugins_menu.py b/napari/_qt/menus/plugins_menu.py
+index 8fceb52f..c5529016 100644
+--- a/napari/_qt/menus/plugins_menu.py
++++ b/napari/_qt/menus/plugins_menu.py
+@@ -49,8 +49,7 @@ class PluginsMenu(NapariMenu):
+         self._add_registered_widget(call_all=True)
+ 
+     def _remove_unregistered_widget(self, event):
+-
+-        for idx, action in enumerate(self.actions()):
++        for action in self.actions():
+             if event.value in action.text():
+                 self.removeAction(action)
+                 self._win._remove_dock_widget(event=event)
+diff --git a/napari/_qt/perf/qt_performance.py b/napari/_qt/perf/qt_performance.py
+index 431aa378..204ef25b 100644
+--- a/napari/_qt/perf/qt_performance.py
++++ b/napari/_qt/perf/qt_performance.py
+@@ -159,7 +159,6 @@ class QtPerformance(QWidget):
+         # Updating widgets can create immediate Qt Events which would modify the
+         # timers out from under us!
+         for name, timer in perf.timers.timers.items():
+-
+             # The Qt Event "UpdateRequest" is the main "draw" event, so
+             # that's what we use for our progress bar.
+             if name == "UpdateRequest":
+diff --git a/napari/_qt/qt_event_loop.py b/napari/_qt/qt_event_loop.py
+index f1664b60..ca81822d 100644
+--- a/napari/_qt/qt_event_loop.py
++++ b/napari/_qt/qt_event_loop.py
+@@ -120,7 +120,6 @@ def get_app(
+     if app:
+         set_values.discard("ipy_interactive")
+         if set_values:
+-
+             warn(
+                 trans._(
+                     "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
+diff --git a/napari/_qt/qt_viewer.py b/napari/_qt/qt_viewer.py
+index 82f2a5bd..f907f6e5 100644
+--- a/napari/_qt/qt_viewer.py
++++ b/napari/_qt/qt_viewer.py
+@@ -121,7 +121,6 @@ def _extension_string_for_layers(
+         selected_layer = layers[0]
+         # single selected layer.
+         if selected_layer._type_string == 'image':
+-
+             ext = imsave_extensions()
+ 
+             ext_list = [f"*{val}" for val in ext]
+@@ -133,7 +132,6 @@ def _extension_string_for_layers(
+             )
+ 
+         elif selected_layer._type_string == 'points':
+-
+             ext_str = trans._("All Files (*);; *.csv;;")
+ 
+         else:
+@@ -192,7 +190,6 @@ class QtViewer(QSplitter):
+     def __init__(
+         self, viewer: ViewerModel, show_welcome_screen: bool = False
+     ) -> None:
+-
+         super().__init__()
+         self._instances.add(self)
+         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+@@ -875,7 +872,6 @@ class QtViewer(QSplitter):
+ 
+         cursor = self.viewer.cursor.style
+         if cursor in {'square', 'circle'}:
+-
+             # Scale size by zoom if needed
+             size = self.viewer.cursor.size
+             if self.viewer.cursor.scaled:
+diff --git a/napari/_qt/qthreading.py b/napari/_qt/qthreading.py
+index b043b655..e1aba707 100644
+--- a/napari/_qt/qthreading.py
++++ b/napari/_qt/qthreading.py
+@@ -203,7 +203,6 @@ def thread_worker(
+     ] = None,
+     ignore_errors: bool = False,
+ ):
+-
+     """Decorator that runs a function in a separate thread when called.
+ 
+     When called, the decorated function returns a :class:`WorkerBase`.  See
+diff --git a/napari/_qt/widgets/_tests/test_qt_extension2reader.py b/napari/_qt/widgets/_tests/test_qt_extension2reader.py
+index 55016bb5..695687c7 100644
+--- a/napari/_qt/widgets/_tests/test_qt_extension2reader.py
++++ b/napari/_qt/widgets/_tests/test_qt_extension2reader.py
+@@ -175,7 +175,6 @@ def test_filtering_readers_complex_pattern(
+ def test_adding_new_preference(
+     extension2reader_widget, tif_reader, npy_reader
+ ):
+-
+     widget = extension2reader_widget(npe1_readers={})
+     widget._fn_pattern_edit.setText('*.tif')
+     # will be filtered and tif-reader will be only item
+@@ -198,7 +197,6 @@ def test_adding_new_preference(
+ def test_adding_new_preference_no_asterisk(
+     extension2reader_widget, tif_reader, npy_reader
+ ):
+-
+     widget = extension2reader_widget(npe1_readers={})
+     widget._fn_pattern_edit.setText('.tif')
+     # will be filtered and tif-reader will be only item
+diff --git a/napari/_qt/widgets/qt_dims.py b/napari/_qt/widgets/qt_dims.py
+index ca31d1ad..17850025 100644
+--- a/napari/_qt/widgets/qt_dims.py
++++ b/napari/_qt/widgets/qt_dims.py
+@@ -31,7 +31,6 @@ class QtDims(QWidget):
+     """
+ 
+     def __init__(self, dims: Dims, parent=None) -> None:
+-
+         super().__init__(parent=parent)
+ 
+         self.SLIDERHEIGHT = 22
+@@ -103,7 +102,7 @@ class QtDims(QWidget):
+         self.stop()
+         widgets = reversed(list(enumerate(self.slider_widgets)))
+         nsteps = self.dims.nsteps
+-        for (axis, widget) in widgets:
++        for axis, widget in widgets:
+             if axis in self.dims.displayed or nsteps[axis] <= 1:
+                 # Displayed dimensions correspond to non displayed sliders
+                 self._displayed_sliders[axis] = False
+diff --git a/napari/_qt/widgets/qt_highlight_preview.py b/napari/_qt/widgets/qt_highlight_preview.py
+index 01226a1f..e92c1ba5 100644
+--- a/napari/_qt/widgets/qt_highlight_preview.py
++++ b/napari/_qt/widgets/qt_highlight_preview.py
+@@ -115,7 +115,6 @@ class QtStar(QFrame):
+             x_adj = star_center_x - x
+             y_adj = star_center_y - y + 3
+             if n == 0:
+-
+                 path.moveTo(x_adj, y_adj)
+             else:
+                 path.lineTo(x_adj, y_adj)
+diff --git a/napari/_qt/widgets/qt_keyboard_settings.py b/napari/_qt/widgets/qt_keyboard_settings.py
+index 112ec3c6..88d7e0b2 100644
+--- a/napari/_qt/widgets/qt_keyboard_settings.py
++++ b/napari/_qt/widgets/qt_keyboard_settings.py
+@@ -47,7 +47,6 @@ class ShortcutEditor(QWidget):
+         description: str = "",
+         value: dict = None,
+     ) -> None:
+-
+         super().__init__(parent=parent)
+ 
+         # Flag to not run _set_keybinding method after setting special symbols.
+@@ -195,7 +194,6 @@ class ShortcutEditor(QWidget):
+         actions = self.key_bindings_strs[layer_str]
+ 
+         if len(actions) > 0:
+-
+             # Set up table based on number of actions and needed columns.
+             self._table.setRowCount(len(actions))
+             self._table.setColumnCount(5)
+@@ -220,7 +218,6 @@ class ShortcutEditor(QWidget):
+ 
+             # Go through all the actions in the layer and add them to the table.
+             for row, (action_name, action) in enumerate(actions.items()):
+-
+                 shortcuts = action_manager._shortcuts.get(action_name, [])
+                 # Set action description.  Make sure its not selectable/editable.
+                 item = QTableWidgetItem(action.description)
+diff --git a/napari/_vispy/canvas.py b/napari/_vispy/canvas.py
+index 74d96869..7bd437d6 100644
+--- a/napari/_vispy/canvas.py
++++ b/napari/_vispy/canvas.py
+@@ -24,7 +24,6 @@ class VispyCanvas(SceneCanvas):
+     _instances = WeakSet()
+ 
+     def __init__(self, *args, **kwargs) -> None:
+-
+         # Since the base class is frozen we must create this attribute
+         # before calling super().__init__().
+         self.max_texture_sizes = None
+diff --git a/napari/_vispy/experimental/vispy_tiled_image_layer.py b/napari/_vispy/experimental/vispy_tiled_image_layer.py
+index dcbe04d0..90eaaff8 100644
+--- a/napari/_vispy/experimental/vispy_tiled_image_layer.py
++++ b/napari/_vispy/experimental/vispy_tiled_image_layer.py
+@@ -71,7 +71,6 @@ class VispyTiledImageLayer(VispyImageLayer):
+     """
+ 
+     def __init__(self, layer: Image) -> None:
+-
+         # All tiles are stored in a single TileImageVisual.
+         visual = TiledImageVisual(
+             tile_shape=layer.tile_shape,
+diff --git a/napari/_vispy/filters/tracks.py b/napari/_vispy/filters/tracks.py
+index e3065c5a..4c915422 100644
+--- a/napari/_vispy/filters/tracks.py
++++ b/napari/_vispy/filters/tracks.py
+@@ -93,7 +93,6 @@ class TracksFilter(Filter):
+         use_fade: bool = True,
+         vertex_time: Union[List, np.ndarray] = None,
+     ) -> None:
+-
+         super().__init__(
+             vcode=self.VERT_SHADER, vpos=3, fcode=self.FRAG_SHADER, fpos=9
+         )
+diff --git a/napari/_vispy/layers/image.py b/napari/_vispy/layers/image.py
+index ffe0d225..4e7b2fdc 100644
+--- a/napari/_vispy/layers/image.py
++++ b/napari/_vispy/layers/image.py
+@@ -36,7 +36,6 @@ class ImageLayerNode:
+         )
+ 
+     def get_node(self, ndisplay: int) -> Node:
+-
+         # Return custom node if we have one.
+         if self._custom_node is not None:
+             return self._custom_node
+@@ -49,7 +48,6 @@ class ImageLayerNode:
+ 
+ class VispyImageLayer(VispyBaseLayer):
+     def __init__(self, layer, node=None, texture_format='auto') -> None:
+-
+         # Use custom node from caller, or our standard image/volume nodes.
+         self._layer_node = ImageLayerNode(node, texture_format=texture_format)
+ 
+diff --git a/napari/_vispy/layers/vectors.py b/napari/_vispy/layers/vectors.py
+index ddc859d6..92493d7f 100644
+--- a/napari/_vispy/layers/vectors.py
++++ b/napari/_vispy/layers/vectors.py
+@@ -18,7 +18,6 @@ class VispyVectorsLayer(VispyBaseLayer):
+         self._on_data_change()
+ 
+     def _on_data_change(self):
+-
+         # Make meshes
+         vertices, faces = generate_vector_meshes(
+             self.layer._view_data,
+diff --git a/napari/components/_tests/test_add_layers.py b/napari/components/_tests/test_add_layers.py
+index c39bde10..366d432d 100644
+--- a/napari/components/_tests/test_add_layers.py
++++ b/napari/components/_tests/test_add_layers.py
+@@ -93,7 +93,6 @@ def test_add_layers_with_plugins_and_kwargs(layer_data, kwargs):
+         "napari.plugins.io.read_data_with_plugins",
+         MagicMock(return_value=(layer_data, _testimpl)),
+     ):
+-
+         v = ViewerModel()
+         v._add_layers_with_plugins(['mock_path'], kwargs=kwargs, stack=False)
+         expected_source = Source(path='mock_path', reader_plugin='testimpl')
+diff --git a/napari/components/_viewer_key_bindings.py b/napari/components/_viewer_key_bindings.py
+index 5730511a..64a8cf65 100644
+--- a/napari/components/_viewer_key_bindings.py
++++ b/napari/components/_viewer_key_bindings.py
+@@ -33,7 +33,6 @@ def register_viewer_action(description):
+ 
+ @register_viewer_action(trans._("Reset scroll."))
+ def reset_scroll_progress(viewer: Viewer):
+-
+     # on key press
+     viewer.dims._scroll_progress = 0
+     yield
+diff --git a/napari/components/experimental/chunk/_commands/_tables.py b/napari/components/experimental/chunk/_commands/_tables.py
+index 33f45e45..ed188b0c 100644
+--- a/napari/components/experimental/chunk/_commands/_tables.py
++++ b/napari/components/experimental/chunk/_commands/_tables.py
+@@ -39,7 +39,6 @@ class ColumnSpec:
+     """
+ 
+     def __init__(self, spec: Union[str, dict]) -> None:
+-
+         if isinstance(spec, str):
+             spec = {'name': spec}  # Spec is the name, then we use defaults.
+         self.name = spec.get('name', "")
+diff --git a/napari/components/layerlist.py b/napari/components/layerlist.py
+index 0c393ca6..ef777e4f 100644
+--- a/napari/components/layerlist.py
++++ b/napari/components/layerlist.py
+@@ -185,7 +185,6 @@ class LayerList(SelectableEventedList[Layer]):
+         return self._get_extent_world([layer.extent for layer in self])
+ 
+     def _get_min_and_max(self, mins_list, maxes_list):
+-
+         # Reverse dimensions since it is the last dimensions that are
+         # displayed.
+         mins_list = [mins[::-1] for mins in mins_list]
+diff --git a/napari/layers/base/base.py b/napari/layers/base/base.py
+index 17ce7102..b9ea9641 100644
+--- a/napari/layers/base/base.py
++++ b/napari/layers/base/base.py
+@@ -1514,7 +1514,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+                 position, dims_displayed
+             )
+         else:
+-
+             # adjust for any offset between viewer and data coordinates
+             position = self._get_offset_data_position(position)
+ 
+@@ -1667,7 +1666,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+             return components
+ 
+     def get_source_str(self):
+-
+         source_info = self._get_source_info()
+ 
+         return (
+diff --git a/napari/layers/image/experimental/octree.py b/napari/layers/image/experimental/octree.py
+index 27fead81..4d60a5b2 100644
+--- a/napari/layers/image/experimental/octree.py
++++ b/napari/layers/image/experimental/octree.py
+@@ -232,7 +232,6 @@ class Octree:
+ 
+         # Search up one level at a time.
+         while level_index < stop_level:
+-
+             # Get the next level up. Coords are halved each level.
+             level_index += 1
+             row, col = int(row / 2), int(col / 2)
+diff --git a/napari/layers/image/experimental/octree_image.py b/napari/layers/image/experimental/octree_image.py
+index 956ef890..7147d621 100644
+--- a/napari/layers/image/experimental/octree_image.py
++++ b/napari/layers/image/experimental/octree_image.py
+@@ -77,7 +77,6 @@ class _OctreeImageBase(_ImageBase):
+     """
+ 
+     def __init__(self, *args, **kwargs) -> None:
+-
+         self._view: OctreeView = None
+         self._slice: OctreeSlice = None
+         self._intersection: OctreeIntersection = None
+diff --git a/napari/layers/labels/_labels_mouse_bindings.py b/napari/layers/labels/_labels_mouse_bindings.py
+index 99089e0f..315e744a 100644
+--- a/napari/layers/labels/_labels_mouse_bindings.py
++++ b/napari/layers/labels/_labels_mouse_bindings.py
+@@ -29,7 +29,6 @@ def draw(layer, event):
+ 
+     # on press
+     with layer.block_history():
+-
+         layer._draw(new_label, coordinates, coordinates)
+         yield
+ 
+diff --git a/napari/layers/points/_points_key_bindings.py b/napari/layers/points/_points_key_bindings.py
+index 50bf8b46..f6690514 100644
+--- a/napari/layers/points/_points_key_bindings.py
++++ b/napari/layers/points/_points_key_bindings.py
+@@ -95,7 +95,6 @@ def select_all_in_slice(layer: Points):
+     trans._("Select all points in the layer."),
+ )
+ def select_all_data(layer: Points):
+-
+     # If all points are already selected, deselect all points
+     if len(layer.selected_data) == len(layer.data):
+         layer.selected_data = set()
+diff --git a/napari/layers/points/_tests/test_points_key_bindings.py b/napari/layers/points/_tests/test_points_key_bindings.py
+index 130f642d..02fdad97 100644
+--- a/napari/layers/points/_tests/test_points_key_bindings.py
++++ b/napari/layers/points/_tests/test_points_key_bindings.py
+@@ -15,7 +15,6 @@ def test_modes(layer):
+ 
+ 
+ def test_copy_paste(layer):
+-
+     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
+     layer = Points(data, size=1)
+     layer.mode = 'select'
+@@ -34,7 +33,6 @@ def test_copy_paste(layer):
+ 
+ 
+ def test_select_all_in_slice(layer):
+-
+     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
+     layer = Points(data, size=1)
+     layer.mode = 'select'
+@@ -51,7 +49,6 @@ def test_select_all_in_slice(layer):
+ 
+ 
+ def test_select_all_in_slice_3d_data(layer):
+-
+     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
+     layer = Points(data, size=1)
+     layer.mode = 'select'
+@@ -68,7 +65,6 @@ def test_select_all_in_slice_3d_data(layer):
+ 
+ 
+ def test_select_all_data(layer):
+-
+     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
+     layer = Points(data, size=1)
+     layer.mode = 'select'
+@@ -85,7 +81,6 @@ def test_select_all_data(layer):
+ 
+ 
+ def test_select_all_data_3d_data(layer):
+-
+     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
+     layer = Points(data, size=1)
+     layer.mode = 'select'
+diff --git a/napari/layers/points/points.py b/napari/layers/points/points.py
+index 4cc1a639..c2a81025 100644
+--- a/napari/layers/points/points.py
++++ b/napari/layers/points/points.py
+@@ -1106,7 +1106,6 @@ class Points(Layer):
+ 
+     @current_face_color.setter
+     def current_face_color(self, face_color: ColorType) -> None:
+-
+         if self._update_properties and len(self.selected_data) > 0:
+             update_indices = list(self.selected_data)
+         else:
+diff --git a/napari/layers/shapes/_mesh.py b/napari/layers/shapes/_mesh.py
+index dccba46f..baf3b370 100644
+--- a/napari/layers/shapes/_mesh.py
++++ b/napari/layers/shapes/_mesh.py
+@@ -52,7 +52,6 @@ class Mesh:
+     _types = ['face', 'edge']
+ 
+     def __init__(self, ndisplay=2) -> None:
+-
+         self._ndisplay = ndisplay
+         self.clear()
+ 
+diff --git a/napari/layers/shapes/_shape_list.py b/napari/layers/shapes/_shape_list.py
+index 7ec93e30..d27592bb 100644
+--- a/napari/layers/shapes/_shape_list.py
++++ b/napari/layers/shapes/_shape_list.py
+@@ -68,7 +68,6 @@ class ShapeList:
+     """
+ 
+     def __init__(self, data=(), ndisplay=2) -> None:
+-
+         self._ndisplay = ndisplay
+         self.shapes = []
+         self._displayed = []
+@@ -495,7 +494,6 @@ class ShapeList:
+         for shape, face_color, edge_color in zip(
+             shapes, face_colors, edge_colors
+         ):
+-
+             shape_index = len(self.shapes)
+             self.shapes.append(shape)
+             all_z_index.append(shape.z_index)
+diff --git a/napari/layers/shapes/_shapes_models/_polgyon_base.py b/napari/layers/shapes/_shapes_models/_polgyon_base.py
+index 3cd127ec..1a8cf1e9 100644
+--- a/napari/layers/shapes/_shapes_models/_polgyon_base.py
++++ b/napari/layers/shapes/_shapes_models/_polgyon_base.py
+@@ -44,7 +44,6 @@ class PolygonBase(Shape):
+         interpolation_order=1,
+         interpolation_sampling=50,
+     ) -> None:
+-
+         super().__init__(
+             edge_width=edge_width,
+             z_index=z_index,
+diff --git a/napari/layers/shapes/_shapes_models/ellipse.py b/napari/layers/shapes/_shapes_models/ellipse.py
+index 09deb89a..43d94720 100644
+--- a/napari/layers/shapes/_shapes_models/ellipse.py
++++ b/napari/layers/shapes/_shapes_models/ellipse.py
+@@ -40,7 +40,6 @@ class Ellipse(Shape):
+         dims_order=None,
+         ndisplay=2,
+     ) -> None:
+-
+         super().__init__(
+             edge_width=edge_width,
+             z_index=z_index,
+diff --git a/napari/layers/shapes/_shapes_models/line.py b/napari/layers/shapes/_shapes_models/line.py
+index 505a0e99..e8915fa1 100644
+--- a/napari/layers/shapes/_shapes_models/line.py
++++ b/napari/layers/shapes/_shapes_models/line.py
+@@ -30,7 +30,6 @@ class Line(Shape):
+         dims_order=None,
+         ndisplay=2,
+     ) -> None:
+-
+         super().__init__(
+             edge_width=edge_width,
+             z_index=z_index,
+diff --git a/napari/layers/shapes/_shapes_models/path.py b/napari/layers/shapes/_shapes_models/path.py
+index 3faad795..fc01fef1 100644
+--- a/napari/layers/shapes/_shapes_models/path.py
++++ b/napari/layers/shapes/_shapes_models/path.py
+@@ -27,7 +27,6 @@ class Path(PolygonBase):
+         ndisplay=2,
+         interpolation_order=1,
+     ) -> None:
+-
+         super().__init__(
+             data,
+             edge_width=edge_width,
+diff --git a/napari/layers/shapes/_shapes_models/polygon.py b/napari/layers/shapes/_shapes_models/polygon.py
+index 149746e5..0b566c55 100644
+--- a/napari/layers/shapes/_shapes_models/polygon.py
++++ b/napari/layers/shapes/_shapes_models/polygon.py
+@@ -27,7 +27,6 @@ class Polygon(PolygonBase):
+         ndisplay=2,
+         interpolation_order=1,
+     ) -> None:
+-
+         super().__init__(
+             data=data,
+             edge_width=edge_width,
+diff --git a/napari/layers/shapes/_shapes_models/rectangle.py b/napari/layers/shapes/_shapes_models/rectangle.py
+index cccca2e0..fd1a3413 100644
+--- a/napari/layers/shapes/_shapes_models/rectangle.py
++++ b/napari/layers/shapes/_shapes_models/rectangle.py
+@@ -32,7 +32,6 @@ class Rectangle(Shape):
+         dims_order=None,
+         ndisplay=2,
+     ) -> None:
+-
+         super().__init__(
+             edge_width=edge_width,
+             z_index=z_index,
+diff --git a/napari/layers/shapes/_shapes_models/shape.py b/napari/layers/shapes/_shapes_models/shape.py
+index 4dceef7e..7f8419ef 100644
+--- a/napari/layers/shapes/_shapes_models/shape.py
++++ b/napari/layers/shapes/_shapes_models/shape.py
+@@ -96,7 +96,6 @@ class Shape(ABC):
+         dims_order=None,
+         ndisplay=2,
+     ) -> None:
+-
+         self._dims_order = dims_order or list(range(2))
+         self._ndisplay = ndisplay
+         self.slice_key = None
+diff --git a/napari/layers/shapes/shapes.py b/napari/layers/shapes/shapes.py
+index fc9d938b..9e37c6cf 100644
+--- a/napari/layers/shapes/shapes.py
++++ b/napari/layers/shapes/shapes.py
+@@ -1391,7 +1391,6 @@ class Shapes(Layer):
+                 contrast_limits = getattr(self, f'{attribute}_contrast_limits')
+                 colormap = getattr(self, f'{attribute}_colormap')
+                 if update_color_mapping or contrast_limits is None:
+-
+                     colors, contrast_limits = map_property(
+                         prop=color_properties, colormap=colormap
+                     )
+@@ -1401,7 +1400,6 @@ class Shapes(Layer):
+                         contrast_limits,
+                     )
+                 else:
+-
+                     colors, _ = map_property(
+                         prop=color_properties,
+                         colormap=colormap,
+diff --git a/napari/layers/surface/surface.py b/napari/layers/surface/surface.py
+index ed27e7ca..1feaf0b5 100644
+--- a/napari/layers/surface/surface.py
++++ b/napari/layers/surface/surface.py
+@@ -173,7 +173,6 @@ class Surface(IntensityVisualizationMixin, Layer):
+         wireframe=None,
+         normals=None,
+     ) -> None:
+-
+         ndim = data[0].shape[1]
+ 
+         super().__init__(
+diff --git a/napari/layers/tracks/_track_utils.py b/napari/layers/tracks/_track_utils.py
+index 5902db32..32cc3525 100644
+--- a/napari/layers/tracks/_track_utils.py
++++ b/napari/layers/tracks/_track_utils.py
+@@ -67,7 +67,6 @@ class TrackManager:
+     """
+ 
+     def __init__(self) -> None:
+-
+         # store the raw data here
+         self._data = None
+         self._feature_table = _FeatureTable()
+diff --git a/napari/layers/tracks/tracks.py b/napari/layers/tracks/tracks.py
+index 6cfa78af..4eb92673 100644
+--- a/napari/layers/tracks/tracks.py
++++ b/napari/layers/tracks/tracks.py
+@@ -120,7 +120,6 @@ class Tracks(Layer):
+         cache=True,
+         experimental_clipping_planes=None,
+     ) -> None:
+-
+         # if not provided with any data, set up an empty layer in 2D+t
+         if data is None:
+             data = np.empty((0, 4))
+diff --git a/napari/layers/utils/_link_layers.py b/napari/layers/utils/_link_layers.py
+index 790101fa..100849fe 100644
+--- a/napari/layers/utils/_link_layers.py
++++ b/napari/layers/utils/_link_layers.py
+@@ -108,7 +108,6 @@ def link_layers(
+     # now, connect requested attributes between all requested layers.
+     links = []
+     for (lay1, lay2), attribute in product(permutations(layers, 2), attr_set):
+-
+         key = _link_key(lay1, lay2, attribute)
+         # if the layers and attribute are already linked then ignore
+         if key in _UNLINKERS:
+diff --git a/napari/layers/utils/_tests/test_color_manager.py b/napari/layers/utils/_tests/test_color_manager.py
+index 5d275567..4e73c3b7 100644
+--- a/napari/layers/utils/_tests/test_color_manager.py
++++ b/napari/layers/utils/_tests/test_color_manager.py
+@@ -108,7 +108,6 @@ invalid_keys = {'values': np.array(['A', 'B', 'C'])}
+ 
+ @pytest.mark.parametrize('c_props', [wrong_type, invalid_keys])
+ def test_invalid_color_properties(c_props):
+-
+     colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
+     with pytest.raises(ValidationError):
+         _ = ColorManager(
+diff --git a/napari/layers/utils/_text_utils.py b/napari/layers/utils/_text_utils.py
+index 4dc8bfe2..8cb2631a 100644
+--- a/napari/layers/utils/_text_utils.py
++++ b/napari/layers/utils/_text_utils.py
+@@ -52,7 +52,6 @@ def _calculate_bbox_centers(view_data: Union[np.ndarray, list]) -> np.ndarray:
+ def _calculate_anchor_upper_left(
+     view_data: Union[np.ndarray, list], ndisplay: int
+ ) -> Tuple[np.ndarray, str, str]:
+-
+     if ndisplay == 2:
+         bbox_min, bbox_max = _calculate_bbox_extents(view_data)
+         text_anchors = np.array([bbox_min[:, 0], bbox_min[:, 1]]).T
+@@ -71,7 +70,6 @@ def _calculate_anchor_upper_left(
+ def _calculate_anchor_upper_right(
+     view_data: Union[np.ndarray, list], ndisplay: int
+ ) -> Tuple[np.ndarray, str, str]:
+-
+     if ndisplay == 2:
+         bbox_min, bbox_max = _calculate_bbox_extents(view_data)
+         text_anchors = np.array([bbox_min[:, 0], bbox_max[:, 1]]).T
+diff --git a/napari/plugins/_plugin_manager.py b/napari/plugins/_plugin_manager.py
+index 9b577e96..7faf3758 100644
+--- a/napari/plugins/_plugin_manager.py
++++ b/napari/plugins/_plugin_manager.py
+@@ -130,7 +130,6 @@ class NapariPluginManager(PluginManager):
+         self,
+         name_or_object: Any,
+     ) -> Optional[Any]:
+-
+         if isinstance(name_or_object, str):
+             _name = name_or_object
+         else:
+@@ -441,7 +440,6 @@ class NapariPluginManager(PluginManager):
+         args: Union[AugmentedWidget, List[AugmentedWidget]],
+         hookimpl: HookImplementation,
+     ):
+-
+         plugin_name = hookimpl.plugin_name
+         hook_name = '`napari_experimental_provide_dock_widget`'
+         for arg in args if isinstance(args, list) else [args]:
+diff --git a/napari/plugins/_tests/test_sample_data.py b/napari/plugins/_tests/test_sample_data.py
+index b93bce1c..57867595 100644
+--- a/napari/plugins/_tests/test_sample_data.py
++++ b/napari/plugins/_tests/test_sample_data.py
+@@ -11,7 +11,6 @@ from napari.viewer import ViewerModel
+ 
+ 
+ def test_sample_hook(builtins, tmp_plugin: DynamicPlugin):
+-
+     viewer = ViewerModel()
+     NAME = tmp_plugin.name
+     KEY = 'random data'
+diff --git a/napari/plugins/hook_specifications.py b/napari/plugins/hook_specifications.py
+index 1004cb62..147a2994 100644
+--- a/napari/plugins/hook_specifications.py
++++ b/napari/plugins/hook_specifications.py
+@@ -389,9 +389,9 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
+ 
+ 
+ @napari_hook_specification(historic=True)
+-def napari_experimental_provide_function() -> Union[
+-    FunctionType, List[FunctionType]
+-]:
++def napari_experimental_provide_function() -> (
++    Union[FunctionType, List[FunctionType]]
++):
+     """Provide function(s) that can be passed to magicgui.
+ 
+     This hook specification is marked as experimental as the API or how the
+@@ -425,9 +425,9 @@ def napari_experimental_provide_function() -> Union[
+ 
+ 
+ @napari_hook_specification(historic=True)
+-def napari_experimental_provide_dock_widget() -> Union[
+-    AugmentedWidget, List[AugmentedWidget]
+-]:
++def napari_experimental_provide_dock_widget() -> (
++    Union[AugmentedWidget, List[AugmentedWidget]]
++):
+     """Provide functions that return widgets to be docked in the viewer.
+ 
+     This hook specification is marked as experimental as the API or how the
+@@ -499,9 +499,9 @@ def napari_experimental_provide_dock_widget() -> Union[
+ 
+ 
+ @napari_hook_specification(historic=True)
+-def napari_experimental_provide_theme() -> Dict[
+-    str, Dict[str, Union[str, Tuple, List]]
+-]:
++def napari_experimental_provide_theme() -> (
++    Dict[str, Dict[str, Union[str, Tuple, List]]]
++):
+     """Provide GUI with a set of colors used through napari. This hook allows you to
+     provide additional color schemes so you can accomplish your desired styling.
+ 
+diff --git a/napari/resources/_icons.py b/napari/resources/_icons.py
+index ef7af309..2a68661a 100644
+--- a/napari/resources/_icons.py
++++ b/napari/resources/_icons.py
+@@ -141,7 +141,6 @@ def write_colorized_svgs(
+     opacities: Iterable[float] = (1.0,),
+     theme_override: Optional[Dict[str, str]] = None,
+ ):
+-
+     dest = Path(dest)
+     dest.mkdir(parents=True, exist_ok=True)
+     svgs = generate_colorized_svgs(
+diff --git a/napari/settings/_tests/test_settings.py b/napari/settings/_tests/test_settings.py
+index 493a32e4..be94bcb1 100644
+--- a/napari/settings/_tests/test_settings.py
++++ b/napari/settings/_tests/test_settings.py
+@@ -239,7 +239,6 @@ def test_subfield_env_field(monkeypatch):
+ 
+ # Failing because dark is actually the default...
+ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
+-
+     # create a settings file with light theme
+     data = "appearance:\n   theme: light"
+     fake_path = tmp_path / 'fake_path.yml'
+diff --git a/napari/utils/_tests/test_action_manager.py b/napari/utils/_tests/test_action_manager.py
+index b86a5e40..877ed255 100644
+--- a/napari/utils/_tests/test_action_manager.py
++++ b/napari/utils/_tests/test_action_manager.py
+@@ -41,7 +41,6 @@ def test_bind_multiple_action(action_manager):
+ 
+ 
+ def test_bind_unbind_existing_action(action_manager):
+-
+     action_manager.register_action(
+         'napari:test_action_1', lambda: None, 'this is a test action', None
+     )
+diff --git a/napari/utils/_tests/test_geometry.py b/napari/utils/_tests/test_geometry.py
+index e3c6ea0b..6bedba05 100644
+--- a/napari/utils/_tests/test_geometry.py
++++ b/napari/utils/_tests/test_geometry.py
+@@ -62,7 +62,6 @@ def test_project_point_to_plane(
+     ],
+ )
+ def test_rotation_matrix_from_vectors_2d(vec_1, vec_2):
+-
+     rotation_matrix = rotation_matrix_from_vectors_2d(vec_1, vec_2)
+ 
+     rotated_1 = rotation_matrix.dot(vec_1)
+diff --git a/napari/utils/colormaps/_tests/test_categorical_colormap.py b/napari/utils/colormaps/_tests/test_categorical_colormap.py
+index ece6b2f2..aea60155 100644
+--- a/napari/utils/colormaps/_tests/test_categorical_colormap.py
++++ b/napari/utils/colormaps/_tests/test_categorical_colormap.py
+@@ -84,7 +84,6 @@ fallback_colors = np.array([[1, 0, 0, 1], [0, 1, 0, 1]])
+ 
+ 
+ def test_categorical_colormap_from_array():
+-
+     cmap = CategoricalColormap.from_array(fallback_colors)
+     np.testing.assert_almost_equal(cmap.fallback_color.values, fallback_colors)
+ 
+diff --git a/napari/utils/colormaps/categorical_colormap_utils.py b/napari/utils/colormaps/categorical_colormap_utils.py
+index 4d2cef52..c1ce34a6 100644
+--- a/napari/utils/colormaps/categorical_colormap_utils.py
++++ b/napari/utils/colormaps/categorical_colormap_utils.py
+@@ -99,7 +99,6 @@ def _coerce_colorcycle_from_colors(
+ 
+ 
+ def compare_colormap_dicts(cmap_1, cmap_2):
+-
+     if len(cmap_1) != len(cmap_2):
+         return False
+     for k, v in cmap_1.items():
+diff --git a/napari/utils/colormaps/colormap_utils.py b/napari/utils/colormaps/colormap_utils.py
+index b8d1f8fd..3dd17c89 100644
+--- a/napari/utils/colormaps/colormap_utils.py
++++ b/napari/utils/colormaps/colormap_utils.py
+@@ -489,7 +489,7 @@ def vispy_or_mpl_colormap(name):
+                             sorted(f'"{cm}"' for cm in colormaps)
+                         ),
+                     )
+-                )
++                ) from e
+         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
+         colormap = Colormap(
+             name=name, display_name=display_name, colors=mpl_colors
+diff --git a/napari/utils/events/containers/_set.py b/napari/utils/events/containers/_set.py
+index 91035062..51fc8bd5 100644
+--- a/napari/utils/events/containers/_set.py
++++ b/napari/utils/events/containers/_set.py
+@@ -29,7 +29,6 @@ class EventedSet(MutableSet[_T]):
+     events: EmitterGroup
+ 
+     def __init__(self, data: Iterable[_T] = ()) -> None:
+-
+         _events = {'changed': None}
+         # For inheritance: If the mro already provides an EmitterGroup, add...
+         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
+diff --git a/napari/utils/events/event.py b/napari/utils/events/event.py
+index 61f6bf21..936ba5a3 100644
+--- a/napari/utils/events/event.py
++++ b/napari/utils/events/event.py
+@@ -768,7 +768,6 @@ class EventEmitter:
+             self._emitting = False
+             ps = event._pop_source()
+             if ps is not self.source:
+-
+                 raise RuntimeError(
+                     trans._(
+                         "Event source-stack mismatch.",
+diff --git a/napari/utils/naming.py b/napari/utils/naming.py
+index f15dc0d7..2ce7c71c 100644
+--- a/napari/utils/naming.py
++++ b/napari/utils/naming.py
+@@ -92,7 +92,6 @@ class CallerFrame:
+         self.names = ()
+ 
+     def __enter__(self):
+-
+         frame = inspect.currentframe().f_back
+         try:
+             # See issue #1635 regarding potential AttributeError
+diff --git a/napari/utils/tree/group.py b/napari/utils/tree/group.py
+index d84dc389..c2279024 100644
+--- a/napari/utils/tree/group.py
++++ b/napari/utils/tree/group.py
+@@ -73,7 +73,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
+     def __getitem__(self, key) -> Union[NodeType, Group[NodeType]]:
+         return super().__getitem__(key)
+ 
+-    def __delitem__(self, key: "MaybeNestedIndex"):
++    def __delitem__(self, key: MaybeNestedIndex):
+         """Remove item at ``key``, and unparent."""
+         if isinstance(key, (int, tuple)):
+             self[key].parent = None  # type: ignore
+diff --git a/napari/window.py b/napari/window.py
+index ce9127a0..df2cce9c 100644
+--- a/napari/window.py
++++ b/napari/window.py
+@@ -14,7 +14,6 @@ try:
+     from napari._qt import Window
+ 
+ except ImportError as e:
+-
+     err = e
+ 
+     class Window:  # type: ignore
+diff --git a/napari_builtins/_tests/conftest.py b/napari_builtins/_tests/conftest.py
+index a8ec3996..a54ce707 100644
+--- a/napari_builtins/_tests/conftest.py
++++ b/napari_builtins/_tests/conftest.py
+@@ -21,7 +21,6 @@ def _mock_npe2_pm():
+ 
+ @pytest.fixture(autouse=True)
+ def _use_builtins(_mock_npe2_pm: PluginManager):
+-
+     plugin = DynamicPlugin('napari', plugin_manager=_mock_npe2_pm)
+     mf = PluginManifest.from_file(
+         Path(napari_builtins.__file__).parent / 'builtins.yaml'
+diff --git a/napari_builtins/_tests/test_io.py b/napari_builtins/_tests/test_io.py
+index bc48c017..5de12a89 100644
+--- a/napari_builtins/_tests/test_io.py
++++ b/napari_builtins/_tests/test_io.py
+@@ -244,7 +244,6 @@ def test_single_file(spec: ImageSpec, _write_spec, stacks: int):
+ @pytest.mark.parametrize('stack', [True, False])
+ @pytest.mark.parametrize('use_dask', [True, False, None])
+ def test_magic_imread(_write_spec, spec: ImageSpec, stack, use_dask):
+-
+     fnames = (
+         [_write_spec(s) for s in spec]
+         if isinstance(spec, list)
+diff --git a/tools/test_strings.py b/tools/test_strings.py
+index d487e132..221c05e6 100644
+--- a/tools/test_strings.py
++++ b/tools/test_strings.py
+@@ -589,7 +589,6 @@ NORMAL = "\x1b[1;0m"
+ 
+ 
+ if __name__ == '__main__':
+-
+     issues, outdated_strings, trans_errors = _checks()
+     import json
+     import pathlib
+-- 
+2.34.1

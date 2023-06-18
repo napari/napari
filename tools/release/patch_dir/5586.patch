@@ -1,0 +1,99 @@
+From 282e01c93adace24219ae0f72cf39b37b375152a Mon Sep 17 00:00:00 2001
+From: Lorenzo Gaifas <brisvag@gmail.com>
+Date: Wed, 1 Mar 2023 10:54:39 +0100
+Subject: [PATCH] Remove leftover duplicated code (#5586)
+
+See https://github.com/napari/napari/pull/4894#discussion_r1116278699.
+This code now lives in the base layer, so this was a duplicate.
+
+<!-- What does this pull request (PR) do? Why is it necessary? -->
+<!-- Tell us about your new feature, improvement, or fix! -->
+<!-- If your change includes user interface changes, please add an
+image, or an animation "An image is worth a thousand words!" -->
+<!-- You can use https://www.cockos.com/licecap/ or similar to create
+animations -->
+
+<!-- Please delete options that are not relevant. -->
+- [x] Bug-fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing
+functionality to not work as expected)
+- [ ] This change requires a documentation update
+
+<!-- What resources, documentation, and guides were used in the creation
+of this PR? -->
+<!-- If this is a bug-fix or otherwise resolves an issue, reference it
+here with "closes #(issue)" -->
+
+<!-- Please describe the tests that you ran to verify your changes. -->
+- [ ] example: the test suite for my feature covers cases x, y, and z
+- [ ] example: all tests pass with my change
+- [ ] example: I check if my changes works with both PySide and PyQt
+backends
+      as there are small differences between the two Qt bindings.
+
+- [ ] My PR is the minimum possible work for the desired functionality
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] I have added tests that prove my fix is effective or that my
+feature works
+- [ ] If I included new strings, I have used `trans.` to make them
+localizable.
+For more information see our [translations
+guide](https://napari.org/developers/translations.html).
+---
+ napari/layers/image/_image_key_bindings.py | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/napari/layers/image/_image_key_bindings.py b/napari/layers/image/_image_key_bindings.py
+index 71d1f487..ad4c66b2 100644
+--- a/napari/layers/image/_image_key_bindings.py
++++ b/napari/layers/image/_image_key_bindings.py
+@@ -1,5 +1,7 @@
+ from __future__ import annotations
+ 
++from app_model.types import KeyCode
++
+ import napari
+ from napari.layers.base._base_constants import Mode
+ from napari.layers.image.image import Image
+@@ -14,24 +16,25 @@ def register_image_action(description: str, repeatable: bool = False):
+     return register_layer_action(Image, description, repeatable)
+ 
+ 
+-@Image.bind_key('z')
++@Image.bind_key('z', overwrite=True)
+ @register_image_action(trans._('Orient plane normal along z-axis'))
+ def orient_plane_normal_along_z(layer: Image):
+     orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
+ 
+ 
+-@Image.bind_key('y')
++@Image.bind_key('y', overwrite=True)
+ @register_image_action(trans._('orient plane normal along y-axis'))
+ def orient_plane_normal_along_y(layer: Image):
+     orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
+ 
+ 
+-@Image.bind_key('x')
++@Image.bind_key('x', overwrite=True)
+ @register_image_action(trans._('orient plane normal along x-axis'))
+ def orient_plane_normal_along_x(layer: Image):
+     orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
+ 
+ 
++@Image.bind_key('o', overwrite=True)
+ @register_image_action(trans._('orient plane normal along view direction'))
+ def orient_plane_normal_along_view_direction(layer: Image):
+     viewer = napari.viewer.current_viewer()
+@@ -54,7 +57,7 @@ def orient_plane_normal_along_view_direction(layer: Image):
+     )
+ 
+ 
+-@Image.bind_key('Space')
++@Image.bind_key('Space', overwrite=True)
+ def hold_to_pan_zoom(layer):
+     """Hold to pan and zoom in the viewer."""
+     if layer._mode != Mode.PAN_ZOOM:
+-- 
+2.34.1

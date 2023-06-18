@@ -1,0 +1,202 @@
+From a82611f6fc1d977e453aa211baec1da53d5ed455 Mon Sep 17 00:00:00 2001
+From: "pre-commit-ci[bot]"
+ <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Date: Thu, 2 Mar 2023 15:22:30 +0100
+Subject: [PATCH] [pre-commit.ci] pre-commit autoupdate (#5592)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<!--pre-commit.ci start-->
+updates:
+- [github.com/charliermarsh/ruff-pre-commit: v0.0.249 →
+v0.0.253](https://github.com/charliermarsh/ruff-pre-commit/compare/v0.0.249...v0.0.253)
+<!--pre-commit.ci end-->
+
+---------
+
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Co-authored-by: Matthias Bussonnier <bussonniermatthias@gmail.com>
+Co-authored-by: Grzegorz Bokota <bokota+github@gmail.com>
+---
+ .pre-commit-config.yaml                    |  2 +-
+ examples/dev/q_node_tree.py                |  2 +-
+ examples/minimum_blending.py               |  8 ++---
+ examples/multiple_viewer_widget.py         |  2 +-
+ napari/layers/points/_tests/test_points.py | 34 ----------------------
+ napari/layers/shapes/_tests/test_shapes.py |  4 +--
+ napari/layers/tracks/_track_utils.py       |  2 +-
+ napari/utils/stubgen.py                    |  4 +--
+ 8 files changed, 12 insertions(+), 46 deletions(-)
+
+diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
+index f1f7339f..657df12b 100644
+--- a/.pre-commit-config.yaml
++++ b/.pre-commit-config.yaml
+@@ -11,7 +11,7 @@ repos:
+       pass_filenames: true
+       exclude: _vendor|vendored|examples
+ -   repo: https://github.com/charliermarsh/ruff-pre-commit
+-    rev: v0.0.247
++    rev: v0.0.253
+     hooks:
+       - id: ruff
+         exclude: _vendor|vendored
+diff --git a/examples/dev/q_node_tree.py b/examples/dev/q_node_tree.py
+index ee9e2d65..d92a3114 100644
+--- a/examples/dev/q_node_tree.py
++++ b/examples/dev/q_node_tree.py
+@@ -21,7 +21,7 @@ from napari.utils.tree import Group, Node
+ 
+ get_app()
+ 
+-# create a group of nodes. 
++# create a group of nodes.
+ root = Group(
+     [
+         Node(name='6'),
+diff --git a/examples/minimum_blending.py b/examples/minimum_blending.py
+index c8b7ff99..b616604c 100644
+--- a/examples/minimum_blending.py
++++ b/examples/minimum_blending.py
+@@ -4,11 +4,11 @@ Minimum blending
+ 
+ Demonstrates how to use the `minimum` blending mode with inverted colormaps.
+ `minimum` blending uses the minimum value of each R, G, B channel for each pixel.
+-`minimum` blending can be used to yield multichannel color images on a white 
++`minimum` blending can be used to yield multichannel color images on a white
+ background, when the channels have inverted colormaps assigned.
+-An inverted colormap is one where white [1, 1, 1] is used to represent the lowest 
++An inverted colormap is one where white [1, 1, 1] is used to represent the lowest
+ values, as opposed to the more conventional black [0, 0, 0]. For example, try the
+-colormaps prefixed with *I*, such as *I Forest* or *I Bordeaux*, from 
++colormaps prefixed with *I*, such as *I Forest* or *I Bordeaux*, from
+ ChrisLUTs: https://github.com/cleterrier/ChrisLUTs .
+ 
+ .. tags:: visualization-basic
+@@ -28,7 +28,7 @@ viewer.add_image(data.cells3d(),
+                             name=["membrane", "nuclei"],
+                             channel_axis=1,
+                             contrast_limits = [[1110, 23855], [1600, 50000]],
+-                            colormap = ["I Purple", "I Orange"], 
++                            colormap = ["I Purple", "I Orange"],
+                             blending= ["translucent_no_depth", "minimum"]
+                             )
+ 
+diff --git a/examples/multiple_viewer_widget.py b/examples/multiple_viewer_widget.py
+index f29b9d36..dbb4a892 100644
+--- a/examples/multiple_viewer_widget.py
++++ b/examples/multiple_viewer_widget.py
+@@ -182,7 +182,7 @@ class CrossWidget(QCheckBox):
+     def _update_extent(self):
+         """
+         Calculate the extent of the data.
+-        
++
+         Ignores the the cross layer itself in calculating the extent.
+         """
+         if NAPARI_GE_4_16:
+diff --git a/napari/layers/points/_tests/test_points.py b/napari/layers/points/_tests/test_points.py
+index c6e4bf7c..281140a6 100644
+--- a/napari/layers/points/_tests/test_points.py
++++ b/napari/layers/points/_tests/test_points.py
+@@ -2315,40 +2315,6 @@ def test_text_param_and_setter_are_consistent():
+     )
+ 
+ 
+-def test_editable_2d_layer_ndisplay_3():
+-    """Interactivity doesn't work for 2D points layers
+-    being rendered in 3D. Verify that layer.editable is set
+-    to False upon switching to 3D rendering mode.
+-
+-    See: https://github.com/napari/napari/pull/4184
+-    """
+-    data = np.random.random((10, 2))
+-    layer = Points(data, size=5)
+-    assert layer.editable is True
+-
+-    # simulate switching to 3D rendering
+-    # layer should no longer b editable
+-    layer._slice_dims([0, 0, 0], ndisplay=3)
+-    assert layer.editable is False
+-
+-
+-def test_editable_3d_layer_ndisplay_3():
+-    """Interactivity works for 3D points layers
+-    being rendered in 3D. Verify that layer.editable remains
+-    True upon switching to 3D rendering mode.
+-
+-    See: https://github.com/napari/napari/pull/4184
+-    """
+-    data = np.random.random((10, 3))
+-    layer = Points(data, size=5)
+-    assert layer.editable is True
+-
+-    # simulate switching to 3D rendering
+-    # layer should no longer b editable
+-    layer._slice_dims([0, 0, 0], ndisplay=3)
+-    assert layer.editable is True
+-
+-
+ def test_shown():
+     """Test setting shown property"""
+     shape = (10, 2)
+diff --git a/napari/layers/shapes/_tests/test_shapes.py b/napari/layers/shapes/_tests/test_shapes.py
+index 49451701..02651d03 100644
+--- a/napari/layers/shapes/_tests/test_shapes.py
++++ b/napari/layers/shapes/_tests/test_shapes.py
+@@ -1789,7 +1789,7 @@ def test_edge_width():
+ 
+     # Test setting edge width with number
+     layer.edge_width = 4
+-    assert all([width == 4 for width in layer.edge_width])
++    assert all(width == 4 for width in layer.edge_width)
+ 
+     # Test setting edge width with list
+     new_widths = [2] * 5 + [3] * 4
+@@ -1834,7 +1834,7 @@ def test_z_index():
+ 
+     # Test setting index with number
+     layer.z_index = 4
+-    assert all([idx == 4 for idx in layer.z_index])
++    assert all(idx == 4 for idx in layer.z_index)
+ 
+     # Test setting index with list
+     new_z_indices = [2] * 5 + [3] * 4
+diff --git a/napari/layers/tracks/_track_utils.py b/napari/layers/tracks/_track_utils.py
+index 32cc3525..b83f7b97 100644
+--- a/napari/layers/tracks/_track_utils.py
++++ b/napari/layers/tracks/_track_utils.py
+@@ -240,7 +240,7 @@ class TrackManager:
+                 trans._('track id must be an integer', deferred=True)
+             )
+ 
+-        if not all([t >= 0 for t in data[:, 1]]):
++        if not all(t >= 0 for t in data[:, 1]):
+             raise ValueError(
+                 trans._(
+                     'track timestamps must be greater than zero', deferred=True
+diff --git a/napari/utils/stubgen.py b/napari/utils/stubgen.py
+index df9c6a8f..65ecc790 100644
+--- a/napari/utils/stubgen.py
++++ b/napari/utils/stubgen.py
+@@ -5,7 +5,7 @@ It is intentended to be run as a script or module as follows:
+     python -m napari.utils.stubgen module.a module.b
+ 
+ ... where `module.a` and `module.b` are the module names for which you'd
+-like to generate type stubs. Stubs will be written to a `.pyi` with the 
++like to generate type stubs. Stubs will be written to a `.pyi` with the
+ same name and directory as the input module(s).
+ 
+ Example
+@@ -37,7 +37,7 @@ PYI_TEMPLATE = """
+ # THIS FILE IS AUTOGENERATED BY napari.utils.stubgen
+ # DO NOT EDIT
+ 
+-from typing import List, Union, Mapping, Sequence, Tuple, Dict, Set, Any 
++from typing import List, Union, Mapping, Sequence, Tuple, Dict, Set, Any
+ {imports}
+ 
+ {body}
+-- 
+2.34.1

@@ -1,0 +1,1547 @@
+From 71f55283b102c6f6afdef361c4a2ae0ed08c7572 Mon Sep 17 00:00:00 2001
+From: Grzegorz Bokota <bokota+github@gmail.com>
+Date: Sun, 26 Feb 2023 20:20:26 +0100
+Subject: [PATCH] Enable the `COM` and `SIM` rules in `ruff` configuration
+ (#5566)
+
+Co-authored-by: Lorenzo Gaifas <brisvag@gmail.com>
+---
+ examples/live_tiffs_generator_.py             |   4 +-
+ napari/_app_model/constants/_commands.py      |  78 +++++++-----
+ napari/_lazy.py                               |   5 +-
+ napari/_qt/_tests/test_sigint_interupt.py     |   5 +-
+ napari/_qt/code_syntax_highlight.py           |   6 +-
+ .../dialogs/_tests/test_activity_dialog.py    |   7 +-
+ napari/_qt/dialogs/qt_plugin_report.py        |  10 +-
+ .../layer_controls/qt_image_controls_base.py  |   9 +-
+ .../_qt/layer_controls/qt_points_controls.py  |   5 +-
+ napari/_qt/menus/plugins_menu.py              |   2 +-
+ napari/_qt/widgets/qt_keyboard_settings.py    |   6 +-
+ napari/_tests/test_advanced.py                |   2 +-
+ napari/_tests/test_view_layers.py             |   4 +-
+ napari/_vispy/layers/surface.py               |   5 +-
+ .../_tests/test_viewer_keybindings.py         |  16 +--
+ .../components/experimental/chunk/_loader.py  |   7 +-
+ napari/components/grid.py                     |   5 +-
+ napari/components/viewer_model.py             |   2 +-
+ napari/conftest.py                            |   6 +-
+ napari/layers/_tests/test_serialize.py        |   4 +-
+ napari/layers/base/_base_mouse_bindings.py    |   4 +-
+ .../image/experimental/_octree_loader.py      |  27 ++--
+ .../layers/image/experimental/octree_image.py |   5 +-
+ napari/layers/image/image.py                  |   5 +-
+ napari/layers/points/_tests/test_points.py    |   5 +-
+ napari/layers/points/points.py                | 120 ++++++++----------
+ napari/layers/shapes/_shape_list.py           |   4 +-
+ .../layers/shapes/_shapes_mouse_bindings.py   |  54 +++-----
+ napari/layers/shapes/_shapes_utils.py         |   8 +-
+ napari/layers/shapes/_tests/test_shapes.py    |   5 +-
+ .../_tests/test_shapes_mouse_bindings.py      |   2 +-
+ napari/layers/shapes/shapes.py                |  22 +---
+ napari/layers/tracks/tracks.py                |   7 +-
+ .../layers/utils/_tests/test_text_manager.py  |   4 +-
+ napari/layers/utils/color_manager.py          |   5 +-
+ napari/layers/utils/layer_utils.py            |  15 +--
+ napari/layers/vectors/vectors.py              |  29 ++---
+ napari/plugins/utils.py                       |   5 +-
+ napari/utils/_tests/test_progress.py          |   5 +-
+ napari/utils/_tests/test_theme.py             |   2 +-
+ napari/utils/_testsupport.py                  |   7 +-
+ napari/utils/action_manager.py                |  13 +-
+ .../utils/colormaps/categorical_colormap.py   |   7 +-
+ napari/utils/colormaps/colormap_utils.py      |   7 +-
+ napari/utils/events/event.py                  |   5 +-
+ napari/utils/geometry.py                      |  16 +--
+ napari/utils/interactions.py                  |   5 +-
+ napari/utils/misc.py                          |  33 +++--
+ napari/utils/stubgen.py                       |   5 +-
+ napari/utils/transforms/transform_utils.py    |   2 +-
+ napari/utils/translations.py                  |   2 +-
+ pyproject.toml                                |   6 +-
+ tools/test_strings.py                         |   5 +-
+ 53 files changed, 274 insertions(+), 360 deletions(-)
+
+diff --git a/examples/live_tiffs_generator_.py b/examples/live_tiffs_generator_.py
+index 6c906d3a..3a5210d4 100644
+--- a/examples/live_tiffs_generator_.py
++++ b/examples/live_tiffs_generator_.py
+@@ -49,8 +49,8 @@ def main(argv=sys.argv[1:]):
+         )
+         time.sleep(sleep_time)
+     # create a final.log file as an indicator for end of acquisition
+-    final_file = open(os.path.join(outdir, 'final.log'), 'w')
+-    final_file.close()
++    with open(os.path.join(outdir, 'final.log'), 'w'):
++        pass
+ 
+ 
+ if __name__ == '__main__':
+diff --git a/napari/_app_model/constants/_commands.py b/napari/_app_model/constants/_commands.py
+index 81f4c420..e1b15d6a 100644
+--- a/napari/_app_model/constants/_commands.py
++++ b/napari/_app_model/constants/_commands.py
+@@ -36,7 +36,14 @@ class CommandId(str, Enum):
+     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
+ 
+     # Help menubar
++    NAPARI_GETTING_STARTED = 'napari:window:help:getting_started'
++    NAPARI_TUTORIALS = 'napari:window:help:tutorials'
++    NAPARI_LAYERS_GUIDE = 'napari:window:help:layers_guide'
++    NAPARI_EXAMPLES = 'napari:window:help:examples'
++    NAPARI_RELEASE_NOTES = 'napari:window:help:release_notes'
++    NAPARI_HOMEPAGE = 'napari:window:help:homepage'
+     NAPARI_INFO = 'napari:window:help:info'
++    NAPARI_GITHUB_ISSUE = 'napari:window:help:github_issue'
+     TOGGLE_BUG_REPORT_OPT_IN = 'napari:window:help:bug_report_opt_in'
+ 
+     # Layer menubar
+@@ -87,12 +94,12 @@ class _i(NamedTuple):
+ 
+ _COMMAND_INFO = {
+     # View menubar
+-    CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen'),),
+-    CommandId.TOGGLE_MENUBAR: _i(trans._('Toggle Menubar Visibility'),),
+-    CommandId.TOGGLE_PLAY: _i(trans._('Toggle Play'),),
+-    CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES: _i(trans._('Toggle Chunk Outlines'),),
+-    CommandId.TOGGLE_LAYER_TOOLTIPS: _i(trans._('Toggle Layer Tooltips'),),
+-    CommandId.TOGGLE_ACTIVITY_DOCK: _i(trans._('Toggle Activity Dock'),),
++    CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen')),
++    CommandId.TOGGLE_MENUBAR: _i(trans._('Toggle Menubar Visibility')),
++    CommandId.TOGGLE_PLAY: _i(trans._('Toggle Play')),
++    CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES: _i(trans._('Toggle Chunk Outlines')),
++    CommandId.TOGGLE_LAYER_TOOLTIPS: _i(trans._('Toggle Layer Tooltips')),
++    CommandId.TOGGLE_ACTIVITY_DOCK: _i(trans._('Toggle Activity Dock')),
+     CommandId.TOGGLE_VIEWER_AXES: _i(trans._('Axes Visible')),
+     CommandId.TOGGLE_VIEWER_AXES_COLORED: _i(trans._('Axes Colored')),
+     CommandId.TOGGLE_VIEWER_AXES_LABELS: _i(trans._('Axes Labels')),
+@@ -103,33 +110,40 @@ _COMMAND_INFO = {
+     CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
+ 
+     # Help menubar
+-    CommandId.NAPARI_INFO: _i(trans._('napari Info'), ),
+-    CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...'), ),
++    CommandId.NAPARI_GETTING_STARTED: _i(trans._('Getting started')),
++    CommandId.NAPARI_TUTORIALS: _i(trans._('Tutorials')),
++    CommandId.NAPARI_LAYERS_GUIDE: _i(trans._('Using Layers Guides')),
++    CommandId.NAPARI_EXAMPLES: _i(trans._('Examples Gallery')),
++    CommandId.NAPARI_RELEASE_NOTES: _i(trans._('Release Notes')),
++    CommandId.NAPARI_HOMEPAGE: _i(trans._('napari homepage')),
++    CommandId.NAPARI_INFO: _i(trans._('napari Info')),
++    CommandId.NAPARI_GITHUB_ISSUE: _i(trans._('Report an issue on GitHub')),
++    CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...')),
+ 
+     # Layer menubar
+-    CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),
+-    CommandId.LAYER_SPLIT_STACK: _i(trans._('Split Stack'),),
+-    CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB'),),
+-    CommandId.LAYER_MERGE_STACK: _i(trans._('Merge to Stack'),),
+-    CommandId.LAYER_TOGGLE_VISIBILITY: _i(trans._('Toggle visibility'),),
+-    CommandId.LAYER_LINK_SELECTED: _i(trans._('Link Layers'),),
+-    CommandId.LAYER_UNLINK_SELECTED: _i(trans._('Unlink Layers'),),
+-    CommandId.LAYER_SELECT_LINKED: _i(trans._('Select Linked Layers'),),
+-    CommandId.LAYER_CONVERT_TO_LABELS: _i(trans._('Convert to Labels'),),
+-    CommandId.LAYER_CONVERT_TO_IMAGE: _i(trans._('Convert to Image'),),
+-    CommandId.LAYER_CONVERT_TO_INT8: _i(trans._('Convert to int8'),),
+-    CommandId.LAYER_CONVERT_TO_INT16: _i(trans._('Convert to int16'),),
+-    CommandId.LAYER_CONVERT_TO_INT32: _i(trans._('Convert to int32'),),
+-    CommandId.LAYER_CONVERT_TO_INT64: _i(trans._('Convert to int64'),),
+-    CommandId.LAYER_CONVERT_TO_UINT8: _i(trans._('Convert to uint8'),),
+-    CommandId.LAYER_CONVERT_TO_UINT16: _i(trans._('Convert to uint16'),),
+-    CommandId.LAYER_CONVERT_TO_UINT32: _i(trans._('Convert to uint32'),),
+-    CommandId.LAYER_CONVERT_TO_UINT64: _i(trans._('Convert to uint64'),),
+-    CommandId.LAYER_PROJECT_MAX: _i(trans._('Max projection'),),
+-    CommandId.LAYER_PROJECT_MIN: _i(trans._('Min projection'),),
+-    CommandId.LAYER_PROJECT_STD: _i(trans._('Std projection'),),
+-    CommandId.LAYER_PROJECT_SUM: _i(trans._('Sum projection'),),
+-    CommandId.LAYER_PROJECT_MEAN: _i(trans._('Mean projection'),),
+-    CommandId.LAYER_PROJECT_MEDIAN: _i(trans._('Median projection'),),
++    CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer')),
++    CommandId.LAYER_SPLIT_STACK: _i(trans._('Split Stack')),
++    CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB')),
++    CommandId.LAYER_MERGE_STACK: _i(trans._('Merge to Stack')),
++    CommandId.LAYER_TOGGLE_VISIBILITY: _i(trans._('Toggle visibility')),
++    CommandId.LAYER_LINK_SELECTED: _i(trans._('Link Layers')),
++    CommandId.LAYER_UNLINK_SELECTED: _i(trans._('Unlink Layers')),
++    CommandId.LAYER_SELECT_LINKED: _i(trans._('Select Linked Layers')),
++    CommandId.LAYER_CONVERT_TO_LABELS: _i(trans._('Convert to Labels')),
++    CommandId.LAYER_CONVERT_TO_IMAGE: _i(trans._('Convert to Image')),
++    CommandId.LAYER_CONVERT_TO_INT8: _i(trans._('Convert to int8')),
++    CommandId.LAYER_CONVERT_TO_INT16: _i(trans._('Convert to int16')),
++    CommandId.LAYER_CONVERT_TO_INT32: _i(trans._('Convert to int32')),
++    CommandId.LAYER_CONVERT_TO_INT64: _i(trans._('Convert to int64')),
++    CommandId.LAYER_CONVERT_TO_UINT8: _i(trans._('Convert to uint8')),
++    CommandId.LAYER_CONVERT_TO_UINT16: _i(trans._('Convert to uint16')),
++    CommandId.LAYER_CONVERT_TO_UINT32: _i(trans._('Convert to uint32')),
++    CommandId.LAYER_CONVERT_TO_UINT64: _i(trans._('Convert to uint64')),
++    CommandId.LAYER_PROJECT_MAX: _i(trans._('Max projection')),
++    CommandId.LAYER_PROJECT_MIN: _i(trans._('Min projection')),
++    CommandId.LAYER_PROJECT_STD: _i(trans._('Std projection')),
++    CommandId.LAYER_PROJECT_SUM: _i(trans._('Sum projection')),
++    CommandId.LAYER_PROJECT_MEAN: _i(trans._('Mean projection')),
++    CommandId.LAYER_PROJECT_MEDIAN: _i(trans._('Median projection')),
+ }
+ # fmt: on
+diff --git a/napari/_lazy.py b/napari/_lazy.py
+index 8950ae21..35bd5217 100644
+--- a/napari/_lazy.py
++++ b/napari/_lazy.py
+@@ -22,10 +22,7 @@ def install_lazy(module_name, submodules=None, submod_attrs=None):
+     if submod_attrs is None:
+         submod_attrs = {}
+ 
+-    if submodules is None:
+-        submodules = set()
+-    else:
+-        submodules = set(submodules)
++    submodules = set() if submodules is None else set(submodules)
+ 
+     attr_to_modules = {
+         attr: mod for mod, attrs in submod_attrs.items() for attr in attrs
+diff --git a/napari/_qt/_tests/test_sigint_interupt.py b/napari/_qt/_tests/test_sigint_interupt.py
+index 3adc7b06..b24a0fd2 100644
+--- a/napari/_qt/_tests/test_sigint_interupt.py
++++ b/napari/_qt/_tests/test_sigint_interupt.py
+@@ -26,6 +26,5 @@ def test_sigint(qapp, platform_simulate_ctrl_c, make_napari_viewer):
+ 
+     make_napari_viewer()
+     QTimer.singleShot(100, fire_signal)
+-    with pytest.raises(KeyboardInterrupt):
+-        with _maybe_allow_interrupt(qapp):
+-            qapp.exec_()
++    with pytest.raises(KeyboardInterrupt), _maybe_allow_interrupt(qapp):
++        qapp.exec_()
+diff --git a/napari/_qt/code_syntax_highlight.py b/napari/_qt/code_syntax_highlight.py
+index c0c4580f..e3f3b49c 100644
+--- a/napari/_qt/code_syntax_highlight.py
++++ b/napari/_qt/code_syntax_highlight.py
+@@ -1,3 +1,5 @@
++import contextlib
++
+ from pygments import highlight
+ from pygments.formatter import Formatter
+ from pygments.lexers import get_lexer_by_name
+@@ -80,7 +82,5 @@ class Pylighter(QtGui.QSyntaxHighlighter):
+         # The core problem is that pygemnts by default use string streams,
+         # that will not handle QTextCharFormat, so wee need use `data` property to work around this.
+         for i in range(len(text)):
+-            try:
++            with contextlib.suppress(IndexError):
+                 self.setFormat(i, 1, self.formatter.data[p + i])
+-            except IndexError:
+-                pass
+diff --git a/napari/_qt/dialogs/_tests/test_activity_dialog.py b/napari/_qt/dialogs/_tests/test_activity_dialog.py
+index 45a49f63..2aaeb5df 100644
+--- a/napari/_qt/dialogs/_tests/test_activity_dialog.py
++++ b/napari/_qt/dialogs/_tests/test_activity_dialog.py
+@@ -68,10 +68,9 @@ def test_progress_with_context(make_napari_viewer):
+     """Test adding/removing of progress bar with context manager"""
+     viewer = make_napari_viewer(show=SHOW)
+ 
+-    with assert_pbar_added_to(viewer):
+-        with progress(range(100)) as prog:
+-            pbar = get_qt_labeled_progress_bar(prog, viewer)
+-            assert pbar.qt_progress_bar.maximum() == prog.total == 100
++    with assert_pbar_added_to(viewer), progress(range(100)) as prog:
++        pbar = get_qt_labeled_progress_bar(prog, viewer)
++        assert pbar.qt_progress_bar.maximum() == prog.total == 100
+ 
+ 
+ def test_closing_viewer_no_error(make_napari_viewer):
+diff --git a/napari/_qt/dialogs/qt_plugin_report.py b/napari/_qt/dialogs/qt_plugin_report.py
+index 7db4d824..1217dfb4 100644
+--- a/napari/_qt/dialogs/qt_plugin_report.py
++++ b/napari/_qt/dialogs/qt_plugin_report.py
+@@ -1,5 +1,7 @@
+ """Provides a QtPluginErrReporter that allows the user report plugin errors.
+ """
++
++import contextlib
+ from typing import Optional
+ 
+ from napari_plugin_engine import standard_metadata
+@@ -149,12 +151,10 @@ class QtPluginErrReporter(QDialog):
+         """
+         self.github_button.hide()
+         self.clipboard_button.hide()
+-        try:
++        with contextlib.suppress(RuntimeError, TypeError):
+             self.github_button.clicked.disconnect()
+-        # when disconnecting a non-existent signal
+-        # PySide2 raises runtimeError, PyQt5 raises TypeError
+-        except (RuntimeError, TypeError):
+-            pass
++            # when disconnecting a non-existent signal
++            # PySide2 raises runtimeError, PyQt5 raises TypeError
+ 
+         if not plugin or (plugin == self.NULL_OPTION):
+             self.plugin_meta.setText('')
+diff --git a/napari/_qt/layer_controls/qt_image_controls_base.py b/napari/_qt/layer_controls/qt_image_controls_base.py
+index 748aad6a..e5047d80 100644
+--- a/napari/_qt/layer_controls/qt_image_controls_base.py
++++ b/napari/_qt/layer_controls/qt_image_controls_base.py
+@@ -173,10 +173,11 @@ class QtBaseImageControls(QtLayerControls):
+     def _on_colormap_change(self):
+         """Receive layer model colormap change event and update dropdown menu."""
+         name = self.layer.colormap.name
+-        if name not in self.colormapComboBox._allitems:
+-            if cm := AVAILABLE_COLORMAPS.get(name):
+-                self.colormapComboBox._allitems.add(name)
+-                self.colormapComboBox.addItem(cm._display_name, name)
++        if name not in self.colormapComboBox._allitems and (
++            cm := AVAILABLE_COLORMAPS.get(name)
++        ):
++            self.colormapComboBox._allitems.add(name)
++            self.colormapComboBox.addItem(cm._display_name, name)
+ 
+         if name != self.colormapComboBox.currentData():
+             index = self.colormapComboBox.findData(name)
+diff --git a/napari/_qt/layer_controls/qt_points_controls.py b/napari/_qt/layer_controls/qt_points_controls.py
+index d2a8d2f8..dbe207a9 100644
+--- a/napari/_qt/layer_controls/qt_points_controls.py
++++ b/napari/_qt/layer_controls/qt_points_controls.py
+@@ -1,3 +1,4 @@
++import contextlib
+ from typing import TYPE_CHECKING
+ 
+ import numpy as np
+@@ -312,10 +313,8 @@ class QtPointsControls(QtLayerControls):
+                 self.sizeSlider.setMinimum(max(1, int(min_val - 1)))
+             if max_val > self.sizeSlider.maximum():
+                 self.sizeSlider.setMaximum(int(max_val + 1))
+-            try:
++            with contextlib.suppress(TypeError):
+                 self.sizeSlider.setValue(int(value))
+-            except TypeError:
+-                pass
+ 
+     @Slot(np.ndarray)
+     def changeFaceColor(self, color: np.ndarray):
+diff --git a/napari/_qt/menus/plugins_menu.py b/napari/_qt/menus/plugins_menu.py
+index c5529016..577733d3 100644
+--- a/napari/_qt/menus/plugins_menu.py
++++ b/napari/_qt/menus/plugins_menu.py
+@@ -93,7 +93,7 @@ class PluginsMenu(NapariMenu):
+ 
+             def _add_toggle_widget(*, key=key, hook_type=hook_type):
+                 full_name = menu_item_template.format(*key)
+-                if full_name in self._win._dock_widgets.keys():
++                if full_name in self._win._dock_widgets:
+                     dock_widget = self._win._dock_widgets[full_name]
+                     if dock_widget.isVisible():
+                         dock_widget.hide()
+diff --git a/napari/_qt/widgets/qt_keyboard_settings.py b/napari/_qt/widgets/qt_keyboard_settings.py
+index 88d7e0b2..ab6d3daf 100644
+--- a/napari/_qt/widgets/qt_keyboard_settings.py
++++ b/napari/_qt/widgets/qt_keyboard_settings.py
+@@ -83,7 +83,7 @@ class ShortcutEditor(QWidget):
+                 actions = {}
+             else:
+                 actions = action_manager._get_provider_actions(layer)
+-                for name in actions.keys():
++                for name in actions:
+                     all_actions.pop(name)
+             self.key_bindings_strs[f"{layer.__name__} layer"] = actions
+ 
+@@ -510,7 +510,7 @@ class ShortcutEditor(QWidget):
+ 
+         value = {}
+ 
+-        for action_name in action_manager._actions.keys():
++        for action_name in action_manager._actions:
+             shortcuts = action_manager._shortcuts.get(action_name, [])
+             value[action_name] = list(shortcuts)
+ 
+@@ -600,7 +600,7 @@ class EditorWidget(QLineEdit):
+         keys_li = []
+         # Format how the shortcut is written (ex. 'Ctrl+B' is changed to 'Control-B')
+         for val in parsed:
+-            if val in KEY_SUBS.keys():
++            if val in KEY_SUBS:
+                 keys_li.append(KEY_SUBS[val])
+             else:
+                 keys_li.append(val)
+diff --git a/napari/_tests/test_advanced.py b/napari/_tests/test_advanced.py
+index 8a831e48..3843d103 100644
+--- a/napari/_tests/test_advanced.py
++++ b/napari/_tests/test_advanced.py
+@@ -176,7 +176,7 @@ def test_update_console(make_napari_viewer):
+     assert view.console.shell.user_ns['a'] == a
+     assert 'b' in view.console.shell.user_ns
+     assert view.console.shell.user_ns['b'] == b
+-    for k in locs.keys():
++    for k in locs:
+         del viewer.window._qt_viewer.console.shell.user_ns[k]
+ 
+ 
+diff --git a/napari/_tests/test_view_layers.py b/napari/_tests/test_view_layers.py
+index c2bc46b8..5d9ff030 100644
+--- a/napari/_tests/test_view_layers.py
++++ b/napari/_tests/test_view_layers.py
+@@ -119,8 +119,8 @@ def test_signature(layer):
+     fail_msg = f"signatures don't match for class {name}"
+     if name == 'Image':
+         # If Image just test that class params appear in method
+-        for class_param in class_parameters.keys():
+-            assert class_param in method_parameters.keys(), fail_msg
++        for class_param in class_parameters:
++            assert class_param in method_parameters, fail_msg
+     else:
+         assert class_parameters == method_parameters, fail_msg
+ 
+diff --git a/napari/_vispy/layers/surface.py b/napari/_vispy/layers/surface.py
+index 945cafe5..e8bf69aa 100644
+--- a/napari/_vispy/layers/surface.py
++++ b/napari/_vispy/layers/surface.py
+@@ -79,10 +79,7 @@ class VispySurfaceLayer(VispyBaseLayer):
+         )
+ 
+         # disable normals in 2D to avoid shape errors
+-        if ndisplay == 2:
+-            meshdata = MeshData()
+-        else:
+-            meshdata = self.node.mesh_data
++        meshdata = MeshData() if ndisplay == 2 else self.node.mesh_data
+         self._meshdata = meshdata
+ 
+         self._on_face_normals_change()
+diff --git a/napari/components/_tests/test_viewer_keybindings.py b/napari/components/_tests/test_viewer_keybindings.py
+index 490fc0f6..33366674 100644
+--- a/napari/components/_tests/test_viewer_keybindings.py
++++ b/napari/components/_tests/test_viewer_keybindings.py
+@@ -7,10 +7,10 @@ from napari.utils.theme import available_themes, get_system_theme
+ def test_theme_toggle_keybinding():
+     viewer = ViewerModel()
+     assert viewer.theme == get_settings().appearance.theme
+-    assert not viewer.theme == 'light'
++    assert viewer.theme != 'light'
+     toggle_theme(viewer)
+     # toggle_theme should not change settings
+-    assert not get_settings().appearance.theme == 'light'
++    assert get_settings().appearance.theme != 'light'
+     # toggle_theme should change the viewer theme
+     assert viewer.theme == 'light'
+     # ensure toggle_theme loops through all themes
+@@ -22,9 +22,9 @@ def test_theme_toggle_keybinding():
+         current_theme = viewer.theme
+         toggle_theme(viewer)
+         # theme should have changed
+-        assert not viewer.theme == current_theme
++        assert viewer.theme != current_theme
+         # toggle_theme should toggle only actual themes
+-        assert not viewer.theme == 'system'
++        assert viewer.theme != 'system'
+     # ensure we're back at the initial theme
+     assert viewer.theme == initial_theme
+ 
+@@ -36,8 +36,8 @@ def test_theme_toggle_from_system_theme():
+     actual_initial_theme = get_system_theme()
+     toggle_theme(viewer)
+     # ensure that theme has changed
+-    assert not viewer.theme == actual_initial_theme
+-    assert not viewer.theme == 'system'
++    assert viewer.theme != actual_initial_theme
++    assert viewer.theme != 'system'
+     number_of_actual_themes = len(available_themes())
+     if 'system' in available_themes():
+         number_of_actual_themes = len(available_themes()) - 1
+@@ -45,8 +45,8 @@ def test_theme_toggle_from_system_theme():
+         current_theme = viewer.theme
+         toggle_theme(viewer)
+         # theme should have changed
+-        assert not viewer.theme == current_theme
++        assert viewer.theme != current_theme
+         # toggle_theme should toggle only actual themes
+-        assert not viewer.theme == 'system'
++        assert viewer.theme != 'system'
+     # ensure we have looped back to whatever system was
+     assert viewer.theme == actual_initial_theme
+diff --git a/napari/components/experimental/chunk/_loader.py b/napari/components/experimental/chunk/_loader.py
+index d9b670fb..245b8eaf 100644
+--- a/napari/components/experimental/chunk/_loader.py
++++ b/napari/components/experimental/chunk/_loader.py
+@@ -4,9 +4,10 @@ Loads chunks synchronously, or asynchronously using worker threads or
+ processes. A chunk could be an OctreeChunk or it could be a pre-Octree
+ array from the Image class, time-series or multi-scale.
+ """
++
+ import logging
+ from concurrent.futures import Future
+-from contextlib import contextmanager
++from contextlib import contextmanager, suppress
+ from typing import Callable, Dict, List, Optional, Tuple
+ 
+ from napari.components.experimental.chunk._cache import ChunkCache
+@@ -261,10 +262,8 @@ class ChunkLoader:
+         Layer
+             The layer that was deleted.
+         """
+-        try:
++        with suppress(KeyError):
+             del self.layer_map[id(layer)]
+-        except KeyError:
+-            pass  # We weren't tracking that layer yet.
+ 
+     def wait_for_all(self):
+         """Wait for all in-progress requests to finish."""
+diff --git a/napari/components/grid.py b/napari/components/grid.py
+index 28d4dd34..5305270c 100644
+--- a/napari/components/grid.py
++++ b/napari/components/grid.py
+@@ -96,10 +96,7 @@ class GridCanvas(EventedModel):
+             n_row, n_column = self.actual_shape(nlayers)
+ 
+             # Adjust for forward or reverse ordering
+-            if self.stride < 0:
+-                adj_i = nlayers - index - 1
+-            else:
+-                adj_i = index
++            adj_i = nlayers - index - 1 if self.stride < 0 else index
+ 
+             adj_i = adj_i // abs(self.stride)
+             adj_i = adj_i % (n_row * n_column)
+diff --git a/napari/components/viewer_model.py b/napari/components/viewer_model.py
+index 83904f08..133416d5 100644
+--- a/napari/components/viewer_model.py
++++ b/napari/components/viewer_model.py
+@@ -1052,7 +1052,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+         ) as pbr:
+             for _path in pbr:
+                 # If _path is a list, set stack to True
+-                _stack = True if isinstance(_path, list) else False
++                _stack = isinstance(_path, list)
+                 # If _path is not a list already, make it a list.
+                 _path = [_path] if not isinstance(_path, list) else _path
+                 if plugin:
+diff --git a/napari/conftest.py b/napari/conftest.py
+index 6515bdfa..9062f927 100644
+--- a/napari/conftest.py
++++ b/napari/conftest.py
+@@ -28,6 +28,7 @@ Notes for using the plugin-related fixtures here:
+        ...
+    ```
+ """
++
+ from __future__ import annotations
+ 
+ import os
+@@ -40,11 +41,8 @@ from typing import TYPE_CHECKING
+ from unittest.mock import patch
+ from weakref import WeakKeyDictionary
+ 
+-try:
++with suppress(ModuleNotFoundError):
+     __import__('dotenv').load_dotenv()
+-except ModuleNotFoundError:
+-    pass
+-
+ 
+ import dask.threaded
+ import numpy as np
+diff --git a/napari/layers/_tests/test_serialize.py b/napari/layers/_tests/test_serialize.py
+index f5a07e70..d25ed3b2 100644
+--- a/napari/layers/_tests/test_serialize.py
++++ b/napari/layers/_tests/test_serialize.py
+@@ -20,7 +20,7 @@ def test_attrs_arrays(Layer, data, ndim):
+     signature = inspect.signature(Layer)
+ 
+     # Check every property is also a parameter.
+-    for prop in properties.keys():
++    for prop in properties:
+         assert prop in signature.parameters
+ 
+     # Check number of properties is same as number in signature
+@@ -31,7 +31,7 @@ def test_attrs_arrays(Layer, data, ndim):
+     new_layer = Layer(**properties)
+ 
+     # Check that new layer matches old on all properties:
+-    for prop in properties.keys():
++    for prop in properties:
+         assert are_objects_equal(
+             getattr(layer, prop), getattr(new_layer, prop)
+         )
+diff --git a/napari/layers/base/_base_mouse_bindings.py b/napari/layers/base/_base_mouse_bindings.py
+index 55e2a18a..ce152688 100644
+--- a/napari/layers/base/_base_mouse_bindings.py
++++ b/napari/layers/base/_base_mouse_bindings.py
+@@ -15,7 +15,7 @@ def highlight_box_handles(layer, event):
+     """
+     Highlight the hovered handle of a TransformBox.
+     """
+-    if not len(event.dims_displayed) == 2:
++    if len(event.dims_displayed) != 2:
+         return
+ 
+     # we work in data space so we're axis aligned which simplifies calculation
+@@ -150,7 +150,7 @@ def transform_with_box(layer, event):
+     """
+     Translate, rescale or rotate a layer by dragging a TransformBox handle.
+     """
+-    if not len(event.dims_displayed) == 2:
++    if len(event.dims_displayed) != 2:
+         return
+ 
+     # we work in data space so we're axis aligned which simplifies calculation
+diff --git a/napari/layers/image/experimental/_octree_loader.py b/napari/layers/image/experimental/_octree_loader.py
+index b6b0720c..79a2d1ec 100644
+--- a/napari/layers/image/experimental/_octree_loader.py
++++ b/napari/layers/image/experimental/_octree_loader.py
+@@ -189,9 +189,10 @@ class OctreeLoader:
+             # The ideal level is priority 0, 1 is one level above idea, etc.
+             priority = chunk.location.level_index - ideal_level
+ 
++            if chunk.needs_load:
++                self._load_chunk(chunk, priority)
++
+             if chunk.in_memory:
+-                drawable.append(chunk)
+-            elif chunk.needs_load and self._load_chunk(chunk, priority):
+                 drawable.append(chunk)  # It was a sync load, ready to draw.
+ 
+         # Useful for debugging but very spammy.
+@@ -303,10 +304,7 @@ class OctreeLoader:
+ 
+         # If the ideal chunk is in memory then we'll want to draw that one
+         # too though
+-        if ideal_chunk.in_memory:
+-            best_in_memory_chunk = [ideal_chunk]
+-        else:
+-            best_in_memory_chunk = []
++        best_in_memory_chunk = [ideal_chunk] if ideal_chunk.in_memory else []
+ 
+         # First get any direct children which are in memory. Do not create
+         # OctreeChunks or use children that are not already in memory
+@@ -343,17 +341,16 @@ class OctreeLoader:
+             drawn_ancestors = [drawn_ancestors[-1]]
+ 
+         # If the closest ancestor is drawn just take that one
+-        if len(ancestors) > 0 and ancestors == drawn_ancestors:
++        if len(ancestors) > 0 and ancestors == drawn_ancestors:  # noqa SIM114
++            return children + drawn_ancestors + best_in_memory_chunk
++        # If the ideal chunk is in memory take that one
++        elif len(best_in_memory_chunk) > 0:
+             return children + drawn_ancestors + best_in_memory_chunk
+         else:
+-            # If the ideal chunk is in memory take that one
+-            if len(best_in_memory_chunk) > 0:
+-                return children + drawn_ancestors + best_in_memory_chunk
+-            else:
+-                # Otherwise that the close in memory ancestor
+-                return children + drawn_ancestors + ancestors
+-
+-    def _load_chunk(self, octree_chunk: OctreeChunk, priority: int) -> None:
++            # Otherwise that the close in memory ancestor
++            return children + drawn_ancestors + ancestors
++
++    def _load_chunk(self, octree_chunk: OctreeChunk, priority: int) -> bool:
+         """Load the data for one OctreeChunk.
+ 
+         Parameters
+diff --git a/napari/layers/image/experimental/octree_image.py b/napari/layers/image/experimental/octree_image.py
+index 7147d621..06c4cd41 100644
+--- a/napari/layers/image/experimental/octree_image.py
++++ b/napari/layers/image/experimental/octree_image.py
+@@ -167,10 +167,7 @@ class _OctreeImageBase(_ImageBase):
+         tuple
+             The shape of a single tile.
+         """
+-        if self.multiscale:
+-            init_shape = self.data[0].shape
+-        else:
+-            init_shape = self.data.shape
++        init_shape = self.data[0].shape if self.multiscale else self.data.shape
+ 
+         tile_shape = (self.tile_size, self.tile_size)
+ 
+diff --git a/napari/layers/image/image.py b/napari/layers/image/image.py
+index 6514fac2..55041ce6 100644
+--- a/napari/layers/image/image.py
++++ b/napari/layers/image/image.py
+@@ -962,10 +962,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
+         coord = np.round(coord).astype(int)
+ 
+         raw = self._slice.image.raw
+-        if self.rgb:
+-            shape = raw.shape[:-1]
+-        else:
+-            shape = raw.shape
++        shape = raw.shape[:-1] if self.rgb else raw.shape
+ 
+         if self.ndim < len(coord):
+             # handle 3D views of 2D data by omitting extra coordinate
+diff --git a/napari/layers/points/_tests/test_points.py b/napari/layers/points/_tests/test_points.py
+index 362bc058..c6e4bf7c 100644
+--- a/napari/layers/points/_tests/test_points.py
++++ b/napari/layers/points/_tests/test_points.py
+@@ -1064,9 +1064,8 @@ def test_colormap_with_categorical_properties(attribute):
+     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
+     layer = Points(data, properties=properties)
+ 
+-    with pytest.raises(TypeError):
+-        with pytest.warns(UserWarning):
+-            setattr(layer, f'{attribute}_color_mode', 'colormap')
++    with pytest.raises(TypeError), pytest.warns(UserWarning):
++        setattr(layer, f'{attribute}_color_mode', 'colormap')
+ 
+ 
+ @pytest.mark.parametrize("attribute", ['edge', 'face'])
+diff --git a/napari/layers/points/points.py b/napari/layers/points/points.py
+index c2a81025..ba7ab0db 100644
+--- a/napari/layers/points/points.py
++++ b/napari/layers/points/points.py
+@@ -519,75 +519,65 @@ class Points(Layer):
+         self._data = data
+ 
+         # Add/remove property and style values based on the number of new points.
+-        with self.events.blocker_all():
+-            with self._edge.events.blocker_all():
+-                with self._face.events.blocker_all():
+-                    self._feature_table.resize(len(data))
+-                    self.text.apply(self.features)
+-                    if len(data) < cur_npoints:
+-                        # If there are now fewer points, remove the size and colors of the
+-                        # extra ones
+-                        if len(self._edge.colors) > len(data):
+-                            self._edge._remove(
+-                                np.arange(len(data), len(self._edge.colors))
+-                            )
+-                        if len(self._face.colors) > len(data):
+-                            self._face._remove(
+-                                np.arange(len(data), len(self._face.colors))
+-                            )
+-                        self._shown = self._shown[: len(data)]
+-                        self._size = self._size[: len(data)]
+-                        self._edge_width = self._edge_width[: len(data)]
+-                        self._symbol = self._symbol[: len(data)]
+-
+-                    elif len(data) > cur_npoints:
+-                        # If there are now more points, add the size and colors of the
+-                        # new ones
+-                        adding = len(data) - cur_npoints
+-                        if len(self._size) > 0:
+-                            new_size = copy(self._size[-1])
+-                            for i in self._slice_input.displayed:
+-                                new_size[i] = self.current_size
+-                        else:
+-                            # Add the default size, with a value for each dimension
+-                            new_size = np.repeat(
+-                                self.current_size, self._size.shape[1]
+-                            )
+-                        size = np.repeat([new_size], adding, axis=0)
+-
+-                        if len(self._edge_width) > 0:
+-                            new_edge_width = copy(self._edge_width[-1])
+-                        else:
+-                            new_edge_width = self.current_edge_width
+-                        edge_width = np.repeat(
+-                            [new_edge_width], adding, axis=0
+-                        )
++        with self.events.blocker_all(), self._edge.events.blocker_all(), self._face.events.blocker_all():
++            self._feature_table.resize(len(data))
++            self.text.apply(self.features)
++            if len(data) < cur_npoints:
++                # If there are now fewer points, remove the size and colors of the
++                # extra ones
++                if len(self._edge.colors) > len(data):
++                    self._edge._remove(
++                        np.arange(len(data), len(self._edge.colors))
++                    )
++                if len(self._face.colors) > len(data):
++                    self._face._remove(
++                        np.arange(len(data), len(self._face.colors))
++                    )
++                self._shown = self._shown[: len(data)]
++                self._size = self._size[: len(data)]
++                self._edge_width = self._edge_width[: len(data)]
++                self._symbol = self._symbol[: len(data)]
++
++            elif len(data) > cur_npoints:
++                # If there are now more points, add the size and colors of the
++                # new ones
++                adding = len(data) - cur_npoints
++                if len(self._size) > 0:
++                    new_size = copy(self._size[-1])
++                    for i in self._slice_input.displayed:
++                        new_size[i] = self.current_size
++                else:
++                    # Add the default size, with a value for each dimension
++                    new_size = np.repeat(
++                        self.current_size, self._size.shape[1]
++                    )
++                size = np.repeat([new_size], adding, axis=0)
++
++                if len(self._edge_width) > 0:
++                    new_edge_width = copy(self._edge_width[-1])
++                else:
++                    new_edge_width = self.current_edge_width
++                edge_width = np.repeat([new_edge_width], adding, axis=0)
+ 
+-                        if len(self._symbol) > 0:
+-                            new_symbol = copy(self._symbol[-1])
+-                        else:
+-                            new_symbol = self.current_symbol
+-                        symbol = np.repeat([new_symbol], adding, axis=0)
++                if len(self._symbol) > 0:
++                    new_symbol = copy(self._symbol[-1])
++                else:
++                    new_symbol = self.current_symbol
++                symbol = np.repeat([new_symbol], adding, axis=0)
+ 
+-                        # add new colors
+-                        self._edge._add(n_colors=adding)
+-                        self._face._add(n_colors=adding)
++                # add new colors
++                self._edge._add(n_colors=adding)
++                self._face._add(n_colors=adding)
+ 
+-                        shown = np.repeat([True], adding, axis=0)
+-                        self._shown = np.concatenate(
+-                            (self._shown, shown), axis=0
+-                        )
++                shown = np.repeat([True], adding, axis=0)
++                self._shown = np.concatenate((self._shown, shown), axis=0)
+ 
+-                        self.size = np.concatenate((self._size, size), axis=0)
+-                        self.edge_width = np.concatenate(
+-                            (self._edge_width, edge_width), axis=0
+-                        )
+-                        self.symbol = np.concatenate(
+-                            (self._symbol, symbol), axis=0
+-                        )
+-                        self.selected_data = set(
+-                            np.arange(cur_npoints, len(data))
+-                        )
++                self.size = np.concatenate((self._size, size), axis=0)
++                self.edge_width = np.concatenate(
++                    (self._edge_width, edge_width), axis=0
++                )
++                self.symbol = np.concatenate((self._symbol, symbol), axis=0)
++                self.selected_data = set(np.arange(cur_npoints, len(data)))
+ 
+         self._update_dims()
+         self.events.data(value=self.data)
+diff --git a/napari/layers/shapes/_shape_list.py b/napari/layers/shapes/_shape_list.py
+index d27592bb..59468f49 100644
+--- a/napari/layers/shapes/_shape_list.py
++++ b/napari/layers/shapes/_shape_list.py
+@@ -711,7 +711,7 @@ class ShapeList:
+             cur_shape = self.shapes[index]
+             if type(new_type) == str:
+                 shape_type = ShapeType(new_type)
+-                if shape_type in shape_classes.keys():
++                if shape_type in shape_classes:
+                     shape_cls = shape_classes[shape_type]
+                 else:
+                     raise ValueError(
+@@ -833,7 +833,7 @@ class ShapeList:
+             Order that the dimensions are rendered in.
+         """
+         for index in range(len(self.shapes)):
+-            if not self.shapes[index].dims_order == dims_order:
++            if self.shapes[index].dims_order != dims_order:
+                 shape = self.shapes[index]
+                 shape.dims_order = dims_order
+                 self.remove(index, renumber=False)
+diff --git a/napari/layers/shapes/_shapes_mouse_bindings.py b/napari/layers/shapes/_shapes_mouse_bindings.py
+index 23232e76..a23383d6 100644
+--- a/napari/layers/shapes/_shapes_mouse_bindings.py
++++ b/napari/layers/shapes/_shapes_mouse_bindings.py
+@@ -201,10 +201,7 @@ def add_path_polygon(layer, event):
+     else:
+         # Add to an existing path or polygon
+         index = layer._moving_value[0]
+-        if layer._mode == Mode.ADD_POLYGON:
+-            new_type = Polygon
+-        else:
+-            new_type = None
++        new_type = Polygon if layer._mode == Mode.ADD_POLYGON else None
+         vertices = layer._data_view.shapes[index].data
+         vertices = np.concatenate((vertices, [coordinates]), axis=0)
+         # Change the selected vertex
+@@ -312,7 +309,7 @@ def vertex_remove(layer, event):
+         # Removing vertex from ellipse not implemented
+         return
+     vertices = layer._data_view.shapes[shape_under_cursor].data
+-    if len(vertices) <= 2:
++    if len(vertices) <= 2 or (shape_type == Polygon and len(vertices) == 3):
+         # If only 2 vertices present, remove whole shape
+         with layer.events.set_data.blocker():
+             if shape_under_cursor in layer.selected_data:
+@@ -320,16 +317,8 @@ def vertex_remove(layer, event):
+             layer._data_view.remove(shape_under_cursor)
+             shapes = layer.selected_data
+             layer._selected_box = layer.interaction_box(shapes)
+-    elif shape_type == Polygon and len(vertices) == 3:
+-        # If only 3 vertices of a polygon present remove
+-        with layer.events.set_data.blocker():
+-            if shape_under_cursor in layer.selected_data:
+-                layer.selected_data.remove(shape_under_cursor)
+-            layer._data_view.remove(shape_under_cursor)
+-            shapes = layer.selected_data
+-            layer._selected_box = layer.interaction_box(shapes)
+     else:
+-        if shape_type == Rectangle:
++        if shape_type == Rectangle:  # noqa SIM108
+             # Deleting vertex from a rectangle creates a polygon
+             new_type = Polygon
+         else:
+@@ -512,23 +501,20 @@ def _move(layer, coordinates):
+                 )
+             layer._rotate_box(angle, center=layer._fixed_vertex)
+             layer.refresh()
+-    elif layer._mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON]:
+-        if vertex is not None:
+-            layer._moving_coordinates = coordinates
+-            layer._is_moving = True
+-            index = layer._moving_value[0]
+-            shape_type = type(layer._data_view.shapes[index])
+-            if shape_type == Ellipse:
+-                # DIRECT vertex moving of ellipse not implemented
+-                pass
+-            else:
+-                if shape_type == Rectangle:
+-                    new_type = Polygon
+-                else:
+-                    new_type = None
+-                vertices = layer._data_view.shapes[index].data
+-                vertices[vertex] = coordinates
+-                layer._data_view.edit(index, vertices, new_type=new_type)
+-                shapes = layer.selected_data
+-                layer._selected_box = layer.interaction_box(shapes)
+-                layer.refresh()
++    elif (
++        layer._mode in {Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON}
++        and vertex is not None
++    ):
++        layer._moving_coordinates = coordinates
++        layer._is_moving = True
++        index = layer._moving_value[0]
++        shape_type = type(layer._data_view.shapes[index])
++        if shape_type != Ellipse:
++            # not DIRECT vertex moving of ellipse not implemented
++            new_type = Polygon if shape_type == Rectangle else None
++            vertices = layer._data_view.shapes[index].data
++            vertices[vertex] = coordinates
++            layer._data_view.edit(index, vertices, new_type=new_type)
++            shapes = layer.selected_data
++            layer._selected_box = layer.interaction_box(shapes)
++            layer.refresh()
+diff --git a/napari/layers/shapes/_shapes_utils.py b/napari/layers/shapes/_shapes_utils.py
+index fb499dab..97058b02 100644
+--- a/napari/layers/shapes/_shapes_utils.py
++++ b/napari/layers/shapes/_shapes_utils.py
+@@ -260,11 +260,7 @@ def is_collinear(points):
+ 
+     # The collinearity test takes three points, the first two are the first
+     # two in the list, and then the third is iterated through in the loop
+-    for p in points[2:]:
+-        if orientation(points[0], points[1], p) != 0:
+-            return False
+-
+-    return True
++    return all(orientation(points[0], points[1], p) == 0 for p in points[2:])
+ 
+ 
+ def point_to_lines(point, lines):
+@@ -973,7 +969,7 @@ def points_in_poly(points, vertices):
+         d = np.where(abs(d) < tolerance, 0, d)
+         if d[1] == 0:
+             # If y vertices are aligned avoid division by zero
+-            cond_4 = 0 < d[0] * (points[:, 1] - vertices[i, 1])
++            cond_4 = d[0] * (points[:, 1] - vertices[i, 1]) > 0
+         else:
+             cond_4 = points[:, 0] < (
+                 d[0] * (points[:, 1] - vertices[i, 1]) / d[1] + vertices[i, 0]
+diff --git a/napari/layers/shapes/_tests/test_shapes.py b/napari/layers/shapes/_tests/test_shapes.py
+index 1d867508..49451701 100644
+--- a/napari/layers/shapes/_tests/test_shapes.py
++++ b/napari/layers/shapes/_tests/test_shapes.py
+@@ -1715,9 +1715,8 @@ def test_colormap_with_categorical_properties(attribute):
+     properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
+     layer = Shapes(data, properties=properties)
+ 
+-    with pytest.raises(TypeError):
+-        with pytest.warns(UserWarning):
+-            setattr(layer, f'{attribute}_color_mode', 'colormap')
++    with pytest.raises(TypeError), pytest.warns(UserWarning):
++        setattr(layer, f'{attribute}_color_mode', 'colormap')
+ 
+ 
+ @pytest.mark.parametrize("attribute", ['edge', 'face'])
+diff --git a/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py b/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py
+index 970f36cf..3b07aa0a 100644
+--- a/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py
++++ b/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py
+@@ -772,7 +772,7 @@ def test_all_modes_covered(attr):
+     As we do not need to test whether a key is in a dict or not.
+     """
+     mode_dict = getattr(Shapes, attr)
+-    assert {k.value for k in mode_dict.keys()} == set(Mode.keys())
++    assert {k.value for k in mode_dict} == set(Mode.keys())
+ 
+ 
+ @pytest.mark.parametrize(
+diff --git a/napari/layers/shapes/shapes.py b/napari/layers/shapes/shapes.py
+index 9e37c6cf..04c57433 100644
+--- a/napari/layers/shapes/shapes.py
++++ b/napari/layers/shapes/shapes.py
+@@ -752,10 +752,7 @@ class Shapes(Layer):
+ 
+     def _get_ndim(self):
+         """Determine number of dimensions of the layer."""
+-        if self.nshapes == 0:
+-            ndim = self.ndim
+-        else:
+-            ndim = self.data[0].shape[1]
++        ndim = self.ndim if self.nshapes == 0 else self.data[0].shape[1]
+         return ndim
+ 
+     @property
+@@ -1468,10 +1465,7 @@ class Shapes(Layer):
+     def _is_color_mapped(self, color):
+         """determines if the new color argument is for directly setting or cycle/colormap"""
+         if isinstance(color, str):
+-            if color in self.properties:
+-                return True
+-            else:
+-                return False
++            return color in self.properties
+         elif isinstance(color, (list, np.ndarray)):
+             return False
+         else:
+@@ -2248,13 +2242,13 @@ class Shapes(Layer):
+     def _set_view_slice(self):
+         """Set the view given the slicing indices."""
+         ndisplay = self._slice_input.ndisplay
+-        if not ndisplay == self._ndisplay_stored:
++        if ndisplay != self._ndisplay_stored:
+             self.selected_data = set()
+             self._data_view.ndisplay = min(self.ndim, ndisplay)
+             self._ndisplay_stored = ndisplay
+             self._clipboard = {}
+ 
+-        if not self._slice_input.order == self._display_order_stored:
++        if self._slice_input.order != self._display_order_stored:
+             self.selected_data = set()
+             self._data_view.update_dims_order(self._slice_input.order)
+             self._display_order_stored = copy(self._slice_input.order)
+@@ -2375,9 +2369,7 @@ class Shapes(Layer):
+                 # If in select mode just show the interaction boudning box
+                 # including its vertices and the rotation handle
+                 box = self._selected_box[Box.WITH_HANDLE]
+-                if self._value[0] is None:
+-                    face_color = 'white'
+-                elif self._value[1] is None:
++                if self._value[0] is None or self._value[1] is None:
+                     face_color = 'white'
+                 else:
+                     face_color = self._highlight_color
+@@ -2408,9 +2400,7 @@ class Shapes(Layer):
+                 if self._mode == Mode.ADD_PATH:
+                     vertices = vertices[:-1]
+ 
+-                if self._value[0] is None:
+-                    face_color = 'white'
+-                elif self._value[1] is None:
++                if self._value[0] is None or self._value[1] is None:
+                     face_color = 'white'
+                 else:
+                     face_color = self._highlight_color
+diff --git a/napari/layers/tracks/tracks.py b/napari/layers/tracks/tracks.py
+index 4eb92673..2601462a 100644
+--- a/napari/layers/tracks/tracks.py
++++ b/napari/layers/tracks/tracks.py
+@@ -121,11 +121,8 @@ class Tracks(Layer):
+         experimental_clipping_planes=None,
+     ) -> None:
+         # if not provided with any data, set up an empty layer in 2D+t
+-        if data is None:
+-            data = np.empty((0, 4))
+-        else:
+-            # convert data to a numpy array if it is not already one
+-            data = np.asarray(data)
++        # otherwise convert the data to an np.ndarray
++        data = np.empty((0, 4)) if data is None else np.asarray(data)
+ 
+         # set the track data dimensions (remove ID from data)
+         ndim = data.shape[1] - 1
+diff --git a/napari/layers/utils/_tests/test_text_manager.py b/napari/layers/utils/_tests/test_text_manager.py
+index 25519b26..1087f78c 100644
+--- a/napari/layers/utils/_tests/test_text_manager.py
++++ b/napari/layers/utils/_tests/test_text_manager.py
+@@ -166,11 +166,11 @@ def test_equality():
+     )
+ 
+     assert text_manager_1 == text_manager_2
+-    assert not (text_manager_1 != text_manager_2)
++    assert text_manager_1 == text_manager_2
+ 
+     text_manager_2.color = 'blue'
+     assert text_manager_1 != text_manager_2
+-    assert not (text_manager_1 == text_manager_2)
++    assert text_manager_1 != text_manager_2
+ 
+ 
+ @pytest.mark.filterwarnings('ignore::DeprecationWarning')
+diff --git a/napari/layers/utils/color_manager.py b/napari/layers/utils/color_manager.py
+index d5fbd0e9..3742f248 100644
+--- a/napari/layers/utils/color_manager.py
++++ b/napari/layers/utils/color_manager.py
+@@ -301,10 +301,7 @@ class ColorManager(EventedModel):
+             (i.e., reset the range to 0-new_max_value).
+         """
+         if self.color_mode == ColorMode.DIRECT:
+-            if color is None:
+-                new_color = self.current_color
+-            else:
+-                new_color = color
++            new_color = self.current_color if color is None else color
+             transformed_color = transform_color_with_defaults(
+                 num_entries=n_colors,
+                 colors=new_color,
+diff --git a/napari/layers/utils/layer_utils.py b/napari/layers/utils/layer_utils.py
+index fe774c7f..88a77d76 100644
+--- a/napari/layers/utils/layer_utils.py
++++ b/napari/layers/utils/layer_utils.py
+@@ -119,10 +119,7 @@ def register_layer_attr_action(
+ 
+         @functools.wraps(func)
+         def _wrapper(*args, **kwargs):
+-            if args:
+-                obj = args[0]
+-            else:
+-                obj = kwargs[first_variable_name]
++            obj = args[0] if args else kwargs[first_variable_name]
+             prev_mode = getattr(obj, attribute_name)
+             func(*args, **kwargs)
+ 
+@@ -262,10 +259,7 @@ def segment_normal(a, b, p=(0, 0, 1)):
+     d = b - a
+ 
+     if d.ndim == 1:
+-        if len(d) == 2:
+-            normal = np.array([d[1], -d[0]])
+-        else:
+-            normal = np.cross(d, p)
++        normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
+         norm = np.linalg.norm(normal)
+         if norm == 0:
+             norm = 1
+@@ -582,10 +576,7 @@ def compute_multiscale_level(
+ 
+     # Find the highest level (lowest resolution) allowed
+     locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
+-    if len(locations) > 0:
+-        level = locations[-1][0]
+-    else:
+-        level = 0
++    level = locations[-1][0] if len(locations) > 0 else 0
+     return level
+ 
+ 
+diff --git a/napari/layers/vectors/vectors.py b/napari/layers/vectors/vectors.py
+index 381e82ec..17d2ab95 100644
+--- a/napari/layers/vectors/vectors.py
++++ b/napari/layers/vectors/vectors.py
+@@ -261,22 +261,21 @@ class Vectors(Layer):
+         n_vectors = len(self.data)
+ 
+         # Adjust the props/color arrays when the number of vectors has changed
+-        with self.events.blocker_all():
+-            with self._edge.events.blocker_all():
+-                self._feature_table.resize(n_vectors)
+-                if n_vectors < previous_n_vectors:
+-                    # If there are now fewer points, remove the size and colors of the
+-                    # extra ones
+-                    if len(self._edge.colors) > n_vectors:
+-                        self._edge._remove(
+-                            np.arange(n_vectors, len(self._edge.colors))
+-                        )
++        with self.events.blocker_all(), self._edge.events.blocker_all():
++            self._feature_table.resize(n_vectors)
++            if n_vectors < previous_n_vectors:
++                # If there are now fewer points, remove the size and colors of the
++                # extra ones
++                if len(self._edge.colors) > n_vectors:
++                    self._edge._remove(
++                        np.arange(n_vectors, len(self._edge.colors))
++                    )
+ 
+-                elif n_vectors > previous_n_vectors:
+-                    # If there are now more points, add the size and colors of the
+-                    # new ones
+-                    adding = n_vectors - previous_n_vectors
+-                    self._edge._add(n_colors=adding)
++            elif n_vectors > previous_n_vectors:
++                # If there are now more points, add the size and colors of the
++                # new ones
++                adding = n_vectors - previous_n_vectors
++                self._edge._add(n_colors=adding)
+ 
+         self._update_dims()
+         self.events.data(value=self.data)
+diff --git a/napari/plugins/utils.py b/napari/plugins/utils.py
+index b5ac5187..a7349d78 100644
+--- a/napari/plugins/utils.py
++++ b/napari/plugins/utils.py
+@@ -84,9 +84,8 @@ def _get_preferred_readers(path: str) -> Iterable[Tuple[str, str]]:
+         Filtered patterns and their corresponding readers.
+     """
+ 
+-    if osp.isdir(path):
+-        if not path.endswith(os.sep):
+-            path = path + os.sep
++    if osp.isdir(path) and not path.endswith(os.sep):
++        path = path + os.sep
+ 
+     reader_settings = get_settings().plugins.extension2reader
+     return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())
+diff --git a/napari/utils/_tests/test_progress.py b/napari/utils/_tests/test_progress.py
+index e7dcf749..e1daa9dd 100644
+--- a/napari/utils/_tests/test_progress.py
++++ b/napari/utils/_tests/test_progress.py
+@@ -90,7 +90,6 @@ def test_progress_set_description():
+ 
+ def test_progrange():
+     """Test progrange shorthand for progress(range(n))"""
+-    with progrange(10) as pbr:
+-        with progress(range(10)) as pbr2:
+-            assert pbr.iterable == pbr2.iterable
++    with progrange(10) as pbr, progress(range(10)) as pbr2:
++        assert pbr.iterable == pbr2.iterable
+     assert pbr not in progress._all_instances
+diff --git a/napari/utils/_tests/test_theme.py b/napari/utils/_tests/test_theme.py
+index 8ab037a7..b18bbb26 100644
+--- a/napari/utils/_tests/test_theme.py
++++ b/napari/utils/_tests/test_theme.py
+@@ -63,7 +63,7 @@ def test_register_theme():
+ 
+     # Check that the dark theme has not been overwritten
+     dark_theme = get_theme('dark', True)
+-    assert not dark_theme['background'] == blue_theme['background']
++    assert dark_theme['background'] != blue_theme['background']
+ 
+     # Check that blue theme can be gotten from available themes
+     theme = get_theme('test_blue', True)
+diff --git a/napari/utils/_testsupport.py b/napari/utils/_testsupport.py
+index 3de6fd52..ce0ae36b 100644
+--- a/napari/utils/_testsupport.py
++++ b/napari/utils/_testsupport.py
+@@ -50,7 +50,7 @@ def fail_obj_graph(Klass):
+     except ModuleNotFoundError:
+         return
+ 
+-    if not len(Klass._instances) == 0:
++    if len(Klass._instances) != 0:
+         global COUNTER
+         COUNTER += 1
+         import gc
+@@ -88,11 +88,8 @@ def napari_plugin_manager(monkeypatch):
+     # get this test version for the duration of the test.
+     monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
+     monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
+-    try:
++    with suppress(AttributeError):
+         monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
+-    except AttributeError:  # headless tests
+-        pass
+-
+     # prevent discovery of plugins in the environment
+     # you can still use `pm.register` to explicitly register something.
+     pm.discovery_blocker = patch.object(pm, 'discover')
+diff --git a/napari/utils/action_manager.py b/napari/utils/action_manager.py
+index 98b4a24b..0dcc0684 100644
+--- a/napari/utils/action_manager.py
++++ b/napari/utils/action_manager.py
+@@ -216,14 +216,13 @@ class ActionManager:
+         """
+         self._validate_action_name(name)
+ 
+-        if action := self._actions.get(name):
+-            if isgeneratorfunction(action):
+-                raise ValueError(
+-                    trans._(
+-                        '`bind_button` cannot be used with generator functions',
+-                        deferred=True,
+-                    )
++        if (action := self._actions.get(name)) and isgeneratorfunction(action):
++            raise ValueError(
++                trans._(
++                    '`bind_button` cannot be used with generator functions',
++                    deferred=True,
+                 )
++            )
+ 
+         button.clicked.connect(lambda: self.trigger(name))
+         if name in self._actions:
+diff --git a/napari/utils/colormaps/categorical_colormap.py b/napari/utils/colormaps/categorical_colormap.py
+index 2a9746f3..e151f245 100644
+--- a/napari/utils/colormaps/categorical_colormap.py
++++ b/napari/utils/colormaps/categorical_colormap.py
+@@ -76,10 +76,7 @@ class CategoricalColormap(EventedModel):
+                 }
+             else:
+                 colormap = {}
+-            if 'fallback_color' in params:
+-                fallback_color = params['fallback_color']
+-            else:
+-                fallback_color = 'white'
++            fallback_color = params.get("fallback_color", "white")
+         else:
+             colormap = {k: transform_color(v)[0] for k, v in params.items()}
+             fallback_color = 'white'
+@@ -94,7 +91,7 @@ class CategoricalColormap(EventedModel):
+     def validate_type(cls, val):
+         if isinstance(val, cls):
+             return val
+-        if isinstance(val, list) or isinstance(val, np.ndarray):
++        if isinstance(val, (list, np.ndarray)):
+             return cls.from_array(val)
+         elif isinstance(val, dict):
+             return cls.from_dict(val)
+diff --git a/napari/utils/colormaps/colormap_utils.py b/napari/utils/colormaps/colormap_utils.py
+index 0ccd866b..f30a59bf 100644
+--- a/napari/utils/colormaps/colormap_utils.py
++++ b/napari/utils/colormaps/colormap_utils.py
+@@ -459,10 +459,7 @@ def vispy_or_mpl_colormap(name):
+     else:
+         try:
+             mpl_cmap = getattr(cm, name)
+-            if name in _MATPLOTLIB_COLORMAP_NAMES:
+-                display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
+-            else:
+-                display_name = name
++            display_name = _MATPLOTLIB_COLORMAP_NAMES.get(name, name)
+         except AttributeError as e:
+             suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
+                 name
+@@ -647,7 +644,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
+                 name = cmap.name
+                 AVAILABLE_COLORMAPS[name] = cmap
+             elif not all(
+-                (isinstance(i, VispyColormap) or isinstance(i, Colormap))
++                (isinstance(i, (VispyColormap, Colormap)))
+                 for i in colormap.values()
+             ):
+                 raise TypeError(
+diff --git a/napari/utils/events/event.py b/napari/utils/events/event.py
+index 936ba5a3..a999a3c0 100644
+--- a/napari/utils/events/event.py
++++ b/napari/utils/events/event.py
+@@ -48,6 +48,7 @@ to emit events. The EmitterGroup groups EventEmitter objects.
+ For more information see http://github.com/vispy/vispy/wiki/API_Events
+ 
+ """
++import contextlib
+ import inspect
+ import os
+ import warnings
+@@ -1222,11 +1223,9 @@ def _is_pos_arg(param: inspect.Parameter):
+     )
+ 
+ 
+-try:
++with contextlib.suppress(ImportError):
+     # this could move somewhere higher up in napari imports ... but where?
+     __import__('dotenv').load_dotenv()
+-except ImportError:
+-    pass
+ 
+ 
+ def _noop(*a, **k):
+diff --git a/napari/utils/geometry.py b/napari/utils/geometry.py
+index 075116fd..f7804d74 100644
+--- a/napari/utils/geometry.py
++++ b/napari/utils/geometry.py
+@@ -555,10 +555,7 @@ def point_in_quadrilateral_2d(
+         (quadrilateral[[0, 1, 2]], quadrilateral[[0, 2, 3]])
+     )
+     in_triangles = inside_triangles(triangle_vertices - point)
+-    if in_triangles.sum() < 1:
+-        return False
+-    else:
+-        return True
++    return in_triangles.sum() >= 1
+ 
+ 
+ def line_in_quadrilateral_3d(
+@@ -690,16 +687,15 @@ def find_front_back_face(
+ 
+     bbox_face_coords = bounding_box_to_face_vertices(bounding_box)
+     for k, v in FACE_NORMALS.items():
+-        if (np.dot(view_dir, v) + 0.001) < 0:
++        if np.dot(view_dir, v) < -0.001:
+             if line_in_quadrilateral_3d(
+                 click_pos, view_dir, bbox_face_coords[k]
+             ):
+                 front_face_normal = v
+-        elif (np.dot(view_dir, v) + 0.001) > 0:
+-            if line_in_quadrilateral_3d(
+-                click_pos, view_dir, bbox_face_coords[k]
+-            ):
+-                back_face_normal = v
++        elif line_in_quadrilateral_3d(
++            click_pos, view_dir, bbox_face_coords[k]
++        ):
++            back_face_normal = v
+         if front_face_normal is not None and back_face_normal is not None:
+             # stop looping if both the front and back faces have been found
+             break
+diff --git a/napari/utils/interactions.py b/napari/utils/interactions.py
+index 4363f55f..6c6f7f41 100644
+--- a/napari/utils/interactions.py
++++ b/napari/utils/interactions.py
+@@ -1,3 +1,4 @@
++import contextlib
+ import inspect
+ import re
+ import sys
+@@ -206,11 +207,9 @@ def mouse_release_callbacks(obj, event):
+     """
+     for func, gen in tuple(obj._mouse_drag_gen.items()):
+         obj._persisted_mouse_event[gen].__wrapped__ = event
+-        try:
++        with contextlib.suppress(StopIteration):
+             # Run last part of the function to trigger release event
+             next(gen)
+-        except StopIteration:
+-            pass
+         # Finally delete the generator and stored event
+         del obj._mouse_drag_gen[func]
+         del obj._persisted_mouse_event[gen]
+diff --git a/napari/utils/misc.py b/napari/utils/misc.py
+index 4656ae00..4cadb036 100644
+--- a/napari/utils/misc.py
++++ b/napari/utils/misc.py
+@@ -144,17 +144,14 @@ def is_iterable(arg, color=False, allow_none=False):
+     provided and the argument is a 1-D array of length 3 or 4 then the input
+     is taken to not be iterable. If allow_none is True, `None` is considered iterable.
+     """
+-    if arg is None and not allow_none:
+-        return False
+-    elif type(arg) is str:
+-        return False
+-    elif np.isscalar(arg):
++    if (
++        (arg is None and not allow_none)
++        or isinstance(arg, str)
++        or np.isscalar(arg)
++    ):
+         return False
+     elif color and isinstance(arg, (list, np.ndarray)):
+-        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg) == 4):
+-            return False
+-        else:
+-            return True
++        return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
+     else:
+         return True
+ 
+@@ -231,18 +228,18 @@ def ensure_sequence_of_iterables(
+         obj is not None
+         and is_sequence(obj)
+         and all(is_iterable(el, allow_none=allow_none) for el in obj)
++        and (not repeat_empty or len(obj) > 0)
+     ):
+         if length is not None and len(obj) != length:
+-            if (len(obj) == 0 and not repeat_empty) or len(obj) > 0:
+-                # sequence of iterables of wrong length
+-                raise ValueError(
+-                    trans._(
+-                        "length of {obj} must equal {length}",
+-                        deferred=True,
+-                        obj=obj,
+-                        length=length,
+-                    )
++            # sequence of iterables of wrong length
++            raise ValueError(
++                trans._(
++                    "length of {obj} must equal {length}",
++                    deferred=True,
++                    obj=obj,
++                    length=length,
+                 )
++            )
+ 
+         if len(obj) > 0 or not repeat_empty:
+             return obj
+diff --git a/napari/utils/stubgen.py b/napari/utils/stubgen.py
+index c66b58f8..df9c6a8f 100644
+--- a/napari/utils/stubgen.py
++++ b/napari/utils/stubgen.py
+@@ -67,9 +67,8 @@ def _iter_imports(hint) -> Iterator[str]:
+     """Get all imports necessary for `hint`"""
+     # inspect.formatannotation strips "typing." from type annotations
+     # so our signatures won't have it in there
+-    if not repr(hint).startswith("typing."):
+-        if orig := get_origin(hint):
+-            yield orig.__module__
++    if not repr(hint).startswith("typing.") and (orig := get_origin(hint)):
++        yield orig.__module__
+ 
+     for arg in get_args(hint):
+         yield from _iter_imports(arg)
+diff --git a/napari/utils/transforms/transform_utils.py b/napari/utils/transforms/transform_utils.py
+index 093d7111..0a172108 100644
+--- a/napari/utils/transforms/transform_utils.py
++++ b/napari/utils/transforms/transform_utils.py
+@@ -286,7 +286,7 @@ def expand_upper_triangular(vector):
+     """
+     n = len(vector)
+     N = ((-1 + np.sqrt(8 * n + 1)) / 2.0) + 1  # n+1 th root
+-    if N != np.floor(N):
++    if np.floor(N) != N:
+         raise ValueError(
+             trans._(
+                 '{number} is a strange number of shear elements',
+diff --git a/napari/utils/translations.py b/napari/utils/translations.py
+index f058c83a..0802df7c 100644
+--- a/napari/utils/translations.py
++++ b/napari/utils/translations.py
+@@ -686,7 +686,7 @@ def _load_language(
+                     "configuration file could not be read.\n\n"
+                     "The default language will be used.\n\n"
+                     f"Error:\n{err}"
+-                ),
++                )
+                 data = {}
+ 
+         locale = data.get("application", {}).get("language", locale)
+diff --git a/pyproject.toml b/pyproject.toml
+index 075fa828..859e9d1e 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -86,10 +86,14 @@ select = [
+     "ISC", # flake8-implicit-str-concat
+     "G", # flake8-logging-format
+     "PIE", # flake8-pie
++    "COM", # flake8-commas
++    "SIM", # flake8-simplify
+ ]
+ ignore = [
+     "E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003",
+-    "A003" # flake8-builtins - we have class attributes violating these rule
++    "A003", # flake8-builtins - we have class attributes violating these rule
++    "COM812", # flake8-commas - we don't like adding comma on single line of arguments
++    "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
+ 
+ ]
+ 
+diff --git a/tools/test_strings.py b/tools/test_strings.py
+index 221c05e6..393c5903 100644
+--- a/tools/test_strings.py
++++ b/tools/test_strings.py
+@@ -593,10 +593,7 @@ if __name__ == '__main__':
+     import json
+     import pathlib
+ 
+-    if len(sys.argv) > 1:
+-        edit_cmd = sys.argv[1]
+-    else:
+-        edit_cmd = None
++    edit_cmd = sys.argv[1] if len(sys.argv) > 1 else None
+ 
+     pth = pathlib.Path(__file__).parent / 'string_list.json'
+     data = json.loads(pth.read_text())
+-- 
+2.34.1
+
