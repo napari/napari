@@ -107,6 +107,8 @@ for pull in tqdm(pr_list):
     if pull.number in consumed_pr:
         continue
     # commit = repo.commit(pr_commits_dict[pull.number])
+    # print("hash",  pr_commits_dict[pull.number])
+    # break
     patch_file = LOCAL_DIR / "patch_dir" / f"{pull.number}.patch"
     if patch_file.exists():
         print(f"Apply patch {patch_file}")

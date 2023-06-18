@@ -1,4 +1,4 @@
-From 193c5341f8513cce650c24a7010d1f482e555414 Mon Sep 17 00:00:00 2001
+From 42c726cf37968c0249adcfc395254cf32db4a1b1 Mon Sep 17 00:00:00 2001
 From: Grzegorz Bokota <bokota+github@gmail.com>
 Date: Tue, 31 Jan 2023 15:09:13 +0100
 Subject: [PATCH] Replace flake8, isort and pyupgrade by ruff, enable
@@ -49,7 +49,7 @@ Co-authored-by: Matthias Bussonnier <bussonniermatthias@gmail.com>
  examples/dynamic-projections-dask.py          |  6 ++-
  examples/embed_ipython_.py                    |  3 +-
  examples/image_depth.py                       |  3 +-
- examples/inherit_viewer_style.py              | 21 +++++----
+ examples/inherit_viewer_style.py              | 20 +++++----
  examples/interaction_box_image.py             |  1 +
  examples/interaction_box_points.py            |  3 +-
  examples/interactive_move_rectangle_3d.py     |  3 +-
@@ -86,7 +86,7 @@ Co-authored-by: Matthias Bussonnier <bussonniermatthias@gmail.com>
  examples/point_cloud.py                       |  1 +
  examples/points-over-time.py                  |  4 +-
  examples/progress_bar_minimal_.py             | 11 +++--
- examples/progress_bar_segmentation_.py        |  8 ++--
+ examples/progress_bar_segmentation_.py        |  9 ++--
  examples/progress_bar_threading_.py           |  2 +
  examples/reader_plugin.py                     |  3 +-
  examples/scale_bar.py                         |  3 +-
@@ -128,7 +128,7 @@ Co-authored-by: Matthias Bussonnier <bussonniermatthias@gmail.com>
  napari/_qt/dialogs/qt_activity_dialog.py      |  2 +-
  napari/_qt/dialogs/qt_modal.py                |  2 +-
  napari/_qt/dialogs/qt_notification.py         | 10 ++---
- napari/_qt/dialogs/qt_plugin_dialog.py        | 11 +++--
+ napari/_qt/dialogs/qt_plugin_dialog.py        | 18 +++++---
  napari/_qt/dialogs/qt_reader_dialog.py        |  6 ++-
  napari/_qt/dialogs/screenshot_dialog.py       |  6 ++-
  napari/_qt/experimental/qt_chunk_receiver.py  |  4 +-
@@ -137,7 +137,7 @@ Co-authored-by: Matthias Bussonnier <bussonniermatthias@gmail.com>
  .../_qt/layer_controls/qt_image_controls.py   |  2 +-
  .../layer_controls/qt_image_controls_base.py  |  4 +-
  .../_qt/layer_controls/qt_labels_controls.py  |  4 +-
- .../layer_controls/qt_layer_controls_base.py  | 25 ++++++++++-
+ .../layer_controls/qt_layer_controls_base.py  |  4 +-
  .../qt_layer_controls_container.py            |  2 +-
  .../_qt/layer_controls/qt_points_controls.py  |  2 +-
  .../_qt/layer_controls/qt_shapes_controls.py  |  2 +-
@@ -346,7 +346,7 @@ Co-authored-by: Matthias Bussonnier <bussonniermatthias@gmail.com>
  setup.cfg                                     | 15 +------
  tools/test_strings.py                         | 31 ++++++-------
  tox.ini                                       | 11 +----
- 339 files changed, 798 insertions(+), 713 deletions(-)
+ 339 files changed, 781 insertions(+), 716 deletions(-)
 
 diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
 index 925d47d3..1d682278 100644
@@ -1084,10 +1084,10 @@ index 7c4492f0..cc23d2ce 100644
  im_data[30:40, 25:35, 25:35] = 1
  viewer = napari.view_image(im_data, colormap='magenta', rendering='iso')
 diff --git a/examples/inherit_viewer_style.py b/examples/inherit_viewer_style.py
-index b58a6058..030727b9 100644
+index b58a6058..27f02ee5 100644
 --- a/examples/inherit_viewer_style.py
 +++ b/examples/inherit_viewer_style.py
-@@ -8,19 +8,22 @@ from main napari window.
+@@ -8,19 +8,23 @@ from main napari window.
  .. tags::  gui, interactivity
  """
  
@@ -1097,7 +1097,7 @@ index b58a6058..030727b9 100644
 -=======
 ->>>>>>> 5ca30ea2 (Add ruff linter to pre-commit (#5275))
 -from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton, QGridLayout, QLabel, QSpinBox
--
+ 
  from magicgui import magicgui
 +from qtpy.QtWidgets import (
 +    QDialog,
@@ -1117,7 +1117,7 @@ index b58a6058..030727b9 100644
  # The magicgui widget shown by selecting the 'Show widget' button of MyWidget
  @magicgui
  def sample_add(a: int, b: int) -> int:
-@@ -35,7 +38,7 @@ change_style()
+@@ -35,7 +39,7 @@ change_style()
  
  
  class MyDialog(QDialog):
@@ -1126,7 +1126,7 @@ index b58a6058..030727b9 100644
          super().__init__(parent)
          self.first_input = QSpinBox()
          self.second_input = QSpinBox()
-@@ -54,7 +57,7 @@ class MyDialog(QDialog):
+@@ -54,7 +58,7 @@ class MyDialog(QDialog):
          self.close()
  
  class MyWidget(QWidget):
@@ -1795,10 +1795,10 @@ index 86c9346a..1c7c6911 100644
  def process(im_slice):
      # do something with your image slice
 diff --git a/examples/progress_bar_segmentation_.py b/examples/progress_bar_segmentation_.py
-index 34d930b6..08ca1460 100644
+index 34d930b6..dbe65250 100644
 --- a/examples/progress_bar_segmentation_.py
 +++ b/examples/progress_bar_segmentation_.py
-@@ -8,10 +8,6 @@ in the viewer.
+@@ -8,12 +8,7 @@ in the viewer.
  .. tags:: gui
  """
  import numpy as np
@@ -1807,9 +1807,11 @@ index 34d930b6..08ca1460 100644
 -from time import sleep
 -from napari.utils import progress
  from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
- 
+-
  from skimage.filters import (
-@@ -23,6 +19,9 @@ from skimage.filters import (
+     threshold_isodata,
+     threshold_li,
+@@ -23,6 +18,9 @@ from skimage.filters import (
  )
  from skimage.measure import label
  
@@ -1819,7 +1821,7 @@ index 34d930b6..08ca1460 100644
  # we will try each of these thresholds on our image
  all_thresholds = [
      threshold_isodata,
-@@ -141,6 +140,7 @@ def process_ims():
+@@ -141,6 +139,7 @@ def process_ims():
          pbar.update(1)
  
          # uncomment this line to see the 100% progress bar
@@ -2583,10 +2585,10 @@ index e89b91cc..ce93dd7d 100644
          self.exception = exception
          self.setModal(True)
 diff --git a/napari/_qt/dialogs/qt_plugin_dialog.py b/napari/_qt/dialogs/qt_plugin_dialog.py
-index b8361f30..cf6d560e 100644
+index b8361f30..82967a52 100644
 --- a/napari/_qt/dialogs/qt_plugin_dialog.py
 +++ b/napari/_qt/dialogs/qt_plugin_dialog.py
-@@ -355,7 +356,7 @@ class PluginListItem(QFrame):
+@@ -355,7 +355,7 @@ class PluginListItem(QFrame):
          enabled: bool = True,
          installed: bool = False,
          npe_version=1,
@@ -2595,7 +2597,7 @@ index b8361f30..cf6d560e 100644
          super().__init__(parent)
          self.setup_ui(enabled)
          self.plugin_name.setText(package_name)
-@@ -378,7 +379,7 @@ class PluginListItem(QFrame):
+@@ -378,7 +378,7 @@ class PluginListItem(QFrame):
              self.action_button.setObjectName("install_button")
  
      def _handle_npe2_plugin(self, npe_version):
@@ -2604,7 +2606,7 @@ index b8361f30..cf6d560e 100644
              return
          opacity = 0.4 if npe_version == 'shim' else 1
          lbl = trans._('npe1 (adapted)') if npe_version == 'shim' else 'npe2'
-@@ -538,7 +539,7 @@ class PluginListItem(QFrame):
+@@ -538,7 +538,7 @@ class PluginListItem(QFrame):
  
  
  class QPluginList(QListWidget):
@@ -2613,7 +2615,7 @@ index b8361f30..cf6d560e 100644
          super().__init__(parent)
          self.installer = installer
          self.setSortingEnabled(True)
-@@ -737,7 +738,7 @@ class RefreshState(Enum):
+@@ -737,7 +737,7 @@ class RefreshState(Enum):
  
  
  class QtPluginDialog(QDialog):
@@ -2622,6 +2624,25 @@ index b8361f30..cf6d560e 100644
          super().__init__(parent)
          self.refresh_state = RefreshState.DONE
          self.already_installed = set()
+@@ -872,11 +872,15 @@ class QtPluginDialog(QDialog):
+         self.worker.start()
+         if discovered:
+             message = trans._(
+-                'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
++                'When installing/uninstalling npe2 plugins, '
++                'you must restart napari for UI changes to take effect.'
+             )
+-            self._warn_dialog = WarnPopup(
+-                text=message,
++            self._warn_dialog = WarnPopup(text=message)
++            global_point = self.process_error_indicator.mapToGlobal(
++                self.process_error_indicator.rect().topLeft()
+             )
++            global_point = QPoint(global_point.x(), global_point.y() - 75)
++            self._warn_dialog.move(global_point)
+             self._warn_dialog.exec_()
+ 
+     def setup_ui(self):
 diff --git a/napari/_qt/dialogs/qt_reader_dialog.py b/napari/_qt/dialogs/qt_reader_dialog.py
 index eb305200..f9dc0713 100644
 --- a/napari/_qt/dialogs/qt_reader_dialog.py
@@ -2733,7 +2754,7 @@ index 22c65b4b..0f5f9b58 100644
          view = QListView()
          view.setMinimumWidth(COLORMAP_WIDTH + TEXT_WIDTH)
 diff --git a/napari/_qt/layer_controls/qt_image_controls.py b/napari/_qt/layer_controls/qt_image_controls.py
-index 19929d1a..e6cfd7b6 100644
+index cc994526..3733372c 100644
 --- a/napari/_qt/layer_controls/qt_image_controls.py
 +++ b/napari/_qt/layer_controls/qt_image_controls.py
 @@ -60,7 +60,7 @@ class QtImageControls(QtBaseImageControls):
@@ -2768,7 +2789,7 @@ index ba1ce929..748aad6a 100644
  
          decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)
 diff --git a/napari/_qt/layer_controls/qt_labels_controls.py b/napari/_qt/layer_controls/qt_labels_controls.py
-index 0ca652f3..0cd34750 100644
+index 845b81b6..65411005 100644
 --- a/napari/_qt/layer_controls/qt_labels_controls.py
 +++ b/napari/_qt/layer_controls/qt_labels_controls.py
 @@ -83,7 +83,7 @@ class QtLabelsControls(QtLayerControls):
@@ -2780,7 +2801,7 @@ index 0ca652f3..0cd34750 100644
          super().__init__(layer)
  
          self.layer.events.mode.connect(self._on_mode_change)
-@@ -503,7 +503,7 @@ class QtColorBox(QWidget):
+@@ -498,7 +498,7 @@ class QtColorBox(QWidget):
          An instance of a napari layer.
      """
  
@@ -2790,18 +2811,10 @@ index 0ca652f3..0cd34750 100644
  
          self.layer = layer
 diff --git a/napari/_qt/layer_controls/qt_layer_controls_base.py b/napari/_qt/layer_controls/qt_layer_controls_base.py
-index d872a9ac..5164e497 100644
+index 47850387..5164e497 100644
 --- a/napari/_qt/layer_controls/qt_layer_controls_base.py
 +++ b/napari/_qt/layer_controls/qt_layer_controls_base.py
-@@ -3,6 +3,7 @@ from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
- 
- from napari._qt.widgets._slider_compat import QDoubleSlider
- from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
-+from napari.layers.base.base import Layer
- from napari.utils.events import disconnect_events
- from napari.utils.translations import trans
- 
-@@ -13,7 +14,7 @@ NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
+@@ -14,7 +14,7 @@ NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
  class LayerFormLayout(QFormLayout):
      """Reusable form layout for subwidgets in each QtLayerControls class"""
  
@@ -2810,46 +2823,17 @@ index d872a9ac..5164e497 100644
          super().__init__(QWidget)
          self.setContentsMargins(0, 0, 0, 0)
          self.setSpacing(4)
-@@ -42,9 +43,11 @@ class QtLayerControls(QFrame):
+@@ -43,7 +43,7 @@ class QtLayerControls(QFrame):
          Label for the opacity slider widget.
      """
  
--    def __init__(self, layer):
+-    def __init__(self, layer: Layer):
 +    def __init__(self, layer: Layer) -> None:
          super().__init__()
  
-+        self._ndisplay: int = 2
-+
-         self.layer = layer
-         self.layer.events.blending.connect(self._on_blending_change)
-         self.layer.events.opacity.connect(self._on_opacity_change)
-@@ -131,6 +134,24 @@ class QtLayerControls(QFrame):
-                 self.blendComboBox.findData(self.layer.blending)
-             )
- 
-+    @property
-+    def ndisplay(self) -> int:
-+        """The number of dimensions displayed in the canvas."""
-+        return self._ndisplay
-+
-+    @ndisplay.setter
-+    def ndisplay(self, ndisplay: int) -> None:
-+        self._ndisplay = ndisplay
-+        self._on_ndisplay_changed()
-+
-+    def _on_ndisplay_changed(self) -> None:
-+        """Respond to a change to the number of dimensions displayed in the viewer.
-+
-+        This is needed because some layer controls may have options that are specific
-+        to 2D or 3D visualization only.
-+        """
-+        pass
-+
-     def deleteLater(self):
-         disconnect_events(self.layer.events, self)
-         super().deleteLater()
+         self._ndisplay: int = 2
 diff --git a/napari/_qt/layer_controls/qt_layer_controls_container.py b/napari/_qt/layer_controls/qt_layer_controls_container.py
-index 67187ad6..1f643752 100644
+index 3e75994f..57b49ac4 100644
 --- a/napari/_qt/layer_controls/qt_layer_controls_container.py
 +++ b/napari/_qt/layer_controls/qt_layer_controls_container.py
 @@ -94,7 +94,7 @@ class QtLayerControlsContainer(QStackedWidget):
@@ -2914,12 +2898,12 @@ index fc9f8df6..f34de367 100644
  
          # NOTE(arl): there are no events fired for changing checkboxes
 diff --git a/napari/_qt/layer_controls/qt_vectors_controls.py b/napari/_qt/layer_controls/qt_vectors_controls.py
-index 5cd4a69e..57c308d9 100644
+index 92d1463c..2807eb3f 100644
 --- a/napari/_qt/layer_controls/qt_vectors_controls.py
 +++ b/napari/_qt/layer_controls/qt_vectors_controls.py
 @@ -47,7 +47,7 @@ class QtVectorsControls(QtLayerControls):
  
-     layer: 'napari.layers.Tracks'
+     layer: 'napari.layers.Vectors'
  
 -    def __init__(self, layer):
 +    def __init__(self, layer) -> None:
@@ -4643,7 +4627,7 @@ index ec3da3b9..f5a07e70 100644
      for em in layer.events.emitters.values():
          assert len(em.callbacks) == 0
 diff --git a/napari/layers/base/base.py b/napari/layers/base/base.py
-index 1520fa3f..85a0cf2c 100644
+index 355d26b3..83cb86c3 100644
 --- a/napari/layers/base/base.py
 +++ b/napari/layers/base/base.py
 @@ -232,7 +232,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
@@ -4655,7 +4639,7 @@ index 1520fa3f..85a0cf2c 100644
          super().__init__()
  
          if name is None and data is not None:
-@@ -1781,7 +1781,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+@@ -1780,7 +1780,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
  
          try:
              return Cls(data, **(meta or {}))
@@ -6347,10 +6331,10 @@ index 59cab056..996c2fbb 100644
              # like repackaging on linux or anything else we fallback to
              # using compress
 diff --git a/napari/utils/key_bindings.py b/napari/utils/key_bindings.py
-index 84190499..f1d724b6 100644
+index 9a223616..c1530a66 100644
 --- a/napari/utils/key_bindings.py
 +++ b/napari/utils/key_bindings.py
-@@ -337,7 +337,7 @@ class KeybindingDescriptor:
+@@ -336,7 +336,7 @@ class KeybindingDescriptor:
          Function to bind.
      """
  
@@ -6359,7 +6343,7 @@ index 84190499..f1d724b6 100644
          self.__func__ = func
  
      def __get__(self, instance, cls):
-@@ -356,7 +356,7 @@ class KeymapProvider:
+@@ -355,7 +355,7 @@ class KeymapProvider:
          Instance keymap.
      """
  
@@ -6368,7 +6352,7 @@ index 84190499..f1d724b6 100644
          super().__init__(*args, **kwargs)
          self.keymap = {}
  
-@@ -401,7 +401,7 @@ class KeymapHandler:
+@@ -400,7 +400,7 @@ class KeymapHandler:
          Classes that provide the keymaps for this class to handle.
      """
  

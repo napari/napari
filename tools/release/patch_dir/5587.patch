@@ -1,0 +1,559 @@
+From f052b8947b91c6e2109a211df672924e02031baf Mon Sep 17 00:00:00 2001
+From: Pam <54282105+ppwadhwa@users.noreply.github.com>
+Date: Wed, 1 Mar 2023 03:40:13 -0600
+Subject: [PATCH] Remove napari-hub API access code (#5587)
+
+<!-- What does this pull request (PR) do? Why is it necessary? -->
+This PR removes any dependency on the hub api in napari. While working
+on #5198, it was decided to go ahead and remove this code.
+
+<!-- Tell us about your new feature, improvement, or fix! -->
+<!-- If your change includes user interface changes, please add an
+image, or an animation "An image is worth a thousand words!" -->
+<!-- You can use https://www.cockos.com/licecap/ or similar to create
+animations -->
+
+<!-- Please delete options that are not relevant. -->
+- [ ] Bug-fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing
+functionality to not work as expected)
+- [ ] This change requires a documentation update
+
+<!-- What resources, documentation, and guides were used in the creation
+of this PR? -->
+<!-- If this is a bug-fix or otherwise resolves an issue, reference it
+here with "closes #(issue)" -->
+
+<!-- Please describe the tests that you ran to verify your changes. -->
+- [ ] example: the test suite for my feature covers cases x, y, and z
+- [ ] example: all tests pass with my change
+- [ ] example: I check if my changes works with both PySide and PyQt
+backends
+      as there are small differences between the two Qt bindings.
+
+- [ ] My PR is the minimum possible work for the desired functionality
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] I have added tests that prove my fix is effective or that my
+feature works
+- [ ] If I included new strings, I have used `trans.` to make them
+localizable.
+For more information see our [translations
+guide](https://napari.org/developers/translations.html).
+---
+ .../dialogs/_tests/test_qt_plugin_dialog.py   |  29 ++---
+ napari/_qt/dialogs/qt_plugin_dialog.py        |  36 ++----
+ napari/plugins/_tests/test_hub.py             | 121 ------------------
+ napari/plugins/hub.py                         | 121 ------------------
+ napari/plugins/pypi.py                        |   4 +-
+ napari/settings/_plugins.py                   |  21 +--
+ tools/string_list.json                        |  19 ---
+ 7 files changed, 28 insertions(+), 323 deletions(-)
+ delete mode 100644 napari/plugins/_tests/test_hub.py
+ delete mode 100644 napari/plugins/hub.py
+
+diff --git a/napari/_qt/dialogs/_tests/test_qt_plugin_dialog.py b/napari/_qt/dialogs/_tests/test_qt_plugin_dialog.py
+index 769fdf6d..595e5236 100644
+--- a/napari/_qt/dialogs/_tests/test_qt_plugin_dialog.py
++++ b/napari/_qt/dialogs/_tests/test_qt_plugin_dialog.py
+@@ -6,13 +6,12 @@ from npe2 import PackageMetadata
+ from napari._qt.dialogs import qt_plugin_dialog
+ 
+ 
+-def _iter_napari_hub_or_pypi_plugin_info(
++def _iter_napari_pypi_plugin_info(
+     conda_forge: bool = True,
+ ) -> Generator[Tuple[Optional[PackageMetadata], bool], None, None]:
+-    """Mock the hub and pypi methods to collect available plugins.
++    """Mock the pypi method to collect available plugins.
+ 
+-    This will mock `napari.plugins.hub.iter_hub_plugin_info` for napari-hub,
+-    and `napari.plugins.pypi.iter_napari_plugin_info` for pypi.
++    This will mock napari.plugins.pypi.iter_napari_plugin_info` for pypi.
+ 
+     It will return two fake plugins that will populate the available plugins
+     list (the bottom one). The first plugin will not be available on
+@@ -35,12 +34,11 @@ def _iter_napari_hub_or_pypi_plugin_info(
+ @pytest.fixture
+ def plugin_dialog(qtbot, monkeypatch):
+     """Fixture that provides a plugin dialog for a normal napari install."""
+-    for method_name in ["iter_hub_plugin_info", "iter_napari_plugin_info"]:
+-        monkeypatch.setattr(
+-            qt_plugin_dialog,
+-            method_name,
+-            _iter_napari_hub_or_pypi_plugin_info,
+-        )
++    monkeypatch.setattr(
++        qt_plugin_dialog,
++        "iter_napari_plugin_info",
++        _iter_napari_pypi_plugin_info,
++    )
+ 
+     # This is patching `napari.utils.misc.running_as_constructor_app` function
+     # to mock a normal napari install.
+@@ -62,12 +60,11 @@ def plugin_dialog_constructor(qtbot, monkeypatch):
+     """
+     Fixture that provides a plugin dialog for a constructor based install.
+     """
+-    for method_name in ["iter_hub_plugin_info", "iter_napari_plugin_info"]:
+-        monkeypatch.setattr(
+-            qt_plugin_dialog,
+-            method_name,
+-            _iter_napari_hub_or_pypi_plugin_info,
+-        )
++    monkeypatch.setattr(
++        qt_plugin_dialog,
++        "iter_napari_plugin_info",
++        _iter_napari_pypi_plugin_info,
++    )
+ 
+     # This is patching `napari.utils.misc.running_as_constructor_app` function
+     # to mock a constructor based install.
+diff --git a/napari/_qt/dialogs/qt_plugin_dialog.py b/napari/_qt/dialogs/qt_plugin_dialog.py
+index 0b641a14..e9a78af7 100644
+--- a/napari/_qt/dialogs/qt_plugin_dialog.py
++++ b/napari/_qt/dialogs/qt_plugin_dialog.py
+@@ -44,14 +44,12 @@ from napari._qt.qthreading import create_worker
+ from napari._qt.widgets.qt_message_popup import WarnPopup
+ from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+ from napari.plugins import plugin_manager
+-from napari.plugins.hub import iter_hub_plugin_info
+ from napari.plugins.pypi import _user_agent, iter_napari_plugin_info
+ from napari.plugins.utils import normalized_name
+ from napari.settings import get_settings
+ from napari.utils._appdirs import user_plugin_dir, user_site_packages
+ from napari.utils.misc import (
+     parse_version,
+-    running_as_bundled_app,
+     running_as_constructor_app,
+ )
+ from napari.utils.translations import trans
+@@ -851,19 +849,9 @@ class QtPluginDialog(QDialog):
+         )
+ 
+         # fetch available plugins
+-        settings = get_settings()
+-        use_hub = (
+-            running_as_bundled_app()
+-            or running_as_constructor_app()
+-            or settings.plugins.plugin_api.name == "napari_hub"
+-        )
+-        if use_hub:
+-            conda_forge = running_as_constructor_app()
+-            self.worker = create_worker(
+-                iter_hub_plugin_info, conda_forge=conda_forge
+-            )
+-        else:
+-            self.worker = create_worker(iter_napari_plugin_info)
++        get_settings()
++
++        self.worker = create_worker(iter_napari_plugin_info)
+ 
+         self.worker.yielded.connect(self._handle_yield)
+         self.worker.finished.connect(self.working_indicator.hide)
+@@ -872,11 +860,15 @@ class QtPluginDialog(QDialog):
+         self.worker.start()
+         if discovered:
+             message = trans._(
+-                'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
++                'When installing/uninstalling npe2 plugins, '
++                'you must restart napari for UI changes to take effect.'
+             )
+-            self._warn_dialog = WarnPopup(
+-                text=message,
++            self._warn_dialog = WarnPopup(text=message)
++            global_point = self.process_error_indicator.mapToGlobal(
++                self.process_error_indicator.rect().topLeft()
+             )
++            global_point = QPoint(global_point.x(), global_point.y() - 75)
++            self._warn_dialog.move(global_point)
+             self._warn_dialog.exec_()
+ 
+     def setup_ui(self):
+@@ -1018,12 +1010,10 @@ class QtPluginDialog(QDialog):
+     def _install_packages(self, packages: Sequence[str] = ()):
+         if not packages:
+             _packages = self.direct_entry_edit.text()
+-            if os.path.exists(_packages):
+-                packages = [_packages]
+-            else:
+-                packages = _packages.split()
++            packages = (
++                [_packages] if os.path.exists(_packages) else _packages.split()
++            )
+             self.direct_entry_edit.clear()
+-
+         if packages:
+             self.installer.install(packages)
+ 
+diff --git a/napari/plugins/_tests/test_hub.py b/napari/plugins/_tests/test_hub.py
+deleted file mode 100644
+index c9b43467..00000000
+--- a/napari/plugins/_tests/test_hub.py
++++ /dev/null
+@@ -1,121 +0,0 @@
+-from unittest import mock
+-from urllib import error
+-
+-from napari.plugins import hub
+-
+-# Mock data
+-# ----------------------------------------------------------------------------
+-HUB_REPLY = b'''{"authors": [{"email": "sofroniewn@gmail.com", "name": "Nicholas Sofroniew"}],
+-"development_status": ["Development Status :: 4 - Beta"],
+-"license": "BSD-3-Clause",
+-"name": "napari-svg",
+-"project_site": "https://github.com/napari/napari-svg",
+-"summary": "A plugin",
+-"version": "0.1.6",
+-"visibility": "public"}'''
+-ANACONDA_REPLY_DIFFERENT_PYPI = b'{"versions": ["0.1.5"]}'
+-ANACONDA_REPLY_SAME_PYPI = b'{"versions": ["0.1.5", "0.1.6"]}'
+-ANACONDA_REPLY_EMPTY = b'{"versions": []}'
+-
+-
+-# Mocks
+-# ----------------------------------------------------------------------------
+-class FakeResponse:
+-    def __init__(self, *, data: bytes, _error=None) -> None:
+-        self.data = data
+-        self._error = _error
+-
+-    def read(self):
+-        if self._error:
+-            raise self._error
+-
+-        return self.data
+-
+-    def close(self):
+-        pass
+-
+-    def __enter__(self):
+-        return self
+-
+-    def __exit__(self, *exc):
+-        return
+-
+-
+-def mocked_urlopen_valid_different(*args, **kwargs):
+-    if "https://api.anaconda.org" in args[0]:
+-        return FakeResponse(data=ANACONDA_REPLY_DIFFERENT_PYPI)
+-    return FakeResponse(data=HUB_REPLY)
+-
+-
+-def mocked_urlopen_valid_same(*args, **kwargs):
+-    if "https://api.anaconda.org" in args[0]:
+-        return FakeResponse(data=ANACONDA_REPLY_SAME_PYPI)
+-    return FakeResponse(data=HUB_REPLY)
+-
+-
+-def mocked_urlopen_valid_empty(*args, **kwargs):
+-    if "https://api.anaconda.org" in args[0]:
+-        return FakeResponse(data=ANACONDA_REPLY_EMPTY)
+-    return FakeResponse(data=HUB_REPLY)
+-
+-
+-def mocked_urlopen_valid_not_in_forge(*args, **kwargs):
+-    if "https://api.anaconda.org" in args[0]:
+-        return FakeResponse(
+-            data=ANACONDA_REPLY_EMPTY,
+-            _error=error.HTTPError('', 1, '', '', None),
+-        )
+-    return FakeResponse(data=HUB_REPLY)
+-
+-
+-# Tests
+-# ----------------------------------------------------------------------------
+-@mock.patch('urllib.request.urlopen', new=mocked_urlopen_valid_different)
+-def test_hub_plugin_info_different_pypi():
+-    hub.hub_plugin_info.cache_clear()
+-    info, is_available_in_conda_forge = hub.hub_plugin_info(
+-        'napari-SVG', conda_forge=True
+-    )
+-    assert is_available_in_conda_forge
+-    assert info.name == 'napari-svg'
+-    assert info.version == '0.1.5'
+-
+-
+-@mock.patch('urllib.request.urlopen', new=mocked_urlopen_valid_same)
+-def test_hub_plugin_info_same_as_pypi():
+-    hub.hub_plugin_info.cache_clear()
+-    info, is_available_in_conda_forge = hub.hub_plugin_info(
+-        'napari-SVG', conda_forge=True
+-    )
+-    assert is_available_in_conda_forge
+-    assert info.version == '0.1.6'
+-
+-
+-@mock.patch('urllib.request.urlopen', new=mocked_urlopen_valid_empty)
+-def test_hub_plugin_info_empty():
+-    hub.hub_plugin_info.cache_clear()
+-    info, is_available_in_conda_forge = hub.hub_plugin_info(
+-        'napari-SVG', conda_forge=True
+-    )
+-    assert not is_available_in_conda_forge
+-    assert info.version == '0.1.6'
+-
+-
+-@mock.patch('urllib.request.urlopen', new=mocked_urlopen_valid_empty)
+-def test_hub_plugin_info_forge_false():
+-    hub.hub_plugin_info.cache_clear()
+-    info, is_available_in_conda_forge = hub.hub_plugin_info(
+-        'napari-SVG', conda_forge=False
+-    )
+-    assert is_available_in_conda_forge
+-    assert info.version == '0.1.6'
+-
+-
+-@mock.patch('urllib.request.urlopen', new=mocked_urlopen_valid_not_in_forge)
+-def test_hub_plugin_info_not_in_forge():
+-    hub.hub_plugin_info.cache_clear()
+-    info, is_available_in_conda_forge = hub.hub_plugin_info(
+-        'napari-SVG', conda_forge=True
+-    )
+-    assert not is_available_in_conda_forge
+-    assert info.version == '0.1.6'
+diff --git a/napari/plugins/hub.py b/napari/plugins/hub.py
+deleted file mode 100644
+index 0b53df84..00000000
+--- a/napari/plugins/hub.py
++++ /dev/null
+@@ -1,121 +0,0 @@
+-"""
+-These convenience functions will be useful for searching napari hub for
+-retriving plugin information and related metadata.
+-"""
+-import json
+-from concurrent.futures import ThreadPoolExecutor, as_completed
+-from functools import lru_cache
+-from typing import Generator, Optional, Tuple
+-from urllib import error, request
+-
+-from npe2 import PackageMetadata
+-
+-from napari.plugins.utils import normalized_name
+-
+-NAPARI_HUB_PLUGINS = 'https://api.napari-hub.org/plugins'
+-ANACONDA_ORG = 'https://api.anaconda.org/package/{channel}/{package_name}'
+-
+-
+-@lru_cache(maxsize=1024)
+-def hub_plugin_info(
+-    name: str,
+-    min_dev_status=3,
+-    conda_forge=True,
+-) -> Tuple[Optional[PackageMetadata], bool]:
+-    """Get package metadata from the napari hub.
+-
+-    Parameters
+-    ----------
+-    name : str
+-        name of the package
+-    min_dev_status : int, optional
+-        Development status. Default is 3.
+-    conda_forge : bool, optional
+-        Check if package is available in conda-forge. Default is True.
+-
+-    Returns
+-    -------
+-    Tuple of optional PackageMetadata and bool
+-        Project PackageMetadata and availability on conda forge.
+-    """
+-    try:
+-        with request.urlopen(NAPARI_HUB_PLUGINS + "/" + name) as resp:
+-            info = json.loads(resp.read().decode())
+-    except error.HTTPError:
+-        return None, False
+-
+-    # If the napari hub returns an info dict missing the required keys,
+-    # simply return None, False like the above except
+-    if (
+-        not {
+-            'name',
+-            'version',
+-            'authors',
+-            'summary',
+-            'license',
+-            'project_site',
+-        }
+-        <= info.keys()
+-    ):
+-        return None, False
+-
+-    version = info["version"]
+-    norm_name = normalized_name(info["name"])
+-    is_available_in_conda_forge = True
+-    if conda_forge:
+-        is_available_in_conda_forge = False
+-        anaconda_api = ANACONDA_ORG.format(
+-            channel="conda-forge", package_name=norm_name
+-        )
+-        try:
+-            with request.urlopen(anaconda_api) as resp_api:
+-                anaconda_info = json.loads(resp_api.read().decode())
+-                versions = anaconda_info.get("versions", [])
+-                if versions:
+-                    if version not in versions:
+-                        version = versions[-1]
+-
+-                    is_available_in_conda_forge = True
+-        except error.HTTPError:
+-            pass
+-
+-    classifiers = info.get("development_status", [])
+-    for _ in range(1, min_dev_status):
+-        if any(f'Development Status :: {1}' in x for x in classifiers):
+-            return None, False
+-
+-    authors = ", ".join([author["name"] for author in info["authors"]])
+-    data = PackageMetadata(
+-        metadata_version="1.0",
+-        name=norm_name,
+-        version=version,
+-        summary=info["summary"],
+-        home_page=info["project_site"],
+-        author=authors,
+-        license=info["license"] or "UNKNOWN",
+-    )
+-    return data, is_available_in_conda_forge
+-
+-
+-def iter_hub_plugin_info(
+-    skip=None, conda_forge=True
+-) -> Generator[Tuple[Optional[PackageMetadata], bool], None, None]:
+-    """Return a generator that yields ProjectInfo of available napari plugins."""
+-    if skip is None:
+-        skip = {}
+-    with request.urlopen(NAPARI_HUB_PLUGINS) as resp:
+-        plugins = json.loads(resp.read().decode())
+-
+-    already_yielded = []
+-    with ThreadPoolExecutor(max_workers=8) as executor:
+-        futures = [
+-            executor.submit(hub_plugin_info, name, conda_forge=conda_forge)
+-            for name in sorted(plugins)
+-            if name not in skip
+-        ]
+-
+-        for future in as_completed(futures):
+-            info, is_available_in_conda_forge = future.result()
+-            if info and info not in already_yielded:
+-                already_yielded.append(info)
+-                yield info, is_available_in_conda_forge
+diff --git a/napari/plugins/pypi.py b/napari/plugins/pypi.py
+index 452a4ae7..2ea5ed48 100644
+--- a/napari/plugins/pypi.py
++++ b/napari/plugins/pypi.py
+@@ -82,11 +82,9 @@ def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool]]:
+         _info = cast(Dict[str, str], dict(info))
+         # TODO: use this better.
+         # this would require changing the api that qt_plugin_dialog expects to
+-        # receive (and it doesn't currently receive this from the hub API)
++        # receive
+         _info.pop("display_name", None)
+ 
+-        # TODO: I'd prefer we didn't normalize the name here, but it's needed for
+-        # parity with the hub api.  change this later.
+         name = _info.pop("name")
+         meta = PackageMetadata(name=normalized_name(name), **_info)
+         yield meta, (name in conda)
+diff --git a/napari/settings/_plugins.py b/napari/settings/_plugins.py
+index 1ff18e64..fa8337c8 100644
+--- a/napari/settings/_plugins.py
++++ b/napari/settings/_plugins.py
+@@ -1,14 +1,9 @@
+-from enum import Enum
+ from typing import Dict, List, Set
+ 
+ from pydantic import Field
+ from typing_extensions import TypedDict
+ 
+ from napari.settings._base import EventedSettings
+-from napari.utils.misc import (
+-    running_as_bundled_app,
+-    running_as_constructor_app,
+-)
+ from napari.utils.translations import trans
+ 
+ 
+@@ -22,11 +17,6 @@ class PluginHookOption(TypedDict):
+ CallOrderDict = Dict[str, List[PluginHookOption]]
+ 
+ 
+-class PluginAPI(str, Enum):
+-    napari_hub = 'napari hub'
+-    pypi = 'PyPI'
+-
+-
+ class PluginsSettings(EventedSettings):
+     use_npe2_adaptor: bool = Field(
+         False,
+@@ -36,13 +26,7 @@ class PluginsSettings(EventedSettings):
+         ),
+         requires_restart=True,
+     )
+-    plugin_api: PluginAPI = Field(
+-        PluginAPI.pypi,
+-        title=trans._("Plugin API"),
+-        description=trans._(
+-            "Use the following API for querying plugin information.",
+-        ),
+-    )
++
+     call_order: CallOrderDict = Field(
+         default_factory=dict,
+         title=trans._("Plugin sort order"),
+@@ -82,6 +66,3 @@ class PluginsSettings(EventedSettings):
+             'disabled_plugins',
+             'extension2writer',
+         ]
+-
+-        if running_as_bundled_app() or running_as_constructor_app():
+-            preferences_exclude.append('plugin_api')
+diff --git a/tools/string_list.json b/tools/string_list.json
+index 5ca42c7c..5487158c 100644
+--- a/tools/string_list.json
++++ b/tools/string_list.json
+@@ -375,7 +375,6 @@
+       "=={item.latest_version}",
+       "1.0",
+       "shim",
+-      "napari_hub",
+       "0-{item.text()}",
+       "unavailable"
+     ],
+@@ -2347,23 +2346,6 @@
+       "Neutral"
+     ],
+     "napari/plugins/hook_specifications.py": [],
+-    "napari/plugins/hub.py": [
+-      "https://api.napari-hub.org/plugins",
+-      "https://api.anaconda.org/package/{channel}/{package_name}",
+-      "/",
+-      "name",
+-      "version",
+-      "authors",
+-      "summary",
+-      "license",
+-      "project_site",
+-      "conda-forge",
+-      "versions",
+-      "development_status",
+-      "Development Status :: {1}",
+-      "1.0",
+-      "UNKNOWN"
+-    ],
+     "napari/plugins/io.py": [
+       "napari_write_{layer._type_string}",
+       "Falling back to original plugin engine.",
+@@ -2502,7 +2484,6 @@
+       "disabled_plugins",
+       "extension2writer",
+       "schema_version",
+-      "napari hub",
+       "PyPI",
+       "plugin_api"
+     ],
+-- 
+2.34.1

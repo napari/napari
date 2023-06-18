@@ -1,0 +1,432 @@
+From a778232f8f40d50522c76b169917424c1c3b76ec Mon Sep 17 00:00:00 2001
+From: Andy Sweet <andrew.d.sweet@gmail.com>
+Date: Mon, 23 Jan 2023 10:58:28 -0800
+Subject: [PATCH] Remove layer ndisplay event (#5491)
+
+This removes the private event `Layer.events._ndisplay`. This was needed
+to notify the layer control widgets, some of which should only be
+presented in 2D others in 3D. Now, each layer control widget stores
+`ndisplay` as a public mutable property and triggers similar updates
+when `ViewerModel.dims.ndisplay` changes.
+
+There are two motivations for this change.
+
+1. It makes `Layer._slice_dims` simpler and more clearly similar to
+`Layer.refresh`.
+2. We use and test against the public API of the widgets and model
+rather than rely on a private event.
+
+The main downside of this change is that the layer control widget has
+some extra state (`ndisplay`) that we need to keep in sync. Initially, I
+hoped we could pass through the new value of `ndisplay` through events
+(rather than store it as state), but things are complex enough in
+`QtImageControls` to make that difficult.
+
+This is mostly a refactor with no napari public API changes.
+
+Partly motivated by #4795
+
+- [x] all existing tests pass with my change
+---
+ .../_tests/test_qt_image_layer.py             | 20 +++---
+ .../_qt/layer_controls/qt_image_controls.py   | 66 ++++++++-----------
+ .../_qt/layer_controls/qt_labels_controls.py  | 17 ++---
+ .../layer_controls/qt_layer_controls_base.py  | 23 ++++++-
+ .../qt_layer_controls_container.py            | 19 +++++-
+ .../_qt/layer_controls/qt_vectors_controls.py |  2 +-
+ napari/layers/base/base.py                    |  7 +-
+ 7 files changed, 83 insertions(+), 71 deletions(-)
+
+diff --git a/napari/_qt/layer_controls/_tests/test_qt_image_layer.py b/napari/_qt/layer_controls/_tests/test_qt_image_layer.py
+index 59e1b198..b64e6b36 100644
+--- a/napari/_qt/layer_controls/_tests/test_qt_image_layer.py
++++ b/napari/_qt/layer_controls/_tests/test_qt_image_layer.py
+@@ -42,8 +42,8 @@ def test_rendering_combobox(qtbot):
+ def test_depiction_combobox_changes(qtbot):
+     """Changing the model attribute should update the view."""
+     layer = Image(np.random.rand(10, 15, 20))
+-    layer._slice_dims(ndisplay=3)
+     qtctrl = QtImageControls(layer)
++    qtctrl.ndisplay = 3
+     qtbot.addWidget(qtctrl)
+     combo_box = qtctrl.depictionComboBox
+     opts = {combo_box.itemText(i) for i in range(combo_box.count())}
+@@ -61,9 +61,9 @@ def test_depiction_combobox_changes(qtbot):
+ def test_plane_controls_show_hide_on_depiction_change(qtbot):
+     """Changing depiction mode should show/hide plane controls in 3D."""
+     layer = Image(np.random.rand(10, 15, 20))
+-    layer._slice_dims(ndisplay=3)
+     qtctrl = QtImageControls(layer)
+     qtbot.addWidget(qtctrl)
++    qtctrl.ndisplay = 3
+ 
+     layer.depiction = 'volume'
+     assert qtctrl.planeThicknessSlider.isHidden()
+@@ -81,22 +81,22 @@ def test_plane_controls_show_hide_on_depiction_change(qtbot):
+ def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
+     """Changing ndisplay should show/hide plane controls if depicting a plane."""
+     layer = Image(np.random.rand(10, 15, 20))
++    layer.depiction = 'plane'
+     qtctrl = QtImageControls(layer)
+     qtbot.addWidget(qtctrl)
+ 
+-    layer._slice_dims(ndisplay=3)
+-    layer.depiction = 'plane'
+-    assert not qtctrl.planeThicknessSlider.isHidden()
+-    assert not qtctrl.planeThicknessLabel.isHidden()
+-    assert not qtctrl.planeNormalButtons.isHidden()
+-    assert not qtctrl.planeNormalLabel.isHidden()
+-
+-    layer._slice_dims(ndisplay=2)
++    assert qtctrl.ndisplay == 2
+     assert qtctrl.planeThicknessSlider.isHidden()
+     assert qtctrl.planeThicknessLabel.isHidden()
+     assert qtctrl.planeNormalButtons.isHidden()
+     assert qtctrl.planeNormalLabel.isHidden()
+ 
++    qtctrl.ndisplay = 3
++    assert not qtctrl.planeThicknessSlider.isHidden()
++    assert not qtctrl.planeThicknessLabel.isHidden()
++    assert not qtctrl.planeNormalButtons.isHidden()
++    assert not qtctrl.planeNormalLabel.isHidden()
++
+ 
+ def test_plane_slider_value_change(qtbot):
+     """Changing the model should update the view."""
+diff --git a/napari/_qt/layer_controls/qt_image_controls.py b/napari/_qt/layer_controls/qt_image_controls.py
+index 19929d1a..cc994526 100644
+--- a/napari/_qt/layer_controls/qt_image_controls.py
++++ b/napari/_qt/layer_controls/qt_image_controls.py
+@@ -72,7 +72,6 @@ class QtImageControls(QtBaseImageControls):
+         self.layer.events.rendering.connect(self._on_rendering_change)
+         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
+         self.layer.events.attenuation.connect(self._on_attenuation_change)
+-        self.layer.events._ndisplay.connect(self._on_ndisplay_change)
+         self.layer.events.depiction.connect(self._on_depiction_change)
+         self.layer.plane.events.thickness.connect(
+             self._on_plane_thickness_change
+@@ -156,7 +155,8 @@ class QtImageControls(QtBaseImageControls):
+         sld.valueChanged.connect(self.changeAttenuation)
+         self.attenuationSlider = sld
+         self.attenuationLabel = QLabel(trans._('attenuation:'))
+-        self._on_ndisplay_change()
++
++        self._on_ndisplay_changed()
+ 
+         colormap_layout = QHBoxLayout()
+         if hasattr(self.layer, 'rgb') and self.layer.rgb:
+@@ -198,7 +198,7 @@ class QtImageControls(QtBaseImageControls):
+             'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
+             'nearest', 'spline16', 'spline36'
+         """
+-        if self.layer._slice_input.ndisplay == 2:
++        if self.ndisplay == 2:
+             self.layer.interpolation2d = text
+         else:
+             self.layer.interpolation3d = text
+@@ -227,11 +227,11 @@ class QtImageControls(QtBaseImageControls):
+               This will make nearer objects appear more prominent.
+         """
+         self.layer.rendering = text
+-        self._toggle_rendering_parameter_visbility()
++        self._update_rendering_parameter_visibility()
+ 
+     def changeDepiction(self, text):
+         self.layer.depiction = text
+-        self._toggle_plane_parameter_visibility()
++        self._update_plane_parameter_visibility()
+ 
+     def changePlaneThickness(self, value: float):
+         self.layer.plane.thickness = value
+@@ -297,7 +297,7 @@ class QtImageControls(QtBaseImageControls):
+                 self.layer.rendering, Qt.MatchFlag.MatchFixedString
+             )
+             self.renderComboBox.setCurrentIndex(index)
+-            self._toggle_rendering_parameter_visbility()
++            self._update_rendering_parameter_visibility()
+ 
+     def _on_depiction_change(self):
+         """Receive layer model depiction change event and update combobox."""
+@@ -306,48 +306,36 @@ class QtImageControls(QtBaseImageControls):
+                 self.layer.depiction, Qt.MatchFlag.MatchFixedString
+             )
+             self.depictionComboBox.setCurrentIndex(index)
+-            self._toggle_plane_parameter_visibility()
++            self._update_plane_parameter_visibility()
+ 
+     def _on_plane_thickness_change(self):
+         with self.layer.plane.events.blocker():
+             self.planeThicknessSlider.setValue(self.layer.plane.thickness)
+ 
+-    def _toggle_rendering_parameter_visbility(self):
++    def _update_rendering_parameter_visibility(self):
+         """Hide isosurface rendering parameters if they aren't needed."""
+         rendering = ImageRendering(self.layer.rendering)
+-        if rendering == ImageRendering.ISO:
+-            self.isoThresholdSlider.show()
+-            self.isoThresholdLabel.show()
+-        else:
+-            self.isoThresholdSlider.hide()
+-            self.isoThresholdLabel.hide()
+-        if rendering == ImageRendering.ATTENUATED_MIP:
+-            self.attenuationSlider.show()
+-            self.attenuationLabel.show()
+-        else:
+-            self.attenuationSlider.hide()
+-            self.attenuationLabel.hide()
+-
+-    def _toggle_plane_parameter_visibility(self):
++        iso_threshold_visible = rendering == ImageRendering.ISO
++        self.isoThresholdLabel.setVisible(iso_threshold_visible)
++        self.isoThresholdSlider.setVisible(iso_threshold_visible)
++        attenuation_visible = rendering == ImageRendering.ATTENUATED_MIP
++        self.attenuationSlider.setVisible(attenuation_visible)
++        self.attenuationLabel.setVisible(attenuation_visible)
++
++    def _update_plane_parameter_visibility(self):
+         """Hide plane rendering controls if they aren't needed."""
+         depiction = VolumeDepiction(self.layer.depiction)
+-        ndisplay = self.layer._slice_input.ndisplay
+-        if depiction == VolumeDepiction.VOLUME or ndisplay == 2:
+-            self.planeNormalButtons.hide()
+-            self.planeNormalLabel.hide()
+-            self.planeThicknessSlider.hide()
+-            self.planeThicknessLabel.hide()
+-        if depiction == VolumeDepiction.PLANE and ndisplay == 3:
+-            self.planeNormalButtons.show()
+-            self.planeNormalLabel.show()
+-            self.planeThicknessSlider.show()
+-            self.planeThicknessLabel.show()
++        visible = depiction == VolumeDepiction.PLANE and self.ndisplay == 3
++        self.planeNormalButtons.setVisible(visible)
++        self.planeNormalLabel.setVisible(visible)
++        self.planeThicknessSlider.setVisible(visible)
++        self.planeThicknessLabel.setVisible(visible)
+ 
+     def _update_interpolation_combo(self):
+         interp_names = [i.value for i in Interpolation.view_subset()]
+         interp = (
+             self.layer.interpolation2d
+-            if self.layer._slice_input.ndisplay == 2
++            if self.ndisplay == 2
+             else self.layer.interpolation3d
+         )
+         with qt_signals_blocked(self.interpComboBox):
+@@ -355,11 +343,11 @@ class QtImageControls(QtBaseImageControls):
+             self.interpComboBox.addItems(interp_names)
+             self.interpComboBox.setCurrentText(interp)
+ 
+-    def _on_ndisplay_change(self):
+-        """Toggle between 2D and 3D visualization modes."""
++    def _on_ndisplay_changed(self):
++        """Update widget visibility based on 2D and 3D visualization modes."""
+         self._update_interpolation_combo()
+-        self._toggle_plane_parameter_visibility()
+-        if self.layer._slice_input.ndisplay == 2:
++        self._update_plane_parameter_visibility()
++        if self.ndisplay == 2:
+             self.isoThresholdSlider.hide()
+             self.isoThresholdLabel.hide()
+             self.attenuationSlider.hide()
+@@ -371,7 +359,7 @@ class QtImageControls(QtBaseImageControls):
+         else:
+             self.renderComboBox.show()
+             self.renderLabel.show()
+-            self._toggle_rendering_parameter_visbility()
++            self._update_rendering_parameter_visibility()
+             self.depictionComboBox.show()
+             self.depictionLabel.show()
+ 
+diff --git a/napari/_qt/layer_controls/qt_labels_controls.py b/napari/_qt/layer_controls/qt_labels_controls.py
+index 0ca652f3..845b81b6 100644
+--- a/napari/_qt/layer_controls/qt_labels_controls.py
++++ b/napari/_qt/layer_controls/qt_labels_controls.py
+@@ -87,7 +87,6 @@ class QtLabelsControls(QtLayerControls):
+         super().__init__(layer)
+ 
+         self.layer.events.mode.connect(self._on_mode_change)
+-        self.layer.events._ndisplay.connect(self._on_ndisplay_change)
+         self.layer.events.rendering.connect(self._on_rendering_change)
+         self.layer.events.selected_label.connect(
+             self._on_selected_label_change
+@@ -240,7 +239,8 @@ class QtLabelsControls(QtLayerControls):
+         renderComboBox.currentTextChanged.connect(self.changeRendering)
+         self.renderComboBox = renderComboBox
+         self.renderLabel = QLabel(trans._('rendering:'))
+-        self._on_ndisplay_change()
++
++        self._on_ndisplay_changed()
+ 
+         color_mode_comboBox = QComboBox(self)
+         for index, (data, text) in enumerate(
+@@ -478,15 +478,10 @@ class QtLabelsControls(QtLayerControls):
+             )
+             self.renderComboBox.setCurrentIndex(index)
+ 
+-    def _on_ndisplay_change(self):
+-        """Toggle between 2D and 3D visualization modes."""
+-        if self.layer._slice_input.ndisplay == 2:
+-            self.renderComboBox.hide()
+-            self.renderLabel.hide()
+-        else:
+-            self.renderComboBox.show()
+-            self.renderLabel.show()
+-
++    def _on_ndisplay_changed(self):
++        render_visible = self.ndisplay == 3
++        self.renderComboBox.setVisible(render_visible)
++        self.renderLabel.setVisible(render_visible)
+         self._on_editable_change()
+ 
+     def deleteLater(self):
+diff --git a/napari/_qt/layer_controls/qt_layer_controls_base.py b/napari/_qt/layer_controls/qt_layer_controls_base.py
+index d872a9ac..47850387 100644
+--- a/napari/_qt/layer_controls/qt_layer_controls_base.py
++++ b/napari/_qt/layer_controls/qt_layer_controls_base.py
+@@ -3,6 +3,7 @@ from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
+ 
+ from napari._qt.widgets._slider_compat import QDoubleSlider
+ from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
++from napari.layers.base.base import Layer
+ from napari.utils.events import disconnect_events
+ from napari.utils.translations import trans
+ 
+@@ -42,9 +43,11 @@ class QtLayerControls(QFrame):
+         Label for the opacity slider widget.
+     """
+ 
+-    def __init__(self, layer):
++    def __init__(self, layer: Layer):
+         super().__init__()
+ 
++        self._ndisplay: int = 2
++
+         self.layer = layer
+         self.layer.events.blending.connect(self._on_blending_change)
+         self.layer.events.opacity.connect(self._on_opacity_change)
+@@ -131,6 +134,24 @@ class QtLayerControls(QFrame):
+                 self.blendComboBox.findData(self.layer.blending)
+             )
+ 
++    @property
++    def ndisplay(self) -> int:
++        """The number of dimensions displayed in the canvas."""
++        return self._ndisplay
++
++    @ndisplay.setter
++    def ndisplay(self, ndisplay: int) -> None:
++        self._ndisplay = ndisplay
++        self._on_ndisplay_changed()
++
++    def _on_ndisplay_changed(self) -> None:
++        """Respond to a change to the number of dimensions displayed in the viewer.
++
++        This is needed because some layer controls may have options that are specific
++        to 2D or 3D visualization only.
++        """
++        pass
++
+     def deleteLater(self):
+         disconnect_events(self.layer.events, self)
+         super().deleteLater()
+diff --git a/napari/_qt/layer_controls/qt_layer_controls_container.py b/napari/_qt/layer_controls/qt_layer_controls_container.py
+index 67187ad6..3e75994f 100644
+--- a/napari/_qt/layer_controls/qt_layer_controls_container.py
++++ b/napari/_qt/layer_controls/qt_layer_controls_container.py
+@@ -46,7 +46,7 @@ def create_qt_layer_controls(layer):
+ 
+     Parameters
+     ----------
+-    layer : napari.layers._base_layer.Layer
++    layer : napari.layers.Layer
+         Layer that needs its controls widget created.
+ 
+     Returns
+@@ -109,6 +109,19 @@ class QtLayerControlsContainer(QStackedWidget):
+         self.viewer.layers.events.inserted.connect(self._add)
+         self.viewer.layers.events.removed.connect(self._remove)
+         viewer.layers.selection.events.active.connect(self._display)
++        viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
++
++    def _on_ndisplay_changed(self, event):
++        """Responds to a change in the dimensionality displayed in the canvas.
++
++        Parameters
++        ----------
++        event : Event
++            Event with the new dimensionality value at `event.value`.
++        """
++        for widget in self.widgets.values():
++            if widget is not self.empty_widget:
++                widget.ndisplay = event.value
+ 
+     def _display(self, event):
+         """Change the displayed controls to be those of the target layer.
+@@ -116,7 +129,7 @@ class QtLayerControlsContainer(QStackedWidget):
+         Parameters
+         ----------
+         event : Event
+-            Event with the target layer at `event.item`.
++            Event with the target layer at `event.value`.
+         """
+         layer = event.value
+         if layer is None:
+@@ -135,6 +148,7 @@ class QtLayerControlsContainer(QStackedWidget):
+         """
+         layer = event.value
+         controls = create_qt_layer_controls(layer)
++        controls.ndisplay = 3
+         self.addWidget(controls)
+         self.widgets[layer] = controls
+ 
+@@ -149,7 +163,6 @@ class QtLayerControlsContainer(QStackedWidget):
+         layer = event.value
+         controls = self.widgets[layer]
+         self.removeWidget(controls)
+-        # controls.close()
+         controls.hide()
+         controls.deleteLater()
+         controls = None
+diff --git a/napari/_qt/layer_controls/qt_vectors_controls.py b/napari/_qt/layer_controls/qt_vectors_controls.py
+index 5cd4a69e..92d1463c 100644
+--- a/napari/_qt/layer_controls/qt_vectors_controls.py
++++ b/napari/_qt/layer_controls/qt_vectors_controls.py
+@@ -45,7 +45,7 @@ class QtVectorsControls(QtLayerControls):
+         Spin box widget controlling edge line width of vectors.
+     """
+ 
+-    layer: 'napari.layers.Tracks'
++    layer: 'napari.layers.Vectors'
+ 
+     def __init__(self, layer):
+         super().__init__(layer)
+diff --git a/napari/layers/base/base.py b/napari/layers/base/base.py
+index 1520fa3f..1b22b067 100644
+--- a/napari/layers/base/base.py
++++ b/napari/layers/base/base.py
+@@ -344,7 +344,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+             editable=Event,
+             loaded=Event,
+             extent=Event,
+-            _ndisplay=Event,
+             select=WarningEmitter(
+                 trans._(
+                     "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
+@@ -941,14 +940,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+         if self._slice_input == slice_input:
+             return
+ 
+-        old_ndisplay = self._slice_input.ndisplay
+         self._slice_input = slice_input
+ 
+-        if old_ndisplay != ndisplay:
+-            self.events._ndisplay()
+-
+         # Update the point values
+-        self._update_dims()
++        self.refresh()
+         self._set_editable()
+ 
+     @abstractmethod
+-- 
+2.34.1

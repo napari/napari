@@ -3041,13 +3041,11 @@ new file mode 100644
 index 00000000..6ac9d14e
 --- /dev/null
 +++ b/napari/layers/base/_base_key_bindings.py
-@@ -0,0 +1,17 @@
-+from app_model.types import KeyCode
-+
+@@ -0,0 +1,15 @@
 +from napari.layers.base.base import Layer
 +
 +
-+@Layer.bind_key(KeyCode.Space)
++@Layer.bind_key("Space")
 +def hold_to_pan_zoom(layer):
 +    """Hold to pan and zoom in the viewer."""
 +    if layer._mode != layer._modeclass.PAN_ZOOM:
