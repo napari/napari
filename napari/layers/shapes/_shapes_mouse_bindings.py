@@ -572,6 +572,9 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
             )
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
+    layer.events.data(
+        value={"action": "change", "index": [shape_under_cursor]}
+    )
     layer.refresh()
 
 
