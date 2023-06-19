@@ -96,7 +96,7 @@ def test_progress_set_disable():
         total=5, disable=True, desc="This description will not be set by tqdm."
     )
     # make sure the dummy desscription (empty string) was set
-    assert pbr.desc == "progress"
+    assert pbr.desc == "progress: "
     pbr.close()
 
 
