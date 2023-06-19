@@ -1,0 +1,52 @@
+From 1874478722275d73a78c21e267abebf988e829f7 Mon Sep 17 00:00:00 2001
+From: Grzegorz Bokota <bokota+github@gmail.com>
+Date: Thu, 25 May 2023 07:55:44 +0200
+Subject: [PATCH] Add constraints file during installation of packages from pip
+ in docs workflow (#5862)
+
+Add usage of constraints in build docs process to reduce failed
+workflows caused by updates of dependency.
+
+I also add a lower pin to typing-extension to keep min-req test working.
+---
+ .github/workflows/build_docs.yml | 5 ++++-
+ setup.cfg                        | 2 +-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/.github/workflows/build_docs.yml b/.github/workflows/build_docs.yml
+index d9bbce81..f4c59cb1 100644
+--- a/.github/workflows/build_docs.yml
++++ b/.github/workflows/build_docs.yml
+@@ -25,13 +25,16 @@ jobs:
+       - uses: actions/setup-python@v4
+         with:
+           python-version: 3.9
++          cache-dependency-path: |
++            setup.cfg
++            docs/requirements.txt
+ 
+       - uses: tlambert03/setup-qt-libs@v1
+ 
+       - name: Install Dependencies
+         run: |
+           python -m pip install --upgrade pip
+-          python -m pip install -e ".[docs]"
++          python -m pip install -e ".[docs]" -c "resources/constraints/constraints_py3.9.txt"
+ 
+       - name: Build Docs
+         uses: aganders3/headless-gui@v1
+diff --git a/setup.cfg b/setup.cfg
+index 7ca23193..6d70777b 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -75,7 +75,7 @@ install_requires =
+     tifffile>=2020.2.16
+     toolz>=0.10.0
+     tqdm>=4.56.0
+-    typing_extensions
++    typing_extensions>=4.2.0
+     vispy>=0.12.1,<0.13
+     wrapt>=1.11.1
+ 
+-- 
+2.34.1

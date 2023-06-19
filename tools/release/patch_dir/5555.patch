@@ -1,0 +1,1716 @@
+From 104a2121f66400b216165e384be338bc3d670dc6 Mon Sep 17 00:00:00 2001
+From: LucaMarconato <2664412+LucaMarconato@users.noreply.github.com>
+Date: Sat, 27 May 2023 10:47:59 +0200
+Subject: [PATCH] Add lasso tool for faster drawing of polygonal Shapes (#5555)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This PR adds a polygon lasso tool for drawing complex polygons which are
+added to a shape layer. The tool does not require the user to click for
+adding each specific vertex as is the case with the polygon tool. This
+PR features the following:
+• A new shape layer button which can be activated by keyboard shortcut
+shift + P
+• A polygon lasso mode which can be used for drawing with the mouse and
+tablet
+
+For mouse draw mode the sequence of events by the user is as follows:
+
+1. Mouse press
+2. Move mouse while not mouse pressed
+3. Mouse press to finish draw
+
+For tablet mode, the shape is created by a mouse (ie stylus) click+drag
+event. Drawing finishes when the stylus is lifted / on mouse release.
+
+For both modes, vertices are added only if the vertex to be added is at
+least 10 screen pixels away from the previous vertex. This is a setting
+configurable in advanced settings.
+
+An implementation of the Ramer–Douglas–Peucker algorithm is used to
+reduce the number of vertices when a drawing is finished. The
+aggressiveness of reducing the number of vertices is dependent on a
+parameter epsilon. If set to 0, no vertices are removed. The higher the
+epsilon, the more vertices are removed. The epsilon parameter can be
+configured in napari preferences -> experimental -> rdp_epsilon.
+
+Lastly, a refactor has been performed for various functions related to
+polygon drawing.
+
+We acknowledge @yozhikoff who made a first prototype of this new
+feature.
+
+---------
+
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Co-authored-by: wmv_hpomen <w-mv@hotmail.com>
+Co-authored-by: Peter Sobolewski <76622105+psobolewskiPhD@users.noreply.github.com>
+Co-authored-by: Juan Nunez-Iglesias <jni@fastmail.com>
+---
+ .../_qt/layer_controls/qt_shapes_controls.py  |  22 +-
+ napari/_qt/qt_resources/styles/01_buttons.qss |   4 +
+ napari/layers/shapes/_shapes_constants.py     |   1 +
+ napari/layers/shapes/_shapes_key_bindings.py  |  13 +-
+ .../layers/shapes/_shapes_mouse_bindings.py   | 364 +++++++++++++++---
+ napari/layers/shapes/_shapes_utils.py         |  81 +++-
+ .../_tests/test_shapes_mouse_bindings.py      | 188 ++++++++-
+ .../layers/shapes/_tests/test_shapes_utils.py |  79 ++++
+ napari/layers/shapes/shapes.py                |  34 +-
+ napari/resources/icons/polygon_lasso.svg      |  43 +++
+ napari/settings/_experimental.py              |  21 +
+ napari/utils/shortcuts.py                     |   1 +
+ tools/string_list.json                        |   3 +-
+ 13 files changed, 790 insertions(+), 64 deletions(-)
+ create mode 100644 napari/resources/icons/polygon_lasso.svg
+
+diff --git a/napari/_qt/layer_controls/qt_shapes_controls.py b/napari/_qt/layer_controls/qt_shapes_controls.py
+index 0c9bfbed..d525b366 100644
+--- a/napari/_qt/layer_controls/qt_shapes_controls.py
++++ b/napari/_qt/layer_controls/qt_shapes_controls.py
+@@ -64,6 +64,8 @@ class QtShapesControls(QtLayerControls):
+         Button to add paths to shapes layer.
+     polygon_button : qtpy.QtWidgets.QtModeRadioButton
+         Button to add polygons to shapes layer.
++    polygon_lasso_button : qtpy.QtWidgets.QtModeRadioButton
++        Button to add polygons to shapes layer with a lasso tool.
+     rectangle_button : qtpy.QtWidgets.QtModeRadioButton
+         Button to add rectangles to shapes layer.
+     select_button : qtpy.QtWidgets.QtModeRadioButton
+@@ -203,6 +205,12 @@ class QtShapesControls(QtLayerControls):
+             Mode.ADD_POLYGON,
+             "activate_add_polygon_mode",
+         )
++        self.polygon_lasso_button = _radio_button(
++            layer,
++            'polygon_lasso',
++            Mode.ADD_POLYGON_LASSO,
++            "activate_add_polygon_lasso_mode",
++        )
+         self.vertex_insert_button = _radio_button(
+             layer,
+             'vertex_insert',
+@@ -255,6 +263,7 @@ class QtShapesControls(QtLayerControls):
+             self.line_button,
+             self.path_button,
+             self.polygon_button,
++            self.polygon_lasso_button,
+             self.vertex_remove_button,
+             self.vertex_insert_button,
+             self.delete_button,
+@@ -271,6 +280,7 @@ class QtShapesControls(QtLayerControls):
+         self.button_group.addButton(self.line_button)
+         self.button_group.addButton(self.path_button)
+         self.button_group.addButton(self.polygon_button)
++        self.button_group.addButton(self.polygon_lasso_button)
+         self.button_group.addButton(self.vertex_insert_button)
+         self.button_group.addButton(self.vertex_remove_button)
+         self._on_editable_or_visible_change()
+@@ -282,11 +292,12 @@ class QtShapesControls(QtLayerControls):
+         button_grid.addWidget(self.direct_button, 0, 5)
+         button_grid.addWidget(self.select_button, 0, 6)
+         button_grid.addWidget(self.panzoom_button, 0, 7)
+-        button_grid.addWidget(self.move_back_button, 1, 1)
+-        button_grid.addWidget(self.move_front_button, 1, 2)
+-        button_grid.addWidget(self.ellipse_button, 1, 3)
+-        button_grid.addWidget(self.rectangle_button, 1, 4)
+-        button_grid.addWidget(self.polygon_button, 1, 5)
++        button_grid.addWidget(self.move_back_button, 1, 0)
++        button_grid.addWidget(self.move_front_button, 1, 1)
++        button_grid.addWidget(self.ellipse_button, 1, 2)
++        button_grid.addWidget(self.rectangle_button, 1, 3)
++        button_grid.addWidget(self.polygon_button, 1, 4)
++        button_grid.addWidget(self.polygon_lasso_button, 1, 5)
+         button_grid.addWidget(self.line_button, 1, 6)
+         button_grid.addWidget(self.path_button, 1, 7)
+         button_grid.setContentsMargins(5, 0, 0, 5)
+@@ -354,6 +365,7 @@ class QtShapesControls(QtLayerControls):
+             Mode.ADD_LINE: self.line_button,
+             Mode.ADD_PATH: self.path_button,
+             Mode.ADD_POLYGON: self.polygon_button,
++            Mode.ADD_POLYGON_LASSO: self.polygon_lasso_button,
+             Mode.VERTEX_INSERT: self.vertex_insert_button,
+             Mode.VERTEX_REMOVE: self.vertex_remove_button,
+         }
+diff --git a/napari/_qt/qt_resources/styles/01_buttons.qss b/napari/_qt/qt_resources/styles/01_buttons.qss
+index 0a6ed7e8..d279ef76 100644
+--- a/napari/_qt/qt_resources/styles/01_buttons.qss
++++ b/napari/_qt/qt_resources/styles/01_buttons.qss
+@@ -125,6 +125,10 @@ QtModeRadioButton[mode="polygon"]::indicator {
+   image: url("theme_{{ id }}:/polygon.svg");
+ }
+ 
++QtModeRadioButton[mode="polygon_lasso"]::indicator {
++  image: url("theme_{{ id }}:/polygon_lasso.svg");
++}
++
+ QtModeRadioButton[mode="vertex_insert"]::indicator {
+   image: url("theme_{{ id }}:/vertex_insert.svg");
+ }
+diff --git a/napari/layers/shapes/_shapes_constants.py b/napari/layers/shapes/_shapes_constants.py
+index 89408e0e..48f2537a 100644
+--- a/napari/layers/shapes/_shapes_constants.py
++++ b/napari/layers/shapes/_shapes_constants.py
+@@ -38,6 +38,7 @@ class Mode(StringEnum):
+     ADD_LINE = auto()
+     ADD_PATH = auto()
+     ADD_POLYGON = auto()
++    ADD_POLYGON_LASSO = auto()
+     VERTEX_INSERT = auto()
+     VERTEX_REMOVE = auto()
+ 
+diff --git a/napari/layers/shapes/_shapes_key_bindings.py b/napari/layers/shapes/_shapes_key_bindings.py
+index b99c2c4a..3e2c1038 100644
+--- a/napari/layers/shapes/_shapes_key_bindings.py
++++ b/napari/layers/shapes/_shapes_key_bindings.py
+@@ -2,7 +2,9 @@ import numpy as np
+ from app_model.types import KeyCode
+ 
+ from napari.layers.shapes._shapes_constants import Box, Mode
+-from napari.layers.shapes._shapes_mouse_bindings import _move
++from napari.layers.shapes._shapes_mouse_bindings import (
++    _move_active_element_under_cursor,
++)
+ from napari.layers.shapes.shapes import Shapes
+ from napari.layers.utils.layer_utils import (
+     register_layer_action,
+@@ -27,7 +29,7 @@ def hold_to_lock_aspect_ratio(layer: Shapes):
+         layer._aspect_ratio = 1
+     if layer._is_moving:
+         assert layer._moving_coordinates is not None, layer
+-        _move(layer, layer._moving_coordinates)
++        _move_active_element_under_cursor(layer, layer._moving_coordinates)
+ 
+     yield
+ 
+@@ -83,6 +85,12 @@ def activate_add_polygon_mode(layer: Shapes):
+     layer.mode = Mode.ADD_POLYGON
+ 
+ 
++@register_shapes_mode_action(trans._('Add polygons lasso'))
++def activate_add_polygon_lasso_mode(layer: Shapes):
++    """Activate add polygon tool."""
++    layer.mode = Mode.ADD_POLYGON_LASSO
++
++
+ @register_shapes_mode_action(trans._('Select vertices'))
+ def activate_direct_mode(layer: Shapes):
+     """Activate vertex selection tool."""
+@@ -115,6 +123,7 @@ shapes_fun_to_mode = [
+     (activate_add_line_mode, Mode.ADD_LINE),
+     (activate_add_path_mode, Mode.ADD_PATH),
+     (activate_add_polygon_mode, Mode.ADD_POLYGON),
++    (activate_add_polygon_lasso_mode, Mode.ADD_POLYGON_LASSO),
+     (activate_direct_mode, Mode.DIRECT),
+     (activate_select_mode, Mode.SELECT),
+     (activate_vertex_insert_mode, Mode.VERTEX_INSERT),
+diff --git a/napari/layers/shapes/_shapes_mouse_bindings.py b/napari/layers/shapes/_shapes_mouse_bindings.py
+index a23383d6..54ae69b0 100644
+--- a/napari/layers/shapes/_shapes_mouse_bindings.py
++++ b/napari/layers/shapes/_shapes_mouse_bindings.py
+@@ -1,4 +1,7 @@
++from __future__ import annotations
++
+ from copy import copy
++from typing import TYPE_CHECKING
+ 
+ import numpy as np
+ 
+@@ -11,19 +14,51 @@ from napari.layers.shapes._shapes_models import (
+     Rectangle,
+ )
+ from napari.layers.shapes._shapes_utils import point_to_lines
++from napari.settings import get_settings
++
++if TYPE_CHECKING:
++    from typing import List, Optional, Tuple
++
++    import numpy.typing as npt
++    from vispy.app.canvas import MouseEvent
++
++    from napari.layers.shapes.shapes import Shapes
+ 
+ 
+-def highlight(layer, event):
+-    """Highlight hovered shapes."""
++def highlight(layer: Shapes, event: MouseEvent) -> None:
++    """Render highlights of shapes.
++
++    Highlight hovered shapes, including boundaries, vertices, interaction boxes, and drag
++    selection box when appropriate.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event. Though not used here it is passed as argument by the
++        shapes layer mouse move callbacks.
++
++    Returns
++    -------
++    None
++    """
+     layer._set_highlight()
+ 
+ 
+-def select(layer, event):
++def select(layer: Shapes, event: MouseEvent) -> None:
+     """Select shapes or vertices either in select or direct select mode.
+ 
+     Once selected shapes can be moved or resized, and vertices can be moved
+     depending on the mode. Holding shift when resizing a shape will preserve
+     the aspect ratio.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event.
+     """
+     shift = 'Shift' in event.modifiers
+     # on press
+@@ -66,7 +101,7 @@ def select(layer, event):
+         if len(layer.selected_data) == 0:
+             _drag_selection_box(layer, coordinates)
+         else:
+-            _move(layer, coordinates)
++            _move_active_element_under_cursor(layer, coordinates)
+ 
+         # if a shape is being moved, update the thumbnail
+         if layer._is_moving:
+@@ -100,8 +135,21 @@ def select(layer, event):
+         layer._update_thumbnail()
+ 
+ 
+-def add_line(layer, event):
+-    """Add a line."""
++def add_line(layer: Shapes, event: MouseEvent) -> None:
++    """Add a line.
++
++    Adds a line by connecting 2 ndim points. On press one point is set under the mouse cursor and a second point is
++    created with a very minor offset to the first point. If moving mouse while mouse is pressed the second point will
++    track the cursor. The second point it set upon mouse release.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event.
++    """
++    # full size is the initial offset of the second point compared to the first point of the line.
+     size = layer._vertex_size * layer.scale_factor / 4
+     full_size = np.zeros(layer.ndim, dtype=float)
+     for i in layer._slice_input.displayed:
+@@ -110,15 +158,27 @@ def add_line(layer, event):
+     coordinates = layer.world_to_data(event.position)
+     layer._moving_coordinates = coordinates
+ 
++    # corner is first datapoint defining the line
+     corner = np.array(coordinates)
+     data = np.array([corner, corner + full_size])
++
++    # adds data to layer.data and handles mouse move (cursor tracking) and release event (setting second point)
+     yield from _add_line_rectangle_ellipse(
+         layer, event, data=data, shape_type='line'
+     )
+ 
+ 
+-def add_ellipse(layer, event):
+-    """Add an ellipse."""
++def add_ellipse(layer: Shapes, event: MouseEvent):
++    """
++    Add an ellipse to the shapes layer.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event.
++    """
+     size = layer._vertex_size * layer.scale_factor / 4
+     size_h = np.zeros(layer.ndim, dtype=float)
+     size_h[layer._slice_input.displayed[0]] = size
+@@ -135,8 +195,16 @@ def add_ellipse(layer, event):
+     )
+ 
+ 
+-def add_rectangle(layer, event):
+-    """Add a rectangle."""
++def add_rectangle(layer: Shapes, event: MouseEvent) -> None:
++    """Add a rectangle to the shapes layer.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event.
++    """
+     size = layer._vertex_size * layer.scale_factor / 4
+     size_h = np.zeros(layer.ndim, dtype=float)
+     size_h[layer._slice_input.displayed[0]] = size
+@@ -154,9 +222,22 @@ def add_rectangle(layer, event):
+     )
+ 
+ 
+-def _add_line_rectangle_ellipse(layer, event, data, shape_type):
+-    """Helper function for adding a line, rectangle or ellipse."""
++def _add_line_rectangle_ellipse(
++    layer: Shapes, event: MouseEvent, data: npt.NDArray, shape_type: str
++) -> None:
++    """Helper function for adding a line, rectangle or ellipse.
+ 
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event.
++    data: np.NDarray
++        Array containing the initial datapoints of the shape in image data space.
++    shape_type: str
++        String indicating the type of shape to be added.
++    """
+     # on press
+     # Start drawing rectangle / ellipse / line
+     layer.add(data, shape_type=shape_type)
+@@ -171,60 +252,210 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
+         # Drag any selected shapes
+         coordinates = layer.world_to_data(event.position)
+         layer._moving_coordinates = coordinates
+-        _move(layer, coordinates)
++        _move_active_element_under_cursor(layer, coordinates)
+         yield
+ 
+     # on release
+     layer._finish_drawing()
+ 
+ 
+-def finish_drawing_shape(layer, event):
+-    """
+-    finish drawing the current shape
++def finish_drawing_shape(layer: Shapes, event: MouseEvent) -> None:
++    """Finish drawing of shape.
++
++    Calls the finish drawing method of the shapes layer which resets all the properties used for shape drawing
++    and deletes the shape if the number of vertices do not meet the threshold of 3.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event. Not used here, but passed as argument due to being a
++        double click callback of the shapes layer.
+     """
+     layer._finish_drawing()
+ 
+ 
+-def add_path_polygon(layer, event):
+-    """Add a path or polygon."""
++def initiate_polygon_draw(
++    layer: Shapes, coordinates: Tuple[float, ...]
++) -> None:
++    """Start drawing of polygon.
++
++    Creates the polygon shape when initializing the draw, adding to layer and selecting the initiatlized shape and
++    setting required layer attributes for drawing.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    coordinates: Tuple[float, ...]
++        A tuple with the coordinates of the initial vertex in image data space.
++    """
++    data = np.array([coordinates, coordinates])
++    layer.add(data, shape_type='path')
++    layer.selected_data = {layer.nshapes - 1}
++    layer._value = (layer.nshapes - 1, 1)
++    layer._moving_value = copy(layer._value)
++    layer._is_creating = True
++    layer._set_highlight()
++
++
++def add_path_polygon_lasso(layer: Shapes, event: MouseEvent) -> None:
++    """Add, draw and finish drawing of polygon.
++
++    Initiates, draws and finishes the lasso polygon in drag mode (tablet) or
++    initiates and finishes the lasso polygon when drawing with the mouse.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event.
++    """
+     # on press
+     coordinates = layer.world_to_data(event.position)
+     if layer._is_creating is False:
++        # Set last cursor position to initial position of the mouse when starting to draw the shape
++        layer._last_cursor_position = np.array(event.pos)
++
+         # Start drawing a path
+-        data = np.array([coordinates, coordinates])
+-        layer.add(data, shape_type='path')
+-        layer.selected_data = {layer.nshapes - 1}
+-        layer._value = (layer.nshapes - 1, 1)
+-        layer._moving_value = copy(layer._value)
+-        layer._is_creating = True
+-        layer._set_highlight()
++        initiate_polygon_draw(layer, coordinates)
++        yield
++
++        while event.type == 'mouse_move':
++            polygon_creating(layer, event)
++            yield
++        index = layer._moving_value[0]
++        vertices = layer._data_view.shapes[index].data
++        # If number of vertices is higher than 2, tablet draw mode is assumed and shape is finished upon mouse release
++        if len(vertices) > 2:
++            layer._finish_drawing()
++    else:
++        # This code block is responsible for finishing drawing in mouse draw mode
++        layer._finish_drawing()
++
++
++def add_vertex_to_path(
++    layer: Shapes,
++    event: MouseEvent,
++    index: int,
++    coordinates: Tuple[float, ...],
++    new_type: Optional[str],
++) -> None:
++    """Add a vertex to an existing path or polygon and edit the layer view.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event.
++    index: int
++        The index of the shape being added, e.g. first shape in the layer has index 0.
++    coordinates: Tuple[float, ...]
++        The coordinates of the vertex being added to the shape being drawn in image data space
++    new_type: Optional[str]
++        Type of the shape being added.
++    """
++    vertices = layer._data_view.shapes[index].data
++    vertices = np.concatenate((vertices, [coordinates]), axis=0)
++    value = layer.get_value(event.position, world=True)
++    layer._value = (value[0], value[1] + 1)
++    layer._moving_value = copy(layer._value)
++    layer._data_view.edit(index, vertices, new_type=new_type)
++    layer._selected_box = layer.interaction_box(layer.selected_data)
++    layer._last_cursor_position = np.array(event.pos)
++
++
++def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
++    """Let active vertex follow cursor while drawing polygon, adding it to polygon after a certain distance.
++
++    When drawing a polygon in lasso mode, a vertex follows the cursor, creating a polygon
++    visually that is *not* the final polygon to be created: it is the polygon if the current
++    mouse position were to be the last position added. After the mouse moves a distance of 10 screen pixels,
++    a new vertex is automatically added and the last cursor position is set to the global screen coordinates
++    at that moment.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event.
++    """
++    if layer._is_creating:
++        coordinates = layer.world_to_data(event.position)
++        move_active_vertex_under_cursor(layer, coordinates)
++
++        if layer._mode == Mode.ADD_POLYGON_LASSO:
++            index = layer._moving_value[0]
++
++            position_diff = np.linalg.norm(
++                event.pos - layer._last_cursor_position
++            )
++            if (
++                position_diff
++                > get_settings().experimental.lasso_vertex_distance
++            ):
++                add_vertex_to_path(layer, event, index, coordinates, None)
++
++
++def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
++    """Add a path or polygon or add vertex to an existing one.
++
++    When shape is not yet being created, initiates the drawing of a polygon on mouse press. Else, on subsequent mouse
++    presses, add vertex to polygon being created.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event.
++    """
++    # on press
++    coordinates = layer.world_to_data(event.position)
++    if layer._is_creating is False:
++        # Start drawing a path
++        initiate_polygon_draw(layer, coordinates)
+     else:
+         # Add to an existing path or polygon
+         index = layer._moving_value[0]
+         new_type = Polygon if layer._mode == Mode.ADD_POLYGON else None
+-        vertices = layer._data_view.shapes[index].data
+-        vertices = np.concatenate((vertices, [coordinates]), axis=0)
+-        # Change the selected vertex
+-        value = layer.get_value(event.position, world=True)
+-        layer._value = (value[0], value[1] + 1)
+-        layer._moving_value = copy(layer._value)
+-        layer._data_view.edit(index, vertices, new_type=new_type)
+-        layer._selected_box = layer.interaction_box(layer.selected_data)
++        add_vertex_to_path(layer, event, index, coordinates, new_type)
+ 
+ 
+-def add_path_polygon_creating(layer, event):
+-    """While a path or polygon move next vertex to be added."""
++def move_active_vertex_under_cursor(
++    layer: Shapes, coordinates: Tuple[float, ...]
++) -> None:
++    """While a path or polygon is being created, move next vertex to be added.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    coordinates: Tuple[float, ...]
++        The coordinates in data space of the vertex to be potentially added, e.g. vertex tracks the mouse cursor
++        position.
++    """
+     if layer._is_creating:
+-        coordinates = layer.world_to_data(event.position)
+-        _move(layer, coordinates)
++        _move_active_element_under_cursor(layer, coordinates)
+ 
+ 
+-def vertex_insert(layer, event):
++def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
+     """Insert a vertex into a selected shape.
+ 
+     The vertex will get inserted in between the vertices of the closest edge
+     from all the edges in selected shapes. Vertices cannot be inserted into
+     Ellipses.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event.
+     """
+     # Determine all the edges in currently selected shapes
+     all_edges = np.empty((0, 2, 2))
+@@ -290,12 +521,19 @@ def vertex_insert(layer, event):
+     layer.refresh()
+ 
+ 
+-def vertex_remove(layer, event):
++def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
+     """Remove a vertex from a selected shape.
+ 
+     If a vertex is clicked on remove it from the shape it is in. If this cause
+     the shape to shrink to a size that no longer is valid remove the whole
+     shape.
++
++    Parameters
++    ----------
++    layer: Shapes
++        Napari shapes layer
++    event: MouseEvent
++        A proxy read only wrapper around a vispy mouse event.
+     """
+     value = layer.get_value(event.position, world=True)
+     shape_under_cursor, vertex_under_cursor = value
+@@ -334,15 +572,15 @@ def vertex_remove(layer, event):
+     layer.refresh()
+ 
+ 
+-def _drag_selection_box(layer, coordinates):
++def _drag_selection_box(layer: Shapes, coordinates: Tuple[float, ...]) -> None:
+     """Drag a selection box.
+ 
+     Parameters
+     ----------
+     layer : napari.layers.Shapes
+         Shapes layer.
+-    coordinates : tuple
+-        Position of mouse cursor in data coordinates.
++    coordinates : Tuple[float, ...]
++        The current position of the cursor during the mouse move event in image data space.
+     """
+     # If something selected return
+     if len(layer.selected_data) > 0:
+@@ -358,7 +596,26 @@ def _drag_selection_box(layer, coordinates):
+     layer._set_highlight()
+ 
+ 
+-def _set_drag_start(layer, coordinates):
++def _set_drag_start(
++    layer: Shapes, coordinates: Tuple[float, ...]
++) -> List[float, ...]:
++    """Indicate where in data space a drag event started.
++
++    Sets the coordinates relative to the center of the bounding box of a shape and returns the position
++    of where a drag event of a shape started.
++
++    Parameters
++    ----------
++    layer: Shapes
++        The napari layer shape
++    coordinates: Tuple[float, ...]
++        The position in image data space where dragging started.
++
++    Returns
++    -------
++    coord: List[float, ...]
++        The coordinates of where a shape drag event started.
++    """
+     coord = [coordinates[i] for i in layer._slice_input.displayed]
+     if layer._drag_start is None and len(layer.selected_data) > 0:
+         center = layer._selected_box[Box.CENTER]
+@@ -366,14 +623,16 @@ def _set_drag_start(layer, coordinates):
+     return coord
+ 
+ 
+-def _move(layer, coordinates):
++def _move_active_element_under_cursor(
++    layer: Shapes, coordinates: Tuple[float, ...]
++) -> None:
+     """Moves object at given mouse position and set of indices.
+ 
+     Parameters
+     ----------
+     layer : napari.layers.Shapes
+         Shapes layer.
+-    coordinates : tuple
++    coordinates : Tuple[float, ...]
+         Position of mouse cursor in data coordinates.
+     """
+     # If nothing selected return
+@@ -501,16 +760,25 @@ def _move(layer, coordinates):
+                 )
+             layer._rotate_box(angle, center=layer._fixed_vertex)
+             layer.refresh()
++
+     elif (
+-        layer._mode in {Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON}
++        layer._mode
++        in [
++            Mode.DIRECT,
++            Mode.ADD_PATH,
++            Mode.ADD_POLYGON,
++            Mode.ADD_POLYGON_LASSO,
++        ]
+         and vertex is not None
+     ):
+         layer._moving_coordinates = coordinates
+         layer._is_moving = True
+         index = layer._moving_value[0]
+         shape_type = type(layer._data_view.shapes[index])
+-        if shape_type != Ellipse:
+-            # not DIRECT vertex moving of ellipse not implemented
++        if shape_type == Ellipse:
++            # TODO: Implement DIRECT vertex moving of ellipse
++            pass
++        else:
+             new_type = Polygon if shape_type == Rectangle else None
+             vertices = layer._data_view.shapes[index].data
+             vertices[vertex] = coordinates
+diff --git a/napari/layers/shapes/_shapes_utils.py b/napari/layers/shapes/_shapes_utils.py
+index 808aed7b..797568dd 100644
+--- a/napari/layers/shapes/_shapes_utils.py
++++ b/napari/layers/shapes/_shapes_utils.py
+@@ -1,4 +1,6 @@
+-from typing import Tuple
++from __future__ import annotations
++
++from typing import TYPE_CHECKING, Tuple
+ 
+ import numpy as np
+ from skimage.draw import line, polygon2mask
+@@ -8,6 +10,9 @@ from vispy.visuals.tube import _frenet_frames
+ from napari.layers.utils.layer_utils import segment_normal
+ from napari.utils.translations import trans
+ 
++if TYPE_CHECKING:
++    import numpy.typing as npt
++
+ try:
+     # see https://github.com/vispy/vispy/issues/1029
+     from triangle import triangulate
+@@ -1140,3 +1145,77 @@ def validate_num_vertices(
+                     shape_length=len(shape),
+                 )
+             )
++
++
++def perpendicular_distance(
++    point: npt.NDArray, line_start: npt.NDArray, line_end: npt.NDArray
++) -> float:
++    """Calculate the perpendicular distance of a point to a given euclidean line.
++
++    Calculates the shortest distance of a point to a euclidean line defined by a line_start point and a line_end point.
++    Works up to any dimension.
++
++    Parameters
++    ---------
++    point : np.ndarray
++        A point defined by a numpy array of shape (viewer.ndims,)  which is part of a polygon shape.
++    line_start : np.ndarray
++        A point defined by a numpy array of shape (viewer.ndims,)  used to define the starting point of a line.
++    line_end : np.ndarray
++        A point defined by a numpy array of shape (viewer.ndims,)  used to define the end point of a line.
++
++    Returns
++    -------
++    float
++        A float number representing the distance of point to a euclidean line defined by line_start and line_end.
++    """
++
++    if np.array_equal(line_start, line_end):
++        return np.linalg.norm(point - line_start)
++
++    t = np.dot(point - line_end, line_start - line_end) / np.dot(
++        line_start - line_end, line_start - line_end
++    )
++    return np.linalg.norm(t * (line_start - line_end) + line_end - point)
++
++
++def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
++    """Reduce the number of vertices that make up a polygon.
++
++    Implementation of the Ramer-Douglas-Peucker algorithm based on:
++    https://github.com/fhirschmann/rdp/blob/master/rdp. This algorithm reduces the amounts of points in a polyline or
++    in this case reduces the number of vertices in a polygon shape.
++
++    Parameters
++    ----------
++    vertices : np.ndarray
++        A numpy array of shape (n, viewer.ndims) containing the vertices of a polygon shape.
++    epsilon : float
++        A float representing the maximum distance threshold. When the perpendicular distance of a point to a given line
++        is higher, subsequent refinement occurs.
++
++    Returns
++    -------
++    np.ndarray
++        A numpy array of shape (n, viewer.ndims) containing the vertices of a polygon shape.
++    """
++    max_distance_index = -1
++    max_distance = 0.0
++
++    for i in range(1, vertices.shape[0]):
++        d = perpendicular_distance(vertices[i], vertices[0], vertices[-1])
++        if d > max_distance:
++            max_distance_index = i
++            max_distance = d
++
++    if epsilon != 0:
++        if max_distance > epsilon and epsilon:
++            l1 = rdp(vertices[: max_distance_index + 1], epsilon)
++            l2 = rdp(vertices[max_distance_index:], epsilon)
++            return np.vstack((l1[:-1], l2))
++
++        # This part of the algorithm is actually responsible for removing the datapoints.
++        return np.vstack((vertices[0], vertices[-1]))
++
++    # When epsilon is 0, avoid removing datapoints
++    return vertices
+diff --git a/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py b/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py
+index c9ba094d..735212bc 100644
+--- a/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py
++++ b/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py
+@@ -5,6 +5,7 @@ import pytest
+ 
+ from napari.layers import Shapes
+ from napari.layers.shapes.shapes import Mode
++from napari.settings import get_settings
+ from napari.utils._proxies import ReadOnlyWrapper
+ from napari.utils.interactions import (
+     mouse_double_click_callbacks,
+@@ -25,7 +26,8 @@ def Event():
+         NamedTuple object with fields "type", "is_dragging", and "modifiers".
+     """
+     return collections.namedtuple(
+-        'Event', field_names=['type', 'is_dragging', 'modifiers', 'position']
++        'Event',
++        field_names=['type', 'is_dragging', 'modifiers', 'position', 'pos'],
+     )
+ 
+ 
+@@ -67,6 +69,7 @@ def test_not_adding_or_selecting_shape(create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=(0, 0),
++            pos=(0, 0),
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -78,6 +81,7 @@ def test_not_adding_or_selecting_shape(create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=(0, 0),
++            pos=(0, 0),
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -102,6 +106,7 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=known_non_shape,
++            pos=known_non_shape,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -114,6 +119,7 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=known_non_shape_end,
++            pos=known_non_shape_end,
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -125,6 +131,7 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=known_non_shape_end,
++            pos=known_non_shape_end,
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -137,6 +144,137 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer, Event):
+     assert layer.shape_type[-1] == shape_type
+ 
+ 
++def test_polygon_lasso_tablet(create_known_shapes_layer, Event):
++    """Draw polygon with tablet simulated by mouse drag event."""
++    layer, n_shapes, known_non_shape = create_known_shapes_layer
++    desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
++
++    get_settings().experimental.rdp_epsilon = 0
++    layer.mode = 'add_polygon_lasso'
++
++    event = ReadOnlyWrapper(
++        Event(
++            type='mouse_press',
++            is_dragging=True,
++            modifiers=[],
++            position=desired_shape[0],
++            pos=desired_shape[0],
++        )
++    )
++    mouse_press_callbacks(layer, event)
++
++    assert layer.shape_type[-1] != 'polygon'
++
++    for coord in desired_shape[1:]:
++        event = ReadOnlyWrapper(
++            Event(
++                type='mouse_move',
++                is_dragging=True,
++                modifiers=[],
++                position=coord,
++                pos=coord,
++            )
++        )
++        mouse_move_callbacks(layer, event)
++
++    event = ReadOnlyWrapper(
++        Event(
++            type='mouse_release',
++            is_dragging=True,
++            modifiers=[],
++            position=desired_shape[-1],
++            pos=desired_shape[-1],
++        )
++    )
++    mouse_release_callbacks(layer, event)
++
++    assert len(layer.data) == n_shapes + 1
++    assert np.array_equal(desired_shape, layer.data[-1])
++    assert layer.shape_type[-1] == 'polygon'
++    assert not layer._is_creating
++
++
++def test_polygon_lasso_mouse(create_known_shapes_layer, Event):
++    """Draw polygon with mouse. Events in sequence are mouse press, release, move, press, release"""
++    layer, n_shapes, known_non_shape = create_known_shapes_layer
++    desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
++
++    get_settings().experimental.rdp_epsilon = 0
++    layer.mode = 'add_polygon_lasso'
++
++    event = ReadOnlyWrapper(
++        Event(
++            type='mouse_press',
++            is_dragging=False,
++            modifiers=[],
++            position=desired_shape[0],
++            pos=desired_shape[0],
++        )
++    )
++    mouse_press_callbacks(layer, event)
++    assert layer.shape_type[-1] != 'polygon'
++
++    for coord in desired_shape[1:]:
++        event = ReadOnlyWrapper(
++            Event(
++                type='mouse_move',
++                is_dragging=False,
++                modifiers=[],
++                position=coord,
++                pos=coord,
++            )
++        )
++        mouse_move_callbacks(layer, event)
++    event = ReadOnlyWrapper(
++        Event(
++            type='mouse_press',
++            is_dragging=False,
++            modifiers=[],
++            position=desired_shape[-1],
++            pos=desired_shape[-1],
++        )
++    )
++    mouse_press_callbacks(layer, event)
++
++    assert len(layer.data) == n_shapes + 1
++    assert np.array_equal(desired_shape, layer.data[-1])
++    assert layer.shape_type[-1] == 'polygon'
++    assert not layer._is_creating
++
++
++def test_distance_polygon_creating(create_known_shapes_layer, Event):
++    """Test that distance threshold in polygon creating works as intended"""
++    layer, n_shapes, known_non_shape = create_known_shapes_layer
++
++    # While drawing only 2 of the vertices should be added to shape data because distance threshold is 10
++    vertices = [[x, 0] for x in range(11)]
++    layer.mode = 'add_polygon_lasso'
++
++    event = ReadOnlyWrapper(
++        Event(
++            type='mouse_press',
++            is_dragging=False,
++            modifiers=[],
++            position=vertices[0],
++            pos=vertices[0],
++        )
++    )
++    mouse_press_callbacks(layer, event)
++    for coord in vertices[1:]:
++        event = ReadOnlyWrapper(
++            Event(
++                type='mouse_move',
++                is_dragging=False,
++                modifiers=[],
++                position=coord,
++                pos=coord,
++            )
++        )
++        mouse_move_callbacks(layer, event)
++
++    assert len(layer.data[-1] == 2)
++
++
+ @pytest.mark.parametrize('shape_type', ['path', 'polygon'])
+ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
+     """Add simple shape by clicking in add mode."""
+@@ -154,6 +292,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
+                 is_dragging=False,
+                 modifiers=[],
+                 position=coord,
++                pos=coord,
+             )
+         )
+         mouse_move_callbacks(layer, event)
+@@ -163,6 +302,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
+                 is_dragging=False,
+                 modifiers=[],
+                 position=coord,
++                pos=coord,
+             )
+         )
+         mouse_press_callbacks(layer, event)
+@@ -172,6 +312,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
+                 is_dragging=False,
+                 modifiers=[],
+                 position=coord,
++                pos=coord,
+             )
+         )
+         mouse_release_callbacks(layer, event)
+@@ -183,6 +324,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=coord,
++            pos=coord,
+         )
+     )
+     assert layer.mouse_double_click_callbacks
+@@ -210,6 +352,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=known_non_shape,
++            pos=known_non_shape,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -221,6 +364,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=known_non_shape,
++            pos=known_non_shape,
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -249,6 +393,7 @@ def test_vertex_remove(create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -260,6 +405,7 @@ def test_vertex_remove(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -284,6 +430,7 @@ def test_select_shape(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -295,6 +442,7 @@ def test_select_shape(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -327,6 +475,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -337,6 +486,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -355,6 +505,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -365,6 +516,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -376,6 +528,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -386,6 +539,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -414,6 +568,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -424,6 +579,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -437,6 +593,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -447,6 +604,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -470,6 +628,7 @@ def test_drag_vertex(create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -482,6 +641,7 @@ def test_drag_vertex(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -493,6 +653,7 @@ def test_drag_vertex(create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -532,6 +693,7 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -543,6 +705,7 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -568,6 +731,7 @@ def test_unselect_select_shape(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -579,6 +743,7 @@ def test_unselect_select_shape(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=position,
++            pos=position,
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -602,6 +767,7 @@ def test_not_selecting_shape(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=known_non_shape,
++            pos=known_non_shape,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -613,6 +779,7 @@ def test_not_selecting_shape(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=known_non_shape,
++            pos=known_non_shape,
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -637,6 +804,7 @@ def test_unselecting_shapes(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=known_non_shape,
++            pos=known_non_shape,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -648,6 +816,7 @@ def test_unselecting_shapes(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=known_non_shape,
++            pos=known_non_shape,
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -670,6 +839,7 @@ def test_selecting_shapes_with_drag(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=known_non_shape,
++            pos=known_non_shape,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -681,6 +851,7 @@ def test_selecting_shapes_with_drag(mode, create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=known_non_shape,
++            pos=known_non_shape,
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -688,7 +859,11 @@ def test_selecting_shapes_with_drag(mode, create_known_shapes_layer, Event):
+     # Simulate drag end
+     event = ReadOnlyWrapper(
+         Event(
+-            type='mouse_move', is_dragging=True, modifiers=[], position=(0, 0)
++            type='mouse_move',
++            is_dragging=True,
++            modifiers=[],
++            position=(0, 0),
++            pos=(0, 0),
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -700,6 +875,7 @@ def test_selecting_shapes_with_drag(mode, create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=(0, 0),
++            pos=(0, 0),
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -722,6 +898,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer, Event):
+             is_dragging=False,
+             modifiers=[],
+             position=known_non_shape,
++            pos=known_non_shape,
+         )
+     )
+     mouse_press_callbacks(layer, event)
+@@ -733,6 +910,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=known_non_shape,
++            pos=known_non_shape,
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -744,6 +922,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=(50, 60),
++            pos=(50, 60),
+         )
+     )
+     mouse_move_callbacks(layer, event)
+@@ -755,6 +934,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer, Event):
+             is_dragging=True,
+             modifiers=[],
+             position=(50, 60),
++            pos=(50, 60),
+         )
+     )
+     mouse_release_callbacks(layer, event)
+@@ -807,6 +987,7 @@ def test_drag_start_selection(
+         Event(
+             type='mouse_press',
+             position=initial_position,
++            pos=initial_position,
+             modifiers=modifier,
+             is_dragging=True,
+         )
+@@ -854,6 +1035,7 @@ def test_drag_start_selection(
+             type='mouse_move',
+             is_dragging=True,
+             position=offset_position,
++            pos=offset_position,
+             modifiers=modifier,
+         )
+     )
+@@ -883,6 +1065,7 @@ def test_drag_start_selection(
+             type='mouse_move',
+             is_dragging=True,
+             position=offset_position,
++            pos=offset_position,
+             modifiers=modifier,
+         )
+     )
+@@ -912,6 +1095,7 @@ def test_drag_start_selection(
+             is_dragging=True,
+             modifiers=modifier,
+             position=offset_position,
++            pos=offset_position,
+         )
+     )
+     mouse_release_callbacks(layer, event)
+diff --git a/napari/layers/shapes/_tests/test_shapes_utils.py b/napari/layers/shapes/_tests/test_shapes_utils.py
+index 19be339a..1979e1f9 100644
+--- a/napari/layers/shapes/_tests/test_shapes_utils.py
++++ b/napari/layers/shapes/_tests/test_shapes_utils.py
+@@ -6,10 +6,23 @@ from napari.layers.shapes._shapes_utils import (
+     generate_2D_edge_meshes,
+     get_default_shape_type,
+     number_of_shapes,
++    perpendicular_distance,
++    rdp,
+ )
+ 
+ W_DATA = [[0, 3], [1, 0], [2, 3], [5, 0], [2.5, 5]]
+ 
++line_points = [
++    (np.array([0, 0]), np.array([0, 3]), np.array([1, 0])),
++    (np.array([0, 0, 0]), np.array([0, 0, 3]), np.array([1, 0, 0])),
++    (
++        np.array([0, 0, 0, 0]),
++        np.array([0, 0, 3, 0]),
++        np.array([1, 0, 0, 0]),
++    ),
++    (np.array([0, 0, 0]), np.array([0, 0, 0]), np.array([1, 0, 0])),
++]
++
+ 
+ def _regen_testcases():
+     """
+@@ -290,6 +303,50 @@ cases = [
+ ]
+ 
+ 
++@pytest.fixture
++def create_complex_shape():
++    shape = np.array(
++        [
++            [136.74888492, -279.3367529],
++            [144.05664585, -286.64451383],
++            [154.10481713, -295.77921499],
++            [162.32604817, -303.08697591],
++            [170.54727921, -307.65432649],
++            [179.68198037, -306.74085638],
++            [187.90321142, -300.34656557],
++            [193.38403211, -291.21186441],
++            [195.21097235, -282.07716325],
++            [196.12444246, -272.94246209],
++            [200.69179304, -264.72123104],
++            [207.08608385, -255.58652988],
++            [214.39384478, -246.45182872],
++            [218.04772525, -237.31712756],
++            [212.56690455, -229.09589652],
++            [207.99955397, -220.87466548],
++            [205.25914362, -209.91302409],
++            [203.43220339, -200.77832293],
++            [203.43220339, -189.81668153],
++            [199.77832293, -179.76851026],
++            [189.73015165, -171.54727921],
++            [179.68198037, -166.97992864],
++            [169.6338091, -164.23951829],
++            [160.49910794, -166.06645852],
++            [149.53746655, -169.72033898],
++            [140.40276539, -176.11462979],
++            [134.00847458, -185.24933095],
++            [126.70071365, -195.29750223],
++            [121.21989295, -204.43220339],
++            [118.4794826, -213.56690455],
++            [114.82560214, -222.70160571],
++            [115.73907226, -232.74977698],
++            [118.4794826, -241.88447814],
++            [123.9603033, -251.0191793],
++            [129.441124, -259.24041035],
++        ]
++    )
++    return shape
++
++
+ @pytest.mark.parametrize(
+     'path, closed, limit, bevel, expected',
+     cases,
+@@ -344,3 +401,25 @@ def test_get_default_shape_type():
+ 
+     shape_type = ['polygon']
+     assert get_default_shape_type(shape_type) == 'polygon'
++
++
++def test_rdp(create_complex_shape):
++    # Rational of test is more vertices should be removed as epsilon gets higher.
++    shape = create_complex_shape
++
++    rdp_shape = rdp(shape, 0)
++    assert len(shape) == len(rdp_shape)
++
++    rdp_shape = rdp(shape, 1)
++    assert len(rdp_shape) < len(shape)
++
++    rdp_shape_lt = rdp(shape, 2)
++    assert len(rdp_shape_lt) < len(rdp_shape)
++
++
++@pytest.mark.parametrize('start, end, point', line_points)
++def test_perpendicular_distance(start, end, point):
++    # check whether math is correct and works higher than 2D / 3d
++    distance = perpendicular_distance(point, start, end)
++
++    assert distance == 1
+diff --git a/napari/layers/shapes/shapes.py b/napari/layers/shapes/shapes.py
+index 6054a68e..8c1d6db0 100644
+--- a/napari/layers/shapes/shapes.py
++++ b/napari/layers/shapes/shapes.py
+@@ -25,10 +25,11 @@ from napari.layers.shapes._shapes_mouse_bindings import (
+     add_ellipse,
+     add_line,
+     add_path_polygon,
+-    add_path_polygon_creating,
++    add_path_polygon_lasso,
+     add_rectangle,
+     finish_drawing_shape,
+     highlight,
++    polygon_creating,
+     select,
+     vertex_insert,
+     vertex_remove,
+@@ -39,6 +40,7 @@ from napari.layers.shapes._shapes_utils import (
+     get_default_shape_type,
+     get_shape_ndim,
+     number_of_shapes,
++    rdp,
+     validate_num_vertices,
+ )
+ from napari.layers.utils.color_manager_utils import (
+@@ -55,6 +57,7 @@ from napari.layers.utils.interactivity_utils import (
+ )
+ from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
+ from napari.layers.utils.text_manager import TextManager
++from napari.settings import get_settings
+ from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+ from napari.utils.colormaps.colormap_utils import ColorType
+ from napari.utils.colormaps.standardize_color import (
+@@ -336,6 +339,7 @@ class Shapes(Layer):
+         Mode.ADD_LINE: add_line,
+         Mode.ADD_PATH: add_path_polygon,
+         Mode.ADD_POLYGON: add_path_polygon,
++        Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
+     }
+ 
+     _move_modes = {
+@@ -348,8 +352,9 @@ class Shapes(Layer):
+         Mode.ADD_RECTANGLE: no_op,
+         Mode.ADD_ELLIPSE: no_op,
+         Mode.ADD_LINE: no_op,
+-        Mode.ADD_PATH: add_path_polygon_creating,
+-        Mode.ADD_POLYGON: add_path_polygon_creating,
++        Mode.ADD_PATH: polygon_creating,
++        Mode.ADD_POLYGON: polygon_creating,
++        Mode.ADD_POLYGON_LASSO: polygon_creating,
+     }
+ 
+     _double_click_modes = {
+@@ -364,6 +369,7 @@ class Shapes(Layer):
+         Mode.ADD_LINE: no_op,
+         Mode.ADD_PATH: finish_drawing_shape,
+         Mode.ADD_POLYGON: finish_drawing_shape,
++        Mode.ADD_POLYGON_LASSO: no_op,
+     }
+ 
+     _cursor_modes = {
+@@ -378,6 +384,7 @@ class Shapes(Layer):
+         Mode.ADD_LINE: 'cross',
+         Mode.ADD_PATH: 'cross',
+         Mode.ADD_POLYGON: 'cross',
++        Mode.ADD_POLYGON_LASSO: 'cross',
+     }
+ 
+     _interactive_modes = {
+@@ -498,6 +505,7 @@ class Shapes(Layer):
+         self._selected_data_stored = set()
+         self._selected_data_history = set()
+         self._selected_box = None
++        self._last_cursor_position = None
+ 
+         self._drag_start = None
+         self._fixed_vertex = None
+@@ -2403,6 +2411,7 @@ class Shapes(Layer):
+                     Mode.DIRECT,
+                     Mode.ADD_PATH,
+                     Mode.ADD_POLYGON,
++                    Mode.ADD_POLYGON_LASSO,
+                     Mode.ADD_RECTANGLE,
+                     Mode.ADD_ELLIPSE,
+                     Mode.ADD_LINE,
+@@ -2494,12 +2503,27 @@ class Shapes(Layer):
+                 self._data_view.remove(index)
+             else:
+                 self._data_view.edit(index, vertices[:-1])
+-        if self._is_creating is True and self._mode == Mode.ADD_POLYGON:
++        if self._is_creating is True and (
++            self._mode
++            in {
++                Mode.ADD_POLYGON,
++                Mode.ADD_POLYGON_LASSO,
++            }
++        ):
+             vertices = self._data_view.shapes[index].data
+             if len(vertices) <= 3:
+                 self._data_view.remove(index)
+-            else:
++            elif self._mode == Mode.ADD_POLYGON:
+                 self._data_view.edit(index, vertices[:-1])
++            else:
++                vertices = rdp(
++                    vertices, epsilon=get_settings().experimental.rdp_epsilon
++                )
++                self._data_view.edit(
++                    index,
++                    vertices[:-1],
++                    new_type=shape_classes[ShapeType.POLYGON],
++                )
+         self._is_creating = False
+         self._update_dims()
+ 
+diff --git a/napari/resources/icons/polygon_lasso.svg b/napari/resources/icons/polygon_lasso.svg
+new file mode 100644
+index 00000000..cb4a0562
+--- /dev/null
++++ b/napari/resources/icons/polygon_lasso.svg
+@@ -0,0 +1,43 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Generator: Adobe Illustrator 27.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
++<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
++	 viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">
++<style type="text/css">
++	.st0{fill:none;}
++</style>
++<path d="M79.8,65.6c-0.3,0-0.6-0.1-0.9-0.1c-4.7,0-8.6,3.9-8.6,8.6c0,0.5,0.1,1.1,0.2,1.6c0.8,4,4.3,7,8.4,7c4.7,0,8.6-3.9,8.6-8.6
++	C87.5,69.7,84.1,66,79.8,65.6z M78.9,77.1c-1.5,0-2.7-1-2.9-2.4c0-0.2-0.1-0.4-0.1-0.6c0-1.7,1.3-3,3-3c0.1,0,0.2,0,0.3,0
++	c1.5,0.2,2.7,1.4,2.7,3C81.9,75.8,80.6,77.1,78.9,77.1z"/>
++<path class="st0" d="M81.9,74.1c0,1.7-1.3,3-3,3c-1.5,0-2.7-1-2.9-2.4l2.9-0.6l0.3-3C80.8,71.3,81.9,72.5,81.9,74.1z"/>
++<path d="M81.9,37.7c-2.9,0-5.5,1.5-7.1,3.7c-0.8,1.1-1.3,2.3-1.5,3.7c-0.1,0.4-0.1,0.8-0.1,1.2c0,4.4,3.4,8.1,7.7,8.5
++	c0.3,0,0.6,0,0.9,0c4.7,0,8.6-3.9,8.6-8.6S86.6,37.7,81.9,37.7z M81.9,49.3c-0.1,0-0.2,0-0.3,0c-1.5-0.1-2.7-1.4-2.7-3
++	c0-0.1,0-0.3,0-0.4c0.1-0.5,0.2-0.9,0.5-1.3c0.5-0.8,1.4-1.3,2.5-1.3c1.7,0,3,1.3,3,3S83.6,49.3,81.9,49.3z"/>
++<path class="st0" d="M84.9,46.3c0,1.7-1.3,3-3,3c-0.1,0-0.2,0-0.3,0l0.3-3l-2.5-1.7c0.5-0.8,1.4-1.3,2.5-1.3
++	C83.6,43.3,84.9,44.6,84.9,46.3z"/>
++<path class="st0" d="M81.9,46.3l-3-0.4c0.1-0.5,0.2-0.9,0.5-1.3L81.9,46.3z"/>
++<path d="M39.8,8.7c-4.7,0-8.6,3.9-8.6,8.6c0,1.6,0.5,3.1,1.2,4.4c0.4,0.7,1,1.4,1.6,1.9c0.6,0.6,1.3,1,2.1,1.4
++	c1.1,0.5,2.3,0.8,3.6,0.8c1.6,0,3.1-0.5,4.4-1.2c1.1-0.7,2-1.5,2.7-2.6c0.9-1.4,1.5-3,1.5-4.8C48.4,12.6,44.5,8.7,39.8,8.7z
++	 M41.4,19.9c-0.5,0.3-1,0.5-1.6,0.5c-0.8,0-1.4-0.2-2-0.7l-0.2-0.2c-0.5-0.5-0.8-1.3-0.8-2.1c0-1.7,1.3-3,3-3c1.7,0,3,1.3,3,3
++	c0,0.6-0.2,1.1-0.5,1.6C42.1,19.3,41.8,19.6,41.4,19.9z"/>
++<path class="st0" d="M42.8,17.3c0,0.6-0.2,1.1-0.5,1.6L40,17.3l-2.2,2.3l-0.2-0.2c-0.5-0.5-0.8-1.3-0.8-2.1c0-1.7,1.3-3,3-3
++	C41.5,14.3,42.8,15.6,42.8,17.3z"/>
++<path class="st0" d="M42.3,19c-0.2,0.4-0.5,0.7-0.9,0.9L40,17.3L42.3,19z"/>
++<path d="M28.4,29.7c-1.5-1.4-3.6-2.3-5.9-2.3c-4.7,0-8.6,3.9-8.6,8.6s3.9,8.6,8.6,8.6c2,0,3.8-0.7,5.3-1.9c2-1.6,3.3-4,3.3-6.7
++	C31.2,33.5,30.1,31.3,28.4,29.7z M22.6,39c-1.7,0-3-1.3-3-3s1.3-3,3-3c0.8,0,1.5,0.3,2.1,0.8c0.6,0.5,0.9,1.3,0.9,2.2
++	c0,1-0.4,1.8-1.1,2.4C23.9,38.7,23.3,39,22.6,39z"/>
++<path class="st0" d="M22.6,36l1.9,2.4c-0.5,0.4-1.1,0.6-1.9,0.6c-1.7,0-3-1.3-3-3s1.3-3,3-3c0.8,0,1.5,0.3,2.1,0.8L22.6,36z"/>
++<path d="M39.8,49.3c-2,0-3.8,0.7-5.3,1.9c-2,1.6-3.3,4-3.3,6.7c0,4.7,3.9,8.6,8.6,8.6c1.1,0,2.2-0.2,3.2-0.6c3.1-1.3,5.4-4.4,5.4-8
++	C48.4,53.2,44.5,49.3,39.8,49.3z M39.8,60.9c-1.7,0-3-1.3-3-3c0-1,0.4-1.8,1.1-2.4c0.5-0.4,1.2-0.6,1.9-0.6c1.7,0,3,1.3,3,3
++	c0,1.3-0.8,2.4-1.9,2.8C40.5,60.8,40.2,60.9,39.8,60.9z"/>
++<path class="st0" d="M40.9,60.7c-0.3,0.1-0.7,0.2-1.1,0.2c-1.7,0-3-1.3-3-3c0-1,0.4-1.8,1.1-2.4l1.9,2.4L40.9,60.7z"/>
++<path d="M57,78.2c-0.8-4-4.3-7-8.5-7c-1.1,0-2.2,0.2-3.2,0.6c-3.1,1.3-5.4,4.4-5.4,8c0,4.7,3.9,8.6,8.6,8.6s8.6-3.9,8.6-8.6
++	C57.2,79.2,57.1,78.7,57,78.2z M48.6,82.8c-1.7,0-3-1.3-3-3c0-1.3,0.8-2.4,1.9-2.8c0.3-0.1,0.7-0.2,1.1-0.2c1.5,0,2.7,1,3,2.4
++	c0,0.2,0,0.4,0,0.6C51.6,81.5,50.3,82.8,48.6,82.8z"/>
++<path class="st0" d="M51.6,79.8c0,1.7-1.3,3-3,3s-3-1.3-3-3c0-1.3,0.8-2.4,1.9-2.8l1.1,2.8l3-0.6C51.6,79.4,51.6,79.6,51.6,79.8z"/>
++<rect x="28.7" y="36" transform="matrix(0.7866 -0.6174 0.6174 0.7866 -22.3069 29.2585)" width="5" height="21.8"/>
++<rect x="41.7" y="60" transform="matrix(0.9277 -0.3733 0.3733 0.9277 -22.4926 21.4663)" width="5" height="17.6"/>
++<rect x="51.3" y="74.4" transform="matrix(0.9829 -0.184 0.184 0.9829 -13.068 13.0431)" width="24.8" height="5"/>
++<rect x="69.4" y="57.7" transform="matrix(0.107 -0.9943 0.9943 0.107 11.9593 133.6762)" width="22" height="5"/>
++<polygon points="39.7,21.4 36.1,25.1 30,31.7 26.5,35.4 24.7,33.7 22.8,32 26.4,28.2 32.4,21.8 36,17.9 37.6,19.4 37.8,19.7 "/>
++<polygon points="78,46.6 40.9,21 43.7,16.9 80.8,42.5 "/>
++</svg>
+diff --git a/napari/settings/_experimental.py b/napari/settings/_experimental.py
+index ca55fa53..3195a7f2 100644
+--- a/napari/settings/_experimental.py
++++ b/napari/settings/_experimental.py
+@@ -37,6 +37,27 @@ class ExperimentalSettings(EventedSettings):
+         requires_restart=True,
+     )
+ 
++    rdp_epsilon: float = Field(
++        0.5,
++        title=trans._("Shapes polygon lasso RDP epsilon"),
++        description=trans._(
++            "Setting this higher removes more points from polygons. \nSetting this to 0 keeps all vertices of a given polygon"
++        ),
++        type=float,
++        ge=0,
++    )
++
++    lasso_vertex_distance: int = Field(
++        10,
++        title=trans._("Minimum distance threshold of shapes lasso tool"),
++        description=trans._(
++            "Value determines how many screen pixels one has to move before another vertex can be added to the polygon."
++        ),
++        type=int,
++        gt=0,
++        lt=50,
++    )
++
+     class NapariConfig:
+         # Napari specific configuration
+         preferences_exclude = ['schema_version']
+diff --git a/napari/utils/shortcuts.py b/napari/utils/shortcuts.py
+index fb2b0eef..afb19ee4 100644
+--- a/napari/utils/shortcuts.py
++++ b/napari/utils/shortcuts.py
+@@ -40,6 +40,7 @@ default_shortcuts: Dict[str, List[str]] = {
+     'napari:activate_add_line_mode': ['L'],
+     'napari:activate_add_path_mode': ['T'],
+     'napari:activate_add_polygon_mode': ['P'],
++    'napari:activate_add_polygon_lasso_mode': ['Shift-P'],
+     'napari:activate_direct_mode': ['4'],
+     'napari:activate_select_mode': ['5'],
+     'napari:activate_shapes_pan_zoom_mode': ['6'],
+diff --git a/tools/string_list.json b/tools/string_list.json
+index 09ebfc26..c0614a6b 100644
+--- a/tools/string_list.json
++++ b/tools/string_list.json
+@@ -489,6 +489,7 @@
+       "path_button",
+       "polygon",
+       "polygon_button",
++      "polygon_lasso_button",
+       "rectangle",
+       "rectangle_button",
+       "select",
+@@ -3340,4 +3341,4 @@
+     "]",
+     "napari"
+   ]
+-}
+\ No newline at end of file
++}
+-- 
+2.34.1

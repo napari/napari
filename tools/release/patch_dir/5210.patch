@@ -1,0 +1,281 @@
+From e76d7a56efffaee5ea640d0009d19a7c3d55dd92 Mon Sep 17 00:00:00 2001
+From: Dave Ross <48140684+davidpross@users.noreply.github.com>
+Date: Thu, 15 Jun 2023 15:09:26 -0700
+Subject: [PATCH] Push variables to console when instantiated (#5210)
+
+Currently, if
+[`update_console`](https://github.com/napari/napari/blob/7117d22e4baa740864762454911dc5ed09764ccc/napari/viewer.py#L88)
+is called on viewer object before the console is instantiated the
+function does nothing. With this PR instead references to the requested
+variables are added to a `console_backlog` list attribute on qt_viewer.
+If and when console is instantiated these variables are pushed.
+
+Unsure if [this related
+PR](https://github.com/napari/napari-console/pull/18) is moving forward
+and whether it would solve this case.
+
+- [x] Enhancment
+
+Closes #4098
+
+- [x] Ran unit tests for `napari/_qt`. There were some errors but looked
+unrelated to my changes.
+- [x] Added unit test based on existing `test_update_console`
+
+- [x] My PR is the minimum possible work for the desired functionality
+- [x] I have commented my code, particularly in hard-to-understand areas
+- [x] I have made corresponding changes to the documentation
+- [x] I have added tests that prove my fix is effective or that my
+feature works
+
+---------
+
+Co-authored-by: Peter Sobolewski <76622105+psobolewskiPhD@users.noreply.github.com>
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Co-authored-by: Grzegorz Bokota <bokota+github@gmail.com>
+Co-authored-by: Juan Nunez-Iglesias <jni@fastmail.com>
+---
+ examples/update_console.py     |   7 +--
+ napari/_qt/qt_viewer.py        | 102 ++++++++++++++++++++++++++++++++-
+ napari/_tests/test_advanced.py |  50 ++++++++++++++++
+ napari/viewer.py               |   1 +
+ 4 files changed, 154 insertions(+), 6 deletions(-)
+
+diff --git a/examples/update_console.py b/examples/update_console.py
+index f6343b4c..b84afdbe 100644
+--- a/examples/update_console.py
++++ b/examples/update_console.py
+@@ -2,9 +2,8 @@
+ Update console
+ ==============
+ 
+-Display one shapes layer ontop of one image layer using the add_shapes and
+-add_image APIs. When the window is closed it will print the coordinates of
+-your shapes.
++Display one shapes layer on top of one image layer using the add_shapes and
++add_image APIs.
+ 
+ .. tags:: historical
+ """
+@@ -19,7 +18,7 @@ viewer = napari.Viewer()
+ 
+ # add the image
+ photographer = data.camera()
+-image_layer = napari.view_image(photographer, name='photographer')
++image_layer = viewer.add_image(photographer, name='photographer')
+ 
+ # create a list of polygons
+ polygons = [
+diff --git a/napari/_qt/qt_viewer.py b/napari/_qt/qt_viewer.py
+index 07c52116..2a9d9f80 100644
+--- a/napari/_qt/qt_viewer.py
++++ b/napari/_qt/qt_viewer.py
+@@ -1,12 +1,13 @@
+ from __future__ import annotations
+ 
+ import logging
++import sys
+ import traceback
+ import typing
+ import warnings
+ from pathlib import Path
+-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
+-from weakref import WeakSet
++from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, Union
++from weakref import WeakSet, ref
+ 
+ import numpy as np
+ from qtpy.QtCore import QCoreApplication, QObject, Qt
+@@ -208,6 +209,7 @@ class QtViewer(QSplitter):
+         self._viewerButtons = None
+         self._key_map_handler = KeymapHandler()
+         self._key_map_handler.keymap_providers = [self.viewer]
++        self._console_backlog = []
+         self._console = None
+ 
+         self._dockLayerList = None
+@@ -483,6 +485,92 @@ class QtViewer(QSplitter):
+             )
+         return None
+ 
++    def _weakref_if_possible(self, obj):
++        """Create a weakref to obj.
++
++        Parameters
++        ----------
++        obj : object
++            Cannot create weakrefs to many Python built-in datatypes such as
++            list, dict, str.
++
++            From https://docs.python.org/3/library/weakref.html: "Objects which
++            support weak references include class instances, functions written
++            in Python (but not in C), instance methods, sets, frozensets, some
++            file objects, generators, type objects, sockets, arrays, deques,
++            regular expression pattern objects, and code objects."
++
++        Returns
++        -------
++        weakref or object
++            Returns a weakref if possible.
++        """
++        try:
++            newref = ref(obj)
++        except TypeError:
++            newref = obj
++        return newref
++
++    def _unwrap_if_weakref(self, value):
++        """Return value or if that is weakref the object referenced by value.
++
++        Parameters
++        ----------
++        value : object or weakref
++            No-op for types other than weakref.
++
++        Returns
++        -------
++        unwrapped: object or None
++            Returns referenced object, or None if weakref is dead.
++        """
++        unwrapped = value() if isinstance(value, ref) else value
++        return unwrapped
++
++    def add_to_console_backlog(self, variables):
++        """Save variables for pushing to console when it is instantiated.
++
++        This function will create weakrefs when possible to avoid holding on to
++        too much memory unnecessarily.
++
++        Parameters
++        ----------
++        variables : dict, str or list/tuple of str
++            The variables to inject into the console's namespace. If a dict, a
++            simple update is done. If a str, the string is assumed to have
++            variable names separated by spaces. A list/tuple of str can also
++            be used to give the variable names. If just the variable names are
++            give (list/tuple/str) then the variable values looked up in the
++            callers frame.
++        """
++        if isinstance(variables, (str, list, tuple)):
++            if isinstance(variables, str):
++                vlist = variables.split()
++            else:
++                vlist = variables
++            vdict = {}
++            cf = sys._getframe(2)
++            for name in vlist:
++                try:
++                    vdict[name] = eval(name, cf.f_globals, cf.f_locals)
++                except:  # noqa: E722
++                    print(
++                        f'Could not get variable {name} from '
++                        f'{cf.f_code.co_name}'
++                    )
++        elif isinstance(variables, dict):
++            vdict = variables
++        else:
++            raise TypeError('variables must be a dict/str/list/tuple')
++        # weakly reference values if possible
++        new_dict = {k: self._weakref_if_possible(v) for k, v in vdict.items()}
++        self.console_backlog.append(new_dict)
++
++    @property
++    def console_backlog(self):
++        """List: items to push to console when instantiated."""
++        return self._console_backlog
++
+     @property
+     def console(self):
+         """QtConsole: iPython console terminal integrated into the napari GUI."""
+@@ -498,6 +586,16 @@ class QtViewer(QSplitter):
+                     self.console.push(
+                         {'napari': napari, 'action_manager': action_manager}
+                     )
++                    for i in self.console_backlog:
++                        # recover weak refs
++                        self.console.push(
++                            {
++                                k: self._unwrap_if_weakref(v)
++                                for k, v in i.items()
++                                if self._unwrap_if_weakref(v) is not None
++                            }
++                        )
++                    self._console_backlog = []
+             except ModuleNotFoundError:
+                 warnings.warn(
+                     trans._(
+diff --git a/napari/_tests/test_advanced.py b/napari/_tests/test_advanced.py
+index 3843d103..5a78968b 100644
+--- a/napari/_tests/test_advanced.py
++++ b/napari/_tests/test_advanced.py
+@@ -180,6 +180,56 @@ def test_update_console(make_napari_viewer):
+         del viewer.window._qt_viewer.console.shell.user_ns[k]
+ 
+ 
++@pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
++def test_update_lazy_console(make_napari_viewer, capsys):
++    """Test updating the console with local variables,
++    before console is instantiated."""
++    viewer = make_napari_viewer()
++    view = viewer.window._qt_viewer
++
++    a = 4
++    b = 5
++    viewer.update_console(["a", "b"])
++
++    x = np.arange(5)
++    viewer.update_console("x")
++
++    viewer.update_console("missing")
++    captured = capsys.readouterr()
++    assert 'Could not get' in captured.out
++    with pytest.raises(TypeError):
++        viewer.update_console(x)
++
++    # Create class objects that will have weakrefs
++    class Foo:
++        pass
++
++    obj1 = Foo()
++    obj2 = Foo()
++    viewer.update_console({'obj1': obj1, 'obj2': obj2})
++    del obj1
++
++    # Check viewer in console
++    assert view.console.kernel_client is not None
++    assert 'viewer' in view.console.shell.user_ns
++    assert view.console.shell.user_ns['viewer'] == viewer
++
++    # Check backlog is cleared
++    assert len(view.console_backlog) == 0
++
++    assert 'a' in view.console.shell.user_ns
++    assert view.console.shell.user_ns['a'] == a
++    assert 'b' in view.console.shell.user_ns
++    assert view.console.shell.user_ns['b'] == b
++    assert 'x' in view.console.shell.user_ns
++    assert view.console.shell.user_ns['x'] is x
++    assert 'obj1' not in view.console.shell.user_ns
++    assert 'obj2' in view.console.shell.user_ns
++    assert view.console.shell.user_ns['obj2'] == obj2
++    del viewer.window._qt_viewer.console.shell.user_ns['obj2']
++    del viewer.window._qt_viewer.console.shell.user_ns['x']
++
++
+ def test_changing_display_surface(make_napari_viewer):
+     """Test adding 3D surface and changing its display."""
+     viewer = make_napari_viewer()
+diff --git a/napari/viewer.py b/napari/viewer.py
+index 8a521646..85c19006 100644
+--- a/napari/viewer.py
++++ b/napari/viewer.py
+@@ -86,6 +86,7 @@ class Viewer(ViewerModel):
+             callers frame.
+         """
+         if self.window._qt_viewer._console is None:
++            self.window._qt_viewer.add_to_console_backlog(variables)
+             return
+         self.window._qt_viewer.console.push(variables)
+ 
+-- 
+2.34.1

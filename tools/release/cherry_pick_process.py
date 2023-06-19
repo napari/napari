@@ -10,10 +10,10 @@ from git import GitCommandError, Repo
 from tqdm import tqdm
 
 from release_utils import (
+    get_milestone,
     iter_pull_request,
     pr_num_pattern,
     setup_cache,
-    short_cache,
 )
 
 
@@ -75,8 +75,14 @@ else:
 
 setup_cache()
 
-with short_cache(60):
-    iterable = iter_pull_request(f"milestone:{args.milestone} is:merged")
+milestone = get_milestone(args.milestone)
+
+# with short_cache(60):
+iterable = [
+    x
+    for x in iter_pull_request(f"milestone:{args.milestone} is:merged")
+    if x.milestone == milestone
+]
 
 if args.first_commits is not None:
     with open(args.first_commits) as f:

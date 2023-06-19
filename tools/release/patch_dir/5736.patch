@@ -1,0 +1,138 @@
+From 4af6a193b631d9a0c184440a290a1bf1d902bd4a Mon Sep 17 00:00:00 2001
+From: Lorenzo Gaifas <brisvag@gmail.com>
+Date: Tue, 6 Jun 2023 14:12:58 +0200
+Subject: [PATCH] Fix centering of non-displayed dimensions (#5736)
+
+Closes #5735
+
+`Dims.range` uses world coordinates since #5522 (and then #5751), which
+broke the centering of nondisplayed dimensions when a single nD layer
+with `scale != 1` is added to the viewer. This PR uses `Dims.nsteps` to
+properly center dims.
+
+---------
+
+Co-authored-by: Andy Sweet <andrew.d.sweet@gmail.com>
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+---
+ napari/components/_tests/test_viewer_model.py | 13 +++++++++++++
+ napari/components/dims.py                     |  2 ++
+ napari/components/viewer_model.py             | 12 +++++++++---
+ 3 files changed, 24 insertions(+), 3 deletions(-)
+
+diff --git a/napari/components/_tests/test_viewer_model.py b/napari/components/_tests/test_viewer_model.py
+index f757316e..2eacdf49 100644
+--- a/napari/components/_tests/test_viewer_model.py
++++ b/napari/components/_tests/test_viewer_model.py
+@@ -318,17 +318,30 @@ def test_view_centering_with_points_add():
+
+     viewer = ViewerModel()
+     viewer.add_image(image)
+-    assert tuple(viewer.dims.point) == (2, 5, 5)
++    assert tuple(viewer.dims.point) == (2, 4, 4)
+
+     viewer.dims.set_point(0, 0)
+     # viewer point shouldn't change after this
+-    assert tuple(viewer.dims.point) == (0, 5, 5)
++    assert tuple(viewer.dims.point) == (0, 4, 4)
+
+     pts_layer = viewer.add_points(ndim=3)
+-    assert tuple(viewer.dims.point) == (0, 5, 5)
++    assert tuple(viewer.dims.point) == (0, 4, 4)
+
+     pts_layer.add([(0, 8, 8)])
+-    assert tuple(viewer.dims.point) == (0, 5, 5)
++    assert tuple(viewer.dims.point) == (0, 4, 4)
++
++
++def test_view_centering_with_scale():
++    """Regression test for issue #5735"""
++    image = np.zeros((5, 10, 10))
++
++    viewer = ViewerModel()
++    viewer.add_image(image, scale=(1, 1, 1))
++    assert tuple(viewer.dims.point) == (2, 4, 4)
++
++    viewer.layers.pop()
++    viewer.add_image(image, scale=(2, 1, 1))
++    assert tuple(viewer.dims.point) == (4, 4, 4)
+
+
+ def test_new_shapes():
+@@ -358,7 +371,7 @@ def test_swappable_dims():
+     image_data = np.random.random((7, 12, 10, 15))
+     image_name = viewer.add_image(image_data).name
+     assert np.all(
+-        viewer.layers[image_name]._data_view == image_data[3, 6, :, :]
++        viewer.layers[image_name]._data_view == image_data[3, 5, :, :]
+     )
+
+     points_data = np.random.randint(6, size=(10, 4))
+@@ -372,17 +385,17 @@ def test_swappable_dims():
+     # midpoints indices into the data below depend on the data range.
+     # This depends on the values in vectors_data and thus the random seed.
+     assert np.all(
+-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 6, :, :]
++        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 5, :, :]
+     )
+
+     # Swap dims
+     viewer.dims.order = [0, 2, 1, 3]
+     assert viewer.dims.order == (0, 2, 1, 3)
+     assert np.all(
+-        viewer.layers[image_name]._data_view == image_data[3, :, 5, :]
++        viewer.layers[image_name]._data_view == image_data[3, :, 4, :]
+     )
+     assert np.all(
+-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 5, :]
++        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 4, :]
+     )
+
+
+
+diff --git a/napari/components/dims.py b/napari/components/dims.py
+index 5a368a04..a8ac5c46 100644
+--- a/napari/components/dims.py
++++ b/napari/components/dims.py
+@@ -408,6 +408,8 @@ class Dims(EventedModel):
+         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
+         self.order = order.tolist()
+ 
++    def _go_to_center_step(self):
++        self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
+ 
+ def assert_axis_in_bounds(axis: int, ndim: int) -> int:
+     """Assert a given value is inside the existing axes of the image.
+diff --git a/napari/components/viewer_model.py b/napari/components/viewer_model.py
+index c059acf4..3e560bbb 100644
+--- a/napari/components/viewer_model.py
++++ b/napari/components/viewer_model.py
+@@ -414,6 +414,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+ 
+     @staticmethod
+     def rounded_division(min_val, max_val, precision):
++        warnings.warn(
++            trans._(
++                'Viewer.rounded_division is deprecated since v0.4.18 and will soon be removed.'
++            ),
++            DeprecationWarning,
++            stacklevel=2,
++        )
+         return int(((min_val + max_val) / 2) / precision) * precision
+ 
+     def _on_layers_change(self):
+@@ -555,10 +562,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+         self._update_layers(layers=[layer])
+ 
+         if len(self.layers) == 1:
++            # set dims slider to the middle of all dimensions
+             self.reset_view()
+-            ranges = self.layers._ranges
+-            midpoint = [self.rounded_division(*_range) for _range in ranges]
+-            self.dims.set_point(range(len(ranges)), midpoint)
++            self.dims._go_to_center_step()
+ 
+     @staticmethod
+     def _layer_help_from_mode(layer: Layer):
+-- 
+2.34.1

@@ -1,0 +1,180 @@
+From f553cb92ffa9ae9587500a232d36346a2fd9d985 Mon Sep 17 00:00:00 2001
+From: Kabilar Gunalan <kabilar.gunalan@gmail.com>
+Date: Thu, 15 Jun 2023 04:13:44 -0500
+Subject: [PATCH] Fix Dev Docker Container (#5877)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Building the Dev Container locally resulted in two errors listed below.
+
+This PR implements the following fixes:
+
+- Add `sudo` for the `apt-get` command to enable installation
+- Fix syntax in the `postCreateCommand`
+
+- Local setup
+  - macOS 13.3.1
+  - Visual Studio Code 1.78.2
+  - Docker Desktop 4.15.0
+
+- Error at the `Dockerfile` build step:
+  ```
+[3725 ms] Start: Run: docker buildx build --load --build-arg
+BUILDKIT_INLINE_CACHE=1 -f
+/var/folders/d6/ptz3l3wj1pb94kb9gvb6q_h80000gn/T/devcontainercli/container-features/0.40.0-1685315962670/Dockerfile-with-features
+-t
+vsc-napari-c12a01b2d27670fa9bcf03028a18145b9053db406d9f5d78d051e2507c958799
+--target dev_containers_target_stage --no-cache --pull --build-arg
+NODE_VERSION=none --build-context
+dev_containers_feature_content_source=/var/folders/d6/ptz3l3wj1pb94kb9gvb6q_h80000gn/T/devcontainercli/container-features/0.40.0-1685315962670
+--build-arg
+_DEV_CONTAINERS_BASE_IMAGE=dev_container_auto_added_stage_label
+--build-arg _DEV_CONTAINERS_IMAGE_USER=vscode --build-arg
+_DEV_CONTAINERS_FEATURE_CONTENT_SOURCE=dev_container_feature_content_temp
+/Users/kabilargunalan/Documents/GitHub/napari
+[+] Building 1.6s (11/19)
+=> [internal] load build definition from Dockerfile-with-features 0.0s
+=> => transferring dockerfile: 5.50kB 0.0s
+=> [internal] load .dockerignore 0.0s
+=> => transferring context: 2B 0.0s
+=> resolve image config for docker.io/docker/dockerfile:1.4 0.6s
+=> CACHED docker-image://docker.io/docker/dockerfile:1.4@sha256:9ba7531b
+0.0s
+=> [internal] load build definition from Dockerfile-with-features 0.0s
+=> [internal] load .dockerignore 0.0s
+=> [context dev_containers_feature_content_source] load .dockerignore
+0.0s
+=> => transferring dev_containers_feature_content_source: 2B 0.0s
+=> [internal] load metadata for mcr.microsoft.com/vscode/devcontainers/m
+0.3s
+=> CACHED [dev_container_auto_added_stage_label 1/2] FROM mcr.microsoft.
+0.0s
+=> [context dev_containers_feature_content_source] load from client 0.0s
+=> => transferring dev_containers_feature_content_source: 38.39kB 0.0s
+=> ERROR [dev_container_auto_added_stage_label 2/2] RUN apt-get update &
+0.3s
+------
+> [dev_container_auto_added_stage_label 2/2] RUN apt-get update &&
+export DEBIAN_FRONTEND=noninteractive && apt-get -y install
+--no-install-recommends libxcb-icccm4 libxcb-image0 libxcb-keysyms1
+libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxkbcommon-x11-0:
+  #0 0.247 Reading package lists...
+Acquire (13: Permission denied)
+  ------
+ERROR: failed to solve: executor failed running [/bin/sh -c apt-get
+update && export DEBIAN_FRONTEND=noninteractive && apt-get -y install
+--no-install-recommends libxcb-icccm4 libxcb-image0 libxcb-keysyms1
+libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxkbcommon-x11-0]:
+exit code: 100
+[5886 ms] Error: Command failed: docker buildx build --load --build-arg
+BUILDKIT_INLINE_CACHE=1 -f
+/var/folders/d6/ptz3l3wj1pb94kb9gvb6q_h80000gn/T/devcontainercli/container-features/0.40.0-1685315962670/Dockerfile-with-features
+-t
+vsc-napari-c12a01b2d27670fa9bcf03028a18145b9053db406d9f5d78d051e2507c958799
+--target dev_containers_target_stage --no-cache --pull --build-arg
+NODE_VERSION=none --build-context
+dev_containers_feature_content_source=/var/folders/d6/ptz3l3wj1pb94kb9gvb6q_h80000gn/T/devcontainercli/container-features/0.40.0-1685315962670
+--build-arg
+_DEV_CONTAINERS_BASE_IMAGE=dev_container_auto_added_stage_label
+--build-arg _DEV_CONTAINERS_IMAGE_USER=vscode --build-arg
+_DEV_CONTAINERS_FEATURE_CONTENT_SOURCE=dev_container_feature_content_temp
+/Users/kabilargunalan/Documents/GitHub/napari
+[5887 ms] at Lse
+(/Users/kabilargunalan/.vscode/extensions/ms-vscode-remote.remote-containers-0.292.0/dist/spec-node/devContainersSpecCLI.js:1947:1698)
+[5887 ms] at process.processTicksAndRejections
+(node:internal/process/task_queues:96:5)
+[5887 ms] at async wD
+(/Users/kabilargunalan/.vscode/extensions/ms-vscode-remote.remote-containers-0.292.0/dist/spec-node/devContainersSpecCLI.js:1946:3889)
+[5887 ms] at async rO
+(/Users/kabilargunalan/.vscode/extensions/ms-vscode-remote.remote-containers-0.292.0/dist/spec-node/devContainersSpecCLI.js:1946:2808)
+[5887 ms] at async Xse
+(/Users/kabilargunalan/.vscode/extensions/ms-vscode-remote.remote-containers-0.292.0/dist/spec-node/devContainersSpecCLI.js:1961:2626)
+[5887 ms] at async vh
+(/Users/kabilargunalan/.vscode/extensions/ms-vscode-remote.remote-containers-0.292.0/dist/spec-node/devContainersSpecCLI.js:1961:3741)
+[5887 ms] at async gae
+(/Users/kabilargunalan/.vscode/extensions/ms-vscode-remote.remote-containers-0.292.0/dist/spec-node/devContainersSpecCLI.js:2092:10213)
+[5887 ms] at async mae
+(/Users/kabilargunalan/.vscode/extensions/ms-vscode-remote.remote-containers-0.292.0/dist/spec-node/devContainersSpecCLI.js:2092:9954)
+  [5898 ms] Exit code 1
+[5902 ms] Command failed: /Applications/Visual Studio
+Code.app/Contents/Frameworks/Code Helper
+(Plugin).app/Contents/MacOS/Code Helper (Plugin)
+--ms-enable-electron-run-as-node
+/Users/kabilargunalan/.vscode/extensions/ms-vscode-remote.remote-containers-0.292.0/dist/spec-node/devContainersSpecCLI.js
+up --user-data-folder /Users/kabilargunalan/Library/Application
+Support/Code/User/globalStorage/ms-vscode-remote.remote-containers/data
+--container-session-data-folder
+/tmp/devcontainers-15c3fd8a-931d-4eb4-a413-f1000c1e9ce51685315959838
+--workspace-folder /Users/kabilargunalan/Documents/GitHub/napari
+--workspace-mount-consistency cached --id-label
+devcontainer.local_folder=/Users/kabilargunalan/Documents/GitHub/napari
+--id-label
+devcontainer.config_file=/Users/kabilargunalan/Documents/GitHub/napari/.devcontainer/devcontainer.json
+--log-level debug --log-format json --config
+/Users/kabilargunalan/Documents/GitHub/napari/.devcontainer/devcontainer.json
+--default-user-env-probe loginInteractiveShell --build-no-cache
+--remove-existing-container --mount
+type=volume,source=vscode,target=/vscode,external=true
+--skip-post-create --update-remote-user-uid-default on
+--mount-workspace-git-root true
+  [5902 ms] Exit code 1
+  ```
+
+- Error at the `postCreateCommand` step:
+  ```
+  Running the postCreateCommand from devcontainer.json...
+
+[127190 ms] Start: Run in container: /bin/sh -c pip install -U pip &&
+pip install -e .[pyqt, dev] && pre-commit install
+Requirement already satisfied: pip in
+/opt/conda/lib/python3.10/site-packages (22.3.1)
+  Collecting pip
+    Downloading pip-23.1.2-py3-none-any.whl (2.1 MB)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 7.3 MB/s eta 0:00:00
+  Installing collected packages: pip
+    Attempting uninstall: pip
+      Found existing installation: pip 22.3.1
+      Uninstalling pip-22.3.1:
+        Successfully uninstalled pip-22.3.1
+  Successfully installed pip-23.1.2
+  ERROR: Invalid requirement: 'dev]'
+[135445 ms] postCreateCommand failed with exit code 1. Skipping any
+further user-provided commands.
+  Done. Press any key to close the terminal.
+  ```
+---
+ .devcontainer/Dockerfile        | 4 ++--
+ .devcontainer/devcontainer.json | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/.devcontainer/Dockerfile b/.devcontainer/Dockerfile
+index 66b75f0b..ddec6ecd 100644
+--- a/.devcontainer/Dockerfile
++++ b/.devcontainer/Dockerfile
+@@ -3,7 +3,7 @@
+ FROM mcr.microsoft.com/vscode/devcontainers/miniconda:0-3
+ 
+ 
+-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+-    && apt-get -y install --no-install-recommends \
++RUN sudo apt-get update && export DEBIAN_FRONTEND=noninteractive \
++    && sudo apt-get -y install --no-install-recommends \
+     libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+     libxcb-render-util0 libxcb-xinerama0 libxkbcommon-x11-0
+\ No newline at end of file
+diff --git a/.devcontainer/devcontainer.json b/.devcontainer/devcontainer.json
+index e6bccac0..d5dfad30 100644
+--- a/.devcontainer/devcontainer.json
++++ b/.devcontainer/devcontainer.json
+@@ -31,7 +31,7 @@
+ 	"forwardPorts": [5900, 5901, 6080],
+ 
+ 	// Use 'postCreateCommand' to run commands after the container is created.
+-	"postCreateCommand": "pip install -U pip && pip install -e .[dev] && pre-commit install",
++	"postCreateCommand": "pip install -U pip && pip install -e .[pyqt,dev] && pre-commit install",
+ 
+ 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+ 	"remoteUser": "vscode",
+-- 
+2.34.1

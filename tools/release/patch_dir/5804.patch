@@ -1,0 +1,793 @@
+From 778d2721480cf50bb75d554fe110c6d09cf05da6 Mon Sep 17 00:00:00 2001
+From: jaimergp <jaimergp@users.noreply.github.com>
+Date: Wed, 24 May 2023 16:36:28 +0000
+Subject: [PATCH] [MAINT, packaging] Remove support for briefcase installers
+ (#5804)
+
+Closes https://github.com/napari/napari/issues/5506
+
+The Briefcase bundles have not been working for a while (at least in
+some platforms), nobody is testing them either, and our development
+efforts are mostly directed to the `constructor` installers.
+In this PR, they are removed to [avoid CI
+waste](https://github.com/napari/napari/issues/5660) and permit deleting
+some strange code paths for Briefcase workarounds.
+
+- [X] Removes / deprecates code
+
+<!-- Please describe the tests that you ran to verify your changes. -->
+- [x] No CI jobs for Briefcase
+- [x] Tests pass without the extra Briefcase workarounds
+
+- [X] My PR is the minimum possible work for the desired functionality
+- [x] I have made corresponding changes to the documentation:
+https://github.com/napari/docs/pull/147
+
+---------
+
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Co-authored-by: Grzegorz Bokota <bokota+github@gmail.com>
+---
+ .github/workflows/make_bundle.yml | 111 -----------
+ .gitignore                        |   5 -
+ MANIFEST.in                       |   4 -
+ README.md                         |   2 +-
+ bundle.py                         | 307 ------------------------------
+ napari/__main__.py                |   4 +-
+ napari/_qt/menus/file_menu.py     |   4 +-
+ napari/_qt/qt_main_window.py      |   4 +-
+ napari/plugins/__init__.py        |  11 --
+ napari/plugins/_plugin_manager.py |   7 +-
+ napari/plugins/pypi.py            |   4 +-
+ napari/utils/_appdirs.py          |  38 +---
+ napari/utils/misc.py              |  18 +-
+ pyproject.toml                    |  19 --
+ resources/bundle_readme.md        |   2 +-
+ setup.cfg                         |  17 --
+ 16 files changed, 26 insertions(+), 531 deletions(-)
+ delete mode 100644 .github/workflows/make_bundle.yml
+ delete mode 100644 bundle.py
+
+diff --git a/.github/workflows/make_bundle.yml b/.github/workflows/make_bundle.yml
+deleted file mode 100644
+index 09c42490..00000000
+--- a/.github/workflows/make_bundle.yml
++++ /dev/null
+@@ -1,111 +0,0 @@
+-on:
+-  push:
+-    # Sequence of patterns matched against refs/tags
+-    tags:
+-      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+-    branches:
+-      - main
+-  pull_request:
+-    branches:
+-      - main
+-    paths-ignore:
+-      - 'docs/**'
+-  schedule:
+-    - cron: "0 0 * * *"
+-  # Allows you to run this workflow manually from the Actions tab
+-  workflow_dispatch:
+-
+-name: Create Bundle
+-
+-jobs:
+-  bundle:
+-    name: Bundle ${{ matrix.platform }}
+-    runs-on: ${{ matrix.platform }}
+-    if: github.repository == 'napari/napari'
+-    env:
+-      GITHUB_TOKEN: ${{ github.token }}
+-      DISPLAY: ":99.0"
+-    strategy:
+-      fail-fast: false
+-      matrix:
+-        include:
+-          - platform: ubuntu-20.04
+-            python-version: "3.9"
+-          - platform: macos-latest
+-            python-version: "3.9"
+-          - platform: windows-latest
+-            python-version: "3.8"
+-    steps:
+-      - name: Checkout code
+-        uses: actions/checkout@v3
+-        with:
+-          fetch-depth: 0
+-      - name: Install Python
+-        uses: actions/setup-python@v4
+-        with:
+-          python-version: ${{ matrix.python-version }}
+-          cache-dependency-path: setup.cfg
+-      - name: Install Dependencies
+-        run: |
+-          python -m pip install --upgrade pip
+-          python -m pip install -e '.[bundle_build]'
+-      - name: get tag / arch-suffix
+-        shell: bash
+-        run: |
+-          VER=`python bundle.py --version`
+-          echo "version=${VER}" >> $GITHUB_ENV
+-          echo "Version: $VER"
+-          ARCH_SUFFIX=`python bundle.py --arch`
+-          echo "arch-suffix=${ARCH_SUFFIX}" >> $GITHUB_ENV
+-          echo "Machine: ${ARCH_SUFFIX}"
+-      - name: Make Bundle (Linux)
+-        if: runner.os == 'Linux'
+-        run: |
+-          sudo apt-get update
+-          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
+-            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+-            libxcb-xinerama0 libxcb-xfixes0 libxcb-shape0 libqt5gui5
+-          sudo ln -s /usr/lib/x86_64-linux-gnu/libffi.so.7 /usr/lib/x86_64-linux-gnu/libffi.so.6
+-          sudo ln -s /usr/lib/x86_64-linux-gnu/libgdbm.so.6 /usr/lib/x86_64-linux-gnu/libgdbm.so.5
+-          xvfb-run --auto-servernum python bundle.py
+-      - name: Make Bundle (Windows & MacOS)
+-        if: runner.os != 'Linux'
+-        run: python bundle.py
+-      - name: Upload Artifact
+-        uses: actions/upload-artifact@v3
+-        with:
+-          name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+-          path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+-      - name: Get Release
+-        if: startsWith(github.ref, 'refs/tags/v')
+-        id: get_release
+-        uses: bruceadams/get-release@v1.2.3
+-      - name: Upload Release Asset
+-        if: startsWith(github.ref, 'refs/tags/v')
+-        uses: actions/upload-release-asset@v1
+-        with:
+-          upload_url: ${{ steps.get_release.outputs.upload_url }}
+-          asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+-          asset_name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+-          asset_content_type: application/zip
+-      - name: Upload Nightly Build Asset
+-        if: ${{ github.event_name == 'schedule' }}
+-        uses: WebFreak001/deploy-nightly@v1.1.0
+-        env:
+-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+-        with:
+-          # nightly build release from https://api.github.com/repos/napari/napari/releases
+-          upload_url: https://uploads.github.com/repos/napari/napari/releases/34273071/assets{?name,label}
+-          release_id: 34273071
+-          asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+-          asset_name: napari-${{ runner.os }}-${{ env.arch-suffix }}.zip
+-          asset_content_type: application/zip
+-          max_releases: 1
+-      - name: Update latest tag
+-        uses: EndBug/latest-tag@latest
+-        if: ${{ github.event_name == 'schedule' }}
+-        with:
+-          description: latest code released from nightly build
+-          tag-name: latest
+-        env:
+-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+diff --git a/.gitignore b/.gitignore
+index e900b23d..fb9dcd73 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -141,11 +141,6 @@ res.qrc
+ # ignore all generated themed svgs
+ napari/resources/themes
+ 
+-# briefcase
+-macOS/
+-linux/
+-windows/
+-
+ napari/_version.py
+ 
+ docs/api/napari*
+diff --git a/MANIFEST.in b/MANIFEST.in
+index 3f61d52a..a64af5ff 100644
+--- a/MANIFEST.in
++++ b/MANIFEST.in
+@@ -7,19 +7,15 @@ recursive-include napari_builtins _tests/*.py
+ recursive-include napari *.pyi
+ recursive-include napari *.png *.svg *.qss *.gif *.ico *.icns
+ recursive-include napari *.yaml
+-exclude napari/resources/_qt_resources*.py
+ 
+ # explicit excludes to keep check-manifest happy and remind us that
+ # these things are not being included unless we ask
+ recursive-exclude tools *
+-recursive-exclude docs *
+-recursive-exclude examples *
+ recursive-exclude napari *.pyc
+ exclude napari/benchmarks/*
+ recursive-exclude resources *
+ recursive-exclude binder *
+ recursive-exclude examples *
+-exclude bundle.py bundle_conda.py
+ exclude dockerfile
+ exclude EULA.md
+ exclude Singularity
+diff --git a/README.md b/README.md
+index dfb7d662..3cc8547e 100644
+--- a/README.md
++++ b/README.md
+@@ -33,7 +33,7 @@ python -m pip install "napari[all]"
+ 
+ If you prefer conda over pip, you can replace the last line with: `conda install -c conda-forge napari`
+ 
+-See here for the full [installation guide](https://napari.org/tutorials/fundamentals/installation.html), including how to [install napari as a bundled app](https://napari.org/tutorials/fundamentals/installation.html#install-as-a-bundled-app).
++See here for the full [installation guide](https://napari.org/tutorials/fundamentals/installation.html).
+ 
+ ## simple example
+ 
+diff --git a/bundle.py b/bundle.py
+deleted file mode 100644
+index a4222baf..00000000
+--- a/bundle.py
++++ /dev/null
+@@ -1,307 +0,0 @@
+-import configparser
+-import os
+-import platform
+-import re
+-import shutil
+-import subprocess
+-import sys
+-import time
+-from contextlib import contextmanager
+-from pathlib import Path
+-
+-import tomlkit
+-
+-APP = 'napari'
+-
+-# EXTRA_REQS will be added to the bundle, in addition to those specified in
+-# setup.cfg.  To add additional packages to the bundle, or to override any of
+-# the packages listed here or in `setup.cfg, use the `--add` command line
+-# argument with a series of "pip install" style strings when running this file.
+-# For example, the following will ADD ome-zarr, and CHANGE the version of
+-# PySide2:
+-# python bundle.py --add 'PySide2==5.15.0' 'ome-zarr'
+-
+-# This is now defined in setup.cfg "options.extras_require.bundle_run"
+-# EXTRA_REQS = []
+-
+-WINDOWS = os.name == 'nt'
+-MACOS = sys.platform == 'darwin'
+-LINUX = sys.platform.startswith("linux")
+-HERE = os.path.abspath(os.path.dirname(__file__))
+-PYPROJECT_TOML = os.path.join(HERE, 'pyproject.toml')
+-SETUP_CFG = os.path.join(HERE, 'setup.cfg')
+-ARCH = (platform.machine() or "generic").lower().replace("amd64", "x86_64")
+-
+-if WINDOWS:
+-    BUILD_DIR = os.path.join(HERE, 'windows')
+-    APP_DIR = os.path.join(BUILD_DIR, APP, 'src')
+-    EXT, OS = 'msi', 'Windows'
+-elif LINUX:
+-    BUILD_DIR = os.path.join(HERE, 'linux')
+-    APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.AppDir')
+-    EXT, OS = 'AppImage', 'Linux'
+-elif MACOS:
+-    BUILD_DIR = os.path.join(HERE, 'macOS')
+-    APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.app')
+-    EXT, OS = 'dmg', 'macOS'
+-
+-with open(os.path.join(HERE, "napari", "_version.py")) as f:
+-    match = re.search(r'version\s?=\s?\'([^\']+)', f.read())
+-    if match:
+-        VERSION = match.groups()[0].split('+')[0]
+-
+-
+-@contextmanager
+-def patched_toml():
+-    parser = configparser.ConfigParser()
+-    parser.read(SETUP_CFG)
+-    requirements = parser.get("options", "install_requires").splitlines()
+-    requirements = [r.split('#')[0].strip() for r in requirements if r]
+-
+-    with open(PYPROJECT_TOML) as f:
+-        original_toml = f.read()
+-
+-    toml = tomlkit.parse(original_toml)
+-
+-    # Initialize EXTRA_REQS from setup.cfg 'options.extras_require.bundle_run'
+-    bundle_run = parser.get("options.extras_require", "bundle_run")
+-    EXTRA_REQS = [
+-        requirement.split('#')[0].strip()
+-        for requirement in bundle_run.splitlines()
+-        if requirement
+-    ]
+-
+-    # parse command line arguments
+-    if '--add' in sys.argv:
+-        for item in sys.argv[sys.argv.index('--add') + 1 :]:
+-            if item.startswith('-'):
+-                break
+-            EXTRA_REQS.append(item)
+-
+-    for item in EXTRA_REQS:
+-        _base = re.split('<|>|=', item, maxsplit=1)[0]
+-        for r in requirements:
+-            if r.startswith(_base):
+-                requirements.remove(r)
+-                break
+-        if _base.lower().startswith('pyqt5'):
+-            try:
+-                i = next(x for x in requirements if x.startswith('PySide'))
+-                requirements.remove(i)
+-            except StopIteration:
+-                pass
+-
+-    requirements += EXTRA_REQS
+-
+-    toml['tool']['briefcase']['app'][APP]['requires'] = requirements
+-    toml['tool']['briefcase']['version'] = VERSION
+-
+-    print("patching pyproject.toml to version: ", VERSION)
+-    print(
+-        "patching pyproject.toml requirements to:",
+-        *toml['tool']['briefcase']['app'][APP]['requires'],
+-        sep="\n ",
+-    )
+-
+-    if MACOS:
+-        # Workaround https://github.com/napari/napari/issues/2965
+-        # Pin revisions to releases _before_ they switched to static libs
+-        revision = {
+-            (3, 6): '11',
+-            (3, 7): '5',
+-            (3, 8): '4',
+-            (3, 9): '1',
+-        }[sys.version_info[:2]]
+-        app_table = toml['tool']['briefcase']['app'][APP]
+-        app_table.add('macOS', tomlkit.table())
+-        app_table['macOS']['support_revision'] = revision
+-        print(
+-            "patching pyproject.toml to pin support package to revision:",
+-            revision,
+-        )
+-
+-    with open(PYPROJECT_TOML, 'w') as f:
+-        f.write(tomlkit.dumps(toml))
+-
+-    try:
+-        yield
+-    finally:
+-        with open(PYPROJECT_TOML, 'w') as f:
+-            f.write(original_toml)
+-
+-
+-@contextmanager
+-def patched_dmgbuild():
+-    if not MACOS:
+-        yield
+-    else:
+-        from dmgbuild import core
+-
+-        with open(core.__file__) as f:
+-            src = f.read()
+-        with open(core.__file__, 'w') as f:
+-            f.write(
+-                src.replace(
+-                    "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)",
+-                    "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True);time.sleep(30)",
+-                )
+-            )
+-        print("patched dmgbuild.core")
+-        try:
+-            yield
+-        finally:
+-            # undo
+-            with open(core.__file__, 'w') as f:
+-                f.write(src)
+-
+-
+-def add_site_packages_to_path():
+-    # on mac, make sure the site-packages folder exists even before the user
+-    # has pip installed, so it is in sys.path on the first run
+-    # (otherwise, newly installed plugins will not be detected until restart)
+-    if MACOS:
+-        pkgs_dir = os.path.join(
+-            APP_DIR,
+-            'Contents',
+-            'Resources',
+-            'Support',
+-            'lib',
+-            f'python{sys.version_info.major}.{sys.version_info.minor}',
+-            'site-packages',
+-        )
+-        os.makedirs(pkgs_dir)
+-        print("created site-packages at", pkgs_dir)
+-
+-    # on windows, briefcase uses a _pth file to determine the sys.path at
+-    # runtime.  https://docs.python.org/3/using/windows.html#finding-modules
+-    # We update that file with the eventual location of pip site-packages
+-    elif WINDOWS:
+-        py = "".join(map(str, sys.version_info[:2]))
+-        python_dir = os.path.join(BUILD_DIR, APP, 'src', 'python')
+-        pth = os.path.join(python_dir, f'python{py}._pth')
+-        with open(pth, "a") as f:
+-            # Append 'hello' at the end of file
+-            f.write(".\\\\Lib\\\\site-packages\n")
+-        print("added bundled site-packages to", pth)
+-
+-        pkgs_dir = os.path.join(python_dir, 'Lib', 'site-packages')
+-        os.makedirs(pkgs_dir)
+-        print("created site-packages at", pkgs_dir)
+-        with open(os.path.join(pkgs_dir, 'readme.txt'), 'w') as f:
+-            f.write("this is where plugin packages will go")
+-
+-
+-def patch_wxs():
+-    # must run after briefcase create
+-    fname = os.path.join(BUILD_DIR, APP, f'{APP}.wxs')
+-
+-    if os.path.exists(fname):
+-        with open(fname) as f:
+-            source = f.read()
+-        with open(fname, 'w') as f:
+-            f.write(source.replace('pythonw.exe', 'python.exe'))
+-            print("patched pythonw.exe -> python.exe")
+-
+-
+-def patch_python_lib_location():
+-    # must run after briefcase create
+-    support = os.path.join(
+-        BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support"
+-    )
+-    python_resources = os.path.join(support, "Python", "Resources")
+-    if os.path.exists(python_resources):
+-        return
+-    os.makedirs(python_resources, exist_ok=True)
+-    for subdir in ("bin", "lib"):
+-        orig = os.path.join(support, subdir)
+-        dest = os.path.join(python_resources, subdir)
+-        os.symlink("../../" + subdir, dest)
+-        print("symlinking", orig, "to", dest)
+-
+-
+-def add_sentinel_file():
+-    if MACOS:
+-        (Path(APP_DIR) / "Contents" / "MacOS" / ".napari_is_bundled").touch()
+-    elif LINUX:
+-        (Path(APP_DIR) / "usr" / "bin" / ".napari_is_bundled").touch()
+-    elif WINDOWS:
+-        (Path(APP_DIR) / "python" / ".napari_is_bundled").touch()
+-    else:
+-        print("!!! Sentinel files not yet implemented in", sys.platform)
+-
+-
+-def patch_environment_variables():
+-    os.environ["ARCH"] = ARCH
+-
+-
+-def make_zip():
+-    import glob
+-    import zipfile
+-
+-    artifact = glob.glob(os.path.join(BUILD_DIR, f"*.{EXT}"))[0]
+-    dest = f'napari-{VERSION}-{OS}-{ARCH}.zip'
+-
+-    with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as zf:
+-        zf.write(artifact, arcname=os.path.basename(artifact))
+-    print("created zipfile: ", dest)
+-    return dest
+-
+-
+-def clean():
+-    shutil.rmtree(BUILD_DIR, ignore_errors=True)
+-
+-
+-def bundle():
+-    clean()
+-
+-    if LINUX:
+-        patch_environment_variables()
+-
+-    # smoke test, and build resources
+-    subprocess.check_call([sys.executable, '-m', APP, '--info'])
+-
+-    # the briefcase calls need to happen while the pyproject toml is patched
+-    with patched_toml(), patched_dmgbuild():
+-        # create
+-        cmd = ['briefcase', 'create', '-v'] + (
+-            ['--no-docker'] if LINUX else []
+-        )
+-        subprocess.check_call(cmd)
+-
+-        time.sleep(0.5)
+-
+-        add_site_packages_to_path()
+-        add_sentinel_file()
+-
+-        if WINDOWS:
+-            patch_wxs()
+-        elif MACOS:
+-            patch_python_lib_location()
+-
+-        # build
+-        cmd = ['briefcase', 'build', '-v'] + (['--no-docker'] if LINUX else [])
+-        subprocess.check_call(cmd)
+-
+-        # package
+-        cmd = ['briefcase', 'package', '-v']
+-        cmd += ['--no-sign'] if MACOS else (['--no-docker'] if LINUX else [])
+-        subprocess.check_call(cmd)
+-
+-        # compress
+-        dest = make_zip()
+-        clean()
+-
+-        return dest
+-
+-
+-if __name__ == "__main__":
+-    if '--clean' in sys.argv:
+-        clean()
+-        sys.exit()
+-    if '--version' in sys.argv:
+-        print(VERSION)
+-        sys.exit()
+-    if '--arch' in sys.argv:
+-        print(ARCH)
+-        sys.exit()
+-    print('created', bundle())
+diff --git a/napari/__main__.py b/napari/__main__.py
+index 6e307f09..b3b4a15b 100644
+--- a/napari/__main__.py
++++ b/napari/__main__.py
+@@ -381,10 +381,10 @@ def _run():
+         # only necessary in bundled app, but see #3596
+         from napari.utils.misc import (
+             install_certifi_opener,
+-            running_as_bundled_app,
++            running_as_constructor_app,
+         )
+ 
+-        if running_as_bundled_app():
++        if running_as_constructor_app():
+             install_certifi_opener()
+         run(gui_exceptions=True)
+ 
+diff --git a/napari/_qt/menus/file_menu.py b/napari/_qt/menus/file_menu.py
+index 138f2ea7..af7e9eb0 100644
+--- a/napari/_qt/menus/file_menu.py
++++ b/napari/_qt/menus/file_menu.py
+@@ -12,7 +12,7 @@ from napari.components._viewer_key_bindings import register_viewer_action
+ from napari.errors.reader_errors import MultipleReaderError
+ from napari.settings import get_settings
+ from napari.utils.history import get_save_history, update_save_history
+-from napari.utils.misc import running_as_bundled_app
++from napari.utils.misc import running_as_constructor_app
+ from napari.utils.translations import trans
+ 
+ if TYPE_CHECKING:
+@@ -123,7 +123,7 @@ class FileMenu(NapariMenu):
+                 'shortcut': 'Ctrl+W',
+             },
+             {
+-                'when': running_as_bundled_app(),
++                'when': running_as_constructor_app(),
+                 'text': trans._('Restart'),
+                 'slot': window._qt_window.restart,
+             },
+diff --git a/napari/_qt/qt_main_window.py b/napari/_qt/qt_main_window.py
+index dc5b09d2..e6317cdd 100644
+--- a/napari/_qt/qt_main_window.py
++++ b/napari/_qt/qt_main_window.py
+@@ -66,7 +66,7 @@ from napari.utils.misc import (
+     in_ipython,
+     in_jupyter,
+     in_python_repl,
+-    running_as_bundled_app,
++    running_as_constructor_app,
+ )
+ from napari.utils.notifications import Notification
+ from napari.utils.theme import _themes, get_system_theme
+@@ -451,7 +451,7 @@ class _QtMainWindow(QMainWindow):
+         process = QProcess()
+         process.setProgram(sys.executable)
+ 
+-        if not running_as_bundled_app():
++        if not running_as_constructor_app():
+             process.setArguments(sys.argv)
+ 
+         process.startDetached()
+diff --git a/napari/plugins/__init__.py b/napari/plugins/__init__.py
+index 898af969..a85f7478 100644
+--- a/napari/plugins/__init__.py
++++ b/napari/plugins/__init__.py
+@@ -1,9 +1,7 @@
+ from functools import lru_cache
+ 
+ from npe2 import (
+-    PackageMetadata,
+     PluginManager as _PluginManager,
+-    PluginManifest,
+ )
+ 
+ from napari.plugins import _npe2
+@@ -42,15 +40,6 @@ def _initialize_plugins():
+     _npe2pm.events.plugins_registered.connect(_npe2.on_plugins_registered)
+     _npe2pm.discover(include_npe1=settings.plugins.use_npe2_adaptor)
+ 
+-    # this is a workaround for the fact that briefcase does not seem to include
+-    # napari's entry_points.txt in the bundled app, so the builtin plugins
+-    # don't get detected.  So we just register it manually.  This could
+-    # potentially be removed when we move to a different bundle strategy
+-    if 'napari' not in _npe2pm._manifests:
+-        mf = PluginManifest.from_distribution('napari')
+-        mf.package_metadata = PackageMetadata.for_package('napari')
+-        _npe2pm.register(mf)
+-
+     # Disable plugins listed as disabled in settings, or detected in npe2
+     _from_npe2 = {m.name for m in _npe2pm.iter_manifests()}
+     if 'napari' in _from_npe2:
+diff --git a/napari/plugins/_plugin_manager.py b/napari/plugins/_plugin_manager.py
+index 60052e3f..ec8a334e 100644
+--- a/napari/plugins/_plugin_manager.py
++++ b/napari/plugins/_plugin_manager.py
+@@ -1,5 +1,4 @@
+ import contextlib
+-import sys
+ import warnings
+ from functools import partial
+ from pathlib import Path
+@@ -29,9 +28,8 @@ from typing_extensions import TypedDict
+ from napari.plugins import hook_specifications
+ from napari.settings import get_settings
+ from napari.types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
+-from napari.utils._appdirs import user_site_packages
+ from napari.utils.events import EmitterGroup, EventedSet
+-from napari.utils.misc import camel_to_spaces, running_as_bundled_app
++from napari.utils.misc import camel_to_spaces
+ from napari.utils.theme import Theme, register_theme, unregister_theme
+ from napari.utils.translations import trans
+ 
+@@ -97,9 +95,6 @@ class NapariPluginManager(PluginManager):
+         self._function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = {}
+         self._theme_data: Dict[str, Dict[str, Theme]] = {}
+ 
+-        if sys.platform.startswith('linux') and running_as_bundled_app():
+-            sys.path.append(user_site_packages())
+-
+     def _initialize(self):
+         with self.discovery_blocked():
+             from napari.settings import get_settings
+diff --git a/napari/plugins/pypi.py b/napari/plugins/pypi.py
+index 2ea5ed48..5a4d3dac 100644
+--- a/napari/plugins/pypi.py
++++ b/napari/plugins/pypi.py
+@@ -23,9 +23,7 @@ def _user_agent() -> str:
+     from napari import __version__
+     from napari.utils import misc
+ 
+-    if misc.running_as_bundled_app():
+-        env = 'briefcase'
+-    elif misc.running_as_constructor_app():
++    if misc.running_as_constructor_app():
+         env = 'constructor'
+     elif misc.in_jupyter():
+         env = 'jupyter'
+diff --git a/napari/utils/misc.py b/napari/utils/misc.py
+index 07187419..5ea11497 100644
+--- a/napari/utils/misc.py
++++ b/napari/utils/misc.py
+@@ -50,15 +50,27 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
+         return packaging.version.LegacyVersion(v)
+ 
+ 
+-def running_as_bundled_app() -> bool:
+-    """Infer whether we are running as a briefcase bundle."""
++def running_as_bundled_app(*, check_conda=True) -> bool:
++    """Infer whether we are running as a bundle."""
+     # https://github.com/beeware/briefcase/issues/412
+     # https://github.com/beeware/briefcase/pull/425
+     # note that a module may not have a __package__ attribute
+     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
+-    if (Path(sys.executable).parent / ".napari_is_bundled").exists():
++    warnings.warn(
++        trans._(
++            "Briefcase installations are no longer supported as of v0.4.18. "
++            "running_as_bundled_app() will be removed in a 0.6.0 release.",
++        ),
++        DeprecationWarning,
++        stacklevel=2,
++    )
++    if (
++        check_conda
++        and (Path(sys.executable).parent / ".napari_is_bundled").exists()
++    ):
+         return True
+ 
++    # TODO: Remove from here on?
+     try:
+         app_module = sys.modules['__main__'].__package__
+     except AttributeError:
+diff --git a/pyproject.toml b/pyproject.toml
+index 09d4ab6b..0f052fd3 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -9,23 +9,6 @@ build-backend = "setuptools.build_meta"
+ [tool.setuptools_scm]
+ write_to = "napari/_version.py"
+ 
+-[tool.briefcase]
+-project_name = "napari"
+-bundle = "com.napari"
+-author = "napari"
+-url = "https://napari.org/"
+-license = "BSD license"
+-# version populated in bundle.py
+-version = "0.0.1"
+-
+-[tool.briefcase.app.napari]
+-formal_name = "napari"
+-description = "napari: a multi-dimensional image viewer"
+-sources = ['napari']
+-icon = "napari/resources/icon"
+-# populated in bundle.py
+-requires = []
+-
+ [tool.black]
+ target-version = ['py38', 'py39', 'py310']
+ skip-string-normalization = true
+@@ -54,7 +37,6 @@ exclude = '''
+ 
+ [tool.check-manifest]
+ ignore = [
+-  "bundle.py",
+   ".cirrus.yml",
+   ".pre-commit-config.yaml",
+   "asv.conf.json",
+@@ -144,7 +126,6 @@ fix = true
+ "tools/test_strings.py" = ["F401"]
+ "tools/**" = ["INP001", "T20"]
+ "examples/**" = ["INP001", "T20"]
+-"bundle.py" = ["T20"]
+ "**/vendored/**" = ["TID"]
+ 
+ [tool.ruff.flake8-quotes]
+diff --git a/resources/bundle_readme.md b/resources/bundle_readme.md
+index b87a8c8b..5f454da9 100644
+--- a/resources/bundle_readme.md
++++ b/resources/bundle_readme.md
+@@ -24,7 +24,7 @@ need to activate the `conda` environment to ensure all dependencies are importab
+ 
+ ## What does `conda` have to do with `napari`?
+ 
+-The `napari` installer uses `conda` packages to bundle all its dependencies (Python, qt, etc).
++The `napari` installer uses `conda` packages to bundle all its dependencies (Python, Qt, etc).
+ This directory is actually a full `conda` installation! If you have used `conda` before, this
+ is equivalent to what you usually call the `base` environment.
+ 
+diff --git a/setup.cfg b/setup.cfg
+index 882ebb1e..7ca23193 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -160,23 +160,6 @@ build =
+     black
+     ruff
+     pyqt5
+-bundle_build =
+-    briefcase==0.3.1
+-    dmgbuild>=1.4.2
+-    markupsafe<2.1
+-    PySide2==5.15.2
+-    ruamel.yaml
+-    tomlkit
+-    wheel
+-bundle_run =
+-    imagecodecs
+-    pip
+-    PySide2==5.15.2
+-    scikit-image[data]
+-    zarr
+-    wheel
+-    pims
+-    numpy==1.19.3
+ 
+ [options.entry_points]
+ console_scripts =
+-- 
+2.34.1
+

@@ -1,0 +1,55 @@
+From 9254e3fa3501b82a646e1284f8a9951f3dbcb2ba Mon Sep 17 00:00:00 2001
+From: Matthias Bussonnier <bussonniermatthias@gmail.com>
+Date: Fri, 2 Jun 2023 12:25:08 +0200
+Subject: [PATCH] Make mypy error checking opt-out instead of opt-in (#5885)
+
+Currently mypy configuration is opt-in, where we ignore errors by
+default.
+
+This PR implements the opposite: when new code / new files are added to
+the repo they are checked by mypy. Existing known issues are still
+ignored, but we can progressively work our way down the outstanding
+files, while not adding new typing errors.
+
+ #2751
+---
+ pyproject.toml | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index f6e58d80..efebf13b 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -184,6 +184,9 @@ markers = [
+ 
+ [tool.mypy]
+ files = "napari"
++# This file triggers an internal mypy error, so exclude collection
++# TODO: fix this
++plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
+ ignore_missing_imports = true
+ exclude = [
+   "_tests",
+@@ -191,6 +195,20 @@ exclude = [
+ show_error_codes = true
+ no_implicit_optional = true
+ warn_redundant_casts = true
++ignore_errors = true
++
++[[tool.mypy.overrides]]
++module = ['*._tests.*']
++ignore_errors = true
++
++[[tool.mypy.overrides]]
++module = [
++  'napari.plugins.*',
++  'napari.settings.*',
++  'napari.types.*',
++]
++ignore_errors = false
++no_implicit_optional = true
+ warn_unused_ignores = true
+ check_untyped_defs = true
+ plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
+-- 
+2.34.1

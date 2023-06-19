@@ -1,0 +1,273 @@
+From bd7e36f07ff8f2b95a790050b6d1ae38b8b25758 Mon Sep 17 00:00:00 2001
+From: Konstantin Sofiiuk <k.sofiyuk@gmail.com>
+Date: Fri, 28 Apr 2023 11:12:13 +0200
+Subject: [PATCH] Brush cursor implementation using an overlay (#5763)
+
+Closes #5712, #5756
+
+It also provides means to fix the mouse shaking in #5753
+
+The implementation of the brush circle cursor using an overlay (based on
+@brisvag's overlay example). It should completely match the behavior and
+appearance of the previous Qt-based cursor. The implementation is ready,
+it remains to comment the code, maybe add some tests.
+
+- [X] Bug-fix (non-breaking change which fixes an issue)
+- [X] New feature (non-breaking change which adds functionality)
+
+- [X] My PR is the minimum possible work for the desired functionality
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] I have added tests that prove my fix is effective or that my
+feature works
+- [ ] If I included new strings, I have used `trans.` to make them
+localizable.
+For more information see our [translations
+guide](https://napari.org/developers/translations.html).
+
+---------
+
+Co-authored-by: alisterburt <alisterburt@gmail.com>
+Co-authored-by: Lorenzo Gaifas <brisvag@gmail.com>
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+---
+ .../_tests/test_vispy_brush_circle_overlay.py | 17 ++++
+ napari/_vispy/overlays/brush_circle.py        | 80 +++++++++++++++++++
+ napari/_vispy/utils/visual.py                 |  3 +
+ .../_tests/test_brush_circle_overlay.py       |  7 ++
+ napari/components/overlays/__init__.py        |  2 +
+ napari/components/overlays/brush_circle.py    | 19 +++++
+ napari/components/viewer_model.py             |  6 ++
+ 8 files changed, 137 insertions(+)
+ create mode 100644 napari/_vispy/_tests/test_vispy_brush_circle_overlay.py
+ create mode 100644 napari/_vispy/overlays/brush_circle.py
+ create mode 100644 napari/components/_tests/test_brush_circle_overlay.py
+ create mode 100644 napari/components/overlays/brush_circle.py
+
+diff --git a/napari/_vispy/_tests/test_vispy_brush_circle_overlay.py b/napari/_vispy/_tests/test_vispy_brush_circle_overlay.py
+new file mode 100644
+index 00000000..22667116
+--- /dev/null
++++ b/napari/_vispy/_tests/test_vispy_brush_circle_overlay.py
+@@ -0,0 +1,17 @@
++from napari._vispy.overlays.brush_circle import VispyBrushCircleOverlay
++from napari.components import ViewerModel
++from napari.components.overlays import BrushCircleOverlay
++
++
++def test_vispy_brush_circle_overlay():
++    brush_circle_model = BrushCircleOverlay()
++    viewer = ViewerModel()
++
++    vispy_brush_circle = VispyBrushCircleOverlay(
++        viewer=viewer, overlay=brush_circle_model
++    )
++    brush_circle_model.size = 100
++    brush_circle_model.position = 10, 20
++
++    assert vispy_brush_circle._white_circle.radius == 50
++    assert vispy_brush_circle._black_circle.radius == 49
+diff --git a/napari/_vispy/overlays/brush_circle.py b/napari/_vispy/overlays/brush_circle.py
+new file mode 100644
+index 00000000..7acad05b
+--- /dev/null
++++ b/napari/_vispy/overlays/brush_circle.py
+@@ -0,0 +1,80 @@
++from vispy.scene.visuals import Compound, Ellipse
++
++from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
++
++
++class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
++    def __init__(self, *, viewer, overlay, parent=None):
++        self._white_circle = Ellipse(
++            center=(0, 0),
++            color=(0, 0, 0, 0.0),
++            border_color='white',
++            border_method='agg',
++        )
++        self._black_circle = Ellipse(
++            center=(0, 0),
++            color=(0, 0, 0, 0.0),
++            border_color='black',
++            border_method='agg',
++        )
++
++        super().__init__(
++            node=Compound([self._white_circle, self._black_circle]),
++            viewer=viewer,
++            overlay=overlay,
++            parent=parent,
++        )
++
++        self._last_mouse_pos = None
++
++        self.overlay.events.size.connect(self._on_size_change)
++        self.node.events.canvas_change.connect(self._on_canvas_change)
++        self.viewer.events.mouse_over_canvas.connect(
++            self._on_mouse_over_canvas
++        )
++        # no need to connect position, since that's in the base classes of CanvasOverlay
++
++        self.reset()
++
++    def _on_position_change(self, event=None):
++        self._set_position(self.overlay.position)
++
++    def _on_size_change(self, event=None):
++        self._white_circle.radius = self.overlay.size / 2
++        self._black_circle.radius = self._white_circle.radius - 1
++
++    def _on_visible_change(self):
++        if self._last_mouse_pos is not None:
++            self._set_position(self._last_mouse_pos)
++        self.node.visible = (
++            self.overlay.visible and self.viewer.mouse_over_canvas
++        )
++
++    def _on_mouse_move(self, event):
++        self._last_mouse_pos = event.pos
++        if self.overlay.visible:
++            self.overlay.position = event.pos.tolist()
++
++    def _set_position(self, pos):
++        self.node.transform.translate = [pos[0], pos[1], 0, 0]
++
++    def _on_canvas_change(self, event):
++        if event.new is not None:
++            event.new.events.mouse_move.connect(self._on_mouse_move)
++        if event.old is not None:
++            event.old.events.mouse_move.disconnect(self._on_mouse_move)
++
++    def _on_mouse_over_canvas(self):
++        if self.viewer.mouse_over_canvas:
++            # Move the cursor outside the canvas when the mouse leaves it.
++            # It fixes the bug described in PR #5763:
++            # https://github.com/napari/napari/pull/5763#issuecomment-1523182141
++            self._set_position((-1000, -1000))
++            self.node.visible = self.overlay.visible
++        else:
++            self.node.visible = False
++
++    def reset(self):
++        super().reset()
++        self._on_size_change()
++        self._last_mouse_pos = None
+diff --git a/napari/_vispy/utils/visual.py b/napari/_vispy/utils/visual.py
+index f55f990f..3ccf31f8 100644
+--- a/napari/_vispy/utils/visual.py
++++ b/napari/_vispy/utils/visual.py
+@@ -16,6 +16,7 @@ from napari._vispy.layers.vectors import VispyVectorsLayer
+ from napari._vispy.overlays.axes import VispyAxesOverlay
+ from napari._vispy.overlays.base import VispyBaseOverlay
+ from napari._vispy.overlays.bounding_box import VispyBoundingBoxOverlay
++from napari._vispy.overlays.brush_circle import VispyBrushCircleOverlay
+ from napari._vispy.overlays.interaction_box import (
+     VispySelectionBoxOverlay,
+     VispyTransformBoxOverlay,
+@@ -25,6 +26,7 @@ from napari._vispy.overlays.text import VispyTextOverlay
+ from napari.components.overlays import (
+     AxesOverlay,
+     BoundingBoxOverlay,
++    BrushCircleOverlay,
+     Overlay,
+     ScaleBarOverlay,
+     SelectionBoxOverlay,
+@@ -62,6 +64,7 @@ overlay_to_visual = {
+     BoundingBoxOverlay: VispyBoundingBoxOverlay,
+     TransformBoxOverlay: VispyTransformBoxOverlay,
+     SelectionBoxOverlay: VispySelectionBoxOverlay,
++    BrushCircleOverlay: VispyBrushCircleOverlay,
+ }
+
+ if async_octree:
+diff --git a/napari/components/_tests/test_brush_circle_overlay.py b/napari/components/_tests/test_brush_circle_overlay.py
+new file mode 100644
+index 00000000..f7703208
+--- /dev/null
++++ b/napari/components/_tests/test_brush_circle_overlay.py
+@@ -0,0 +1,7 @@
++from napari.components.overlays.brush_circle import BrushCircleOverlay
++
++
++def test_brush_circle():
++    """Test creating a brush circle overlay"""
++    brush_circle = BrushCircleOverlay()
++    assert brush_circle is not None
+diff --git a/napari/components/overlays/__init__.py b/napari/components/overlays/__init__.py
+index 6280b025..df8ffc09 100644
+--- a/napari/components/overlays/__init__.py
++++ b/napari/components/overlays/__init__.py
+@@ -5,6 +5,7 @@ from napari.components.overlays.base import (
+     SceneOverlay,
+ )
+ from napari.components.overlays.bounding_box import BoundingBoxOverlay
++from napari.components.overlays.brush_circle import BrushCircleOverlay
+ from napari.components.overlays.interaction_box import (
+     SelectionBoxOverlay,
+     TransformBoxOverlay,
+@@ -22,4 +23,5 @@ __all__ = [
+     "ScaleBarOverlay",
+     "SceneOverlay",
+     "TextOverlay",
++    "BrushCircleOverlay",
+ ]
+diff --git a/napari/components/overlays/brush_circle.py b/napari/components/overlays/brush_circle.py
+new file mode 100644
+index 00000000..b9ae4cf5
+--- /dev/null
++++ b/napari/components/overlays/brush_circle.py
+@@ -0,0 +1,19 @@
++from typing import Tuple
++
++from napari.components.overlays.base import CanvasOverlay
++
++
++class BrushCircleOverlay(CanvasOverlay):
++    """
++    Overlay that displays a circle for a brush on a canvas.
++
++    Attributes
++    ----------
++    size : int
++        The diameter of the brush circle in canvas pixels.
++    position : Tuple[int, int]
++        The position (x, y) of the center of the brush circle on the canvas.
++    """
++
++    size: int = 10
++    position: Tuple[int, int] = (0, 0)
+diff --git a/napari/components/viewer_model.py b/napari/components/viewer_model.py
+index 96c9b951..0c8c9d10 100644
+--- a/napari/components/viewer_model.py
++++ b/napari/components/viewer_model.py
+@@ -31,6 +31,7 @@ from napari.components.grid import GridCanvas
+ from napari.components.layerlist import LayerList
+ from napari.components.overlays import (
+     AxesOverlay,
++    BrushCircleOverlay,
+     Overlay,
+     ScaleBarOverlay,
+     TextOverlay,
+@@ -110,6 +111,7 @@ DEFAULT_OVERLAYS = {
+     'scale_bar': ScaleBarOverlay,
+     'text': TextOverlay,
+     'axes': AxesOverlay,
++    'brush_circle': BrushCircleOverlay,
+ }
+
+
+@@ -251,6 +253,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+     def text_overlay(self):
+         return self._overlays['text']
+
++    @property
++    def _brush_circle_overlay(self):
++        return self._overlays['brush_circle']
++
+     def _tooltip_visible_update(self, event):
+         self.tooltip.visible = event.value
+
+--
+2.34.1
+

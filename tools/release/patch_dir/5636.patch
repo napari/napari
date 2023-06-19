@@ -227,7 +227,7 @@ index 45a1a25c..53ffe707 100644
      'napari:toggle_ndisplay': ['Control-Y'],
      'napari:toggle_theme': ['Control-Shift-T'],
      'napari:reset_view': ['Control-R'],
-+    'napari:napari:delete_selected_layers': ['Control-Delete'],
++    'napari:delete_selected_layers': ['Control-Delete'],
      'napari:show_shortcuts': ['Control-Alt-/'],
      'napari:increment_dims_left': ['Left'],
      'napari:increment_dims_right': ['Right'],

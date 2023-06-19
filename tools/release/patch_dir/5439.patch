@@ -1,0 +1,972 @@
+From 8b5feadc4000d9c004bf0c26887900191e021364 Mon Sep 17 00:00:00 2001
+From: Matthias Bussonnier <bussonniermatthias@gmail.com>
+Date: Fri, 9 Jun 2023 01:25:43 +0200
+Subject: [PATCH] MAINT: Start testing on Python 3.11 in CI. (#5439)
+
+Python 3.11 was released in October 2022.
+In this PR, the CI test suite is extended to test on Python 3.11.
+
+I'm hoping that CI on Python 3.11 will be faster, as 3.11 is reported to
+be quite a bit faster in some use cases.
+
+Additionally, there are a few refactors and split of test into multiple
+subtests, as some of them are segfaulting on some platforms/python
+version combinations.
+
+---------
+
+Co-authored-by: Grzegorz Bokota <bokota+github@gmail.com>
+---
+ .github/workflows/build_docs.yml              |   4 +-
+ .github/workflows/test_comprehensive.yml      |   6 +-
+ .github/workflows/test_pull_requests.yml      |  14 +-
+ .github/workflows/test_translations.yml       |   4 +-
+ .github/workflows/test_typing.yml             |   2 +-
+ .../workflows/upgrade_test_constraints.yml    |  45 +-
+ napari/_qt/dialogs/qt_modal.py                |   3 +-
+ .../_tests/test_qt_layer_controls.py          |  86 ++-
+ resources/constraints/constraints_py3.11.txt  | 526 ++++++++++++++++++
+ tools/check_updated_packages.py               |   2 +-
+ tox.ini                                       |  15 +-
+ 11 files changed, 675 insertions(+), 32 deletions(-)
+ create mode 100644 resources/constraints/constraints_py3.11.txt
+
+diff --git a/.github/workflows/build_docs.yml b/.github/workflows/build_docs.yml
+index f4c59cb1..bbe7f123 100644
+--- a/.github/workflows/build_docs.yml
++++ b/.github/workflows/build_docs.yml
+@@ -24,7 +24,7 @@ jobs:
+ 
+       - uses: actions/setup-python@v4
+         with:
+-          python-version: 3.9
++          python-version: 3.10
+           cache-dependency-path: |
+             setup.cfg
+             docs/requirements.txt
+@@ -34,7 +34,7 @@ jobs:
+       - name: Install Dependencies
+         run: |
+           python -m pip install --upgrade pip
+-          python -m pip install -e ".[docs]" -c "resources/constraints/constraints_py3.9.txt"
++          python -m pip install -e ".[docs]" -c "resources/constraints/constraints_py3.10.txt"
+ 
+       - name: Build Docs
+         uses: aganders3/headless-gui@v1
+diff --git a/.github/workflows/test_comprehensive.yml b/.github/workflows/test_comprehensive.yml
+index 7cf689c8..eb8b5865 100644
+--- a/.github/workflows/test_comprehensive.yml
++++ b/.github/workflows/test_comprehensive.yml
+@@ -23,10 +23,10 @@ jobs:
+     runs-on: ubuntu-latest
+     steps:
+       - uses: actions/checkout@v3
+-      - name: Set up Python 3.8
++      - name: "Set up Python 3.11"
+         uses: actions/setup-python@v4
+         with:
+-          python-version: 3.8
++          python-version: "3.11"
+       - name: Install dependencies
+         run: |
+           pip install --upgrade pip
+@@ -41,7 +41,7 @@ jobs:
+       fail-fast: false
+       matrix:
+         platform: [ubuntu-latest, windows-latest]
+-        python: ["3.8", "3.9", "3.10"]
++        python: ["3.8", "3.9", "3.10", "3.11"]
+         backend: [pyqt5, pyside2]
+         include:
+           - python: 3.9
+diff --git a/.github/workflows/test_pull_requests.yml b/.github/workflows/test_pull_requests.yml
+index ca3b923e..83996380 100644
+--- a/.github/workflows/test_pull_requests.yml
++++ b/.github/workflows/test_pull_requests.yml
+@@ -57,8 +57,11 @@ jobs:
+       fail-fast: false
+       matrix:
+         platform: [ubuntu-latest]
+-        python: ["3.8", "3.9", "3.10"]
++        python: ["3.8", "3.9", "3.10", "3.11"]
+         backend: [pyqt5, pyside2]
++        exclude:
++          - python: '3.11'
++            backend: pyside2
+         include:
+           # Windows py38
+           - python: 3.8
+@@ -89,9 +92,13 @@ jobs:
+           - python: 3.9
+             platform: ubuntu-latest
+             backend: pyside6
++          # pyside 6
+           - python: '3.10'
+             platform: ubuntu-latest
+             backend: pyside6
++          - python: '3.11'
++            platform: ubuntu-latest
++            backend: pyside6
+ 
+     steps:
+       - name: Cancel Previous Runs
+@@ -195,10 +202,13 @@ jobs:
+     runs-on: ubuntu-latest
+     steps:
+       - uses: actions/checkout@v3
++        with:
++          path: napari-from-github
++
+       - uses: actions/setup-python@v4
+         with:
+           python-version: 3.9
+-          cache-dependency-path: setup.cfg
++          cache-dependency-path: napari-from-github/setup.cfg
+       - uses: tlambert03/setup-qt-libs@v1
+       - name: Install this commit
+         run: |
+diff --git a/.github/workflows/test_translations.yml b/.github/workflows/test_translations.yml
+index 3c024d83..fe39b6bb 100644
+--- a/.github/workflows/test_translations.yml
++++ b/.github/workflows/test_translations.yml
+@@ -12,10 +12,10 @@ jobs:
+     runs-on: ubuntu-latest
+     steps:
+       - uses: actions/checkout@v3
+-      - name: Set up Python 3.8
++      - name: Set up Python 3.11
+         uses: actions/setup-python@v4
+         with:
+-          python-version: 3.9
++          python-version: "3.11"
+           cache-dependency-path: setup.cfg
+       - name: Install napari
+         run: |
+diff --git a/.github/workflows/test_typing.yml b/.github/workflows/test_typing.yml
+index abac0416..b92c8a65 100644
+--- a/.github/workflows/test_typing.yml
++++ b/.github/workflows/test_typing.yml
+@@ -12,7 +12,7 @@ jobs:
+       - uses: actions/checkout@v3
+       - uses: actions/setup-python@v4
+         with:
+-          python-version: 3.9
++          python-version: "3.11"
+           cache-dependency-path: setup.cfg
+       - name: Install tox
+         run: |
+diff --git a/.github/workflows/upgrade_test_constraints.yml b/.github/workflows/upgrade_test_constraints.yml
+index 6b0a1ba5..6ea1eda3 100644
+--- a/.github/workflows/upgrade_test_constraints.yml
++++ b/.github/workflows/upgrade_test_constraints.yml
+@@ -37,28 +37,45 @@ jobs:
+           python-version: "3.10"
+           cache: pip
+           cache-dependency-path: 'setup.cfg'
++      - uses: actions/setup-python@v4
++        with:
++          python-version: "3.11"
++          cache: pip
++          cache-dependency-path: 'setup.cfg'
++
+       - name: Upgrade Python dependencies
+         # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
+         run: |
+-          python3.8 -m pip install -U pip pip-tools
+-          python3.9 -m pip install -U pip pip-tools
+-          python3.10 -m pip install -U pip pip-tools
+-
+-          python3.8 -m piptools compile --upgrade -o resources/constraints/constraints_py3.8.txt setup.cfg resources/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
+-          python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9.txt setup.cfg resources/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
+-          python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9_examples.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
+-          python3.10 -m piptools compile --upgrade -o resources/constraints/constraints_py3.10.txt setup.cfg resources/constraints/version_denylist.txt --extra pyqt5 --extra pyqt6_experimental --extra pyside2 --extra pyside6_experimental --extra testing --allow-unsafe --strip-extras --resolver=backtracking
+-
+-          # Explanation of above commands 
+-          # python3.8 -m piptools compile - call pip-compile but ensure proper intepretter
++          flags=""
++          # Explanation of below commands 
++          # python3.8 -m piptools compile - call pip-compile but ensure proper interpreter
+           # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
+           # -o resources/constraints/constraints_py3.8.txt - output file
+           # setup.cfg resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
++          #
+           # --extra pyqt5 etc - names of extra sections from setup.cfg that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
+-          # --allow-unsafe - allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
+-          # --strip-extras - pip constrains format does not allow to specify extras (like dask[array]) so we need to use this option
+-          # --resolver=backtracking - future default resolver. It fasters. Lower probability of long CI run.
++          flags+=" --extra pyqt5"
++          flags+=" --extra pyqt6_experimental"
++          flags+=" --extra pyside2"
++          flags+=" --extra pyside6_experimental"
++          flags+=" --extra testing"
++
++
++          # allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
++          flags+=" --allow-unsafe"
++
++          # pip constrains format does not allow to specify extras (like dask[array]) so we need to use this option
++          flags+=" --strip-extras"
++
++          # future default resolver. It is faster. Lower probability of long CI run.
++          flags+=" --resolver=backtracking"
++
++          for pyv in 3.8 3.9 3.10 3.11; do
++            python${pyv}  -m pip install -U pip pip-tools
++            python${pyv}  -m piptools compile --upgrade -o resources/constraints/constraints_${pyv}.txt  setup.cfg resources/constraints/version_denylist.txt ${flags}
++          done
+ 
++          python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9_examples.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
+ 
+       # END PYTHON DEPENDENCIES
+ 
+diff --git a/napari/_qt/dialogs/qt_modal.py b/napari/_qt/dialogs/qt_modal.py
+index 6273b8dc..64739967 100644
+--- a/napari/_qt/dialogs/qt_modal.py
++++ b/napari/_qt/dialogs/qt_modal.py
+@@ -36,7 +36,8 @@ class QtPopup(QDialog):
+         super().__init__(parent)
+         self.setObjectName("QtModalPopup")
+         self.setModal(False)  # if False, then clicking anywhere else closes it
+-        self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
++        flags = Qt.Popup | Qt.FramelessWindowHint
++        self.setWindowFlags(flags)
+         self.setLayout(QVBoxLayout())
+ 
+         self.frame = QFrame()
+diff --git a/napari/_qt/layer_controls/_tests/test_qt_layer_controls.py b/napari/_qt/layer_controls/_tests/test_qt_layer_controls.py
+index 7b1e2791..c70b948f 100644
+--- a/napari/_qt/layer_controls/_tests/test_qt_layer_controls.py
++++ b/napari/_qt/layer_controls/_tests/test_qt_layer_controls.py
+@@ -5,6 +5,7 @@ from collections import namedtuple
+ 
+ import numpy as np
+ import pytest
++import qtpy
+ from qtpy.QtCore import Qt
+ from qtpy.QtWidgets import (
+     QAbstractButton,
+@@ -141,7 +142,6 @@ def create_layer_controls(qtbot):
+         _LABELS_WITH_COLOR,
+         _LABELS,
+         _IMAGE,
+-        _LABELS,
+         _POINTS,
+         _SHAPES,
+         _SURFACE,
+@@ -177,6 +177,40 @@ def test_create_layer_controls(
+                     assert qcombobox.currentText() == previous_qcombobox_text
+             qcombobox.setCurrentIndex(qcombobox_initial_idx)
+ 
++
++if sys.version_info[:2] == (3, 11) and qtpy.API == 'pyqt5':
++    test_data = []
++else:
++    # those 2 fail on 3.11 + pyqt5 with a segfault that can't be caught by
++    # pytest in qspinbox.setValue(value)
++    test_data = [_LABELS_WITH_COLOR, _LABELS]
++
++
++test_data += [
++    _IMAGE,
++    _POINTS,
++    _SHAPES,
++    _SURFACE,
++    _TRACKS,
++    _VECTORS,
++]
++
++
++@pytest.mark.parametrize(
++    'layer_type_with_data',
++    test_data,
++)
++@pytest.mark.qt_no_exception_capture
++@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
++def test_create_layer_controls_spin(
++    qtbot, create_layer_controls, layer_type_with_data, capsys
++):
++    # create layer controls widget
++    ctrl = create_layer_controls(layer_type_with_data)
++
++    # check create widget corresponds to the expected class for each type of layer
++    assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
++
+     # check QAbstractSpinBox by changing value with `setValue` from minimum value to maximum
+     for qspinbox in ctrl.findChildren(QAbstractSpinBox):
+         qspinbox_initial_value = qspinbox.value()
+@@ -227,6 +261,31 @@ def test_create_layer_controls(
+         assert qspinbox.value() in [qspinbox_max, qspinbox_max - 1]
+         qspinbox.setValue(qspinbox_initial_value)
+ 
++
++@pytest.mark.parametrize(
++    'layer_type_with_data',
++    [
++        _LABELS_WITH_COLOR,
++        _LABELS,
++        _IMAGE,
++        _POINTS,
++        _SHAPES,
++        _SURFACE,
++        _TRACKS,
++        _VECTORS,
++    ],
++)
++@pytest.mark.qt_no_exception_capture
++@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
++def test_create_layer_controls_qslider(
++    qtbot, create_layer_controls, layer_type_with_data, capsys
++):
++    # create layer controls widget
++    ctrl = create_layer_controls(layer_type_with_data)
++
++    # check create widget corresponds to the expected class for each type of layer
++    assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
++
+     # check QAbstractSlider by changing value with `setValue` from minimum value to maximum
+     for qslider in ctrl.findChildren(QAbstractSlider):
+         if isinstance(qslider.minimum(), float):
+@@ -284,6 +343,31 @@ def test_create_layer_controls(
+         else:
+             assert qslider.value() == qslider.maximum()
+ 
++
++@pytest.mark.parametrize(
++    'layer_type_with_data',
++    [
++        _LABELS_WITH_COLOR,
++        _LABELS,
++        _IMAGE,
++        _POINTS,
++        _SHAPES,
++        _SURFACE,
++        _TRACKS,
++        _VECTORS,
++    ],
++)
++@pytest.mark.qt_no_exception_capture
++@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
++def test_create_layer_controls_qcolorswatchedit(
++    qtbot, create_layer_controls, layer_type_with_data, capsys
++):
++    # create layer controls widget
++    ctrl = create_layer_controls(layer_type_with_data)
++
++    # check create widget corresponds to the expected class for each type of layer
++    assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
++
+     # check QColorSwatchEdit by changing line edit text with a range of predefined values
+     for qcolorswatchedit in ctrl.findChildren(QColorSwatchEdit):
+         lineedit = qcolorswatchedit.line_edit
+diff --git a/resources/constraints/constraints_py3.11.txt b/resources/constraints/constraints_py3.11.txt
+new file mode 100644
+index 00000000..91f8fbff
+--- /dev/null
++++ b/resources/constraints/constraints_py3.11.txt
+@@ -0,0 +1,526 @@
++#
++# This file is autogenerated by pip-compile with Python 3.11
++# by the following command:
++#
++#    pip-compile --allow-unsafe --extra=pyqt5 --extra=pyqt6_experimental --extra=pyside2 --extra=pyside6_experimental --extra=testing --output-file=resources/constraints/constraints_py3.11.txt --resolver=backtracking --strip-extras resources/constraints/version_denylist.txt setup.cfg
++#
++alabaster==0.7.13
++    # via sphinx
++app-model==0.1.4
++    # via napari (setup.cfg)
++appdirs==1.4.4
++    # via
++    #   napari (setup.cfg)
++    #   npe2
++asciitree==0.3.3
++    # via zarr
++asttokens==2.2.1
++    # via stack-data
++attrs==23.1.0
++    # via
++    #   hypothesis
++    #   jsonschema
++babel==2.12.1
++    # via
++    #   napari (setup.cfg)
++    #   sphinx
++backcall==0.2.0
++    # via ipython
++build==0.10.0
++    # via npe2
++cachey==0.2.1
++    # via napari (setup.cfg)
++certifi==2023.5.7
++    # via
++    #   napari (setup.cfg)
++    #   requests
++charset-normalizer==3.1.0
++    # via requests
++click==8.1.3
++    # via
++    #   dask
++    #   typer
++cloudpickle==2.2.1
++    # via dask
++cmake==3.26.3
++    # via triton
++comm==0.1.3
++    # via ipykernel
++contourpy==1.0.7
++    # via matplotlib
++coverage==7.2.5
++    # via pytest-cov
++cycler==0.11.0
++    # via matplotlib
++dask==2023.5.0
++    # via napari (setup.cfg)
++debugpy==1.6.7
++    # via ipykernel
++decorator==5.1.1
++    # via ipython
++distlib==0.3.6
++    # via virtualenv
++docstring-parser==0.15
++    # via magicgui
++docutils==0.17.1
++    # via sphinx
++entrypoints==0.4
++    # via numcodecs
++executing==1.2.0
++    # via stack-data
++fasteners==0.18
++    # via zarr
++filelock==3.12.0
++    # via
++    #   torch
++    #   triton
++    #   virtualenv
++fonttools==4.39.4
++    # via matplotlib
++freetype-py==2.4.0
++    # via vispy
++fsspec==2023.5.0
++    # via
++    #   dask
++    #   napari (setup.cfg)
++heapdict==1.0.1
++    # via cachey
++hsluv==5.0.3
++    # via vispy
++hypothesis==6.75.3
++    # via napari (setup.cfg)
++idna==3.4
++    # via requests
++imageio==2.28.1
++    # via
++    #   napari (setup.cfg)
++    #   napari-svg
++    #   scikit-image
++imagesize==1.4.1
++    # via sphinx
++importlib-metadata==6.6.0
++    # via dask
++in-n-out==0.1.7
++    # via app-model
++iniconfig==2.0.0
++    # via pytest
++ipykernel==6.23.1
++    # via
++    #   napari-console
++    #   qtconsole
++ipython==8.13.2
++    # via
++    #   ipykernel
++    #   napari (setup.cfg)
++    #   napari-console
++ipython-genutils==0.2.0
++    # via qtconsole
++jedi==0.18.2
++    # via ipython
++jinja2==3.1.2
++    # via
++    #   numpydoc
++    #   sphinx
++    #   torch
++jsonschema==4.17.3
++    # via napari (setup.cfg)
++jupyter-client==8.2.0
++    # via
++    #   ipykernel
++    #   qtconsole
++jupyter-core==5.3.0
++    # via
++    #   ipykernel
++    #   jupyter-client
++    #   qtconsole
++kiwisolver==1.4.4
++    # via
++    #   matplotlib
++    #   vispy
++lazy-loader==0.2
++    # via
++    #   napari (setup.cfg)
++    #   scikit-image
++lit==16.0.3
++    # via triton
++locket==1.0.0
++    # via partd
++lxml==4.9.2
++    # via napari (setup.cfg)
++magicgui==0.7.2
++    # via napari (setup.cfg)
++markdown-it-py==2.2.0
++    # via rich
++markupsafe==2.1.2
++    # via jinja2
++matplotlib==3.7.1
++    # via napari (setup.cfg)
++matplotlib-inline==0.1.6
++    # via
++    #   ipykernel
++    #   ipython
++mdurl==0.1.2
++    # via markdown-it-py
++mpmath==1.3.0
++    # via sympy
++mypy-extensions==1.0.0
++    # via psygnal
++napari-console==0.0.8
++    # via napari (setup.cfg)
++napari-plugin-engine==0.2.0
++    # via
++    #   napari (setup.cfg)
++    #   napari-console
++    #   napari-svg
++napari-svg==0.1.6
++    # via napari (setup.cfg)
++nest-asyncio==1.5.6
++    # via ipykernel
++networkx==3.1
++    # via
++    #   scikit-image
++    #   torch
++npe2==0.7.0
++    # via napari (setup.cfg)
++numcodecs==0.11.0
++    # via zarr
++numpy==1.24.3
++    # via
++    #   contourpy
++    #   dask
++    #   imageio
++    #   matplotlib
++    #   napari (setup.cfg)
++    #   napari-svg
++    #   numcodecs
++    #   pandas
++    #   pywavelets
++    #   scikit-image
++    #   scipy
++    #   tensorstore
++    #   tifffile
++    #   vispy
++    #   xarray
++    #   zarr
++numpydoc==1.5.0
++    # via napari (setup.cfg)
++nvidia-cublas-cu11==11.10.3.66
++    # via
++    #   nvidia-cudnn-cu11
++    #   nvidia-cusolver-cu11
++    #   torch
++nvidia-cuda-cupti-cu11==11.7.101
++    # via torch
++nvidia-cuda-nvrtc-cu11==11.7.99
++    # via torch
++nvidia-cuda-runtime-cu11==11.7.99
++    # via torch
++nvidia-cudnn-cu11==8.5.0.96
++    # via torch
++nvidia-cufft-cu11==10.9.0.58
++    # via torch
++nvidia-curand-cu11==10.2.10.91
++    # via torch
++nvidia-cusolver-cu11==11.4.0.1
++    # via torch
++nvidia-cusparse-cu11==11.7.4.91
++    # via torch
++nvidia-nccl-cu11==2.14.3
++    # via torch
++nvidia-nvtx-cu11==11.7.91
++    # via torch
++packaging==23.1
++    # via
++    #   build
++    #   dask
++    #   ipykernel
++    #   matplotlib
++    #   pooch
++    #   pytest
++    #   qtconsole
++    #   qtpy
++    #   scikit-image
++    #   sphinx
++    #   superqt
++    #   vispy
++    #   xarray
++pandas==2.0.1 ; python_version >= "3.9"
++    # via
++    #   napari (setup.cfg)
++    #   xarray
++parso==0.8.3
++    # via jedi
++partd==1.4.0
++    # via dask
++pexpect==4.8.0
++    # via ipython
++pickleshare==0.7.5
++    # via ipython
++pillow==9.5.0
++    # via
++    #   imageio
++    #   matplotlib
++    #   napari (setup.cfg)
++    #   scikit-image
++pint==0.21
++    # via napari (setup.cfg)
++platformdirs==3.5.1
++    # via
++    #   jupyter-core
++    #   pooch
++    #   virtualenv
++pluggy==1.0.0
++    # via pytest
++pooch==1.7.0
++    # via
++    #   napari (setup.cfg)
++    #   scikit-image
++prompt-toolkit==3.0.38
++    # via ipython
++psutil==5.9.5
++    # via
++    #   ipykernel
++    #   napari (setup.cfg)
++psygnal==0.9.0
++    # via
++    #   app-model
++    #   magicgui
++    #   napari (setup.cfg)
++    #   npe2
++ptyprocess==0.7.0
++    # via pexpect
++pure-eval==0.2.2
++    # via stack-data
++pydantic==1.10.7
++    # via
++    #   app-model
++    #   napari (setup.cfg)
++    #   npe2
++pygments==2.15.1
++    # via
++    #   ipython
++    #   napari (setup.cfg)
++    #   qtconsole
++    #   rich
++    #   sphinx
++    #   superqt
++pyopengl==3.1.6
++    # via napari (setup.cfg)
++pyparsing==3.0.9
++    # via matplotlib
++pyproject-hooks==1.0.0
++    # via build
++pyqt5==5.15.9
++    # via napari (setup.cfg)
++pyqt5-qt5==5.15.2
++    # via pyqt5
++pyqt5-sip==12.12.1
++    # via pyqt5
++pyqt6==6.5.0
++    # via napari (setup.cfg)
++pyqt6-qt6==6.5.0
++    # via pyqt6
++pyqt6-sip==13.5.1
++    # via pyqt6
++pyrsistent==0.19.3
++    # via jsonschema
++pyside2==5.13.2 ; python_version != "3.8"
++    # via napari (setup.cfg)
++pyside6==6.4.2 ; python_version >= "3.10"
++    # via
++    #   -r resources/constraints/version_denylist.txt
++    #   napari (setup.cfg)
++pyside6-addons==6.4.2
++    # via pyside6
++pyside6-essentials==6.4.2
++    # via
++    #   pyside6
++    #   pyside6-addons
++pytest==7.3.1
++    # via
++    #   napari (setup.cfg)
++    #   pytest-cov
++    #   pytest-json-report
++    #   pytest-metadata
++    #   pytest-pretty
++    #   pytest-qt
++pytest-cov==4.0.0
++    # via
++    #   -r resources/constraints/version_denylist.txt
++    #   napari (setup.cfg)
++pytest-json-report==1.5.0
++    # via -r resources/constraints/version_denylist.txt
++pytest-metadata==2.0.4
++    # via pytest-json-report
++pytest-pretty==1.2.0
++    # via napari (setup.cfg)
++pytest-qt==4.2.0
++    # via napari (setup.cfg)
++python-dateutil==2.8.2
++    # via
++    #   jupyter-client
++    #   matplotlib
++    #   pandas
++pytomlpp==1.0.13
++    # via npe2
++pytz==2023.3
++    # via pandas
++pywavelets==1.4.1
++    # via scikit-image
++pyyaml==6.0
++    # via
++    #   dask
++    #   napari (setup.cfg)
++    #   npe2
++pyzmq==25.0.2
++    # via
++    #   ipykernel
++    #   jupyter-client
++    #   qtconsole
++qtconsole==5.4.3
++    # via
++    #   napari (setup.cfg)
++    #   napari-console
++qtpy==2.3.1
++    # via
++    #   magicgui
++    #   napari (setup.cfg)
++    #   napari-console
++    #   qtconsole
++    #   superqt
++requests==2.30.0
++    # via
++    #   pooch
++    #   sphinx
++rich==13.3.5
++    # via
++    #   napari (setup.cfg)
++    #   npe2
++    #   pytest-pretty
++scikit-image==0.20.0
++    # via napari (setup.cfg)
++scipy==1.10.1 ; python_version >= "3.9"
++    # via
++    #   napari (setup.cfg)
++    #   scikit-image
++shiboken2==5.13.2
++    # via pyside2
++shiboken6==6.4.2
++    # via
++    #   pyside6
++    #   pyside6-addons
++    #   pyside6-essentials
++six==1.16.0
++    # via
++    #   asttokens
++    #   python-dateutil
++snowballstemmer==2.2.0
++    # via sphinx
++sortedcontainers==2.4.0
++    # via hypothesis
++sphinx==4.5.0
++    # via
++    #   napari (setup.cfg)
++    #   numpydoc
++sphinxcontrib-applehelp==1.0.4
++    # via sphinx
++sphinxcontrib-devhelp==1.0.2
++    # via sphinx
++sphinxcontrib-htmlhelp==2.0.1
++    # via sphinx
++sphinxcontrib-jsmath==1.0.1
++    # via sphinx
++sphinxcontrib-qthelp==1.0.3
++    # via sphinx
++sphinxcontrib-serializinghtml==1.1.5
++    # via sphinx
++stack-data==0.6.2
++    # via ipython
++superqt==0.4.1
++    # via
++    #   magicgui
++    #   napari (setup.cfg)
++sympy==1.12
++    # via torch
++tensorstore==0.1.36
++    # via napari (setup.cfg)
++tifffile==2023.4.12
++    # via
++    #   napari (setup.cfg)
++    #   scikit-image
++toolz==0.12.0
++    # via
++    #   dask
++    #   napari (setup.cfg)
++    #   partd
++torch==2.0.1
++    # via
++    #   napari (setup.cfg)
++    #   triton
++tornado==6.3.2
++    # via
++    #   ipykernel
++    #   jupyter-client
++tqdm==4.65.0
++    # via napari (setup.cfg)
++traitlets==5.9.0
++    # via
++    #   comm
++    #   ipykernel
++    #   ipython
++    #   jupyter-client
++    #   jupyter-core
++    #   matplotlib-inline
++    #   qtconsole
++triton==2.0.0
++    # via torch
++typer==0.9.0
++    # via npe2
++typing-extensions==4.5.0
++    # via
++    #   app-model
++    #   magicgui
++    #   napari (setup.cfg)
++    #   psygnal
++    #   pydantic
++    #   superqt
++    #   torch
++    #   typer
++tzdata==2023.3
++    # via pandas
++urllib3==2.0.2
++    # via requests
++virtualenv==20.23.0
++    # via napari (setup.cfg)
++vispy==0.12.2
++    # via
++    #   napari (setup.cfg)
++    #   napari-svg
++wcwidth==0.2.6
++    # via prompt-toolkit
++wheel==0.40.0
++    # via
++    #   nvidia-cublas-cu11
++    #   nvidia-cuda-cupti-cu11
++    #   nvidia-cuda-runtime-cu11
++    #   nvidia-curand-cu11
++    #   nvidia-cusparse-cu11
++    #   nvidia-nvtx-cu11
++wrapt==1.15.0
++    # via napari (setup.cfg)
++xarray==2023.4.2
++    # via napari (setup.cfg)
++zarr==2.14.2
++    # via napari (setup.cfg)
++zipp==3.15.0
++    # via importlib-metadata
++
++# The following packages are considered to be unsafe in a requirements file:
++setuptools==67.7.2
++    # via
++    #   nvidia-cublas-cu11
++    #   nvidia-cuda-cupti-cu11
++    #   nvidia-cuda-runtime-cu11
++    #   nvidia-curand-cu11
++    #   nvidia-cusparse-cu11
++    #   nvidia-nvtx-cu11
+diff --git a/tools/check_updated_packages.py b/tools/check_updated_packages.py
+index 6d3b7519..0095aed1 100644
+--- a/tools/check_updated_packages.py
++++ b/tools/check_updated_packages.py
+@@ -19,7 +19,7 @@ out = subprocess.run(  # nosec
+     [
+         "git",
+         "diff",
+-        str(src_dir / "resources" / "constraints" / "constraints_py3.9.txt"),
++        str(src_dir / "resources" / "constraints" / "constraints_py3.10.txt"),
+     ],
+     capture_output=True,
+     check=True,
+diff --git a/tox.ini b/tox.ini
+index 3b872178..e1487515 100644
+--- a/tox.ini
++++ b/tox.ini
+@@ -15,7 +15,7 @@
+ # "tox -e py38-macos-pyqt" will test python3.8 with pyqt on macos
+ # (even if a combination of factors is not in the default envlist
+ # you can run it manually... like py39-linux-pyside2-async)
+-envlist = py{38,39,310}-{linux,macos,windows}-{pyqt5,pyside2,pyqt6,pyside6}
++envlist = py{38,39,310,311}-{linux,macos,windows}-{pyqt5,pyside2,pyqt6,pyside6},mypy
+ isolated_build = true
+ toxworkdir=/tmp/.tox
+ 
+@@ -25,13 +25,14 @@ python =
+     3.9: py39
+     3.9.0: py390
+     3.10: py310
++    3.11: py311
+ fail_on_no_env = True
+ 
+ # This section turns environment variables from github actions
+ # into tox environment factors. This, combined with the [gh-actions]
+ # section above would mean that a test running python 3.9 on ubuntu-latest
+ # with an environment variable of BACKEND=pyqt would be converted to a
+-# tox env of `py39-linux-pyqt5`  
++# tox env of `py39-linux-pyqt5`
+ [gh-actions:env]
+ PLATFORM =
+     ubuntu-latest: linux
+@@ -51,13 +52,13 @@ BACKEND =
+ # Settings defined in the top-level testenv section are automatically
+ # inherited by individual environments unless overridden.
+ [testenv]
+-platform = 
++platform =
+     macos: darwin
+     linux: linux
+     windows: win32
+ # These environment variables will be passed from the calling environment
+ # to the tox environment
+-passenv = 
++passenv =
+     CI
+     GITHUB_ACTIONS
+     DISPLAY
+@@ -88,6 +89,10 @@ extras =
+     testing
+     pyqt5: pyqt5
+     pyside2: pyside2
++indexserver =
++    # we use Spec 4 index server that contain nightly wheel.
++    # this will be used only when using --pre with tox/pip as it only contains nightly.
++    extra = https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
+ commands_pre =
+     # strictly only need to uninstall pytest-qt (which will raise without a backend)
+     # the rest is for good measure
+@@ -105,7 +110,7 @@ commands =
+         --json-report --json-report-file={toxinidir}/report-{envname}.json {posargs}
+ 
+ 
+-[testenv:py{38,39,310}-{linux,macos,windows}-{pyqt5,pyside2}-examples]
++[testenv:py{38,39,310,311}-{linux,macos,windows}-{pyqt5,pyside2}-examples]
+ deps =
+     # For surface_timeseries_.py example
+     nilearn
+-- 
+2.34.1

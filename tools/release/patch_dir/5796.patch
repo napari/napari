@@ -1,0 +1,41 @@
+From 20fd08a39e524895b83347b39761f7be289829a9 Mon Sep 17 00:00:00 2001
+From: Grzegorz Bokota <bokota+github@gmail.com>
+Date: Wed, 10 May 2023 03:27:57 +0200
+Subject: [PATCH] Fix multiple viewer example (#5796)
+
+Closes #5778
+
+After changes in Dims there is a need to fix the multiple_viewer_widget example script.
+
+- [x] Bug-fix (non-breaking change which fixes an issue)
+
+- [x] all tests pass with my change
+- [x] the example script multiple_viewer_widget.py was run successfully and the cells3d sample dataset could be opened
+
+Co-authored-by: Genevieve Buckley <30920819+GenevieveBuckley@users.noreply.github.com>
+---
+ examples/multiple_viewer_widget.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/examples/multiple_viewer_widget.py b/examples/multiple_viewer_widget.py
+index dbb4a892..8e9e03ce 100644
+--- a/examples/multiple_viewer_widget.py
++++ b/examples/multiple_viewer_widget.py
+@@ -326,6 +326,8 @@ class MultipleViewerWidget(QSplitter):
+         for model in [self.viewer, self.viewer_model1, self.viewer_model2]:
+             if model.dims is event.source:
+                 continue
++            if len(self.viewer.layers) != len(model.layers):
++                continue
+             model.dims.current_step = event.value
+ 
+     def _order_update(self):
+@@ -457,4 +459,6 @@ if __name__ == "__main__":
+     view.window.add_dock_widget(dock_widget, name="Sample")
+     view.window.add_dock_widget(cross, name="Cross", area="left")
+ 
++    view.open_sample('napari', 'cells3d')
++
+     napari.run()
+-- 
+2.34.1

@@ -60,10 +60,11 @@ index 0977535a..7a5db4b3 100644
      def _valid_theme(cls, v):
          if not is_theme_available(v):
              raise ValueError(
-@@ -404,6 +404,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+@@ -404,7 +404,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
              self.cursor.style = active_layer.cursor
              self.cursor.size = active_layer.cursor_size
-             self.camera.interactive = active_layer.interactive
+             self.camera.mouse_pan = active_layer.mouse_pan
+             self.camera.mouse_zoom = active_layer.mouse_zoom
 +            self._update_status_bar_from_cursor()
  
      @staticmethod

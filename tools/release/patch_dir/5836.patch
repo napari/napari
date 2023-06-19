@@ -1,0 +1,170 @@
+From 65e0768d9b918858ddb8f7483d63f5c2c9c6836e Mon Sep 17 00:00:00 2001
+From: "pre-commit-ci[bot]"
+ <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Date: Sat, 20 May 2023 21:54:51 +0200
+Subject: [PATCH] [pre-commit.ci] pre-commit autoupdate (#5836)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<!--pre-commit.ci start-->
+updates:
+- [github.com/charliermarsh/ruff-pre-commit: v0.0.265 →
+v0.0.267](https://github.com/charliermarsh/ruff-pre-commit/compare/v0.0.265...v0.0.267)
+- [github.com/seddonym/import-linter: v1.8.0 →
+v1.9.0](https://github.com/seddonym/import-linter/compare/v1.8.0...v1.9.0)
+<!--pre-commit.ci end-->
+
+---------
+
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+---
+ .pre-commit-config.yaml                      |  6 +++---
+ napari/layers/base/base.py                   |  2 +-
+ napari/plugins/exceptions.py                 |  2 +-
+ napari/utils/events/containers/_selection.py |  2 +-
+ napari/utils/events/containers/_set.py       |  2 +-
+ napari_builtins/io/_write.py                 |  4 ++--
+ tools/test_strings.py                        | 10 +++++-----
+ 7 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
+index 3a9474ae..aca8b7f8 100644
+--- a/.pre-commit-config.yaml
++++ b/.pre-commit-config.yaml
+@@ -6,16 +6,16 @@ repos:
+       pass_filenames: true
+       exclude: _vendor|vendored|examples
+ -   repo: https://github.com/charliermarsh/ruff-pre-commit
+-    rev: v0.0.261
++    rev: v0.0.267
+     hooks:
+       - id: ruff
+         exclude: _vendor|vendored
+ -   repo: https://github.com/seddonym/import-linter
+-    rev: v1.8.0
++    rev: v1.9.0
+     hooks:
+     - id: import-linter
+       stages: [manual]
+ -   repo: https://github.com/python-jsonschema/check-jsonschema
+-    rev: 0.22.0
++    rev: 0.23.0
+     hooks:
+       - id: check-github-workflows
+diff --git a/napari/layers/base/base.py b/napari/layers/base/base.py
+index 418c434b..2d9630bf 100644
+--- a/napari/layers/base/base.py
++++ b/napari/layers/base/base.py
+@@ -412,7 +412,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+ 
+     def __repr__(self):
+         cls = type(self)
+-        return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
++        return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
+ 
+     def _mode_setter_helper(self, mode):
+         """
+diff --git a/napari/plugins/exceptions.py b/napari/plugins/exceptions.py
+index 48f9bc5a..bcf61496 100644
+--- a/napari/plugins/exceptions.py
++++ b/napari/plugins/exceptions.py
+@@ -59,7 +59,7 @@ def format_exceptions(
+ 
+     for n, err in enumerate(_plugin_errors):
+         _pad = _linewidth - len(str(err)) - 10
+-        msg += ['', f'ERROR #{n + 1}:  {str(err)} {"-" * _pad}', '']
++        msg += ['', f'ERROR #{n + 1}:  {err!s} {"-" * _pad}', '']
+         msg.append(format_exc_info(err.info(), as_html, color))
+ 
+     msg.append('=' * _linewidth)
+diff --git a/napari/utils/events/containers/_selection.py b/napari/utils/events/containers/_selection.py
+index f6e4a609..1ed3f342 100644
+--- a/napari/utils/events/containers/_selection.py
++++ b/napari/utils/events/containers/_selection.py
+@@ -70,7 +70,7 @@ class Selection(EventedSet[_T]):
+         return super()._emit_change(added=added, removed=removed)
+ 
+     def __repr__(self) -> str:
+-        return f"{type(self).__name__}({repr(self._set)})"
++        return f"{type(self).__name__}({self._set!r})"
+ 
+     def __hash__(self) -> int:
+         """Make selection hashable."""
+diff --git a/napari/utils/events/containers/_set.py b/napari/utils/events/containers/_set.py
+index 51fc8bd5..3873af21 100644
+--- a/napari/utils/events/containers/_set.py
++++ b/napari/utils/events/containers/_set.py
+@@ -97,7 +97,7 @@ class EventedSet(MutableSet[_T]):
+             self._emit_change(added={}, removed=values)
+ 
+     def __repr__(self) -> str:
+-        return f"{type(self).__name__}({repr(self._set)})"
++        return f"{type(self).__name__}({self._set!r})"
+ 
+     def update(self, others: Iterable[_T] = ()) -> None:
+         """Update this set with the union of this set and others"""
+diff --git a/napari_builtins/io/_write.py b/napari_builtins/io/_write.py
+index 3934131d..b001f9c4 100644
+--- a/napari_builtins/io/_write.py
++++ b/napari_builtins/io/_write.py
+@@ -181,7 +181,7 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
+     properties = meta.get('properties', {})
+     # TODO: we need to change this to the axis names once we get access to them
+     # construct table from data
+-    column_names = [f'axis-{str(n)}' for n in range(data.shape[1])]
++    column_names = [f'axis-{n!s}' for n in range(data.shape[1])]
+     if properties:
+         column_names += properties.keys()
+         prop_table = [
+@@ -236,7 +236,7 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
+     # TODO: we need to change this to the axis names once we get access to them
+     # construct table from data
+     n_dimensions = max(s.shape[1] for s in data)
+-    column_names = [f'axis-{str(n)}' for n in range(n_dimensions)]
++    column_names = [f'axis-{n!s}' for n in range(n_dimensions)]
+ 
+     # add shape id and vertex id of each vertex
+     column_names = ["index", "shape-type", "vertex-index", *column_names]
+diff --git a/tools/test_strings.py b/tools/test_strings.py
+index 6e769e78..3726a820 100644
+--- a/tools/test_strings.py
++++ b/tools/test_strings.py
+@@ -511,7 +511,7 @@ def test_missing_translations(checks):
+         unique_values = set()
+         for line, value in values:
+             unique_values.add(value)
+-            print(f"{line}:\t{repr(value)}")
++            print(f"{line}:\t{value!r}")
+ 
+         print("\n")
+ 
+@@ -520,14 +520,14 @@ def test_missing_translations(checks):
+                 f"List below can be copied directly to `tools/strings_list.py` file inside the '{fpath}' key:\n"
+             )
+             for value in sorted(unique_values):
+-                print(f"        {repr(value)},")
++                print(f"        {value!r},")
+         else:
+             print(
+                 "List below can be copied directly to `tools/strings_list.py` file:\n"
+             )
+-            print(f"    {repr(fpath)}: [")
++            print(f"    {fpath!r}: [")
+             for value in sorted(unique_values):
+-                print(f"        {repr(value)},")
++                print(f"        {value!r},")
+             print("    ],")
+ 
+         print("\n")
+@@ -560,7 +560,7 @@ def test_translation_errors(checks):
+     for fpath, errors in trans_errors.items():
+         print(f"{fpath}\n{'*' * len(fpath)}")
+         for string, variables in errors:
+-            print(f"String:\t\t{repr(string)}")
++            print(f"String:\t\t{string!r}")
+             print(
+                 f"Variables:\t{', '.join(repr(value) for value in variables)}"
+             )
+-- 
+2.34.1
