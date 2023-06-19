@@ -180,8 +180,7 @@ def test_create_layer_controls(
 
 if (
     sys.version_info[:2] == (3, 11)
-    and qtpy.API == 'pyqt5'
-    or qtpy.API == 'pyqt6'
+    and (qtpy.API == 'pyqt5' or qtpy.API == 'pyqt6')
 ):
     test_data = []
 else:
