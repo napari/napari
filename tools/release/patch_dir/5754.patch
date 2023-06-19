@@ -1,0 +1,72 @@
+From a4193aa6b0890f156a15890d7ffb05e589ab4b67 Mon Sep 17 00:00:00 2001
+From: Jannis Ahlers <jannis.ahlers@monash.edu>
+Date: Sat, 22 Apr 2023 20:19:44 +1000
+Subject: [PATCH] Update status bar on active layer change (#5754)
+
+<!-- In general, PRs should fix an existing issue on the repo. -->
+<!-- Please link to that issue here as "Closes #(issue-number)". -->
+Closes #5749
+
+<!-- What does this pull request (PR) do? Why is it necessary? -->
+<!-- Tell us about your new feature, improvement, or fix! -->
+<!-- If your change includes user interface changes, please add an
+image, or an animation "An image is worth a thousand words!" -->
+<!-- You can use https://www.cockos.com/licecap/ or similar to create
+animations -->
+
+Updates the status bar when updating the viewer's state on a new active
+layer being selected. I just decided to call `ViewerModel`'s
+`_update_status_bar_from_cursor` at the end of `_on_active_layer`,
+instead of adding a new connection from
+`self.layers.selection.events.active` to
+`_update_status_bar_from_cursor`, as I thought it cleaner to have one
+connection and put all viewer state update code in `_on_active_layer`.
+
+<!-- What resources, documentation, and guides were used in the creation
+of this PR? -->
+
+<!-- Please delete options that are not relevant. -->
+- [x] Bug-fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing
+functionality to not work as expected)
+- [ ] This change requires a documentation update
+
+I have not tested.
+
+- [x] My PR is the minimum possible work for the desired functionality
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] I have added tests that prove my fix is effective or that my
+feature works
+- [ ] If I included new strings, I have used `trans.` to make them
+localizable.
+For more information see our [translations
+guide](https://napari.org/developers/translations.html).
+---
+ napari/components/viewer_model.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/napari/components/viewer_model.py b/napari/components/viewer_model.py
+index 0977535a..7a5db4b3 100644
+--- a/napari/components/viewer_model.py
++++ b/napari/components/viewer_model.py
+@@ -265,7 +265,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+             settings.application.grid_width,
+         )
+ 
+-    @validator('theme')
++    @validator('theme', allow_reuse=True)
+     def _valid_theme(cls, v):
+         if not is_theme_available(v):
+             raise ValueError(
+@@ -404,6 +404,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+             self.cursor.style = active_layer.cursor
+             self.cursor.size = active_layer.cursor_size
+             self.camera.interactive = active_layer.interactive
++            self._update_status_bar_from_cursor()
+ 
+     @staticmethod
+     def rounded_division(min_val, max_val, precision):
+-- 
+2.34.1

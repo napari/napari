@@ -1,4 +1,4 @@
-From fb186e3e09f02ced0cd8f847ee7c8819c3d0f746 Mon Sep 17 00:00:00 2001
+From 4ecd1faefb81f404bcfbb93ee546db29fcdbcb5a Mon Sep 17 00:00:00 2001
 From: Matthias Bussonnier <bussonniermatthias@gmail.com>
 Date: Fri, 18 Nov 2022 12:59:07 +0100
 Subject: [PATCH] MAINT: remove requirements.txt and cache actions based on
@@ -147,7 +147,7 @@ index 36d9d9e7..3c024d83 100644
          run: |
            pip install -e .[all]
 diff --git a/.github/workflows/test_typing.yml b/.github/workflows/test_typing.yml
-index f7d954ff..aa1e3a92 100644
+index 2eeb96e5..50534610 100644
 --- a/.github/workflows/test_typing.yml
 +++ b/.github/workflows/test_typing.yml
 @@ -13,6 +13,7 @@ jobs:
@@ -157,6 +157,6 @@ index f7d954ff..aa1e3a92 100644
 +          cache-dependency-path: setup.cfg
        - name: Install napari
          run: |
-           pip install mypy types-PyYAML types-setuptools
+           pip install -r resources/requirements_mypy.txt
 -- 
 2.34.1

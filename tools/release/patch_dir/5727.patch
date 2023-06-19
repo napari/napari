@@ -1,0 +1,393 @@
+From d51db5cc81f5a983a1dcef9a244950ff2a030db2 Mon Sep 17 00:00:00 2001
+From: Grzegorz Bokota <bokota+github@gmail.com>
+Date: Tue, 18 Apr 2023 20:57:44 +0200
+Subject: [PATCH] Maint: Bump mypy (#5727)
+
+<!-- In general, PRs should fix an existing issue on the repo. -->
+<!-- Please link to that issue here as "Closes #(issue-number)". -->
+Closes #5724
+
+<!-- What does this pull request (PR) do? Why is it necessary? -->
+<!-- Tell us about your new feature, improvement, or fix! -->
+<!-- If your change includes user interface changes, please add an
+image, or an animation "An image is worth a thousand words!" -->
+<!-- You can use https://www.cockos.com/licecap/ or similar to create
+animations -->
+
+<!-- What resources, documentation, and guides were used in the creation
+of this PR? -->
+
+<!-- Please delete options that are not relevant. -->
+- [x] Bug-fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing
+functionality to not work as expected)
+- [ ] This change requires a documentation update
+
+<!-- Please describe the tests that you ran to verify your changes. -->
+- [ ] example: the test suite for my feature covers cases x, y, and z
+- [ ] example: all tests pass with my change
+- [ ] example: I check if my changes works with both PySide and PyQt
+backends
+      as there are small differences between the two Qt bindings.
+
+- [ ] My PR is the minimum possible work for the desired functionality
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] I have added tests that prove my fix is effective or that my
+feature works
+- [ ] If I included new strings, I have used `trans.` to make them
+localizable.
+For more information see our [translations
+guide](https://napari.org/developers/translations.html).
+---
+ .github/workflows/test_typing.yml             |  7 ++---
+ Makefile                                      |  2 +-
+ .../qt_jsonschema_form/widgets.py             |  1 +
+ napari/plugins/_npe2.py                       |  8 ++---
+ napari/plugins/hook_specifications.py         |  1 +
+ napari/settings/_appearance.py                |  2 +-
+ napari/settings/_application.py               |  4 +--
+ napari/settings/_napari_settings.py           |  5 +++-
+ napari/types.py                               | 30 +++++++++----------
+ napari/utils/shortcuts.py                     |  4 ++-
+ pyproject.toml                                |  2 ++
+ resources/requirements_mypy.in                |  4 +++
+ resources/requirements_mypy.txt               | 25 ++++++++++++++--
+ tox.ini                                       |  8 +++++
+ 14 files changed, 71 insertions(+), 32 deletions(-)
+ create mode 100644 resources/requirements_mypy.in
+
+diff --git a/.github/workflows/test_typing.yml b/.github/workflows/test_typing.yml
+index 50534610..abac0416 100644
+--- a/.github/workflows/test_typing.yml
++++ b/.github/workflows/test_typing.yml
+@@ -14,10 +14,9 @@ jobs:
+         with:
+           python-version: 3.9
+           cache-dependency-path: setup.cfg
+-      - name: Install napari
++      - name: Install tox
+         run: |
+-          pip install -r resources/requirements_mypy.txt
+-          SETUPTOOLS_ENABLE_FEATURES="legacy-editable" pip install -e .[all]
++          pip install tox
+ 
+       - name: Run mypy on typed modules
+-        run: make typecheck
++        run: tox -e mypy
+diff --git a/Makefile b/Makefile
+index 82945d96..7bddca90 100644
+--- a/Makefile
++++ b/Makefile
+@@ -15,7 +15,7 @@ typestubs:
+ # dmypy run -- ...
+ # https://mypy.readthedocs.io/en/stable/mypy_daemon.html
+ typecheck:
+-	mypy napari/settings napari/types.py napari/plugins
++	tox -e mypy
+ 
+ check-manifest:
+ 	pip install -U check-manifest
+diff --git a/napari/_vendor/qt_json_builder/qt_jsonschema_form/widgets.py b/napari/_vendor/qt_json_builder/qt_jsonschema_form/widgets.py
+index ce933524..4e245901 100644
+--- a/napari/_vendor/qt_json_builder/qt_jsonschema_form/widgets.py
++++ b/napari/_vendor/qt_json_builder/qt_jsonschema_form/widgets.py
+@@ -760,6 +760,7 @@ class EnumSchemaWidget(SchemaWidgetMixin, QtWidgets.QComboBox):
+ 
+     @state.setter
+     def state(self, value):
++        value = str(value)
+         index = self.findData(value)
+         if index == -1:
+             raise ValueError(value)
+diff --git a/napari/plugins/_npe2.py b/napari/plugins/_npe2.py
+index 8865a357..6a9b01f9 100644
+--- a/napari/plugins/_npe2.py
++++ b/napari/plugins/_npe2.py
+@@ -1,5 +1,6 @@
+ from __future__ import annotations
+ 
++from collections import defaultdict
+ from typing import (
+     TYPE_CHECKING,
+     DefaultDict,
+@@ -10,7 +11,6 @@ from typing import (
+     Sequence,
+     Set,
+     Tuple,
+-    Union,
+     cast,
+ )
+ 
+@@ -26,7 +26,7 @@ if TYPE_CHECKING:
+     from npe2.manifest.contributions import WriterContribution
+     from npe2.plugin_manager import PluginName
+     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
+-    from qtpy.QtWidgets import QMenu
++    from qtpy.QtWidgets import QMenu  # type: ignore [attr-defined]
+ 
+     from napari.layers import Layer
+     from napari.types import SampleDict
+@@ -241,7 +241,7 @@ def iter_manifests(
+ 
+ def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
+     # eg ('dock', ('my_plugin', ('My widget', MyWidget)))
+-    wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
++    wdgs: DefaultDict[str, List[str]] = defaultdict(list)
+     for wdg_contrib in pm.iter_widgets():
+         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
+     return (('dock', x) for x in wdgs.items())
+@@ -392,7 +392,7 @@ def _npe2_manifest_to_actions(
+ 
+ def _when_group_order(
+     menu_item: contributions.MenuItem,
+-) -> dict[str, Union[str, float, None]]:
++) -> dict:
+     """Extract when/group/order from an npe2 Submenu or MenuCommand."""
+     group, _, _order = (menu_item.group or '').partition("@")
+     try:
+diff --git a/napari/plugins/hook_specifications.py b/napari/plugins/hook_specifications.py
+index 147a2994..acee9087 100644
+--- a/napari/plugins/hook_specifications.py
++++ b/napari/plugins/hook_specifications.py
+@@ -1,3 +1,4 @@
++# mypy: disable-error-code=empty-body
+ """
+ All napari hook specifications for pluggable functionality are defined here.
+ 
+diff --git a/napari/settings/_appearance.py b/napari/settings/_appearance.py
+index fec05d02..2d5674ee 100644
+--- a/napari/settings/_appearance.py
++++ b/napari/settings/_appearance.py
+@@ -8,7 +8,7 @@ from napari.utils.translations import trans
+ 
+ class AppearanceSettings(EventedModel):
+     theme: Theme = Field(
+-        "dark",
++        Theme("dark"),
+         title=trans._("Theme"),
+         description=trans._("Select the user interface theme."),
+         env="napari_theme",
+diff --git a/napari/settings/_application.py b/napari/settings/_application.py
+index 9215f674..b5180d13 100644
+--- a/napari/settings/_application.py
++++ b/napari/settings/_application.py
+@@ -54,7 +54,7 @@ class ApplicationSettings(EventedModel):
+         ),
+     )
+     language: Language = Field(
+-        _DEFAULT_LOCALE,
++        Language(_DEFAULT_LOCALE),
+         title=trans._("Language"),
+         description=trans._(
+             "Select the display language for the user interface."
+@@ -192,7 +192,7 @@ class ApplicationSettings(EventedModel):
+     )
+     # convert cache (and max cache) from bytes to mb for widget
+     dask: DaskSettings = Field(
+-        default=DaskSettings().dict(),
++        default=DaskSettings(),
+         title=trans._("Dask cache"),
+         description=trans._(
+             "Settings for dask cache (does not work with distributed arrays)"
+diff --git a/napari/settings/_napari_settings.py b/napari/settings/_napari_settings.py
+index 1775201c..c6f2a574 100644
+--- a/napari/settings/_napari_settings.py
++++ b/napari/settings/_napari_settings.py
+@@ -46,21 +46,25 @@ class NapariSettings(EventedConfigFileSettings):
+         default_factory=AppearanceSettings,
+         title=trans._("Appearance"),
+         description=trans._("User interface appearance settings."),
++        allow_mutation=False,
+     )
+     plugins: PluginsSettings = Field(
+         default_factory=PluginsSettings,
+         title=trans._("Plugins"),
+         description=trans._("Plugins settings."),
++        allow_mutation=False,
+     )
+     shortcuts: ShortcutsSettings = Field(
+         default_factory=ShortcutsSettings,
+         title=trans._("Shortcuts"),
+         description=trans._("Shortcut settings."),
++        allow_mutation=False,
+     )
+     experimental: ExperimentalSettings = Field(
+         default_factory=ExperimentalSettings,
+         title=trans._("Experimental"),
+         description=trans._("Experimental settings."),
++        allow_mutation=False,
+     )
+ 
+     # private attributes and ClassVars will not appear in the schema
+@@ -72,7 +76,6 @@ class NapariSettings(EventedConfigFileSettings):
+         # all of these fields are evented models, so we don't want to break
+         # connections by setting the top-level field itself
+         # (you can still mutate attributes in the subfields)
+-        allow_mutation = False
+ 
+         @classmethod
+         def _config_file_settings_source(cls, settings) -> dict:
+diff --git a/napari/types.py b/napari/types.py
+index 775fec2f..a5682f28 100644
+--- a/napari/types.py
++++ b/napari/types.py
+@@ -26,7 +26,7 @@ if TYPE_CHECKING:
+     import dask.array  # noqa: ICN001
+     import zarr
+     from magicgui.widgets import FunctionGui
+-    from qtpy.QtWidgets import QWidget
++    from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
+ 
+ 
+ # This is a WOEFULLY inadequate stub for a duck-array type.
+@@ -76,16 +76,16 @@ class SampleDict(TypedDict):
+ # while their names should not change (without deprecation), their typing
+ # implementations may... or may be rolled over to napari/image-types
+ 
+-ArrayBase = np.ndarray
++ArrayBase: Type[np.ndarray] = np.ndarray
+ 
+ 
+-ImageData = NewType("ImageData", ArrayBase)
+-LabelsData = NewType("LabelsData", ArrayBase)
+-PointsData = NewType("PointsData", ArrayBase)
+-ShapesData = NewType("ShapesData", List[ArrayBase])
+-SurfaceData = NewType("SurfaceData", Tuple[ArrayBase, ArrayBase, ArrayBase])
+-TracksData = NewType("TracksData", ArrayBase)
+-VectorsData = NewType("VectorsData", ArrayBase)
++ImageData = NewType("ImageData", np.ndarray)
++LabelsData = NewType("LabelsData", np.ndarray)
++PointsData = NewType("PointsData", np.ndarray)
++ShapesData = NewType("ShapesData", List[np.ndarray])
++SurfaceData = NewType("SurfaceData", Tuple[np.ndarray, np.ndarray, np.ndarray])
++TracksData = NewType("TracksData", np.ndarray)
++VectorsData = NewType("VectorsData", np.ndarray)
+ _LayerData = Union[
+     ImageData,
+     LabelsData,
+@@ -135,13 +135,13 @@ def _register_types_with_magicgui():
+ 
+     from napari.utils import _magicgui as _mgui
+ 
+-    for _type in (LayerDataTuple, List[LayerDataTuple]):
++    for type_ in (LayerDataTuple, List[LayerDataTuple]):
+         register_type(
+-            _type,
++            type_,
+             return_callback=_mgui.add_layer_data_tuples_to_viewer,
+         )
+         if sys.version_info >= (3, 9):
+-            future_type = Future[_type]  # type: ignore
++            future_type = Future[type_]  # type: ignore [valid-type]
+             register_type(future_type, return_callback=_mgui.add_future_data)
+ 
+     for data_type in get_args(_LayerData):
+@@ -152,20 +152,20 @@ def _register_types_with_magicgui():
+         )
+         if sys.version_info >= (3, 9):
+             register_type(
+-                Future[data_type],  # type: ignore
++                Future[data_type],  # type: ignore [valid-type]
+                 choices=_mgui.get_layers_data,
+                 return_callback=partial(
+                     _mgui.add_future_data, _from_tuple=False
+                 ),
+             )
+         register_type(
+-            Optional[data_type],  # type: ignore
++            Optional[data_type],  # type: ignore [call-overload]
+             choices=_mgui.get_layers_data,
+             return_callback=_mgui.add_layer_data_to_viewer,
+         )
+         if sys.version_info >= (3, 9):
+             register_type(
+-                Future[Optional[data_type]],  # type: ignore
++                Future[Optional[data_type]],  # type: ignore [valid-type]
+                 choices=_mgui.get_layers_data,
+                 return_callback=partial(
+                     _mgui.add_future_data, _from_tuple=False
+diff --git a/napari/utils/shortcuts.py b/napari/utils/shortcuts.py
+index 3ed1ef5c..63db3241 100644
+--- a/napari/utils/shortcuts.py
++++ b/napari/utils/shortcuts.py
+@@ -1,4 +1,6 @@
+-default_shortcuts = {
++from typing import Dict, List
++
++default_shortcuts: Dict[str, List[str]] = {
+     'napari:toggle_console_visibility': ['Control-Shift-C'],
+     'napari:reset_scroll_progress': ['Control'],
+     'napari:toggle_ndisplay': ['Control-Y'],
+diff --git a/pyproject.toml b/pyproject.toml
+index 48e3c7bd..09d4ab6b 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -216,6 +216,8 @@ no_implicit_optional = true
+ warn_redundant_casts = true
+ warn_unused_ignores = true
+ check_untyped_defs = true
++plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
++
+ # # maybe someday :)
+ # disallow_any_generics = true
+ # no_implicit_reexport = true
+diff --git a/resources/requirements_mypy.in b/resources/requirements_mypy.in
+new file mode 100644
+index 00000000..c90d3e30
+--- /dev/null
++++ b/resources/requirements_mypy.in
+@@ -0,0 +1,4 @@
++mypy
++types-PyYAML
++types-setuptools
++types-requests
+diff --git a/resources/requirements_mypy.txt b/resources/requirements_mypy.txt
+index 2e03b2f8..9eff78eb 100644
+--- a/resources/requirements_mypy.txt
++++ b/resources/requirements_mypy.txt
+@@ -1,3 +1,22 @@
+-mypy==0.982
+-types-PyYAML==6.0.12.1
+-types-setuptools==65.5.0.2
++#
++# This file is autogenerated by pip-compile with python 3.10
++# To update, run:
++#
++#    pip-compile requirements_mypy.in
++#
++mypy==1.2.0
++    # via -r requirements_mypy.in
++mypy-extensions==1.0.0
++    # via mypy
++tomli==2.0.1
++    # via mypy
++types-pyyaml==6.0.12.9
++    # via -r requirements_mypy.in
++types-requests==2.28.11.17
++    # via -r requirements_mypy.in
++types-setuptools==67.6.0.7
++    # via -r requirements_mypy.in
++types-urllib3==1.26.25.10
++    # via types-requests
++typing-extensions==4.5.0
++    # via mypy
+diff --git a/tox.ini b/tox.ini
+index 7a3e1c2c..13d9ed6d 100644
+--- a/tox.ini
++++ b/tox.ini
+@@ -137,3 +137,11 @@ commands =
+     check-manifest
+     python -m build
+     python -m twine check dist/*
++
++
++[testenv:mypy]
++deps =
++    -r resources/requirements_mypy.txt
++commands =
++    mypy napari/settings napari/types.py napari/plugins  --check-untyped-defs
++package = editable-legacy
+-- 
+2.34.1
