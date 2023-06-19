@@ -1899,7 +1899,7 @@ class Points(Layer):
             Point or points to add to the layer data.
         """
         self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
-        self.events.data(value={"action": "add", "index": -1})
+        self.events.data(value={"action": "add", "index": [-1]})
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -1929,7 +1929,7 @@ class Points(Layer):
 
             self.data = np.delete(self.data, index, axis=0)
             self.events.data(
-                value={"action": "remove", "index": self.selected_data}
+                value={"action": "remove", "index": list(self.selected_data)}
             )
             self.selected_data = set()
 
@@ -1958,7 +1958,7 @@ class Points(Layer):
             )
             self.refresh()
         self.events.data(
-            value={"action": "change", "index": self.selected_data}
+            value={"action": "change", "index": list(self.selected_data)}
         )
 
     def _set_drag_start(

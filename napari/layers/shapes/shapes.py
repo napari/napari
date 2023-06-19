@@ -2006,7 +2006,7 @@ class Shapes(Layer):
                 face_color=face_color,
                 z_index=z_index,
             )
-            self.events.data(value={"action": "add", "index": -1})
+            self.events.data(value={"action": "add", "index": [-1]})
 
     def _init_shapes(
         self,
