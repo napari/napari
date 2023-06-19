@@ -110,7 +110,9 @@ def select(layer: Shapes, event: MouseEvent) -> None:
 
     # only emit data once dragging has finished
     if layer._is_moving:
-        layer.events.data(value=layer.data)
+        layer.events.data(
+            value={"action": "change", "index": layer.selected_data}
+        )
 
     # on release
     shift = 'Shift' in event.modifiers
