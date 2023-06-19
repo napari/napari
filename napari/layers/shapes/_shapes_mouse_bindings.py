@@ -520,6 +520,7 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
     with layer.events.set_data.blocker():
         layer._data_view.edit(index, vertices, new_type=new_type)
         layer._selected_box = layer.interaction_box(layer.selected_data)
+    layer.events.data(value={"action": "change", "index": [index]})
     layer.refresh()
 
 
