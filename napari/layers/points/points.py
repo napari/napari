@@ -596,7 +596,6 @@ class Points(Layer):
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
-        self.events.data(value=self.data)
         self._reset_editable()
 
     def _on_selection(self, selected):
@@ -1900,6 +1899,7 @@ class Points(Layer):
             Point or points to add to the layer data.
         """
         self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
+        self.events.data(value={"action": "add", "index": -1})
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -1928,6 +1928,9 @@ class Points(Layer):
                     self._value_stored -= offset
 
             self.data = np.delete(self.data, index, axis=0)
+            self.events.data(
+                value={"action": "remove", "index": self.selected_data}
+            )
             self.selected_data = set()
 
     def _move(
@@ -1954,7 +1957,9 @@ class Points(Layer):
                 self.data[np.ix_(selection_indices, disp)] + shift
             )
             self.refresh()
-        self.events.data(value=self.data)
+        self.events.data(
+            value={"action": "change", "index": self.selected_data}
+        )
 
     def _set_drag_start(
         self,

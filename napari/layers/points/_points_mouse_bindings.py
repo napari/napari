@@ -85,7 +85,7 @@ def select(layer, event):
 
     # only emit data once dragging has finished
     if is_moving:
-        layer._move([], coordinates)
+        layer._move([], layer.selected_data)
         is_moving = False
 
     # on release
