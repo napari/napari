@@ -1,0 +1,105 @@
+From 004679571808de970df9f516769f3566ebdf988b Mon Sep 17 00:00:00 2001
+From: Grzegorz Bokota <bokota+github@gmail.com>
+Date: Thu, 13 Apr 2023 00:41:30 +0200
+Subject: [PATCH] Resolve symlinks from path to environment for setting path
+ (#5704)
+
+<!-- What does this pull request (PR) do? Why is it necessary? -->
+<!-- Tell us about your new feature, improvement, or fix! -->
+<!-- If your change includes user interface changes, please add an
+image, or an animation "An image is worth a thousand words!" -->
+<!-- You can use https://www.cockos.com/licecap/ or similar to create
+animations -->
+
+I have observed that when using `pyenv` to manage python environments,
+depending on way to run napari I got different settings path.
+
+```
+$ python -m napari
+/home/czaki/.pyenv/versions/napari
+...
+$ napari
+/home/czaki/.pyenv/versions/3.8.3/envs/napari
+...
+```
+
+but it is the fact this was the path to the same env, but one of them
+uses symlinks.
+```
+lrwxrwxrwx  1 czaki grzegorz   45 lip  9  2020  napari -> /home/czaki/.pyenv/versions/3.8.3/envs/napari
+```
+
+So I add the step of resolving the path to get the full path without
+symlinks.
+
+<!-- What resources, documentation, and guides were used in the creation
+of this PR? -->
+
+<!-- Please delete options that are not relevant. -->
+- [x] Bug-fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing
+functionality to not work as expected)
+- [ ] This change requires a documentation update
+
+<!-- Please describe the tests that you ran to verify your changes. -->
+- [ ] example: the test suite for my feature covers cases x, y, and z
+- [ ] example: all tests pass with my change
+- [ ] example: I check if my changes works with both PySide and PyQt
+backends
+      as there are small differences between the two Qt bindings.
+
+- [ ] My PR is the minimum possible work for the desired functionality
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] I have added tests that prove my fix is effective or that my
+feature works
+- [ ] If I included new strings, I have used `trans.` to make them
+localizable.
+For more information see our [translations
+guide](https://napari.org/developers/translations.html).
+---
+ napari/utils/_appdirs.py | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/napari/utils/_appdirs.py b/napari/utils/_appdirs.py
+index 460fed88..e2e53a11 100644
+--- a/napari/utils/_appdirs.py
++++ b/napari/utils/_appdirs.py
+@@ -1,3 +1,4 @@
++import hashlib
+ import os
+ import sys
+ from functools import partial
+@@ -5,13 +6,13 @@ from typing import Callable, Optional
+ 
+ import appdirs
+ 
+-from napari._version import __version_tuple__
++PREFIX_PATH = os.path.realpath(sys.prefix)
++
++sha_short = f"{os.path.basename(PREFIX_PATH)}_{hashlib.sha1(PREFIX_PATH.encode()).hexdigest()}"
+ 
+ _appname = 'napari'
+ _appauthor = False
+ 
+-version_string = '.'.join(str(x) for x in __version_tuple__[:3])
+-
+ 
+ # all of these also take an optional "version" argument ... but if we want
+ # to be able to update napari while using data (e.g. plugins, settings) from
+@@ -21,10 +22,10 @@ user_data_dir: Callable[[], str] = partial(
+     appdirs.user_data_dir, _appname, _appauthor
+ )
+ user_config_dir: Callable[[], str] = partial(
+-    appdirs.user_config_dir, _appname, _appauthor
++    appdirs.user_config_dir, _appname, _appauthor, sha_short
+ )
+ user_cache_dir: Callable[[], str] = partial(
+-    appdirs.user_cache_dir, _appname, _appauthor, version_string
++    appdirs.user_cache_dir, _appname, _appauthor, sha_short
+ )
+ user_state_dir: Callable[[], str] = partial(
+     appdirs.user_state_dir, _appname, _appauthor
+-- 
+2.34.1

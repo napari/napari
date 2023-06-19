@@ -82,7 +82,7 @@ def get_repo():
     return g.get_repo(f'{GH_USER}/{GH_REPO}')
 
 
-def get_local_repo():
+def get_local_repo(path=None):
     """
     get local repository
     """
@@ -90,6 +90,8 @@ def get_local_repo():
 
     from git import Repo
 
+    if path is not None:
+        return Repo(path)
     return Repo(Path(__file__).parent.parent.parent)
 
 

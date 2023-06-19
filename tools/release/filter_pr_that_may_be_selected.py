@@ -48,7 +48,9 @@ label = repository.get_label(args.label) if args.label else None
 consumed_pr = set()
 
 if args.target_branch:
-    for commit in get_local_repo().iter_commits(args.target_branch):
+    for commit in get_local_repo("./napari_repo").iter_commits(
+        args.target_branch
+    ):
         if (match := pr_num_pattern.search(commit.message)) is not None:
             pr_num = int(match[1])
             consumed_pr.add(pr_num)

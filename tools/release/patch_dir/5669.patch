@@ -1,0 +1,268 @@
+From 2eb65d021172429d2478acd1acbfbab20001bb04 Mon Sep 17 00:00:00 2001
+From: Peter Sobolewski <76622105+psobolewskiPhD@users.noreply.github.com>
+Date: Tue, 4 Apr 2023 13:54:30 +0200
+Subject: [PATCH] Bugfix: ensure pan/zoom buttons work, along with spacebar
+ keybinding (#5669)
+
+This fixes issues with Pan/Zoom buttons (layer controls) not working and
+the spacebar keybinding to activate pan/zoom mode also not working.
+In https://github.com/napari/napari/pull/4894 there was some refactoring
+which introduced the bugs, see my investigation here:
+https://github.com/napari/napari/issues/5654
+
+This PR fixes the typo, lack of proper layer types, and now moves the
+`hold_for_pan_zoom` to be a Viewer keybinding. As a result, this
+keybinding isn't hard-coded anymore, but is now settable in the
+Preferences > Shortcuts.
+
+<!-- Please delete options that are not relevant. -->
+- [x] Bug-fix (non-breaking change which fixes an issue)
+- [x] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing
+functionality to not work as expected)
+- [ ] This change requires a documentation update
+
+closes https://github.com/napari/napari/issues/5654
+
+Good question! All tests were passing before this PR, despite the fact
+that things were broken. So I'm open to suggestions how to improve tests
+so we catch stuff better.
+
+- [x] My PR is the minimum possible work for the desired functionality
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] I have added tests that prove my fix is effective or that my
+feature works
+- [ ] If I included new strings, I have used `trans.` to make them
+localizable.
+For more information see our [translations
+guide](https://napari.org/developers/translations.html).
+---
+ .../_qt/layer_controls/qt_shapes_controls.py  |  2 +-
+ .../_tests/test_viewer_keybindings.py         | 25 ++++++++++++++++++-
+ napari/components/_viewer_key_bindings.py     | 14 +++++++++++
+ napari/layers/base/_base_key_bindings.py      | 15 -----------
+ .../base/_tests/test_base_key_bindings.py     | 19 --------------
+ napari/layers/image/_image_key_bindings.py    |  2 +-
+ napari/layers/points/_points_key_bindings.py  |  2 +-
+ napari/layers/shapes/_shapes_key_bindings.py  |  2 +-
+ .../layers/surface/_surface_key_bindings.py   |  2 +-
+ napari/layers/tracks/_tracks_key_bindings.py  |  2 +-
+ .../layers/vectors/_vectors_key_bindings.py   |  2 +-
+ napari/utils/shortcuts.py                     |  1 +
+ 12 files changed, 46 insertions(+), 42 deletions(-)
+ delete mode 100644 napari/layers/base/_base_key_bindings.py
+ delete mode 100644 napari/layers/base/_tests/test_base_key_bindings.py
+
+diff --git a/napari/_qt/layer_controls/qt_shapes_controls.py b/napari/_qt/layer_controls/qt_shapes_controls.py
+index c19bdd15..81fd070b 100644
+--- a/napari/_qt/layer_controls/qt_shapes_controls.py
++++ b/napari/_qt/layer_controls/qt_shapes_controls.py
+@@ -173,7 +173,7 @@ class QtShapesControls(QtLayerControls):
+             layer,
+             'zoom',
+             Mode.PAN_ZOOM,
+-            "activate_shape_pan_zoom_mode",
++            "activate_shapes_pan_zoom_mode",
+             extra_tooltip_text=trans._('(or hold Space)'),
+             checked=True,
+         )
+diff --git a/napari/components/_tests/test_viewer_keybindings.py b/napari/components/_tests/test_viewer_keybindings.py
+index 33366674..b618abe9 100644
+--- a/napari/components/_tests/test_viewer_keybindings.py
++++ b/napari/components/_tests/test_viewer_keybindings.py
+@@ -1,5 +1,11 @@
+-from napari.components._viewer_key_bindings import toggle_theme
++import pytest
++
++from napari.components._viewer_key_bindings import (
++    hold_for_pan_zoom,
++    toggle_theme,
++)
+ from napari.components.viewer_model import ViewerModel
++from napari.layers.points import Points
+ from napari.settings import get_settings
+ from napari.utils.theme import available_themes, get_system_theme
+ 
+@@ -50,3 +56,20 @@ def test_theme_toggle_from_system_theme():
+         assert viewer.theme != 'system'
+     # ensure we have looped back to whatever system was
+     assert viewer.theme == actual_initial_theme
++
++
++def test_hold_for_pan_zoom():
++    viewer = ViewerModel()
++    data = [[1, 3], [8, 4], [10, 10], [15, 4]]
++    layer = Points(data, size=1)
++    viewer.layers.append(layer)
++    layer.mode = 'transform'
++
++    viewer.layers.selection.active = viewer.layers[0]
++    gen = hold_for_pan_zoom(viewer)
++    assert layer.mode == 'transform'
++    next(gen)
++    assert layer.mode == 'pan_zoom'
++    with pytest.raises(StopIteration):
++        next(gen)
++    assert layer.mode == 'transform'
+diff --git a/napari/components/_viewer_key_bindings.py b/napari/components/_viewer_key_bindings.py
+index 4e9c5aa3..4fe913bd 100644
+--- a/napari/components/_viewer_key_bindings.py
++++ b/napari/components/_viewer_key_bindings.py
+@@ -134,3 +134,17 @@ def toggle_selected_visibility(viewer: Viewer):
+ )
+ def toggle_console_visibility(viewer: Viewer):
+     viewer.window._qt_viewer.toggle_console_visibility()
++
++
++@register_viewer_action(trans._("Press and hold for pan/zoom mode"))
++def hold_for_pan_zoom(viewer: ViewerModel):
++    selected_layer = viewer.layers.selection.active
++    if selected_layer is None:
++        yield
++        return
++    previous_mode = selected_layer.mode
++    if previous_mode != selected_layer._modeclass.PAN_ZOOM:
++        selected_layer.mode = selected_layer._modeclass.PAN_ZOOM
++        yield
++
++        selected_layer.mode = previous_mode
+diff --git a/napari/layers/base/_base_key_bindings.py b/napari/layers/base/_base_key_bindings.py
+deleted file mode 100644
+index 4a837bf6..00000000
+--- a/napari/layers/base/_base_key_bindings.py
++++ /dev/null
+@@ -1,15 +0,0 @@
+-from napari.layers.base.base import Layer
+-
+-
+-@Layer.bind_key("Space")
+-def hold_to_pan_zoom(layer):
+-    """Hold to pan and zoom in the viewer."""
+-    if layer._mode != layer._modeclass.PAN_ZOOM:
+-        # on key press
+-        prev_mode = layer.mode
+-        layer.mode = layer._modeclass.PAN_ZOOM
+-
+-        yield
+-
+-        # on key release
+-        layer.mode = prev_mode
+diff --git a/napari/layers/base/_tests/test_base_key_bindings.py b/napari/layers/base/_tests/test_base_key_bindings.py
+deleted file mode 100644
+index 0d9d0d0d..00000000
+--- a/napari/layers/base/_tests/test_base_key_bindings.py
++++ /dev/null
+@@ -1,19 +0,0 @@
+-import pytest
+-
+-from napari.layers.base import _base_key_bindings as key_bindings
+-from napari.layers.points import Points
+-
+-
+-def test_hold_to_pan_zoom(layer):
+-    data = [[1, 3], [8, 4], [10, 10], [15, 4]]
+-    layer = Points(data, size=1)
+-
+-    layer.mode = 'transform'
+-    # need to go through the generator
+-    gen = key_bindings.hold_to_pan_zoom(layer)
+-    assert layer.mode == 'transform'
+-    next(gen)
+-    assert layer.mode == 'pan_zoom'
+-    with pytest.raises(StopIteration):
+-        next(gen)
+-    assert layer.mode == 'transform'
+diff --git a/napari/layers/image/_image_key_bindings.py b/napari/layers/image/_image_key_bindings.py
+index ad4c66b2..9efb6c5a 100644
+--- a/napari/layers/image/_image_key_bindings.py
++++ b/napari/layers/image/_image_key_bindings.py
+@@ -77,7 +77,7 @@ def activate_image_transform_mode(layer):
+ 
+ 
+ @register_image_action(trans._('Pan/zoom'))
+-def activate_image_pan_zoom_mode(layer):
++def activate_image_pan_zoom_mode(layer: Image):
+     layer.mode = Mode.PAN_ZOOM
+ 
+ 
+diff --git a/napari/layers/points/_points_key_bindings.py b/napari/layers/points/_points_key_bindings.py
+index bd843f4a..86718d43 100644
+--- a/napari/layers/points/_points_key_bindings.py
++++ b/napari/layers/points/_points_key_bindings.py
+@@ -25,7 +25,7 @@ def activate_points_transform_mode(layer):
+ 
+ 
+ @register_points_mode_action(trans._('Pan/zoom'))
+-def activate_points_pan_zoom_mode(layer):
++def activate_points_pan_zoom_mode(layer: Points):
+     layer.mode = Mode.PAN_ZOOM
+ 
+ 
+diff --git a/napari/layers/shapes/_shapes_key_bindings.py b/napari/layers/shapes/_shapes_key_bindings.py
+index 0a54df4c..5355aa8d 100644
+--- a/napari/layers/shapes/_shapes_key_bindings.py
++++ b/napari/layers/shapes/_shapes_key_bindings.py
+@@ -51,7 +51,7 @@ def activate_shapes_transform_mode(layer):
+ 
+ 
+ @register_shapes_mode_action(trans._('Pan/zoom'))
+-def activate_shapes_pan_zoom_mode(layer):
++def activate_shapes_pan_zoom_mode(layer: Shapes):
+     layer.mode = Mode.PAN_ZOOM
+ 
+ 
+diff --git a/napari/layers/surface/_surface_key_bindings.py b/napari/layers/surface/_surface_key_bindings.py
+index 703df346..6011953e 100644
+--- a/napari/layers/surface/_surface_key_bindings.py
++++ b/napari/layers/surface/_surface_key_bindings.py
+@@ -21,7 +21,7 @@ def activate_surface_transform_mode(layer):
+ 
+ 
+ @register_surface_mode_action(trans._('Pan/zoom'))
+-def activate_surface_pan_zoom_mode(layer):
++def activate_surface_pan_zoom_mode(layer: Surface):
+     layer.mode = Mode.PAN_ZOOM
+ 
+ 
+diff --git a/napari/layers/tracks/_tracks_key_bindings.py b/napari/layers/tracks/_tracks_key_bindings.py
+index a701e4cd..2ea14a72 100644
+--- a/napari/layers/tracks/_tracks_key_bindings.py
++++ b/napari/layers/tracks/_tracks_key_bindings.py
+@@ -21,7 +21,7 @@ def activate_tracks_transform_mode(layer):
+ 
+ 
+ @register_tracks_mode_action(trans._('Pan/zoom'))
+-def activate_tracks_pan_zoom_mode(layer):
++def activate_tracks_pan_zoom_mode(layer: Tracks):
+     layer.mode = Mode.PAN_ZOOM
+ 
+ 
+diff --git a/napari/layers/vectors/_vectors_key_bindings.py b/napari/layers/vectors/_vectors_key_bindings.py
+index f8f7bec8..06f48b3a 100644
+--- a/napari/layers/vectors/_vectors_key_bindings.py
++++ b/napari/layers/vectors/_vectors_key_bindings.py
+@@ -21,7 +21,7 @@ def activate_vectors_transform_mode(layer):
+ 
+ 
+ @register_vectors_mode_action(trans._('Pan/zoom'))
+-def activate_vectors_pan_zoom_mode(layer):
++def activate_vectors_pan_zoom_mode(layer: Vectors):
+     layer.mode = Mode.PAN_ZOOM
+ 
+ 
+diff --git a/napari/utils/shortcuts.py b/napari/utils/shortcuts.py
+index 53ffe707..3ed1ef5c 100644
+--- a/napari/utils/shortcuts.py
++++ b/napari/utils/shortcuts.py
+@@ -14,6 +14,7 @@ default_shortcuts = {
+     'napari:transpose_axes': ['Control-T'],
+     'napari:toggle_grid': ['Control-G'],
+     'napari:toggle_selected_visibility': ['V'],
++    'napari:hold_for_pan_zoom': ['Space'],
+     'napari:activate_labels_erase_mode': ['1'],
+     'napari:activate_labels_paint_mode': ['2'],
+     'napari:activate_labels_fill_mode': ['3'],
+-- 
+2.34.1
+

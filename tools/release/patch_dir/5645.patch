@@ -1,0 +1,384 @@
+From 16d6f31416419a77cc720c89754d0acf6ca31772 Mon Sep 17 00:00:00 2001
+From: "pre-commit-ci[bot]"
+ <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Date: Mon, 17 Apr 2023 15:54:12 +0200
+Subject: [PATCH] [pre-commit.ci] pre-commit autoupdate (#5645)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<!--pre-commit.ci start-->
+updates:
+- [github.com/psf/black: 23.1.0 →
+23.3.0](https://github.com/psf/black/compare/23.1.0...23.3.0)
+- [github.com/charliermarsh/ruff-pre-commit: v0.0.256 →
+v0.0.261](https://github.com/charliermarsh/ruff-pre-commit/compare/v0.0.256...v0.0.261)
+<!--pre-commit.ci end-->
+
+---------
+
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+Co-authored-by: Grzegorz Bokota <bokota+github@gmail.com>
+---
+ .pre-commit-config.yaml                       |  4 +-
+ napari/__init__.pyi                           | 48 ++++++++++++-------
+ napari/__main__.py                            |  2 +-
+ napari/_app_model/context/_context.py         |  7 ++-
+ napari/_qt/qt_main_window.py                  |  6 ++-
+ napari/_tests/test_magicgui.py                |  2 +-
+ napari/_tests/test_view_layers.py             |  3 +-
+ napari/components/_tests/test_multichannel.py |  2 +-
+ napari/layers/image/image.py                  |  2 -
+ .../points/_tests/test_points_key_bindings.py |  3 +-
+ napari/plugins/__init__.py                    |  7 ++-
+ napari/plugins/_npe2.py                       |  3 +-
+ napari/plugins/_plugin_manager.py             |  6 ++-
+ napari/utils/_tests/test_theme.py             |  3 +-
+ napari/utils/colormaps/colormap_utils.py      | 19 ++++----
+ napari/utils/misc.py                          |  3 +-
+ pyproject.toml                                |  5 +-
+ 17 files changed, 73 insertions(+), 52 deletions(-)
+
+diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
+index 09817eb4..3a9474ae 100644
+--- a/.pre-commit-config.yaml
++++ b/.pre-commit-config.yaml
+@@ -1,12 +1,12 @@
+ repos:
+ -   repo: https://github.com/psf/black
+-    rev: 23.1.0
++    rev: 23.3.0
+     hooks:
+     - id: black
+       pass_filenames: true
+       exclude: _vendor|vendored|examples
+ -   repo: https://github.com/charliermarsh/ruff-pre-commit
+-    rev: v0.0.256
++    rev: v0.0.261
+     hooks:
+       - id: ruff
+         exclude: _vendor|vendored
+diff --git a/napari/__init__.pyi b/napari/__init__.pyi
+index 85cd846f..1354203c 100644
+--- a/napari/__init__.pyi
++++ b/napari/__init__.pyi
+@@ -1,24 +1,36 @@
+-import napari._qt.qt_event_loop
+-import napari.plugins.io
+ import napari.utils.notifications
+-import napari.view_layers
+-import napari.viewer
++from napari._qt.qt_event_loop import gui_qt, run
++from napari.plugins.io import save_layers
++from napari.view_layers import (
++    view_image,
++    view_labels,
++    view_path,
++    view_points,
++    view_shapes,
++    view_surface,
++    view_tracks,
++    view_vectors,
++)
++from napari.viewer import Viewer, current_viewer
+ 
+ __version__: str
+ 
+ notification_manager: napari.utils.notifications.NotificationManager
+-Viewer = napari.viewer.Viewer
+-current_viewer = napari.viewer.current_viewer
+ 
+-gui_qt = napari._qt.qt_event_loop.gui_qt
+-run = napari._qt.qt_event_loop.run
+-save_layers = napari.plugins.io.save_layers
+-
+-view_image = napari.view_layers.view_image
+-view_labels = napari.view_layers.view_labels
+-view_path = napari.view_layers.view_path
+-view_points = napari.view_layers.view_points
+-view_shapes = napari.view_layers.view_shapes
+-view_surface = napari.view_layers.view_surface
+-view_tracks = napari.view_layers.view_tracks
+-view_vectors = napari.view_layers.view_vectors
++__all__ = (
++    'Viewer',
++    'current_viewer',
++    'view_image',
++    'view_labels',
++    'view_path',
++    'view_points',
++    'view_shapes',
++    'view_surface',
++    'view_tracks',
++    'view_vectors',
++    'save_layers',
++    'gui_qt',
++    'run',
++    'notification_manager',
++    '__version__',
++)
+diff --git a/napari/__main__.py b/napari/__main__.py
+index ae9729b8..6e307f09 100644
+--- a/napari/__main__.py
++++ b/napari/__main__.py
+@@ -505,7 +505,7 @@ def _maybe_rerun_with_macos_fixes():
+         # When napari is launched from the conda bundle shortcut
+         # it already has the right 'napari' name in the app title
+         # and __CFBundleIdentifier is set to 'com.napari._(<version>)'
+-        "napari" not in os.environ.get("__CFBundleIdentifier", "")
++        "napari" not in os.environ.get("__CFBUNDLEIDENTIFIER", "")
+         # with a sys.executable named napari,
+         # macOS should have picked the right name already
+         or os.path.basename(executable) != "napari"
+diff --git a/napari/_app_model/context/_context.py b/napari/_app_model/context/_context.py
+index 3cbd4674..67969625 100644
+--- a/napari/_app_model/context/_context.py
++++ b/napari/_app_model/context/_context.py
+@@ -2,8 +2,11 @@ from __future__ import annotations
+ 
+ from typing import TYPE_CHECKING, Any, Final, Optional
+ 
+-from app_model.expressions import Context, get_context
+-from app_model.expressions import create_context as _create_context
++from app_model.expressions import (
++    Context,
++    create_context as _create_context,
++    get_context,
++)
+ 
+ from napari.utils.translations import trans
+ 
+diff --git a/napari/_qt/qt_main_window.py b/napari/_qt/qt_main_window.py
+index 33e40e72..dc5b09d2 100644
+--- a/napari/_qt/qt_main_window.py
++++ b/napari/_qt/qt_main_window.py
+@@ -54,8 +54,10 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
+     QtViewerDockWidget,
+ )
+ from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
+-from napari.plugins import menu_item_template as plugin_menu_item_template
+-from napari.plugins import plugin_manager
++from napari.plugins import (
++    menu_item_template as plugin_menu_item_template,
++    plugin_manager,
++)
+ from napari.settings import get_settings
+ from napari.utils import perf
+ from napari.utils._proxies import PublicOnlyProxy
+diff --git a/napari/_tests/test_magicgui.py b/napari/_tests/test_magicgui.py
+index ab2cca0e..612a5923 100644
+--- a/napari/_tests/test_magicgui.py
++++ b/napari/_tests/test_magicgui.py
+@@ -20,7 +20,7 @@ if TYPE_CHECKING:
+ 
+ 
+ try:
+-    import qtpy
++    import qtpy  # noqa: F401 need to be ignored as qtpy may be available but Qt bindings may not be
+ except ModuleNotFoundError:
+     pytest.skip('Cannot test magicgui without qtpy.', allow_module_level=True)
+ except RuntimeError:
+diff --git a/napari/_tests/test_view_layers.py b/napari/_tests/test_view_layers.py
+index 890f6bfe..1929a6fe 100644
+--- a/napari/_tests/test_view_layers.py
++++ b/napari/_tests/test_view_layers.py
+@@ -13,8 +13,7 @@ import pytest
+ from numpydoc.docscrape import ClassDoc, FunctionDoc
+ 
+ import napari
+-from napari import Viewer
+-from napari import layers as module
++from napari import Viewer, layers as module
+ from napari._tests.utils import check_viewer_functioning, layer_test_data
+ from napari.utils.misc import camel_to_snake
+ 
+diff --git a/napari/components/_tests/test_multichannel.py b/napari/components/_tests/test_multichannel.py
+index c3f2794d..e9b99408 100644
+--- a/napari/components/_tests/test_multichannel.py
++++ b/napari/components/_tests/test_multichannel.py
+@@ -61,7 +61,7 @@ multi_channel_test_data = [
+     ((), {'translate': MULTI_TUPLES}),
+     ((), {'blending': 'translucent'}),
+     ((), {'metadata': {'hi': 'there'}}),
+-    ((), {'metadata': {k: v for k, v in MULTI_TUPLES}}),
++    ((), {'metadata': dict(MULTI_TUPLES)}),
+     ((), {'experimental_clipping_planes': []}),
+ ]
+ 
+diff --git a/napari/layers/image/image.py b/napari/layers/image/image.py
+index bf484e12..17ee7b9a 100644
+--- a/napari/layers/image/image.py
++++ b/napari/layers/image/image.py
+@@ -19,8 +19,6 @@ from napari.layers.image._image_constants import (
+ )
+ from napari.layers.image._image_mouse_bindings import (
+     move_plane_along_normal as plane_drag_callback,
+-)
+-from napari.layers.image._image_mouse_bindings import (
+     set_plane_position as plane_double_click_callback,
+ )
+ from napari.layers.image._image_slice import ImageSlice
+diff --git a/napari/layers/points/_tests/test_points_key_bindings.py b/napari/layers/points/_tests/test_points_key_bindings.py
+index 02fdad97..6f2bba3e 100644
+--- a/napari/layers/points/_tests/test_points_key_bindings.py
++++ b/napari/layers/points/_tests/test_points_key_bindings.py
+@@ -1,5 +1,4 @@
+-from napari.layers.points import Points
+-from napari.layers.points import _points_key_bindings as key_bindings
++from napari.layers.points import Points, _points_key_bindings as key_bindings
+ 
+ 
+ def test_modes(layer):
+diff --git a/napari/plugins/__init__.py b/napari/plugins/__init__.py
+index f4b5fef2..898af969 100644
+--- a/napari/plugins/__init__.py
++++ b/napari/plugins/__init__.py
+@@ -1,7 +1,10 @@
+ from functools import lru_cache
+ 
+-from npe2 import PackageMetadata, PluginManifest
+-from npe2 import PluginManager as _PluginManager
++from npe2 import (
++    PackageMetadata,
++    PluginManager as _PluginManager,
++    PluginManifest,
++)
+ 
+ from napari.plugins import _npe2
+ from napari.plugins._plugin_manager import NapariPluginManager
+diff --git a/napari/plugins/_npe2.py b/napari/plugins/_npe2.py
+index 7fb9f382..8865a357 100644
+--- a/napari/plugins/_npe2.py
++++ b/napari/plugins/_npe2.py
+@@ -15,8 +15,7 @@ from typing import (
+ )
+ 
+ from app_model.types import SubmenuItem
+-from npe2 import io_utils
+-from npe2 import plugin_manager as pm
++from npe2 import io_utils, plugin_manager as pm
+ from npe2.manifest import contributions
+ 
+ from napari.utils.translations import trans
+diff --git a/napari/plugins/_plugin_manager.py b/napari/plugins/_plugin_manager.py
+index 7faf3758..60052e3f 100644
+--- a/napari/plugins/_plugin_manager.py
++++ b/napari/plugins/_plugin_manager.py
+@@ -18,8 +18,10 @@ from typing import (
+ )
+ from warnings import warn
+ 
+-from napari_plugin_engine import HookImplementation
+-from napari_plugin_engine import PluginManager as PluginManager
++from napari_plugin_engine import (
++    HookImplementation,
++    PluginManager as PluginManager,
++)
+ from napari_plugin_engine.hooks import HookCaller
+ from pydantic import ValidationError
+ from typing_extensions import TypedDict
+diff --git a/napari/utils/_tests/test_theme.py b/napari/utils/_tests/test_theme.py
+index eeca0220..94378483 100644
+--- a/napari/utils/_tests/test_theme.py
++++ b/napari/utils/_tests/test_theme.py
+@@ -2,8 +2,7 @@ import os
+ import sys
+ 
+ import pytest
+-from npe2 import PluginManager, PluginManifest
+-from npe2 import __version__ as npe2_version
++from npe2 import PluginManager, PluginManifest, __version__ as npe2_version
+ from npe2.manifest.schema import ContributionPoints
+ from packaging.version import parse as parse_version
+ from pydantic import ValidationError
+diff --git a/napari/utils/colormaps/colormap_utils.py b/napari/utils/colormaps/colormap_utils.py
+index f246640c..ada0eff9 100644
+--- a/napari/utils/colormaps/colormap_utils.py
++++ b/napari/utils/colormaps/colormap_utils.py
+@@ -5,8 +5,13 @@ from typing import Dict, List, Optional, Tuple, Union
+ 
+ import numpy as np
+ import skimage.color as colorconv
+-from vispy.color import BaseColormap as VispyColormap
+-from vispy.color import Color, ColorArray, get_colormap, get_colormaps
++from vispy.color import (
++    BaseColormap as VispyColormap,
++    Color,
++    ColorArray,
++    get_colormap,
++    get_colormaps,
++)
+ from vispy.color.colormap import LUT_len
+ 
+ from napari.utils.colormaps.bop_colors import bopd
+@@ -502,10 +507,9 @@ ALL_COLORMAPS.update(BOP_COLORMAPS)
+ ALL_COLORMAPS.update(INVERSE_COLORMAPS)
+ 
+ # ... sorted alphabetically by name
+-AVAILABLE_COLORMAPS = {
+-    k: v
+-    for k, v in sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
+-}
++AVAILABLE_COLORMAPS = dict(
++    sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
++)
+ # lock to allow update of AVAILABLE_COLORMAPS in threads
+ AVAILABLE_COLORMAPS_LOCK = Lock()
+ 
+@@ -642,8 +646,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
+ 
+         elif isinstance(colormap, dict):
+             if 'colors' in colormap and not (
+-                isinstance(colormap['colors'], VispyColormap)
+-                or isinstance(colormap['colors'], Colormap)
++                isinstance(colormap['colors'], (VispyColormap, Colormap))
+             ):
+                 cmap = Colormap(**colormap)
+                 name = cmap.name
+diff --git a/napari/utils/misc.py b/napari/utils/misc.py
+index a255093b..07187419 100644
+--- a/napari/utils/misc.py
++++ b/napari/utils/misc.py
+@@ -12,8 +12,7 @@ import re
+ import sys
+ import warnings
+ from enum import Enum, EnumMeta
+-from os import fspath
+-from os import path as os_path
++from os import fspath, path as os_path
+ from pathlib import Path
+ from typing import (
+     TYPE_CHECKING,
+diff --git a/pyproject.toml b/pyproject.toml
+index 99fe5cb0..48e3c7bd 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -107,6 +107,8 @@ ignore = [
+     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
+     "TRY003", # require implement multiple exception class
+     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
++    "B028", # need to be fixed
++    "PYI015", # it produces bad looking files (@jni opinion)
+ 
+ ]
+ 
+@@ -137,7 +139,7 @@ fix = true
+ 
+ [tool.ruff.per-file-ignores]
+ "napari/_vispy/__init__.py" = ["E402"]
+-"**/_tests/*.py" = ["B011", "INP001", "TRY301"]
++"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018"]
+ "napari/utils/_testsupport.py" = ["B011"]
+ "tools/test_strings.py" = ["F401"]
+ "tools/**" = ["INP001", "T20"]
+@@ -158,6 +160,7 @@ keep-runtime-typing = true
+ 
+ [tool.ruff.isort]
+ known-first-party=['napari']
++combine-as-imports = true
+ 
+ [tool.ruff.flake8-import-conventions]
+ [tool.ruff.flake8-import-conventions.extend-aliases]
+-- 
+2.34.1
+
