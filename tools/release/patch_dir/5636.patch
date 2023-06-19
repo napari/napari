@@ -1,0 +1,253 @@
+From e1eb4d584cfc88d9d44ed58ec2923568a62c9c9b Mon Sep 17 00:00:00 2001
+From: Peter Sobolewski <76622105+psobolewskiPhD@users.noreply.github.com>
+Date: Tue, 21 Mar 2023 02:01:09 +0100
+Subject: [PATCH] Bugfix: Convert Viewer Delete button to QtViewerPushButton
+ with action and shortcut (#5636)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The current trash-icon delete button in the viewer when clicked deletes
+selected layers, but is also supposed to accept drag-n-drop events,
+making it work like the Trash on say macOS (and other OS with a similar
+desktop model).
+However, this behavior was broken in
+https://github.com/napari/napari/pull/2441
+
+This (broken) behavior makes no sense, because napari *doesn't use* a
+desktop model, so the Trash icon is not a folder, like the Trash bin in
+a OS, a temporary storage for unwanted items. You can't open the napari
+trash button to restore the layers you drag there.
+
+The Trash icon in napari should be simply a button—and is stylized as
+one—that responds to a single-click to delete selected layers.
+
+This PR removes the broken behavior—eliminating the source of error. In
+this way it simplifies the code, to treat the delete button the same as
+other viewer buttons (QtViewerPushButton). as a result, the delete
+button now also has a registered action and keybinding that is editable
+in the Preferences, rather than hard-coded.
+
+<!-- Please delete options that are not relevant. -->
+- [x] Bug-fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [x] Breaking change (fix or feature that would cause existing
+functionality to not work as expected): it's been broken for 2 years
+without being reported...
+- [x] This change requires a documentation update: docs PR:
+https://github.com/napari/docs/pull/123
+
+closes https://github.com/napari/napari/issues/5629
+See also discussion on zulip:
+https://napari.zulipchat.com/#narrow/stream/212875-general/topic/Drag.20layer.20to.20trash
+
+<!-- Please describe the tests that you ran to verify your changes. -->
+- [ ] example: the test suite for my feature covers cases x, y, and z
+- [ ] example: all tests pass with my change
+- [ ] example: I check if my changes works with both PySide and PyQt
+backends
+      as there are small differences between the two Qt bindings.
+
+- [x] My PR is the minimum possible work for the desired functionality
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [x] I have made corresponding changes to the documentation: docs PR
+https://github.com/napari/docs/pull/123
+- [ ] I have added tests that prove my fix is effective or that my
+feature works
+- [ ] If I included new strings, I have used `trans.` to make them
+localizable.
+For more information see our [translations
+guide](https://napari.org/developers/translations.html).
+---
+ napari/_qt/qt_resources/styles/01_buttons.qss | 13 +--
+ napari/_qt/widgets/qt_viewer_buttons.py       | 81 ++-----------------
+ napari/components/_viewer_key_bindings.py     |  5 ++
+ napari/utils/shortcuts.py                     |  2 +-
+ tools/string_list.json                        |  1 +
+ 5 files changed, 16 insertions(+), 86 deletions(-)
+
+diff --git a/napari/_qt/qt_resources/styles/01_buttons.qss b/napari/_qt/qt_resources/styles/01_buttons.qss
+index be79089b..8eae8b86 100644
+--- a/napari/_qt/qt_resources/styles/01_buttons.qss
++++ b/napari/_qt/qt_resources/styles/01_buttons.qss
+@@ -1,15 +1,6 @@
+ 
+ /* ----------------- Buttons -------------------- */
+ 
+-QtDeleteButton {
+-   image: url("theme_{{ id }}:/delete.svg");
+-   min-width : 28px;
+-   max-width : 28px;
+-   min-height : 28px;
+-   max-height : 28px;
+-   padding: 0px;
+-}
+-
+ QtViewerPushButton{
+    min-width : 28px;
+    max-width : 28px;
+@@ -19,6 +10,10 @@ QtViewerPushButton{
+    
+ }
+ 
++QtViewerPushButton[mode="delete_button"] {
++   image: url("theme_{{ id }}:/delete.svg");
++}
++
+ QtViewerPushButton[mode="new_points"] {
+   image: url("theme_{{ id }}:/new_points.svg");
+ }
+diff --git a/napari/_qt/widgets/qt_viewer_buttons.py b/napari/_qt/widgets/qt_viewer_buttons.py
+index 9aae491f..6659d745 100644
+--- a/napari/_qt/widgets/qt_viewer_buttons.py
++++ b/napari/_qt/widgets/qt_viewer_buttons.py
+@@ -18,7 +18,6 @@ from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
+ from napari._qt.widgets.qt_spinbox import QtSpinBox
+ from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+ from napari.utils.action_manager import action_manager
+-from napari.utils.interactions import Shortcut
+ from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
+ from napari.utils.translations import trans
+ 
+@@ -52,7 +51,11 @@ class QtLayerButtons(QFrame):
+         super().__init__()
+ 
+         self.viewer = viewer
+-        self.deleteButton = QtDeleteButton(self.viewer)
++
++        self.deleteButton = QtViewerPushButton(
++            'delete_button', action='napari:delete_selected_layers'
++        )
++
+         self.newPointsButton = QtViewerPushButton(
+             'new_points',
+             trans._('New points layer'),
+@@ -337,80 +340,6 @@ class QtViewerButtons(QFrame):
+         self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
+ 
+ 
+-class QtDeleteButton(QPushButton):
+-    """Delete button to remove selected layers.
+-
+-    Parameters
+-    ----------
+-    viewer : napari.components.ViewerModel
+-        Napari viewer containing the rendered scene, layers, and controls.
+-
+-    Attributes
+-    ----------
+-    hover : bool
+-        Hover is true while mouse cursor is on the button widget.
+-    viewer : napari.components.ViewerModel
+-        Napari viewer containing the rendered scene, layers, and controls.
+-    """
+-
+-    def __init__(self, viewer) -> None:
+-        super().__init__()
+-
+-        self.viewer = viewer
+-        self.setToolTip(
+-            trans._(
+-                "Delete selected layers ({shortcut})",
+-                shortcut=Shortcut("Control-Backspace"),
+-            )
+-        )
+-        self.setAcceptDrops(True)
+-        self.clicked.connect(lambda: self.viewer.layers.remove_selected())
+-
+-    def dragEnterEvent(self, event):
+-        """The cursor enters the widget during a drag and drop operation.
+-
+-        Parameters
+-        ----------
+-        event : qtpy.QtCore.QEvent
+-            Event from the Qt context.
+-        """
+-        event.accept()
+-        self.hover = True
+-        self.update()
+-
+-    def dragLeaveEvent(self, event):
+-        """The cursor leaves the widget during a drag and drop operation.
+-
+-        Using event.ignore() here allows the event to pass through the
+-        parent widget to its child widget, otherwise the parent widget
+-        would catch the event and not pass it on to the child widget.
+-
+-        Parameters
+-        ----------
+-        event : qtpy.QtCore.QEvent
+-            Event from the Qt context.
+-        """
+-        event.ignore()
+-        self.hover = False
+-        self.update()
+-
+-    def dropEvent(self, event):
+-        """The drag and drop mouse event is completed.
+-
+-        Parameters
+-        ----------
+-        event : qtpy.QtCore.QDropEvent
+-            Event from the Qt context.
+-        """
+-        event.accept()
+-        layer_name = event.mimeData().text()
+-        layer = self.viewer.layers[layer_name]
+-        if not layer.selected:
+-            self.viewer.layers.remove(layer)
+-        else:
+-            self.viewer.layers.remove_selected()
+-
+-
+ def _omit_viewer_args(constructor):
+     @wraps(constructor)
+     def _func(*args, **kwargs):
+diff --git a/napari/components/_viewer_key_bindings.py b/napari/components/_viewer_key_bindings.py
+index 64a8cf65..4e9c5aa3 100644
+--- a/napari/components/_viewer_key_bindings.py
++++ b/napari/components/_viewer_key_bindings.py
+@@ -76,6 +76,11 @@ def reset_view(viewer: Viewer):
+     viewer.reset_view()
+ 
+ 
++@register_viewer_action(trans._("Delete selected layers."))
++def delete_selected_layers(viewer: Viewer):
++    viewer.layers.remove_selected()
++
++
+ @register_viewer_action(trans._("Increment dimensions slider to the left."))
+ def increment_dims_left(viewer: Viewer):
+     viewer.dims._increment_dims_left()
+diff --git a/napari/utils/shortcuts.py b/napari/utils/shortcuts.py
+index 45a1a25c..53ffe707 100644
+--- a/napari/utils/shortcuts.py
++++ b/napari/utils/shortcuts.py
+@@ -4,6 +4,7 @@ default_shortcuts = {
+     'napari:toggle_ndisplay': ['Control-Y'],
+     'napari:toggle_theme': ['Control-Shift-T'],
+     'napari:reset_view': ['Control-R'],
++    'napari:napari:delete_selected_layers': ['Control-Delete'],
+     'napari:show_shortcuts': ['Control-Alt-/'],
+     'napari:increment_dims_left': ['Left'],
+     'napari:increment_dims_right': ['Right'],
+@@ -61,5 +62,4 @@ default_shortcuts = {
+     # surface
+     'napari:activate_surface_pan_zoom_mode': ['1'],
+     'napari:activate_surface_transform_mode': ['2'],
+-
+ }
+diff --git a/tools/string_list.json b/tools/string_list.json
+index 5487158c..09ebfc26 100644
+--- a/tools/string_list.json
++++ b/tools/string_list.json
+@@ -891,6 +891,7 @@
+       "napari:reset_view",
+       "napari:toggle_grid",
+       "napari:toggle_ndisplay",
++      "napari:delete_selected_layers",
+       "perspective",
+       "Control-Backspace",
+       "console",
+-- 
+2.34.1

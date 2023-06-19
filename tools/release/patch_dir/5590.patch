@@ -1,0 +1,3979 @@
+From 5c36e9a401d694a2af68f440c9307bc68b1f0667 Mon Sep 17 00:00:00 2001
+From: Grzegorz Bokota <bokota+github@gmail.com>
+Date: Tue, 4 Apr 2023 12:14:04 +0200
+Subject: [PATCH] Enable `ruff` rules part 4. (#5590)
+
+<!-- What does this pull request (PR) do? Why is it necessary? -->
+<!-- Tell us about your new feature, improvement, or fix! -->
+<!-- If your change includes user interface changes, please add an
+image, or an animation "An image is worth a thousand words!" -->
+<!-- You can use https://www.cockos.com/licecap/ or similar to create
+animations -->
+
+* `INP` flake8-no-pep420 - The pep 420 is something that part of us may
+remember as the reason why napari stop working at some moment because of
+some problematic files in `site-packages`.
+
+ * `PYI` flake8-pyi - better type annotation
+* `Q`, flake8-quotes - enforce quoting, but the rule Q000 is disabled
+(see #5589).
+* `RSE` # flake8-raise - simplify raise code by remove `()` when
+obsolete.
+* `RET` # flake8-return - simplify code readability by forcing proper
+return schema.
+ * `TID` # flake8-tidy-imports - replacement for absolutify imports
+* `TRY` # tryceratops - enforce rules on exception raises like keeping
+in try only this that could raise exception (see why it could create
+problems in #5577).
+* `ICN` # flake8-import-conventions - enforce import convention for
+alias (like `import numpy as np`)
+ * `RUF`# ruff specific rules -
+
+<!-- Please delete options that are not relevant. -->
+- [x] Maintenance
+
+<!-- What resources, documentation, and guides were used in the creation
+of this PR? -->
+<!-- If this is a bug-fix or otherwise resolves an issue, reference it
+here with "closes #(issue)" -->
+
+<!-- Please describe the tests that you ran to verify your changes. -->
+- [ ] example: the test suite for my feature covers cases x, y, and z
+- [ ] example: all tests pass with my change
+- [ ] example: I check if my changes works with both PySide and PyQt
+backends
+      as there are small differences between the two Qt bindings.
+
+- [ ] My PR is the minimum possible work for the desired functionality
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] I have added tests that prove my fix is effective or that my
+feature works
+- [ ] If I included new strings, I have used `trans.` to make them
+localizable.
+For more information see our [translations
+guide](https://napari.org/developers/translations.html).
+---
+ .pre-commit-config.yaml                       | 11 +--
+ examples/action_manager.py                    |  2 +-
+ examples/add_labels_with_features.py          |  2 +-
+ examples/affine_transforms.py                 |  4 +-
+ examples/live_tiffs_.py                       |  4 +-
+ examples/magic_image_arithmetic.py            |  1 +
+ examples/magic_parameter_sweep.py             |  1 +
+ napari/__main__.py                            | 30 +++----
+ napari/_lazy.py                               |  6 +-
+ napari/_qt/__init__.py                        |  2 +-
+ napari/_qt/_qapp_model/qactions/__init__.py   |  2 +
+ napari/_qt/_tests/test_sigint_interupt.py     |  6 +-
+ napari/_qt/containers/_base_item_view.py      |  2 +-
+ napari/_qt/containers/qt_list_model.py        |  4 +-
+ napari/_qt/containers/qt_tree_model.py        |  2 +-
+ napari/_qt/dialogs/_tests/test_qt_modal.py    |  2 +-
+ napari/_qt/dialogs/qt_activity_dialog.py      |  1 +
+ napari/_qt/dialogs/qt_modal.py                |  2 +-
+ napari/_qt/dialogs/qt_notification.py         |  7 +-
+ napari/_qt/dialogs/qt_reader_dialog.py        |  1 +
+ .../layer_controls/qt_image_controls_base.py  | 18 ++--
+ napari/_qt/qt_main_window.py                  | 19 +++--
+ napari/_qt/qt_viewer.py                       |  4 +-
+ napari/_qt/utils.py                           |  4 +-
+ napari/_qt/widgets/_slider_compat.py          |  2 +-
+ .../widgets/_tests/test_qt_color_swatch.py    |  6 +-
+ napari/_qt/widgets/qt_color_swatch.py         |  5 +-
+ napari/_qt/widgets/qt_dims.py                 |  4 +-
+ napari/_qt/widgets/qt_dims_slider.py          |  7 +-
+ napari/_qt/widgets/qt_dims_sorter.py          |  4 +-
+ napari/_qt/widgets/qt_keyboard_settings.py    | 15 ++--
+ napari/_tests/test_cli.py                     |  2 +-
+ napari/_tests/test_function_widgets.py        |  1 +
+ napari/_tests/test_magicgui.py                |  2 +-
+ napari/_tests/test_notebook_display.py        |  9 +-
+ napari/_tests/test_view_layers.py             |  2 +-
+ napari/_tests/test_with_screenshot.py         | 10 +--
+ napari/_tests/utils.py                        |  2 +-
+ napari/_vispy/camera.py                       |  5 +-
+ .../_tests/test_vispy_tiled_image.py          | 10 +--
+ .../experimental/vispy_tiled_image_layer.py   |  2 +-
+ napari/_vispy/layers/base.py                  |  2 +-
+ napari/_vispy/utils/gl.py                     | 36 ++++----
+ napari/_vispy/utils/quaternion.py             |  4 +-
+ napari/_vispy/visuals/axes.py                 | 48 +++++------
+ napari/_vispy/visuals/image.py                |  6 +-
+ napari/_vispy/visuals/markers.py              |  4 +-
+ .../experimental/chunk/_commands/_loader.py   |  8 +-
+ napari/components/grid.py                     | 63 +++++++-------
+ napari/components/layerlist.py                | 82 +++++++++----------
+ napari/components/viewer_model.py             | 41 +++++-----
+ napari/conftest.py                            | 26 +++---
+ napari/layers/_layer_actions.py               |  4 +-
+ napari/layers/_tests/test_layer_attributes.py |  2 +-
+ napari/layers/base/base.py                    | 43 +++++-----
+ napari/layers/image/_image_slice.py           |  4 +-
+ .../layers/image/_tests/test_image_utils.py   |  4 +-
+ .../image/experimental/_octree_loader.py      | 26 +++---
+ napari/layers/image/experimental/octree.py    |  4 +-
+ .../layers/image/experimental/octree_level.py |  2 +-
+ napari/layers/image/image.py                  | 14 ++--
+ napari/layers/labels/_tests/test_labels.py    |  4 +-
+ napari/layers/labels/labels.py                | 20 ++---
+ napari/layers/points/_tests/test_points.py    |  6 +-
+ napari/layers/points/points.py                |  8 +-
+ napari/layers/shapes/_shape_list.py           | 48 +++++------
+ napari/layers/shapes/_shapes_models/shape.py  |  6 +-
+ napari/layers/shapes/_shapes_utils.py         |  6 +-
+ napari/layers/shapes/_tests/test_shapes.py    | 10 +--
+ .../_tests/test_shapes_mouse_bindings.py      |  2 +-
+ napari/layers/shapes/shapes.py                | 24 +++---
+ napari/layers/surface/surface.py              |  8 +-
+ napari/layers/tracks/_track_utils.py          |  7 +-
+ napari/layers/tracks/tracks.py                |  6 +-
+ napari/layers/utils/color_manager.py          | 20 ++---
+ napari/layers/utils/color_manager_utils.py    | 16 ++--
+ napari/layers/utils/interaction_box.py        |  6 +-
+ napari/layers/utils/layer_utils.py            | 23 +++---
+ napari/layers/utils/style_encoding.py         |  4 +-
+ napari/layers/vectors/vectors.py              | 72 ++++++++--------
+ napari/plugins/_npe2.py                       | 14 ++--
+ napari/plugins/_tests/test_plugins_manager.py |  2 +
+ napari/plugins/io.py                          |  6 +-
+ napari/settings/_fields.py                    |  4 +-
+ napari/types.py                               |  5 +-
+ napari/utils/_dtype.py                        |  5 +-
+ napari/utils/_proxies.py                      | 57 +++++++++++++
+ napari/utils/_register.py                     |  6 +-
+ napari/utils/_tests/test_dtype.py             |  2 +-
+ .../utils/colormaps/categorical_colormap.py   | 18 ++--
+ .../colormaps/categorical_colormap_utils.py   |  6 +-
+ napari/utils/colormaps/colorbars.py           |  2 +-
+ napari/utils/colormaps/colormap_utils.py      | 24 +++---
+ napari/utils/colormaps/standardize_color.py   | 30 +++----
+ napari/utils/colormaps/vendored/_cm_listed.py |  3 +-
+ napari/utils/colormaps/vendored/cm.py         |  6 +-
+ napari/utils/colormaps/vendored/colors.py     |  2 +-
+ napari/utils/events/containers/_dict.py       |  2 +-
+ .../utils/events/containers/_evented_dict.py  |  1 +
+ .../utils/events/containers/_evented_list.py  |  4 +-
+ .../utils/events/containers/_nested_list.py   | 27 +++---
+ .../events/containers/_selectable_list.py     |  2 +-
+ napari/utils/events/containers/_typed.py      | 15 ++--
+ napari/utils/events/debugging.py              |  2 +-
+ napari/utils/events/event.py                  | 26 +++---
+ napari/utils/events/evented_model.py          |  2 +-
+ napari/utils/info.py                          | 11 ++-
+ napari/utils/key_bindings.py                  |  2 +-
+ napari/utils/misc.py                          | 33 ++++----
+ napari/utils/perf/_config.py                  | 11 +--
+ napari/utils/perf/_patcher.py                 |  1 +
+ napari/utils/status_messages.py               |  6 +-
+ napari/utils/theme.py                         | 10 +--
+ napari/utils/transforms/transform_utils.py    | 14 ++--
+ napari/utils/transforms/transforms.py         | 20 ++---
+ napari/viewer.py                              |  7 +-
+ napari_builtins/_skimage_data.py              |  6 +-
+ napari_builtins/_tests/test_io.py             | 10 +--
+ napari_builtins/io/_read.py                   |  9 +-
+ napari_builtins/io/_write.py                  | 10 +--
+ pyproject.toml                                | 37 ++++++++-
+ tools/test_strings.py                         |  8 +-
+ 122 files changed, 760 insertions(+), 652 deletions(-)
+
+diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
+index 657df12b..09817eb4 100644
+--- a/.pre-commit-config.yaml
++++ b/.pre-commit-config.yaml
+@@ -1,9 +1,4 @@
+ repos:
+--   repo: https://github.com/MarcoGorelli/absolufy-imports
+-    rev: v0.3.1
+-    hooks:
+-    -   id: absolufy-imports
+-        exclude: _vendor|vendored|examples
+ -   repo: https://github.com/psf/black
+     rev: 23.1.0
+     hooks:
+@@ -11,16 +6,16 @@ repos:
+       pass_filenames: true
+       exclude: _vendor|vendored|examples
+ -   repo: https://github.com/charliermarsh/ruff-pre-commit
+-    rev: v0.0.253
++    rev: v0.0.256
+     hooks:
+       - id: ruff
+         exclude: _vendor|vendored
+ -   repo: https://github.com/seddonym/import-linter
+-    rev: v1.7.0
++    rev: v1.8.0
+     hooks:
+     - id: import-linter
+       stages: [manual]
+ -   repo: https://github.com/python-jsonschema/check-jsonschema
+-    rev: 0.21.0
++    rev: 0.22.0
+     hooks:
+       - id: check-github-workflows
+diff --git a/examples/action_manager.py b/examples/action_manager.py
+index dbd22221..28a1eed2 100644
+--- a/examples/action_manager.py
++++ b/examples/action_manager.py
+@@ -51,7 +51,7 @@ layer_buttons.layout().insertWidget(3, rot_button)
+ 
+ def register_action():
+     # Here we pass ViewerModel as the KeymapProvider as we want it to handle the shortcuts.
+-    # we could also pass none and bind the shortcuts at the window level – though we
++    # we could also pass none and bind the shortcuts at the window level - though we
+     # are trying to not change the KeymapProvider API too much for now.
+     # we give an action name to the action for configuration purposes as we need
+     # it to be storable in json.
+diff --git a/examples/add_labels_with_features.py b/examples/add_labels_with_features.py
+index c12a9580..1f45dbe9 100644
+--- a/examples/add_labels_with_features.py
++++ b/examples/add_labels_with_features.py
+@@ -44,7 +44,7 @@ label_features = {
+     'row': ['none']
+     + ['top'] * 4
+     + ['bottom'] * 4,  # background is row: none
+-    'size': ['none'] + list(coin_sizes),  # background is size: none
++    'size': ["none", *coin_sizes],  # background is size: none
+ }
+ 
+ color = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'}
+diff --git a/examples/affine_transforms.py b/examples/affine_transforms.py
+index 2f5572c1..48e38821 100644
+--- a/examples/affine_transforms.py
++++ b/examples/affine_transforms.py
+@@ -34,8 +34,8 @@ viewer.add_points((corners_h @ affine.T)[:, :-1], size=0.5, opacity=.5, face_col
+ # Note how the transformed corner points remain at the corners of the transformed image
+ 
+ # Now add the a regridded version of the image transformed with scipy.ndimage.affine_transform
+-# Note that we have to use the inverse of the affine as scipy does ‘pull’ (or ‘backward’) resampling,
+-# transforming the output space to the input to locate data, but napari does ‘push’ (or ‘forward’) direction,
++# Note that we have to use the inverse of the affine as scipy does `pull` (or `backward`) resampling,
++# transforming the output space to the input to locate data, but napari does `push` (or `forward`) direction,
+ # transforming input to output.
+ scipy_affine = ndi.affine_transform(image, np.linalg.inv(affine), output_shape=(10, 25), order=5)
+ viewer.add_image(scipy_affine, colormap='green', opacity=.5, name='scipy')
+diff --git a/examples/live_tiffs_.py b/examples/live_tiffs_.py
+index 92275e18..15025034 100644
+--- a/examples/live_tiffs_.py
++++ b/examples/live_tiffs_.py
+@@ -45,14 +45,14 @@ def append(delayed_image):
+         image_dtype = layer.data.dtype
+         image = da.from_delayed(
+             delayed_image, shape=image_shape, dtype=image_dtype,
+-        ).reshape((1,) + image_shape)
++        ).reshape((1, *image_shape))
+         layer.data = da.concatenate((layer.data, image), axis=0)
+     else:
+         # first run, no layer added yet
+         image = delayed_image.compute()
+         image = da.from_delayed(
+             delayed_image, shape=image.shape, dtype=image.dtype,
+-        ).reshape((1,) + image.shape)
++        ).reshape((1, *image.shape))
+         layer = viewer.add_image(image, rendering='attenuated_mip')
+ 
+     # we want to show the last file added in the viewer to do so we want to
+diff --git a/examples/magic_image_arithmetic.py b/examples/magic_image_arithmetic.py
+index 5e30be5c..afe107da 100644
+--- a/examples/magic_image_arithmetic.py
++++ b/examples/magic_image_arithmetic.py
+@@ -42,6 +42,7 @@ def image_arithmetic(
+     """Adds, subtracts, multiplies, or divides two same-shaped image layers."""
+     if layerA is not None and layerB is not None:
+         return operation.value(layerA, layerB)
++    return None
+ 
+ 
+ # create a new viewer with a couple image layers
+diff --git a/examples/magic_parameter_sweep.py b/examples/magic_parameter_sweep.py
+index 521a02f2..f3d938d7 100644
+--- a/examples/magic_parameter_sweep.py
++++ b/examples/magic_parameter_sweep.py
+@@ -38,6 +38,7 @@ def gaussian_blur(
+     """Apply a gaussian blur to ``layer``."""
+     if layer:
+         return skimage.filters.gaussian(layer.data, sigma=sigma, mode=mode)
++    return None
+ 
+ 
+ # create a viewer and add some images
+diff --git a/napari/__main__.py b/napari/__main__.py
+index 1a3f6978..1f0d5323 100644
+--- a/napari/__main__.py
++++ b/napari/__main__.py
+@@ -77,26 +77,22 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
+ 
+     out: Dict[str, Any] = {}
+     valid = set.union(*valid_add_kwargs().values())
+-    for i, arg in enumerate(unknown):
+-        if not arg.startswith("--"):
++    for i, raw_arg in enumerate(unknown):
++        if not raw_arg.startswith("--"):
+             continue
++        arg = raw_arg.lstrip('-')
+ 
+-        if "=" in arg:
+-            key, value = arg.split("=", maxsplit=1)
+-        else:
+-            key = arg
+-        key = key.lstrip('-').replace("-", "_")
+-
++        key, *value = arg.split("=", maxsplit=1)
++        key = key.replace('-', '_')
+         if key not in valid:
+-            sys.exit(f"error: unrecognized arguments: {arg}")
+-
+-        if "=" not in arg:
+-            try:
+-                value = unknown[i + 1]
+-                if value.startswith("--"):
+-                    raise IndexError()
+-            except IndexError:
+-                sys.exit(f"error: argument {arg} expected one argument")
++            sys.exit(f"error: unrecognized argument: {raw_arg}")
++
++        if value:
++            value = value[0]
++        else:
++            if len(unknown) <= i + 1 or unknown[i + 1].startswith("--"):
++                sys.exit(f"error: argument {raw_arg} expected one argument")
++            value = unknown[i + 1]
+         with contextlib.suppress(Exception):
+             value = literal_eval(value)
+ 
+diff --git a/napari/_lazy.py b/napari/_lazy.py
+index 35bd5217..413bf12a 100644
+--- a/napari/_lazy.py
++++ b/napari/_lazy.py
+@@ -40,7 +40,7 @@ def install_lazy(module_name, submodules=None, submod_attrs=None):
+ 
+         if name in submodules:
+             return import_module(f'{module_name}.{name}')
+-        elif name in attr_to_modules:
++        if name in attr_to_modules:
+             try:
+                 submod = import_module(
+                     f'{module_name}.{attr_to_modules[name]}'
+@@ -56,8 +56,8 @@ def install_lazy(module_name, submodules=None, submod_attrs=None):
+                 ) from er
+             # this is where we allow an attribute error to be raised.
+             return getattr(submod, name)
+-        else:
+-            raise AttributeError(f'No {module_name} attribute {name}')
++
++        raise AttributeError(f'No {module_name} attribute {name}')
+ 
+     def __dir__():
+         return __all__
+diff --git a/napari/_qt/__init__.py b/napari/_qt/__init__.py
+index 4e4d76cb..4416cd84 100644
+--- a/napari/_qt/__init__.py
++++ b/napari/_qt/__init__.py
+@@ -11,7 +11,7 @@ except Exception as e:
+     if 'No Qt bindings could be found' in str(e):
+         raise ImportError(
+             trans._(
+-                "No Qt bindings could be found.\n\nnapari requires either PyQt5 or PySide2 to be installed in the environment.\nTo install the default backend (currently PyQt5), run \"pip install napari[all]\" \nYou may also use \"pip install napari[pyside2]\"for Pyside2, or \"pip install napari[pyqt5]\" for PyQt5",
++                'No Qt bindings could be found.\n\nnapari requires either PyQt5 or PySide2 to be installed in the environment.\nTo install the default backend (currently PyQt5), run "pip install napari[all]" \nYou may also use "pip install napari[pyside2]"for Pyside2, or "pip install napari[pyqt5]" for PyQt5',
+                 deferred=True,
+             )
+         ) from e
+diff --git a/napari/_qt/_qapp_model/qactions/__init__.py b/napari/_qt/_qapp_model/qactions/__init__.py
+index 94539394..aa3c9ae6 100644
+--- a/napari/_qt/_qapp_model/qactions/__init__.py
++++ b/napari/_qt/_qapp_model/qactions/__init__.py
+@@ -42,11 +42,13 @@ def init_qactions() -> None:
+     def _provide_window() -> Optional[Window]:
+         if _qmainwin := _QtMainWindow.current():
+             return _qmainwin._window
++        return None
+ 
+     @store.register_provider
+     def _provide_qt_viewer() -> Optional[QtViewer]:
+         if _qmainwin := _QtMainWindow.current():
+             return _qmainwin._qt_viewer
++        return None
+ 
+     # register actions
+     for action in chain(Q_VIEW_ACTIONS, Q_HELP_ACTIONS):
+diff --git a/napari/_qt/_tests/test_sigint_interupt.py b/napari/_qt/_tests/test_sigint_interupt.py
+index b24a0fd2..507d211a 100644
+--- a/napari/_qt/_tests/test_sigint_interupt.py
++++ b/napari/_qt/_tests/test_sigint_interupt.py
+@@ -14,9 +14,9 @@ def platform_simulate_ctrl_c():
+     if hasattr(signal, "CTRL_C_EVENT"):
+         win32api = pytest.importorskip('win32api')
+         return partial(win32api.GenerateConsoleCtrlEvent, 0, 0)
+-    else:
+-        # we're not on windows
+-        return partial(os.kill, os.getpid(), signal.SIGINT)
++
++    # we're not on windows
++    return partial(os.kill, os.getpid(), signal.SIGINT)
+ 
+ 
+ @pytest.mark.skipif(os.name != "Windows", reason="Windows specific")
+diff --git a/napari/_qt/containers/_base_item_view.py b/napari/_qt/containers/_base_item_view.py
+index 313c247c..4d04c476 100644
+--- a/napari/_qt/containers/_base_item_view.py
++++ b/napari/_qt/containers/_base_item_view.py
+@@ -55,7 +55,7 @@ class _BaseEventedItemView(Generic[ItemType]):
+         """Delete items with delete key."""
+         if e.key() in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
+             self._root.remove_selected()
+-            return
++            return None
+         return super().keyPressEvent(e)
+ 
+     def currentChanged(
+diff --git a/napari/_qt/containers/qt_list_model.py b/napari/_qt/containers/qt_list_model.py
+index b80a6eeb..7d0c1bcc 100644
+--- a/napari/_qt/containers/qt_list_model.py
++++ b/napari/_qt/containers/qt_list_model.py
+@@ -75,8 +75,8 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
+ 
+             if len(moving_indices) == 1:
+                 return self._root.move(moving_indices[0], destRow)
+-            else:
+-                return bool(self._root.move_multiple(moving_indices, destRow))
++
++            return bool(self._root.move_multiple(moving_indices, destRow))
+         return False
+ 
+ 
+diff --git a/napari/_qt/containers/qt_tree_model.py b/napari/_qt/containers/qt_tree_model.py
+index af5a5bcb..03f8a475 100644
+--- a/napari/_qt/containers/qt_tree_model.py
++++ b/napari/_qt/containers/qt_tree_model.py
+@@ -159,7 +159,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
+ 
+         if isinstance(data, NodeMimeData):
+             dest_idx = self.getItem(parent).index_from_root()
+-            dest_idx = dest_idx + (destRow,)
++            dest_idx = (*dest_idx, destRow)
+             moving_indices = data.node_indices()
+ 
+             logger.debug(
+diff --git a/napari/_qt/dialogs/_tests/test_qt_modal.py b/napari/_qt/dialogs/_tests/test_qt_modal.py
+index 19fbcd4f..a790cd5f 100644
+--- a/napari/_qt/dialogs/_tests/test_qt_modal.py
++++ b/napari/_qt/dialogs/_tests/test_qt_modal.py
+@@ -44,7 +44,7 @@ class TestQtPopup:
+         with pytest.raises(ValueError):
+             popup.move_to("dummy_text")
+ 
+-        with pytest.raises(ValueError):
++        with pytest.raises(TypeError):
+             popup.move_to({})
+ 
+     @pytest.mark.parametrize("pos", [[10, 10, 10, 10], (15, 10, 10, 10)])
+diff --git a/napari/_qt/dialogs/qt_activity_dialog.py b/napari/_qt/dialogs/qt_activity_dialog.py
+index 5bb2a2b3..1d23bf9a 100644
+--- a/napari/_qt/dialogs/qt_activity_dialog.py
++++ b/napari/_qt/dialogs/qt_activity_dialog.py
+@@ -233,6 +233,7 @@ class QtActivityDialog(QDialog):
+             for potential_parent in pbars:
+                 if potential_parent.progress is prog:
+                     return potential_parent
++        return None
+ 
+     def close_progress_bar(self, prog):
+         """Close `QtLabeledProgressBar` and parent `QtProgressBarGroup` if needed
+diff --git a/napari/_qt/dialogs/qt_modal.py b/napari/_qt/dialogs/qt_modal.py
+index 61276bd2..6273b8dc 100644
+--- a/napari/_qt/dialogs/qt_modal.py
++++ b/napari/_qt/dialogs/qt_modal.py
+@@ -124,7 +124,7 @@ class QtPopup(QDialog):
+             assert len(position) == 4, '`position` argument must have length 4'
+             left, top, width, height = position
+         else:
+-            raise ValueError(
++            raise TypeError(
+                 trans._(
+                     "Wrong type of position {position}",
+                     deferred=True,
+diff --git a/napari/_qt/dialogs/qt_notification.py b/napari/_qt/dialogs/qt_notification.py
+index aa5d5d35..3dedfa29 100644
+--- a/napari/_qt/dialogs/qt_notification.py
++++ b/napari/_qt/dialogs/qt_notification.py
+@@ -362,7 +362,8 @@ class NapariQtNotification(QDialog):
+                 )
+                 tbdialog.show()
+ 
+-            actions = tuple(notification.actions) + (
++            actions = (
++                *tuple(notification.actions),
+                 (trans._('View Traceback'), show_tb),
+             )
+         else:
+@@ -417,9 +418,7 @@ class TracebackDialog(QDialog):
+         self.resize(650, 270)
+         text = QTextEdit()
+         theme = get_theme(get_settings().appearance.theme, as_dict=False)
+-        _highlight = Pylighter(  # noqa: F841
+-            text.document(), "python", theme.syntax_style
+-        )
++        _highlight = Pylighter(text.document(), "python", theme.syntax_style)
+         text.setText(exception.as_text())
+         text.setReadOnly(True)
+         self.btn = QPushButton(trans._('Enter Debugger'))
+diff --git a/napari/_qt/dialogs/qt_reader_dialog.py b/napari/_qt/dialogs/qt_reader_dialog.py
+index f9dc0713..b38c10f8 100644
+--- a/napari/_qt/dialogs/qt_reader_dialog.py
++++ b/napari/_qt/dialogs/qt_reader_dialog.py
+@@ -127,6 +127,7 @@ class QtReaderDialog(QDialog):
+         checked_btn = self.reader_btn_group.checkedButton()
+         if checked_btn:
+             return checked_btn.text()
++        return None
+ 
+     def _get_persist_choice(self):
+         """Get persistence checkbox choice"""
+diff --git a/napari/_qt/layer_controls/qt_image_controls_base.py b/napari/_qt/layer_controls/qt_image_controls_base.py
+index e5047d80..a188f86a 100644
+--- a/napari/_qt/layer_controls/qt_image_controls_base.py
++++ b/napari/_qt/layer_controls/qt_image_controls_base.py
+@@ -303,12 +303,12 @@ def range_to_decimals(range_, dtype):
+ 
+     if np.issubdtype(dtype, np.integer):
+         return 0
+-    else:
+-        # scale precision with the log of the data range order of magnitude
+-        # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
+-        #       0 - 10  (1 order of mag)  -> 2 decimals
+-        #       0 - 100 (2 orders of mag) -> 1 decimal
+-        #       ≥ 3 orders of mag -> no decimals
+-        # no more than 64 decimals
+-        d_range = np.subtract(*range_[::-1])
+-        return min(64, max(int(3 - np.log10(d_range)), 0))
++
++    # scale precision with the log of the data range order of magnitude
++    # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
++    #       0 - 10  (1 order of mag)  -> 2 decimals
++    #       0 - 100 (2 orders of mag) -> 1 decimal
++    #       ≥ 3 orders of mag -> no decimals
++    # no more than 64 decimals
++    d_range = np.subtract(*range_[::-1])
++    return min(64, max(int(3 - np.log10(d_range)), 0))
+diff --git a/napari/_qt/qt_main_window.py b/napari/_qt/qt_main_window.py
+index a8c1251c..33e40e72 100644
+--- a/napari/_qt/qt_main_window.py
++++ b/napari/_qt/qt_main_window.py
+@@ -337,6 +337,7 @@ class _QtMainWindow(QMainWindow):
+             self._qt_viewer.dims.stop()
+             return super().close()
+         self._is_close_dialog[quit_app] = True
++        return None
+         # here we inform that confirmation dialog is not open
+ 
+     def close_window(self):
+@@ -778,7 +779,7 @@ class Window:
+         """
+         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
+         if full_name in self._dock_widgets:
+-            return
++            return None
+ 
+         func = plugin_manager._function_widgets[plugin_name][widget_name]
+ 
+@@ -926,7 +927,7 @@ class Window:
+                 dock_widget.show()
+                 dock_widget.raise_()
+             elif dock_widget.area in ('right', 'left'):
+-                _wdg = current_dws_in_area + [dock_widget]
++                _wdg = [*current_dws_in_area, dock_widget]
+                 # add sizes to push lower widgets up
+                 sizes = list(range(1, len(_wdg) * 4, 4))
+                 self._qt_window.resizeDocks(
+@@ -1069,13 +1070,13 @@ class Window:
+                 allowed_areas=allowed_areas,
+                 shortcut=shortcut,
+             )
+-        else:
+-            return self.add_dock_widget(
+-                widget,
+-                name=name or function.__name__.replace('_', ' '),
+-                area=area,
+-                allowed_areas=allowed_areas,
+-            )
++
++        return self.add_dock_widget(
++            widget,
++            name=name or function.__name__.replace('_', ' '),
++            area=area,
++            allowed_areas=allowed_areas,
++        )
+ 
+     def resize(self, width, height):
+         """Resize the window.
+diff --git a/napari/_qt/qt_viewer.py b/napari/_qt/qt_viewer.py
+index 26988464..503a70c7 100644
+--- a/napari/_qt/qt_viewer.py
++++ b/napari/_qt/qt_viewer.py
+@@ -677,8 +677,8 @@ class QtViewer(QSplitter):
+                         error_messages=error_messages,
+                     )
+                 )
+-            else:
+-                update_save_history(saved[0])
++
++            update_save_history(saved[0])
+ 
+     def _update_welcome_screen(self):
+         """Update welcome screen display based on layer count."""
+diff --git a/napari/_qt/utils.py b/napari/_qt/utils.py
+index f66e248c..a3cbb8e5 100644
+--- a/napari/_qt/utils.py
++++ b/napari/_qt/utils.py
+@@ -324,9 +324,9 @@ def combine_widgets(
+         # compatibility with magicgui v0.2.0 which no longer uses QWidgets
+         # directly. Like vispy, the backend widget is at widget.native
+         return widgets.native  # type: ignore
+-    elif isinstance(widgets, QWidget):
++    if isinstance(widgets, QWidget):
+         return widgets
+-    elif is_sequence(widgets):
++    if is_sequence(widgets):
+         # the same as above, compatibility with magicgui v0.2.0
+         widgets = [
+             i.native if isinstance(getattr(i, 'native', None), QWidget) else i
+diff --git a/napari/_qt/widgets/_slider_compat.py b/napari/_qt/widgets/_slider_compat.py
+index fd4fa5d7..da5fcdb8 100644
+--- a/napari/_qt/widgets/_slider_compat.py
++++ b/napari/_qt/widgets/_slider_compat.py
+@@ -1,5 +1,5 @@
+ from qtpy import QT_VERSION
+-from qtpy.QtWidgets import QSlider  # noqa
++from qtpy.QtWidgets import QSlider
+ from superqt import QDoubleSlider
+ 
+ # here until we can debug why labeled sliders render differently on 5.12
+diff --git a/napari/_qt/widgets/_tests/test_qt_color_swatch.py b/napari/_qt/widgets/_tests/test_qt_color_swatch.py
+index fcb1b495..23d78e85 100644
+--- a/napari/_qt/widgets/_tests/test_qt_color_swatch.py
++++ b/napari/_qt/widgets/_tests/test_qt_color_swatch.py
+@@ -1,4 +1,4 @@
+-import numpy
++import numpy as np
+ import pytest
+ 
+ from napari._qt.widgets.qt_color_swatch import (
+@@ -18,7 +18,7 @@ def test_succesfull_create_qcolorswatchedit(qtbot, color, tooltip):
+     test_tooltip = tooltip or 'click to set color'
+ 
+     assert widget.color_swatch.toolTip() == test_tooltip
+-    numpy.testing.assert_array_equal(widget.color, test_color)
++    np.testing.assert_array_equal(widget.color, test_color)
+ 
+ 
+ @pytest.mark.parametrize('color', [None, [1, 1, 1, 1]])
+@@ -31,4 +31,4 @@ def test_succesfull_create_qcolorswatch(qtbot, color, tooltip):
+     test_tooltip = tooltip or 'click to set color'
+ 
+     assert widget.toolTip() == test_tooltip
+-    numpy.testing.assert_array_equal(widget.color, test_color)
++    np.testing.assert_array_equal(widget.color, test_color)
+diff --git a/napari/_qt/widgets/qt_color_swatch.py b/napari/_qt/widgets/qt_color_swatch.py
+index 3ce55644..7f4fe276 100644
+--- a/napari/_qt/widgets/qt_color_swatch.py
++++ b/napari/_qt/widgets/qt_color_swatch.py
+@@ -200,6 +200,8 @@ class QColorSwatch(QFrame):
+         self._color = _color
+         if emit or np.all(_color == TRANSPARENT):
+             self.color_changed.emit(_color)
++            return None
++        return None
+ 
+ 
+ class QColorLineEdit(QLineEdit):
+@@ -213,7 +215,7 @@ class QColorLineEdit(QLineEdit):
+ 
+     def __init__(self, parent=None) -> None:
+         super().__init__(parent)
+-        self._compl = QCompleter(list(get_color_dict()) + ['transparent'])
++        self._compl = QCompleter([*get_color_dict(), "transparent"])
+         self._compl.setCompletionMode(QCompleter.InlineCompletion)
+         self.setCompleter(self._compl)
+         self.setTextMargins(2, 2, 2, 2)
+@@ -311,3 +313,4 @@ class QColorPopup(QtPopup):
+         if event.key() == Qt.Key.Key_Escape:
+             return self.color_dialog.reject()
+         self.color_dialog.keyPressEvent(event)
++        return None
+diff --git a/napari/_qt/widgets/qt_dims.py b/napari/_qt/widgets/qt_dims.py
+index 6ef9351f..69baea67 100644
+--- a/napari/_qt/widgets/qt_dims.py
++++ b/napari/_qt/widgets/qt_dims.py
+@@ -294,8 +294,8 @@ class QtDims(QWidget):
+                     fps, loop_mode, frame_range
+                 )
+                 return
+-            else:
+-                self.stop()
++
++            self.stop()
+ 
+         # we want to avoid playing a dimension that does not have a slider
+         # (like X or Y, or a third dimension in volume view.)
+diff --git a/napari/_qt/widgets/qt_dims_slider.py b/napari/_qt/widgets/qt_dims_slider.py
+index fa4cca23..3d52e40f 100644
+--- a/napari/_qt/widgets/qt_dims_slider.py
++++ b/napari/_qt/widgets/qt_dims_slider.py
+@@ -402,7 +402,7 @@ class QtDimSliderWidget(QWidget):
+ 
+         # setting fps to 0 just stops the animation
+         if fps == 0:
+-            return
++            return None
+ 
+         worker, thread = _new_worker_qthread(
+             AnimationWorker,
+@@ -553,10 +553,11 @@ class QtPlayButton(QPushButton):
+         """Toggle play/stop animation control."""
+         qt_dims = self.qt_dims_ref()
+         if not qt_dims:  # pragma: no cover
+-            return
++            return None
+         if self.property('playing') == "True":
+             return qt_dims.stop()
+         self.play_requested.emit(self.axis)
++        return None
+ 
+     def _handle_start(self):
+         """On animation start, set playing property to True & update style."""
+@@ -654,6 +655,7 @@ class AnimationWorker(QObject):
+             return self.finish()
+         self.step = 1 if fps > 0 else -1  # negative fps plays in reverse
+         self.interval = 1000 / abs(fps)
++        return None
+ 
+     @Slot(tuple)
+     def set_frame_range(self, frame_range):
+@@ -741,6 +743,7 @@ class AnimationWorker(QObject):
+         with self.dims.events.current_step.blocker(self._on_axis_changed):
+             self.frame_requested.emit(self.axis, self.current)
+         self.timer.start()
++        return None
+ 
+     def finish(self):
+         """Emit the finished event signal."""
+diff --git a/napari/_qt/widgets/qt_dims_sorter.py b/napari/_qt/widgets/qt_dims_sorter.py
+index d7fad34c..65a27321 100644
+--- a/napari/_qt/widgets/qt_dims_sorter.py
++++ b/napari/_qt/widgets/qt_dims_sorter.py
+@@ -32,8 +32,8 @@ class AxisModel:
+     def __eq__(self, other: Union[int, str]) -> bool:
+         if isinstance(other, int):
+             return self.axis == other
+-        else:
+-            return repr(self) == other
++
++        return repr(self) == other
+ 
+ 
+ def set_dims_order(dims: Dims, order: Tuple[int, ...]):
+diff --git a/napari/_qt/widgets/qt_keyboard_settings.py b/napari/_qt/widgets/qt_keyboard_settings.py
+index ab6d3daf..ecd7b67a 100644
+--- a/napari/_qt/widgets/qt_keyboard_settings.py
++++ b/napari/_qt/widgets/qt_keyboard_settings.py
+@@ -315,11 +315,10 @@ class ShortcutEditor(QWidget):
+ 
+                 return False
+ 
+-            else:
+-                # This shortcut was here.  Reformat and reset text.
+-                format_shortcut = Shortcut(new_shortcut).platform
+-                with lock_keybind_update(self):
+-                    current_item.setText(format_shortcut)
++            # This shortcut was here.  Reformat and reset text.
++            format_shortcut = Shortcut(new_shortcut).platform
++            with lock_keybind_update(self):
++                current_item.setText(format_shortcut)
+ 
+         return True
+ 
+@@ -549,10 +548,10 @@ class EditorWidget(QLineEdit):
+         if event.type() == QEvent.Type.ShortcutOverride:
+             self.keyPressEvent(event)
+             return True
+-        elif event.type() in [QEvent.Type.KeyPress, QEvent.Type.Shortcut]:
++        if event.type() in [QEvent.Type.KeyPress, QEvent.Type.Shortcut]:
+             return True
+-        else:
+-            return super().event(event)
++
++        return super().event(event)
+ 
+     def keyPressEvent(self, event):
+         """Qt method override."""
+diff --git a/napari/_tests/test_cli.py b/napari/_tests/test_cli.py
+index 28bd2b4d..0f0d366d 100644
+--- a/napari/_tests/test_cli.py
++++ b/napari/_tests/test_cli.py
+@@ -67,7 +67,7 @@ def test_cli_raises(monkeypatch):
+         m.setattr(sys, 'argv', ['napari', 'path/to/file', '--nonsense'])
+         with pytest.raises(SystemExit) as e:
+             __main__._run()
+-        assert str(e.value) == 'error: unrecognized arguments: --nonsense'
++        assert str(e.value) == 'error: unrecognized argument: --nonsense'
+ 
+     with monkeypatch.context() as m:
+         m.setattr(sys, 'argv', ['napari', 'path/to/file', '--gamma'])
+diff --git a/napari/_tests/test_function_widgets.py b/napari/_tests/test_function_widgets.py
+index 81e4f44f..eff1cb1e 100644
+--- a/napari/_tests/test_function_widgets.py
++++ b/napari/_tests/test_function_widgets.py
+@@ -16,6 +16,7 @@ def test_add_function_widget(make_napari_viewer):
+         """Add two layers."""
+         if layerA is not None and layerB is not None:
+             return napari.layers.Image(layerA.data + layerB.data)
++        return None
+ 
+     dwidg = viewer.window.add_function_widget(image_sum)
+     assert dwidg.name == 'image sum'
+diff --git a/napari/_tests/test_magicgui.py b/napari/_tests/test_magicgui.py
+index 49bf37f3..ab2cca0e 100644
+--- a/napari/_tests/test_magicgui.py
++++ b/napari/_tests/test_magicgui.py
+@@ -20,7 +20,7 @@ if TYPE_CHECKING:
+ 
+ 
+ try:
+-    import qtpy  # noqa
++    import qtpy
+ except ModuleNotFoundError:
+     pytest.skip('Cannot test magicgui without qtpy.', allow_module_level=True)
+ except RuntimeError:
+diff --git a/napari/_tests/test_notebook_display.py b/napari/_tests/test_notebook_display.py
+index a57a5ff3..a9525641 100644
+--- a/napari/_tests/test_notebook_display.py
++++ b/napari/_tests/test_notebook_display.py
+@@ -32,7 +32,7 @@ def test_nbscreenshot(make_napari_viewer):
+         ("Good alt text", "Good alt text"),
+         # Naughty strings https://github.com/minimaxir/big-list-of-naughty-strings
+         # ASCII punctuation
+-        (r",./;'[]\-=", ',./;&#x27;[]\\-='),  # noqa: W605
++        (r",./;'[]\-=", ',./;&#x27;[]\\-='),
+         # ASCII punctuation 2, skipping < because that is interpreted as the start
+         # of an HTML element.
+         ('>?:"{}|_+', '&gt;?:&quot;{}|_+'),
+@@ -40,10 +40,13 @@ def test_nbscreenshot(make_napari_viewer):
+         # # Emojis
+         ("😍", "😍"),  # emoji 1
+         ("👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️", "👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️"),  # emoji 2
+-        (r"¯\_(ツ)_/¯", '¯\\_(ツ)_/¯'),  # Japanese emoticon  # noqa: W605
++        (r"¯\_(ツ)_/¯", '¯\\_(ツ)_/¯'),  # Japanese emoticon
+         # # Special characters
+         ("田中さんにあげて下さい", "田中さんにあげて下さい"),  # two-byte characters
+-        ("表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀", "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀"),  # special unicode chars
++        (
++            "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀",  # noqa: RUF001
++            "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀",  # noqa: RUF001
++        ),  # special unicode chars
+         ("گچپژ", "گچپژ"),  # Persian special characters
+         # # Script injection
+         ("<script>alert(0)</script>", None),  # script injection 1
+diff --git a/napari/_tests/test_view_layers.py b/napari/_tests/test_view_layers.py
+index 5d9ff030..890f6bfe 100644
+--- a/napari/_tests/test_view_layers.py
++++ b/napari/_tests/test_view_layers.py
+@@ -97,7 +97,7 @@ def test_docstring(layer):
+         assert method_returns == (
+             'layer',
+             f':class:`napari.layers.{name}` or list',
+-            f'The newly-created {name.lower()} layer or list of {name.lower()} layers.',  # noqa: E501
++            f'The newly-created {name.lower()} layer or list of {name.lower()} layers.',
+         ), f"improper 'Returns' section of '{method_name}'"
+     else:
+         assert method_returns == (
+diff --git a/napari/_tests/test_with_screenshot.py b/napari/_tests/test_with_screenshot.py
+index 10f51390..2cf78425 100644
+--- a/napari/_tests/test_with_screenshot.py
++++ b/napari/_tests/test_with_screenshot.py
+@@ -198,23 +198,23 @@ def test_changing_image_gamma(make_napari_viewer):
+ 
+     screenshot = viewer.screenshot(canvas_only=True, flash=False)
+     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+-    assert 127 <= screenshot[center + (0,)] <= 129
++    assert 127 <= screenshot[(*center, 0)] <= 129
+ 
+     layer.gamma = 0.1
+     screenshot = viewer.screenshot(canvas_only=True, flash=False)
+-    assert screenshot[center + (0,)] > 230
++    assert screenshot[(*center, 0)] > 230
+ 
+     viewer.dims.ndisplay = 3
+     screenshot = viewer.screenshot(canvas_only=True, flash=False)
+-    assert screenshot[center + (0,)] > 230
++    assert screenshot[(*center, 0)] > 230
+ 
+     layer.gamma = 1.9
+     screenshot = viewer.screenshot(canvas_only=True, flash=False)
+-    assert screenshot[center + (0,)] < 80
++    assert screenshot[(*center, 0)] < 80
+ 
+     viewer.dims.ndisplay = 2
+     screenshot = viewer.screenshot(canvas_only=True, flash=False)
+-    assert screenshot[center + (0,)] < 80
++    assert screenshot[(*center, 0)] < 80
+ 
+ 
+ @skip_on_win_ci
+diff --git a/napari/_tests/utils.py b/napari/_tests/utils.py
+index dd44f6ba..2cbb7dc0 100644
+--- a/napari/_tests/utils.py
++++ b/napari/_tests/utils.py
+@@ -205,7 +205,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
+         corresponding to the array of property values
+     """
+     if layer.multiscale:
+-        return None
++        return
+ 
+     # Get an handle on visual layer:
+     vis_lyr = viewer.window._qt_viewer.layer_to_visual[layer]
+diff --git a/napari/_vispy/camera.py b/napari/_vispy/camera.py
+index 5b50b124..81a39f12 100644
+--- a/napari/_vispy/camera.py
++++ b/napari/_vispy/camera.py
+@@ -80,10 +80,9 @@ class VispyCamera:
+             center = tuple(self._view.camera.center)
+         else:
+             # in 2D, we arbitrarily choose 0.0 as the center in z
+-            center = tuple(self._view.camera.center[:2]) + (0.0,)
++            center = (*self._view.camera.center[:2], 0.0)
+         # switch from VisPy xyz ordering to NumPy prc ordering
+-        center = center[::-1]
+-        return center
++        return center[::-1]
+ 
+     @center.setter
+     def center(self, center):
+diff --git a/napari/_vispy/experimental/_tests/test_vispy_tiled_image.py b/napari/_vispy/experimental/_tests/test_vispy_tiled_image.py
+index 1761537d..e099e3a4 100644
+--- a/napari/_vispy/experimental/_tests/test_vispy_tiled_image.py
++++ b/napari/_vispy/experimental/_tests/test_vispy_tiled_image.py
+@@ -57,7 +57,7 @@ def test_tiled_screenshot(qtbot, monkeypatch, make_napari_viewer, dtype):
+ 
+     # Take the screenshot
+     screenshot = viewer.screenshot(canvas_only=True, flash=False)
+-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
++    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
+     target_center = np.array([0, 0, 128, 255], dtype='uint8')
+     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
+     screen_offset = 3  # Offset is needed as our screenshots have black borders
+@@ -98,7 +98,7 @@ def test_tiled_rgb(qtbot, monkeypatch, make_napari_viewer):
+ 
+     # Take the screenshot
+     screenshot = viewer.screenshot(canvas_only=True, flash=False)
+-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
++    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
+     target_center = np.array([128, 128, 128, 255], dtype='uint8')
+     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
+     screen_offset = 3  # Offset is needed as our screenshots have black borders
+@@ -144,7 +144,7 @@ def test_tiled_changing_contrast_limits(
+ 
+     # Take the screenshot
+     screenshot = viewer.screenshot(canvas_only=True, flash=False)
+-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
++    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
+     target_center = np.array([0, 0, 255, 255], dtype='uint8')
+     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
+     screen_offset = 3  # Offset is needed as our screenshots have black borders
+@@ -198,7 +198,7 @@ def test_tiled_single_scale(qtbot, monkeypatch, make_napari_viewer):
+ 
+     # Take the screenshot
+     screenshot = viewer.screenshot(canvas_only=True, flash=False)
+-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
++    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
+     target_center = np.array([128, 128, 128, 255], dtype='uint8')
+     screen_offset = 3  # Offset is needed as our screenshots have black borders
+ 
+@@ -239,7 +239,7 @@ def test_tiled_labels(qtbot, monkeypatch, make_napari_viewer):
+ 
+     # Take the screenshot
+     screenshot = viewer.screenshot(canvas_only=True, flash=False)
+-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
++    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
+     col = layer.get_color(1)
+     target_center = np.array([c * 255 for c in col], dtype='uint8')
+     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
+diff --git a/napari/_vispy/experimental/vispy_tiled_image_layer.py b/napari/_vispy/experimental/vispy_tiled_image_layer.py
+index 90eaaff8..6623c3ef 100644
+--- a/napari/_vispy/experimental/vispy_tiled_image_layer.py
++++ b/napari/_vispy/experimental/vispy_tiled_image_layer.py
+@@ -118,7 +118,7 @@ class VispyTiledImageLayer(VispyImageLayer):
+         NotImplementedError
+             Always raises this.
+         """
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     def _update_tile_shape(self) -> None:
+         """If the tile shape was changed, update our node."""
+diff --git a/napari/_vispy/layers/base.py b/napari/_vispy/layers/base.py
+index 2f6841ae..f832991f 100644
+--- a/napari/_vispy/layers/base.py
++++ b/napari/_vispy/layers/base.py
+@@ -111,7 +111,7 @@ class VispyBaseLayer(ABC):
+ 
+     @abstractmethod
+     def _on_data_change(self):
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     def _on_refresh_change(self):
+         self.node.update()
+diff --git a/napari/_vispy/utils/gl.py b/napari/_vispy/utils/gl.py
+index a405181e..56fd395b 100644
+--- a/napari/_vispy/utils/gl.py
++++ b/napari/_vispy/utils/gl.py
+@@ -94,24 +94,24 @@ def fix_data_dtype(data):
+     dtype = np.dtype(data.dtype)
+     if dtype in texture_dtypes:
+         return data
+-    else:
+-        try:
+-            dtype = {
+-                "i": np.float32,
+-                "f": np.float32,
+-                "u": np.uint16,
+-                "b": np.uint8,
+-            }[dtype.kind]
+-        except KeyError as e:  # not an int or float
+-            raise TypeError(
+-                trans._(
+-                    'type {dtype} not allowed for texture; must be one of {textures}',  # noqa: E501
+-                    deferred=True,
+-                    dtype=dtype,
+-                    textures=set(texture_dtypes),
+-                )
+-            ) from e
+-        return data.astype(dtype)
++
++    try:
++        dtype = {
++            "i": np.float32,
++            "f": np.float32,
++            "u": np.uint16,
++            "b": np.uint8,
++        }[dtype.kind]
++    except KeyError as e:  # not an int or float
++        raise TypeError(
++            trans._(
++                'type {dtype} not allowed for texture; must be one of {textures}',
++                deferred=True,
++                dtype=dtype,
++                textures=set(texture_dtypes),
++            )
++        ) from e
++    return data.astype(dtype)
+ 
+ 
+ # blend_func parameters are multiplying:
+diff --git a/napari/_vispy/utils/quaternion.py b/napari/_vispy/utils/quaternion.py
+index b7bdd218..b362cd46 100644
+--- a/napari/_vispy/utils/quaternion.py
++++ b/napari/_vispy/utils/quaternion.py
+@@ -53,5 +53,5 @@ def quaternion2euler(quaternion, degrees=False):
+ 
+     if degrees:
+         return tuple(np.degrees(angles))
+-    else:
+-        return angles
++
++    return angles
+diff --git a/napari/_vispy/visuals/axes.py b/napari/_vispy/visuals/axes.py
+index 70781019..bd7e5e37 100644
+--- a/napari/_vispy/visuals/axes.py
++++ b/napari/_vispy/visuals/axes.py
+@@ -64,19 +64,19 @@ def color_lines(colors):
+             [[colors[0]] * 2, [colors[1]] * 2],
+             axis=0,
+         )
+-    elif len(colors) == 3:
++    if len(colors) == 3:
+         return np.concatenate(
+             [[colors[0]] * 2, [colors[1]] * 2, [colors[2]] * 2],
+             axis=0,
+         )
+-    else:
+-        return ValueError(
+-            trans._(
+-                'Either 2 or 3 colors must be provided, got {number}.',
+-                deferred=True,
+-                number=len(colors),
+-            )
++
++    return ValueError(
++        trans._(
++            'Either 2 or 3 colors must be provided, got {number}.',
++            deferred=True,
++            number=len(colors),
+         )
++    )
+ 
+ 
+ def color_dashed_lines(colors):
+@@ -85,19 +85,19 @@ def color_dashed_lines(colors):
+             [[colors[0]] * 2, [colors[1]] * 4 * 2],
+             axis=0,
+         )
+-    elif len(colors) == 3:
++    if len(colors) == 3:
+         return np.concatenate(
+             [[colors[0]] * 2, [colors[1]] * 4 * 2, [colors[2]] * 8 * 2],
+             axis=0,
+         )
+-    else:
+-        return ValueError(
+-            trans._(
+-                'Either 2 or 3 colors must be provided, got {number}.',
+-                deferred=True,
+-                number=len(colors),
+-            )
++
++    return ValueError(
++        trans._(
++            'Either 2 or 3 colors must be provided, got {number}.',
++            deferred=True,
++            number=len(colors),
+         )
++    )
+ 
+ 
+ def color_arrowheads(colors, num_segments):
+@@ -106,7 +106,7 @@ def color_arrowheads(colors, num_segments):
+             [[colors[0]] * num_segments, [colors[1]] * num_segments],
+             axis=0,
+         )
+-    elif len(colors) == 3:
++    if len(colors) == 3:
+         return np.concatenate(
+             [
+                 [colors[0]] * num_segments,
+@@ -115,14 +115,14 @@ def color_arrowheads(colors, num_segments):
+             ],
+             axis=0,
+         )
+-    else:
+-        return ValueError(
+-            trans._(
+-                'Either 2 or 3 colors must be provided, got {number}.',
+-                deferred=True,
+-                number=len(colors),
+-            )
++
++    return ValueError(
++        trans._(
++            'Either 2 or 3 colors must be provided, got {number}.',
++            deferred=True,
++            number=len(colors),
+         )
++    )
+ 
+ 
+ class Axes(Compound):
+diff --git a/napari/_vispy/visuals/image.py b/napari/_vispy/visuals/image.py
+index 668e5ae2..533fb305 100644
+--- a/napari/_vispy/visuals/image.py
++++ b/napari/_vispy/visuals/image.py
+@@ -6,7 +6,7 @@ class Image(BaseImage):
+     def _compute_bounds(self, axis, view):
+         if self._data is None:
+             return None
+-        elif axis > 1:
++        if axis > 1:
+             return (0, 0)
+-        else:
+-            return (0, self.size[axis])
++
++        return (0, self.size[axis])
+diff --git a/napari/_vispy/visuals/markers.py b/napari/_vispy/visuals/markers.py
+index 03c7ec35..41d55cc6 100644
+--- a/napari/_vispy/visuals/markers.py
++++ b/napari/_vispy/visuals/markers.py
+@@ -33,8 +33,8 @@ class Markers(BaseMarkers):
+             return None
+         if pos.shape[1] > axis:
+             return (pos[:, axis].min(), pos[:, axis].max())
+-        else:
+-            return (0, 0)
++
++        return (0, 0)
+ 
+     @property
+     def canvas_size_limits(self):
+diff --git a/napari/components/experimental/chunk/_commands/_loader.py b/napari/components/experimental/chunk/_commands/_loader.py
+index 9977a410..4d3e51da 100644
+--- a/napari/components/experimental/chunk/_commands/_loader.py
++++ b/napari/components/experimental/chunk/_commands/_loader.py
+@@ -1,6 +1,6 @@
+ """LoaderCommands class and helpers.
+ """
+-from typing import List
++from typing import List, Optional
+ 
+ from napari._vendor.experimental.humanize.src.humanize import naturalsize
+ from napari.components.experimental.chunk._commands._tables import (
+@@ -89,7 +89,7 @@ def _get_shape_str(layer):
+ 
+     data = layer.data
+     if isinstance(data, list):
+-        if len(data) == 0:
++        if not data:
+             return "NONE"  # Shape layer is empty list?
+         return f"{data[0].shape}"  # Multi-scale
+ 
+@@ -212,7 +212,7 @@ class LevelsTable:
+         data = layer.data
+         if isinstance(data, list):
+             for i, level in enumerate(data):
+-                shape_str = level.shape if level.shape else "NONE"
++                shape_str = level.shape or "NONE"
+                 size_str = naturalsize(level.nbytes, gnu=True)
+                 self.table.add_row([i, shape_str, size_str])
+ 
+@@ -281,7 +281,7 @@ class LoaderCommands:
+             print(f"Layer index {layer_index} is invalid.")
+             return None
+ 
+-    def _get_layer_info(self, layer_index) -> LayerInfo:
++    def _get_layer_info(self, layer_index) -> Optional[LayerInfo]:
+         """Return the LayerInfo at this index."""
+         layer = self._get_layer(layer_index)
+ 
+diff --git a/napari/components/grid.py b/napari/components/grid.py
+index 5305270c..f60c4fc4 100644
+--- a/napari/components/grid.py
++++ b/napari/components/grid.py
+@@ -54,27 +54,28 @@ class GridCanvas(EventedModel):
+         shape : 2-tuple of int
+             Number of rows and columns in the grid.
+         """
+-        if self.enabled:
+-            if nlayers == 0:
+-                return (1, 1)
+-            n_row, n_column = self.shape
+-            n_grid_squares = np.ceil(nlayers / abs(self.stride)).astype(int)
+-
+-            if n_row == -1 and n_column == -1:
+-                n_column = np.ceil(np.sqrt(n_grid_squares)).astype(int)
+-                n_row = np.ceil(n_grid_squares / n_column).astype(int)
+-            elif n_row == -1:
+-                n_row = np.ceil(n_grid_squares / n_column).astype(int)
+-            elif n_column == -1:
+-                n_column = np.ceil(n_grid_squares / n_row).astype(int)
+-
+-            n_row = max(1, n_row)
+-            n_column = max(1, n_column)
+-
+-            return (n_row, n_column)
+-        else:
++        if not self.enabled:
+             return (1, 1)
+ 
++        if nlayers == 0:
++            return (1, 1)
++
++        n_row, n_column = self.shape
++        n_grid_squares = np.ceil(nlayers / abs(self.stride)).astype(int)
++
++        if n_row == -1 and n_column == -1:
++            n_column = np.ceil(np.sqrt(n_grid_squares)).astype(int)
++            n_row = np.ceil(n_grid_squares / n_column).astype(int)
++        elif n_row == -1:
++            n_row = np.ceil(n_grid_squares / n_column).astype(int)
++        elif n_column == -1:
++            n_column = np.ceil(n_grid_squares / n_row).astype(int)
++
++        n_row = max(1, n_row)
++        n_column = max(1, n_column)
++
++        return (n_row, n_column)
++
+     def position(self, index: int, nlayers: int) -> Tuple[int, int]:
+         """Return the position of a given linear index in grid.
+ 
+@@ -92,16 +93,16 @@ class GridCanvas(EventedModel):
+         position : 2-tuple of int
+             Row and column position of current index in the grid.
+         """
+-        if self.enabled:
+-            n_row, n_column = self.actual_shape(nlayers)
+-
+-            # Adjust for forward or reverse ordering
+-            adj_i = nlayers - index - 1 if self.stride < 0 else index
+-
+-            adj_i = adj_i // abs(self.stride)
+-            adj_i = adj_i % (n_row * n_column)
+-            i_row = adj_i // n_column
+-            i_column = adj_i % n_column
+-            return (i_row, i_column)
+-        else:
++        if not self.enabled:
+             return (0, 0)
++
++        n_row, n_column = self.actual_shape(nlayers)
++
++        # Adjust for forward or reverse ordering
++        adj_i = nlayers - index - 1 if self.stride < 0 else index
++
++        adj_i = adj_i // abs(self.stride)
++        adj_i = adj_i % (n_row * n_column)
++        i_row = adj_i // n_column
++        i_column = adj_i % n_column
++        return (i_row, i_column)
+diff --git a/napari/components/layerlist.py b/napari/components/layerlist.py
+index ef777e4f..4d860642 100644
+--- a/napari/components/layerlist.py
++++ b/napari/components/layerlist.py
+@@ -308,47 +308,47 @@ class LayerList(SelectableEventedList[Layer]):
+         """
+         if len(self) == 0:
+             return [(0, 1, 1)] * self.ndim
+-        else:
+-            # Determine minimum step size across all layers
+-            layer_extent_list = [layer.extent for layer in self]
+-            scales = [extent.step for extent in layer_extent_list]
+-            min_steps = self._step_size_from_scales(scales)
+-
+-            # Pixel-based layers need to be offset by 0.5 * min_steps to align
+-            # Dims.range with pixel centers in world coordinates
+-            pixel_offsets = [
+-                0.5 * min_steps
+-                if isinstance(layer, _ImageBase)
+-                else [0] * len(min_steps)
+-                for layer in self
+-            ]
+-
+-            # Non-pixel layers need an offset of the range stop by min_steps since the upper
+-            # limit of Dims.range is non-inclusive.
+-            point_offsets = [
+-                [0] * len(min_steps)
+-                if isinstance(layer, _ImageBase)
+-                else min_steps
+-                for layer in self
+-            ]
+-
+-            # Determine world coordinate extents similarly to
+-            # `_get_extent_world`, but including offsets calculated above.
+-            extrema = [extent.world for extent in layer_extent_list]
+-            mins = [
+-                e[0] + o1[: len(e[0])] for e, o1 in zip(extrema, pixel_offsets)
+-            ]
+-            maxs = [
+-                e[1] + o1[: len(e[0])] + o2[: len(e[0])]
+-                for e, o1, o2 in zip(extrema, pixel_offsets, point_offsets)
+-            ]
+-            min_v, max_v = self._get_min_and_max(mins, maxs)
+ 
+-            # form range tuples, switching back to original dimension order
+-            return [
+-                (start, stop, step)
+-                for start, stop, step in zip(min_v, max_v, min_steps)
+-            ]
++        # Determine minimum step size across all layers
++        layer_extent_list = [layer.extent for layer in self]
++        scales = [extent.step for extent in layer_extent_list]
++        min_steps = self._step_size_from_scales(scales)
++
++        # Pixel-based layers need to be offset by 0.5 * min_steps to align
++        # Dims.range with pixel centers in world coordinates
++        pixel_offsets = [
++            0.5 * min_steps
++            if isinstance(layer, _ImageBase)
++            else [0] * len(min_steps)
++            for layer in self
++        ]
++
++        # Non-pixel layers need an offset of the range stop by min_steps since the upper
++        # limit of Dims.range is non-inclusive.
++        point_offsets = [
++            [0] * len(min_steps)
++            if isinstance(layer, _ImageBase)
++            else min_steps
++            for layer in self
++        ]
++
++        # Determine world coordinate extents similarly to
++        # `_get_extent_world`, but including offsets calculated above.
++        extrema = [extent.world for extent in layer_extent_list]
++        mins = [
++            e[0] + o1[: len(e[0])] for e, o1 in zip(extrema, pixel_offsets)
++        ]
++        maxs = [
++            e[1] + o1[: len(e[0])] + o2[: len(e[0])]
++            for e, o1, o2 in zip(extrema, pixel_offsets, point_offsets)
++        ]
++        min_v, max_v = self._get_min_and_max(mins, maxs)
++
++        # form range tuples, switching back to original dimension order
++        return [
++            (start, stop, step)
++            for start, stop, step in zip(min_v, max_v, min_steps)
++        ]
+ 
+     @property
+     def ndim(self) -> int:
+@@ -433,7 +433,7 @@ class LayerList(SelectableEventedList[Layer]):
+         If ``plugin`` is provided and multiple layers are targeted, then
+         we call we call
+         :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
+-        that plugin, and if it doesn’t return a ``WriterFunction`` we error,
++        that plugin, and if it doesn`t return a ``WriterFunction`` we error,
+         otherwise we call it and if that fails if it we error.
+ 
+         Parameters
+diff --git a/napari/components/viewer_model.py b/napari/components/viewer_model.py
+index c672cf74..0977535a 100644
+--- a/napari/components/viewer_model.py
++++ b/napari/components/viewer_model.py
+@@ -323,8 +323,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+             return np.vstack(
+                 [np.zeros(self.dims.ndim), np.repeat(512, self.dims.ndim)]
+             )
+-        else:
+-            return self.layers.extent.world[:, self.dims.displayed]
++
++        return self.layers.extent.world[:, self.dims.displayed]
+ 
+     def reset_view(self):
+         """Reset the camera view."""
+@@ -870,16 +870,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+             self.layers.append(layer)
+ 
+             return layer
+-        else:
+-            layerdata_list = split_channels(data, channel_axis, **kwargs)
+ 
+-            layer_list = []
+-            for image, i_kwargs, _ in layerdata_list:
+-                layer = Image(image, **i_kwargs)
+-                self.layers.append(layer)
+-                layer_list.append(layer)
++        layerdata_list = split_channels(data, channel_axis, **kwargs)
++
++        layer_list = [
++            Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
++        ]
++        self.layers.extend(layer_list)
+ 
+-            return layer_list
++        return layer_list
+ 
+     def open_sample(
+         self,
+@@ -963,18 +962,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+                 for datum in data(**kwargs):
+                     added.extend(self._add_layer_from_data(*datum))
+                 return added
+-            elif isinstance(data, (str, Path)):
++            if isinstance(data, (str, Path)):
+                 return self.open(data, plugin=reader_plugin)
+-            else:
+-                raise TypeError(
+-                    trans._(
+-                        'Got unexpected type for sample ({plugin!r}, {sample!r}): {data_type}',
+-                        deferred=True,
+-                        plugin=plugin,
+-                        sample=sample,
+-                        data_type=type(data),
+-                    )
++
++            raise TypeError(
++                trans._(
++                    'Got unexpected type for sample ({plugin!r}, {sample!r}): {data_type}',
++                    deferred=True,
++                    plugin=plugin,
++                    sample=sample,
++                    data_type=type(data),
+                 )
++            )
+ 
+     def open(
+         self,
+@@ -1365,7 +1364,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+             layer = add_method(data, **(meta or {}))
+         except TypeError as exc:
+             if 'unexpected keyword argument' not in str(exc):
+-                raise exc
++                raise
+             bad_key = str(exc).split('keyword argument ')[-1]
+             raise TypeError(
+                 trans._(
+diff --git a/napari/conftest.py b/napari/conftest.py
+index 9062f927..6309368a 100644
+--- a/napari/conftest.py
++++ b/napari/conftest.py
+@@ -135,13 +135,13 @@ def layer(request):
+     if request.param == 'image':
+         data = np.random.rand(20, 20)
+         return Image(data)
+-    elif request.param == 'labels':
++    if request.param == 'labels':
+         data = np.random.randint(10, size=(20, 20))
+         return Labels(data)
+-    elif request.param == 'points':
++    if request.param == 'points':
+         data = np.random.rand(20, 2)
+         return Points(data)
+-    elif request.param == 'shapes':
++    if request.param == 'shapes':
+         data = [
+             np.random.rand(2, 2),
+             np.random.rand(2, 2),
+@@ -151,14 +151,14 @@ def layer(request):
+         ]
+         shape_type = ['ellipse', 'line', 'path', 'polygon', 'rectangle']
+         return Shapes(data, shape_type=shape_type)
+-    elif request.param == 'shapes-rectangles':
++    if request.param == 'shapes-rectangles':
+         data = np.random.rand(7, 4, 2)
+         return Shapes(data)
+-    elif request.param == 'vectors':
++    if request.param == 'vectors':
+         data = np.random.rand(20, 2, 2)
+         return Vectors(data)
+-    else:
+-        return None
++
++    return None
+ 
+ 
+ @pytest.fixture()
+@@ -208,11 +208,11 @@ def _is_async_mode() -> bool:
+     """
+     if not async_loading:
+         return False  # Not enabled at all.
+-    else:
+-        # Late import so we don't import experimental code unless using it.
+-        from napari.components.experimental.chunk import chunk_loader
+ 
+-        return not chunk_loader.force_synchronous
++    # Late import so we don't import experimental code unless using it.
++    from napari.components.experimental.chunk import chunk_loader
++
++    return not chunk_loader.force_synchronous
+ 
+ 
+ @pytest.fixture(autouse=True)
+@@ -319,8 +319,8 @@ def napari_svg_name():
+ 
+     if parse_version(version('napari-svg')) < parse_version('0.1.6'):
+         return 'svg'
+-    else:
+-        return 'napari-svg'
++
++    return 'napari-svg'
+ 
+ 
+ @pytest.fixture(autouse=True, scope='session')
+diff --git a/napari/layers/_layer_actions.py b/napari/layers/_layer_actions.py
+index e6301d16..df325d96 100644
+--- a/napari/layers/_layer_actions.py
++++ b/napari/layers/_layer_actions.py
+@@ -133,8 +133,8 @@ def _convert_dtype(ll: LayerList, mode='int64'):
+                 deferred=True,
+             )
+         )
+-    else:
+-        layer.data = layer.data.astype(np.dtype(mode))
++
++    layer.data = layer.data.astype(np.dtype(mode))
+ 
+ 
+ def _project(ll: LayerList, axis: int = 0, mode='max'):
+diff --git a/napari/layers/_tests/test_layer_attributes.py b/napari/layers/_tests/test_layer_attributes.py
+index 3d55893d..b70320f0 100644
+--- a/napari/layers/_tests/test_layer_attributes.py
++++ b/napari/layers/_tests/test_layer_attributes.py
+@@ -76,7 +76,7 @@ def _check_subpixel_values(layer, val_dict):
+                 view_direction = None
+                 dims_displayed = None
+                 if ndisplay == 3:
+-                    position = [0] + position
++                    position = [0, *position]
+                     if isinstance(layer, Labels):
+                         # Labels implements _get_value_3d, Image does not
+                         view_direction = np.asarray([1.0, 0, 0])
+diff --git a/napari/layers/base/base.py b/napari/layers/base/base.py
+index 1f38a868..418c434b 100644
+--- a/napari/layers/base/base.py
++++ b/napari/layers/base/base.py
+@@ -71,7 +71,7 @@ def no_op(layer: Layer, event: Event) -> None:
+     None
+ 
+     """
+-    return None
++    return
+ 
+ 
+ @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
+@@ -748,12 +748,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+     @abstractmethod
+     def data(self):
+         # user writes own docstring
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     @data.setter
+     @abstractmethod
+     def data(self, data):
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     @property
+     @abstractmethod
+@@ -764,7 +764,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+         -------
+         extent_data : array, shape (2, D)
+         """
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     @property
+     def _extent_world(self) -> np.ndarray:
+@@ -818,7 +818,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+ 
+     @abstractmethod
+     def _get_ndim(self):
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     def _get_base_state(self):
+         """Get dictionary of attributes on base layer.
+@@ -847,7 +847,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+ 
+     @abstractmethod
+     def _get_state(self):
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     @property
+     def _type_string(self):
+@@ -973,7 +973,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+ 
+     @abstractmethod
+     def _set_view_slice(self):
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     def _slice_dims(self, point=None, ndisplay=2, order=None):
+         """Slice data with values from a global dims model.
+@@ -1024,7 +1024,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+ 
+     @abstractmethod
+     def _update_thumbnail(self):
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     @abstractmethod
+     def _get_value(self, position):
+@@ -1040,7 +1040,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+         value : tuple
+             Value of the data.
+         """
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     def get_value(
+         self,
+@@ -1122,7 +1122,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+         start_point: np.ndarray,
+         end_point: np.ndarray,
+         dims_displayed: List[int],
+-    ) -> Union[float, int]:
++    ) -> Union[
++        float, int, None, Tuple[Union[float, int, None], Optional[int]]
++    ]:
+         """Get the layer data value along a ray
+ 
+         Parameters
+@@ -1138,9 +1140,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+         -------
+         value
+             The data value along the supplied ray.
+-
+         """
+-        return None
+ 
+     def projected_distance_from_mouse_drag(
+         self,
+@@ -1362,8 +1362,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+         order = np.array(world_dims)
+         if offset <= 0:
+             return list(range(-offset)) + list(order - offset)
+-        else:
+-            return list(order[order >= offset] - offset)
++
++        return list(order[order >= offset] - offset)
+ 
+     def _display_bounding_box(self, dims_displayed: np.ndarray):
+         """An axis aligned (ndisplay, 2) bounding box around the data"""
+@@ -1635,7 +1635,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+                 components['plugin'] = self.source.reader_plugin
+             return components
+ 
+-        elif self.source.sample:
++        if self.source.sample:
+             components['layer_base'] = self.name
+             components['source_type'] = 'sample'
+             try:
+@@ -1646,17 +1646,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+                 components['plugin'] = self.source.sample[0]
+             return components
+ 
+-        elif self.source.widget:
++        if self.source.widget:
+             components['layer_base'] = self.name
+             components['source_type'] = 'widget'
+             components['plugin'] = self.source.widget._function.__name__
+             return components
+ 
+-        else:
+-            components['layer_base'] = self.name
+-            components['source_type'] = ''
+-            components['plugin'] = ''
+-            return components
++        components['layer_base'] = self.name
++        components['source_type'] = ''
++        components['plugin'] = ''
++        return components
+ 
+     def get_source_str(self):
+         source_info = self._get_source_info()
+@@ -1851,7 +1850,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
+             return Cls(data, **(meta or {}))
+         except Exception as exc:  # noqa: BLE001
+             if 'unexpected keyword argument' not in str(exc):
+-                raise exc
++                raise
+ 
+             bad_key = str(exc).split('keyword argument ')[-1]
+             raise TypeError(
+diff --git a/napari/layers/image/_image_slice.py b/napari/layers/image/_image_slice.py
+index e5b0bdcc..950a3e51 100644
+--- a/napari/layers/image/_image_slice.py
++++ b/napari/layers/image/_image_slice.py
+@@ -32,8 +32,8 @@ def _create_loader_class() -> ImageLoader:
+         )
+ 
+         return ChunkedImageLoader()
+-    else:
+-        return ImageLoader()
++
++    return ImageLoader()
+ 
+ 
+ class ImageSlice:
+diff --git a/napari/layers/image/_tests/test_image_utils.py b/napari/layers/image/_tests/test_image_utils.py
+index 37578abe..08e78bcb 100644
+--- a/napari/layers/image/_tests/test_image_utils.py
++++ b/napari/layers/image/_tests/test_image_utils.py
+@@ -84,9 +84,7 @@ def test_guess_multiscale_strip_single_scale():
+ 
+ def test_guess_multiscale_non_array_list():
+     """Check that non-decreasing list input raises ValueError"""
+-    data = [
+-        np.empty((10, 15, 6)),
+-    ] * 2  # noqa: E231
++    data = [np.empty((10, 15, 6))] * 2
+     with pytest.raises(ValueError):
+         _, _ = guess_multiscale(data)
+ 
+diff --git a/napari/layers/image/experimental/_octree_loader.py b/napari/layers/image/experimental/_octree_loader.py
+index 79a2d1ec..70130c01 100644
+--- a/napari/layers/image/experimental/_octree_loader.py
++++ b/napari/layers/image/experimental/_octree_loader.py
+@@ -233,14 +233,14 @@ class OctreeLoader:
+             best_ancestor_index = level_indices.index(min(level_indices))
+             # Take the last common ancestor which will be the most recent
+             return [common_ancestors[best_ancestor_index]]
+-        else:
+-            # No in memory common ancestors were found so return the root tile.
+-            # We say create=True because the root is not part of the current
+-            # intersection. However since it's permanent once created and
+-            # loaded it should always be available. As long as we don't garbage
+-            # collect it!
+-            root_tile = self._octree.levels[-1].get_chunk(0, 0, create=True)
+-            return [root_tile]
++
++        # No in memory common ancestors were found so return the root tile.
++        # We say create=True because the root is not part of the current
++        # intersection. However since it's permanent once created and
++        # loaded it should always be available. As long as we don't garbage
++        # collect it!
++        root_tile = self._octree.levels[-1].get_chunk(0, 0, create=True)
++        return [root_tile]
+ 
+     def _get_permanent_chunks(self) -> List[OctreeChunk]:
+         """Get any permanent chunks we want to always draw.
+@@ -341,14 +341,14 @@ class OctreeLoader:
+             drawn_ancestors = [drawn_ancestors[-1]]
+ 
+         # If the closest ancestor is drawn just take that one
+-        if len(ancestors) > 0 and ancestors == drawn_ancestors:  # noqa SIM114
++        if len(ancestors) > 0 and ancestors == drawn_ancestors:
+             return children + drawn_ancestors + best_in_memory_chunk
+         # If the ideal chunk is in memory take that one
+-        elif len(best_in_memory_chunk) > 0:
++        if len(best_in_memory_chunk) > 0:
+             return children + drawn_ancestors + best_in_memory_chunk
+-        else:
+-            # Otherwise that the close in memory ancestor
+-            return children + drawn_ancestors + ancestors
++
++        # Otherwise that the close in memory ancestor
++        return children + drawn_ancestors + ancestors
+ 
+     def _load_chunk(self, octree_chunk: OctreeChunk, priority: int) -> bool:
+         """Load the data for one OctreeChunk.
+diff --git a/napari/layers/image/experimental/octree.py b/napari/layers/image/experimental/octree.py
+index 4d60a5b2..19022641 100644
+--- a/napari/layers/image/experimental/octree.py
++++ b/napari/layers/image/experimental/octree.py
+@@ -185,8 +185,8 @@ class Octree:
+         # If no parent exists yet then returns None
+         if len(ancestors) == 0:
+             return None
+-        else:
+-            return ancestors[0]
++
++        return ancestors[0]
+ 
+     def get_ancestors(
+         self,
+diff --git a/napari/layers/image/experimental/octree_level.py b/napari/layers/image/experimental/octree_level.py
+index b44a3fb5..bd7b3989 100644
+--- a/napari/layers/image/experimental/octree_level.py
++++ b/napari/layers/image/experimental/octree_level.py
+@@ -181,7 +181,7 @@ class OctreeLevel:
+         # Create OctreeChunkGeom used by the visual for rendering this
+         # chunk. Size it based on the base image pixels, not based on the
+         # data in this level, so it's exact.
+-        base = np.array(meta.base_shape[::-1], dtype=np.float)
++        base = np.array(meta.base_shape[::-1], dtype=float)
+         remain = base - pos
+         size = np.minimum(remain, [scaled_size, scaled_size])
+         geom = OctreeChunkGeom(pos, size)
+diff --git a/napari/layers/image/image.py b/napari/layers/image/image.py
+index dd324b23..bf484e12 100644
+--- a/napari/layers/image/image.py
++++ b/napari/layers/image/image.py
+@@ -278,7 +278,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
+                     "'rgb' was set to True but data does not have suitable dimensions."
+                 )
+             )
+-        elif rgb is None:
++        if rgb is None:
+             rgb = rgb_guess
+         self.rgb = rgb
+ 
+@@ -407,8 +407,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
+         """Get empty image to use as the default before data is loaded."""
+         if self.rgb:
+             return np.zeros((1,) * self._slice_input.ndisplay + (3,))
+-        else:
+-            return np.zeros((1,) * self._slice_input.ndisplay)
++
++        return np.zeros((1,) * self._slice_input.ndisplay)
+ 
+     def _get_order(self) -> Tuple[int]:
+         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
+@@ -417,9 +417,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
+             # if rgb need to keep the final axis fixed during the
+             # transpose. The index of the final axis depends on how many
+             # axes are displayed.
+-            return order + (max(order) + 1,)
+-        else:
+-            return order
++            return (*order, max(order) + 1)
++
++        return order
+ 
+     @property
+     def _data_view(self):
+@@ -957,7 +957,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
+                 downsampled = (downsampled - low) / color_range
+             downsampled = downsampled**self.gamma
+             color_array = self.colormap.map(downsampled.ravel())
+-            colormapped = color_array.reshape(downsampled.shape + (4,))
++            colormapped = color_array.reshape((*downsampled.shape, 4))
+             colormapped[..., 3] *= self.opacity
+         self.thumbnail = colormapped
+ 
+diff --git a/napari/layers/labels/_tests/test_labels.py b/napari/layers/labels/_tests/test_labels.py
+index 58b17aab..0d663019 100644
+--- a/napari/layers/labels/_tests/test_labels.py
++++ b/napari/layers/labels/_tests/test_labels.py
+@@ -407,7 +407,7 @@ def test_custom_color_dict():
+     # Test to see if our label mapped control points map to those in the colormap
+     # with an extra half step.
+     local_controls = np.array(
+-        sorted(np.unique(list(layer._label_color_index.values()) + [1.0]))
++        sorted(np.unique([*layer._label_color_index.values(), 1.0]))
+     )
+     colormap_controls = np.array(layer._colormap.controls)
+     assert np.max(np.abs(local_controls - colormap_controls)) == pytest.approx(
+@@ -1068,7 +1068,7 @@ def test_fill_with_xarray():
+ def test_paint_3d_negative_scale(scale):
+     labels = np.zeros((3, 5, 11, 11), dtype=int)
+     labels_layer = Labels(
+-        labels, scale=(1,) + scale, translate=(-200, 100, 100)
++        labels, scale=(1, *scale), translate=(-200, 100, 100)
+     )
+     labels_layer.n_edit_dimensions = 3
+     labels_layer.brush_size = 8
+diff --git a/napari/layers/labels/labels.py b/napari/layers/labels/labels.py
+index 2060f057..51273700 100644
+--- a/napari/layers/labels/labels.py
++++ b/napari/layers/labels/labels.py
+@@ -870,14 +870,14 @@ class Labels(_ImageBase):
+         max_nbytes = max(data.nbytes, 1024)
+         if data_range * nbytes_low_discrepancy > max_nbytes:
+             return self._lookup_with_low_discrepancy_image
+-        else:
+-            if self._all_vals.size < data_range:
+-                new_all_vals = low_discrepancy_image(
+-                    np.arange(min_label_val0, max_label_val + 1), self._seed
+-                )
+-                self._all_vals = np.roll(new_all_vals, min_label_val0)
+-                self._all_vals[0] = 0
+-            return self._lookup_with_index
++
++        if self._all_vals.size < data_range:
++            new_all_vals = low_discrepancy_image(
++                np.arange(min_label_val0, max_label_val + 1), self._seed
++            )
++            self._all_vals = np.roll(new_all_vals, min_label_val0)
++            self._all_vals[0] = 0
++        return self._lookup_with_index
+ 
+     def _raw_to_displayed(self, raw):
+         """Determine displayed image from a saved raw image and a saved seed.
+@@ -1516,8 +1516,8 @@ def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
+         # for difference from indexing numpy
+         try:
+             import xarray as xr
+-
+-            return tuple(xr.DataArray(i) for i in indices)
+         except ModuleNotFoundError:
+             pass
++        else:
++            return tuple(xr.DataArray(i) for i in indices)
+     return tuple(indices)
+diff --git a/napari/layers/points/_tests/test_points.py b/napari/layers/points/_tests/test_points.py
+index 70b748bf..c267a846 100644
+--- a/napari/layers/points/_tests/test_points.py
++++ b/napari/layers/points/_tests/test_points.py
+@@ -402,7 +402,7 @@ def test_removing_selected_points():
+     layer.remove_selected()
+     assert len(layer.data) == shape[0] - 2
+     assert len(layer.selected_data) == 0
+-    keep = [1, 2] + list(range(4, 10))
++    keep = [1, 2, *range(4, 10)]
+     assert np.all(layer.data == data[keep])
+     assert layer._value is None
+ 
+@@ -828,14 +828,14 @@ def test_text_from_property_fstring(properties):
+     layer.selected_data = {0}
+     layer._copy_data()
+     layer._paste_data()
+-    expected_text_3 = expected_text_2 + ['type-ish: A']
++    expected_text_3 = [*expected_text_2, "type-ish: A"]
+     np.testing.assert_equal(layer.text.values, expected_text_3)
+ 
+     # add point
+     layer.selected_data = {0}
+     new_shape = np.random.random((1, 2))
+     layer.add(new_shape)
+-    expected_text_4 = expected_text_3 + ['type-ish: A']
++    expected_text_4 = [*expected_text_3, "type-ish: A"]
+     np.testing.assert_equal(layer.text.values, expected_text_4)
+ 
+ 
+diff --git a/napari/layers/points/points.py b/napari/layers/points/points.py
+index 9434e656..a2947fbe 100644
+--- a/napari/layers/points/points.py
++++ b/napari/layers/points/points.py
+@@ -1575,7 +1575,7 @@ class Points(Layer):
+         else:
+             return [], np.empty(0)
+ 
+-    def _get_value(self, position) -> Union[None, int]:
++    def _get_value(self, position) -> Optional[int]:
+         """Index of the point at a given 2D position in data coordinates.
+ 
+         Parameters
+@@ -1616,7 +1616,7 @@ class Points(Layer):
+         start_point: np.ndarray,
+         end_point: np.ndarray,
+         dims_displayed: List[int],
+-    ) -> Union[int, None]:
++    ) -> Optional[int]:
+         """Get the layer data value along a ray
+ 
+         Parameters
+@@ -1835,7 +1835,7 @@ class Points(Layer):
+                 pos = _create_box_from_corners_3d(
+                     self._drag_box, self._drag_normal, self._drag_up
+                 )
+-            pos = pos[list(range(4)) + [0]]
++            pos = pos[[*range(4), 0]]
+         else:
+             pos = None
+ 
+@@ -1880,7 +1880,7 @@ class Points(Layer):
+             coords = np.clip(coords, 0, thumbnail_shape - 1)
+ 
+             # Draw single pixel points in the colormapped thumbnail.
+-            colormapped = np.zeros(tuple(thumbnail_shape) + (4,))
++            colormapped = np.zeros((*thumbnail_shape, 4))
+             colormapped[..., 3] = 1
+             colors = self._face.colors[thumbnail_indices]
+             colormapped[coords[:, 0], coords[:, 1]] = colors
+diff --git a/napari/layers/shapes/_shape_list.py b/napari/layers/shapes/_shape_list.py
+index 59468f49..2ad1a8ec 100644
+--- a/napari/layers/shapes/_shape_list.py
++++ b/napari/layers/shapes/_shape_list.py
+@@ -279,7 +279,7 @@ class ShapeList:
+                 z_refresh=z_refresh,
+             )
+         else:
+-            raise ValueError(
++            raise TypeError(
+                 trans._(
+                     'Cannot add single nor multiple shape',
+                     deferred=True,
+@@ -313,7 +313,7 @@ class ShapeList:
+             ShapesList._update_z_order() once at the end.
+         """
+         if not issubclass(type(shape), Shape):
+-            raise ValueError(
++            raise TypeError(
+                 trans._(
+                     'shape must be subclass of Shape',
+                     deferred=True,
+@@ -1034,14 +1034,14 @@ class ShapeList:
+         indices = inside_triangles(triangles - coord)
+         shapes = self._mesh.displayed_triangles_index[indices, 0]
+ 
+-        if len(shapes) > 0:
+-            z_list = self._z_order.tolist()
+-            order_indices = np.array([z_list.index(m) for m in shapes])
+-            ordered_shapes = shapes[np.argsort(order_indices)]
+-            return ordered_shapes[0]
+-        else:
++        if len(shapes) == 0:
+             return None
+ 
++        z_list = self._z_order.tolist()
++        order_indices = np.array([z_list.index(m) for m in shapes])
++        ordered_shapes = shapes[np.argsort(order_indices)]
++        return ordered_shapes[0]
++
+     def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
+         """Determines if any shape is intersected by a ray by looking inside triangle
+         meshes. Looks only at displayed shapes.
+@@ -1072,21 +1072,21 @@ class ShapeList:
+             triangles=triangles,
+         )
+         intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
+-        if len(intersected_shapes) > 0:
+-            intersection_points = self._triangle_intersection(
+-                triangle_indices=inside,
+-                ray_position=ray_position,
+-                ray_direction=ray_direction,
+-            )
+-            start_to_intersection = intersection_points - ray_position
+-            distances = np.linalg.norm(start_to_intersection, axis=1)
+-            closest_shape_index = np.argmin(distances)
+-            shape = intersected_shapes[closest_shape_index]
+-            intersection = intersection_points[closest_shape_index]
+-            return shape, intersection
+-        else:
++        if len(intersected_shapes) == 0:
+             return None, None
+ 
++        intersection_points = self._triangle_intersection(
++            triangle_indices=inside,
++            ray_position=ray_position,
++            ray_direction=ray_direction,
++        )
++        start_to_intersection = intersection_points - ray_position
++        distances = np.linalg.norm(start_to_intersection, axis=1)
++        closest_shape_index = np.argmin(distances)
++        shape = intersected_shapes[closest_shape_index]
++        intersection = intersection_points[closest_shape_index]
++        return shape, intersection
++
+     def _triangle_intersection(
+         self,
+         triangle_indices: np.ndarray,
+@@ -1181,7 +1181,7 @@ class ShapeList:
+             integer up to N for points inside the corresponding shape.
+         """
+         if labels_shape is None:
+-            labels_shape = self.displayed_vertices.max(axis=0).astype(np.int)
++            labels_shape = self.displayed_vertices.max(axis=0).astype(int)
+ 
+         labels = np.zeros(labels_shape, dtype=int)
+ 
+@@ -1226,9 +1226,9 @@ class ShapeList:
+             value of the shape for points inside the corresponding shape.
+         """
+         if colors_shape is None:
+-            colors_shape = self.displayed_vertices.max(axis=0).astype(np.int)
++            colors_shape = self.displayed_vertices.max(axis=0).astype(int)
+ 
+-        colors = np.zeros(tuple(colors_shape) + (4,), dtype=float)
++        colors = np.zeros((*colors_shape, 4), dtype=float)
+         colors[..., 3] = 1
+ 
+         z_order = self._z_order[::-1]
+diff --git a/napari/layers/shapes/_shapes_models/shape.py b/napari/layers/shapes/_shapes_models/shape.py
+index 7f8419ef..002fa510 100644
+--- a/napari/layers/shapes/_shapes_models/shape.py
++++ b/napari/layers/shapes/_shapes_models/shape.py
+@@ -118,16 +118,16 @@ class Shape(ABC):
+     @abstractmethod
+     def data(self):
+         # user writes own docstring
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     @data.setter
+     @abstractmethod
+     def data(self, data):
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     @abstractmethod
+     def _update_displayed_data(self):
+-        raise NotImplementedError()
++        raise NotImplementedError
+ 
+     @property
+     def ndisplay(self):
+diff --git a/napari/layers/shapes/_shapes_utils.py b/napari/layers/shapes/_shapes_utils.py
+index 97058b02..808aed7b 100644
+--- a/napari/layers/shapes/_shapes_utils.py
++++ b/napari/layers/shapes/_shapes_utils.py
+@@ -628,10 +628,10 @@ def _sign_cross(x, y):
+     """sign of cross product (faster for 2d)"""
+     if x.shape[1] == y.shape[1] == 2:
+         return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
+-    elif x.shape[1] == y.shape[1] == 3:
++    if x.shape[1] == y.shape[1] == 3:
+         return _sign_nonzero(np.cross(x, y))
+-    else:
+-        raise ValueError(x.shape[1], y.shape[1])
++
++    raise ValueError(x.shape[1], y.shape[1])
+ 
+ 
+ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
+diff --git a/napari/layers/shapes/_tests/test_shapes.py b/napari/layers/shapes/_tests/test_shapes.py
+index 91e396cf..93943b85 100644
+--- a/napari/layers/shapes/_tests/test_shapes.py
++++ b/napari/layers/shapes/_tests/test_shapes.py
+@@ -310,14 +310,14 @@ def test_text_from_property_fstring(properties):
+     layer.selected_data = {0}
+     layer._copy_data()
+     layer._paste_data()
+-    expected_text_3 = expected_text_2 + ['type-ish: A']
++    expected_text_3 = [*expected_text_2, "type-ish: A"]
+     np.testing.assert_equal(layer.text.values, expected_text_3)
+ 
+     # add shape
+     layer.selected_data = {0}
+     new_shape = np.random.random((1, 4, 2))
+     layer.add(new_shape)
+-    expected_text_4 = expected_text_3 + ['type-ish: A']
++    expected_text_4 = [*expected_text_3, "type-ish: A"]
+     np.testing.assert_equal(layer.text.values, expected_text_4)
+ 
+ 
+@@ -1233,7 +1233,7 @@ def test_removing_selected_shapes():
+     # Select three shapes and remove them
+     layer.selected_data = {1, 7, 8}
+     layer.remove_selected()
+-    keep = [0] + list(range(2, 7)) + [9]
++    keep = [0, *range(2, 7)] + [9]
+     data_keep = [data[i] for i in keep]
+     shape_type_keep = [shape_type[i] for i in keep]
+     assert len(layer.data) == len(data_keep)
+@@ -1802,7 +1802,7 @@ def test_edge_width():
+     layer.current_edge_width = 4
+     layer.add(new_shape)
+     assert len(layer.edge_width) == shape[0] + 1
+-    assert layer.edge_width == width_list + [4]
++    assert layer.edge_width == [*width_list, 4]
+ 
+     # Check removing data adjusts colors correctly
+     layer.selected_data = {0, 2}
+@@ -1847,7 +1847,7 @@ def test_z_index():
+     new_shape = np.random.random((1, 4, 2))
+     layer.add(new_shape)
+     assert len(layer.z_index) == shape[0] + 1
+-    assert layer.z_index == z_index_list + [4]
++    assert layer.z_index == [*z_index_list, 4]
+ 
+     # Check removing data adjusts colors correctly
+     layer.selected_data = {0, 2}
+diff --git a/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py b/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py
+index 3b07aa0a..c9ba094d 100644
+--- a/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py
++++ b/napari/layers/shapes/_tests/test_shapes_mouse_bindings.py
+@@ -393,7 +393,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
+     # Check clicked shape selected
+     assert len(layer.selected_data) == 1
+     assert layer.selected_data == {0}
+-    np.testing.assert_allclose(layer.data[0], orig_data + [10, 5])
++    np.testing.assert_allclose(layer.data[0], orig_data + np.array([10, 5]))
+ 
+ 
+ def test_rotate_shape(create_known_shapes_layer, Event):
+diff --git a/napari/layers/shapes/shapes.py b/napari/layers/shapes/shapes.py
+index abb435e2..71cf9a2a 100644
+--- a/napari/layers/shapes/shapes.py
++++ b/napari/layers/shapes/shapes.py
+@@ -1118,8 +1118,8 @@ class Shapes(Layer):
+                 raise ValueError(
+                     trans._('Length of list does not match number of shapes')
+                 )
+-            else:
+-                widths = width
++
++            widths = width
+         else:
+             widths = [width for _ in range(self.nshapes)]
+ 
+@@ -1147,8 +1147,8 @@ class Shapes(Layer):
+                 raise ValueError(
+                     trans._('Length of list does not match number of shapes')
+                 )
+-            else:
+-                z_indices = z_index
++
++            z_indices = z_index
+         else:
+             z_indices = [z_index for _ in range(self.nshapes)]
+ 
+@@ -1478,15 +1478,15 @@ class Shapes(Layer):
+         """determines if the new color argument is for directly setting or cycle/colormap"""
+         if isinstance(color, str):
+             return color in self.properties
+-        elif isinstance(color, (list, np.ndarray)):
++        if isinstance(color, (list, np.ndarray)):
+             return False
+-        else:
+-            raise ValueError(
+-                trans._(
+-                    'face_color should be the name of a color, an array of colors, or the name of an property',
+-                    deferred=True,
+-                )
++
++        raise ValueError(
++            trans._(
++                'face_color should be the name of a color, an array of colors, or the name of an property',
++                deferred=True,
+             )
++        )
+ 
+     def _get_state(self):
+         """Get dictionary of layer state.
+@@ -2720,7 +2720,7 @@ class Shapes(Layer):
+             dims_displayed=dims_displayed,
+         )
+ 
+-        return (value, None)
++        return value, None
+ 
+     def _get_index_and_intersection(
+         self,
+diff --git a/napari/layers/surface/surface.py b/napari/layers/surface/surface.py
+index 5de6331c..13c5129c 100644
+--- a/napari/layers/surface/surface.py
++++ b/napari/layers/surface/surface.py
+@@ -1,5 +1,5 @@
+ import warnings
+-from typing import List, Tuple, Union
++from typing import List, Optional, Tuple, Union
+ 
+ import numpy as np
+ 
+@@ -505,14 +505,14 @@ class Surface(IntensityVisualizationMixin, Layer):
+         value : None
+             Value of the data at the coord.
+         """
+-        return None
++        return
+ 
+     def _get_value_3d(
+         self,
+         start_point: np.ndarray,
+         end_point: np.ndarray,
+         dims_displayed: List[int],
+-    ) -> Tuple[Union[None, float, int], None]:
++    ) -> Tuple[Union[None, float, int], Optional[int]]:
+         """Get the layer data value along a ray
+ 
+         Parameters
+@@ -529,7 +529,7 @@ class Surface(IntensityVisualizationMixin, Layer):
+         value
+             The data value along the supplied ray.
+         vertex : None
+-            Index of vertex if any that is at the coordinates. Always returns `None`.
++            Index of vertex if any that is at the coordinates.
+         """
+         if len(dims_displayed) != 3:
+             # only applies to 3D
+diff --git a/napari/layers/tracks/_track_utils.py b/napari/layers/tracks/_track_utils.py
+index b83f7b97..a5b0d3ed 100644
+--- a/napari/layers/tracks/_track_utils.py
++++ b/napari/layers/tracks/_track_utils.py
+@@ -264,7 +264,7 @@ class TrackManager:
+ 
+         # check that graph nodes exist in the track id lookup
+         for node_idx, parents_idx in graph.items():
+-            nodes = [node_idx] + parents_idx
++            nodes = [node_idx, *parents_idx]
+             for node in nodes:
+                 if node not in unique_track_ids:
+                     raise ValueError(
+@@ -345,7 +345,7 @@ class TrackManager:
+     def get_value(self, coords):
+         """use a kd-tree to lookup the ID of the nearest tree"""
+         if self._kdtree is None:
+-            return
++            return None
+ 
+         # query can return indices to points that do not exist, trim that here
+         # then prune to only those in the current frame/time
+@@ -356,7 +356,8 @@ class TrackManager:
+ 
+         # if we have found a point, return it
+         if pruned and self._points_id is not None:
+-            return self._points_id[pruned[0]]  # return the track ID
++            return self._points_id[pruned[0]]
++        return None  # return the track ID
+ 
+     @property
+     def ndim(self) -> int:
+diff --git a/napari/layers/tracks/tracks.py b/napari/layers/tracks/tracks.py
+index 2601462a..c3e6db95 100644
+--- a/napari/layers/tracks/tracks.py
++++ b/napari/layers/tracks/tracks.py
+@@ -329,7 +329,7 @@ class Tracks(Layer):
+     def _pad_display_data(self, vertices):
+         """pad display data when moving between 2d and 3d"""
+         if vertices is None:
+-            return
++            return None
+ 
+         data = vertices[:, self._slice_input.displayed]
+         # if we're only displaying two dimensions, then pad the display dim
+@@ -337,8 +337,8 @@ class Tracks(Layer):
+         if self._slice_input.ndisplay == 2:
+             data = np.pad(data, ((0, 0), (0, 1)), 'constant')
+             return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
+-        else:
+-            return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
++
++        return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
+ 
+     @property
+     def current_time(self):
+diff --git a/napari/layers/utils/color_manager.py b/napari/layers/utils/color_manager.py
+index 3742f248..e0da9c1c 100644
+--- a/napari/layers/utils/color_manager.py
++++ b/napari/layers/utils/color_manager.py
+@@ -96,8 +96,8 @@ class ColorProperties:
+             )
+ 
+             return np.all([name_eq, values_eq, current_value_eq])
+-        else:
+-            return False
++
++        return False
+ 
+ 
+ class ColorManager(EventedModel):
+@@ -164,17 +164,17 @@ class ColorManager(EventedModel):
+     def _ensure_color_array(cls, v):
+         if len(v) > 0:
+             return transform_color(v)
+-        else:
+-            return np.empty((0, 4))
++
++        return np.empty((0, 4))
+ 
+     @validator('current_color', pre=True)
+     def _coerce_current_color(cls, v):
+         if v is None:
+             return v
+-        elif len(v) == 0:
++        if len(v) == 0:
+             return None
+-        else:
+-            return transform_color(v)[0]
++
++        return transform_color(v)[0]
+ 
+     @root_validator()
+     def _validate_colors(cls, values):
+@@ -183,14 +183,12 @@ class ColorManager(EventedModel):
+             colors, values = _validate_cycle_mode(values)
+         elif color_mode == ColorMode.COLORMAP:
+             colors, values = _validate_colormap_mode(values)
+-        elif color_mode == ColorMode.DIRECT:
++        else:  # color_mode == ColorMode.DIRECT:
+             colors = values['colors']
+ 
+-        # FIXME Local variable 'colors' might be referenced before assignment
+-
+         # set the current color to the last color/property value
+         # if it wasn't already set
+-        if values['current_color'] is None and len(colors) > 0:
++        if values.get("current_color") is None and len(colors) > 0:
+             values['current_color'] = colors[-1]
+             if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
+                 property_values = values['color_properties']
+diff --git a/napari/layers/utils/color_manager_utils.py b/napari/layers/utils/color_manager_utils.py
+index 6e881247..e67c72c9 100644
+--- a/napari/layers/utils/color_manager_utils.py
++++ b/napari/layers/utils/color_manager_utils.py
+@@ -32,17 +32,17 @@ def is_color_mapped(color, properties):
+     """determines if the new color argument is for directly setting or cycle/colormap"""
+     if isinstance(color, str):
+         return color in properties
+-    elif isinstance(color, dict):
++    if isinstance(color, dict):
+         return True
+-    elif isinstance(color, (list, np.ndarray)):
++    if isinstance(color, (list, np.ndarray)):
+         return False
+-    else:
+-        raise ValueError(
+-            trans._(
+-                'face_color should be the name of a color, an array of colors, or the name of an property',
+-                deferred=True,
+-            )
++
++    raise ValueError(
++        trans._(
++            'face_color should be the name of a color, an array of colors, or the name of an property',
++            deferred=True,
+         )
++    )
+ 
+ 
+ def map_property(
+diff --git a/napari/layers/utils/interaction_box.py b/napari/layers/utils/interaction_box.py
+index b7f2ef2b..ceb13db2 100644
+--- a/napari/layers/utils/interaction_box.py
++++ b/napari/layers/utils/interaction_box.py
+@@ -150,7 +150,7 @@ def get_nearby_handle(
+     if np.any(close_to_vertex):
+         idx = np.argmax(close_to_vertex)
+         return InteractionBoxHandle(idx)
+-    elif np.all((position >= top_left) & (position <= bot_right)):
++    if np.all((position >= top_left) & (position <= bot_right)):
+         return InteractionBoxHandle.INSIDE
+-    else:
+-        return None
++
++    return None
+diff --git a/napari/layers/utils/layer_utils.py b/napari/layers/utils/layer_utils.py
+index 411ccbf3..e8a9b821 100644
+--- a/napari/layers/utils/layer_utils.py
++++ b/napari/layers/utils/layer_utils.py
+@@ -31,7 +31,7 @@ def register_layer_action(
+     Parameters
+     ----------
+     keymapprovider : KeymapProvider
+-        class on which to register the keybindings – this will typically be
++        class on which to register the keybindings - this will typically be
+         the instance in focus that will handle the keyboard shortcut.
+     description : str
+         The description of the action, this will typically be translated and
+@@ -87,7 +87,7 @@ def register_layer_attr_action(
+     Parameters
+     ----------
+     keymapprovider : KeymapProvider
+-        class on which to register the keybindings – this will typically be
++        class on which to register the keybindings - this will typically be
+         the instance in focus that will handle the keyboard shortcut.
+     description : str
+         The description of the action, this will typically be translated and
+@@ -315,15 +315,16 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
+             return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
+                 out_dtype
+             )
+-        else:
+-            np.maximum(data, 0, out=data, dtype=data.dtype)
+-            if data.dtype == np.int8:
+-                return (data * 2).astype(np.uint8)
+-            if data.max() < out_max:
+-                return data.astype(out_dtype)
+-            return np.right_shift(
+-                data, (data.dtype.itemsize - 1) * 8 - 1
+-            ).astype(out_dtype)
++
++        np.maximum(data, 0, out=data, dtype=data.dtype)
++        if data.dtype == np.int8:
++            return (data * 2).astype(np.uint8)
++        if data.max() < out_max:
++            return data.astype(out_dtype)
++        return np.right_shift(data, (data.dtype.itemsize - 1) * 8 - 1).astype(
++            out_dtype
++        )
++    return None
+ 
+ 
+ def prepare_properties(
+diff --git a/napari/layers/utils/style_encoding.py b/napari/layers/utils/style_encoding.py
+index 4b92d1ec..aa659a27 100644
+--- a/napari/layers/utils/style_encoding.py
++++ b/napari/layers/utils/style_encoding.py
+@@ -262,7 +262,7 @@ class _DerivedStyleEncoding(
+                 ),
+                 category=RuntimeWarning,
+             )
+-            shape = (features.shape[0],) + self.fallback.shape
++            shape = (features.shape[0], *self.fallback.shape)
+             array = np.broadcast_to(self.fallback, shape)
+         return array
+ 
+@@ -291,5 +291,5 @@ def _get_style_values(
+ 
+ def _empty_array_like(value: StyleValue) -> StyleArray:
+     """Returns an empty array with the same type and remaining shape of the given value."""
+-    shape = (0,) + value.shape
++    shape = (0, *value.shape)
+     return np.empty_like(value, shape=shape)
+diff --git a/napari/layers/vectors/vectors.py b/napari/layers/vectors/vectors.py
+index 5911a635..79afec2f 100644
+--- a/napari/layers/vectors/vectors.py
++++ b/napari/layers/vectors/vectors.py
+@@ -617,44 +617,42 @@ class Vectors(Layer):
+             values, based on how far from the current slice they originate.
+         """
+ 
+-        if len(self.data) > 0:
+-            dims_not_displayed = self._slice_input.not_displayed
+-
+-            # We want a numpy array so we can use fancy indexing with the non-displayed
+-            # indices, but as dims_indices can (and often/always does) contain slice
+-            # objects, the array has dtype=object which is then very slow for the
+-            # arithmetic below.
+-            # promote slicing plane to array so we can index into it, project as type float
+-            not_disp_indices = np.array(dims_indices)[
+-                dims_not_displayed
+-            ].astype(float)
+-            # get the anchor points (starting positions) of the vector layers in not displayed dims
+-            data = self.data[:, 0, dims_not_displayed]
+-            # calculate distances from anchor points to the slicing plane
+-            distances = abs(data - not_disp_indices)
+-            # if we need to include vectors that are out of this slice
+-            if self.out_of_slice_display is True:
+-                # get the scaled projected vectors
+-                projected_lengths = abs(
+-                    self.data[:, 1, dims_not_displayed] * self.length
+-                )
+-                # find where the distance to plane is less than the scaled vector
+-                matches = np.all(distances <= projected_lengths, axis=1)
+-                alpha_match = projected_lengths[matches]
+-                alpha_match[alpha_match == 0] = 1
+-                alpha_per_dim = (
+-                    alpha_match - distances[matches]
+-                ) / alpha_match
+-                alpha_per_dim[alpha_match == 0] = 1
+-                alpha = np.prod(alpha_per_dim, axis=1).astype(float)
+-            else:
+-                matches = np.all(distances <= 0.5, axis=1)
+-                alpha = 1.0
+-            slice_indices = np.where(matches)[0].astype(int)
+-            return slice_indices, alpha
+-        else:
++        if len(self.data) == 0:
+             return [], np.empty(0)
+ 
++        dims_not_displayed = self._slice_input.not_displayed
++
++        # We want a numpy array so we can use fancy indexing with the non-displayed
++        # indices, but as dims_indices can (and often/always does) contain slice
++        # objects, the array has dtype=object which is then very slow for the
++        # arithmetic below.
++        # promote slicing plane to array so we can index into it, project as type float
++        not_disp_indices = np.array(dims_indices)[dims_not_displayed].astype(
++            float
++        )
++        # get the anchor points (starting positions) of the vector layers in not displayed dims
++        data = self.data[:, 0, dims_not_displayed]
++        # calculate distances from anchor points to the slicing plane
++        distances = abs(data - not_disp_indices)
++        # if we need to include vectors that are out of this slice
++        if self.out_of_slice_display is True:
++            # get the scaled projected vectors
++            projected_lengths = abs(
++                self.data[:, 1, dims_not_displayed] * self.length
++            )
++            # find where the distance to plane is less than the scaled vector
++            matches = np.all(distances <= projected_lengths, axis=1)
++            alpha_match = projected_lengths[matches]
++            alpha_match[alpha_match == 0] = 1
++            alpha_per_dim = (alpha_match - distances[matches]) / alpha_match
++            alpha_per_dim[alpha_match == 0] = 1
++            alpha = np.prod(alpha_per_dim, axis=1).astype(float)
++        else:
++            matches = np.all(distances <= 0.5, axis=1)
++            alpha = 1.0
++        slice_indices = np.where(matches)[0].astype(int)
++        return slice_indices, alpha
++
+     def _set_view_slice(self):
+         """Sets the view given the indices to slice with."""
+ 
+@@ -739,4 +737,4 @@ class Vectors(Layer):
+         value : None
+             Value of the data at the coord.
+         """
+-        return None
++        return
+diff --git a/napari/plugins/_npe2.py b/napari/plugins/_npe2.py
+index 6b1061b9..7fb9f382 100644
+--- a/napari/plugins/_npe2.py
++++ b/napari/plugins/_npe2.py
+@@ -55,10 +55,11 @@ def read(
+         layer_data, reader = io_utils.read_get_reader(
+             npe1_path, plugin_name=plugin
+         )
+-        return layer_data, _FakeHookimpl(reader.plugin_name)
+     except ValueError as e:
+         if 'No readers returned data' not in str(e):
+-            raise e from e
++            raise
++    else:
++        return layer_data, _FakeHookimpl(reader.plugin_name)
+     return None
+ 
+ 
+@@ -101,9 +102,10 @@ def write_layers(
+             paths, writer = io_utils.write_get_writer(
+                 path=path, layer_data=layer_data, plugin_name=plugin_name
+             )
+-            return (paths, writer.plugin_name)
+         except ValueError:
+-            return ([], '')
++            return [], ''
++        else:
++            return paths, writer.plugin_name
+ 
+     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
+     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
+@@ -111,8 +113,8 @@ def write_layers(
+     if isinstance(
+         res, str
+     ):  # pragma: no cover # it shouldn't be... bad plugin.
+-        return ([res], writer.plugin_name)
+-    return (res or [], writer.plugin_name)
++        return [res], writer.plugin_name
++    return res or [], writer.plugin_name
+ 
+ 
+ def get_widget_contribution(
+diff --git a/napari/plugins/_tests/test_plugins_manager.py b/napari/plugins/_tests/test_plugins_manager.py
+index 75152912..8b365577 100644
+--- a/napari/plugins/_tests/test_plugins_manager.py
++++ b/napari/plugins/_tests/test_plugins_manager.py
+@@ -78,11 +78,13 @@ def test_plugin_extension_assignment(napari_plugin_manager):
+         def napari_get_reader(path):
+             if path.endswith('.png'):
+                 return lambda x: None
++            return None
+ 
+         @napari_hook_implementation
+         def napari_get_writer(path, *args):
+             if path.endswith('.png'):
+                 return lambda x: None
++            return None
+ 
+     tnpm: NapariPluginManager = napari_plugin_manager
+     tnpm.register(Plugin, name='test_plugin')
+diff --git a/napari/plugins/io.py b/napari/plugins/io.py
+index e723391b..fd3008e2 100644
+--- a/napari/plugins/io.py
++++ b/napari/plugins/io.py
+@@ -196,7 +196,7 @@ def save_layers(
+ 
+     If a ``plugin`` is provided and multiple layers are passed, then
+     we call we call ``napari_get_writer`` for that plugin, and if it
+-    doesn’t return a WriterFunction we error, otherwise we call it and if
++    doesn`t return a WriterFunction we error, otherwise we call it and if
+     that fails if it we error.
+ 
+     Parameters
+@@ -299,7 +299,7 @@ def _write_multiple_layers_with_plugins(
+     to unique files in the folder.
+ 
+     If a ``plugin_name`` is provided, then call ``napari_get_writer`` for that
+-    plugin. If it doesn’t return a ``WriterFunction`` we error, otherwise we
++    plugin. If it doesn`t return a ``WriterFunction`` we error, otherwise we
+     call it and if that fails if it we error.
+ 
+     Exceptions will be caught and stored as PluginErrors
+@@ -384,7 +384,7 @@ def _write_multiple_layers_with_plugins(
+                 layer_types=layer_types,
+             )
+ 
+-        raise ValueError(msg)
++        raise TypeError(msg)
+ 
+     try:
+         return (
+diff --git a/napari/settings/_fields.py b/napari/settings/_fields.py
+index 61035003..37868f7b 100644
+--- a/napari/settings/_fields.py
++++ b/napari/settings/_fields.py
+@@ -27,7 +27,7 @@ class Theme(str):
+     @classmethod
+     def validate(cls, v):
+         if not isinstance(v, str):
+-            raise ValueError(trans._('must be a string', deferred=True))
++            raise TypeError(trans._('must be a string', deferred=True))
+ 
+         value = v.lower()
+         if not is_theme_available(value):
+@@ -64,7 +64,7 @@ class Language(str):
+     @classmethod
+     def validate(cls, v):
+         if not isinstance(v, str):
+-            raise ValueError(trans._('must be a string', deferred=True))
++            raise TypeError(trans._('must be a string', deferred=True))
+ 
+         language_packs = list(get_language_packs(_load_language()).keys())
+         if v not in language_packs:
+diff --git a/napari/types.py b/napari/types.py
+index 5833ea14..3b1c2461 100644
+--- a/napari/types.py
++++ b/napari/types.py
+@@ -20,7 +20,10 @@ import numpy as np
+ from typing_extensions import TypedDict, get_args
+ 
+ if TYPE_CHECKING:
+-    import dask.array
++    # dask zarr should be imported as `import dask.array as da` But here it is used only in type annotation to
++    # register it as a valid type fom magicgui so is passed as string and requires full qualified name to allow
++    # magicgui properly register it.
++    import dask.array  # noqa: ICN001
+     import zarr
+     from magicgui.widgets import FunctionGui
+     from qtpy.QtWidgets import QWidget
+diff --git a/napari/utils/_dtype.py b/napari/utils/_dtype.py
+index f7531291..c77ae904 100644
+--- a/napari/utils/_dtype.py
++++ b/napari/utils/_dtype.py
+@@ -49,6 +49,7 @@ def _normalize_str_by_bit_depth(dtype_str, kind):
+         return bit_dict[32]
+     if '64' in dtype_str:
+         return bit_dict[64]
++    return None
+ 
+ 
+ def normalize_dtype(dtype_spec):
+@@ -83,8 +84,8 @@ def normalize_dtype(dtype_spec):
+     # If we don't find one of the named dtypes, return the dtype_spec
+     # unchanged. This allows NumPy big endian types to work. See
+     # https://github.com/napari/napari/issues/3421
+-    else:
+-        return dtype_spec
++
++    return dtype_spec
+ 
+ 
+ def get_dtype_limits(dtype_spec) -> Tuple[float, float]:
+diff --git a/napari/utils/_proxies.py b/napari/utils/_proxies.py
+index e7ac4ca5..de780186 100644
+--- a/napari/utils/_proxies.py
++++ b/napari/utils/_proxies.py
+@@ -1,3 +1,4 @@
++import os
+ import re
+ import sys
+ import warnings
+@@ -94,6 +95,14 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
+         return self.create(super().__getattr__(name))
+ 
+     def __setattr__(self, name: str, value: Any):
++        if (
++            os.environ.get("NAPARI_ENSURE_PLUGIN_MAIN_THREAD", "0")
++            not in ("0", "False")
++        ) and not in_main_thread():
++            raise RuntimeError(
++                "Setting attributes on a napari object is only allowed from the main Qt thread."
++            )
++
+         if self._is_private_attr(name):
+             if self._is_called_from_napari():
+                 return super().__setattr__(name, value)
+@@ -102,6 +111,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
+             self._private_attr_warning(name, typ)
+ 
+         setattr(self.__wrapped__, name, value)
++        return None
+ 
+     def __getitem__(self, key):
+         return self.create(super().__getitem__(key))
+@@ -128,3 +138,50 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
+ class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
+     def __call__(self, *args, **kwargs):
+         return self.__wrapped__(*args, **kwargs)
++
++
++def in_main_thread_py() -> bool:
++    """
++    Check if caller is in main python thread.
++
++    Returns
++    -------
++    thread_flag : bool
++        True if we are in the main thread, False otherwise.
++    """
++    import threading
++
++    return threading.current_thread() == threading.main_thread()
++
++
++def _in_main_thread() -> bool:
++    """
++    General implementation of checking if we are in a proper thread.
++    If Qt is available and Application is created then assign :py:func:`in_qt_main_thread` to `in_main_thread`.
++    If Qt liba are not available then assign :py:func:`in_main_thread_py` to in_main_thread.
++    IF Qt libs are available but there is no Application ti wil emmit warning and return result of in_main_thread_py.
++
++    Returns
++    -------
++    thread_flag : bool
++        True if we are in the main thread, False otherwise.
++    """
++
++    global in_main_thread
++    try:
++        from napari._qt.utils import in_qt_main_thread
++
++        res = in_qt_main_thread()
++        in_main_thread = in_qt_main_thread
++        return res
++    except ImportError:
++        in_main_thread = in_main_thread_py
++        return in_main_thread_py()
++    except AttributeError:
++        warnings.warn(
++            "Qt libs are available but no QtApplication instance is created"
++        )
++        return in_main_thread_py()
++
++
++in_main_thread = _in_main_thread
+diff --git a/napari/utils/_register.py b/napari/utils/_register.py
+index 52a2ec88..b90e263a 100644
+--- a/napari/utils/_register.py
++++ b/napari/utils/_register.py
+@@ -45,8 +45,10 @@ def create_func(cls, name=None, doc=None, filename: str = '<string>'):
+ 
+     sig = signature(cls)
+     new_sig = sig.replace(
+-        parameters=[Parameter('self', Parameter.POSITIONAL_OR_KEYWORD)]
+-        + list(sig.parameters.values()),
++        parameters=[
++            Parameter("self", Parameter.POSITIONAL_OR_KEYWORD),
++            *list(sig.parameters.values()),
++        ],
+         return_annotation=cls,
+     )
+     src = template.format(
+diff --git a/napari/utils/_tests/test_dtype.py b/napari/utils/_tests/test_dtype.py
+index e455b225..45359694 100644
+--- a/napari/utils/_tests/test_dtype.py
++++ b/napari/utils/_tests/test_dtype.py
+@@ -20,7 +20,7 @@ pure_py = ['int', 'float']
+ 
+ 
+ @pytest.mark.parametrize(
+-    'dtype_str', ['uint8'] + ints + floats + complex_types + bools
++    'dtype_str', ['uint8', *ints, *floats, *complex_types, *bools]
+ )
+ def test_normalize_dtype_torch(dtype_str):
+     """torch doesn't have uint for >8bit, so it gets its own test."""
+diff --git a/napari/utils/colormaps/categorical_colormap.py b/napari/utils/colormaps/categorical_colormap.py
+index e151f245..624bd510 100644
+--- a/napari/utils/colormaps/categorical_colormap.py
++++ b/napari/utils/colormaps/categorical_colormap.py
+@@ -93,15 +93,15 @@ class CategoricalColormap(EventedModel):
+             return val
+         if isinstance(val, (list, np.ndarray)):
+             return cls.from_array(val)
+-        elif isinstance(val, dict):
++        if isinstance(val, dict):
+             return cls.from_dict(val)
+-        else:
+-            raise TypeError(
+-                trans._(
+-                    'colormap should be an array or dict',
+-                    deferred=True,
+-                )
++
++        raise TypeError(
++            trans._(
++                'colormap should be an array or dict',
++                deferred=True,
+             )
++        )
+ 
+     def __eq__(self, other):
+         if isinstance(other, CategoricalColormap):
+@@ -112,5 +112,5 @@ class CategoricalColormap(EventedModel):
+             ):
+                 return False
+             return True
+-        else:
+-            return False
++
++        return False
+diff --git a/napari/utils/colormaps/categorical_colormap_utils.py b/napari/utils/colormaps/categorical_colormap_utils.py
+index c1ce34a6..4e6b9aea 100644
+--- a/napari/utils/colormaps/categorical_colormap_utils.py
++++ b/napari/utils/colormaps/categorical_colormap_utils.py
+@@ -36,10 +36,10 @@ class ColorCycle:
+         # turn a generic dict into object
+         if isinstance(val, dict):
+             return _coerce_colorcycle_from_dict(val)
+-        elif isinstance(val, ColorCycle):
++        if isinstance(val, ColorCycle):
+             return val
+-        else:
+-            return _coerce_colorcycle_from_colors(val)
++
++        return _coerce_colorcycle_from_colors(val)
+ 
+     def _json_encode(self):
+         return {'values': self.values.tolist()}
+diff --git a/napari/utils/colormaps/colorbars.py b/napari/utils/colormaps/colorbars.py
+index eec1a931..7f9294bb 100644
+--- a/napari/utils/colormaps/colorbars.py
++++ b/napari/utils/colormaps/colorbars.py
+@@ -30,6 +30,6 @@ def make_colorbar(cmap, size=(18, 28), horizontal=True):
+         bar = np.tile(np.expand_dims(basic_values, 1), size[1])
+ 
+     color_array = cmap.map(bar.ravel())
+-    cbar = color_array.reshape(bar.shape + (4,))
++    cbar = color_array.reshape((*bar.shape, 4))
+ 
+     return np.round(255 * cbar).astype(np.uint8).copy(order='C')
+diff --git a/napari/utils/colormaps/colormap_utils.py b/napari/utils/colormaps/colormap_utils.py
+index f30a59bf..e526bdb2 100644
+--- a/napari/utils/colormaps/colormap_utils.py
++++ b/napari/utils/colormaps/colormap_utils.py
+@@ -473,20 +473,18 @@ def vispy_or_mpl_colormap(name):
+                         suggestion=suggestion,
+                     )
+                 ) from e
+-            else:
+-                colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
+-                    set(_MATPLOTLIB_COLORMAP_NAMES)
++
++            colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
++                set(_MATPLOTLIB_COLORMAP_NAMES)
++            )
++            raise KeyError(
++                trans._(
++                    'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
++                    deferred=True,
++                    name=name,
++                    colormaps=", ".join(sorted(f'"{cm}"' for cm in colormaps)),
+                 )
+-                raise KeyError(
+-                    trans._(
+-                        'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
+-                        deferred=True,
+-                        name=name,
+-                        colormaps=", ".join(
+-                            sorted(f'"{cm}"' for cm in colormaps)
+-                        ),
+-                    )
+-                ) from e
++            ) from e
+         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
+         colormap = Colormap(
+             name=name, display_name=display_name, colors=mpl_colors
+diff --git a/napari/utils/colormaps/standardize_color.py b/napari/utils/colormaps/standardize_color.py
+index 61ed00e5..a02c1c32 100644
+--- a/napari/utils/colormaps/standardize_color.py
++++ b/napari/utils/colormaps/standardize_color.py
+@@ -146,6 +146,7 @@ def _handle_list_like(colors: Sequence) -> np.ndarray:
+     # User input was an iterable with strings
+     if color_array.dtype.kind in ['U', 'O']:
+         return _handle_str_list_like(color_array.ravel())
++    return None
+ 
+ 
+ def _handle_generator(colors) -> np.ndarray:
+@@ -178,17 +179,17 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
+         return np.ones((max(len(colors), 1), 4), dtype=np.float32)
+ 
+     # An array of strings will be treated as a list if compatible
+-    elif kind == 'U':
++    if kind == 'U':
+         if colors.ndim == 1:
+             return _handle_str_list_like(colors)
+-        else:
+-            warnings.warn(
+-                trans._(
+-                    "String color arrays should be one-dimensional. Converting input to a white color array.",
+-                    deferred=True,
+-                )
++
++        warnings.warn(
++            trans._(
++                "String color arrays should be one-dimensional. Converting input to a white color array.",
++                deferred=True,
+             )
+-            return np.ones((len(colors), 4), dtype=np.float32)
++        )
++        return np.ones((len(colors), 4), dtype=np.float32)
+ 
+     # Test the dimensionality of the input array
+ 
+@@ -250,14 +251,13 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
+     if kind in ['f', 'i', 'u']:
+         return _convert_array_to_correct_format(colors)
+ 
+-    else:
+-        raise ValueError(
+-            trans._(
+-                "Data type of array ({color_dtype}) not supported.",
+-                deferred=True,
+-                color_dtype=colors.dtype,
+-            )
++    raise ValueError(
++        trans._(
++            "Data type of array ({color_dtype}) not supported.",
++            deferred=True,
++            color_dtype=colors.dtype,
+         )
++    )
+ 
+ 
+ def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
+diff --git a/napari/utils/colormaps/vendored/_cm_listed.py b/napari/utils/colormaps/vendored/_cm_listed.py
+index 63d3fe03..fc08edfc 100644
+--- a/napari/utils/colormaps/vendored/_cm_listed.py
++++ b/napari/utils/colormaps/vendored/_cm_listed.py
+@@ -1,4 +1,5 @@
+-from napari.utils.colormaps.vendored.colors import ListedColormap
++# closest mpl commit is 3fda6a719d, except it is missing turbo data
++from .colors import ListedColormap
+ 
+ _magma_data = [
+     [0.001462, 0.000466, 0.013866],
+diff --git a/napari/utils/colormaps/vendored/cm.py b/napari/utils/colormaps/vendored/cm.py
+index 16e05b33..36dbe412 100644
+--- a/napari/utils/colormaps/vendored/cm.py
++++ b/napari/utils/colormaps/vendored/cm.py
+@@ -23,9 +23,9 @@ import functools
+ import numpy as np
+ from numpy import ma
+ 
+-from napari.utils.colormaps.vendored import colors
+-from napari.utils.colormaps.vendored._cm import datad
+-from napari.utils.colormaps.vendored._cm_listed import cmaps as cmaps_listed
++from . import colors
++from ._cm import datad
++from ._cm_listed import cmaps as cmaps_listed
+ 
+ 
+ cmap_d = {}
+diff --git a/napari/utils/colormaps/vendored/colors.py b/napari/utils/colormaps/vendored/colors.py
+index 6d969366..3e887a19 100644
+--- a/napari/utils/colormaps/vendored/colors.py
++++ b/napari/utils/colormaps/vendored/colors.py
+@@ -65,7 +65,7 @@ import itertools
+ import re
+ 
+ import numpy as np
+-from napari.utils.colormaps.vendored._color_data import (BASE_COLORS, TABLEAU_COLORS, CSS4_COLORS,
++from ._color_data import (BASE_COLORS, TABLEAU_COLORS, CSS4_COLORS,
+                           XKCD_COLORS, NTH_COLORS)
+ 
+ 
+diff --git a/napari/utils/events/containers/_dict.py b/napari/utils/events/containers/_dict.py
+index 14f4482d..81474bd2 100644
+--- a/napari/utils/events/containers/_dict.py
++++ b/napari/utils/events/containers/_dict.py
+@@ -33,7 +33,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
+ 
+     # #### START Required Abstract Methods
+ 
+-    def __setitem__(self, key: int, value: _T):  # noqa: F811
++    def __setitem__(self, key: int, value: _T):
+         self._dict[key] = self._type_check(value)
+ 
+     def __delitem__(self, key: _K) -> None:
+diff --git a/napari/utils/events/containers/_evented_dict.py b/napari/utils/events/containers/_evented_dict.py
+index a5db7db5..8731d96a 100644
+--- a/napari/utils/events/containers/_evented_dict.py
++++ b/napari/utils/events/containers/_evented_dict.py
+@@ -108,3 +108,4 @@ class EventedDict(TypedMutableMapping[_K, _T]):
+         for k, v in self._dict.items():
+             if v is value or v == value:
+                 return k
++        return None
+diff --git a/napari/utils/events/containers/_evented_list.py b/napari/utils/events/containers/_evented_list.py
+index 510e1584..2db01140 100644
+--- a/napari/utils/events/containers/_evented_list.py
++++ b/napari/utils/events/containers/_evented_list.py
+@@ -161,9 +161,9 @@ class EventedList(TypedMutableSequence[_T]):
+         # returning List[(self, int)] allows subclasses to pass nested members
+         if isinstance(key, int):
+             return [(self, key if key >= 0 else key + len(self))]
+-        elif isinstance(key, slice):
++        if isinstance(key, slice):
+             return [(self, i) for i in range(*key.indices(len(self)))]
+-        elif type(key) in self._lookup:
++        if type(key) in self._lookup:
+             return [(self, self.index(key))]
+ 
+         valid = {int, slice}.union(set(self._lookup))
+diff --git a/napari/utils/events/containers/_nested_list.py b/napari/utils/events/containers/_nested_list.py
+index 3b5f1eef..632bb785 100644
+--- a/napari/utils/events/containers/_nested_list.py
++++ b/napari/utils/events/containers/_nested_list.py
+@@ -52,7 +52,7 @@ def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
+     """
+     if isinstance(index, (slice, int)):
+         return (index,)  # single integer inserts to self
+-    elif isinstance(index, tuple):
++    if isinstance(index, tuple):
+         return index
+ 
+     raise TypeError(
+@@ -173,7 +173,7 @@ class NestableEventedList(EventedList[_T]):
+         ...  # pragma: no cover
+ 
+     @overload
+-    def __getitem__(self, key: slice) -> NestableEventedList[_T]:  # noqa
++    def __getitem__(self, key: slice) -> NestableEventedList[_T]:
+         ...  # pragma: no cover
+ 
+     @overload
+@@ -242,7 +242,7 @@ class NestableEventedList(EventedList[_T]):
+         if hasattr(event, 'index'):
+             # This event is coming from a nested List...
+             # update the index as a nested index.
+-            ei = (self.index(event.source),) + ensure_tuple_index(event.index)
++            ei = (self.index(event.source), *ensure_tuple_index(event.index))
+             for attr in ('index', 'new_index'):
+                 if hasattr(event, attr):
+                     setattr(event, attr, ei)
+@@ -311,7 +311,7 @@ class NestableEventedList(EventedList[_T]):
+ 
+         dest_par, dest_i = split_nested_index(dest_index)
+         if isinstance(dest_i, slice):
+-            raise ValueError(
++            raise TypeError(
+                 trans._(
+                     "Destination index may not be a slice",
+                     deferred=True,
+@@ -353,7 +353,7 @@ class NestableEventedList(EventedList[_T]):
+ 
+             src_par, src_i = split_nested_index(idx)
+             if isinstance(src_i, slice):
+-                raise ValueError(
++                raise TypeError(
+                     trans._(
+                         "Terminal source index may not be a slice",
+                         deferred=True,
+@@ -375,7 +375,7 @@ class NestableEventedList(EventedList[_T]):
+             if src_par == dest_par and src_i == dest_i - ddec:
+                 continue
+ 
+-            yield src_par + (src_i,), dest_par + (dest_i - ddec,)
++            yield (*src_par, src_i), (*dest_par, dest_i - ddec)
+             popped[src_par].append(src_i)
+             dumped.append(dest_i - ddec)
+ 
+@@ -413,10 +413,10 @@ class NestableEventedList(EventedList[_T]):
+         src_par_i, src_i = split_nested_index(src_index)
+         dest_par_i, dest_i = split_nested_index(dest_index)
+         dest_i = self._non_negative_index(dest_par_i, dest_i)
+-        dest_index = dest_par_i + (dest_i,)
++        dest_index = (*dest_par_i, dest_i)
+ 
+         if isinstance(src_i, slice):
+-            raise ValueError(
++            raise TypeError(
+                 trans._(
+                     "Terminal source index may not be a slice",
+                     deferred=True,
+@@ -424,7 +424,7 @@ class NestableEventedList(EventedList[_T]):
+             )
+ 
+         if isinstance(dest_i, slice):
+-            raise ValueError(
++            raise TypeError(
+                 trans._(
+                     "Destination index may not be a slice",
+                     deferred=True,
+@@ -461,7 +461,7 @@ class NestableEventedList(EventedList[_T]):
+         if isinstance(e, list):
+             return self.__newlike__(e)
+         if self._basetypes:
+-            _types = tuple(self._basetypes) + (NestableEventedList,)
++            _types = (*tuple(self._basetypes), NestableEventedList)
+             if not isinstance(e, _types):
+                 raise TypeError(
+                     trans._(
+@@ -479,9 +479,9 @@ class NestableEventedList(EventedList[_T]):
+         Depth first traversal of the tree
+         """
+         for i, item in enumerate(self[start:stop]):
+-            yield root + (i,) if root else i
++            yield (*root, i) if root else i
+             if isinstance(item, NestableEventedList):
+-                yield from item._iter_indices(root=root + (i,))
++                yield from item._iter_indices(root=(*root, i))
+ 
+     def has_index(self, index: Union[int, Tuple[int, ...]]) -> bool:
+         """Return true if `index` is valid for this nestable list."""
+@@ -490,7 +490,8 @@ class NestableEventedList(EventedList[_T]):
+         if isinstance(index, tuple):
+             try:
+                 self[index]
+-                return True
+             except IndexError:
+                 return False
++            else:
++                return True
+         raise TypeError(f"Not supported index type {type(index)}")
+diff --git a/napari/utils/events/containers/_selectable_list.py b/napari/utils/events/containers/_selectable_list.py
+index 29442151..02e42bb2 100644
+--- a/napari/utils/events/containers/_selectable_list.py
++++ b/napari/utils/events/containers/_selectable_list.py
+@@ -83,7 +83,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
+             do_add = len(self) > new
+         else:
+             *root, _idx = idx
+-            new = tuple(root) + (_idx - 1,) if _idx >= 1 else tuple(root)
++            new = (*tuple(root), _idx - 1) if _idx >= 1 else tuple(root)
+             do_add = len(self) > new[0]
+         if do_add:
+             self.selection.add(self[new])
+diff --git a/napari/utils/events/containers/_typed.py b/napari/utils/events/containers/_typed.py
+index 4dee3322..bbb7bfee 100644
+--- a/napari/utils/events/containers/_typed.py
++++ b/napari/utils/events/containers/_typed.py
+@@ -75,14 +75,14 @@ class TypedMutableSequence(MutableSequence[_T]):
+         return id(self)
+ 
+     @overload
+-    def __setitem__(self, key: int, value: _T):  # noqa: F811
++    def __setitem__(self, key: int, value: _T):
+         ...  # pragma: no cover
+ 
+     @overload
+-    def __setitem__(self, key: slice, value: Iterable[_T]):  # noqa: F811
++    def __setitem__(self, key: slice, value: Iterable[_T]):
+         ...  # pragma: no cover
+ 
+-    def __setitem__(self, key, value):  # noqa: F811
++    def __setitem__(self, key, value):
+         if isinstance(key, slice):
+             if not isinstance(value, Iterable):
+                 raise TypeError(
+@@ -109,14 +109,14 @@ class TypedMutableSequence(MutableSequence[_T]):
+         return super().__contains__(key)
+ 
+     @overload
+-    def __getitem__(self, key: int) -> _T:  # noqa: F811
++    def __getitem__(self, key: int) -> _T:
+         ...  # pragma: no cover
+ 
+     @overload
+-    def __getitem__(self, key: slice) -> 'TypedMutableSequence[_T]':  # noqa
++    def __getitem__(self, key: slice) -> 'TypedMutableSequence[_T]':
+         ...  # pragma: no cover
+ 
+-    def __getitem__(self, key):  # noqa: F811
++    def __getitem__(self, key):
+         """Get an item from the list
+ 
+         Parameters
+@@ -245,7 +245,8 @@ class TypedMutableSequence(MutableSequence[_T]):
+ 
+     def _ipython_key_completions_(self):
+         if str in self._lookup:
+-            return (self._lookup[str](x) for x in self)  # type: ignore
++            return (self._lookup[str](x) for x in self)
++        return None  # type: ignore
+ 
+ 
+ def _noop(x):
+diff --git a/napari/utils/events/debugging.py b/napari/utils/events/debugging.py
+index 0ae03847..cc032b96 100644
+--- a/napari/utils/events/debugging.py
++++ b/napari/utils/events/debugging.py
+@@ -112,7 +112,7 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
+ 
+     # seperate groups of events
+     if not cfg._cur_depth:
+-        lines = ["─" * 79, ''] + lines
++        lines = ["─" * 79, "", *lines]
+     elif not cfg.nesting_allowance:
+         return
+ 
+diff --git a/napari/utils/events/event.py b/napari/utils/events/event.py
+index a999a3c0..a3c34fb8 100644
+--- a/napari/utils/events/event.py
++++ b/napari/utils/events/event.py
+@@ -193,9 +193,9 @@ class Event:
+                 attr = getattr(self, name)
+ 
+                 attrs.append(f"{name}={attr!r}")
+-            return "<{} {}>".format(self.__class__.__name__, " ".join(attrs))
+         finally:
+             _event_repr_depth -= 1
++        return f'<{self.__class__.__name__} {" ".join(attrs)}>'
+ 
+     def __str__(self) -> str:
+         """Shorter string representation"""
+@@ -390,16 +390,18 @@ class EventEmitter:
+         core : str
+             Name of core module, for example 'napari'.
+         """
+-        try:
+-            if isinstance(callback, partial):
+-                callback = callback.func
+-            if not isinstance(callback, tuple):
+-                return callback.__module__.startswith(core + '.')
+-            obj = callback[0]()  # get object behind weakref
+-            if obj is None:  # object is dead
++        if isinstance(callback, partial):
++            callback = callback.func
++        if not isinstance(callback, tuple):
++            try:
++                return callback.__module__.startswith(f'{core}.')
++            except AttributeError:
+                 return False
+-            return obj.__module__.startswith(core + '.')
+-
++        obj = callback[0]()  # get object behind weakref
++        if obj is None:  # object is dead
++            return False
++        try:
++            return obj.__module__.startswith(f'{core}.')
+         except AttributeError:
+             return False
+ 
+@@ -470,7 +472,7 @@ class EventEmitter:
+         callback, pass_event = self._normalize_cb(callback)
+ 
+         if callback in callbacks:
+-            return
++            return None
+ 
+         # deal with the ref
+         _ref: Union[str, None]
+@@ -1024,7 +1026,7 @@ class EmitterGroup(EventEmitter):
+                         name=name,
+                     )
+                 )
+-            elif hasattr(self, name):
++            if hasattr(self, name):
+                 raise ValueError(
+                     trans._(
+                         "The name '{name}' cannot be used as an emitter; it is already an attribute of EmitterGroup",
+diff --git a/napari/utils/events/evented_model.py b/napari/utils/events/evented_model.py
+index ea30cc0b..0230d9df 100644
+--- a/napari/utils/events/evented_model.py
++++ b/napari/utils/events/evented_model.py
+@@ -355,7 +355,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
+         if isinstance(values, self.__class__):
+             values = values.dict()
+         if not isinstance(values, dict):
+-            raise ValueError(
++            raise TypeError(
+                 trans._(
+                     "Unsupported update from {values}",
+                     deferred=True,
+diff --git a/napari/utils/info.py b/napari/utils/info.py
+index 8d7375c5..820645b3 100644
+--- a/napari/utils/info.py
++++ b/napari/utils/info.py
+@@ -29,7 +29,14 @@ def _linux_sys_name():
+                 return f'{data["NAME"]} {data["VERSION_ID"]}'
+             return f'{data["NAME"]} (no version)'
+ 
+-    try:
++    return _linux_sys_name_lsb_release()
++
++
++def _linux_sys_name_lsb_release():
++    """
++    Try to discover linux system name base on lsb_release command output
++    """
++    with contextlib.suppress(subprocess.CalledProcessError):
+         res = subprocess.run(
+             ["lsb_release", "-d", "-r"], check=True, capture_output=True
+         )
+@@ -42,8 +49,6 @@ def _linux_sys_name():
+         if not version_str.endswith(data["Release"]):
+             version_str += " " + data["Release"]
+         return version_str
+-    except subprocess.CalledProcessError:
+-        pass
+     return ""
+ 
+ 
+diff --git a/napari/utils/key_bindings.py b/napari/utils/key_bindings.py
+index c1530a66..b5266f93 100644
+--- a/napari/utils/key_bindings.py
++++ b/napari/utils/key_bindings.py
+@@ -458,7 +458,7 @@ class KeymapHandler:
+ 
+         if func is Ellipsis:  # blocker
+             return
+-        elif not callable(func):
++        if not callable(func):
+             raise TypeError(
+                 trans._(
+                     "expected {func} to be callable",
+diff --git a/napari/utils/misc.py b/napari/utils/misc.py
+index 4cadb036..a255093b 100644
+--- a/napari/utils/misc.py
++++ b/napari/utils/misc.py
+@@ -90,6 +90,7 @@ def bundle_bin_dir() -> Optional[str]:
+     )
+     if os_path.isdir(bin_path):
+         return bin_path
++    return None
+ 
+ 
+ def in_jupyter() -> bool:
+@@ -135,8 +136,8 @@ def ensure_iterable(arg, color=False):
+     """
+     if is_iterable(arg, color=color):
+         return arg
+-    else:
+-        return itertools.repeat(arg)
++
++    return itertools.repeat(arg)
+ 
+ 
+ def is_iterable(arg, color=False, allow_none=False):
+@@ -150,10 +151,10 @@ def is_iterable(arg, color=False, allow_none=False):
+         or np.isscalar(arg)
+     ):
+         return False
+-    elif color and isinstance(arg, (list, np.ndarray)):
++    if color and isinstance(arg, (list, np.ndarray)):
+         return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
+-    else:
+-        return True
++
++    return True
+ 
+ 
+ def is_sequence(arg):
+@@ -254,9 +255,9 @@ def formatdoc(obj):
+         obj.__doc__ = obj.__doc__.format(
+             **{**frame.f_globals, **frame.f_locals}
+         )
+-        return obj
+     finally:
+         del frame
++    return obj
+ 
+ 
+ class StringEnumMeta(EnumMeta):
+@@ -282,17 +283,17 @@ class StringEnumMeta(EnumMeta):
+         if names is None:
+             if isinstance(value, str):
+                 return super().__call__(value.lower())
+-            elif isinstance(value, cls):
++            if isinstance(value, cls):
+                 return value
+-            else:
+-                raise ValueError(
+-                    trans._(
+-                        '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
+-                        deferred=True,
+-                        class_name=cls,
+-                        dtype=builtins.type(value),
+-                    )
++
++            raise ValueError(
++                trans._(
++                    '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
++                    deferred=True,
++                    class_name=cls,
++                    dtype=builtins.type(value),
+                 )
++            )
+ 
+         # otherwise create new Enum class
+         return cls._create_(
+@@ -322,7 +323,7 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
+     def __eq__(self, other):
+         if type(self) is type(other):
+             return self is other
+-        elif isinstance(other, str):
++        if isinstance(other, str):
+             return str(self) == other
+         return NotImplemented
+ 
+diff --git a/napari/utils/perf/_config.py b/napari/utils/perf/_config.py
+index c49c0140..1a966e2d 100644
+--- a/napari/utils/perf/_config.py
++++ b/napari/utils/perf/_config.py
+@@ -138,7 +138,7 @@ class PerfmonConfig:
+             return False
+ 
+     @property
+-    def trace_file_on_start(self) -> str:
++    def trace_file_on_start(self) -> Optional[str]:
+         """Return path of trace file to write or None."""
+         if self.config_path is None:
+             return None  # don't trace on start in legacy mode
+@@ -146,9 +146,10 @@ class PerfmonConfig:
+             path = self.data["trace_file_on_start"]
+ 
+             # Return None if it was empty string or false.
+-            return path if path else None
+         except KeyError:
+             return None
++        else:
++            return path or None
+ 
+ 
+ def _create_perf_config():
+@@ -156,10 +157,10 @@ def _create_perf_config():
+ 
+     if value is None or value == "0":
+         return None  # Totally disabled
+-    elif value == "1":
++    if value == "1":
+         return PerfmonConfig(None)  # Legacy no config, Qt events only.
+-    else:
+-        return PerfmonConfig(value)  # Normal parse the config file.
++
++    return PerfmonConfig(value)  # Normal parse the config file.
+ 
+ 
+ # The global instance
+diff --git a/napari/utils/perf/_patcher.py b/napari/utils/perf/_patcher.py
+index d51070df..db375571 100644
+--- a/napari/utils/perf/_patcher.py
++++ b/napari/utils/perf/_patcher.py
+@@ -146,6 +146,7 @@ def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
+             # the module_path we didn't use.
+             attribute_str = '.'.join(parts[i - 1 :])
+             return module, attribute_str
++    return None
+ 
+ 
+ def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
+diff --git a/napari/utils/status_messages.py b/napari/utils/status_messages.py
+index bf6725e7..5f7d1fc7 100644
+--- a/napari/utils/status_messages.py
++++ b/napari/utils/status_messages.py
+@@ -37,10 +37,8 @@ def status_format(value):
+         return ''
+     if isinstance(value, float) or np.issubdtype(type(value), np.floating):
+         return format_float(value)
+-    elif isinstance(value, int) or np.issubdtype(type(value), np.integer):
+-        return str(value)
+-    else:
+-        return str(value)
++
++    return str(value)
+ 
+ 
+ def generate_layer_coords_status(position, value):
+diff --git a/napari/utils/theme.py b/napari/utils/theme.py
+index 797985af..67d8fbf4 100644
+--- a/napari/utils/theme.py
++++ b/napari/utils/theme.py
+@@ -5,7 +5,7 @@ import re
+ import warnings
+ from ast import literal_eval
+ from contextlib import suppress
+-from typing import Union
++from typing import List, Union
+ 
+ import npe2
+ from pydantic import validator
+@@ -281,7 +281,7 @@ def unregister_theme(theme_id):
+     _themes.pop(theme_id, None)
+ 
+ 
+-def available_themes():
++def available_themes() -> List[str]:
+     """List available themes.
+ 
+     Returns
+@@ -289,7 +289,7 @@ def available_themes():
+     list of str
+         ids of available themes.
+     """
+-    return tuple(_themes) + ("system",)
++    return [*_themes, 'system']
+ 
+ 
+ def is_theme_available(theme_id):
+@@ -389,8 +389,8 @@ def _install_npe2_themes(themes=None):
+             theme_dict.update(theme_colors)
+             try:
+                 register_theme(theme.id, theme_dict, manifest.name)
+-            except ValueError as e:
+-                logging.exception("Registration theme failed.\n%s", e)
++            except ValueError:
++                logging.exception("Registration theme failed.")
+ 
+ 
+ _install_npe2_themes(_themes)
+diff --git a/napari/utils/transforms/transform_utils.py b/napari/utils/transforms/transform_utils.py
+index 0a172108..7e7d85d0 100644
+--- a/napari/utils/transforms/transform_utils.py
++++ b/napari/utils/transforms/transform_utils.py
+@@ -168,7 +168,7 @@ def rotate_to_matrix(rotate, *, ndim):
+ def _make_rotate_mat(rotate):
+     if np.isscalar(rotate):
+         return _make_2d_rotation(rotate)
+-    elif np.array(rotate).ndim == 1 and len(rotate) == 3:
++    if np.array(rotate).ndim == 1 and len(rotate) == 3:
+         return _make_3d_rotation(*rotate)
+     return np.array(rotate)
+ 
+@@ -328,10 +328,10 @@ def embed_in_identity_matrix(matrix, ndim):
+ 
+     if matrix.shape[0] == ndim:
+         return matrix
+-    else:
+-        full_matrix = np.eye(ndim)
+-        full_matrix[-matrix.shape[0] :, -matrix.shape[1] :] = matrix
+-        return full_matrix
++
++    full_matrix = np.eye(ndim)
++    full_matrix[-matrix.shape[0] :, -matrix.shape[1] :] = matrix
++    return full_matrix
+ 
+ 
+ def decompose_linear_matrix(
+@@ -494,5 +494,5 @@ def is_diagonal(matrix, tol=1e-8):
+     non_diag = matrix[~np.eye(matrix.shape[0], dtype=bool)]
+     if tol == 0:
+         return np.count_nonzero(non_diag) == 0
+-    else:
+-        return np.max(np.abs(non_diag)) <= tol
++
++    return np.max(np.abs(non_diag)) <= tol
+diff --git a/napari/utils/transforms/transforms.py b/napari/utils/transforms/transforms.py
+index 090a1743..3856fa9b 100644
+--- a/napari/utils/transforms/transforms.py
++++ b/napari/utils/transforms/transforms.py
+@@ -50,10 +50,10 @@ class Transform:
+     def inverse(self) -> 'Transform':
+         if self._inverse_func is not None:
+             return Transform(self._inverse_func, self.func)
+-        else:
+-            raise ValueError(
+-                trans._('Inverse function was not provided.', deferred=True)
+-            )
++
++        raise ValueError(
++            trans._('Inverse function was not provided.', deferred=True)
++        )
+ 
+     def compose(self, transform: 'Transform') -> 'Transform':
+         """Return the composite of this transform and the provided one."""
+@@ -147,8 +147,8 @@ class TransformChain(EventedList, Transform):
+             return None
+         if len(self) == 1:
+             return self[0]
+-        else:
+-            return tz.pipe(self[0], *[tf.compose for tf in self[1:]])
++
++        return tz.pipe(self[0], *[tf.compose for tf in self[1:]])
+ 
+     def set_slice(self, axes: Sequence[int]) -> 'TransformChain':
+         """Return a transform chain subset to the visible dimensions.
+@@ -433,10 +433,10 @@ class Affine(Transform):
+         """Return the scale of the transform."""
+         if self._is_diagonal:
+             return np.diag(self._linear_matrix)
+-        else:
+-            return decompose_linear_matrix(
+-                self._linear_matrix, upper_triangular=self._upper_triangular
+-            )[1]
++
++        return decompose_linear_matrix(
++            self._linear_matrix, upper_triangular=self._upper_triangular
++        )[1]
+ 
+     @scale.setter
+     def scale(self, scale):
+diff --git a/napari/viewer.py b/napari/viewer.py
+index 2dc77b45..8a521646 100644
+--- a/napari/viewer.py
++++ b/napari/viewer.py
+@@ -87,8 +87,7 @@ class Viewer(ViewerModel):
+         """
+         if self.window._qt_viewer._console is None:
+             return
+-        else:
+-            self.window._qt_viewer.console.push(variables)
++        self.window._qt_viewer.console.push(variables)
+ 
+     def screenshot(
+         self,
+@@ -184,7 +183,7 @@ def current_viewer() -> Optional[Viewer]:
+     """Return the currently active napari viewer."""
+     try:
+         from napari._qt.qt_main_window import _QtMainWindow
+-
+-        return _QtMainWindow.current_viewer()
+     except ImportError:
+         return None
++    else:
++        return _QtMainWindow.current_viewer()
+diff --git a/napari_builtins/_skimage_data.py b/napari_builtins/_skimage_data.py
+index 3ab2b97a..1b66f297 100644
+--- a/napari_builtins/_skimage_data.py
++++ b/napari_builtins/_skimage_data.py
+@@ -15,7 +15,7 @@ def _load_skimage_data(name, **kwargs):
+                 },
+             )
+         ]
+-    elif name == 'kidney':
++    if name == 'kidney':
+         return [
+             (
+                 skimage.data.kidney(),
+@@ -26,7 +26,7 @@ def _load_skimage_data(name, **kwargs):
+                 },
+             )
+         ]
+-    elif name == 'lily':
++    if name == 'lily':
+         return [
+             (
+                 skimage.data.lily(),
+@@ -37,7 +37,7 @@ def _load_skimage_data(name, **kwargs):
+                 },
+             )
+         ]
+-    elif name == 'binary_blobs_3D':
++    if name == 'binary_blobs_3D':
+         kwargs['n_dim'] = 3
+         kwargs.setdefault('length', 128)
+         kwargs.setdefault('volume_fraction', 0.25)
+diff --git a/napari_builtins/_tests/test_io.py b/napari_builtins/_tests/test_io.py
+index 5de12a89..082d882f 100644
+--- a/napari_builtins/_tests/test_io.py
++++ b/napari_builtins/_tests/test_io.py
+@@ -232,9 +232,7 @@ def test_single_file(spec: ImageSpec, _write_spec, stacks: int):
+     fnames = [str(_write_spec(spec)) for _ in range(stacks)]
+     [(layer_data,)] = npe2.read(fnames, stack=stacks > 1)
+     assert isinstance(layer_data, np.ndarray if stacks == 1 else da.Array)
+-    assert layer_data.shape == tuple(
+-        i for i in (stacks,) + spec.shape if i > 1
+-    )
++    assert layer_data.shape == tuple(i for i in (stacks, *spec.shape) if i > 1)
+     assert layer_data.dtype == spec.dtype
+ 
+ 
+@@ -253,7 +251,7 @@ def test_magic_imread(_write_spec, spec: ImageSpec, stack, use_dask):
+     if isinstance(spec, ImageSpec):
+         expect_shape = spec.shape
+     else:
+-        expect_shape = (len(spec),) + spec[0].shape if stack else spec[0].shape
++        expect_shape = (len(spec), *spec[0].shape) if stack else spec[0].shape
+     expect_shape = tuple(i for i in expect_shape if i > 1)
+ 
+     expected_arr_type = (
+@@ -289,8 +287,8 @@ def test_irregular_images(_write_spec, stack):
+         ):
+             magic_imread(fnames, use_dask=False, stack=stack)
+         return
+-    else:
+-        images = magic_imread(fnames, use_dask=False, stack=stack)
++
++    images = magic_imread(fnames, use_dask=False, stack=stack)
+     assert isinstance(images, list)
+     assert len(images) == 2
+     assert all(img.shape == spec.shape for img, spec in zip(images, specs))
+diff --git a/napari_builtins/io/_read.py b/napari_builtins/io/_read.py
+index 29bdb2fa..2860e06f 100644
+--- a/napari_builtins/io/_read.py
++++ b/napari_builtins/io/_read.py
+@@ -324,7 +324,7 @@ def _shapes_csv_to_layerdata(
+     n_shapes = max(inds) + 1
+     # Determine when shape id changes
+     transitions = list((np.diff(inds)).nonzero()[0] + 1)
+-    shape_boundaries = [0] + transitions + [len(table)]
++    shape_boundaries = [0, *transitions] + [len(table)]
+     if n_shapes != len(shape_boundaries) - 1:
+         raise ValueError(
+             trans._('Expected number of shapes not found', deferred=True)
+@@ -359,10 +359,9 @@ def _guess_layer_type_from_column_names(
+         column_names
+     ):
+         return 'shapes'
+-    elif {'axis-0', 'axis-1'}.issubset(column_names):
++    if {'axis-0', 'axis-1'}.issubset(column_names):
+         return 'points'
+-    else:
+-        return None
++    return None
+ 
+ 
+ def read_csv(
+@@ -414,7 +413,7 @@ def read_csv(
+                         filename=filename,
+                     )
+                 )
+-            elif layer_type != require_type and require_type.lower() != "any":
++            if layer_type != require_type and require_type.lower() != "any":
+                 raise ValueError(
+                     trans._(
+                         'File "{filename}" not recognized as {require_type} data',
+diff --git a/napari_builtins/io/_write.py b/napari_builtins/io/_write.py
+index 2dbacb77..3934131d 100644
+--- a/napari_builtins/io/_write.py
++++ b/napari_builtins/io/_write.py
+@@ -191,9 +191,9 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
+         prop_table = []
+ 
+     # add index of each point
+-    column_names = ['index'] + column_names
++    column_names = ["index", *column_names]
+     indices = np.expand_dims(list(range(data.shape[0])), axis=1)
+-    table = np.concatenate([indices, data] + prop_table, axis=1)
++    table = np.concatenate([indices, data, *prop_table], axis=1)
+ 
+     # write table to csv file
+     write_csv(path, table, column_names)
+@@ -239,7 +239,7 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
+     column_names = [f'axis-{str(n)}' for n in range(n_dimensions)]
+ 
+     # add shape id and vertex id of each vertex
+-    column_names = ['index', 'shape-type', 'vertex-index'] + column_names
++    column_names = ["index", "shape-type", "vertex-index", *column_names]
+ 
+     # concatenate shape data into 2D array
+     len_shapes = [s.shape[0] for s in data]
+@@ -317,8 +317,8 @@ def write_layer_data_with_plugins(
+             for fname in os.listdir(tmp):
+                 written.append(os.path.join(path, fname))
+                 shutil.move(os.path.join(tmp, fname), path)
+-    except Exception as exc:
++    except Exception:
+         if not already_existed:
+             shutil.rmtree(path, ignore_errors=True)
+-        raise exc
++        raise
+     return written
+diff --git a/pyproject.toml b/pyproject.toml
+index 859e9d1e..99fe5cb0 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -88,12 +88,25 @@ select = [
+     "PIE", # flake8-pie
+     "COM", # flake8-commas
+     "SIM", # flake8-simplify
++    "INP", # flake8-no-pep420
++    "PYI", # flake8-pyi
++    "Q", # flake8-quotes
++    "RSE", # flake8-raise
++    "RET", # flake8-return
++    "TID",  # flake8-tidy-imports # replace absolutify import
++    "TRY", # tryceratops
++    "ICN", # flake8-import-conventions
++    "RUF", # ruff specyfic rules
+ ]
+ ignore = [
+     "E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003",
+     "A003", # flake8-builtins - we have class attributes violating these rule
+     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
+     "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
++    "Q000",
++    "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
++    "TRY003", # require implement multiple exception class
++    "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
+ 
+ ]
+ 
+@@ -124,12 +137,34 @@ fix = true
+ 
+ [tool.ruff.per-file-ignores]
+ "napari/_vispy/__init__.py" = ["E402"]
+-"**/_tests/*.py" = ["B011"]
++"**/_tests/*.py" = ["B011", "INP001", "TRY301"]
+ "napari/utils/_testsupport.py" = ["B011"]
++"tools/test_strings.py" = ["F401"]
++"tools/**" = ["INP001", "T20"]
++"examples/**" = ["INP001", "T20"]
++"bundle.py" = ["T20"]
++"**/vendored/**" = ["TID"]
++
++[tool.ruff.flake8-quotes]
++docstring-quotes = "double"
++
++[tool.ruff.flake8-tidy-imports]
++# Disallow all relative imports.
++ban-relative-imports = "all"
++
++[tool.ruff.pyupgrade]
++# Preserve types, even if a file imports `from __future__ import annotations`.
++keep-runtime-typing = true
+ 
+ [tool.ruff.isort]
+ known-first-party=['napari']
+ 
++[tool.ruff.flake8-import-conventions]
++[tool.ruff.flake8-import-conventions.extend-aliases]
++# Declare a custom alias for the `matplotlib` module.
++"dask.array" = "da"
++xarray = "xr"
++
+ [tool.pytest.ini_options]
+ # These follow standard library warnings filters syntax.  See more here:
+ # https://docs.python.org/3/library/warnings.html#describing-warning-filters
+diff --git a/tools/test_strings.py b/tools/test_strings.py
+index 393c5903..95ecabb0 100644
+--- a/tools/test_strings.py
++++ b/tools/test_strings.py
+@@ -625,12 +625,12 @@ if __name__ == '__main__':
+ 
+             print()
+             print(
+-                f"{RED}i{NORMAL} : ignore –  add to ignored localised strings"
++                f"{RED}i{NORMAL} : ignore -  add to ignored localised strings"
+             )
+-            print(f"{RED}q{NORMAL} : quit –  quit w/o saving")
+-            print(f"{RED}c{NORMAL} : continue –  go to next")
++            print(f"{RED}q{NORMAL} : quit -  quit w/o saving")
++            print(f"{RED}c{NORMAL} : continue -  go to next")
+             if edit_cmd:
+-                print(f"{RED}e{NORMAL} : EDIT – using {edit_cmd!r}")
++                print(f"{RED}e{NORMAL} : EDIT - using {edit_cmd!r}")
+             else:
+                 print(
+                     "- : Edit not available, call with python tools/test_strings.py  '$COMMAND {filename} {linenumber} '"
+-- 
+2.34.1
+
