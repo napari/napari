@@ -88,6 +88,18 @@ def test_progress_set_description():
     assert pbr not in progress._all_instances
 
 
+def test_progress_set_disable():
+    """Test that the progress bar does not throw an attribute error when it is disabled."""
+    # before the changes in #5964 this failed with an AttributeError, because self.desc was not
+    # set in the super constructor of tqdm
+    pbr = progress(
+        total=5, disable=True, desc="This description will not be set by tqdm."
+    )
+    # make sure the dummy desscription (empty string) was set
+    assert pbr.desc == "progress: "
+    pbr.close()
+
+
 def test_progrange():
     """Test progrange shorthand for progress(range(n))"""
     with progrange(10) as pbr, progress(range(10)) as pbr2:
