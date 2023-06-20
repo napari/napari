@@ -111,7 +111,11 @@ def select(layer: Shapes, event: MouseEvent) -> None:
     # only emit data once dragging has finished
     if layer._is_moving:
         layer.events.data(
-            value={"action": "change", "index": list(layer.selected_data)}
+            value=layer.data,
+            action_type={
+                "action": "change",
+                "index": list(layer.selected_data),
+            },
         )
 
     # on release
@@ -520,7 +524,9 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
     with layer.events.set_data.blocker():
         layer._data_view.edit(index, vertices, new_type=new_type)
         layer._selected_box = layer.interaction_box(layer.selected_data)
-    layer.events.data(value={"action": "change", "index": [index]})
+    layer.events.data(
+        value=layer.data, action_type={"action": "change", "index": [index]}
+    )
     layer.refresh()
 
 
@@ -573,7 +579,8 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
     layer.events.data(
-        value={"action": "change", "index": [shape_under_cursor]}
+        value=layer.data,
+        action_type={"action": "change", "index": [shape_under_cursor]},
     )
     layer.refresh()
 
