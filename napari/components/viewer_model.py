@@ -973,6 +973,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         plugin_spec_reader = None
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
+
         # then try with npe1
         if data is None:
             try:
