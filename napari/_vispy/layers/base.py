@@ -167,7 +167,10 @@ class VispyBaseLayer(ABC):
             if overlay in self.overlays:
                 continue
 
-            overlay_visual = create_vispy_overlay(overlay, layer=self.layer)
+            with self.layer.events._overlays.blocker():
+                overlay_visual = create_vispy_overlay(
+                    overlay, layer=self.layer
+                )
             self.overlays[overlay] = overlay_visual
             if isinstance(overlay, CanvasOverlay):
                 overlay_visual.node.parent = self.node.parent.parent  # viewbox
