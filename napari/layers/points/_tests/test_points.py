@@ -1,6 +1,6 @@
 from copy import copy
 from itertools import cycle, islice
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -443,23 +443,20 @@ def test_remove_selected_updates_value():
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
-    def mock_event_handler(event):
-        # Perform assertions on the event arguments
-        assert event.value == layer.data
-        assert event.action == "remove"
-        assert event.data_indices == list(layer.selected_data)
+    layer.events.data = Mock()
+    # set the value
+    layer._value = 3
+    layer._value_stored = 3
 
-    with patch.object(
-        layer.events.data, 'connect', side_effect=mock_event_handler
-    ):
-        # set the value
-        layer._value = 3
-        layer._value_stored = 3
-
-        layer.selected_data = {0, 5, 6, 7}
-        layer.remove_selected()
-
-        assert layer._value == 2
+    selection = {0, 5, 6, 7}
+    layer.selected_data = selection
+    layer.remove_selected()
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": "remove",
+        "data_indices": list(selection),
+    }
+    assert layer._value == 2
 
 
 def test_remove_selected_removes_corresponding_attributes():
@@ -517,21 +514,12 @@ def test_move():
     unmoved = copy(data)
     layer = Points(data)
 
-    def mock_event_handler(event):
-        # Perform assertions on the event arguments
-        assert event.value == layer.data
-        assert event.action == "change"
-        assert event.data_indices == list(layer.selected_data)
-
     # Move one point relative to an initial drag start location
-    with patch.object(
-        layer.events.data, 'connect', side_effect=mock_event_handler
-    ):
-        layer._move([0], [0, 0])
-        layer._move([0], [10, 10])
-        layer._drag_start = None
-        assert np.all(layer.data[0] == unmoved[0] + [10, 10])
-        assert np.all(layer.data[1:] == unmoved[1:])
+    layer._move([0], [0, 0])
+    layer._move([0], [10, 10])
+    layer._drag_start = None
+    assert np.all(layer.data[0] == unmoved[0] + [10, 10])
+    assert np.all(layer.data[1:] == unmoved[1:])
 
     # Move two points relative to an initial drag start location
     layer._move([1, 2], [2, 2])
@@ -1134,21 +1122,19 @@ def test_add_point_direct(attribute: str):
     layer = Points()
     assert len(getattr(layer, f'{attribute}_color')) == 0
 
-    def mock_event_handler(event):
-        # Perform assertions on the event arguments
-        assert event.value == layer.data
-        assert event.action == "add"
-        assert event.data_indices == [0]
-
+    layer.events.data = Mock()
     setattr(layer, f'current_{attribute}_color', 'red')
     coord = [18, 18]
-    with patch.object(
-        layer.events.data, 'connect', side_effect=mock_event_handler
-    ):
-        layer.add(coord)
-        np.testing.assert_allclose(
-            [[1, 0, 0, 1]], getattr(layer, f'{attribute}_color')
-        )
+
+    layer.add(coord)
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": "add",
+        "data_indices": [-1],
+    }
+    np.testing.assert_allclose(
+        [[1, 0, 0, 1]], getattr(layer, f'{attribute}_color')
+    )
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
