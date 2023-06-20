@@ -10,6 +10,7 @@ from psygnal.containers import Selection
 from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
+from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -1899,7 +1900,9 @@ class Points(Layer):
             Point or points to add to the layer data.
         """
         self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
-        self.events.data(value=self.data, action="add", data_indices=[-1])
+        self.events.data(
+            value=self.data, action=ActionType.ADD.value, data_indices=[-1]
+        )
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -1930,7 +1933,7 @@ class Points(Layer):
             self.data = np.delete(self.data, index, axis=0)
             self.events.data(
                 value=self.data,
-                action="remove",
+                action=ActionType.REMOVE.value,
                 data_indices=list(self.selected_data),
             )
             self.selected_data = set()
@@ -1961,7 +1964,7 @@ class Points(Layer):
             self.refresh()
         self.events.data(
             value=self.data,
-            action="change",
+            action=ActionType.CHANGE.value,
             data_indices=list(selection_indices),
         )
 

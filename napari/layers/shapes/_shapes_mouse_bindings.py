@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes._shapes_constants import Box, Mode
 from napari.layers.shapes._shapes_models import (
     Ellipse,
@@ -116,7 +117,7 @@ def select(layer: Shapes, event: MouseEvent) -> None:
     if layer._is_moving:
         layer.events.data(
             value=layer.data,
-            action="change",
+            action=ActionType.CHANGE.value,
             data_indices=list(layer.selected_data),
             vertex_indices=vertex_indices,
         )
@@ -529,7 +530,7 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
         layer._selected_box = layer.interaction_box(layer.selected_data)
     layer.events.data(
         value=layer.data,
-        action="change",
+        action=ActionType.CHANGE.value,
         data_indices=[index],
         vertex_indices=[[ind]],
     )
@@ -586,7 +587,7 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
             layer._selected_box = layer.interaction_box(shapes)
     layer.events.data(
         value=layer.data,
-        action="change",
+        action=ActionType.CHANGE.value,
         data_indices=[shape_under_cursor],
         vertex_indices=[[vertex_under_cursor]],
     )

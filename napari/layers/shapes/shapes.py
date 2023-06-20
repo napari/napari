@@ -9,6 +9,7 @@ import pandas as pd
 from vispy.color import get_color_names
 
 from napari.layers.base import Layer, no_op
+from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -2006,7 +2007,9 @@ class Shapes(Layer):
                 face_color=face_color,
                 z_index=z_index,
             )
-            self.events.data(value=self.data, action="add", data_indices=[-1])
+            self.events.data(
+                value=self.data, action=ActionType.ADD.value, data_indices=[-1]
+            )
 
     def _init_shapes(
         self,
@@ -2588,7 +2591,9 @@ class Shapes(Layer):
             )
         self.selected_data = set()
         self._finish_drawing()
-        self.events.data(value=self.data, action="remove", data_indices=index)
+        self.events.data(
+            value=self.data, action=ActionType.REMOVE.value, data_indices=index
+        )
 
     def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.

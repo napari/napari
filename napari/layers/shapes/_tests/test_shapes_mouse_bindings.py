@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from napari.layers import Shapes
+from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes.shapes import Mode
 from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
@@ -376,7 +377,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     assert len(layer.data[0]) == n_coord + 1
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": "change",
+        "action": ActionType.CHANGE.value,
         "data_indices": [0],
         "vertex_indices": [[2]],
     }
@@ -420,7 +421,7 @@ def test_vertex_remove(create_known_shapes_layer, Event):
     mouse_move_callbacks(layer, event)
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": "change",
+        "action": ActionType.CHANGE.value,
         "data_indices": list(select),
         "vertex_indices": [[3]],
     }
@@ -565,7 +566,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
     assert layer.selected_data == {0}
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": "change",
+        "action": ActionType.CHANGE.value,
         "data_indices": [0],
         "vertex_indices": vertex_indices,
     }
@@ -686,7 +687,7 @@ def test_drag_vertex(create_known_shapes_layer, Event):
     assert layer.selected_data == {0}
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": "change",
+        "action": ActionType.CHANGE.value,
         "data_indices": [0],
         "vertex_indices": vertex_indices,
     }

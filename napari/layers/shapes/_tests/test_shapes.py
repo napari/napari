@@ -13,6 +13,7 @@ from napari._tests.utils import (
 )
 from napari.components import ViewerModel
 from napari.layers import Shapes
+from napari.layers.base._base_constants import ActionType
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.utils.colormaps.standardize_color import transform_color
@@ -949,7 +950,7 @@ def test_polygons(shape):
 
     # Avoid a.any(), a.all()
     assert np.array_equal(layer2.events.data.call_args[1]["value"], layer.data)
-    assert layer2.events.data.call_args[1]["action"] == "add"
+    assert layer2.events.data.call_args[1]["action"] == ActionType.ADD.value
     assert layer2.events.data.call_args[1]["data_indices"] == [-1]
 
 
@@ -1244,7 +1245,7 @@ def test_removing_selected_shapes():
     layer.remove_selected()
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": "remove",
+        "action": ActionType.REMOVE.value,
         "data_indices": list(selection),
     }
 
