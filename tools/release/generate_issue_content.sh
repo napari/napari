@@ -27,7 +27,7 @@ python filter_opened_bug_issues.py $LAST_TAG main --milestone $NEW_RELEASE
 
 echo
 
-python filter_opened_bug_issues.py $LAST_TAG main --skip-triaged
+python filter_opened_bug_issues.py $LAST_TAG main --skip-triaged  --milestone none
 
 echo
 echo "The content of this issue will be updated to reflect current state."

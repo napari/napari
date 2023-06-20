@@ -28,14 +28,28 @@ parser.add_argument(
     default=False,
     help="if present then skip triaged PRs",
 )
+parser.add_argument("--label", help="The label", action="append")
 
 args = parser.parse_args()
+
+if args.label is None:
+    args.label = ["bug"]
 
 setup_cache()
 
 repository = get_repo()
 
-milestone = get_milestone(args.milestone)
+if args.milestone is not None:
+    if args.mileston.lower() == "none":
+        milestone_search_string = "no:milestone"
+        milestone = None
+    else:
+        milestone = get_milestone(args.milestone)
+        milestone_search_string = f'milestone:"{milestone.title}"'
+else:
+    milestone_search_string = ""
+    milestone = None
+
 
 common_ancestor = get_common_ancestor(args.from_commit, args.to_commit)
 remote_commit = repository.get_commit(common_ancestor.hexsha)
@@ -47,22 +61,30 @@ probably_solved = repository.get_label("probably solved")
 need_to_reproduce = repository.get_label("need to reproduce")
 
 if args.skip_triaged:
-    triage_label = repository.get_label("triaged-0.4.18")
+    triage_labels = [
+        x for x in repository.get_labels() if x.name.startswith("triaged")
+    ]
 else:
-    triage_label = None
+    triage_labels = []
+
+labels = [repository.get_label(label) for label in args.label]
+
+search_string = (
+    f'repo:{GH_USER}/{GH_REPO} is:issue is:open '
+    f'created:>{previous_tag_date.isoformat()} '
+    'sort:updated-desc' + milestone_search_string
+)
+for label in labels:
+    search_string += f' label:"{label.name}"'
+
+iterable = get_github().search_issues(search_string)
 
 issue_list = []
 
 for issue in tqdm(
-    get_github().search_issues(
-        f'repo:{GH_USER}/{GH_REPO} '
-        "is:issue "
-        "is:open "
-        "label:bug "
-        f'created:>{previous_tag_date.isoformat()} '
-        'sort:updated-desc'
-    ),
+    iterable,
     desc='issues...',
+    total=iterable.totalCount,
 ):
     if "[test-bot]" in issue.title:
         continue
@@ -70,21 +92,26 @@ for issue in tqdm(
         continue
     if need_to_reproduce in issue.labels:
         continue
-    if issue.milestone != milestone:
-        continue
-    if args.skip_triaged and triage_label in issue.labels:
+    if args.skip_triaged and any(x in issue.labels for x in triage_labels):
         continue
 
     issue_list.append(issue)
 
-if milestone:
-    print(
-        f"## {len(issue_list)} Opened Issues with bug label and milestone {milestone.title}:"
-    )
+if len(labels) > 1:
+    label_string = "labels " + ", ".join([x.name for x in labels])
 else:
-    print(
-        f"## {len(issue_list)} Opened Issues with bug label and no milestone:"
-    )
+    label_string = f"label {labels[0].name}"
+
+
+header = f"## {len(issue_list)} Opened Issues with {label_string}"
+
+if milestone:
+    if milestone_search_string.startswith("no:"):
+        header += " and no milestone"
+    else:
+        header += f" and milestone {milestone.title}"
+
+print(header)
 
 for issue in issue_list:
     print(f" * [ ] #{issue.number}")
