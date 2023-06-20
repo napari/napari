@@ -81,7 +81,7 @@ select = [
     "RUF", # ruff specyfic rules
 ]
 ignore = [
-    "E501", "UP006", "TCH001", "TCH002", "TCH003",
+    "E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
@@ -134,10 +134,6 @@ docstring-quotes = "double"
 [tool.ruff.flake8-tidy-imports]
 # Disallow all relative imports.
 ban-relative-imports = "all"
-
-[tool.ruff.pyupgrade]
-# Preserve types, even if a file imports `from __future__ import annotations`.
-keep-runtime-typing = true
 
 [tool.ruff.isort]
 known-first-party=['napari']
@@ -369,8 +365,6 @@ module = [
     'napari.layers.image.experimental.octree_util',
     'napari.layers.image.image',
     'napari.layers.intensity_mixin',
-    'napari.layers.labels._labels_utils',
-    'napari.layers.labels.labels',
     'napari.layers.points._points_key_bindings',
     'napari.layers.points._points_utils',
     'napari.layers.points._slice',
@@ -400,9 +394,6 @@ module = [
     'napari.layers.utils.string_encoding',
     'napari.layers.utils.style_encoding',
     'napari.layers.utils.text_manager',
-    'napari.layers.vectors._vector_utils',
-    'napari.layers.vectors._vectors_key_bindings',
-    'napari.layers.vectors.vectors',
     'napari.resources._icons',
     'napari.utils._magicgui',
     'napari.utils._octree',
@@ -429,10 +420,7 @@ module = [
     'napari.utils.geometry',
     'napari.utils.interactions',
     'napari.utils.key_bindings',
-    'napari.utils.misc',
     'napari.utils.mouse_bindings',
-    'napari.utils.naming',
-    'napari.utils.notifications',
     'napari.utils.perf._event',
     'napari.utils.perf._patcher',
     'napari.utils.perf._stat',

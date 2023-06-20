@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -219,7 +219,6 @@ class Vectors(Layer):
         self._length = float(length)
 
         self._data = data
-        self._displayed_stored = None
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -242,9 +241,8 @@ class Vectors(Layer):
 
         # Data containing vectors in the currently viewed slice
         self._view_data = np.empty((0, 2, 2))
-        self._displayed_stored = []
-        self._view_indices = []
-        self._view_alphas = []
+        self._view_indices = np.array([], dtype=int)
+        self._view_alphas: Union[float, np.ndarray] = 1.0
 
         # now that everything is set up, make the layer visible (if set to visible)
         self.refresh()
@@ -597,7 +595,7 @@ class Vectors(Layer):
 
     def _slice_data(
         self, dims_indices
-    ) -> Tuple[List[int], Union[float, np.ndarray]]:
+    ) -> Tuple[np.ndarray, Union[float, np.ndarray]]:
         """Determines the slice of vectors given the indices.
 
         Parameters
@@ -618,7 +616,7 @@ class Vectors(Layer):
         """
 
         if len(self.data) == 0:
-            return [], np.empty(0)
+            return np.array([], dtype=int), np.empty(0)
 
         dims_not_displayed = self._slice_input.not_displayed
 
@@ -653,7 +651,7 @@ class Vectors(Layer):
         slice_indices = np.where(matches)[0].astype(int)
         return slice_indices, alpha
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         """Sets the view given the indices to slice with."""
 
         indices, alphas = self._slice_data(self._slice_indices)
@@ -662,12 +660,12 @@ class Vectors(Layer):
 
         if len(self.data) == 0:
             self._view_data = np.empty((0, 2, 2))
-            self._view_indices = []
+            self._view_indices = np.array([], dtype=int)
         elif self.ndim > 2:
             indices, alphas = self._slice_data(self._slice_indices)
             self._view_indices = indices
             self._view_alphas = alphas
-            self._view_data = self.data[np.ix_(indices, [0, 1], disp)]
+            self._view_data = self.data[np.ix_(list(indices), [0, 1], disp)]
         else:
             self._view_data = self.data[:, :, disp]
             self._view_indices = np.arange(self.data.shape[0])
