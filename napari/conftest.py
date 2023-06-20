@@ -48,6 +48,7 @@ import dask.threaded
 import numpy as np
 import pytest
 from IPython.core.history import HistoryManager
+from packaging.version import parse as parse_version
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -243,9 +244,9 @@ HistoryManager.enabled = False
 @pytest.fixture
 def napari_svg_name():
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
-    from importlib.metadata import metadata
+    from importlib.metadata import version
 
-    if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
+    if parse_version(version('napari-svg')) < parse_version('0.1.6'):
         return 'svg'
 
     return 'napari-svg'
@@ -615,8 +616,44 @@ def dangling_qtimers(monkeypatch, request):
         long_desc += "The QTimers were started in:\n"
     else:
         long_desc += "The QTimer was started in:\n"
+
+    def _check_throttle_info(path):
+        if "superqt" in path and "throttler" in path:
+            return (
+                path
+                + " it's possible that there was a problem with unfinished work by a "
+                "qthrottler; to solve this, you can either try to wait (such as with "
+                "`qtbot.wait`) or disable throttling with the disable_throttling fixture"
+            )
+        return path
+
     assert not dangling_timers, long_desc + "\n".join(
-        x[1] for x in dangling_timers
+        _check_throttle_info(x[1]) for x in dangling_timers
+    )
+
+
+def _throttle_mock(self):
+    self.triggered.emit()
+
+
+def _flush_mock(self):
+    """There are no waiting events."""
+
+
+@pytest.fixture
+def disable_throttling(monkeypatch):
+    """Disable qthrottler from superqt.
+
+    This is sometimes necessary to avoid flaky failures in tests
+    due to dangling qt timers.
+    """
+    # if this monkeypath fails then you should update path to GenericSignalThrottler
+    monkeypatch.setattr(
+        "superqt.utils._throttler.GenericSignalThrottler.throttle",
+        _throttle_mock,
+    )
+    monkeypatch.setattr(
+        "superqt.utils._throttler.GenericSignalThrottler.flush", _flush_mock
     )
 
 
