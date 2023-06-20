@@ -349,7 +349,7 @@ class Graph(_BasePoints):
             raise TypeError from e
 
         if isinstance(data, BaseGraph):
-            if data._coords is None:
+            if not data.is_spatial():
                 raise ValueError(
                     trans._(
                         "Graph layer must be a spatial graph, have the `coords` attribute (`pos` in NetworkX)."
@@ -361,7 +361,7 @@ class Graph(_BasePoints):
 
     @property
     def _points_data(self) -> np.ndarray:
-        return self._data._coords
+        return self._data.coords_buffer
 
     @property
     def data(self) -> BaseGraph:
@@ -431,15 +431,29 @@ class Graph(_BasePoints):
 
         self._data_changed(prev_size)
 
-    def remove_selected(self):
+    def remove_selected(self) -> None:
         """Removes selected points if any."""
         if len(self.selected_data):
-            indices = self.data._buffer2world[list(self.selected_data)]
-            self.remove(indices)
+            self._remove_nodes(list(self.selected_data), is_buffer_domain=True)
             self.selected_data = set()
 
     def remove(self, indices: ArrayLike) -> None:
-        """Removes nodes given their indices."""
+        """Remove nodes given indices."""
+        self._remove_nodes(indices, is_buffer_domain=False)
+
+    def _remove_nodes(
+        self,
+        indices: ArrayLike,
+        is_buffer_domain: bool,
+    ) -> None:
+        """
+        Parameters
+        ----------
+        indices : ArrayLike
+            List of node indices to remove.
+        is_buffer_domain : bool
+            Indicates if node indices are on world or buffer domain.
+        """
         indices = np.atleast_1d(indices)
         if indices.ndim > 1:
             raise ValueError(
@@ -450,12 +464,10 @@ class Graph(_BasePoints):
             )
 
         prev_size = self.data.n_allocated_nodes
-        # descending order
-        indices = np.flip(np.sort(indices))
 
         # it got error missing __iter__ attribute, but we guarantee by np.atleast_1d call
         for idx in indices:  # type: ignore[union-attr]
-            self.data.remove_node(idx)
+            self.data.remove_node(idx, is_buffer_domain)
 
         self._data_changed(prev_size)
 
