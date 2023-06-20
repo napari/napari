@@ -144,7 +144,7 @@ jobs:
       # see tox.ini for more
       - name: Test with tox
         # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
-        timeout-minutes: 35
+        timeout-minutes: 40
         uses: aganders3/headless-gui@v1
         with:
           run: python -m tox
