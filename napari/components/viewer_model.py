@@ -982,7 +982,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 available += list(plugin_manager.available_samples())
         # npe2 uri sample data, extract the path so we can use viewer.open
         elif hasattr(data.__self__, 'uri'):
-            if hasattr(data.__self__, 'reader_plugin'):
+            if (
+                hasattr(data.__self__, 'reader_plugin')
+                and data.__self__.reader_plugin != reader_plugin
+            ):
                 # if the user chose a reader_plugin, we use their choice
                 # but we remember what the plugin declared so we can inform the user if it fails
                 plugin_spec_reader = data.__self__.reader_plugin
