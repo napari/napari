@@ -19,7 +19,7 @@ out = subprocess.run(  # nosec
     [
         "git",
         "diff",
-        str(src_dir / "resources" / "constraints" / "constraints_py3.9.txt"),
+        str(src_dir / "resources" / "constraints" / "constraints_py3.10.txt"),
     ],
     capture_output=True,
     check=True,
