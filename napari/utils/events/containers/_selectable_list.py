@@ -27,9 +27,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     moved (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: int, old_value: T, value: T)
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
 
@@ -83,7 +83,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
             do_add = len(self) > new
         else:
             *root, _idx = idx
-            new = tuple(root) + (_idx - 1,) if _idx >= 1 else tuple(root)
+            new = (*tuple(root), _idx - 1) if _idx >= 1 else tuple(root)
             do_add = len(self) > new[0]
         if do_add:
             self.selection.add(self[new])

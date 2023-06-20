@@ -2,11 +2,13 @@ import hashlib
 import os
 import sys
 from functools import partial
-from typing import Callable, Optional
+from typing import Callable
 
 import appdirs
 
-sha_short = f"{os.path.basename(sys.prefix)}_{hashlib.sha1(sys.prefix.encode()).hexdigest()}"
+PREFIX_PATH = os.path.realpath(sys.prefix)
+
+sha_short = f"{os.path.basename(PREFIX_PATH)}_{hashlib.sha1(PREFIX_PATH.encode()).hexdigest()}"
 
 _appname = 'napari'
 _appauthor = False
@@ -31,39 +33,3 @@ user_state_dir: Callable[[], str] = partial(
 user_log_dir: Callable[[], str] = partial(
     appdirs.user_log_dir, _appname, _appauthor
 )
-
-
-def user_plugin_dir() -> str:
-    """Prefix directory for external pip install.
-
-    Suitable for use as argument with `pip install --prefix`.
-    On mac and windows, we can install directly into the bundle.  This may be
-    used on Linux to pip install packages outside of the bundle with:
-    ``pip install --prefix user_plugin_dir()``
-    """
-    return os.path.join(user_data_dir(), 'plugins')
-
-
-def user_site_packages() -> str:
-    """Platform-specific location of site-packages folder in user library"""
-    if os.name == 'nt':
-        return os.path.join(user_plugin_dir(), 'Lib', 'site-packages')
-
-    python_dir = f'python{sys.version_info.major}.{sys.version_info.minor}'
-    return os.path.join(user_plugin_dir(), 'lib', python_dir, 'site-packages')
-
-
-def bundled_site_packages() -> Optional[str]:
-    """Platform-specific location of site-packages folder in bundles."""
-    exe_dir = os.path.dirname(sys.executable)
-    if os.name == 'nt':
-        return os.path.join(exe_dir, "Lib", "site-packages")
-
-    if sys.platform.startswith('darwin'):
-        python_dir = f'python{sys.version_info.major}.{sys.version_info.minor}'
-        return os.path.join(
-            os.path.dirname(exe_dir), "lib", python_dir, "site-packages"
-        )
-
-    # briefcase linux bundles cannot install into the AppImage
-    return None

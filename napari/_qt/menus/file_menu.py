@@ -12,7 +12,7 @@ from napari.components._viewer_key_bindings import register_viewer_action
 from napari.errors.reader_errors import MultipleReaderError
 from napari.settings import get_settings
 from napari.utils.history import get_save_history, update_save_history
-from napari.utils.misc import running_as_bundled_app
+from napari.utils.misc import running_as_constructor_app
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -123,7 +123,7 @@ class FileMenu(NapariMenu):
                 'shortcut': 'Ctrl+W',
             },
             {
-                'when': running_as_bundled_app(),
+                'when': running_as_constructor_app(),
                 'text': trans._('Restart'),
                 'slot': window._qt_window.restart,
             },

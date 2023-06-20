@@ -2,7 +2,7 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -25,10 +25,11 @@ from napari.layers.shapes._shapes_mouse_bindings import (
     add_ellipse,
     add_line,
     add_path_polygon,
-    add_path_polygon_creating,
+    add_path_polygon_lasso,
     add_rectangle,
     finish_drawing_shape,
     highlight,
+    polygon_creating,
     select,
     vertex_insert,
     vertex_remove,
@@ -39,6 +40,7 @@ from napari.layers.shapes._shapes_utils import (
     get_default_shape_type,
     get_shape_ndim,
     number_of_shapes,
+    rdp,
     validate_num_vertices,
 )
 from napari.layers.utils.color_manager_utils import (
@@ -55,6 +57,7 @@ from napari.layers.utils.interactivity_utils import (
 )
 from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
 from napari.layers.utils.text_manager import TextManager
+from napari.settings import get_settings
 from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from napari.utils.colormaps.colormap_utils import ColorType
 from napari.utils.colormaps.standardize_color import (
@@ -85,6 +88,8 @@ class Shapes(Layer):
     features : dict[str, array-like] or Dataframe-like
         Features table where each row corresponds to a shape and each column
         is a feature.
+    feature_defaults : dict[str, Any] or Dataframe-like
+        The default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
@@ -334,6 +339,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: add_line,
         Mode.ADD_PATH: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
+        Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
 
     _move_modes = {
@@ -346,8 +352,9 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: no_op,
         Mode.ADD_ELLIPSE: no_op,
         Mode.ADD_LINE: no_op,
-        Mode.ADD_PATH: add_path_polygon_creating,
-        Mode.ADD_POLYGON: add_path_polygon_creating,
+        Mode.ADD_PATH: polygon_creating,
+        Mode.ADD_POLYGON: polygon_creating,
+        Mode.ADD_POLYGON_LASSO: polygon_creating,
     }
 
     _double_click_modes = {
@@ -362,6 +369,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
+        Mode.ADD_POLYGON_LASSO: no_op,
     }
 
     _cursor_modes = {
@@ -376,6 +384,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: 'cross',
         Mode.ADD_PATH: 'cross',
         Mode.ADD_POLYGON: 'cross',
+        Mode.ADD_POLYGON_LASSO: 'cross',
     }
 
     _interactive_modes = {
@@ -388,6 +397,7 @@ class Shapes(Layer):
         *,
         ndim=None,
         features=None,
+        feature_defaults=None,
         properties=None,
         property_choices=None,
         text=None,
@@ -415,7 +425,7 @@ class Shapes(Layer):
         cache=True,
         experimental_clipping_planes=None,
     ) -> None:
-        if data is None:
+        if data is None or len(data) == 0:
             if ndim is None:
                 ndim = 2
             data = np.empty((0, 0, ndim))
@@ -469,6 +479,7 @@ class Shapes(Layer):
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
+            feature_defaults=feature_defaults,
             properties=properties,
             property_choices=property_choices,
             num_data=number_of_shapes(data),
@@ -494,6 +505,7 @@ class Shapes(Layer):
         self._selected_data_stored = set()
         self._selected_data_history = set()
         self._selected_box = None
+        self._last_cursor_position = None
 
         self._drag_start = None
         self._fixed_vertex = None
@@ -588,14 +600,14 @@ class Shapes(Layer):
 
             # add the new color cycle mapping
             color_property = getattr(self, f'_{attribute}_color_property')
-            prop_value = self.property_choices[color_property][0]
+            prop_value = self.feature_defaults[color_property][0]
             color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
             color_cycle_map[prop_value] = np.squeeze(curr_color)
             setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
         elif color_mode == ColorMode.COLORMAP:
             color_property = getattr(self, f'_{attribute}_color_property')
-            prop_value = self.property_choices[color_property][0]
+            prop_value = self.feature_defaults[color_property][0]
             colormap = getattr(self, f'{attribute}_colormap')
             contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
             curr_color, _ = map_property(
@@ -736,6 +748,14 @@ class Shapes(Layer):
         See `features` for more details on the type of this property.
         """
         return self._feature_table.defaults
+
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        self._feature_table.set_defaults(defaults)
+        self.events.current_properties()
+        self.events.feature_defaults()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -1106,8 +1126,8 @@ class Shapes(Layer):
                 raise ValueError(
                     trans._('Length of list does not match number of shapes')
                 )
-            else:
-                widths = width
+
+            widths = width
         else:
             widths = [width for _ in range(self.nshapes)]
 
@@ -1135,8 +1155,8 @@ class Shapes(Layer):
                 raise ValueError(
                     trans._('Length of list does not match number of shapes')
                 )
-            else:
-                z_indices = z_index
+
+            z_indices = z_index
         else:
             z_indices = [z_index for _ in range(self.nshapes)]
 
@@ -1466,15 +1486,15 @@ class Shapes(Layer):
         """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             return color in self.properties
-        elif isinstance(color, (list, np.ndarray)):
+        if isinstance(color, (list, np.ndarray)):
             return False
-        else:
-            raise ValueError(
-                trans._(
-                    'face_color should be the name of a color, an array of colors, or the name of an property',
-                    deferred=True,
-                )
+
+        raise ValueError(
+            trans._(
+                'face_color should be the name of a color, an array of colors, or the name of an property',
+                deferred=True,
             )
+        )
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -1485,6 +1505,12 @@ class Shapes(Layer):
             Dictionary of layer state.
         """
         state = self._get_base_state()
+        face_color = self.face_color
+        edge_color = self.edge_color
+        if not face_color.size:
+            face_color = self._current_face_color
+        if not edge_color.size:
+            edge_color = self._current_edge_color
         state.update(
             {
                 'ndim': self.ndim,
@@ -1495,16 +1521,17 @@ class Shapes(Layer):
                 'opacity': self.opacity,
                 'z_index': self.z_index,
                 'edge_width': self.edge_width,
-                'face_color': self.face_color,
+                'face_color': face_color,
                 'face_color_cycle': self.face_color_cycle,
                 'face_colormap': self.face_colormap.name,
                 'face_contrast_limits': self.face_contrast_limits,
-                'edge_color': self.edge_color,
+                'edge_color': edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'features': self.features,
+                'feature_defaults': self.feature_defaults,
             }
         )
         return state
@@ -2381,6 +2408,7 @@ class Shapes(Layer):
                     Mode.DIRECT,
                     Mode.ADD_PATH,
                     Mode.ADD_POLYGON,
+                    Mode.ADD_POLYGON_LASSO,
                     Mode.ADD_RECTANGLE,
                     Mode.ADD_ELLIPSE,
                     Mode.ADD_LINE,
@@ -2472,12 +2500,27 @@ class Shapes(Layer):
                 self._data_view.remove(index)
             else:
                 self._data_view.edit(index, vertices[:-1])
-        if self._is_creating is True and self._mode == Mode.ADD_POLYGON:
+        if self._is_creating is True and (
+            self._mode
+            in {
+                Mode.ADD_POLYGON,
+                Mode.ADD_POLYGON_LASSO,
+            }
+        ):
             vertices = self._data_view.shapes[index].data
             if len(vertices) <= 3:
                 self._data_view.remove(index)
-            else:
+            elif self._mode == Mode.ADD_POLYGON:
                 self._data_view.edit(index, vertices[:-1])
+            else:
+                vertices = rdp(
+                    vertices, epsilon=get_settings().experimental.rdp_epsilon
+                )
+                self._data_view.edit(
+                    index,
+                    vertices[:-1],
+                    new_type=shape_classes[ShapeType.POLYGON],
+                )
         self._is_creating = False
         self._update_dims()
 
@@ -2704,7 +2747,7 @@ class Shapes(Layer):
             dims_displayed=dims_displayed,
         )
 
-        return (value, None)
+        return value, None
 
     def _get_index_and_intersection(
         self,

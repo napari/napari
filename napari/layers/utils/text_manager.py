@@ -109,7 +109,6 @@ class TextManager(EventedModel):
             _warn_about_deprecated_text_parameter()
             kwargs['string'] = text
         super().__init__(**kwargs)
-        self.events.add(values=Event)
         self.apply(features)
 
     @property
@@ -216,7 +215,7 @@ class TextManager(EventedModel):
         """Copies all encoded values at the given indices."""
         return {
             'string': _get_style_values(self.string, indices),
-            'color': _get_style_values(self.color, indices),
+            'color': _get_style_values(self.color, indices, value_ndim=1),
         }
 
     def _paste(self, *, string: StringArray, color: ColorArray):
