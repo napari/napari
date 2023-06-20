@@ -513,6 +513,7 @@ def test_move():
     data = 20 * np.random.random(shape)
     unmoved = copy(data)
     layer = Points(data)
+    layer.events.data = Mock()
 
     # Move one point relative to an initial drag start location
     layer._move([0], [0, 0])
@@ -520,10 +521,20 @@ def test_move():
     layer._drag_start = None
     assert np.all(layer.data[0] == unmoved[0] + [10, 10])
     assert np.all(layer.data[1:] == unmoved[1:])
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": "change",
+        "data_indices": [0],
+    }
 
     # Move two points relative to an initial drag start location
     layer._move([1, 2], [2, 2])
     layer._move([1, 2], np.add([2, 2], [-3, 4]))
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": "change",
+        "data_indices": [1, 2],
+    }
     assert np.all(layer.data[1:2] == unmoved[1:2] + [-3, 4])
 
 

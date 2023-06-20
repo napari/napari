@@ -1962,7 +1962,7 @@ class Points(Layer):
         self.events.data(
             value=self.data,
             action="change",
-            data_indices=list(self.selected_data),
+            data_indices=list(selection_indices),
         )
 
     def _set_drag_start(
