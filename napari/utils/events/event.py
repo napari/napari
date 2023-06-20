@@ -100,7 +100,12 @@ class Event:
         All extra keyword arguments become attributes of the event object.
     """
 
-    @rename_argument("type", "type_name", "0.6.0")
+    @rename_argument(
+        from_name="type",
+        to_name="type_name",
+        version="0.6.0",
+        since_version="0.4.18",
+    )
     def __init__(
         self, type_name: str, native: Any = None, **kwargs: Any
     ) -> None:
@@ -272,13 +277,13 @@ class EventEmitter:
     source : object
         The object that the generated events apply to. All emitted Events will
         have their .source property set to this value.
-    type : str or None
+    type_name: str or None
         String indicating the event type (e.g. mouse_press, key_release)
     event_class : subclass of Event
         The class of events that this emitter will generate.
     """
 
-    @rename_argument("type", "type_name", "0.6.0")
+    @rename_argument("type", "type_name", "0.6.0", "0.4.18")
     def __init__(
         self,
         source: Any = None,
