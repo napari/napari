@@ -103,5 +103,9 @@ authors:
 - given-names: Abigail
   family-names: McGovern
   affiliation: Monash University
+- given-names: Constantin
+  family-names: Pape
+  affiliation: Georg-August-Universität Göttingen
+  orcid: "https://orcid.org/0000-0001-6562-7187"
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
