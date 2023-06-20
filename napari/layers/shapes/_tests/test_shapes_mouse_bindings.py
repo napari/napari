@@ -378,8 +378,8 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
         "action": ActionType.CHANGE.value,
-        "data_indices": [0],
-        "vertex_indices": [[2]],
+        "data_indices": frozenset([0]),
+        "vertex_indices": frozenset([frozenset([2])]),
     }
     np.testing.assert_allclose(
         np.min(abs(layer.data[0] - known_non_shape), axis=0), [0, 0]
@@ -422,8 +422,8 @@ def test_vertex_remove(create_known_shapes_layer, Event):
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
         "action": ActionType.CHANGE.value,
-        "data_indices": list(select),
-        "vertex_indices": [[3]],
+        "data_indices": frozenset(select),
+        "vertex_indices": frozenset([frozenset([3])]),
     }
     # Check new shape added at coordinates
     assert len(layer.data) == n_shapes
@@ -561,13 +561,15 @@ def test_drag_shape(create_known_shapes_layer, Event):
     mouse_release_callbacks(layer, event)
 
     # Check clicked shape selected
-    vertex_indices = [list(range(len(layer.data[0])))]
+    vertex_indices = frozenset(
+        [frozenset(i for i in range(len(layer.data[0])))]
+    )
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
         "action": ActionType.CHANGE.value,
-        "data_indices": [0],
+        "data_indices": frozenset([0]),
         "vertex_indices": vertex_indices,
     }
     np.testing.assert_allclose(layer.data[0], orig_data + np.array([10, 5]))
@@ -682,13 +684,15 @@ def test_drag_vertex(create_known_shapes_layer, Event):
     mouse_release_callbacks(layer, event)
 
     # Check clicked shape selected
-    vertex_indices = [list(range(len(layer.data[0])))]
+    vertex_indices = frozenset(
+        [frozenset(i for i in range(len(layer.data[0])))]
+    )
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
         "action": ActionType.CHANGE.value,
-        "data_indices": [0],
+        "data_indices": frozenset([0]),
         "vertex_indices": vertex_indices,
     }
     np.testing.assert_allclose(layer.data[0][-1], [0, 0])

@@ -2008,7 +2008,9 @@ class Shapes(Layer):
                 z_index=z_index,
             )
             self.events.data(
-                value=self.data, action=ActionType.ADD.value, data_indices=[-1]
+                value=self.data,
+                action=ActionType.ADD.value,
+                data_indices=frozenset([-1]),
             )
 
     def _init_shapes(
@@ -2592,7 +2594,9 @@ class Shapes(Layer):
         self.selected_data = set()
         self._finish_drawing()
         self.events.data(
-            value=self.data, action=ActionType.REMOVE.value, data_indices=index
+            value=self.data,
+            action=ActionType.REMOVE.value,
+            data_indices=frozenset(index),
         )
 
     def _rotate_box(self, angle, center=(0, 0)):
