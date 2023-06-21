@@ -76,6 +76,10 @@ authors:
 - given-names: Lukasz
   family-names: Migas
   affiliation: Delft University of Technology
+- given-names: Nadalyn
+  family-names: Miller
+  affiliation: Apex Systems
+  orcid: https://orcid.org/0009-0007-6993-1267
 - given-names: Hector
   family-names: "Mu\xF1oz"
   affiliation: University of California, Los Angeles
