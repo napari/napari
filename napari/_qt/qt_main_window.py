@@ -709,6 +709,14 @@ class Window:
         # TODO: remove from window
         return self._qt_window.statusBar()
 
+    @property
+    def dock_widgets(self) -> Dict[str, QWidget]:
+        """All open dock widgets."""
+        return {
+            name: self._dock_widgets[name].widget()
+            for name in self._dock_widgets
+        }
+
     def _add_menus(self):
         """Add menubar to napari app."""
         # TODO: move this to _QMainWindow... but then all of the Menu()
