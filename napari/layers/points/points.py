@@ -1901,7 +1901,9 @@ class Points(Layer):
         """
         self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
         self.events.data(
-            value=self.data, action=ActionType.ADD.value, data_indices=[-1]
+            value=self.data,
+            action=ActionType.ADD.value,
+            data_indices=(-1,),
         )
 
     def remove_selected(self):
@@ -1934,7 +1936,9 @@ class Points(Layer):
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVE.value,
-                data_indices=list(self.selected_data),
+                data_indices=tuple(
+                    self.selected_data,
+                ),
             )
             self.selected_data = set()
 
@@ -1965,7 +1969,7 @@ class Points(Layer):
         self.events.data(
             value=self.data,
             action=ActionType.CHANGE.value,
-            data_indices=list(selection_indices),
+            data_indices=tuple(selection_indices),
         )
 
     def _set_drag_start(
