@@ -93,6 +93,14 @@ subtrees:
           - file: plugins/testing_workshop_docs/3-readers-and-fixtures
           - file: plugins/testing_workshop_docs/4-test-coverage
           - file: plugins/testing_workshop_docs/testing-resources
+      - file: plugins/virtual_environment_docs/index
+        subtrees:
+        - entries:
+          - file: plugins/virtual_environment_docs/1-virtual-environments
+          - file: plugins/virtual_environment_docs/2-deploying-your-plugin
+          - file: plugins/virtual_environment_docs/3-version-management
+          - file: plugins/virtual_environment_docs/4-developer-tools
+          - file: plugins/virtual_environment_docs/5-survey
   - file: community/index
     subtrees:
     - titlesonly: True
