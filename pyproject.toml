@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-  "setuptools >= 42",
+  "setuptools >= 56",
   "wheel",
   "setuptools_scm[toml]>=3.4"
 ]
@@ -420,10 +420,7 @@ module = [
     'napari.utils.geometry',
     'napari.utils.interactions',
     'napari.utils.key_bindings',
-    'napari.utils.misc',
     'napari.utils.mouse_bindings',
-    'napari.utils.naming',
-    'napari.utils.notifications',
     'napari.utils.perf._event',
     'napari.utils.perf._patcher',
     'napari.utils.perf._stat',

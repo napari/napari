@@ -18,7 +18,7 @@ viewer = napari.view_image(data.astronaut(), rgb=True, name='astronaut')
 # List themes
 print('Originally themes', available_themes())
 
-blue_theme = get_theme('dark', False)
+blue_theme = get_theme('dark')
 blue_theme.id = "blue"
 blue_theme.icon = (
     'rgb(0, 255, 255)'  # you can provide colors as rgb(XXX, YYY, ZZZ)
