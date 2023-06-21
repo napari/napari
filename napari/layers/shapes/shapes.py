@@ -2011,6 +2011,7 @@ class Shapes(Layer):
                 value=self.data,
                 action=ActionType.ADD.value,
                 data_indices=(-1,),
+                vertex_indices=((),),
             )
 
     def _init_shapes(
@@ -2599,6 +2600,7 @@ class Shapes(Layer):
             data_indices=tuple(
                 index,
             ),
+            vertex_indices=((),),
         )
 
     def _rotate_box(self, angle, center=(0, 0)):

@@ -1904,6 +1904,7 @@ class Points(Layer):
             value=self.data,
             action=ActionType.ADD.value,
             data_indices=(-1,),
+            vertex_indices=((),),
         )
 
     def remove_selected(self):
@@ -1939,6 +1940,7 @@ class Points(Layer):
                 data_indices=tuple(
                     self.selected_data,
                 ),
+                vertex_indices=((),),
             )
             self.selected_data = set()
 
@@ -1970,6 +1972,7 @@ class Points(Layer):
             value=self.data,
             action=ActionType.CHANGE.value,
             data_indices=tuple(selection_indices),
+            vertex_indices=((),),
         )
 
     def _set_drag_start(

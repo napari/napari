@@ -456,6 +456,7 @@ def test_remove_selected_updates_value():
         "value": layer.data,
         "action": ActionType.REMOVE.value,
         "data_indices": tuple(selection),
+        "vertex_indices": ((),),
     }
     assert layer._value == 2
 
@@ -526,6 +527,7 @@ def test_move():
         "value": layer.data,
         "action": ActionType.CHANGE.value,
         "data_indices": (0,),
+        "vertex_indices": ((),),
     }
 
     # Move two points relative to an initial drag start location
@@ -535,6 +537,7 @@ def test_move():
         "value": layer.data,
         "action": ActionType.CHANGE.value,
         "data_indices": (1, 2),
+        "vertex_indices": ((),),
     }
     assert np.all(layer.data[1:2] == unmoved[1:2] + [-3, 4])
 
@@ -1143,6 +1146,7 @@ def test_add_point_direct(attribute: str):
         "value": layer.data,
         "action": ActionType.ADD.value,
         "data_indices": (-1,),
+        "vertex_indices": ((),),
     }
     np.testing.assert_allclose(
         [[1, 0, 0, 1]], getattr(layer, f'{attribute}_color')

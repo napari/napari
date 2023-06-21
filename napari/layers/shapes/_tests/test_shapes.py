@@ -952,6 +952,7 @@ def test_polygons(shape):
     assert np.array_equal(layer2.events.data.call_args[1]["value"], layer.data)
     assert layer2.events.data.call_args[1]["action"] == ActionType.ADD.value
     assert layer2.events.data.call_args[1]["data_indices"] == (-1,)
+    assert layer2.events.data.call_args[1]["vertex_indices"] == ((),)
 
 
 def test_add_polygons_raises_error():
@@ -1249,6 +1250,7 @@ def test_removing_selected_shapes():
         "data_indices": tuple(
             selection,
         ),
+        "vertex_indices": ((),),
     }
 
     keep = [0, *range(2, 7)] + [9]
