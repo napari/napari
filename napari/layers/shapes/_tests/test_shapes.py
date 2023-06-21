@@ -951,7 +951,7 @@ def test_polygons(shape):
     # Avoid a.any(), a.all()
     assert np.array_equal(layer2.events.data.call_args[1]["value"], layer.data)
     assert layer2.events.data.call_args[1]["action"] == ActionType.ADD.value
-    assert layer2.events.data.call_args[1]["data_indices"] == frozenset([-1])
+    assert layer2.events.data.call_args[1]["data_indices"] == [-1]
 
 
 def test_add_polygons_raises_error():
@@ -1246,7 +1246,7 @@ def test_removing_selected_shapes():
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
         "action": ActionType.REMOVE.value,
-        "data_indices": frozenset(selection),
+        "data_indices": list(selection),
     }
 
     keep = [0, *range(2, 7)] + [9]

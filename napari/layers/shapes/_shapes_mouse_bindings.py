@@ -109,22 +109,16 @@ def select(layer: Shapes, event: MouseEvent) -> None:
             update_thumbnail = True
         yield
 
-    vertex_indices = frozenset(
-        [
-            frozenset(
-                vertex_index
-                for vertex_index, coord in enumerate(layer.data[i])
-            )
-            for i in layer.selected_data
-        ]
-    )
-
+    vertex_indices = [
+        [vertex_index for vertex_index, coord in enumerate(layer.data[i])]
+        for i in layer.selected_data
+    ]
     # only emit data once dragging has finished
     if layer._is_moving:
         layer.events.data(
             value=layer.data,
             action=ActionType.CHANGE.value,
-            data_indices=frozenset(layer.selected_data),
+            data_indices=list(layer.selected_data),
             vertex_indices=vertex_indices,
         )
 
@@ -537,8 +531,8 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
     layer.events.data(
         value=layer.data,
         action=ActionType.CHANGE.value,
-        data_indices=frozenset([index]),
-        vertex_indices=frozenset([frozenset([ind])]),
+        data_indices=[index],
+        vertex_indices=[[ind]],
     )
     layer.refresh()
 
@@ -594,8 +588,8 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
     layer.events.data(
         value=layer.data,
         action=ActionType.CHANGE.value,
-        data_indices=frozenset([shape_under_cursor]),
-        vertex_indices=frozenset([frozenset([vertex_under_cursor])]),
+        data_indices=[shape_under_cursor],
+        vertex_indices=[[vertex_under_cursor]],
     )
     layer.refresh()
 

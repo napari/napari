@@ -455,7 +455,7 @@ def test_remove_selected_updates_value():
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
         "action": ActionType.REMOVE.value,
-        "data_indices": frozenset(selection),
+        "data_indices": list(selection),
     }
     assert layer._value == 2
 
@@ -525,7 +525,7 @@ def test_move():
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
         "action": ActionType.CHANGE.value,
-        "data_indices": frozenset([0]),
+        "data_indices": [0],
     }
 
     # Move two points relative to an initial drag start location
@@ -534,7 +534,7 @@ def test_move():
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
         "action": ActionType.CHANGE.value,
-        "data_indices": frozenset([1, 2]),
+        "data_indices": [1, 2],
     }
     assert np.all(layer.data[1:2] == unmoved[1:2] + [-3, 4])
 
@@ -1142,7 +1142,7 @@ def test_add_point_direct(attribute: str):
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
         "action": ActionType.ADD.value,
-        "data_indices": frozenset([-1]),
+        "data_indices": [-1],
     }
     np.testing.assert_allclose(
         [[1, 0, 0, 1]], getattr(layer, f'{attribute}_color')
