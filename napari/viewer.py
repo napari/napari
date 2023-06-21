@@ -86,6 +86,7 @@ class Viewer(ViewerModel):
             callers frame.
         """
         if self.window._qt_viewer._console is None:
+            self.window._qt_viewer.add_to_console_backlog(variables)
             return
         self.window._qt_viewer.console.push(variables)
 
@@ -105,7 +106,7 @@ class Viewer(ViewerModel):
         path : str
             Filename for saving screenshot image.
         size : tuple (int, int)
-            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
         scale : float
             Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.

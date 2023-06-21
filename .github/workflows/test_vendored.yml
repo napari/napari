@@ -20,7 +20,7 @@ jobs:
         run: python tools/check_vendored_modules.py --ci
 
       - name: Create PR updating vendored modules
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         with:
           commit-message: Update vendored modules.
           branch: update-vendored-examples
@@ -31,3 +31,8 @@ jobs:
             action cron to keep vendored modules up to date.
 
             It look like ${{ steps.check_v.outputs.vendored }} has a new version.
+          token: ${{ secrets.GHA_TOKEN }}
+          # Token permissions required by the action:
+          # * pull requests: write and read
+          # * repository contents: read and write
+          # for screenshots please see https://github.com/napari/napari/pull/5777

@@ -150,9 +150,9 @@ class NestableEventedList(EventedList[_T]):
     moved (index: Index, new_index: Index, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: Index, old_value: T, value: T)
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     changed <OVERLOAD> (index: slice, old_value: list[_T], value: list[_T])
-        emitted when slice ``index`` is set from ``old_value`` to ``value``
+        emitted when slice at ``index`` is changed from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """

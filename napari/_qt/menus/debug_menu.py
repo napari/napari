@@ -62,9 +62,9 @@ class DebugMenu(NapariMenu):
         hist = get_save_history()
         dlg.setHistory(hist)
         filename, _ = dlg.getSaveFileName(
-            parent=viewer,
-            caption=trans._('Record performance trace file'),
-            directory=hist[0],
+            viewer,  # parent
+            trans._('Record performance trace file'),  # caption
+            hist[0],  # directory in PyQt, dir in PySide
             filter=trans._("Trace Files (*.json)"),
         )
         if filename:
