@@ -987,7 +987,7 @@ class Points(Layer):
         self._current_edge_width = edge_width
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
-                self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
+                self.edge_width[i] = ((self.edge_width[i] > 0) * edge_width)[0]
             self.refresh()
             self.events.edge_width()
         self.events.current_edge_width()
