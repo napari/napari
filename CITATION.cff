@@ -74,6 +74,7 @@ authors:
 - given-names: Jaime
   family-names: Rodríguez-Guerra
   affiliation: Quansight Labs
+  orcid: https://orcid.org/0000-0001-8974-1566
 - given-names: Hector
   family-names: Muñoz
   affiliation: University of California, Los Angeles
@@ -119,6 +120,9 @@ authors:
   family-names: Harrington
   affiliation: Chan Zuckerberg Initiative
   orcid: https://orcid.org/0000-0002-7237-1973
-
+- given-names: Ashley
+  family-names: Anderson
+  affiliation: Chan Zuckerberg Initiative
+  orcid: https://orcid.org/0000-0002-3841-8344
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
