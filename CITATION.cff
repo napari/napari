@@ -124,5 +124,9 @@ authors:
   family-names: Anderson
   affiliation: Chan Zuckerberg Initiative
   orcid: https://orcid.org/0000-0002-3841-8344
+- given-names: Peter
+  family-names: Sobolewski
+  affiliation: West Pomeranian University of Technology, Szczecin
+  orcid: https://orcid.org/0000-0002-2097-0990
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
