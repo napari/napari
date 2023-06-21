@@ -25,10 +25,7 @@ from jinja2.filters import FILTERS
 import napari
 
 release = napari.__version__
-if "dev" in release:
-    version = "dev"
-else:
-    version = release
+version = "dev" if "dev" in release else release
 
 # -- Project information -----------------------------------------------------
 
@@ -83,10 +80,7 @@ html_theme = 'napari'
 # Define the json_url for our version switcher.
 json_url = "https://napari.org/version_switcher.json"
 
-if version == "dev":
-    version_match = "latest"
-else:
-    version_match = release
+version_match = "latest" if version == "dev" else release
 
 html_theme_options = {
     "external_links": [
@@ -121,8 +115,8 @@ intersphinx_mapping = {
         'https://napari-plugin-engine.readthedocs.io/en/latest/objects.inv',
     ],
     'magicgui': [
-        'https://napari.org/magicgui/',
-        'https://napari.org/magicgui/objects.inv',
+        'https://pyapp-kit.github.io/magicgui/',
+        'https://pyapp-kit.github.io/magicgui/objects.inv',
     ],
 }
 
@@ -209,8 +203,7 @@ def get_attributes(item, obj, modulename):
 
     if hasattr(getattr(module, obj), item):
         return f"~{obj}.{item}"
-    else:
-        return ""
+    return ""
 
 
 FILTERS["get_attributes"] = get_attributes
