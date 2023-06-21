@@ -120,6 +120,7 @@ target-version = "py38"
 fix = true
 
 [tool.ruff.per-file-ignores]
+"docs/**" = ["INP001"]
 "napari/_vispy/__init__.py" = ["E402"]
 "**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018"]
 "napari/utils/_testsupport.py" = ["B011"]
