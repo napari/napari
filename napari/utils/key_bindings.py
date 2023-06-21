@@ -191,7 +191,7 @@ def normalize_key_combo(key_combo):
         )
 
     for modifier in modifiers:
-        if modifier in KEY_SUBS.keys():
+        if modifier in KEY_SUBS:
             modifiers.remove(modifier)
             modifier = KEY_SUBS[modifier]
 

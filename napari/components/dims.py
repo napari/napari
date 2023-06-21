@@ -411,6 +411,7 @@ class Dims(EventedModel):
     def _go_to_center_step(self):
         self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
 
+
 def assert_axis_in_bounds(axis: int, ndim: int) -> int:
     """Assert a given value is inside the existing axes of the image.
 

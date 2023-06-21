@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from app_model.types import KeyCode
-
 import napari
 from napari.layers.base._base_constants import Mode
 from napari.layers.image.image import Image

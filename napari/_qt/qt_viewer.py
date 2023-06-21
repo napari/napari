@@ -6,7 +6,7 @@ import traceback
 import typing
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 from weakref import WeakSet, ref
 
 import numpy as np
