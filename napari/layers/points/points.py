@@ -10,6 +10,7 @@ from psygnal.containers import Selection
 from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
+from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -594,7 +595,6 @@ class Points(Layer):
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
-        self.events.data(value=self.data)
         self._reset_editable()
 
     def _on_selection(self, selected):
@@ -1904,6 +1904,12 @@ class Points(Layer):
             Point or points to add to the layer data.
         """
         self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
+        self.events.data(
+            value=self.data,
+            action=ActionType.ADD.value,
+            data_indices=(-1,),
+            vertex_indices=((),),
+        )
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -1932,6 +1938,14 @@ class Points(Layer):
                     self._value_stored -= offset
 
             self.data = np.delete(self.data, index, axis=0)
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVE.value,
+                data_indices=tuple(
+                    self.selected_data,
+                ),
+                vertex_indices=((),),
+            )
             self.selected_data = set()
 
     def _move(
@@ -1958,7 +1972,12 @@ class Points(Layer):
                 self.data[np.ix_(selection_indices, disp)] + shift
             )
             self.refresh()
-        self.events.data(value=self.data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.CHANGE.value,
+            data_indices=tuple(selection_indices),
+            vertex_indices=((),),
+        )
 
     def _set_drag_start(
         self,
