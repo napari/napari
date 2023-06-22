@@ -64,6 +64,10 @@ authors:
   family-names: Lambert
   affiliation: Harvard Medical School
   orcid: https://orcid.org/0000-0002-2409-0181
+- given-names: Jessy
+  family-names: Lauer
+  affiliation: Swiss Federal Institute of Technology (EPFL), Lausanne, Switzerland
+  orcid: orcid.org/0000-0002-3656-2449
 - given-names: Ziyang
   family-names: Liu
   affiliation: Chan Zuckerberg Initiative Foundation
@@ -113,6 +117,14 @@ authors:
 - given-names: Loic
   family-names: Royer
   affiliation: Chan Zuckerberg Biohub
+- given-names: Craig T.
+  family-names: Russell
+  affiliation: European Bioinformatics Institute - European Molecular Biology Laboratory
+  orcid: orcid.org/0000-0002-2447-5911
+- given-names: Gabriel
+  family-names: Selzer
+  affiliation: University of Wisconsin-Madison
+  orcid: orcid.org/0009-0002-2400-1940
 - given-names: Peter
   family-names: Sobolewski
   affiliation: West Pomeranian University of Technology, Szczecin
@@ -121,6 +133,10 @@ authors:
   family-names: Sofroniew
   affiliation: Chan Zuckerberg Initiative
   orcid: https://orcid.org/0000-0002-3426-0914
+- given-names: David
+  family-names: Stansby
+  affiliation: University College London
+  orcid: orcid.org/0000-0002-1365-1908
 - given-names: Andrew
   family-names: Sweet
   affiliation: Chan Zuckerberg Initiative
