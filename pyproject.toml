@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-  "setuptools >= 42",
+  "setuptools >= 56",
   "wheel",
   "setuptools_scm[toml]>=3.4"
 ]
@@ -158,7 +158,6 @@ filterwarnings = [
   "error:::napari", # turn warnings from napari into errors
   "error:::test_.*", # turn warnings in our own tests into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
-  "ignore:Restart required for this change:UserWarning:napari",  # triggered by a lot of async tests
   "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
   "ignore::DeprecationWarning:tensorstore",
@@ -173,8 +172,6 @@ filterwarnings = [
   "ignore:There is no current event loop:DeprecationWarning:",
 ]
 markers = [
-    "sync_only: Test should only be run synchronously",
-    "async_only: Test should only be run asynchronously",
     "examples: Test of examples",
     "disable_qthread_start: Disable thread start in this Test",
     "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
@@ -365,8 +362,6 @@ module = [
     'napari.layers.image.experimental.octree_util',
     'napari.layers.image.image',
     'napari.layers.intensity_mixin',
-    'napari.layers.labels._labels_utils',
-    'napari.layers.labels.labels',
     'napari.layers.points._points_key_bindings',
     'napari.layers.points._points_utils',
     'napari.layers.points._slice',
@@ -422,10 +417,7 @@ module = [
     'napari.utils.geometry',
     'napari.utils.interactions',
     'napari.utils.key_bindings',
-    'napari.utils.misc',
     'napari.utils.mouse_bindings',
-    'napari.utils.naming',
-    'napari.utils.notifications',
     'napari.utils.perf._event',
     'napari.utils.perf._patcher',
     'napari.utils.perf._stat',
@@ -436,7 +428,6 @@ module = [
     'napari.utils.theme',
     'napari.utils.transforms.transform_utils',
     'napari.utils.transforms.transforms',
-    'napari.utils.translations',
     'napari.utils.tree.group',
 ]
 ignore_errors = true
