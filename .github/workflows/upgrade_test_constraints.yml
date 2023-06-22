@@ -108,6 +108,7 @@ jobs:
       - name: Check updated packages
         id: packages
         run: |
+          rm -rf docs
           git fetch --all
           python tools/check_updated_packages.py --main-packages
           python tools/check_updated_packages.py
