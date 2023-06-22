@@ -233,7 +233,7 @@ def chunk_slices(array: da.Array, ndim=3, interval=None) -> list:
 
 @thread_worker
 def render_sequence(
-        corner_pixels, visible_scales=[], data=None, ndisplay=2
+        corner_pixels, visible_scales=[], data=None, ndisplay=2, camera=None
 ):
     """Generate multiscale chunk tuples from low to high resolution.
 
@@ -276,7 +276,8 @@ def render_sequence(
                                                 data._scale_factors[scale])
             elif ndisplay == 3:
                 chunk_queue = chunk_priority_3D(chunk_keys, corner_pixels,
-                                                data._scale_factors[scale])
+                                                data._scale_factors[scale],
+                                                camera=camera)
             else:
                 LOGGER.info(
                     f"render_sequence: {ndisplay} dimensions not supported"
@@ -296,7 +297,11 @@ def render_sequence(
                 # - first for the target chunk
                 # - second for blanking out the lower resolution
                 #   (is this too wasteful?)
-                real_array = np.asarray(vdata.array[chunk_slice]).transpose()
+
+                # TODO Transpose needed in 2D mandelbrot
+                # real_array = np.asarray(vdata.array[chunk_slice]).transpose()
+
+                real_array = np.asarray(vdata.array[chunk_slice])
 
                 chunk_result = (
                     tuple(chunk_slice),
@@ -305,8 +310,7 @@ def render_sequence(
                     real_array,
                 )
 
-                if len(chunk_slice) == 2:
-                    import pdb; pdb.set_trace()
+                LOGGER.info(f"render_sequence: yielding chunk {chunk_slice} at scale {scale} which has priority\t{priority}")
                 
                 yield tuple(list(chunk_result) + [len(chunk_queue) == 0])
 
@@ -376,6 +380,8 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
     top_left = np.max((corner_pixels,), axis=0)[0, :]
     bottom_right = np.min((corner_pixels,), axis=0)[1, :]
 
+    camera = viewer.camera.copy()
+    
     # TODO Added to skip situations when 3D isnt setup on layer yet??
     if np.any((bottom_right - top_left) == 0):
         return
@@ -436,6 +442,7 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
         data=data,
         visible_scales=visible_scales,
         ndisplay=ndisplay,
+        camera=camera,
     )
 
     LOGGER.info(f"dims_update_handler: started render_sequence with corners {corners}")
@@ -513,7 +520,7 @@ def add_progressive_loading_image(img,
 
     # The scale bar will help this be more dramatic
     viewer.scale_bar.visible = True
-    viewer.scale_bar.unit = "m"
+    viewer.scale_bar.unit = "pixel"
     
     viewer.dims.ndim = ndisplay
     # Ensure async slicing is enabled
@@ -563,6 +570,7 @@ def add_progressive_loading_image(img,
             name=get_layer_name_for_scale(scale),
             colormap=colormap,
             scale=multiscale_data._scale_factors[scale],
+            rendering="attenuated_mip",
         )
         layers[scale] = layer
         layer.metadata["translated"] = False
@@ -684,8 +692,17 @@ def should_render_scale_2D(scale, viewer, min_scale, max_scale):
 
 # ---------- 3D specific ----------
 
+def get_chunk_center(chunk_slice):
+    """
+    Return the center of chunk_slice.
 
-def chunk_priority_3D(chunk_keys, corner_pixels, scale_factor):
+
+    chunk_slices is a tuple of slices
+    """
+    return np.array([(sl.start + sl.stop) * 0.5 for sl in chunk_slice])
+
+
+def chunk_priority_3D(chunk_keys, corner_pixels, scale_factor, camera=None):
     """Return the keys for all chunks at this scale within the corner_pixels.
 
     Parameters
@@ -713,11 +730,13 @@ def chunk_priority_3D(chunk_keys, corner_pixels, scale_factor):
         )
     ):
         priority = 0
-        # TODO 3d stuff here
-        if True:
-            priority = 0
-        else:
-            priority = np.inf
+
+        chunk_center = get_chunk_center(chunk_key)
+        depth = visual_depth(chunk_center, camera)
+        center_line_dist = distance_from_camera_center_line(chunk_center, camera)
+
+        priority = depth + camera.zoom * center_line_dist
+
         if priority < np.inf:
             heapq.heappush(priority_map, (priority, chunk_key))
 
@@ -748,8 +767,8 @@ def should_render_scale_3D(scale, viewer, min_scale, max_scale):
         max_pixel = 5
         min_pixel = 0.25
     else:
-        max_pixel = 4
-        min_pixel = 0.5
+        max_pixel = 10
+        min_pixel = 5
     greater_than_min_pixel = pixel_size > min_pixel
     less_than_max_pixel = pixel_size < max_pixel
     render = greater_than_min_pixel and less_than_max_pixel
