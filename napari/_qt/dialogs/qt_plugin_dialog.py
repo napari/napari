@@ -331,7 +331,9 @@ class Installer(QObject):
             for file in conda_meta_path.iterdir():
                 fname = file.parts[-1]
                 if (
-                    fname.startswith((napari_version_string, qt_version_string))
+                    fname.startswith(
+                        (napari_version_string, qt_version_string)
+                    )
                 ) and fname.endswith(".json"):
                     return True
         return False
