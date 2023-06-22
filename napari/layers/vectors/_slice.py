@@ -14,7 +14,7 @@ class _VectorSliceResponse:
     ----------
     indices : array like
         Indices of the sliced Vectors data.
-    alphas: array like or scalar
+    alphas : array like or scalar
         Used to change the opacity of the sliced vectors for visualization.
         Should be broadcastable to indices.
     dims : _SliceInput
