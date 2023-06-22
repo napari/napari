@@ -507,7 +507,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _get_unique_id(self):
         """Unique id of the layer."""
         return uuid.uuid4()
-      
+
     @classmethod
     def _basename(cls):
         return f'{cls.__name__}'
