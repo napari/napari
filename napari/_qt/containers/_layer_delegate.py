@@ -83,6 +83,7 @@ class LayerDelegate(QStyledItemDelegate):
         self.load_movie = QMovie(LOADING_GIF_PATH)
         self.load_movie.setScaledSize(QSize(18, 18))
         self.load_movie.frameChanged.connect(self.loading_frame_changed)
+        self._timer_id = None
         self._layer_visibility_states = WeakKeyDictionary()
         self._alt_click_layer = lambda: None
 
@@ -131,6 +132,7 @@ class LayerDelegate(QStyledItemDelegate):
 
     def timerEvent(self, event):
         self._check_loaded()
+        self._timer_id = None
         self.killTimer(event.timerId())
 
     def _check_loaded(self):
@@ -158,12 +160,16 @@ class LayerDelegate(QStyledItemDelegate):
         load_rect.setWidth(h)
         load_rect.setHeight(h)
 
-        if loaded and self.load_movie.state() == QMovie.Running:
+        if (
+            loaded
+            and self.load_movie.state() == QMovie.Running
+            and not self._timer_id
+        ):
             # Add some delay to check if the layer is still loaded to
             # prevent blinking from the loading indicator
             # when pausing the movie.
             self.layer_index = index
-            self.startTimer(100)
+            self._timer_id = self.startTimer(600)
         elif not loaded:
             self.load_movie.start()
 
