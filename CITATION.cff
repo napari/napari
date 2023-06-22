@@ -49,6 +49,8 @@ authors:
 - given-names: Christoph
   family-names: Gohlke
   affiliation: University of California, Irvine
+- given-names: Kabilar
+  family-names: Gunalan
 - given-names: Hagai
   family-names: Har-Gil
   affiliation: Tel Aviv University, Israel
@@ -163,6 +165,10 @@ authors:
   family-names: Weber Mendonça
   affiliation: Quansight
   orcid: orcid.org/0000-0002-3212-402X
+- given-names: Jonas
+  family-names: Windhager
+  affiliation: ETH Zurich / University of Zurich
+  orcid: https://orcid.org/0000-0002-2111-5291
 - given-names: Philip
   family-names: Winston
   affiliation: Tobeva Software
