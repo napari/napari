@@ -91,7 +91,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.3
     # via vispy
-hypothesis==6.79.1
+hypothesis==6.79.2
     # via napari (setup.cfg)
 idna==3.4
     # via requests
@@ -181,8 +181,6 @@ napari-plugin-engine==0.2.0
     #   napari (setup.cfg)
     #   napari-console
     #   napari-svg
-napari-plugin-manager==0.1.0a2
-    # via napari (setup.cfg)
 napari-svg==0.1.10
     # via napari (setup.cfg)
 nest-asyncio==1.5.6
@@ -192,9 +190,7 @@ networkx==3.1
     #   scikit-image
     #   torch
 npe2==0.7.0
-    # via
-    #   napari (setup.cfg)
-    #   napari-plugin-manager
+    # via napari (setup.cfg)
 numcodecs==0.11.0
     # via zarr
 numpy==1.25.0
@@ -401,7 +397,6 @@ qtpy==2.3.1
     #   magicgui
     #   napari (setup.cfg)
     #   napari-console
-    #   napari-plugin-manager
     #   qtconsole
     #   superqt
 requests==2.31.0
@@ -456,7 +451,6 @@ superqt==0.4.1
     # via
     #   magicgui
     #   napari (setup.cfg)
-    #   napari-plugin-manager
 sympy==1.12
     # via torch
 tensorstore==0.1.37
@@ -545,8 +539,6 @@ zipp==3.15.0
     #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.1.2
-    # via napari-plugin-manager
 setuptools==68.0.0
     # via
     #   nvidia-cublas-cu11
