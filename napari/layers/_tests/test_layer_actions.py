@@ -9,9 +9,11 @@ from napari.layers._layer_actions import (
     _duplicate_layer,
     _hide_selected,
     _hide_unselected,
+    _link_selected_layers,
     _project,
     _show_selected,
     _show_unselected,
+    _toggle_visibility,
 )
 
 
