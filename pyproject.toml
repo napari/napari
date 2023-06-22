@@ -428,7 +428,6 @@ module = [
     'napari.utils.theme',
     'napari.utils.transforms.transform_utils',
     'napari.utils.transforms.transforms',
-    'napari.utils.translations',
     'napari.utils.tree.group',
 ]
 ignore_errors = true
