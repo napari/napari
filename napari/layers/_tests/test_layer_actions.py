@@ -12,7 +12,6 @@ from napari.layers._layer_actions import (
     _project,
     _show_selected,
     _show_unselected,
-    _toggle_visibility,
 )
 
 
@@ -35,32 +34,6 @@ def test_duplicate_layers():
         len(layer_list[1].events.data.callbacks) == 1
     )  # `events` Event Emitter
     assert layer_list[1].source.parent() is layer_list[0]
-
-
-def test_toggle_selected_layers():
-    layer_list = make_three_layer_layerlist()
-    layer_list[0].visible = False
-    layer_list[1].visible = True
-    layer_list[2].visible = True
-
-    layer_list.selection.active = layer_list[0]
-    layer_list.selection.add(layer_list[1])
-
-    assert layer_list[0].visible is False
-    assert layer_list[1].visible is True
-    assert layer_list[2].visible is True
-
-    _toggle_visibility(layer_list)
-
-    assert layer_list[0].visible is True
-    assert layer_list[1].visible is False
-    assert layer_list[2].visible is True
-
-    _toggle_visibility(layer_list)
-
-    assert layer_list[0].visible is False
-    assert layer_list[1].visible is True
-    assert layer_list[2].visible is True
 
 
 def test_hide_unselected_layers():

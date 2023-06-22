@@ -23,8 +23,6 @@ class MenuId(str, Enum):
 
     MENUBAR_HELP = 'napari/help'
 
-    VISIBILITY_CONTEXT = 'napari/visibility'
-
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'

@@ -117,19 +117,13 @@ LAYER_ACTIONS: List[Action] = [
         enablement=LLCK.num_unselected_linked_layers,
         menus=[LAYERCTX_LINK],
     ),
-]
-
-
-# Statically defined Layer actions.
-# modifying this list at runtime has no effect.
-VISIBILITY_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LAYER_TOGGLE_VISIBILITY,
         title=CommandId.LAYER_TOGGLE_VISIBILITY.title,
         callback=_layer_actions._toggle_visibility,
         menus=[
             {
-                'id': MenuId.VISIBILITY_CONTEXT,
+                'id': MenuId.LAYERLIST_CONTEXT,
                 'group': MenuGroup.NAVIGATION,
             }
         ],
@@ -140,7 +134,7 @@ VISIBILITY_ACTIONS: List[Action] = [
         callback=_layer_actions._show_selected,
         menus=[
             {
-                'id': MenuId.VISIBILITY_CONTEXT,
+                'id': MenuId.LAYERLIST_CONTEXT,
                 'group': MenuGroup.NAVIGATION,
             }
         ],
@@ -151,7 +145,7 @@ VISIBILITY_ACTIONS: List[Action] = [
         callback=_layer_actions._hide_selected,
         menus=[
             {
-                'id': MenuId.VISIBILITY_CONTEXT,
+                'id': MenuId.LAYERLIST_CONTEXT,
                 'group': MenuGroup.NAVIGATION,
             }
         ],
@@ -162,7 +156,7 @@ VISIBILITY_ACTIONS: List[Action] = [
         callback=_layer_actions._show_unselected,
         menus=[
             {
-                'id': MenuId.VISIBILITY_CONTEXT,
+                'id': MenuId.LAYERLIST_CONTEXT,
                 'group': MenuGroup.NAVIGATION,
             }
         ],
@@ -173,7 +167,7 @@ VISIBILITY_ACTIONS: List[Action] = [
         callback=_layer_actions._hide_unselected,
         menus=[
             {
-                'id': MenuId.VISIBILITY_CONTEXT,
+                'id': MenuId.LAYERLIST_CONTEXT,
                 'group': MenuGroup.NAVIGATION,
             }
         ],
