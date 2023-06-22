@@ -3,8 +3,16 @@ from __future__ import annotations
 import functools
 import inspect
 import warnings
-from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
-
+from typing import (
+    Any,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import dask
 import numpy as np
