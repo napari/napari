@@ -1652,7 +1652,12 @@ class _BasePoints(Layer):
             shift = np.array(position)[disp] - center - self._drag_start
             self._move_points(ixgrid, shift)
             self.refresh()
-        self.events.data(value=self.data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.CHANGE.value,
+            data_indices=tuple(selection_indices),
+            vertex_indices=((),),
+        )
 
     @abstractmethod
     def _move_points(
@@ -2318,7 +2323,6 @@ class Points(_BasePoints):
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
-        self.events.data(value=self.data)
         self._reset_editable()
 
     def _get_ndim(self) -> int:

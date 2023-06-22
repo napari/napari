@@ -517,7 +517,8 @@ class Graph(_BasePoints):
                 self._face._update_current_properties(current_properties)
                 self._face._add(n_colors=adding)
 
-                for attribute in ("border_width", "shown", "size", "symbol"):
+                # `shown` must be first due to "refresh" calls inside `attribute`.setters
+                for attribute in ("shown", "size", "symbol", "border_width"):
                     if attribute == "shown":
                         default_value = True
                     else:
@@ -531,7 +532,6 @@ class Graph(_BasePoints):
     def _data_changed(self, prev_size: int) -> None:
         self._update_props_and_style(self.data.n_allocated_nodes, prev_size)
         self._update_dims()
-        self.events.data(value=self.data)
 
     def _get_state(self) -> Dict[str, Any]:
         # FIXME: this method can be removed once 'properties' argument is deprecreated.
