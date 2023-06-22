@@ -22,7 +22,6 @@ class CommandId(str, Enum):
     TOGGLE_FULLSCREEN = 'napari:window:view:toggle_fullscreen'
     TOGGLE_MENUBAR = 'napari:window:view:toggle_menubar'
     TOGGLE_PLAY = 'napari:window:view:toggle_play'
-    TOGGLE_OCTREE_CHUNK_OUTLINES = 'napari:window:view:toggle_octree_chunk_outlines'
     TOGGLE_LAYER_TOOLTIPS = 'napari:window:view:toggle_layer_tooltips'
     TOGGLE_ACTIVITY_DOCK = 'napari:window:view:toggle_activity_dock'
 
@@ -97,7 +96,6 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen')),
     CommandId.TOGGLE_MENUBAR: _i(trans._('Toggle Menubar Visibility')),
     CommandId.TOGGLE_PLAY: _i(trans._('Toggle Play')),
-    CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES: _i(trans._('Toggle Chunk Outlines')),
     CommandId.TOGGLE_LAYER_TOOLTIPS: _i(trans._('Toggle Layer Tooltips')),
     CommandId.TOGGLE_ACTIVITY_DOCK: _i(trans._('Toggle Activity Dock')),
     CommandId.TOGGLE_VIEWER_AXES: _i(trans._('Axes Visible')),

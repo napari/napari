@@ -13,6 +13,7 @@ from napari.layers.base._base_mouse_bindings import (
     transform_with_box,
 )
 from napari.layers.image._image_utils import guess_multiscale
+from napari.layers.image._slice import _ImageSliceResponse
 from napari.layers.image.image import _ImageBase
 from napari.layers.labels._labels_constants import (
     LabelColorMode,
@@ -33,7 +34,6 @@ from napari.layers.labels._labels_utils import (
 )
 from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
-from napari.utils import config
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import (
     color_dict_to_colormap,
@@ -916,10 +916,15 @@ class Labels(_ImageBase):
             self._all_vals[0] = 0
         return self._lookup_with_index
 
+    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+        """Override to convert raw slice data to displayed label colors."""
+        response = response.to_displayed(self._raw_to_displayed)
+        super()._update_slice_response(response)
+
     def _partial_labels_refresh(self):
         """Prepares and displays only an updated part of the labels."""
 
-        if self._updated_slice is None or not self._slice.loaded:
+        if self._updated_slice is None or not self.loaded:
             return
 
         dims_displayed = self._slice_input.displayed
@@ -1684,13 +1689,6 @@ class Labels(_ImageBase):
             and v[idx] is not None
             and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
-
-
-if config.async_octree:
-    from napari.layers.image.experimental.octree_image import _OctreeImageBase
-
-    class Labels(Labels, _OctreeImageBase):  # type: ignore[no-redef]
-        pass
 
 
 def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
