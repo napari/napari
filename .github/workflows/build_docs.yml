@@ -60,7 +60,7 @@ jobs:
         with:
           # the napari-docs repo is cloned into a docs/ folder, hence the
           # invocation below. Locally, you should simply run make docs
-          run:  PIP_CONSTRAINTS=${GITHUB_WORKSPACE}/napari-repo/resources/constraints/constraints_py3.10_docs.txt make -C docs docs GALLERY_PATH=../examples/
+          run:  PIP_CONSTRAINTS=../napari-repo/resources/constraints/constraints_py3.10_docs.txt make -C docs docs GALLERY_PATH=../examples/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
