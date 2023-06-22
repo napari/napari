@@ -4,7 +4,7 @@ import inspect
 import re
 from collections import ChainMap
 from types import FrameType
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 from napari.utils.misc import ROOT_DIR, formatdoc
 
@@ -88,7 +88,7 @@ class CallerFrame:
         self, skip_predicate: Callable[[int, FrameType], bool]
     ) -> None:
         self.predicate = skip_predicate
-        self.namespace = {}
+        self.namespace: ChainMap[Dict[str, Any], Dict[str, Any]] = ChainMap()
         self.names = ()
 
     def __enter__(self):
