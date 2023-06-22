@@ -181,6 +181,7 @@ def test_update_console(make_napari_viewer):
         del viewer.window._qt_viewer.console.shell.user_ns[k]
 
 
+@pytest.mark.enable_console
 @pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
 def test_update_lazy_console(make_napari_viewer, capsys):
     """Test updating the console with local variables,
