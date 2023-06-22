@@ -60,6 +60,9 @@ authors:
   family-names: Hilsenstein
   affiliation: EMBL Heidelberg, Germany
   orcid: https://orcid.org/0000-0002-2255-2960
+- given-names: Katherine
+  family-names: Hutchings
+  affiliation: University College London
 - given-names: Talley
   family-names: Lambert
   affiliation: Harvard Medical School
@@ -114,6 +117,10 @@ authors:
   family-names: Rodríguez-Guerra
   affiliation: Quansight Labs
   orcid: https://orcid.org/0000-0001-8974-1566
+- given-names: David
+  family-names: Ross
+  affiliation: NanoString Technologies, Inc.
+  orcid: orcid.org/0000-0001-9998-3817
 - given-names: Loic
   family-names: Royer
   affiliation: Chan Zuckerberg Biohub
@@ -125,6 +132,10 @@ authors:
   family-names: Selzer
   affiliation: University of Wisconsin-Madison
   orcid: orcid.org/0009-0002-2400-1940
+- given-names: Paul
+  family-names: Smith
+  affiliation: University College London
+  orcid: orcid.org/0000-0002-3676-5318
 - given-names: Peter
   family-names: Sobolewski
   affiliation: West Pomeranian University of Technology, Szczecin
@@ -148,6 +159,10 @@ authors:
 - given-names: Pam
   family-names: Wadhwa
   affiliation: Quansight Labs
+- given-names: Melissa
+  family-names: Weber Mendonça
+  affiliation: Quansight
+  orcid: orcid.org/0000-0002-3212-402X
 - given-names: Philip
   family-names: Winston
   affiliation: Tobeva Software
