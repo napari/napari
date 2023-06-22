@@ -198,6 +198,15 @@ class ApplicationSettings(EventedModel):
             "Modifiers to activate changing the brush size by moving the mouse."
         ),
     )
+    
+    n_moveable_dims: int = Field(
+        default=2,
+        ge=2,
+        title=trans._("Maximal Number of moveable dimensions"),
+        description=trans._(
+            "This specifies the number of dimension the can be reordered in the Dims. Ordering pop-up window or rolled through by pushing the 'Change order of visible axes' button. The dimensions are counted from the back."
+        ),
+    )
 
     # convert cache (and max cache) from bytes to mb for widget
     dask: DaskSettings = Field(

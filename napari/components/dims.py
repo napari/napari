@@ -12,6 +12,7 @@ from typing import (
 import numpy as np
 from pydantic import root_validator, validator
 
+from napari.settings import get_settings
 from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 from napari.utils.translations import trans
@@ -86,6 +87,8 @@ class Dims(EventedModel):
     displayed_order : tuple of int
         Order of only displayed dimensions. These are calculated from the
         ``displayed`` dimensions.
+    n_moveable_dims : int
+        Number of dimensions (from the back) which can be reordered / rolled. Defined by the application setting 'n_moveable_dims'.
     """
 
     # fields
@@ -276,6 +279,24 @@ class Dims(EventedModel):
     def displayed_order(self) -> Tuple[int, ...]:
         return tuple(argsort(self.displayed))
 
+    # TODO: I'm not sure if this is the correct way to bind it. I fear this might cause some event miss fireing.
+    @property
+    def n_moveable_dims(self) -> int:
+        """Int: Number of dimensions (from the back) which can be reordered / rolled"""
+        nmdims = get_settings().application.n_moveable_dims
+        # if the requested numer of roallable dimensions exceed the number of dimensions clip to ndim
+        if nmdims > self.ndim:
+            return self.ndim
+        return nmdims
+    
+    @n_moveable_dims.setter
+    def n_moveable_dims(self, value: int):
+        # if the requested numer of roallable dimensions exceed the number of dimensions clip to ndim
+        if value > self.ndim:
+            get_settings().application.n_moveable_dims = self.ndim
+        else:
+            get_settings().application.n_moveable_dims = value
+
     def set_range(
         self,
         axis: Union[int, Sequence[int]],
@@ -427,8 +448,11 @@ class Dims(EventedModel):
         """Roll order of dimensions for display."""
         order = np.array(self.order)
         nsteps = np.array(self.nsteps)
-        order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
-        self.order = order.tolist()
+        order[nsteps > 1] = [
+            *order[:-self.n_moveable_dims][nsteps[:-self.n_moveable_dims] > 1], 
+            *np.roll(order[-self.n_moveable_dims:][nsteps[-self.n_moveable_dims:] > 1], 1)
+        ]
+        self.order = order
 
     def _go_to_center_step(self):
         self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
