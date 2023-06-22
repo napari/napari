@@ -151,7 +151,7 @@ class QtViewer(QSplitter):
     _key_map_handler : napari.utils.key_bindings.KeymapHandler
         KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped
     _qt_poll : Optional[napari._qt.experimental.qt_poll.QtPoll]
-        A QtPoll object required for octree or monitor.
+        A QtPoll object required for the monitor.
     _remote_manager : napari.components.experimental.remote.RemoteManager
         A remote manager processing commands from remote clients and sending out messages when polled.
     _welcome_widget : napari._qt.widgets.qt_welcome.QtWidgetOverlay
@@ -232,26 +232,13 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
-        # Create the experimental QtPool for octree and/or monitor.
+        # Create the experimental QtPool for the monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
 
         # Create the experimental RemoteManager for the monitor.
         self._remote_manager = _create_remote_manager(
             self.viewer.layers, self._qt_poll
         )
-
-        # moved from the old layerlist... still feels misplaced.
-        # can you help me move this elsewhere?
-        if config.async_loading:
-            from napari._qt.experimental.qt_chunk_receiver import (
-                QtChunkReceiver,
-            )
-
-            # The QtChunkReceiver object allows the ChunkLoader to pass newly
-            # loaded chunks to the layers that requested them.
-            self.chunk_receiver = QtChunkReceiver(self.layers)
-        else:
-            self.chunk_receiver = None
 
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
@@ -295,6 +282,17 @@ class QtViewer(QSplitter):
             stacklevel=2,
         )
         return self.canvas.camera
+
+    @property
+    def chunk_receiver(self) -> None:
+        warnings.warn(
+            trans._(
+                'QtViewer.chunk_receiver is deprecated in version 0.5 and will be removed in a later version. '
+                'More generally the old approach to async loading was removed in version 0.5 so this value is always None. '
+                'If you need to specifically use the old approach, continue to use the latest 0.4 release.'
+            ),
+            DeprecationWarning,
+        )
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -579,17 +577,26 @@ class QtViewer(QSplitter):
 
     @ensure_main_thread
     def _on_slice_ready(self, event):
+        """Callback connected to `viewer._layer_slicer.events.ready`.
+
+        Provides updates after slicing using the slice response data.
+        This only gets triggered on the async slicing path.
+        """
         responses = event.value
         logging.debug('QtViewer._on_slice_ready: %s', responses)
         for layer, response in responses.items():
             # Update the layer slice state to temporarily support behavior
             # that depends on it.
             layer._update_slice_response(response)
-            # The rest of `Layer.refresh` after `set_view_slice`, where `set_data`
-            # notifies the corresponding vispy layer of the new slice.
+            # The rest of `Layer.refresh` after `set_view_slice`, where
+            # `set_data` notifies the corresponding vispy layer of the new
+            # slice.
             layer.events.set_data()
             layer._update_thumbnail()
             layer._set_highlight(force=True)
+            # Update the layer's loaded state after everything else, so
+            # that a user can rely on the rendered state being updated.
+            layer._update_loaded_slice_id(response.request_id)
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""
@@ -898,16 +905,6 @@ class QtViewer(QSplitter):
         except MultipleReaderError:
             handle_gui_reading(filenames, self, stack, **kwargs)
 
-    def _toggle_chunk_outlines(self):
-        """Toggle whether we are drawing outlines around the chunks."""
-        from napari.layers.image.experimental.octree_image import (
-            _OctreeImageBase,
-        )
-
-        for layer in self.viewer.layers:
-            if isinstance(layer, _OctreeImageBase):
-                layer.display.show_grid = not layer.display.show_grid
-
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
 
@@ -1060,11 +1057,7 @@ if TYPE_CHECKING:
 def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     """Create and return a QtPoll instance, if needed.
 
-    Create a QtPoll instance for octree or monitor.
-
-    Octree needs QtPoll so VispyTiledImageLayer can finish in-progress
-    loads even if the camera is not moving. Once loading is finish it will
-    tell QtPoll it no longer needs to be polled.
+    Create a QtPoll instance for the monitor.
 
     Monitor needs QtPoll to poll for incoming messages. This might be
     temporary until we can process incoming messages with a dedicated
@@ -1082,7 +1075,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     Optional[QtPoll]
         The new QtPoll instance, if we need one.
     """
-    if not config.async_octree and not config.monitor:
+    if not config.monitor:
         return None
 
     from napari._qt.experimental.qt_poll import QtPoll

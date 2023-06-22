@@ -517,7 +517,7 @@ class Graph(_BasePoints):
                 self._face._update_current_properties(current_properties)
                 self._face._add(n_colors=adding)
 
-                for attribute in ("shown", "border_width", "symbol"):
+                for attribute in ("border_width", "shown", "size", "symbol"):
                     if attribute == "shown":
                         default_value = True
                     else:
@@ -527,11 +527,6 @@ class Graph(_BasePoints):
                         (getattr(self, f"_{attribute}"), new_values), axis=0
                     )
                     setattr(self, attribute, values)
-
-                new_sizes = np.broadcast_to(
-                    self.current_size, (adding, self._size.shape[1])
-                )
-                self.size = np.concatenate((self._size, new_sizes), axis=0)
 
     def _data_changed(self, prev_size: int) -> None:
         self._update_props_and_style(self.data.n_allocated_nodes, prev_size)

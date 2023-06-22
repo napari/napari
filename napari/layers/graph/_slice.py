@@ -4,6 +4,7 @@ from typing import Any, Sequence, Tuple
 import numpy as np
 from numpy.typing import ArrayLike
 
+from napari.layers.base._slice import _next_request_id
 from napari.layers.points._slice import _PointSliceResponse
 from napari.layers.utils._slice_input import _SliceInput
 
@@ -29,6 +30,8 @@ class _GraphSliceResponse(_PointSliceResponse):
         Should be broadcastable to indices.
     dims : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
+    request_id : int
+        The identifier of the request from which this was generated.
     """
 
     edges_indices: ArrayLike = field(repr=False)
@@ -64,6 +67,7 @@ class _GraphSliceRequest:
     dims_indices: Any = field(repr=False)
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
+    id: int = field(default=_next_request_id)
 
     def __call__(self) -> _GraphSliceResponse:
         # Return early if no data
@@ -73,6 +77,7 @@ class _GraphSliceRequest:
                 edges_indices=[],
                 scale=np.empty(0),
                 dims=self.dims,
+                request_id=self.id,
             )
 
         not_disp = list(self.dims.not_displayed)
@@ -87,6 +92,7 @@ class _GraphSliceRequest:
                 edges_indices=edges,
                 scale=1,
                 dims=self.dims,
+                request_id=self.id,
             )
 
         # We want a numpy array so we can use fancy indexing with the non-displayed
@@ -112,6 +118,7 @@ class _GraphSliceRequest:
             edges_indices=edges_indices,
             scale=scale,
             dims=self.dims,
+            request_id=self.id,
         )
 
     def _get_out_of_display_slice_data(
@@ -127,13 +134,13 @@ class _GraphSliceRequest:
         valid_nodes = self.data.initialized_buffer_mask()
         ixgrid = np.ix_(valid_nodes, not_disp)
         data = self.data.coords_buffer[ixgrid]
-        sizes = self.size[ixgrid] / 2
-        distances = abs(data - not_disp_indices)
+        sizes = self.size[valid_nodes, np.newaxis] / 2
+        distances = np.abs(data - not_disp_indices)
         matches = np.all(distances <= sizes, axis=1)
+        if not np.any(matches):
+            return np.empty(0, dtype=int), np.empty(0, dtype=int), 1
         size_match = sizes[matches]
-        size_match[size_match == 0] = 1
         scale_per_dim = (size_match - distances[matches]) / size_match
-        scale_per_dim[size_match == 0] = 1
         scale = np.prod(scale_per_dim, axis=1)
         valid_nodes[valid_nodes] = matches
         slice_indices = np.where(valid_nodes)[0].astype(int)
