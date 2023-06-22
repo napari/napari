@@ -235,6 +235,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         settings.application.events.grid_height.connect(
             self._update_viewer_grid
         )
+        settings.experimental.events.async_.connect(self._update_async)
 
         # Add extra events - ideally these will be removed too!
         self.events.add(
@@ -448,9 +449,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def rounded_division(min_val, max_val, precision):
         warnings.warn(
             trans._(
-                'Viewer.rounded_division is deprecated since v0.4.18 and will soon be removed.'
+                'Viewer.rounded_division is deprecated since v0.4.18 and will be removed in 0.6.0.'
             ),
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return int(((min_val + max_val) / 2) / precision) * precision
@@ -492,6 +493,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
+
+    def _update_async(self, event: Event) -> None:
+        """Set layer slicer to force synchronous if async is disabled."""
+        self._layer_slicer._force_sync = not event.value
 
     def _update_status_bar_from_cursor(self, event=None):
         """Update the status bar based on the current cursor position.
@@ -658,6 +663,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
+        # Clean up overlays
+        for overlay in list(layer._overlays):
+            del layer._overlays[overlay]
+
         self._on_layers_change()
         self._on_grid_change()
 
@@ -681,7 +690,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.append(layer)
         return layer
 
-    @rename_argument("interpolation", "interpolation2d", "0.6.0")
+    @rename_argument(
+        from_name="interpolation",
+        to_name="interpolation2d",
+        version="0.6.0",
+        since_version="0.4.17",
+    )
     def add_image(
         self,
         data=None,

@@ -10,6 +10,7 @@ from psygnal.containers import Selection
 from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
+from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -596,7 +597,6 @@ class Points(Layer):
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
-        self.events.data(value=self.data)
         self._reset_editable()
 
     def _on_selection(self, selected):
@@ -987,7 +987,7 @@ class Points(Layer):
         self._current_edge_width = edge_width
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
-                self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
+                self.edge_width[i] = ((self.edge_width[i] > 0) * edge_width)[0]
             self.refresh()
             self.events.edge_width()
         self.events.current_edge_width()
@@ -1728,13 +1728,8 @@ class Points(Layer):
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
         )
-        # TODO: [see Image]
-        #   For the existing sync slicing, slice_indices is passed through
-        # to avoid some performance issues related to the evaluation of the
-        # data-to-world transform and its inverse. Async slicing currently
-        # absorbs these performance issues here, but we can likely improve
-        # things either by caching the world-to-data transform on the layer
-        # or by lazily evaluating it in the slice task itself.
+        # See Image._make_slice_request to understand why we evaluate this here
+        # instead of using `self._slice_indices`.
         slice_indices = slice_input.data_indices(
             self._data_to_world.inverse, round_index=False
         )
@@ -1900,6 +1895,12 @@ class Points(Layer):
             Point or points to add to the layer data.
         """
         self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
+        self.events.data(
+            value=self.data,
+            action=ActionType.ADD.value,
+            data_indices=(-1,),
+            vertex_indices=((),),
+        )
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -1928,6 +1929,14 @@ class Points(Layer):
                     self._value_stored -= offset
 
             self.data = np.delete(self.data, index, axis=0)
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVE.value,
+                data_indices=tuple(
+                    self.selected_data,
+                ),
+                vertex_indices=((),),
+            )
             self.selected_data = set()
 
     def _move(
@@ -1954,7 +1963,12 @@ class Points(Layer):
                 self.data[np.ix_(selection_indices, disp)] + shift
             )
             self.refresh()
-        self.events.data(value=self.data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.CHANGE.value,
+            data_indices=tuple(selection_indices),
+            vertex_indices=((),),
+        )
 
     def _set_drag_start(
         self,
