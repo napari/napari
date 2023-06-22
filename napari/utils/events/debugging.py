@@ -112,7 +112,7 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
 
     # seperate groups of events
     if not cfg._cur_depth:
-        lines = ["─" * 79, ''] + lines
+        lines = ["─" * 79, "", *lines]
     elif not cfg.nesting_allowance:
         return
 

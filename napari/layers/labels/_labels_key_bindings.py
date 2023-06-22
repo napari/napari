@@ -73,6 +73,14 @@ def new_label(layer: Labels):
 
 
 @register_label_action(
+    trans._("Swap between the selected label and the background label."),
+)
+def swap_selected_and_background_labels(layer: Labels):
+    """Swap between the selected label and the background label."""
+    layer.swap_selected_and_background_labels()
+
+
+@register_label_action(
     trans._("Decrease the currently selected label by one."),
 )
 def decrease_label_id(layer: Labels):

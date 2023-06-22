@@ -1,4 +1,3 @@
-import pkg_resources
 from .filesize import naturalsize
 from .i18n import activate, deactivate
 from .number import apnumber, fractional, intcomma, intword, ordinal, scientific

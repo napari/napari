@@ -1,14 +1,19 @@
 from copy import copy
 from itertools import cycle, islice
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
 import pytest
 from pydantic import ValidationError
 
-from napari._tests.utils import check_layer_world_data_extent
+from napari._tests.utils import (
+    assert_colors_equal,
+    check_layer_world_data_extent,
+)
 from napari.components import ViewerModel
 from napari.layers import Shapes
+from napari.layers.base._base_constants import ActionType
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.utils.colormaps.standardize_color import transform_color
@@ -43,6 +48,27 @@ def test_update_thumbnail_empty_shapes():
     layer = Shapes()
     layer._allow_thumbnail_update = True
     layer._update_thumbnail()
+
+
+def test_empty_shapes_with_features():
+    """See the following for the points issues this covers:
+    https://github.com/napari/napari/issues/5632
+    https://github.com/napari/napari/issues/5634
+    """
+    shapes = Shapes(
+        features={'a': np.empty(0, int)},
+        feature_defaults={'a': 0},
+        face_color='a',
+        face_color_cycle=list('rgb'),
+    )
+
+    shapes.add_rectangles([[0, 0], [1, 1]])
+    shapes.feature_defaults['a'] = 1
+    shapes.add_rectangles([[1, 1], [2, 2]])
+    shapes.feature_defaults = {'a': 2}
+    shapes.add_rectangles([[2, 2], [3, 3]])
+
+    assert_colors_equal(shapes.face_color, list('rgb'))
 
 
 properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
@@ -286,14 +312,14 @@ def test_text_from_property_fstring(properties):
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
-    expected_text_3 = expected_text_2 + ['type-ish: A']
+    expected_text_3 = [*expected_text_2, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
     # add shape
     layer.selected_data = {0}
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
-    expected_text_4 = expected_text_3 + ['type-ish: A']
+    expected_text_4 = [*expected_text_3, "type-ish: A"]
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
@@ -915,10 +941,18 @@ def test_polygons(shape):
 
     # Test adding via add_polygons
     layer2 = Shapes()
+    layer2.events.data = Mock()
+
     layer2.add_polygons(data)
     assert layer.nshapes == layer2.nshapes
     assert np.allclose(layer2.data, layer.data)
     assert np.all([s == 'polygon' for s in layer2.shape_type])
+
+    # Avoid a.any(), a.all()
+    assert np.array_equal(layer2.events.data.call_args[1]["value"], layer.data)
+    assert layer2.events.data.call_args[1]["action"] == ActionType.ADD.value
+    assert layer2.events.data.call_args[1]["data_indices"] == (-1,)
+    assert layer2.events.data.call_args[1]["vertex_indices"] == ((),)
 
 
 def test_add_polygons_raises_error():
@@ -1201,15 +1235,25 @@ def test_removing_selected_shapes():
     ] + list(np.random.random((5, 4, 2)))
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
     layer = Shapes(data, shape_type=shape_type)
-
+    layer.events.data = Mock()
     # With nothing selected no points should be removed
     layer.remove_selected()
     assert len(layer.data) == len(data)
 
     # Select three shapes and remove them
-    layer.selected_data = {1, 7, 8}
+    selection = {1, 7, 8}
+    layer.selected_data = selection
     layer.remove_selected()
-    keep = [0] + list(range(2, 7)) + [9]
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.REMOVE.value,
+        "data_indices": tuple(
+            selection,
+        ),
+        "vertex_indices": ((),),
+    }
+
+    keep = [0, *range(2, 7)] + [9]
     data_keep = [data[i] for i in keep]
     shape_type_keep = [shape_type[i] for i in keep]
     assert len(layer.data) == len(data_keep)
@@ -1227,47 +1271,47 @@ def test_changing_modes():
     data = 20 * np.random.random((10, 4, 2))
     layer = Shapes(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'select'
     assert layer.mode == 'select'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'direct'
     assert layer.mode == 'direct'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'vertex_insert'
     assert layer.mode == 'vertex_insert'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'vertex_remove'
     assert layer.mode == 'vertex_remove'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_rectangle'
     assert layer.mode == 'add_rectangle'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_ellipse'
     assert layer.mode == 'add_ellipse'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_line'
     assert layer.mode == 'add_line'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_path'
     assert layer.mode == 'add_path'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'add_polygon'
     assert layer.mode == 'add_polygon'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
 
 def test_name():
@@ -1778,7 +1822,7 @@ def test_edge_width():
     layer.current_edge_width = 4
     layer.add(new_shape)
     assert len(layer.edge_width) == shape[0] + 1
-    assert layer.edge_width == width_list + [4]
+    assert layer.edge_width == [*width_list, 4]
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
@@ -1823,7 +1867,7 @@ def test_z_index():
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
     assert len(layer.z_index) == shape[0] + 1
-    assert layer.z_index == z_index_list + [4]
+    assert layer.z_index == [*z_index_list, 4]
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
@@ -2153,7 +2197,7 @@ def test_world_data_extent():
     min_val = (-2, -8, 0)
     max_val = (9, 30, 15)
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
 def test_set_data_3d():

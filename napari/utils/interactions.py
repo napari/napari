@@ -241,7 +241,7 @@ KEY_SYMBOLS = {
 
 joinchar = '+'
 if sys.platform.startswith('darwin'):
-    KEY_SYMBOLS.update({'Ctrl': '⌘', 'Alt': '⌥', 'Meta': '⌃'})
+    KEY_SYMBOLS.update({'Ctrl': '⌃', 'Alt': '⌥', 'Meta': '⌘'})
     joinchar = ''
 elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
@@ -335,7 +335,7 @@ class Shortcut:
         return ' '.join(
             joinchar.join(
                 KEY_SYMBOLS.get(x, x)
-                for x in (_kb2mods(part) + [str(part.key)])
+                for x in ([*_kb2mods(part), str(part.key)])
             )
             for part in self._kb.parts
         )

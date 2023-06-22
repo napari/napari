@@ -29,7 +29,7 @@ def _threading_warn():
 
 
 def _warn():
-    warnings.warn('warning!')
+    warnings.warn('warning!', stacklevel=3)
 
 
 def _threading_raise():
@@ -267,7 +267,6 @@ def test_notification_error(count_show, monkeypatch):
 
 
 @skip_on_win_ci
-@pytest.mark.sync_only
 def test_notifications_error_with_threading(
     make_napari_viewer, clean_current, monkeypatch
 ):

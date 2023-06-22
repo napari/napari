@@ -127,25 +127,6 @@ class PreferencesDialog(QDialog):
             lambda d: getattr(self._settings, name.lower()).update(d)
         )
 
-        # need to disable async if octree is enabled.
-        # TODO: this shouldn't live here... if there is a coupling/dependency
-        # between these settings, it should be declared in the settings schema
-        if (
-            name.lower() == 'experimental'
-            and values['octree']
-            and self._settings.env_settings()
-            .get('experimental', {})
-            .get('async_')
-            not in (None, '0')
-        ):
-            form_layout = form.widget.layout()
-            for i in range(form_layout.count()):
-                wdg = form_layout.itemAt(i, form_layout.FieldRole).widget()
-                if wdg._name == 'async_':
-                    wdg.opacity.setOpacity(0.3)
-                    wdg.setDisabled(True)
-                    break
-
         self._list.addItem(field.field_info.title or field.name)
         self._stack.addWidget(form)
 
@@ -165,14 +146,23 @@ class PreferencesDialog(QDialog):
                 "type": "object",
                 "properties": {
                     "shortcuts": {
-                        "title": "shortcuts",
-                        "description": "Set keyboard shortcuts for actions.",
+                        "title": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.title,
+                        "description": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.description,
                         "type": "object",
                     }
                 },
             }
         else:
             schema = json.loads(ftype.schema_json())
+
+        if field.field_info.title:
+            schema["title"] = field.field_info.title
+        if field.field_info.description:
+            schema["description"] = field.field_info.description
 
         # find enums:
         for name, subfield in ftype.__fields__.items():

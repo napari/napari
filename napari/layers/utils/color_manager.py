@@ -96,8 +96,8 @@ class ColorProperties:
             )
 
             return np.all([name_eq, values_eq, current_value_eq])
-        else:
-            return False
+
+        return False
 
 
 class ColorManager(EventedModel):
@@ -164,17 +164,17 @@ class ColorManager(EventedModel):
     def _ensure_color_array(cls, v):
         if len(v) > 0:
             return transform_color(v)
-        else:
-            return np.empty((0, 4))
+
+        return np.empty((0, 4))
 
     @validator('current_color', pre=True, allow_reuse=True)
     def _coerce_current_color(cls, v):
         if v is None:
             return v
-        elif len(v) == 0:
+        if len(v) == 0:
             return None
-        else:
-            return transform_color(v)[0]
+
+        return transform_color(v)[0]
 
     @root_validator(allow_reuse=True)
     def _validate_colors(cls, values):
@@ -183,14 +183,12 @@ class ColorManager(EventedModel):
             colors, values = _validate_cycle_mode(values)
         elif color_mode == ColorMode.COLORMAP:
             colors, values = _validate_colormap_mode(values)
-        elif color_mode == ColorMode.DIRECT:
+        else:  # color_mode == ColorMode.DIRECT:
             colors = values['colors']
-
-        # FIXME Local variable 'colors' might be referenced before assignment
 
         # set the current color to the last color/property value
         # if it wasn't already set
-        if values['current_color'] is None and len(colors) > 0:
+        if values.get("current_color") is None and len(colors) > 0:
             values['current_color'] = colors[-1]
             if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
                 property_values = values['color_properties']

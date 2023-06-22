@@ -44,7 +44,6 @@ class QtDims(QWidget):
         # True / False if slider is or is not displayed
         self._displayed_sliders = []
 
-        self._play_ready = True  # False if currently awaiting a draw event
         self._animation_thread = None
         self._animation_worker = None
 
@@ -116,6 +115,7 @@ class QtDims(QWidget):
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
+        self._resize_axis_labels()
 
     def _update_nsliders(self):
         """Updates the number of sliders based on the number of dimensions."""
@@ -130,20 +130,31 @@ class QtDims(QWidget):
 
     def _resize_axis_labels(self):
         """When any of the labels get updated, this method updates all label
-        widths to the width of the longest label. This keeps the sliders
-        left-aligned and allows the full label to be visible at all times,
-        with minimal space, without setting stretch on the layout.
+        widths to a minimum size. This allows the full label to be
+        visible at all times, with minimal space, without setting stretch on
+        the layout.
         """
-        fm = QFontMetrics(QFont("", 0))
-        labels = self.findChildren(QLineEdit, 'axis_label')
-        newwidth = max(fm.boundingRect(lab.text()).width() for lab in labels)
-
-        if any(self._displayed_sliders):
+        displayed_labels = [
+            self.slider_widgets[idx].axis_label
+            for idx, displayed in enumerate(self._displayed_sliders)
+            if displayed
+        ]
+        if displayed_labels:
+            fm = QFontMetrics(QFont("", 0))
+            labels = self.findChildren(QLineEdit, 'axis_label')
             # set maximum width to no more than 20% of slider width
-            maxwidth = self.slider_widgets[0].width() * 0.2
-            newwidth = min([newwidth, maxwidth])
-        for labl in labels:
-            labl.setFixedWidth(int(newwidth) + 10)
+            maxwidth = int(self.slider_widgets[0].width() * 0.2)
+            # set new base width to the width of the longest label being displayed
+            newwidth = max(
+                [
+                    int(fm.boundingRect(dlab.text()).width())
+                    for dlab in displayed_labels
+                ]
+            )
+
+            for labl in labels:
+                labl_width = min([newwidth + 10, maxwidth])
+                labl.setFixedWidth(labl_width)
 
     def _resize_slice_labels(self):
         """When the size of any dimension changes, we want to resize all of the
@@ -176,7 +187,9 @@ class QtDims(QWidget):
         for slider_num in range(self.nsliders, number_of_sliders):
             dim_axis = number_of_sliders - slider_num - 1
             slider_widget = QtDimSliderWidget(self, dim_axis)
-            slider_widget.axis_label_changed.connect(self._resize_axis_labels)
+            slider_widget.axis_label.textChanged.connect(
+                self._resize_axis_labels
+            )
             slider_widget.play_button.play_requested.connect(self.play)
             self.layout().addWidget(slider_widget)
             self.slider_widgets.insert(0, slider_widget)
@@ -280,8 +293,8 @@ class QtDims(QWidget):
                     fps, loop_mode, frame_range
                 )
                 return
-            else:
-                self.stop()
+
+            self.stop()
 
         # we want to avoid playing a dimension that does not have a slider
         # (like X or Y, or a third dimension in volume view.)
@@ -310,7 +323,7 @@ class QtDims(QWidget):
     def cleaned_worker(self):
         self._animation_thread = None
         self._animation_worker = None
-        self.enable_play()
+        self.dims._play_ready = True
 
     @property
     def is_playing(self):
@@ -338,15 +351,10 @@ class QtDims(QWidget):
         the canvas can draw, this will drop the intermediate frames, keeping
         the effective frame rate constant even if the canvas cannot keep up.
         """
-        if self._play_ready:
+        if self.dims._play_ready:
             # disable additional point advance requests until this one draws
-            self._play_ready = False
+            self.dims._play_ready = False
             self.dims.set_current_step(axis, frame)
-
-    def enable_play(self, *args):
-        # this is mostly here to connect to the main SceneCanvas.events.draw
-        # event in the qt_viewer
-        self._play_ready = True
 
     def closeEvent(self, event):
         [w.deleteLater() for w in self.slider_widgets]
