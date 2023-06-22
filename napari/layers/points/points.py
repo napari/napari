@@ -1740,13 +1740,8 @@ class Points(Layer):
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
         )
-        # TODO: [see Image]
-        #   For the existing sync slicing, slice_indices is passed through
-        # to avoid some performance issues related to the evaluation of the
-        # data-to-world transform and its inverse. Async slicing currently
-        # absorbs these performance issues here, but we can likely improve
-        # things either by caching the world-to-data transform on the layer
-        # or by lazily evaluating it in the slice task itself.
+        # See Image._make_slice_request to understand why we evaluate this here
+        # instead of using `self._slice_indices`.
         slice_indices = slice_input.data_indices(
             self._data_to_world.inverse, round_index=False
         )
