@@ -52,10 +52,10 @@ def test_disable_qtimer(qtbot):
     assert not th.isRunning()
 
 
-
 def test_console_mock(qapp):
     qt_viewer = QtViewer(ViewerModel())
     assert qt_viewer.console.__class__.__name__ == "FakeQtConsole"
+
 
 @pytest.mark.usefixtures("disable_throttling")
 @patch("qtpy.QtCore.QTimer.start")
@@ -84,4 +84,3 @@ def test_lack_disable_throttle(start_mock, _active_mock, monkeypatch):
     f()
     start_mock.assert_called_once()
     mock.assert_not_called()
-
