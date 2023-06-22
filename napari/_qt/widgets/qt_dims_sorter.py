@@ -41,7 +41,9 @@ def set_dims_order(dims: Dims, order: Tuple[int, ...]):
     dims_order = list(dims.order)
     if type(order[0]) == AxisModel:
         order = [a.axis for a in order]
-    dims_order[-dims.n_moveable_dims:] = order  # only modify the allowed number of dimensions
+    dims_order[
+        -dims.n_moveable_dims :
+    ] = order  # only modify the allowed number of dimensions
     dims.order = tuple(dims_order)
 
 
@@ -79,8 +81,11 @@ class QtDimsSorter(QWidget):
     def __init__(self, viewer: 'Viewer', parent=None) -> None:
         super().__init__(parent=parent)
         self.dims = viewer.dims
-        self.axes_list= SelectableEventedList(
-            [AxisModel(self.dims, self.dims.order[-i]) for i in range(1, self.dims.n_moveable_dims + 1)][::-1]
+        self.axes_list = SelectableEventedList(
+            [
+                AxisModel(self.dims, self.dims.order[-i])
+                for i in range(1, self.dims.n_moveable_dims + 1)
+            ][::-1]
         )
         self.axes_list.events.reordered.connect(
             lambda event: set_dims_order(self.dims, event.value)
@@ -108,10 +113,13 @@ class QtDimsSorter(QWidget):
         self.layout().addWidget(widget_title, 0, 0)
         self.layout().addWidget(widget_tooltip, 0, 1)
         self.layout().addWidget(view, 1, 0)
-    
+
     def _update_axes_list(self, event):
         if len(self.axes_list) != event.value:
             self.axes_list.clear()
             self.axes_list.extend(
-                [AxisModel(self.dims, self.dims.order[-i]) for i in range(1, self.dims.n_moveable_dims + 1)][::-1]
+                [
+                    AxisModel(self.dims, self.dims.order[-i])
+                    for i in range(1, self.dims.n_moveable_dims + 1)
+                ][::-1]
             )

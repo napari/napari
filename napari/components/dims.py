@@ -288,7 +288,7 @@ class Dims(EventedModel):
         if nmdims > self.ndim:
             return self.ndim
         return nmdims
-    
+
     @n_moveable_dims.setter
     def n_moveable_dims(self, value: int):
         # if the requested numer of roallable dimensions exceed the number of dimensions clip to ndim
@@ -449,8 +449,15 @@ class Dims(EventedModel):
         order = np.array(self.order)
         nsteps = np.array(self.nsteps)
         order[nsteps > 1] = [
-            *order[:-self.n_moveable_dims][nsteps[:-self.n_moveable_dims] > 1], 
-            *np.roll(order[-self.n_moveable_dims:][nsteps[-self.n_moveable_dims:] > 1], 1)
+            *order[: -self.n_moveable_dims][
+                nsteps[: -self.n_moveable_dims] > 1
+            ],
+            *np.roll(
+                order[-self.n_moveable_dims :][
+                    nsteps[-self.n_moveable_dims :] > 1
+                ],
+                1,
+            ),
         ]
         self.order = order
 

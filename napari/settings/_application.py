@@ -198,7 +198,7 @@ class ApplicationSettings(EventedModel):
             "Modifiers to activate changing the brush size by moving the mouse."
         ),
     )
-    
+
     n_moveable_dims: int = Field(
         default=2,
         ge=2,
