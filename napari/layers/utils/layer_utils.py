@@ -5,7 +5,6 @@ import inspect
 import warnings
 from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Union
 
-import dask
 import numpy as np
 import pandas as pd
 
@@ -212,8 +211,6 @@ def calc_data_range(data, rgb=False):
     if data.dtype == np.uint8:
         return [0, 255]
 
-    
-    
     # if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
     #     # If data is very large take the average of start, middle and end.
     #     center = int(data.shape[0] // 2)
@@ -260,19 +257,21 @@ def calc_data_range(data, rgb=False):
     num_elements = np.prod(data.shape)
 
     target_number_elements = 20_000
-    
-    # Calculate the number of elements to be sampled, should be based on 
+
+    # Calculate the number of elements to be sampled, should be based on
     num_sampled_elements = min(num_elements, target_number_elements)
 
     # Generate random indices to sample from the array
-    indices = np.random.choice(num_elements, size=num_sampled_elements, replace=False)
+    indices = np.random.choice(
+        num_elements, size=num_sampled_elements, replace=False
+    )
 
     # Convert the 1D indices array to nD indices
     indices = np.unravel_index(indices, data.shape)
 
     # Use the indices to extract the subset from the input array
     reduced_data = data[indices]
-    
+
     min_val = _nanmin(reduced_data)
     max_val = _nanmax(reduced_data)
 
