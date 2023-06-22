@@ -10,6 +10,7 @@ from psygnal.containers import Selection
 from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
+from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -233,7 +234,7 @@ class Points(Layer):
     out_of_slice_display : bool
         If True, renders points not just in central plane but also slightly out of slice
         according to specified point marker size.
-    selected_data : set
+    selected_data : Selection
         Integer indices of any selected points.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
@@ -271,8 +272,8 @@ class Points(Layer):
 
     Notes
     -----
-    _view_data : array (M, 2)
-        2D coordinates of points in the currently viewed slice.
+    _view_data : array (M, D)
+        coordinates of points in the currently viewed slice.
     _view_size : array (M, )
         Size of the point markers in the currently viewed slice.
     _view_symbol : array (M, )
@@ -368,7 +369,6 @@ class Points(Layer):
         data, ndim = fix_data_points(data, ndim)
 
         # Indices of selected points
-        self._selected_data = set()
         self._selected_data_stored = set()
         self._selected_data_history = set()
         # Indices of selected points within the currently viewed slice
@@ -597,7 +597,6 @@ class Points(Layer):
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
-        self.events.data(value=self.data)
         self._reset_editable()
 
     def _on_selection(self, selected):
@@ -757,7 +756,20 @@ class Points(Layer):
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
             extrema = np.vstack([mins, maxs])
-        return extrema
+        return extrema.astype(float)
+
+    @property
+    def _extent_data_augmented(self):
+        # _extent_data is a property that returns a new/copied array, which
+        # is safe to modify below
+        extent = self._extent_data
+        if len(self.size) == 0:
+            return extent
+
+        max_point_size = np.max(self.size)
+        extent[0] -= max_point_size / 2
+        extent[1] += max_point_size / 2
+        return extent
 
     @property
     def out_of_slice_display(self) -> bool:
@@ -829,6 +841,7 @@ class Points(Layer):
                         deferred=True,
                     )
                 ) from e
+        self._clear_extent_augmented()
         self.refresh()
 
     @property
@@ -854,6 +867,7 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
                 self.size[i, :] = (self.size[i, :] > 0) * size
+            self._clear_extent_augmented()
             self.refresh()
             self.events.size()
         self.events.current_size()
@@ -973,7 +987,7 @@ class Points(Layer):
         self._current_edge_width = edge_width
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
-                self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
+                self.edge_width[i] = ((self.edge_width[i] > 0) * edge_width)[0]
             self.refresh()
             self.events.edge_width()
         self.events.current_edge_width()
@@ -1636,22 +1650,6 @@ class Points(Layer):
             selection = None
         return selection
 
-    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
-        """An augmented, axis-aligned (ndisplay, 2) bounding box.
-
-        This bounding box for includes the full size of displayed points
-        and enables calculation of intersections in `Layer._get_value_3d()`.
-        """
-        if len(self._view_size) == 0:
-            return None
-        max_point_size = np.max(self._view_size)
-        bounding_box = np.copy(
-            self._display_bounding_box(dims_displayed)
-        ).astype(float)
-        bounding_box[:, 0] -= max_point_size / 2
-        bounding_box[:, 1] += max_point_size / 2
-        return bounding_box
-
     def get_ray_intersections(
         self,
         position: List[float],
@@ -1730,14 +1728,11 @@ class Points(Layer):
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
         )
-        # TODO: [see Image]
-        #   For the existing sync slicing, slice_indices is passed through
-        # to avoid some performance issues related to the evaluation of the
-        # data-to-world transform and its inverse. Async slicing currently
-        # absorbs these performance issues here, but we can likely improve
-        # things either by caching the world-to-data transform on the layer
-        # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_indices(self._data_to_world.inverse)
+        # See Image._make_slice_request to understand why we evaluate this here
+        # instead of using `self._slice_indices`.
+        slice_indices = slice_input.data_indices(
+            self._data_to_world.inverse, round_index=False
+        )
         return self._make_slice_request_internal(slice_input, slice_indices)
 
     def _make_slice_request_internal(
@@ -1900,6 +1895,12 @@ class Points(Layer):
             Point or points to add to the layer data.
         """
         self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
+        self.events.data(
+            value=self.data,
+            action=ActionType.ADD.value,
+            data_indices=(-1,),
+            vertex_indices=((),),
+        )
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -1928,6 +1929,14 @@ class Points(Layer):
                     self._value_stored -= offset
 
             self.data = np.delete(self.data, index, axis=0)
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVE.value,
+                data_indices=tuple(
+                    self.selected_data,
+                ),
+                vertex_indices=((),),
+            )
             self.selected_data = set()
 
     def _move(
@@ -1954,7 +1963,12 @@ class Points(Layer):
                 self.data[np.ix_(selection_indices, disp)] + shift
             )
             self.refresh()
-        self.events.data(value=self.data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.CHANGE.value,
+            data_indices=tuple(selection_indices),
+            vertex_indices=((),),
+        )
 
     def _set_drag_start(
         self,
@@ -2033,8 +2047,8 @@ class Points(Layer):
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
-            self._selected_data = set(
-                range(totpoints, totpoints + len(self._clipboard['data']))
+            self._selected_data.update(
+                set(range(totpoints, totpoints + len(self._clipboard['data'])))
             )
             self.refresh()
 

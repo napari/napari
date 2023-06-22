@@ -13,6 +13,7 @@ from napari._app_model.constants import CommandId, MenuId
 from napari.settings import get_settings
 
 VIEW_ACTIONS: List[Action] = []
+MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
 
 for cmd, viewer_attr, sub_attr in (
     (CommandId.TOGGLE_VIEWER_AXES, 'axes', 'visible'),
@@ -24,14 +25,13 @@ for cmd, viewer_attr, sub_attr in (
     (CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED, 'scale_bar', 'colored'),
     (CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS, 'scale_bar', 'ticks'),
 ):
-    menu = MenuId.VIEW_AXES if viewer_attr == 'axes' else MenuId.VIEW_SCALEBAR
     VIEW_ACTIONS.append(
         ViewerToggleAction(
             id=cmd,
             title=cmd.title,
             viewer_attribute=viewer_attr,
             sub_attribute=sub_attr,
-            menus=[{'id': menu}],
+            menus=[{'id': MENUID_DICT[viewer_attr]}],
         )
     )
 
@@ -41,7 +41,6 @@ def _tooltip_visibility_toggle():
     settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
 
 
-# this can be generalised for all boolean settings, similar to `ViewerToggleAction`
 def _get_current_tooltip_visibility():
     return get_settings().appearance.layer_tooltip_visibility
 

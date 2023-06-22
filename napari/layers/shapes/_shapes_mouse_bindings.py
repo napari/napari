@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 from copy import copy
+from typing import TYPE_CHECKING
 
 import numpy as np
 
+from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes._shapes_constants import Box, Mode
 from napari.layers.shapes._shapes_models import (
     Ellipse,
@@ -11,19 +15,51 @@ from napari.layers.shapes._shapes_models import (
     Rectangle,
 )
 from napari.layers.shapes._shapes_utils import point_to_lines
+from napari.settings import get_settings
+
+if TYPE_CHECKING:
+    from typing import List, Optional, Tuple
+
+    import numpy.typing as npt
+    from vispy.app.canvas import MouseEvent
+
+    from napari.layers.shapes.shapes import Shapes
 
 
-def highlight(layer, event):
-    """Highlight hovered shapes."""
+def highlight(layer: Shapes, event: MouseEvent) -> None:
+    """Render highlights of shapes.
+
+    Highlight hovered shapes, including boundaries, vertices, interaction boxes, and drag
+    selection box when appropriate.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event. Though not used here it is passed as argument by the
+        shapes layer mouse move callbacks.
+
+    Returns
+    -------
+    None
+    """
     layer._set_highlight()
 
 
-def select(layer, event):
+def select(layer: Shapes, event: MouseEvent) -> None:
     """Select shapes or vertices either in select or direct select mode.
 
     Once selected shapes can be moved or resized, and vertices can be moved
     depending on the mode. Holding shift when resizing a shape will preserve
     the aspect ratio.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
     """
     shift = 'Shift' in event.modifiers
     # on press
@@ -66,7 +102,7 @@ def select(layer, event):
         if len(layer.selected_data) == 0:
             _drag_selection_box(layer, coordinates)
         else:
-            _move(layer, coordinates)
+            _move_active_element_under_cursor(layer, coordinates)
 
         # if a shape is being moved, update the thumbnail
         if layer._is_moving:
@@ -75,7 +111,19 @@ def select(layer, event):
 
     # only emit data once dragging has finished
     if layer._is_moving:
-        layer.events.data(value=layer.data)
+        vertex_indices = tuple(
+            tuple(
+                vertex_index
+                for vertex_index, coord in enumerate(layer.data[i])
+            )
+            for i in layer.selected_data
+        )
+        layer.events.data(
+            value=layer.data,
+            action=ActionType.CHANGE.value,
+            data_indices=tuple(layer.selected_data),
+            vertex_indices=vertex_indices,
+        )
 
     # on release
     shift = 'Shift' in event.modifiers
@@ -100,8 +148,21 @@ def select(layer, event):
         layer._update_thumbnail()
 
 
-def add_line(layer, event):
-    """Add a line."""
+def add_line(layer: Shapes, event: MouseEvent) -> None:
+    """Add a line.
+
+    Adds a line by connecting 2 ndim points. On press one point is set under the mouse cursor and a second point is
+    created with a very minor offset to the first point. If moving mouse while mouse is pressed the second point will
+    track the cursor. The second point it set upon mouse release.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
+    """
+    # full size is the initial offset of the second point compared to the first point of the line.
     size = layer._vertex_size * layer.scale_factor / 4
     full_size = np.zeros(layer.ndim, dtype=float)
     for i in layer._slice_input.displayed:
@@ -110,15 +171,27 @@ def add_line(layer, event):
     coordinates = layer.world_to_data(event.position)
     layer._moving_coordinates = coordinates
 
+    # corner is first datapoint defining the line
     corner = np.array(coordinates)
     data = np.array([corner, corner + full_size])
+
+    # adds data to layer.data and handles mouse move (cursor tracking) and release event (setting second point)
     yield from _add_line_rectangle_ellipse(
         layer, event, data=data, shape_type='line'
     )
 
 
-def add_ellipse(layer, event):
-    """Add an ellipse."""
+def add_ellipse(layer: Shapes, event: MouseEvent):
+    """
+    Add an ellipse to the shapes layer.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
+    """
     size = layer._vertex_size * layer.scale_factor / 4
     size_h = np.zeros(layer.ndim, dtype=float)
     size_h[layer._slice_input.displayed[0]] = size
@@ -135,8 +208,16 @@ def add_ellipse(layer, event):
     )
 
 
-def add_rectangle(layer, event):
-    """Add a rectangle."""
+def add_rectangle(layer: Shapes, event: MouseEvent) -> None:
+    """Add a rectangle to the shapes layer.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
+    """
     size = layer._vertex_size * layer.scale_factor / 4
     size_h = np.zeros(layer.ndim, dtype=float)
     size_h[layer._slice_input.displayed[0]] = size
@@ -154,9 +235,22 @@ def add_rectangle(layer, event):
     )
 
 
-def _add_line_rectangle_ellipse(layer, event, data, shape_type):
-    """Helper function for adding a line, rectangle or ellipse."""
+def _add_line_rectangle_ellipse(
+    layer: Shapes, event: MouseEvent, data: npt.NDArray, shape_type: str
+) -> None:
+    """Helper function for adding a line, rectangle or ellipse.
 
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
+    data: np.NDarray
+        Array containing the initial datapoints of the shape in image data space.
+    shape_type: str
+        String indicating the type of shape to be added.
+    """
     # on press
     # Start drawing rectangle / ellipse / line
     layer.add(data, shape_type=shape_type)
@@ -171,60 +265,210 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
         # Drag any selected shapes
         coordinates = layer.world_to_data(event.position)
         layer._moving_coordinates = coordinates
-        _move(layer, coordinates)
+        _move_active_element_under_cursor(layer, coordinates)
         yield
 
     # on release
     layer._finish_drawing()
 
 
-def finish_drawing_shape(layer, event):
-    """
-    finish drawing the current shape
+def finish_drawing_shape(layer: Shapes, event: MouseEvent) -> None:
+    """Finish drawing of shape.
+
+    Calls the finish drawing method of the shapes layer which resets all the properties used for shape drawing
+    and deletes the shape if the number of vertices do not meet the threshold of 3.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event. Not used here, but passed as argument due to being a
+        double click callback of the shapes layer.
     """
     layer._finish_drawing()
 
 
-def add_path_polygon(layer, event):
-    """Add a path or polygon."""
+def initiate_polygon_draw(
+    layer: Shapes, coordinates: Tuple[float, ...]
+) -> None:
+    """Start drawing of polygon.
+
+    Creates the polygon shape when initializing the draw, adding to layer and selecting the initiatlized shape and
+    setting required layer attributes for drawing.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    coordinates: Tuple[float, ...]
+        A tuple with the coordinates of the initial vertex in image data space.
+    """
+    data = np.array([coordinates, coordinates])
+    layer.add(data, shape_type='path')
+    layer.selected_data = {layer.nshapes - 1}
+    layer._value = (layer.nshapes - 1, 1)
+    layer._moving_value = copy(layer._value)
+    layer._is_creating = True
+    layer._set_highlight()
+
+
+def add_path_polygon_lasso(layer: Shapes, event: MouseEvent) -> None:
+    """Add, draw and finish drawing of polygon.
+
+    Initiates, draws and finishes the lasso polygon in drag mode (tablet) or
+    initiates and finishes the lasso polygon when drawing with the mouse.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
+    """
+    # on press
+    coordinates = layer.world_to_data(event.position)
+    if layer._is_creating is False:
+        # Set last cursor position to initial position of the mouse when starting to draw the shape
+        layer._last_cursor_position = np.array(event.pos)
+
+        # Start drawing a path
+        initiate_polygon_draw(layer, coordinates)
+        yield
+
+        while event.type == 'mouse_move':
+            polygon_creating(layer, event)
+            yield
+        index = layer._moving_value[0]
+        vertices = layer._data_view.shapes[index].data
+        # If number of vertices is higher than 2, tablet draw mode is assumed and shape is finished upon mouse release
+        if len(vertices) > 2:
+            layer._finish_drawing()
+    else:
+        # This code block is responsible for finishing drawing in mouse draw mode
+        layer._finish_drawing()
+
+
+def add_vertex_to_path(
+    layer: Shapes,
+    event: MouseEvent,
+    index: int,
+    coordinates: Tuple[float, ...],
+    new_type: Optional[str],
+) -> None:
+    """Add a vertex to an existing path or polygon and edit the layer view.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
+    index: int
+        The index of the shape being added, e.g. first shape in the layer has index 0.
+    coordinates: Tuple[float, ...]
+        The coordinates of the vertex being added to the shape being drawn in image data space
+    new_type: Optional[str]
+        Type of the shape being added.
+    """
+    vertices = layer._data_view.shapes[index].data
+    vertices = np.concatenate((vertices, [coordinates]), axis=0)
+    value = layer.get_value(event.position, world=True)
+    layer._value = (value[0], value[1] + 1)
+    layer._moving_value = copy(layer._value)
+    layer._data_view.edit(index, vertices, new_type=new_type)
+    layer._selected_box = layer.interaction_box(layer.selected_data)
+    layer._last_cursor_position = np.array(event.pos)
+
+
+def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
+    """Let active vertex follow cursor while drawing polygon, adding it to polygon after a certain distance.
+
+    When drawing a polygon in lasso mode, a vertex follows the cursor, creating a polygon
+    visually that is *not* the final polygon to be created: it is the polygon if the current
+    mouse position were to be the last position added. After the mouse moves a distance of 10 screen pixels,
+    a new vertex is automatically added and the last cursor position is set to the global screen coordinates
+    at that moment.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
+    """
+    if layer._is_creating:
+        coordinates = layer.world_to_data(event.position)
+        move_active_vertex_under_cursor(layer, coordinates)
+
+        if layer._mode == Mode.ADD_POLYGON_LASSO:
+            index = layer._moving_value[0]
+
+            position_diff = np.linalg.norm(
+                event.pos - layer._last_cursor_position
+            )
+            if (
+                position_diff
+                > get_settings().experimental.lasso_vertex_distance
+            ):
+                add_vertex_to_path(layer, event, index, coordinates, None)
+
+
+def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
+    """Add a path or polygon or add vertex to an existing one.
+
+    When shape is not yet being created, initiates the drawing of a polygon on mouse press. Else, on subsequent mouse
+    presses, add vertex to polygon being created.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
+    """
     # on press
     coordinates = layer.world_to_data(event.position)
     if layer._is_creating is False:
         # Start drawing a path
-        data = np.array([coordinates, coordinates])
-        layer.add(data, shape_type='path')
-        layer.selected_data = {layer.nshapes - 1}
-        layer._value = (layer.nshapes - 1, 1)
-        layer._moving_value = copy(layer._value)
-        layer._is_creating = True
-        layer._set_highlight()
+        initiate_polygon_draw(layer, coordinates)
     else:
         # Add to an existing path or polygon
         index = layer._moving_value[0]
         new_type = Polygon if layer._mode == Mode.ADD_POLYGON else None
-        vertices = layer._data_view.shapes[index].data
-        vertices = np.concatenate((vertices, [coordinates]), axis=0)
-        # Change the selected vertex
-        value = layer.get_value(event.position, world=True)
-        layer._value = (value[0], value[1] + 1)
-        layer._moving_value = copy(layer._value)
-        layer._data_view.edit(index, vertices, new_type=new_type)
-        layer._selected_box = layer.interaction_box(layer.selected_data)
+        add_vertex_to_path(layer, event, index, coordinates, new_type)
 
 
-def add_path_polygon_creating(layer, event):
-    """While a path or polygon move next vertex to be added."""
+def move_active_vertex_under_cursor(
+    layer: Shapes, coordinates: Tuple[float, ...]
+) -> None:
+    """While a path or polygon is being created, move next vertex to be added.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    coordinates: Tuple[float, ...]
+        The coordinates in data space of the vertex to be potentially added, e.g. vertex tracks the mouse cursor
+        position.
+    """
     if layer._is_creating:
-        coordinates = layer.world_to_data(event.position)
-        _move(layer, coordinates)
+        _move_active_element_under_cursor(layer, coordinates)
 
 
-def vertex_insert(layer, event):
+def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
     """Insert a vertex into a selected shape.
 
     The vertex will get inserted in between the vertices of the closest edge
     from all the edges in selected shapes. Vertices cannot be inserted into
     Ellipses.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
     """
     # Determine all the edges in currently selected shapes
     all_edges = np.empty((0, 2, 2))
@@ -287,15 +531,28 @@ def vertex_insert(layer, event):
     with layer.events.set_data.blocker():
         layer._data_view.edit(index, vertices, new_type=new_type)
         layer._selected_box = layer.interaction_box(layer.selected_data)
+    layer.events.data(
+        value=layer.data,
+        action=ActionType.CHANGE.value,
+        data_indices=(index,),
+        vertex_indices=((ind,),),
+    )
     layer.refresh()
 
 
-def vertex_remove(layer, event):
+def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
     """Remove a vertex from a selected shape.
 
     If a vertex is clicked on remove it from the shape it is in. If this cause
     the shape to shrink to a size that no longer is valid remove the whole
     shape.
+
+    Parameters
+    ----------
+    layer: Shapes
+        Napari shapes layer
+    event: MouseEvent
+        A proxy read only wrapper around a vispy mouse event.
     """
     value = layer.get_value(event.position, world=True)
     shape_under_cursor, vertex_under_cursor = value
@@ -331,18 +588,24 @@ def vertex_remove(layer, event):
             )
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
+    layer.events.data(
+        value=layer.data,
+        action=ActionType.CHANGE.value,
+        data_indices=(shape_under_cursor,),
+        vertex_indices=((vertex_under_cursor,),),
+    )
     layer.refresh()
 
 
-def _drag_selection_box(layer, coordinates):
+def _drag_selection_box(layer: Shapes, coordinates: Tuple[float, ...]) -> None:
     """Drag a selection box.
 
     Parameters
     ----------
     layer : napari.layers.Shapes
         Shapes layer.
-    coordinates : tuple
-        Position of mouse cursor in data coordinates.
+    coordinates : Tuple[float, ...]
+        The current position of the cursor during the mouse move event in image data space.
     """
     # If something selected return
     if len(layer.selected_data) > 0:
@@ -358,7 +621,26 @@ def _drag_selection_box(layer, coordinates):
     layer._set_highlight()
 
 
-def _set_drag_start(layer, coordinates):
+def _set_drag_start(
+    layer: Shapes, coordinates: Tuple[float, ...]
+) -> List[float, ...]:
+    """Indicate where in data space a drag event started.
+
+    Sets the coordinates relative to the center of the bounding box of a shape and returns the position
+    of where a drag event of a shape started.
+
+    Parameters
+    ----------
+    layer: Shapes
+        The napari layer shape
+    coordinates: Tuple[float, ...]
+        The position in image data space where dragging started.
+
+    Returns
+    -------
+    coord: List[float, ...]
+        The coordinates of where a shape drag event started.
+    """
     coord = [coordinates[i] for i in layer._slice_input.displayed]
     if layer._drag_start is None and len(layer.selected_data) > 0:
         center = layer._selected_box[Box.CENTER]
@@ -366,14 +648,16 @@ def _set_drag_start(layer, coordinates):
     return coord
 
 
-def _move(layer, coordinates):
+def _move_active_element_under_cursor(
+    layer: Shapes, coordinates: Tuple[float, ...]
+) -> None:
     """Moves object at given mouse position and set of indices.
 
     Parameters
     ----------
     layer : napari.layers.Shapes
         Shapes layer.
-    coordinates : tuple
+    coordinates : Tuple[float, ...]
         Position of mouse cursor in data coordinates.
     """
     # If nothing selected return
@@ -419,21 +703,21 @@ def _move(layer, coordinates):
             fixed = layer._fixed_vertex
             new = list(coord)
 
-            c = box[Box.CENTER]
+            box_center = box[Box.CENTER]
             if layer._fixed_aspect and layer._fixed_index % 2 == 0:
                 # corner
-                new = (box[vertex] - c) / np.linalg.norm(
-                    box[vertex] - c
-                ) * np.linalg.norm(new - c) + c
+                new = (box[vertex] - box_center) / np.linalg.norm(
+                    box[vertex] - box_center
+                ) * np.linalg.norm(new - box_center) + box_center
 
             if layer._fixed_index % 2 == 0:
                 # corner selected
-                scale = (inv_rot @ (new - fixed)) / (
+                drag_scale = (inv_rot @ (new - fixed)) / (
                     inv_rot @ (box[vertex] - fixed)
                 )
             elif layer._fixed_index % 4 == 3:
                 # top or bottom selected
-                scale = np.array(
+                drag_scale = np.array(
                     [
                         (inv_rot @ (new - fixed))[0]
                         / (inv_rot @ (box[vertex] - fixed))[0],
@@ -442,7 +726,7 @@ def _move(layer, coordinates):
                 )
             else:
                 # left or right selected
-                scale = np.array(
+                drag_scale = np.array(
                     [
                         1,
                         (inv_rot @ (new - fixed))[1]
@@ -451,22 +735,25 @@ def _move(layer, coordinates):
                 )
 
             # prevent box from shrinking below a threshold size
-            size = [
-                np.linalg.norm(box[Box.TOP_CENTER] - c),
-                np.linalg.norm(box[Box.LEFT_CENTER] - c),
-            ]
-            threshold = layer._vertex_size * layer.scale_factor / 2
-            scale[abs(scale * size) < threshold] = 1
+            size = (np.linalg.norm(box[Box.TOP_LEFT] - box_center),)
+            threshold = (
+                layer._vertex_size * layer.scale_factor / layer.scale[-1] / 2
+            )
+            if np.linalg.norm(size * drag_scale) < threshold:
+                drag_scale[:] = 1
+            # on vertical/horizontal drags we get scale of 0
+            # when we actually simply don't want to scale
+            drag_scale[drag_scale == 0] = 1
 
             # check orientation of box
             if abs(handle_offset_norm[0]) == 1:
                 for index in layer.selected_data:
                     layer._data_view.scale(
-                        index, scale, center=layer._fixed_vertex
+                        index, drag_scale, center=layer._fixed_vertex
                     )
-                layer._scale_box(scale, center=layer._fixed_vertex)
+                layer._scale_box(drag_scale, center=layer._fixed_vertex)
             else:
-                scale_mat = np.array([[scale[0], 0], [0, scale[1]]])
+                scale_mat = np.array([[drag_scale[0], 0], [0, drag_scale[1]]])
                 transform = rot @ scale_mat @ inv_rot
                 for index in layer.selected_data:
                     layer._data_view.shift(index, -layer._fixed_vertex)
@@ -488,9 +775,7 @@ def _move(layer, coordinates):
                 np.arctan2(fixed_offset[0], -fixed_offset[1])
             )
 
-            if np.linalg.norm(new_offset) < 1:
-                angle = 0
-            elif layer._fixed_aspect:
+            if layer._fixed_aspect:
                 angle = np.round(new_angle / 45) * 45 - fixed_angle
             else:
                 angle = new_angle - fixed_angle
@@ -501,16 +786,25 @@ def _move(layer, coordinates):
                 )
             layer._rotate_box(angle, center=layer._fixed_vertex)
             layer.refresh()
+
     elif (
-        layer._mode in {Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON}
+        layer._mode
+        in [
+            Mode.DIRECT,
+            Mode.ADD_PATH,
+            Mode.ADD_POLYGON,
+            Mode.ADD_POLYGON_LASSO,
+        ]
         and vertex is not None
     ):
         layer._moving_coordinates = coordinates
         layer._is_moving = True
         index = layer._moving_value[0]
         shape_type = type(layer._data_view.shapes[index])
-        if shape_type != Ellipse:
-            # not DIRECT vertex moving of ellipse not implemented
+        if shape_type == Ellipse:
+            # TODO: Implement DIRECT vertex moving of ellipse
+            pass
+        else:
             new_type = Polygon if shape_type == Rectangle else None
             vertices = layer._data_view.shapes[index].data
             vertices[vertex] = coordinates

@@ -34,7 +34,7 @@ class Dims(EventedModel):
         Number of displayed dimensions.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
-        coordinates space.
+        coordinates space. Lower and upper bounds are inclusive.
     point : tuple of floats
         Dims position in world coordinates for each dimension.
     margin_left : tuple of floats
@@ -56,7 +56,7 @@ class Dims(EventedModel):
         Number of displayed dimensions.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
-        coordinates space.
+        coordinates space. Lower and upper bounds are inclusive.
     point : tuple of floats
         Dims position in world coordinates for each dimension.
     margin_left : tuple of floats
@@ -224,14 +224,16 @@ class Dims(EventedModel):
     def nsteps(self) -> Tuple[float, ...]:
         return tuple(
             # "or 1" ensures degenerate dimension works
-            int((rng.stop - rng.start) / (rng.step or 1))
+            int((rng.stop - rng.start) / (rng.step or 1)) + 1
             for rng in self.range
         )
 
     @nsteps.setter
     def nsteps(self, value):
         self.range = tuple(
-            RangeTuple(rng.start, rng.stop, (rng.stop - rng.start) / nsteps)
+            RangeTuple(
+                rng.start, rng.stop, (rng.stop - rng.start) / (nsteps - 1)
+            )
             for rng, nsteps in zip(self.range, value)
         )
 
@@ -427,6 +429,9 @@ class Dims(EventedModel):
         nsteps = np.array(self.nsteps)
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
+
+    def _go_to_center_step(self):
+        self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
 
     def _sanitize_input(
         self, axis, value, value_is_sequence=False

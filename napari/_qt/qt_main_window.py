@@ -75,7 +75,7 @@ from napari.utils.misc import (
     in_ipython,
     in_jupyter,
     in_python_repl,
-    running_as_bundled_app,
+    running_as_constructor_app,
 )
 from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
@@ -145,6 +145,10 @@ class _QtMainWindow(QMainWindow):
         self._activity_dialog = act_dlg
 
         self.setStatusBar(ViewerStatusBar(self))
+
+        # Prevent QLineEdit based widgets to keep focus even when clicks are
+        # done outside the widget. See #1571
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         settings = get_settings()
 
@@ -312,9 +316,10 @@ class _QtMainWindow(QMainWindow):
         if not window_position:
             window_position = (self.x(), self.y())
         else:
-            width, height = window_position
-            screen_geo = QApplication.primaryScreen().geometry()
-            if screen_geo.width() < width or screen_geo.height() < height:
+            origin_x, origin_y = window_position
+            screen = QApplication.screenAt(QPoint(origin_x, origin_y))
+            screen_geo = screen.geometry() if screen else None
+            if not screen_geo:
                 window_position = (self.x(), self.y())
 
         return (
@@ -542,7 +547,7 @@ class _QtMainWindow(QMainWindow):
         process = QProcess()
         process.setProgram(sys.executable)
 
-        if not running_as_bundled_app():
+        if not running_as_constructor_app():
             process.setArguments(sys.argv)
 
         process.startDetached()
