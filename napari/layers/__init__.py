@@ -5,7 +5,6 @@ Custom layers must inherit from Layer and pass along the
 to the super constructor.
 """
 import inspect as _inspect
-from importlib import import_module as _imp
 
 from napari.layers.base import Layer
 from napari.layers.image import Image

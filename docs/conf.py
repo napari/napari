@@ -25,10 +25,7 @@ from jinja2.filters import FILTERS
 import napari
 
 release = napari.__version__
-if "dev" in release:
-    version = "dev"
-else:
-    version = release
+version = "dev" if "dev" in release else release
 
 # -- Project information -----------------------------------------------------
 
@@ -83,10 +80,7 @@ html_theme = 'napari'
 # Define the json_url for our version switcher.
 json_url = "https://napari.org/version_switcher.json"
 
-if version == "dev":
-    version_match = "latest"
-else:
-    version_match = release
+version_match = "latest" if version == "dev" else release
 
 html_theme_options = {
     "external_links": [

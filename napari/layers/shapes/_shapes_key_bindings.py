@@ -1,5 +1,4 @@
 import numpy as np
-from app_model.types import KeyCode
 
 from napari.layers.shapes._shapes_constants import Box, Mode
 from napari.layers.shapes._shapes_mouse_bindings import (

@@ -127,12 +127,12 @@ def iter_evented_container_events(
                 continue
             docs = class_doc_attrs(kls)
             kls_instance = kls()
-            for name, emitter in kls_instance.events._emitters.items():
+            for name, _emitter in kls_instance.events._emitters.items():
                 descr = docs.get(name)
                 yield Ev(name, kls, descr, type_=None)
             if hasattr(kls_instance, 'selection'):
                 selection = kls_instance.selection
-                for name, emitter in selection.events._emitters.items():
+                for name, _emitter in selection.events._emitters.items():
                     if name.startswith('_'):
                         # skip private emitters
                         continue
