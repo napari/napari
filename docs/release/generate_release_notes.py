@@ -191,7 +191,7 @@ reviewers = set()
 users = {}
 
 for commit in tqdm(all_commits, desc="Getting committers and authors"):
-    if match := pr_num_pattern.search(commit.commit.message):
+    if match := pr_num_pattern.search(commit.commit.message):  # noqa: SIM102
         if int(match[1]) in consumed_pr:
             continue
             # omit commits from release branch

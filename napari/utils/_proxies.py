@@ -179,18 +179,19 @@ def _in_main_thread() -> bool:
     global in_main_thread
     try:
         from napari._qt.utils import in_qt_main_thread
-
-        res = in_qt_main_thread()
-        in_main_thread = in_qt_main_thread
-        return res
     except ImportError:
         in_main_thread = in_main_thread_py
         return in_main_thread_py()
+    try:
+        res = in_qt_main_thread()
     except AttributeError:
         warnings.warn(
             "Qt libs are available but no QtApplication instance is created"
         )
         return in_main_thread_py()
+    else:
+        in_main_thread = in_qt_main_thread
+        return res
 
 
 in_main_thread = _in_main_thread
