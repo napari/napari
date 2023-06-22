@@ -23,6 +23,6 @@ def get_stylesheet(extra: Optional[List[str]] = None) -> str:
         category=DeprecationWarning,
         stacklevel=2,
     )
-    from .._qt.qt_resources import get_stylesheet as qt_get_stylesheet
+    from napari._qt.qt_resources import get_stylesheet as qt_get_stylesheet
 
     return qt_get_stylesheet(extra)

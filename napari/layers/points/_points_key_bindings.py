@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from napari.layers.points._points_constants import Mode
 from napari.layers.points.points import Points
 from napari.layers.utils.layer_utils import (

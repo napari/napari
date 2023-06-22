@@ -134,7 +134,6 @@ def create_preferences_docs():
     sections = {}
 
     for name, field in NapariSettings.__fields__.items():
-
         if not isinstance(field.type_, ModelMetaclass):
             continue
 

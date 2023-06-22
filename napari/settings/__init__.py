@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional
 
 from napari.settings._base import _NOT_SET
 from napari.settings._napari_settings import (

@@ -1047,10 +1047,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Order of dimensions, where last `ndisplay` will be
             rendered in canvas.
         """
-        if point is None:
-            point = (0,) * self.ndim
-        else:
-            point = tuple(point)
+        point = (0,) * self.ndim if point is None else tuple(point)
 
         ndim = len(point)
 
