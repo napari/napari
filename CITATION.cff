@@ -13,7 +13,7 @@ authors:
   orcid: https://orcid.org/0000-0002-5470-1676
 - given-names: Peter
   family-names: Boone
-- given-names: "Jord\xE3o"
+- given-names: Jordão
   family-names: Bragantini
   affiliation: Chan Zuckerberg Biohub
 - given-names: Genevieve
@@ -81,25 +81,29 @@ authors:
   affiliation: Apex Systems
   orcid: https://orcid.org/0009-0007-6993-1267
 - given-names: Hector
-  family-names: "Mu\xF1oz"
+  family-names: Muñoz
   affiliation: University of California, Los Angeles
   orcid: https://orcid.org/0000-0001-7851-2549
+- given-names: Jan-Hendrik
+  family-names: Müller
+  affiliation: Georg-August-Universität Göttingen
+  orcid: orcid.org/0009-0007-3670-9969
 - given-names: Juan
   family-names: Nunez-Iglesias
   affiliation: Biomedicine Discovery Institute, Monash University
 - given-names: Constantin
   family-names: Pape
-  affiliation: "Georg-August-Universit\xE4t G\xF6ttingen"
+  affiliation: Georg-August-Universität Göttingen
   orcid: https://orcid.org/0000-0001-6562-7187
 - given-names: Gonzalo
-  family-names: "Pe\xF1a-Castellanos"
+  family-names: Peña-Castellanos
   affiliation: Quansight, Inc. / SIHSA Ltda
 - given-names: Andrea
-  family-names: "Pierr\xE9"
+  family-names: Pierré
   affiliation: Brown University
   orcid: https://orcid.org/0000-0003-4501-5428
 - given-names: Jaime
-  family-names: "Rodr\xEDguez-Guerra"
+  family-names: Rodríguez-Guerra
   affiliation: Quansight Labs
   orcid: https://orcid.org/0000-0001-8974-1566
 - given-names: Loic
@@ -129,6 +133,6 @@ authors:
   affiliation: Tobeva Software
 - given-names: Kevin
   family-names: Yamauchi
-  affiliation: "Iber Lab - ETH Z\xFCrich"
+  affiliation: Iber Lab - ETH Zürich
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
