@@ -75,7 +75,7 @@ def test_convert_dtype(mode):
     'layer, type_',
     [
         (Image(np.random.rand(10, 10)), 'labels'),
-        (Image(np.array([[1, 2], [3, 4]]).astype(int)), 'labels'),
+        (Image(np.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
         (Labels(np.ones((10, 10), dtype=int)), 'image'),
         (Shapes([np.array([[0, 0], [0, 10], [10, 0], [10, 10]])]), 'labels'),
     ],
@@ -97,3 +97,4 @@ def test_convert_layer(layer, type_):
         assert id(input.data) == id(
             ll[0].data
         )  # don't copy data unnecessarily, python object id should indicate it's the same object
+        assert input.data is ll[0].data
