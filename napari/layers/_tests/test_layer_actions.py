@@ -1,5 +1,7 @@
 import numpy as np
 import pytest
+import tensorstore as ts
+import zarr
 
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels, Points, Shapes
@@ -118,6 +120,8 @@ def test_convert_dtype(mode):
     [
         (Image(np.random.rand(10, 10)), 'labels'),
         (Image(np.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
+        (Image(ts.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
+        (Image(zarr.array([[1, 2], [3, 4]], dtype=(int), chunks=(1, 2))), 'labels'),
         (Labels(np.ones((10, 10), dtype=int)), 'image'),
         (Shapes([np.array([[0, 0], [0, 10], [10, 0], [10, 10]])]), 'labels'),
     ],
