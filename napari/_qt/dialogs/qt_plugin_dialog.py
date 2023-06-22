@@ -50,6 +50,7 @@ from napari.settings import get_settings
 from napari.utils._appdirs import user_plugin_dir, user_site_packages
 from napari.utils.misc import (
     parse_version,
+    running_as_bundled_app,
     running_as_constructor_app,
 )
 from napari.utils.translations import trans
@@ -331,8 +332,9 @@ class Installer(QObject):
             for file in conda_meta_path.iterdir():
                 fname = file.parts[-1]
                 if (
-                    fname.startswith(napari_version_string)
-                    or fname.startswith(qt_version_string)
+                    fname.startswith(
+                        (napari_version_string, qt_version_string)
+                    )
                 ) and fname.endswith(".json"):
                     return True
         return False

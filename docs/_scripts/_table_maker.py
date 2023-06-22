@@ -40,17 +40,17 @@ def table_repr(
     """Pretty string repr of a 2D table."""
     try:
         nrows = len(data)
-    except TypeError:
-        raise TypeError("data must be a collection")
+    except TypeError as e:
+        raise TypeError("data must be a collection") from e
     if not nrows:
         return ""
 
     try:
         ncols = ncols or len(data[0])
-    except TypeError:
-        raise TypeError("data must be a collection")
-    except IndexError:
-        raise IndexError("data must be a 2D collection of collections")
+    except TypeError as e:
+        raise TypeError("data must be a collection") from e
+    except IndexError as e:
+        raise IndexError("data must be a 2D collection of collections") from e
 
     _widths = list(data)
     if header:
