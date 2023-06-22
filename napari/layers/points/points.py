@@ -837,7 +837,7 @@ class Points(Layer):
                 warnings.warn(
                     trans._(
                         "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be"
-                        " used instead. This will become an error in a 0.6.0 version.",
+                        " used instead. This will become an error in version 0.6.0.",
                         deferred=True,
                     ),
                     category=DeprecationWarning,
@@ -857,7 +857,7 @@ class Points(Layer):
             warnings.warn(
                 trans._(
                     "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be used instead. "
-                    "This will become an error in a 0.6.0 version.",
+                    "This will become an error in version 0.6.0.",
                     deferred=True,
                 ),
                 category=DeprecationWarning,
