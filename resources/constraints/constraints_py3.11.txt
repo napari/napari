@@ -87,7 +87,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.3
     # via vispy
-hypothesis==6.79.1
+hypothesis==6.79.2
     # via napari (setup.cfg)
 idna==3.4
     # via requests
