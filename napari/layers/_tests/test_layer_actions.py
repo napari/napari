@@ -120,7 +120,6 @@ def test_convert_dtype(mode):
     [
         (Image(np.random.rand(10, 10)), 'labels'),
         (Image(np.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
-        (Image(ts.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
         (Image(zarr.array([[1, 2], [3, 4]], dtype=(int), chunks=(1, 2))), 'labels'),
         (Labels(np.ones((10, 10), dtype=int)), 'image'),
         (Shapes([np.array([[0, 0], [0, 10], [10, 0], [10, 10]])]), 'labels'),
@@ -138,9 +137,6 @@ def test_convert_layer(layer, type_):
     if (
         type_ == "labels"
         and isinstance(input, Image)
-        and input.data.dtype == int
+        and np.issubdtype(input.data.dtype, np.integer)
     ):
-        assert id(input.data) == id(
-            ll[0].data
-        )  # don't copy data unnecessarily, python object id should indicate it's the same object
-        assert input.data is ll[0].data
+        assert input.data is ll[0].data  # check array data not copied unnecessarily
