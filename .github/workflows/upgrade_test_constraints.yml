@@ -1,0 +1,147 @@
+name: Upgrade test constraints
+
+on:
+  workflow_dispatch: # Allow running on-demand
+  schedule:
+    # Runs every Monday at 8:00 UTC (4:00 Eastern)
+    - cron: '0 8 * * 1'
+
+  push:
+    paths:
+        - 'resources/constraints/version_denylist.txt'
+        - 'resources/constraints/version_denylist_examples.txt'
+        - 'resources/requirements_mypy.in'
+        - 'setup.cfg'
+        - '.github/workflows/upgrade_test_constraints.yml'
+        - 'tools/get_auto_upgrade_branch_name.py'
+        - 'tools/check_updated_packages.py'
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  upgrade:
+    name: Upgrade & Open Pull Request
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # [Optional] Use a separate key to automatically execute checks on the resulting PR
+          # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+          fetch-depth: 0
+
+      # START PYTHON DEPENDENCIES
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+          cache: pip
+          cache-dependency-path: 'setup.cfg'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: pip
+          cache-dependency-path: 'setup.cfg'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: 'setup.cfg'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: 'setup.cfg'
+      - name: "Calculate branch name"
+        id: branch_name
+        run: |
+          python tools/get_auto_upgrade_branch_name.py --verbose
+          git fetch --all
+          git branch -a
+          echo "branch_name=$(python tools/get_auto_upgrade_branch_name.py)" >> $GITHUB_OUTPUT
+          echo "base_branch_name=$(python tools/get_auto_upgrade_branch_name.py --base_branch)" >> $GITHUB_OUTPUT
+
+      - name: Upgrade Python dependencies
+        # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
+        if: steps.branch_name.outputs.branch_name != 'skip'
+        run: |
+          flags=""
+          # Explanation of below commands 
+          # python3.8 -m piptools compile - call pip-compile but ensure proper interpreter
+          # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
+          # -o resources/constraints/constraints_py3.8.txt - output file
+          # setup.cfg resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
+          #
+          # --extra pyqt5 etc - names of extra sections from setup.cfg that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
+          flags+=" --extra pyqt5"
+          flags+=" --extra pyqt6_experimental"
+          flags+=" --extra pyside2"
+          flags+=" --extra pyside6_experimental"
+          flags+=" --extra testing"
+
+
+          # allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
+          flags+=" --allow-unsafe"
+
+          # pip constrains format does not allow to specify extras (like dask[array]) so we need to use this option
+          flags+=" --strip-extras"
+
+          # future default resolver. It is faster. Lower probability of long CI run.
+          flags+=" --resolver=backtracking"
+
+          for pyv in 3.8 3.9 3.10 3.11; do
+            python${pyv}  -m pip install -U pip pip-tools
+            python${pyv}  -m piptools compile --upgrade -o resources/constraints/constraints_py${pyv}.txt  setup.cfg resources/constraints/version_denylist.txt ${flags}
+          done
+
+          python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9_examples.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
+          python3.11 -m piptools compile --upgrade -o resources/requirements_mypy.txt resources/requirements_mypy.in --resolver=backtracking
+
+      # END PYTHON DEPENDENCIES
+
+
+      - name: Check updated packages
+        id: packages
+        run: |
+          git fetch --all
+          python tools/check_updated_packages.py --main-packages
+          python tools/check_updated_packages.py
+          echo "main_packages=$(python tools/check_updated_packages.py --main-packages)" >> $GITHUB_OUTPUT
+          echo "all_packages<<EOF" >> $GITHUB_OUTPUT
+          echo "$(python tools/check_updated_packages.py)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create commit
+        if: (steps.branch_name.outputs.branch_name != 'skip') && (github.event_name == 'push')
+        run: |
+          git config --global user.name "napari-bot"
+          git config --global user.email "napari-bot@users.noreply.github.com"
+          git reset --soft `git merge-base origin/${{ steps.branch_name.outputs.base_branch_name }} HEAD`
+          git add -u
+          git diff-index --quiet HEAD -- || git commit -m "update constraints"
+          
+
+      - name: Create PR updating test constraints
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: Update bundle dependencies.
+          branch: ${{ steps.branch_name.outputs.branch_name }}
+          base: ${{ steps.branch_name.outputs.base_branch_name }}
+          delete-branch: true
+          labels: maintenance
+          title: "test: [Automatic] Constraints upgrades: ${{ steps.packages.outputs.main_packages }}"
+          body: |
+            This PR is automatically created and updated by this napari GitHub Action:
+            https://github.com/napari/napari/tree/main/.github/workflows/upgrade_test_contraints.yml
+            It ensures that dependencies are tested with the most recent version.
+
+            The updated packages are:
+
+            ${{ steps.packages.outputs.all_packages }}
+          token: ${{ secrets.GHA_TOKEN }}
+          # Token permissions required by the action:
+          # * pull requests: write and read
+          # * repository contents: read and write
+          # for screenshots please see https://github.com/napari/napari/pull/5777
+

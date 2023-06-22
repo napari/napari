@@ -1,25 +1,33 @@
 # syntax_style for the console must be one of the supported styles from
 # pygments - see here for examples https://help.farbox.com/pygments.html
+import logging
 import re
 import warnings
 from ast import literal_eval
-from typing import Union
+from contextlib import suppress
+from typing import Any, Dict, List, Literal, Union, overload
 
+import npe2
 from pydantic import validator
 from pydantic.color import Color
 
-from .._vendor import darkdetect
-from ..resources._icons import build_theme_svgs
-from ..utils.translations import trans
-from .events import EventedModel
-from .events.containers._evented_dict import EventedDict
+from napari._vendor import darkdetect
+from napari.resources._icons import (
+    PLUGIN_FILE_NAME,
+    _theme_path,
+    build_theme_svgs,
+)
+from napari.utils.events import EventedModel
+from napari.utils.events.containers._evented_dict import EventedDict
+from napari.utils.translations import trans
 
 try:
     from qtpy import QT_VERSION
 
-    major, minor, *rest = QT_VERSION.split('.')
+    major, minor, *_ = QT_VERSION.split('.')
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
-except Exception:
+    del major, minor, QT_VERSION
+except (ImportError, RuntimeError):
     use_gradients = False
 
 
@@ -28,8 +36,11 @@ class Theme(EventedModel):
 
     Attributes
     ----------
-    name : str
-        Name of the virtual folder where icons will be saved to.
+    id : str
+        id of the theme and name of the virtual folder where icons
+        will be saved to.
+    label : str
+        Name of the theme as it should be shown in the ui.
     syntax_style : str
         Name of the console style.
         See for more details: https://pygments.org/docs/styles/
@@ -48,12 +59,15 @@ class Theme(EventedModel):
     text : Color
         Color used to display text.
     warning : Color
-        Color used to indicate something is wrong.
+        Color used to indicate something needs attention.
+    error : Color
+        Color used to indicate something is wrong or could stop functionality.
     current : Color
         Color used to highlight Qt widget.
     """
 
-    name: str
+    id: str
+    label: str
     syntax_style: str
     canvas: Color
     console: Color
@@ -65,18 +79,30 @@ class Theme(EventedModel):
     text: Color
     icon: Color
     warning: Color
+    error: Color
     current: Color
 
-    @validator("syntax_style", pre=True)
+    @validator("syntax_style", pre=True, allow_reuse=True)
     def _ensure_syntax_style(value: str) -> str:
         from pygments.styles import STYLE_MAP
 
         assert value in STYLE_MAP, trans._(
-            "Incorrect `syntax_style` value provided. Please use one of the following: {syntax_style}",
+            "Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}",
             deferred=True,
             syntax_style=f" {', '.join(STYLE_MAP)}",
+            value=value,
         )
         return value
+
+    def to_rgb_dict(self) -> Dict[str, Any]:
+        """
+        This differs from baseclass `dict()` by converting colors to rgb.
+        """
+        th = super().dict()
+        return {
+            k: v if not isinstance(v, Color) else v.as_rgb()
+            for (k, v) in th.items()
+        }
 
 
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
@@ -167,15 +193,25 @@ def template(css: str, **theme):
 def get_system_theme() -> str:
     """Return the system default theme, either 'dark', or 'light'."""
     try:
-        name = darkdetect.theme().lower()
-    except Exception:
-        name = "dark"
+        id_ = darkdetect.theme().lower()
+    except AttributeError:
+        id_ = "dark"
 
-    return name
+    return id_
 
 
-def get_theme(name, as_dict=None):
-    """Get a copy of theme based on it's name.
+@overload
+def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme:
+    ...
+
+
+@overload
+def get_theme(theme_id: str, as_dict: Literal[True]) -> Dict[str, Any]:
+    ...
+
+
+def get_theme(theme_id, as_dict=None):
+    """Get a copy of theme based on it's id.
 
     If you get a copy of the theme, changes to the theme model will not be
     reflected in the UI unless you replace or add the modified theme to
@@ -183,9 +219,13 @@ def get_theme(name, as_dict=None):
 
     Parameters
     ----------
-    name : str
-        Name of requested theme.
+    theme_id : str
+        ID of requested theme.
     as_dict : bool
+        .. deprecated:: 0.5.0
+
+            Use ``get_theme(...).to_rgb_dict()``
+
         Flag to indicate that the old-style dictionary
         should be returned. This will emit deprecation warning.
 
@@ -196,82 +236,104 @@ def get_theme(name, as_dict=None):
         so that manipulating this theme can be done without
         side effects.
     """
-    if name == "system":
-        name = get_system_theme()
+    if theme_id == "system":
+        theme_id = get_system_theme()
 
-    if name not in _themes:
+    if theme_id not in _themes:
         raise ValueError(
             trans._(
-                "Unrecognized theme {name}. Available themes are {themes}",
+                "Unrecognized theme {id}. Available themes are {themes}",
                 deferred=True,
-                name=name,
+                id=theme_id,
                 themes=available_themes(),
             )
         )
-    theme = _themes[name]
-    _theme = theme.copy()
-    if as_dict is None:
+    theme = _themes[theme_id].copy()
+    if as_dict is not None:
         warnings.warn(
             trans._(
-                "The `as_dict` kwarg default to False` since Napari 0.4.17, "
-                "and will become a mandatory parameter in the future.",
+                "The `as_dict` kwarg has been deprecated since Napari 0.5.0 and "
+                "will be removed in future version. You can use `get_theme(...).to_rgb_dict()`",
                 deferred=True,
             ),
             category=FutureWarning,
             stacklevel=2,
         )
-        as_dict = False
     if as_dict:
-        _theme = _theme.dict()
-        _theme = {
-            k: v if not isinstance(v, Color) else v.as_rgb()
-            for (k, v) in _theme.items()
-        }
-        return _theme
-    return _theme
+        return theme.to_rgb_dict()
+    return theme
 
 
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
 
 
-def register_theme(name, theme):
+def register_theme(theme_id, theme, source):
     """Register a new or updated theme.
 
     Parameters
     ----------
-    name : str
-        Name of requested theme.
+    theme_id : str
+        id of requested theme.
     theme : dict of str: str, Theme
         Theme mapping elements to colors.
+    source : str
+        Source plugin of theme
     """
     if isinstance(theme, dict):
         theme = Theme(**theme)
     assert isinstance(theme, Theme)
-    _themes[name] = theme
+    _themes[theme_id] = theme
 
-    build_theme_svgs(name)
+    build_theme_svgs(theme_id, source)
 
 
-def unregister_theme(name):
+def unregister_theme(theme_id):
     """Remove existing theme.
 
     Parameters
     ----------
-    name : str
-        Name of the theme to be removed.
+    theme_id : str
+        id of the theme to be removed.
     """
-    _themes.pop(name, None)
+    _themes.pop(theme_id, None)
 
 
-def available_themes():
+def available_themes() -> List[str]:
     """List available themes.
 
     Returns
     -------
     list of str
-        Names of available themes.
+        ids of available themes.
     """
-    return tuple(_themes) + ("system",)
+    return [*_themes, 'system']
+
+
+def is_theme_available(theme_id):
+    """Check if a theme is available.
+
+    Parameters
+    ----------
+    theme_id : str
+        id of requested theme.
+
+    Returns
+    -------
+    bool
+        True if the theme is available, False otherwise.
+    """
+    if theme_id == "system":
+        return True
+    if theme_id not in _themes and _theme_path(theme_id).exists():
+        plugin_name_file = _theme_path(theme_id) / PLUGIN_FILE_NAME
+        if not plugin_name_file.exists():
+            return False
+        plugin_name = plugin_name_file.read_text()
+        with suppress(ModuleNotFoundError):
+            npe2.PluginManager.instance().register(plugin_name)
+        _install_npe2_themes(_themes)
+
+    return theme_id in _themes
 
 
 def rebuild_theme_settings():
@@ -280,14 +342,15 @@ def rebuild_theme_settings():
     here we simply update the settings to reflect current list of available
     themes.
     """
-    from ..settings import get_settings
+    from napari.settings import get_settings
 
     settings = get_settings()
     settings.appearance.refresh_themes()
 
 
 DARK = Theme(
-    name='dark',
+    id='dark',
+    label='Default Dark',
     background='rgb(38, 41, 48)',
     foreground='rgb(65, 72, 81)',
     primary='rgb(90, 98, 108)',
@@ -295,14 +358,16 @@ DARK = Theme(
     highlight='rgb(106, 115, 128)',
     text='rgb(240, 241, 242)',
     icon='rgb(209, 210, 212)',
-    warning='rgb(153, 18, 31)',
+    warning='rgb(227, 182, 23)',
+    error='rgb(153, 18, 31)',
     current='rgb(0, 122, 204)',
     syntax_style='native',
     console='rgb(18, 18, 18)',
     canvas='black',
 )
 LIGHT = Theme(
-    name='light',
+    id='light',
+    label='Default Light',
     background='rgb(239, 235, 233)',
     foreground='rgb(214, 208, 206)',
     primary='rgb(188, 184, 181)',
@@ -310,27 +375,39 @@ LIGHT = Theme(
     highlight='rgb(163, 158, 156)',
     text='rgb(59, 58, 57)',
     icon='rgb(107, 105, 103)',
-    warning='rgb(255, 18, 31)',
+    warning='rgb(227, 182, 23)',
+    error='rgb(255, 18, 31)',
     current='rgb(253, 240, 148)',
     syntax_style='default',
     console='rgb(255, 255, 255)',
     canvas='white',
 )
 
-register_theme('dark', DARK)
-register_theme('light', LIGHT)
+register_theme('dark', DARK, "builtin")
+register_theme('light', LIGHT, "builtin")
 
 
 # this function here instead of plugins._npe2 to avoid circular import
-def _install_npe2_themes(_themes):
+def _install_npe2_themes(themes=None):
+    if themes is None:
+        themes = _themes
     import npe2
 
-    for theme in npe2.PluginManager.instance().iter_themes():
-        # `theme.type` is dark/light and supplies defaults for keys that
-        # are not provided by the plugin
-        d = _themes[theme.type].dict()
-        d.update(theme.colors.dict(exclude_unset=True))
-        register_theme(theme.id, d)
+    for manifest in npe2.PluginManager.instance().iter_manifests(
+        disabled=False
+    ):
+        for theme in manifest.contributions.themes or ():
+            # get fallback values
+            theme_dict = themes[theme.type].dict()
+            # update available values
+            theme_info = theme.dict(exclude={'colors'}, exclude_unset=True)
+            theme_colors = theme.colors.dict(exclude_unset=True)
+            theme_dict.update(theme_info)
+            theme_dict.update(theme_colors)
+            try:
+                register_theme(theme.id, theme_dict, manifest.name)
+            except ValueError:
+                logging.exception("Registration theme failed.")
 
 
 _install_npe2_themes(_themes)

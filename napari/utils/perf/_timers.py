@@ -5,9 +5,9 @@ import os
 from time import perf_counter_ns
 from typing import Dict, Optional
 
-from ._event import PerfEvent
-from ._stat import Stat
-from ._trace_file import PerfTraceFile
+from napari.utils.perf._event import PerfEvent
+from napari.utils.perf._stat import Stat
+from napari.utils.perf._trace_file import PerfTraceFile
 
 USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
 
@@ -44,7 +44,7 @@ class PerfTimers:
     chrome://tracing GUI to see the full story.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create PerfTimers."""
         # Maps a timer name to one Stat object.
         self.timers: Dict[str, Stat] = {}

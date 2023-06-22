@@ -98,7 +98,7 @@ import os
 import subprocess
 from multiprocessing.managers import SharedMemoryManager
 
-from ._utils import base64_encoded_json
+from napari.components.experimental.monitor._utils import base64_encoded_json
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -144,7 +144,7 @@ class MonitorService:
     those.
     """
 
-    def __init__(self, config: dict, manager: SharedMemoryManager):
+    def __init__(self, config: dict, manager: SharedMemoryManager) -> None:
         super().__init__()
         self._config = config
         self._manager = manager

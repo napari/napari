@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Union
 
-from ...components.layerlist import LayerList
-from ...utils.events import SelectableEventedList
-from ...utils.translations import trans
-from ...utils.tree import Group
+from napari.components.layerlist import LayerList
+from napari.utils.events import SelectableEventedList
+from napari.utils.translations import trans
+from napari.utils.tree import Group
 
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
@@ -28,7 +28,7 @@ def create_view(
     Union[QtListView, QtNodeTreeView]
         A view instance appropriate for `obj`.
     """
-    from . import QtLayerList, QtListView, QtNodeTreeView
+    from napari._qt.containers import QtLayerList, QtListView, QtNodeTreeView
 
     if isinstance(obj, LayerList):
         return QtLayerList(obj, parent=parent)
@@ -62,7 +62,11 @@ def create_model(
     Union[QtListModel, QtNodeTreeModel]
         A model instance appropriate for `obj`.
     """
-    from . import QtLayerListModel, QtListModel, QtNodeTreeModel
+    from napari._qt.containers import (
+        QtLayerListModel,
+        QtListModel,
+        QtNodeTreeModel,
+    )
 
     if isinstance(obj, LayerList):
         return QtLayerListModel(obj, parent=parent)

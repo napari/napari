@@ -113,24 +113,24 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 }
 """
 
-ISO_CATEGORICAL_SNIPPETS = dict(
-    before_loop="""
+ISO_CATEGORICAL_SNIPPETS = {
+    "before_loop": """
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader
         gl_FragColor = vec4(0.0);
         bool discard_fragment = true;
         """,
-    in_loop="""
+    "in_loop": """
         // check if value is different from the background value
         if ( floatNotEqual(val, categorical_bg_value) ) {
             // Take the last interval in smaller steps
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
                 color = $get_data(iloc);
-                if (floatNotEqual(color.g, categorical_bg_value) ) {
-                    // when the non-background value is reached
+                color = applyColormap(color.g);
+                if (floatNotEqual(color.a, 0) ) {
+                    // when the value mapped to non-transparent color is reached
                     // calculate the color (apply lighting effects)
-                    color = applyColormap(color.g);
                     color = calculateCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
 
@@ -145,11 +145,11 @@ ISO_CATEGORICAL_SNIPPETS = dict(
             }
         }
         """,
-    after_loop="""
+    "after_loop": """
         if (discard_fragment)
             discard;
         """,
-)
+}
 
 shaders = BaseVolume._shaders.copy()
 before, after = shaders['fragment'].split('void main()')

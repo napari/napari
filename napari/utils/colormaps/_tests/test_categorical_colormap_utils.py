@@ -2,7 +2,10 @@ from itertools import cycle
 
 import numpy as np
 
-from ..categorical_colormap_utils import ColorCycle, compare_colormap_dicts
+from napari.utils.colormaps.categorical_colormap_utils import (
+    ColorCycle,
+    compare_colormap_dicts,
+)
 
 
 def test_color_cycle():

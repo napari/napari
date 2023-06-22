@@ -12,9 +12,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.action_manager import action_manager
-from ...utils.interactions import Shortcut
-from ...utils.translations import trans
+from napari.utils.action_manager import action_manager
+from napari.utils.interactions import Shortcut
+from napari.utils.translations import trans
 
 
 class QtWelcomeLabel(QLabel):
@@ -30,7 +30,7 @@ class QtWelcomeWidget(QWidget):
 
     sig_dropped = Signal("QEvent")
 
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:
         super().__init__(parent)
 
         # Create colored icon using theme
@@ -178,7 +178,7 @@ class QtWidgetOverlay(QStackedWidget):
     leave = Signal()
     enter = Signal()
 
-    def __init__(self, parent, widget):
+    def __init__(self, parent, widget) -> None:
         super().__init__(parent)
 
         self._overlay = QtWelcomeWidget(self)

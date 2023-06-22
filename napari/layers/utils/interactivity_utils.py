@@ -4,10 +4,13 @@ from typing import TYPE_CHECKING, List, Tuple, Union
 
 import numpy as np
 
-from ...utils.geometry import point_in_bounding_box, project_points_onto_plane
+from napari.utils.geometry import (
+    point_in_bounding_box,
+    project_points_onto_plane,
+)
 
 if TYPE_CHECKING:
-    from ..image.image import Image
+    from napari.layers.image.image import Image
 
 
 def displayed_plane_from_nd_line_segment(
@@ -110,8 +113,7 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
     """
     # avoid circular imports
     import napari
-
-    from ..image._image_constants import VolumeDepiction
+    from napari.layers.image._image_constants import VolumeDepiction
 
     viewer = napari.viewer.current_viewer()
 

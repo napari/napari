@@ -2,16 +2,43 @@ from __future__ import annotations
 
 import functools
 import inspect
-from typing import Any, Dict, List, Optional, Sequence, Union
+import warnings
+from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Union
 
 import dask
 import numpy as np
 import pandas as pd
 
-from ...utils.action_manager import action_manager
-from ...utils.events.custom_types import Array
-from ...utils.transforms import Affine
-from ...utils.translations import trans
+from napari.utils.action_manager import action_manager
+from napari.utils.events.custom_types import Array
+from napari.utils.transforms import Affine
+from napari.utils.translations import trans
+
+
+class Extent(NamedTuple):
+    """Extent of coordinates in a local data space and world space.
+
+    Each extent is a (2, D) array that stores the minimum and maximum coordinate
+    values in each of D dimensions. Both the minimum and maximum coordinates are
+    inclusive so form an axis-aligned, closed interval or a D-dimensional box
+    around all the coordinates.
+
+    Attributes
+    ----------
+    data : (2, D) array of floats
+        The minimum and maximum raw data coordinates ignoring any transforms like
+        translation or scale.
+    world : (2, D) array of floats
+        The minimum and maximum world coordinates after applying a transform to the
+        raw data coordinates that brings them into a potentially shared world space.
+    step : (D,) array of floats
+        The step in each dimension that when taken from the minimum world coordinate,
+        should form a regular grid that eventually hits the maximum world coordinate.
+    """
+
+    data: np.ndarray
+    world: np.ndarray
+    step: np.ndarray
 
 
 def register_layer_action(
@@ -30,7 +57,7 @@ def register_layer_action(
     Parameters
     ----------
     keymapprovider : KeymapProvider
-        class on which to register the keybindings – this will typically be
+        class on which to register the keybindings - this will typically be
         the instance in focus that will handle the keyboard shortcut.
     description : str
         The description of the action, this will typically be translated and
@@ -86,7 +113,7 @@ def register_layer_attr_action(
     Parameters
     ----------
     keymapprovider : KeymapProvider
-        class on which to register the keybindings – this will typically be
+        class on which to register the keybindings - this will typically be
         the instance in focus that will handle the keyboard shortcut.
     description : str
         The description of the action, this will typically be translated and
@@ -108,20 +135,17 @@ def register_layer_attr_action(
         sig = inspect.signature(func)
         try:
             first_variable_name = next(iter(sig.parameters))
-        except StopIteration:
+        except StopIteration as e:
             raise RuntimeError(
                 trans._(
                     "If actions has no arguments there is no way to know what to set the attribute to.",
                     deferred=True,
                 ),
-            )
+            ) from e
 
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
-            if args:
-                obj = args[0]
-            else:
-                obj = kwargs[first_variable_name]
+            obj = args[0] if args else kwargs[first_variable_name]
             prev_mode = getattr(obj, attribute_name)
             func(*args, **kwargs)
 
@@ -143,26 +167,26 @@ def _nanmin(array):
     """
     call np.min but fall back to avoid nan and inf if necessary
     """
-    min = np.min(array)
-    if not np.isfinite(min):
+    min_value = np.min(array)
+    if not np.isfinite(min_value):
         masked = array[np.isfinite(array)]
         if masked.size == 0:
             return 0
-        min = np.min(masked)
-    return min
+        min_value = np.min(masked)
+    return min_value
 
 
 def _nanmax(array):
     """
     call np.max but fall back to avoid nan and inf if necessary
     """
-    max = np.max(array)
-    if not np.isfinite(max):
+    max_value = np.max(array)
+    if not np.isfinite(max_value):
         masked = array[np.isfinite(array)]
         if masked.size == 0:
             return 1
-        max = np.max(masked)
-    return max
+        max_value = np.max(masked)
+    return max_value
 
 
 def calc_data_range(data, rgb=False):
@@ -261,10 +285,7 @@ def segment_normal(a, b, p=(0, 0, 1)):
     d = b - a
 
     if d.ndim == 1:
-        if len(d) == 2:
-            normal = np.array([d[1], -d[0]])
-        else:
-            normal = np.cross(d, p)
+        normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
         norm = np.linalg.norm(normal)
         if norm == 0:
             norm = 1
@@ -284,18 +305,20 @@ def segment_normal(a, b, p=(0, 0, 1)):
 
 def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     """
-    Convert array content to uint8.
+    Convert array content to uint8, always returning a copy.
 
-    If all negative values are changed on 0.
+    Based on skimage.util.dtype._convert but limited to an output type uint8,
+    so should be equivalent to skimage.util.dtype.img_as_ubyte.
 
-    If values are integer and bellow 256 it is simple casting otherwise maximum value for this data type is picked
-    and values are scaled by 255/maximum type value.
+    If all negative, values are clipped to 0.
 
-    Binary images ar converted to [0,255] images.
+    If values are integers and below 256, this simply casts.
+    Otherwise the maximum value for the input data type is determined and
+    output values are proportionally scaled by this value.
 
-    float images are multiply by 255 and then casted to uint8.
+    Binary images are converted so that False -> 0, True -> 255.
 
-    Based on skimage.util.dtype.convert but limited to output type uint8
+    Float images are multiplied by 255 and then cast to uint8.
     """
     out_dtype = np.dtype(np.uint8)
     out_max = np.iinfo(out_dtype).max
@@ -308,6 +331,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
         image_out = np.multiply(data, out_max, dtype=data.dtype)
         np.rint(image_out, out=image_out)
         np.clip(image_out, 0, out_max, out=image_out)
+        image_out = np.nan_to_num(image_out, copy=False)
         return image_out.astype(out_dtype)
 
     if in_kind in "ui":
@@ -317,15 +341,16 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
                 out_dtype
             )
-        else:
-            np.maximum(data, 0, out=data, dtype=data.dtype)
-            if data.dtype == np.int8:
-                return (data * 2).astype(np.uint8)
-            if data.max() < out_max:
-                return data.astype(out_dtype)
-            return np.right_shift(
-                data, (data.dtype.itemsize - 1) * 8 - 1
-            ).astype(out_dtype)
+
+        np.maximum(data, 0, out=data, dtype=data.dtype)
+        if data.dtype == np.int8:
+            return (data * 2).astype(np.uint8)
+        if data.max() < out_max:
+            return data.astype(out_dtype)
+        return np.right_shift(data, (data.dtype.itemsize - 1) * 8 - 1).astype(
+            out_dtype
+        )
+    return None
 
 
 def get_current_properties(
@@ -508,10 +533,7 @@ def compute_multiscale_level(
 
     # Find the highest level (lowest resolution) allowed
     locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
-    if len(locations) > 0:
-        level = locations[-1][0]
-    else:
-        level = 0
+    level = locations[-1][0] if len(locations) > 0 else 0
     return level
 
 
@@ -637,7 +659,7 @@ def dims_displayed_world_to_layer(
     return dims_displayed
 
 
-def get_extent_world(data_extent, data_to_world, centered=False):
+def get_extent_world(data_extent, data_to_world, centered=None):
     """Range of layer in world coordinates base on provided data_extent
 
     Parameters
@@ -646,19 +668,23 @@ def get_extent_world(data_extent, data_to_world, centered=False):
         Extent of layer in data coordinates.
     data_to_world : napari.utils.transforms.Affine
         The transform from data to world coordinates.
-    centered : bool
-        If pixels should be centered. By default False.
 
     Returns
     -------
     extent_world : array, shape (2, D)
     """
-    D = data_extent.shape[1]
-    # subtract 0.5 to get from pixel center to pixel edge
-    offset = 0.5 * bool(centered)
-    pixel_extents = tuple(d - offset for d in data_extent.T)
+    if centered is not None:
+        warnings.warn(
+            trans._(
+                'The `centered` argument is deprecated. '
+                'Extents are now always centered on data points.',
+                deferred=True,
+            ),
+            stacklevel=2,
+        )
 
-    full_data_extent = np.array(np.meshgrid(*pixel_extents)).T.reshape(-1, D)
+    D = data_extent.shape[1]
+    full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(-1, D)
     full_world_extent = data_to_world(full_data_extent)
     world_extent = np.array(
         [
@@ -703,6 +729,9 @@ class _FeatureTable:
         the number of points, which is used to check that the features
         table has the expected number of rows. If None, then the default
         DataFrame index is used.
+    defaults: Optional[Union[Dict[str, Any], pd.DataFrame]]
+        The default feature values, which if specified should have the same keys
+        as the values provided. If None, will be inferred from the values.
     """
 
     def __init__(
@@ -710,9 +739,10 @@ class _FeatureTable:
         values: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
         *,
         num_data: Optional[int] = None,
-    ):
+        defaults: Optional[Union[Dict[str, Any], pd.DataFrame]] = None,
+    ) -> None:
         self._values = _validate_features(values, num_data=num_data)
-        self._defaults = self._make_defaults()
+        self._defaults = _validate_feature_defaults(defaults, self._values)
 
     @property
     def values(self) -> pd.DataFrame:
@@ -722,23 +752,18 @@ class _FeatureTable:
     def set_values(self, values, *, num_data=None) -> None:
         """Sets the feature values table."""
         self._values = _validate_features(values, num_data=num_data)
-        self._defaults = self._make_defaults()
-
-    def _make_defaults(self) -> pd.DataFrame:
-        """Makes the default values table from the feature values."""
-        return pd.DataFrame(
-            {
-                name: _get_default_column(column)
-                for name, column in self._values.items()
-            },
-            index=range(1),
-            copy=True,
-        )
+        self._defaults = _validate_feature_defaults(None, self._values)
 
     @property
     def defaults(self) -> pd.DataFrame:
         """The default values one-row table."""
         return self._defaults
+
+    def set_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        """Sets the feature default values."""
+        self._defaults = _validate_feature_defaults(defaults, self._values)
 
     def properties(self) -> Dict[str, np.ndarray]:
         """Converts this to a deprecated properties dictionary.
@@ -847,6 +872,7 @@ class _FeatureTable:
         cls,
         *,
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+        feature_defaults: Optional[Union[Dict[str, Any], pd.DataFrame]] = None,
         properties: Optional[
             Union[Dict[str, np.ndarray], pd.DataFrame]
         ] = None,
@@ -884,7 +910,7 @@ class _FeatureTable:
                 property_choices=property_choices,
                 num_data=num_data,
             )
-        return cls(features, num_data=num_data)
+        return cls(features, defaults=feature_defaults, num_data=num_data)
 
 
 def _get_default_column(column: pd.Series) -> pd.Series:
@@ -896,6 +922,13 @@ def _get_default_column(column: pd.Series) -> pd.Series:
         choices = column.dtype.categories
         if choices.size > 0:
             value = choices[0]
+    elif isinstance(column.dtype, np.dtype) and np.issubdtype(
+        column.dtype, np.integer
+    ):
+        # For numpy backed columns that store integers there's no way to
+        # store missing values, so passing None creates an np.float64 series
+        # containing NaN. Therefore, use a default of 0 instead.
+        value = 0
     return pd.Series(data=value, dtype=column.dtype, index=range(1))
 
 
@@ -904,7 +937,7 @@ def _validate_features(
     *,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
-    """Validates and coerces a features table into a pandas DataFrame.
+    """Validates and coerces feature values into a pandas DataFrame.
 
     See Also
     --------
@@ -923,6 +956,53 @@ def _validate_features(
         }
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
+
+
+def _validate_feature_defaults(
+    defaults: Optional[Union[Dict[str, Any], pd.DataFrame]],
+    values: pd.DataFrame,
+) -> pd.DataFrame:
+    """Validates and coerces feature default values into a pandas DataFrame.
+
+    See Also
+    --------
+    :class:`_FeatureTable` : See initialization for parameter descriptions.
+    """
+    if defaults is None:
+        defaults = {c: _get_default_column(values[c]) for c in values.columns}
+    else:
+        default_columns = set(defaults.keys())
+        value_columns = set(values.keys())
+        extra_defaults = default_columns - value_columns
+        if len(extra_defaults) > 0:
+            raise ValueError(
+                trans._(
+                    'Feature defaults contain some extra columns not in feature values: {extra_defaults}',
+                    deferred=True,
+                    extra_defaults=extra_defaults,
+                )
+            )
+        missing_defaults = value_columns - default_columns
+        if len(missing_defaults) > 0:
+            raise ValueError(
+                trans._(
+                    'Feature defaults is missing some columns in feature values: {missing_defaults}',
+                    deferred=True,
+                    missing_defaults=missing_defaults,
+                )
+            )
+        # Convert to series first to capture the per-column dtype from values,
+        # since the DataFrame initializer does not support passing multiple dtypes.
+        defaults = {
+            c: pd.Series(
+                defaults[c],
+                dtype=values.dtypes[c],
+                index=range(1),
+            )
+            for c in defaults
+        }
+
+    return pd.DataFrame(defaults, index=range(1))
 
 
 def _features_from_properties(

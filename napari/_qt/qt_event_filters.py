@@ -5,7 +5,7 @@ import html
 from qtpy.QtCore import QEvent, QObject
 from qtpy.QtWidgets import QWidget
 
-from .utils import qt_might_be_rich_text
+from napari._qt.utils import qt_might_be_rich_text
 
 
 class QtToolTipEventFilter(QObject):

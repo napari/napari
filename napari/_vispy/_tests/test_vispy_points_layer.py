@@ -108,6 +108,12 @@ def test_text_with_non_empty_constant_string():
     assert len(text_node.text) == 3
     np.testing.assert_array_equal(text_node.text, ['a', 'a', 'a'])
 
+    # Ensure we do position calculation for constants.
+    # See https://github.com/napari/napari/issues/5378
+    # We want row, column coordinates so drop 3rd dimension and flip.
+    actual_position = text_node.pos[:, 1::-1]
+    np.testing.assert_allclose(actual_position, points)
+
 
 def test_change_antialiasing():
     """Changing antialiasing on the layer should change it on the vispy node."""

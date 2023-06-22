@@ -1,6 +1,6 @@
 from vispy.scene.visuals import Mesh
 
-from .clipping_planes_mixin import ClippingPlanesMixin
+from napari._vispy.visuals.clipping_planes_mixin import ClippingPlanesMixin
 
 
 class VectorsVisual(ClippingPlanesMixin, Mesh):

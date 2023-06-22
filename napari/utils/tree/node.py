@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from .group import Group
+    from napari.utils.tree.group import Group
 
 
 class Node:
@@ -28,7 +28,7 @@ class Node:
         The parent of this Node.
     """
 
-    def __init__(self, name: str = "Node"):
+    def __init__(self, name: str = "Node") -> None:
         self.parent: Optional[Group] = None
         self._name = name
 

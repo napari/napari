@@ -1,8 +1,10 @@
 from enum import auto
+from importlib.metadata import version as package_version
 from os.path import abspath, expanduser, sep
 from pathlib import Path
 
 import pytest
+from packaging.version import parse as parse_version
 
 from napari.utils.misc import (
     StringEnum,
@@ -24,7 +26,7 @@ REPEATED_PARTLY_NESTED_ITERABLE = [PARTLY_NESTED_ITERABLE] * 3
 
 
 @pytest.mark.parametrize(
-    'input, expected',
+    'input_data, expected',
     [
         [ITERABLE, NESTED_ITERABLE],
         [NESTED_ITERABLE, NESTED_ITERABLE],
@@ -37,20 +39,22 @@ REPEATED_PARTLY_NESTED_ITERABLE = [PARTLY_NESTED_ITERABLE] * 3
         [[], ([], [], [])],
     ],
 )
-def test_sequence_of_iterables(input, expected):
+def test_sequence_of_iterables(input_data, expected):
     """Test ensure_sequence_of_iterables returns a sequence of iterables."""
     zipped = zip(
         range(3),
-        ensure_sequence_of_iterables(input, repeat_empty=True),
+        ensure_sequence_of_iterables(input_data, repeat_empty=True),
         expected,
     )
-    for i, result, expectation in zipped:
+    for _i, result, expectation in zipped:
         assert result == expectation
 
 
 def test_sequence_of_iterables_allow_none():
-    input = [(1, 2), None]
-    assert ensure_sequence_of_iterables(input, allow_none=True) == input
+    input_data = [(1, 2), None]
+    assert (
+        ensure_sequence_of_iterables(input_data, allow_none=True) == input_data
+    )
 
 
 def test_sequence_of_iterables_no_repeat_empty():
@@ -72,7 +76,7 @@ def test_sequence_of_iterables_raises():
 
 
 @pytest.mark.parametrize(
-    'input, expected',
+    'input_data, expected',
     [
         [ITERABLE, ITERABLE],
         [DICT, DICT],
@@ -81,10 +85,10 @@ def test_sequence_of_iterables_raises():
         [None, [None, None, None]],
     ],
 )
-def test_ensure_iterable(input, expected):
+def test_ensure_iterable(input_data, expected):
     """Test test_ensure_iterable returns an iterable."""
-    zipped = zip(range(3), ensure_iterable(input), expected)
-    for i, result, expectation in zipped:
+    zipped = zip(range(3), ensure_iterable(input_data), expected)
+    for _i, result, expectation in zipped:
         assert result == expectation
 
 
@@ -196,6 +200,15 @@ def test_equality_operator():
         pick_equality_operator(xr.DataArray(np.ones((1, 1))))
         == _quiet_array_equal
     )
+
+
+@pytest.mark.skipif(
+    parse_version(package_version("numpy")) >= parse_version("1.25.0"),
+    reason="Numpy 1.25.0 return true for below comparison",
+)
+def test_equality_operator_silence():
+    import numpy as np
+
     eq = pick_equality_operator(np.asarray([]))
     # make sure this doesn't warn
     assert not eq(np.asarray([]), np.asarray([], '<U32'))
@@ -215,7 +228,7 @@ def test_is_array_type_with_xarray():
 
 
 @pytest.mark.parametrize(
-    'input, expected',
+    'input_data, expected',
     [
         ([([1, 10],)], [([1, 10],)]),
         ([([1, 10], {'name': 'hi'})], [([1, 10], {'name': 'hi'})]),
@@ -226,10 +239,10 @@ def test_is_array_type_with_xarray():
         ([], []),
     ],
 )
-def test_ensure_list_of_layer_data_tuple(input, expected):
+def test_ensure_list_of_layer_data_tuple(input_data, expected):
     """Ensure that when given layer data that a tuple can be generated.
 
     When data with a name is supplied a layer should be created and named.
     When an empty dataset is supplied no layer is created and no errors are produced.
     """
-    assert ensure_list_of_layer_data_tuple(input) == expected
+    assert ensure_list_of_layer_data_tuple(input_data) == expected

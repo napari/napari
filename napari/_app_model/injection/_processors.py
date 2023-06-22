@@ -2,11 +2,11 @@ import sys
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union, get_origin
 
-from ... import layers, types, viewer
-from ...layers._source import layer_source
-from ._providers import _provide_viewer
+from napari import layers, types, viewer
+from napari._app_model.injection._providers import _provide_viewer
+from napari.layers._source import layer_source
 
 
 def _add_layer_data_tuples_to_viewer(
@@ -15,7 +15,7 @@ def _add_layer_data_tuples_to_viewer(
     viewer=None,
     source: Optional[dict] = None,
 ):
-    from ...utils.misc import ensure_list_of_layer_data_tuple
+    from napari.utils.misc import ensure_list_of_layer_data_tuple
 
     if viewer is None:
         viewer = _provide_viewer()
@@ -72,6 +72,15 @@ def _add_layer_data_to_viewer(
             with suppress(KeyError):
                 viewer.layers[layer_name].data = data
                 return
+        if get_origin(return_type) is Union:
+            if len(return_type.__args__) != 2 or return_type.__args__[
+                1
+            ] is not type(None):
+                # this case should be impossible, but we'll check anyway.
+                raise TypeError(
+                    f"napari supports only Optional[<layer_data_type>], not {return_type}"
+                )
+            return_type = return_type.__args__[0]
         layer_type = return_type.__name__.replace("Data", "").lower()
         with layer_source(**source) if source else nullcontext():
             getattr(viewer, f'add_{layer_type}')(data=data, name=layer_name)
