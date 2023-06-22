@@ -23,7 +23,16 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
+from qtpy.QtCore import (
+    QEvent,
+    QEventLoop,
+    QPoint,
+    QProcess,
+    QRect,
+    QSize,
+    Qt,
+    Slot,
+)
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
@@ -120,6 +129,7 @@ class _QtMainWindow(QMainWindow):
         self._window_pos = None
         self._old_size = None
         self._positions = []
+        self._toggle_menubar_visibility = False
 
         self._is_close_dialog = {False: True, True: True}
         # this ia sa workaround for #5335 issue. The dict is used to not
@@ -208,6 +218,32 @@ class _QtMainWindow(QMainWindow):
                 inst = _QtMainWindow._instances
                 inst.append(inst.pop(inst.index(self)))
         return super().event(e)
+
+    def eventFilter(self, source, event):
+        # Handle showing hidden menubar on mouse move event.
+        # We do not hide menubar when a menu is being shown or
+        # we are not in menubar toggled state
+        if (
+            QApplication.activePopupWidget() is None
+            and self._toggle_menubar_visibility
+        ):
+            if event.type() == QEvent.MouseMove:
+                if self.menuBar().isHidden():
+                    rect = self.geometry()
+                    # set mouse-sensitive zone to trigger showing the menubar
+                    rect.setHeight(25)
+                    if rect.contains(event.globalPos()):
+                        self.menuBar().show()
+                else:
+                    rect = QRect(
+                        self.menuBar().mapToGlobal(QPoint(0, 0)),
+                        self.menuBar().size(),
+                    )
+                    if not rect.contains(event.globalPos()):
+                        self.menuBar().hide()
+            elif event.type() == QEvent.Leave and source is self:
+                self.menuBar().hide()
+        return QMainWindow.eventFilter(self, source, event)
 
     def _load_window_settings(self):
         """
@@ -458,6 +494,16 @@ class _QtMainWindow(QMainWindow):
         process.startDetached()
         self.close(quit_app=True)
 
+    def toggle_menubar_visibility(self):
+        """
+        Change menubar to be shown or to be hidden and shown on mouse movement.
+
+        For the mouse movement functionality see the `eventFilter` implementation.
+        """
+        self._toggle_menubar_visibility = not self._toggle_menubar_visibility
+        self.menuBar().setVisible(not self._toggle_menubar_visibility)
+        return self._toggle_menubar_visibility
+
     @staticmethod
     @Slot(Notification)
     def show_notification(notification: Notification):
@@ -490,7 +536,7 @@ class Window:
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
-        get_app()
+        qapp = get_app()
 
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[
@@ -500,6 +546,7 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
+        qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
@@ -690,8 +737,8 @@ class Window:
         show the menubar, since menubar shortcuts are only available while the
         menubar is visible.
         """
-        self.main_menu.setVisible(not self.main_menu.isVisible())
-        self._main_menu_shortcut.setEnabled(not self.main_menu.isVisible())
+        toggle_menubar_visibility = self._qt_window.toggle_menubar_visibility()
+        self._main_menu_shortcut.setEnabled(toggle_menubar_visibility)
 
     def _toggle_fullscreen(self):
         """Toggle fullscreen mode."""
