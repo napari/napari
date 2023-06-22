@@ -36,7 +36,7 @@ jobs:
         run: check-manifest
 
   test:
-    name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
+    name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
     timeout-minutes: 60
     runs-on: ${{ matrix.platform }}
     strategy:
@@ -54,10 +54,6 @@ jobs:
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
-          # test with --async_only
-          - python: "3.8"
-            platform: ubuntu-20.04
-            toxenv: async-py38-linux-pyqt5
           # test without any Qt backends
           - python: "3.8"
             platform: ubuntu-20.04

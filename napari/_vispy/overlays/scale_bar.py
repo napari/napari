@@ -126,7 +126,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                     background_color = self.node.parent.bgcolor.rgba
                 else:
                     background_color = get_theme(
-                        self.viewer.theme, False
+                        self.viewer.theme
                     ).canvas.as_hex()
                     background_color = transform_color(background_color)[0]
                 color = np.subtract(1, background_color)
