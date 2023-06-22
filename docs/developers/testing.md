@@ -148,7 +148,7 @@ you create during testing are cleaned up at the end of each test:
    Duplicate cleanup may cause an error.  Use the fixture as follows:
 
     ```python
-    # the make_napari_viewer fixture is defined in napari/conftest.py
+    # the make_napari_viewer fixture is defined in napari/utils/_testsupport.py
     def test_something_with_a_viewer(make_napari_viewer):
         # make_napari_viewer takes any keyword arguments that napari.Viewer() takes
         viewer = make_napari_viewer()
@@ -158,7 +158,7 @@ you create during testing are cleaned up at the end of each test:
     ```
 
 > If you're curious to see the actual `make_napari_viewer` fixture definition, it's
-> in `napari/conftest.py`
+> in `napari/utils/_testsupport.py`
 
 ### Mocking: "Fake it till you make it"
 

@@ -115,8 +115,8 @@ intersphinx_mapping = {
         'https://napari-plugin-engine.readthedocs.io/en/latest/objects.inv',
     ],
     'magicgui': [
-        'https://napari.org/magicgui/',
-        'https://napari.org/magicgui/objects.inv',
+        'https://pyapp-kit.github.io/magicgui/',
+        'https://pyapp-kit.github.io/magicgui/objects.inv',
     ],
 }
 
