@@ -3,6 +3,10 @@ message: If you use this software, please cite it using these metadata.
 title: 'napari: a multi-dimensional image viewer for Python'
 doi: 10.5281/zenodo.3555620
 authors:
+- given-names: Daniel
+  family-names: Althviz Moré
+  affiliation: Quansight
+  orcid: https://orcid.org/0000-0003-1759-4194
 - given-names: Ashley
   family-names: Anderson
   affiliation: Chan Zuckerberg Initiative
