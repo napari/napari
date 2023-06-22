@@ -4,7 +4,6 @@ import json
 import logging
 
 from napari.components.layerlist import LayerList
-from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -38,18 +37,6 @@ class RemoteCommands:
 
     def __init__(self, layers: LayerList) -> None:
         self.layers = layers
-
-    def show_grid(self, show: bool) -> None:
-        """Set whether the octree tile grid is visible.
-
-        Parameters
-        ----------
-        show : bool
-            If True the grid is shown.
-        """
-        for layer in self.layers.selected:
-            if isinstance(layer, _OctreeImageBase):
-                layer.display.show_grid = show
 
     def process_command(self, event) -> None:
         """Process this one command from the remote client.

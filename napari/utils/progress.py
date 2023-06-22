@@ -7,6 +7,8 @@ from napari.utils.events.containers import EventedSet
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.translations import trans
 
+__all__ = ["progress", "progrange", "cancelable_progress"]
+
 
 class progress(tqdm):
     """This class inherits from tqdm and provides an interface for
@@ -85,6 +87,10 @@ class progress(tqdm):
         self.is_init = True
         super().__init__(iterable, desc, total, *args, **kwargs)
 
+        # if the progress bar is set to disable the 'desc' member is not set by the
+        # tqdm super constructor, so we set it to a dummy value to avoid errors thrown below
+        if self.disable:
+            self.desc = ""
         if not self.desc:
             self.set_description(trans._("progress"))
         progress._all_instances.add(self)

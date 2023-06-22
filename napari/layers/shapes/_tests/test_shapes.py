@@ -1,5 +1,6 @@
 from copy import copy
 from itertools import cycle, islice
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ from napari._tests.utils import (
 )
 from napari.components import ViewerModel
 from napari.layers import Shapes
+from napari.layers.base._base_constants import ActionType
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.utils.colormaps.standardize_color import transform_color
@@ -939,10 +941,18 @@ def test_polygons(shape):
 
     # Test adding via add_polygons
     layer2 = Shapes()
+    layer2.events.data = Mock()
+
     layer2.add_polygons(data)
     assert layer.nshapes == layer2.nshapes
     assert np.allclose(layer2.data, layer.data)
     assert np.all([s == 'polygon' for s in layer2.shape_type])
+
+    # Avoid a.any(), a.all()
+    assert np.array_equal(layer2.events.data.call_args[1]["value"], layer.data)
+    assert layer2.events.data.call_args[1]["action"] == ActionType.ADD.value
+    assert layer2.events.data.call_args[1]["data_indices"] == (-1,)
+    assert layer2.events.data.call_args[1]["vertex_indices"] == ((),)
 
 
 def test_add_polygons_raises_error():
@@ -1225,14 +1235,24 @@ def test_removing_selected_shapes():
     ] + list(np.random.random((5, 4, 2)))
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
     layer = Shapes(data, shape_type=shape_type)
-
+    layer.events.data = Mock()
     # With nothing selected no points should be removed
     layer.remove_selected()
     assert len(layer.data) == len(data)
 
     # Select three shapes and remove them
-    layer.selected_data = {1, 7, 8}
+    selection = {1, 7, 8}
+    layer.selected_data = selection
     layer.remove_selected()
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.REMOVE.value,
+        "data_indices": tuple(
+            selection,
+        ),
+        "vertex_indices": ((),),
+    }
+
     keep = [0, *range(2, 7)] + [9]
     data_keep = [data[i] for i in keep]
     shape_type_keep = [shape_type[i] for i in keep]
@@ -2177,7 +2197,7 @@ def test_world_data_extent():
     min_val = (-2, -8, 0)
     max_val = (9, 30, 15)
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
 def test_set_data_3d():

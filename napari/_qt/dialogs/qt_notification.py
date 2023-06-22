@@ -115,7 +115,7 @@ class NapariQtNotification(QDialog):
 
         settings = get_settings()
         theme = settings.appearance.theme
-        default_color = get_theme(theme, False).icon
+        default_color = get_theme(theme).icon
 
         # FIXME: Should these be defined at the theme level?
         # Currently there is a warning one
@@ -417,7 +417,7 @@ class TracebackDialog(QDialog):
         self.setLayout(QVBoxLayout())
         self.resize(650, 270)
         text = QTextEdit()
-        theme = get_theme(get_settings().appearance.theme, as_dict=False)
+        theme = get_theme(get_settings().appearance.theme)
         _highlight = Pylighter(text.document(), "python", theme.syntax_style)
         text.setText(exception.as_text())
         text.setReadOnly(True)

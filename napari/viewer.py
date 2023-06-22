@@ -6,7 +6,7 @@ from weakref import WeakSet
 import magicgui as mgui
 
 from napari.components.viewer_model import ViewerModel
-from napari.utils import _magicgui, config
+from napari.utils import _magicgui
 
 if TYPE_CHECKING:
     # helpful for IDE support
@@ -86,6 +86,7 @@ class Viewer(ViewerModel):
             callers frame.
         """
         if self.window._qt_viewer._console is None:
+            self.window._qt_viewer.add_to_console_backlog(variables)
             return
         self.window._qt_viewer.console.push(variables)
 
@@ -146,15 +147,6 @@ class Viewer(ViewerModel):
         # Close the main window
         self.window.close()
 
-        if config.async_loading:
-            from napari.components.experimental.chunk import chunk_loader
-
-            # TODO_ASYNC: Find a cleaner way to do this? This fixes some
-            # tests. We are telling the ChunkLoader that this layer is
-            # going away:
-            # https://github.com/napari/napari/issues/1500
-            for layer in self.layers:
-                chunk_loader.on_layer_deleted(layer)
         self._instances.discard(self)
 
     @classmethod
