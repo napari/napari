@@ -606,7 +606,7 @@ class NapariPluginManager(PluginManager):
         Raises
         ------
         KeyError
-            If plugin `plugin_name` does not provide any widgets
+            If plugin `plugin_name` is not installed or does not provide any widgets.
         KeyError
             If plugin does not provide a widget named `widget_name`.
         ValueError
@@ -616,7 +616,7 @@ class NapariPluginManager(PluginManager):
         plg_wdgs = self._dock_widgets.get(plugin_name)
         if not plg_wdgs:
             msg = trans._(
-                'Plugin {plugin_name!r} does not provide any dock widgets',
+                'Plugin {plugin_name!r} is not installed or does not provide any dock widgets',
                 plugin_name=plugin_name,
                 deferred=True,
             )

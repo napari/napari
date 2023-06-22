@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-  "setuptools >= 42",
+  "setuptools >= 56",
   "wheel",
   "setuptools_scm[toml]>=3.4"
 ]
@@ -81,7 +81,7 @@ select = [
     "RUF", # ruff specyfic rules
 ]
 ignore = [
-    "E501", "UP006", "TCH001", "TCH002", "TCH003",
+    "E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
@@ -135,10 +135,6 @@ docstring-quotes = "double"
 # Disallow all relative imports.
 ban-relative-imports = "all"
 
-[tool.ruff.pyupgrade]
-# Preserve types, even if a file imports `from __future__ import annotations`.
-keep-runtime-typing = true
-
 [tool.ruff.isort]
 known-first-party=['napari']
 combine-as-imports = true
@@ -162,7 +158,6 @@ filterwarnings = [
   "error:::napari", # turn warnings from napari into errors
   "error:::test_.*", # turn warnings in our own tests into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
-  "ignore:Restart required for this change:UserWarning:napari",  # triggered by a lot of async tests
   "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
   "ignore::DeprecationWarning:tensorstore",
@@ -177,8 +172,6 @@ filterwarnings = [
   "ignore:There is no current event loop:DeprecationWarning:",
 ]
 markers = [
-    "sync_only: Test should only be run synchronously",
-    "async_only: Test should only be run asynchronously",
     "examples: Test of examples",
     "disable_qthread_start: Disable thread start in this Test",
     "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
@@ -195,10 +188,14 @@ plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
 ignore_missing_imports = true
 show_error_codes = true
 warn_redundant_casts = true
-ignore_errors = true
 
+
+# gloabl ignore error
 [[tool.mypy.overrides]]
-module = ['*._tests.*']
+module = ['*._tests.*',
+         '*._vendor.*',
+         '*.benchmarks.*',
+         'napari_builtins.*']
 ignore_errors = true
 
 [[tool.mypy.overrides]]
@@ -216,3 +213,221 @@ check_untyped_defs = true
 # disallow_any_generics = true
 # no_implicit_reexport = true
 # disallow_untyped_defs = true
+
+
+# individual ignore error
+# we should strive to remove those
+# See https://github.com/napari/napari/issues/2751
+[[tool.mypy.overrides]]
+module = [
+    'napari.__main__',
+    'napari._app_model._app',
+    'napari._app_model.actions._layer_actions',
+    'napari._app_model.constants._commands',
+    'napari._app_model.context._layerlist_context',
+    'napari._app_model.injection._processors',
+    'napari._event_loop',
+    'napari._qt',
+    'napari._qt._qapp_model._menus',
+    'napari._qt.code_syntax_highlight',
+    'napari._qt.containers._base_item_model',
+    'napari._qt.containers._base_item_view',
+    'napari._qt.containers._factory',
+    'napari._qt.containers._layer_delegate',
+    'napari._qt.containers.qt_layer_list',
+    'napari._qt.containers.qt_layer_model',
+    'napari._qt.containers.qt_list_model',
+    'napari._qt.containers.qt_list_view',
+    'napari._qt.containers.qt_tree_model',
+    'napari._qt.containers.qt_tree_view',
+    'napari._qt.dialogs.confirm_close_dialog',
+    'napari._qt.dialogs.preferences_dialog',
+    'napari._qt.dialogs.qt_about',
+    'napari._qt.dialogs.qt_activity_dialog',
+    'napari._qt.dialogs.qt_modal',
+    'napari._qt.dialogs.qt_notification',
+    'napari._qt.dialogs.qt_package_installer',
+    'napari._qt.dialogs.qt_plugin_dialog',
+    'napari._qt.dialogs.qt_plugin_report',
+    'napari._qt.dialogs.qt_reader_dialog',
+    'napari._qt.dialogs.screenshot_dialog',
+    'napari._qt.experimental.qt_chunk_receiver',
+    'napari._qt.experimental.qt_poll',
+    'napari._qt.layer_controls.qt_colormap_combobox',
+    'napari._qt.layer_controls.qt_image_controls',
+    'napari._qt.layer_controls.qt_image_controls_base',
+    'napari._qt.layer_controls.qt_labels_controls',
+    'napari._qt.layer_controls.qt_layer_controls_base',
+    'napari._qt.layer_controls.qt_layer_controls_container',
+    'napari._qt.layer_controls.qt_points_controls',
+    'napari._qt.layer_controls.qt_shapes_controls',
+    'napari._qt.layer_controls.qt_surface_controls',
+    'napari._qt.layer_controls.qt_tracks_controls',
+    'napari._qt.layer_controls.qt_vectors_controls',
+    'napari._qt.menus._util',
+    'napari._qt.menus.debug_menu',
+    'napari._qt.menus.file_menu',
+    'napari._qt.menus.window_menu',
+    'napari._qt.perf.qt_event_tracing',
+    'napari._qt.perf.qt_performance',
+    'napari._qt.qt_event_filters',
+    'napari._qt.qt_event_loop',
+    'napari._qt.qt_main_window',
+    'napari._qt.qt_resources',
+    'napari._qt.qt_resources._svg',
+    'napari._qt.qt_viewer',
+    'napari._qt.qthreading',
+    'napari._qt.utils',
+    'napari._qt.widgets._slider_compat',
+    'napari._qt.widgets.qt_color_swatch',
+    'napari._qt.widgets.qt_dict_table',
+    'napari._qt.widgets.qt_dims',
+    'napari._qt.widgets.qt_dims_slider',
+    'napari._qt.widgets.qt_dims_sorter',
+    'napari._qt.widgets.qt_extension2reader',
+    'napari._qt.widgets.qt_highlight_preview',
+    'napari._qt.widgets.qt_keyboard_settings',
+    'napari._qt.widgets.qt_message_popup',
+    'napari._qt.widgets.qt_mode_buttons',
+    'napari._qt.widgets.qt_plugin_sorter',
+    'napari._qt.widgets.qt_progress_bar',
+    'napari._qt.widgets.qt_range_slider_popup',
+    'napari._qt.widgets.qt_scrollbar',
+    'napari._qt.widgets.qt_size_preview',
+    'napari._qt.widgets.qt_spinbox',
+    'napari._qt.widgets.qt_splash_screen',
+    'napari._qt.widgets.qt_theme_sample',
+    'napari._qt.widgets.qt_tooltip',
+    'napari._qt.widgets.qt_viewer_buttons',
+    'napari._qt.widgets.qt_viewer_dock_widget',
+    'napari._qt.widgets.qt_viewer_status_bar',
+    'napari._qt.widgets.qt_welcome',
+    'napari._vispy.canvas',
+    'napari._vispy.experimental.texture_atlas',
+    'napari._vispy.experimental.tile_set',
+    'napari._vispy.experimental.tiled_image_visual',
+    'napari._vispy.experimental.vispy_tiled_image_layer',
+    'napari._vispy.filters.tracks',
+    'napari._vispy.layers.base',
+    'napari._vispy.layers.labels',
+    'napari._vispy.overlays.base',
+    'napari._vispy.overlays.base',
+    'napari._vispy.overlays.base',
+    'napari._vispy.overlays.base',
+    'napari._vispy.overlays.base',
+    'napari._vispy.overlays.base',
+    'napari._vispy.overlays.scale_bar',
+    'napari._vispy.utils.cursor',
+    'napari._vispy.utils.visual',
+    'napari._vispy.visuals.clipping_planes_mixin',
+    'napari.components._layer_slicer',
+    'napari.components._viewer_key_bindings',
+    'napari.components.camera',
+    'napari.components.dims',
+    'napari.components.experimental.chunk._cache',
+    'napari.components.experimental.chunk._commands._loader',
+    'napari.components.experimental.chunk._loader',
+    'napari.components.experimental.chunk._pool',
+    'napari.components.experimental.chunk._request',
+    'napari.components.experimental.monitor._api',
+    'napari.components.experimental.monitor._monitor',
+    'napari.components.experimental.monitor._service',
+    'napari.components.experimental.remote._commands',
+    'napari.components.experimental.remote._messages',
+    'napari.components.grid',
+    'napari.components.layerlist',
+    'napari.components.overlays.base',
+    'napari.components.overlays.bounding_box',
+    'napari.components.overlays.brush_circle',
+    'napari.components.overlays.scale_bar',
+    'napari.components.overlays.text',
+    'napari.components.viewer_model',
+    'napari.conftest',
+    'napari.layers._layer_actions',
+    'napari.layers._multiscale_data',
+    'napari.layers.base.base',
+    'napari.layers.image._image_key_bindings',
+    'napari.layers.image._image_utils',
+    'napari.layers.image._slice',
+    'napari.layers.image.experimental._chunk_set',
+    'napari.layers.image.experimental._chunked_image_loader',
+    'napari.layers.image.experimental._chunked_slice_data',
+    'napari.layers.image.experimental._octree_loader',
+    'napari.layers.image.experimental._octree_slice',
+    'napari.layers.image.experimental.octree',
+    'napari.layers.image.experimental.octree_chunk',
+    'napari.layers.image.experimental.octree_image',
+    'napari.layers.image.experimental.octree_intersection',
+    'napari.layers.image.experimental.octree_level',
+    'napari.layers.image.experimental.octree_util',
+    'napari.layers.image.image',
+    'napari.layers.intensity_mixin',
+    'napari.layers.points._points_key_bindings',
+    'napari.layers.points._points_utils',
+    'napari.layers.points._slice',
+    'napari.layers.points.points',
+    'napari.layers.shapes._shape_list',
+    'napari.layers.shapes._shapes_key_bindings',
+    'napari.layers.shapes._shapes_mouse_bindings',
+    'napari.layers.shapes._shapes_utils',
+    'napari.layers.shapes.shapes',
+    'napari.layers.surface._surface_key_bindings',
+    'napari.layers.surface.normals',
+    'napari.layers.surface.surface',
+    'napari.layers.surface.wireframe',
+    'napari.layers.tracks._track_utils',
+    'napari.layers.tracks._tracks_key_bindings',
+    'napari.layers.tracks.tracks',
+    'napari.layers.utils._link_layers',
+    'napari.layers.utils._text_utils',
+    'napari.layers.utils.color_encoding',
+    'napari.layers.utils.color_manager',
+    'napari.layers.utils.color_transformations',
+    'napari.layers.utils.interaction_box',
+    'napari.layers.utils.interactivity_utils',
+    'napari.layers.utils.layer_utils',
+    'napari.layers.utils.plane',
+    'napari.layers.utils.stack_utils',
+    'napari.layers.utils.string_encoding',
+    'napari.layers.utils.style_encoding',
+    'napari.layers.utils.text_manager',
+    'napari.resources._icons',
+    'napari.utils._magicgui',
+    'napari.utils._octree',
+    'napari.utils._testsupport',
+    'napari.utils._tracebacks',
+    'napari.utils.action_manager',
+    'napari.utils.colormaps.categorical_colormap',
+    'napari.utils.colormaps.categorical_colormap_utils',
+    'napari.utils.colormaps.colormap',
+    'napari.utils.colormaps.colormap_utils',
+    'napari.utils.colormaps.standardize_color',
+    'napari.utils.events.containers._dict',
+    'napari.utils.events.containers._evented_dict',
+    'napari.utils.events.containers._evented_list',
+    'napari.utils.events.containers._nested_list',
+    'napari.utils.events.containers._selectable_list',
+    'napari.utils.events.containers._selection',
+    'napari.utils.events.containers._set',
+    'napari.utils.events.containers._typed',
+    'napari.utils.events.custom_types',
+    'napari.utils.events.debugging',
+    'napari.utils.events.event',
+    'napari.utils.events.evented_model',
+    'napari.utils.geometry',
+    'napari.utils.interactions',
+    'napari.utils.key_bindings',
+    'napari.utils.mouse_bindings',
+    'napari.utils.perf._event',
+    'napari.utils.perf._patcher',
+    'napari.utils.perf._stat',
+    'napari.utils.perf._timers',
+    'napari.utils.progress',
+    'napari.utils.shortcuts',
+    'napari.utils.stubgen',
+    'napari.utils.theme',
+    'napari.utils.transforms.transform_utils',
+    'napari.utils.transforms.transforms',
+    'napari.utils.tree.group',
+]
+ignore_errors = true
