@@ -137,16 +137,16 @@ def test_get_value_3d_view_of_2d_image(ImageClass):
 
 
 @pytest.mark.parametrize('Layer, data, _', layer_test_data)
-def test_layer_id(Layer, data, _):
+def test_layer_unique_id(Layer, data, _):
     layer = Layer(data)
-    assert layer.id is not None
-    assert type(layer.id) is uuid.uuid4
+    assert layer.unique_id is not None
+    assert type(layer.unique_id) is uuid.UUID
 
 
 def test_layer_id_unique():
     layer1 = Image(np.random.rand(10, 10))
-    layer2 = Labels(np.ones((10, 10)))
-    assert layer1.id != layer2.id
+    layer2 = Labels(np.ones((10, 10)).astype(int))
+    assert layer1.unique_id != layer2.unique_id
 
 
 def test_zero_scale_layer():

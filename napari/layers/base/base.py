@@ -115,8 +115,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     ----------
     name : str
         Unique name of the layer.
-    id : uuid.UUID
-        Unique id of the layer. Generated using UUID version 4.
+    unique_id : hashable
+        Unique id of the layer. Guaranteed to be unique across the lifetime
+        of a viewer
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     visible : bool
@@ -252,7 +253,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # Needs to be imported here to avoid circular import in _source
         from .._source import current_source
 
-        self.id = uuid.uuid4()
+        self.unique_id = self._get_unique_id()
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
@@ -420,6 +421,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self.interactive = mode == Modeclass.PAN_ZOOM
         return mode, True
+    
+    def _get_unique_id(self):
+        """Unique id of the layer."""
+        return uuid.uuid4()
 
     @classmethod
     def _basename(cls):
