@@ -15,6 +15,7 @@ from napari._tests.utils import (
     check_layer_world_data_extent,
 )
 from napari.layers import Points
+from napari.layers.base._base_constants import ActionType
 from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._slice_input import _SliceInput
@@ -443,13 +444,20 @@ def test_remove_selected_updates_value():
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
+    layer.events.data = Mock()
     # set the value
     layer._value = 3
     layer._value_stored = 3
 
-    layer.selected_data = {0, 5, 6, 7}
+    selection = {0, 5, 6, 7}
+    layer.selected_data = selection
     layer.remove_selected()
-
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.REMOVE.value,
+        "data_indices": tuple(selection),
+        "vertex_indices": ((),),
+    }
     assert layer._value == 2
 
 
@@ -507,6 +515,7 @@ def test_move():
     data = 20 * np.random.random(shape)
     unmoved = copy(data)
     layer = Points(data)
+    layer.events.data = Mock()
 
     # Move one point relative to an initial drag start location
     layer._move([0], [0, 0])
@@ -514,10 +523,22 @@ def test_move():
     layer._drag_start = None
     assert np.all(layer.data[0] == unmoved[0] + [10, 10])
     assert np.all(layer.data[1:] == unmoved[1:])
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGE.value,
+        "data_indices": (0,),
+        "vertex_indices": ((),),
+    }
 
     # Move two points relative to an initial drag start location
     layer._move([1, 2], [2, 2])
     layer._move([1, 2], np.add([2, 2], [-3, 4]))
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGE.value,
+        "data_indices": (1, 2),
+        "vertex_indices": ((),),
+    }
     assert np.all(layer.data[1:2] == unmoved[1:2] + [-3, 4])
 
 
@@ -1115,9 +1136,18 @@ def test_add_point_direct(attribute: str):
     """Test adding points to layer directly"""
     layer = Points()
     assert len(getattr(layer, f'{attribute}_color')) == 0
+
+    layer.events.data = Mock()
     setattr(layer, f'current_{attribute}_color', 'red')
     coord = [18, 18]
+
     layer.add(coord)
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.ADD.value,
+        "data_indices": (-1,),
+        "vertex_indices": ((),),
+    }
     np.testing.assert_allclose(
         [[1, 0, 0, 1]], getattr(layer, f'{attribute}_color')
     )
