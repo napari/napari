@@ -505,14 +505,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self.events.mode(mode=str(mode))
 
-    def _get_unique_id(self):
-        """Unique id of the layer."""
-        return uuid.uuid4()
-
     @property
     def unique_id(self) -> Hashable:
         if self._unique_id is None:
-            self._unique_id = self._get_unique_id()
+            self._unique_id = uuid.uuid4()
         return self._unique_id
 
     @classmethod
