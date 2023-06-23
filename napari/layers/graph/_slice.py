@@ -144,7 +144,9 @@ class _GraphSliceRequest:
         scale = np.prod(scale_per_dim, axis=1)
         valid_nodes[valid_nodes] = matches
         slice_indices = np.where(valid_nodes)[0].astype(int)
-        edge_indices = self._valid_edges(valid_nodes)
+        edge_indices = self.data.subgraph_edges(
+            slice_indices, is_buffer_domain=True
+        )
         return slice_indices, edge_indices, scale
 
     def _get_slice_data(
@@ -162,27 +164,7 @@ class _GraphSliceRequest:
         matches = np.all(distances <= 0.5, axis=1)
         valid_nodes[valid_nodes] = matches
         slice_indices = np.where(valid_nodes)[0].astype(int)
-        edge_indices = self._valid_edges(valid_nodes)
+        edge_indices = self.data.subgraph_edges(
+            slice_indices, is_buffer_domain=True
+        )
         return slice_indices, edge_indices, 1
-
-    def _valid_edges(
-        self,
-        nodes_mask: np.ndarray,
-    ) -> np.ndarray:
-        """Compute edges (node pair) where both nodes are presents.
-
-        Parameters
-        ----------
-        nodes_mask : np.ndarray
-            Binary mask of available nodes.
-
-        Returns
-        -------
-        np.ndarray
-            (N x 2) array of nodes indices, where N is the number of valid edges.
-        """
-        _, edges = self.data.get_edges_buffers(is_buffer_domain=True)
-        valid_edges = edges[
-            np.logical_and(nodes_mask[edges[:, 0]], nodes_mask[edges[:, 1]])
-        ]
-        return valid_edges

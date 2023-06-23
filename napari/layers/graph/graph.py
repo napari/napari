@@ -407,28 +407,8 @@ class Graph(_BasePoints):
         coords : sequence of indices to add point at
         indices : optional indices of the newly inserted nodes.
         """
-        coords = np.atleast_2d(coords)
-        if indices is None:
-            new_starting_idx = self.data._buffer2world.max() + 1
-            indices = np.arange(
-                new_starting_idx, new_starting_idx + len(coords)
-            )
-
-        indices = np.atleast_1d(indices)
-
-        if len(coords) != len(indices):
-            raise ValueError(
-                trans._(
-                    'coordinates and indices must have the same length. Found {coords_size} and {idx_size}',
-                    coords_size=len(coords),
-                    idx_size=len(indices),
-                )
-            )
-
         prev_size = self.data.n_allocated_nodes
-
-        self.data.add_nodes(indices, coords)
-
+        self.data.add_nodes(indices=indices, coords=coords)
         self._data_changed(prev_size)
 
     def remove_selected(self) -> None:
