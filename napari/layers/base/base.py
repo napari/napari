@@ -32,6 +32,7 @@ from napari.layers.utils.layer_utils import (
     get_extent_world,
 )
 from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
+from napari.settings import get_settings
 from napari.utils._dask_utils import configure_dask
 from napari.utils._magicgui import (
     add_layer_to_viewer,
@@ -1125,7 +1126,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         slice_input = self._make_slice_input(point, ndisplay, order)
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
-            self.refresh()
+            self.refresh(force_sync=True)
 
     def _make_slice_input(
         self, point=None, ndisplay=2, order=None
@@ -1332,9 +1333,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Bool that forces a redraw to occur when `True`.
         """
 
-    def refresh(self, event=None):
+    def refresh(self, event=None, *, force_sync: bool = False):
         """Refresh all layer data based on current view slice."""
         logger.debug('Layer.refresh: %s', self)
+        # If async is enabled then emit an event that the viewer should handle.
+        if (not force_sync) and get_settings().experimental.async_:
+            self.events.reload(layer=self)
+            return
         if self.visible:
             self.set_view_slice()
             self.events.set_data()
@@ -1745,7 +1750,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.events.reload(Event('reload', layer=self))
+                self.refresh()
         else:
             # The stored corner_pixels attribute must contain valid indices.
             corners = np.zeros((2, self.ndim), dtype=int)
