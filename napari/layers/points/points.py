@@ -836,8 +836,8 @@ class Points(Layer):
                 self._size = np.mean(size, axis=1)
                 warnings.warn(
                     trans._(
-                        "Point sizes must be isotropic; the average from each dimension will be used instead. "
-                        "This will become an error in a future version.",
+                        "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be"
+                        " used instead. This will become an error in version 0.6.0.",
                         deferred=True,
                     ),
                     category=DeprecationWarning,
@@ -856,8 +856,8 @@ class Points(Layer):
         if isinstance(size, (list, tuple, np.ndarray)):
             warnings.warn(
                 trans._(
-                    "Point sizes must be isotropic; the average from each dimension will be used instead. "
-                    "This will become an error in a future version.",
+                    "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be used instead. "
+                    "This will become an error in version 0.6.0.",
                     deferred=True,
                 ),
                 category=DeprecationWarning,
