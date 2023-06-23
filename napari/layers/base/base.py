@@ -422,9 +422,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         cls = type(self)
         return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
 
-    def _mode_setter_helper(self, mode):
+    def _mode_setter_helper(self, mode: Union[Mode, str]) -> Mode:
         """
         Helper to manage callbacks in multiple layers
+
+        This will return a valid mode for the current layer, to for example
+        refuse to set a mode that is not supported by the layer if it is not editable.
+
+        This will as well manage the mouse callbacks.
+
 
         Parameters
         ----------
@@ -433,7 +439,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Returns
         -------
-        bool : whether mode changed
+        mode : type(self._modeclass)
+            New mode for the current layer.
 
         """
         mode = self._modeclass(mode)
