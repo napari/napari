@@ -119,6 +119,9 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             typ = type(self.__wrapped__).__name__
             self._private_attr_warning(name, typ)
 
+        if isinstance(value, PublicOnlyProxy):
+            value = value.__wrapped__
+
         setattr(self.__wrapped__, name, value)
         return None
 
@@ -134,7 +137,11 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     @classmethod
     def create(cls, obj: Any) -> Union['PublicOnlyProxy', Any]:
         # restrict the scope of this proxy to napari objects
-        mod = getattr(type(obj), '__module__', None) or ''
+
+        if type(obj).__name__ == 'method':
+            mod = getattr(obj, '__module__', None) or ''
+        else:
+            mod = getattr(type(obj), '__module__', None) or ''
         if not mod.startswith('napari'):
             return obj
         if isinstance(obj, PublicOnlyProxy):
@@ -146,6 +153,14 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
 class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
     def __call__(self, *args, **kwargs):
+        args = [
+            arg.__wrapped__ if isinstance(arg, PublicOnlyProxy) else arg
+            for arg in args
+        ]
+        kwargs = {
+            k: v.__wrapped__ if isinstance(v, PublicOnlyProxy) else v
+            for k, v in kwargs.items()
+        }
         return self.__wrapped__(*args, **kwargs)
 
 
