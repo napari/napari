@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from unittest.mock import patch
 
 import numpy as np
@@ -5,6 +6,7 @@ import pytest
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils._proxies import PublicOnlyProxy, ReadOnlyWrapper
+from napari.utils.events.containers._set import EventedSet
 
 
 def test_ReadOnlyWrapper_setitem():
@@ -135,3 +137,28 @@ def test_receive_return_proxy_object():
 def test_viewer_method():
     viewer = PublicOnlyProxy(ViewerModel())
     assert viewer.add_points() is not None
+
+
+def test_unwrap_on_call():
+    s = EventedSet()
+    p_s = PublicOnlyProxy(s)
+    text = "aaa"
+    p_text = PublicOnlyProxy(text)
+    p_s.add(p_text)
+
+    assert id(text) == id(list(s)[0])
+
+
+def test_unwrap_setattr():
+    @dataclass
+    class Sample:
+        a = "aaa"
+
+    s = Sample()
+    p_s = PublicOnlyProxy(s)
+
+    text = "bbb"
+    p_text = PublicOnlyProxy(text)
+
+    p_s.a = p_text
+    assert id(text) == id(s.a)
