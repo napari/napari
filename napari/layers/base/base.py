@@ -7,6 +7,7 @@ import uuid
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Hashable
 from contextlib import contextmanager
 from functools import cached_property
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union
@@ -124,9 +125,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     ----------
     name : str
         Unique name of the layer.
-    unique_id : hashable
+    unique_id : Hashable
         Unique id of the layer. Guaranteed to be unique across the lifetime
-        of a viewer
+        of a viewer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     visible : bool
@@ -285,7 +286,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
 
-        self.unique_id = self._get_unique_id()
+        self._unique_id = self._get_unique_id()
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
@@ -507,6 +508,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _get_unique_id(self):
         """Unique id of the layer."""
         return uuid.uuid4()
+
+    @property
+    def unique_id(self) -> Hashable:
+        return self._unique_id
 
     @classmethod
     def _basename(cls):
