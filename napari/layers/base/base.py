@@ -507,6 +507,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def unique_id(self) -> Hashable:
+        """Unique ID of the layer.
+
+        This is guaranteed to be unique to this specific layer instance
+        over the lifetime of the program.
+        """
         if self._unique_id is None:
             self._unique_id = uuid.uuid4()
         return self._unique_id
