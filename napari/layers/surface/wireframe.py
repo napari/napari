@@ -1,4 +1,4 @@
-from napari.utils.color import ColorValueType
+from napari.utils.color import ColorValue
 from napari.utils.events import EventedModel
 
 
@@ -18,5 +18,5 @@ class SurfaceWireframe(EventedModel):
     """
 
     visible: bool = False
-    color: ColorValueType = 'black'
+    color: ColorValue = ColorValue('black')
     width: float = 1
