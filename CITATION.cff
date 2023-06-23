@@ -3,6 +3,10 @@ message: If you use this software, please cite it using these metadata.
 title: 'napari: a multi-dimensional image viewer for Python'
 doi: 10.5281/zenodo.3555620
 authors:
+- given-names: Jannis
+  family-names: Ahlers
+  affiliation: Monash University
+  orcid: orcid.org/0000-0003-0630-1819
 - given-names: Daniel
   family-names: Althviz Moré
   affiliation: Quansight
@@ -34,6 +38,11 @@ authors:
 - given-names: Ahmet
   family-names: Can Solak
   affiliation: Chan Zuckerberg Biohub
+- given-names: Clément
+  family-names: Caporal
+  affiliation: Laboratory for Optics and Biosciences, Ecole Polytechnique, INSERM,
+    CNRS, Palaiseau, France
+  orcid: https://orcid.org/0000-0002-9441-9173
 - given-names: Draga
   family-names: Doncila Pop
 - given-names: Kira
@@ -73,9 +82,16 @@ authors:
   family-names: Lauer
   affiliation: Swiss Federal Institute of Technology (EPFL), Lausanne, Switzerland
   orcid: orcid.org/0000-0002-3656-2449
+- given-names: Gregor
+  family-names: Lichtner
+  affiliation: Universitätsmedizin Greifswald
+  orcid: https://orcid.org/0000-0002-5890-1958
 - given-names: Ziyang
   family-names: Liu
   affiliation: Chan Zuckerberg Initiative Foundation
+- given-names: Lucy
+  family-names: Liu
+  affiliation: Quansight
 - given-names: Alan
   family-names: Lowe
   affiliation: UCL & The Alan Turing Institute
