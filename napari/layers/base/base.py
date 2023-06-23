@@ -1345,7 +1345,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._update_thumbnail()
             self._set_highlight(force=True)
 
-    def world_to_data(self, position: npt.ArrayLike) -> np.ndarray:
+    def world_to_data(self, position: npt.ArrayLike) -> npt.NDArray:
         """Convert from world coordinates to data coordinates.
 
         Parameters
@@ -1392,7 +1392,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _world_to_displayed_data(
         self, position: np.ndarray, dims_displayed: List[int]
-    ) -> np.ndarray:
+    ) -> npt.NDArray:
         """Convert world to data coordinates for displayed dimensions only.
 
         Parameters
@@ -1424,7 +1424,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         return self._transforms[1:3].simplified
 
-    def _world_to_data_ray(self, vector: npt.ArrayLike) -> np.ndarray:
+    def _world_to_data_ray(self, vector: npt.ArrayLike) -> npt.NDArray:
         """Convert a vector defining an orientation from world coordinates to data coordinates.
         For example, this would be used to convert the view ray.
 
@@ -1445,7 +1445,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return normalized_vector
 
     def _world_to_displayed_data_ray(
-        self, vector_world: np.ndarray, dims_displayed: List[int]
+        self, vector_world: npt.NDArray, dims_displayed: List[int]
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 
@@ -1467,7 +1467,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return vector_data_ndisplay
 
     def _world_to_layer_dims(
-        self, *, world_dims: np.ndarray, ndim_world: int
+        self, *, world_dims: npt.NDArray, ndim_world: int
     ) -> np.ndarray:
         """Map world dimensions to layer dimensions while maintaining order.
 
@@ -1501,13 +1501,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return order[order >= offset] - offset
 
-    def _display_bounding_box(self, dims_displayed: List[int]) -> np.ndarray:
+    def _display_bounding_box(self, dims_displayed: List[int]) -> npt.NDArray:
         """An axis aligned (ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed].T
 
     def _display_bounding_box_augmented(
         self, dims_displayed: List[int]
-    ) -> np.ndarray:
+    ) -> npt.NDArray:
         """An augmented, axis-aligned (ndisplay, 2) bounding box.
 
         This bounding box for includes the "full" size of the layer, including
@@ -1602,16 +1602,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
         return start_point, end_point
 
-    def _get_offset_data_position(self, position: np.ndarray) -> np.ndarray:
+    def _get_offset_data_position(self, position: npt.NDArray) -> npt.NDArray:
         """Adjust position for offset between viewer and data coordinates."""
         return np.asarray(position)
 
     def _get_ray_intersections(
         self,
-        position: np.ndarray,
+        position: npt.NDArray,
         view_direction: np.ndarray,
         dims_displayed: List[int],
-        bounding_box: np.ndarray,
+        bounding_box: npt.NDArray,
         world: bool = True,
     ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
         """Get the start and end point for the ray extending
@@ -1660,7 +1660,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             # adjust for any offset between viewer and data coordinates
             position = self._get_offset_data_position(position)
 
-            print(type(position))
             view_dir = view_direction[dims_displayed]
             click_pos_data = position[dims_displayed]
 
@@ -1872,7 +1871,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _get_tooltip_text(
         self,
-        position: np.ndarray,
+        position: npt.NDArray,
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,

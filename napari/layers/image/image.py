@@ -886,7 +886,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         return value
 
-    def _get_offset_data_position(self, position: np.ndarray) -> np.ndarray:
+    def _get_offset_data_position(self, position: npt.NDArray) -> npt.NDArray:
         """Adjust position for offset between viewer and data coordinates.
 
         VisPy considers the coordinate system origin to be the canvas corner,
