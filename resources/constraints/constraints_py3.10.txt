@@ -91,7 +91,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.3
     # via vispy
-hypothesis==6.79.1
+hypothesis==6.79.2
     # via napari (setup.cfg)
 idna==3.4
     # via requests
@@ -108,7 +108,7 @@ in-n-out==0.1.7
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.23.2
+ipykernel==6.23.3
     # via
     #   napari-console
     #   qtconsole
@@ -128,7 +128,7 @@ jinja2==3.1.2
     #   torch
 jsonschema==4.17.3
     # via napari (setup.cfg)
-jupyter-client==8.2.0
+jupyter-client==8.3.0
     # via
     #   ipykernel
     #   qtconsole
@@ -176,8 +176,6 @@ napari-plugin-engine==0.2.0
     #   napari (setup.cfg)
     #   napari-console
     #   napari-svg
-napari-plugin-manager==0.1.0a2
-    # via napari (setup.cfg)
 napari-svg==0.1.10
     # via napari (setup.cfg)
 nest-asyncio==1.5.6
@@ -187,9 +185,7 @@ networkx==3.1
     #   scikit-image
     #   torch
 npe2==0.7.0
-    # via
-    #   napari (setup.cfg)
-    #   napari-plugin-manager
+    # via napari (setup.cfg)
 numcodecs==0.11.0
     # via zarr
 numpy==1.25.0
@@ -272,7 +268,7 @@ pillow==9.5.0
     #   scikit-image
 pint==0.22
     # via napari (setup.cfg)
-platformdirs==3.7.0
+platformdirs==3.8.0
     # via
     #   jupyter-core
     #   pooch
@@ -346,7 +342,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==7.3.2
+pytest==7.4.0
     # via
     #   napari (setup.cfg)
     #   pytest-cov
@@ -396,7 +392,6 @@ qtpy==2.3.1
     #   magicgui
     #   napari (setup.cfg)
     #   napari-console
-    #   napari-plugin-manager
     #   qtconsole
     #   superqt
 requests==2.31.0
@@ -451,10 +446,9 @@ superqt==0.4.1
     # via
     #   magicgui
     #   napari (setup.cfg)
-    #   napari-plugin-manager
 sympy==1.12
     # via torch
-tensorstore==0.1.37
+tensorstore==0.1.39
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (setup.cfg)
@@ -529,7 +523,7 @@ wheel==0.40.0
     #   nvidia-nvtx-cu11
 wrapt==1.15.0
     # via napari (setup.cfg)
-xarray==2023.5.0
+xarray==2023.6.0
     # via napari (setup.cfg)
 zarr==2.15.0
     # via napari (setup.cfg)
@@ -537,8 +531,6 @@ zipp==3.15.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.1.2
-    # via napari-plugin-manager
 setuptools==68.0.0
     # via
     #   nvidia-cublas-cu11
