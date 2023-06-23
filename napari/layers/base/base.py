@@ -8,11 +8,19 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import cached_property
-from typing import Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import magicgui as mgui
 import numpy as np
-import numpy.typing as npt
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import Blending, Mode
@@ -52,6 +60,10 @@ from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
+
 
 logger = logging.getLogger("napari.layers.base.base")
 
