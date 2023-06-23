@@ -286,7 +286,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
 
-        self._unique_id = self._get_unique_id()
+        self._unique_id = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
@@ -511,6 +511,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def unique_id(self) -> Hashable:
+        if self._unique_id is None:
+            self._unique_id = self._get_unique_id()
         return self._unique_id
 
     @classmethod
