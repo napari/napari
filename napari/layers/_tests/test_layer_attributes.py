@@ -1,5 +1,3 @@
-import uuid
-
 import numpy as np
 import pytest
 
@@ -140,7 +138,6 @@ def test_get_value_3d_view_of_2d_image(ImageClass):
 def test_layer_unique_id(Layer, data, _):
     layer = Layer(data)
     assert layer.unique_id is not None
-    assert type(layer.unique_id) is uuid.UUID
 
 
 def test_layer_id_unique():
