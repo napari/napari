@@ -3,6 +3,7 @@ import typing
 from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
 
+from napari import current_viewer
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.layers import Layer
 from napari.utils.translations import trans
@@ -48,6 +49,12 @@ class QtLayerListModel(QtListModel[Layer]):
                 QImage.Format_RGBA8888,
             )
         if role == LoadedRole:
+            viewer = current_viewer()
+            if viewer:
+                viewer_playing = viewer.window._qt_viewer.dims.is_playing
+                force_sync = viewer._layer_slicer._force_sync
+                if not force_sync:
+                    return layer.loaded and not viewer_playing
             return layer.loaded
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.

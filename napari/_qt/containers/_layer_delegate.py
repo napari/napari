@@ -79,11 +79,10 @@ class LayerDelegate(QStyledItemDelegate):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.layer_index = None
-        self.load_movie = QMovie(LOADING_GIF_PATH)
-        self.load_movie.setScaledSize(QSize(18, 18))
-        self.load_movie.frameChanged.connect(self.loading_frame_changed)
-        self._timer_id = None
+        self._load_movie = QMovie(LOADING_GIF_PATH)
+        self._load_movie.setScaledSize(QSize(18, 18))
+        self._load_movie.frameChanged.connect(self.loading_frame_changed)
+        self._load_movie.start()
         self._layer_visibility_states = WeakKeyDictionary()
         self._alt_click_layer = lambda: None
 
@@ -130,23 +129,6 @@ class LayerDelegate(QStyledItemDelegate):
         )  # put icon on the right
         option.features |= option.ViewItemFeature.HasDecoration
 
-    def timerEvent(self, event):
-        self._check_loaded()
-        self._timer_id = None
-        self.killTimer(event.timerId())
-
-    def _check_loaded(self):
-        """
-        Check loading state of the layer and pause loading movie if necessary.
-        """
-        if (
-            self.layer_index
-            and self.layer_index.isValid()
-            and self.layer_index.data(LoadedRole)
-        ):
-            self.load_movie.setPaused(True)
-            self.loading_frame_changed.emit()
-
     def _paint_loading(
         self,
         painter: QPainter,
@@ -160,21 +142,8 @@ class LayerDelegate(QStyledItemDelegate):
         load_rect.setWidth(h)
         load_rect.setHeight(h)
 
-        if (
-            loaded
-            and self.load_movie.state() == QMovie.Running
-            and not self._timer_id
-        ):
-            # Add some delay to check if the layer is still loaded to
-            # prevent blinking from the loading indicator
-            # when pausing the movie.
-            self.layer_index = index
-            self._timer_id = self.startTimer(600)
-        elif not loaded:
-            self.load_movie.start()
-
-        if self.load_movie.state() == QMovie.Running:
-            painter.drawPixmap(load_rect, self.load_movie.currentPixmap())
+        if not loaded:
+            painter.drawPixmap(load_rect, self._load_movie.currentPixmap())
 
     def _paint_thumbnail(self, painter, option, index):
         """paint the layer thumbnail."""
