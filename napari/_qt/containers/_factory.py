@@ -10,7 +10,7 @@ from napari.utils.tree import Group
 if TYPE_CHECKING:
     from typing import Optional
 
-    from qtpy.QtWidgets import QWidget
+    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
 
 def create_view(
