@@ -155,17 +155,17 @@ myst_heading_anchors = 3
 
 version_string = '.'.join(str(x) for x in __version_tuple__[:3])
 python_version = '3.9'
-python_version_range = '3.8–3.10'
+python_version_range = '3.8-3.10'
 python_minimum_version = '3.8'
 
 myst_substitutions = {
-   "napari_conda_version": f"`napari={version_string}`",
-   "napari_version": version_string,
-   "python_version": python_version,
-   "python_version_range": python_version_range,
-   "python_minimum_version": python_minimum_version,
-   "python_version_code": f"`python={python_version}`",
-   "conda_create_env": f"```sh\nconda create -y -n napari-env -c conda-forge python={python_version}\nconda activate napari-env\n```",
+    "napari_conda_version": f"`napari={version_string}`",
+    "napari_version": version_string,
+    "python_version": python_version,
+    "python_version_range": python_version_range,
+    "python_minimum_version": python_minimum_version,
+    "python_version_code": f"`python={python_version}`",
+    "conda_create_env": f"```sh\nconda create -y -n napari-env -c conda-forge python={python_version}\nconda activate napari-env\n```",
 }
 
 nb_output_stderr = 'show'
@@ -216,7 +216,10 @@ sphinx_gallery_conf = {
     'download_all_examples': False,
     'min_reported_time': 10,
     'only_warn_on_example_error': True,
-    'image_scrapers': ("matplotlib", qtgallery.qtscraper,),
+    'image_scrapers': (
+        "matplotlib",
+        qtgallery.qtscraper,
+    ),
     'reset_modules': (reset_napari_theme,),
     'reference_url': {'napari': None},
     'within_subsection_order': ExampleTitleSortKey,
@@ -259,7 +262,7 @@ linkcheck_ignore = [
     'https://napari.zulipchat.com/',
     '../_tags',
     'https://en.wikipedia.org/wiki/Napari#/media/File:Tabuaeran_Kiribati.jpg',
-    ]
+]
 
 
 def rewrite_github_anchor(app, uri: str):
