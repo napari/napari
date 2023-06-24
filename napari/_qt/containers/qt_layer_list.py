@@ -14,6 +14,8 @@ from napari.layers import Layer
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from typing import Optional
+
     from qtpy.QtGui import QKeyEvent
     from qtpy.QtWidgets import QWidget
 
@@ -42,7 +44,9 @@ class QtLayerList(QtListView[Layer]):
     reversing the view with ReverseProxyModel.
     """
 
-    def __init__(self, root: LayerList, parent: QWidget = None) -> None:
+    def __init__(
+        self, root: LayerList, parent: Optional[QWidget] = None
+    ) -> None:
         super().__init__(root, parent)
         self.setItemDelegate(LayerDelegate())
         self.setToolTip(trans._('Layer list'))
