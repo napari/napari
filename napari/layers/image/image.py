@@ -39,6 +39,8 @@ from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
+
     from napari.components import Dims
 
 
