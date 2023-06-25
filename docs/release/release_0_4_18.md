@@ -493,3 +493,25 @@ https://github.com/napari/napari
 - [Sean Martin](https://github.com/napari/napari/commits?author=seankmartin) - @seankmartin
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
 
+## New Contributors
+
+There are 18 new contributors for this release:
+
+- [Christopher Nauroth-Kreß](https://github.com/napari/napari/commits?author=Chris-N-K) - @Chris-N-K
+- [Clément Caporal](https://github.com/napari/napari/commits?author=ClementCaporal) - @ClementCaporal
+- [Constantin Pape](https://github.com/napari/napari/commits?author=constantinpape) - @constantinpape
+- [Craig T. Russell](https://github.com/napari/napari/commits?author=ctr26) - @ctr26
+- [Daniel Althviz Moré](https://github.com/napari/napari/commits?author=dalthviz) - @dalthviz
+- [David Ross](https://github.com/napari/napari/commits?author=davidpross) - @davidpross
+- [Gregor Lichtner](https://github.com/napari/napari/commits?author=glichtner) - @glichtner
+- [Jannis Ahlers](https://github.com/napari/napari/commits?author=jnahlers) - @jnahlers
+- [Jessy Lauer](https://github.com/napari/napari/commits?author=jeylau) - @jeylau
+- [Kabilar Gunalan](https://github.com/napari/napari/commits?author=kabilar) - @kabilar
+- [Katherine Hutchings](https://github.com/napari/napari/commits?author=katherine-hutchings) - @katherine-hutchings
+- [Konstantin Sofiiuk](https://github.com/napari/napari/commits?author=ksofiyuk) - @ksofiyuk
+- [LucaMarconato](https://github.com/napari/napari/commits?author=LucaMarconato) - @LucaMarconato
+- [Nadalyn Miller](https://github.com/napari/napari/commits?author=Nadalyn-CZI) - @Nadalyn-CZI
+- [Oren Amsalem](https://github.com/napari/napari/commits?author=orena1) - @orena1
+- [Paul Smith](https://github.com/napari/napari/commits?author=p-j-smith) - @p-j-smith
+- [Sean Martin](https://github.com/napari/napari/commits?author=seankmartin) - @seankmartin
+- [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
