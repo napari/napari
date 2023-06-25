@@ -22,9 +22,7 @@ will also require:
 
 If you wish to add/amend documentation that does contain code, you will also require:
 
-- A clean conda environment with a development installation of napari, see
-  the [contributor guide](napari-contributing#setting-up-a-development-installation)
-  for details
+- A clean conda environment with a development installation of napari, see the [contributor guide](dev-installation) for details
 - [Jupyter notebook](https://jupyter.org/) installed
 - Familiarity with Jupyter notebooks (code cells and markdown cells)
 - Familiarity with using napari through a Jupyter notebook
@@ -101,6 +99,7 @@ some steps:
   to [Step #3 - Preview your document](#3-preview-your-document)
 * For all other documentation changes, follow the steps below
 
+(update-toc)=
 ## 2. Update TOC
 
 If you are adding a new documentation file, you will need to add your document
@@ -169,7 +168,7 @@ subtrees:
 
 If your documentation change includes code, it is important that you ensure
 the code is working and executable. This is why you will need to have a
-development installation of napari installed. [Examples](..../examples/README)
+development installation of napari installed. [Examples](gallery)
 are automatically executed when the documentation is built and code problems can
 also be caught when previewing the built documentation. If your documentation
 change does not include code, you only need the napari docs dependencies

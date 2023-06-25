@@ -5,6 +5,7 @@ We welcome your contributions! Please see the provided steps below and never hes
 
 If you are a new user, we recommend checking out the detailed [Github Docs](https://docs.github.com/en).
 
+(dev-installation)=
 ## Setting up a development installation
 
 In order to make changes to `napari`, you will need to [fork](https://docs.github.com/en/get-started/quickstart/contributing-to-projects#forking-a-repository) the
