@@ -449,69 +449,69 @@ https://github.com/napari/napari
 
 ## 19 docs authors added to this release (alphabetical)
 
-- [Ashley Anderson](https://github.com/napari/napari/commits?author=aganders3) - @aganders3
-- [chili-chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
-- [Christopher Nauroth-Kreß](https://github.com/napari/napari/commits?author=Chris-N-K) - @Chris-N-K
-- [Curtis Rueden](https://github.com/napari/napari/commits?author=ctrueden) - @ctrueden
-- [Daniel Althviz Moré](https://github.com/napari/napari/commits?author=dalthviz) - @dalthviz
-- [David Stansby](https://github.com/napari/napari/commits?author=dstansby) - @dstansby
-- [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
-- [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
-- [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
-- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
-- [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
-- [Lucy Liu](https://github.com/napari/napari/commits?author=lucyleeow) - @lucyleeow
-- [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
-- [Melissa Weber Mendonça](https://github.com/napari/napari/commits?author=melissawm) - @melissawm
-- [Nadalyn Miller](https://github.com/napari/napari/commits?author=Nadalyn-CZI) - @Nadalyn-CZI
-- [Oren Amsalem](https://github.com/napari/napari/commits?author=orena1) - @orena1
-- [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
-- [Sean Martin](https://github.com/napari/napari/commits?author=seankmartin) - @seankmartin
-- [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
+- [Ashley Anderson](https://github.com/napari/docs/commits?author=aganders3) - @aganders3
+- [chili-chiu](https://github.com/napari/docs/commits?author=chili-chiu) - @chili-chiu
+- [Christopher Nauroth-Kreß](https://github.com/napari/docs/commits?author=Chris-N-K) - @Chris-N-K
+- [Curtis Rueden](https://github.com/napari/docs/commits?author=ctrueden) - @ctrueden
+- [Daniel Althviz Moré](https://github.com/napari/docs/commits?author=dalthviz) - @dalthviz
+- [David Stansby](https://github.com/napari/docs/commits?author=dstansby) - @dstansby
+- [Draga Doncila Pop](https://github.com/napari/docs/commits?author=DragaDoncila) - @DragaDoncila
+- [Grzegorz Bokota](https://github.com/napari/docs/commits?author=Czaki) - @Czaki
+- [Jaime Rodríguez-Guerra](https://github.com/napari/docs/commits?author=jaimergp) - @jaimergp
+- [Juan Nunez-Iglesias](https://github.com/napari/docs/commits?author=jni) - @jni
+- [Lorenzo Gaifas](https://github.com/napari/docs/commits?author=brisvag) - @brisvag
+- [Lucy Liu](https://github.com/napari/docs/commits?author=lucyleeow) - @lucyleeow
+- [Matthias Bussonnier](https://github.com/napari/docs/commits?author=Carreau) - @Carreau
+- [Melissa Weber Mendonça](https://github.com/napari/docs/commits?author=melissawm) - @melissawm
+- [Nadalyn Miller](https://github.com/napari/docs/commits?author=Nadalyn-CZI) - @Nadalyn-CZI
+- [Oren Amsalem](https://github.com/napari/docs/commits?author=orena1) - @orena1
+- [Peter Sobolewski](https://github.com/napari/docs/commits?author=psobolewskiPhD) - @psobolewskiPhD
+- [Sean Martin](https://github.com/napari/docs/commits?author=seankmartin) - @seankmartin
+- [Wouter-Michiel Vierdag](https://github.com/napari/docs/commits?author=melonora) - @melonora
 
 
 ## 20 docs reviewers added to this release (alphabetical)
 
-- [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
-- [Andrew Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
-- [Ashley Anderson](https://github.com/napari/napari/commits?author=aganders3) - @aganders3
-- [Christopher Nauroth-Kreß](https://github.com/napari/napari/commits?author=Chris-N-K) - @Chris-N-K
-- [David Stansby](https://github.com/napari/napari/commits?author=dstansby) - @dstansby
-- [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
-- [Gonzalo Peña-Castellanos](https://github.com/napari/napari/commits?author=goanpeca) - @goanpeca
-- [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
-- [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
-- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
-- [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
-- [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
-- [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
-- [Lucy Liu](https://github.com/napari/napari/commits?author=lucyleeow) - @lucyleeow
-- [Melissa Weber Mendonça](https://github.com/napari/napari/commits?author=melissawm) - @melissawm
-- [Nadalyn Miller](https://github.com/napari/napari/commits?author=Nadalyn-CZI) - @Nadalyn-CZI
-- [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
-- [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
-- [Sean Martin](https://github.com/napari/napari/commits?author=seankmartin) - @seankmartin
-- [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
+- [Alister Burt](https://github.com/napari/docs/commits?author=alisterburt) - @alisterburt
+- [Andrew Sweet](https://github.com/napari/docs/commits?author=andy-sweet) - @andy-sweet
+- [Ashley Anderson](https://github.com/napari/docs/commits?author=aganders3) - @aganders3
+- [Christopher Nauroth-Kreß](https://github.com/napari/docs/commits?author=Chris-N-K) - @Chris-N-K
+- [David Stansby](https://github.com/napari/docs/commits?author=dstansby) - @dstansby
+- [Draga Doncila Pop](https://github.com/napari/docs/commits?author=DragaDoncila) - @DragaDoncila
+- [Gonzalo Peña-Castellanos](https://github.com/napari/docs/commits?author=goanpeca) - @goanpeca
+- [Grzegorz Bokota](https://github.com/napari/docs/commits?author=Czaki) - @Czaki
+- [Jaime Rodríguez-Guerra](https://github.com/napari/docs/commits?author=jaimergp) - @jaimergp
+- [Juan Nunez-Iglesias](https://github.com/napari/docs/commits?author=jni) - @jni
+- [Kevin Yamauchi](https://github.com/napari/docs/commits?author=kevinyamauchi) - @kevinyamauchi
+- [Kira Evans](https://github.com/napari/docs/commits?author=kne42) - @kne42
+- [Lorenzo Gaifas](https://github.com/napari/docs/commits?author=brisvag) - @brisvag
+- [Lucy Liu](https://github.com/napari/docs/commits?author=lucyleeow) - @lucyleeow
+- [Melissa Weber Mendonça](https://github.com/napari/docs/commits?author=melissawm) - @melissawm
+- [Nadalyn Miller](https://github.com/napari/docs/commits?author=Nadalyn-CZI) - @Nadalyn-CZI
+- [Nicholas Sofroniew](https://github.com/napari/docs/commits?author=sofroniewn) - @sofroniewn
+- [Peter Sobolewski](https://github.com/napari/docs/commits?author=psobolewskiPhD) - @psobolewskiPhD
+- [Sean Martin](https://github.com/napari/docs/commits?author=seankmartin) - @seankmartin
+- [Wouter-Michiel Vierdag](https://github.com/napari/docs/commits?author=melonora) - @melonora
 
 ## New Contributors
 
 There are 18 new contributors for this release:
 
-- [Christopher Nauroth-Kreß](https://github.com/napari/napari/commits?author=Chris-N-K) - @Chris-N-K
-- [Clément Caporal](https://github.com/napari/napari/commits?author=ClementCaporal) - @ClementCaporal
-- [Constantin Pape](https://github.com/napari/napari/commits?author=constantinpape) - @constantinpape
-- [Craig T. Russell](https://github.com/napari/napari/commits?author=ctr26) - @ctr26
-- [Daniel Althviz Moré](https://github.com/napari/napari/commits?author=dalthviz) - @dalthviz
-- [David Ross](https://github.com/napari/napari/commits?author=davidpross) - @davidpross
-- [Gregor Lichtner](https://github.com/napari/napari/commits?author=glichtner) - @glichtner
-- [Jannis Ahlers](https://github.com/napari/napari/commits?author=jnahlers) - @jnahlers
-- [Jessy Lauer](https://github.com/napari/napari/commits?author=jeylau) - @jeylau
-- [Kabilar Gunalan](https://github.com/napari/napari/commits?author=kabilar) - @kabilar
-- [Katherine Hutchings](https://github.com/napari/napari/commits?author=katherine-hutchings) - @katherine-hutchings
-- [Konstantin Sofiiuk](https://github.com/napari/napari/commits?author=ksofiyuk) - @ksofiyuk
-- [LucaMarconato](https://github.com/napari/napari/commits?author=LucaMarconato) - @LucaMarconato
-- [Nadalyn Miller](https://github.com/napari/napari/commits?author=Nadalyn-CZI) - @Nadalyn-CZI
-- [Oren Amsalem](https://github.com/napari/napari/commits?author=orena1) - @orena1
-- [Paul Smith](https://github.com/napari/napari/commits?author=p-j-smith) - @p-j-smith
-- [Sean Martin](https://github.com/napari/napari/commits?author=seankmartin) - @seankmartin
-- [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
+- Christopher Nauroth-Kreß [docs](https://github.com/napari/docs/commits?author=Chris-N-K) - @Chris-N-K
+- Clément Caporal [napari](https://github.com/napari/napari/commits?author=ClementCaporal) - @ClementCaporal
+- Constantin Pape [napari](https://github.com/napari/napari/commits?author=constantinpape) - @constantinpape
+- Craig T. Russell [napari](https://github.com/napari/napari/commits?author=ctr26) - @ctr26
+- Daniel Althviz Moré [docs](https://github.com/napari/docs/commits?author=dalthviz) [napari](https://github.com/napari/napari/commits?author=dalthviz) - @dalthviz
+- David Ross [napari](https://github.com/napari/napari/commits?author=davidpross) - @davidpross
+- Gregor Lichtner [napari](https://github.com/napari/napari/commits?author=glichtner) - @glichtner
+- Jannis Ahlers [napari](https://github.com/napari/napari/commits?author=jnahlers) - @jnahlers
+- Jessy Lauer [napari](https://github.com/napari/napari/commits?author=jeylau) - @jeylau
+- Kabilar Gunalan [napari](https://github.com/napari/napari/commits?author=kabilar) - @kabilar
+- Katherine Hutchings [napari](https://github.com/napari/napari/commits?author=katherine-hutchings) - @katherine-hutchings
+- Konstantin Sofiiuk [napari](https://github.com/napari/napari/commits?author=ksofiyuk) - @ksofiyuk
+- LucaMarconato [napari](https://github.com/napari/napari/commits?author=LucaMarconato) - @LucaMarconato
+- Nadalyn Miller [docs](https://github.com/napari/docs/commits?author=Nadalyn-CZI) [napari](https://github.com/napari/napari/commits?author=Nadalyn-CZI) - @Nadalyn-CZI
+- Oren Amsalem [docs](https://github.com/napari/docs/commits?author=orena1) - @orena1
+- Paul Smith [napari](https://github.com/napari/napari/commits?author=p-j-smith) - @p-j-smith
+- Sean Martin [docs](https://github.com/napari/docs/commits?author=seankmartin) [napari](https://github.com/napari/napari/commits?author=seankmartin) - @seankmartin
+- Wouter-Michiel Vierdag [docs](https://github.com/napari/docs/commits?author=melonora) [napari](https://github.com/napari/napari/commits?author=melonora) - @melonora
