@@ -29,6 +29,10 @@ def _open_folder_with_plugin(window: Window):
     window._qt_viewer._open_folder_dialog(choose_plugin=True)
 
 
+def _save_selected_layers(qt_viewer: QtViewer):
+    qt_viewer._save_layers_dialog(selected=True)
+
+
 Q_FILE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.DLG_OPEN_FILES,
@@ -92,7 +96,7 @@ Q_FILE_ACTIONS: List[Action] = [
     Action(
         id=f"{CommandId.DLG_SAVE_LAYERS}.selected",
         title=trans._('Save Selected Layers...'),
-        callback=lambda: QtViewer._save_layers_dialog(selected=True),
+        callback=_save_selected_layers,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[StandardKeyBinding.Save],
         enablement=(LLSCK.num_selected_layers > 0),
