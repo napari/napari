@@ -79,7 +79,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         for i in list(self.selection):
             idx = self.index(i)
             self.remove(i)
-        if initial_len < len(self):
+        if initial_len > len(self):
             if isinstance(idx, int):
                 new = max(0, (idx - 1))
                 do_add = len(self) > new
