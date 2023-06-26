@@ -99,6 +99,10 @@ authors:
 - given-names: Alan
   family-names: Lowe
   affiliation: UCL & The Alan Turing Institute
+- given-names: Luca
+  family-names: Marconato
+  affiliation: EMBL Heidelberg
+  orcid: https://orcid.org/0000-0003-3198-1326
 - given-names: Sean
   family-names: Martin
   affiliation: MetaCell
