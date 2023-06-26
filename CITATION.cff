@@ -128,6 +128,8 @@ authors:
   family-names: Pape
   affiliation: Georg-August-Universität Göttingen
   orcid: https://orcid.org/0000-0001-6562-7187
+- given-names: Kim
+  family-names: Pevey
 - given-names: Gonzalo
   family-names: Peña-Castellanos
   affiliation: Quansight, Inc. / SIHSA Ltda
@@ -162,6 +164,8 @@ authors:
   family-names: Sobolewski
   affiliation: West Pomeranian University of Technology, Szczecin
   orcid: https://orcid.org/0000-0002-2097-0990
+- given-names: Konstantin
+  family-names: Sofiiuk
 - given-names: Nicholas
   family-names: Sofroniew
   affiliation: Chan Zuckerberg Initiative
