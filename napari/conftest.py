@@ -48,34 +48,14 @@ import dask.threaded
 import numpy as np
 import pytest
 from IPython.core.history import HistoryManager
+from packaging.version import parse as parse_version
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
-from napari.utils.config import async_loading
 from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
-
-
-def pytest_addoption(parser):
-    """Add napari specific command line options.
-
-    --aysnc_only
-        Run only asynchronous tests, not sync ones.
-
-    Notes
-    -----
-    Due to the placement of this conftest.py file, you must specifically name
-    the napari folder such as "pytest napari --aysnc_only"
-    """
-
-    parser.addoption(
-        "--async_only",
-        action="store_true",
-        default=False,
-        help="run only asynchronous tests",
-    )
 
 
 @pytest.fixture
@@ -180,56 +160,6 @@ def layers():
     return LayerList(list_of_layers)
 
 
-# Currently we cannot run async and async in the invocation of pytest
-# because we get a segfault for unknown reasons. So for now:
-# "pytest" runs sync_only
-# "pytest napari --async_only" runs async only
-@pytest.fixture(scope="session", autouse=True)
-def configure_loading(request):
-    """Configure async/async loading."""
-    if request.config.getoption("--async_only"):
-        # Late import so we don't import experimental code unless using it.
-        from napari.components.experimental.chunk import synchronous_loading
-
-        with synchronous_loading(False):
-            yield
-    else:
-        yield  # Sync so do nothing.
-
-
-def _is_async_mode() -> bool:
-    """Return True if we are currently loading chunks asynchronously
-
-    Returns
-    -------
-    bool
-        True if we are currently loading chunks asynchronously.
-    """
-    if not async_loading:
-        return False  # Not enabled at all.
-
-    # Late import so we don't import experimental code unless using it.
-    from napari.components.experimental.chunk import chunk_loader
-
-    return not chunk_loader.force_synchronous
-
-
-@pytest.fixture(autouse=True)
-def skip_sync_only(request):
-    """Skip async_only tests if running async."""
-    sync_only = request.node.get_closest_marker('sync_only')
-    if _is_async_mode() and sync_only:
-        pytest.skip("running with --async_only")
-
-
-@pytest.fixture(autouse=True)
-def skip_async_only(request):
-    """Skip async_only tests if running sync."""
-    async_only = request.node.get_closest_marker('async_only')
-    if not _is_async_mode() and async_only:
-        pytest.skip("not running with --async_only")
-
-
 @pytest.fixture(autouse=True)
 def skip_examples(request):
     """Skip examples test if ."""
@@ -314,9 +244,9 @@ HistoryManager.enabled = False
 @pytest.fixture
 def napari_svg_name():
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
-    from importlib.metadata import metadata
+    from importlib.metadata import version
 
-    if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
+    if parse_version(version('napari-svg')) < parse_version('0.1.6'):
         return 'svg'
 
     return 'napari-svg'
@@ -686,8 +616,44 @@ def dangling_qtimers(monkeypatch, request):
         long_desc += "The QTimers were started in:\n"
     else:
         long_desc += "The QTimer was started in:\n"
+
+    def _check_throttle_info(path):
+        if "superqt" in path and "throttler" in path:
+            return (
+                path
+                + " it's possible that there was a problem with unfinished work by a "
+                "qthrottler; to solve this, you can either try to wait (such as with "
+                "`qtbot.wait`) or disable throttling with the disable_throttling fixture"
+            )
+        return path
+
     assert not dangling_timers, long_desc + "\n".join(
-        x[1] for x in dangling_timers
+        _check_throttle_info(x[1]) for x in dangling_timers
+    )
+
+
+def _throttle_mock(self):
+    self.triggered.emit()
+
+
+def _flush_mock(self):
+    """There are no waiting events."""
+
+
+@pytest.fixture
+def disable_throttling(monkeypatch):
+    """Disable qthrottler from superqt.
+
+    This is sometimes necessary to avoid flaky failures in tests
+    due to dangling qt timers.
+    """
+    # if this monkeypath fails then you should update path to GenericSignalThrottler
+    monkeypatch.setattr(
+        "superqt.utils._throttler.GenericSignalThrottler.throttle",
+        _throttle_mock,
+    )
+    monkeypatch.setattr(
+        "superqt.utils._throttler.GenericSignalThrottler.flush", _flush_mock
     )
 
 

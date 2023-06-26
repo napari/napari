@@ -6,7 +6,7 @@ repos:
       pass_filenames: true
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.270
+    rev: v0.0.272
     hooks:
       - id: ruff
         exclude: _vendor|vendored
@@ -16,6 +16,6 @@ repos:
     - id: import-linter
       stages: [manual]
 -   repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.23.0
+    rev: 0.23.2
     hooks:
       - id: check-github-workflows
