@@ -121,14 +121,12 @@ class _LayerSlicer:
         >>> with layer_slice.force_sync():
         >>>     layer_slicer.submit(layers=[layer], dims=Dims())
         """
-        logger.debug('_LayerSlicer.force_sync: start, %s', self._force_sync)
         prev = self._force_sync
         self._force_sync = True
         try:
             yield None
         finally:
             self._force_sync = prev
-        logger.debug('_LayerSlicer.force_sync: end, %s', self._force_sync)
 
     def wait_until_idle(self, timeout: Optional[float] = None) -> None:
         """Wait for all slicing tasks to complete before returning.
@@ -144,7 +142,6 @@ class _LayerSlicer:
         TimeoutError: when the timeout limit has been exceeded and the task is
             not yet complete
         """
-        logger.debug('_LayerSlicer.wait_until_idle')
         futures = self._layers_to_task.values()
         _, not_done_futures = wait(futures, timeout=timeout)
 
@@ -220,7 +217,6 @@ class _LayerSlicer:
         if len(requests) > 0:
             logger.debug('Submitting task %s', id(task))
             task = self._executor.submit(self._slice_layers, requests)
-            logger.debug('Submitted task %s', id(task))
             # Store task before adding done callback to ensure there is always
             # a task to remove in the done callback.
             with self._lock_layers_to_task:
