@@ -1,3 +1,5 @@
+import sys
+from pathlib import Path
 from typing import List
 
 from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
@@ -9,7 +11,6 @@ from napari._app_model.context import (
 )
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
-from napari.utils.misc import running_as_bundled_app
 from napari.utils.translations import trans
 
 
@@ -160,7 +161,9 @@ Q_FILE_ACTIONS: List[Action] = [
             {
                 'id': MenuId.MENUBAR_FILE,
                 'group': MenuGroup.CLOSE,
-                'when': running_as_bundled_app(),
+                'when': (
+                    Path(sys.executable).parent / ".napari_is_bundled"
+                ).exists(),
             }
         ],
     ),
