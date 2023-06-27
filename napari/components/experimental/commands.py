@@ -1,7 +1,7 @@
 """ExperimentalNamespace and CommandProcessor classes.
 """
 
-HELP_STR = f"""
+HELP_STR = """
 Available Commands
 ------------------
 experimental.cmds.loader
