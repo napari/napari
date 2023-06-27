@@ -130,6 +130,7 @@ SurfaceData = NewType("SurfaceData", Tuple[np.ndarray, np.ndarray, np.ndarray])
 TracksData = NewType("TracksData", np.ndarray)
 VectorsData = NewType("VectorsData", np.ndarray)
 _LayerData = Union[
+    GraphData,
     ImageData,
     LabelsData,
     PointsData,
