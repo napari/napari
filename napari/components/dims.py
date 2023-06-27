@@ -34,7 +34,7 @@ class Dims(EventedModel):
         Number of displayed dimensions.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
-        coordinates space.
+        coordinates space. Lower and upper bounds are inclusive.
     point : tuple of floats
         Dims position in world coordinates for each dimension.
     margin_left : tuple of floats
@@ -56,7 +56,7 @@ class Dims(EventedModel):
         Number of displayed dimensions.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
-        coordinates space.
+        coordinates space. Lower and upper bounds are inclusive.
     point : tuple of floats
         Dims position in world coordinates for each dimension.
     margin_left : tuple of floats
@@ -93,6 +93,7 @@ class Dims(EventedModel):
     ndisplay: Literal[2, 3] = 2
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
+
     range: Tuple[RangeTuple, ...] = ()
     margin_left: Tuple[float, ...] = ()
     margin_right: Tuple[float, ...] = ()
@@ -101,6 +102,7 @@ class Dims(EventedModel):
     last_used: int = 0
 
     # private vars
+    _play_ready: bool = True  # False if currently awaiting a draw event
     _scroll_progress: int = 0
 
     # validators
@@ -180,8 +182,8 @@ class Dims(EventedModel):
         # order and label default computation is too different to include in ensure_len()
         # Check the order tuple has same number of elements as ndim
         order = values['order']
-        order_ndim = len(order)
         if len(order) < ndim:
+            order_ndim = len(order)
             # new dims are always prepended
             prepended_dims = tuple(range(ndim - order_ndim))
             # maintain existing order, but shift accordingly
@@ -192,7 +194,7 @@ class Dims(EventedModel):
         updated['order'] = order
 
         # Check the order is a permutation of 0, ..., ndim - 1
-        if not set(updated['order']) == set(range(ndim)):
+        if set(updated['order']) != set(range(ndim)):
             raise ValueError(
                 trans._(
                     "Invalid ordering {order} for {ndim} dimensions",
@@ -222,16 +224,18 @@ class Dims(EventedModel):
     def nsteps(self) -> Tuple[float, ...]:
         return tuple(
             # "or 1" ensures degenerate dimension works
-            int((rng.stop - rng.start) / (rng.step or 1))
+            int((rng.stop - rng.start) / (rng.step or 1)) + 1
             for rng in self.range
         )
 
     @nsteps.setter
     def nsteps(self, value):
-        self.range = [
-            (rng.start, rng.stop, (rng.stop - rng.start) / nsteps)
+        self.range = tuple(
+            RangeTuple(
+                rng.start, rng.stop, (rng.stop - rng.start) / (nsteps - 1)
+            )
             for rng, nsteps in zip(self.range, value)
-        ]
+        )
 
     @property
     def current_step(self):
@@ -242,10 +246,10 @@ class Dims(EventedModel):
 
     @current_step.setter
     def current_step(self, value):
-        self.point = [
+        self.point = tuple(
             rng.start + point * rng.step
             for point, rng in zip(value, self.range)
-        ]
+        )
 
     @property
     def thickness(self) -> Tuple[float, ...]:
@@ -295,7 +299,7 @@ class Dims(EventedModel):
         full_range = list(self.range)
         for ax, val in zip(axis, value):
             full_range[ax] = val
-        self.range = full_range
+        self.range = tuple(full_range)
 
     def set_point(
         self,
@@ -317,7 +321,7 @@ class Dims(EventedModel):
         full_point = list(self.point)
         for ax, val in zip(axis, value):
             full_point[ax] = val
-        self.point = full_point
+        self.point = tuple(full_point)
 
     def set_current_step(
         self,
@@ -425,6 +429,9 @@ class Dims(EventedModel):
         nsteps = np.array(self.nsteps)
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
+
+    def _go_to_center_step(self):
+        self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
 
     def _sanitize_input(
         self, axis, value, value_is_sequence=False

@@ -97,7 +97,7 @@ class EventedSet(MutableSet[_T]):
             self._emit_change(added={}, removed=values)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({repr(self._set)})"
+        return f"{type(self).__name__}({self._set!r})"
 
     def update(self, others: Iterable[_T] = ()) -> None:
         """Update this set with the union of this set and others"""

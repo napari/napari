@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
     import napari.types
 
-
 try:
     import qtpy  # noqa: F401 need to be ignored as qtpy may be available but Qt bindings may not be
 except ModuleNotFoundError:
@@ -119,7 +118,6 @@ def test_magicgui_add_future_data(
     _assert_stuff()
 
 
-@pytest.mark.sync_only
 def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
     """Test that annotating with FunctionWorker works."""
     from napari.qt.threading import FunctionWorker, thread_worker

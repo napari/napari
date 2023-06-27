@@ -10,6 +10,7 @@ from psygnal.containers import Selection
 from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
+from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -185,9 +186,8 @@ class Points(Layer):
         For example usage, see /napari/examples/add_points_with_text.py.
     symbol : array of str
         Array of symbols for each point.
-    size : array (N, D)
-        Array of sizes for each point in each dimension. Must have the same
-        shape as the layer `data`.
+    size : array (N,)
+        Array of sizes for each point. Must have the same shape as the layer `data`.
     edge_width : array (N,)
         Width of the marker edges in pixels for all points
     edge_width : array (N,)
@@ -233,7 +233,7 @@ class Points(Layer):
     out_of_slice_display : bool
         If True, renders points not just in central plane but also slightly out of slice
         according to specified point marker size.
-    selected_data : set
+    selected_data : Selection
         Integer indices of any selected points.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
@@ -271,8 +271,8 @@ class Points(Layer):
 
     Notes
     -----
-    _view_data : array (M, 2)
-        2D coordinates of points in the currently viewed slice.
+    _view_data : array (M, D)
+        coordinates of points in the currently viewed slice.
     _view_size : array (M, )
         Size of the point markers in the currently viewed slice.
     _view_symbol : array (M, )
@@ -368,7 +368,6 @@ class Points(Layer):
         data, ndim = fix_data_points(data, ndim)
 
         # Indices of selected points
-        self._selected_data = set()
         self._selected_data_stored = set()
         self._selected_data_history = set()
         # Indices of selected points within the currently viewed slice
@@ -554,16 +553,7 @@ class Points(Layer):
                 # If there are now more points, add the size and colors of the
                 # new ones
                 adding = len(data) - cur_npoints
-                if len(self._size) > 0:
-                    new_size = copy(self._size[-1])
-                    for i in self._slice_input.displayed:
-                        new_size[i] = self.current_size
-                else:
-                    # Add the default size, with a value for each dimension
-                    new_size = np.repeat(
-                        self.current_size, self._size.shape[1]
-                    )
-                size = np.repeat([new_size], adding, axis=0)
+                size = np.repeat(self.current_size, adding, axis=0)
 
                 if len(self._edge_width) > 0:
                     new_edge_width = copy(self._edge_width[-1])
@@ -597,7 +587,6 @@ class Points(Layer):
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
-        self.events.data(value=self.data)
         self._reset_editable()
 
     def _on_selection(self, selected):
@@ -757,7 +746,20 @@ class Points(Layer):
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
             extrema = np.vstack([mins, maxs])
-        return extrema
+        return extrema.astype(float)
+
+    @property
+    def _extent_data_augmented(self):
+        # _extent_data is a property that returns a new/copied array, which
+        # is safe to modify below
+        extent = self._extent_data
+        if len(self.size) == 0:
+            return extent
+
+        max_point_size = np.max(self.size)
+        extent[0] -= max_point_size / 2
+        extent[1] += max_point_size / 2
+        return extent
 
     @property
     def out_of_slice_display(self) -> bool:
@@ -810,14 +812,15 @@ class Points(Layer):
 
     @property
     def size(self) -> np.ndarray:
-        """(N, D) array: size of all N points in D dimensions."""
+        """(N,) array: size of all N points."""
         return self._size
 
     @size.setter
     def size(self, size: Union[int, float, np.ndarray, list]) -> None:
         try:
-            self._size = np.broadcast_to(size, self.data.shape).copy()
+            self._size = np.broadcast_to(size, len(self.data)).copy()
         except ValueError as e:
+            # deprecated anisotropic sizes; extra check should be removed in future version
             try:
                 self._size = np.broadcast_to(
                     size, self.data.shape[::-1]
@@ -829,6 +832,18 @@ class Points(Layer):
                         deferred=True,
                     )
                 ) from e
+            else:
+                self._size = np.mean(size, axis=1)
+                warnings.warn(
+                    trans._(
+                        "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be"
+                        " used instead. This will become an error in version 0.6.0.",
+                        deferred=True,
+                    ),
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+        self._clear_extent_augmented()
         self.refresh()
 
     @property
@@ -838,22 +853,37 @@ class Points(Layer):
 
     @current_size.setter
     def current_size(self, size: Union[None, float]) -> None:
-        if (isinstance(size, numbers.Number) and size < 0) or (
-            isinstance(size, list) and min(size) < 0
-        ):
+        if isinstance(size, (list, tuple, np.ndarray)):
             warnings.warn(
-                message=trans._(
-                    'current_size value must be positive, value will be left at {value}.',
+                trans._(
+                    "Since 0.4.18 point sizes must be isotropic; the average from each dimension will be used instead. "
+                    "This will become an error in version 0.6.0.",
                     deferred=True,
-                    value=self.current_size,
                 ),
-                category=RuntimeWarning,
+                category=DeprecationWarning,
+                stacklevel=2,
             )
-            size = self.current_size
+            size = size[-1]
+        if not isinstance(size, numbers.Number):
+            raise TypeError(
+                trans._(
+                    'currrent size must be a number',
+                    deferred=True,
+                )
+            )
+        if size < 0:
+            raise ValueError(
+                trans._(
+                    'current_size value must be positive.',
+                    deferred=True,
+                ),
+            )
+
         self._current_size = size
         if self._update_properties and len(self.selected_data) > 0:
-            for i in self.selected_data:
-                self.size[i, :] = (self.size[i, :] > 0) * size
+            idx = np.fromiter(self.selected_data, dtype=int)
+            self.size[idx] = size
+            self._clear_extent_augmented()
             self.refresh()
             self.events.size()
         self.events.current_size()
@@ -972,8 +1002,8 @@ class Points(Layer):
     def current_edge_width(self, edge_width: Union[None, float]) -> None:
         self._current_edge_width = edge_width
         if self._update_properties and len(self.selected_data) > 0:
-            for i in self.selected_data:
-                self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
+            idx = np.fromiter(self.selected_data, dtype=int)
+            self.edge_width[idx] = edge_width
             self.refresh()
             self.events.edge_width()
         self.events.current_edge_width()
@@ -1301,43 +1331,36 @@ class Points(Layer):
             self._set_highlight()
             return
         index = list(self._selected_data)
-        if (
-            unique_edge_color := _unique_element(self.edge_color[index])
-        ) is not None:
-            with self.block_update_properties():
+        with self.block_update_properties():
+            if (
+                unique_edge_color := _unique_element(self.edge_color[index])
+            ) is not None:
                 self.current_edge_color = unique_edge_color
 
-        if (
-            unique_face_color := _unique_element(self.face_color[index])
-        ) is not None:
-            with self.block_update_properties():
+            if (
+                unique_face_color := _unique_element(self.face_color[index])
+            ) is not None:
                 self.current_face_color = unique_face_color
 
-        # Calculate the mean size across the displayed dimensions for
-        # each point to be consistent with `_view_size`.
-        mean_size = np.mean(
-            self.size[np.ix_(index, self._slice_input.displayed)], axis=1
-        )
-        if (unique_size := _unique_element(mean_size)) is not None:
-            with self.block_update_properties():
+            if (unique_size := _unique_element(self.size[index])) is not None:
                 self.current_size = unique_size
 
-        if (
-            unique_edge_width := _unique_element(self.edge_width[index])
-        ) is not None:
-            with self.block_update_properties():
+            if (
+                unique_edge_width := _unique_element(self.edge_width[index])
+            ) is not None:
                 self.current_edge_width = unique_edge_width
-        if (unique_symbol := _unique_element(self.symbol[index])) is not None:
-            with self.block_update_properties():
+            if (
+                unique_symbol := _unique_element(self.symbol[index])
+            ) is not None:
                 self.current_symbol = unique_symbol
 
-        unique_properties = {}
-        for k, v in self.properties.items():
-            unique_properties[k] = _unique_element(v[index])
+            unique_properties = {}
+            for k, v in self.properties.items():
+                unique_properties[k] = _unique_element(v[index])
 
-        if all(p is not None for p in unique_properties.values()):
-            with self.block_update_properties():
+            if all(p is not None for p in unique_properties.values()):
                 self.current_properties = unique_properties
+
         self._set_highlight()
 
     def interaction_box(self, index) -> Optional[np.ndarray]:
@@ -1465,18 +1488,11 @@ class Points(Layer):
 
         Returns
         -------
-        view_size : (N x D) np.ndarray
+        view_size : (N,) np.ndarray
             Array of sizes for the N points in view
         """
         if len(self._indices_view) > 0:
-            # Get the point sizes and scale for ndim display
-            sizes = (
-                self.size[
-                    np.ix_(self._indices_view, self._slice_input.displayed)
-                ].mean(axis=1)
-                * self._view_size_scale
-            )
-
+            sizes = self.size[self._indices_view] * self._view_size_scale
         else:
             # if no points, return an empty list
             sizes = np.array([])
@@ -1559,6 +1575,11 @@ class Points(Layer):
             displayed_position = [
                 position[i] for i in self._slice_input.displayed
             ]
+            # positions are scaled anisotropically by scale, but sizes are not,
+            # so we need to calculate the ratio to correctly map to screen coordinates
+            scale_ratio = (
+                self.scale[self._slice_input.displayed] / self.scale[-1]
+            )
             # Get the point sizes
             # TODO: calculate distance in canvas space to account for canvas_size_limits.
             # Without this implementation, point hover and selection (and anything depending
@@ -1566,7 +1587,8 @@ class Points(Layer):
             # unexpected behaviour. See #3734 for details.
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
-                distances <= np.expand_dims(self._view_size, axis=1) / 2,
+                distances
+                <= np.expand_dims(self._view_size, axis=1) / scale_ratio / 2,
                 axis=1,
             )
             indices = np.where(in_slice_matches)[0]
@@ -1619,10 +1641,14 @@ class Points(Layer):
         )
         rotated_click_point = np.dot(rotation_matrix, plane_point)
 
+        # positions are scaled anisotropically by scale, but sizes are not,
+        # so we need to calculate the ratio to correctly map to screen coordinates
+        scale_ratio = self.scale[self._slice_input.displayed] / self.scale[-1]
         # find the points the click intersects
-        distances = abs(rotated_points[:, :2] - rotated_click_point[:2])
+        distances = abs(rotated_points - rotated_click_point)
         in_slice_matches = np.all(
-            distances <= np.expand_dims(self._view_size, axis=1) / 2,
+            distances
+            <= np.expand_dims(self._view_size, axis=1) / scale_ratio / 2,
             axis=1,
         )
         indices = np.where(in_slice_matches)[0]
@@ -1635,22 +1661,6 @@ class Points(Layer):
         else:
             selection = None
         return selection
-
-    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
-        """An augmented, axis-aligned (ndisplay, 2) bounding box.
-
-        This bounding box for includes the full size of displayed points
-        and enables calculation of intersections in `Layer._get_value_3d()`.
-        """
-        if len(self._view_size) == 0:
-            return None
-        max_point_size = np.max(self._view_size)
-        bounding_box = np.copy(
-            self._display_bounding_box(dims_displayed)
-        ).astype(float)
-        bounding_box[:, 0] -= max_point_size / 2
-        bounding_box[:, 1] += max_point_size / 2
-        return bounding_box
 
     def get_ray_intersections(
         self,
@@ -1730,14 +1740,11 @@ class Points(Layer):
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
         )
-        # TODO: [see Image]
-        #   For the existing sync slicing, slice_indices is passed through
-        # to avoid some performance issues related to the evaluation of the
-        # data-to-world transform and its inverse. Async slicing currently
-        # absorbs these performance issues here, but we can likely improve
-        # things either by caching the world-to-data transform on the layer
-        # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_indices(self._data_to_world.inverse)
+        # See Image._make_slice_request to understand why we evaluate this here
+        # instead of using `self._slice_indices`.
+        slice_indices = slice_input.data_indices(
+            self._data_to_world.inverse, round_index=False
+        )
         return self._make_slice_request_internal(slice_input, slice_indices)
 
     def _make_slice_request_internal(
@@ -1900,6 +1907,12 @@ class Points(Layer):
             Point or points to add to the layer data.
         """
         self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
+        self.events.data(
+            value=self.data,
+            action=ActionType.ADD.value,
+            data_indices=(-1,),
+            vertex_indices=((),),
+        )
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -1928,6 +1941,14 @@ class Points(Layer):
                     self._value_stored -= offset
 
             self.data = np.delete(self.data, index, axis=0)
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVE.value,
+                data_indices=tuple(
+                    self.selected_data,
+                ),
+                vertex_indices=((),),
+            )
             self.selected_data = set()
 
     def _move(
@@ -1954,7 +1975,12 @@ class Points(Layer):
                 self.data[np.ix_(selection_indices, disp)] + shift
             )
             self.refresh()
-        self.events.data(value=self.data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.CHANGE.value,
+            data_indices=tuple(selection_indices),
+            vertex_indices=((),),
+        )
 
     def _set_drag_start(
         self,
@@ -2033,8 +2059,8 @@ class Points(Layer):
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
-            self._selected_data = set(
-                range(totpoints, totpoints + len(self._clipboard['data']))
+            self._selected_data.update(
+                set(range(totpoints, totpoints + len(self._clipboard['data'])))
             )
             self.refresh()
 
@@ -2097,16 +2123,10 @@ class Points(Layer):
         )
 
         # Calculating the radii of the output points in the mask is complex.
-
-        # Points.size tells the size of the points in pixels in each dimension,
-        # so we take the arithmetic mean across dimensions to define a scalar size
-        # per point, which is consistent with visualization.
-        mean_radii = np.mean(self.size, axis=1, keepdims=True) / 2
+        radii = self.size / 2
 
         # Scale each radius by the geometric mean scale of the Points layer to
         # keep the balls isotropic when visualized in world coordinates.
-        # Then scale each radius by the scale of the output image mask
-        # using the geometric mean if isotropic output is desired.
         # The geometric means are used instead of the arithmetic mean
         # to maintain the volume scaling factor of the transforms.
         point_data_to_world_scale = gmean(np.abs(self._data_to_world.scale))
@@ -2117,7 +2137,7 @@ class Points(Layer):
         )
         radii_scale = point_data_to_world_scale * mask_world_to_data_scale
 
-        output_data_radii = mean_radii * np.atleast_2d(radii_scale)
+        output_data_radii = radii[:, np.newaxis] * np.atleast_2d(radii_scale)
 
         for coords, radii in zip(
             points_in_mask_data_coords, output_data_radii
