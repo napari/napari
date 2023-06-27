@@ -29,6 +29,7 @@ _submod_attrs = {
     'utils': ['sys_info'],
     'utils.notifications': ['notification_manager'],
     'view_layers': [
+        'view_graph',
         'view_image',
         'view_labels',
         'view_path',
