@@ -67,7 +67,7 @@ class _GraphSliceRequest:
     dims_indices: Any = field(repr=False)
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
-    id: int = field(default=_next_request_id)
+    id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _GraphSliceResponse:
         # Return early if no data

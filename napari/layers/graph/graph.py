@@ -1,7 +1,8 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union, cast
 
 import numpy as np
 from numpy.typing import ArrayLike
+from psygnal.containers import Selection
 
 from napari.layers.graph._slice import _GraphSliceRequest, _GraphSliceResponse
 from napari.layers.points.points import _BasePoints
@@ -415,7 +416,7 @@ class Graph(_BasePoints):
         """Removes selected points if any."""
         if len(self.selected_data):
             self._remove_nodes(list(self.selected_data), is_buffer_domain=True)
-            self.selected_data = set()
+            self.selected_data = cast(Selection[int], set())
 
     def remove(self, indices: ArrayLike) -> None:
         """Remove nodes given indices."""
