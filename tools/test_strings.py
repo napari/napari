@@ -467,8 +467,13 @@ def find_issues(
         skip_words_for_file = skip_words.get(fpath, [])
         skip_words_for_file_check = skip_words_for_file[:]
         module = import_module_by_path(fpath)
+        if module is None:
+            raise RuntimeError(f"Error loading {fpath}")
+
         try:
             __all__strings = module.__all__
+            if __all__strings is None:
+                __all__strings = []
         except AttributeError:
             __all__strings = []
 
