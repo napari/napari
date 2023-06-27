@@ -18,6 +18,13 @@ class QtLayerListModel(QtListModel[Layer]):
         if not index.isValid():
             return None
         layer = self.getItem(index)
+        viewer = current_viewer()
+        layer_loaded = layer.loaded
+        if viewer:
+            viewer_playing = viewer.window._qt_viewer.dims.is_playing
+            force_sync = viewer._layer_slicer._force_sync
+            if not force_sync:
+                layer_loaded = layer.loaded and not viewer_playing
         if role == Qt.ItemDataRole.DisplayRole:  # used for item text
             return layer.name
         if role == Qt.ItemDataRole.TextAlignmentRole:  # alignment of the text
@@ -27,7 +34,7 @@ class QtLayerListModel(QtListModel[Layer]):
             return layer.name
         if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
             layer_source_info = layer.get_source_str()
-            if layer.loaded:
+            if layer_loaded:
                 return layer_source_info
             return trans._('{source} (loading)', source=layer_source_info)
         if (
@@ -49,13 +56,7 @@ class QtLayerListModel(QtListModel[Layer]):
                 QImage.Format_RGBA8888,
             )
         if role == LoadedRole:
-            viewer = current_viewer()
-            if viewer:
-                viewer_playing = viewer.window._qt_viewer.dims.is_playing
-                force_sync = viewer._layer_slicer._force_sync
-                if not force_sync:
-                    return layer.loaded and not viewer_playing
-            return layer.loaded
+            return layer_loaded
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.
         # if role == Qt.ItemDataRole.DecorationRole:  # icon to show

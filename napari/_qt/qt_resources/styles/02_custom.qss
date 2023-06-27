@@ -843,17 +843,12 @@ QtLayerList::item {
   border: 0;
 }
 
-QtLayerList::text {
-    right: 18px;
-}
-
 /* the first one is the "partially checked" state */
 QtLayerList::indicator {
   width: 16px;
   height: 16px;
   position: absolute;
   left: 0px;
-  padding-right: 38px;
   image: url("theme_{{ id }}:/visibility_off.svg");
 }
 

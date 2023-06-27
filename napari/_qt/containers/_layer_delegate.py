@@ -137,12 +137,11 @@ class LayerDelegate(QStyledItemDelegate):
     ):
         """Paint loading layer indicator."""
         loaded = index.data(LoadedRole)
-        load_rect = option.rect.translated(55, 8)
-        h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
-        load_rect.setWidth(h)
-        load_rect.setHeight(h)
-
         if not loaded:
+            load_rect = option.rect.translated(4, 8)
+            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
+            load_rect.setWidth(h)
+            load_rect.setHeight(h)
             painter.drawPixmap(load_rect, self._load_movie.currentPixmap())
 
     def _paint_thumbnail(self, painter, option, index):
@@ -150,12 +149,14 @@ class LayerDelegate(QStyledItemDelegate):
         # paint the thumbnail
         # MAGICNUMBER: numbers from the margin applied in the stylesheet to
         # QtLayerTreeView::item
-        thumb_rect = option.rect.translated(-2, 2)
-        h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
-        thumb_rect.setWidth(h)
-        thumb_rect.setHeight(h)
-        image = index.data(ThumbnailRole)
-        painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
+        loaded = index.data(LoadedRole)
+        if loaded:
+            thumb_rect = option.rect.translated(-2, 2)
+            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
+            thumb_rect.setWidth(h)
+            thumb_rect.setHeight(h)
+            image = index.data(ThumbnailRole)
+            painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
 
     def createEditor(
         self,
