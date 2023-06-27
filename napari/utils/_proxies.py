@@ -120,6 +120,14 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             self._private_attr_warning(name, typ)
 
         if isinstance(value, PublicOnlyProxy):
+            # unwrap the value before setting it
+            # without this change every interaction with value with proxy
+            # will trigger checks for private attributes
+            # where `_is_called_from_napari()` will be called with performance penalty
+            # also if such object is passed to a Qt data model there are
+            # situations when Qt will not use overloaded `__eq__` operator,
+            # so wil treat wrapped and unwrapped objects as different.
+            # See https://github.com/napari/napari/issues/5767
             value = value.__wrapped__
 
         setattr(self.__wrapped__, name, value)
@@ -139,7 +147,10 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         # restrict the scope of this proxy to napari objects
 
         if type(obj).__name__ == 'method':
-            mod = getattr(obj, '__module__', None) or ''
+            # when object is method then type of object is `method` that belongs to
+            # builtins module, so we need to check the module of the object to which method is bound.
+            # without this change we will not be able to wrap result of methods of napari objects
+            mod = getattr(type(obj.__self__), '__module__', None) or ''
         else:
             mod = getattr(type(obj), '__module__', None) or ''
         if not mod.startswith('napari'):
@@ -153,6 +164,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
 class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
     def __call__(self, *args, **kwargs):
+        # We unwrap here arguments of callable to avoid same problems as in `__setattr__`
         args = [
             arg.__wrapped__ if isinstance(arg, PublicOnlyProxy) else arg
             for arg in args
