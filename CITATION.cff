@@ -1,4 +1,4 @@
-cff-version: 1.0.3
+cff-version: 1.2.0
 message: If you use this software, please cite it using these metadata.
 title: 'napari: a multi-dimensional image viewer for Python'
 doi: 10.5281/zenodo.3555620
