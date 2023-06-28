@@ -1,9 +1,11 @@
 import contextlib
-import re
 from collections import OrderedDict
 
+from app_model.backends.qt import (
+    qkey2modelkey,
+    qkeysequence2modelkeybinding,
+)
 from qtpy.QtCore import QEvent, QPoint, Qt, Signal
-from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -19,7 +21,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from vispy.util import keys
 
 from napari._qt.widgets.qt_message_popup import WarnPopup
 from napari.layers import (
@@ -35,12 +36,6 @@ from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
-
-# Dict used to format strings returned from converted key press events.
-# For example, the ShortcutTranslator returns 'Ctrl' instead of 'Control'.
-# In order to be consistent with the code base, the values in KEY_SUBS will
-# be subsituted.
-KEY_SUBS = {'Ctrl': 'Control'}
 
 
 class ShortcutEditor(QWidget):
@@ -585,16 +580,14 @@ class EditorWidget(QLineEdit):
             self.setText('')
             return
 
-        key_map = {
-            Qt.Key.Key_Control: keys.CONTROL.name,
-            Qt.Key.Key_Shift: keys.SHIFT.name,
-            Qt.Key.Key_Alt: keys.ALT.name,
-            Qt.Key.Key_Meta: keys.META.name,
-            Qt.Key.Key_Delete: keys.DELETE.name,
-        }
-
-        if event_key in key_map:
-            self.setText(key_map[event_key])
+        if event_key in (
+            Qt.Key.Key_Control,
+            Qt.Key.Key_Shift,
+            Qt.Key.Key_Alt,
+            Qt.Key.Key_Meta,
+            Qt.Key.Key_Delete,
+        ):
+            self.setText(str(qkey2modelkey(event_key)))
             return
 
         if event_key in {
@@ -609,21 +602,9 @@ class EditorWidget(QLineEdit):
         # Translate key value to key string.
         translator = ShortcutTranslator()
         event_keyseq = translator.keyevent_to_keyseq(event)
-        event_keystr = event_keyseq.toString(QKeySequence.PortableText)
+        kb = qkeysequence2modelkeybinding(event_keyseq)
 
-        # Split the shortcut if it contains a symbol.
-        parsed = re.split('[-(?=.+)]', event_keystr)
-
-        keys_li = []
-        # Format how the shortcut is written (ex. 'Ctrl+B' is changed to 'Control-B')
-        for val in parsed:
-            if val in KEY_SUBS:
-                keys_li.append(KEY_SUBS[val])
-            else:
-                keys_li.append(val)
-
-        keys_li = '-'.join(keys_li)
-        self.setText(keys_li)
+        self.setText(str(kb))
 
 
 class ShortcutTranslator(QKeySequenceEdit):

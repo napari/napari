@@ -11,7 +11,7 @@ from napari.utils.validators import _validate_increasing, validate_n_seq
 validate_2_tuple = validate_n_seq(2)
 
 if TYPE_CHECKING:
-    from napari.layers.image.image import Image
+    from napari.layers.image.image import _ImageBase
 
 
 class IntensityVisualizationMixin:
@@ -49,7 +49,7 @@ class IntensityVisualizationMixin:
         self._auto_contrast_source = 'slice'
         self._keep_auto_contrast = False
 
-    def reset_contrast_limits(self: 'Image', mode=None):
+    def reset_contrast_limits(self: '_ImageBase', mode=None):
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
         self.contrast_limits = self._calc_data_range(mode)
