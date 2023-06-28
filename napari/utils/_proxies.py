@@ -173,7 +173,7 @@ class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
             k: v.__wrapped__ if isinstance(v, PublicOnlyProxy) else v
             for k, v in kwargs.items()
         }
-        return self.__wrapped__(*args, **kwargs)
+        return self.create(self.__wrapped__(*args, **kwargs))
 
 
 def in_main_thread_py() -> bool:
