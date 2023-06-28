@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 import warnings
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, List, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -330,8 +330,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Set data
         self._data = data
-        if self.multiscale:
-            self._data_level = len(self.data) - 1
+        if isinstance(data, MultiScaleData):
+            self._data_level = len(data) - 1
             # Determine which level of the multiscale to use for the thumbnail.
             # Pick the smallest level with at least one axis >= 64. This is
             # done to prevent the thumbnail from being from one of the very
@@ -373,7 +373,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
-        self._contrast_limits = tuple(self.contrast_limits_range)
+        self._contrast_limits: Tuple[float, float] = self.contrast_limits_range
         if iso_threshold is None:
             cmin, cmax = self.contrast_limits_range
             self._iso_threshold = cmin + (cmax - cmin) / 2
@@ -405,7 +405,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
 
-    def _calc_data_range(self, mode='data'):
+    def _calc_data_range(self, mode='data') -> Tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
         or full data array
@@ -440,9 +440,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._data
 
     @data.setter
-    def data(
-        self, data: Union[LayerDataProtocol, Sequence[LayerDataProtocol]]
-    ):
+    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
         self._data_raw = data
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
@@ -487,7 +485,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @property
     def level_shapes(self) -> np.ndarray:
         """array: Shapes of each level of the multiscale or just of image."""
-        shapes = self.data.shapes if self.multiscale else [self.data.shape]
+        data = self.data
+        if isinstance(data, MultiScaleData):
+            shapes = data.shapes
+        else:
+            shapes = [self.data.shape]
         if self.rgb:
             shapes = [s[:-1] for s in shapes]
         return np.array(shapes)
