@@ -45,7 +45,7 @@ class IntensityVisualizationMixin:
         )
         self._contrast_limits_range: Tuple[
             Optional[float], Optional[float]
-        ] = [None, None]
+        ] = (None, None)
         self._auto_contrast_source = 'slice'
         self._keep_auto_contrast = False
 
