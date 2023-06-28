@@ -82,7 +82,6 @@ class LayerDelegate(QStyledItemDelegate):
         self._load_movie = QMovie(LOADING_GIF_PATH)
         self._load_movie.setScaledSize(QSize(18, 18))
         self._load_movie.frameChanged.connect(self.loading_frame_changed)
-        self._load_movie.start()
         self._layer_visibility_states = WeakKeyDictionary()
         self._alt_click_layer = lambda: None
 
@@ -138,6 +137,7 @@ class LayerDelegate(QStyledItemDelegate):
         """Paint loading layer indicator."""
         loaded = index.data(LoadedRole)
         if not loaded:
+            self._load_movie.start()
             load_rect = option.rect.translated(4, 8)
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
             load_rect.setWidth(h)
@@ -151,6 +151,7 @@ class LayerDelegate(QStyledItemDelegate):
         # QtLayerTreeView::item
         loaded = index.data(LoadedRole)
         if loaded:
+            self._load_movie.setPaused(True)
             thumb_rect = option.rect.translated(-2, 2)
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
             thumb_rect.setWidth(h)

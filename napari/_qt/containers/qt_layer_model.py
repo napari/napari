@@ -6,6 +6,7 @@ from qtpy.QtGui import QImage
 from napari import current_viewer
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.layers import Layer
+from napari.settings import get_settings
 from napari.utils.translations import trans
 
 ThumbnailRole = Qt.UserRole + 2
@@ -20,11 +21,12 @@ class QtLayerListModel(QtListModel[Layer]):
         layer = self.getItem(index)
         viewer = current_viewer()
         layer_loaded = layer.loaded
-        if viewer:
+        # Playback with async slicing causes flickering between the thumbnail
+        # and loading animation in some cases due quick changes in the loaded
+        # state, so report as unloaded in that case to avoid that.
+        if get_settings().experimental.async_ and (viewer := current_viewer()):
             viewer_playing = viewer.window._qt_viewer.dims.is_playing
-            force_sync = viewer._layer_slicer._force_sync
-            if not force_sync:
-                layer_loaded = layer.loaded and not viewer_playing
+            layer_loaded = layer.loaded and not viewer_playing
         if role == Qt.ItemDataRole.DisplayRole:  # used for item text
             return layer.name
         if role == Qt.ItemDataRole.TextAlignmentRole:  # alignment of the text
