@@ -1,16 +1,15 @@
+# The tests in this module for the new style of async slicing in napari:
+# https://napari.org/dev/naps/4-async-slicing.html
+
 import numpy as np
 import pytest
 from vispy.visuals import VolumeVisual
 
 from napari import Viewer
-from napari._vispy.layers.image import VispyImageLayer
+from napari._tests.utils import LockableData
+from napari._vispy.layers.image import VispyBaseLayer, VispyImageLayer
 from napari.layers import Image, Layer, Points
 from napari.utils.events import Event
-
-# The tests in this module for the new style of async slicing in napari:
-# https://napari.org/dev/naps/4-async-slicing.html
-# They are marked with sync_only because that denotes that the old experimental
-# async should not run as we don't explicitly wait for its threads to finish.
 
 
 @pytest.fixture()
@@ -18,7 +17,6 @@ def rng() -> np.random.Generator:
     return np.random.default_rng(0)
 
 
-@pytest.mark.sync_only
 def test_async_slice_image_on_current_step_change(
     make_napari_viewer, qtbot, rng
 ):
@@ -33,7 +31,6 @@ def test_async_slice_image_on_current_step_change(
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[2, :, :])
 
 
-@pytest.mark.sync_only
 def test_async_slice_image_on_order_change(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = rng.random((3, 5, 7))
@@ -46,7 +43,6 @@ def test_async_slice_image_on_order_change(make_napari_viewer, qtbot, rng):
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[:, 2, :])
 
 
-@pytest.mark.sync_only
 def test_async_slice_image_on_ndisplay_change(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = rng.random((3, 4, 5))
@@ -59,7 +55,6 @@ def test_async_slice_image_on_ndisplay_change(make_napari_viewer, qtbot, rng):
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data)
 
 
-@pytest.mark.sync_only
 def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = [rng.random((4, 8, 10)), rng.random((2, 4, 5))]
@@ -81,7 +76,6 @@ def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot, rng):
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[1][0, 0:4, 0:3])
 
 
-@pytest.mark.sync_only
 def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer, rng):
     viewer = make_napari_viewer()
     data = [rng.random((4, 8, 10)), rng.random((2, 4, 5))]
@@ -146,14 +140,32 @@ def test_async_slice_points_on_point_change(make_napari_viewer, qtbot):
     wait_until_vispy_points_data_equal(qtbot, vispy_points, np.array([[3, 4]]))
 
 
+def test_async_slice_image_loaded(make_napari_viewer, qtbot, rng):
+    viewer = make_napari_viewer()
+    data = rng.random((3, 4, 5))
+    lockable_data = LockableData(data)
+    layer = Image(lockable_data, multiscale=False)
+    vispy_layer = setup_viewer_for_async_slicing(viewer, layer)
+
+    assert layer.loaded
+    assert viewer.dims.current_step != (2, 0, 0)
+
+    with lockable_data.lock:
+        viewer.dims.current_step = (2, 0, 0)
+        assert not layer.loaded
+
+    wait_until_vispy_image_data_equal(qtbot, vispy_layer, data[2, :, :])
+    assert layer.loaded
+
+
 def setup_viewer_for_async_slicing(
     viewer: Viewer,
     layer: Layer,
-) -> VispyImageLayer:
+) -> VispyBaseLayer:
     # Initially force synchronous slicing so any slicing caused
     # by adding the layer finishes before any other slicing starts.
     viewer._layer_slicer._force_sync = True
-    # Add the image and get the corresponding vispy image.
+    # Add the layer and get the corresponding vispy layer.
     layer = viewer.add_layer(layer)
     vispy_layer = viewer.window._qt_viewer.layer_to_visual[layer]
     # Then allow asynchronous slicing for testing.

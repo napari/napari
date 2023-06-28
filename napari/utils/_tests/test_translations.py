@@ -375,7 +375,9 @@ def test_translation_string_exceptions():
 
 
 def test_bundle_exceptions(trans):
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        TypeError, match="missing 1 required keyword-only argument: 'msgid'"
+    ):
         trans._dnpgettext()
 
 
@@ -420,6 +422,7 @@ def test_deepcopy(kwargs):
       - https://github.com/napari/napari/issues/2911
       - https://github.com/napari/napari/issues/4736
     """
+    kwargs['domain'] = 'napari'
     t = TranslationString(**kwargs)
     u = deepcopy(t)
     assert t is not u

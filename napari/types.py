@@ -30,6 +30,32 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
 
 
+__all__ = [
+    'ArrayLike',
+    'LayerTypeName',
+    'FullLayerData',
+    'LayerData',
+    'PathLike',
+    'PathOrPaths',
+    'ReaderFunction',
+    'WriterFunction',
+    'ExcInfo',
+    'WidgetCallable',
+    'AugmentedWidget',
+    'SampleData',
+    'SampleDict',
+    'ArrayBase',
+    'ImageData',
+    'LabelsData',
+    'PointsData',
+    'ShapesData',
+    'SurfaceData',
+    'TracksData',
+    'VectorsData',
+    'LayerDataTuple',
+    'image_reader_to_layerdata_reader',
+]
+
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
 # Ultimately, this should come from https://github.com/napari/image-types

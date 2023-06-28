@@ -44,7 +44,7 @@ def get_stylesheet(
     if theme_id:
         from napari.utils.theme import get_theme, template
 
-        return template(stylesheet, **get_theme(theme_id, as_dict=True))
+        return template(stylesheet, **get_theme(theme_id).to_rgb_dict())
 
     return stylesheet
 

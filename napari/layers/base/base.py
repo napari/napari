@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import cached_property
-from typing import List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import magicgui as mgui
 import numpy as np
@@ -45,6 +45,7 @@ from napari.utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from napari.utils.key_bindings import KeymapProvider
+from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
@@ -226,18 +227,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     * `_basename()`: base/default name of the layer
     """
 
-    _modeclass = Mode
+    _modeclass: Type[StringEnum] = Mode
 
-    _drag_modes = {
+    _drag_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes = {
+    _move_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
-    _cursor_modes = {
+    _cursor_modes: Dict[StringEnum, str] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
@@ -306,6 +307,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             point=(0,) * ndim,
             order=tuple(range(ndim)),
         )
+        self._loaded: bool = True
+        self._last_slice_id: int = -1
 
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
@@ -380,7 +383,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             help=Event,
             interactive=WarningEmitter(
                 trans._(
-                    "layer.events.interactive is deprecated since 0.5.0 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom",
+                    "layer.events.interactive is deprecated since 0.4.18 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom",
                     deferred=True,
                 ),
                 type_name='interactive',
@@ -530,12 +533,37 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def loaded(self) -> bool:
-        """Return True if this layer is fully loaded in memory.
+        """True if this layer is fully loaded in memory, False otherwise.
 
-        This base class says that layers are permanently in the loaded state.
-        Derived classes that do asynchronous loading can override this.
+        Layers that only support sync slicing are always fully loaded.
+        Layers that support async slicing can be temporarily not loaded
+        while slicing is occurring.
         """
-        return True
+        return self._loaded
+
+    def _set_loaded(self, loaded: bool) -> None:
+        """Set the loaded state and notify a change with the loaded event."""
+        if self._loaded != loaded:
+            self._loaded = loaded
+            self.events.loaded()
+
+    def _set_unloaded_slice_id(self, slice_id: int) -> None:
+        """Set this layer to be unloaded and associated with a pending slice ID.
+
+        This is private but accessed externally because it is related to slice
+        state, which is intended to be moved off the layer in the future.
+        """
+        self._last_slice_id = slice_id
+        self._set_loaded(False)
+
+    def _update_loaded_slice_id(self, slice_id: int) -> None:
+        """Potentially update the loaded state based on the given completed slice ID.
+
+        This is private but accessed externally because it is related to slice
+        state, which is intended to be moved off the layer in the future.
+        """
+        if self._last_slice_id == slice_id:
+            self._set_loaded(True)
 
     @property
     def opacity(self):
@@ -955,7 +983,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def interactive(self) -> bool:
         warnings.warn(
             trans._(
-                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+                "Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
             ),
             FutureWarning,
             stacklevel=2,
@@ -966,7 +994,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def interactive(self, interactive: bool):
         warnings.warn(
             trans._(
-                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+                "Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
             ),
             FutureWarning,
             stacklevel=2,
@@ -1144,7 +1172,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def get_value(
         self,
-        position: Tuple[float],
+        position: Tuple[float, ...],
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
