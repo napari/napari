@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from napari import Viewer
 from napari._vispy.layers.vectors import (
     generate_vector_meshes,
     generate_vector_meshes_2D,
@@ -111,9 +110,11 @@ def test_generate_vector_meshes_2D(edge_width, length, style, p):
         ['arrow', 'arrow'],
     ],
 )
-def test_vector_style_change(initial_vector_style, new_vector_style):
+def test_vector_style_change(
+    make_napari_viewer, initial_vector_style, new_vector_style
+):
     # initialize viewer
-    viewer = Viewer()
+    viewer = make_napari_viewer()
     # add a vector layer
     vector_layer = viewer.add_vectors(
         vector_style=initial_vector_style, name='vectors'
