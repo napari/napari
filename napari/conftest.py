@@ -38,7 +38,7 @@ from contextlib import suppress
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from weakref import WeakKeyDictionary
 
 with suppress(ModuleNotFoundError):
@@ -53,6 +53,7 @@ from packaging.version import parse as parse_version
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.misc import ROOT_DIR
+from napari.viewer import Viewer
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
@@ -378,6 +379,38 @@ def single_threaded_executor():
     executor = ThreadPoolExecutor(max_workers=1)
     yield executor
     executor.shutdown()
+
+
+@pytest.fixture()
+def mock_console(request):
+    """Mock the qtconsole to avoid starting an interactive IPython session.
+    In-process IPython kernels can interfere with other tests and are difficult
+    (impossible?) to shutdown.
+
+    This fixture is configured to be applied automatically to tests unless they
+    use the `enable_console` marker. It's not autouse to avoid use on headless
+    tests (without Qt); instead it's enabled in `pytest_runtest_setup`.
+    """
+    if "enable_console" in request.keywords:
+        yield
+        return
+
+    from napari_console import QtConsole
+    from qtconsole.rich_jupyter_widget import RichJupyterWidget
+
+    class FakeQtConsole(RichJupyterWidget):
+        def __init__(self, viewer: Viewer):
+            super().__init__()
+            self.viewer = viewer
+            self.kernel_client = None
+            self.kernel_manager = None
+
+        _update_theme = Mock()
+        push = Mock()
+        closeEvent = QtConsole.closeEvent
+
+    with patch("napari_console.QtConsole", FakeQtConsole):
+        yield
 
 
 @pytest.fixture(autouse=True)
@@ -716,5 +749,6 @@ def pytest_runtest_setup(item):
                 "dangling_qanimations",
                 "dangling_qthreads",
                 "dangling_qtimers",
+                "mock_console",
             ]
         )
