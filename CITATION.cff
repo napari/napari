@@ -183,7 +183,8 @@ authors:
   alias: kcpevey
 - given-names: Gonzalo
   family-names: Peña-Castellanos
-  affiliation: Quansight, Inc. / SIHSA Ltda
+  affiliation: Quansight
+  orcid: https://orcid.org/0000-0002-1214-4680
   alias: goanpeca
 - given-names: Andrea
   family-names: Pierré
