@@ -140,25 +140,39 @@ def test_viewer_method():
 
 
 def test_unwrap_on_call():
-    s = EventedSet()
-    p_s = PublicOnlyProxy(s)
+    """Check that PublicOnlyProxy'd arguments to methods of a
+    PublicOnlyProxy'd object are unwrapped before calling the method.
+    """
+    evset = EventedSet()
+    public_only_evset = PublicOnlyProxy(evset)
     text = "aaa"
-    p_text = PublicOnlyProxy(text)
-    p_s.add(p_text)
+    wrapped_text = PublicOnlyProxy(text)
+    public_only_evset.add(wrapped_text)
+    retrieved_text = list(evset)[0]
 
-    assert id(text) == id(list(s)[0])
+    # check that the text in the set is not the version wrapped with
+    # PublicOnlyProxy
+    assert id(text) == id(retrieved_text)
 
 
 def test_unwrap_setattr():
+    """Check that objects added with __setattr__ of an object wrapped with
+    PublicOnlyProxy are unwrapped before setting the attribute.
+    """
+
     @dataclass
     class Sample:
-        a = "aaa"
+        attribute = "aaa"
 
-    s = Sample()
-    p_s = PublicOnlyProxy(s)
+    sample = Sample()
+    public_only_sample = PublicOnlyProxy(sample)
 
     text = "bbb"
-    p_text = PublicOnlyProxy(text)
+    wrapped_text = PublicOnlyProxy(text)
 
-    p_s.a = p_text
-    assert id(text) == id(s.a)
+    public_only_sample.attribute = wrapped_text
+    attribute = sample.attribute  # use original, not wrapped object
+
+    # check that the attribute in the unwrapped sample is itself not the
+    # wrapped text, but the original text.
+    assert id(text) == id(attribute)
