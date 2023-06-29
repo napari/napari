@@ -151,7 +151,12 @@ class LayerDelegate(QStyledItemDelegate):
         # QtLayerTreeView::item
         loaded = index.data(LoadedRole)
         if loaded:
-            self._load_movie.setPaused(True)
+            # only pause the loading movie if all the layers are loaded. The
+            # last layer that enters the loaded state will pause the load movie
+            all_loaded = index.model().sourceModel().all_loaded()
+            if all_loaded:
+                self._load_movie.setPaused(True)
+
             thumb_rect = option.rect.translated(-2, 2)
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
             thumb_rect.setWidth(h)

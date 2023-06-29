@@ -88,6 +88,13 @@ class QtLayerListModel(QtListModel[Layer]):
         self.dataChanged.emit(index, index, [role])
         return True
 
+    def all_loaded(self):
+        """Return if all the layers are loaded."""
+        return all(
+            self.index(row, 0).data(LoadedRole)
+            for row in range(self.rowCount())
+        )
+
     def _process_event(self, event):
         # The model needs to emit `dataChanged` whenever data has changed
         # for a given index, so that views can update themselves.
