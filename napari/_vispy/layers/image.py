@@ -98,13 +98,9 @@ class VispyImageLayer(VispyBaseLayer):
         if data is None:
             data = np.zeros((1,) * ndisplay, dtype=np.float32)
 
-        if self.layer._empty:
-            self.node.visible = False
-        else:
-            self.node.visible = self.layer.visible
+        self.node.visible = not self.layer._slice.empty and self.layer.visible
 
-        if self.layer.loaded:
-            self.node.set_data(data)
+        self.node.set_data(data)
 
         self.node.parent = parent
         self.node.order = self.order
@@ -113,17 +109,8 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
 
     def _on_data_change(self):
-        if not self.layer.loaded:
-            # Do nothing if we are not yet loaded. Calling astype below could
-            # be very expensive. Lets not do it until our data has been loaded.
-            return
-
-        self._set_node_data(self.node, self.layer._data_view)
-
-    def _set_node_data(self, node, data):
-        """Our self.layer._data_view has been updated, update our node."""
-
-        data = fix_data_dtype(data)
+        node = self.node
+        data = fix_data_dtype(self.layer._data_view)
         ndisplay = self.layer._slice_input.ndisplay
 
         if ndisplay == 3 and self.layer.ndim == 2:
@@ -143,10 +130,7 @@ class VispyImageLayer(VispyBaseLayer):
         else:
             node.set_data(data)
 
-        if self.layer._empty:
-            node.visible = False
-        else:
-            node.visible = self.layer.visible
+        node.visible = not self.layer._slice.empty and self.layer.visible
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
