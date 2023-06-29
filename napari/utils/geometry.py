@@ -1,6 +1,7 @@
 from typing import Dict, Optional, Tuple
 
 import numpy as np
+import numpy.typing as npt
 
 # normal vectors for a 3D axis-aligned box
 # coordinates are ordered [z, y, x]
@@ -386,10 +387,10 @@ def inside_triangles(triangles):
 
 
 def intersect_line_with_plane_3d(
-    line_position: np.ndarray,
-    line_direction: np.ndarray,
-    plane_position: np.ndarray,
-    plane_normal: np.ndarray,
+    line_position: npt.ArrayLike,
+    line_direction: npt.ArrayLike,
+    plane_position: npt.ArrayLike,
+    plane_normal: npt.ArrayLike,
 ) -> np.ndarray:
     """Find the intersection of a line with an arbitrarily oriented plane in 3D.
     The line is defined by a position and a direction vector.
