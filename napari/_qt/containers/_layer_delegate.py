@@ -152,7 +152,10 @@ class LayerDelegate(QStyledItemDelegate):
         loaded = index.data(LoadedRole)
         if loaded:
             # only pause the loading movie if all the layers are loaded. The
-            # last layer that enters the loaded state will pause the load movie
+            # last layer that enters the loaded state will pause the load
+            # movie. This is needed since there is only one instance of the
+            # delegate and therefore only one instance of the load movie shared
+            # between all the layer items.
             all_loaded = index.model().sourceModel().all_loaded()
             if all_loaded:
                 self._load_movie.setPaused(True)
