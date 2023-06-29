@@ -225,7 +225,8 @@ class Dims(EventedModel):
         not_displayed = [
             d
             for d in order[:-ndisplay]
-            if cls._nsteps_from_range(dims_range)[d] > 1
+            if len(cls._nsteps_from_range(dims_range)) > d
+            and cls._nsteps_from_range(dims_range)[d] > 1
         ]
         if len(not_displayed) > 0 and last_used not in not_displayed:
             updated['last_used'] = not_displayed[0]
