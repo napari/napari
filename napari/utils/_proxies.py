@@ -119,6 +119,24 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             typ = type(self.__wrapped__).__name__
             self._private_attr_warning(name, typ)
 
+        if isinstance(value, PublicOnlyProxy):
+            # if we want to set an attribute on a PublicOnlyProxy *and* the
+            # value that we want to set is itself a PublicOnlyProxy, we unwrap
+            # the value. This has two benefits:
+            #
+            # 1. Checking the attribute later will incur a significant
+            # performance cost, because _is_called_from_napari() will be
+            # checked on each attribute access and it involves inspecting the
+            # calling frame, which is expensive.
+            # 2. Certain equality checks fail when objects are
+            # PublicOnlyProxies. Notably, equality checks fail when such
+            # objects are included in a Qt data model. For example, plugins can
+            # grab a layer from the viewer; this layer will be wrapped by the
+            # PublicOnlyProxy, and then using this object to set the current
+            # layer selection will not propagate the selection to the Viewer.
+            # See https://github.com/napari/napari/issues/5767
+            value = value.__wrapped__
+
         setattr(self.__wrapped__, name, value)
         return None
 
@@ -134,7 +152,15 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     @classmethod
     def create(cls, obj: Any) -> Union['PublicOnlyProxy', Any]:
         # restrict the scope of this proxy to napari objects
-        mod = getattr(type(obj), '__module__', None) or ''
+        if type(obj).__name__ == 'method':
+            # If the given object is a method, we check the module *of the
+            # object to which that method is bound*. Otherwise, the module of a
+            # method is just builtins!
+            mod = getattr(type(obj.__self__), '__module__', None) or ''
+        else:
+            # Otherwise, the module is of an object just given by the
+            # __module__ attribute.
+            mod = getattr(type(obj), '__module__', None) or ''
         if not mod.startswith('napari'):
             return obj
         if isinstance(obj, PublicOnlyProxy):
@@ -146,7 +172,20 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
 class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
     def __call__(self, *args, **kwargs):
-        return self.__wrapped__(*args, **kwargs)
+        # if a PublicOnlyProxy is callable, then when we call it we:
+        # - unwrap the arguments, to avoid performance issues detailed in
+        #   PublicOnlyProxy.__setattr__,
+        # - call the unwrapped callable on the unwrapped arguments
+        # - wrap the result in a PublicOnlyProxy
+        args = [
+            arg.__wrapped__ if isinstance(arg, PublicOnlyProxy) else arg
+            for arg in args
+        ]
+        kwargs = {
+            k: v.__wrapped__ if isinstance(v, PublicOnlyProxy) else v
+            for k, v in kwargs.items()
+        }
+        return self.create(self.__wrapped__(*args, **kwargs))
 
 
 def in_main_thread_py() -> bool:
