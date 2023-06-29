@@ -21,6 +21,7 @@ from urllib.parse import urlparse, urlunparse
 
 import qtgallery
 from jinja2.filters import FILTERS
+from sphinx_gallery.sorting import ExampleTitleSortKey
 
 import napari
 from napari._version import __version_tuple__
@@ -200,8 +201,6 @@ def reset_napari_theme(gallery_conf, fname):
     settings.appearance.theme = 'dark'
     qtgallery.reset_qapp(gallery_conf, fname)
 
-
-from sphinx_gallery.sorting import ExampleTitleSortKey
 
 sphinx_gallery_conf = {
     'examples_dirs': '../examples',  # path to your example scripts
