@@ -26,7 +26,7 @@ def _len(layer: Union[LayerSel, LayerList]) -> int:
 class LayerListContextKeys(ContextNamespace['Layer']):
     """These are the available context keys relating to a LayerList.
 
-    Consist of a default value, a description, and a function to retrieve the
+    Consists of a default value, a description, and a function to retrieve the
     current value from `layers`.
     """
 

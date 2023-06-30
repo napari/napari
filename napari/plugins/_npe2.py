@@ -477,7 +477,7 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     actions, submenus = _npe2_manifest_to_actions(mf)
     samples_submenu, sample_actions = _get_samples_submenu_actions(mf)
     context = pm.get_context(cast('PluginName', mf.name))
-    # Register 'unregister' callback to plugin deactivate ('unregistered') event
+    # Connect 'unregister' callback to plugin deactivate ('unregistered') event
     if actions:
         context.register_disposable(app.register_actions(actions))
     if submenus:
