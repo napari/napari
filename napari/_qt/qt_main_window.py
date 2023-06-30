@@ -1513,10 +1513,6 @@ class Window:
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.removed.disconnect(self._remove_theme)
-        self._qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
-        for menu in self.file_menu._INSTANCES:
-            with contextlib.suppress(RuntimeError):
-                menu._destroy()
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
