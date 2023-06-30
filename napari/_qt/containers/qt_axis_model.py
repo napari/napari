@@ -76,17 +76,3 @@ class QtAxisListModel(QtListModel[AxisModel]):
             return super().setData(index, value, role=role)
         self.dataChanged.emit(index, index, [role])
         return True
-
-    def _process_event(self, event):
-        # The model needs to emit `dataChanged` whenever data has changed
-        # for a given index, so that views can update themselves.
-        # Here we convert native events to the dataChanged signal.
-        if not hasattr(event, 'index'):
-            return
-        role = {
-            'name': Qt.ItemDataRole.DisplayRole,
-            'rollable': Qt.ItemDataRole.CheckStateRole,
-        }.get(event.type)
-        roles = [role] if role is not None else []
-        row = self.index(event.index)
-        self.dataChanged.emit(row, row, roles)
