@@ -21,8 +21,10 @@ from urllib.parse import urlparse, urlunparse
 
 import qtgallery
 from jinja2.filters import FILTERS
+from sphinx_gallery.sorting import ExampleTitleSortKey
 
 import napari
+from napari._version import __version_tuple__
 
 release = napari.__version__
 version = "dev" if "dev" in release else release
@@ -53,11 +55,12 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx_external_toc",
-    "sphinx_tabs.tabs",
+    "sphinx_design",
     'myst_nb',
     #    "sphinx_comments",
-    "sphinx_panels",
     "sphinx.ext.viewcode",
+    "sphinx_favicon",
+    "sphinx_copybutton",
     "sphinx_gallery.gen_gallery",
     "sphinx_tags",
 ]
@@ -78,7 +81,7 @@ tags_extension = ["md", "rst"]
 html_theme = 'napari'
 
 # Define the json_url for our version switcher.
-json_url = "https://napari.org/version_switcher.json"
+json_url = "https://napari.org/dev/_static/version_switcher.json"
 
 version_match = "latest" if version == "dev" else release
 
@@ -90,7 +93,7 @@ html_theme_options = {
     "navbar_start": ["navbar-project"],
     "navbar_end": ["version-switcher", "navbar-icon-links"],
     "switcher": {
-        "json_url": "https://napari.org/version_switcher.json",
+        "json_url": json_url,
         "version_match": version_match,
     },
 }
@@ -102,6 +105,28 @@ html_static_path = ['_static']
 html_logo = "images/logo.png"
 html_sourcelink_suffix = ''
 html_title = 'napari'
+
+favicons = [
+    {
+        # the SVG is the "best" and contains code to detect OS light/dark mode
+        "static-file": "favicon/logo-silhouette-dark-light.svg",
+        "type": "image/svg+xml",
+    },
+    {
+        # Safari in Oct. 2022 does not support SVG
+        # an ICO would work as well, but PNG should be just as good
+        # setting sizes="any" is needed for Chrome to prefer the SVG
+        "sizes": "any",
+        "static-file": "favicon/logo-silhouette-192.png",
+    },
+    {
+        # this is used on iPad/iPhone for "Save to Home Screen"
+        # apparently some other apps use it as well
+        "rel": "apple-touch-icon",
+        "sizes": "180x180",
+        "static-file": "favicon/logo-noborder-180.png",
+    },
+]
 
 html_css_files = [
     'custom.css',
@@ -129,6 +154,21 @@ myst_enable_extensions = [
 
 myst_heading_anchors = 3
 
+version_string = '.'.join(str(x) for x in __version_tuple__[:3])
+python_version = '3.9'
+python_version_range = '3.8-3.10'
+python_minimum_version = '3.8'
+
+myst_substitutions = {
+    "napari_conda_version": f"`napari={version_string}`",
+    "napari_version": version_string,
+    "python_version": python_version,
+    "python_version_range": python_version_range,
+    "python_minimum_version": python_minimum_version,
+    "python_version_code": f"`python={python_version}`",
+    "conda_create_env": f"```sh\nconda create -y -n napari-env -c conda-forge python={python_version}\nconda activate napari-env\n```",
+}
+
 nb_output_stderr = 'show'
 
 panels_add_bootstrap_css = False
@@ -148,6 +188,7 @@ exclude_patterns = [
     '.jupyter_cache',
     'jupyter_execute',
     'plugins/_*.md',
+    'gallery/index.rst',
 ]
 
 napoleon_custom_sections = [('Events', 'params_style')]
@@ -174,9 +215,13 @@ sphinx_gallery_conf = {
     'download_all_examples': False,
     'min_reported_time': 10,
     'only_warn_on_example_error': True,
-    'image_scrapers': (qtgallery.qtscraper,),
+    'image_scrapers': (
+        "matplotlib",
+        qtgallery.qtscraper,
+    ),
     'reset_modules': (reset_napari_theme,),
     'reference_url': {'napari': None},
+    'within_subsection_order': ExampleTitleSortKey,
 }
 
 
@@ -212,7 +257,11 @@ autosummary_ignore_module_all = False
 
 linkcheck_anchors_ignore = [r'^!', r'L\d+-L\d+', r'r\d+', r'issuecomment-\d+']
 
-linkcheck_ignore = ['https://napari.zulipchat.com/']
+linkcheck_ignore = [
+    'https://napari.zulipchat.com/',
+    '../_tags',
+    'https://en.wikipedia.org/wiki/Napari#/media/File:Tabuaeran_Kiribati.jpg',
+]
 
 
 def rewrite_github_anchor(app, uri: str):

@@ -60,7 +60,7 @@ by distributing "[wheels](https://realpython.com/python-wheels/)" on
 Other packages simply distribute the source code (as an "sdist") and expect the
 end-user to compile it on their own computer.  Compiling C code requires
 software that is not always installed on every computer. (If you've ever tried
-to `pip install` a package and had it fail with a big wall of red text saying
+to `python -m pip install` a package and had it fail with a big wall of red text saying
 something about `gcc`, then you've run into a package that doesn't distribute
 wheels, and you didn't have the software required to compile it).
 ````
@@ -103,7 +103,7 @@ reliable way, the built-in napari plugin installer doesn't currently work with
 conda.  If your dependency is only available on conda, but does not offer
 wheels,you *may* guide your users in using conda to install your package or one
 of your dependencies.  Just know that it may not work with the built-in plugin
-installer. 
+installer.
 ````
 
 
@@ -115,7 +115,7 @@ This point will be less relevant when we move to the second generation
 declaration](https://github.com/napari/napari/issues/3115), but it's still a
 good idea to delay importing your plugin-specific dependencies and modules until
 *after* your hookspec has been called.  This helps napari stay quick and
-responsive at startup.  
+responsive at startup.
 ````
 
 
@@ -218,7 +218,7 @@ template](https://github.com/napari/cookiecutter-napari-plugin) is already set
 up to report test coverage, but you can test locally as well, using
 [pytest-cov](https://github.com/pytest-dev/pytest-cov)
 
-1. `pip install pytest-cov`
+1. `python -m pip install pytest-cov`
 2. Run your tests with `pytest --cov=<your_package> --cov-report=html`
 3. Open the resulting report in your browser: `open htmlcov/index.html`
 4. The report will show line-by-line what is being tested, and what is being
@@ -233,7 +233,7 @@ up to report test coverage, but you can test locally as well, using
 ## Set style for additional windows in your plugin
 
 In napari plugins we strongly advise additional widgets be docked in the main napari viewer,
-but sometimes a separate window is required. 
+but sometimes a separate window is required.
 The best practice is to use [`QDialog`](https://doc.qt.io/qt-5/qdialog.html)
 based windows with parent set to widget
 already docked in the viewer.
@@ -248,35 +248,35 @@ class MyInputDialog(QDialog):
         self.number = QSpinBox()
         self.ok_btn = QPushButton("OK")
         self.cancel_btn = QPushButton("Cancel")
-        
+
         layout = QGridLayout()
         layout.addWidget(QLabel("Number:"), 0, 0)
         layout.addWidget(self.number, 0, 1)
         layout.addWidget(self.ok_btn, 1, 0)
         layout.addWidget(self.cancel_btn, 1, 1)
         self.setLayout(layout)
-        
+
         self.ok_btn.clicked.connect(self.accept)
         self.cancel_btn.clicked.connect(self.reject)
-        
+
 class MyWidget(QWidget):
     def __init__(self, viewer: "napari.Viewer"):
         super().__init__()
         self.viewer = viewer
         self.open_dialog = QPushButton("Open dialog")
         self.open_dialog.clicked.connect(self.open_dialog_clicked)
-        
+
     def open_dialog_clicked(self):
-        # setting parent to self allows the dialog to inherit its 
+        # setting parent to self allows the dialog to inherit its
         # style from the viewer by pass self as argument
-        dialog = MyInputDialog(self)  
+        dialog = MyInputDialog(self)
         dialog.exec_()
         if dialog.result() == QDialog.Accepted:
             print(dialog.number.value())
 ```
 
 If there is a particular reason that you need to use a separate window that
-inherits from `QWidget`, not `QDialog`, then you could use the `get_current_stylesheet` 
+inherits from `QWidget`, not `QDialog`, then you could use the `get_current_stylesheet`
 and {func}`get_stylesheet <napari.qt.get_stylesheet>` functions from the
 {mod}`napari.qt <napari.qt>` module.
 
@@ -302,4 +302,90 @@ def change_style():
 get_settings().appearance.events.theme.connect(change_style)
 change_style()
 
+```
+
+## Do not package your tests as a top-level package
+
+If you are using the [napari plugin cookiecutter template](https://github.com/napari/cookiecutter-napari-plugin),
+your tests are already packaged in the correct way. No further action required!
+
+```bash
+# project structure suggested by the cookiecutter template
+src/
+  my_package/
+    _tests/
+      test_my_module.py
+    __init__.py
+    my_module.py
+pyproject.toml
+README.md
+```
+
+However, if your project structure is already following a different scheme,
+the testing logic might live outside your package, as a top-level directory:
+
+```bash
+# alternative structure, no src/ directory, testing logic outside the package
+my_package/
+  __init__.py
+  my_module.py
+tests/
+  conftest.py
+  test_my_module.py
+pyproject.toml
+README.md
+```
+
+Under these circumstances, your build backend (usually `setuptools`) might include `tests` as a
+separate package that will be installed next to `my_package`!
+Most of the time, this is not wanted; e.g. do you want to do `import tests`? Probably not!
+Additionally, this unwanted behavior might cause installation issues with other projects.
+
+Ideally, you could change your project structure to follow the recommended skeleton followed in
+the cookiecutter template. Howevever, if that's unfeasible, you can fix this in the project metadata files.
+
+You need to explicitly _exclude_ the top-level `tests` directory from the packaged contents:
+
+```toml
+# pyproject.toml
+...
+[options.packages.find]
+exclude =
+    tests
+    tests.*
+```
+
+```python
+# setup.py
+...
+setup(
+    ...
+    packages=find_packages(exclude=("tests", "tests.*")),
+    ...
+)
+```
+
+Note this also applies to other top-level directories, like `test`, `_tests`, `testing`, etc.
+
+You can find more information in the
+[package discovery documentation for `setuptools`](https://setuptools.pypa.io/en/latest/userguide/package_discovery.html).
+
+
+## License issues when including code from 3rd parties
+
+Plugins will often depend on 3rd party packages beyond `napari` itself.
+These dependencies are usually included in the project metadata in `pyproject.toml`.
+However, sometimes developers might include code from 3rd parties directly in their project.
+Sometimes it will be just a little snippet, maybe slightly modified to suit the project needs.
+Some other times, a whole project will be included entirely (vendoring).
+
+This constitutes an act of source code redistribution, which is usually covered by many licensing schemes.
+Most of the time, this means you need to explicitly include the vendored project license in the source.
+This is the case for Apache, BSD and MIT-style licenses.
+Do note that some projects might NOT allow redistribution without explicit approval.
+Others will prevent it entirely... Be mindful and check the requirements before distributing your package!
+
+```{note}
+If you are vendoring other projects, please add an acknowledgement in your README.
+The license details in your project metadata should also include this information!
 ```

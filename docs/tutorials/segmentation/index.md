@@ -1,3 +1,4 @@
+(segmentation)=
 # Segmentation
 
 This section contains tutorials for segmentation [labeling](../../howtos/layers/labels).

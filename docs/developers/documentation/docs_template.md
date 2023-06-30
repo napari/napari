@@ -144,4 +144,4 @@ words to capitalize in your headings (spoiler - we use sentence case for our hea
 ## Next steps
 - Use this section to link to other (maybe more advanced?) tutorials, further reading on any complex topics you mentioned,
 or other relevant documentation
-- Now that you've written your document, you can proceed with [updating the TOC](./index.md#3-update-toc)
+- Now that you've written your document, you can proceed with [updating the TOC](update-toc)

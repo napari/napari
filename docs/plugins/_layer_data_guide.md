@@ -118,3 +118,14 @@ Out[7]:
     'image'
 )
 ```
+
+### Adding to the viewer
+
+To add a `LayerData` tuple to the napari viewer, use :meth:`Layer.create`:
+
+```python
+>>> image_layer_data = (data, {'name': 'My Image', 'colormap': 'red'}, 'image')
+>>> viewer = napari.current_viewer()
+>>> viewer.add_layer(napari.layers.Layer.create(*image_layer_data))
+```
+The only attribute that can't be passed to `napari.layers.Layer.create` that is otherwise valid for a `LayerData` tuple is 'channel_axis'.

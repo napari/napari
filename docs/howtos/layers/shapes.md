@@ -391,8 +391,7 @@ You can delete vertices to a selected shape using the vertex deletion tool which
 can be selected either clicking on the vertex deletion tool in the layer
 controls panel or pressing the `X` key while the shapes layer is selected.
 
-For example see below: ![image: shape vertex
-editing](../../images/shape_vertex_editing.webm)
+For example see below: ![animation of napari viewer with a shapes layer bounded by vertices over an initial static image. The shapes are selected and the vertices moved by the mouse pointer, resulting in new shapes.](../../images/shape_vertex_editing.webm)
 
 ## Changing shape edge and face colors
 

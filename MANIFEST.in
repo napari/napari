@@ -32,6 +32,8 @@ recursive-include docs *.rst
 recursive-include docs *.txt
 recursive-include docs *.webm
 recursive-include docs *.yml
+recursive-include docs *.mp4
+recursive-include docs *.svg
 
 
 exclude docs/_build/**

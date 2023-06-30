@@ -27,7 +27,7 @@ ij = imagej.init('sc.fiji:fiji') # Fiji includes Bio-Formats.
 
 viewer = napari.Viewer()
 for path in sys.argv[1:]:
-    print('--> Reading {}'.format(path))
+    print(f'--> Reading {path}')
 
     dataset = ij.io().open(path)
     image = ij.py.from_java(dataset)

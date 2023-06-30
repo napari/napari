@@ -1,14 +1,14 @@
 (napari-plugin-engine)=
 # 1st Gen Plugin Guide (*Deprecated*)
 
-```{Admonition} DEPRECATED 
+```{Admonition} DEPRECATED
 :class: warning
 We introduced a new plugin engine ([`npe2`][npe2]) in December 2021.
 
 Plugins targeting the first generation `napari-plugin-engine`
 (described on this page) will continue to work for at least the
 first half of 2022, but we recommend that new plugins use `npe2` and
-existing plugins consider migrating soon. See the 
+existing plugins consider migrating soon. See the
 [npe2 migration guide](npe2-migration-guide) for details.
 
 The content below describes the original
@@ -203,7 +203,7 @@ A user would then be able to use `napari`, extended with your package's
 functionality by simply installing your package along with napari:
 
 ```sh
-   pip install napari mypackage
+   python -m pip install napari mypackage
 ```
 
 (plugin-sharing)=
@@ -227,7 +227,7 @@ plugin.
 Install cookiecutter and use the template as follows:
 
 ```sh
-pip install cookiecutter
+python -m pip install cookiecutter
 cookiecutter https://github.com/napari/cookiecutter-napari-plugin
 ```
 

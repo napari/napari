@@ -16,7 +16,7 @@ development environment, then if using ``venv`` you may install the requirement 
 
 ```bash
 source napari-dev/bin/activate
-pip install asv
+python -m pip install asv
 ```
 
 If you are using conda, then the command:
@@ -162,14 +162,14 @@ Note that we in both these cases we have sent the output of the profiling to [sn
 which you can pip install with
 
 ```bash
-pip install snakeviz
+python -m pip install snakeviz
 ```
 
 and we use `--python=same` to profile against our current python environment.
 
 ## Running benchmarks on CI
 
-Benchmarking on CI has two main parts - the Benchmark Action and the Benchmark Reporting Action. 
+Benchmarking on CI has two main parts - the Benchmark Action and the Benchmark Reporting Action.
 
 ### The Benchmark Action
 
@@ -178,11 +178,11 @@ The benchmarks are set to run:
 * On PRs with the `run-benchmark` label
 * On workflow dispatch (manual trigger)
 
-If the benchmarks fail during the scheduled run, an issue is opened in the repo to flag the occurrence. 
-If an issue has already been opened, it will add to the existing issue. 
+If the benchmarks fail during the scheduled run, an issue is opened in the repo to flag the occurrence.
+If an issue has already been opened, it will add to the existing issue.
 
 The contender SHA is a Github PR merge commit - a fake commit not available to users.
-Every time you want the benchmark CI to run in a PR, you'll need to remove and re-add the `run-benchmark` label. 
+Every time you want the benchmark CI to run in a PR, you'll need to remove and re-add the `run-benchmark` label.
 
 
 ### Benchmark Reporting Action

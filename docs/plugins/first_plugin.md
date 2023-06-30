@@ -54,14 +54,16 @@ cd napari-hello
 In your root `napari-hello` folder, create a `pyproject.toml` and `setup.cfg` file,
 then create a `napari_hello` directory with a single `__init__.py` file inside of it.
 
-````{tabbed} macOS / Linux
+::::{tab-set}
+
+:::{tab-item} macOS / Linux
 ```sh
 mkdir napari_hello
 touch napari_hello/__init__.py napari_hello/napari.yaml pyproject.toml setup.cfg
 ```
-````
+:::
 
-````{tabbed} Windows
+:::{tab-item} Windows
 ```bat
 mkdir napari_hello
 copy /b napari_hello\__init__.py +,,
@@ -69,7 +71,9 @@ copy /b napari_hello\napari.yaml +,,
 copy /b pyproject.toml +,,
 copy /b setup.cfg +,,
 ```
-````
+:::
+
+::::
 
 Your project should now look like this:
 
@@ -92,7 +96,7 @@ single top-level module, called `napari_hello`.
 
 You would *install* this package with
 ```sh
-pip install napari-hello
+python -m pip install napari-hello
 ```
 
 ... and *import* it with ...
@@ -255,13 +259,13 @@ napari.manifest =
 ## 4. Install your plugin and try it out!
 
 With that, we're ready to go.  Let's install our package in the environment
-and then run napari.  Note: we're using `pip install -e .` here to install our
+and then run napari.  Note: we're using `python -m pip install -e .` here to install our
 package (in the current working directory) in ["editable" mode][editable_mode].
 This means that changes we make to our package during development will be
-detected when we re-run napari, without having to run `pip install` again.
+detected when we re-run napari, without having to run `python -m pip install` again.
 
 ```sh
-pip install -e .
+python -m pip install -e .
 napari
 ```
 
@@ -281,7 +285,7 @@ includes conveniences like testing, continuous integration, version
 management, and deployment hooks.
 
 ```sh
-pip install cookiecutter
+python -m pip install cookiecutter
 cookiecutter https://github.com/napari/cookiecutter-napari-plugin
 ```
 

@@ -48,7 +48,7 @@ python -m cProfile -o result.pstat path_to_script.py
 Once the file is saved, you can investigate using free tools. Some options include:
 
 1.  The Stat object.
-    
+
     You can parse the profile output using the `Stats` object from the `pstats` built-in library. For example:
     ```python
     from pstats import Stats
@@ -58,13 +58,13 @@ Once the file is saved, you can investigate using free tools. Some options inclu
     You can find more documentation about the Stats object in the Python documentation [here](https://docs.python.org/3/library/profile.html#the-stats-class).
 
 2.  Snakeviz.
-    
+
     Snakeviz is a third party library designed to visualize profiling output interactively.
-    You can install it with pip like any other Python library using `pip install snakeviz`.
+    You can install it with pip like any other Python library using `python -m pip install snakeviz`.
     This will provide the `snakeviz` command, which you can call to create an in-browser
     visualization of your profiling data. Use the command:
     ```bash
-    snakeviz path/to/result.pstat   
+    snakeviz path/to/result.pstat
     ```
     This should cause a new page to open in your browser with your profiling information.
     You can read more about how to interpret this visualization on the
@@ -75,7 +75,7 @@ Once the file is saved, you can investigate using free tools. Some options inclu
     You can visualize the call graph with [`graphviz`](https://www.graphviz.org/),
     a third party graph visualization library.
     You can install graphviz with system package managers:
-    
+
     * Ubuntu: `sudo apt install graphviz`
     * MacOS with brew: `brew install graphviz`
     * Windows with choco `choco install graphviz`
@@ -87,9 +87,9 @@ Once the file is saved, you can investigate using free tools. Some options inclu
     $ python -m gprof2dot -f pstats  -n 5  result.pstat -o result.dot
     $ dot -Tpng -o result.png result.dot
     ```
-    
+
     If your shell supports piping, this can all be combined into one command:
-    
+
     ```bash
     $ python -m gprof2dot -f pstats  -n 5  result.pstat -o | dot -Tpng -o result.png
     ```
@@ -129,6 +129,6 @@ viewer.window.add_dock_widget(testing_btn)
 In addition to cProfile, third-party profilers are available in Python:
 
 *  `yappi` with support for multithreading
-*  `vmprof` 
+*  `vmprof`
 
 Both can be installed with `pip`.

@@ -143,6 +143,8 @@ browse volumetric timeseries data and other high dimensional data.
 
 ```{code-cell} python
 :tags: [remove-output]
+import napari
+from skimage import data
 from scipy import ndimage as ndi
 
 blobs = data.binary_blobs(length=128, volume_fraction=0.1, n_dim=3)

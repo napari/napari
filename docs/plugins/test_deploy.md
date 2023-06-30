@@ -12,11 +12,11 @@ We recommend using
 [pytest](https://docs.pytest.org/en/6.2.x/getting-started.html) for testing your
 plugin. Aim for [100% test coverage](./best_practices.md#how-to-check-test-coverage)!
 
-### The `make_napari_viewer` fixture
+### The `make_napari_viewer_proxy` fixture
 
 Testing a napari `Viewer` requires some setup and teardown each time.  We have
 created a [pytest fixture](https://docs.pytest.org/en/6.2.x/fixture.html) called
-`make_napari_viewer` that you can use (this requires that you have napari
+`make_napari_viewer_proxy` that you can use (this requires that you have napari
 installed in your environment).
 
 To use a fixture in pytest, you simply include the name of the fixture in the
@@ -24,10 +24,13 @@ test parameters (oddly enough, you don't need to import it!).  For example, to
 create a napari viewer for testing:
 
 ```
-def test_something_with_a_viewer(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_something_with_a_viewer(make_napari_viewer_proxy):
+    viewer = make_napari_viewer_proxy()
     ...  # carry on with your test
 ```
+
+If you embed the viewer in your own application and need to access private attributes,
+you can use the `make_napari_viewer` fixture.
 
 ### Prefer smaller unit tests when possible
 
@@ -123,12 +126,12 @@ guide][hub-guide-custom-viz].
 
 Finally, once you have curated your package metadata and description, you can
 preview your metadata, and check any missing fields using the
-napari hub preview page service. Check out [this guide](https://github.com/chanzuckerberg/napari-hub/blob/main/docs/setting-up-preview.md) for instructions on how to set it up. 
+napari hub preview page service. Check out [this guide](https://github.com/chanzuckerberg/napari-hub/blob/main/docs/setting-up-preview.md) for instructions on how to set it up.
 
 ## Deployment
 
 When you are ready to share your plugin, [upload the Python package to
-PyPI][pypi-upload] after which it will be installable using `pip install
+PyPI][pypi-upload] after which it will be installable using `python -m pip install
 <yourpackage>`, or (assuming you added the `Framework :: napari` classifier)
 in the builtin plugin installer dialog.
 
@@ -156,4 +159,3 @@ forum](https://forum.image.sc/tag/napari).
 [hub-guide-custom-viz]: https://github.com/chanzuckerberg/napari-hub/wiki/Customizing-your-plugin's-listing#visibility
 [hub-guide-preview]: https://github.com/chanzuckerberg/napari-hub/blob/main/docs/setting-up-preview.md
 [autodeploy]: https://github.com/napari/cookiecutter-napari-plugin#set-up-automatic-deployments
-

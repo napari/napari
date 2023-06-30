@@ -59,11 +59,11 @@ supported by imageio, and zarr).  However, we can now *write* to all these
 formats, and read and write point and shape annotations in .csv format.
 Additionally, we have made it possible for anyone to create packages for napari
 to read and write in any other formats through plugins. You can read about our
-plugin architecture [here](https://napari.org/plugins/stable/index.html).
+plugin architecture [here](https://napari.org/plugins/index.html).
 
 Want to drag and drop your favorite file format into napari and have it load
 automatically? See [this
-guide](https://napari.org/plugins/stable/for_plugin_developers.html) to
+guide](https://github.com/napari/napari/blob/v0.3.0/docs/source/plugins/for_plugin_developers.rst) to
 understand how to write your own plugin, see Jackson Brown's
 [napari-aicsimageio](https://github.com/AllenCellModeling/napari-aicsimageio)
 for an exemplar plugin, and get started with Talley's [cookiecutter napari
@@ -82,7 +82,7 @@ Even better, we have released a side package called
 [magicgui](https://github.com/napari/magicgui) to allow you to create your own
 dockable widgets with which to interact with napari without writing GUI code.
 We are still working on standard models of interaction here (see our
-[roadmap](https://napari.org/docs/developers/ROADMAP_0_3.html)), but you should
+[roadmap](https://napari.org/roadmaps/0_3.html)), but you should
 be able to get started creating useful user interfaces right now. [This
 image.sc
 post](https://forum.image.sc/t/integration-of-napari-module-subclass-plugin/36018/2)

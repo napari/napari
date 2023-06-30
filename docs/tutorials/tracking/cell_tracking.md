@@ -188,7 +188,7 @@ The `btrack` library can be used for cell tracking. It provides a convenient `to
 import btrack
 ```
 
-We start by loading a file containing the centroids of all the found cells in each frame of the source movie. Note that this file only contains the locations of cells in the movie, there are no tracks yet. We can use the `btrack` library to load this file as a list of `objects` that contain information about each found cell, including the TZYX position.  The example dataset can be downloaded [here](https://raw.githubusercontent.com/quantumjot/BayesianTracker/master/examples/napari_example.csv).
+We start by loading a file containing the centroids of all the found cells in each frame of the source movie. Note that this file only contains the locations of cells in the movie, there are no tracks yet. We can use the `btrack` library to load this file as a list of `objects` that contain information about each found cell, including the TZYX position.  The example dataset can be downloaded [here](https://github.com/quantumjot/BayesianTracker/blob/0f8bbd937535193bde20e3ebe91a323f6bb915e9/examples/napari_example.csv).
 
 ```python
 objects = btrack.dataio.import_CSV('napari_example.csv')

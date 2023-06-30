@@ -125,7 +125,7 @@ is suitable for a NAP. Posting to the napari [issues list] is the best
 way to do this.
 
 The proposal should be submitted as a draft NAP via a [GitHub pull
-request][github pull request] to the `docs/source/naps` directory with the
+request][github pull request] to the `docs/naps` directory of the `napari/docs` repo with the
 name `nap-<n>-<short-title>.md` where `<n>` is an appropriately assigned
 number (typically sequential) and `<short-title>` is a one or two word title
 for the idea (e.g., `nap-35-lazy-slicing.md`). The draft must use the
@@ -320,7 +320,7 @@ on a separate line.
 
 [^id3]: This historical record is available by the normal git commands
     for retrieving older revisions, and can also be browsed on
-    [GitHub](https://github.com/napari/napari/tree/main/docs/naps).
+    [GitHub](https://github.com/napari/docs/tree/main/docs/naps).
 
 [^id4]: The URL for viewing NAPs on the web is
     <https://napari.org/naps/>

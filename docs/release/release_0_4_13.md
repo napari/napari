@@ -22,7 +22,7 @@ This is the first release supporting npe2, the second iteration of napari
 plugin engine, which will soon enable more powerful actions from plugins.
 New plugin authors should start using npe2, while existing authors can migrate
 their plugins using our
-[migration guide](https://napari.org/plugins/stable/npe2_migration_guide.html).
+[migration guide](https://napari.org/plugins/npe2_migration_guide.html).
 
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
@@ -128,11 +128,11 @@ Complete list of changes below:
 - Replace timeout in test by duration assertion. (#3887)
 - Do not leak QtViewer between tests. (#3890)
 - `_track_colors`  cleanup (#3891)
-- Add error message if local file doesn't exist. (#3900)
+- Add error message if local file doesn't exist. (#3900)
 - Better error message on failed window import (#3901)
 - Update typing test on CI (#3903)
 - Features implementation refactor (#3904)
-- Add npe2 to install requires (#3906)
+- Add npe2 to install requires (#3906)
 - Rename feature manager attribute to table (#3931)
 - Better Notification __str__ method (#3933)
 - Fix ndisplay button highlight (#3935)
@@ -174,9 +174,9 @@ Complete list of changes below:
 - Fix cleaning of resources in function contextmanagers (#3918)
 - Fix magicgui layer combobox not populated when adding to viewer (#3938)
 - Fix setting attribute to None for single slices of image stacks on stack creation (#3941)
-- Fix too many entries in available plugins list (#3943)
-- Block some duplications in Plugins menu (#3957)
-- Fix close_progress_bar with no current_pbar (#3961)
+- Fix too many entries in available plugins list (#3943)
+- Block some duplications in Plugins menu (#3957)
+- Fix close_progress_bar with no current_pbar (#3961)
 - Switch append to concat (#3963)
 - Update plugin docs index (#3964)
 
@@ -189,7 +189,7 @@ Complete list of changes below:
 - Deprecate `qt_viewer.screenshot` & `clipboard` (#3765)
 - Restrict PublicOnlyProxy to napari namespace, allow napari-internal private usage (#3777)
 - Change PublicOnlyProxy deprecation expiry to 0.5.0 (#3788)
-- Remove deprecation of sceenshot in qt_viewer (#3937)
+- Remove deprecation of sceenshot in qt_viewer (#3937)
 
 
 ## Build Tools and Docs

@@ -51,7 +51,7 @@ widget_demo.show()
 *Add caption here*
 
 For more information on the features and usage of `magicgui`, see the [magicgui
-documentation](https://napari.org/magicgui).  `magicgui` does not require
+documentation](https://pyapp-kit.github.io/magicgui/). `magicgui` does not require
 napari, but napari *does* provide support for using magicgui within napari. The
 purpose of this page is to document some of the conveniences provided by napari
 when using `magicgui` with napari-specific type annotations.
@@ -64,7 +64,7 @@ context-dependent action for the object returned from the function (in the
 absence of a type hint, the type of the default value will be used).  Third
 party packages (like `napari` in this case) may provide support for their types
 using
-[`magicgui.register_type`](https://napari.org/magicgui/usage/types_widgets.html#register-type).
+[`magicgui.register_type`](https://pyapp-kit.github.io/magicgui/usage/types_widgets.html#register-type).
 This is how using the type annotations described below leads to widgets and/or
 "actions" in napari.
 

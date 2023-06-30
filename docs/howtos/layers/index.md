@@ -1,3 +1,4 @@
+(using-layers)=
 # Using layers
 
 [Layers](napari.layers) are the viewable objects that can be added to a viewer.
