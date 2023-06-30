@@ -82,10 +82,6 @@ jobs:
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
-          # test with --async_only
-          - python: 3.8
-            platform: ubuntu-20.04
-            toxenv: async-pyqt5-py38-linux
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-20.04
@@ -144,7 +140,7 @@ jobs:
       # see tox.ini for more
       - name: Test with tox
         # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
-        timeout-minutes: 35
+        timeout-minutes: 40
         uses: aganders3/headless-gui@v1
         with:
           run: python -m tox

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes._shapes_constants import Box, Mode
 from napari.layers.shapes._shapes_models import (
     Ellipse,
@@ -110,7 +111,19 @@ def select(layer: Shapes, event: MouseEvent) -> None:
 
     # only emit data once dragging has finished
     if layer._is_moving:
-        layer.events.data(value=layer.data)
+        vertex_indices = tuple(
+            tuple(
+                vertex_index
+                for vertex_index, coord in enumerate(layer.data[i])
+            )
+            for i in layer.selected_data
+        )
+        layer.events.data(
+            value=layer.data,
+            action=ActionType.CHANGE.value,
+            data_indices=tuple(layer.selected_data),
+            vertex_indices=vertex_indices,
+        )
 
     # on release
     shift = 'Shift' in event.modifiers
@@ -518,6 +531,12 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
     with layer.events.set_data.blocker():
         layer._data_view.edit(index, vertices, new_type=new_type)
         layer._selected_box = layer.interaction_box(layer.selected_data)
+    layer.events.data(
+        value=layer.data,
+        action=ActionType.CHANGE.value,
+        data_indices=(index,),
+        vertex_indices=((ind,),),
+    )
     layer.refresh()
 
 
@@ -569,6 +588,12 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
             )
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
+    layer.events.data(
+        value=layer.data,
+        action=ActionType.CHANGE.value,
+        data_indices=(shape_under_cursor,),
+        vertex_indices=((vertex_under_cursor,),),
+    )
     layer.refresh()
 
 

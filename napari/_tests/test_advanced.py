@@ -157,6 +157,7 @@ def test_range_one_images_and_points(make_napari_viewer):
     assert np.sum(view.dims._displayed_sliders) == 3
 
 
+@pytest.mark.enable_console
 @pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
 def test_update_console(make_napari_viewer):
     """Test updating the console with local variables."""
@@ -178,6 +179,57 @@ def test_update_console(make_napari_viewer):
     assert view.console.shell.user_ns['b'] == b
     for k in locs:
         del viewer.window._qt_viewer.console.shell.user_ns[k]
+
+
+@pytest.mark.enable_console
+@pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
+def test_update_lazy_console(make_napari_viewer, capsys):
+    """Test updating the console with local variables,
+    before console is instantiated."""
+    viewer = make_napari_viewer()
+    view = viewer.window._qt_viewer
+
+    a = 4
+    b = 5
+    viewer.update_console(["a", "b"])
+
+    x = np.arange(5)
+    viewer.update_console("x")
+
+    viewer.update_console("missing")
+    captured = capsys.readouterr()
+    assert 'Could not get' in captured.out
+    with pytest.raises(TypeError):
+        viewer.update_console(x)
+
+    # Create class objects that will have weakrefs
+    class Foo:
+        pass
+
+    obj1 = Foo()
+    obj2 = Foo()
+    viewer.update_console({'obj1': obj1, 'obj2': obj2})
+    del obj1
+
+    # Check viewer in console
+    assert view.console.kernel_client is not None
+    assert 'viewer' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['viewer'] == viewer
+
+    # Check backlog is cleared
+    assert len(view.console_backlog) == 0
+
+    assert 'a' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['a'] == a
+    assert 'b' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['b'] == b
+    assert 'x' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['x'] is x
+    assert 'obj1' not in view.console.shell.user_ns
+    assert 'obj2' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['obj2'] == obj2
+    del viewer.window._qt_viewer.console.shell.user_ns['obj2']
+    del viewer.window._qt_viewer.console.shell.user_ns['x']
 
 
 def test_changing_display_surface(make_napari_viewer):

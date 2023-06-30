@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple, Union
 
 import numpy as np
 
@@ -11,7 +11,7 @@ from napari.utils.validators import _validate_increasing, validate_n_seq
 validate_2_tuple = validate_n_seq(2)
 
 if TYPE_CHECKING:
-    from napari.layers.image.image import Image
+    from napari.layers.image.image import _ImageBase
 
 
 class IntensityVisualizationMixin:
@@ -39,12 +39,17 @@ class IntensityVisualizationMixin:
         self._gamma = 1
         self._colormap_name = ''
         self._contrast_limits_msg = ''
-        self._contrast_limits = [None, None]
+        self._contrast_limits: Tuple[
+            Union[float, None], Union[float, None]
+        ] = (
+            None,
+            None,
+        )
         self._contrast_limits_range = [None, None]
         self._auto_contrast_source = 'slice'
         self._keep_auto_contrast = False
 
-    def reset_contrast_limits(self: 'Image', mode=None):
+    def reset_contrast_limits(self: '_ImageBase', mode=None):
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
         self.contrast_limits = self._calc_data_range(mode)

@@ -1,9 +1,11 @@
 import collections
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
 
 from napari.layers import Shapes
+from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes.shapes import Mode
 from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
@@ -343,6 +345,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     """Add vertex to shape."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
+    layer.events.data = Mock()
     n_coord = len(layer.data[0])
     layer.mode = 'vertex_insert'
     layer.selected_data = {0}
@@ -374,6 +377,12 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     # Check new shape added at coordinates
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord + 1
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGE.value,
+        "data_indices": tuple(layer.selected_data),
+        "vertex_indices": ((2,),),
+    }
     np.testing.assert_allclose(
         np.min(abs(layer.data[0] - known_non_shape), axis=0), [0, 0]
     )
@@ -382,10 +391,11 @@ def test_vertex_insert(create_known_shapes_layer, Event):
 def test_vertex_remove(create_known_shapes_layer, Event):
     """Remove vertex from shape."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
-
+    layer.events.data = Mock()
     n_coord = len(layer.data[0])
     layer.mode = 'vertex_remove'
-    layer.selected_data = {0}
+    select = {0}
+    layer.selected_data = select
     position = tuple(layer.data[0][0])
 
     # Simulate click
@@ -411,7 +421,14 @@ def test_vertex_remove(create_known_shapes_layer, Event):
         )
     )
     mouse_move_callbacks(layer, event)
-
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGE.value,
+        "data_indices": tuple(
+            select,
+        ),
+        "vertex_indices": ((3,),),
+    }
     # Check new shape added at coordinates
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord - 1
@@ -457,6 +474,7 @@ def test_select_shape(mode, create_known_shapes_layer, Event):
 def test_drag_shape(create_known_shapes_layer, Event):
     """Select and drag vertex."""
     layer, n_shapes, _ = create_known_shapes_layer
+    layer.events.data = Mock()
 
     layer.mode = 'select'
     # Zoom in so as to not select any vertices
@@ -547,8 +565,15 @@ def test_drag_shape(create_known_shapes_layer, Event):
     mouse_release_callbacks(layer, event)
 
     # Check clicked shape selected
+    vertex_indices = (tuple(range(len(layer.data[0]))),)
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGE.value,
+        "data_indices": (0,),
+        "vertex_indices": vertex_indices,
+    }
     np.testing.assert_allclose(layer.data[0], orig_data + np.array([10, 5]))
 
 
@@ -618,7 +643,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
 def test_drag_vertex(create_known_shapes_layer, Event):
     """Select and drag vertex."""
     layer, n_shapes, _ = create_known_shapes_layer
-
+    layer.events.data = Mock()
     layer.mode = 'direct'
     layer.selected_data = {0}
     old_position = tuple(layer.data[0][0])
@@ -663,9 +688,16 @@ def test_drag_vertex(create_known_shapes_layer, Event):
     mouse_release_callbacks(layer, event)
 
     # Check clicked shape selected
+    vertex_indices = (tuple(range(len(layer.data[0]))),)
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
-    np.testing.assert_allclose(layer.data[0][0], new_position)
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGE.value,
+        "data_indices": (0,),
+        "vertex_indices": vertex_indices,
+    }
+    np.testing.assert_allclose(layer.data[0][0], [0, 0])
 
 
 @pytest.mark.parametrize(
