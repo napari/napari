@@ -142,7 +142,7 @@ class LayerDelegate(QStyledItemDelegate):
         """paint the layer error indicator."""
         errored = index.data(ErroredRole)
         if errored:
-            error_rect = option.rect.translated(55, 8)
+            error_rect = option.rect.translated(4, 8)
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
             error_rect.setWidth(h)
             error_rect.setHeight(h)
@@ -155,12 +155,14 @@ class LayerDelegate(QStyledItemDelegate):
         # paint the thumbnail
         # MAGICNUMBER: numbers from the margin applied in the stylesheet to
         # QtLayerTreeView::item
-        thumb_rect = option.rect.translated(-2, 2)
-        h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
-        thumb_rect.setWidth(h)
-        thumb_rect.setHeight(h)
-        image = index.data(ThumbnailRole)
-        painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
+        errored = index.data(ErroredRole)
+        if not errored:
+            thumb_rect = option.rect.translated(-2, 2)
+            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
+            thumb_rect.setWidth(h)
+            thumb_rect.setHeight(h)
+            image = index.data(ThumbnailRole)
+            painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
 
     def createEditor(
         self,
