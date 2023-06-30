@@ -16,7 +16,7 @@ napari is a consensus-based community project. Anyone with an interest in the pr
 - [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - [@royerloic](https://github.com/royerloic)^
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - [@brisvag](https://github.com/brisvag)
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - [@melonora](https://github.com/melonora)
-- [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - [@sofroniewn](https://github.com/sofroniewn)*
+- [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - [@sofroniewn](https://github.com/sofroniewn)^
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - [@psobolewskiPhD](https://github.com/psobolewskiPhD)
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - [@tlambert03](https://github.com/tlambert03)*
 
@@ -46,7 +46,7 @@ Read more about napari’s [mission and values](https://napari.org/community/mis
 
 ## Institutional and funding Partners
 
-- [Chan Zuckberg Initiative Foundation.](https://chanzuckerberg.com/science) Representative [Nicholas Sofroniew](https://github.com/sofroniewn).
+- [Chan Zuckerberg Initiative Foundation.](https://chanzuckerberg.com/science) Representative [Kyle I. S. Harrington](https://github.com/kephale).
 
     - The napari project and community have been generously supported by the [CZI Science Imaging Program.](https://chanzuckerberg.com/science/programs-resources/imaging/)
     - Since late 2018, Juan Nunez-Iglesias has been supported by a CZI Imaging Software Fellowship.
