@@ -308,6 +308,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             point=(0,) * ndim,
             order=tuple(range(ndim)),
         )
+        self._loaded: bool = True
+        self._last_slice_id: int = -1
 
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
@@ -382,7 +384,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             help=Event,
             interactive=WarningEmitter(
                 trans._(
-                    "layer.events.interactive is deprecated since 0.5.0 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom",
+                    "layer.events.interactive is deprecated since 0.4.18 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom",
                     deferred=True,
                 ),
                 type_name='interactive',
@@ -533,12 +535,37 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def loaded(self) -> bool:
-        """Return True if this layer is fully loaded in memory.
+        """True if this layer is fully loaded in memory, False otherwise.
 
-        This base class says that layers are permanently in the loaded state.
-        Derived classes that do asynchronous loading can override this.
+        Layers that only support sync slicing are always fully loaded.
+        Layers that support async slicing can be temporarily not loaded
+        while slicing is occurring.
         """
-        return True
+        return self._loaded
+
+    def _set_loaded(self, loaded: bool) -> None:
+        """Set the loaded state and notify a change with the loaded event."""
+        if self._loaded != loaded:
+            self._loaded = loaded
+            self.events.loaded()
+
+    def _set_unloaded_slice_id(self, slice_id: int) -> None:
+        """Set this layer to be unloaded and associated with a pending slice ID.
+
+        This is private but accessed externally because it is related to slice
+        state, which is intended to be moved off the layer in the future.
+        """
+        self._last_slice_id = slice_id
+        self._set_loaded(False)
+
+    def _update_loaded_slice_id(self, slice_id: int) -> None:
+        """Potentially update the loaded state based on the given completed slice ID.
+
+        This is private but accessed externally because it is related to slice
+        state, which is intended to be moved off the layer in the future.
+        """
+        if self._last_slice_id == slice_id:
+            self._set_loaded(True)
 
     @property
     def errored(self) -> bool:
@@ -968,7 +995,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def interactive(self) -> bool:
         warnings.warn(
             trans._(
-                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+                "Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
             ),
             FutureWarning,
             stacklevel=2,
@@ -979,7 +1006,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def interactive(self, interactive: bool):
         warnings.warn(
             trans._(
-                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+                "Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
             ),
             FutureWarning,
             stacklevel=2,

@@ -8,7 +8,6 @@ from typing import Dict
 
 from napari.components.experimental.monitor import monitor
 from napari.components.layerlist import LayerList
-from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -50,10 +49,6 @@ class RemoteMessages:
         self._frame_number += 1
 
         layers: Dict[int, dict] = {}
-
-        for layer in self.layers:
-            if isinstance(layer, _OctreeImageBase):
-                layers[id(layer)] = layer.remote_messages
 
         monitor.add_data({"poll": {"layers": layers}})
         self._send_frame_time()

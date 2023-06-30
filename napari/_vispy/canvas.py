@@ -23,6 +23,7 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
+from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from typing import Callable, List, Optional, Tuple, Union
@@ -116,6 +117,10 @@ class VispyCanvas:
         self._key_map_handler = key_map_handler
         self._instances.add(self)
 
+        self.bgcolor = transform_color(
+            get_theme(self.viewer.theme).canvas.as_hex()
+        )[0]
+
         # Call get_max_texture_sizes() here so that we query OpenGL right
         # now while we know a Canvas exists. Later calls to
         # get_max_texture_sizes() will return the same results because it's
@@ -204,7 +209,7 @@ class VispyCanvas:
         # Note 2. the reason for using the `as_hex` here is to avoid
         # `UserWarning` which is emitted when RGB values are above 1
         self._last_theme_color = transform_color(
-            get_theme(theme, False).canvas.as_hex()
+            get_theme(theme).canvas.as_hex()
         )[0]
         self.bgcolor = self._last_theme_color
 
@@ -558,6 +563,7 @@ class VispyCanvas:
         self.layer_to_visual[napari_layer] = vispy_layer
 
         napari_layer.events.visible.connect(self._reorder_layers)
+        self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
         self._reorder_layers()
 
@@ -576,6 +582,7 @@ class VispyCanvas:
         layer = event.value
         layer.events.visible.disconnect(self._reorder_layers)
         vispy_layer = self.layer_to_visual[layer]
+        self.viewer.camera.events.disconnect(vispy_layer._on_camera_move)
         vispy_layer.close()
         del vispy_layer
         del self.layer_to_visual[layer]

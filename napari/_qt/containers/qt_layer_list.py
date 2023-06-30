@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QSortFilterProxyModel, Qt
+from qtpy.QtCore import QSortFilterProxyModel, Qt  # type: ignore[attr-defined]
 
 from napari._qt.containers._base_item_model import (
     SortRole,
@@ -14,8 +14,10 @@ from napari.layers import Layer
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from qtpy.QtGui import QKeyEvent
-    from qtpy.QtWidgets import QWidget
+    from typing import Optional
+
+    from qtpy.QtGui import QKeyEvent  # type: ignore[attr-defined]
+    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
     from napari.components.layerlist import LayerList
 
@@ -42,7 +44,9 @@ class QtLayerList(QtListView[Layer]):
     reversing the view with ReverseProxyModel.
     """
 
-    def __init__(self, root: LayerList, parent: QWidget = None) -> None:
+    def __init__(
+        self, root: LayerList, parent: Optional[QWidget] = None
+    ) -> None:
         super().__init__(root, parent)
         self.setItemDelegate(LayerDelegate())
         self.setToolTip(trans._('Layer list'))
