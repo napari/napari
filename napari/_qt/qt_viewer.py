@@ -589,8 +589,7 @@ class QtViewer(QSplitter):
             # that depends on it.
             layer._update_slice_response(response)
             # Update the layer's loaded state before everything else,
-            # as things like the vispy layer and thumbnail may need that
-            # updated state.
+            # because they may rely on its updated value.
             layer._update_loaded_slice_id(response.request_id)
             # The rest of `Layer.refresh` after `set_view_slice`, where
             # `set_data` notifies the corresponding vispy layer of the new
