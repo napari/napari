@@ -68,6 +68,7 @@ from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
     plugin_manager,
 )
+from napari.plugins._npe2 import _rebuild_npe1_samples_menu
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
@@ -758,6 +759,15 @@ class Window:
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
+    def _setup_npe1_samples_menu(self):
+        """Register npe1 sample data, build menu and connect to events."""
+        plugin_manager.discover_sample_data()
+        plugin_manager.events.enabled.connect(_rebuild_npe1_samples_menu)
+        plugin_manager.events.disabled.connect(_rebuild_npe1_samples_menu)
+        plugin_manager.events.registered.connect(_rebuild_npe1_samples_menu)
+        plugin_manager.events.unregistered.connect(_rebuild_npe1_samples_menu)
+        _rebuild_npe1_samples_menu()
+
     def _add_menus(self):
         """Add menubar to napari app."""
         # TODO: move this to _QMainWindow... but then all of the Menu()
@@ -779,6 +789,7 @@ class Window:
         self.file_menu = build_qmodel_menu(
             MenuId.MENUBAR_FILE, title=trans._('&File'), parent=self._qt_window
         )
+        self._setup_npe1_samples_menu()
         self.file_menu.aboutToShow.connect(
             lambda: self._update_enabled('file_menu')
         )

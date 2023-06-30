@@ -330,7 +330,6 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     # list them explicitly)
     for v in Viewer._instances:
         v.window.plugins_menu._build()
-    _build_npe1_samples_menu()
 
 
 def on_plugins_registered(manifests: Set[PluginManifest]):
@@ -341,35 +340,40 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
     for mf in manifests:
         if not pm.is_disabled(mf.name):
             _register_manifest_actions(mf)
-    _build_npe1_samples_menu()
 
 
-# TODO: This is a separate function from `_build_samples_menu` so it can be
-# easily deleted once npe1 is no longer supported.
-def _build_npe1_samples_menu():
-    """Builds 'Open Sample' menu for all npe1 plugins."""
+# TODO: This is a separate function from `_get_samples_submenu_actions` so it
+# can be easily deleted once npe1 is no longer supported.
+def _rebuild_npe1_samples_menu():
+    """Register submenu and actions for all npe1 plugins, clearing all first."""
     from napari._app_model import get_app
     from napari._app_model.constants import MenuGroup, MenuId
-    from napari._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
     from napari._qt.qt_viewer import QtViewer
     from napari.plugins import menu_item_template, plugin_manager
 
     app = get_app()
+    # Unregister all existing npe1 sample menu actions and submenus
+    if unreg := plugin_manager._unreg_sample_appmodel_submenus:
+        unreg()
+    if unreg := plugin_manager._unreg_sample_appmodel_actions:
+        unreg()
+
+    sample_actions: List[Action] = []
     for plugin_name, samples in plugin_manager._sample_data.items():
         multiprovider = len(samples) > 1
         if multiprovider:
-            sub_menu_id = f'napari/file/samples/{plugin_name}'
-            sub_menu = [
+            submenu_id = f'napari/file/samples/{plugin_name}'
+            submenu = [
                 (
                     MenuId.FILE_SAMPLES,
                     SubmenuItem(
-                        submenu=sub_menu_id, title=trans._(plugin_name)
+                        submenu=submenu_id, title=trans._(plugin_name)
                     ),
                 ),
             ]
-            app.menus.append_menu_items(sub_menu)
         else:
-            sub_menu_id = MenuId.FILE_SAMPLES
+            submenu_id = MenuId.FILE_SAMPLES
+            submenu = []
 
         for samp_name, samp_dict in samples.items():
 
@@ -392,40 +396,45 @@ def _build_npe1_samples_menu():
             action: Action = Action(
                 id=samp_dict['display_name'],
                 title=title,
-                menus=[{'id': sub_menu_id, 'group': MenuGroup.NAVIGATION}],
+                menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
                 callback=_add_sample,
             )
-            Q_FILE_ACTIONS.append(action)
+            sample_actions.append(action)
+
+        unreg_sample_appmodel_submenus = app.menus.append_menu_items(submenu)
+        plugin_manager._unreg_sample_appmodel_submenus = (
+            unreg_sample_appmodel_submenus
+        )
+        unreg_sample_actions = app.register_actions(sample_actions)
+        plugin_manager._unreg_sample_appmodel_actions = unreg_sample_actions
 
 
-def _build_samples_menu(mf: PluginManifest) -> None:
-    """Builds 'Open Sample' menu for a single npe2 plugin manifest."""
-    from napari._app_model import get_app
+def _get_samples_submenu_actions(mf: PluginManifest) -> None:
+    """Get sample data submenu and actions for a single npe2 plugin manifest."""
     from napari._app_model.constants import MenuGroup, MenuId
-    from napari._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
     from napari._qt.qt_viewer import QtViewer
     from napari.plugins import menu_item_template
 
     # If no sample data, return
     if not mf.contributions.sample_data:
-        return
+        return None, None
 
-    app = get_app()
+    sample_actions: List[Action] = []
     sample_data = mf.contributions.sample_data
     multiprovider = len(sample_data) > 1
     if multiprovider:
-        sub_menu_id = f'napari/file/samples/{mf.display_name}'
-        sub_menu = [
+        submenu_id = f'napari/file/samples/{mf.display_name}'
+        submenu = [
             (
                 MenuId.FILE_SAMPLES,
                 SubmenuItem(
-                    submenu=sub_menu_id, title=trans._(mf.display_name)
+                    submenu=submenu_id, title=trans._(mf.display_name)
                 ),
             ),
         ]
-        app.menus.append_menu_items(sub_menu)
     else:
-        sub_menu_id = MenuId.FILE_SAMPLES
+        submenu_id = MenuId.FILE_SAMPLES
+        submenu = []
 
     for sample in sample_data:
 
@@ -448,10 +457,12 @@ def _build_samples_menu(mf: PluginManifest) -> None:
         action: Action = Action(
             id=f'{mf.display_name}.{sample.key}',
             title=title,
-            menus=[{'id': sub_menu_id, 'group': MenuGroup.NAVIGATION}],
+            menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
             callback=_add_sample,
         )
-        Q_FILE_ACTIONS.append(action)
+        sample_actions.append(action)
+
+    return submenu, sample_actions
 
 
 def _register_manifest_actions(mf: PluginManifest) -> None:
@@ -464,12 +475,19 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
 
     app = get_app()
     actions, submenus = _npe2_manifest_to_actions(mf)
+    samples_submenu, sample_actions = _get_samples_submenu_actions(mf)
     context = pm.get_context(cast('PluginName', mf.name))
+    # Register 'unregister' callback to plugin deactivate ('unregistered') event
     if actions:
         context.register_disposable(app.register_actions(actions))
     if submenus:
         context.register_disposable(app.menus.append_menu_items(submenus))
-    _build_samples_menu(mf)
+    if samples_submenu:
+        context.register_disposable(
+            app.menus.append_menu_items(samples_submenu)
+        )
+    if sample_actions:
+        context.register_disposable(app.register_actions(sample_actions))
 
 
 def _npe2_manifest_to_actions(
@@ -492,8 +510,8 @@ def _npe2_manifest_to_actions(
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
 
-    # Filter sample data commands as they are registered in
-    # `_build_samples_menu`
+    # Filter sample data commands as they are obtained by
+    # `_get_samples_submenu_actions`
     if mf.contributions.commands:
         if mf.contributions.sample_data:
             sample_data_commands = [
