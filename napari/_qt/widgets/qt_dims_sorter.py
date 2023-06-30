@@ -1,9 +1,10 @@
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
 from qtpy.QtWidgets import QGridLayout, QLabel, QWidget
 
 from napari._qt.containers import QtListView
+from napari._qt.containers.qt_axis_model import AxisList, AxisModel
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.components import Dims
 from napari.utils.events import SelectableEventedList
@@ -11,29 +12,6 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.viewer import Viewer
-
-
-class AxisModel:
-    """View of an axis within a dims model keeping track of axis names."""
-
-    def __init__(self, dims: Dims, axis: int) -> None:
-        self.dims = dims
-        self.axis = axis
-
-    def __hash__(self) -> int:
-        return id(self)
-
-    def __str__(self) -> str:
-        return repr(self)
-
-    def __repr__(self) -> str:
-        return self.dims.axis_labels[self.axis]
-
-    def __eq__(self, other: Union[int, str]) -> bool:
-        if isinstance(other, int):
-            return self.axis == other
-
-        return repr(self) == other
 
 
 def set_dims_order(dims: Dims, order: Tuple[int, ...]):
@@ -72,9 +50,7 @@ class QtDimsSorter(QWidget):
     def __init__(self, viewer: 'Viewer', parent=None) -> None:
         super().__init__(parent=parent)
         dims = viewer.dims
-        root = SelectableEventedList(
-            [AxisModel(dims, dims.order[i]) for i in range(dims.ndim)]
-        )
+        root = AxisList.from_dims(dims)
         root.events.reordered.connect(
             lambda event: set_dims_order(dims, event.value)
         )

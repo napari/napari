@@ -93,6 +93,7 @@ class Dims(EventedModel):
     ndisplay: Literal[2, 3] = 2
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
+    rollable: Tuple[bool, ...] = ()
 
     range: Tuple[RangeTuple, ...] = ()
     margin_left: Tuple[float, ...] = ()
@@ -110,6 +111,7 @@ class Dims(EventedModel):
     @validator(
         'order',
         'axis_labels',
+        'rollable',
         'point',
         'margin_left',
         'margin_right',
@@ -217,6 +219,15 @@ class Dims(EventedModel):
                 )
         elif labels_ndim > ndim:
             updated['axis_labels'] = axis_labels[-ndim:]
+
+        rollable = values['rollable']
+        n_rollable = len(rollable)
+        if n_rollable < ndim:
+            updated['rollable'] = list(rollable) + (
+                [True] * (ndim - n_rollable)
+            )
+        elif n_rollable > ndim:
+            updated['rollable'] = rollable[:ndim]
 
         return {**values, **updated}
 
@@ -427,8 +438,9 @@ class Dims(EventedModel):
         """Roll order of dimensions for display."""
         order = np.array(self.order)
         nsteps = np.array(self.nsteps)
-        order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
-        self.order = order.tolist()
+        rollable = np.logical_and(self.rollable, nsteps > 1)
+        order[rollable] = np.roll(order[rollable], shift=1)
+        self.order = order
 
     def _go_to_center_step(self):
         self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
