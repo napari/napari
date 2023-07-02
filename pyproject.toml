@@ -177,6 +177,7 @@ markers = [
     "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
+    "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
 ]
 
 [tool.mypy]
@@ -192,11 +193,15 @@ warn_redundant_casts = true
 
 # gloabl ignore error
 [[tool.mypy.overrides]]
-module = ['*._tests.*',
-         '*._vendor.*',
-         '*.benchmarks.*',
-         'napari_builtins.*']
+module = [
+  '*._tests.*',
+  '*.experimental.*',
+  '*._vendor.*',
+  '*.benchmarks.*',
+  'napari_builtins.*'
+]
 ignore_errors = true
+
 
 [[tool.mypy.overrides]]
 module = [
@@ -232,9 +237,7 @@ module = [
     'napari._qt.code_syntax_highlight',
     'napari._qt.containers._base_item_model',
     'napari._qt.containers._base_item_view',
-    'napari._qt.containers._factory',
     'napari._qt.containers._layer_delegate',
-    'napari._qt.containers.qt_layer_list',
     'napari._qt.containers.qt_layer_model',
     'napari._qt.containers.qt_list_model',
     'napari._qt.containers.qt_list_view',
@@ -346,21 +349,6 @@ module = [
     'napari.layers._layer_actions',
     'napari.layers._multiscale_data',
     'napari.layers.base.base',
-    'napari.layers.image._image_key_bindings',
-    'napari.layers.image._image_utils',
-    'napari.layers.image._slice',
-    'napari.layers.image.experimental._chunk_set',
-    'napari.layers.image.experimental._chunked_image_loader',
-    'napari.layers.image.experimental._chunked_slice_data',
-    'napari.layers.image.experimental._octree_loader',
-    'napari.layers.image.experimental._octree_slice',
-    'napari.layers.image.experimental.octree',
-    'napari.layers.image.experimental.octree_chunk',
-    'napari.layers.image.experimental.octree_image',
-    'napari.layers.image.experimental.octree_intersection',
-    'napari.layers.image.experimental.octree_level',
-    'napari.layers.image.experimental.octree_util',
-    'napari.layers.image.image',
     'napari.layers.intensity_mixin',
     'napari.layers.points._points_key_bindings',
     'napari.layers.points._points_utils',
