@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Sequence
+from typing import Generic, Sequence, TypeVar, overload
 
 import numpy as np
 import toolz as tz
@@ -109,7 +109,10 @@ class Transform:
         [self.__dict__.pop(p, None) for p in cached_properties]
 
 
-class TransformChain(EventedList, Transform):
+_T = TypeVar('_T', bound=Transform)
+
+
+class TransformChain(EventedList[_T], Transform, Generic[_T]):
     def __init__(self, transforms=None) -> None:
         if transforms is None:
             transforms = []
@@ -129,6 +132,17 @@ class TransformChain(EventedList, Transform):
     def __newlike__(self, iterable):
         return TransformChain(iterable)
 
+    @overload
+    def __getitem__(self, key: int) -> _T:
+        ...
+
+    @overload
+    def __getitem__(self, key: slice) -> 'TransformChain':
+        ...
+
+    def __getitem__(self, value):
+        return super().__getitem__(value)
+
     @property
     def inverse(self) -> 'TransformChain':
         """Return the inverse transform chain."""
@@ -141,7 +155,7 @@ class TransformChain(EventedList, Transform):
         return getattr(self.simplified, '_is_diagonal', False)
 
     @property
-    def simplified(self) -> 'Transform':
+    def simplified(self) -> _T:
         """Return the composite of the transforms inside the transform chain."""
         if len(self) == 0:
             return None

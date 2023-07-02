@@ -23,6 +23,7 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
+from napari.components.overlays.base import SceneOverlay
 from napari.layers.base._base_constants import Blending, Mode
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -342,7 +343,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             scale = [1] * ndim
         if translate is None:
             translate = [0] * ndim
-        self._transforms = TransformChain(
+        self._transforms: TransformChain[Affine] = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
                 CompositeAffine(
@@ -375,7 +376,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             TransformBoxOverlay,
         )
 
-        self._overlays = EventedDict()
+        self._overlays: EventedDict[str, SceneOverlay] = EventedDict()
 
         self.events = EmitterGroup(
             source=self,
@@ -1259,8 +1260,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _get_value_3d(
         self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
         dims_displayed: List[int],
     ) -> Union[
         float, int, None, Tuple[Union[float, int, None], Optional[int]]
@@ -1562,7 +1563,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         view_direction: npt.ArrayLike,
         dims_displayed: List[int],
         world: bool = True,
-    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Get the start and end point for the ray extending
         from a point through the data bounding box.
 
@@ -1625,7 +1626,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         dims_displayed: List[int],
         bounding_box: npt.NDArray,
         world: bool = True,
-    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Get the start and end point for the ray extending
         from a point through the data bounding box.
 
