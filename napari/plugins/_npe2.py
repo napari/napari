@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
+    Any,
     DefaultDict,
     Dict,
     Iterator,
@@ -413,7 +414,7 @@ def _rebuild_npe1_samples_menu() -> None:
 
 def _get_samples_submenu_actions(
     mf: PluginManifest,
-) -> Tuple[List[Tuple], List[Action]]:
+) -> Tuple[List[Any], List[Any]]:
     """Get sample data submenu and actions for a single npe2 plugin manifest."""
     from napari._app_model.constants import MenuGroup, MenuId
     from napari._qt.qt_viewer import QtViewer
@@ -421,7 +422,7 @@ def _get_samples_submenu_actions(
 
     # If no sample data, return
     if not mf.contributions.sample_data:
-        return None, None
+        return [], []
 
     sample_actions = []
     sample_data = mf.contributions.sample_data
