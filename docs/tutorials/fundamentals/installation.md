@@ -85,6 +85,8 @@ python -m pip install "napari[all]" --upgrade
 *(See [Choosing a different Qt backend](#choosing-a-different-qt-backend) below for an explanation of the `[all]`
 notation.)*
 
+*(See[Using constraints file](#using-constraints-file) for help installing older versions of napari)*
+
 ````
 
 
@@ -214,6 +216,25 @@ and then use `pip install napari`.
 ```{note}
 If you switch backends, it's a good idea to `pip uninstall` the one
 you're not using.
+```
+
+## Using constraints files
+
+Since napari 0.4.18, we store constraints files with information about each exact dependency version against which napari was tested.
+This could be useful if you need to install napari as a package from PyPI, and prevents creating environments where napari does not start or work properly.
+
+The constraints files are stored in the napari repository under `resources/constraints/constraints_py3.10.txt`. To find
+constraints for specific releases, go under the link `https://github.com/napari/napari/tree/{tag}/resources/constraints`
+replacing `{tag}` with the desired napari version.
+
+```sh
+pip install napari[backend_selection] -c path/to/constraints/file
+```
+
+For example, if you would like to install napari on python 3.10:
+
+```sh
+pip install napari[all, pyqt] -c constraints_py3.10.txt
 ```
 
 ## Install as a bundled app
