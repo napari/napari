@@ -77,7 +77,7 @@ def running_as_bundled_app(*, check_conda=True) -> bool:
     except AttributeError:
         return False
 
-    if app_module is None:
+    if not app_module:
         return False
 
     try:
