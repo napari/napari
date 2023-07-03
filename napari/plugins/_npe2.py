@@ -394,7 +394,7 @@ def _rebuild_npe1_samples_menu():
                 title = menu_item_template.format(plugin_name, display_name)
 
             action: Action = Action(
-                id=sample_dict['display_name'],
+                id=f"{plugin_name}.{display_name}",
                 title=title,
                 menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
                 callback=_add_sample,
@@ -421,7 +421,7 @@ def _get_samples_submenu_actions(mf: PluginManifest) -> None:
     sample_data = mf.contributions.sample_data
     multiprovider = len(sample_data) > 1
     if multiprovider:
-        submenu_id = f'napari/file/samples/{mf.display_name}'
+        submenu_id = f'napari/file/samples/{mf.name}'
         submenu = [
             (
                 MenuId.FILE_SAMPLES,
@@ -453,7 +453,7 @@ def _get_samples_submenu_actions(mf: PluginManifest) -> None:
             title = menu_item_template.format(mf.display_name, display_name)
 
         action: Action = Action(
-            id=f'{mf.display_name}.{sample.key}',
+            id=f'{mf.name}.{sample.key}',
             title=title,
             menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
             callback=_add_sample,
