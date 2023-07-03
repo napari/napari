@@ -353,9 +353,9 @@ def _rebuild_npe1_samples_menu():
 
     app = get_app()
     # Unregister all existing npe1 sample menu actions and submenus
-    if unreg := plugin_manager._unreg_sample_appmodel_submenus:
+    if unreg := plugin_manager._unreg_sample_submenus:
         unreg()
-    if unreg := plugin_manager._unreg_sample_appmodel_actions:
+    if unreg := plugin_manager._unreg_sample_actions:
         unreg()
 
     sample_actions: List[Action] = []
@@ -375,38 +375,36 @@ def _rebuild_npe1_samples_menu():
             submenu_id = MenuId.FILE_SAMPLES
             submenu = []
 
-        for samp_name, samp_dict in samples.items():
+        for sample_name, sample_dict in samples.items():
 
             def _add_sample(
                 qt_viewer: QtViewer,
                 plugin=plugin_name,
-                sample=samp_name,
+                sample=sample_name,
             ):
                 try:
                     qt_viewer.viewer.open_sample(plugin, sample)
                 except MultipleReaderError as e:
                     qt_viewer._qt_open(e.paths, stack=False, plugin=plugin)
 
-            display_name = samp_dict['display_name'].replace("&", "&&")
+            display_name = sample_dict['display_name'].replace("&", "&&")
             if multiprovider:
                 title = display_name
             else:
                 title = menu_item_template.format(plugin_name, display_name)
 
             action: Action = Action(
-                id=samp_dict['display_name'],
+                id=sample_dict['display_name'],
                 title=title,
                 menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
                 callback=_add_sample,
             )
             sample_actions.append(action)
 
-        unreg_sample_appmodel_submenus = app.menus.append_menu_items(submenu)
-        plugin_manager._unreg_sample_appmodel_submenus = (
-            unreg_sample_appmodel_submenus
-        )
+        unreg_sample_submenus = app.menus.append_menu_items(submenu)
+        plugin_manager._unreg_sample_submenus = (unreg_sample_submenus)
         unreg_sample_actions = app.register_actions(sample_actions)
-        plugin_manager._unreg_sample_appmodel_actions = unreg_sample_actions
+        plugin_manager._unreg_sample_actions = unreg_sample_actions
 
 
 def _get_samples_submenu_actions(mf: PluginManifest) -> None:

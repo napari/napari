@@ -97,8 +97,8 @@ class NapariPluginManager(PluginManager):
 
         # appmodel sample menu actions/submenu unregister functions used in
         # `napari.plugins._npe2._build_npe1_samples_menu`
-        self._unreg_sample_appmodel_submenus = None
-        self._unreg_sample_appmodel_actions = None
+        self._unreg_sample_submenus = None
+        self._unreg_sample_actions = None
 
     def _initialize(self):
         with self.discovery_blocked():
