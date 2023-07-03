@@ -93,7 +93,6 @@ def test_sample_uses_reader_plugin(builtins, tmp_plugin, tmp_path):
 
 def test_samples_menu(mock_pm: 'TestPluginManager'):
     """Check samples menu correct after plugin changes state."""
-
     app = get_app()
     # Before plugin is registered
     with pytest.raises(KeyError):

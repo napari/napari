@@ -344,7 +344,7 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
 
 # TODO: This is a separate function from `_get_samples_submenu_actions` so it
 # can be easily deleted once npe1 is no longer supported.
-def _rebuild_npe1_samples_menu():
+def _rebuild_npe1_samples_menu() -> None:
     """Register submenu and actions for all npe1 plugins, clearing all first."""
     from napari._app_model import get_app
     from napari._app_model.constants import MenuGroup, MenuId
@@ -407,7 +407,9 @@ def _rebuild_npe1_samples_menu():
         plugin_manager._unreg_sample_actions = unreg_sample_actions
 
 
-def _get_samples_submenu_actions(mf: PluginManifest) -> None:
+def _get_samples_submenu_actions(
+    mf: PluginManifest,
+) -> Tuple[List[Tuple], List[Action]]:
     """Get sample data submenu and actions for a single npe2 plugin manifest."""
     from napari._app_model.constants import MenuGroup, MenuId
     from napari._qt.qt_viewer import QtViewer
@@ -417,7 +419,7 @@ def _get_samples_submenu_actions(mf: PluginManifest) -> None:
     if not mf.contributions.sample_data:
         return None, None
 
-    sample_actions: List[Action] = []
+    sample_actions = []
     sample_data = mf.contributions.sample_data
     multiprovider = len(sample_data) > 1
     if multiprovider:
@@ -459,7 +461,6 @@ def _get_samples_submenu_actions(mf: PluginManifest) -> None:
             callback=_add_sample,
         )
         sample_actions.append(action)
-
     return submenu, sample_actions
 
 
