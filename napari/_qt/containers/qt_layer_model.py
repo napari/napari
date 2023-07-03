@@ -49,8 +49,7 @@ class QtLayerListModel(QtListModel[Layer]):
                 )
             elif not layer_loaded:
                 layer_source_info = trans._(
-                  '{source} (loading)',
-                  source=layer_source_info
+                    '{source} (loading)', source=layer_source_info
                 )
             return layer_source_info
         if (
