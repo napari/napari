@@ -402,7 +402,7 @@ def _rebuild_npe1_samples_menu():
             sample_actions.append(action)
 
         unreg_sample_submenus = app.menus.append_menu_items(submenu)
-        plugin_manager._unreg_sample_submenus = (unreg_sample_submenus)
+        plugin_manager._unreg_sample_submenus = unreg_sample_submenus
         unreg_sample_actions = app.register_actions(sample_actions)
         plugin_manager._unreg_sample_actions = unreg_sample_actions
 
