@@ -38,16 +38,17 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary, ref
 
-from qtpy.QtCore import QPoint, QSize, Qt
-from qtpy.QtGui import QMouseEvent, QPixmap
+from qtpy.QtCore import QPoint, QSize, Qt, Signal
+from qtpy.QtGui import QMouseEvent, QMovie, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt.containers._base_item_model import ItemRole
-from napari._qt.containers.qt_layer_model import ErroredRole, ThumbnailRole
+from napari._qt.containers.qt_layer_model import ErroredRole, LoadedRole, ThumbnailRole
 from napari._qt.qt_resources import QColoredSVGIcon
+from napari.resources import LOADING_GIF_PATH
 
 if TYPE_CHECKING:
     from qtpy import QtCore
@@ -74,8 +75,13 @@ class LayerDelegate(QStyledItemDelegate):
     the appropriate icon for the layer, and some additional style/UX issues.
     """
 
+    loading_frame_changed = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._load_movie = QMovie(LOADING_GIF_PATH)
+        self._load_movie.setScaledSize(QSize(18, 18))
+        self._load_movie.frameChanged.connect(self.loading_frame_changed)
         self._layer_visibility_states = WeakKeyDictionary()
         self._alt_click_layer = lambda: None
 
@@ -91,6 +97,8 @@ class LayerDelegate(QStyledItemDelegate):
         self.get_layer_icon(option, index)
         # paint the standard itemView (includes name, icon, and vis. checkbox)
         super().paint(painter, option, index)
+        # paint loading indicator if needed
+        self._paint_loading(painter, option, index)
         # paint errored indicator
         self._paint_errored(painter, option, index)
         # paint the thumbnail
@@ -139,7 +147,7 @@ class LayerDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QtCore.QModelIndex,
     ):
-        """paint the layer error indicator."""
+        """Paint the layer error indicator."""
         errored = index.data(ErroredRole)
         if errored:
             error_rect = option.rect.translated(4, 8)
@@ -150,13 +158,39 @@ class LayerDelegate(QStyledItemDelegate):
             if icon:
                 painter.drawPixmap(error_rect, icon.pixmap(QSize(18, 18)))
 
+    def _paint_loading(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QtCore.QModelIndex,
+    ):
+        """Paint loading layer indicator."""
+        loaded = index.data(LoadedRole)
+        if not loaded:
+            self._load_movie.start()
+            load_rect = option.rect.translated(4, 8)
+            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
+            load_rect.setWidth(h)
+            load_rect.setHeight(h)
+            painter.drawPixmap(load_rect, self._load_movie.currentPixmap())
+
     def _paint_thumbnail(self, painter, option, index):
         """paint the layer thumbnail."""
         # paint the thumbnail
         # MAGICNUMBER: numbers from the margin applied in the stylesheet to
         # QtLayerTreeView::item
         errored = index.data(ErroredRole)
-        if not errored:
+        loaded = index.data(LoadedRole)
+        if not errored and loaded:
+            # only pause the loading movie if all the layers are loaded. The
+            # last layer that enters the loaded state will pause the load
+            # movie. This is needed since there is only one instance of the
+            # delegate and therefore only one instance of the load movie shared
+            # between all the layer items.
+            all_loaded = index.model().sourceModel().all_loaded()
+            if all_loaded:
+                self._load_movie.setPaused(True)
+
             thumb_rect = option.rect.translated(-2, 2)
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
             thumb_rect.setWidth(h)
