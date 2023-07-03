@@ -41,7 +41,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         return None
 
     def index(
-        self, row: int, column: int = 0, parent: QModelIndex = None
+        self, row: int, column: int = 0, parent: Optional[QModelIndex] = None
     ) -> QModelIndex:
         """Return a QModelIndex for item at `row`, `column` and `parent`."""
 
