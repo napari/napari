@@ -145,23 +145,6 @@ class LayerDelegate(QStyledItemDelegate):
             theme='dark' if red_color_component < 128 else 'light'
         )
 
-    def _paint_errored(
-        self,
-        painter: QPainter,
-        option: QStyleOptionViewItem,
-        index: QtCore.QModelIndex,
-    ):
-        """Paint the layer error indicator."""
-        errored = index.data(ErroredRole)
-        if errored:
-            error_rect = option.rect.translated(4, 8)
-            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
-            error_rect.setWidth(h)
-            error_rect.setHeight(h)
-            icon = self._get_icon("warning", option.palette)
-            if icon:
-                painter.drawPixmap(error_rect, icon.pixmap(QSize(18, 18)))
-
     def _paint_loading(
         self,
         painter: QPainter,
@@ -177,6 +160,24 @@ class LayerDelegate(QStyledItemDelegate):
             load_rect.setWidth(h)
             load_rect.setHeight(h)
             painter.drawPixmap(load_rect, self._load_movie.currentPixmap())
+
+    def _paint_errored(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QtCore.QModelIndex,
+    ):
+        """Paint the layer error indicator."""
+        errored = index.data(ErroredRole)
+        loaded = index.data(LoadedRole)
+        if errored and loaded:
+            error_rect = option.rect.translated(4, 8)
+            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
+            error_rect.setWidth(h)
+            error_rect.setHeight(h)
+            icon = self._get_icon("warning", option.palette)
+            if icon:
+                painter.drawPixmap(error_rect, icon.pixmap(QSize(18, 18)))
 
     def _paint_thumbnail(self, painter, option, index):
         """paint the layer thumbnail."""

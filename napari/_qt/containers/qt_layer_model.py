@@ -37,7 +37,11 @@ class QtLayerListModel(QtListModel[Layer]):
             return layer.name
         if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
             layer_source_info = layer.get_source_str()
-            if layer.errored:
+            if not layer_loaded:
+                layer_source_info = trans._(
+                    '{source} (loading)', source=layer_source_info
+                )
+            elif layer.errored:
                 failure_message = trans._("Layer failed loading")
                 options_message = trans._("Try refreshing or reloading layer")
                 layer_source_info = (
@@ -46,10 +50,6 @@ class QtLayerListModel(QtListModel[Layer]):
                     "<br>"
                     f"{options_message}"
                     "</p>"
-                )
-            elif not layer_loaded:
-                layer_source_info = trans._(
-                    '{source} (loading)', source=layer_source_info
                 )
             return layer_source_info
         if (
