@@ -10,6 +10,8 @@ from napari.utils.events.containers import SelectableEventedList
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from typing import Optional
+
     from qtpy.QtWidgets import QWidget
 
 
@@ -75,7 +77,9 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
     # ########## Reimplemented Public Qt Functions ##################
 
     def __init__(
-        self, root: SelectableEventedList[ItemType], parent: QWidget = None
+        self,
+        root: SelectableEventedList[ItemType],
+        parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent=parent)
         self.setRoot(root)
@@ -132,7 +136,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         return 1
 
-    def rowCount(self, parent: QModelIndex = None) -> int:
+    def rowCount(self, parent: Optional[QModelIndex] = None) -> int:
         """Returns the number of rows under the given parent.
 
         When the parent is valid it means that rowCount is returning the number
@@ -146,7 +150,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
             return 0
 
     def index(
-        self, row: int, column: int = 0, parent: QModelIndex = None
+        self, row: int, column: int = 0, parent: Optional[QModelIndex] = None
     ) -> QModelIndex:
         """Return a QModelIndex for item at `row`, `column` and `parent`."""
 
