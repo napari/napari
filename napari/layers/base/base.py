@@ -1126,7 +1126,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         slice_input = self._make_slice_input(point, ndisplay, order)
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
-            self.refresh(force_sync=True)
+            self._refresh_sync()
 
     def _make_slice_input(
         self, point=None, ndisplay=2, order=None
@@ -1333,13 +1333,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Bool that forces a redraw to occur when `True`.
         """
 
-    def refresh(self, event=None, *, force_sync: bool = False):
+    def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
         logger.debug('Layer.refresh: %s', self)
         # If async is enabled then emit an event that the viewer should handle.
-        if (not force_sync) and get_settings().experimental.async_:
+        if get_settings().experimental.async_:
             self.events.reload(layer=self)
-            return
+        # Otherwise, slice immediately on the calling thread.
+        else:
+            self._refresh_sync()
+
+    def _refresh_sync(self, event=None):
+        logger.debug('Layer._refresh_sync: %s', self)
         if self.visible:
             self.set_view_slice()
             self.events.set_data()
