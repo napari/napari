@@ -17,6 +17,7 @@ https://github.com/napari/napari
 - Zooming with the mouse wheel in any mode ([napari/napari/#5701](https://github.com/napari/napari/pull/5701))
 - Fix inefficient label mapping in direct color mode (10-20x speedup) ([napari/napari/#5723](https://github.com/napari/napari/pull/5723))
 - Efficient labels mapping for drawing in Labels (60 FPS even with 8000x8000 images) ([napari/napari/#5732](https://github.com/napari/napari/pull/5732))
+- Add arrow display styles to Vectors layer ([napari/napari/#5740](https://github.com/napari/napari/pull/5740))
 
 ## New Features
 
@@ -33,6 +34,7 @@ https://github.com/napari/napari
 - Back point selection with a psygnal Selection ([napari/napari/#5691](https://github.com/napari/napari/pull/5691))
 - Zooming with the mouse wheel in any mode ([napari/napari/#5701](https://github.com/napari/napari/pull/5701))
 - Add cancellation functionality to progress ([napari/napari/#5728](https://github.com/napari/napari/pull/5728))
+- Add arrow display styles to Vectors layer ([napari/napari/#5740](https://github.com/napari/napari/pull/5740))
 
 ## Improvements
 
@@ -52,6 +54,7 @@ https://github.com/napari/napari
 - Improve preferences genration ([napari/napari/#5696](https://github.com/napari/napari/pull/5696))
 - Add dev example for adding custom overlays. ([napari/napari/#5719](https://github.com/napari/napari/pull/5719))
 - Disable buffer swapping ([napari/napari/#5741](https://github.com/napari/napari/pull/5741))
+- Remove max brush size from increase brush size keybinding ([napari/napari/#5761](https://github.com/napari/napari/pull/5761))
 - Explicitly list valid layer names in types ([napari/napari/#5823](https://github.com/napari/napari/pull/5823))
 - Sort npe1 widget contributions ([napari/napari/#5865](https://github.com/napari/napari/pull/5865))
 - feat: add `since_version` argument of `rename_argument` decorator ([napari/napari/#5910](https://github.com/napari/napari/pull/5910))
@@ -182,6 +185,9 @@ https://github.com/napari/napari
 - Fix issue in utils.progress for disable=True ([napari/napari/#5964](https://github.com/napari/napari/pull/5964))
 - Set high DPI attributes when using PySide2 ([napari/napari/#5968](https://github.com/napari/napari/pull/5968))
 - [0.4.18rc1] Bugfix/event proxy ([napari/napari/#5994](https://github.com/napari/napari/pull/5994))
+- Fix behavior of PublicOnlyProxy in setattr, wrapped methods, and calling ([napari/napari/#5997](https://github.com/napari/napari/pull/5997))
+- Bugfix: Fix regression from #5739 for passing plugin name and reader plus add test ([napari/napari/#6013](https://github.com/napari/napari/pull/6013))
+- Avoid passing empty string to `importlib.metadata.metadata` ([napari/napari/#6018](https://github.com/napari/napari/pull/6018))
 
 ## API Changes
 
@@ -219,7 +225,9 @@ https://github.com/napari/napari
 - Improve documentation of `changed` event in EventedList ([napari/napari/#5928](https://github.com/napari/napari/pull/5928))
 - Set removal version in deprecation of Viewer.rounded_division ([napari/napari/#5944](https://github.com/napari/napari/pull/5944))
 - Update docs using changes from napari/docs ([napari/napari/#5979](https://github.com/napari/napari/pull/5979))
+- Update CITATION.cff file with 0.4.18 contributors ([napari/napari/#5980](https://github.com/napari/napari/pull/5980))
 - Pre commit fixes for 0.4.18 release branch ([napari/napari/#5985](https://github.com/napari/napari/pull/5985))
+- Port changes from docs repo to main repo for 0.4.18 ([napari/napari/#6002](https://github.com/napari/napari/pull/6002))
 - Add favicon and configuration ([napari/docs/#4](https://github.com/napari/docs/pull/4))
 - Docs for  5195 from main repository ([napari/docs/#7](https://github.com/napari/docs/pull/7))
 - Use `imshow` in `getting_started` ([napari/docs/#9](https://github.com/napari/docs/pull/9))
@@ -269,6 +277,7 @@ https://github.com/napari/napari
 - Add a napari plugin debugging quick start section to the debugging guide ([napari/docs/#161](https://github.com/napari/docs/pull/161))
 - Pin npe2 version to match installed one ([napari/docs/#175](https://github.com/napari/docs/pull/175))
 - Add Wouter-Michiel Vierdag to list of core devs ([napari/docs/#181](https://github.com/napari/docs/pull/181))
+- Update SC information ([napari/docs/#192](https://github.com/napari/docs/pull/192))
 
 ## Other Pull Requests
 
@@ -358,10 +367,12 @@ https://github.com/napari/napari
 - Change license_file to license_files in setup.cfg ([napari/napari/#5948](https://github.com/napari/napari/pull/5948))
 - test: [Automatic] Constraints upgrades: `dask`, `fsspec`, `hypothesis`, `imageio`, `ipython`, `napari-plugin-manager`, `napari-svg`, `numpy`, `psygnal`, `pydantic`, `pyqt6`, `pytest`, `rich`, `scikit-image`, `virtualenv`, `zarr` ([napari/napari/#5963](https://github.com/napari/napari/pull/5963))
 - Update deprecation information ([napari/napari/#5984](https://github.com/napari/napari/pull/5984))
+- Pin napari and pydantic when installing a plugin ([napari/napari/#6022](https://github.com/napari/napari/pull/6022))
 
 
-## 38 authors added to this release (alphabetical)
+## 40 authors added to this release (alphabetical)
 
+- [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andrea Pierré](https://github.com/napari/napari/commits?author=kir0ul) - @kir0ul
 - [Andrew Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
 - [Ashley Anderson](https://github.com/napari/napari/commits?author=aganders3) - @aganders3
@@ -382,13 +393,14 @@ https://github.com/napari/napari
 - [Jonas Windhager](https://github.com/napari/napari/commits?author=jwindhager) - @jwindhager
 - [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
+- [Jules Vanaret](https://github.com/napari/napari/commits?author=jules-vanaret) - @jules-vanaret
 - [Kabilar Gunalan](https://github.com/napari/napari/commits?author=kabilar) - @kabilar
 - [Katherine Hutchings](https://github.com/napari/napari/commits?author=katherine-hutchings) - @katherine-hutchings
 - [Kim Pevey](https://github.com/napari/napari/commits?author=kcpevey) - @kcpevey
 - [Konstantin Sofiiuk](https://github.com/napari/napari/commits?author=ksofiyuk) - @ksofiyuk
 - [Kyle I. S. Harrington](https://github.com/napari/napari/commits?author=kephale) - @kephale
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
-- [LucaMarconato](https://github.com/napari/napari/commits?author=LucaMarconato) - @LucaMarconato
+- [Luca Marconato](https://github.com/napari/napari/commits?author=LucaMarconato) - @LucaMarconato
 - [Lucy Liu](https://github.com/napari/napari/commits?author=lucyleeow) - @lucyleeow
 - [Mark Harfouche](https://github.com/napari/napari/commits?author=hmaarrfk) - @hmaarrfk
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
@@ -402,9 +414,9 @@ https://github.com/napari/napari
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
 
 
-## 41 reviewers added to this release (alphabetical)
+## 43 reviewers added to this release (alphabetical)
 
-- [Alan R Lowe](https://github.com/napari/napari/commits?author=quantumjot) - @quantumjot
+- [Alan Lowe](https://github.com/napari/napari/commits?author=quantumjot) - @quantumjot
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andrew Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
 - [Ashley Anderson](https://github.com/napari/napari/commits?author=aganders3) - @aganders3
@@ -424,13 +436,14 @@ https://github.com/napari/napari
 - [Jessy Lauer](https://github.com/napari/napari/commits?author=jeylau) - @jeylau
 - [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
+- [Jules Vanaret](https://github.com/napari/napari/commits?author=jules-vanaret) - @jules-vanaret
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
 - [Kim Pevey](https://github.com/napari/napari/commits?author=kcpevey) - @kcpevey
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Konstantin Sofiiuk](https://github.com/napari/napari/commits?author=ksofiyuk) - @ksofiyuk
 - [Kyle I. S. Harrington](https://github.com/napari/napari/commits?author=kephale) - @kephale
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
-- [LucaMarconato](https://github.com/napari/napari/commits?author=LucaMarconato) - @LucaMarconato
+- [Luca Marconato](https://github.com/napari/napari/commits?author=LucaMarconato) - @LucaMarconato
 - [Lucy Liu](https://github.com/napari/napari/commits?author=lucyleeow) - @lucyleeow
 - [Lucy Obus](https://github.com/napari/napari/commits?author=LCObus) - @LCObus
 - [Mark Harfouche](https://github.com/napari/napari/commits?author=hmaarrfk) - @hmaarrfk
@@ -438,6 +451,7 @@ https://github.com/napari/napari
 - [Melissa Weber Mendonça](https://github.com/napari/napari/commits?author=melissawm) - @melissawm
 - [Nathan Clack](https://github.com/napari/napari/commits?author=nclack) - @nclack
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
+- [Oren Amsalem](https://github.com/napari/napari/commits?author=orena1) - @orena1
 - [Pam Wadhwa](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Paul Smith](https://github.com/napari/napari/commits?author=p-j-smith) - @p-j-smith
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
@@ -495,7 +509,7 @@ https://github.com/napari/napari
 
 ## New Contributors
 
-There are 18 new contributors for this release:
+There are 19 new contributors for this release:
 
 - Christopher Nauroth-Kreß [docs](https://github.com/napari/docs/commits?author=Chris-N-K) - @Chris-N-K
 - Clément Caporal [napari](https://github.com/napari/napari/commits?author=ClementCaporal) - @ClementCaporal
@@ -506,6 +520,7 @@ There are 18 new contributors for this release:
 - Gregor Lichtner [napari](https://github.com/napari/napari/commits?author=glichtner) - @glichtner
 - Jannis Ahlers [napari](https://github.com/napari/napari/commits?author=jnahlers) - @jnahlers
 - Jessy Lauer [napari](https://github.com/napari/napari/commits?author=jeylau) - @jeylau
+- Jules Vanaret [napari](https://github.com/napari/napari/commits?author=jules-vanaret) - @jules-vanaret
 - Kabilar Gunalan [napari](https://github.com/napari/napari/commits?author=kabilar) - @kabilar
 - Katherine Hutchings [napari](https://github.com/napari/napari/commits?author=katherine-hutchings) - @katherine-hutchings
 - Konstantin Sofiiuk [napari](https://github.com/napari/napari/commits?author=ksofiyuk) - @ksofiyuk
