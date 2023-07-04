@@ -62,11 +62,7 @@ InstallerTypes = Literal['pip', 'mamba']
 
 
 def _pip_constraints():
-    return [f"napari=={__version__}", "pydantic<2"]
-
-
-def _conda_constraints():
-    return [f"napari={__version__}", "pydantic<2.0a0"]
+    return (f"napari=={__version__}", "pydantic<2")
 
 
 @lru_cache(maxsize=3)
