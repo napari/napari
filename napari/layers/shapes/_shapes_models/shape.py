@@ -487,10 +487,10 @@ class Shape(ABC):
             )
 
         if len(target_shape) == 2:
-            embedded = False
+            extend = False
             shape_plane = target_shape
         elif len(target_shape) == self.data.shape[1]:
-            embedded = True
+            extend = True
             shape_plane = [target_shape[d] for d in self.dims_displayed]
         else:
             raise ValueError(
@@ -517,7 +517,9 @@ class Shape(ABC):
         else:
             indices = path_to_indices(shape_plane, (data - offset) * zoom_factor)
 
-        if embedded:
+        # if the target_shape isn't 2D use the full data to extend the 2D indices
+        # to the full number of dimensions
+        if extend:
             # TODO: index embedding
             return indices
         return indices
