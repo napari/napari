@@ -419,10 +419,10 @@ class Shape(ABC):
         else:
             data = self.data_displayed
 
-        data = data[:, -len(shape_plane) :]
-
         if transform:
             data = np.array(list(map(transform[0], map(transform[1], data))))
+        
+        data = data[:, -len(shape_plane) :]
         
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
@@ -506,11 +506,11 @@ class Shape(ABC):
             data = self._face_vertices
         else:
             data = self.data_displayed
-
-        data = data[:, -len(shape_plane) :]
         
         if transform:
             data = np.array(list(map(transform[0], map(transform[1], data))))
+        
+        data = data[:, -len(shape_plane) :]
 
         if self._filled:
             indices = poly_to_indices(shape_plane, (data - offset) * zoom_factor)
