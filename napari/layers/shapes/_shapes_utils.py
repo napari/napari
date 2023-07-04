@@ -898,13 +898,13 @@ def path_to_indices(shape, vertices):
     return indices
 
 
-def path_to_mask(mask_shape, vertices):
+def path_to_mask(target_shape, vertices):
     """Converts a path to a boolean mask with `True` for points lying along
     each edge.
 
     Parameters
     ----------
-    mask_shape : array (2,)
+    target_shape : array (2,)
         Shape of mask to be generated.
     vertices : array (N, 2)
         Vertices of the path.
@@ -915,8 +915,8 @@ def path_to_mask(mask_shape, vertices):
         Boolean array with `True` for points along the path
 
     """
-    mask = np.zeros(mask_shape, dtype=bool)
-    iis, jjs = path_to_indices(mask_shape, vertices)
+    mask = np.zeros(target_shape, dtype=bool)
+    iis, jjs = path_to_indices(target_shape, vertices)
     mask[iis, jjs] = 1
 
     return mask
@@ -946,14 +946,14 @@ def poly_to_indices(target_shape, vertices):
     return polygon(vertices[:, -2], vertices[:, -1], shape=target_shape)
 
 
-def poly_to_mask(mask_shape, vertices):
+def poly_to_mask(target_shape, vertices):
     """Converts a polygon to a boolean mask with `True` for points
     lying inside the shape. Uses the bounding box of the vertices to reduce
     computation time.
 
     Parameters
     ----------
-    mask_shape : np.ndarray | tuple
+    target_shape : np.ndarray | tuple
         1x2 array of shape of mask to be generated.
     vertices : np.ndarray
         Nx2 array of the vertices of the polygon.
@@ -963,7 +963,7 @@ def poly_to_mask(mask_shape, vertices):
     mask : np.ndarray
         Boolean array with `True` for points inside the polygon
     """
-    return polygon2mask(mask_shape, vertices)
+    return polygon2mask(target_shape, vertices)
 
 
 def grid_points_in_poly(shape, vertices):

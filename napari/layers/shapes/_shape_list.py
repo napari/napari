@@ -1125,20 +1125,20 @@ class ShapeList:
 
     def to_masks(
             self, 
-            mask_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
             transform: Optional[Tuple[Callable, ...]] = None, 
             zoom_factor: float = 1, 
             offset: Tuple[float, ...] = (0, 0)
         ) -> NDArray:
         """Returns N binary masks, one for each shape, embedded in an array of
-        shape `mask_shape`.
+        shape `target_shape`.
         If transform is specified the shape data is cast from the Shapes layer 
         coordinate space to world and afterwards to a target Layer coordinate 
         space.
 
         Parameters
         ----------
-        mask_shape : np.ndarray | tuple | None
+        target_shape : np.ndarray | tuple | None
             2-tuple defining shape of mask to be generated. If non specified,
             takes the max of all the vertices.
         transform : tuple of callables
@@ -1158,13 +1158,13 @@ class ShapeList:
             Array where there is one binary mask of shape MxP for each of
             N shapes
         """
-        if mask_shape is None:
-            mask_shape = self.displayed_vertices.max(axis=0).astype('int')
+        if target_shape is None:
+            target_shape = self.displayed_vertices.max(axis=0).astype('int')
 
         masks = np.array(
             [
                 s.to_mask(
-                    mask_shape,
+                    target_shape,
                     transform=transform,
                     zoom_factor=zoom_factor, 
                     offset=offset
@@ -1177,13 +1177,13 @@ class ShapeList:
 
     def to_labels(
             self, 
-            labels_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
             transform: Optional[Tuple[Callable, ...]] = None, 
             zoom_factor: float = 1, 
             offset: Tuple[float, ...] = (0, 0)
         ) -> NDArray:
         """Returns a integer labels image, where each shape is embedded in an
-        array of shape labels_shape with the value of the index + 1
+        array of shape target_shape with the value of the index + 1
         corresponding to it, and 0 for background. For overlapping shapes
         z-ordering will be respected.
         If transform is specified the shape data is cast from the Shapes layer 
@@ -1192,7 +1192,7 @@ class ShapeList:
 
         Parameters
         ----------
-        labels_shape : np.ndarray | tuple | None
+        target_shape : np.ndarray | tuple | None
             2-tuple defining shape of labels image to be generated. If non
             specified, takes the max of all the vertices.
         transform : tuple of callables
@@ -1212,14 +1212,14 @@ class ShapeList:
             MxP integer array where each value is either 0 for background or an
             integer up to N for points inside the corresponding shape.
         """
-        if labels_shape is None:
-            labels_shape = self.displayed_vertices.max(axis=0).astype(int)
+        if target_shape is None:
+            target_shape = self.displayed_vertices.max(axis=0).astype(int)
 
-        labels = np.zeros(labels_shape, dtype=int)
+        labels = np.zeros(target_shape, dtype=int)
 
         for ind in self._z_order[::-1]:
             mask = self.shapes[ind].to_mask(
-                labels_shape,
+                target_shape,
                 transform=transform,
                 zoom_factor=zoom_factor, 
                 offset=offset

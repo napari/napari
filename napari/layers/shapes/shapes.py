@@ -2933,14 +2933,14 @@ class Shapes(Layer):
 
     def to_masks(
             self, 
-            mask_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
             target_layer: Optional[Layer] = None
         ) -> NDArray:
         """Return an array of binary masks, one for each shape.
 
         Parameters
         ----------
-        mask_shape : np.ndarray | tuple | None
+        target_shape : np.ndarray | tuple | None
             tuple defining shape of mask to be generated. If non specified,
             takes the max of all the vertices
         target_layer : napari.layers.Layer
@@ -2955,30 +2955,30 @@ class Shapes(Layer):
         else:
             transform = (self.data_to_world, target_layer.world_to_data)
 
-        if mask_shape is None:
+        if target_shape is None:
             # See https://github.com/napari/napari/issues/2778
             # Point coordinates land on pixel centers. We want to find the
             # smallest shape that will hold the largest point in the data,
             # using rounding.
-            mask_shape = np.round(self._extent_data[1]) + 1
+            target_shape = np.round(self._extent_data[1]) + 1
 
-        mask_shape = np.ceil(mask_shape).astype('int')
+        target_shape = np.ceil(target_shape).astype('int')
         masks = self._data_view.to_masks(
-            mask_shape=mask_shape, transform=transform
+            target_shape=target_shape, transform=transform
         )
 
         return masks
 
     def to_labels(
             self, 
-            labels_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
             target_layer: Optional[Layer] = None
         ) -> NDArray:
         """Return an integer labels image.
 
         Parameters
         ----------
-        labels_shape : np.ndarray | tuple | None
+        target_shape : np.ndarray | tuple | None
             Tuple defining shape of labels image to be generated. If non
             specified, takes the max of all the vertiecs
         target_layer : napari.layers.Layer
@@ -2996,16 +2996,16 @@ class Shapes(Layer):
         else:
             transform = (self.data_to_world, target_layer.world_to_data)
 
-        if labels_shape is None:
+        if target_shape is None:
             # See https://github.com/napari/napari/issues/2778
             # Point coordinates land on pixel centers. We want to find the
             # smallest shape that will hold the largest point in the data,
             # using rounding.
-            labels_shape = np.round(self._extent_data[1]) + 1
+            target_shape = np.round(self._extent_data[1]) + 1
 
-        labels_shape = np.ceil(labels_shape).astype('int')
+        target_shape = np.ceil(target_shape).astype('int')
         labels = self._data_view.to_labels(
-            labels_shape=labels_shape, transform=transform
+            target_shape=target_shape, transform=transform
         )
 
         return labels
