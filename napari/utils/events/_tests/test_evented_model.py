@@ -627,15 +627,15 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
         def c(self):
             return self.a * 3
 
-    eq_op_get = EventMock(return_value=operator.eq)
+    eq_op_get = Mock(return_value=operator.eq)
     monkeypatch.setattr(
         "napari.utils.events.evented_model.pick_equality_operator", eq_op_get
     )
 
     t = Tt()
 
-    a_eq = EventMock(return_value=False)
-    b_eq = EventMock(return_value=False)
+    a_eq = Mock(return_value=False)
+    b_eq = Mock(return_value=False)
 
     t.__eq_operators__["a"] = a_eq
     t.__eq_operators__["b"] = b_eq
@@ -644,7 +644,7 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
     a_eq.assert_not_called()
     b_eq.assert_not_called()
 
-    call1 = EventMock()
+    call1 = Mock()
     t.events.a.connect(call1)
 
     t.a = 3
@@ -655,7 +655,7 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
     b_eq.assert_not_called()
     eq_op_get.assert_not_called()
 
-    call2 = EventMock()
+    call2 = Mock()
     t.events.b.connect(call2)
     call1.reset_mock()
     a_eq.reset_mock()
@@ -669,7 +669,7 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
     b_eq.assert_called_once()
     eq_op_get.assert_not_called()
 
-    call3 = EventMock()
+    call3 = Mock()
     t.events.c.connect(call3)
     call1.reset_mock()
     call2.reset_mock()
@@ -686,3 +686,38 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
     a_eq.assert_called_once()
     b_eq.assert_called_once()
     eq_op_get.assert_called_once_with(9)
+
+
+def test_no_duplicate_firing_events():
+    class Tt(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self) -> float:
+            return self.a * 2
+
+        @b.setter
+        def b(self, v):
+            self.a = v // 2
+
+    def count_calls(emitter):
+        emitter.__call_count = 0
+
+        def increment_counter():
+            emitter.__call_count += 1
+
+        return increment_counter
+
+    t = Tt()
+    t.events.a.connect(count_calls(t.events.a))
+    t.events.b.connect(count_calls(t.events.b))
+    t.a = 2
+    assert t.events.a.__call_count == 1
+    assert t.events.b.__call_count == 1
+
+    t = Tt()
+    t.events.a.connect(count_calls(t.events.a))
+    t.events.b.connect(count_calls(t.events.b))
+    t.b = 10
+    assert t.events.a.__call_count == 1
+    assert t.events.b.__call_count == 1
