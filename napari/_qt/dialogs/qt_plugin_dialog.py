@@ -62,7 +62,7 @@ InstallerTypes = Literal['pip', 'mamba']
 
 
 def _pip_constraints():
-    return [f"napari=={__version__}", "pydantic<2"]
+    return (f"napari=={__version__}", "pydantic<2")
 
 
 def _conda_constraints():
