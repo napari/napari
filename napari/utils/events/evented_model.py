@@ -312,7 +312,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 before_deps[dep] = getattr(self, dep, object())
 
         # set value using original setter
-        self._super_setattr_(name, value)
+        # we need to block this emitter to ensure that, if a dependent property
+        # is updated, this event is not fired multiple times
+        # (we take care of firing it if needed a few lines below!)
+        with emitter.blocker():
+            self._super_setattr_(name, value)
 
         # if different we emit the event with new value
         after = getattr(self, name)

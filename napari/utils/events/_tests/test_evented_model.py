@@ -16,6 +16,11 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
 
 
+class EventMock(Mock):
+    __enter__ = Mock(return_value=None)
+    __exit__ = Mock(return_value=None)
+
+
 def test_creating_empty_evented_model():
     """Test creating an empty evented pydantic model."""
     model = EventedModel()
@@ -57,8 +62,8 @@ def test_evented_model():
     # ClassVars are excluded from events
     assert 'age' not in user.events
     # mocking EventEmitters to spy on events
-    user.events.id = Mock(user.events.id)
-    user.events.name = Mock(user.events.name)
+    user.events.id = EventMock(user.events.id)
+    user.events.name = EventMock(user.events.name)
     # setting an attribute should, by default, emit an event with the value
     user.id = 4
     user.events.id.assert_called_with(value=4)
@@ -120,8 +125,8 @@ def test_evented_model_array_updates():
 
     model = Model(values=[1, 2, 3])
 
-    # Mock events
-    model.events.values = Mock(model.events.values)
+    # EventMock events
+    model.events.values = EventMock(model.events.values)
 
     np.testing.assert_almost_equal(model.values, np.array([1, 2, 3]))
 
@@ -210,10 +215,10 @@ def test_values_updated():
     user2 = User(id=1, name='K')
 
     # Add mocks
-    user1_events = Mock(user1.events)
+    user1_events = EventMock(user1.events)
     user1.events.connect(user1_events)
-    user1.events.id = Mock(user1.events.id)
-    user2.events.id = Mock(user2.events.id)
+    user1.events.id = EventMock(user1.events.id)
+    user2.events.id = EventMock(user2.events.id)
 
     # Check user1 and user2 dicts
     assert user1.dict() == {'id': 0, 'name': 'A'}
@@ -487,11 +492,11 @@ def test_evented_model_with_property_setters():
 @pytest.fixture()
 def mocked_object():
     t = T()
-    t.events.a = Mock(t.events.a)
-    t.events.b = Mock(t.events.b)
-    t.events.c = Mock(t.events.c)
-    t.events.d = Mock(t.events.d)
-    t.events.e = Mock(t.events.e)
+    t.events.a = EventMock(t.events.a)
+    t.events.b = EventMock(t.events.b)
+    t.events.c = EventMock(t.events.c)
+    t.events.d = EventMock(t.events.d)
+    t.events.e = EventMock(t.events.e)
     return t
 
 
@@ -542,8 +547,8 @@ def test_evented_model_with_provided_dependencies():
             dependencies = {'b': ['a']}
 
     t = T()
-    t.events.a = Mock(t.events.a)
-    t.events.b = Mock(t.events.b)
+    t.events.a = EventMock(t.events.a)
+    t.events.b = EventMock(t.events.b)
 
     t.a = 2
     t.events.a.assert_called_with(value=2)
@@ -622,15 +627,15 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
         def c(self):
             return self.a * 3
 
-    eq_op_get = Mock(return_value=operator.eq)
+    eq_op_get = EventMock(return_value=operator.eq)
     monkeypatch.setattr(
         "napari.utils.events.evented_model.pick_equality_operator", eq_op_get
     )
 
     t = Tt()
 
-    a_eq = Mock(return_value=False)
-    b_eq = Mock(return_value=False)
+    a_eq = EventMock(return_value=False)
+    b_eq = EventMock(return_value=False)
 
     t.__eq_operators__["a"] = a_eq
     t.__eq_operators__["b"] = b_eq
@@ -639,7 +644,7 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
     a_eq.assert_not_called()
     b_eq.assert_not_called()
 
-    call1 = Mock()
+    call1 = EventMock()
     t.events.a.connect(call1)
 
     t.a = 3
@@ -650,7 +655,7 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
     b_eq.assert_not_called()
     eq_op_get.assert_not_called()
 
-    call2 = Mock()
+    call2 = EventMock()
     t.events.b.connect(call2)
     call1.reset_mock()
     a_eq.reset_mock()
@@ -664,7 +669,7 @@ def test_events_are_fired_only_if_necessary(monkeypatch):
     b_eq.assert_called_once()
     eq_op_get.assert_not_called()
 
-    call3 = Mock()
+    call3 = EventMock()
     t.events.c.connect(call3)
     call1.reset_mock()
     call2.reset_mock()
