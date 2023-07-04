@@ -2,7 +2,8 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Any, Dict, List, Tuple, Union
+from numpy.typing import NDArray
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -2930,7 +2931,11 @@ class Shapes(Layer):
 
             self.move_to_front()
 
-    def to_masks(self, mask_shape=None):
+    def to_masks(
+            self, 
+            mask_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            target_layer: Optional[Layer] = None
+        ) -> NDArray:
         """Return an array of binary masks, one for each shape.
 
         Parameters
@@ -2938,12 +2943,18 @@ class Shapes(Layer):
         mask_shape : np.ndarray | tuple | None
             tuple defining shape of mask to be generated. If non specified,
             takes the max of all the vertices
-
+        target_layer : napari.layers.Layer
+            Casts the masks to the coordinate space of this layer.
         Returns
         -------
         masks : np.ndarray
             Array where there is one binary mask for each shape
         """
+        if target_layer is None:
+            transform = None
+        else:
+            transform = (self.data_to_world, target_layer.world_to_data)
+
         if mask_shape is None:
             # See https://github.com/napari/napari/issues/2778
             # Point coordinates land on pixel centers. We want to find the
@@ -2952,11 +2963,17 @@ class Shapes(Layer):
             mask_shape = np.round(self._extent_data[1]) + 1
 
         mask_shape = np.ceil(mask_shape).astype('int')
-        masks = self._data_view.to_masks(mask_shape=mask_shape)
+        masks = self._data_view.to_masks(
+            mask_shape=mask_shape, transform=transform
+        )
 
         return masks
 
-    def to_labels(self, labels_shape=None):
+    def to_labels(
+            self, 
+            labels_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            target_layer: Optional[Layer] = None
+        ) -> NDArray:
         """Return an integer labels image.
 
         Parameters
@@ -2964,6 +2981,8 @@ class Shapes(Layer):
         labels_shape : np.ndarray | tuple | None
             Tuple defining shape of labels image to be generated. If non
             specified, takes the max of all the vertiecs
+        target_layer : napari.layers.Layer
+            Casts the labels to the coordinate space of this layer.
 
         Returns
         -------
@@ -2972,6 +2991,11 @@ class Shapes(Layer):
             integer up to N for points inside the shape at the index value - 1.
             For overlapping shapes z-ordering will be respected.
         """
+        if target_layer is None:
+            transform = None
+        else:
+            transform = (self.data_to_world, target_layer.world_to_data)
+
         if labels_shape is None:
             # See https://github.com/napari/napari/issues/2778
             # Point coordinates land on pixel centers. We want to find the
@@ -2980,6 +3004,8 @@ class Shapes(Layer):
             labels_shape = np.round(self._extent_data[1]) + 1
 
         labels_shape = np.ceil(labels_shape).astype('int')
-        labels = self._data_view.to_labels(labels_shape=labels_shape)
+        labels = self._data_view.to_labels(
+            labels_shape=labels_shape, transform=transform
+        )
 
         return labels

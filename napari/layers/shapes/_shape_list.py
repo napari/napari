@@ -1,7 +1,8 @@
 from collections.abc import Iterable
-from typing import Sequence, Union
+from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
+from numpy.typing import NDArray
 
 from napari.layers.shapes._mesh import Mesh
 from napari.layers.shapes._shapes_constants import ShapeType, shape_classes
@@ -1122,15 +1123,28 @@ class ShapeList:
         )
         return intersection_points
 
-    def to_masks(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
+    def to_masks(
+            self, 
+            mask_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            transform: Optional[Tuple[Callable, ...]] = None, 
+            zoom_factor: float = 1, 
+            offset: Tuple[float, ...] = (0, 0)
+        ) -> NDArray:
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.
+        If transform is specified the shape data is cast from the Shapes layer 
+        coordinate space to world and afterwards to a target Layer coordinate 
+        space.
 
         Parameters
         ----------
         mask_shape : np.ndarray | tuple | None
             2-tuple defining shape of mask to be generated. If non specified,
-            takes the max of all the vertices
+            takes the max of all the vertices.
+        transform : tuple of callables
+            Tuple containing the callables to cast from layer to world 
+            coordinate space and from world to a target layer coordinate space.
+            If non specified, keep in layer coordinate space.
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
@@ -1149,24 +1163,42 @@ class ShapeList:
 
         masks = np.array(
             [
-                s.to_mask(mask_shape, zoom_factor=zoom_factor, offset=offset)
+                s.to_mask(
+                    mask_shape,
+                    transform=transform,
+                    zoom_factor=zoom_factor, 
+                    offset=offset
+                )
                 for s in self.shapes
             ]
         )
 
         return masks
 
-    def to_labels(self, labels_shape=None, zoom_factor=1, offset=(0, 0)):
+    def to_labels(
+            self, 
+            labels_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            transform: Optional[Tuple[Callable, ...]] = None, 
+            zoom_factor: float = 1, 
+            offset: Tuple[float, ...] = (0, 0)
+        ) -> NDArray:
         """Returns a integer labels image, where each shape is embedded in an
         array of shape labels_shape with the value of the index + 1
         corresponding to it, and 0 for background. For overlapping shapes
         z-ordering will be respected.
+        If transform is specified the shape data is cast from the Shapes layer 
+        coordinate space to world and afterwards to a target Layer coordinate 
+        space.
 
         Parameters
         ----------
         labels_shape : np.ndarray | tuple | None
             2-tuple defining shape of labels image to be generated. If non
-            specified, takes the max of all the vertices
+            specified, takes the max of all the vertices.
+        transform : tuple of callables
+            Tuple containing the callables to cast from layer to world 
+            coordinate space and from world to a target layer coordinate space.
+            If non specified, keep in layer coordinate space.
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
@@ -1187,7 +1219,10 @@ class ShapeList:
 
         for ind in self._z_order[::-1]:
             mask = self.shapes[ind].to_mask(
-                labels_shape, zoom_factor=zoom_factor, offset=offset
+                labels_shape,
+                transform=transform,
+                zoom_factor=zoom_factor, 
+                offset=offset
             )
             labels[mask] = ind + 1
 

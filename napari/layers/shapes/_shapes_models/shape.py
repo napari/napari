@@ -1,11 +1,15 @@
 from abc import ABC, abstractmethod
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
+from numpy.typing import NDArray
 
 from napari.layers.shapes._shapes_utils import (
     is_collinear,
     path_to_mask,
     poly_to_mask,
+    path_to_indices,
+    poly_to_indices,
     triangulate_edge,
     triangulate_face,
 )
@@ -351,19 +355,32 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(-center)
 
-    def to_mask(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
+    def to_mask(
+            self, 
+            mask_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            transform: Optional[Tuple[Callable, ...]] = None, 
+            zoom_factor: float = 1, 
+            offset: Tuple[float, ...] = (0, 0)
+        ) -> NDArray:
         """Convert the shape vertices to a boolean mask.
 
         Set points to `True` if they are lying inside the shape if the shape is
         filled, or if they are lying along the boundary of the shape if the
         shape is not filled. Negative points or points outside the mask_shape
         after the zoom and offset are clipped.
+        If transform is specified the shape data is cast from the Shapes layer 
+        coordinate space to world and afterwards to a target Layer coordinate 
+        space.
 
         Parameters
         ----------
         mask_shape : (D,) array
             Shape of mask to be generated. If non specified, takes the max of
             the displayed vertices.
+        transform : tuple of callables
+            Tuple containing the callables to cast from layer to world 
+            coordinate space and from world to a target layer coordinate space.
+            If non specified, keep in layer coordinate space.
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
@@ -404,6 +421,9 @@ class Shape(ABC):
 
         data = data[:, -len(shape_plane) :]
 
+        if transform:
+            data = np.array(list(map(transform[0], map(transform[1], data))))
+        
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
         else:
