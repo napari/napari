@@ -16,14 +16,14 @@ https://napari.org
 
 ## Highlights
 
-- Drawing polygons in the Shapes layer can now be done much more quickly with
+- Drawing polygons in the Shapes layer can now be done much faster with
   the new lasso tool ([napari/napari/#5555](https://github.com/napari/napari/pull/5555))
 - Surface layers now support textures and vertex colors, allowing a whole new
   type of dataset to be visualised in napari. Have a look at
   `surface_multi_texture.py` and `surface_texture_and_colors.py` in the
   `examples` directory for some pretty demos! ([napari/napari/#5642](https://github.com/napari/napari/pull/5642))
 - Previously, navigating an image required switching out of whatever drawing
-  mode you might have been using and go back to pan/zoom mode. Now you can use
+  mode you might have been using and going back to pan/zoom mode. Now you can use
   the mouse wheel to zoom in and out in any mode. ([napari/napari/#5701](https://github.com/napari/napari/pull/5701))
 - Painting labels is now much, much faster (achieving 60fps even on an 8k x 8k
   image) ([napari/napari/#5723](https://github.com/napari/napari/pull/5723) and
