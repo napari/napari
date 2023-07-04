@@ -6,18 +6,31 @@ It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
+This is primarily a bug-fix release, addressing many issues from 0.4.17 (see
+"Bug Fixes", below). However, it also contains some performance improvements and
+several exciting new features (see "Highlights"), so read on below!
 
 For more information, examples, and documentation, please visit our website:
-https://github.com/napari/napari
+
+https://napari.org
 
 ## Highlights
 
-- Add lasso tool for faster drawing of polygonal Shapes ([napari/napari/#5555](https://github.com/napari/napari/pull/5555))
-- Feature: support for textures and vertex colors on Surface layers ([napari/napari/#5642](https://github.com/napari/napari/pull/5642))
-- Zooming with the mouse wheel in any mode ([napari/napari/#5701](https://github.com/napari/napari/pull/5701))
-- Fix inefficient label mapping in direct color mode (10-20x speedup) ([napari/napari/#5723](https://github.com/napari/napari/pull/5723))
-- Efficient labels mapping for drawing in Labels (60 FPS even with 8000x8000 images) ([napari/napari/#5732](https://github.com/napari/napari/pull/5732))
-- Add arrow display styles to Vectors layer ([napari/napari/#5740](https://github.com/napari/napari/pull/5740))
+- Drawing polygons in the Shapes layer can now be done much more quickly with
+  the new lasso tool ([napari/napari/#5555](https://github.com/napari/napari/pull/5555))
+- Surface layers now support textures and vertex colors, allowing a whole new
+  type of dataset to be visualised in napari. Have a look at
+  `surface_multi_texture.py` and `surface_texture_and_colors.py` in the
+  `examples` directory for some pretty demos! ([napari/napari/#5642](https://github.com/napari/napari/pull/5642))
+- Previously, navigating an image required switching out of whatever drawing
+  mode you might have been using and go back to pan/zoom mode. Now you can use
+  the mouse wheel to zoom in and out in any mode. ([napari/napari/#5701](https://github.com/napari/napari/pull/5701))
+- Painting labels is now much, much faster (achieving 60fps even on an 8k x 8k
+  image) ([napari/napari/#5723](https://github.com/napari/napari/pull/5723) and
+  [napari/napari/#5732](https://github.com/napari/napari/pull/5732))
+- Vectors layers can now be displayed with two different styles of arrowheads,
+  instead of just plain lines. This removes a longstanding limitation of the
+  vectors layer! ([napari/napari/#5740](https://github.com/napari/napari/pull/5740))
 
 ## New Features
 
