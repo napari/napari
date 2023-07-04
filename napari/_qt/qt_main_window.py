@@ -588,7 +588,6 @@ class Window:
         Help menu.
     main_menu : qtpy.QtWidgets.QMainWindow.menuBar
         Main menubar.
-
     view_menu : qtpy.QtWidgets.QMenu
         View menu.
     window_menu : qtpy.QtWidgets.QMenu

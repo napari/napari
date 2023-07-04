@@ -267,7 +267,7 @@ def _no_error_reports():
 
 @pytest.fixture(autouse=True)
 def _npe2pm(npe2pm, monkeypatch):
-    """Autouse the npe2 mock plugin manager with no registered plugins."""
+    """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
     from napari.plugins import NapariPluginManager
 
     monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
