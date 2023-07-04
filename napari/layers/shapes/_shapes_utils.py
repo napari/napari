@@ -865,10 +865,10 @@ def path_to_indices(shape, vertices):
     Parameters
     ----------
     shape : array (2,)
-        Image shape which is used to determine the maximum extent of output 
-        pixel coordinates. This is useful for paths that exceed the image 
-        size. If None, the full extent of the path is used. Must be at 
-        least length 2. Only the first two values are used to determine the 
+        Image shape which is used to determine the maximum extent of output
+        pixel coordinates. This is useful for paths that exceed the image
+        size. If None, the full extent of the path is used. Must be at
+        least length 2. Only the first two values are used to determine the
         extent of the input image.
     vertices : array (N, 2)
         Vertices of the path.
@@ -894,7 +894,7 @@ def path_to_indices(shape, vertices):
         iis.extend(ii.tolist())
         jjs.extend(jj.tolist())
     indices = (iis, jjs)
-    
+
     return indices
 
 
@@ -930,10 +930,10 @@ def poly_to_indices(target_shape, vertices):
     Parameters
     ----------
     target_shape : np.ndarray | tuple
-        Image shape which is used to determine the maximum extent of output 
-        pixel coordinates. This is useful for polygons that exceed the image 
-        size. If None, the full extent of the polygon is used. Must be at 
-        least length 2. Only the first two values are used to determine the 
+        Image shape which is used to determine the maximum extent of output
+        pixel coordinates. This is useful for polygons that exceed the image
+        size. If None, the full extent of the polygon is used. Must be at
+        least length 2. Only the first two values are used to determine the
         extent of the input image.
     vertices : np.ndarray
         Nx2 array of the vertices of the polygon.
