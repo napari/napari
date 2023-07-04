@@ -3051,7 +3051,7 @@ class Shapes(Layer):
             target_shape = np.round(self._extent_data[1]) + 1
             
         target_shape = np.ceil(target_shape).astype('int')
-        indices = self._data_view.to_idxs(
+        indices = self._data_view.to_indices(
             target_shape=target_shape, transform = transform
         )
 
