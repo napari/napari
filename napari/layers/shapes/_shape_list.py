@@ -1287,3 +1287,55 @@ class ShapeList:
             colors[mask, :] = col
 
         return colors
+
+    def to_indices(
+            self, 
+            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            transform: Optional[Tuple[Callable, ...]] = None, 
+            zoom_factor: float = 1, 
+            offset: Tuple[float, ...] = (0, 0)
+        ) -> List[Tuple[List[int], ...],]:
+        """Return a list of index tuples.
+
+        Convert each shape to a tuple of point indices. If the shape
+        is filled the tuple contains all face indices of the shape, else only
+        the indices of the edges. Indices outside of roi are dropped.
+        If transform is specified the shape data is cast from the Shapes layer 
+        coordinate space to world and afterwards to a target Layer coordinate 
+        space.
+
+        Parameters
+        ----------
+        target_shape : np.ndarray | tuple | None
+            Array / tuple defining the maximal shape to generate indices from. If 
+            non specified, takes the max of all the vertiecs.
+        transform : tuple of callables
+            Tuple containing the callables to cast from layer to world 
+            coordinate space and from world to a target layer coordinate space.
+            If non specified, keep in layer coordinate space.
+        zoom_factor : float
+            Premultiplier applied to coordinates before generating mask. Used
+            for generating as downsampled mask.
+        offset : 2-tuple
+            Offset subtracted from coordinates before multiplying by the
+            zoom_factor. Used for putting negative coordinates into the mask.
+        
+        Returns
+        -------
+        indices : list of tuples
+            List of index tuples. One tuple per shape.
+        """
+        if target_shape is None:
+            target_shape = self.displayed_vertices.max(axis=0).astype(int)
+        
+        indices = [
+            s.to_indices(
+                target_shape,
+                transform=transform,
+                zoom_factor=zoom_factor, 
+                offset=offset
+            )
+            for s in self.shapes
+        ]
+        
+        return indices

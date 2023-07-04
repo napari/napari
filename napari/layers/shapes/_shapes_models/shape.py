@@ -449,3 +449,75 @@ class Shape(ABC):
             mask = mask_p
 
         return mask
+
+    def to_indices(
+            self, 
+            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            transform: Optional[Tuple[Callable, ...]] = None,
+            zoom_factor: float = 1, 
+            offset: Tuple[float, ...] = (0, 0)
+        ) -> List[Tuple[List[int], ...],]:
+        """Convert the shape vertices to indices.
+
+        Convert the shape to a tuple of point indices. If the shape
+        is filled the tuple contains all face indices of the shape, else only
+        the indices of the edges. Indices outside of roi are dropped. If
+        transform is specified the indices are cast from the Shapes layer
+        coordinate space to world and afterwards to a target coordinate space.
+
+        Parameters
+        ----------
+        target_shape : np.ndarray | tuple | None
+            Array / tuple defining the maximal shape to generate indices from. If 
+            non specified, takes the max of all the vertiecs.
+        transform : tuple of callables
+            Tuple containing the callables to cast the indces from layer to
+            world coordinate space and from world to a target layer coordinate
+            space. If non specified, return the indices in the shapes layer's 
+            coordinate space.
+
+        Returns
+        -------
+        indices : list of tuples
+            List of index tuples. One tuple per shape.
+        """
+        if target_shape is None:
+            target_shape = np.round(self.data_displayed.max(axis=0)).astype(
+                'int'
+            )
+
+        if len(target_shape) == 2:
+            embedded = False
+            shape_plane = target_shape
+        elif len(target_shape) == self.data.shape[1]:
+            embedded = True
+            shape_plane = [target_shape[d] for d in self.dims_displayed]
+        else:
+            raise ValueError(
+                trans._(
+                    "roi length must either be 2 or the same as the dimensionality of the shape, expected {expected} got {received}.",
+                    deferred=True,
+                    expected=self.data.shape[1],
+                    received=len(target_shape),
+                )
+            )
+
+        if self._use_face_vertices:
+            data = self._face_vertices
+        else:
+            data = self.data_displayed
+
+        data = data[:, -len(shape_plane) :]
+        
+        if transform:
+            data = np.array(list(map(transform[0], map(transform[1], data))))
+
+        if self._filled:
+            indices = poly_to_indices(shape_plane, (data - offset) * zoom_factor)
+        else:
+            indices = path_to_indices(shape_plane, (data - offset) * zoom_factor)
+
+        if embedded:
+            # TODO: index embedding
+            return indices
+        return indices

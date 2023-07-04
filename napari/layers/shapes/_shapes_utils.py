@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
-from skimage.draw import line, polygon2mask
+from skimage.draw import line, polygon, polygon2mask
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
@@ -858,6 +858,46 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     return centers, offsets, triangles
 
 
+def path_to_indices(shape, vertices):
+    """Converts a path to a boolean mask with `True` for points lying along
+    each edge.
+
+    Parameters
+    ----------
+    shape : array (2,)
+        Image shape which is used to determine the maximum extent of output 
+        pixel coordinates. This is useful for paths that exceed the image 
+        size. If None, the full extent of the path is used. Must be at 
+        least length 2. Only the first two values are used to determine the 
+        extent of the input image.
+    vertices : array (N, 2)
+        Vertices of the path.
+
+    Returns
+    -------
+    mask : np.ndarray
+        Boolean array with `True` for points along the path
+
+    """
+    shape = np.asarray(shape, dtype=int)
+
+    vertices = np.round(np.clip(vertices, 0, shape - 1)).astype(int)
+
+    # remove identical, consecutive vertices
+    duplicates = np.all(np.diff(vertices, axis=0) == 0, axis=-1)
+    duplicates = np.concatenate(([False], duplicates))
+    vertices = vertices[~duplicates]
+
+    iis, jjs = [], []
+    for v1, v2 in zip(vertices, vertices[1:]):
+        ii, jj = line(*v1, *v2)
+        iis.extend(ii.tolist())
+        jjs.extend(jj.tolist())
+    indices = (iis, jjs)
+    
+    return indices
+
+
 def path_to_mask(mask_shape, vertices):
     """Converts a path to a boolean mask with `True` for points lying along
     each edge.
@@ -875,25 +915,35 @@ def path_to_mask(mask_shape, vertices):
         Boolean array with `True` for points along the path
 
     """
-    mask_shape = np.asarray(mask_shape, dtype=int)
     mask = np.zeros(mask_shape, dtype=bool)
-
-    vertices = np.round(np.clip(vertices, 0, mask_shape - 1)).astype(int)
-
-    # remove identical, consecutive vertices
-    duplicates = np.all(np.diff(vertices, axis=0) == 0, axis=-1)
-    duplicates = np.concatenate(([False], duplicates))
-    vertices = vertices[~duplicates]
-
-    iis, jjs = [], []
-    for v1, v2 in zip(vertices, vertices[1:]):
-        ii, jj = line(*v1, *v2)
-        iis.extend(ii.tolist())
-        jjs.extend(jj.tolist())
-
+    iis, jjs = path_to_indices(mask_shape, vertices)
     mask[iis, jjs] = 1
 
     return mask
+
+
+def poly_to_indices(target_shape, vertices):
+    """Converts a polygon to a boolean mask with `True` for points
+    lying inside the shape. Uses the bounding box of the vertices to reduce
+    computation time.
+
+    Parameters
+    ----------
+    target_shape : np.ndarray | tuple
+        Image shape which is used to determine the maximum extent of output 
+        pixel coordinates. This is useful for polygons that exceed the image 
+        size. If None, the full extent of the polygon is used. Must be at 
+        least length 2. Only the first two values are used to determine the 
+        extent of the input image.
+    vertices : np.ndarray
+        Nx2 array of the vertices of the polygon.
+
+    Returns
+    -------
+    mask : np.ndarray
+        Boolean array with `True` for points inside the polygon
+    """
+    return polygon(vertices[:, -2], vertices[:, -1], shape=target_shape)
 
 
 def poly_to_mask(mask_shape, vertices):
