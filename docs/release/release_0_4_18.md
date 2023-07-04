@@ -201,6 +201,7 @@ https://napari.org
 - Fix behavior of PublicOnlyProxy in setattr, wrapped methods, and calling ([napari/napari/#5997](https://github.com/napari/napari/pull/5997))
 - Bugfix: Fix regression from #5739 for passing plugin name and reader plus add test ([napari/napari/#6013](https://github.com/napari/napari/pull/6013))
 - Avoid passing empty string to `importlib.metadata.metadata` ([napari/napari/#6018](https://github.com/napari/napari/pull/6018))
+-  Use tuple for pip constraints to avoid LRU cache error ([napari/napari#6036](https://github.com/napari/napari/pull/6036)
 
 ## API Changes
 
