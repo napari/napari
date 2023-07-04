@@ -1,10 +1,12 @@
+import atexit
 import contextlib
 import os
 import sys
 from enum import Enum, auto
+from functools import lru_cache
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
-from tempfile import gettempdir
+from tempfile import gettempdir, mkstemp
 from typing import Callable, Dict, List, Literal, Optional, Sequence, Tuple
 
 from npe2 import PackageMetadata, PluginManager
@@ -39,6 +41,7 @@ from qtpy.QtWidgets import (
 from superqt import QElidingLabel
 
 import napari.resources
+from napari import __version__
 from napari._qt.qt_resources import QColoredSVGIcon
 from napari._qt.qthreading import create_worker
 from napari._qt.widgets.qt_message_popup import WarnPopup
@@ -56,6 +59,23 @@ from napari.utils.misc import (
 from napari.utils.translations import trans
 
 InstallerTypes = Literal['pip', 'mamba']
+
+
+def _pip_constraints():
+    return [f"napari=={__version__}", "pydantic<2"]
+
+
+def _conda_constraints():
+    return [f"napari={__version__}", "pydantic<2.0a0"]
+
+
+@lru_cache(maxsize=3)
+def _create_constraints_file(constraints):
+    _, path = mkstemp("-napari-constraints.txt", text=True)
+    with open(path, "w") as f:
+        f.write("\n".join(constraints))
+    atexit.register(os.unlink, path)
+    return path
 
 
 # TODO: add error icon and handle pip install errors
@@ -229,6 +249,10 @@ class Installer(QObject):
                 cmd.extend(["-c", channel])
         else:
             cmd = ['-m', 'pip', 'install', '--upgrade']
+            cmd += [
+                "--constraint",
+                _create_constraints_file(_pip_constraints()),
+            ]
 
         if (
             running_as_bundled_app()
