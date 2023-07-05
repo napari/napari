@@ -63,14 +63,11 @@ def test_plugin_display_name_use_for_multiple_samples(
 
 def test_show_shortcuts_actions(make_napari_viewer):
     viewer = make_napari_viewer()
-    assert viewer.window.file_menu._pref_dialog is None
+    assert viewer.window._pref_dialog is None
     action_manager.trigger("napari:show_shortcuts")
-    assert viewer.window.file_menu._pref_dialog is not None
-    assert (
-        viewer.window.file_menu._pref_dialog._list.currentItem().text()
-        == "Shortcuts"
-    )
-    viewer.window.file_menu._pref_dialog.close()
+    assert viewer.window._pref_dialog is not None
+    assert viewer.window._pref_dialog._list.currentItem().text() == "Shortcuts"
+    viewer.window._pref_dialog.close()
 
 
 def get_open_with_plugin_action(viewer, action_text):
