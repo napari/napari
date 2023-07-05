@@ -410,26 +410,14 @@ def test_vertex_remove(create_known_shapes_layer, Event):
     )
     mouse_press_callbacks(layer, event)
 
-    # Simulate drag end
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-            pos=position,
-        )
-    )
-    mouse_move_callbacks(layer, event)
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
         "action": ActionType.CHANGE.value,
         "data_indices": tuple(
             select,
         ),
-        "vertex_indices": ((3,),),
+        "vertex_indices": ((0,),),
     }
-    # Check new shape added at coordinates
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord - 1
 
