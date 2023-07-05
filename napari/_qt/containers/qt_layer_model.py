@@ -103,6 +103,19 @@ class QtLayerListModel(QtListModel[Layer]):
         self.dataChanged.emit(index, index, [role])
         return True
 
+    def flags(self, index):
+        layer_loaded = index.data(LoadedRole)
+        layer_errored = index.data(ErroredRole)
+        flags = super().flags(index)
+
+        if layer_errored and layer_loaded:
+            flags = Qt.ItemFlag.NoItemFlags
+            layer = self.getItem(index)
+            if layer in self._root.selection:
+                self._root.selection = []
+
+        return flags
+
     def all_loaded(self):
         """Return if all the layers are loaded."""
         return all(
