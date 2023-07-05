@@ -50,7 +50,7 @@ def test_plugin_display_name_use_for_multiple_samples(
 ):
     """Check 'display_name' used for submenu when plugin has >1 sample data."""
     app = get_app()
-    # This is required for `builtin` to be registered
+    # Note this is required so `init_qactions` is run
     viewer = make_napari_viewer()
 
     # builtins provides more than one sample,
