@@ -604,6 +604,8 @@ class Window:
         ] = WeakValueDictionary()
         self._unnamed_dockwidget_count = 1
 
+        self._pref_dialog = None
+
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
         qapp.installEventFilter(self._qt_window)
@@ -1527,7 +1529,7 @@ class Window:
         """Edit preferences from the menubar."""
         from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 
-        if getattr(self, '_pref_dialog', None) is None:
+        if self._pref_dialog is None:
             win = PreferencesDialog(parent=self._qt_window)
             self._pref_dialog = win
 
