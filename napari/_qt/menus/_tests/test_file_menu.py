@@ -6,6 +6,7 @@ from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtWidgets import QMenu
 
+from napari._app_model import get_app
 from napari.utils.action_manager import action_manager
 
 
@@ -44,19 +45,24 @@ def test_sample_data_triggers_reader_dialog(
 
 
 def test_plugin_display_name_use_for_multiple_samples(
-    make_napari_viewer, builtins
+    make_napari_viewer,
+    builtins,
 ):
-    """For plugin with more than two sample datasets, should use plugin_display for building the menu"""
+    """Check 'display_name' used for submenu when plugin has >1 sample data."""
+    # This is required for `builtin` to be registered
+
+    app = get_app()
     viewer = make_napari_viewer()
-    # builtins provides more than one sample, so the submenu should use the `display_name` from manifest
-    plugin_action_menu = viewer.window.file_menu.open_sample_menu.actions()[
-        0
-    ].menu()
-    assert plugin_action_menu.title() == 'napari builtins'
+
+    # builtins provides more than one sample,
+    # so the submenu should use the `display_name` from manifest
+    samples_menu = app.menus.get_menu('napari/file/samples')
+    assert samples_menu[0].title == 'napari builtins'
     # Now ensure that the actions are still correct
     # trigger the action, opening the first sample: `Astronaut`
+    assert 'napari.astronaut' in app.commands
     assert len(viewer.layers) == 0
-    plugin_action_menu.actions()[0].trigger()
+    app.commands.execute_command('napari.astronaut')
     assert len(viewer.layers) == 1
     assert viewer.layers[0].name == 'astronaut'
 
