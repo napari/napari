@@ -11,11 +11,8 @@ from napari.utils.events import disconnect_events
 
 class VispyPointsLayer(VispyBaseLayer):
     _highlight_color = (0, 0.6, 1)
-    _highlight_width = None
 
     def __init__(self, layer) -> None:
-        self._highlight_width = get_settings().appearance.highlight_thickness
-
         node = PointsVisual()
         super().__init__(layer, node)
 
@@ -45,10 +42,10 @@ class VispyPointsLayer(VispyBaseLayer):
         if len(self.layer._indices_view) == 0:
             # always pass one invisible point to avoid issues
             data = np.zeros((1, self.layer._slice_input.ndisplay))
-            size = [0]
+            size = np.zeros(1)
             edge_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
             face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
-            edge_width = [0]
+            edge_width = np.zeros(1)
             symbol = ['o']
         else:
             data = self.layer._view_data
@@ -60,6 +57,9 @@ class VispyPointsLayer(VispyBaseLayer):
 
         set_data = self.node._subvisuals[0].set_data
 
+        # use only last dimension to scale point sizes, see #5582
+        scale = self.layer.scale[-1]
+
         if self.layer.edge_width_is_relative:
             edge_kw = {
                 'edge_width': None,
@@ -67,13 +67,13 @@ class VispyPointsLayer(VispyBaseLayer):
             }
         else:
             edge_kw = {
-                'edge_width': edge_width,
+                'edge_width': edge_width * scale,
                 'edge_width_rel': None,
             }
 
         set_data(
             data[:, ::-1],
-            size=size,
+            size=size * scale,
             symbol=symbol,
             edge_color=edge_color,
             face_color=face_color,
@@ -90,17 +90,31 @@ class VispyPointsLayer(VispyBaseLayer):
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             size = self.layer._view_size[self.layer._highlight_index]
+            edge_width = self.layer._view_edge_width[
+                self.layer._highlight_index
+            ]
+            if self.layer.edge_width_is_relative:
+                edge_width = (
+                    edge_width
+                    * self.layer._view_size[self.layer._highlight_index][-1]
+                )
             symbol = self.layer._view_symbol[self.layer._highlight_index]
         else:
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = 0
             symbol = ['o']
+            edge_width = np.array([0])
+
+        scale = self.layer.scale[-1]
+        scaled_highlight = (
+            settings.appearance.highlight_thickness * self.layer.scale_factor
+        )
 
         self.node._subvisuals[1].set_data(
             data[:, ::-1],
-            size=size,
+            size=(size + edge_width) * scale,
             symbol=symbol,
-            edge_width=settings.appearance.highlight_thickness,
+            edge_width=scaled_highlight * 2,
             edge_color=self._highlight_color,
             face_color=transform_color('transparent'),
         )
@@ -113,7 +127,7 @@ class VispyPointsLayer(VispyBaseLayer):
             width = 0
         else:
             pos = self.layer._highlight_box
-            width = settings.appearance.highlight_thickness
+            width = scaled_highlight
 
         self.node._subvisuals[2].set_data(
             pos=pos[:, ::-1],

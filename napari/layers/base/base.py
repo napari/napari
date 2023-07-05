@@ -383,7 +383,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             help=Event,
             interactive=WarningEmitter(
                 trans._(
-                    "layer.events.interactive is deprecated since 0.5.0 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom",
+                    "layer.events.interactive is deprecated since 0.4.18 and will be removed in 0.6.0. Please use layer.events.mouse_pan and layer.events.mouse_zoom",
                     deferred=True,
                 ),
                 type_name='interactive',
@@ -983,7 +983,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def interactive(self) -> bool:
         warnings.warn(
             trans._(
-                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+                "Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
             ),
             FutureWarning,
             stacklevel=2,
@@ -994,7 +994,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def interactive(self, interactive: bool):
         warnings.warn(
             trans._(
-                "Layer.interactive is deprecated since napari 0.5.0 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
+                "Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
             ),
             FutureWarning,
             stacklevel=2,
