@@ -75,7 +75,7 @@ class QtPluginErrReporter(QDialog):
         self.setLayout(self.layout)
 
         self.text_area = QTextEdit()
-        theme = get_theme(get_settings().appearance.theme, as_dict=False)
+        theme = get_theme(get_settings().appearance.theme)
         self._highlight = Pylighter(
             self.text_area.document(), "python", theme.syntax_style
         )

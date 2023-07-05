@@ -239,8 +239,8 @@ def get_contours(labels, thickness: int, background_label: int):
 
 
 def expand_slice(
-    axes_slice: Tuple[slice], shape: tuple, offset: int
-) -> Tuple[slice]:
+    axes_slice: Tuple[slice, ...], shape: tuple, offset: int
+) -> Tuple[slice, ...]:
     """Expands or shrinks a provided multi-axis slice by a given offset"""
     return tuple(
         [

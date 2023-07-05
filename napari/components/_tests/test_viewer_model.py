@@ -331,6 +331,19 @@ def test_view_centering_with_points_add():
     assert tuple(viewer.dims.point) == (0, 4, 4)
 
 
+def test_view_centering_with_scale():
+    """Regression test for issue #5735"""
+    image = np.zeros((5, 10, 10))
+
+    viewer = ViewerModel()
+    viewer.add_image(image, scale=(1, 1, 1))
+    assert tuple(viewer.dims.point) == (2, 4, 4)
+
+    viewer.layers.pop()
+    viewer.add_image(image, scale=(2, 1, 1))
+    assert tuple(viewer.dims.point) == (4, 4, 4)
+
+
 def test_new_shapes():
     """Test adding new shapes layer."""
     # Add labels to empty viewer

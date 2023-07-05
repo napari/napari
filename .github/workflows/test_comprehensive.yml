@@ -24,10 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python 3.8
+      - name: "Set up Python 3.11"
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: "3.11"
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -36,32 +36,37 @@ jobs:
         run: check-manifest
 
   test:
-    name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
+    name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
     timeout-minutes: 60
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
-        python: ["3.8", "3.9", "3.10"]
+        python: ["3.8", "3.9", "3.10", "3.11"]
         backend: [pyqt5, pyside2]
         include:
-          - python: 3.9
+          - python: "3.9"
             platform: macos-latest
             backend: pyqt5
           # test with minimum specified requirements
-          - python: 3.8
+          - python: "3.8"
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
-          # test with --async_only
-          - python: 3.8
-            platform: ubuntu-20.04
-            toxenv: async-py38-linux-pyqt5
           # test without any Qt backends
-          - python: 3.8
+          - python: "3.8"
             platform: ubuntu-20.04
             toxenv: headless-py38-linux
+          - python: "3.11"
+            platform: ubuntu-latest
+            backend: pyqt6
+          - python: "3.11"
+            platform: ubuntu-latest
+            backend: pyside6
+        exclude:
+          - python: "3.11"
+            backend: pyside2
 
 
     steps:
@@ -144,7 +149,7 @@ jobs:
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: "3.9"
           cache: "pip"
           cache-dependency-path: napari-from-github/setup.cfg
 
@@ -170,7 +175,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: "3.9"
       - uses: tlambert03/setup-qt-libs@v1
       - name: Install this commit
         run: |

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import logging
+import sys
 import traceback
 import typing
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, Union
-from weakref import WeakSet
+from weakref import WeakSet, ref
 
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QGuiApplication
@@ -150,7 +151,7 @@ class QtViewer(QSplitter):
     _key_map_handler : napari.utils.key_bindings.KeymapHandler
         KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped
     _qt_poll : Optional[napari._qt.experimental.qt_poll.QtPoll]
-        A QtPoll object required for octree or monitor.
+        A QtPoll object required for the monitor.
     _remote_manager : napari.components.experimental.remote.RemoteManager
         A remote manager processing commands from remote clients and sending out messages when polled.
     _welcome_widget : napari._qt.widgets.qt_welcome.QtWidgetOverlay
@@ -183,6 +184,7 @@ class QtViewer(QSplitter):
         self._viewerButtons = None
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
+        self._console_backlog = []
         self._console = None
 
         self._dockLayerList = None
@@ -230,26 +232,13 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
-        # Create the experimental QtPool for octree and/or monitor.
+        # Create the experimental QtPool for the monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
 
         # Create the experimental RemoteManager for the monitor.
         self._remote_manager = _create_remote_manager(
             self.viewer.layers, self._qt_poll
         )
-
-        # moved from the old layerlist... still feels misplaced.
-        # can you help me move this elsewhere?
-        if config.async_loading:
-            from napari._qt.experimental.qt_chunk_receiver import (
-                QtChunkReceiver,
-            )
-
-            # The QtChunkReceiver object allows the ChunkLoader to pass newly
-            # loaded chunks to the layers that requested them.
-            self.chunk_receiver = QtChunkReceiver(self.layers)
-        else:
-            self.chunk_receiver = None
 
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
@@ -293,6 +282,17 @@ class QtViewer(QSplitter):
             stacklevel=2,
         )
         return self.canvas.camera
+
+    @property
+    def chunk_receiver(self) -> None:
+        warnings.warn(
+            trans._(
+                'QtViewer.chunk_receiver is deprecated in version 0.5 and will be removed in a later version. '
+                'More generally the old approach to async loading was removed in version 0.5 so this value is always None. '
+                'If you need to specifically use the old approach, continue to use the latest 0.4 release.'
+            ),
+            DeprecationWarning,
+        )
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -437,6 +437,92 @@ class QtViewer(QSplitter):
             )
         return None
 
+    def _weakref_if_possible(self, obj):
+        """Create a weakref to obj.
+
+        Parameters
+        ----------
+        obj : object
+            Cannot create weakrefs to many Python built-in datatypes such as
+            list, dict, str.
+
+            From https://docs.python.org/3/library/weakref.html: "Objects which
+            support weak references include class instances, functions written
+            in Python (but not in C), instance methods, sets, frozensets, some
+            file objects, generators, type objects, sockets, arrays, deques,
+            regular expression pattern objects, and code objects."
+
+        Returns
+        -------
+        weakref or object
+            Returns a weakref if possible.
+        """
+        try:
+            newref = ref(obj)
+        except TypeError:
+            newref = obj
+        return newref
+
+    def _unwrap_if_weakref(self, value):
+        """Return value or if that is weakref the object referenced by value.
+
+        Parameters
+        ----------
+        value : object or weakref
+            No-op for types other than weakref.
+
+        Returns
+        -------
+        unwrapped: object or None
+            Returns referenced object, or None if weakref is dead.
+        """
+        unwrapped = value() if isinstance(value, ref) else value
+        return unwrapped
+
+    def add_to_console_backlog(self, variables):
+        """Save variables for pushing to console when it is instantiated.
+
+        This function will create weakrefs when possible to avoid holding on to
+        too much memory unnecessarily.
+
+        Parameters
+        ----------
+        variables : dict, str or list/tuple of str
+            The variables to inject into the console's namespace. If a dict, a
+            simple update is done. If a str, the string is assumed to have
+            variable names separated by spaces. A list/tuple of str can also
+            be used to give the variable names. If just the variable names are
+            give (list/tuple/str) then the variable values looked up in the
+            callers frame.
+        """
+        if isinstance(variables, (str, list, tuple)):
+            if isinstance(variables, str):
+                vlist = variables.split()
+            else:
+                vlist = variables
+            vdict = {}
+            cf = sys._getframe(2)
+            for name in vlist:
+                try:
+                    vdict[name] = eval(name, cf.f_globals, cf.f_locals)
+                except:  # noqa: E722
+                    print(
+                        f'Could not get variable {name} from '
+                        f'{cf.f_code.co_name}'
+                    )
+        elif isinstance(variables, dict):
+            vdict = variables
+        else:
+            raise TypeError('variables must be a dict/str/list/tuple')
+        # weakly reference values if possible
+        new_dict = {k: self._weakref_if_possible(v) for k, v in vdict.items()}
+        self.console_backlog.append(new_dict)
+
+    @property
+    def console_backlog(self):
+        """List: items to push to console when instantiated."""
+        return self._console_backlog
+
     @property
     def console(self):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
@@ -452,6 +538,16 @@ class QtViewer(QSplitter):
                     self.console.push(
                         {'napari': napari, 'action_manager': action_manager}
                     )
+                    for i in self.console_backlog:
+                        # recover weak refs
+                        self.console.push(
+                            {
+                                k: self._unwrap_if_weakref(v)
+                                for k, v in i.items()
+                                if self._unwrap_if_weakref(v) is not None
+                            }
+                        )
+                    self._console_backlog = []
             except ModuleNotFoundError:
                 warnings.warn(
                     trans._(
@@ -481,17 +577,26 @@ class QtViewer(QSplitter):
 
     @ensure_main_thread
     def _on_slice_ready(self, event):
+        """Callback connected to `viewer._layer_slicer.events.ready`.
+
+        Provides updates after slicing using the slice response data.
+        This only gets triggered on the async slicing path.
+        """
         responses = event.value
         logging.debug('QtViewer._on_slice_ready: %s', responses)
         for layer, response in responses.items():
             # Update the layer slice state to temporarily support behavior
             # that depends on it.
             layer._update_slice_response(response)
-            # The rest of `Layer.refresh` after `set_view_slice`, where `set_data`
-            # notifies the corresponding vispy layer of the new slice.
+            # The rest of `Layer.refresh` after `set_view_slice`, where
+            # `set_data` notifies the corresponding vispy layer of the new
+            # slice.
             layer.events.set_data()
             layer._update_thumbnail()
             layer._set_highlight(force=True)
+            # Update the layer's loaded state after everything else, so
+            # that a user can rely on the rendered state being updated.
+            layer._update_loaded_slice_id(response.request_id)
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""
@@ -569,9 +674,10 @@ class QtViewer(QSplitter):
         dlg.setHistory(hist)
 
         filename, selected_filter = dlg.getSaveFileName(
-            parent=self,
-            caption=trans._('Save {msg} layers', msg=msg),
-            directory=hist[0],  # home dir by default,
+            self,  # parent
+            trans._('Save {msg} layers', msg=msg),  # caption
+            # home dir by default
+            hist[0],  # directory in PyQt, dir in PySide
             filter=ext_str,
             options=(
                 QFileDialog.DontUseNativeDialog
@@ -799,16 +905,6 @@ class QtViewer(QSplitter):
         except MultipleReaderError:
             handle_gui_reading(filenames, self, stack, **kwargs)
 
-    def _toggle_chunk_outlines(self):
-        """Toggle whether we are drawing outlines around the chunks."""
-        from napari.layers.image.experimental.octree_image import (
-            _OctreeImageBase,
-        )
-
-        for layer in self.viewer.layers:
-            if isinstance(layer, _OctreeImageBase):
-                layer.display.show_grid = not layer.display.show_grid
-
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
 
@@ -961,11 +1057,7 @@ if TYPE_CHECKING:
 def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     """Create and return a QtPoll instance, if needed.
 
-    Create a QtPoll instance for octree or monitor.
-
-    Octree needs QtPoll so VispyTiledImageLayer can finish in-progress
-    loads even if the camera is not moving. Once loading is finish it will
-    tell QtPoll it no longer needs to be polled.
+    Create a QtPoll instance for the monitor.
 
     Monitor needs QtPoll to poll for incoming messages. This might be
     temporary until we can process incoming messages with a dedicated
@@ -983,7 +1075,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     Optional[QtPoll]
         The new QtPoll instance, if we need one.
     """
-    if not config.async_octree and not config.monitor:
+    if not config.monitor:
         return None
 
     from napari._qt.experimental.qt_poll import QtPoll
