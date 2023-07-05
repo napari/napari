@@ -134,6 +134,10 @@ def _empty_shapes_layer_selected(s: LayerSel) -> bool:
     return any(x._type_string == "shapes" and not len(x.data) for x in s)
 
 
+def _errored_layer_selected(s: LayerSel) -> bool:
+    return any(x.errored for x in s)
+
+
 class LayerListContextKeys(ContextNamespace['LayerSel']):
     """These are the available context keys relating to a LayerList.
 
@@ -247,4 +251,9 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._("True when there is a shapes layer without data selected."),
         _empty_shapes_layer_selected,
+    )
+    selected_errored_layer = ContextKey(
+        False,
+        trans._("True when there is an errored layer selected."),
+        _errored_layer_selected,
     )
