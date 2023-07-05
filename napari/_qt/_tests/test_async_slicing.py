@@ -233,7 +233,9 @@ def wait_until_vispy_vectors_data_equal(
 ) -> None:
     def assert_vispy_vectors_data_equal() -> None:
         displayed = expected_data[..., -2:]
-        exp_vertices, exp_faces = generate_vector_meshes_2D(displayed, 1, 1)
+        exp_vertices, exp_faces = generate_vector_meshes_2D(
+            displayed, 1, 1, 'triangle'
+        )
         meshdata = vispy_layer.node._meshdata
         vertices = meshdata.get_vertices()
         faces = meshdata.get_faces()

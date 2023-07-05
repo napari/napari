@@ -3,6 +3,7 @@ from typing import Any, Union
 
 import numpy as np
 
+from napari.layers.base._slice import _next_request_id
 from napari.layers.utils._slice_input import _SliceInput
 
 
@@ -19,11 +20,14 @@ class _VectorSliceResponse:
         Should be broadcastable to indices.
     dims : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
+    request_id : int
+        The identifier of the request from which this was generated.
     """
 
     indices: np.ndarray = field(repr=False)
     alphas: Union[np.ndarray, float] = field(repr=False)
     dims: _SliceInput
+    request_id: int
 
 
 @dataclass(frozen=True)
@@ -54,6 +58,7 @@ class _VectorSliceRequest:
     dims_indices: Any = field(repr=False)
     length: float = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
+    id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _VectorSliceResponse:
         # Return early if no data
@@ -62,6 +67,7 @@ class _VectorSliceRequest:
                 indices=np.empty(0, dtype=int),
                 alphas=np.empty(0),
                 dims=self.dims,
+                request_id=self.id,
             )
 
         not_disp = list(self.dims.not_displayed)
@@ -72,6 +78,7 @@ class _VectorSliceRequest:
                 indices=np.arange(len(self.data), dtype=int),
                 alphas=1,
                 dims=self.dims,
+                request_id=self.id,
             )
 
         # We want a numpy array so we can use fancy indexing with the non-displayed
@@ -91,7 +98,10 @@ class _VectorSliceRequest:
             )
 
         return _VectorSliceResponse(
-            indices=slice_indices, alphas=alphas, dims=self.dims
+            indices=slice_indices,
+            alphas=alphas,
+            dims=self.dims,
+            request_id=self.id,
         )
 
     def _get_out_of_display_slice_data(self, not_disp, not_disp_indices):
