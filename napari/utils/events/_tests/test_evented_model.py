@@ -2,7 +2,7 @@ import inspect
 import operator
 from enum import auto
 from typing import ClassVar, List, Protocol, Sequence, Union, runtime_checkable
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import dask.array as da
 import numpy as np
@@ -14,11 +14,6 @@ from pydantic import Field
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
-
-
-class EventMock(Mock):
-    __enter__ = Mock(return_value=None)
-    __exit__ = Mock(return_value=None)
 
 
 def test_creating_empty_evented_model():
@@ -62,8 +57,8 @@ def test_evented_model():
     # ClassVars are excluded from events
     assert 'age' not in user.events
     # mocking EventEmitters to spy on events
-    user.events.id = EventMock(user.events.id)
-    user.events.name = EventMock(user.events.name)
+    user.events.id = MagicMock(user.events.id)
+    user.events.name = MagicMock(user.events.name)
     # setting an attribute should, by default, emit an event with the value
     user.id = 4
     user.events.id.assert_called_with(value=4)
@@ -125,8 +120,8 @@ def test_evented_model_array_updates():
 
     model = Model(values=[1, 2, 3])
 
-    # EventMock events
-    model.events.values = EventMock(model.events.values)
+    # MagicMock events
+    model.events.values = MagicMock(model.events.values)
 
     np.testing.assert_almost_equal(model.values, np.array([1, 2, 3]))
 
@@ -215,10 +210,10 @@ def test_values_updated():
     user2 = User(id=1, name='K')
 
     # Add mocks
-    user1_events = EventMock(user1.events)
+    user1_events = MagicMock(user1.events)
     user1.events.connect(user1_events)
-    user1.events.id = EventMock(user1.events.id)
-    user2.events.id = EventMock(user2.events.id)
+    user1.events.id = MagicMock(user1.events.id)
+    user2.events.id = MagicMock(user2.events.id)
 
     # Check user1 and user2 dicts
     assert user1.dict() == {'id': 0, 'name': 'A'}
@@ -492,11 +487,11 @@ def test_evented_model_with_property_setters():
 @pytest.fixture()
 def mocked_object():
     t = T()
-    t.events.a = EventMock(t.events.a)
-    t.events.b = EventMock(t.events.b)
-    t.events.c = EventMock(t.events.c)
-    t.events.d = EventMock(t.events.d)
-    t.events.e = EventMock(t.events.e)
+    t.events.a = MagicMock(t.events.a)
+    t.events.b = MagicMock(t.events.b)
+    t.events.c = MagicMock(t.events.c)
+    t.events.d = MagicMock(t.events.d)
+    t.events.e = MagicMock(t.events.e)
     return t
 
 
@@ -547,8 +542,8 @@ def test_evented_model_with_provided_dependencies():
             dependencies = {'b': ['a']}
 
     t = T()
-    t.events.a = EventMock(t.events.a)
-    t.events.b = EventMock(t.events.b)
+    t.events.a = MagicMock(t.events.a)
+    t.events.b = MagicMock(t.events.b)
 
     t.a = 2
     t.events.a.assert_called_with(value=2)
