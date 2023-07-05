@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 import warnings
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Tuple, Union
+from typing import TYPE_CHECKING, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -39,6 +39,8 @@ from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
+
     from napari.components import Dims
 
 
@@ -888,7 +890,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         return value
 
-    def _get_offset_data_position(self, position: List[float]) -> List[float]:
+    def _get_offset_data_position(self, position: npt.NDArray) -> npt.NDArray:
         """Adjust position for offset between viewer and data coordinates.
 
         VisPy considers the coordinate system origin to be the canvas corner,
@@ -896,7 +898,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         pixel. To get the correct value under the mouse cursor, we need to
         shift the position by 0.5 pixels on each axis.
         """
-        return [p + 0.5 for p in position]
+        return position + 0.5
 
 
 class Image(_ImageBase):

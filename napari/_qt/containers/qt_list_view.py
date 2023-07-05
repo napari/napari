@@ -8,6 +8,8 @@ from napari._qt.containers._base_item_view import _BaseEventedItemView
 from napari._qt.containers.qt_list_model import QtListModel
 
 if TYPE_CHECKING:
+    from typing import Optional
+
     from qtpy.QtWidgets import QWidget
 
     from napari.utils.events.containers import SelectableEventedList
@@ -34,7 +36,9 @@ class QtListView(_BaseEventedItemView[ItemType], QListView):
     _root: SelectableEventedList[ItemType]
 
     def __init__(
-        self, root: SelectableEventedList[ItemType], parent: QWidget = None
+        self,
+        root: SelectableEventedList[ItemType],
+        parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
         self.setDragDropMode(QListView.InternalMove)
