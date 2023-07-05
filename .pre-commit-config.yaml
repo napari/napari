@@ -19,3 +19,7 @@ repos:
     rev: 0.23.2
     hooks:
       - id: check-github-workflows
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: check-json
