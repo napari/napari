@@ -225,6 +225,9 @@ class VispyBaseLayer(ABC):
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
+    def _on_camera_move(self, event=None):
+        return
+
     def reset(self):
         self._on_visible_change()
         self._on_opacity_change()
@@ -232,6 +235,7 @@ class VispyBaseLayer(ABC):
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
         self._on_overlays_change()
+        self._on_camera_move()
 
     def _on_poll(self, event=None):  # noqa: B027
         """Called when camera moves, before we are drawn.

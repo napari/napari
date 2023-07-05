@@ -156,7 +156,7 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
         # it forces garbage collection, and then makes sure that at least one
         # additional reference to our viewer exists.
         gc.collect()
-        if sys.getrefcount(v) <= ref_count:
+        if sys.getrefcount(v) <= ref_count:  # pragma: no cover
             raise AssertionError(
                 "Reference to napari.viewer has been lost by "
                 "the time the event loop started in napari.__main__"
