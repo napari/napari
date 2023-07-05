@@ -9,7 +9,7 @@ from napari.utils.events.types import SupportsEvents
 class EventedDict(TypedMutableMapping[_K, _T]):
     """Mutable dictionary that emits events when altered.
 
-    This class is designed to behave exactly like builting ``dict``, but
+    This class is designed to behave exactly like builtin ``dict``, but
     will emit events before and after all mutations (addition, removal, and
     changing).
 
@@ -23,7 +23,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     Events
     ------
     changed (key: K, old_value: T, value: T)
-        emitted when ``key`` is set from ``old_value`` to ``value``
+        emitted when item at ``key`` is changed from ``old_value`` to ``value``
     adding (key: K)
         emitted before an item is added to the dictionary with ``key``
     added (key: K, value: T)

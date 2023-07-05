@@ -75,7 +75,7 @@ def test_plugin_provide_theme_hook_set_settings_correctly(
 def make_napari_viewer_with_plugin_theme(
     make_napari_viewer, napari_plugin_manager, *, theme_type: str, name: str
 ) -> Viewer:
-    theme = get_theme(theme_type, True)
+    theme = get_theme(theme_type).to_rgb_dict()
     theme["name"] = name
 
     class TestPlugin:

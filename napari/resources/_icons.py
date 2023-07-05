@@ -7,6 +7,7 @@ from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
 from napari.utils._appdirs import user_cache_dir
 from napari.utils.translations import trans
 
+LOADING_GIF_PATH = str((Path(__file__).parent / 'loading.gif').resolve())
 ICON_PATH = (Path(__file__).parent / 'icons').resolve()
 ICONS = {x.stem: str(x) for x in ICON_PATH.iterdir() if x.suffix == '.svg'}
 PLUGIN_FILE_NAME = "plugin.txt"
@@ -126,7 +127,7 @@ def generate_colorized_svgs(
 
             clrkey, theme_key = color
             theme_key = theme_override.get(svg_stem, theme_key)
-            color = getattr(get_theme(clrkey, False), theme_key).as_hex()
+            color = getattr(get_theme(clrkey), theme_key).as_hex()
             # convert color to string to fit get_colorized_svg signature
 
         op_key = "" if op == 1 else f"_{op * 100:.0f}"

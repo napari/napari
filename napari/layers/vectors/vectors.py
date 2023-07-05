@@ -16,6 +16,7 @@ from napari.layers.vectors._slice import (
     _VectorSliceResponse,
 )
 from napari.layers.vectors._vector_utils import fix_data_vectors
+from napari.layers.vectors._vectors_constants import VectorStyle
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
@@ -47,6 +48,9 @@ class Vectors(Layer):
         possible values for each property.
     edge_width : float
         Width for all vectors in pixels.
+    vector_style : str
+        One of a list of preset display modes that determines how vectors are displayed.
+        Allowed values are {'line', 'triangle', and 'arrow'}.
     length : float
         Multiplicative factor on projections for length of all vectors.
     edge_color : str
@@ -113,6 +117,15 @@ class Vectors(Layer):
         where N is the number of vectors.
     edge_width : float
         Width for all vectors in pixels.
+    vector_style : VectorStyle
+        Determines how vectors are displayed.
+
+        * ``VectorStyle.LINE``:
+        Vectors are displayed as lines.
+        * ``VectorStyle.TRIANGLE``:
+        Vectors are displayed as triangles.
+        * ``VectorStyle.ARROW``:
+        Vectors are displayed as arrows.
     length : float
         Multiplicative factor on projections for length of all vectors.
     edge_color : str
@@ -164,6 +177,7 @@ class Vectors(Layer):
         properties=None,
         property_choices=None,
         edge_width=1,
+        vector_style='triangle',
         edge_color='red',
         edge_color_cycle=None,
         edge_colormap='viridis',
@@ -210,6 +224,7 @@ class Vectors(Layer):
             length=Event,
             edge_width=Event,
             edge_color=Event,
+            vector_style=Event,
             edge_color_mode=Event,
             properties=Event,
             out_of_slice_display=Event,
@@ -218,6 +233,7 @@ class Vectors(Layer):
         )
 
         # Save the vector style params
+        self._vector_style = VectorStyle(vector_style)
         self._edge_width = edge_width
         self._out_of_slice_display = out_of_slice_display
 
@@ -376,6 +392,7 @@ class Vectors(Layer):
             {
                 'length': self.length,
                 'edge_width': self.edge_width,
+                'vector_style': self.vector_style,
                 'edge_color': self.edge_color
                 if self.data.size
                 else [self._edge.current_color],
@@ -438,6 +455,27 @@ class Vectors(Layer):
 
         self.events.edge_width()
         self.refresh()
+
+    @property
+    def vector_style(self) -> str:
+        """Vectors display mode: Determines how vectors are displayed.
+
+        VectorStyle.LINE
+                Displays vectors as rectangular lines.
+            VectorStyle.TRIANGLE
+                Displays vectors as triangles.
+            VectorStyle.ARROW
+                Displays vectors as arrows.
+        """
+        return str(self._vector_style)
+
+    @vector_style.setter
+    def vector_style(self, vector_style: str):
+        old_vector_style = self._vector_style
+        self._vector_style = VectorStyle(vector_style)
+        if self._vector_style != old_vector_style:
+            self.events.vector_style()
+            self.refresh()
 
     @property
     def length(self) -> Union[int, float]:
@@ -591,7 +629,12 @@ class Vectors(Layer):
         """(Mx4) np.ndarray : colors for the M in view vectors"""
         face_color = self.edge_color[self._view_indices]
         face_color[:, -1] *= self._view_alphas
-        face_color = np.repeat(face_color, 2, axis=0)
+
+        if self.vector_style == 'line':
+            face_color = np.repeat(face_color, 2, axis=0)
+
+        elif self.vector_style == 'arrow':
+            face_color = np.repeat(face_color, 3, axis=0)
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])

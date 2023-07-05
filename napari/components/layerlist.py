@@ -38,9 +38,9 @@ class LayerList(SelectableEventedList[Layer]):
     moved : (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed : (index: int, old_value: T, value: T)
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     changed <OVERLOAD> : (index: slice, old_value: List[_T], value: List[_T])
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     reordered : (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     selection.events.changed : (added: Set[_T], removed: Set[_T])
