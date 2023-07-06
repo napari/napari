@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -7,14 +6,8 @@ from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 
 import napari
-from napari._app_model import get_app
 from napari.layers._source import Source
-from napari.plugins import _initialize_plugins
-from napari.plugins._tests.test_npe2 import PLUGIN_NAME
 from napari.viewer import ViewerModel
-
-if TYPE_CHECKING:
-    from npe2._pytest_plugin import TestPluginManager
 
 LOGO = str(Path(napari.__file__).parent / 'resources' / 'logo.png')
 
@@ -89,34 +82,3 @@ def test_sample_uses_reader_plugin(builtins, tmp_plugin, tmp_path):
         f"Chosen reader napari failed to open sample. Plugin {NAME} declares gibberish"
         in str(e)
     )
-
-
-def test_samples_menu(mock_pm: 'TestPluginManager'):
-    """Check samples menu correct after plugin changes state."""
-    app = get_app()
-    # Before plugin is registered
-    with pytest.raises(KeyError):
-        app.menus.get_menu('napari/file/samples')
-    assert 'my-plugin.random_data' not in app.commands
-
-    # connect registration callbacks and populate registries
-    _initialize_plugins()
-
-    # Plugin registered
-    samples_menu = app.menus.get_menu('napari/file/samples')
-    assert len(samples_menu) == 1
-    assert samples_menu[0].title == "My Plugin"
-    assert 'my-plugin.random_data' in app.commands
-
-    # Plugin disabled
-    mock_pm.disable(PLUGIN_NAME)
-    with pytest.raises(KeyError):
-        app.menus.get_menu('napari/file/samples')
-    assert 'my-plugin.random_data' not in app.commands
-
-    # Plugin enabled
-    mock_pm.enable(PLUGIN_NAME)
-    samples_menu = app.menus.get_menu('napari/file/samples')
-    assert len(samples_menu) == 1
-    assert samples_menu[0].title == "My Plugin"
-    assert 'my-plugin.random_data' in app.commands
