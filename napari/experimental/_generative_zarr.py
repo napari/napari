@@ -1,0 +1,186 @@
+import logging
+import sys
+import time
+
+import dask.array as da
+import numpy as np
+import xarray
+import zarr
+from fibsem_tools import read_xarray
+from numba import njit
+from numcodecs import Blosc
+from ome_zarr.io import parse_url
+from ome_zarr.reader import Reader
+from zarr.storage import init_array, init_group
+from zarr.util import json_dumps
+
+LOGGER = logging.getLogger("napari.experimental._generative_zarr")
+LOGGER.setLevel(logging.DEBUG)
+
+streamHandler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+streamHandler.setFormatter(formatter)
+LOGGER.addHandler(streamHandler)
+
+# Utilities to support generative zarrs
+def create_meta_store(levels, tilesize, compressor, dtype):
+    store = dict()
+    init_group(store)
+
+    datasets = [{"path": str(i)} for i in range(levels)]
+    root_attrs = {"multiscales": [{"datasets": datasets, "version": "0.1"}]}
+    store[".zattrs"] = json_dumps(root_attrs)
+
+    base_width = tilesize * 2**levels
+    for level in range(levels):
+        width = int(base_width / 2**level)
+        init_array(
+            store,
+            path=str(level),
+            shape=(width, width, width),
+            chunks=(tilesize, tilesize, tilesize),
+            dtype=dtype,
+            compressor=compressor,
+        )
+    return store
+
+
+@njit(nogil=True)
+def tile_bounds(level, coords, max_level, min_coord=-2.5, max_coord=2.5):
+    """Return the bounds of a ND tile
+
+    Parameters
+    ----------
+    level : int
+        the scale level of this tile
+    coords : tuple/list
+        a sequence of int coordinates
+    max_level : int
+        the maximum level of tiles
+    min_coord : float
+        the minimum coordinate of all tiles
+    max_coord : float
+        the maximum coordinate of all files
+    """
+    max_width = max_coord - min_coord
+    tile_width = max_width / 2 ** (max_level - level)
+
+    bounds = np.zeros((len(coords), 2))
+    for idx, c in enumerate(coords):
+        start = min_coord + c * tile_width
+        stop = min_coord + (c + 1) * tile_width
+
+        bounds[idx, :] = (start, stop)
+
+    return bounds
+
+
+# Based on http://www.fractal.org/Formula-Mandelbulb.pdf
+@njit(nogil=True)
+def hypercomplex_exponentiation(x, y, z, n):
+    r = np.sqrt(x*x + y*y + z*z)
+    r1 = np.sqrt(x*x + y*y)
+    theta = np.arctan2(z, r1)
+    phi = np.arctan2(y, x)
+    new_r = r**n
+    new_x = new_r * np.cos(n*phi) * np.cos(n*theta)
+    new_y = new_r * np.sin(n*phi) * np.cos(n*theta)
+    new_z = new_r * np.sin(n*theta)
+    return new_x, new_y, new_z
+
+@njit(nogil=True)
+def mandelbulb(out, from_x, from_y, from_z, to_x, to_y, to_z, grid_size, maxiter, n):
+    step_x = (to_x - from_x) / grid_size
+    step_y = (to_y - from_y) / grid_size
+    step_z = (to_z - from_z) / grid_size
+    
+    for i in range(grid_size):
+        creal = from_x + i * step_x
+        for j in range(grid_size):
+            cimag = from_y + j * step_y
+            for k in range(grid_size):
+                cimag2 = from_z + k * step_z
+                nreal = real = imag = imag2 = n_iter = 0
+                for _ in range(maxiter):
+                    nreal, nimag, nimag2 = hypercomplex_exponentiation(real, imag, imag2, n)
+                    nreal += creal
+                    nimag += cimag
+                    nimag2 += cimag2
+                    real = nreal
+                    imag = nimag
+                    imag2 = nimag2
+                    if real*real + imag*imag + imag2*imag2 > 4.0:
+                        break
+                    out[i * grid_size * grid_size + j * grid_size + k] = n_iter
+                    n_iter += 1
+
+    return out
+
+
+class MandelbulbStore(zarr.storage.Store):
+    def __init__(self, levels, tilesize, maxiter=255, compressor=None):
+        self.levels = levels
+        self.tilesize = tilesize
+        self.compressor = compressor
+        self.dtype = np.dtype(np.uint8 if maxiter < 256 else np.uint16)
+        self.maxiter = maxiter
+        self.order = 4
+        self._store = create_meta_store(
+            levels, tilesize, compressor, self.dtype
+        )
+
+    def __getitem__(self, key):
+        if key in self._store:
+            return self._store[key]
+
+        try:
+            # Try parsing pyramidal coords
+            level, chunk_key = key.split("/")
+            level = int(level)
+            z, y, x = map(int, chunk_key.split("."))
+        except:
+            raise KeyError
+
+        return self.get_chunk(level, z, y, x).tobytes()
+
+    def get_chunk(self, level, z, y, x):
+        bounds = tile_bounds(level, (x, y, z), self.levels)
+        from_x, from_y, from_z = bounds[:, 0]
+        to_x, to_y, to_z = bounds[:, 1]
+        out = np.zeros(self.tilesize * self.tilesize * self.tilesize, dtype=self.dtype)
+        tile = mandelbulb(
+            out,
+            from_x,
+            from_y,
+            from_z,
+            to_x,
+            to_y,
+            to_z,
+            self.tilesize,
+            self.maxiter,
+            self.order,
+        )
+        tile = tile.reshape(self.tilesize, self.tilesize, self.tilesize).transpose()
+
+        if self.compressor:
+            return self.compressor.encode(tile)
+
+        return tile
+
+    def keys(self):
+        return self._store.keys()
+
+    def __iter__(self):
+        return iter(self._store)
+
+    def __delitem__(self, key):
+        if key in self._store:
+            del self._store[key]
+
+    def __len__(self):
+        return len(self._store)  # TODO not correct
+
+    def __setitem__(self, key, val):
+        self._store[key] = val
