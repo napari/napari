@@ -695,24 +695,18 @@ def test_no_duplicate_firing_events():
         def b(self, v):
             self.a = v // 2
 
-    def count_calls(emitter):
-        emitter.__call_count = 0
-
-        def increment_counter():
-            emitter.__call_count += 1
-
-        return increment_counter
-
     t = Tt()
-    t.events.a.connect(count_calls(t.events.a))
-    t.events.b.connect(count_calls(t.events.b))
+    call_a = Mock()
+    call_b = Mock()
+    t.events.a.connect(call_a)
+    t.events.b.connect(call_b)
     t.a = 2
-    assert t.events.a.__call_count == 1
-    assert t.events.b.__call_count == 1
+    call_a.assert_called_once()
+    call_b.assert_called_once()
 
-    t = Tt()
-    t.events.a.connect(count_calls(t.events.a))
-    t.events.b.connect(count_calls(t.events.b))
+    call_a.reset_mock()
+    call_b.reset_mock()
+
     t.b = 10
-    assert t.events.a.__call_count == 1
-    assert t.events.b.__call_count == 1
+    call_a.assert_called_once()
+    call_b.assert_called_once()
