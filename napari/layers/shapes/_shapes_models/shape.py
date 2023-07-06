@@ -356,12 +356,12 @@ class Shape(ABC):
             self.shift(-center)
 
     def to_mask(
-            self, 
-            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
-            transform: Optional[Tuple[Callable, ...]] = None, 
-            zoom_factor: float = 1, 
-            offset: Tuple[float, ...] = (0, 0)
-        ) -> NDArray:
+        self,
+        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        transform: Optional[Tuple[Callable, ...]] = None,
+        zoom_factor: float = 1,
+        offset: Tuple[float, ...] = (0, 0),
+    ) -> NDArray:
         """Convert the shape vertices to a boolean mask.
 
         Set points to `True` if they are lying inside the shape if the shape is
