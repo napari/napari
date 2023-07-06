@@ -120,7 +120,7 @@ def test_evented_model_array_updates():
 
     model = Model(values=[1, 2, 3])
 
-    # MagicMock events
+    # Mock events
     model.events.values = MagicMock(model.events.values)
 
     np.testing.assert_almost_equal(model.values, np.array([1, 2, 3]))
