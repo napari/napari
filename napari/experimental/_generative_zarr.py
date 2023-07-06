@@ -20,6 +20,22 @@ LOGGER.addHandler(streamHandler)
 
 # Utilities to support generative zarrs
 def create_meta_store(levels, tilesize, compressor, dtype, ndim=3):
+    """Create metadata for a zarr Store.
+
+    Parameters
+    ----------
+    levels : int
+        Number of scale levels
+    tilesize : int
+        size of a tile, this will be used along all dimensions
+    compressor : zarr compressor
+        a zarr compressor, like blosc or None
+    dtype : numpy dtype
+        a numpy dtype
+    ndim : int
+        number of dimensions for the zarr
+
+    """
     store = dict()
     init_group(store)
 
@@ -43,7 +59,7 @@ def create_meta_store(levels, tilesize, compressor, dtype, ndim=3):
 
 @njit(nogil=True)
 def tile_bounds(level, coords, max_level, min_coord=-2.5, max_coord=2.5):
-    """Return the bounds of a ND tile
+    """Return the bounds of a ND tile.
 
     Parameters
     ----------
@@ -74,6 +90,26 @@ def tile_bounds(level, coords, max_level, min_coord=-2.5, max_coord=2.5):
 # Mandelbrot
 @njit(nogil=True)
 def mandelbrot(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
+    """Return a 2D set of mandelbrot calculations.
+
+    Parameters
+    ----------
+    out : ndarray-like
+        a 2D ndarray
+    from_x : int
+        start coordinate along X-axis
+    from_y : int
+        start coordinate along Y-axis
+    to_x : int
+        end coordinate along X-axis
+    to_y : int
+        end coordinate along Y-axis
+    grid_size : int
+        the number of steps along any dimension
+    maxiter : int
+        the maximum number of iterations for calculating Mandelbrot
+
+    """
     step_x = (to_x - from_x) / grid_size
     step_y = (to_y - from_y) / grid_size
     creal = from_x
@@ -100,6 +136,8 @@ def mandelbrot(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
 
 
 class MandelbrotStore(zarr.storage.Store):
+    """A Zarr store for generating the Mandelbrot set."""
+
     def __init__(self, levels, tilesize, maxiter=255, compressor=None):
         self.levels = levels
         self.tilesize = tilesize
@@ -167,6 +205,20 @@ class MandelbrotStore(zarr.storage.Store):
 # Based on http://www.fractal.org/Formula-Mandelbulb.pdf
 @njit(nogil=True)
 def hypercomplex_exponentiation(x, y, z, n):
+    """Hypercomplex exponentiation to transform coordinates in the Mandelbulb.
+
+    Parameters
+    ----------
+    x : float
+        a X-coordinate
+    y : float
+        a Y-coordinate
+    z : float
+        a Z-coordinate
+    n : int
+        the order of the Mandelbulb
+
+    """
     r = np.sqrt(x * x + y * y + z * z)
     r1 = np.sqrt(x * x + y * y)
     theta = np.arctan2(z, r1)
@@ -182,6 +234,33 @@ def hypercomplex_exponentiation(x, y, z, n):
 def mandelbulb(
     out, from_x, from_y, from_z, to_x, to_y, to_z, grid_size, maxiter, n
 ):
+    """Compute the Mandelbulb.
+
+    Parameters
+    ----------
+    out : ndarray-like
+        a 3D array for storing the Mandelbulb results
+    from_x : int
+        the start X-coordinate
+    from_y : int
+        the start Y-coordinate
+    from_z : int
+        the start Z-coordinate
+    to_x : int
+        the end X-coordinate
+    to_y : int
+        the end Y-coordinate
+    to_z : int
+        the end Z-coordinate
+    grid_size : int
+        the number of steps to take along each dimensions
+    maxiter : int
+        the maximum number of iterations for calculating the
+        Mandelbulb
+    n : int
+        the order of the Mandelbulb equation
+
+    """
     step_x = (to_x - from_x) / grid_size
     step_y = (to_y - from_y) / grid_size
     step_z = (to_z - from_z) / grid_size
@@ -210,14 +289,19 @@ def mandelbulb(
 
     return out
 
+
 class MandelbulbStore(zarr.storage.Store):
-    def __init__(self, levels, tilesize, maxiter=255, compressor=None):
+    """A Zarr store for generating the Mandelbulb."""
+
+    def __init__(
+        self, levels, tilesize, maxiter=255, compressor=None, order=4
+    ):
         self.levels = levels
         self.tilesize = tilesize
         self.compressor = compressor
         self.dtype = np.dtype(np.uint8 if maxiter < 256 else np.uint16)
         self.maxiter = maxiter
-        self.order = 4
+        self.order = order
         self._store = create_meta_store(
             levels, tilesize, compressor, self.dtype, ndim=3
         )
