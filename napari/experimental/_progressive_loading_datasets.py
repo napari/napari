@@ -1,18 +1,12 @@
 import logging
 import sys
-import time
 
 import dask.array as da
 import numpy as np
-import xarray
 import zarr
 from fibsem_tools import read_xarray
-from numba import njit
 from numcodecs import Blosc
 from ome_zarr.io import parse_url
-from ome_zarr.reader import Reader
-from zarr.storage import init_array, init_group
-from zarr.util import json_dumps
 
 from napari.experimental._generative_zarr import MandelbrotStore
 
@@ -149,7 +143,7 @@ def luethi_zenodo_7144919():
     )
     local_container = os.path.split(dest_dir[0])[0]
     print(local_container)
-    
+
     store = parse_url(local_container, mode="r").store
     store = zarr.LRUStoreCache(store, max_size=8e9)
     z_grp = zarr.open(store, mode="r")
@@ -169,7 +163,7 @@ def luethi_zenodo_7144919():
     }
 
     multiscale_data = z_grp[large_image["dataset"]]
-    
+
     large_image["arrays"] = []
     for scale in range(large_image["scale_levels"]):
         array = multiscale_data[str(scale)]
@@ -177,7 +171,9 @@ def luethi_zenodo_7144919():
         # TODO extract scale_factors now
 
         # large_image["arrays"].append(result.data.rechunk((3, 10, 256, 256)))
-        large_image["arrays"].append(da.from_array(array, chunks=(1, 10, 256, 256)).squeeze())
+        large_image["arrays"].append(
+            da.from_array(array, chunks=(1, 10, 256, 256)).squeeze()
+        )
 
     return large_image
 
@@ -306,7 +302,7 @@ def mandelbrot_dataset(max_levels=14):
 
     arrays = []
     for scale, a in enumerate(multiscale_img):
-        chunks = da.core.normalize_chunks(
+        da.core.normalize_chunks(
             large_image["chunk_size"],
             a.shape,
             dtype=np.uint8,
@@ -315,11 +311,7 @@ def mandelbrot_dataset(max_levels=14):
 
         # arrays += [da.from_zarr(a, chunks=chunks)]
 
-        setattr(
-            a,
-            "get_zarr_chunk",
-            lambda scale, y, x: store.get_chunk(scale, y, x),
-        )
+        a.get_zarr_chunk = lambda scale, y, x: store.get_chunk(scale, y, x)
         # setattr(a, "get_zarr_chunk", lambda chunk_slice: a[tuple(chunk_slice)].transpose())
         arrays += [a]
 

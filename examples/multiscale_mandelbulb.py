@@ -2,11 +2,10 @@ import dask.array as da
 import numpy as np
 import zarr
 
+from napari.experimental._generative_zarr import MandelbulbStore
 from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
 )
-
-from napari.experimental._generative_zarr import MandelbulbStore
 
 
 def mandelbulb_dataset(max_levels=14):
@@ -53,8 +52,8 @@ def mandelbulb_dataset(max_levels=14):
     multiscale_img = [z_grp[str(k)] for k in range(max_levels)]
 
     arrays = []
-    for scale, a in enumerate(multiscale_img):
-        chunks = da.core.normalize_chunks(
+    for _scale, a in enumerate(multiscale_img):
+        da.core.normalize_chunks(
             chunk_size,
             a.shape,
             dtype=np.uint8,

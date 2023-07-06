@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-import napari
 import toolz as tz
 from psygnal import debounced
-
 from scipy.spatial.transform import Rotation as R
+
+import napari
 
 
 def rotation_matrix_from_camera(camera: napari.components.Camera) -> np.ndarray:
@@ -28,7 +28,7 @@ def distance_from_camera_centre_line(points, camera):
     view_direction = camera.view_direction
     projected_length = visual_depth(points, camera)
     projected = view_direction * np.reshape(projected_length, (-1, 1))
-    points_relative_to_camera = points - camera.center  # for performance, don't compute this twice in both functions 
+    points_relative_to_camera = points - camera.center  # for performance, don't compute this twice in both functions
     distances = np.linalg.norm(projected - points_relative_to_camera, axis=-1)
     return distances
 

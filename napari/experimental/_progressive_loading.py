@@ -4,14 +4,13 @@ import logging
 import sys
 import time
 from collections import defaultdict
-from typing import Tuple, Union, List, Dict
+from typing import Dict, List, Tuple, Union
 
-from psygnal import debounced
-from superqt import ensure_main_thread
-
-import toolz as tz
 import dask.array as da
 import numpy as np
+import toolz as tz
+from psygnal import debounced
+from superqt import ensure_main_thread
 
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.qt.threading import thread_worker
@@ -199,12 +198,9 @@ def chunk_slices(array: da.Array, ndim=3, interval=None) -> list:
                     + 1
                 )
             # Inclusive on the end point
-            cumuchunks = [
-                val
-                for val in range(
+            cumuchunks = list(range(
                     int(start_idx), int(stop_idx), array.chunks[dim]
-                )
-            ]
+                ))
             cumuchunks = np.array(cumuchunks)
             start_pos += [cumuchunks[:-1]]
             end_pos += [cumuchunks[1:]]
@@ -233,7 +229,7 @@ def chunk_slices(array: da.Array, ndim=3, interval=None) -> list:
 
 @thread_worker
 def render_sequence(
-        corner_pixels, visible_scales=[], data=None, ndisplay=2, camera=None
+    corner_pixels, visible_scales=[], data=None, ndisplay=2, camera=None
 ):
     """Generate multiscale chunk tuples from low to high resolution.
 
@@ -266,18 +262,23 @@ def render_sequence(
             LOGGER.info(
                 f"render_sequence: computing chunk slices for {data_interval}"
             )
-            chunk_keys = chunk_slices(vdata, ndim=ndisplay,
-                                      interval=data_interval)
+            chunk_keys = chunk_slices(
+                vdata, ndim=ndisplay, interval=data_interval
+            )
 
             LOGGER.info("render_sequence: computing priority")
             chunk_queue = []
             if ndisplay == 2:
-                chunk_queue = chunk_priority_2D(chunk_keys, corner_pixels,
-                                                data._scale_factors[scale])
+                chunk_queue = chunk_priority_2D(
+                    chunk_keys, corner_pixels, data._scale_factors[scale]
+                )
             elif ndisplay == 3:
-                chunk_queue = chunk_priority_3D(chunk_keys, corner_pixels,
-                                                data._scale_factors[scale],
-                                                camera=camera)
+                chunk_queue = chunk_priority_3D(
+                    chunk_keys,
+                    corner_pixels,
+                    data._scale_factors[scale],
+                    camera=camera,
+                )
             else:
                 LOGGER.info(
                     f"render_sequence: {ndisplay} dimensions not supported"
@@ -310,8 +311,10 @@ def render_sequence(
                     real_array,
                 )
 
-                LOGGER.info(f"render_sequence: yielding chunk {chunk_slice} at scale {scale} which has priority\t{priority}")
-                
+                LOGGER.info(
+                    f"render_sequence: yielding chunk {chunk_slice} at scale {scale} which has priority\t{priority}"
+                )
+
                 yield tuple(list(chunk_result) + [len(chunk_queue) == 0])
 
                 # TODO blank out lower resolution
@@ -381,7 +384,7 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
     bottom_right = np.min((corner_pixels,), axis=0)[1, :]
 
     camera = viewer.camera.copy()
-    
+
     # TODO Added to skip situations when 3D isnt setup on layer yet??
     if np.any((bottom_right - top_left) == 0):
         return
@@ -408,10 +411,11 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
     max_scale = len(data.arrays) - 1
 
     ndisplay = ndisplay if ndisplay else viewer.dims.ndisplay
-    
+
     # Get the scale visibility predicate for the correct ndisplay
-    should_render_scale = should_render_scale_2D \
-        if ndisplay == 2 else should_render_scale_3D
+    should_render_scale = (
+        should_render_scale_2D if ndisplay == 2 else should_render_scale_3D
+    )
 
     for scale in range(len(data.arrays)):
         layer_name = get_layer_name_for_scale(scale)
@@ -432,10 +436,8 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
         )
 
     # Update the MultiScaleVirtualData memory backing
-    data.set_interval(top_left, bottom_right,
-                      visible_scales=visible_scales)
+    data.set_interval(top_left, bottom_right, visible_scales=visible_scales)
 
-    
     # Start a new multiscale render
     worker = render_sequence(
         corners,
@@ -445,7 +447,9 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
         camera=camera,
     )
 
-    LOGGER.info(f"dims_update_handler: started render_sequence with corners {corners}")
+    LOGGER.info(
+        f"dims_update_handler: started render_sequence with corners {corners}"
+    )
 
     # This will consume our chunks and update the numpy "canvas" and refresh
     def on_yield(coord):
@@ -471,8 +475,9 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
         )
 
         if not layer.metadata["translated"]:
-            layer.translate = np.array(layer.data.translate) \
-                * scale_factors[scale]
+            layer.translate = (
+                np.array(layer.data.translate) * scale_factors[scale]
+            )
 
             # Toggle visibility of lower res layer
             if layer.metadata["prev_layer"]:
@@ -487,9 +492,8 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
         # If this is the last chunk of the layer, turn off the previous layer
         # TODO if chunks are zero-ed when replaced by higher res data,
         #      then delete this
-        if is_last_chunk:
-            if layer.metadata["prev_layer"]:
-                layer.metadata["prev_layer"].visible = False
+        if is_last_chunk and layer.metadata["prev_layer"]:
+            layer.metadata["prev_layer"].visible = False
 
         layer.data.set_offset(chunk_slice, chunk)
 
@@ -504,11 +508,9 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
     worker.start()
 
 
-def add_progressive_loading_image(img,
-                                  viewer=None,
-                                  contrast_limits=[0, 255],
-                                  colormap='PiYG',
-                                  ndisplay=2):
+def add_progressive_loading_image(
+    img, viewer=None, contrast_limits=[0, 255], colormap='PiYG', ndisplay=2
+):
     """Add tiled multiscale image."""
     # initialize multiscale virtual data (generate scale factors, translations,
     # and chunk slices)
@@ -516,21 +518,23 @@ def add_progressive_loading_image(img,
 
     if not viewer:
         from napari import Viewer
+
         viewer = Viewer()
 
     # The scale bar will help this be more dramatic
     viewer.scale_bar.visible = True
     viewer.scale_bar.unit = "pixel"
-    
+
     viewer.dims.ndim = ndisplay
     # Ensure async slicing is enabled
     viewer._layer_slicer._force_sync = False
-        
+
     LOGGER.info(f"Adding MultiscaleData with shape: {multiscale_data.shape}")
 
     # Get initial extent for rendering
-    canvas_corners = \
+    canvas_corners = (
         viewer.window.qt_viewer.canvas._canvas_corners_in_world.copy()
+    )
     canvas_corners[
         canvas_corners < 0
     ] = 0  # required to cast from float64 to int64
@@ -542,7 +546,7 @@ def add_progressive_loading_image(img,
     # TODO hack for 3D setup
     # top_left = [viewer.dims.point[-3]] + top_left.tolist()
     # bottom_right = [viewer.dims.point[-3]] + bottom_right.tolist()
-    
+
     LOGGER.debug(f'>>> top left: {top_left}, bottom_right: {bottom_right}')
     # set the extents for each scale in data coordinates
     # take the currently visible canvas extents and apply them to the
@@ -563,7 +567,7 @@ def add_progressive_loading_image(img,
     # Start from back to start because we build a linked list
 
     viewer.dims.ndim = ndisplay
-    
+
     for scale, vdata in list(enumerate(multiscale_data._data)):
         layer = viewer.add_image(
             vdata,
@@ -592,19 +596,21 @@ def add_progressive_loading_image(img,
     for listener in [viewer.camera.events, viewer.dims.events]:
         listener.connect(
             debounced(
-                ensure_main_thread(dims_update_handler(data=multiscale_data,
-                                                       viewer=viewer,
-                                                       ndisplay=ndisplay,
-                                                       )),
+                ensure_main_thread(
+                    dims_update_handler(
+                        data=multiscale_data,
+                        viewer=viewer,
+                        ndisplay=ndisplay,
+                    )
+                ),
                 timeout=2000,
             )
         )
 
     # Trigger first render
-    dims_update_handler(None,
-                        data=multiscale_data,
-                        viewer=viewer,
-                        ndisplay=ndisplay)
+    dims_update_handler(
+        None, data=multiscale_data, viewer=viewer, ndisplay=ndisplay
+    )
 
     return viewer
 
@@ -632,7 +638,7 @@ def chunk_priority_2D(chunk_keys, corner_pixels, scale_factor):
 
     priority_map: List = []
 
-    for idx, chunk_key in enumerate(
+    for _idx, chunk_key in enumerate(
         list(
             itertools.product(
                 *[contained_keys[k] for k in sorted(contained_keys.keys())]
@@ -641,10 +647,7 @@ def chunk_priority_2D(chunk_keys, corner_pixels, scale_factor):
     ):
         priority = 0
         # TODO filter priority here
-        if True:
-            priority = 0
-        else:
-            priority = np.inf
+        priority = 0 if True else np.inf
         if priority < np.inf:
             heapq.heappush(priority_map, (priority, chunk_key))
 
@@ -692,6 +695,7 @@ def should_render_scale_2D(scale, viewer, min_scale, max_scale):
 
 # ---------- 3D specific ----------
 
+
 def get_chunk_center(chunk_slice):
     """
     Return the center of chunk_slice.
@@ -722,7 +726,7 @@ def chunk_priority_3D(chunk_keys, corner_pixels, scale_factor, camera=None):
 
     priority_map: List = []
 
-    for idx, chunk_key in enumerate(
+    for _idx, chunk_key in enumerate(
         list(
             itertools.product(
                 *[contained_keys[k] for k in sorted(contained_keys.keys())]
@@ -733,7 +737,9 @@ def chunk_priority_3D(chunk_keys, corner_pixels, scale_factor, camera=None):
 
         chunk_center = get_chunk_center(chunk_key)
         depth = visual_depth(chunk_center, camera)
-        center_line_dist = distance_from_camera_center_line(chunk_center, camera)
+        center_line_dist = distance_from_camera_center_line(
+            chunk_center, camera
+        )
 
         priority = depth + camera.zoom * center_line_dist
 
@@ -1089,7 +1095,7 @@ def interpolated_get_chunk_2D(chunk_slice, array=None):
     if real_array is None:
         # If we do not need to interpolate
         # TODO this isn't safe enough
-        if all([(sl.start % 1 == 0) for sl in chunk_slice]):
+        if all((sl.start % 1 == 0) for sl in chunk_slice):
             real_array = get_chunk(
                 chunk_slice,
                 array=array,
@@ -1134,9 +1140,7 @@ def interpolated_get_chunk_2D(chunk_slice, array=None):
             w = chunk_slice[0].start - lchunk_slice[0].start
 
             # TODO squeeze is a bad sign
-            real_array = (
-                ((1 - w) * lvalue + w * rvalue).squeeze()
-            )
+            real_array = ((1 - w) * lvalue + w * rvalue).squeeze()
 
     LOGGER.info(f"interpolated_get_chunk_2D : {(time.time() - start_time)}")
 
@@ -1236,14 +1240,11 @@ class VirtualData:
                 cumuchunks = np.array(chunks).cumsum()
             else:
                 # For zarr
-                cumuchunks = [
-                    val
-                    for val in range(
+                cumuchunks = list(range(
                         self.chunks[dim],
                         self.array.shape[dim],
                         self.chunks[dim],
-                    )
-                ]
+                    ))
                 # Add last element
                 cumuchunks += [self.array.shape[dim]]
                 cumuchunks = np.array(cumuchunks)
@@ -1251,7 +1252,9 @@ class VirtualData:
             # First value greater or equal to
             min_where = np.where(cumuchunks >= self._min_coord[dim])
             if min_where[0].size == 0:
-                import pdb; pdb.set_trace()
+                import pdb
+
+                pdb.set_trace()
             greaterthan_min_idx = (
                 min_where[0][0] if min_where[0] is not None else 0
             )
@@ -1263,7 +1266,9 @@ class VirtualData:
 
             max_where = np.where(cumuchunks >= self._max_coord[dim])
             if max_where[0].size == 0:
-                import pdb; pdb.set_trace()
+                import pdb
+
+                pdb.set_trace()
             lessthan_max_idx = (
                 max_where[0][0] if max_where[0] is not None else 0
             )
@@ -1365,13 +1370,15 @@ class VirtualData:
         """
         # TODO maybe fine, but a little lazy
         if type(key) is not tuple:
-            key = (key, )
+            key = (key,)
 
         indices = [None] * len(key)
         for i, index in enumerate(indices):
             if type(index) == slice:
-                indices[i] = slice(index.start - self.translate[i],
-                                   index.stop - self.translate[i])
+                indices[i] = slice(
+                    index.start - self.translate[i],
+                    index.stop - self.translate[i],
+                )
             elif np.issubdtype(int, type(index)):
                 indices[i] = index - self.translate[i]
             # else:
@@ -1398,20 +1405,20 @@ class VirtualData:
                         ),
                         sl.step,
                     )
-                    for (idx, sl) in enumerate(key[(-self.ndisplay):])
+                    for (idx, sl) in enumerate(key[(-self.ndisplay) :])
                 ]
             )
         elif type(key) is tuple and type(key[0]) is int:
             hyperslice_key = tuple(
                 [
                     int(v - self.translate[idx])
-                    for idx, v in enumerate(key[(-self.ndisplay):])
+                    for idx, v in enumerate(key[(-self.ndisplay) :])
                 ]
             )
         else:
             LOGGER.info(f"_hyperslice_key: funky key {key}")
             hyperslice_key = key
-            
+
         return hyperslice_key
 
     def __getitem__(
@@ -1445,8 +1452,14 @@ class VirtualData:
             return self.hyperslice.__getitem__(hyperslice_key)
         except Exception:
             # if it isnt a slice it is an int so width=1
-            shape = tuple([(1 if sl.start is None else sl.stop - sl.start)
-                           if type(sl) is slice else 1 for sl in key])
+            shape = tuple(
+                [
+                    (1 if sl.start is None else sl.stop - sl.start)
+                    if type(sl) is slice
+                    else 1
+                    for sl in key
+                ]
+            )
             LOGGER.info(f"get_offset failed {key}")
             return np.zeros(shape)
 
@@ -1464,13 +1477,17 @@ class VirtualData:
             try:
                 self.hyperslice[hyperslice_key] = value
             except Exception:
-                import pdb; pdb.set_trace()
+                import pdb
+
+                pdb.set_trace()
         return self.hyperslice[hyperslice_key]
 
     @property
     def chunksize(self):
         """Return the size of a chunk."""
-        import pdb; pdb.set_trace()
+        import pdb
+
+        pdb.set_trace()
         if isinstance(self.array, da.Array):
             return self.chunksize
         else:

@@ -1,6 +1,4 @@
-import itertools
 import logging
-import os
 import sys
 import threading
 import time
@@ -8,23 +6,20 @@ import time
 import dask.array as da
 import numpy as np
 import toolz as tz
-
 from magicgui import magic_factory
 from psygnal import debounced
 from scipy.spatial.transform import Rotation as R
 from superqt import ensure_main_thread
 
 import napari
-from napari.qt.threading import thread_worker
-
 from napari.experimental._progressive_loading import (
-    get_chunk,
     chunk_centers,
+    get_chunk,
 )
-
 from napari.experimental._progressive_loading_datasets import (
     luethi_zenodo_7144919,
 )
+from napari.qt.threading import thread_worker
 
 LOGGER = logging.getLogger("poor-mans-octree")
 LOGGER.setLevel(logging.DEBUG)
@@ -230,7 +225,7 @@ def render_sequence(
     # Select the number of chunks
     # TODO consider using threshold on priorities
     """
-    Note: 
+    Note:
     switching from recursing on 1 top chunk to N-best introduces extra
     complexity, because the shape of texture allocation needs to
     accommodate projections from all viewpoints around the volume.
@@ -239,7 +234,7 @@ def render_sequence(
     best_priorities = np.argsort(priorities)[:n]
 
     # This node's offset in world space
-    world_offset = np.array(min_coord) * np.array(scale_factor)
+    np.array(min_coord) * np.array(scale_factor)
 
     # Iterate over points/chunks and add corresponding nodes when appropriate
     for idx, point in enumerate(points):
@@ -257,7 +252,7 @@ def render_sequence(
             min_interval = offset
 
             # find position and scale
-            node_offset = (
+            (
                 min_interval[0] * scale_factor[0],
                 min_interval[1] * scale_factor[1],
                 min_interval[2] * scale_factor[2],
@@ -425,7 +420,7 @@ def update_chunk(
         ) = chunk_tuple
 
         # TODO 3D assumed here as last 3 dimensions
-        texture_offset = tuple([sl.start for sl in texture_slice[-3:]])
+        tuple([sl.start for sl in texture_slice[-3:]])
 
         layer_name = f"{container}/{dataset}/s{scale}"
         layer = viewer.layers[layer_name]
@@ -446,9 +441,9 @@ def update_chunk(
             : layer.data[texture_slice].shape[3],
         ]
 
-        dest_slice = [slice(sl.start, sl.start + width) for sl, width in zip(texture_slice, new_texture_data.shape)]
-        
-        ntd_slice = (
+        [slice(sl.start, sl.start + width) for sl, width in zip(texture_slice, new_texture_data.shape)]
+
+        (
             slice(0, layer.data[texture_slice].shape[1]),
             slice(0, layer.data[texture_slice].shape[2]),
             slice(0, layer.data[texture_slice].shape[3]),
@@ -501,8 +496,8 @@ def update_chunk(
                 pdb.set_trace()
             """
     This error is triggered here infrequently.
-            
-    
+
+
     WARNING: Traceback (most recent call last):
   File "/Users/kharrington/mambaforge/envs/nesoi/lib/python3.10/site-packages/toolz/functoolz.py", line 304, in __call__
     return self._partial(*args, **kwargs)
@@ -673,7 +668,7 @@ def poor_octree_widget(
         for scale_level, array in enumerate(multiscale_arrays)
     ]
 
-    multiscale_grids = [
+    [
         np.array(list(chunk_map)) for chunk_map in multiscale_chunk_maps
     ]
 
@@ -721,7 +716,7 @@ def poor_octree_widget(
         contrast_limits=[0, 500],
     )
     for scale in range(len(multiscale_arrays) - 1):
-        relative_scale_factor = [
+        [
             this_scale / next_scale
             for this_scale, next_scale in zip(
                 scale_factors[scale], scale_factors[scale - 1]
@@ -803,7 +798,7 @@ if __name__ == "__main__":
     widget = poor_octree_widget()
 
     widget(viewer, 0.8, "multiscale")
-    
+
     # widget(viewer)
 
     # viewer.window.add_dock_widget(widget, name="Poor Octree Renderer")

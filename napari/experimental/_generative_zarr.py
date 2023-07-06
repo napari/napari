@@ -36,7 +36,7 @@ def create_meta_store(levels, tilesize, compressor, dtype, ndim=3):
         number of dimensions for the zarr
 
     """
-    store = dict()
+    store = {}
     init_group(store)
 
     datasets = [{"path": str(i)} for i in range(levels)]
