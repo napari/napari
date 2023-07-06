@@ -48,7 +48,13 @@ class QtLayerList(QtListView[Layer]):
         self, root: LayerList, parent: Optional[QWidget] = None
     ) -> None:
         super().__init__(root, parent)
-        self.setItemDelegate(LayerDelegate())
+        layer_delegate = LayerDelegate()
+        self.setItemDelegate(layer_delegate)
+        # To be able to update the loading indicator frame in the item delegate
+        # smoothly and also be able to leave the item painted in a coherent
+        # state (showing the loading indicator or the thumbnail)
+        layer_delegate.loading_frame_changed.connect(self.viewport().update)
+
         self.setToolTip(trans._('Layer list'))
         font = self.font()
         font.setPointSize(12)
