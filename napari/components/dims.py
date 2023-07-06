@@ -221,12 +221,10 @@ class Dims(EventedModel):
         # If the last used slider is no longer visible, use the first.
         last_used = values['last_used']
         ndisplay = values['ndisplay']
-        dims_range = values['range']
+        dims_range = updated['range']
+        nsteps = cls._nsteps_from_range(dims_range)
         not_displayed = [
-            d
-            for d in order[:-ndisplay]
-            if len(cls._nsteps_from_range(dims_range)) > d
-            and cls._nsteps_from_range(dims_range)[d] > 1
+            d for d in order[:-ndisplay] if len(nsteps) > d and nsteps[d] > 1
         ]
         if len(not_displayed) > 0 and last_used not in not_displayed:
             updated['last_used'] = not_displayed[0]

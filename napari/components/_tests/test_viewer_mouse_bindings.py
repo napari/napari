@@ -52,7 +52,7 @@ def test_paint(mouse_event, modifiers, native, expected_dim):
     viewer = ViewerModel()
     data = np.random.random((10, 10, 10))
     viewer.add_image(data)
-    viewer.dims.last_used = 2
+    viewer.dims.last_used = 0
     viewer.dims.set_point(axis=0, value=5)
     viewer.dims.set_point(axis=1, value=5)
     viewer.dims.set_point(axis=2, value=5)
