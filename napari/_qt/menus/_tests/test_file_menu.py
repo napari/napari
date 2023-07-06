@@ -32,13 +32,14 @@ def test_sample_data_triggers_reader_dialog(
         uri='some-path/some-file.tif',
     )
     tmp_plugin.manifest.contributions.sample_data = [my_sample]
-
-    viewer = make_napari_viewer()
-    sample_action = viewer.window.file_menu.open_sample_menu.actions()[0]
+    app = get_app()
+    # required so setup steps run; init of `Viewer` and `Window`, which runs
+    # `_initialize_plugins`, `init_qactions` etc
+    make_napari_viewer()
     with mock.patch(
-        'napari._qt.menus.file_menu.handle_gui_reading'
+        'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
     ) as mock_read:
-        sample_action.trigger()
+        app.commands.execute_command('tmp_plugin.tmp-sample')
 
     # assert that handle gui reading was called
     mock_read.assert_called_once()

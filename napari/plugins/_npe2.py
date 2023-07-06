@@ -387,10 +387,19 @@ def _rebuild_npe1_samples_menu() -> None:
                 plugin=plugin_name,
                 sample=sample_name,
             ):
+                from napari._qt.dialogs.qt_reader_dialog import (
+                    handle_gui_reading,
+                )
+
                 try:
                     qt_viewer.viewer.open_sample(plugin, sample)
                 except MultipleReaderError as e:
-                    qt_viewer._qt_open(e.paths, stack=False, plugin=plugin)
+                    handle_gui_reading(
+                        e.paths,
+                        qt_viewer,
+                        plugin_name=plugin,
+                        stack=False,
+                    )
 
             display_name = sample_dict['display_name'].replace("&", "&&")
             if multiprovider:
@@ -448,10 +457,17 @@ def _get_samples_submenu_actions(
             plugin=mf.name,
             sample=sample.key,
         ):
+            from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
+
             try:
                 qt_viewer.viewer.open_sample(plugin, sample)
             except MultipleReaderError as e:
-                qt_viewer._qt_open(e.paths, stack=False, plugin=plugin)
+                handle_gui_reading(
+                    e.paths,
+                    qt_viewer,
+                    plugin_name=mf.name,
+                    stack=False,
+                )
 
         display_name = sample.display_name.replace("&", "&&")
         if multiprovider:
