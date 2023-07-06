@@ -700,6 +700,7 @@ def test_no_duplicate_firing_events():
     call_b = Mock()
     t.events.a.connect(call_a)
     t.events.b.connect(call_b)
+
     t.a = 2
     call_a.assert_called_once()
     call_b.assert_called_once()
