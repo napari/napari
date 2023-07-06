@@ -2,6 +2,7 @@ from unittest import mock
 
 import pytest
 import qtpy
+from app_model.types import MenuItem, SubmenuItem
 from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtWidgets import QMenu
@@ -33,8 +34,7 @@ def test_sample_data_triggers_reader_dialog(
     )
     tmp_plugin.manifest.contributions.sample_data = [my_sample]
     app = get_app()
-    # required so setup steps run; init of `Viewer` and `Window`, which runs
-    # `_initialize_plugins`, `init_qactions` etc
+    # required so setup steps run in init of `Viewer` and `Window`
     make_napari_viewer()
     with mock.patch(
         'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
@@ -65,6 +65,78 @@ def test_plugin_display_name_use_for_multiple_samples(
     app.commands.execute_command('napari.astronaut')
     assert len(viewer.layers) == 1
     assert viewer.layers[0].name == 'astronaut'
+
+
+def test_sample_menu_plugin_state_change(
+    make_napari_viewer,
+    tmp_plugin: DynamicPlugin,
+):
+    """Check samples submenu correct after plugin changes state."""
+
+    app = get_app()
+    pm = tmp_plugin.plugin_manager
+    # Check no samples menu before plugin registration
+    with pytest.raises(KeyError):
+        app.menus.get_menu('napari/file/samples')
+
+    sample1 = SampleDataURI(
+        key='tmp-sample-1',
+        display_name='Temp Sample One',
+        uri='some-file.tif',
+    )
+    sample2 = SampleDataURI(
+        key='tmp-sample-2',
+        display_name='Temp Sample Two',
+        uri='some-file.tif',
+    )
+    tmp_plugin.manifest.contributions.sample_data = [sample1, sample2]
+
+    # Register plugin
+    make_napari_viewer()
+
+    samples_menu = app.menus.get_menu('napari/file/samples')
+    assert len(samples_menu) == 1
+    assert isinstance(samples_menu[0], SubmenuItem)
+    assert samples_menu[0].title == tmp_plugin.display_name
+    samples_sub_menu = app.menus.get_menu('napari/file/samples/tmp_plugin')
+    assert len(samples_sub_menu) == 2
+    assert isinstance(samples_sub_menu[0], MenuItem)
+    assert samples_sub_menu[0].command.title == 'Temp Sample One'
+    assert 'tmp_plugin.tmp-sample-1' in app.commands
+
+    # Disable plugin
+    pm.disable(tmp_plugin.name)
+    with pytest.raises(KeyError):
+        app.menus.get_menu('napari/file/samples')
+    assert 'tmp_plugin.tmp-sample-1' not in app.commands
+
+    # Enable plugin
+    pm.enable(tmp_plugin.name)
+    samples_sub_menu = app.menus.get_menu('napari/file/samples/tmp_plugin')
+    assert len(samples_sub_menu) == 2
+    assert 'tmp_plugin.tmp-sample-1' in app.commands
+
+
+def test_sample_menu_single_data(
+    make_napari_viewer,
+    tmp_plugin: DynamicPlugin,
+):
+    """Checks sample submenu correct when plugin has single sample data."""
+    app = get_app()
+    sample = SampleDataURI(
+        key='tmp-sample-1',
+        display_name='Temp Sample One',
+        uri='some-file.tif',
+    )
+    tmp_plugin.manifest.contributions.sample_data = [sample]
+    # Register plugin
+    make_napari_viewer()
+
+    samples_menu = app.menus.get_menu('napari/file/samples')
+    assert isinstance(samples_menu[0], MenuItem)
+    assert len(samples_menu) == 1
+    assert samples_menu[0].command.title == 'Temp Sample One (Temp Plugin)'
+    assert 'tmp_plugin.tmp-sample-1' in app.commands
 
 
 def test_show_shortcuts_actions(make_napari_viewer):
