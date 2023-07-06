@@ -2,11 +2,11 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from numpy.typing import NDArray
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 from vispy.color import get_color_names
 
 from napari.layers.base import Layer, no_op
@@ -2932,10 +2932,10 @@ class Shapes(Layer):
             self.move_to_front()
 
     def to_masks(
-            self, 
-            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
-            target_layer: Optional[Layer] = None
-        ) -> NDArray:
+        self,
+        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        target_layer: Optional[Layer] = None,
+    ) -> NDArray:
         """Return an array of binary masks, one for each shape.
 
         Parameters
@@ -2970,10 +2970,10 @@ class Shapes(Layer):
         return masks
 
     def to_labels(
-            self, 
-            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
-            target_layer: Optional[Layer] = None
-        ) -> NDArray:
+        self,
+        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        target_layer: Optional[Layer] = None,
+    ) -> NDArray:
         """Return an integer labels image.
 
         Parameters
@@ -3011,48 +3011,48 @@ class Shapes(Layer):
         return labels
 
     def to_indices(
-            self, 
-            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
-            target_layer: Optional[Layer] = None
-        ) -> List[Tuple[List[int], ...],]:
+        self,
+        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        target_layer: Optional[Layer] = None,
+    ) -> List[Tuple[List[int], ...],]:
         """Return a list of index tuples.
 
         Convert each shape to a tuple of point indices. If the shape
         is filled the tuple contains all face indices of the shape, else only
         the indices of the edges. Indices outside of roi are dropped. If
         target_layer is specified the indices are cast from the Shapes layer
-        coordinate space to world and afterwards to the target_layer 
+        coordinate space to world and afterwards to the target_layer
         coordinate space.
 
         Parameters
         ----------
         target_shape : np.ndarray | tuple | None
-            Array / tuple defining the maximal shape to generate indices from. If 
+            Array / tuple defining the maximal shape to generate indices from. If
             non specified, takes the max of all the vertiecs.
         target_layer : napari.layers.Layer
             Casts the indices to the coordinate space of this layer.
-        
+
         Returns
         -------
         indices : list of tuples
             List of index tuples. One tuple per shape.
         """
-        
+
         if target_layer is None:
             transform = None
         else:
             transform = (self.data_to_world, target_layer.world_to_data)
-        
+
         if target_shape is None:
             # See https://github.com/napari/napari/issues/2778
             # Point coordinates land on pixel centers. We want to find the
             # smallest shape that will hold the largest point in the data,
             # using rounding.
             target_shape = np.round(self._extent_data[1]) + 1
-            
+
         target_shape = np.ceil(target_shape).astype('int')
         indices = self._data_view.to_indices(
-            target_shape=target_shape, transform = transform
+            target_shape=target_shape, transform=transform
         )
 
         return indices

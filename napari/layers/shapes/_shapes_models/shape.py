@@ -6,10 +6,10 @@ from numpy.typing import NDArray
 
 from napari.layers.shapes._shapes_utils import (
     is_collinear,
-    path_to_mask,
-    poly_to_mask,
     path_to_indices,
+    path_to_mask,
     poly_to_indices,
+    poly_to_mask,
     triangulate_edge,
     triangulate_face,
 )
@@ -368,8 +368,8 @@ class Shape(ABC):
         filled, or if they are lying along the boundary of the shape if the
         shape is not filled. Negative points or points outside the target_shape
         after the zoom and offset are clipped.
-        If transform is specified the shape data is cast from the Shapes layer 
-        coordinate space to world and afterwards to a target Layer coordinate 
+        If transform is specified the shape data is cast from the Shapes layer
+        coordinate space to world and afterwards to a target Layer coordinate
         space.
 
         Parameters
@@ -378,7 +378,7 @@ class Shape(ABC):
             Shape of mask to be generated. If non specified, takes the max of
             the displayed vertices.
         transform : tuple of callables
-            Tuple containing the callables to cast from layer to world 
+            Tuple containing the callables to cast from layer to world
             coordinate space and from world to a target layer coordinate space.
             If non specified, keep in layer coordinate space.
         zoom_factor : float
@@ -421,9 +421,9 @@ class Shape(ABC):
 
         if transform:
             data = np.array(list(map(transform[0], map(transform[1], data))))
-        
+
         data = data[:, -len(shape_plane) :]
-        
+
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
         else:
@@ -451,12 +451,12 @@ class Shape(ABC):
         return mask
 
     def to_indices(
-            self, 
-            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
-            transform: Optional[Tuple[Callable, ...]] = None,
-            zoom_factor: float = 1, 
-            offset: Tuple[float, ...] = (0, 0)
-        ) -> List[Tuple[List[int], ...],]:
+        self,
+        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        transform: Optional[Tuple[Callable, ...]] = None,
+        zoom_factor: float = 1,
+        offset: Tuple[float, ...] = (0, 0),
+    ) -> List[Tuple[List[int], ...],]:
         """Convert the shape vertices to indices.
 
         Convert the shape to a tuple of point indices. If the shape
@@ -468,12 +468,12 @@ class Shape(ABC):
         Parameters
         ----------
         target_shape : np.ndarray | tuple | None
-            Array / tuple defining the maximal shape to generate indices from. If 
+            Array / tuple defining the maximal shape to generate indices from. If
             non specified, takes the max of all the vertiecs.
         transform : tuple of callables
             Tuple containing the callables to cast the indces from layer to
             world coordinate space and from world to a target layer coordinate
-            space. If non specified, return the indices in the shapes layer's 
+            space. If non specified, return the indices in the shapes layer's
             coordinate space.
 
         Returns
@@ -506,16 +506,20 @@ class Shape(ABC):
             data = self._face_vertices
         else:
             data = self.data_displayed
-        
+
         if transform:
             data = np.array(list(map(transform[0], map(transform[1], data))))
-        
+
         data = data[:, -len(shape_plane) :]
 
         if self._filled:
-            indices = poly_to_indices(shape_plane, (data - offset) * zoom_factor)
+            indices = poly_to_indices(
+                shape_plane, (data - offset) * zoom_factor
+            )
         else:
-            indices = path_to_indices(shape_plane, (data - offset) * zoom_factor)
+            indices = path_to_indices(
+                shape_plane, (data - offset) * zoom_factor
+            )
 
         # if the target_shape isn't 2D use the full data to extend the 2D indices
         # to the full number of dimensions
