@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from scipy import ndimage as ndi
 from skimage.draw import polygon2mask
@@ -1175,7 +1176,7 @@ class Labels(_ImageBase):
                 start_point, end_point, n_points, endpoint=True
             )
             im_slice = self._slice.image.raw
-            bounding_box = self._display_bounding_box(np.array(dims_displayed))
+            bounding_box = self._display_bounding_box(dims_displayed)
             # the display bounding box is returned as a closed interval
             # (i.e. the endpoint is included) by the method, but we need
             # open intervals in the code that follows, so we add 1.
@@ -1642,9 +1643,9 @@ class Labels(_ImageBase):
 
     def get_status(
         self,
-        position: Optional[Tuple] = None,
+        position: Optional[npt.ArrayLike] = None,
         *,
-        view_direction: Optional[np.ndarray] = None,
+        view_direction: Optional[npt.ArrayLike] = None,
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
     ) -> dict:
@@ -1683,13 +1684,13 @@ class Labels(_ImageBase):
 
         pos = position
         if pos is not None:
-            pos = pos[-self.ndim :]
+            pos = np.asarray(pos)[-self.ndim :]
         source_info['coordinates'] = generate_layer_coords_status(pos, value)
 
         # if this labels layer has properties
         properties = self._get_properties(
             position,
-            view_direction=view_direction,
+            view_direction=np.asarray(view_direction),
             dims_displayed=dims_displayed,
             world=world,
         )
