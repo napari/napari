@@ -301,7 +301,7 @@ def render_sequence(
                 # TODO Transpose needed in 2D mandelbrot
                 # real_array = np.asarray(vdata.array[chunk_slice]).transpose()
 
-                real_array = np.asarray(vdata.array[chunk_slice])
+                real_array = np.asarray(vdata.array[chunk_slice]).transpose()
 
                 chunk_result = (
                     tuple(chunk_slice),

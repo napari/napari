@@ -186,12 +186,12 @@ def mandelbulb(
     step_y = (to_y - from_y) / grid_size
     step_z = (to_z - from_z) / grid_size
 
-    for i in range(grid_size):
-        creal = from_x + i * step_x
-        for j in range(grid_size):
+    for k in range(grid_size):  # Z loop
+        cimag2 = from_z + k * step_z
+        for j in range(grid_size):  # Y loop
             cimag = from_y + j * step_y
-            for k in range(grid_size):
-                cimag2 = from_z + k * step_z
+            for i in range(grid_size):  # X loop
+                creal = from_x + i * step_x
                 nreal = real = imag = imag2 = n_iter = 0
                 for _ in range(maxiter):
                     nreal, nimag, nimag2 = hypercomplex_exponentiation(
@@ -205,11 +205,10 @@ def mandelbulb(
                     imag2 = nimag2
                     if real * real + imag * imag + imag2 * imag2 > 4.0:
                         break
-                    out[i * grid_size * grid_size + j * grid_size + k] = n_iter
+                    out[k * grid_size * grid_size + j * grid_size + i] = n_iter
                     n_iter += 1
 
     return out
-
 
 class MandelbulbStore(zarr.storage.Store):
     def __init__(self, levels, tilesize, maxiter=255, compressor=None):
