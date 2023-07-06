@@ -8,9 +8,6 @@ from napari.experimental._progressive_loading import \
     add_progressive_loading_image
 from napari.experimental._progressive_loading_datasets import \
     mandelbrot_dataset
-from napari.experimental._progressive_loading_3d_gen import \
-    mandelbulb_dataset
-
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 

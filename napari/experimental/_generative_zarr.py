@@ -1,16 +1,9 @@
 import logging
 import sys
-import time
 
-import dask.array as da
 import numpy as np
-import xarray
 import zarr
-from fibsem_tools import read_xarray
 from numba import njit
-from numcodecs import Blosc
-from ome_zarr.io import parse_url
-from ome_zarr.reader import Reader
 from zarr.storage import init_array, init_group
 from zarr.util import json_dumps
 
@@ -24,8 +17,9 @@ formatter = logging.Formatter(
 streamHandler.setFormatter(formatter)
 LOGGER.addHandler(streamHandler)
 
+
 # Utilities to support generative zarrs
-def create_meta_store(levels, tilesize, compressor, dtype):
+def create_meta_store(levels, tilesize, compressor, dtype, ndim=3):
     store = dict()
     init_group(store)
 
@@ -39,8 +33,8 @@ def create_meta_store(levels, tilesize, compressor, dtype):
         init_array(
             store,
             path=str(level),
-            shape=(width, width, width),
-            chunks=(tilesize, tilesize, tilesize),
+            shape=tuple([width] * ndim),
+            chunks=tuple([tilesize] * ndim),
             dtype=dtype,
             compressor=compressor,
         )
@@ -77,25 +71,121 @@ def tile_bounds(level, coords, max_level, min_coord=-2.5, max_coord=2.5):
     return bounds
 
 
+# Mandelbrot
+@njit(nogil=True)
+def mandelbrot(out, from_x, from_y, to_x, to_y, grid_size, maxiter):
+    step_x = (to_x - from_x) / grid_size
+    step_y = (to_y - from_y) / grid_size
+    creal = from_x
+    cimag = from_y
+    for i in range(grid_size):
+        cimag = from_y
+        for j in range(grid_size):
+            nreal = real = imag = n = 0
+            # Use Cardioid / bulb checking for early termination
+            q = (i - 0.25) ** 2 + j**2
+            if q * (q + (i - 0.25)) > 0.25 * j**2:
+                for _ in range(maxiter):
+                    nreal = real * real - imag * imag + creal
+                    imag = 2 * real * imag + cimag
+                    real = nreal
+                    if real * real + imag * imag > 4.0:
+                        break
+                    n += 1
+            out[j * grid_size + i] = n
+            cimag += step_y
+        creal += step_x
+
+    return out
+
+
+class MandelbrotStore(zarr.storage.Store):
+    def __init__(self, levels, tilesize, maxiter=255, compressor=None):
+        self.levels = levels
+        self.tilesize = tilesize
+        self.compressor = compressor
+        self.dtype = np.dtype(np.uint8 if maxiter < 256 else np.uint16)
+        self.maxiter = maxiter
+        self._store = create_meta_store(
+            levels, tilesize, compressor, self.dtype, ndim=2
+        )
+
+    def __getitem__(self, key):
+        if key in self._store:
+            return self._store[key]
+
+        try:
+            # Try parsing pyramidal coords
+            level, chunk_key = key.split("/")
+            level = int(level)
+            y, x = map(int, chunk_key.split("."))
+        except:
+            raise KeyError
+
+        return self.get_chunk(level, y, x).tobytes()
+
+    def get_chunk(self, level, y, x):
+        bounds = tile_bounds(level, (x, y), self.levels)
+        from_x, from_y = bounds[:, 0]
+        to_x, to_y = bounds[:, 1]
+        out = np.zeros(self.tilesize * self.tilesize, dtype=self.dtype)
+        tile = mandelbrot(
+            # tile = xcoord_image(
+            out,
+            from_x,
+            from_y,
+            to_x,
+            to_y,
+            self.tilesize,
+            self.maxiter,
+        )
+        tile = tile.reshape(self.tilesize, self.tilesize).transpose()
+
+        if self.compressor:
+            return self.compressor.encode(tile)
+
+        return tile
+
+    def keys(self):
+        return self._store.keys()
+
+    def __iter__(self):
+        return iter(self._store)
+
+    def __delitem__(self, key):
+        if key in self._store:
+            del self._store[key]
+
+    def __len__(self):
+        return len(self._store)  # TODO not correct
+
+    def __setitem__(self, key, val):
+        self._store[key] = val
+
+
+# Mandelbulb
 # Based on http://www.fractal.org/Formula-Mandelbulb.pdf
 @njit(nogil=True)
 def hypercomplex_exponentiation(x, y, z, n):
-    r = np.sqrt(x*x + y*y + z*z)
-    r1 = np.sqrt(x*x + y*y)
+    r = np.sqrt(x * x + y * y + z * z)
+    r1 = np.sqrt(x * x + y * y)
     theta = np.arctan2(z, r1)
     phi = np.arctan2(y, x)
     new_r = r**n
-    new_x = new_r * np.cos(n*phi) * np.cos(n*theta)
-    new_y = new_r * np.sin(n*phi) * np.cos(n*theta)
-    new_z = new_r * np.sin(n*theta)
+    new_x = new_r * np.cos(n * phi) * np.cos(n * theta)
+    new_y = new_r * np.sin(n * phi) * np.cos(n * theta)
+    new_z = new_r * np.sin(n * theta)
     return new_x, new_y, new_z
 
+
 @njit(nogil=True)
-def mandelbulb(out, from_x, from_y, from_z, to_x, to_y, to_z, grid_size, maxiter, n):
+def mandelbulb(
+    out, from_x, from_y, from_z, to_x, to_y, to_z, grid_size, maxiter, n
+):
     step_x = (to_x - from_x) / grid_size
     step_y = (to_y - from_y) / grid_size
     step_z = (to_z - from_z) / grid_size
-    
+
     for i in range(grid_size):
         creal = from_x + i * step_x
         for j in range(grid_size):
@@ -104,14 +194,16 @@ def mandelbulb(out, from_x, from_y, from_z, to_x, to_y, to_z, grid_size, maxiter
                 cimag2 = from_z + k * step_z
                 nreal = real = imag = imag2 = n_iter = 0
                 for _ in range(maxiter):
-                    nreal, nimag, nimag2 = hypercomplex_exponentiation(real, imag, imag2, n)
+                    nreal, nimag, nimag2 = hypercomplex_exponentiation(
+                        real, imag, imag2, n
+                    )
                     nreal += creal
                     nimag += cimag
                     nimag2 += cimag2
                     real = nreal
                     imag = nimag
                     imag2 = nimag2
-                    if real*real + imag*imag + imag2*imag2 > 4.0:
+                    if real * real + imag * imag + imag2 * imag2 > 4.0:
                         break
                     out[i * grid_size * grid_size + j * grid_size + k] = n_iter
                     n_iter += 1
@@ -128,7 +220,7 @@ class MandelbulbStore(zarr.storage.Store):
         self.maxiter = maxiter
         self.order = 4
         self._store = create_meta_store(
-            levels, tilesize, compressor, self.dtype
+            levels, tilesize, compressor, self.dtype, ndim=3
         )
 
     def __getitem__(self, key):
@@ -149,7 +241,9 @@ class MandelbulbStore(zarr.storage.Store):
         bounds = tile_bounds(level, (x, y, z), self.levels)
         from_x, from_y, from_z = bounds[:, 0]
         to_x, to_y, to_z = bounds[:, 1]
-        out = np.zeros(self.tilesize * self.tilesize * self.tilesize, dtype=self.dtype)
+        out = np.zeros(
+            self.tilesize * self.tilesize * self.tilesize, dtype=self.dtype
+        )
         tile = mandelbulb(
             out,
             from_x,
@@ -162,7 +256,9 @@ class MandelbulbStore(zarr.storage.Store):
             self.maxiter,
             self.order,
         )
-        tile = tile.reshape(self.tilesize, self.tilesize, self.tilesize).transpose()
+        tile = tile.reshape(
+            self.tilesize, self.tilesize, self.tilesize
+        ).transpose()
 
         if self.compressor:
             return self.compressor.encode(tile)

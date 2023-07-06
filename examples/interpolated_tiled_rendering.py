@@ -206,6 +206,7 @@ def get_and_process_chunk(chunk_slice, scale, array, full_shape):
     )
 
     # TODO imposes 3D
+    print(f"chunk_slice {chunk_slice}")
     z, y, x = [sl.start for sl in chunk_slice]
 
     # Use this to overwrite data and then use a colormap to debug where resolution levels go
@@ -267,7 +268,7 @@ def render_sequence_2D(corner_pixels, full_shape):
 
         # for chunk_slice in chunks_to_fetch:
         while chunk_queue:
-            priority, chunk_slice = heapq.heappop(chunk_queue)
+            priority, chunk_slice = heapq.heappop(chunk_queue)            
             yield get_and_process_chunk(
                 chunk_slice,
                 scale,
@@ -303,7 +304,7 @@ def dims_update_handler(invar, data=None, layers={}):
 
     # Find the corners of visible data in the canvas
     corner_pixels = layers[0].corner_pixels
-    canvas_corners = viewer.window.qt_viewer._canvas_corners_in_world.astype(
+    canvas_corners = viewer.window.qt_viewer.canvas._canvas_corners_in_world.astype(
         int
     )
 
