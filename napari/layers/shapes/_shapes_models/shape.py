@@ -357,7 +357,7 @@ class Shape(ABC):
 
     def to_mask(
             self, 
-            mask_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
+            target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None, 
             transform: Optional[Tuple[Callable, ...]] = None, 
             zoom_factor: float = 1, 
             offset: Tuple[float, ...] = (0, 0)
@@ -366,7 +366,7 @@ class Shape(ABC):
 
         Set points to `True` if they are lying inside the shape if the shape is
         filled, or if they are lying along the boundary of the shape if the
-        shape is not filled. Negative points or points outside the mask_shape
+        shape is not filled. Negative points or points outside the target_shape
         after the zoom and offset are clipped.
         If transform is specified the shape data is cast from the Shapes layer 
         coordinate space to world and afterwards to a target Layer coordinate 
@@ -374,7 +374,7 @@ class Shape(ABC):
 
         Parameters
         ----------
-        mask_shape : (D,) array
+        target_shape : (D,) array
             Shape of mask to be generated. If non specified, takes the max of
             the displayed vertices.
         transform : tuple of callables
@@ -393,24 +393,24 @@ class Shape(ABC):
         mask : np.ndarray
             Boolean array with `True` for points inside the shape
         """
-        if mask_shape is None:
-            mask_shape = np.round(self.data_displayed.max(axis=0)).astype(
+        if target_shape is None:
+            target_shape = np.round(self.data_displayed.max(axis=0)).astype(
                 'int'
             )
 
-        if len(mask_shape) == 2:
+        if len(target_shape) == 2:
             embedded = False
-            shape_plane = mask_shape
-        elif len(mask_shape) == self.data.shape[1]:
+            shape_plane = target_shape
+        elif len(target_shape) == self.data.shape[1]:
             embedded = True
-            shape_plane = [mask_shape[d] for d in self.dims_displayed]
+            shape_plane = [target_shape[d] for d in self.dims_displayed]
         else:
             raise ValueError(
                 trans._(
                     "mask shape length must either be 2 or the same as the dimensionality of the shape, expected {expected} got {received}.",
                     deferred=True,
                     expected=self.data.shape[1],
-                    received=len(mask_shape),
+                    received=len(target_shape),
                 )
             )
 
@@ -432,10 +432,10 @@ class Shape(ABC):
         # If the mask is to be embedded in a larger array, compute array
         # and embed as a slice.
         if embedded:
-            mask = np.zeros(mask_shape, dtype=bool)
-            slice_key = [0] * len(mask_shape)
+            mask = np.zeros(target_shape, dtype=bool)
+            slice_key = [0] * len(target_shape)
             j = 0
-            for i in range(len(mask_shape)):
+            for i in range(len(target_shape)):
                 if i in self.dims_displayed:
                     slice_key[i] = slice(None)
                 else:
