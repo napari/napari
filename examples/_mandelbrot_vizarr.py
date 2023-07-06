@@ -4,10 +4,12 @@ import warnings
 
 import napari
 from napari import Viewer
-from napari.experimental._progressive_loading import \
-    add_progressive_loading_image
-from napari.experimental._progressive_loading_datasets import \
-    mandelbrot_dataset
+from napari.experimental._progressive_loading import (
+    add_progressive_loading_image,
+)
+from napari.experimental._progressive_loading_datasets import (
+    mandelbrot_dataset,
+)
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -24,13 +26,6 @@ LOGGER.addHandler(streamHandler)
 
 
 if __name__ == "__main__":
-    import yappi
-
-    def start_yappi():
-        """Start yappi."""
-        yappi.set_clock_type("cpu")  # Use set_clock_type("wall") for wall time
-        yappi.start()
-
     # This dataset is 2D and visualized in 2D
     ndisplay = 2
     large_image = mandelbrot_dataset(max_levels=21)
@@ -43,9 +38,8 @@ if __name__ == "__main__":
     # ndisplay = 3
     # large_image = mandelbulb_dataset(max_levels=3)
 
-    global viewer
     viewer = Viewer(ndisplay=ndisplay)
-    
+
     multiscale_img = large_image["arrays"]
     viewer._layer_slicer._force_sync = False
 
@@ -63,22 +57,4 @@ if __name__ == "__main__":
     else:
         layer = viewer.add_image(multiscale_img)
 
-    def stop_yappi():
-        """Stop yappi."""
-        yappi.stop()
-
-        yappi.get_func_stats().print_all()
-        yappi.get_thread_stats().print_all()
-
     napari.run()
-
-    def yappi_stats():
-        """Save yappi stats."""
-        import time
-
-        timestamp = time.time()
-
-        filename = f"/tmp/mandelbrot_vizarr_{timestamp}.prof"
-
-        func_stats = yappi.get_func_stats()
-        func_stats.save(filename, type='pstat')
