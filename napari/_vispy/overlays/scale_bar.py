@@ -72,6 +72,11 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             # return the last index.
             index -= 1
         new_value = PREFERRED_VALUES[index]
+        # validate if new_value is greater than the actual calculated magnitude
+        # to prevent the scale bar to extend beyond the canvas when zooming.
+        # See https://github.com/napari/napari/issues/5914
+        if new_value > new_quantity.magnitude:
+            new_value = new_quantity.magnitude
 
         # get the new pixel length utilizing the user-specified units
         new_length = ((new_value * factor) / self._unit.magnitude).magnitude
