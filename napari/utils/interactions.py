@@ -291,7 +291,7 @@ class Shortcut:
             shortcut to format
         """
         error_msg = trans._(
-            "{shortcut} does not seem to be a valid shortcut Key.",
+            "`{shortcut}` does not seem to be a valid shortcut Key.",
             shortcut=shortcut,
         )
         error = False
@@ -308,6 +308,33 @@ class Shortcut:
 
         if error:
             warnings.warn(error_msg, UserWarning, stacklevel=2)
+
+    @staticmethod
+    def parse_platform(text: str) -> str:
+        """
+        Parse a current_platform_specific shortcut, and return a canonical
+        version separated with dashes.
+
+        This replace platform specific symbols, like ↵ by Enter,  ⌘ by Command on MacOS....
+        """
+        # edge case, shortcut combinaison where `+` is a key.
+        # this should be rare as on english keyboard + is Shift-Minus.
+        # but not unheard of. In those case `+` is always at the end with `++`
+        # as you can't get two non-modifier keys,  or alone.
+        if text == '+':
+            return text
+        if joinchar == "+":
+            text.replace('++', '+Plus')
+            text.replace('+', '')
+            text.replace('Plus', '+')
+        for k, v in KEY_SYMBOLS.items():
+            if text.endswith(v):
+                text = text.replace(v, k)
+                assert v not in text
+            else:
+                text = text.replace(v, k + '-')
+
+        return text
 
     @property
     def qt(self) -> str:
