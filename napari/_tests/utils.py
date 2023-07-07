@@ -55,16 +55,6 @@ DEFAULT_TIMEOUT_SECS: float = 5
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
 """
 layer_test_data = [
-    (
-        Graph,
-        to_napari_graph(20 * np.random.random((10, 2))),
-        2,
-    ),  # only nodes, no edges
-    (
-        Graph,
-        to_napari_graph(20 * np.random.random((10, 3))),
-        3,
-    ),  # only nodes, no edges
     (Image, np.random.random((10, 15)), 2),
     (Image, np.random.random((10, 15, 20)), 3),
     (Image, np.random.random((5, 10, 15, 20)), 4),
@@ -107,6 +97,24 @@ layer_test_data = [
     ),
 ]
 
+
+if Graph.napari_graph_installed():
+    layer_test_data.extend(
+        [
+            (
+                Graph,
+                to_napari_graph(20 * np.random.random((10, 2))),
+                2,
+            ),  # only nodes, no edges
+            (
+                Graph,
+                to_napari_graph(20 * np.random.random((10, 3))),
+                3,
+            ),  # only nodes, no edges
+        ]
+    )
+
+
 with suppress(ModuleNotFoundError):
     import tensorstore as ts
 
@@ -127,11 +135,6 @@ good_layer_data = [
     (np.random.random((10, 10, 3)), {'rgb': True}),
     (np.random.randint(20, size=(10, 15)), {'seed': 0.3}, 'labels'),
     (np.random.random((10, 2)) * 20, {'face_color': 'blue'}, 'points'),
-    (
-        to_napari_graph(np.random.random((10, 2))),
-        {'border_color': 'blue'},
-        'graph',
-    ),
     (np.random.random((10, 2, 2)) * 20, {}, 'vectors'),
     (np.random.random((10, 4, 2)) * 20, {'opacity': 1}, 'shapes'),
     (
@@ -144,6 +147,16 @@ good_layer_data = [
         'surface',
     ),
 ]
+
+
+if Graph.napari_graph_installed():
+    good_layer_data.append(
+        (
+            to_napari_graph(np.random.random((10, 2))),
+            {'border_color': 'blue'},
+            'graph',
+        )
+    )
 
 
 class LockableData:

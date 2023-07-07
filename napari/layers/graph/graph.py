@@ -520,3 +520,8 @@ class Graph(_BasePoints):
         state.pop("properties", None)
         state.pop("property_choices", None)
         return state
+
+    @staticmethod
+    def napari_graph_installed() -> bool:
+        """Check if napari_graph is installed."""
+        return BaseGraph is not None
