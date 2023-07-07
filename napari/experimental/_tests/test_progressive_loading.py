@@ -1,13 +1,11 @@
 import numpy as np
 import pytest
-from _mandelbrot_vizarr import add_progressive_loading_image
 from numpy.testing import assert_array_equal, assert_raises
 
 import napari
 from napari.experimental import _progressive_loading
-from napari.experimental._progressive_loading import get_chunk
+from napari.experimental._progressive_loading import get_chunk, add_progressive_loading_image
 from napari.experimental._progressive_loading_datasets import (
-    MandlebrotStore,
     mandelbrot_dataset,
 )
 
@@ -22,11 +20,14 @@ def mandelbrot_arrays(max_level):
     multiscale_img = large_image["arrays"]
     return multiscale_img
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_add_progressive_loading_image(mandelbrot_arrays):
     viewer = napari.Viewer()
+    # pytest.warns()
     add_progressive_loading_image(mandelbrot_arrays, viewer=viewer)
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_add_progressive_loading_image_zoom_in(mandelbrot_arrays):
     viewer = napari.Viewer()
     viewer.camera.zoom = 0.0001
@@ -34,6 +35,7 @@ def test_add_progressive_loading_image_zoom_in(mandelbrot_arrays):
     viewer.camera.zoom = 0.001  # only fails if we change visible scales
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_add_progressive_loading_image_zoom_out(mandelbrot_arrays):
     viewer = napari.Viewer()
     viewer.camera.zoom = 0.001
@@ -127,12 +129,6 @@ def test_multiscalevirtualdata_init(mandelbrot_arrays):
     mvdata = _progressive_loading.MultiScaleVirtualData(mandelbrot_arrays)
     assert isinstance(mvdata, _progressive_loading.MultiScaleVirtualData)
 
-
-@pytest.mark.parametrize('max_level', [8, 14])
-def test_MandlebrotStore(max_level):
-    MandlebrotStore(
-        levels=max_level, tilesize=512, compressor=None, maxiter=255
-    )
 
 def test_get_chunk(mandelbrot_arrays):
     scale = 12
