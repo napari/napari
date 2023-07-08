@@ -176,7 +176,9 @@ def make_napari_viewer(
     from qtpy.QtWidgets import QApplication
 
     from napari import Viewer
+    from napari._qt._qapp_model.qactions import init_qactions
     from napari._qt.qt_viewer import QtViewer
+    from napari.plugins import _initialize_plugins
     from napari.settings import get_settings
 
     global GCPASS
@@ -202,6 +204,9 @@ def make_napari_viewer(
 
     settings = get_settings()
     settings.reset()
+
+    _initialize_plugins.cache_clear()
+    init_qactions.cache_clear()
 
     viewers: WeakSet[Viewer] = WeakSet()
 
