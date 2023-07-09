@@ -1,4 +1,5 @@
 import contextlib
+import sys
 from collections import OrderedDict
 from typing import Optional
 
@@ -7,6 +8,7 @@ from app_model.backends.qt import (
     qkeysequence2modelkeybinding,
 )
 from qtpy.QtCore import QEvent, QPoint, Qt, Signal
+from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -121,7 +123,10 @@ class ShortcutEditor(QWidget):
         layout.addWidget(
             QLabel(
                 trans._(
-                    "To edit, double-click the keybinding. To unbind a shortcut, use Backspace or Delete. To set Backspace or Delete, first unbind."
+                    "To edit, double-click the keybinding. To unbind a"
+                    " shortcut, use Backspace or Delete. To set Backspace"
+                    " or Delete, first unbind. Validate Modifiers only"
+                    " shortcut with Enter."
                 )
             )
         )
@@ -569,9 +574,56 @@ class EditorWidget(QLineEdit):
 
         return super().event(event)
 
-    def keyPressEvent(self, event):
+    def _handleEditModifiersOnly(self, event) -> None:
+        """
+        Shared handler between keyPressEvent and keyReleaseEvent for modifiers.
+
+        This is valid both on keyPress and Keyrelease events during edition as we
+        are sure to not have received any real keys events yet. If that was the case
+        the shortcut would have been validated and we would not be in edition mode.
+        """
+        event_key = event.key()
+        if event_key not in (
+            Qt.Key.Key_Control,
+            Qt.Key.Key_Shift,
+            Qt.Key.Key_Alt,
+            Qt.Key.Key_Meta,
+        ):
+            return
+        if sys.platform == 'darwin':
+            # On macOS, the modifiers are not the same as on other platforms.
+            # we also use pairs instead of a dict to keep the order.
+            modmap = (
+                (Qt.ControlModifier, 'Meta+'),
+                (Qt.AltModifier, 'Alt+'),
+                (Qt.ShiftModifier, 'Shift+'),
+                (Qt.MetaModifier, 'Ctrl+'),
+            )
+        else:
+            modmap = (
+                (Qt.ControlModifier, 'Ctrl+'),
+                (Qt.AltModifier, 'Alt+'),
+                (Qt.ShiftModifier, 'Shift+'),
+                (Qt.MetaModifier, 'Meta+'),
+            )
+        modifiers = event.modifiers()
+        seq = ''
+        for mod, s in modmap:
+            if modifiers & mod:
+                seq += s
+        seq = seq[:-1]
+
+        # in current pyappkit this will have weird effects on the order of modifiers
+        # see https://github.com/pyapp-kit/app-model/issues/110
+        self.setText(Shortcut(seq).platform)
+
+    def keyReleaseEvent(self, event) -> None:
+        self._handleEditModifiersOnly(event)
+
+    def keyPressEvent(self, event) -> None:
         """Qt method override."""
         event_key = event.key()
+
         if not event_key or event_key == Qt.Key.Key_unknown:
             return
 
@@ -588,13 +640,13 @@ class EditorWidget(QLineEdit):
             Qt.Key.Key_Shift,
             Qt.Key.Key_Alt,
             Qt.Key.Key_Meta,
-            Qt.Key.Key_Delete,
         ):
-            self.setText(Shortcut(qkey2modelkey(event_key)).platform)
+            self._handleEditModifiersOnly(event)
             return
+        if event_key == Qt.Key.Key_Delete:
+            self.setText(Shortcut(qkey2modelkey(event_key)).platform)
 
         if event_key in {
-            Qt.Key.Key_Return,
             Qt.Key.Key_Tab,
             Qt.Key.Key_CapsLock,
             Qt.Key.Key_Enter,
@@ -606,7 +658,14 @@ class EditorWidget(QLineEdit):
         translator = ShortcutTranslator()
         event_keyseq = translator.keyevent_to_keyseq(event)
         kb = qkeysequence2modelkeybinding(event_keyseq)
-        self.setText(Shortcut(kb).platform)
+        short = Shortcut(kb)
+        if event_key == Qt.Key.Key_Return:
+            # enter should be an invalid shortcut, but we use it as a key to
+            # validate modifiers only shortcuts. thus we let 'Enter' go through,
+            # but remove it from the shortcut we remove +enter from the shortcut
+            short = Shortcut(str(short._kb)[:-6])
+        self.setText(short.platform)
+        self.clearFocus()
 
 
 class ShortcutTranslator(QKeySequenceEdit):
@@ -618,8 +677,15 @@ class ShortcutTranslator(QKeySequenceEdit):
         super().__init__()
         self.hide()
 
-    def keyevent_to_keyseq(self, event):
-        """Return a QKeySequence representation of the provided QKeyEvent."""
+    def keyevent_to_keyseq(self, event) -> QKeySequence:
+        """Return a QKeySequence representation of the provided QKeyEvent.
+
+        This only works for complete key sequence that do not contain only
+        modifiers. If the event is only pressing modifiers, this will return an
+        empty sequence as QKeySequence do support only modifiers
+
+        """
+
         self.keyPressEvent(event)
         event.accept()
         return self.keySequence()
