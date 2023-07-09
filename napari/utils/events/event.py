@@ -299,6 +299,8 @@ class EventEmitter:
         # count number of times this emitter is blocked for each callback.
         self._blocked: Dict[Optional[Callback], int] = {None: 0}
         self._block_counter: _WeakCounter[Optional[Callback]] = _WeakCounter()
+        self._dellay_semaphore = 0
+        self._dellay_last_event = None
 
         # used to detect emitter loops
         self._emitting = False
@@ -726,6 +728,9 @@ class EventEmitter:
 
         # Add our source to the event; remove it after all callbacks have been
         # invoked.
+        if self._dellay_semaphore:
+            self._dellay_last_event = event
+            return event 
         event._push_source(self.source)
         self._emitting = True
         try:
@@ -880,6 +885,24 @@ class EventEmitter:
                 pass  # ..do stuff; no events will be emitted..
         """
         return EventBlocker(self, callback)
+
+    def dellay_emmit(self):
+        """
+        Block emiting callbacks, but emit them when unlock.
+        """
+        self._dellay_semaphore += 1
+
+    def undellay_emmit(self):
+        self._dellay_semaphore -=1
+        if self._dellay_semaphore < 0:
+            raise RuntimeError("there is no waiting dellay event")
+        if self._dellay_last_event is not None:
+            self(self._dellay_last_event)
+            self._dellay_last_event = None
+
+    def dellayer(self):
+        return EventDelayer(self)
+
 
 
 class WarningEmitter(EventEmitter):
@@ -1106,6 +1129,22 @@ class EmitterGroup(EventEmitter):
         for em in self._emitters.values():
             em.unblock()
 
+    def dellay_all(self):
+        """
+        Dellay all event emmision 
+        """
+        self.dellay_emmit()
+        for em in self._emitters.values():
+            em.dellay_emmit()
+
+    def undellay_all(self):
+        """
+        Undellay event emmision
+        """
+        self.undellay_emmit()
+        for em in self._emitters.values():
+            em.undellay_emmit()
+
     def connect(
         self,
         callback: Union[Callback, CallbackRef, 'EmitterGroup'],
@@ -1174,6 +1213,9 @@ class EmitterGroup(EventEmitter):
                 pass  # ..do stuff; no events will be emitted..
         """
         return EventBlockerAll(self)
+    
+    def dellayer_all(self):
+        return EventDelayerAll(self)
 
 
 class EventBlocker:
@@ -1182,7 +1224,7 @@ class EventBlocker:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target, callback=None) -> None:
+    def __init__(self, target: EventEmitter, callback=None) -> None:
         self.target = target
         self.callback = callback
         self._base_count = target._block_counter.get(callback, 0)
@@ -1206,7 +1248,7 @@ class EventBlockerAll:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target) -> None:
+    def __init__(self, target: EmitterGroup) -> None:
         self.target = target
 
     def __enter__(self):
@@ -1214,6 +1256,28 @@ class EventBlockerAll:
 
     def __exit__(self, *args):
         self.target.unblock_all()
+
+
+class EventDelayer:
+    def __init__(self, target: EventEmitter):
+        self.target = target
+
+    def __enter__(self):
+        self.target.dellay_emmit()
+    
+    def __exit__(self, *args):
+        self.target.undellay_emmit()
+
+
+class EventDelayerAll:
+    def __init__(self, target: EmitterGroup) -> None:
+        self.target = target 
+
+    def __enter__(self):
+        self.target.dellay_all()
+
+    def __exit__(self, *args):
+        self.target.undellay_all()
 
 
 def _is_pos_arg(param: inspect.Parameter):

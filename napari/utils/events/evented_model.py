@@ -277,6 +277,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             super().__setattr__(name, value)
 
     def __setattr__(self, name: str, value: Any) -> None:
+        if name not in self.__properties__:
+            self._setattr_impl(name, value)
+            return
+        with self.events.dellayer_all():
+            self._setattr_impl(name, value)
+
+    def _setattr_impl(self, name: str, value: Any) -> None:
         if name not in getattr(self, 'events', {}):
             # fallback to default behavior
             self._super_setattr_(name, value)
