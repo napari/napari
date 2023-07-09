@@ -687,6 +687,7 @@ def _reset_mocks(*args):
     for el in args:
         el.reset_mock()
 
+
 def test_single_emmit():
     class SampleClass(EventedModel):
         a: int = 1
@@ -695,7 +696,7 @@ def test_single_emmit():
         @property
         def c(self):
             return self.a
-        
+
         @c.setter
         def c(self, value):
             self.a = value
@@ -703,7 +704,7 @@ def test_single_emmit():
         @property
         def d(self):
             return self.a + self.b
-        
+
         @d.setter
         def d(self, value):
             self.a = value // 2
@@ -713,7 +714,6 @@ def test_single_emmit():
         def e(self):
             return self.a - self.b
 
-
     s = SampleClass()
     a_m = Mock()
     c_m = Mock()
@@ -722,14 +722,14 @@ def test_single_emmit():
     s.events.c.connect(c_m)
     s.events.d.connect(d_m)
 
-    s.a = 4 
+    s.a = 4
     a_m.assert_called_once()
     c_m.assert_called_once()
     d_m.assert_called_once()
 
     _reset_mocks(a_m, c_m, d_m)
 
-    s.c = 6 
+    s.c = 6
     a_m.assert_called_once()
     c_m.assert_called_once()
     d_m.assert_called_once()
@@ -744,5 +744,3 @@ def test_single_emmit():
     c_m.assert_called_once()
     d_m.assert_called_once()
     e_m.assert_called_once()
-
-

@@ -730,7 +730,7 @@ class EventEmitter:
         # invoked.
         if self._dellay_semaphore:
             self._dellay_last_event = event
-            return event 
+            return event
         event._push_source(self.source)
         self._emitting = True
         try:
@@ -893,7 +893,7 @@ class EventEmitter:
         self._dellay_semaphore += 1
 
     def undellay_emmit(self):
-        self._dellay_semaphore -=1
+        self._dellay_semaphore -= 1
         if self._dellay_semaphore < 0:
             raise RuntimeError("there is no waiting dellay event")
         if self._dellay_last_event is not None:
@@ -902,7 +902,6 @@ class EventEmitter:
 
     def dellayer(self):
         return EventDelayer(self)
-
 
 
 class WarningEmitter(EventEmitter):
@@ -1131,7 +1130,7 @@ class EmitterGroup(EventEmitter):
 
     def dellay_all(self):
         """
-        Dellay all event emmision 
+        Dellay all event emmision
         """
         self.dellay_emmit()
         for em in self._emitters.values():
@@ -1213,7 +1212,7 @@ class EmitterGroup(EventEmitter):
                 pass  # ..do stuff; no events will be emitted..
         """
         return EventBlockerAll(self)
-    
+
     def dellayer_all(self):
         return EventDelayerAll(self)
 
@@ -1264,14 +1263,14 @@ class EventDelayer:
 
     def __enter__(self):
         self.target.dellay_emmit()
-    
+
     def __exit__(self, *args):
         self.target.undellay_emmit()
 
 
 class EventDelayerAll:
     def __init__(self, target: EmitterGroup) -> None:
-        self.target = target 
+        self.target = target
 
     def __enter__(self):
         self.target.dellay_all()
