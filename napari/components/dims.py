@@ -4,6 +4,7 @@ from typing import (
     List,
     Literal,
     NamedTuple,
+    Optional,
     Sequence,
     Tuple,
     Union,
@@ -358,7 +359,7 @@ class Dims(EventedModel):
         full_axis_labels = list(self.axis_labels)
         for ax, val in zip(axis, label):
             full_axis_labels[ax] = val
-        self.axis_labels = full_axis_labels
+        self.axis_labels = tuple(full_axis_labels)
 
     def reset(self):
         """Reset dims values to initial states."""
@@ -381,7 +382,7 @@ class Dims(EventedModel):
         order[-2], order[-1] = order[-1], order[-2]
         self.order = order
 
-    def _increment_dims_right(self, axis: int = None):
+    def _increment_dims_right(self, axis: Optional[int] = None):
         """Increment dimensions to the right along given axis, or last used axis if None
 
         Parameters
@@ -393,7 +394,7 @@ class Dims(EventedModel):
             axis = self.last_used
         self.set_current_step(axis, self.current_step[axis] + 1)
 
-    def _increment_dims_left(self, axis: int = None):
+    def _increment_dims_left(self, axis: Optional[int] = None):
         """Increment dimensions to the left along given axis, or last used axis if None
 
         Parameters
