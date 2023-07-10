@@ -622,13 +622,23 @@ class Vectors(Layer):
     @property
     def _view_face_color(self) -> np.ndarray:
         """(Mx4) np.ndarray : colors for the M in view vectors"""
+
+        # Create as many colors as there are visible vectors
         face_color = self.edge_color[self._view_indices]
         face_color[:, -1] *= self._view_alphas
 
+        # Generally, several triangles are drawn for each vector,
+        # so we need to duplicate the colors accordingly
         if self.vector_style == 'line':
+            # Line vectors are drawn with 2 triangles
             face_color = np.repeat(face_color, 2, axis=0)
 
+        elif self.vector_style == 'triangle':
+            # Triangle vectors are drawn with 1 triangle
+            pass  # No need to duplicate colors
+
         elif self.vector_style == 'arrow':
+            # Arrow vectors are drawn with 3 triangles
             face_color = np.repeat(face_color, 3, axis=0)
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
