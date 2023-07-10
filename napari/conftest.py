@@ -425,11 +425,11 @@ def _mock_app():
     processors. If this is not desired, please create a clean
     `app_model.Application` in the test. It does not however, register Qt
     related actions or providers or register plugins.
-    If these are required, you can run `init_qactions()` or
+    If these are required, the `make_napari_viewer` fixture can be used, which
+    will run both these function and automatically clear the lru cache.
+    Alternatively, you can specifically run `init_qactions()` or
     `_initialize_plugins` within the test, ensuring that you `cache_clear()`
     first.
-    Alternatively, consider using the `make_napari_viewer` fixture, which
-    will run both these function and automatically clear the lru cache.
     """
     from app_model import Application
 
