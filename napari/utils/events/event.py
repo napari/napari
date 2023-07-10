@@ -896,9 +896,10 @@ class EventEmitter:
         self._delay_semaphore -= 1
         if self._delay_semaphore < 0:
             raise RuntimeError("there is no waiting delay event")
-        if self._delay_last_event is not None:
-            self(self._delay_last_event)
+        if not self._delay_semaphore and self._delay_last_event is not None:
+            event = self._delay_last_event
             self._delay_last_event = None
+            self(event)
 
     def delayer(self):
         return EventDelayer(self)
