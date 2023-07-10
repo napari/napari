@@ -83,6 +83,26 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         new_quantity = new_value * new_quantity.units
         return new_length, new_quantity
 
+    def _format_quantity(self, quantity):
+        """Format quantity to be displayed."""
+        from math import floor, log
+
+        def logclip(value):
+            pow_value = floor(log(value, 1000))
+            return value * 1000 ** (-pow_value), pow_value
+
+        formatted_quantity = f'{quantity:~}'
+        if quantity < PREFERRED_VALUES[0]:
+            clipped_quantity, clipped_pow = logclip(quantity)
+            index = bisect.bisect_left(PREFERRED_VALUES, clipped_quantity)
+            if index > len(PREFERRED_VALUES) - 1:
+                index = 0
+                clipped_pow = clipped_pow + 1
+            base_quantity = PREFERRED_VALUES[index]
+            formatted_quantity = f'{base_quantity:>4}x10^{3*clipped_pow}'
+
+        return formatted_quantity
+
     def _on_zoom_change(self, *, force: bool = False):
         """Update axes length based on zoom scale."""
 
@@ -108,7 +128,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         # Update scalebar and text
         self.node.transform.scale = [scale, 1, 1, 1]
-        self.node.text.text = f'{new_dim:~}'
+        self.node.text.text = self._format_quantity(new_dim)
         self.x_size = scale  # needed to offset properly
         self._on_position_change()
 
