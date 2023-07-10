@@ -688,7 +688,7 @@ def _reset_mocks(*args):
         el.reset_mock()
 
 
-def test_single_emmit():
+def test_single_emit():
     class SampleClass(EventedModel):
         a: int = 1
         b: int = 2
