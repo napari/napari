@@ -277,8 +277,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             super().__setattr__(name, value)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name not in self.__properties__:
-            self._setattr_impl(name, value)
+        if not hasattr(self, "_events"):
+            # This is a workaround needed because `EventedConfigFileSettings` uses
+            # `_config_path` before calling the superclass constructor
+            super().__setattr__(name, value)
             return
         with self.events.delayer_all():
             self._setattr_impl(name, value)
