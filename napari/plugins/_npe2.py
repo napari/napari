@@ -426,8 +426,10 @@ def _get_samples_submenu_actions(
 ) -> Tuple[List[Any], List[Any]]:
     """Get sample data submenu and actions for a single npe2 plugin manifest."""
     from napari._app_model.constants import MenuGroup, MenuId
-    from napari._qt.qt_viewer import QtViewer
     from napari.plugins import menu_item_template
+
+    if TYPE_CHECKING:
+        from napari._qt.qt_viewer import QtViewer
 
     # If no sample data, return
     if not mf.contributions.sample_data:
