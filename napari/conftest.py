@@ -424,9 +424,11 @@ def _mock_app():
     Note that `NapariApplication` registers app-model actions, providers and
     processors. If this is not desired, please create a clean
     `app_model.Application` in the test. It does not however, register Qt
-    related actions or providers. If this is required for a unit test,
-    `napari._qt._qapp_model.qactions.init_qactions()` can be used within
-    the test.
+    related actions or providers or register plugins.
+    If these are required, you can run `init_qactions()` or
+    `_initialize_plugins` within the test.
+    Alternatively, consider using the `make_napari_viewer` fixture, which
+    will run both these function and automatically clear the lru cache.
     """
     from app_model import Application
 
