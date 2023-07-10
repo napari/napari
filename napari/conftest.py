@@ -426,7 +426,8 @@ def _mock_app():
     `app_model.Application` in the test. It does not however, register Qt
     related actions or providers or register plugins.
     If these are required, you can run `init_qactions()` or
-    `_initialize_plugins` within the test.
+    `_initialize_plugins` within the test, ensuring that you `cache_clear()`
+    first.
     Alternatively, consider using the `make_napari_viewer` fixture, which
     will run both these function and automatically clear the lru cache.
     """
