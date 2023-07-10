@@ -280,7 +280,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if name not in self.__properties__:
             self._setattr_impl(name, value)
             return
-        with self.events.dellayer_all():
+        with self.events.delayer_all():
             self._setattr_impl(name, value)
 
     def _setattr_impl(self, name: str, value: Any) -> None:
