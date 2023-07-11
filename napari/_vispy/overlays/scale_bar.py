@@ -1,4 +1,6 @@
 import bisect
+from decimal import Decimal
+from math import floor, log
 
 import numpy as np
 
@@ -65,50 +67,54 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # that might have occurred (e.g. um -> cm)
         factor = current_quantity / new_quantity
 
-        # select value closest to one of our preferred values
-        index = bisect.bisect_left(PREFERRED_VALUES, new_quantity.magnitude)
-        if index > 0:
-            # When we get the lowest index of the list, removing -1 will
-            # return the last index.
-            index -= 1
-        new_value = PREFERRED_VALUES[index]
-        # validate if new_value is greater than the actual calculated magnitude
-        # to prevent the scale bar to extend beyond the canvas when zooming.
+        # select value closest to one of our preferred values and also
+        # validate if quantity is dimensionless to prevent the scale bar to
+        # extend beyond the canvas when zooming. If that is the case, calculate
+        # scaled magnitude to use one of the prefered values but scaled
         # See https://github.com/napari/napari/issues/5914
-        if new_value > new_quantity.magnitude:
-            new_value = new_quantity.magnitude
+        if not new_quantity.dimensionless:
+            index = bisect.bisect_left(
+                PREFERRED_VALUES, new_quantity.magnitude
+            )
+            if index > 0:
+                # When we get the lowest index of the list, removing -1 will
+                # return the last index.
+                index -= 1
+            new_value = PREFERRED_VALUES[index]
+        else:
+            magnitude_1000 = floor(log(new_quantity.magnitude, 1000))
+            scaled_magnitude = new_quantity.magnitude * 1000 ** (
+                -magnitude_1000
+            )
+            index = bisect.bisect_left(PREFERRED_VALUES, scaled_magnitude)
+            if index > 0:
+                # When we get the lowest index of the list, removing -1 will
+                # return the last index.
+                index -= 1
+            new_value = PREFERRED_VALUES[index]
+            if new_quantity.magnitude < 1:
+                new_value = float(
+                    Decimal(PREFERRED_VALUES[index])
+                    * Decimal(1000) ** magnitude_1000
+                )
 
         # get the new pixel length utilizing the user-specified units
         new_length = ((new_value * factor) / self._unit.magnitude).magnitude
         new_quantity = new_value * new_quantity.units
         return new_length, new_quantity
 
-    def _format_quantity(self, quantity):
-        """Format quantity to be displayed."""
-        from math import floor, log
-
-        def logclip(value):
-            pow_value = floor(log(value, 1000))
-            return value * 1000 ** (-pow_value), pow_value
-
-        formatted_quantity = f'{quantity:~}'
-        if quantity < PREFERRED_VALUES[0]:
-            clipped_quantity, clipped_pow = logclip(quantity)
-            index = bisect.bisect_left(PREFERRED_VALUES, clipped_quantity)
-            if index > len(PREFERRED_VALUES) - 1:
-                index = 0
-                clipped_pow = clipped_pow + 1
-            base_quantity = PREFERRED_VALUES[index]
-            formatted_quantity = f'{base_quantity:>4}x10^{3*clipped_pow}'
-
-        return formatted_quantity
-
     def _on_zoom_change(self, *, force: bool = False):
         """Update axes length based on zoom scale."""
 
         # If scale has not changed, do not redraw
-        scale = 1 / self.viewer.camera.zoom
-        if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4 and not force:
+        zoom = self.viewer.camera.zoom
+        scale = 1 / zoom
+        if (
+            # workaround to prevent scale break with last zoom change possible
+            zoom in [501.0, 444.0]
+            or abs(np.log10(self._scale) - np.log10(scale)) < 1e-4
+            and not force
+        ):
             return
         self._scale = scale
 
@@ -121,6 +127,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         target_world_pixels_rounded, new_dim = self._calculate_best_length(
             target_world_pixels
         )
+
         target_canvas_pixels_rounded = (
             target_world_pixels_rounded / scale_canvas2world
         )
@@ -128,7 +135,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         # Update scalebar and text
         self.node.transform.scale = [scale, 1, 1, 1]
-        self.node.text.text = self._format_quantity(new_dim)
+        self.node.text.text = f'{new_dim:~}'
         self.x_size = scale  # needed to offset properly
         self._on_position_change()
 
