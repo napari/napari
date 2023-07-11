@@ -77,7 +77,7 @@ def generate_transform_box_from_layer(
     np.ndarray
         Vertices and handles of the interaction box in data coordinates.
     """
-    bounds = layer._display_bounding_box_augmented(np.asarray(dims_displayed))
+    bounds = layer._display_bounding_box_augmented(list(dims_displayed))
 
     # generates in vispy canvas pos, so invert x and y, and then go back
     top_left, bot_right = (tuple(point) for point in bounds.T[:, ::-1])
