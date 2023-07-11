@@ -647,7 +647,7 @@ class Points(Layer):
         self, defaults: Union[Dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
-        current_properties = self.current_properties
+        current_properties = self._feature_table.currents()
         self._edge._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
@@ -1366,11 +1366,11 @@ class Points(Layer):
                 self.current_symbol = unique_symbol
 
             unique_properties = {}
-            for k, v in self.properties.items():
+            for k, v in self._feature_table.properties().items():
                 unique_properties[k] = _unique_element(v[index])
 
             if all(p is not None for p in unique_properties.values()):
-                self.current_properties = unique_properties
+                self._feature_table.set_currents(unique_properties)
 
         self._set_highlight()
 

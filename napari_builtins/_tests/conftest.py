@@ -35,7 +35,7 @@ LAYERS: List[layers.Layer] = [
     layers.Labels(np.random.randint(0, 16000, (32, 32), 'uint64')),
     layers.Points(np.random.rand(20, 2)),
     layers.Points(
-        np.random.rand(20, 2), properties={'values': np.random.rand(20)}
+        np.random.rand(20, 2), features={'values': np.random.rand(20)}
     ),
     layers.Shapes(
         [

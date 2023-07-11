@@ -77,9 +77,7 @@ def layer_data_and_types():
         Image(np.random.rand(20, 20), name='ex_img'),
         Image(np.random.rand(20, 20)),
         Points(np.random.rand(20, 2), name='ex_pts'),
-        Points(
-            np.random.rand(20, 2), properties={'values': np.random.rand(20)}
-        ),
+        Points(np.random.rand(20, 2), features={'values': np.random.rand(20)}),
     ]
     extensions = ['.tif', '.tif', '.csv', '.csv']
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
