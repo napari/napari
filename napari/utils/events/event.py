@@ -299,8 +299,8 @@ class EventEmitter:
         # count number of times this emitter is blocked for each callback.
         self._blocked: Dict[Optional[Callback], int] = {None: 0}
         self._block_counter: _WeakCounter[Optional[Callback]] = _WeakCounter()
-        self._delay_semaphore = 0
-        self._delay_last_event = None
+        self._delay_semaphore: int = 0
+        self._delay_last_event: Optional[Event] = None
 
         # used to detect emitter loops
         self._emitting = False
@@ -888,7 +888,7 @@ class EventEmitter:
 
     def delay_emit(self):
         """
-        Block emiting callbacks, but emit them when unlock.
+        Block emitting callbacks, but emit them when unlock.
         """
         self._delay_semaphore += 1
 
@@ -1131,7 +1131,7 @@ class EmitterGroup(EventEmitter):
 
     def delay_all(self):
         """
-        Delay all event emmision
+        Delay all event emission
         """
         self.delay_emit()
         for em in self._emitters.values():
@@ -1139,7 +1139,7 @@ class EmitterGroup(EventEmitter):
 
     def undelay_all(self):
         """
-        Undelay event emmision
+        Undelay event emission
         """
         self.undelay_emit()
         for em in self._emitters.values():
