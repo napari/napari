@@ -623,7 +623,10 @@ class Vectors(Layer):
     def _view_face_color(self) -> np.ndarray:
         """(Mx4) np.ndarray : colors for the M in view vectors"""
 
-        # Create as many colors as there are visible vectors
+        # Create as many colors as there are visible vectors.
+        # Using fancy array indexing implicitly creates a new
+        # array rather than creating a view of the original one
+        # in ColorManager
         face_color = self.edge_color[self._view_indices]
         face_color[:, -1] *= self._view_alphas
 
