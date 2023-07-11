@@ -534,37 +534,31 @@ def _npe2_manifest_to_actions(
 
     # Filter sample data commands as they are obtained by
     # `_get_samples_submenu_actions`
-    if mf.contributions.commands:
-        if mf.contributions.sample_data:
-            sample_data_commands = [
-                contrib.command
-                for contrib in mf.contributions.sample_data
-                if hasattr(contrib, 'command')
-            ]
-        else:
-            sample_data_commands = []
+    sample_data_commands = []
+    if mf.contributions.sample_data:
+        sample_data_commands = [
+            contrib.command
+            for contrib in mf.contributions.sample_data
+            if hasattr(contrib, 'command')
+        ]
 
-        filtered_commands = [
-            cmd
-            for cmd in mf.contributions.commands
-            if cmd.id not in sample_data_commands
-        ]
-        actions: List[Action] = [
-            Action(
-                id=cmd.id,
-                title=cmd.title,
-                category=cmd.category,
-                tooltip=cmd.short_title or cmd.title,
-                icon=cmd.icon,
-                enablement=cmd.enablement,
-                callback=cmd.python_name or '',
-                menus=cmds.get(cmd.id),
-                keybindings=[],
-            )
-            for cmd in filtered_commands
-        ]
-    else:
-        actions = []
+    actions: List[Action] = []
+    if mf.contributions.commands:
+        for cmd in mf.contributions.commands:
+            if cmd.id not in sample_data_commands:
+                actions.append(
+                    Action(
+                        id=cmd.id,
+                        title=cmd.title,
+                        category=cmd.category,
+                        tooltip=cmd.short_title or cmd.title,
+                        icon=cmd.icon,
+                        enablement=cmd.enablement,
+                        callback=cmd.python_name or '',
+                        menus=cmds.get(cmd.id),
+                        keybindings=[],
+                    )
+                )
 
     return actions, submenus
 
