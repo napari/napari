@@ -397,7 +397,6 @@ def _rebuild_npe1_samples_menu() -> None:
                     handle_gui_reading(
                         e.paths,
                         qt_viewer,
-                        plugin_name=plugin,
                         stack=False,
                     )
 
@@ -467,7 +466,6 @@ def _get_samples_submenu_actions(
                 handle_gui_reading(
                     e.paths,
                     qt_viewer,
-                    plugin_name=mf.name,
                     stack=False,
                 )
 
