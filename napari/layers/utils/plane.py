@@ -35,6 +35,12 @@ class Plane(EventedModel):
     def _ensure_tuple(cls, v):
         return tuple(v)
 
+    def shift_along_normal_vector(self, distance: float) -> None:
+        """Shift the plane along its normal vector by a given distance."""
+        self.position = tuple(
+            p + (distance * n) for p, n in zip(self.position, self.normal)
+        )
+
     def intersect_with_line(
         self, line_position: np.ndarray, line_direction: np.ndarray
     ) -> np.ndarray:
