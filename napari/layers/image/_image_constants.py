@@ -29,6 +29,7 @@ class Interpolation(StringEnum):
     NEAREST = auto()
     SPLINE16 = auto()
     SPLINE36 = auto()
+    CUSTOM = auto()
 
     @classmethod
     def view_subset(cls):
@@ -39,18 +40,6 @@ class Interpolation(StringEnum):
             cls.NEAREST,
             cls.SPLINE36,
         )
-
-
-class Mode(StringEnum):
-    """
-    Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
-    allows for normal interactivity with the canvas.
-
-    TRANSFORM allows for manipulation of the layer transform.
-    """
-
-    TRANSFORM = auto()
-    PAN_ZOOM = auto()
 
 
 class ImageRendering(StringEnum):

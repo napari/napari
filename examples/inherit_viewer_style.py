@@ -4,15 +4,25 @@ Method to get napari style in magicgui based windows
 
 Example how to embed magicgui widget in dialog to inherit style
 from main napari window.
+
+.. tags::  gui, interactivity
 """
 
-from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton, QGridLayout, QLabel, QSpinBox
-
 from magicgui import magicgui
+from qtpy.QtWidgets import (
+    QDialog,
+    QGridLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
 
 import napari
 from napari.qt import get_stylesheet
 from napari.settings import get_settings
+
 
 # The magicgui widget shown by selecting the 'Show widget' button of MyWidget
 @magicgui
@@ -28,7 +38,7 @@ change_style()
 
 
 class MyDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.first_input = QSpinBox()
         self.second_input = QSpinBox()
@@ -47,7 +57,7 @@ class MyDialog(QDialog):
         self.close()
 
 class MyWidget(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.btn1 = QPushButton('Show dialog')
         self.btn1.clicked.connect(self.show_dialog)

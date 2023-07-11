@@ -64,19 +64,19 @@ def color_lines(colors):
             [[colors[0]] * 2, [colors[1]] * 2],
             axis=0,
         )
-    elif len(colors) == 3:
+    if len(colors) == 3:
         return np.concatenate(
             [[colors[0]] * 2, [colors[1]] * 2, [colors[2]] * 2],
             axis=0,
         )
-    else:
-        return ValueError(
-            trans._(
-                'Either 2 or 3 colors must be provided, got {number}.',
-                deferred=True,
-                number=len(colors),
-            )
+
+    return ValueError(
+        trans._(
+            'Either 2 or 3 colors must be provided, got {number}.',
+            deferred=True,
+            number=len(colors),
         )
+    )
 
 
 def color_dashed_lines(colors):
@@ -85,19 +85,19 @@ def color_dashed_lines(colors):
             [[colors[0]] * 2, [colors[1]] * 4 * 2],
             axis=0,
         )
-    elif len(colors) == 3:
+    if len(colors) == 3:
         return np.concatenate(
             [[colors[0]] * 2, [colors[1]] * 4 * 2, [colors[2]] * 8 * 2],
             axis=0,
         )
-    else:
-        return ValueError(
-            trans._(
-                'Either 2 or 3 colors must be provided, got {number}.',
-                deferred=True,
-                number=len(colors),
-            )
+
+    return ValueError(
+        trans._(
+            'Either 2 or 3 colors must be provided, got {number}.',
+            deferred=True,
+            number=len(colors),
         )
+    )
 
 
 def color_arrowheads(colors, num_segments):
@@ -106,7 +106,7 @@ def color_arrowheads(colors, num_segments):
             [[colors[0]] * num_segments, [colors[1]] * num_segments],
             axis=0,
         )
-    elif len(colors) == 3:
+    if len(colors) == 3:
         return np.concatenate(
             [
                 [colors[0]] * num_segments,
@@ -115,18 +115,18 @@ def color_arrowheads(colors, num_segments):
             ],
             axis=0,
         )
-    else:
-        return ValueError(
-            trans._(
-                'Either 2 or 3 colors must be provided, got {number}.',
-                deferred=True,
-                number=len(colors),
-            )
+
+    return ValueError(
+        trans._(
+            'Either 2 or 3 colors must be provided, got {number}.',
+            deferred=True,
+            number=len(colors),
         )
+    )
 
 
 class Axes(Compound):
-    def __init__(self):
+    def __init__(self) -> None:
         self._num_segments_arrowhead = 100
         # CMYRGB for 6 axes data in x, y, z, ... ordering
         self._default_color = [

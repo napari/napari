@@ -1,10 +1,11 @@
 # syntax_style for the console must be one of the supported styles from
 # pygments - see here for examples https://help.farbox.com/pygments.html
+import logging
 import re
 import warnings
 from ast import literal_eval
 from contextlib import suppress
-from typing import Union
+from typing import Any, Dict, List, Literal, Union, overload
 
 import npe2
 from pydantic import validator
@@ -23,9 +24,10 @@ from napari.utils.translations import trans
 try:
     from qtpy import QT_VERSION
 
-    major, minor, *rest = QT_VERSION.split('.')
+    major, minor, *_ = QT_VERSION.split('.')
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
-except Exception:
+    del major, minor, QT_VERSION
+except (ImportError, RuntimeError):
     use_gradients = False
 
 
@@ -80,16 +82,27 @@ class Theme(EventedModel):
     error: Color
     current: Color
 
-    @validator("syntax_style", pre=True)
+    @validator("syntax_style", pre=True, allow_reuse=True)
     def _ensure_syntax_style(value: str) -> str:
         from pygments.styles import STYLE_MAP
 
         assert value in STYLE_MAP, trans._(
-            "Incorrect `syntax_style` value provided. Please use one of the following: {syntax_style}",
+            "Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}",
             deferred=True,
             syntax_style=f" {', '.join(STYLE_MAP)}",
+            value=value,
         )
         return value
+
+    def to_rgb_dict(self) -> Dict[str, Any]:
+        """
+        This differs from baseclass `dict()` by converting colors to rgb.
+        """
+        th = super().dict()
+        return {
+            k: v if not isinstance(v, Color) else v.as_rgb()
+            for (k, v) in th.items()
+        }
 
 
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
@@ -180,14 +193,24 @@ def template(css: str, **theme):
 def get_system_theme() -> str:
     """Return the system default theme, either 'dark', or 'light'."""
     try:
-        id = darkdetect.theme().lower()
-    except Exception:
-        id = "dark"
+        id_ = darkdetect.theme().lower()
+    except AttributeError:
+        id_ = "dark"
 
-    return id
+    return id_
 
 
-def get_theme(id, as_dict=None):
+@overload
+def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme:
+    ...
+
+
+@overload
+def get_theme(theme_id: str, as_dict: Literal[True]) -> Dict[str, Any]:
+    ...
+
+
+def get_theme(theme_id, as_dict=None):
     """Get a copy of theme based on it's id.
 
     If you get a copy of the theme, changes to the theme model will not be
@@ -196,9 +219,13 @@ def get_theme(id, as_dict=None):
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         ID of requested theme.
     as_dict : bool
+        .. deprecated:: 0.5.0
+
+            Use ``get_theme(...).to_rgb_dict()``
+
         Flag to indicate that the old-style dictionary
         should be returned. This will emit deprecation warning.
 
@@ -209,50 +236,43 @@ def get_theme(id, as_dict=None):
         so that manipulating this theme can be done without
         side effects.
     """
-    if id == "system":
-        id = get_system_theme()
+    if theme_id == "system":
+        theme_id = get_system_theme()
 
-    if id not in _themes:
+    if theme_id not in _themes:
         raise ValueError(
             trans._(
                 "Unrecognized theme {id}. Available themes are {themes}",
                 deferred=True,
-                id=id,
+                id=theme_id,
                 themes=available_themes(),
             )
         )
-    theme = _themes[id]
-    _theme = theme.copy()
-    if as_dict is None:
+    theme = _themes[theme_id].copy()
+    if as_dict is not None:
         warnings.warn(
             trans._(
-                "The `as_dict` kwarg default to False` since Napari 0.4.17, "
-                "and will become a mandatory parameter in the future.",
+                "The `as_dict` kwarg has been deprecated since Napari 0.5.0 and "
+                "will be removed in future version. You can use `get_theme(...).to_rgb_dict()`",
                 deferred=True,
             ),
             category=FutureWarning,
             stacklevel=2,
         )
-        as_dict = False
     if as_dict:
-        _theme = _theme.dict()
-        _theme = {
-            k: v if not isinstance(v, Color) else v.as_rgb()
-            for (k, v) in _theme.items()
-        }
-        return _theme
-    return _theme
+        return theme.to_rgb_dict()
+    return theme
 
 
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
 
 
-def register_theme(id, theme, source):
+def register_theme(theme_id, theme, source):
     """Register a new or updated theme.
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         id of requested theme.
     theme : dict of str: str, Theme
         Theme mapping elements to colors.
@@ -262,23 +282,23 @@ def register_theme(id, theme, source):
     if isinstance(theme, dict):
         theme = Theme(**theme)
     assert isinstance(theme, Theme)
-    _themes[id] = theme
+    _themes[theme_id] = theme
 
-    build_theme_svgs(id, source)
+    build_theme_svgs(theme_id, source)
 
 
-def unregister_theme(id):
+def unregister_theme(theme_id):
     """Remove existing theme.
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         id of the theme to be removed.
     """
-    _themes.pop(id, None)
+    _themes.pop(theme_id, None)
 
 
-def available_themes():
+def available_themes() -> List[str]:
     """List available themes.
 
     Returns
@@ -286,15 +306,15 @@ def available_themes():
     list of str
         ids of available themes.
     """
-    return tuple(_themes) + ("system",)
+    return [*_themes, 'system']
 
 
-def is_theme_available(id):
+def is_theme_available(theme_id):
     """Check if a theme is available.
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         id of requested theme.
 
     Returns
@@ -302,10 +322,10 @@ def is_theme_available(id):
     bool
         True if the theme is available, False otherwise.
     """
-    if id == "system":
+    if theme_id == "system":
         return True
-    if id not in _themes and _theme_path(id).exists():
-        plugin_name_file = _theme_path(id) / PLUGIN_FILE_NAME
+    if theme_id not in _themes and _theme_path(theme_id).exists():
+        plugin_name_file = _theme_path(theme_id) / PLUGIN_FILE_NAME
         if not plugin_name_file.exists():
             return False
         plugin_name = plugin_name_file.read_text()
@@ -313,7 +333,7 @@ def is_theme_available(id):
             npe2.PluginManager.instance().register(plugin_name)
         _install_npe2_themes(_themes)
 
-    return id in _themes
+    return theme_id in _themes
 
 
 def rebuild_theme_settings():
@@ -384,7 +404,10 @@ def _install_npe2_themes(themes=None):
             theme_colors = theme.colors.dict(exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
-            register_theme(theme.id, theme_dict, manifest.name)
+            try:
+                register_theme(theme.id, theme_dict, manifest.name)
+            except ValueError:
+                logging.exception("Registration theme failed.")
 
 
 _install_npe2_themes(_themes)

@@ -38,7 +38,7 @@ def get_image_params():
 
 
 class SlowMemoryStore(zarr.storage.MemoryStore):
-    def __init__(self, load_delay, *args, **kwargs):
+    def __init__(self, load_delay, *args, **kwargs) -> None:
         self.load_delay = load_delay
         super().__init__(*args, **kwargs)
 

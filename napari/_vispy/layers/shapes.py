@@ -9,7 +9,7 @@ from napari.utils.events import disconnect_events
 
 
 class VispyShapesLayer(VispyBaseLayer):
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         node = ShapesVisual()
         super().__init__(layer, node)
 

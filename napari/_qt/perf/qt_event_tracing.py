@@ -53,7 +53,7 @@ class EventTypes:
     We use this class for PyQt5 and PySide2 to be consistent.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create mapping for all known event types."""
         self.string_name = {}
         for name in vars(QEvent):

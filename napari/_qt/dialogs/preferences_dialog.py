@@ -2,7 +2,7 @@ import json
 from enum import EnumMeta
 from typing import TYPE_CHECKING, Tuple, cast
 
-from pydantic.main import BaseModel
+from pydantic.main import BaseModel, ModelMetaclass
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (
     QDialog,
@@ -29,11 +29,12 @@ class PreferencesDialog(QDialog):
         "highlight_thickness": {"ui:widget": "highlight"},
         "shortcuts": {"ui:widget": "shortcuts"},
         "extension2reader": {"ui:widget": "extension2reader"},
+        "dask": {"ui:widget": "horizontal_object"},
     }
 
     resized = Signal(QSize)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         from napari.settings import get_settings
 
         super().__init__(parent)
@@ -126,25 +127,6 @@ class PreferencesDialog(QDialog):
             lambda d: getattr(self._settings, name.lower()).update(d)
         )
 
-        # need to disable async if octree is enabled.
-        # TODO: this shouldn't live here... if there is a coupling/dependency
-        # between these settings, it should be declared in the settings schema
-        if (
-            name.lower() == 'experimental'
-            and values['octree']
-            and self._settings.env_settings()
-            .get('experimental', {})
-            .get('async_')
-            not in (None, '0')
-        ):
-            form_layout = form.widget.layout()
-            for i in range(form_layout.count()):
-                wdg = form_layout.itemAt(i, form_layout.FieldRole).widget()
-                if getattr(wdg, '_name') == 'async_':
-                    wdg.opacity.setOpacity(0.3)
-                    wdg.setDisabled(True)
-                    break
-
         self._list.addItem(field.field_info.title or field.name)
         self._stack.addWidget(form)
 
@@ -164,8 +146,12 @@ class PreferencesDialog(QDialog):
                 "type": "object",
                 "properties": {
                     "shortcuts": {
-                        "title": "shortcuts",
-                        "description": "Set keyboard shortcuts for actions.",
+                        "title": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.title,
+                        "description": field.type_.__fields__[
+                            "shortcuts"
+                        ].field_info.description,
                         "type": "object",
                     }
                 },
@@ -173,12 +159,23 @@ class PreferencesDialog(QDialog):
         else:
             schema = json.loads(ftype.schema_json())
 
+        if field.field_info.title:
+            schema["title"] = field.field_info.title
+        if field.field_info.description:
+            schema["description"] = field.field_info.description
+
         # find enums:
         for name, subfield in ftype.__fields__.items():
             if isinstance(subfield.type_, EnumMeta):
                 enums = [s.value for s in subfield.type_]  # type: ignore
                 schema["properties"][name]["enum"] = enums
                 schema["properties"][name]["type"] = "string"
+            if isinstance(subfield.type_, ModelMetaclass):
+                local_schema = json.loads(subfield.type_.schema_json())
+                schema["properties"][name]["type"] = "object"
+                schema["properties"][name]["properties"] = local_schema[
+                    "properties"
+                ]
 
         # Need to remove certain properties that will not be displayed on the GUI
         setting = getattr(self._settings, field.name)

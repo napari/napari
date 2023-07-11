@@ -8,6 +8,7 @@ Display one image and transform it using the :func:`view_image` API.
 """
 
 from skimage import data
+
 import napari
 
 # create the viewer with an image and transform (rotate) it

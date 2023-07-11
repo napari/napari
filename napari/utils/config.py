@@ -1,8 +1,9 @@
 """Napari Configuration.
 """
 import os
+import warnings
 
-from napari.utils._octree import get_octree_config
+from napari.utils.translations import trans
 
 
 def _set(env_var: str) -> bool:
@@ -19,30 +20,6 @@ def _set(env_var: str) -> bool:
 """
 Experimental Features
 
-Async Loading
--------------
-Image layers will use the ChunkLoader to load data instead of loading
-the data directly. Image layers will not call np.asarray() in the GUI
-thread. The ChunkLoader will call np.asarray() in a worker thread. That
-means any IO or computation done as part of the load will not block the
-GUI thread.
-
-Set NAPARI_ASYNC=1 to turn on async loading with default settings.
-
-Octree Rendering
-----------------
-Image layers use an octree for rendering. The octree organizes the image
-into chunks/tiles. Only a subset of those chunks/tiles are loaded and
-drawn at a time. Octree rendering is a work in progress.
-
-Enabled one of two ways:
-
-1) Set NAPARI_OCTREE=1 to enabled octree rendering with defaults.
-
-2) Set NAPARI_OCTREE=/tmp/config.json use a config file.
-
-See napari/utils/_octree.py for the config file format.
-
 Shared Memory Server
 --------------------
 Experimental shared memory service. Only enabled if NAPARI_MON is set to
@@ -50,22 +27,55 @@ the path of a config file. See this PR for more info:
 https://github.com/napari/napari/pull/1909.
 """
 
-# Config for async/octree. If octree_config['octree']['enabled'] is False
-# only async is enabled, not the octree.
-octree_config = get_octree_config()
 
-# Shorthand for async loading with or without an octree.
-async_loading = octree_config is not None
+# Handle old async/octree deprecated attributes by returning their
+# fixed values in the module level __getattr__
+# https://peps.python.org/pep-0562/
+# Other module attributes are defined as normal.
+def __getattr__(name):
+    if name == 'octree_config':
+        warnings.warn(
+            trans._(
+                'octree_config is deprecated in version 0.5 and will be removed in a later version.'
+                'More generally, the experimental octree feature was removed in napari version 0.5 so this value is always None. '
+                'If you need to use that experimental feature, continue to use the latest 0.4 release. '
+                'Also look out for announcements regarding similar efforts.'
+            ),
+            DeprecationWarning,
+        )
+        return None
+    if name == 'async_octree':
+        warnings.warn(
+            trans._(
+                'async_octree is deprecated in version 0.5 and will be removed in a later version.'
+                'More generally, the experimental octree feature was removed in version 0.5 so this value is always False. '
+                'If you need to use that experimental feature, continue to use the latest 0.4 release. '
+                'Also look out for announcements regarding similar future efforts.'
+            ),
+            DeprecationWarning,
+        )
+        return False
+    if name == 'async_loading':
+        # For async_loading, we could get the value of the remaining
+        # async setting. We do not because that is dynamic, so will not
+        # handle an import of the form
+        #
+        # `from napari.utils.config import async_loading`
+        #
+        # consistently. Instead, we let this attribute effectively
+        # refer to the old async which is always off in napari now.
+        warnings.warn(
+            trans._(
+                'async_loading is deprecated in version 0.5 and will be removed in a later version. '
+                'The old approach to async loading was removed in version 0.5 so this value is always False. '
+                'Instead, please use napari.settings.get_settings().experimental.async_ to use a new approach. '
+                'If you need to specifically use the old approach, continue to use the latest 0.4 release.'
+            ),
+            DeprecationWarning,
+        )
+        return False
+    return None
 
-# Shorthand for async with an octree.
-async_octree = octree_config and octree_config['octree']['enabled']
 
 # Shared Memory Server
 monitor = _set("NAPARI_MON")
-
-"""
-Other Config Options
-"""
-# Added this temporarily for octree debugging. The welcome visual causes
-# breakpoints to hit in image visual code. It's easier if we don't show it.
-allow_welcome_visual = True

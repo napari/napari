@@ -92,8 +92,7 @@ class TracksFilter(Filter):
         head_length: Union[int, float] = 0,
         use_fade: bool = True,
         vertex_time: Union[List, np.ndarray] = None,
-    ):
-
+    ) -> None:
         super().__init__(
             vcode=self.VERT_SHADER, vpos=3, fcode=self.FRAG_SHADER, fpos=9
         )

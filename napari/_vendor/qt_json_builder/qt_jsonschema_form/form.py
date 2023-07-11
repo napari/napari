@@ -24,6 +24,7 @@ class WidgetBuilder:
         },
         "object": {
             "object": widgets.ObjectSchemaWidget,
+            "horizontal_object": widgets.HorizontalObjectSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
             "plugins": widgets.PluginWidget,
             "shortcuts": widgets.ShortcutsWidget,
@@ -118,6 +119,9 @@ class WidgetBuilder:
 
         if "enum" in schema:
             default_variant = "enum"
+
+        if schema.get("description"):
+            description = schema["description"]
 
         widget_variant = ui_schema.get('ui:widget', default_variant)
         widget_cls = self.widget_map[schema_type][widget_variant]

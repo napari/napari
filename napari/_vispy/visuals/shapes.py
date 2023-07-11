@@ -16,5 +16,5 @@ class ShapesVisual(ClippingPlanesMixin, Compound):
         - Text labels (vispy.TextVisual)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__([Mesh(), Mesh(), Line(), Markers(), Text()])
