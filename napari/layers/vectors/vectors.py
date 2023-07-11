@@ -621,7 +621,7 @@ class Vectors(Layer):
 
     @property
     def _view_face_color(self) -> np.ndarray:
-        """(Mx4) np.ndarray : colors for the M in view vectors"""
+        """(Mx4) np.ndarray : colors for the M in view triangles"""
 
         # Create as many colors as there are visible vectors.
         # Using fancy array indexing implicitly creates a new
