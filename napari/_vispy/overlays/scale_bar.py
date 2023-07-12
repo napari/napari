@@ -83,8 +83,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         new_value = PREFERRED_VALUES[index]
         if new_quantity.dimensionless and new_quantity.magnitude < 1:
             new_value = float(
-                Decimal(new_value)
-                * Decimal(1000) ** magnitude_1000
+                Decimal(new_value) * Decimal(1000) ** magnitude_1000
             )
 
         # get the new pixel length utilizing the user-specified units
