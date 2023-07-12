@@ -588,15 +588,15 @@ class QtViewer(QSplitter):
             # Update the layer slice state to temporarily support behavior
             # that depends on it.
             layer._update_slice_response(response)
+            # Update the layer's loaded state before everything else,
+            # because they may rely on its updated value.
+            layer._update_loaded_slice_id(response.request_id)
             # The rest of `Layer.refresh` after `set_view_slice`, where
             # `set_data` notifies the corresponding vispy layer of the new
             # slice.
             layer.events.set_data()
             layer._update_thumbnail()
             layer._set_highlight(force=True)
-            # Update the layer's loaded state after everything else, so
-            # that a user can rely on the rendered state being updated.
-            layer._update_loaded_slice_id(response.request_id)
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""
