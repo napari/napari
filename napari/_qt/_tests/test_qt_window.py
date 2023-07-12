@@ -70,7 +70,7 @@ def test_update_theme(
 ):
     viewer = make_napari_viewer()
 
-    blue = get_theme("dark", False)
+    blue = get_theme("dark")
     blue.id = "blue"
     register_theme("blue", blue, "test")
 
