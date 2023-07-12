@@ -18,7 +18,7 @@ napari is a consensus-based community project. Anyone with an interest in the pr
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - [@melonora](https://github.com/melonora)
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - [@sofroniewn](https://github.com/sofroniewn)^
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - [@psobolewskiPhD](https://github.com/psobolewskiPhD)
-- [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - [@tlambert03](https://github.com/tlambert03)*
+- [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - [@tlambert03](https://github.com/tlambert03)^
 
 <sub>* on the napari [steering council](https://napari.org/community/governance.html#steering-council).</sub>
 
