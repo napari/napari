@@ -82,6 +82,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             index -= 1
         new_value = PREFERRED_VALUES[index]
         if new_quantity.dimensionless and new_quantity.magnitude < 1:
+            # using Decimal is necessary to avoid `4.999999e-6`
+            # at really small scale.
             new_value = float(
                 Decimal(new_value) * Decimal(1000) ** magnitude_1000
             )
@@ -109,7 +111,6 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         target_world_pixels_rounded, new_dim = self._calculate_best_length(
             target_world_pixels
         )
-
         target_canvas_pixels_rounded = (
             target_world_pixels_rounded / scale_canvas2world
         )
