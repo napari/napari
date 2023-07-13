@@ -1399,7 +1399,6 @@ def test_out_of_slice_display():
     assert layer.out_of_slice_display is True
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -1423,7 +1422,8 @@ def test_switch_color_mode(attribute):
         colormap_kwarg: 'gray',
         color_cycle_kwarg: color_cycle,
     }
-    layer = Points(data, properties=properties, **args)
+    with pytest.warns(DeprecationWarning):
+        layer = Points(data, properties=properties, **args)
 
     layer_color_mode = getattr(layer, f'{attribute}_color_mode')
     layer_color = getattr(layer, f'{attribute}_color')
@@ -1461,7 +1461,6 @@ def test_switch_color_mode(attribute):
     np.testing.assert_allclose(new_edge_color, color)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_colormap_without_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
@@ -1474,7 +1473,6 @@ def test_colormap_without_properties(attribute):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_colormap_with_categorical_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
@@ -1482,13 +1480,13 @@ def test_colormap_with_categorical_properties(attribute):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Points(data, properties=properties)
+    with pytest.warns(DeprecationWarning):
+        layer = Points(data, properties=properties)
 
     with pytest.raises(TypeError), pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_add_colormap(attribute):
     """Test  directly adding a vispy Colormap object"""
@@ -1499,7 +1497,8 @@ def test_add_colormap(attribute):
     color_kwarg = f'{attribute}_color'
     colormap_kwarg = f'{attribute}_colormap'
     args = {color_kwarg: 'point_type', colormap_kwarg: 'viridis'}
-    layer = Points(data, properties=annotations, **args)
+    with pytest.warns(DeprecationWarning):
+        layer = Points(data, properties=annotations, **args)
 
     setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
     layer_colormap = getattr(layer, f'{attribute}_colormap')
@@ -1588,7 +1587,6 @@ color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
 color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 @pytest.mark.parametrize(
     "color_cycle",
@@ -1606,9 +1604,11 @@ def test_color_cycle(attribute, color_cycle):
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
-    layer = Points(data, **points_kwargs)
+    with pytest.warns(DeprecationWarning):
+        layer = Points(data, **points_kwargs)
 
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(DeprecationWarning):
+        np.testing.assert_equal(layer.properties, properties)
 
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, shape[0]))
@@ -1641,9 +1641,11 @@ def test_color_cycle(attribute, color_cycle):
 
     # test adding a point with a new property value
     layer.selected_data = {}
-    current_properties = layer.current_properties
+    with pytest.warns(DeprecationWarning):
+        current_properties = layer.current_properties
     current_properties['point_type'] = np.array(['new'])
-    layer.current_properties = current_properties
+    with pytest.warns(DeprecationWarning):
+        layer.current_properties = current_properties
     layer.add([10, 10])
     color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
@@ -1654,7 +1656,6 @@ def test_color_cycle(attribute, color_cycle):
     )
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_color_cycle_dict(attribute):
     """Test setting edge/face color with a color cycle dict"""
@@ -1665,7 +1666,8 @@ def test_color_cycle_dict(attribute):
         f'{attribute}_color': 'my_colors',
         f'{attribute}_color_cycle': {1: 'green', 2: 'red', 3: 'blue'},
     }
-    layer = Points(data, **points_kwargs)
+    with pytest.warns(DeprecationWarning):
+        layer = Points(data, **points_kwargs)
 
     color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
@@ -1674,7 +1676,6 @@ def test_color_cycle_dict(attribute):
     np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_add_color_cycle_to_empty_layer(attribute):
     """Test adding a point to an empty layer when edge/face color is a color cycle
@@ -1688,7 +1689,8 @@ def test_add_color_cycle_to_empty_layer(attribute):
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
-    layer = Points(**points_kwargs)
+    with pytest.warns(DeprecationWarning):
+        layer = Points(**points_kwargs)
 
     # verify the current_edge_color is correct
     expected_color = transform_color(color_cycle[0])[0]
@@ -1700,23 +1702,25 @@ def test_add_color_cycle_to_empty_layer(attribute):
     layer.add([10, 10])
     props = {'point_type': np.array(['A'])}
     expected_color = np.array([[1, 0, 0, 1]])
-    np.testing.assert_equal(layer.properties, props)
+    with pytest.warns(DeprecationWarning):
+        np.testing.assert_equal(layer.properties, props)
     attribute_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(attribute_color, expected_color)
 
     # add a point with a new property
     layer.selected_data = []
-    layer.current_properties = {'point_type': np.array(['B'])}
+    with pytest.warns(DeprecationWarning):
+        layer.current_properties = {'point_type': np.array(['B'])}
     layer.add([12, 12])
     new_color = np.array([0, 0, 1, 1])
     expected_color = np.vstack((expected_color, new_color))
     new_properties = {'point_type': np.array(['A', 'B'])}
     attribute_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(attribute_color, expected_color)
-    np.testing.assert_equal(layer.properties, new_properties)
+    with pytest.warns(DeprecationWarning):
+        np.testing.assert_equal(layer.properties, new_properties)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_adding_value_color_cycle(attribute):
     """Test that adding values to properties used to set a color cycle
@@ -1735,14 +1739,17 @@ def test_adding_value_color_cycle(attribute):
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
-    layer = Points(data, **points_kwargs)
+    with pytest.warns(DeprecationWarning):
+        layer = Points(data, **points_kwargs)
 
     # make point 0 point_type C
-    props = layer.properties
+    with pytest.warns(DeprecationWarning):
+        props = layer.properties
     point_types = props['point_type']
     point_types[0] = 'C'
     props['point_type'] = point_types
-    layer.properties = props
+    with pytest.warns(DeprecationWarning):
+        layer.properties = props
 
     color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
@@ -1750,7 +1757,6 @@ def test_adding_value_color_cycle(attribute):
     assert 'C' in color_map_keys
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_color_colormap(attribute):
     """Test setting edge/face color with a colormap"""
@@ -1764,9 +1770,11 @@ def test_color_colormap(attribute):
         f'{attribute}_color': 'point_type',
         f'{attribute}_colormap': 'gray',
     }
-    layer = Points(data, **points_kwargs)
+    with pytest.warns(DeprecationWarning):
+        layer = Points(data, **points_kwargs)
 
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(DeprecationWarning):
+        np.testing.assert_equal(layer.properties, properties)
 
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
@@ -2202,7 +2210,6 @@ def test_update_none():
     assert layer.data.size == 6
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_set_face_color_mode_after_set_properties():
     # See GitHub issue for more details:
     # https://github.com/napari/napari/issues/2755
@@ -2210,19 +2217,21 @@ def test_set_face_color_mode_after_set_properties():
     num_points = 3
     points = Points(np.random.random((num_points, 2)))
 
-    points.properties = {
-        'cat': np.random.randint(low=0, high=num_points, size=num_points),
-        'cont': np.random.random(num_points),
-    }
+    with pytest.warns(DeprecationWarning):
+        points.properties = {
+            'cat': np.random.randint(low=0, high=num_points, size=num_points),
+            'cont': np.random.random(num_points),
+        }
 
     # Initially the color_mode is DIRECT, which means that the face ColorManager
     # has no color_properties, so the first property is used with a warning.
     with pytest.warns(UserWarning):
         points.face_color_mode = 'cycle'
 
-    first_property_key, first_property_values = next(
-        iter(points.properties.items())
-    )
+    with pytest.warns(DeprecationWarning):
+        first_property_key, first_property_values = next(
+            iter(points.properties.items())
+        )
     expected_properties = ColorProperties(
         name=first_property_key,
         values=first_property_values,
@@ -2592,50 +2601,61 @@ def test_to_mask_3d_with_size_2():
     np.testing.assert_array_equal(mask, expected_mask)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_set_properties_updates_text_values():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = Points(points, properties=properties, text='class')
+    with pytest.warns(DeprecationWarning):
+        layer = Points(points, properties=properties, text='class')
 
-    layer.properties = {'class': np.array(['D', 'E', 'F'])}
+    with pytest.warns(DeprecationWarning):
+        layer.properties = {'class': np.array(['D', 'E', 'F'])}
 
     np.testing.assert_array_equal(layer.text.values, ['D', 'E', 'F'])
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_set_properties_with_invalid_shape_errors_safely():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    points = Points(np.random.rand(3, 2), text='class', properties=properties)
-    np.testing.assert_equal(points.properties, properties)
+    with pytest.warns(DeprecationWarning):
+        points = Points(
+            np.random.rand(3, 2), text='class', properties=properties
+        )
+    with pytest.warns(DeprecationWarning):
+        np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError), pytest.warns(DeprecationWarning):
         points.properties = {'class': np.array(['D', 'E'])}
 
-    np.testing.assert_equal(points.properties, properties)
+    with pytest.warns(DeprecationWarning):
+        np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_set_properties_with_missing_text_property_text_becomes_constant_empty_and_warns():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    points = Points(np.random.rand(3, 2), text='class', properties=properties)
-    np.testing.assert_equal(points.properties, properties)
+    with pytest.warns(DeprecationWarning):
+        points = Points(
+            np.random.rand(3, 2), text='class', properties=properties
+        )
+    with pytest.warns(DeprecationWarning):
+        np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
-    with pytest.warns(RuntimeWarning):
+    # Cannot use two separate `warns`, so assert the record instead.
+    with pytest.warns() as record:
         points.properties = {'not_class': np.array(['D', 'E', 'F'])}
+    assert len(record) == 2
+    assert issubclass(record[0].category, DeprecationWarning)
+    assert issubclass(record[1].category, RuntimeWarning)
 
     values = points.text.values
     np.testing.assert_array_equal(values, ['', '', ''])
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_text_param_and_setter_are_consistent():
     """See https://github.com/napari/napari/issues/1833"""
     data = np.random.rand(5, 3) * 100
@@ -2644,9 +2664,11 @@ def test_text_param_and_setter_are_consistent():
     }
     text = {'string': 'accepted', 'color': 'black'}
 
-    points_init = Points(data, properties=properties, text=text)
+    with pytest.warns(DeprecationWarning):
+        points_init = Points(data, properties=properties, text=text)
 
-    points_set = Points(data, properties=properties)
+    with pytest.warns(DeprecationWarning):
+        points_set = Points(data, properties=properties)
     points_set.text = text
 
     np.testing.assert_array_equal(

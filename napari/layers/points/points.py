@@ -1029,8 +1029,8 @@ class Points(Layer):
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
-            properties=self.properties,
-            current_properties=self.current_properties,
+            properties=self._feature_table.properties(),
+            current_properties=self._feature_table.currents(),
         )
         self.events.edge_color()
 
@@ -1116,8 +1116,8 @@ class Points(Layer):
         self._face._set_color(
             color=face_color,
             n_colors=len(self.data),
-            properties=self.properties,
-            current_properties=self.current_properties,
+            properties=self._feature_table.properties(),
+            current_properties=self._feature_table.currents(),
         )
         self.events.face_color()
 
