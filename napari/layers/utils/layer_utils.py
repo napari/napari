@@ -1028,7 +1028,6 @@ def _features_from_properties(
     """
     # Create categorical series for any choices provided.
     if property_choices is not None:
-        _warn_about_deprecated_property_choices()
         properties = pd.DataFrame(data=properties)
         for name, choices in property_choices.items():
             dtype = pd.CategoricalDtype(categories=choices)
@@ -1037,8 +1036,6 @@ def _features_from_properties(
                 properties[name] if name in properties else [None] * num_values
             )
             properties[name] = pd.Series(values, dtype=dtype)
-    elif properties is not None:
-        _warn_about_deprecated_properties()
     return _validate_features(properties, num_data=num_data)
 
 

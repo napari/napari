@@ -450,6 +450,10 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
+        if properties is not None:
+            _warn_about_deprecated_properties()
+        if property_choices is not None:
+            _warn_about_deprecated_property_choices()
         self._feature_table = _FeatureTable.from_layer(
             features=features,
             feature_defaults=feature_defaults,
