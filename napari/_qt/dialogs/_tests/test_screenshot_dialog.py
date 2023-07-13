@@ -1,5 +1,5 @@
 import pytest
-from qtpy.QtWidgets import QLineEdit, QMessageBox
+from qtpy.QtWidgets import QFileDialog, QLineEdit, QMessageBox
 
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
 from napari.utils.history import get_save_history
@@ -18,6 +18,7 @@ def test_screenshot_save(qtbot, tmp_path, filename):
         save_function, directory=str(tmp_path), history=get_save_history()
     )
     qtbot.addWidget(dialog)
+    dialog.setOptions(QFileDialog.DontUseNativeDialog)
     dialog.show()
 
     assert dialog.windowTitle() == 'Save screenshot'
@@ -51,6 +52,7 @@ def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
         save_function, directory=str(tmp_path), history=get_save_history()
     )
     qtbot.addWidget(dialog)
+    dialog.setOptions(QFileDialog.DontUseNativeDialog)
     dialog.show()
 
     assert dialog.windowTitle() == 'Save screenshot'
