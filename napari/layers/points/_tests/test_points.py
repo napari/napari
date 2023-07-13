@@ -90,44 +90,16 @@ def test_add_to_empty_points_with_features():
     assert_colors_equal(points.face_color, list('rgb'))
 
 
-def test_empty_points_with_properties():
-    """Test instantiating an empty Points layer with properties
+def test_empty_points_with_features():
+    """Test instantiating an empty Points layer with features
 
     See: https://github.com/napari/napari/pull/1069
     """
-    properties = {
-        'label': np.array(['label1', 'label2']),
-        'cont_prop': np.array([0], dtype=float),
-    }
-    with pytest.warns(DeprecationWarning):
-        pts = Points(property_choices=properties)
-
-    current_props = {k: v[0] for k, v in properties.items()}
-    with pytest.warns(DeprecationWarning):
-        np.testing.assert_equal(pts.current_properties, current_props)
-
-    # verify the property datatype is correct
-    with pytest.warns(DeprecationWarning):
-        assert pts.properties['cont_prop'].dtype == float
-
-    # add two points and verify the default property was applied
-    pts.add([10, 10])
-    pts.add([20, 20])
-    props = {
-        'label': np.array(['label1', 'label1']),
-        'cont_prop': np.array([0, 0], dtype=float),
-    }
-    with pytest.warns(DeprecationWarning):
-        np.testing.assert_equal(pts.properties, props)
-
-
-def test_empty_points_with_features():
-    """See: https://github.com/napari/napari/pull/1069"""
     label_dtype = pd.CategoricalDtype(['label1', 'label2'])
     features = pd.DataFrame(
         {
             'label': pd.Series([], dtype=label_dtype),
-            'cont_prop': np.array([], dtype=float),
+            'cont_prop': pd.Series([], dtype=float),
         }
     )
     pts = Points(features=features)
@@ -144,58 +116,13 @@ def test_empty_points_with_features():
     np.testing.assert_array_equal(pts.features['cont_prop'], [np.nan, np.nan])
 
 
-def test_empty_points_with_properties_list():
-    """Test instantiating an empty Points layer with properties
-    stored in a list
-
-    See: https://github.com/napari/napari/pull/1069
-    """
-    properties = {'label': ['label1', 'label2'], 'cont_prop': [0]}
-    with pytest.warns(DeprecationWarning):
-        pts = Points(property_choices=properties)
-
-    current_props = {k: np.asarray(v[0]) for k, v in properties.items()}
-    with pytest.warns(DeprecationWarning):
-        np.testing.assert_equal(pts.current_properties, current_props)
-
-    # add two points and verify the default property was applied
-    pts.add([10, 10])
-    pts.add([20, 20])
-    props = {
-        'label': np.array(['label1', 'label1']),
-        'cont_prop': np.array([0, 0], dtype=float),
-    }
-
-    with pytest.warns(DeprecationWarning):
-        np.testing.assert_equal(pts.properties, props)
-
-
-def test_empty_layer_with_face_colormap_deprecated():
+def test_empty_layer_with_face_colormap():
     """Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
-    default_properties = {'point_type': np.array([1.5], dtype=float)}
-    with pytest.warns(DeprecationWarning):
-        layer = Points(
-            property_choices=default_properties,
-            face_color='point_type',
-            face_colormap='gray',
-        )
-
-    assert layer.face_color_mode == 'colormap'
-
-    # verify the current_face_color is correct
-    face_color = np.array([1, 1, 1, 1])
-    np.testing.assert_allclose(layer._face.current_color, face_color)
-
-
-def test_empty_layer_with_face_colormap():
-    """See: https://github.com/napari/napari/pull/1069"""
-    features = {'point_type': np.empty((0,), dtype=float)}
-    feature_defaults = {'point_type': 1.5}
     layer = Points(
-        features=features,
-        feature_defaults=feature_defaults,
+        features={'point_type': []},
+        feature_defaults={'point_type': 1.5},
         face_color='point_type',
         face_colormap='gray',
     )
@@ -205,25 +132,6 @@ def test_empty_layer_with_face_colormap():
     # verify the current_face_color is correct
     face_color = np.array([1, 1, 1, 1])
     np.testing.assert_allclose(layer._face.current_color, face_color)
-
-
-def test_empty_layer_with_edge_colormap_deprecated():
-    """Test creating an empty layer where the face color is a colormap
-    See: https://github.com/napari/napari/pull/1069
-    """
-    default_properties = {'point_type': np.array([1.5], dtype=float)}
-    with pytest.warns(DeprecationWarning):
-        layer = Points(
-            property_choices=default_properties,
-            edge_color='point_type',
-            edge_colormap='gray',
-        )
-
-    assert layer.edge_color_mode == 'colormap'
-
-    # verify the current_face_color is correct
-    edge_color = np.array([1, 1, 1, 1])
-    np.testing.assert_allclose(layer._edge.current_color, edge_color)
 
 
 def test_empty_layer_with_edge_colormap():
@@ -242,43 +150,6 @@ def test_empty_layer_with_edge_colormap():
     # verify the current_face_color is correct
     edge_color = np.array([1, 1, 1, 1])
     np.testing.assert_allclose(layer._edge.current_color, edge_color)
-
-
-@pytest.mark.parametrize('feature_name', ('edge', 'face'))
-def test_set_current_properties_on_empty_layer_with_color_cycle_deprecated(
-    feature_name,
-):
-    """Test setting current_properties an empty layer where the face/edge color
-    is a color cycle.
-
-    See: https://github.com/napari/napari/pull/3110
-    """
-    default_properties = {'annotation': np.array(['tail', 'nose', 'paw'])}
-    color_cycle = [[0, 1, 0, 1], [1, 0, 1, 1]]
-    color_parameters = {
-        'colors': 'annotation',
-        'categorical_colormap': color_cycle,
-        'mode': 'cycle',
-    }
-    color_name = f'{feature_name}_color'
-    points_kwargs = {
-        'property_choices': default_properties,
-        color_name: color_parameters,
-    }
-    with pytest.warns(DeprecationWarning):
-        layer = Points(**points_kwargs)
-
-    color_mode = getattr(layer, f'{feature_name}_color_mode')
-    assert color_mode == 'cycle'
-    with pytest.warns(DeprecationWarning):
-        layer.current_properties = {'annotation': np.array(['paw'])}
-
-    layer.add([10, 10])
-    colors = getattr(layer, color_name)
-    np.testing.assert_allclose(colors, [color_cycle[1]])
-    assert len(layer.data) == 1
-    cm = getattr(layer, f'_{feature_name}')
-    assert cm.color_properties.current_value == 'paw'
 
 
 @pytest.mark.parametrize('feature_name', ('edge', 'face'))
@@ -313,24 +184,6 @@ def test_set_feature_defaults_on_empty_layer_with_color_cycle(feature_name):
     assert cm.color_properties.current_value == 'paw'
 
 
-def test_empty_layer_with_text_properties():
-    """Test initializing an empty layer with text defined"""
-    default_properties = {'point_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'string': 'point_type', 'color': 'red'}
-    with pytest.warns(DeprecationWarning):
-        layer = Points(
-            property_choices=default_properties,
-            text=text_kwargs,
-        )
-    assert layer.text.values.size == 0
-    np.testing.assert_allclose(layer.text.color.constant, [1, 0, 0, 1])
-
-    # add a point and check that the appropriate text value was added
-    layer.add([1, 1])
-    np.testing.assert_equal(layer.text.values, ['1.5'])
-    np.testing.assert_allclose(layer.text.color.constant, [1, 0, 0, 1])
-
-
 def test_empty_layer_with_text_features():
     """Test initializing an empty layer with text defined"""
     layer = Points(
@@ -345,21 +198,6 @@ def test_empty_layer_with_text_features():
     layer.add([1, 1])
     np.testing.assert_equal(layer.text.values, ['1.5'])
     np.testing.assert_allclose(layer.text.color.constant, [1, 0, 0, 1])
-
-
-def test_empty_layer_with_text_formatted_deprecated():
-    """Test initializing an empty layer with text defined"""
-    default_properties = {'point_type': np.array([1.5], dtype=float)}
-    with pytest.warns(DeprecationWarning):
-        layer = Points(
-            property_choices=default_properties,
-            text='point_type: {point_type:.2f}',
-        )
-    assert layer.text.values.size == 0
-
-    # add a point and check that the appropriate text value was added
-    layer.add([1, 1])
-    np.testing.assert_equal(layer.text.values, ['point_type: 1.50'])
 
 
 def test_empty_layer_with_text_formatted():
@@ -809,46 +647,54 @@ def test_symbol():
     assert np.all(layer.symbol == 'star')
 
 
-properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
-properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
-
-
 @pytest.fixture
 def features():
     return pd.DataFrame({'point_type': _make_cycled_features(('A', 'B'), 10)})
 
 
-# Ignore all deprecation warnings because there are too many to individually
-# capture here for properties.
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
+properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
+
+
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_properties(properties):
+    """Ensure that properties is deprecated but still functional."""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Points(data, properties=copy(properties))
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(DeprecationWarning):
+        layer = Points(data, properties=copy(properties))
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties
+    np.testing.assert_equal(layer_properties, properties)
 
     current_prop = {'point_type': np.array(['B'])}
-    assert layer.current_properties == current_prop
+    with pytest.warns(DeprecationWarning):
+        layer_current_properties = layer.current_properties
+    assert layer_current_properties == current_prop
 
     # test removing points
     layer.selected_data = {0, 1}
     layer.remove_selected()
     remove_properties = properties['point_type'][2::]
-    assert len(layer.properties['point_type']) == (shape[0] - 2)
-    assert np.all(layer.properties['point_type'] == remove_properties)
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties['point_type']
+    assert len(layer_properties) == (shape[0] - 2)
+    assert np.all(layer_properties == remove_properties)
 
     # test selection of properties
     layer.selected_data = {0}
-    selected_annotation = layer.current_properties['point_type']
+    with pytest.warns(DeprecationWarning):
+        selected_annotation = layer.current_properties['point_type']
     assert len(selected_annotation) == 1
     assert selected_annotation[0] == 'A'
 
     # test adding points with properties
     layer.add([10, 10])
     add_annotations = np.concatenate((remove_properties, ['A']), axis=0)
-    assert np.all(layer.properties['point_type'] == add_annotations)
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties['point_type']
+    assert np.all(layer_properties == add_annotations)
 
     # test copy/paste
     layer.selected_data = {0, 1}
@@ -857,7 +703,9 @@ def test_properties(properties):
 
     layer._paste_data()
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
-    assert np.all(layer.properties['point_type'] == paste_annotations)
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties['point_type']
+    assert np.all(layer_properties == paste_annotations)
 
     assert layer.get_status(data[0])['coordinates'].endswith("point_type: B")
     assert layer.get_status(data[1])['coordinates'].endswith("point_type: A")
@@ -904,12 +752,9 @@ def test_features(features: pd.DataFrame):
     assert layer.get_status(data[1])['coordinates'].endswith("point_type: A")
 
 
-# Ignore all deprecation warnings because there are too many to individually
-# capture here for properties.
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_adding_properties(attribute):
-    """Test adding properties to an existing layer"""
+    """Test adding properties to an existing layer is deprecated but functional."""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -917,20 +762,29 @@ def test_adding_properties(attribute):
 
     # add properties
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer.properties = properties
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(DeprecationWarning):
+        layer.properties = properties
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties
+    np.testing.assert_equal(layer_properties, properties)
 
     # add properties as a dataframe
     properties_df = pd.DataFrame(properties)
-    layer.properties = properties_df
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(DeprecationWarning):
+        layer.properties = properties_df
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties
+    np.testing.assert_equal(layer_properties, properties)
 
     # add properties as a dictionary with list values
     properties_list = {
         'point_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
     }
-    layer.properties = properties_list
-    assert isinstance(layer.properties['point_type'], np.ndarray)
+    with pytest.warns(DeprecationWarning):
+        layer.properties = properties_list
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties
+    assert isinstance(layer_properties['point_type'], np.ndarray)
 
     # removing a property that was the _*_color_property should give a warning
     color_manager = getattr(layer, f'_{attribute}')
@@ -942,8 +796,12 @@ def test_adding_properties(attribute):
     properties_2 = {
         'not_point_type': _make_cycled_properties(['A', 'B'], shape[0])
     }
-    with pytest.warns(RuntimeWarning):
+    # Cannot use two separate `warns`, so assert the record instead.
+    with pytest.warns() as record:
         layer.properties = properties_2
+    assert len(record) == 2
+    assert issubclass(record[0].category, DeprecationWarning)
+    assert issubclass(record[1].category, RuntimeWarning)
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -973,20 +831,6 @@ def test_adding_features(attribute):
     )
     with pytest.warns(RuntimeWarning):
         layer.features = other_features
-
-
-def test_properties_dataframe():
-    """Test if properties can be provided as a DataFrame"""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    properties_df = pd.DataFrame(properties)
-    properties_df = properties_df.astype(properties['point_type'].dtype)
-    with pytest.warns(DeprecationWarning):
-        layer = Points(data, properties=properties_df)
-    with pytest.warns(DeprecationWarning):
-        np.testing.assert_equal(layer.properties, properties)
 
 
 def test_add_points_with_properties_as_list():
@@ -1063,19 +907,8 @@ def test_setting_current_properties():
         np.testing.assert_equal(value, expected_current_properties[k])
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
-def test_text_from_property_value(properties):
-    """Test setting text from a property value"""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    with pytest.warns(DeprecationWarning):
-        layer = Points(data, properties=copy(properties), text='point_type')
-
-    np.testing.assert_equal(layer.text.values, properties['point_type'])
-
-
 def test_text_from_feature_value(features):
+    """Test setting text from a feature value"""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -1083,41 +916,8 @@ def test_text_from_feature_value(features):
     np.testing.assert_equal(layer.text.values, features['point_type'])
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
-def test_text_from_property_fstring(properties):
-    """Test setting text with an f-string from the property value"""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    with pytest.warns(DeprecationWarning):
-        layer = Points(
-            data, properties=copy(properties), text='type: {point_type}'
-        )
-
-    expected_text = ['type: ' + v for v in properties['point_type']]
-    np.testing.assert_equal(layer.text.values, expected_text)
-
-    # test updating the text
-    layer.text = 'type-ish: {point_type}'
-    expected_text_2 = ['type-ish: ' + v for v in properties['point_type']]
-    np.testing.assert_equal(layer.text.values, expected_text_2)
-
-    # copy/paste
-    layer.selected_data = {0}
-    layer._copy_data()
-    layer._paste_data()
-    expected_text_3 = [*expected_text_2, "type-ish: A"]
-    np.testing.assert_equal(layer.text.values, expected_text_3)
-
-    # add point
-    layer.selected_data = {0}
-    new_shape = np.random.random((1, 2))
-    layer.add(new_shape)
-    expected_text_4 = [*expected_text_3, "type-ish: A"]
-    np.testing.assert_equal(layer.text.values, expected_text_4)
-
-
 def test_text_from_feature_fstring(features):
+    """Test setting text with an f-string from the feature value"""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -1146,33 +946,6 @@ def test_text_from_feature_fstring(features):
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
-def test_set_text_with_kwarg_dict_deprecated(properties):
-    text_kwargs = {
-        'string': 'type: {point_type}',
-        'color': ConstantColorEncoding(constant=[0, 0, 0, 1]),
-        'rotation': 10,
-        'translation': [5, 5],
-        'anchor': Anchor.UPPER_LEFT,
-        'size': 10,
-        'visible': True,
-    }
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    with pytest.warns(DeprecationWarning):
-        layer = Points(data, properties=copy(properties), text=text_kwargs)
-
-    expected_text = ['type: ' + v for v in properties['point_type']]
-    np.testing.assert_equal(layer.text.values, expected_text)
-
-    for property_, value in text_kwargs.items():
-        if property_ == 'string':
-            continue
-        layer_value = getattr(layer._text, property_)
-        np.testing.assert_equal(layer_value, value)
-
-
 def test_set_text_with_kwarg_dict(features):
     text_kwargs = {
         'string': 'type: {point_type}',
@@ -1198,18 +971,6 @@ def test_set_text_with_kwarg_dict(features):
         np.testing.assert_equal(layer_value, value)
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
-def test_text_error_deprecated(properties):
-    """creating a layer with text as the wrong type should raise an error"""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    # try adding text as the wrong type
-    with pytest.raises(ValidationError):
-        with pytest.warns(DeprecationWarning):
-            Points(data, properties=copy(properties), text=123)
-
-
 def test_text_error(features):
     """creating a layer with text as the wrong type should raise an error"""
     shape = (10, 2)
@@ -1220,35 +981,11 @@ def test_text_error(features):
         Points(data, features=features, text=123)
 
 
-def test_select_properties_object_dtype():
-    """selecting points when they have a property of object dtype should not fail"""
-    # pandas uses object as dtype for strings by default
-    properties = pd.DataFrame({'color': ['red', 'green']})
-    with pytest.warns(DeprecationWarning):
-        pl = Points(np.ones((2, 2)), properties=properties)
-    selection = {0, 1}
-    pl.selected_data = selection
-    assert pl.selected_data == selection
-
-
 def test_select_features_object_dtype():
     """selecting points when they have a feature of object dtype should not fail"""
     # pandas uses object as dtype for strings by default
     features = pd.DataFrame({'color': ['red', 'green']})
     pl = Points(np.ones((2, 2)), features=features)
-    selection = {0, 1}
-    pl.selected_data = selection
-    assert pl.selected_data == selection
-
-
-def test_select_properties_unsortable():
-    """selecting multiple points when they have properties that cannot be sorted should not fail
-
-    see https://github.com/napari/napari/issues/5174
-    """
-    properties = pd.DataFrame({'unsortable': [{}, {}]})
-    with pytest.warns(DeprecationWarning):
-        pl = Points(np.ones((2, 2)), properties=properties)
     selection = {0, 1}
     pl.selected_data = selection
     assert pl.selected_data == selection
@@ -1266,21 +1003,6 @@ def test_select_features_unsortable():
     assert pl.selected_data == selection
 
 
-def test_refresh_text_deprecated():
-    """Test refreshing the text after setting new properties"""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {'point_type': ['A'] * shape[0]}
-    with pytest.warns(DeprecationWarning):
-        layer = Points(data, properties=copy(properties), text='point_type')
-
-    new_properties = {'point_type': ['B'] * shape[0]}
-    with pytest.warns(DeprecationWarning):
-        layer.properties = new_properties
-    np.testing.assert_equal(layer.text.values, new_properties['point_type'])
-
-
 def test_refresh_text():
     """Test refreshing the text after setting new features"""
     shape = (10, 2)
@@ -1292,18 +1014,6 @@ def test_refresh_text():
     new_features = {'point_type': ['B'] * shape[0]}
     layer.features = new_features
     np.testing.assert_equal(layer.text.values, new_features['point_type'])
-
-
-def test_points_errors_deprecated():
-    shape = (3, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-
-    # try adding properties with the wrong number of properties
-    with pytest.raises(ValueError):
-        annotations = {'point_type': np.array(['A', 'B'])}
-        with pytest.warns(DeprecationWarning):
-            Points(data, properties=copy(annotations))
 
 
 def test_points_errors():

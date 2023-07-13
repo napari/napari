@@ -45,6 +45,7 @@ from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import project_points_onto_plane, rotate_points
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
@@ -422,8 +423,18 @@ class Points(Layer):
             current_face_color=Event,
             edge_color=Event,
             current_edge_color=Event,
-            properties=Event,
-            current_properties=Event,
+            properties=WarningEmitter(
+                trans._(
+                    "points.properties is deprecated since 0.5.0 and will be removed in 0.6.0. Please use points.features instead",
+                    deferred=True,
+                )
+            ),
+            current_properties=WarningEmitter(
+                trans._(
+                    "points.current_properties is deprecated since 0.5.0 and will be removed in 0.6.0. Please use points.feature_defaults instead",
+                    deferred=True,
+                )
+            ),
             symbol=Event,
             current_symbol=Event,
             out_of_slice_display=Event,
