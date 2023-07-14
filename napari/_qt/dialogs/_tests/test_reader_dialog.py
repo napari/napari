@@ -154,13 +154,10 @@ def test_open_sample_data_shows_all_readers(
     viewer = make_napari_viewer()
     sample_action = viewer.window.file_menu.open_sample_menu.actions()[0]
 
-    with (
-        mock.patch(
-            'napari._qt.dialogs.qt_reader_dialog.prepare_remaining_readers'
-        ) as mock_prepare_readers,
-        mock.patch.object(
-            QtReaderDialog, 'get_user_choices', return_value=(None, None)
-        ),
+    with mock.patch(
+        'napari._qt.dialogs.qt_reader_dialog.prepare_remaining_readers'
+    ) as mock_prepare_readers, mock.patch.object(
+        QtReaderDialog, 'get_user_choices', return_value=(None, None)
     ):
         sample_action.trigger()
     # Ensure that `prepare_remaining_readers` called with `plugin_name=None`
