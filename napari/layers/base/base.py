@@ -23,7 +23,6 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.components.overlays.base import SceneOverlay
 from napari.layers.base._base_constants import Blending, Mode
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -64,6 +63,8 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+
+    from napari.components.overlays.base import SceneOverlay
 
 
 logger = logging.getLogger("napari.layers.base.base")
