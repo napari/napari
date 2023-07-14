@@ -427,13 +427,15 @@ class Points(Layer):
                 trans._(
                     "points.properties is deprecated since 0.5.0 and will be removed in 0.6.0. Please use points.features instead",
                     deferred=True,
-                )
+                ),
+                type_name='properties',
             ),
             current_properties=WarningEmitter(
                 trans._(
                     "points.current_properties is deprecated since 0.5.0 and will be removed in 0.6.0. Please use points.feature_defaults instead",
                     deferred=True,
-                )
+                ),
+                type_name='current_properties',
             ),
             symbol=Event,
             current_symbol=Event,
