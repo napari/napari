@@ -202,7 +202,8 @@ class _LayerSlicer:
         # when we want to perform sync slicing anyway.
         requests = {}
         sync_layers = []
-        for layer in layers:
+        visible_layers = (layer for layer in layers if layer.visible)
+        for layer in visible_layers:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
                 logger.debug('Making async slice request for %s', layer)
                 request = layer._make_slice_request(dims)
