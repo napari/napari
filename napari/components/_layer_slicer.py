@@ -234,6 +234,8 @@ class _LayerSlicer:
     def shutdown(self) -> None:
         """Shuts this down, preventing any new slice tasks from being submitted.
 
+        This waits for any running tasks to finish, cancels any pending tasks,
+        and disconnects any observers from this LayerSlicer's events.
         This should only be called from the main thread.
         """
         logger.debug('_LayerSlicer.shutdown')
@@ -244,6 +246,8 @@ class _LayerSlicer:
         for task in tasks:
             task.cancel()
         self._executor.shutdown(wait=True)
+        self.events.disconnect()
+        self.events.ready.disconnect()
 
     def _slice_layers(self, requests: Dict) -> Dict:
         """
