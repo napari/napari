@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from napari._tests.utils import are_objects_equal, layer_test_data
+from napari.layers.utils._state_dict import LayerStateDict
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -14,7 +15,7 @@ def test_attrs_arrays(Layer, data, ndim):
     # Check layer has been correctly created
     assert layer.ndim == ndim
 
-    properties = layer._get_state()
+    properties: LayerStateDict = layer._get_state()
 
     # Check every property is in call signature
     signature = inspect.signature(Layer)
@@ -22,6 +23,17 @@ def test_attrs_arrays(Layer, data, ndim):
     # Check every property is also a parameter.
     for prop in properties:
         assert prop in signature.parameters
+
+    # Remove deprecated properties for testing purposes.
+    for deprecated in properties.deprecations:
+        del properties[deprecated]
+    signature = signature.replace(
+        parameters=tuple(
+            param
+            for param in signature.parameters.values()
+            if param.name not in properties.deprecations
+        )
+    )
 
     # Check number of properties is same as number in signature
     # excluding `cache` which is not yet in `_get_state`

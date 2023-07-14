@@ -29,6 +29,7 @@ from napari.layers.base._base_mouse_bindings import (
     transform_with_box,
 )
 from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._state_dict import LayerStateDict
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
 )
@@ -910,7 +911,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _get_ndim(self):
         raise NotImplementedError
 
-    def _get_base_state(self):
+    def _get_base_state(self) -> LayerStateDict:
         """Get dictionary of attributes on base layer.
 
         Returns
@@ -918,25 +919,26 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         state : dict
             Dictionary of attributes on base layer.
         """
-        base_dict = {
-            'name': self.name,
-            'metadata': self.metadata,
-            'scale': list(self.scale),
-            'translate': list(self.translate),
-            'rotate': [list(r) for r in self.rotate],
-            'shear': list(self.shear),
-            'affine': self.affine.affine_matrix,
-            'opacity': self.opacity,
-            'blending': self.blending,
-            'visible': self.visible,
-            'experimental_clipping_planes': [
-                plane.dict() for plane in self.experimental_clipping_planes
-            ],
-        }
-        return base_dict
+        return LayerStateDict(
+            {
+                'name': self.name,
+                'metadata': self.metadata,
+                'scale': list(self.scale),
+                'translate': list(self.translate),
+                'rotate': [list(r) for r in self.rotate],
+                'shear': list(self.shear),
+                'affine': self.affine.affine_matrix,
+                'opacity': self.opacity,
+                'blending': self.blending,
+                'visible': self.visible,
+                'experimental_clipping_planes': [
+                    plane.dict() for plane in self.experimental_clipping_planes
+                ],
+            }
+        )
 
     @abstractmethod
-    def _get_state(self):
+    def _get_state(self) -> LayerStateDict:
         raise NotImplementedError
 
     @property

@@ -1335,6 +1335,10 @@ class Points(Layer):
                 'shown': self.shown,
             }
         )
+        state.deprecations = {
+            'properties': 'bye properties',
+            'property_choices': 'bye property choices',
+        }
         return state
 
     @property

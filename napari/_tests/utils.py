@@ -1,9 +1,10 @@
 import os
 import sys
+import warnings
 from collections import abc
 from contextlib import suppress
 from threading import RLock
-from typing import Any, Dict, Tuple, Union
+from typing import Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -21,6 +22,7 @@ from napari.layers import (
     Vectors,
 )
 from napari.layers._data_protocols import Index, LayerDataProtocol
+from napari.layers.utils._state_dict import LayerStateDict
 from napari.utils.color import ColorArray
 
 skip_on_win_ci = pytest.mark.skipif(
@@ -275,7 +277,7 @@ def check_layer_world_data_extent(layer, extent, scale, translate):
 
 
 def assert_layer_state_equal(
-    actual: Dict[str, Any], expected: Dict[str, Any]
+    actual: LayerStateDict, expected: LayerStateDict
 ) -> None:
     """Asserts that an layer state dictionary is equal to an expected one.
 
@@ -284,8 +286,10 @@ def assert_layer_state_equal(
     """
     assert actual.keys() == expected.keys()
     for name in actual:
-        actual_value = actual[name]
-        expected_value = expected[name]
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            actual_value = actual[name]
+            expected_value = expected[name]
         if isinstance(actual_value, pd.DataFrame):
             pd.testing.assert_frame_equal(actual_value, expected_value)
         else:

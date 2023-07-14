@@ -43,6 +43,8 @@ def test_layer_save(tmp_path: Path, some_layer: 'layers.Layer', use_ext: bool):
     if rest:
         meta, type_string = rest
         assert type_string == some_layer._type_string
+        for deprecated in some_layer._get_state().deprecations:
+            meta.pop(deprecated, None)
         for key, value in meta.items():  # type: ignore
             np.testing.assert_equal(value, getattr(some_layer, key))
 
