@@ -129,7 +129,8 @@ def test_prepare_dialog_options_removes_plugin(tmp_plugin: DynamicPlugin):
 
 
 def test_open_sample_data_shows_all_readers(
-    make_napari_viewer, tmp_plugin: DynamicPlugin
+    make_napari_viewer,
+    tmp_plugin: DynamicPlugin,
 ):
     """Checks that sample data callback `_add_sample` shows all readers."""
     tmp2 = tmp_plugin.spawn(register=True)
