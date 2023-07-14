@@ -29,7 +29,7 @@ def test_update_enabled_context(make_napari_viewer, builtins):
     save_layers_action = viewer.window.file_menu.findAction(
         CommandId.DLG_SAVE_LAYERS
     )
-    # Check 'Save All Layers...' is not enabled when number of layers is 0
+    # Check 'Save All Layers...' is not enabled when num_layers > 0
     assert len(viewer.layers) == 0
     viewer.window._update_enabled('file_menu')
     assert not save_layers_action.isEnabled()
