@@ -26,6 +26,7 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from npe2.manifest import PluginManifest
     from npe2.manifest.contributions import WriterContribution
+    from npe2.manifest.contributions._sample_data import SampleDataGenerator
     from npe2.plugin_manager import PluginName
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
     from qtpy.QtWidgets import QMenu  # type: ignore [attr-defined]
@@ -532,7 +533,7 @@ def _npe2_manifest_to_actions(
 
     # Filter sample data commands (not URIs) as they are registered via
     # `_get_samples_submenu_actions`
-    sample_data_commands = {}
+    sample_data_commands: Set[Optional[SampleDataGenerator]] = {}
     if mf.contributions.sample_data:
         sample_data_commands = {
             contrib.command
