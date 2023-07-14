@@ -219,15 +219,30 @@ class Dims(EventedModel):
         elif labels_ndim > ndim:
             updated['axis_labels'] = axis_labels[-ndim:]
 
+        # If the last used slider is no longer visible, use the first.
+        last_used = values['last_used']
+        ndisplay = values['ndisplay']
+        dims_range = updated['range']
+        nsteps = cls._nsteps_from_range(dims_range)
+        not_displayed = [
+            d for d in order[:-ndisplay] if len(nsteps) > d and nsteps[d] > 1
+        ]
+        if len(not_displayed) > 0 and last_used not in not_displayed:
+            updated['last_used'] = not_displayed[0]
+
         return {**values, **updated}
 
-    @property
-    def nsteps(self) -> Tuple[float, ...]:
+    @staticmethod
+    def _nsteps_from_range(dims_range) -> Tuple[float, ...]:
         return tuple(
             # "or 1" ensures degenerate dimension works
             int((rng.stop - rng.start) / (rng.step or 1)) + 1
-            for rng in self.range
+            for rng in dims_range
         )
+
+    @property
+    def nsteps(self) -> Tuple[float, ...]:
+        return self._nsteps_from_range(self.range)
 
     @nsteps.setter
     def nsteps(self, value):
