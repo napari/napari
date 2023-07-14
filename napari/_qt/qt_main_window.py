@@ -1561,58 +1561,6 @@ class Window:
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
 
-    def _close_dialog(self):
-        from qtpy.QtGui import QKeySequence
-        from qtpy.QtWidgets import QMessageBox
-
-        if not get_settings().application.confirm_close_window:
-            self._qt_window.close(quit_app=False)
-            return
-
-        shortcut = QKeySequence('Ctrl+W')
-        message = QMessageBox(
-            QMessageBox.Icon.Question,
-            trans._("Close window?"),
-            trans._(
-                "Confirm to close window (or press '{shortcut}')",
-                shortcut=shortcut.toString(
-                    QKeySequence.SequenceFormat.NativeText
-                ),
-            ),
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
-            self._qt_window,
-        )
-        close_btn = message.button(QMessageBox.StandardButton.Ok)
-        close_btn.setShortcut(shortcut)
-        if message.exec_() == QMessageBox.StandardButton.Ok:
-            self._qt_window.close(quit_app=False)
-
-    def _quit_dialog(self):
-        from qtpy.QtGui import QKeySequence
-        from qtpy.QtWidgets import QMessageBox
-
-        if not get_settings().application.confirm_close_window:
-            self._qt_window.close(quit_app=True)
-            return
-
-        shortcut = QKeySequence('Ctrl+Q')
-        message = QMessageBox(
-            QMessageBox.Icon.Warning,
-            trans._("Close application?"),
-            trans._(
-                "Do you want to close the application? ('{shortcut}' to confirm). This will close all Qt Windows in this process",
-                shortcut=shortcut.toString(
-                    QKeySequence.SequenceFormat.NativeText
-                ),
-            ),
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
-            self._qt_window,
-        )
-        close_btn = message.button(QMessageBox.StandardButton.Ok)
-        close_btn.setShortcut(shortcut)
-        if message.exec_() == QMessageBox.StandardButton.Ok:
-            self._qt_window.close(quit_app=True)
-
 
 def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
     # if the signature is looking a for a napari viewer, pass it.

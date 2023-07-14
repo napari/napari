@@ -14,10 +14,6 @@ from napari._qt.qt_viewer import QtViewer
 from napari.utils.translations import trans
 
 
-def _restart(window: Window):
-    window._qt_window.restart()
-
-
 def _open_files_with_plugin(window: Window):
     window._qt_viewer._open_files_dialog(choose_plugin=True)
 
@@ -32,6 +28,18 @@ def _open_folder_with_plugin(window: Window):
 
 def _save_selected_layers(qt_viewer: QtViewer):
     qt_viewer._save_layers_dialog(selected=True)
+
+
+def _restart(window: Window):
+    window._qt_window.restart()
+
+
+def _close_window(window: Window):
+    window._qt_window.close(quit_app=False, confirm_need=True)
+
+
+def _close_app(window: Window):
+    window._qt_window.close(quit_app=True, confirm_need=True)
 
 
 Q_FILE_ACTIONS: List[Action] = [
@@ -149,7 +157,7 @@ Q_FILE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.DLG_CLOSE,
         title=CommandId.DLG_CLOSE.title,
-        callback=Window._close_dialog,
+        callback=_close_window,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
         keybindings=[StandardKeyBinding.Close],
     ),
@@ -170,7 +178,7 @@ Q_FILE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.DLG_QUIT,
         title=CommandId.DLG_QUIT.title,
-        callback=Window._quit_dialog,
+        callback=_close_app,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
     ),
 ]
