@@ -1,6 +1,9 @@
+from typing import cast
+
 import numpy as np
 from app_model.types import KeyCode, KeyMod
 
+from napari.components.overlays.labels_polygon import LabelsPolygonOverlay
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels.labels import Labels
 from napari.layers.utils.layer_utils import (
@@ -153,4 +156,5 @@ def reset_polygon(layer: Labels):
 )
 def complete_polygon(layer: Labels):
     """Complete the drawing of the current polygon."""
-    layer._overlays["polygon"].add_polygon_to_labels(layer)
+    polygon_overlay = cast(LabelsPolygonOverlay, layer._overlays["polygon"])
+    polygon_overlay.add_polygon_to_labels(layer)
