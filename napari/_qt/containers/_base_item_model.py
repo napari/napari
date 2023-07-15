@@ -29,7 +29,7 @@ _BASE_FLAGS = (
 )
 
 
-class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
+class _BaseEventedItemModel(Generic[ItemType], QAbstractItemModel):
     """A QAbstractItemModel desigend to work with `SelectableEventedList`.
 
     :class:`~napari.utils.events.SelectableEventedList` is our pure python
