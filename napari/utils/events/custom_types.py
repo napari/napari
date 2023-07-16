@@ -84,12 +84,12 @@ class ConstrainedInt(types.ConstrainedInt):
 def conint(
     *,
     strict: bool = False,
-    gt: int = None,
-    ge: int = None,
-    lt: int = None,
-    le: int = None,
-    multiple_of: int = None,
-    ne: int = None,
+    gt: Optional[int] = None,
+    ge: Optional[int] = None,
+    lt: Optional[int] = None,
+    le: Optional[int] = None,
+    multiple_of: Optional[int] = None,
+    ne: Optional[int] = None,
 ) -> Type[int]:
     """Extended version of `pydantic.types.conint` that includes not-equal."""
     # use kwargs then define conf in a dict to aid with IDE type hinting

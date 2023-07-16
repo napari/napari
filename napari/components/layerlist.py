@@ -310,7 +310,7 @@ class LayerList(SelectableEventedList[Layer]):
         return self.get_extent(list(self))
 
     @property
-    def _ranges(self) -> List[Tuple[float, float, float]]:
+    def _ranges(self) -> Tuple[Tuple[float, float, float], ...]:
         """Get ranges for Dims.range in world coordinates."""
         ext = self.extent
         return tuple(zip(ext.world[0], ext.world[1], ext.step))
