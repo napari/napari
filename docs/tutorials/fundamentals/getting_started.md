@@ -1,5 +1,5 @@
 (getting_started)=
-# Getting started with napari
+# Getting started
 
 Welcome to the getting started with **napari** tutorial!
 
