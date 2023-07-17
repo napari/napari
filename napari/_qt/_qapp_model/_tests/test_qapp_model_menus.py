@@ -1,8 +1,12 @@
+import numpy as np
 import pytest
+from app_model.types import Action
 
 from napari._app_model import constants, get_app
-from napari._app_model.constants import CommandId
+from napari._app_model.constants import MenuId
+from napari._app_model.context import LayerListContextKeys as LLCK
 from napari._qt._qapp_model import build_qmodel_menu
+from napari.layers import Image
 
 
 # `builtins` required so there are samples registered, so samples menu exists
@@ -21,21 +25,41 @@ def test_build_qmodel_menu(builtins, make_napari_viewer, qtbot, menu_id):
     assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
 
 
-def test_update_enabled_context(make_napari_viewer, builtins):
-    """Test that `Window._update_enabled` correctly updates menu state."""
+def test_update_menu_state_context(make_napari_viewer):
+    """Test `_update_menu_state` correctly updates enabled/visible state."""
     app = get_app()
     viewer = make_napari_viewer()
 
-    save_layers_action = viewer.window.file_menu.findAction(
-        CommandId.DLG_SAVE_LAYERS
+    action = Action(
+        id='dummy_id',
+        title='dummy title',
+        callback=lambda: None,
+        menus=[{'id': MenuId.MENUBAR_FILE, 'when': (LLCK.num_layers > 0)}],
+        enablement=(LLCK.num_layers == 2),
     )
-    # Check 'Save All Layers...' is not enabled when num_layers > 0
-    assert len(viewer.layers) == 0
-    viewer.window._update_enabled('file_menu')
-    assert not save_layers_action.isEnabled()
+    app.register_action(action)
 
-    # Add a layer and check 'Save All Layers...' is enabled
-    app.commands.execute_command('napari.astronaut')
+    dummy_action = viewer.window.file_menu.findAction('dummy_id')
+
+    assert 'dummy_id' in app.commands
+    # `dummy_action` should be disabled & not visible, num layers == 0
+    assert len(viewer.layers) == 0
+    viewer.window._update_menu_state('file_menu')
+    assert not dummy_action.isVisible()
+    assert not dummy_action.isEnabled()
+
+    # Add a layer, `dummy_action` should be visible but not enabled
+    layer_a = Image(np.random.random((10, 10)))
+    viewer.layers.append(layer_a)
     assert len(viewer.layers) == 1
-    viewer.window._update_enabled('file_menu')
-    assert save_layers_action.isEnabled()
+    viewer.window._update_menu_state('file_menu')
+    assert dummy_action.isVisible()
+    assert not dummy_action.isEnabled()
+
+    # Add second layer, `dummy_action` should be enabled and visible
+    layer_b = Image(np.random.random((10, 10)))
+    viewer.layers.append(layer_b)
+    assert len(viewer.layers) == 2
+    viewer.window._update_menu_state('file_menu')
+    assert dummy_action.isVisible()
+    assert dummy_action.isEnabled()
