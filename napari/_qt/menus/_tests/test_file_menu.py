@@ -234,20 +234,20 @@ def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
     )
     # Check both save actions are not enabled when no layers
     assert len(viewer.layers) == 0
-    viewer.window._update_enabled('file_menu')
+    viewer.window._update_menu_state('file_menu')
     assert not save_layers_action.isEnabled()
     assert not save_selected_layers_action.isEnabled()
 
     # Add selected layer and check both save actions enabled
     app.commands.execute_command('napari.astronaut')
     assert len(viewer.layers) == 1
-    viewer.window._update_enabled('file_menu')
+    viewer.window._update_menu_state('file_menu')
     assert save_layers_action.isEnabled()
     assert save_selected_layers_action.isEnabled()
 
     # Remove selection and check 'Save All Layers...' is enabled but
     # 'Save Selected Layers...' is not
     viewer.layers.selection.clear()
-    viewer.window._update_enabled('file_menu')
+    viewer.window._update_menu_state('file_menu')
     assert save_layers_action.isEnabled()
     assert not save_selected_layers_action.isEnabled()
