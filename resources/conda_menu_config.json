@@ -19,7 +19,7 @@
                 "win": {
                     "precommand": "set \"PYTHONHOME=\" & set \"PYTHONPATH=\"",
                     "desktop": true,
-                    "app_user_model_id": "napari.napari"
+                    "app_user_model_id": "napari.napari.viewer.__PKG_VERSION__"
                 },
                 "linux": {
                     "Categories": [
