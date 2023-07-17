@@ -1514,6 +1514,15 @@ class Window:
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.removed.disconnect(self._remove_theme)
+        self.file_menu.aboutToShow.disconnect(
+            lambda: self._update_menu_state('file_menu')
+        )
+        self.view_menu.aboutToShow.disconnect(
+            lambda: self._update_menu_state('view_menu')
+        )
+        self.help_menu.aboutToShow.disconnect(
+            lambda: self._update_menu_state('help_menu')
+        )
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
