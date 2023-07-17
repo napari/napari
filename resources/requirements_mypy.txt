@@ -26,7 +26,7 @@ mypy-extensions==1.0.0
     #   psygnal
 npe2==0.7.1
     # via -r resources/requirements_mypy.in
-numpy==1.25.0
+numpy==1.24.4
     # via -r resources/requirements_mypy.in
 packaging==23.1
     # via
