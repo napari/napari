@@ -1049,36 +1049,31 @@ def _features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
     return {name: series.to_numpy() for name, series in features.items()}
 
 
-def _warn_about_deprecated_properties():
-    warnings.warn(
-        trans._(
-            'Use features instead of properties. '
-            'This warning will become an error in version 0.6'
-        ),
-        DeprecationWarning,
-        stacklevel=2,
+def _warn_deprecation(message: str) -> None:
+    warnings.warn(message, DeprecationWarning, stacklevel=2)
+
+
+def _properties_deprecation_message() -> str:
+    return trans._(
+        'properties was deprecated in version 0.5.0 and will be removed in 0.6. '
+        'Please use features instead.',
+        deferred=True,
     )
 
 
-def _warn_about_deprecated_property_choices():
-    warnings.warn(
-        trans._(
-            'Use features with categorical dtypes instead of property_choices. '
-            'This warning will become an error in version 0.6'
-        ),
-        DeprecationWarning,
-        stacklevel=2,
+def _property_choices_deprecation_message() -> str:
+    return trans._(
+        'property_choices was deprecated in version 0.5.0 and will be removed in 0.6. '
+        'Please use features with categorical dtypes instead.',
+        deferred=True,
     )
 
 
-def _warn_about_deprecated_current_properties():
-    warnings.warn(
-        trans._(
-            'Use feature_defaults instead of current_properties. '
-            'This warning will become an error in version 0.6'
-        ),
-        DeprecationWarning,
-        stacklevel=2,
+def _current_properties_deprecation_message() -> str:
+    return trans._(
+        'property_choices was deprecated in version 0.5.0 and will be removed in 0.6. '
+        'Please use feature_defaults instead.',
+        deferred=True,
     )
 
 

@@ -33,12 +33,13 @@ from napari.layers.utils.interactivity_utils import (
     displayed_plane_from_nd_line_segment,
 )
 from napari.layers.utils.layer_utils import (
+    _current_properties_deprecation_message,
     _features_to_properties,
     _FeatureTable,
+    _properties_deprecation_message,
+    _property_choices_deprecation_message,
     _unique_element,
-    _warn_about_deprecated_current_properties,
-    _warn_about_deprecated_properties,
-    _warn_about_deprecated_property_choices,
+    _warn_deprecation,
 )
 from napari.layers.utils.text_manager import TextManager
 from napari.utils.colormaps import Colormap, ValidColormapArg
@@ -424,17 +425,11 @@ class Points(Layer):
             edge_color=Event,
             current_edge_color=Event,
             properties=WarningEmitter(
-                trans._(
-                    "points.properties is deprecated since 0.5.0 and will be removed in 0.6.0. Please use points.features instead",
-                    deferred=True,
-                ),
+                _properties_deprecation_message(),
                 type_name='properties',
             ),
             current_properties=WarningEmitter(
-                trans._(
-                    "points.current_properties is deprecated since 0.5.0 and will be removed in 0.6.0. Please use points.feature_defaults instead",
-                    deferred=True,
-                ),
+                _current_properties_deprecation_message(),
                 type_name='current_properties',
             ),
             symbol=Event,
@@ -453,9 +448,9 @@ class Points(Layer):
         self._data = np.asarray(data)
 
         if properties is not None:
-            _warn_about_deprecated_properties()
+            _warn_deprecation(_properties_deprecation_message())
         if property_choices is not None:
-            _warn_about_deprecated_property_choices()
+            _warn_deprecation(_property_choices_deprecation_message())
         self._feature_table = _FeatureTable.from_layer(
             features=features,
             feature_defaults=feature_defaults,
@@ -672,13 +667,13 @@ class Points(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        _warn_about_deprecated_property_choices()
+        _warn_deprecation(_property_choices_deprecation_message())
         return self._feature_table.choices()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
-        _warn_about_deprecated_properties()
+        _warn_deprecation(_properties_deprecation_message())
         return self._feature_table.properties()
 
     @staticmethod
@@ -707,18 +702,18 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, Array], pd.DataFrame, None]
     ):
-        _warn_about_deprecated_properties()
+        _warn_deprecation(_properties_deprecation_message())
         self.features = properties
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
-        _warn_about_deprecated_current_properties()
+        _warn_deprecation(_current_properties_deprecation_message())
         return self._feature_table.currents()
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        _warn_about_deprecated_current_properties()
+        _warn_deprecation(_current_properties_deprecation_message())
         self._set_current_properties(current_properties)
 
     def _set_current_properties(self, current_properties):
@@ -1336,8 +1331,8 @@ class Points(Layer):
             }
         )
         state.deprecations = {
-            'properties': 'bye properties',
-            'property_choices': 'bye property choices',
+            'properties': _properties_deprecation_message(),
+            'property_choices': _property_choices_deprecation_message(),
         }
         return state
 
