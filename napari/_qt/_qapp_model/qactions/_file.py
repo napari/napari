@@ -99,12 +99,13 @@ Q_FILE_ACTIONS: List[Action] = [
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.Comma}],
     ),
     # TODO:
-    # If app-model supports a `kwargs` field, remove the lambda in the callback.
-    # If it also allows registration of the same `id` when args are different,
-    # we can remove the f string in `id`
+    # If app-model supports a `kwargs` field (see:
+    # https://github.com/pyapp-kit/app-model/issues/52)
+    # it may allow registration of the same `id` when args are different and
+    # we can re-use `DLG_SAVE_LAYERS` below.
     Action(
-        id=f"{CommandId.DLG_SAVE_LAYERS}.selected",
-        title=trans._('Save Selected Layers...'),
+        id=CommandId.DLG_SAVE_SELECTED_LAYERS,
+        title=CommandId.DLG_SAVE_SELECTED_LAYERS.title,
         callback=_save_selected_layers,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[StandardKeyBinding.Save],
@@ -112,7 +113,7 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.DLG_SAVE_LAYERS,
-        title=trans._('Save All Layers...'),
+        title=CommandId.DLG_SAVE_LAYERS.title,
         callback=QtViewer._save_layers_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyS}],

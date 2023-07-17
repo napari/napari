@@ -26,6 +26,9 @@ class CommandId(str, Enum):
     DLG_OPEN_FOLDER_WITH_PLUGIN = 'napari:window:file:_open_folder_with_plugin'
     DLG_SHOW_PREFERENCES = 'napari:window:file:show_preferences_dialog'
     DLG_SAVE_LAYERS = 'napari:window:file:save_layers_dialog'
+    # `DLG_SAVE_SELECTED_LAYERS` uses the same callback as `DLG_SAVE_LAYERS`,
+    # just with different kwarg
+    DLG_SAVE_SELECTED_LAYERS = 'napari:window:file:save_layers_dialog:selected'
     DLG_SAVE_CANVAS_SCREENSHOT = 'napari:window:file:save_canvas_screenshot_dialog'
     DLG_SAVE_VIEWER_SCREENSHOT = 'napari:window:file:save_viewer_screenshot_dialog'
     COPY_CANVAS_SCREENSHOT = 'napari:window:file:copy_canvas_screenshot'
@@ -117,6 +120,7 @@ _COMMAND_INFO = {
     CommandId.DLG_OPEN_FOLDER_WITH_PLUGIN: _i(trans._('Open Folder...')),
     CommandId.DLG_SHOW_PREFERENCES: _i(trans._('Preferences')),
     CommandId.DLG_SAVE_LAYERS: _i(trans._('Save All Layers...')),
+    CommandId.DLG_SAVE_SELECTED_LAYERS: _i(trans._('Save Selected Layers...')),
     CommandId.DLG_SAVE_CANVAS_SCREENSHOT: _i(trans._('Save Screenshot...')),
     CommandId.DLG_SAVE_VIEWER_SCREENSHOT: _i(trans._('Save Screenshot with Viewer...')),
     CommandId.COPY_CANVAS_SCREENSHOT: _i(trans._('Copy Screenshot to Clipboard')),
