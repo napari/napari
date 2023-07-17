@@ -754,8 +754,8 @@ class Window:
         # TODO: remove from window
         return self._qt_window.statusBar()
 
-    def _update_enabled(self, menu):
-        """Update enabled state of menu item with context."""
+    def _update_menu_state(self, menu):
+        """Update enabled/visible state of menu item with context."""
         layerlist = self._qt_viewer._layers.model().sourceModel()._root
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
@@ -792,7 +792,7 @@ class Window:
         )
         self._setup_npe1_samples_menu()
         self.file_menu.aboutToShow.connect(
-            lambda: self._update_enabled('file_menu')
+            lambda: self._update_menu_state('file_menu')
         )
         self.main_menu.addMenu(self.file_menu)
         # view menu
@@ -800,7 +800,7 @@ class Window:
             MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
         )
         self.view_menu.aboutToShow.connect(
-            lambda: self._update_enabled('view_menu')
+            lambda: self._update_menu_state('view_menu')
         )
         self.main_menu.addMenu(self.view_menu)
         # plugin menu
@@ -814,7 +814,7 @@ class Window:
             MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
         )
         self.help_menu.aboutToShow.connect(
-            lambda: self._update_enabled('help_menu')
+            lambda: self._update_menu_state('help_menu')
         )
         self.main_menu.addMenu(self.help_menu)
 
