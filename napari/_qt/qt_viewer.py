@@ -835,16 +835,20 @@ class QtViewer(QSplitter):
         hist = get_open_history()
         dlg.setHistory(hist)
 
-        folder = dlg.getExistingDirectory(
-            self,
-            trans._('Select folder...'),
-            hist[0],  # home dir by default
-            (
-                QFileDialog.DontUseNativeDialog
-                if in_ipython()
-                else QFileDialog.Options()
-            ),
-        )
+        open_kwargs = {
+            "parent": self,
+            "caption": trans._('Select folder...'),
+        }
+        if "pyside" in QFileDialog.__module__.lower():
+            # PySide6
+            open_kwargs["dir"] = hist[0]
+        else:
+            open_kwargs["directory"] = hist[0]
+
+        if in_ipython():
+            open_kwargs["options"] = QFileDialog.DontUseNativeDialog
+
+        folder = dlg.getExistingDirectory(**open_kwargs)
 
         if folder not in {'', None}:
             self._qt_open([folder], stack=False, choose_plugin=choose_plugin)
