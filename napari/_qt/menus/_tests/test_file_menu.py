@@ -8,6 +8,7 @@ from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtWidgets import QMenu
 
 from napari._app_model import get_app
+from napari._app_model.constants import CommandId
 from napari.utils.action_manager import action_manager
 
 
@@ -218,3 +219,35 @@ def test_open_with_plugin(
     mock_read.assert_called_once_with(
         filename_call, stack=stack, choose_plugin=True
     )
+
+
+def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
+    """Test that enablement status of save layer actions updated correctly."""
+    app = get_app()
+    viewer = make_napari_viewer()
+
+    save_layers_action = viewer.window.file_menu.findAction(
+        CommandId.DLG_SAVE_LAYERS,
+    )
+    save_selected_layers_action = viewer.window.file_menu.findAction(
+        CommandId.DLG_SAVE_SELECTED_LAYERS,
+    )
+    # Check both save actions are not enabled when no layers
+    assert len(viewer.layers) == 0
+    viewer.window._update_enabled('file_menu')
+    assert not save_layers_action.isEnabled()
+    assert not save_selected_layers_action.isEnabled()
+
+    # Add selected layer and check both save actions enabled
+    app.commands.execute_command('napari.astronaut')
+    assert len(viewer.layers) == 1
+    viewer.window._update_enabled('file_menu')
+    assert save_layers_action.isEnabled()
+    assert save_selected_layers_action.isEnabled()
+
+    # Remove selection and check 'Save All Layers...' is enabled but
+    # 'Save Selected Layers...' is not
+    viewer.layers.selection.clear()
+    viewer.window._update_enabled('file_menu')
+    assert save_layers_action.isEnabled()
+    assert not save_selected_layers_action.isEnabled()
