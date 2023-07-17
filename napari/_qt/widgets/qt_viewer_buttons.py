@@ -204,16 +204,19 @@ class QtViewerButtons(QFrame):
         if self.viewer.dims.ndisplay != 2:
             return
 
-        dim_sorter = QtDimsSorter(self.viewer, self)
+        # popup
+        pop = QtPopup(self)
+
+        # dims sorter widget
+        dim_sorter = QtDimsSorter(self.viewer, pop)
         dim_sorter.setObjectName('dim_sorter')
 
         # make layout
         layout = QHBoxLayout()
         layout.addWidget(dim_sorter)
-
-        # popup and show
-        pop = QtPopup(self)
         pop.frame.setLayout(layout)
+
+        # show popup
         pop.show_above_mouse()
 
     def _open_grid_popup(self):

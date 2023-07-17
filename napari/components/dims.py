@@ -12,7 +12,6 @@ from typing import (
 import numpy as np
 from pydantic import root_validator, validator
 
-from napari.settings import get_settings
 from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 from napari.utils.translations import trans
@@ -87,8 +86,8 @@ class Dims(EventedModel):
     displayed_order : tuple of int
         Order of only displayed dimensions. These are calculated from the
         ``displayed`` dimensions.
-    n_moveable_dims : int
-        Number of dimensions (from the back) which can be reordered / rolled. Defined by the application setting 'n_moveable_dims'.
+    rollable :  tuple of int
+        Tuple of axis roll state. If True the axis is rollable.
     """
 
     # fields
@@ -96,6 +95,7 @@ class Dims(EventedModel):
     ndisplay: Literal[2, 3] = 2
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
+    rollable: Tuple[bool, ...] = ()
 
     range: Tuple[RangeTuple, ...] = ()
     margin_left: Tuple[float, ...] = ()
@@ -113,6 +113,7 @@ class Dims(EventedModel):
     @validator(
         'order',
         'axis_labels',
+        'rollable',
         'point',
         'margin_left',
         'margin_right',
@@ -221,6 +222,16 @@ class Dims(EventedModel):
         elif labels_ndim > ndim:
             updated['axis_labels'] = axis_labels[-ndim:]
 
+        # Check the rollable axes tuple has same number of elements as ndim
+        rollable = values['rollable']
+        n_rollable = len(rollable)
+        if n_rollable < ndim:
+            updated['rollable'] = list(rollable) + (
+                [True] * (ndim - n_rollable)
+            )
+        elif n_rollable > ndim:
+            updated['rollable'] = rollable[:ndim]
+
         return {**values, **updated}
 
     @property
@@ -278,24 +289,6 @@ class Dims(EventedModel):
     @property
     def displayed_order(self) -> Tuple[int, ...]:
         return tuple(argsort(self.displayed))
-
-    # TODO: I'm not sure if this is the correct way to bind it. I fear this might cause some event miss fireing.
-    @property
-    def n_moveable_dims(self) -> int:
-        """Int: Number of dimensions (from the back) which can be reordered / rolled"""
-        nmdims = get_settings().application.n_moveable_dims
-        # if the requested numer of roallable dimensions exceed the number of dimensions clip to ndim
-        if nmdims > self.ndim:
-            return self.ndim
-        return nmdims
-
-    @n_moveable_dims.setter
-    def n_moveable_dims(self, value: int):
-        # if the requested numer of roallable dimensions exceed the number of dimensions clip to ndim
-        if value > self.ndim:
-            get_settings().application.n_moveable_dims = self.ndim
-        else:
-            get_settings().application.n_moveable_dims = value
 
     def set_range(
         self,
@@ -448,17 +441,8 @@ class Dims(EventedModel):
         """Roll order of dimensions for display."""
         order = np.array(self.order)
         nsteps = np.array(self.nsteps)
-        order[nsteps > 1] = [
-            *order[: -self.n_moveable_dims][
-                nsteps[: -self.n_moveable_dims] > 1
-            ],
-            *np.roll(
-                order[-self.n_moveable_dims :][
-                    nsteps[-self.n_moveable_dims :] > 1
-                ],
-                1,
-            ),
-        ]
+        rollable = np.logical_and(self.rollable, nsteps > 1)
+        order[rollable] = np.roll(order[rollable], shift=1)
         self.order = order
 
     def _go_to_center_step(self):
