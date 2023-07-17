@@ -286,6 +286,8 @@ def assert_layer_state_equal(
     """
     assert actual.keys() == expected.keys()
     for name in actual:
+        # Some state may be deprecated, but we still care about their values.
+        # Testing the deprecation should be handled elsewhere, so just ignore.
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', category=DeprecationWarning)
             actual_value = actual[name]

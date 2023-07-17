@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import npe2
 import numpy as np
+import pandas as pd
 import pytest
 from conftest import LAYERS
 
@@ -43,10 +44,16 @@ def test_layer_save(tmp_path: Path, some_layer: 'layers.Layer', use_ext: bool):
     if rest:
         meta, type_string = rest
         assert type_string == some_layer._type_string
-        for deprecated in some_layer._get_state().deprecations:
-            meta.pop(deprecated, None)
         for key, value in meta.items():  # type: ignore
-            np.testing.assert_equal(value, getattr(some_layer, key))
+            expected = getattr(some_layer, key)
+            if isinstance(value, pd.DataFrame) or isinstance(
+                expected, pd.DataFrame
+            ):
+                pd.testing.assert_frame_equal(
+                    pd.DataFrame(value), pd.DataFrame(expected)
+                )
+            else:
+                np.testing.assert_equal(value, expected)
 
 
 # the layer_writer_and_data fixture is defined in napari/conftest.py
