@@ -192,7 +192,7 @@ npe2==0.7.1
     #   napari-plugin-manager
 numcodecs==0.11.0
     # via zarr
-numpy==1.24.4
+numpy==1.25.0
     # via
     #   contourpy
     #   dask
