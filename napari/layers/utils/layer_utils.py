@@ -216,8 +216,8 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
 
     Returns
     -------
-    values : list of float
-        Range of values.
+    values : pair of floats
+        Minimum and maximum values in that order.
 
     Notes
     -----
