@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional, Tuple, Union, cast
 
 import numpy as np
+from napari_graph import BaseGraph, UndirectedGraph, to_napari_graph
 from numpy.typing import ArrayLike
 from psygnal.containers import Selection
 
@@ -9,14 +10,6 @@ from napari.layers.points.points import _BasePoints
 from napari.layers.utils._slice_input import _SliceInput
 from napari.utils.events import Event
 from napari.utils.translations import trans
-
-try:
-    from napari_graph import BaseGraph, UndirectedGraph, to_napari_graph
-
-except ModuleNotFoundError:
-    BaseGraph = None
-    UndirectedGraph = None
-    to_napari_graph = None
 
 
 class Graph(_BasePoints):
@@ -520,8 +513,3 @@ class Graph(_BasePoints):
         state.pop("properties", None)
         state.pop("property_choices", None)
         return state
-
-    @staticmethod
-    def napari_graph_installed() -> bool:
-        """Check if napari_graph is installed."""
-        return BaseGraph is not None

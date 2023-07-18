@@ -4,16 +4,13 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
-
-pytest.importorskip("napari_graph")
-
-from napari_graph import (  # noqa: E402
+from napari_graph import (
     BaseGraph,
     DirectedGraph,
     UndirectedGraph,
 )
 
-from napari.layers import Graph  # noqa: E402
+from napari.layers import Graph
 
 
 def test_empty_graph() -> None:

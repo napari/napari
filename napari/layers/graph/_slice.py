@@ -2,17 +2,12 @@ from dataclasses import dataclass, field
 from typing import Any, Sequence, Tuple
 
 import numpy as np
+from napari_graph import BaseGraph
 from numpy.typing import ArrayLike
 
 from napari.layers.base._slice import _next_request_id
 from napari.layers.points._slice import _PointSliceResponse
 from napari.layers.utils._slice_input import _SliceInput
-
-try:
-    from napari_graph import BaseGraph
-
-except ModuleNotFoundError:
-    BaseGraph = None
 
 
 @dataclass(frozen=True)

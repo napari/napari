@@ -2,17 +2,14 @@ from typing import Type
 
 import numpy as np
 import pytest
-
-from napari._vispy.layers.graph import VispyGraphLayer
-from napari.layers import Graph
-
-pytest.importorskip("napari_graph")
-
-from napari_graph import (  # noqa: E402
+from napari_graph import (
     BaseGraph,
     DirectedGraph,
     UndirectedGraph,
 )
+
+from napari._vispy.layers.graph import VispyGraphLayer
+from napari.layers import Graph
 
 
 @pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])

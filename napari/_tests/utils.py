@@ -8,6 +8,7 @@ from typing import Any, Dict, Tuple, Union
 import numpy as np
 import pandas as pd
 import pytest
+from napari_graph import to_napari_graph
 from numpy.typing import DTypeLike
 
 from napari import Viewer
@@ -23,15 +24,6 @@ from napari.layers import (
 )
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.utils.color import ColorArray
-
-try:
-    from napari_graph import to_napari_graph
-
-except ModuleNotFoundError:
-
-    def to_napari_graph(x):
-        return x
-
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
@@ -95,24 +87,17 @@ layer_test_data = [
         ),
         4,
     ),
+    (
+        Graph,
+        to_napari_graph(20 * np.random.random((10, 2))),
+        2,
+    ),  # only nodes, no edges
+    (
+        Graph,
+        to_napari_graph(20 * np.random.random((10, 3))),
+        3,
+    ),  # only nodes, no edges
 ]
-
-
-if Graph.napari_graph_installed():
-    layer_test_data.extend(
-        [
-            (
-                Graph,
-                to_napari_graph(20 * np.random.random((10, 2))),
-                2,
-            ),  # only nodes, no edges
-            (
-                Graph,
-                to_napari_graph(20 * np.random.random((10, 3))),
-                3,
-            ),  # only nodes, no edges
-        ]
-    )
 
 
 with suppress(ModuleNotFoundError):
@@ -146,17 +131,12 @@ good_layer_data = [
         {'name': 'some surface'},
         'surface',
     ),
+    (
+        to_napari_graph(np.random.random((10, 2))),
+        {'border_color': 'blue'},
+        'graph',
+    ),
 ]
-
-
-if Graph.napari_graph_installed():
-    good_layer_data.append(
-        (
-            to_napari_graph(np.random.random((10, 2))),
-            {'border_color': 'blue'},
-            'graph',
-        )
-    )
 
 
 class LockableData:

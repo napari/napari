@@ -18,6 +18,7 @@ from typing import (
 )
 
 import numpy as np
+from napari_graph import BaseGraph
 from typing_extensions import TypedDict, get_args
 
 if TYPE_CHECKING:
@@ -29,11 +30,6 @@ if TYPE_CHECKING:
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
 
-try:
-    from napari_graph import BaseGraph
-
-except ModuleNotFoundError:
-    BaseGraph = Any
 
 __all__ = [
     'ArrayLike',
@@ -121,7 +117,7 @@ class SampleDict(TypedDict):
 ArrayBase: Type[np.ndarray] = np.ndarray
 
 
-GraphData = NewType("GraphData", BaseGraph)  # type: ignore [valid-newtype]
+GraphData = NewType("GraphData", BaseGraph)
 ImageData = NewType("ImageData", np.ndarray)
 LabelsData = NewType("LabelsData", np.ndarray)
 PointsData = NewType("PointsData", np.ndarray)
