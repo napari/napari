@@ -8,8 +8,25 @@ from napari.utils.events import SelectableEventedList
 
 
 class AxisModel:
-    """View of an axis within a dims model keeping track of axis names."""
+    """View of an axis within a dims model.
 
+    The model keeps track of axis names and allows read / write
+    acces on the cossesponding rollable state of a Dims object.
+    
+    Parameters
+    ----------
+    dims : napari.components.dims.Dims
+        Parent Dims object.
+    axis : int
+        Axis index.
+
+    Attributes
+    ----------
+    dims : napari.components.dims.Dims
+        Dimensions object modeling slicing and displaying.
+    axis : int
+        Axis index.
+    """
     def __init__(self, dims: Dims, axis: int) -> None:
         self.dims = dims
         self.axis = axis
@@ -30,6 +47,18 @@ class AxisModel:
 
     @property
     def rollable(self) -> bool:
+        """Get or set the 'rollable' state.
+
+        Parameters
+        ----------
+        value : bool
+            True if axis should be rollable.
+
+        Returns
+        -------
+        bool
+            True if axis is rollable.
+        """
         return self.dims.rollable[self.axis]
 
     @rollable.setter
@@ -45,6 +74,21 @@ class AxisList(SelectableEventedList[AxisModel]):
 
     @classmethod
     def from_dims(cls, dims: Dims) -> 'AxisList':
+        """Create AxisList instance from Dims object.
+
+        The AxisList is filled with a number of AxisModels based
+        on the number of dimensions in the Dims object.
+
+        Parameters
+        ----------
+        dims : napari.components.dims.Dims
+            Dims object to be used for creation.
+        
+        Returns
+        -------
+        AxisList
+            A selectable evented list of the viewer axes.
+        """
         return cls([AxisModel(dims, dims.order[i]) for i in range(dims.ndim)])
 
 
@@ -93,6 +137,16 @@ class QtAxisListModel(QtListModel[AxisModel]):
         `Qt.ItemIsEditable`.
 
         See Qt.ItemFlags https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
+
+        Parameters
+        ----------
+        index : qtpy.QtCore.QModelIndex
+            Index to return flags for.
+
+        Returns
+        -------
+        qtpy.QtCore.Qt.ItemFlags
+            ItemFlags specific to the given index.
         """
         flags = (
             Qt.ItemFlag.ItemIsSelectable

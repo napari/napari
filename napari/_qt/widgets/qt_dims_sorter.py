@@ -15,6 +15,15 @@ if TYPE_CHECKING:
 
 
 def set_dims_order(dims: Dims, order: Tuple[int, ...]):
+    """Set dimension order of Dims object to order.
+    
+    Parameters
+    ----------
+    dims : napari.components.dims.Dims
+        Dims object.
+    order : tuple of int
+        New dimension order.
+    """
     if type(order[0]) == AxisModel:
         order = [a.axis for a in order]
     dims.order = order
@@ -42,9 +51,22 @@ def move_indices(axes_list: SelectableEventedList, order: Tuple[int, ...]):
 
 
 class QtDimsSorter(QWidget):
-    """
+    """Qt widget for dimension / axis reordering.
+
     Modified from:
     https://github.com/jni/zarpaint/blob/main/zarpaint/_dims_chooser.py
+
+    Parameters
+    ----------
+    viewer : napari.Viewer
+        Main napari viewer instance.
+    parent : QWidget, optional
+        QWidget that will be the parent of this widget. 
+    
+    Attributes
+    ----------
+    axis_list : napari._qt.containers.qt_axis_model.AxisList
+        Selectable evented list representing the viewer axes.
     """
 
     def __init__(self, viewer: 'Viewer', parent=None) -> None:
@@ -73,6 +95,7 @@ class QtDimsSorter(QWidget):
         self.layout().addWidget(view, 1, 0)
 
         # connect axes_list and dims
+        # terminate connections after parent widget is closed
         self.axis_list.events.reordered.connect(
             lambda event: set_dims_order(dims, event.value),
             until=self.parent().finished,
