@@ -43,8 +43,12 @@ def read(
     """Try to return data for `path`, from reader plugins using a manifest."""
 
     # do nothing if `plugin` is not an npe2 reader
-    if plugin and plugin not in get_readers():
-        return None
+    if plugin:
+        # user might have passed 'plugin.reader_contrib' as the command
+        # so ensure we check vs. just the actual plugin name
+        plugin_name = plugin.partition('.')[0]
+        if plugin_name not in get_readers():
+            return None
 
     assert stack is not None
     # the goal here would be to make read_get_reader of npe2 aware of "stack",
