@@ -104,9 +104,16 @@ def read_data_with_plugins(
                 {i.plugin_name for i in hook_caller.get_hookimpls()}
             )
             err_helper = (
-                "No readers are available. Do you have any plugins installed?"
-                if not names
-                else f"\nNames of plugins offering readers are: {names}."
+                trans._(
+                    "No readers are available. "
+                    "Do you have any plugins installed?",
+                    deferred=True,
+                )
+                if len(names) == 1
+                else trans._(
+                    f"\nNames of plugins offering readers are: {names}.",
+                    deferred=True,
+                )
             )
             raise ValueError(
                 trans._(
