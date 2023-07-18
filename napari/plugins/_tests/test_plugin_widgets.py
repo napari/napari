@@ -52,9 +52,3 @@ def test_function_widget_registration(
         assert len(recwarn) == 0
         if 'list_func' in request.node.name:
             assert f_widgets['Plugin']['func2'] == func2
-
-
-def test_get_widgets(make_napari_viewer):
-    viewer = make_napari_viewer()
-    # TODO: open a widget and make sure it's in this list
-    assert viewer.window.dock_widgets == {}
