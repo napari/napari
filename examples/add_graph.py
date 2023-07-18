@@ -12,7 +12,6 @@ import pandas as pd
 from napari_graph import UndirectedGraph
 
 import napari
-from napari.layers import Graph
 
 
 def build_graph(n_nodes: int, n_neighbors: int) -> UndirectedGraph:
