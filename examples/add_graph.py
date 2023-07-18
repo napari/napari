@@ -28,11 +28,10 @@ def build_graph(n_nodes: int, n_neighbors: int) -> UndirectedGraph:
     return graph
 
 
+graph = build_graph(n_nodes=1_000_000, n_neighbors=5)
+
 viewer = napari.Viewer()
-n_nodes = 1000000
-graph = build_graph(n_nodes, 5)
-layer = Graph(graph, out_of_slice_display=True)
-viewer.add_layer(layer)
+layer = viewer.add_graph(graph, out_of_slice_display=True)
 
 
 if __name__ == "__main__":

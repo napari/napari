@@ -34,10 +34,10 @@ smooth = filters.gaussian(nuclei, sigma=10)
 nodes_coords = feature.peak_local_max(smooth)
 edges = delaunay_edges(nodes_coords)
 graph = UndirectedGraph(edges, nodes_coords)
-viewer = napari.view_image(
+viewer, image_layer = napari.imshow(
     cells, channel_axis=1, name=['membranes', 'nuclei'], ndisplay=3
 )
-viewer.add_graph(graph)
+graph_layer = viewer.add_graph(graph)
 viewer.camera.angles = (10, -20, 130)
 
 if __name__ == '__main__':
