@@ -109,7 +109,7 @@ def read_data_with_plugins(
                     "Do you have any plugins installed?",
                     deferred=True,
                 )
-                if len(names) == 1
+                if len(names) <= 1
                 else trans._(
                     f"\nNames of plugins offering readers are: {names}.",
                     deferred=True,
