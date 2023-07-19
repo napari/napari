@@ -440,9 +440,13 @@ class Dims(EventedModel):
     def _roll(self):
         """Roll order of dimensions for display."""
         order = np.array(self.order)
-        nsteps = np.array(self.nsteps)
-        rollable = np.logical_and(self.rollable, nsteps > 1)
-        order[rollable] = np.roll(order[rollable], shift=1)
+        # we combine "rollable" and "nsteps" into a mask for rolling
+        # this mask has to be aligned to "order" as "rollable" and
+        # "nsteps" are static but order is dynamic, meaning "rollable"
+        # and "nsteps" encode the axes by position, whereas "order" 
+        # encodes axis by number
+        valid = np.logical_and(self.rollable, np.array(self.nsteps) > 1)[order]
+        order[valid] = np.roll(order[valid], shift=1)
         self.order = order
 
     def _go_to_center_step(self):
