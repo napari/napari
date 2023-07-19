@@ -236,6 +236,15 @@ def auto_shutdown_dask_threadworkers():
         dask.threaded.default_pool = None
 
 
+@pytest.fixture(autouse=True)
+def ensure_no_layer_leak():
+    from napari.layers import Layer
+
+    assert len(Layer._instances) == 0, 'test started with Leaked Layers'
+    yield
+    assert len(Layer._instances) == 0, 'test ended with Leaked Layers'
+
+
 # this is not the proper way to configure IPython, but it's an easy one.
 # This will prevent IPython to try to write history on its sql file and do
 # everything in memory.

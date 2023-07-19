@@ -19,6 +19,7 @@ from typing import (
     Type,
     Union,
 )
+from weakref import WeakSet
 
 import magicgui as mgui
 import numpy as np
@@ -242,6 +243,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     * `_basename()`: base/default name of the layer
     """
 
+    _instances: WeakSet[Layer] = WeakSet()
+
     _modeclass: Type[StringEnum] = Mode
 
     _drag_modes: ClassVar[Dict[StringEnum, Callable[[Layer, Event], None]]] = {
@@ -279,6 +282,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         mode='pan_zoom',
     ) -> None:
         super().__init__()
+        self._instances.add(self)
 
         if name is None and data is not None:
             name = magic_name(data)
