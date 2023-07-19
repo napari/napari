@@ -11,6 +11,9 @@ class NormalMode(Enum):
     VERTEX = auto()
 
 
+_DEFAULT_COLOR = ColorValue('black')
+
+
 class Normals(EventedModel):
     """
     Represents face or vertex normals of a surface mesh.
@@ -32,7 +35,7 @@ class Normals(EventedModel):
 
     mode: NormalMode = Field(NormalMode.FACE, allow_mutation=False)
     visible: bool = False
-    color: ColorValue = 'black'
+    color: ColorValue = Field(default_factory=lambda: _DEFAULT_COLOR)
     width: float = 1
     length: float = 5
 
