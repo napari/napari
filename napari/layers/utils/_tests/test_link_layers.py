@@ -92,6 +92,7 @@ def test_removed_linked_target():
 
     # if we delete layer3 we shouldn't get an error when updating otherlayers
     del l3
+
     l1.opacity = 0.25
     assert l1.opacity == l2.opacity
 

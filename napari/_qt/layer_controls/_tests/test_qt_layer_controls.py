@@ -535,7 +535,9 @@ def test_set_3d_display_with_shapes(qtbot):
 )
 def editable_layer(request):
     LayerType, data = request.param
-    return LayerType(data)
+    lay = LayerType(data)
+    lay._leak = True
+    return lay
 
 
 def test_make_visible_when_editable_enables_edit_buttons(
@@ -549,6 +551,7 @@ def test_make_visible_when_editable_enables_edit_buttons(
     editable_layer.visible = True
 
     assert_all_edit_buttons_enabled(controls)
+    del editable_layer
 
 
 def test_make_not_visible_when_editable_disables_edit_buttons(
@@ -562,6 +565,7 @@ def test_make_not_visible_when_editable_disables_edit_buttons(
     editable_layer.visible = False
 
     assert_no_edit_buttons_enabled(controls)
+    del editable_layer
 
 
 def test_make_editable_when_visible_enables_edit_buttons(

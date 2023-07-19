@@ -43,6 +43,29 @@ def get_linked_layers(*layers: Layer) -> Set[Layer]:
     return {x for x in linked_layers if x is not None}
 
 
+def _unlink_me(layer_ref: ReferenceType[Layer]) -> None:
+    """
+    Callback utility to unlink a layer when it is garbage collected.
+
+    We use this to ensure that we don't keep callback to a layer that has
+    been garbage collected.
+
+    The setter callbacks below in particular don't support l1() and l2()
+    being None.
+
+    The callback get the layer_ref as an argument, but the object might already
+    be gone. If That's the case, we can't explicitly unlink the layers - so we
+    just purge the unlink list if any key is None, see `_cleanup_unlinkers`.
+
+    """
+    assert isinstance(layer_ref, ReferenceType)
+    layer = layer_ref()
+    if layer is None:
+        _cleanup_unlinkers()
+        return
+    unlink_layers([layer])
+
+
 def link_layers(
     layers: Iterable[Layer], attributes: Iterable[str] = ()
 ) -> list[LinkKey]:
@@ -110,31 +133,38 @@ def link_layers(
 
     # now, connect requested attributes between all requested layers.
     links = []
-    for (lay1, lay2), attribute in product(permutations(layers, 2), attr_set):
-        rlay1 = ref(lay1)
-        rlay2 = ref(lay2)
-        del lay1, lay2
+    for (_lay1, _lay2), attribute in product(
+        permutations(layers, 2), attr_set
+    ):
+        rlay1 = ref(_lay1, _unlink_me)
+        rlay2 = ref(_lay2, _unlink_me)
         key = _link_key(rlay1(), rlay2(), attribute)
         # if the layers and attribute are already linked then ignore
         if key in _UNLINKERS:
             continue
 
-        def _make_l2_setter(l1=rlay1, l2=rlay2, attr=attribute):
+        def _make_l2_setter(l1, l2, attr):
             # get a suitable equality operator for this attribute type
             eq_op = pick_equality_operator(getattr(l1(), attr))
 
             def setter(event=None):
+                """
+                Note that this needs to be carefully disconnected
+                as it does not support  l1() ot l2() being None.
+                """
                 new_val = getattr(l1(), attr)
-                # this line is the important part for avoiding recursion
-                if not eq_op(getattr(l2(), attr), new_val):
-                    setattr(l2(), attr, new_val)
+                # take ref now, if ever the weakref is gone,
+                # and we gc after if, before settattr, we will have a problem
+                lx = l2()
+                if not eq_op(getattr(lx, attr), new_val):
+                    setattr(lx, attr, new_val)
 
             setter.__doc__ = f"Set {attr!r} on {l1()} to that of {l2()}"
             setter.__qualname__ = f"set_{attr}_on_layer_{id(l2())}"
             return setter
 
         # acually make the connection
-        callback = _make_l2_setter()
+        callback = _make_l2_setter(rlay1, rlay2, attribute)
         emitter_group = getattr(rlay1().events, attribute)
         emitter_group.connect(callback)
 
@@ -142,9 +172,30 @@ def link_layers(
         # and save an "unlink" function for the key.
         _UNLINKERS[key] = partial(emitter_group.disconnect, callback)
         _LINKED_LAYERS[rlay1].add(rlay2)
+
         links.append(key)
 
     return links
+
+
+def _cleanup_unlinkers() -> None:
+    """Remove all unlinkers from the global dict.
+
+    We have to purge this every now and them as sometime the weakref finalizer
+    callback are too late and thus we cannot get the keys from layer_ref() which
+    is None.
+
+    So we loop, and if one item on the key is None, we unlink.
+
+    This should disconnect callbacks that might otherwise be triggered on None.
+    """
+
+    to_unlink = []
+    for rl1, rl2, attr in _UNLINKERS:
+        if rl1() is None or rl2() is None:
+            to_unlink.append((rl1, rl2, attr))
+    if to_unlink:
+        _unlink_keys(to_unlink)
 
 
 def unlink_layers(layers: Iterable[Layer], attributes: Iterable[str] = ()):

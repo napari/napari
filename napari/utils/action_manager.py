@@ -244,7 +244,10 @@ class ActionManager:
         def _update_tt(event: ShortcutEvent):
             if event.name == name:
                 button_ = ref_button()
-                button_.setToolTip(f'{event.tooltip} {extra_tooltip_text}')
+                # there is still a small chance for the ref to be None,
+                # but this to not be disconnected.
+                if button_ is not None:
+                    button_.setToolTip(f'{event.tooltip} {extra_tooltip_text}')
 
         # if it's a QPushbutton, we'll remove it when it gets destroyed
         until = getattr(ref_button(), 'destroyed', None)

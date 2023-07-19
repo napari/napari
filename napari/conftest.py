@@ -90,6 +90,8 @@ def layer_data_and_types():
             np.random.rand(20, 2), properties={'values': np.random.rand(20)}
         ),
     ]
+    for lay in layers:
+        lay._leak = True
     extensions = ['.tif', '.tif', '.csv', '.csv']
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [layer._type_string for layer in layers]
@@ -185,6 +187,8 @@ def layers():
         Shapes(np.random.rand(10, 2, 2)),
         Vectors(np.random.rand(10, 2, 2)),
     ]
+    for lay in list_of_layers:
+        lay._leak = True
     return LayerList(list_of_layers)
 
 
@@ -262,6 +266,7 @@ def auto_shutdown_dask_threadworkers():
 
 
 COUNTER = 0
+GLOBAL_COUNT = 0
 
 
 @pytest.fixture(autouse=True)
@@ -283,16 +288,25 @@ def ensure_no_more_layer_leak(request):
 
     name = request.node.name
 
+    global COUNTER
+
     def filterd_layers():
         return [
             lay for lay in Layer._instances if not getattr(lay, '_leak', False)
         ]
 
     before = len(filterd_layers())
+
+    global GLOBAL_COUNT
+    if before != GLOBAL_COUNT:
+        gc.collect()
+        before = len(filterd_layers())
+        GLOBAL_COUNT = before
     b_s = WeakSet(filterd_layers())
     try:
         yield
-    finally:
+        # if the test is failing, we don't want to check for leaks.
+        # as there are likely layers attached to the traceback/exception
         after = len(filterd_layers())
         if after != before:
             # if not the same number, try to collect and retry.
@@ -306,7 +320,6 @@ def ensure_no_more_layer_leak(request):
                     a_s = WeakSet(filterd_layers())
                     diff_list = [ref(x) for x in (a_s - b_s)]
                     del a_s, b_s
-                    global COUNTER
 
                     def keep_me(x):
                         # internal pytest and other stuff we don't care have (weak)-references to layers
@@ -330,7 +343,7 @@ def ensure_no_more_layer_leak(request):
                         objgraph.show_backrefs(
                             [lay()],
                             filename=f'leaked-{name}-{COUNTER}-{lk}-{before}-{after}.pdf',
-                            max_depth=5,
+                            max_depth=10,
                             filter=lambda x: keep_me(x),
                         )
                     COUNTER = COUNTER + 1
@@ -340,6 +353,9 @@ def ensure_no_more_layer_leak(request):
         assert (
             before == after
         ), f'test ended with {after - before} Leaked Layers, install objgraph/graphviz/dot  to get a pdf leaked layers objects'
+
+    finally:
+        pass
 
 
 # this is not the proper way to configure IPython, but it's an easy one.

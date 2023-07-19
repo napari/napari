@@ -1539,6 +1539,9 @@ def test_negative_label_doesnt_flicker():
         ]
     )
     layer = Labels(data)
+    # it's ok to leak, it's an x-fail, so it will be attached to the
+    # traceback of this failing test.
+    layer._leak = True
     layer._slice_dims(point=(1, 0, 0))
     # This used to fail when negative values were used to index into _all_vals.
     assert tuple(layer.get_color(-1)) != tuple(layer.get_color(5))
@@ -1547,6 +1550,7 @@ def test_negative_label_doesnt_flicker():
     layer._set_view_slice()
 
     assert tuple(layer.get_color(-1)) == minus_one_color_original
+    del layer
 
 
 def test_get_status_with_custom_index():
@@ -1570,6 +1574,7 @@ def test_get_status_with_custom_index():
         layer.get_status((6, 6))['coordinates']
         == ' [6 6]: 2; text1: 3, text2: -2'
     )
+    del layer
 
 
 def test_collision_warning():

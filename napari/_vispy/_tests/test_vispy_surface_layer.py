@@ -9,7 +9,9 @@ from napari.layers import Surface
 @pytest.fixture
 def cube_layer():
     vertices, faces, _ = create_cube()
-    return Surface((vertices['position'] * 100, faces))
+    surf = Surface((vertices['position'] * 100, faces))
+    surf._leak = True
+    return surf
 
 
 @pytest.mark.parametrize("opacity", [0, 0.3, 0.7, 1])
