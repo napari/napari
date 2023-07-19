@@ -11,6 +11,7 @@ def test_modes(layer):
     assert layer.mode == 'select'
     key_bindings.activate_points_pan_zoom_mode(layer)
     assert layer.mode == 'pan_zoom'
+    del layer
 
 
 def test_copy_paste(layer):

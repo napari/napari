@@ -55,6 +55,9 @@ def create_known_points_layer_2d():
     n_points = len(data)
 
     layer = Points(data, size=1)
+    # one of our fixture check we don't leak layers in tests.
+    # mark this layer as ok to leak.
+    layer._leak = True
     assert np.all(layer.data == data)
     assert layer.ndim == 2
     assert len(layer.data) == n_points
@@ -83,6 +86,7 @@ def create_known_points_layer_3d():
 
     layer = Points(data, size=1)
     layer._slice_dims(ndisplay=3)
+    layer._leak = True
 
     assert np.all(layer.data == data)
     assert layer.ndim == 3
@@ -154,6 +158,7 @@ def test_add_point_3d(create_known_points_layer_3d):
     # Check clicked point selected
     assert len(layer.data) == (n_points + 1)
     np.testing.assert_array_equal(layer.data[-1], known_not_point)
+    del layer
 
 
 def test_drag_in_add_mode(create_known_points_layer_2d):

@@ -31,6 +31,7 @@ Notes for using the plugin-related fixtures here:
 
 from __future__ import annotations
 
+import gc
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -39,7 +40,13 @@ from itertools import chain
 from multiprocessing.pool import ThreadPool
 from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
-from weakref import WeakKeyDictionary
+from weakref import (
+    ReferenceType,
+    WeakKeyDictionary,
+    WeakSet,
+    WeakValueDictionary,
+    ref,
+)
 
 from npe2 import PackageMetadata
 
@@ -90,6 +97,23 @@ def layer_data_and_types():
     return layers, layer_data, layer_types, filenames
 
 
+def _mark_leak(fixture):
+    """
+    Make results are return by those fixtures as ok to leak
+    """
+
+    def inner(request):
+        res = fixture(request)
+        if res is not None:
+            res._leak = True
+        return res
+
+    return inner
+
+
+# results of these fixtures are ok to leak as they are created during the tests
+# by the fixture and thus appear to leak to `ensure_no_more_layer_leak`.
+# we mark them with _leak = True, and ensure_no_more_layer_leak will ignore them
 @pytest.fixture(
     params=[
         'image',
@@ -100,6 +124,7 @@ def layer_data_and_types():
         'vectors',
     ]
 )
+@_mark_leak
 def layer(request):
     """Parameterized fixture that supplies a layer for testing.
 
@@ -245,37 +270,68 @@ def ensure_no_more_layer_leak(request):
     Ensure that we have the same numbers of layers before/after a test.
 
     We can't ensure zero before/after as parametrized tests create layers before tests.
+    And some fixture run during the tests, so we want to make sure those are allowed to leak with
+    a _leak attribute.
+
+    Moreover this fixture itself and pytest can keep references to layers, so we need to ignore those.
+
+    When we detect a leak, we _try_ to run objgraph to emit a pdf with the graph of the leak.
     """
-    import gc
-    from weakref import ReferenceType, WeakSet
+    from pytest import FixtureRequest
 
     from napari.layers import Layer
 
     name = request.node.name
-    before = len(Layer._instances)
-    b_s = WeakSet(lay for lay in Layer._instances)
+
+    def filterd_layers():
+        return [
+            lay for lay in Layer._instances if not getattr(lay, '_leak', False)
+        ]
+
+    before = len(filterd_layers())
+    b_s = WeakSet(filterd_layers())
     try:
         yield
     finally:
-        after = len(Layer._instances)
+        after = len(filterd_layers())
         if after != before:
             # if not the same number, try to collect and retry.
             # don't gc every time it can be slow.
             gc.collect()
-            after = len(Layer._instances)
+            after = len(filterd_layers())
             if after != before:
                 try:
                     import objgraph
 
-                    a_s = WeakSet(lay for lay in Layer._instances)
-                    diff_set = a_s - b_s
+                    a_s = WeakSet(filterd_layers())
+                    diff_list = [ref(x) for x in (a_s - b_s)]
+                    del a_s, b_s
                     global COUNTER
-                    for lk, lay in enumerate(diff_set):
+
+                    def keep_me(x):
+                        # internal pytest and other stuff we don't care have (weak)-references to layers
+                        # at least we don't want to show those.
+                        if isinstance(
+                            x,
+                            (
+                                ReferenceType,
+                                WeakSet,
+                                WeakValueDictionary,
+                                FixtureRequest,
+                            ),
+                        ):
+                            return False
+                        # don't show current fixture.
+                        if x is ensure_no_more_layer_leak:
+                            return False
+                        return True
+
+                    for lk, lay in enumerate(diff_list):
                         objgraph.show_backrefs(
-                            [lay],
+                            [lay()],
                             filename=f'leaked-{name}-{COUNTER}-{lk}-{before}-{after}.pdf',
-                            max_depth=10,
-                            filter=lambda x: not isinstance(x, ReferenceType),
+                            max_depth=5,
+                            filter=lambda x: keep_me(x),
                         )
                     COUNTER = COUNTER + 1
                 except ModuleNotFoundError:
