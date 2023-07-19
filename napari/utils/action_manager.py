@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from inspect import isgeneratorfunction
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from weakref import ref
 
 from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
@@ -235,12 +236,18 @@ class ActionManager:
                 f'{self._build_tooltip(name)} {extra_tooltip_text}'
             )
 
+        # buttons may hold references to layers, see
+        # https://github.com/napari/napari/issues/2027
+        ref_button = ref(button)
+        del button
+
         def _update_tt(event: ShortcutEvent):
             if event.name == name:
-                button.setToolTip(f'{event.tooltip} {extra_tooltip_text}')
+                button_ = ref_button()
+                button_.setToolTip(f'{event.tooltip} {extra_tooltip_text}')
 
         # if it's a QPushbutton, we'll remove it when it gets destroyed
-        until = getattr(button, 'destroyed', None)
+        until = getattr(ref_button(), 'destroyed', None)
         self.events.shorcut_changed.connect(_update_tt, until=until)
 
     def bind_shortcut(self, name: str, shortcut: str) -> None:
