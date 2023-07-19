@@ -170,6 +170,7 @@ filterwarnings = [
   "ignore:Alternative shading modes are only available in 3D, defaulting to none",
   "ignore:distutils Version classes are deprecated::",
   "ignore:There is no current event loop:DeprecationWarning:",
+  "ignore:numba not installed, falling back to stubs. Install numba for better napari-graph performance.:UserWarning",
 ]
 markers = [
     "examples: Test of examples",
