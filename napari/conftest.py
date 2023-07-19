@@ -236,13 +236,54 @@ def auto_shutdown_dask_threadworkers():
         dask.threaded.default_pool = None
 
 
+COUNTER = 0
+
+
 @pytest.fixture(autouse=True)
-def ensure_no_layer_leak():
+def ensure_no_more_layer_leak(request):
+    """
+    Ensure that we have the same numbers of layers before/after a test.
+
+    We can't ensure zero before/after as parametrized tests create layers before tests.
+    """
+    import gc
+    from weakref import ReferenceType, WeakSet
+
     from napari.layers import Layer
 
-    assert len(Layer._instances) == 0, 'test started with Leaked Layers'
-    yield
-    assert len(Layer._instances) == 0, 'test ended with Leaked Layers'
+    name = request.node.name
+    before = len(Layer._instances)
+    b_s = WeakSet(lay for lay in Layer._instances)
+    try:
+        yield
+    finally:
+        after = len(Layer._instances)
+        if after != before:
+            # if not the same number, try to collect and retry.
+            # don't gc every time it can be slow.
+            gc.collect()
+            after = len(Layer._instances)
+            if after != before:
+                try:
+                    import objgraph
+
+                    a_s = WeakSet(lay for lay in Layer._instances)
+                    diff_set = a_s - b_s
+                    global COUNTER
+                    for lk, lay in enumerate(diff_set):
+                        objgraph.show_backrefs(
+                            [lay],
+                            filename=f'leaked-{name}-{COUNTER}-{lk}-{before}-{after}.pdf',
+                            max_depth=10,
+                            filter=lambda x: not isinstance(x, ReferenceType),
+                        )
+                    COUNTER = COUNTER + 1
+                except ModuleNotFoundError:
+                    pass
+
+        assert (
+            before == after
+        ), f'test ended with {after - before} Leaked Layers, install objgraph/graphviz/dot  to get a pdf leaked layers objects'
 
 
 # this is not the proper way to configure IPython, but it's an easy one.

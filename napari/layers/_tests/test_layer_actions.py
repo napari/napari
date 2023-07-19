@@ -50,6 +50,7 @@ def test_toggle_visibility_with_linked_layers():
     assert layer_list[1].visible is False
     assert layer_list[2].visible is False
     assert layer_list[3].visible is True
+    del layer_list
 
 
 @pytest.mark.parametrize('layer_type', [Points, Shapes])

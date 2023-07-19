@@ -111,34 +111,37 @@ def link_layers(
     # now, connect requested attributes between all requested layers.
     links = []
     for (lay1, lay2), attribute in product(permutations(layers, 2), attr_set):
-        key = _link_key(lay1, lay2, attribute)
+        rlay1 = ref(lay1)
+        rlay2 = ref(lay2)
+        del lay1, lay2
+        key = _link_key(rlay1(), rlay2(), attribute)
         # if the layers and attribute are already linked then ignore
         if key in _UNLINKERS:
             continue
 
-        def _make_l2_setter(l1=lay1, l2=lay2, attr=attribute):
+        def _make_l2_setter(l1=rlay1, l2=rlay2, attr=attribute):
             # get a suitable equality operator for this attribute type
-            eq_op = pick_equality_operator(getattr(l1, attr))
+            eq_op = pick_equality_operator(getattr(l1(), attr))
 
             def setter(event=None):
-                new_val = getattr(l1, attr)
+                new_val = getattr(l1(), attr)
                 # this line is the important part for avoiding recursion
-                if not eq_op(getattr(l2, attr), new_val):
-                    setattr(l2, attr, new_val)
+                if not eq_op(getattr(l2(), attr), new_val):
+                    setattr(l2(), attr, new_val)
 
-            setter.__doc__ = f"Set {attr!r} on {l1} to that of {l2}"
-            setter.__qualname__ = f"set_{attr}_on_layer_{id(l2)}"
+            setter.__doc__ = f"Set {attr!r} on {l1()} to that of {l2()}"
+            setter.__qualname__ = f"set_{attr}_on_layer_{id(l2())}"
             return setter
 
         # acually make the connection
         callback = _make_l2_setter()
-        emitter_group = getattr(lay1.events, attribute)
+        emitter_group = getattr(rlay1().events, attribute)
         emitter_group.connect(callback)
 
         # store the connection so that we don't make it again.
         # and save an "unlink" function for the key.
         _UNLINKERS[key] = partial(emitter_group.disconnect, callback)
-        _LINKED_LAYERS[ref(lay1)].add(ref(lay2))
+        _LINKED_LAYERS[rlay1].add(rlay2)
         links.append(key)
 
     return links
