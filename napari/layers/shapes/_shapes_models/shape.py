@@ -393,9 +393,8 @@ class Shape(ABC):
         # Thus, we have to find the dimensions containing the shape
         data = np.round(self.data).T
         cdims, vdims = get_constant_and_variable_subiterables(data)
-        # if only a point was added (add polypon / line / path) all 
-        # we have to work on the displayed dimensions
-        if not vdims:
+        # we always need at least two dimensions
+        if len(vdims) < 2:
             vdims = list(self.dims_displayed)
         
         if target_shape is None:
