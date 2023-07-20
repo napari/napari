@@ -582,7 +582,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             return
 
         if values_ndim > 0:
-            indices = np.array(self._data_slice[-vertex_ndim:])
+            indices = np.array(self._data_slice.point[-vertex_ndim:])
             disp = [
                 d
                 for d in np.subtract(self._slice_input.displayed, values_ndim)
@@ -596,7 +596,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                 if d >= 0
             ]
         else:
-            indices = np.array(self._data_slice)
+            indices = np.array(self._data_slice.point)
             not_disp = list(self._slice_input.not_displayed)
             disp = list(self._slice_input.displayed)
 

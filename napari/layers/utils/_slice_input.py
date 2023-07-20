@@ -60,16 +60,33 @@ class _SliceInput:
         old_ndim = self.ndim
         if old_ndim > ndim:
             point = self.world_slice.point[-ndim:]
+            margin_left = self.world_slice.margin_left[-ndim:]
+            margin_right = self.world_slice.margin_right[-ndim:]
             order = reorder_after_dim_reduction(self.order[-ndim:])
         elif old_ndim < ndim:
             point = (0,) * (ndim - old_ndim) + self.world_slice.point
+            margin_left = (0,) * (
+                ndim - old_ndim
+            ) + self.world_slice.margin_left
+            margin_right = (0,) * (
+                ndim - old_ndim
+            ) + self.world_slice.margin_right
             order = tuple(range(ndim - old_ndim)) + tuple(
                 o + ndim - old_ndim for o in self.order
             )
         else:
             point = self.world_slice.point
+            margin_left = self.world_slice.margin_left
+            margin_right = self.world_slice.margin_right
             order = self.order
-        return _SliceInput(ndisplay=self.ndisplay, point=point, order=order)
+
+        world_slice = _ThickNDSlice(
+            point=point, margin_left=margin_left, margin_right=margin_right
+        )
+
+        return _SliceInput(
+            ndisplay=self.ndisplay, world_slice=world_slice, order=order
+        )
 
     def data_slice(
         self, world_to_data: Affine, round_index: bool = True
