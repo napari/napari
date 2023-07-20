@@ -726,11 +726,11 @@ class EventEmitter:
         # create / massage event as needed
         event = self._prepare_event(*args, **kwargs)
 
-        # Add our source to the event; remove it after all callbacks have been
-        # invoked.
         if self._delay_semaphore:
             self._delay_last_event = event
             return event
+        # Add our source to the event; remove it after all callbacks have been
+        # invoked.
         event._push_source(self.source)
         self._emitting = True
         try:
