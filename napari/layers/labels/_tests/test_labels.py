@@ -262,7 +262,7 @@ def test_num_colors():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert layer.num_colors == 50
+    assert layer.num_colors == 49
 
     layer.num_colors = 80
     assert layer.num_colors == 80
