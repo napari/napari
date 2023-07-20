@@ -65,9 +65,9 @@ def generate_vector_meshes(vectors, width, length, vector_style):
 
     Returns
     -------
-    vertices : (4N, 2) array for 2D and (8N, 2) array for 3D
+    vertices : (aN, 2) array for 2D and (2aN, 2) array for 3D, with a=4, 3, or 7 for vector_style='line', 'triangle', or 'arrow' respectively
         Vertices of all triangles
-    triangles : (2N, 3) array for 2D or (4N, 3) array for 3D
+    triangles : (bN, 3) array for 2D or (2bN, 3) array for 3D, with b=2, 1, or 3 for vector_style='line', 'triangle', or 'arrow' respectively
         Vertex indices that form the mesh triangles
     """
     ndim = vectors.shape[2]
@@ -109,9 +109,9 @@ def generate_vector_meshes_2D(
 
     Returns
     -------
-    vertices : (4N, D) array
+    vertices : (aN, 2) array for 2D, with a=4, 3, or 7 for vector_style='line', 'triangle', or 'arrow' respectively
         Vertices of all triangles
-    triangles : (2N, 3) array
+    triangles : (bN, 3) array for 2D, with b=2, 1, or 3 for vector_style='line', 'triangle', or 'arrow' respectively
         Vertex indices that form the mesh triangles
     """
 
