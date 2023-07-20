@@ -85,50 +85,62 @@ properties_df = pd.DataFrame(properties_dict)
 
 @pytest.mark.parametrize("properties", [{}, properties_dict, properties_df])
 def test_track_layer_properties(properties):
-    """Test properties."""
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
-    layer = Tracks(data, properties=properties)
+    with pytest.warns(DeprecationWarning):
+        layer = Tracks(data, properties=properties)
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties
     for k, v in properties.items():
-        np.testing.assert_equal(layer.properties[k], v)
+        np.testing.assert_equal(layer_properties[k], v)
 
 
-@pytest.mark.parametrize("properties", [{}, properties_dict, properties_df])
-def test_track_layer_properties_flipped(properties):
-    """Test properties."""
+features_dict = {'time': np.arange(100)}
+features_df = pd.DataFrame(features_dict)
+
+
+@pytest.mark.parametrize("features", [{}, features_dict, features_df])
+def test_track_layer_features(features):
+    data = np.zeros((100, 4))
+    data[:, 1] = np.arange(100)
+    layer = Tracks(data, features=features)
+    for k, v in features.items():
+        np.testing.assert_equal(layer.features[k].to_numpy(), v)
+
+
+@pytest.mark.parametrize("features", [{}, features_dict, features_df])
+def test_track_layer_features_flipped(features):
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
     data[:, 0] = np.arange(100)
     data = np.flip(data, axis=0)
-    layer = Tracks(data, properties=properties)
-    for k, v in properties.items():
-        np.testing.assert_equal(layer.properties[k], np.flip(v))
+    layer = Tracks(data, features=features)
+    for k, v in features.items():
+        np.testing.assert_equal(layer.features[k].to_numpy(), np.flip(v))
 
 
 @pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")
 def test_track_layer_colorby_nonexistent():
-    """Test error handling for non-existent properties with color_by"""
+    """Test error handling for non-existent features with color_by"""
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
-    non_existant_property = 'not_a_valid_key'
-    assert non_existant_property not in properties_dict.keys()
+    non_existent_feature = 'not_a_valid_key'
+    assert non_existent_feature not in features_dict.keys()
     with pytest.raises(ValueError):
-        Tracks(
-            data, properties=properties_dict, color_by=non_existant_property
-        )
+        Tracks(data, features=features_dict, color_by=non_existent_feature)
 
 
 @pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")
-def test_track_layer_properties_changed_colorby():
-    """Test behaviour when changes to properties invalidate current color_by"""
-    properties_dict_1 = {'time': np.arange(100), 'prop1': np.arange(100)}
-    properties_dict_2 = {'time': np.arange(100), 'prop2': np.arange(100)}
+def test_track_layer_features_changed_colorby():
+    """Test behaviour when changes to features invalidate current color_by"""
+    features_dict_1 = {'time': np.arange(100), 'prop1': np.arange(100)}
+    features_dict_2 = {'time': np.arange(100), 'prop2': np.arange(100)}
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
-    layer = Tracks(data, properties=properties_dict_1, color_by='prop1')
+    layer = Tracks(data, features=features_dict_1, color_by='prop1')
     # test warning is raised
     with pytest.warns(UserWarning):
-        layer.properties = properties_dict_2
+        layer.features = features_dict_2
     # test default fallback
     assert layer.color_by == 'track_id'
 
@@ -148,9 +160,9 @@ def test_track_layer_reset_data():
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
     data[50:, 0] = 1
-    properties = {'time': data[:, 1]}
+    features = {'time': data[:, 1]}
     graph = {1: [0]}
-    layer = Tracks(data, graph=graph, properties=properties)
+    layer = Tracks(data, graph=graph, features=features)
     cropped_data = data[:10, :]
     layer.data = cropped_data
     assert np.all(layer.data == cropped_data)

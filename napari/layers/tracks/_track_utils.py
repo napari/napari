@@ -331,6 +331,7 @@ class TrackManager:
     def vertex_properties(self, color_by: str) -> np.ndarray:
         """return the properties of tracks by vertex"""
 
+        # TODO: rename to features here?
         if color_by not in self.properties:
             raise ValueError(
                 trans._(
