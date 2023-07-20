@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple
+from typing import Iterable, List, TYPE_CHECKING, Tuple
 
 import numpy as np
-from skimage.draw import line, polygon, polygon2mask
+from skimage.draw import line, polygon
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
@@ -898,34 +898,9 @@ def path_to_indices(shape, vertices):
     return indices
 
 
-def path_to_mask(target_shape, vertices):
-    """Converts a path to a boolean mask with `True` for points lying along
-    each edge.
-
-    Parameters
-    ----------
-    target_shape : array (2,)
-        Shape of mask to be generated.
-    vertices : array (N, 2)
-        Vertices of the path.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points along the path
-
-    """
-    mask = np.zeros(target_shape, dtype=bool)
-    iis, jjs = path_to_indices(target_shape, vertices)
-    mask[iis, jjs] = 1
-
-    return mask
-
-
 def poly_to_indices(target_shape, vertices):
-    """Converts a polygon to a boolean mask with `True` for points
-    lying inside the shape. Uses the bounding box of the vertices to reduce
-    computation time.
+    """Converts a polygon to indices for points lying inside the shape. 
+    Uses the bounding box of the vertices to reduce computation time.
 
     Parameters
     ----------
@@ -944,26 +919,6 @@ def poly_to_indices(target_shape, vertices):
         Boolean array with `True` for points inside the polygon
     """
     return polygon(vertices[:, -2], vertices[:, -1], shape=target_shape)
-
-
-def poly_to_mask(target_shape, vertices):
-    """Converts a polygon to a boolean mask with `True` for points
-    lying inside the shape. Uses the bounding box of the vertices to reduce
-    computation time.
-
-    Parameters
-    ----------
-    target_shape : np.ndarray | tuple
-        1x2 array of shape of mask to be generated.
-    vertices : np.ndarray
-        Nx2 array of the vertices of the polygon.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points inside the polygon
-    """
-    return polygon2mask(target_shape, vertices)
 
 
 def grid_points_in_poly(shape, vertices):
@@ -1269,3 +1224,31 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
     # When epsilon is 0, avoid removing datapoints
     return vertices
+
+
+def get_constant_and_variable_subiterables(iterable: Iterable) -> Tuple[List[int], List[int]]:
+    """Returns the indices of constant and variable subiterables.
+    
+    Check if the elements of the subiterables are constant (all 
+    identical) or variabel. Returns the indices as tuple;
+    list of constant subiterable indices first.
+    
+    Parameters
+    ----------
+    iterable : Iterable
+        Iterable containing subiterables.
+    
+    Returns
+    ------
+    tuple[list[int], List[int]]
+        Tuple of size two containing list with the indices of all 
+        constant respectifly variable subiterables.
+    """
+    variable_dims = []
+    constant_dims = []
+    for idx, dim in enumerate(iterable):
+        if len(set(dim)) > 1:
+            variable_dims += [idx]
+        else:
+            constant_dims += [idx]
+    return constant_dims, variable_dims
