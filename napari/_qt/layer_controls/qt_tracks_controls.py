@@ -36,14 +36,13 @@ class QtTracksControls(QtLayerControls):
         self.layer.events.tail_width.connect(self._on_tail_width_change)
         self.layer.events.tail_length.connect(self._on_tail_length_change)
         self.layer.events.head_length.connect(self._on_head_length_change)
-        self.layer.events.properties.connect(self._on_properties_change)
+        self.layer.events.features.connect(self._on_features_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.color_by.connect(self._on_color_by_change)
 
-        # combo box for track coloring, we can get these from the properties
-        # keys
+        # combo box for track coloring, we can get these from the features
         self.color_by_combobox = QComboBox()
-        self.color_by_combobox.addItems(self.layer.properties_to_color_by)
+        self.color_by_combobox.addItems(self.layer.features_to_color_by)
 
         self.colormap_combobox = QComboBox()
         for name, colormap in AVAILABLE_COLORMAPS.items():
@@ -121,11 +120,11 @@ class QtTracksControls(QtLayerControls):
             value = self.layer.head_length
             self.head_length_slider.setValue(value)
 
-    def _on_properties_change(self):
-        """Change the properties that can be used to color the tracks."""
+    def _on_features_change(self):
+        """Change the features that can be used to color the tracks."""
         with qt_signals_blocked(self.color_by_combobox):
             self.color_by_combobox.clear()
-            self.color_by_combobox.addItems(self.layer.properties_to_color_by)
+            self.color_by_combobox.addItems(self.layer.features_to_color_by)
         self._on_color_by_change()
 
     def _on_colormap_change(self):

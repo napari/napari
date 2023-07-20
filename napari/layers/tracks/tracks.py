@@ -10,8 +10,13 @@ import pandas as pd
 
 from napari.layers.base import Layer
 from napari.layers.tracks._track_utils import TrackManager
+from napari.layers.utils.layer_utils import (
+    _properties_deprecation_message,
+    _warn_deprecation,
+)
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events import Event
+from napari.utils.events.event import WarningEmitter
 from napari.utils.translations import trans
 
 
@@ -153,12 +158,16 @@ class Tracks(Layer):
             display_graph=Event,
             color_by=Event,
             colormap=Event,
-            properties=Event,
+            properties=WarningEmitter(
+                _properties_deprecation_message(),
+                type_name='properties',
+            ),
+            features=Event,
             rebuild_tracks=Event,
             rebuild_graph=Event,
         )
 
-        # track manager deals with data slicing, graph building and properties
+        # track manager deals with data slicing, graph building, and features
         self._manager = TrackManager()
         self._track_colors = None
         self._colormaps_dict = colormaps_dict or {}  # additional colormaps
@@ -172,7 +181,7 @@ class Tracks(Layer):
         self._max_length = 300
         self._max_width = 20
 
-        # track display properties
+        # track display features
         self.tail_width = tail_width
         self.tail_length = tail_length
         self.head_length = head_length
@@ -183,9 +192,9 @@ class Tracks(Layer):
         # set the data, features, and graph
         self.data = data
         if properties is not None:
-            self.properties = properties
-        else:
-            self.features = features
+            _warn_deprecation(_properties_deprecation_message())
+            features = properties
+        self.features = features
         self.graph = graph or {}
 
         self.color_by = color_by
@@ -228,7 +237,7 @@ class Tracks(Layer):
         state.update(
             {
                 'data': self.data,
-                'properties': self.properties,
+                'properties': self._manager.properties,
                 'graph': self.graph,
                 'color_by': self.color_by,
                 'colormap': self.colormap,
@@ -239,6 +248,9 @@ class Tracks(Layer):
                 'features': self.features,
             }
         )
+        state.deprecations = {
+            'properties': _properties_deprecation_message(),
+        }
         return state
 
     def _set_view_slice(self):
@@ -414,18 +426,32 @@ class Tracks(Layer):
         self.events.properties()
 
     @property
+    def features_to_color_by(self) -> List[str]:
+        """track features that can be used for coloring etc..."""
+        return list(self.features.columns)
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
+        _warn_deprecation(_properties_deprecation_message())
         return self._manager.properties
 
     @property
     def properties_to_color_by(self) -> List[str]:
         """track properties that can be used for coloring etc..."""
+        _warn_deprecation(
+            trans._(
+                'properties_to_color_by was deprecated in version 0.5.0 and will be removed in 0.6. '
+                'Please use features_to_color_by instead.',
+                deferred=True,
+            )
+        )
         return list(self.properties.keys())
 
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """set track properties"""
+        _warn_deprecation(_properties_deprecation_message())
         self.features = properties
 
     @property
@@ -510,11 +536,11 @@ class Tracks(Layer):
 
     @color_by.setter
     def color_by(self, color_by: str):
-        """set the property to color vertices by"""
-        if color_by not in self.properties_to_color_by:
+        """set the feature to color vertices by"""
+        if color_by not in self.features_to_color_by:
             raise ValueError(
                 trans._(
-                    '{color_by} is not a valid property key',
+                    '{color_by} is not a valid feature',
                     deferred=True,
                     color_by=color_by,
                 )
@@ -555,9 +581,9 @@ class Tracks(Layer):
         """recolor the tracks"""
 
         # this catch prevents a problem coloring the tracks if the data is
-        # updated before the properties are. properties should always contain
+        # updated before the features are. features should always contain
         # a track_id key
-        if self.color_by not in self.properties_to_color_by:
+        if self.color_by not in self.features_to_color_by:
             self._color_by = 'track_id'
             self.events.color_by()
 

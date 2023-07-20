@@ -14,7 +14,7 @@ def null_data() -> np.ndarray:
 
 
 @pytest.fixture
-def properties() -> Dict[str, List]:
+def features() -> Dict[str, List]:
     return {
         'track_id': [0, 0],
         'time': [0, 0],
@@ -22,20 +22,18 @@ def properties() -> Dict[str, List]:
     }
 
 
-def test_tracks_controls_color_by(null_data, properties, qtbot):
+def test_tracks_controls_color_by(null_data, features, qtbot):
     """Check updating of the color_by combobox."""
-    inital_color_by = 'time'
+    initial_color_by = 'time'
     with pytest.warns(UserWarning) as wrn:
-        layer = Tracks(
-            null_data, properties=properties, color_by=inital_color_by
-        )
+        layer = Tracks(null_data, features=features, color_by=initial_color_by)
     assert "Previous color_by key 'time' not present" in str(wrn[0].message)
     qtctrl = QtTracksControls(layer)
     qtbot.addWidget(qtctrl)
 
     # verify the color_by argument is initialized correctly
-    assert layer.color_by == inital_color_by
-    assert qtctrl.color_by_combobox.currentText() == inital_color_by
+    assert layer.color_by == initial_color_by
+    assert qtctrl.color_by_combobox.currentText() == initial_color_by
 
     # update color_by from the layer model
     layer_update_color_by = 'speed'
@@ -54,44 +52,42 @@ def test_tracks_controls_color_by(null_data, properties, qtbot):
 
 
 @pytest.mark.parametrize('color_by', ('track_id', 'speed'))
-def test_color_by_same_after_properties_change(
-    null_data, properties, color_by, qtbot
+def test_color_by_same_after_features_change(
+    null_data, features, color_by, qtbot
 ):
     """See https://github.com/napari/napari/issues/5330"""
-    layer = Tracks(null_data, properties=properties)
+    layer = Tracks(null_data, features=features)
     layer.color_by = color_by
     controls = QtTracksControls(layer)
     qtbot.addWidget(controls)
     assert controls.color_by_combobox.currentText() == color_by
 
-    # Change the properties value by removing the time column.
-    layer.properties = {
-        'track_id': properties['track_id'],
-        'speed': properties['speed'],
+    # Change the features value by removing the time column.
+    layer.features = {
+        'track_id': features['track_id'],
+        'speed': features['speed'],
     }
 
     assert layer.color_by == color_by
     assert controls.color_by_combobox.currentText() == color_by
 
 
-def test_color_by_missing_after_properties_change(
-    null_data, properties, qtbot
-):
+def test_color_by_missing_after_features_change(null_data, features, qtbot):
     """See https://github.com/napari/napari/issues/5330"""
-    layer = Tracks(null_data, properties=properties)
+    layer = Tracks(null_data, features=features)
     layer.color_by = 'time'
     controls = QtTracksControls(layer)
     qtbot.addWidget(controls)
     assert controls.color_by_combobox.currentText() == 'time'
 
-    # Change the properties value by removing the time column.
+    # Change the features value by removing the time column.
     with pytest.warns(
         UserWarning,
         match="Previous color_by key 'time' not present in features. Falling back to track_id",
     ):
-        layer.properties = {
-            'track_id': properties['track_id'],
-            'speed': properties['speed'],
+        layer.features = {
+            'track_id': features['track_id'],
+            'speed': features['speed'],
         }
 
     assert layer.color_by == 'track_id'
