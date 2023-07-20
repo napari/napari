@@ -417,7 +417,7 @@ class Shape(ABC):
             )
             
         if self._use_face_vertices:
-            vertices, triangles = triangulate_face(data[vdims])
+            vertices, triangles = triangulate_face(data[vdims].T)
         else:
             vertices = data[vdims].T
 
