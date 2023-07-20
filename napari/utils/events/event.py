@@ -300,7 +300,7 @@ class EventEmitter:
         self._blocked: Dict[Optional[Callback], int] = {None: 0}
         self._block_counter: _WeakCounter[Optional[Callback]] = _WeakCounter()
         self._delay_semaphore: int = 0
-        self._delay_last_event: Optional[Event] = None
+        self._last_delayed_event: Optional[Event] = None
 
         # used to detect emitter loops
         self._emitting = False
@@ -727,7 +727,7 @@ class EventEmitter:
         event = self._prepare_event(*args, **kwargs)
 
         if self._delay_semaphore:
-            self._delay_last_event = event
+            self._last_delayed_event = event
             return event
         # Add our source to the event; remove it after all callbacks have been
         # invoked.
@@ -896,9 +896,9 @@ class EventEmitter:
         self._delay_semaphore -= 1
         if self._delay_semaphore < 0:
             raise RuntimeError("there is no waiting delay event")
-        if not self._delay_semaphore and self._delay_last_event is not None:
-            event = self._delay_last_event
-            self._delay_last_event = None
+        if not self._delay_semaphore and self._last_delayed_event is not None:
+            event = self._last_delayed_event
+            self._last_delayed_event = None
             self(event)
 
     def delayer(self):
