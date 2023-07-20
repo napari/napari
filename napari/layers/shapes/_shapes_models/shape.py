@@ -10,8 +10,8 @@ from napari.layers.shapes._shapes_utils import (
     path_to_indices,
     poly_to_indices,
     triangulate_edge,
-    triangulate_face,
     triangulate_ellipse,
+    triangulate_face,
 )
 from napari.utils.translations import trans
 
