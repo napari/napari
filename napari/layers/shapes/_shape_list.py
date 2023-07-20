@@ -1171,7 +1171,7 @@ class ShapeList:
         ]
 
         return indices
-    
+
     def to_masks(
         self,
         target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
