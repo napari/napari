@@ -63,8 +63,10 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
     QtViewerDockWidget,
 )
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
-from napari.plugins import menu_item_template as plugin_menu_item_template
-from napari.plugins import plugin_manager
+from napari.plugins import (
+    menu_item_template as plugin_menu_item_template,
+    plugin_manager,
+)
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
@@ -73,7 +75,7 @@ from napari.utils.misc import (
     in_ipython,
     in_jupyter,
     in_python_repl,
-    running_as_bundled_app,
+    running_as_constructor_app,
 )
 from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
@@ -129,6 +131,7 @@ class _QtMainWindow(QMainWindow):
         self._window_pos = None
         self._old_size = None
         self._positions = []
+        self._toggle_menubar_visibility = False
 
         self._is_close_dialog = {False: True, True: True}
         # this ia sa workaround for #5335 issue. The dict is used to not
@@ -142,6 +145,10 @@ class _QtMainWindow(QMainWindow):
         self._activity_dialog = act_dlg
 
         self.setStatusBar(ViewerStatusBar(self))
+
+        # Prevent QLineEdit based widgets to keep focus even when clicks are
+        # done outside the widget. See #1571
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         settings = get_settings()
 
@@ -158,9 +165,7 @@ class _QtMainWindow(QMainWindow):
         # we need to manually connect them again.
         handle = self.windowHandle()
         if handle is not None:
-            handle.screenChanged.connect(
-                self._qt_viewer.canvas._backend.screen_changed
-            )
+            handle.screenChanged.connect(self._qt_viewer.canvas.screen_changed)
 
         # this is the line that initializes any Qt-based app-model Actions that
         # were defined somewhere in the `_qt` module and imported in init_qactions
@@ -273,6 +278,32 @@ class _QtMainWindow(QMainWindow):
         else:
             super().showFullScreen()
 
+    def eventFilter(self, source, event):
+        # Handle showing hidden menubar on mouse move event.
+        # We do not hide menubar when a menu is being shown or
+        # we are not in menubar toggled state
+        if (
+            QApplication.activePopupWidget() is None
+            and self._toggle_menubar_visibility
+        ):
+            if event.type() == QEvent.MouseMove:
+                if self.menuBar().isHidden():
+                    rect = self.geometry()
+                    # set mouse-sensitive zone to trigger showing the menubar
+                    rect.setHeight(25)
+                    if rect.contains(event.globalPos()):
+                        self.menuBar().show()
+                else:
+                    rect = QRect(
+                        self.menuBar().mapToGlobal(QPoint(0, 0)),
+                        self.menuBar().size(),
+                    )
+                    if not rect.contains(event.globalPos()):
+                        self.menuBar().hide()
+            elif event.type() == QEvent.Leave and source is self:
+                self.menuBar().hide()
+        return QMainWindow.eventFilter(self, source, event)
+
     def _load_window_settings(self):
         """
         Load window layout settings from configuration.
@@ -285,9 +316,10 @@ class _QtMainWindow(QMainWindow):
         if not window_position:
             window_position = (self.x(), self.y())
         else:
-            width, height = window_position
-            screen_geo = QApplication.primaryScreen().geometry()
-            if screen_geo.width() < width or screen_geo.height() < height:
+            origin_x, origin_y = window_position
+            screen = QApplication.screenAt(QPoint(origin_x, origin_y))
+            screen_geo = screen.geometry() if screen else None
+            if not screen_geo:
                 window_position = (self.x(), self.y())
 
         return (
@@ -515,11 +547,21 @@ class _QtMainWindow(QMainWindow):
         process = QProcess()
         process.setProgram(sys.executable)
 
-        if not running_as_bundled_app():
+        if not running_as_constructor_app():
             process.setArguments(sys.argv)
 
         process.startDetached()
         self.close(quit_app=True)
+
+    def toggle_menubar_visibility(self):
+        """
+        Change menubar to be shown or to be hidden and shown on mouse movement.
+
+        For the mouse movement functionality see the `eventFilter` implementation.
+        """
+        self._toggle_menubar_visibility = not self._toggle_menubar_visibility
+        self.menuBar().setVisible(not self._toggle_menubar_visibility)
+        return self._toggle_menubar_visibility
 
     @staticmethod
     @Slot(Notification)
@@ -553,7 +595,7 @@ class Window:
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
-        get_app()
+        qapp = get_app()
 
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[
@@ -563,6 +605,7 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
+        qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
@@ -753,8 +796,8 @@ class Window:
         show the menubar, since menubar shortcuts are only available while the
         menubar is visible.
         """
-        self.main_menu.setVisible(not self.main_menu.isVisible())
-        self._main_menu_shortcut.setEnabled(not self.main_menu.isVisible())
+        toggle_menubar_visibility = self._qt_window.toggle_menubar_visibility()
+        self._main_menu_shortcut.setEnabled(toggle_menubar_visibility)
 
     def _toggle_fullscreen(self):
         """Toggle fullscreen mode."""
@@ -1332,7 +1375,7 @@ class Window:
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         size : tuple (int, int)
-            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
         scale : float
             Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
@@ -1364,12 +1407,12 @@ class Window:
                     int(dim / self._qt_window.devicePixelRatio())
                     for dim in size
                 )
-                canvas.size = size[::-1]  # invert x ad y for vispy
+                canvas.size = size
             if scale is not None:
                 # multiply canvas dimensions by the scale factor to get new size
                 canvas.size = tuple(int(dim * scale) for dim in canvas.size)
             try:
-                img = self._qt_viewer.canvas.native.grabFramebuffer()
+                img = canvas.screenshot()
                 if flash:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:

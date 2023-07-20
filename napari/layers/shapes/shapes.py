@@ -9,6 +9,7 @@ import pandas as pd
 from vispy.color import get_color_names
 
 from napari.layers.base import Layer, no_op
+from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -25,10 +26,11 @@ from napari.layers.shapes._shapes_mouse_bindings import (
     add_ellipse,
     add_line,
     add_path_polygon,
-    add_path_polygon_creating,
+    add_path_polygon_lasso,
     add_rectangle,
     finish_drawing_shape,
     highlight,
+    polygon_creating,
     select,
     vertex_insert,
     vertex_remove,
@@ -39,6 +41,7 @@ from napari.layers.shapes._shapes_utils import (
     get_default_shape_type,
     get_shape_ndim,
     number_of_shapes,
+    rdp,
     validate_num_vertices,
 )
 from napari.layers.utils.color_manager_utils import (
@@ -55,6 +58,7 @@ from napari.layers.utils.interactivity_utils import (
 )
 from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
 from napari.layers.utils.text_manager import TextManager
+from napari.settings import get_settings
 from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from napari.utils.colormaps.colormap_utils import ColorType
 from napari.utils.colormaps.standardize_color import (
@@ -336,6 +340,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: add_line,
         Mode.ADD_PATH: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
+        Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
 
     _move_modes = {
@@ -348,8 +353,9 @@ class Shapes(Layer):
         Mode.ADD_RECTANGLE: no_op,
         Mode.ADD_ELLIPSE: no_op,
         Mode.ADD_LINE: no_op,
-        Mode.ADD_PATH: add_path_polygon_creating,
-        Mode.ADD_POLYGON: add_path_polygon_creating,
+        Mode.ADD_PATH: polygon_creating,
+        Mode.ADD_POLYGON: polygon_creating,
+        Mode.ADD_POLYGON_LASSO: polygon_creating,
     }
 
     _double_click_modes = {
@@ -364,6 +370,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
+        Mode.ADD_POLYGON_LASSO: no_op,
     }
 
     _cursor_modes = {
@@ -378,6 +385,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: 'cross',
         Mode.ADD_PATH: 'cross',
         Mode.ADD_POLYGON: 'cross',
+        Mode.ADD_POLYGON_LASSO: 'cross',
     }
 
     _interactive_modes = {
@@ -498,6 +506,7 @@ class Shapes(Layer):
         self._selected_data_stored = set()
         self._selected_data_history = set()
         self._selected_box = None
+        self._last_cursor_position = None
 
         self._drag_start = None
         self._fixed_vertex = None
@@ -1998,7 +2007,12 @@ class Shapes(Layer):
                 face_color=face_color,
                 z_index=z_index,
             )
-            self.events.data(value=self.data)
+            self.events.data(
+                value=self.data,
+                action=ActionType.ADD.value,
+                data_indices=(-1,),
+                vertex_indices=((),),
+            )
 
     def _init_shapes(
         self,
@@ -2400,6 +2414,7 @@ class Shapes(Layer):
                     Mode.DIRECT,
                     Mode.ADD_PATH,
                     Mode.ADD_POLYGON,
+                    Mode.ADD_POLYGON_LASSO,
                     Mode.ADD_RECTANGLE,
                     Mode.ADD_ELLIPSE,
                     Mode.ADD_LINE,
@@ -2491,12 +2506,27 @@ class Shapes(Layer):
                 self._data_view.remove(index)
             else:
                 self._data_view.edit(index, vertices[:-1])
-        if self._is_creating is True and self._mode == Mode.ADD_POLYGON:
+        if self._is_creating is True and (
+            self._mode
+            in {
+                Mode.ADD_POLYGON,
+                Mode.ADD_POLYGON_LASSO,
+            }
+        ):
             vertices = self._data_view.shapes[index].data
             if len(vertices) <= 3:
                 self._data_view.remove(index)
-            else:
+            elif self._mode == Mode.ADD_POLYGON:
                 self._data_view.edit(index, vertices[:-1])
+            else:
+                vertices = rdp(
+                    vertices, epsilon=get_settings().experimental.rdp_epsilon
+                )
+                self._data_view.edit(
+                    index,
+                    vertices[:-1],
+                    new_type=shape_classes[ShapeType.POLYGON],
+                )
         self._is_creating = False
         self._update_dims()
 
@@ -2564,7 +2594,14 @@ class Shapes(Layer):
             )
         self.selected_data = set()
         self._finish_drawing()
-        self.events.data(value=self.data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.REMOVE.value,
+            data_indices=tuple(
+                index,
+            ),
+            vertex_indices=((),),
+        )
 
     def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.

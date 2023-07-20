@@ -40,12 +40,6 @@ from strings_list import (
     SKIP_WORDS_GLOBAL,
 )
 
-# this import is required for octree, but since the env var
-# isn't triggering it properly, I've added it here to avoid errors
-from napari._vispy.experimental.vispy_tiled_image_layer import (
-    VispyTiledImageLayer,
-)
-
 REPO_ROOT = Path(__file__).resolve()
 NAPARI_MODULE = (REPO_ROOT / "napari").relative_to(REPO_ROOT)
 
@@ -427,10 +421,9 @@ def import_module_by_path(fpath: str) -> Optional[ModuleType]:
 
     fpath = fpath.replace("\\", "/")
     module_name = fpath.replace(".py", "").replace("/", ".")
+
     try:
-        spec = importlib.util.spec_from_file_location(module_name, fpath)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        module = importlib.import_module(module_name)
     except ModuleNotFoundError:
         module = None
 
@@ -535,7 +528,7 @@ def test_missing_translations(checks):
         unique_values = set()
         for line, value in values:
             unique_values.add(value)
-            print(f"{line}:\t{repr(value)}")
+            print(f"{line}:\t{value!r}")
 
         print("\n")
 
@@ -544,14 +537,14 @@ def test_missing_translations(checks):
                 f"List below can be copied directly to `tools/strings_list.py` file inside the '{fpath}' key:\n"
             )
             for value in sorted(unique_values):
-                print(f"        {repr(value)},")
+                print(f"        {value!r},")
         else:
             print(
                 "List below can be copied directly to `tools/strings_list.py` file:\n"
             )
-            print(f"    {repr(fpath)}: [")
+            print(f"    {fpath!r}: [")
             for value in sorted(unique_values):
-                print(f"        {repr(value)},")
+                print(f"        {value!r},")
             print("    ],")
 
         print("\n")
@@ -584,7 +577,7 @@ def test_translation_errors(checks):
     for fpath, errors in trans_errors.items():
         print(f"{fpath}\n{'*' * len(fpath)}")
         for string, variables in errors:
-            print(f"String:\t\t{repr(string)}")
+            print(f"String:\t\t{string!r}")
             print(
                 f"Variables:\t{', '.join(repr(value) for value in variables)}"
             )
@@ -612,8 +605,40 @@ RED = "\x1b[1;31m"
 NORMAL = "\x1b[1;0m"
 
 
+def print_colored_diff(old, new):
+    lines = list(difflib.unified_diff(old.splitlines(), new.splitlines()))
+    for line in lines[2:]:
+        if line.startswith('-'):
+            print(f"{RED}{line}{NORMAL}")
+        elif line.startswith('+'):
+            print(f"{GREEN}{line}{NORMAL}")
+        else:
+            print(line)
+
+
+def clear_screen():
+    print(chr(27) + "[2J")
+
+
+def _compute_autosugg(raw_code, text):
+    raw_code[:]
+    start = raw_code.find(f"'{text}'")
+    if start == -1:
+        start = raw_code.find(f'"{text}"')
+    if start == -1:
+        return None, False
+    stop = start + len(text) + 2
+    rawt = raw_code[start:stop]
+
+    sugg = raw_code[:start] + 'trans._(' + rawt + ')' + raw_code[stop:]
+    if sugg[start - 1] == 'f':
+        return None, False
+    return sugg, True
+
+
 if __name__ == '__main__':
     issues, outdated_strings, trans_errors = _checks()
+    import difflib
     import json
     import pathlib
 
@@ -631,13 +656,9 @@ if __name__ == '__main__':
 
     n_issues = sum([len(m) for m in issues.values()])
 
-    print()
-    print(
-        f"{RED}=== About {n_issues} items  in {len(issues)} files to review ==={NORMAL}"
-    )
-    print()
     for file, missing in issues.items():
-        code = Path(file).read_text().splitlines()
+        raw_code = Path(file).read_text()
+        code = raw_code.splitlines()
         if break_:
             break
         for line, text in missing:
@@ -646,21 +667,36 @@ if __name__ == '__main__':
             # in the same file.
             if text in data['SKIP_WORDS'].get(file, []):
                 continue
+
+            sugg, autosugg = _compute_autosugg(raw_code, text)
+
+            clear_screen()
+            print(
+                f"{RED}=== About {n_issues} items  in {len(issues)} files to review ==={NORMAL}"
+            )
+
             print()
             print(f"{RED}{file}:{line}{NORMAL}", GREEN, repr(text), NORMAL)
+            if autosugg:
+                print_colored_diff(raw_code, sugg)
+            else:
+                print(f"{RED}f-string nedds manual intervention{NORMAL}")
+                for lt in code[line - 3 : line - 1]:
+                    print(' ', lt)
+                print('>', code[line - 1].replace(text, GREEN + text + NORMAL))
+                for lt in code[line : line + 3]:
+                    print(' ', lt)
             print()
-            for lt in code[line - 3 : line - 1]:
-                print(' ', lt)
-            print('>', code[line - 1].replace(text, GREEN + text + NORMAL))
-            for lt in code[line : line + 3]:
-                print(' ', lt)
 
             print()
             print(
                 f"{RED}i{NORMAL} : ignore -  add to ignored localised strings"
             )
-            print(f"{RED}q{NORMAL} : quit -  quit w/o saving")
             print(f"{RED}c{NORMAL} : continue -  go to next")
+            if autosugg:
+                print(f"{RED}a{NORMAL} : Apply Auto suggestion")
+            else:
+                print("- : Auto suggestion  not available here")
             if edit_cmd:
                 print(f"{RED}e{NORMAL} : EDIT - using {edit_cmd!r}")
             else:
@@ -671,6 +707,11 @@ if __name__ == '__main__':
             print('> ', end='')
             sys.stdout.flush()
             val = getch()
+            if val == 'a' and autosugg:
+                content = Path(file).read_text()
+                new_content, _ = _compute_autosugg(content, text)
+                Path(file).write_text(new_content)
+
             if val == 'e' and edit_cmd:
                 subprocess.run(
                     edit_cmd.format(filename=file, linenumber=line).split(' ')
@@ -687,5 +728,5 @@ if __name__ == '__main__':
                 break_ = True
                 break
 
-    pth.write_text(json.dumps(data, indent=2, sort_keys=True))
+    pth.write_text(json.dumps(data, indent=4, sort_keys=True))
     # test_outdated_string_skips(issues, outdated_strings, trans_errors)

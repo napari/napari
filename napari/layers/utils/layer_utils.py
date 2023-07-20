@@ -2,7 +2,18 @@ from __future__ import annotations
 
 import functools
 import inspect
-from typing import Any, Dict, List, Optional, Sequence, Union
+import warnings
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import dask
 import numpy as np
@@ -13,12 +24,43 @@ from napari.utils.events.custom_types import Array
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from typing import Mapping
+
+    import numpy.typing as npt
+
+
+class Extent(NamedTuple):
+    """Extent of coordinates in a local data space and world space.
+
+    Each extent is a (2, D) array that stores the minimum and maximum coordinate
+    values in each of D dimensions. Both the minimum and maximum coordinates are
+    inclusive so form an axis-aligned, closed interval or a D-dimensional box
+    around all the coordinates.
+
+    Attributes
+    ----------
+    data : (2, D) array of floats
+        The minimum and maximum raw data coordinates ignoring any transforms like
+        translation or scale.
+    world : (2, D) array of floats
+        The minimum and maximum world coordinates after applying a transform to the
+        raw data coordinates that brings them into a potentially shared world space.
+    step : (D,) array of floats
+        The step in each dimension that when taken from the minimum world coordinate,
+        should form a regular grid that eventually hits the maximum world coordinate.
+    """
+
+    data: np.ndarray
+    world: np.ndarray
+    step: np.ndarray
+
 
 def register_layer_action(
     keymapprovider,
     description: str,
     repeatable: bool = False,
-    shortcuts: str = None,
+    shortcuts: Optional[str] = None,
 ):
     """
     Convenient decorator to register an action with the current Layers
@@ -162,7 +204,7 @@ def _nanmax(array):
     return max_value
 
 
-def calc_data_range(data, rgb=False):
+def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
@@ -174,8 +216,8 @@ def calc_data_range(data, rgb=False):
 
     Returns
     -------
-    values : list of float
-        Range of values.
+    values : pair of floats
+        Minimum and maximum values in that order.
 
     Notes
     -----
@@ -183,7 +225,9 @@ def calc_data_range(data, rgb=False):
     returned.
     """
     if data.dtype == np.uint8:
-        return [0, 255]
+        return (0, 255)
+
+    center: Union[int, List[int]]
 
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
@@ -234,7 +278,7 @@ def calc_data_range(data, rgb=False):
     if min_val == max_val:
         min_val = 0
         max_val = 1
-    return [float(min_val), float(max_val)]
+    return (float(min_val), float(max_val))
 
 
 def segment_normal(a, b, p=(0, 0, 1)):
@@ -276,7 +320,7 @@ def segment_normal(a, b, p=(0, 0, 1)):
     return unit_norm
 
 
-def convert_to_uint8(data: np.ndarray) -> np.ndarray:
+def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
     """
     Convert array content to uint8, always returning a copy.
 
@@ -450,8 +494,8 @@ def _coerce_current_properties_value(
 
 
 def coerce_current_properties(
-    current_properties: Dict[
-        str, Union[float, str, int, bool, list, tuple, np.ndarray]
+    current_properties: Mapping[
+        str, Union[float, str, int, bool, list, tuple, npt.NDArray]
     ]
 ) -> Dict[str, np.ndarray]:
     """Coerce a current_properties dictionary into the correct type.
@@ -617,11 +661,13 @@ def dims_displayed_world_to_layer(
     else:
         order = dims_displayed_world
     offset = ndim_world - ndim_layer
-    order = np.array(order)
+
+    order_arr = np.array(order)
     if offset <= 0:
-        order = list(range(-offset)) + list(order - offset)
+        order = list(range(-offset)) + list(order_arr - offset)
     else:
-        order = list(order[order >= offset] - offset)
+        order = list(order_arr[order_arr >= offset] - offset)
+
     n_display_world = len(dims_displayed_world)
     if n_display_world > ndim_layer:
         n_display_layer = ndim_layer
@@ -632,7 +678,7 @@ def dims_displayed_world_to_layer(
     return dims_displayed
 
 
-def get_extent_world(data_extent, data_to_world, centered=False):
+def get_extent_world(data_extent, data_to_world, centered=None):
     """Range of layer in world coordinates base on provided data_extent
 
     Parameters
@@ -641,19 +687,23 @@ def get_extent_world(data_extent, data_to_world, centered=False):
         Extent of layer in data coordinates.
     data_to_world : napari.utils.transforms.Affine
         The transform from data to world coordinates.
-    centered : bool
-        If pixels should be centered. By default False.
 
     Returns
     -------
     extent_world : array, shape (2, D)
     """
-    D = data_extent.shape[1]
-    # subtract 0.5 to get from pixel center to pixel edge
-    offset = 0.5 * bool(centered)
-    pixel_extents = tuple(d - offset for d in data_extent.T)
+    if centered is not None:
+        warnings.warn(
+            trans._(
+                'The `centered` argument is deprecated. '
+                'Extents are now always centered on data points.',
+                deferred=True,
+            ),
+            stacklevel=2,
+        )
 
-    full_data_extent = np.array(np.meshgrid(*pixel_extents)).T.reshape(-1, D)
+    D = data_extent.shape[1]
+    full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(-1, D)
     full_world_extent = data_to_world(full_data_extent)
     world_extent = np.array(
         [
@@ -769,7 +819,7 @@ class _FeatureTable:
 
     def set_currents(
         self,
-        currents: Dict[str, np.ndarray],
+        currents: Dict[str, npt.NDArray],
         *,
         update_indices: Optional[List[int]] = None,
     ) -> None:

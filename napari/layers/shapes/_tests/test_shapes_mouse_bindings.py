@@ -1,10 +1,13 @@
 import collections
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
 
 from napari.layers import Shapes
+from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes.shapes import Mode
+from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
@@ -25,7 +28,8 @@ def Event():
         NamedTuple object with fields "type", "is_dragging", and "modifiers".
     """
     return collections.namedtuple(
-        'Event', field_names=['type', 'is_dragging', 'modifiers', 'position']
+        'Event',
+        field_names=['type', 'is_dragging', 'modifiers', 'position', 'pos'],
     )
 
 
@@ -67,6 +71,7 @@ def test_not_adding_or_selecting_shape(create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=(0, 0),
+            pos=(0, 0),
         )
     )
     mouse_press_callbacks(layer, event)
@@ -78,6 +83,7 @@ def test_not_adding_or_selecting_shape(create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=(0, 0),
+            pos=(0, 0),
         )
     )
     mouse_release_callbacks(layer, event)
@@ -102,6 +108,7 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=known_non_shape,
+            pos=known_non_shape,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -114,6 +121,7 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=known_non_shape_end,
+            pos=known_non_shape_end,
         )
     )
     mouse_move_callbacks(layer, event)
@@ -125,6 +133,7 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=known_non_shape_end,
+            pos=known_non_shape_end,
         )
     )
     mouse_release_callbacks(layer, event)
@@ -135,6 +144,137 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer, Event):
     new_shape_max = np.max(layer.data[-1], axis=0)
     np.testing.assert_allclose(new_shape_max, known_non_shape_end)
     assert layer.shape_type[-1] == shape_type
+
+
+def test_polygon_lasso_tablet(create_known_shapes_layer, Event):
+    """Draw polygon with tablet simulated by mouse drag event."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
+
+    get_settings().experimental.rdp_epsilon = 0
+    layer.mode = 'add_polygon_lasso'
+
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            is_dragging=True,
+            modifiers=[],
+            position=desired_shape[0],
+            pos=desired_shape[0],
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    assert layer.shape_type[-1] != 'polygon'
+
+    for coord in desired_shape[1:]:
+        event = ReadOnlyWrapper(
+            Event(
+                type='mouse_move',
+                is_dragging=True,
+                modifiers=[],
+                position=coord,
+                pos=coord,
+            )
+        )
+        mouse_move_callbacks(layer, event)
+
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_release',
+            is_dragging=True,
+            modifiers=[],
+            position=desired_shape[-1],
+            pos=desired_shape[-1],
+        )
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    assert np.array_equal(desired_shape, layer.data[-1])
+    assert layer.shape_type[-1] == 'polygon'
+    assert not layer._is_creating
+
+
+def test_polygon_lasso_mouse(create_known_shapes_layer, Event):
+    """Draw polygon with mouse. Events in sequence are mouse press, release, move, press, release"""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
+
+    get_settings().experimental.rdp_epsilon = 0
+    layer.mode = 'add_polygon_lasso'
+
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=desired_shape[0],
+            pos=desired_shape[0],
+        )
+    )
+    mouse_press_callbacks(layer, event)
+    assert layer.shape_type[-1] != 'polygon'
+
+    for coord in desired_shape[1:]:
+        event = ReadOnlyWrapper(
+            Event(
+                type='mouse_move',
+                is_dragging=False,
+                modifiers=[],
+                position=coord,
+                pos=coord,
+            )
+        )
+        mouse_move_callbacks(layer, event)
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=desired_shape[-1],
+            pos=desired_shape[-1],
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    assert np.array_equal(desired_shape, layer.data[-1])
+    assert layer.shape_type[-1] == 'polygon'
+    assert not layer._is_creating
+
+
+def test_distance_polygon_creating(create_known_shapes_layer, Event):
+    """Test that distance threshold in polygon creating works as intended"""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    # While drawing only 2 of the vertices should be added to shape data because distance threshold is 10
+    vertices = [[x, 0] for x in range(11)]
+    layer.mode = 'add_polygon_lasso'
+
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=vertices[0],
+            pos=vertices[0],
+        )
+    )
+    mouse_press_callbacks(layer, event)
+    for coord in vertices[1:]:
+        event = ReadOnlyWrapper(
+            Event(
+                type='mouse_move',
+                is_dragging=False,
+                modifiers=[],
+                position=coord,
+                pos=coord,
+            )
+        )
+        mouse_move_callbacks(layer, event)
+
+    assert len(layer.data[-1] == 2)
 
 
 @pytest.mark.parametrize('shape_type', ['path', 'polygon'])
@@ -154,6 +294,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
                 is_dragging=False,
                 modifiers=[],
                 position=coord,
+                pos=coord,
             )
         )
         mouse_move_callbacks(layer, event)
@@ -163,6 +304,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
                 is_dragging=False,
                 modifiers=[],
                 position=coord,
+                pos=coord,
             )
         )
         mouse_press_callbacks(layer, event)
@@ -172,6 +314,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
                 is_dragging=False,
                 modifiers=[],
                 position=coord,
+                pos=coord,
             )
         )
         mouse_release_callbacks(layer, event)
@@ -183,6 +326,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=coord,
+            pos=coord,
         )
     )
     assert layer.mouse_double_click_callbacks
@@ -199,6 +343,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     """Add vertex to shape."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
+    layer.events.data = Mock()
     n_coord = len(layer.data[0])
     layer.mode = 'vertex_insert'
     layer.selected_data = {0}
@@ -210,6 +355,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=known_non_shape,
+            pos=known_non_shape,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -221,6 +367,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=known_non_shape,
+            pos=known_non_shape,
         )
     )
     mouse_move_callbacks(layer, event)
@@ -228,6 +375,12 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     # Check new shape added at coordinates
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord + 1
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGE.value,
+        "data_indices": tuple(layer.selected_data),
+        "vertex_indices": ((2,),),
+    }
     np.testing.assert_allclose(
         np.min(abs(layer.data[0] - known_non_shape), axis=0), [0, 0]
     )
@@ -236,10 +389,11 @@ def test_vertex_insert(create_known_shapes_layer, Event):
 def test_vertex_remove(create_known_shapes_layer, Event):
     """Remove vertex from shape."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
-
+    layer.events.data = Mock()
     n_coord = len(layer.data[0])
     layer.mode = 'vertex_remove'
-    layer.selected_data = {0}
+    select = {0}
+    layer.selected_data = select
     position = tuple(layer.data[0][0])
 
     # Simulate click
@@ -249,6 +403,7 @@ def test_vertex_remove(create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -260,10 +415,18 @@ def test_vertex_remove(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_move_callbacks(layer, event)
-
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGE.value,
+        "data_indices": tuple(
+            select,
+        ),
+        "vertex_indices": ((3,),),
+    }
     # Check new shape added at coordinates
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord - 1
@@ -284,6 +447,7 @@ def test_select_shape(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -295,6 +459,7 @@ def test_select_shape(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_release_callbacks(layer, event)
@@ -307,6 +472,7 @@ def test_select_shape(mode, create_known_shapes_layer, Event):
 def test_drag_shape(create_known_shapes_layer, Event):
     """Select and drag vertex."""
     layer, n_shapes, _ = create_known_shapes_layer
+    layer.events.data = Mock()
 
     layer.mode = 'select'
     # Zoom in so as to not select any vertices
@@ -327,6 +493,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -337,6 +504,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_release_callbacks(layer, event)
@@ -355,6 +523,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -365,6 +534,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_move_callbacks(layer, event)
@@ -376,6 +546,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_move_callbacks(layer, event)
@@ -386,13 +557,21 @@ def test_drag_shape(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_release_callbacks(layer, event)
 
     # Check clicked shape selected
+    vertex_indices = (tuple(range(len(layer.data[0]))),)
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGE.value,
+        "data_indices": (0,),
+        "vertex_indices": vertex_indices,
+    }
     np.testing.assert_allclose(layer.data[0], orig_data + np.array([10, 5]))
 
 
@@ -414,6 +593,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -424,6 +604,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_move_callbacks(layer, event)
@@ -437,6 +618,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_move_callbacks(layer, event)
@@ -447,6 +629,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_release_callbacks(layer, event)
@@ -458,7 +641,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
 def test_drag_vertex(create_known_shapes_layer, Event):
     """Select and drag vertex."""
     layer, n_shapes, _ = create_known_shapes_layer
-
+    layer.events.data = Mock()
     layer.mode = 'direct'
     layer.selected_data = {0}
     position = tuple(layer.data[0][0])
@@ -470,6 +653,7 @@ def test_drag_vertex(create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -482,6 +666,7 @@ def test_drag_vertex(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_move_callbacks(layer, event)
@@ -493,13 +678,21 @@ def test_drag_vertex(create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_release_callbacks(layer, event)
 
     # Check clicked shape selected
+    vertex_indices = (tuple(range(len(layer.data[0]))),)
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGE.value,
+        "data_indices": (0,),
+        "vertex_indices": vertex_indices,
+    }
     np.testing.assert_allclose(layer.data[0][-1], [0, 0])
 
 
@@ -532,6 +725,7 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -543,6 +737,7 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_release_callbacks(layer, event)
@@ -568,6 +763,7 @@ def test_unselect_select_shape(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -579,6 +775,7 @@ def test_unselect_select_shape(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=position,
+            pos=position,
         )
     )
     mouse_release_callbacks(layer, event)
@@ -602,6 +799,7 @@ def test_not_selecting_shape(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=known_non_shape,
+            pos=known_non_shape,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -613,6 +811,7 @@ def test_not_selecting_shape(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=known_non_shape,
+            pos=known_non_shape,
         )
     )
     mouse_release_callbacks(layer, event)
@@ -637,6 +836,7 @@ def test_unselecting_shapes(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=known_non_shape,
+            pos=known_non_shape,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -648,6 +848,7 @@ def test_unselecting_shapes(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=known_non_shape,
+            pos=known_non_shape,
         )
     )
     mouse_release_callbacks(layer, event)
@@ -670,6 +871,7 @@ def test_selecting_shapes_with_drag(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=known_non_shape,
+            pos=known_non_shape,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -681,6 +883,7 @@ def test_selecting_shapes_with_drag(mode, create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=known_non_shape,
+            pos=known_non_shape,
         )
     )
     mouse_move_callbacks(layer, event)
@@ -688,7 +891,11 @@ def test_selecting_shapes_with_drag(mode, create_known_shapes_layer, Event):
     # Simulate drag end
     event = ReadOnlyWrapper(
         Event(
-            type='mouse_move', is_dragging=True, modifiers=[], position=(0, 0)
+            type='mouse_move',
+            is_dragging=True,
+            modifiers=[],
+            position=(0, 0),
+            pos=(0, 0),
         )
     )
     mouse_move_callbacks(layer, event)
@@ -700,6 +907,7 @@ def test_selecting_shapes_with_drag(mode, create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=(0, 0),
+            pos=(0, 0),
         )
     )
     mouse_release_callbacks(layer, event)
@@ -722,6 +930,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer, Event):
             is_dragging=False,
             modifiers=[],
             position=known_non_shape,
+            pos=known_non_shape,
         )
     )
     mouse_press_callbacks(layer, event)
@@ -733,6 +942,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=known_non_shape,
+            pos=known_non_shape,
         )
     )
     mouse_move_callbacks(layer, event)
@@ -744,6 +954,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=(50, 60),
+            pos=(50, 60),
         )
     )
     mouse_move_callbacks(layer, event)
@@ -755,6 +966,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer, Event):
             is_dragging=True,
             modifiers=[],
             position=(50, 60),
+            pos=(50, 60),
         )
     )
     mouse_release_callbacks(layer, event)
@@ -807,6 +1019,7 @@ def test_drag_start_selection(
         Event(
             type='mouse_press',
             position=initial_position,
+            pos=initial_position,
             modifiers=modifier,
             is_dragging=True,
         )
@@ -854,6 +1067,7 @@ def test_drag_start_selection(
             type='mouse_move',
             is_dragging=True,
             position=offset_position,
+            pos=offset_position,
             modifiers=modifier,
         )
     )
@@ -883,6 +1097,7 @@ def test_drag_start_selection(
             type='mouse_move',
             is_dragging=True,
             position=offset_position,
+            pos=offset_position,
             modifiers=modifier,
         )
     )
@@ -912,6 +1127,7 @@ def test_drag_start_selection(
             is_dragging=True,
             modifiers=modifier,
             position=offset_position,
+            pos=offset_position,
         )
     )
     mouse_release_callbacks(layer, event)

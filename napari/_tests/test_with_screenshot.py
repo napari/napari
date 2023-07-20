@@ -522,8 +522,7 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     img1_layer = viewer.add_image(img1)
     img2_layer = viewer.add_image(img2)
 
-    # invert shape cause vispy xy is flipped
-    viewer.window._qt_viewer.canvas.size = shape[::-1]
+    viewer.window._qt_viewer.canvas.size = shape
     viewer.camera.zoom = 1
 
     # check that additive behaves correctly with black canvas

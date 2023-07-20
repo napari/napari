@@ -147,10 +147,7 @@ def hash2d_get(key, keys, values, empty_val=0):
             raise KeyError('label does not exist')
         key += 1
         pos = idx_to_2D(key, keys.shape)
-    if keys[pos] == key:
-        return pos
-    else:
-        return None
+    return pos if key[pos] == key else None
 
 
 def hash2d_set(key, value, keys, values, empty_val=0):
@@ -188,6 +185,7 @@ class VispyLabelsLayer(VispyImageLayer):
         )
 
         self.layer.events.color_mode.connect(self._on_colormap_change)
+        self.layer.events.labels_update.connect(self._on_partial_labels_update)
 
     def _on_colormap_change(self, event=None):
         # self.layer.colormap is a labels_colormap, which is an evented model
@@ -225,6 +223,22 @@ class VispyLabelsLayer(VispyImageLayer):
             self.node.shared_program['LUT_shape'] = key_texture.shape
         else:
             self.node.cmap = VispyColormap(*colormap)
+
+    def _on_partial_labels_update(self, event):
+        if not self.layer.loaded:
+            return
+
+        raw_displayed = self.layer._slice.image.raw
+        ndims = len(event.offset)
+
+        if self.node._texture.shape[:ndims] != raw_displayed.shape[:ndims]:
+            self.layer.refresh()
+            return
+
+        self.node._texture.scale_and_set_data(
+            event.data, copy=False, offset=event.offset
+        )
+        self.node.update()
 
 
 class LabelVisual(ImageVisual):
@@ -267,7 +281,7 @@ class LabelNode(BaseLabel):
     def _compute_bounds(self, axis, view):
         if self._data is None:
             return None
-        elif axis > 1:
+        elif axis > 1:  # noqa: RET505
             return (0, 0)
         else:
             return (0, self.size[axis])
