@@ -5,6 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from napari.layers.shapes._shapes_utils import (
+    get_constant_and_variable_subiterables,
     is_collinear,
     path_to_indices,
     poly_to_indices,
@@ -12,9 +13,7 @@ from napari.layers.shapes._shapes_utils import (
     triangulate_face,
     triangulate_ellipse,
 )
-from napari.utils.misc import argsort
 from napari.utils.translations import trans
-from napari.layers.shapes._shapes_utils import get_constant_and_variable_subiterables
 
 
 class Shape(ABC):
@@ -396,10 +395,10 @@ class Shape(ABC):
         # we always need at least two dimensions
         if len(vdims) < 2:
             vdims = list(self.dims_displayed)
-        
+
         if target_shape is None:
             target_shape = np.ceil(data.max(axis=0)).astype('int')
-        
+
         if len(target_shape) == 2:
             embedded = False
             shape_plane = target_shape
@@ -415,20 +414,26 @@ class Shape(ABC):
                     received=len(target_shape),
                 )
             )
-            
+
         if self._use_face_vertices:
             vertices, triangles = triangulate_ellipse(data[vdims].T)
         else:
             vertices = data[vdims].T
 
         if self._filled:
-            indices_p = poly_to_indices(shape_plane, (vertices - offset) * zoom_factor)
+            indices_p = poly_to_indices(
+                shape_plane, (vertices - offset) * zoom_factor
+            )
         else:
-            indices_p = path_to_indices(shape_plane, (vertices - offset) * zoom_factor)
-        
+            indices_p = path_to_indices(
+                shape_plane, (vertices - offset) * zoom_factor
+            )
+
         if embedded:
             indices_e = np.zeros((data.shape[0], len(indices_p[0])), dtype=int)
-            indices_e[cdims] = [np.repeat(data[d, 0], indices_e.shape[1]) for d in cdims]
+            indices_e[cdims] = [
+                np.repeat(data[d, 0], indices_e.shape[1]) for d in cdims
+            ]
             indices_e[vdims] = indices_p
             indices = tuple(indices_e)
         else:

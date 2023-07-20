@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, List, TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Tuple
 
 import numpy as np
 from skimage.draw import line, polygon
@@ -899,7 +899,7 @@ def path_to_indices(shape, vertices):
 
 
 def poly_to_indices(target_shape, vertices):
-    """Converts a polygon to indices for points lying inside the shape. 
+    """Converts a polygon to indices for points lying inside the shape.
     Uses the bounding box of the vertices to reduce computation time.
 
     Parameters
@@ -1226,22 +1226,24 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
     return vertices
 
 
-def get_constant_and_variable_subiterables(iterable: Iterable) -> Tuple[List[int], List[int]]:
+def get_constant_and_variable_subiterables(
+    iterable: Iterable,
+) -> Tuple[List[int], List[int]]:
     """Returns the indices of constant and variable subiterables.
-    
-    Check if the elements of the subiterables are constant (all 
+
+    Check if the elements of the subiterables are constant (all
     identical) or variabel. Returns the indices as tuple;
     list of constant subiterable indices first.
-    
+
     Parameters
     ----------
     iterable : Iterable
         Iterable containing subiterables.
-    
+
     Returns
     ------
     tuple[list[int], List[int]]
-        Tuple of size two containing list with the indices of all 
+        Tuple of size two containing list with the indices of all
         constant respectifly variable subiterables.
     """
     variable_dims = []
