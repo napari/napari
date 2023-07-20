@@ -314,11 +314,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         before = getattr(self, name, object())
         before_deps = {}
-        with warnings.catch_warnings():
-            # we still need to check for deprecated properties
-            warnings.simplefilter("ignore", DeprecationWarning)
-            for dep in dep_with_callbacks:
-                before_deps[dep] = getattr(self, dep, object())
+
+        for dep in dep_with_callbacks:
+            before_deps[dep] = getattr(self, dep, object())
 
         # set value using original setter
         self._super_setattr_(name, value)
