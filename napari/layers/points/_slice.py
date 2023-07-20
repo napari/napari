@@ -3,6 +3,7 @@ from typing import Any
 
 import numpy as np
 
+from napari.layers.base._slice import _next_request_id
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
 
@@ -19,11 +20,14 @@ class _PointSliceResponse:
         Should be broadcastable to indices.
     dims : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
+    request_id : int
+        The identifier of the request from which this was generated.
     """
 
     indices: np.ndarray = field(repr=False)
     scale: Any = field(repr=False)
     dims: _SliceInput
+    request_id: int
 
 
 @dataclass(frozen=True)
@@ -56,12 +60,16 @@ class _PointSliceRequest:
     data_slice: _ThickNDSlice = field(repr=False)
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
+    id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _PointSliceResponse:
         # Return early if no data
         if len(self.data) == 0:
             return _PointSliceResponse(
-                indices=[], scale=np.empty(0), dims=self.dims
+                indices=[],
+                scale=np.empty(0),
+                dims=self.dims,
+                request_id=self.id,
             )
 
         not_disp = list(self.dims.not_displayed)
@@ -72,12 +80,16 @@ class _PointSliceRequest:
                 indices=np.arange(len(self.data), dtype=int),
                 scale=1,
                 dims=self.dims,
+                request_id=self.id,
             )
 
         slice_indices, scale = self._get_slice_data(not_disp)
 
         return _PointSliceResponse(
-            indices=slice_indices, scale=scale, dims=self.dims
+            indices=slice_indices,
+            scale=scale,
+            dims=self.dims,
+            request_id=self.id,
         )
 
     def _get_slice_data(self, not_disp):
@@ -98,7 +110,7 @@ class _PointSliceRequest:
         slice_indices = np.where(inside_slice)[0].astype(int)
 
         if self.out_of_slice_display and self.dims.ndim > 2:
-            sizes = self.size[:, not_disp] / 2
+            sizes = self.size[:, np.newaxis] / 2
 
             # add out of slice points with progressively lower sizes
             dist_from_low = np.abs(data - low)
@@ -109,13 +121,12 @@ class _PointSliceRequest:
 
             # display points that "spill" into the slice
             matches = np.all(distances <= sizes, axis=1)
+            if not np.any(matches):
+                return np.empty(0, dtype=int), 1
             size_match = sizes[matches]
-            size_match[size_match == 0] = 1
             # rescale size of spilling points based on how much they do
             scale_per_dim = (size_match - distances[matches]) / size_match
-            scale_per_dim[size_match == 0] = 1
             scale = np.prod(scale_per_dim, axis=1)
-
             slice_indices = np.where(matches)[0].astype(int)
 
         return slice_indices, scale

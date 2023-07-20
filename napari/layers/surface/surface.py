@@ -256,19 +256,20 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
-        if contrast_limits is None:
-            self._contrast_limits_range = calc_data_range(self._vertex_values)
-        else:
+        if contrast_limits is not None:
             self._contrast_limits_range = contrast_limits
-        self._contrast_limits = tuple(self._contrast_limits_range)
+        else:
+            self._contrast_limits_range = calc_data_range(self._vertex_values)
+
+        self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
 
         # Data containing vectors in the currently viewed slice
         self._data_view = np.zeros((0, self._slice_input.ndisplay))
         self._view_faces = np.zeros((0, 3))
-        self._view_vertex_values = []
-        self._view_vertex_colors = []
+        self._view_vertex_values: Union[List[Any], np.ndarray] = []
+        self._view_vertex_colors: Union[List[Any], np.ndarray] = []
 
         # Trigger generation of view slice and thumbnail.
         # Use _update_dims instead of refresh here because _get_ndim is
@@ -682,7 +683,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             triangles=mesh_triangles,
         )
 
-        if intersection_index is None:
+        if intersection_index is None or intersection is None:
             return None, None
 
         # add the full nD coords to intersection
