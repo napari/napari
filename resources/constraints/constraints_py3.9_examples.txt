@@ -201,7 +201,7 @@ nibabel==5.1.0
     # via nilearn
 nilearn==0.10.1
     # via -r resources/constraints/version_denylist_examples.txt
-npe2==0.7.0
+npe2==0.7.2
     # via
     #   napari (setup.cfg)
     #   napari-plugin-manager
