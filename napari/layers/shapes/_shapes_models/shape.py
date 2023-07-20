@@ -393,8 +393,14 @@ class Shape(ABC):
         data = np.round(self.data).T
         cdims, vdims = get_constant_and_variable_subiterables(data)
         # we always need at least two dimensions
-        if len(vdims) < 2:
+        if not vdims:
+            # if no vdims exist the shape is equal to a point and the
+            # displayed dimensions are good to use
             vdims = list(self.dims_displayed)
+        elif len(vdims) == 1:
+            # if only one dimensions is dynamic the shape is equal to
+            # a line along one axis and any second dimensions is fine
+            vdims =[cdims[-1], *vdims]
 
         if target_shape is None:
             target_shape = np.ceil(data.max(axis=0)).astype('int')
