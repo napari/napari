@@ -10,6 +10,7 @@ from napari.layers.shapes._shapes_utils import (
     poly_to_indices,
     triangulate_edge,
     triangulate_face,
+    triangulate_ellipse,
 )
 from napari.utils.misc import argsort
 from napari.utils.translations import trans
@@ -417,7 +418,7 @@ class Shape(ABC):
             )
             
         if self._use_face_vertices:
-            vertices, triangles = triangulate_face(data[vdims].T)
+            vertices, triangles = triangulate_ellipse(data[vdims].T)
         else:
             vertices = data[vdims].T
 
