@@ -9,12 +9,18 @@ from napari.layers.base import Layer
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
-from napari.layers.utils.layer_utils import _FeatureTable
+from napari.layers.utils.layer_utils import (
+    _FeatureTable,
+    _properties_deprecation_message,
+    _property_choices_deprecation_message,
+    _warn_deprecation,
+)
 from napari.layers.vectors._vector_utils import fix_data_vectors
 from napari.layers.vectors._vectors_constants import VectorStyle
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
 from napari.utils.translations import trans
 
 
@@ -221,7 +227,10 @@ class Vectors(Layer):
             edge_color=Event,
             vector_style=Event,
             edge_color_mode=Event,
-            properties=Event,
+            properties=WarningEmitter(
+                _properties_deprecation_message(),
+                type_name='properties',
+            ),
             out_of_slice_display=Event,
             features=Event,
             feature_defaults=Event,
@@ -236,6 +245,10 @@ class Vectors(Layer):
 
         self._data = data
 
+        if properties is not None:
+            _warn_deprecation(_properties_deprecation_message())
+        if property_choices is not None:
+            _warn_deprecation(_property_choices_deprecation_message())
         self._feature_table = _FeatureTable.from_layer(
             features=features,
             feature_defaults=feature_defaults,
@@ -250,7 +263,7 @@ class Vectors(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=self.properties
+            properties=self._feature_table.properties()
             if self._data.size > 0
             else self._feature_table.currents(),
         )
@@ -349,10 +362,12 @@ class Vectors(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
+        _warn_deprecation(_properties_deprecation_message())
         return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
+        _warn_deprecation(_properties_deprecation_message())
         self.features = properties
 
     @property
@@ -372,6 +387,7 @@ class Vectors(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
+        _warn_deprecation(_property_choices_deprecation_message())
         return self._feature_table.choices()
 
     def _get_state(self):
@@ -395,14 +411,18 @@ class Vectors(Layer):
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
-                'properties': self.properties,
-                'property_choices': self.property_choices,
+                'properties': self._feature_table.properties(),
+                'property_choices': self._feature_table.choices(),
                 'ndim': self.ndim,
                 'features': self.features,
                 'feature_defaults': self.feature_defaults,
                 'out_of_slice_display': self.out_of_slice_display,
             }
         )
+        state.deprecations = {
+            'properties': _properties_deprecation_message(),
+            'property_choices': _property_choices_deprecation_message(),
+        }
         return state
 
     def _get_ndim(self) -> int:
@@ -494,7 +514,7 @@ class Vectors(Layer):
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
-            properties=self.properties,
+            properties=self._feature_table.properties(),
             current_properties=self._feature_table.currents(),
         )
         self.events.edge_color()
@@ -513,7 +533,9 @@ class Vectors(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-        self._edge._refresh_colors(self.properties, update_color_mapping)
+        self._edge._refresh_colors(
+            self._feature_table.properties(), update_color_mapping
+        )
 
     @property
     def edge_color_mode(self) -> ColorMode:
@@ -539,8 +561,8 @@ class Vectors(Layer):
             else:
                 color_property = ''
             if color_property == '':
-                if self.properties:
-                    color_property = next(iter(self.properties))
+                if self.features.shape[1] > 0:
+                    color_property = next(iter(self.features))
                     self._edge.color_properties = {
                         'name': color_property,
                         'values': self.features[color_property].to_numpy(),
@@ -567,7 +589,7 @@ class Vectors(Layer):
 
             # ColorMode.COLORMAP can only be applied to numeric properties
             if (edge_color_mode == ColorMode.COLORMAP) and not issubclass(
-                self.properties[color_property].dtype.type,
+                self.features[color_property].dtype.type,
                 np.number,
             ):
                 raise TypeError(
