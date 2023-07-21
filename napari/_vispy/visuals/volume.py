@@ -32,7 +32,7 @@ int detectAdjacentBackground(float val_neg, float val_pos)
     return adjacent_bg;
 }
 
-vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
+vec4 calculateShadedCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 {
     // Calculate color by incorporating ambient and diffuse lighting
     vec4 color0 = $get_data(loc);
@@ -132,8 +132,46 @@ ISO_CATEGORICAL_SNIPPETS = {
                 if (floatNotEqual(color.a, 0) ) {
                     // fully transparent color is considered as background, see napari/napari#5227
                     // when the value mapped to non-transparent color is reached
+                    // calculate the shaded color (apply lighting effects)
+                    color = calculateShadedCategoricalColor(color, iloc, dstep);
+                    gl_FragColor = color;
+
+                    // set the variables for the depth buffer
+                    frag_depth_point = iloc * u_shape;
+                    discard_fragment = false;
+
+                    iter = nsteps;
+                    break;
+                }
+                iloc += step * 0.1;
+            }
+        }
+        """,
+    "after_loop": """
+        if (discard_fragment)
+            discard;
+        """,
+}
+
+TRANSLUCENT_CATEGORICAL_SNIPPETS = {
+    "before_loop": """
+        vec4 color3 = vec4(0.0);  // final color
+        gl_FragColor = vec4(0.0);
+        bool discard_fragment = true;
+        vec4 label_id = vec4(0.0);
+        """,
+    "in_loop": """
+        // check if value is different from the background value
+        if ( floatNotEqual(val, categorical_bg_value) ) {
+            // Take the last interval in smaller steps
+            vec3 iloc = loc - step;
+            for (int i=0; i<10; i++) {
+                label_id = $get_data(iloc);
+                color = sample_label_color(label_id.r);
+                if (floatNotEqual(color.a, 0) ) {
+                    // fully transparent color is considered as background, see napari/napari#5227
+                    // when the value mapped to non-transparent color is reached
                     // calculate the color (apply lighting effects)
-                    color = calculateCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
 
                     // set the variables for the depth buffer
@@ -159,6 +197,7 @@ shaders['fragment'] = before + FUNCTION_DEFINITIONS + 'void main()' + after
 
 rendering_methods = BaseVolume._rendering_methods.copy()
 rendering_methods['iso_categorical'] = ISO_CATEGORICAL_SNIPPETS
+rendering_methods['translucent_categorical'] = TRANSLUCENT_CATEGORICAL_SNIPPETS
 
 
 class Volume(BaseVolume):

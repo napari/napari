@@ -187,6 +187,18 @@ class VispyLabelsLayer(VispyImageLayer):
         self.layer.events.color_mode.connect(self._on_colormap_change)
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
 
+    def _on_rendering_change(self):
+        # overriding the Image method so we can maintain the same old rendering name
+        if isinstance(self.node, VolumeNode):
+            rendering = self.layer.rendering
+            self.node.method = (
+                rendering
+                if rendering != 'translucent'
+                else 'translucent_categorical'
+            )
+            self._on_attenuation_change()
+            self._on_iso_threshold_change()
+
     def _on_colormap_change(self, event=None):
         # self.layer.colormap is a labels_colormap, which is an evented model
         # from napari.utils.colormaps.Colormap (or similar). If we use it
