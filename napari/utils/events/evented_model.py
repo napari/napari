@@ -324,11 +324,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # if different we emit the event with new value
         after = getattr(self, name)
         after_deps = {}
-        with warnings.catch_warnings():
-            # we still need to check for deprecated properties
-            warnings.simplefilter("ignore", DeprecationWarning)
-            for dep in dep_with_callbacks:
-                after_deps[dep] = getattr(self, dep, object())
+        for dep in dep_with_callbacks:
+            after_deps[dep] = getattr(self, dep, object())
 
         are_equal = self.__eq_operators__.get(name, operator.eq)
         if are_equal(after, before):
