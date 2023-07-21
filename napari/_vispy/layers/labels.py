@@ -3,7 +3,8 @@ from napari._vispy.layers.image import VispyImageLayer
 
 class VispyLabelsLayer(VispyImageLayer):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, texture_format=None, **kwargs)
+        kwargs['texture_format'] = None
+        super().__init__(*args, **kwargs)
 
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
 
