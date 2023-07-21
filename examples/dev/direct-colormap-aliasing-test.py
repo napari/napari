@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 import pandas as pd
 
@@ -9,14 +9,19 @@ nb_steps = 10000
 
 # Create a dummy label image
 base = np.linspace(start=1, stop=nb_steps, num=nb_steps).astype('uint16')
-label_img = np.repeat(base.reshape([1, base.shape[0]]), int(nb_steps/10), axis=0)
+label_img = np.repeat(
+        base.reshape([1, base.shape[0]]), int(nb_steps/10), axis=0
+        )
 
 # Add a harder test case: Randomly order the label values.
-# But assign them monotonously increasing feature values (=> if it's off by one, the error is more visible)
+# But assign them monotonously increasing feature values
+# (=> if it's off by one, the error is more visible)
 
 shuffled = np.linspace(start=1, stop=nb_steps, num=nb_steps).astype('uint16')
 np.random.shuffle(shuffled)
-label_img_shuffled = np.repeat(shuffled.reshape([1, shuffled.shape[0]]), int(nb_steps/10), axis=0)
+label_img_shuffled = np.repeat(
+        shuffled.reshape([1, shuffled.shape[0]]), int(nb_steps/10), axis=0
+        )
 df_shuffled = pd.DataFrame([shuffled, np.linspace(start=1, stop=nb_steps, num=nb_steps).astype('uint16')]).T
 df_shuffled.columns = ['label', 'feature']
 
@@ -27,15 +32,19 @@ upper_contrast_limit = nb_steps
 df = df_shuffled
 
 df['feature_scaled_shuffled'] = (
-    (df['feature'] - lower_contrast_limit) / (upper_contrast_limit - lower_contrast_limit)
+    (df['feature'] - lower_contrast_limit)
+    / (upper_contrast_limit - lower_contrast_limit)
 )
-colors = plt.cm.get_cmap('viridis')(df['feature_scaled_shuffled'])
+colors = matplotlib.colormaps['viridis'](df['feature_scaled_shuffled'])
 colormap_shuffled = dict(zip(df['label'].astype(int), colors))
 
 df['feature_scaled_not_shuffled'] = (
-    (df['label'] - lower_contrast_limit) / (upper_contrast_limit - lower_contrast_limit)
+    (df['label'] - lower_contrast_limit)
+    / (upper_contrast_limit - lower_contrast_limit)
 )
-colors_ordered = plt.cm.get_cmap('viridis')(df['feature_scaled_not_shuffled'])
+colors_ordered = (
+    matplotlib.colormaps['viridis'](df['feature_scaled_not_shuffled'])
+)
 colormap_ordered = dict(zip(df['label'].astype(int), colors_ordered))
 
 # calculate texel positions as colors for debugging
