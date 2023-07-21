@@ -285,7 +285,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def _check_if_differ(self, name: str, old_value: Any) -> Tuple[bool, Any]:
         """
         Check new value of a field and emit event if it is different from the old one.
-        Returns True if event was emitted, else False.
+        Returns True if data changed, else False. Return current value.
         """
         new_value = getattr(self, name, object())
         if name in self.__eq_operators__:
@@ -304,11 +304,18 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             self._primary_changes.add(name)
             self._setattr_impl(name, value)
 
-    def _emit_pending(self):
+    def _check_if_values_changed_and_emit_if_need(self):
+        """
+        This is function to check if values changed and emit events if need.
+        The advantage of moving this after whole modification is that comparison will be performed only
+        once for every potential change.
+        """
         if self._value_check_counter > 0 or len(self._check_queue) == 0:
+            # do not run whole machinery if there is no need
             return
         to_emit = []
         for name in self._primary_changes:
+            # primary changes should contains only fields that are changed directly by assigment
             if name not in self._check_queue:
                 continue
             old_value = self._check_queue[name]
@@ -316,19 +323,19 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 to_emit.append((name, res[1]))
             self._check_queue.pop(name)
         if not to_emit:
-            # Reduce number of comparison
+            # If no direct changes was made then we can skip whole machinery
             self._check_queue.clear()
             self._primary_changes.clear()
             return
         for name, old_value in self._check_queue.items():
+            # check if any of dependent properties changed
             if (res := self._check_if_differ(name, old_value))[0]:
                 to_emit.append((name, res[1]))
         self._check_queue.clear()
         self._primary_changes.clear()
 
         with ComparisonDelayer(self):
-            # ensure proper order of events by delay all caused by
-            # settings values from callback
+            # Again delay comparison to avoid having events caused by callback functions
             for name, new_value in to_emit:
                 getattr(self.events, name)(value=new_value)
 
@@ -505,4 +512,4 @@ class ComparisonDelayer:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._target._value_check_counter -= 1
-        self._target._emit_pending()
+        self._target._check_if_values_changed_and_emit_if_need()
