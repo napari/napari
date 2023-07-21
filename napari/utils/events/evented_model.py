@@ -1,4 +1,3 @@
-import operator
 import sys
 import warnings
 from contextlib import contextmanager
@@ -257,6 +256,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             **dict.fromkeys(field_events + list(self.__properties__))
         )
 
+        self._check_queue = {}
+        self._value_check_counter = 0
+
         # while seemingly redundant, this next line is very important to maintain
         # correct sources; see https://github.com/napari/napari/pull/4138
         # we solve it by re-setting the source after initial validation, which allows
@@ -276,14 +278,42 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         else:
             super().__setattr__(name, value)
 
+    def _emmit_if_differ(self, name, old_value) -> bool:
+        """
+        Check new value of a field and emit event if it is different from the old one.
+        Returns True if event was emitted, else False.
+        """
+        new_value = getattr(self, name, object())
+        if name in self.__eq_operators__:
+            are_equal = self.__eq_operators__[name]
+        else:
+            are_equal = pick_equality_operator(new_value)
+        if not are_equal(new_value, old_value):
+            getattr(self.events, name)(value=new_value)
+            return True
+        return False
+
     def __setattr__(self, name: str, value: Any) -> None:
         if not hasattr(self, "_events"):
             # This is a workaround needed because `EventedConfigFileSettings` uses
             # `_config_path` before calling the superclass constructor
             super().__setattr__(name, value)
             return
-        with self.events.delayer_all():
+        try:
+            self._value_check_counter += 1
             self._setattr_impl(name, value)
+        finally:
+            self._value_check_counter -= 1
+            self._emit_pending(name)
+
+    def _emit_pending(self, name):
+        if self._value_check_counter > 0:
+            return
+        if not self._emmit_if_differ(name, self._check_queue[name]):
+            return
+        self._check_queue.pop(name)
+        for name, old_value in self._check_queue.items():
+            self._emmit_if_differ(name, old_value)
 
     def _setattr_impl(self, name: str, value: Any) -> None:
         if name not in getattr(self, 'events', {}):
@@ -312,35 +342,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             dep for dep, has_cb in has_callbacks.items() if has_cb
         ]
 
-        before = getattr(self, name, object())
-        before_deps = {}
+        self._check_queue[name] = getattr(self, name, object())
 
         for dep in dep_with_callbacks:
-            before_deps[dep] = getattr(self, dep, object())
+            self._check_queue[dep] = getattr(self, dep, object())
 
         # set value using original setter
         self._super_setattr_(name, value)
-
-        # if different we emit the event with new value
-        after = getattr(self, name)
-        after_deps = {}
-        for dep in dep_with_callbacks:
-            after_deps[dep] = getattr(self, dep, object())
-
-        are_equal = self.__eq_operators__.get(name, operator.eq)
-        if are_equal(after, before):
-            # no change
-            return
-        emitter(value=after)  # emit event
-
-        # emit events for any dependent computed properties as well
-        for dep, value_ in before_deps.items():
-            if dep in self.__eq_operators__:
-                are_equal = self.__eq_operators__[dep]
-            else:
-                are_equal = pick_equality_operator(after_deps[dep])
-            if not are_equal(after_deps[dep], value_):
-                getattr(self.events, dep)(value=after_deps[dep])
 
     # expose the private EmitterGroup publically
     @property
