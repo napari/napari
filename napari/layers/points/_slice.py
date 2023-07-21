@@ -26,7 +26,7 @@ class _PointSliceResponse:
     """
 
     indices: ArrayLike = field(repr=False)
-    scale: Union[ArrayLike, float, int] = field(repr=False)
+    scale: Union[ArrayLike, float] = field(repr=False)
     dims: _SliceInput
     request_id: int
 
@@ -79,7 +79,7 @@ class _PointSliceRequest:
             # scale is only impacted by not displayed data, therefore 1
             return _PointSliceResponse(
                 indices=np.arange(len(self.data), dtype=int),
-                scale=1,
+                scale=1.0,
                 dims=self.dims,
                 request_id=self.id,
             )

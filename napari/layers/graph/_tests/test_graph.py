@@ -21,6 +21,7 @@ def test_empty_graph() -> None:
 def test_2_dim_array_graph() -> None:
     shape = (5, 2)
 
+    np.random.seed(1)
     graph = Graph(np.random.random(shape))
 
     assert len(graph.data) == shape[0]
@@ -30,6 +31,7 @@ def test_2_dim_array_graph() -> None:
 def test_3_dim_array_graph() -> None:
     shape = (5, 2, 2)
 
+    np.random.seed(1)
     with pytest.raises(ValueError):
         Graph(np.random.random(shape))
 
