@@ -220,6 +220,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     # when field is changed, an event for dependent properties will be emitted.
     __field_dependents__: ClassVar[Dict[str, Set[str]]]
     __eq_operators__: ClassVar[Dict[str, Callable[[Any, Any], bool]]]
+    _check_queue: Dict[str, Any]
+    _value_check_counter: int
     __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
 
     # pydantic BaseModel configuration.  see:
@@ -294,7 +296,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         return False
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if not hasattr(self, "_events"):
+        if name not in getattr(self, 'events', {}):
             # This is a workaround needed because `EventedConfigFileSettings` uses
             # `_config_path` before calling the superclass constructor
             super().__setattr__(name, value)
@@ -309,10 +311,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def _emit_pending(self, name):
         if self._value_check_counter > 0:
             return
-        if not self._emmit_if_differ(name, self._check_queue[name]):
+        cpy = self._check_queue.copy()
+        if not (name in cpy and self._emmit_if_differ(name, cpy[name])):
             return
-        self._check_queue.pop(name)
-        for name, old_value in self._check_queue.items():
+        cpy.pop(name)
+        self._check_queue.clear()
+        for name, old_value in cpy.items():
             self._emmit_if_differ(name, old_value)
 
     def _setattr_impl(self, name: str, value: Any) -> None:
