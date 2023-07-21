@@ -177,6 +177,7 @@ markers = [
     "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
+    "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
 ]
 
 [tool.mypy]
@@ -192,11 +193,15 @@ warn_redundant_casts = true
 
 # gloabl ignore error
 [[tool.mypy.overrides]]
-module = ['*._tests.*',
-         '*._vendor.*',
-         '*.benchmarks.*',
-         'napari_builtins.*']
+module = [
+  '*._tests.*',
+  '*.experimental.*',
+  '*._vendor.*',
+  '*.benchmarks.*',
+  'napari_builtins.*'
+]
 ignore_errors = true
+
 
 [[tool.mypy.overrides]]
 module = [
@@ -232,9 +237,7 @@ module = [
     'napari._qt.code_syntax_highlight',
     'napari._qt.containers._base_item_model',
     'napari._qt.containers._base_item_view',
-    'napari._qt.containers._factory',
     'napari._qt.containers._layer_delegate',
-    'napari._qt.containers.qt_layer_list',
     'napari._qt.containers.qt_layer_model',
     'napari._qt.containers.qt_list_model',
     'napari._qt.containers.qt_list_view',
@@ -322,8 +325,6 @@ module = [
     'napari._vispy.visuals.clipping_planes_mixin',
     'napari.components._layer_slicer',
     'napari.components._viewer_key_bindings',
-    'napari.components.camera',
-    'napari.components.dims',
     'napari.components.experimental.chunk._cache',
     'napari.components.experimental.chunk._commands._loader',
     'napari.components.experimental.chunk._loader',
@@ -333,8 +334,6 @@ module = [
     'napari.components.experimental.monitor._monitor',
     'napari.components.experimental.monitor._service',
     'napari.components.experimental.remote._commands',
-    'napari.components.experimental.remote._messages',
-    'napari.components.grid',
     'napari.components.layerlist',
     'napari.components.overlays.base',
     'napari.components.overlays.bounding_box',
@@ -346,21 +345,6 @@ module = [
     'napari.layers._layer_actions',
     'napari.layers._multiscale_data',
     'napari.layers.base.base',
-    'napari.layers.image._image_key_bindings',
-    'napari.layers.image._image_utils',
-    'napari.layers.image._slice',
-    'napari.layers.image.experimental._chunk_set',
-    'napari.layers.image.experimental._chunked_image_loader',
-    'napari.layers.image.experimental._chunked_slice_data',
-    'napari.layers.image.experimental._octree_loader',
-    'napari.layers.image.experimental._octree_slice',
-    'napari.layers.image.experimental.octree',
-    'napari.layers.image.experimental.octree_chunk',
-    'napari.layers.image.experimental.octree_image',
-    'napari.layers.image.experimental.octree_intersection',
-    'napari.layers.image.experimental.octree_level',
-    'napari.layers.image.experimental.octree_util',
-    'napari.layers.image.image',
     'napari.layers.intensity_mixin',
     'napari.layers.points._points_key_bindings',
     'napari.layers.points._points_utils',
@@ -371,22 +355,13 @@ module = [
     'napari.layers.shapes._shapes_mouse_bindings',
     'napari.layers.shapes._shapes_utils',
     'napari.layers.shapes.shapes',
-    'napari.layers.surface._surface_key_bindings',
-    'napari.layers.surface.normals',
-    'napari.layers.surface.surface',
-    'napari.layers.surface.wireframe',
     'napari.layers.tracks._track_utils',
     'napari.layers.tracks._tracks_key_bindings',
     'napari.layers.tracks.tracks',
     'napari.layers.utils._link_layers',
-    'napari.layers.utils._text_utils',
     'napari.layers.utils.color_encoding',
     'napari.layers.utils.color_manager',
     'napari.layers.utils.color_transformations',
-    'napari.layers.utils.interaction_box',
-    'napari.layers.utils.interactivity_utils',
-    'napari.layers.utils.layer_utils',
-    'napari.layers.utils.plane',
     'napari.layers.utils.stack_utils',
     'napari.layers.utils.string_encoding',
     'napari.layers.utils.style_encoding',

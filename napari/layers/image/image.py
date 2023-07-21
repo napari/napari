@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 import warnings
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -39,6 +39,8 @@ from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
+
     from napari.components import Dims
 
 
@@ -330,8 +332,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Set data
         self._data = data
-        if self.multiscale:
-            self._data_level = len(self.data) - 1
+        if isinstance(data, MultiScaleData):
+            self._data_level = len(data) - 1
             # Determine which level of the multiscale to use for the thumbnail.
             # Pick the smallest level with at least one axis >= 64. This is
             # done to prevent the thumbnail from being from one of the very
@@ -373,7 +375,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
-        self._contrast_limits = tuple(self.contrast_limits_range)
+        self._contrast_limits: Tuple[float, float] = self.contrast_limits_range
         if iso_threshold is None:
             cmin, cmax = self.contrast_limits_range
             self._iso_threshold = cmin + (cmax - cmin) / 2
@@ -405,7 +407,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
 
-    def _calc_data_range(self, mode='data'):
+    def _calc_data_range(self, mode='data') -> Tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
         or full data array
@@ -440,9 +442,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._data
 
     @data.setter
-    def data(
-        self, data: Union[LayerDataProtocol, Sequence[LayerDataProtocol]]
-    ):
+    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
         self._data_raw = data
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
@@ -487,7 +487,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @property
     def level_shapes(self) -> np.ndarray:
         """array: Shapes of each level of the multiscale or just of image."""
-        shapes = self.data.shapes if self.multiscale else [self.data.shape]
+        data = self.data
+        if isinstance(data, MultiScaleData):
+            shapes = data.shapes
+        else:
+            shapes = [self.data.shape]
         if self.rgb:
             shapes = [s[:-1] for s in shapes]
         return np.array(shapes)
@@ -886,7 +890,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         return value
 
-    def _get_offset_data_position(self, position: List[float]) -> List[float]:
+    def _get_offset_data_position(self, position: npt.NDArray) -> npt.NDArray:
         """Adjust position for offset between viewer and data coordinates.
 
         VisPy considers the coordinate system origin to be the canvas corner,
@@ -894,7 +898,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         pixel. To get the correct value under the mouse cursor, we need to
         shift the position by 0.5 pixels on each axis.
         """
-        return [p + 0.5 for p in position]
+        return position + 0.5
 
 
 class Image(_ImageBase):
