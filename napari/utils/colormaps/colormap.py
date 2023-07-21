@@ -166,14 +166,13 @@ class LabelColormap(Colormap):
         # Convert to float32 to match the current GL shader implementation
         values = np.atleast_1d(values).astype(np.float32)
 
-        # If using selected, disable all others
-        if self.use_selection:
-            values[
-                values != self.selection
-            ] = 0  # should be set to the actual background label
-
         values_low_discr = low_discrepancy_image(values, seed=self.seed)
         mapped = super().map(values_low_discr)
+
+        # If using selected, disable all others
+        if self.use_selection:
+            mapped[~np.isclose(values, self.selection)] = 0
+
         return mapped
 
 
@@ -207,5 +206,5 @@ class DirectLabelColormap(Colormap):
                 mapped[idx] = color
         # If using selected, disable all others
         if self.use_selection:
-            mapped[values != self.selection] = 0
+            mapped[~np.isclose(values, self.selection)] = 0
         return mapped

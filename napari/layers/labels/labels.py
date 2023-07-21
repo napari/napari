@@ -670,9 +670,9 @@ class Labels(_ImageBase):
 
         self._prev_selected_label = self.selected_label
         self._selected_label = selected_label
+        self.colormap.selection = selected_label
         self._selected_color = self.get_color(selected_label)
 
-        self.colormap.selection = selected_label
         self.events.selected_label()
 
         if self.show_selected_label:
@@ -991,10 +991,8 @@ class Labels(_ImageBase):
         """Return the color corresponding to a specific label."""
         if label == self._background_label:
             col = None
-        elif (
-            label is None
-            or self.show_selected_label
-            and label != self.selected_label
+        elif label is None or (
+            self.show_selected_label and label != self.selected_label
         ):
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
