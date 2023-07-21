@@ -1,4 +1,3 @@
-import warnings
 from dataclasses import dataclass, field
 from typing import Any, Callable, Tuple, Union
 
@@ -9,7 +8,6 @@ from napari.layers.utils._slice_input import _SliceInput
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
 
 
 @dataclass(frozen=True)
@@ -203,13 +201,6 @@ class _ImageSliceRequest:
 
     def _call_multi_scale(self) -> _ImageSliceResponse:
         if self.dims.ndisplay == 3:
-            warnings.warn(
-                trans._(
-                    'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
-                    deferred=True,
-                ),
-                category=UserWarning,
-            )
             level = len(self.data) - 1
         else:
             level = self.data_level
