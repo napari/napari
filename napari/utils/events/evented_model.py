@@ -1,7 +1,7 @@
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Set, Union
+from typing import Any, Callable, ClassVar, Dict, Set, Tuple, Union
 
 import numpy as np
 from app_model.types import KeyBinding
@@ -221,6 +221,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     __field_dependents__: ClassVar[Dict[str, Set[str]]]
     __eq_operators__: ClassVar[Dict[str, Callable[[Any, Any], bool]]]
     _check_queue: Dict[str, Any]
+    _primary_changes: Set[str]
     _value_check_counter: int
     __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
 
@@ -259,6 +260,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         )
 
         self._check_queue = {}
+        self._primary_changes = set()
         self._value_check_counter = 0
 
         # while seemingly redundant, this next line is very important to maintain
@@ -280,7 +282,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         else:
             super().__setattr__(name, value)
 
-    def _emmit_if_differ(self, name, old_value) -> bool:
+    def _emmit_if_differ(self, name, old_value) -> Tuple[bool, any]:
         """
         Check new value of a field and emit event if it is different from the old one.
         Returns True if event was emitted, else False.
@@ -301,23 +303,29 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             # `_config_path` before calling the superclass constructor
             super().__setattr__(name, value)
             return
-        try:
-            self._value_check_counter += 1
+        with EventBlocker(self):
+            self._primary_changes.add(name)
             self._setattr_impl(name, value)
-        finally:
-            self._value_check_counter -= 1
-            self._emit_pending(name)
 
-    def _emit_pending(self, name):
-        if self._value_check_counter > 0:
+    def _emit_pending(self):
+        if self._value_check_counter > 0 or len(self._check_queue) == 0:
             return
-        cpy = self._check_queue.copy()
-        if not (name in cpy and self._emmit_if_differ(name, cpy[name])):
-            return
-        cpy.pop(name)
-        self._check_queue.clear()
-        for name, old_value in cpy.items():
-            self._emmit_if_differ(name, old_value)
+        with EventBlocker(self):
+            cpy = self._check_queue.copy()
+            self._check_queue.clear()
+            pc = self._primary_changes.copy()
+            self._primary_changes.clear()
+            primary_changed = False
+            for name in pc:
+                if name not in cpy:
+                    continue
+                if self._emmit_if_differ(name, cpy[name]):
+                    primary_changed = True
+                cpy.pop(name)
+            if not primary_changed:
+                return
+            for name, old_value in cpy.items():
+                self._emmit_if_differ(name, old_value)
 
     def _setattr_impl(self, name: str, value: Any) -> None:
         if name not in getattr(self, 'events', {}):
@@ -479,3 +487,15 @@ def get_defaults(obj: BaseModel):
             d = get_defaults(v.type_)
         dflt[k] = d
     return dflt
+
+
+class EventBlocker:
+    def __init__(self, target):
+        self._target = target
+
+    def __enter__(self):
+        self._target._value_check_counter += 1
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._target._value_check_counter -= 1
+        self._target._emit_pending()
