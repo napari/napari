@@ -886,24 +886,6 @@ class EventEmitter:
         """
         return EventBlocker(self, callback)
 
-    def delay_emit(self):
-        """
-        Block emitting callbacks, but emit them when unlock.
-        """
-        self._delay_semaphore += 1
-
-    def undelay_emit(self):
-        self._delay_semaphore -= 1
-        if self._delay_semaphore < 0:
-            raise RuntimeError("there is no waiting delay event")
-        if not self._delay_semaphore and self._last_delayed_event is not None:
-            event = self._last_delayed_event
-            self._last_delayed_event = None
-            self(event)
-
-    def delayer(self):
-        return EventDelayer(self)
-
 
 class WarningEmitter(EventEmitter):
     """
@@ -1129,22 +1111,6 @@ class EmitterGroup(EventEmitter):
         for em in self._emitters.values():
             em.unblock()
 
-    def delay_all(self):
-        """
-        Delay all event emission
-        """
-        self.delay_emit()
-        for em in self._emitters.values():
-            em.delay_emit()
-
-    def undelay_all(self):
-        """
-        Undelay event emission
-        """
-        self.undelay_emit()
-        for em in self._emitters.values():
-            em.undelay_emit()
-
     def connect(
         self,
         callback: Union[Callback, CallbackRef, 'EmitterGroup'],
@@ -1214,9 +1180,6 @@ class EmitterGroup(EventEmitter):
         """
         return EventBlockerAll(self)
 
-    def delayer_all(self):
-        return EventDelayerAll(self)
-
 
 class EventBlocker:
 
@@ -1256,28 +1219,6 @@ class EventBlockerAll:
 
     def __exit__(self, *args):
         self.target.unblock_all()
-
-
-class EventDelayer:
-    def __init__(self, target: EventEmitter):
-        self.target = target
-
-    def __enter__(self):
-        self.target.delay_emit()
-
-    def __exit__(self, *args):
-        self.target.undelay_emit()
-
-
-class EventDelayerAll:
-    def __init__(self, target: EmitterGroup) -> None:
-        self.target = target
-
-    def __enter__(self):
-        self.target.delay_all()
-
-    def __exit__(self, *args):
-        self.target.undelay_all()
 
 
 def _is_pos_arg(param: inspect.Parameter):
