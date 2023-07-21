@@ -8,8 +8,8 @@ def test_remove_selected_with_derived_text():
     """See https://github.com/napari/napari/issues/3504"""
     np.random.seed(0)
     shapes = np.random.rand(3, 4, 2)
-    properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = Shapes(shapes, properties=properties, text='class')
+    features = {'class': np.array(['A', 'B', 'C'])}
+    layer = Shapes(shapes, features=features, text='class')
     vispy_layer = VispyShapesLayer(layer)
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
@@ -23,26 +23,26 @@ def test_remove_selected_with_derived_text():
 def test_change_text_updates_node_string():
     np.random.seed(0)
     shapes = np.random.rand(3, 4, 2)
-    properties = {
+    features = {
         'class': np.array(['A', 'B', 'C']),
         'name': np.array(['D', 'E', 'F']),
     }
-    layer = Shapes(shapes, properties=properties, text='class')
+    layer = Shapes(shapes, features=features, text='class')
     vispy_layer = VispyShapesLayer(layer)
     text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(text_node.text, properties['class'])
+    np.testing.assert_array_equal(text_node.text, features['class'])
 
     layer.text = 'name'
 
-    np.testing.assert_array_equal(text_node.text, properties['name'])
+    np.testing.assert_array_equal(text_node.text, features['name'])
 
 
 def test_change_text_color_updates_node_color():
     np.random.seed(0)
     shapes = np.random.rand(3, 4, 2)
-    properties = {'class': np.array(['A', 'B', 'C'])}
+    features = {'class': np.array(['A', 'B', 'C'])}
     text = {'string': 'class', 'color': [1, 0, 0]}
-    layer = Shapes(shapes, properties=properties, text=text)
+    layer = Shapes(shapes, features=features, text=text)
     vispy_layer = VispyShapesLayer(layer)
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.color.rgb, [[1, 0, 0]])
@@ -52,30 +52,30 @@ def test_change_text_color_updates_node_color():
     np.testing.assert_array_equal(text_node.color.rgb, [[0, 0, 1]])
 
 
-def test_change_properties_updates_node_strings():
+def test_change_features_updates_node_strings():
     np.random.seed(0)
     shapes = np.random.rand(3, 4, 2)
-    properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = Shapes(shapes, properties=properties, text='class')
+    features = {'class': np.array(['A', 'B', 'C'])}
+    layer = Shapes(shapes, features=features, text='class')
     vispy_layer = VispyShapesLayer(layer)
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
 
-    layer.properties = {'class': np.array(['D', 'E', 'F'])}
+    layer.features = {'class': np.array(['D', 'E', 'F'])}
 
     np.testing.assert_array_equal(text_node.text, ['D', 'E', 'F'])
 
 
-def test_update_property_value_then_refresh_text_updates_node_strings():
+def test_update_features_value_then_refresh_text_updates_node_strings():
     np.random.seed(0)
     shapes = np.random.rand(3, 4, 2)
-    properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = Shapes(shapes, properties=properties, text='class')
+    features = {'class': np.array(['A', 'B', 'C'])}
+    layer = Shapes(shapes, features=features, text='class')
     vispy_layer = VispyShapesLayer(layer)
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
 
-    layer.properties['class'][1] = 'D'
+    layer.features['class'][1] = 'D'
     layer.refresh_text()
 
     np.testing.assert_array_equal(text_node.text, ['A', 'D', 'C'])

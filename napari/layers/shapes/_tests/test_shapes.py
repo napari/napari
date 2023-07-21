@@ -19,8 +19,8 @@ from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.utils.colormaps.standardize_color import transform_color
 
 
-def _make_cycled_properties(values, length):
-    """Helper function to make property values
+def _make_cycled_features(values, length):
+    """Helper function to make features values
 
     Parameters
     ----------
@@ -34,8 +34,8 @@ def _make_cycled_properties(values, length):
     cycled_properties : np.ndarray
         The property array comprising the cycled values.
     """
-    cycled_properties = np.array(list(islice(cycle(values), 0, length)))
-    return cycled_properties
+    cycled_features = np.array(list(islice(cycle(values), 0, length)))
+    return cycled_features
 
 
 def test_empty_shapes():
@@ -71,31 +71,36 @@ def test_empty_shapes_with_features():
     assert_colors_equal(shapes.face_color, list('rgb'))
 
 
-properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
-properties_list = {'shape_type': list(_make_cycled_properties(['A', 'B'], 10))}
+properties_array = {'shape_type': _make_cycled_features(['A', 'B'], 10)}
+properties_list = {'shape_type': list(_make_cycled_features(['A', 'B'], 10))}
 
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_properties(properties):
+    """Ensure that properties is deprecated but still functional."""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(data, properties=copy(properties))
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(DeprecationWarning):
+        layer = Shapes(data, properties=copy(properties))
+        np.testing.assert_equal(layer.properties, properties)
 
     current_prop = {'shape_type': np.array(['B'])}
-    assert layer.current_properties == current_prop
+    with pytest.warns(DeprecationWarning):
+        assert layer.current_properties == current_prop
 
     # test removing shapes
     layer.selected_data = {0, 1}
     layer.remove_selected()
     remove_properties = properties['shape_type'][2::]
-    assert len(layer.properties['shape_type']) == (shape[0] - 2)
-    assert np.all(layer.properties['shape_type'] == remove_properties)
+    with pytest.warns(DeprecationWarning):
+        assert len(layer.properties['shape_type']) == (shape[0] - 2)
+        assert np.all(layer.properties['shape_type'] == remove_properties)
 
     # test selection of properties
     layer.selected_data = {0}
-    selected_annotation = layer.current_properties['shape_type']
+    with pytest.warns(DeprecationWarning):
+        selected_annotation = layer.current_properties['shape_type']
     assert len(selected_annotation) == 1
     assert selected_annotation[0] == 'A'
 
@@ -104,7 +109,8 @@ def test_properties(properties):
     new_shape_type = ['rectangle']
     layer.add(new_data, shape_type=new_shape_type)
     add_properties = np.concatenate((remove_properties, ['A']), axis=0)
-    assert np.all(layer.properties['shape_type'] == add_properties)
+    with pytest.warns(DeprecationWarning):
+        assert np.all(layer.properties['shape_type'] == add_properties)
 
     # test copy/paste
     layer.selected_data = {0, 1}
@@ -113,55 +119,59 @@ def test_properties(properties):
 
     layer._paste_data()
     paste_properties = np.concatenate((add_properties, ['A', 'B']), axis=0)
-    assert np.all(layer.properties['shape_type'] == paste_properties)
+    with pytest.warns(DeprecationWarning):
+        assert np.all(layer.properties['shape_type'] == paste_properties)
 
     # test updating a property
     layer.mode = 'select'
     layer.selected_data = {0}
     new_property = {'shape_type': np.array(['B'])}
-    layer.current_properties = new_property
-    updated_properties = layer.properties
+    with pytest.warns(DeprecationWarning):
+        layer.current_properties = new_property
+        updated_properties = layer.properties
     assert updated_properties['shape_type'][0] == 'B'
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
-def test_adding_properties(attribute):
+def test_adding_features(attribute):
     """Test adding properties to an existing layer"""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
 
-    # add properties
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer.properties = properties
-    np.testing.assert_equal(layer.properties, properties)
+    # add features
+    properties = {'shape_type': _make_cycled_features(['A', 'B'], shape[0])}
+    layer.features = properties
+    pd.testing.assert_frame_equal(layer.features, pd.DataFrame(properties))
 
     # add properties as a dataframe
     properties_df = pd.DataFrame(properties)
-    layer.properties = properties_df
-    np.testing.assert_equal(layer.properties, properties)
+    layer.features = properties_df
+    pd.testing.assert_frame_equal(layer.features, properties_df)
 
     # add properties as a dictionary with list values
     properties_list = {
-        'shape_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
+        'shape_type': list(_make_cycled_features(['A', 'B'], shape[0]))
     }
-    layer.properties = properties_list
-    assert isinstance(layer.properties['shape_type'], np.ndarray)
+    layer.features = properties_list
+    pd.testing.assert_frame_equal(
+        layer.features, pd.DataFrame(properties_list)
+    )
 
     # removing a property that was the _*_color_property should give a warning
     setattr(layer, f'_{attribute}_color_property', 'shape_type')
     properties_2 = {
-        'not_shape_type': _make_cycled_properties(['A', 'B'], shape[0])
+        'not_shape_type': _make_cycled_features(['A', 'B'], shape[0])
     }
     with pytest.warns(RuntimeWarning):
-        layer.properties = properties_2
+        layer.features = properties_2
 
 
 def test_colormap_scale_change():
     data = 20 * np.random.random((10, 4, 2))
-    properties = {'a': np.linspace(0, 1, 10), 'b': np.linspace(0, 100000, 10)}
-    layer = Shapes(data, properties=properties, edge_color='b')
+    features = {'a': np.linspace(0, 1, 10), 'b': np.linspace(0, 100000, 10)}
+    layer = Shapes(data, features=features, edge_color='b')
 
     assert not np.allclose(
         layer.edge_color[0], layer.edge_color[1], atol=0.001
@@ -177,83 +187,84 @@ def test_colormap_scale_change():
     )
 
 
-def test_data_setter_with_properties():
-    """Test layer data on a layer with properties via the data setter"""
+def test_data_setter_with_features():
+    """Test layer data on a layer with features via the data setter"""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Shapes(data, properties=properties)
+    features = {'shape_type': _make_cycled_features(['A', 'B'], shape[0])}
+    layer = Shapes(data, features=features)
 
     # test setting to data with fewer shapes
     n_new_shapes = 4
     new_data = 20 * np.random.random((n_new_shapes, 4, 2))
     layer.data = new_data
-    assert len(layer.properties['shape_type']) == n_new_shapes
+    assert len(layer.features['shape_type']) == n_new_shapes
 
     # test setting to data with more shapes
     n_new_shapes_2 = 6
     new_data_2 = 20 * np.random.random((n_new_shapes_2, 4, 2))
     layer.data = new_data_2
-    assert len(layer.properties['shape_type']) == n_new_shapes_2
+    assert len(layer.features['shape_type']) == n_new_shapes_2
 
     # test setting to data with same shapes
     new_data_3 = 20 * np.random.random((n_new_shapes_2, 4, 2))
     layer.data = new_data_3
-    assert len(layer.properties['shape_type']) == n_new_shapes_2
+    assert len(layer.features['shape_type']) == n_new_shapes_2
 
 
-def test_properties_dataframe():
-    """Test if properties can be provided as a DataFrame"""
+def test_features_dataframe():
+    """Test if features can be provided as a DataFrame"""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    properties_df = pd.DataFrame(properties)
-    properties_df = properties_df.astype(properties['shape_type'].dtype)
-    layer = Shapes(data, properties=properties_df)
-    np.testing.assert_equal(layer.properties, properties)
+    features = {'shape_type': _make_cycled_features(['A', 'B'], shape[0])}
+    features_df = pd.DataFrame(features)
+    features_df = features_df.astype(features['shape_type'].dtype)
+    layer = Shapes(data, features=features_df)
+    pd.testing.assert_frame_equal(layer.features, features_df)
 
 
-def test_setting_current_properties():
+def test_setting_feature_defaults():
     shape = (2, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {
+    features = {
         'annotation': ['paw', 'leg'],
         'confidence': [0.5, 0.75],
         'annotator': ['jane', 'ash'],
         'model': ['worst', 'best'],
     }
-    layer = Shapes(data, properties=copy(properties))
-    current_properties = {
+    layer = Shapes(data, features=copy(features))
+    feature_defaults = {
         'annotation': ['leg'],
-        'confidence': 1,
+        'confidence': 1.0,
         'annotator': 'ash',
         'model': np.array(['best']),
     }
-    layer.current_properties = current_properties
+    layer.feature_defaults = feature_defaults
 
-    expected_current_properties = {
-        'annotation': np.array(['leg']),
-        'confidence': np.array([1]),
-        'annotator': np.array(['ash']),
-        'model': np.array(['best']),
-    }
+    expected_feature_defaults = pd.DataFrame(
+        {
+            'annotation': np.array(['leg']),
+            'confidence': np.array([1.0]),
+            'annotator': np.array(['ash']),
+            'model': np.array(['best']),
+        }
+    )
 
-    coerced_current_properties = layer.current_properties
-    for k in coerced_current_properties:
-        value = coerced_current_properties[k]
-        assert isinstance(value, np.ndarray)
-        np.testing.assert_equal(value, expected_current_properties[k])
+    pd.testing.assert_frame_equal(
+        layer.feature_defaults, expected_feature_defaults
+    )
 
 
 def test_empty_layer_with_text_property_choices():
     """Test initializing an empty layer with text defined"""
-    default_properties = {'shape_type': np.array([1.5], dtype=float)}
+    feature_defaults = {'shape_type': np.array([1.5], dtype=float)}
     text_kwargs = {'string': 'shape_type', 'color': 'red'}
     layer = Shapes(
-        property_choices=default_properties,
+        features={"shape_type": np.empty([])},
+        feature_defaults=feature_defaults,
         text=text_kwargs,
     )
     assert layer.text.values.size == 0
@@ -267,9 +278,10 @@ def test_empty_layer_with_text_property_choices():
 
 def test_empty_layer_with_text_formatted():
     """Test initializing an empty layer with text defined"""
-    default_properties = {'shape_type': np.array([1.5], dtype=float)}
+    feature_defaults = {'shape_type': np.array([1.5], dtype=float)}
     layer = Shapes(
-        property_choices=default_properties,
+        features={"shape_type": np.empty([], dtype=float)},
+        feature_defaults=feature_defaults,
         text='shape_type: {shape_type:.2f}',
     )
     assert layer.text.values.size == 0
@@ -279,33 +291,31 @@ def test_empty_layer_with_text_formatted():
     np.testing.assert_equal(layer.text.values, ['shape_type: 1.50'])
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
-def test_text_from_property_value(properties):
+@pytest.mark.parametrize("features", [properties_array, properties_list])
+def test_text_from_property_value(features):
     """Test setting text from a property value"""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(data, properties=copy(properties), text='shape_type')
+    layer = Shapes(data, features=copy(features), text='shape_type')
 
-    np.testing.assert_equal(layer.text.values, properties['shape_type'])
+    np.testing.assert_equal(layer.text.values, features['shape_type'])
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
-def test_text_from_property_fstring(properties):
+@pytest.mark.parametrize("features", [properties_array, properties_list])
+def test_text_from_property_fstring(features):
     """Test setting text with an f-string from the property value"""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(
-        data, properties=copy(properties), text='type: {shape_type}'
-    )
+    layer = Shapes(data, features=copy(features), text='type: {shape_type}')
 
-    expected_text = ['type: ' + v for v in properties['shape_type']]
+    expected_text = ['type: ' + v for v in features['shape_type']]
     np.testing.assert_equal(layer.text.values, expected_text)
 
     # test updating the text
     layer.text = 'type-ish: {shape_type}'
-    expected_text_2 = ['type-ish: ' + v for v in properties['shape_type']]
+    expected_text_2 = ['type-ish: ' + v for v in features['shape_type']]
     np.testing.assert_equal(layer.text.values, expected_text_2)
 
     # copy/paste
@@ -323,8 +333,8 @@ def test_text_from_property_fstring(properties):
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
-def test_set_text_with_kwarg_dict(properties):
+@pytest.mark.parametrize("features", [properties_array, properties_list])
+def test_set_text_with_kwarg_dict(features):
     text_kwargs = {
         'string': 'type: {shape_type}',
         'color': ConstantColorEncoding(constant=[0, 0, 0, 1]),
@@ -337,9 +347,9 @@ def test_set_text_with_kwarg_dict(properties):
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(data, properties=copy(properties), text=text_kwargs)
+    layer = Shapes(data, features=copy(features), text=text_kwargs)
 
-    expected_text = ['type: ' + v for v in properties['shape_type']]
+    expected_text = ['type: ' + v for v in features['shape_type']]
     np.testing.assert_equal(layer.text.values, expected_text)
 
     for property_, value in text_kwargs.items():
@@ -349,25 +359,25 @@ def test_set_text_with_kwarg_dict(properties):
         np.testing.assert_equal(layer_value, value)
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
-def test_text_error(properties):
+@pytest.mark.parametrize("features", [properties_array, properties_list])
+def test_text_error(features):
     """creating a layer with text as the wrong type should raise an error"""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
     with pytest.raises(ValidationError):
-        Shapes(data, properties=copy(properties), text=123)
+        Shapes(data, features=copy(features), text=123)
 
 
 def test_select_properties_object_dtype():
     """selecting points when they have a property of object dtype should not fail"""
     # pandas uses object as dtype for strings by default
-    properties = pd.DataFrame({'color': ['red', 'green']})
-    pl = Shapes(np.ones((2, 2, 2)), properties=properties)
+    features = pd.DataFrame({'color': ['red', 'green']})
+    shapes_layer = Shapes(np.ones((2, 2, 2)), features=features)
     selection = {0, 1}
-    pl.selected_data = selection
-    assert pl.selected_data == selection
+    shapes_layer.selected_data = selection
+    assert shapes_layer.selected_data == selection
 
 
 def test_refresh_text():
@@ -375,12 +385,12 @@ def test_refresh_text():
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'shape_type': ['A'] * shape[0]}
-    layer = Shapes(data, properties=copy(properties), text='shape_type')
+    features = {'shape_type': ['A'] * shape[0]}
+    layer = Shapes(data, features=copy(features), text='shape_type')
 
-    new_properties = {'shape_type': ['B'] * shape[0]}
-    layer.properties = new_properties
-    np.testing.assert_equal(layer.text.values, new_properties['shape_type'])
+    features = {'shape_type': ['B'] * shape[0]}
+    layer.features = features
+    np.testing.assert_equal(layer.text.values, features['shape_type'])
 
 
 def test_nd_text():
@@ -389,9 +399,9 @@ def test_nd_text():
         [[0, 10, 10, 10], [0, 10, 20, 20], [0, 10, 10, 20], [0, 10, 20, 10]],
         [[1, 20, 30, 30], [1, 20, 50, 50], [1, 20, 50, 30], [1, 20, 30, 50]],
     ]
-    properties = {'shape_type': ['A', 'B']}
+    features = {'shape_type': ['A', 'B']}
     text_kwargs = {'string': 'shape_type', 'anchor': 'center'}
-    layer = Shapes(shapes_data, properties=properties, text=text_kwargs)
+    layer = Shapes(shapes_data, features=features, text=text_kwargs)
     assert layer.ndim == 4
 
     layer._slice_dims(point=[0, 10, 0, 0], ndisplay=2)
@@ -403,13 +413,13 @@ def test_nd_text():
     np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
-def test_data_setter_with_text(properties):
+@pytest.mark.parametrize("features", [properties_array, properties_list])
+def test_data_setter_with_text(features):
     """Test layer data on a layer with text via the data setter"""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(data, properties=copy(properties), text='shape_type')
+    layer = Shapes(data, features=copy(features), text='shape_type')
 
     # test setting to data with fewer shapes
     n_new_shapes = 4
@@ -1403,9 +1413,9 @@ def test_switch_color_mode(attribute):
     # create a continuous property with a known value in the last element
     continuous_prop = np.random.random((shape[0],))
     continuous_prop[-1] = 1
-    properties = {
+    features = {
         'shape_truthiness': continuous_prop,
-        'shape_type': _make_cycled_properties(['A', 'B'], shape[0]),
+        'shape_type': _make_cycled_features(['A', 'B'], shape[0]),
     }
     initial_color = [1, 0, 0, 1]
     color_cycle = ['red', 'blue']
@@ -1417,7 +1427,7 @@ def test_switch_color_mode(attribute):
         colormap_kwarg: 'gray',
         color_cycle_kwarg: color_cycle,
     }
-    layer = Shapes(data, properties=properties, **args)
+    layer = Shapes(data, features=features, **args)
 
     layer_color_mode = getattr(layer, f'{attribute}_color_mode')
     layer_color = getattr(layer, f'{attribute}_color')
@@ -1436,7 +1446,7 @@ def test_switch_color_mode(attribute):
     with pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
     color_property = getattr(layer, f'_{attribute}_color_property')
-    assert color_property == next(iter(properties))
+    assert color_property == next(iter(features))
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(layer_color[-1], [1, 1, 1, 1])
 
@@ -1515,8 +1525,8 @@ def test_color_direct(attribute: str):
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
-def test_single_shape_properties(attribute):
-    """Test creating single shape with properties"""
+def test_single_shape(attribute):
+    """Test creating single shape with direct coloring."""
     shape = (4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -1543,15 +1553,17 @@ def test_color_cycle(attribute, color_cycle):
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    features = pd.DataFrame(
+        {'shape_type': _make_cycled_features(['A', 'B'], shape[0])}
+    )
     shapes_kwargs = {
-        'properties': properties,
+        'features': features,
         f'{attribute}_color': 'shape_type',
         f'{attribute}_color_cycle': color_cycle,
     }
     layer = Shapes(data, **shapes_kwargs)
 
-    np.testing.assert_equal(layer.properties, properties)
+    pd.testing.assert_frame_equal(layer.features, features)
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, shape[0]))
     )
@@ -1586,9 +1598,9 @@ def test_color_cycle(attribute, color_cycle):
 
     # test adding a shape with a new property value
     layer.selected_data = {}
-    current_properties = layer.current_properties
-    current_properties['shape_type'] = np.array(['new'])
-    layer.current_properties = current_properties
+    feature_defaults = layer.feature_defaults
+    feature_defaults['shape_type'] = np.array(['new'])
+    layer.feature_defaults = feature_defaults
     new_shape_2 = np.random.random((1, 4, 2))
     layer.add(new_shape_2)
     color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
@@ -1605,10 +1617,11 @@ def test_add_color_cycle_to_empty_layer(attribute):
 
     See: https://github.com/napari/napari/pull/1069
     """
-    default_properties = {'shape_type': np.array(['A'])}
+    default_features = {'shape_type': np.array(['A'])}
     color_cycle = ['red', 'blue']
     shapes_kwargs = {
-        'property_choices': default_properties,
+        'features': {'shape_type': np.empty([], dtype='<U1')},
+        'feature_defaults': default_features,
         f'{attribute}_color': 'shape_type',
         f'{attribute}_color_cycle': color_cycle,
     }
@@ -1623,23 +1636,23 @@ def test_add_color_cycle_to_empty_layer(attribute):
     np.random.seed(0)
     new_shape = 20 * np.random.random((1, 4, 2))
     layer.add(new_shape)
-    props = {'shape_type': np.array(['A'])}
+    expected_features = pd.DataFrame({'shape_type': np.array(['A'])})
     expected_color = np.array([[1, 0, 0, 1]])
-    np.testing.assert_equal(layer.properties, props)
+    pd.testing.assert_frame_equal(layer.features, expected_features)
     attribute_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(attribute_color, expected_color)
 
     # add a shape with a new property
     layer.selected_data = []
-    layer.current_properties = {'shape_type': np.array(['B'])}
+    layer.feature_defaults = {'shape_type': np.array(['B'])}
     new_shape_2 = 20 * np.random.random((1, 4, 2))
     layer.add(new_shape_2)
     new_color = np.array([0, 0, 1, 1])
     expected_color = np.vstack((expected_color, new_color))
-    new_properties = {'shape_type': np.array(['A', 'B'])}
+    new_features = pd.DataFrame({'shape_type': np.array(['A', 'B'])})
     attribute_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(attribute_color, expected_color)
-    np.testing.assert_equal(layer.properties, new_properties)
+    pd.testing.assert_frame_equal(layer.features, new_features)
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1651,19 +1664,19 @@ def test_adding_value_color_cycle(attribute):
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    features = {'shape_type': _make_cycled_features(['A', 'B'], shape[0])}
     color_cycle = ['red', 'blue']
     shapes_kwargs = {
-        'properties': properties,
+        'features': features,
         f'{attribute}_color': 'shape_type',
         f'{attribute}_color_cycle': color_cycle,
     }
     layer = Shapes(data, **shapes_kwargs)
 
     # make shape 0 shape_type C
-    shape_types = layer.properties['shape_type']
+    shape_types = layer.features['shape_type']
     shape_types[0] = 'C'
-    layer.properties['shape_type'] = shape_types
+    layer.features['shape_type'] = shape_types
     layer.refresh_colors(update_color_mapping=False)
 
     color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
@@ -1678,14 +1691,16 @@ def test_color_colormap(attribute):
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties([0, 1.5], shape[0])}
+    features = pd.DataFrame(
+        {'shape_type': _make_cycled_features([0, 1.5], shape[0])}
+    )
     shapes_kwargs = {
-        'properties': properties,
+        'features': features,
         f'{attribute}_color': 'shape_type',
         f'{attribute}_colormap': 'gray',
     }
     layer = Shapes(data, **shapes_kwargs)
-    np.testing.assert_equal(layer.properties, properties)
+    pd.testing.assert_frame_equal(layer.features, features)
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
@@ -1739,7 +1754,7 @@ def test_color_colormap(attribute):
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
-def test_colormap_without_properties(attribute):
+def test_colormap_without_features(attribute):
     """Setting the colormode to colormap should raise an exception"""
     shape = (10, 4, 2)
     np.random.seed(0)
@@ -1751,13 +1766,13 @@ def test_colormap_without_properties(attribute):
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
-def test_colormap_with_categorical_properties(attribute):
+def test_colormap_with_categorical_features(attribute):
     """Setting the colormode to colormap should raise an exception"""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Shapes(data, properties=properties)
+    features = {'shape_type': _make_cycled_features(['A', 'B'], shape[0])}
+    layer = Shapes(data, features=features)
 
     with pytest.raises(TypeError), pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
@@ -1769,11 +1784,11 @@ def test_add_colormap(attribute):
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'shape_type': _make_cycled_properties([0, 1.5], shape[0])}
+    annotations = {'shape_type': _make_cycled_features([0, 1.5], shape[0])}
     color_kwarg = f'{attribute}_color'
     colormap_kwarg = f'{attribute}_colormap'
     args = {color_kwarg: 'shape_type', colormap_kwarg: 'viridis'}
-    layer = Shapes(data, properties=annotations, **args)
+    layer = Shapes(data, features=annotations, **args)
 
     setattr(layer, f'{attribute}_colormap', 'gray')
     layer_colormap = getattr(layer, f'{attribute}_colormap')
@@ -2152,32 +2167,28 @@ def test_to_labels_3D():
     assert np.all(np.unique(labels) == [0, 1, 2, 3])
 
 
-def test_add_single_shape_consistent_properties():
-    """Test adding a single shape ensures correct number of added properties"""
+def test_add_single_shape_consistent_features():
+    """Test adding a single shape ensures correct number of added features"""
     data = [
         np.array([[100, 200], [200, 300]]),
         np.array([[300, 400], [400, 500]]),
     ]
-    properties = {'index': [1, 2]}
-    layer = Shapes(
-        np.array(data), shape_type='rectangle', properties=properties
-    )
+    features = {'index': [1, 2]}
+    layer = Shapes(np.array(data), shape_type='rectangle', features=features)
 
     layer.add(np.array([[500, 600], [700, 800]]))
-    assert len(layer.properties['index']) == 3
-    assert layer.properties['index'][2] == 2
+    assert len(layer.features['index']) == 3
+    assert layer.features['index'][2] == 2
 
 
-def test_add_shapes_consistent_properties():
-    """Test adding multiple shapes ensures correct number of added properties"""
+def test_add_shapes_consistent_features():
+    """Test adding multiple shapes ensures correct number of added features"""
     data = [
         np.array([[100, 200], [200, 300]]),
         np.array([[300, 400], [400, 500]]),
     ]
-    properties = {'index': [1, 2]}
-    layer = Shapes(
-        np.array(data), shape_type='rectangle', properties=properties
-    )
+    features = {'index': [1, 2]}
+    layer = Shapes(np.array(data), shape_type='rectangle', features=features)
 
     layer.add(
         [
@@ -2185,9 +2196,9 @@ def test_add_shapes_consistent_properties():
             np.array([[700, 800], [800, 900]]),
         ]
     )
-    assert len(layer.properties['index']) == 4
-    assert layer.properties['index'][2] == 2
-    assert layer.properties['index'][3] == 2
+    assert len(layer.features['index']) == 4
+    assert layer.features['index'][2] == 2
+    assert layer.features['index'][3] == 2
 
 
 def test_world_data_extent():
