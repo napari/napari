@@ -9,9 +9,6 @@ from vispy.visuals.shaders import Function, FunctionChain
 from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
 from napari._vispy.visuals.volume import Volume as VolumeNode
 
-# from napari._vispy.layers.base import VispyBaseLayer
-
-
 low_disc_lookup_shader = """
 uniform sampler2D texture2D_LUT;
 
@@ -295,7 +292,7 @@ class LabelLayerNode(ImageLayerNode):
 BaseLabel = create_visual_node(LabelVisual)
 
 
-class LabelNode(BaseLabel):
+class LabelNode(BaseLabel):  # type: ignore [valid-type,misc]
     def _compute_bounds(self, axis, view):
         if self._data is None:
             return None
