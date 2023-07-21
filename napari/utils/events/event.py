@@ -299,8 +299,6 @@ class EventEmitter:
         # count number of times this emitter is blocked for each callback.
         self._blocked: Dict[Optional[Callback], int] = {None: 0}
         self._block_counter: _WeakCounter[Optional[Callback]] = _WeakCounter()
-        self._delay_semaphore: int = 0
-        self._last_delayed_event: Optional[Event] = None
 
         # used to detect emitter loops
         self._emitting = False
@@ -726,9 +724,6 @@ class EventEmitter:
         # create / massage event as needed
         event = self._prepare_event(*args, **kwargs)
 
-        if self._delay_semaphore:
-            self._last_delayed_event = event
-            return event
         # Add our source to the event; remove it after all callbacks have been
         # invoked.
         event._push_source(self.source)
