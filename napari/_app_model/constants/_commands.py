@@ -76,7 +76,7 @@ class CommandId(str, Enum):
     LAYER_PROJECT_MEDIAN = 'napari:layer:project_median'
 
     @property
-    def title(self) -> str:  # type: ignore[override]
+    def command_title(self) -> str:
         return _COMMAND_INFO[self].title
 
     @property

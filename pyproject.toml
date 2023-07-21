@@ -228,7 +228,6 @@ check_untyped_defs = true
 # mypy napari | cut -f1 -d: | sort | uniq  | tr '/' '.'  | sed 's/\.py//' | awk '{ print "    \047" $0 "\047," }'
 [[tool.mypy.overrides]]
 module = [
-    'napari._app_model.context._layerlist_context',
     'napari._app_model.injection._processors',
     'napari._event_loop',
     'napari._qt.code_syntax_highlight',
