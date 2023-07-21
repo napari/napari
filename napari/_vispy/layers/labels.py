@@ -21,11 +21,11 @@ vec4 sample_label_color(float t) {
     float margin = 1.0 / 256;
 
     if (t == 0) {
-        return vec4(0.0,0.0,0.0,0.0);
+        return vec4(0);
     }
 
     if (($use_selection) && ($selection != t)) {
-        return vec4(0.0,0.0,0.0,0.0);
+        return vec4(0);
     }
 
     value = mod((t * phi_mod + $seed), 1.0) * (1 - 2*margin) + margin;
@@ -45,6 +45,10 @@ uniform vec2 LUT_shape;
 
 
 vec4 sample_label_color(float t) {
+    if (($use_selection) && ($selection != t)) {
+        return vec4(0);
+    }
+
     float empty = 0.;
     // get position in the texture grid (same as hash2d_get)
     vec2 pos = vec2(
@@ -186,6 +190,8 @@ class VispyLabelsLayer(VispyImageLayer):
 
         self.layer.events.color_mode.connect(self._on_colormap_change)
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
+        self.layer.events.selected_label.connect(self._on_colormap_change)
+        self.layer.events.show_selected_label.connect(self._on_colormap_change)
 
     def _on_rendering_change(self):
         # overriding the Image method so we can maintain the same old rendering name

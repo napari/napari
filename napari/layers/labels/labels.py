@@ -671,6 +671,8 @@ class Labels(_ImageBase):
         self._prev_selected_label = self.selected_label
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
+
+        self.colormap.selection = selected_label
         self.events.selected_label()
 
         if self.show_selected_label:
@@ -715,9 +717,10 @@ class Labels(_ImageBase):
         return self._show_selected_label
 
     @show_selected_label.setter
-    def show_selected_label(self, filter_val):
-        self._show_selected_label = filter_val
-        self.events.show_selected_label(show_selected_label=filter_val)
+    def show_selected_label(self, show_selected):
+        self._show_selected_label = show_selected
+        self.colormap.use_selection = show_selected
+        self.events.show_selected_label(show_selected_label=show_selected)
         self._cached_labels = None
         self.refresh()
 
@@ -933,12 +936,6 @@ class Labels(_ImageBase):
         # If there are no changes, just return the cached image
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
-
-        if self.show_selected_label:
-            selected = self._selected_label
-            labels_to_map = np.where(
-                labels_to_map == selected, selected, self._background_label
-            )
 
         mapped_labels = self._as_type(labels_to_map)
 
