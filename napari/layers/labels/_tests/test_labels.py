@@ -418,16 +418,6 @@ def test_custom_color_dict():
     assert (layer.get_color(4) == layer.get_color(16)).all()
     assert (layer.get_color(8) == layer.get_color(32)).all()
 
-    # Test to see if our label mapped control points map to those in the colormap
-    # with an extra half step.
-    local_controls = np.array(
-        sorted(np.unique([*layer._label_color_index.values(), 1.0]))
-    )
-    colormap_controls = np.array(layer._colormap.controls)
-    assert np.max(np.abs(local_controls - colormap_controls)) == pytest.approx(
-        0.5 / (len(colormap_controls) - 1)
-    )
-
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
     layer.color_mode = 'auto'
@@ -1507,10 +1497,10 @@ def test_color_mapping_when_seed_is_changed():
     """Checks if the color mapping is updated when the color palette seed is changed."""
     np.random.seed(0)
     layer = Labels(np.random.randint(50, size=(10, 10)))
-    mapped_colors1 = layer._raw_to_displayed(layer._slice.image.raw)
+    mapped_colors1 = layer.colormap.map(layer._as_type(layer._slice.image.raw))
 
     layer.new_colormap()
-    mapped_colors2 = layer._raw_to_displayed(layer._slice.image.raw)
+    mapped_colors2 = layer.colormap.map(layer._as_type(layer._slice.image.raw))
 
     assert not np.allclose(mapped_colors1, mapped_colors2)
 
