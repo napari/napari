@@ -282,7 +282,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         else:
             super().__setattr__(name, value)
 
-    def _emmit_if_differ(self, name, old_value) -> Tuple[bool, any]:
+    def _check_if_differ(self, name, old_value) -> Tuple[bool, any]:
         """
         Check new value of a field and emit event if it is different from the old one.
         Returns True if event was emitted, else False.
@@ -293,9 +293,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         else:
             are_equal = pick_equality_operator(new_value)
         if not are_equal(new_value, old_value):
-            getattr(self.events, name)(value=new_value)
-            return True
-        return False
+            return True, new_value
+        return False, None
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name not in getattr(self, 'events', {}):
@@ -303,29 +302,37 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             # `_config_path` before calling the superclass constructor
             super().__setattr__(name, value)
             return
-        with EventBlocker(self):
+        with ComparisonDelayer(self):
             self._primary_changes.add(name)
             self._setattr_impl(name, value)
 
     def _emit_pending(self):
         if self._value_check_counter > 0 or len(self._check_queue) == 0:
             return
-        with EventBlocker(self):
-            cpy = self._check_queue.copy()
+        to_emit = []
+        for name in self._primary_changes:
+            if name not in self._check_queue:
+                continue
+            old_value = self._check_queue[name]
+            if (res := self._check_if_differ(name, old_value))[0]:
+                to_emit.append((name, res[1]))
+            self._check_queue.pop(name)
+        if not to_emit:
+            # Reduce number of comparison
             self._check_queue.clear()
-            pc = self._primary_changes.copy()
             self._primary_changes.clear()
-            primary_changed = False
-            for name in pc:
-                if name not in cpy:
-                    continue
-                if self._emmit_if_differ(name, cpy[name]):
-                    primary_changed = True
-                cpy.pop(name)
-            if not primary_changed:
-                return
-            for name, old_value in cpy.items():
-                self._emmit_if_differ(name, old_value)
+            return
+        for name, old_value in self._check_queue.items():
+            if (res := self._check_if_differ(name, old_value))[0]:
+                to_emit.append((name, res[1]))
+        self._check_queue.clear()
+        self._primary_changes.clear()
+
+        with ComparisonDelayer(self):
+            # ensure proper order of events by delay all caused by
+            # settings values from callback
+            for name, new_value in to_emit:
+                getattr(self.events, name)(value=new_value)
 
     def _setattr_impl(self, name: str, value: Any) -> None:
         if name not in getattr(self, 'events', {}):
@@ -354,10 +361,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             dep for dep, has_cb in has_callbacks.items() if has_cb
         ]
 
-        self._check_queue[name] = getattr(self, name, object())
+        if name not in self._check_queue:
+            self._check_queue[name] = getattr(self, name, object())
 
         for dep in dep_with_callbacks:
-            self._check_queue[dep] = getattr(self, dep, object())
+            if dep not in self._check_queue:
+                self._check_queue[dep] = getattr(self, dep, object())
 
         # set value using original setter
         self._super_setattr_(name, value)
@@ -489,8 +498,8 @@ def get_defaults(obj: BaseModel):
     return dflt
 
 
-class EventBlocker:
-    def __init__(self, target):
+class ComparisonDelayer:
+    def __init__(self, target: EventedModel):
         self._target = target
 
     def __enter__(self):
