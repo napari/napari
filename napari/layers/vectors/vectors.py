@@ -16,7 +16,10 @@ from napari.layers.vectors._slice import (
     _VectorSliceResponse,
 )
 from napari.layers.vectors._vector_utils import fix_data_vectors
-from napari.layers.vectors._vectors_constants import VectorStyle
+from napari.layers.vectors._vectors_constants import (
+    ProjectionMode,
+    VectorStyle,
+)
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
@@ -162,6 +165,8 @@ class Vectors(Layer):
         thumbnail. If more vectors are present then they are randomly
         subsampled.
     """
+
+    _projectionclass = ProjectionMode
 
     # The max number of vectors that will ever be used to render the thumbnail
     # If more vectors are present then they are randomly subsampled
@@ -694,6 +699,7 @@ class Vectors(Layer):
             dims=slice_input,
             data=self.data,
             data_slice=data_slice,
+            projection_mode=self.projection_mode,
             out_of_slice_display=self.out_of_slice_display,
             length=self.length,
         )

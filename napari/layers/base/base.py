@@ -23,7 +23,7 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.layers.base._base_constants import Blending, Mode
+from napari.layers.base._base_constants import Blending, Mode, ProjectionMode
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -242,6 +242,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     """
 
     _modeclass: Type[StringEnum] = Mode
+    _projectionclass: Type[StringEnum] = ProjectionMode
 
     _drag_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
         Mode.PAN_ZOOM: no_op,
@@ -276,6 +277,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
         mode='pan_zoom',
+        projection_mode='none',
     ) -> None:
         super().__init__()
 
@@ -313,6 +315,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.multiscale = multiscale
         self._experimental_clipping_planes = ClippingPlaneList()
         self._mode = self._modeclass('pan_zoom')
+        self._projection_mode = self._projectionclass('none')
 
         self._ndim = ndim
 
@@ -417,9 +420,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             _extent_augmented=Event,
             _overlays=Event,
             mode=Event,
+            projection_mode=Event,
         )
         self.name = name
         self.mode = mode
+        self.projection_mode = projection_mode
         self._overlays.update(
             {
                 'transform_box': TransformBoxOverlay(),
@@ -523,6 +528,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._mode = mode
 
         self.events.mode(mode=str(mode))
+
+    @property
+    def projection_mode(self):
+        return self._projection_mode
+
+    @projection_mode.setter
+    def projection_mode(self, mode):
+        mode = self._projectionclass(mode)
+        if self._projection_mode != mode:
+            self._projection_mode = mode
+            self.events.projection_mode()
+            self.refresh()
 
     @classmethod
     def _basename(cls):

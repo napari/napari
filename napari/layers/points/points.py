@@ -15,7 +15,11 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
-from napari.layers.points._points_constants import Mode, Shading
+from napari.layers.points._points_constants import (
+    Mode,
+    ProjectionMode,
+    Shading,
+)
 from napari.layers.points._points_mouse_bindings import add, highlight, select
 from napari.layers.points._points_utils import (
     _create_box_from_corners_3d,
@@ -294,6 +298,7 @@ class Points(Layer):
     """
 
     _modeclass = Mode
+    _projectionclass = ProjectionMode
 
     _drag_modes = {
         Mode.PAN_ZOOM: no_op,
@@ -1758,6 +1763,7 @@ class Points(Layer):
             dims=slice_input,
             data=self.data,
             data_slice=data_slice,
+            projection_mode=self.projection_mode,
             out_of_slice_display=self.out_of_slice_display,
             size=self.size,
         )

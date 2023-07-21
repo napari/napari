@@ -4,6 +4,8 @@ from typing import Any, Callable, Tuple
 import numpy as np
 
 from napari.layers.base._slice import _next_request_id
+from napari.layers.image._image_constants import ProjectionMode
+from napari.layers.image._image_utils import project_slice
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils.misc import reorder_after_dim_reduction
@@ -163,6 +165,7 @@ class _ImageSliceRequest:
     data: Any = field(repr=False)
     dask_indexer: DaskIndexer
     data_slice: _ThickNDSlice
+    projection_mode: ProjectionMode
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray
     rgb: bool = field(repr=False)
@@ -266,6 +269,10 @@ class _ImageSliceRequest:
 
     def _get_slice_data(self):
         slices = []
+        if self.projection_mode == 'none':
+            indices = np.array(self.data_slice.point)[self.dims.not_displayed]
+            return self.data[tuple(indices.astype(int))]
+
         for dim_len, _point, low, high in zip(
             self.data.shape,
             self.data_slice.point,
@@ -280,9 +287,10 @@ class _ImageSliceRequest:
             slice_ = slice(max(0, low), min(dim_len, high))
             slices.append(slice_)
 
-        # TODO: for now just average is implemented over thick slice
-        return np.mean(
-            self.data[tuple(slices)], axis=tuple(self.dims.not_displayed)
+        return project_slice(
+            self.data[tuple(slices)],
+            axis=tuple(self.dims.not_displayed),
+            mode=self.projection_mode,
         )
 
     def _get_order(self) -> Tuple[int, ...]:

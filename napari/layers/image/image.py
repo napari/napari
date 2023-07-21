@@ -16,6 +16,7 @@ from napari.layers.base import Layer
 from napari.layers.image._image_constants import (
     ImageRendering,
     Interpolation,
+    ProjectionMode,
     VolumeDepiction,
 )
 from napari.layers.image._image_mouse_bindings import (
@@ -256,6 +257,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         plane=None,
         experimental_clipping_planes=None,
         custom_interpolation_kernel_2d=None,
+        projection_mode='none',
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -308,6 +310,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             multiscale=multiscale,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(
@@ -715,9 +718,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # This can happen when slicing layers with different extents.
         data_slice = self._data_slice
         for d in self._slice_input.not_displayed:
+            pt = data_slice.point[d]
             low = data_slice.margin_left[d]
             high = data_slice.margin_right[d]
-            if (high < 0) or (low > self._extent_data[1][d]):
+            if (
+                (pt < 0)
+                or (pt > self._extent_data[1][d])
+                or (high < 0)
+                or (low > self._extent_data[1][d])
+            ):
                 self._slice = _ImageSliceResponse.make_empty(
                     dims=self._slice_input, rgb=self.rgb
                 )
@@ -774,6 +783,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             data=self.data,
             dask_indexer=dask_indexer,
             data_slice=data_slice,
+            projection_mode=self.projection_mode,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,
             rgb=self.rgb,
@@ -908,6 +918,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
 
 class Image(_ImageBase):
+    _projectionclass = ProjectionMode
+
     @property
     def rendering(self):
         """Return current rendering mode.

@@ -126,3 +126,13 @@ class ActionType(StringEnum):
     ADD = auto()
     REMOVE = auto()
     CHANGE = auto()
+
+
+class ProjectionMode(StringEnum):
+    """
+    Projection mode for aggregating a thick nD slice onto displayed dimensions.
+
+        * NONE: ignore slice thickness, only using the dims point
+    """
+
+    NONE = auto()

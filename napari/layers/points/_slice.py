@@ -4,6 +4,7 @@ from typing import Any
 import numpy as np
 
 from napari.layers.base._slice import _next_request_id
+from napari.layers.points._points_constants import ProjectionMode
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
 
@@ -58,6 +59,7 @@ class _PointSliceRequest:
     dims: _SliceInput
     data: Any = field(repr=False)
     data_slice: _ThickNDSlice = field(repr=False)
+    projection_mode: ProjectionMode
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
     id: int = field(default_factory=_next_request_id)
@@ -100,11 +102,15 @@ class _PointSliceRequest:
         low = np.array(self.data_slice.margin_left)[not_disp]
         high = np.array(self.data_slice.margin_right)[not_disp]
 
-        if np.isclose(high, low):
-            # assume slice thickness of 1 in data pixels
-            # (same as before thick slices were implemented)
-            low = point - 0.5
-            high = point + 0.5
+        if self.projection_mode == 'none':
+            low = point
+            high = point
+
+        # assume slice thickness of 1 in data pixels
+        # (same as before thick slices were implemented)
+        too_thin_slice = np.isclose(high, low)
+        low[too_thin_slice] = point - 0.5
+        high[too_thin_slice] = point + 0.5
 
         inside_slice = np.all((data >= low) & (data <= high), axis=1)
         slice_indices = np.where(inside_slice)[0].astype(int)

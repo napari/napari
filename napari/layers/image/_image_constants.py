@@ -93,3 +93,17 @@ VOLUME_DEPICTION_TRANSLATION = OrderedDict(
         (VolumeDepiction.PLANE, trans._('plane')),
     ]
 )
+
+
+class ProjectionMode(StringEnum):
+    """
+    Projection mode for aggregating a thick nD slice onto displayed dimensions.
+
+        * NONE: ignore slice thickness, only using the dims point
+        * ADDITIVE: sum data across the thick slice
+        * AVERAGE: average data across the thick slice
+    """
+
+    NONE = auto()
+    ADDITIVE = auto()
+    AVERAGE = auto()

@@ -6,6 +6,7 @@ import numpy as np
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
+from napari.layers.image._image_constants import ProjectionMode
 from napari.utils.translations import trans
 
 
@@ -105,3 +106,13 @@ def guess_labels(data):
         return 'labels'
 
     return 'image'
+
+
+def project_slice(data, axis, mode):
+    if mode == ProjectionMode.ADDITIVE:
+        func = np.sum
+    elif mode == ProjectionMode.AVERAGE:
+        func = np.mean
+    else:
+        raise NotImplementedError(f'unimplemented projection: {mode}')
+    return func(data, tuple(axis))
