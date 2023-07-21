@@ -36,6 +36,6 @@ class Cursor(EventedModel):
     # fields
     position: Tuple[float, ...] = (1, 1)
     scaled: bool = True
-    size: float = 1
+    size = 1.0
     style: CursorStyle = CursorStyle.STANDARD
     _view_direction: Optional[Tuple[float, ...]] = None
