@@ -302,7 +302,9 @@ class VispyCanvas:
     def _on_interactive(self) -> None:
         """Link interactive attributes of view and viewer."""
         # Is this should be changed or renamed?
-        self.view.interactive = self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
+        self.view.interactive = (
+            self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
+        )
 
     def _map_canvas2world(
         self, position: List[int, int]
