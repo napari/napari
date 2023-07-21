@@ -147,7 +147,7 @@ def hash2d_get(key, keys, values, empty_val=0):
             raise KeyError('label does not exist')
         key += 1
         pos = idx_to_2D(key, keys.shape)
-    return pos if key[pos] == key else None
+    return pos if keys[pos] == key else None
 
 
 def hash2d_set(key, value, keys, values, empty_val=0):
