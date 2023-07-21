@@ -282,7 +282,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         else:
             super().__setattr__(name, value)
 
-    def _check_if_differ(self, name, old_value) -> Tuple[bool, any]:
+    def _check_if_differ(self, name: str, old_value: Any) -> Tuple[bool, Any]:
         """
         Check new value of a field and emit event if it is different from the old one.
         Returns True if event was emitted, else False.
@@ -292,9 +292,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             are_equal = self.__eq_operators__[name]
         else:
             are_equal = pick_equality_operator(new_value)
-        if not are_equal(new_value, old_value):
-            return True, new_value
-        return False, None
+        return not are_equal(new_value, old_value), new_value
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name not in getattr(self, 'events', {}):
