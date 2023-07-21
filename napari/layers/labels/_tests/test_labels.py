@@ -279,21 +279,29 @@ def test_properties():
     data = np.random.randint(20, size=(10, 15))
 
     layer = Labels(data)
-    assert isinstance(layer.properties, dict)
-    assert len(layer.properties) == 0
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties
+    assert isinstance(layer_properties, dict)
+    assert len(layer_properties) == 0
 
     properties = {
         'class': np.array(['Background'] + [f'Class {i}' for i in range(20)])
     }
     label_index = {i: i for i in range(len(properties['class']))}
-    layer = Labels(data, properties=properties)
-    assert isinstance(layer.properties, dict)
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(DeprecationWarning):
+        layer = Labels(data, properties=properties)
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties
+    assert isinstance(layer_properties, dict)
+    np.testing.assert_equal(layer_properties, properties)
     assert layer._label_index == label_index
     layer = Labels(data)
-    layer.properties = properties
-    assert isinstance(layer.properties, dict)
-    np.testing.assert_equal(layer.properties, properties)
+    with pytest.warns(DeprecationWarning):
+        layer.properties = properties
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties
+    assert isinstance(layer_properties, dict)
+    np.testing.assert_equal(layer_properties, properties)
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))
@@ -301,25 +309,29 @@ def test_properties():
     assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
-    layer = Labels(data, properties=properties)
+    with pytest.warns(DeprecationWarning):
+        layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer_message['coordinates'].endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
-    layer = Labels(data, properties=properties)
+    with pytest.warns(DeprecationWarning):
+        layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message['coordinates'].endswith('Class 12')
 
     layer = Labels(data)
-    layer.properties = properties
+    with pytest.warns(DeprecationWarning):
+        layer.properties = properties
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message['coordinates'].endswith('Class 12')
 
     layer = Labels(data)
-    layer.properties = pd.DataFrame(properties)
+    with pytest.warns(DeprecationWarning):
+        layer.properties = pd.DataFrame(properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message['coordinates'].endswith('Class 12')
@@ -333,45 +345,107 @@ def test_default_properties_assignment():
     data = np.random.randint(20, size=(10, 15))
 
     layer = Labels(data)
-    layer.properties = {}
-    assert layer.properties == {}
+    with pytest.warns(DeprecationWarning):
+        layer.properties = {}
+    with pytest.warns(DeprecationWarning):
+        layer_properties = layer.properties
+    assert layer_properties == {}
 
 
-def test_multiscale_properties():
-    """Test adding labels with multiscale properties."""
+def test_features():
+    """Test adding labels with features."""
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+
+    layer = Labels(data)
+    assert len(layer.features) == 0
+    assert len(layer.features.columns) == 0
+
+    features = {'class': ['Background'] + [f'Class {i}' for i in range(20)]}
+    label_index = {i: i for i in range(len(features['class']))}
+
+    layer = Labels(data, features=features)
+    pd.testing.assert_frame_equal(layer.features, pd.DataFrame(features))
+    assert layer._label_index == label_index
+
+    layer = Labels(data)
+    layer.features = features
+    pd.testing.assert_frame_equal(layer.features, pd.DataFrame(features))
+    assert layer._label_index == label_index
+
+    current_label = layer.get_value((0, 0))
+    layer_message = layer.get_status((0, 0))
+    assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
+
+    features = {'class': ['Background']}
+    layer = Labels(data, features=features)
+    layer_message = layer.get_status((0, 0))
+    assert layer_message['coordinates'].endswith("[No Properties]")
+
+    features = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
+    label_index = {0: 0, 12: 1}
+    layer = Labels(data, features=features)
+    layer_message = layer.get_status((0, 0))
+    assert layer._label_index == label_index
+    assert layer_message['coordinates'].endswith('Class 12')
+
+    layer = Labels(data)
+    layer.features = features
+    layer_message = layer.get_status((0, 0))
+    assert layer._label_index == label_index
+    assert layer_message['coordinates'].endswith('Class 12')
+
+    layer = Labels(data)
+    layer.features = pd.DataFrame(features)
+    layer_message = layer.get_status((0, 0))
+    assert layer._label_index == label_index
+    assert layer_message['coordinates'].endswith('Class 12')
+
+
+def test_multiscale_features():
+    """Test adding labels with multiscale features."""
     np.random.seed(0)
     data0 = np.random.randint(20, size=(10, 15))
     data1 = data0[::2, ::2]
     data = [data0, data1]
 
     layer = Labels(data)
-    assert isinstance(layer.properties, dict)
-    assert len(layer.properties) == 0
+    assert len(layer.features) == 0
+    assert len(layer.features.columns) == 0
 
-    properties = {
-        'class': np.array(['Background'] + [f'Class {i}' for i in range(20)])
-    }
-    label_index = {i: i for i in range(len(properties['class']))}
-    layer = Labels(data, properties=properties)
-    assert isinstance(layer.properties, dict)
-    np.testing.assert_equal(layer.properties, properties)
+    features = {'class': ['Background'] + [f'Class {i}' for i in range(20)]}
+    label_index = {i: i for i in range(len(features['class']))}
+    layer = Labels(data, features=features)
+    pd.testing.assert_frame_equal(layer.features, pd.DataFrame(features))
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))[1]
     layer_message = layer.get_status((0, 0))
     assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
 
-    properties = {'class': ['Background']}
-    layer = Labels(data, properties=properties)
+    features = {'class': ['Background']}
+    layer = Labels(data, features=features)
     layer_message = layer.get_status((0, 0))
     assert layer_message['coordinates'].endswith("[No Properties]")
 
-    properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
+    features = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
-    layer = Labels(data, properties=properties)
+    layer = Labels(data, features=features)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message['coordinates'].endswith('Class 12')
+
+
+def test_default_features_assignment():
+    """Test that the default features value can be assigned to features
+    see https://github.com/napari/napari/issues/2477
+    """
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+
+    layer = Labels(data)
+    layer.features = {}
+    pd.testing.assert_frame_equal(layer.features, pd.DataFrame())
 
 
 def test_colormap():
@@ -1460,7 +1534,8 @@ def test_labels_state_update():
     layer = Labels(data)
     state = layer._get_state()
     for k, v in state.items():
-        setattr(layer, k, v)
+        if k not in state.deprecations:
+            setattr(layer, k, v)
 
 
 def test_is_default_color():
@@ -1641,7 +1716,7 @@ def test_get_status_with_custom_index():
     df = pd.DataFrame(
         {'text1': [1, 3], 'text2': [7, -2], 'index': [1, 2]}, index=[1, 2]
     )
-    layer.properties = df
+    layer.features = df
     assert (
         layer.get_status((0, 0))['coordinates'] == ' [0 0]: 0; [No Properties]'
     )
