@@ -38,12 +38,12 @@ class WheelEvent:
         (
             ["Control"],
             WheelEvent(False),
-            [[5, 5, 5], [5, 5, 4], [5, 5, 3], [5, 5, 0]],
+            [[5, 5, 5], [4, 5, 5], [3, 5, 5], [0, 5, 5]],
         ),
         (
             ["Control"],
             WheelEvent(True),
-            [[5, 5, 5], [5, 5, 6], [5, 5, 7], [5, 5, 9]],
+            [[5, 5, 5], [6, 5, 5], [7, 5, 5], [9, 5, 5]],
         ),
     ],
 )
@@ -52,7 +52,7 @@ def test_paint(mouse_event, modifiers, native, expected_dim):
     viewer = ViewerModel()
     data = np.random.random((10, 10, 10))
     viewer.add_image(data)
-    viewer.dims.last_used = 2
+    viewer.dims.last_used = 0
     viewer.dims.set_point(axis=0, value=5)
     viewer.dims.set_point(axis=1, value=5)
     viewer.dims.set_point(axis=2, value=5)

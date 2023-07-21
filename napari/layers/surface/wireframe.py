@@ -1,5 +1,9 @@
+from pydantic import Field
+
 from napari.utils.color import ColorValue
 from napari.utils.events import EventedModel
+
+_DEFAULT_COLOR = ColorValue('black')
 
 
 class SurfaceWireframe(EventedModel):
@@ -18,5 +22,5 @@ class SurfaceWireframe(EventedModel):
     """
 
     visible: bool = False
-    color: ColorValue = 'black'
+    color: ColorValue = Field(default_factory=lambda: _DEFAULT_COLOR)
     width: float = 1

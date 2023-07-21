@@ -7,9 +7,14 @@ import pandas as pd
 
 from napari.layers.base import Layer
 from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.layer_utils import _FeatureTable
+from napari.layers.vectors._slice import (
+    _VectorSliceRequest,
+    _VectorSliceResponse,
+)
 from napari.layers.vectors._vector_utils import fix_data_vectors
 from napari.layers.vectors._vectors_constants import VectorStyle
 from napari.utils.colormaps import Colormap, ValidColormapArg
@@ -621,14 +626,27 @@ class Vectors(Layer):
 
     @property
     def _view_face_color(self) -> np.ndarray:
-        """(Mx4) np.ndarray : colors for the M in view vectors"""
+        """(Mx4) np.ndarray : colors for the M in view triangles"""
+
+        # Create as many colors as there are visible vectors.
+        # Using fancy array indexing implicitly creates a new
+        # array rather than creating a view of the original one
+        # in ColorManager
         face_color = self.edge_color[self._view_indices]
         face_color[:, -1] *= self._view_alphas
 
+        # Generally, several triangles are drawn for each vector,
+        # so we need to duplicate the colors accordingly
         if self.vector_style == 'line':
+            # Line vectors are drawn with 2 triangles
             face_color = np.repeat(face_color, 2, axis=0)
 
+        elif self.vector_style == 'triangle':
+            # Triangle vectors are drawn with 1 triangle
+            pass  # No need to duplicate colors
+
         elif self.vector_style == 'arrow':
+            # Arrow vectors are drawn with 3 triangles
             face_color = np.repeat(face_color, 3, axis=0)
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
@@ -636,83 +654,57 @@ class Vectors(Layer):
 
         return face_color
 
-    def _slice_data(
-        self, dims_indices
-    ) -> Tuple[np.ndarray, Union[float, np.ndarray]]:
-        """Determines the slice of vectors given the indices.
-
-        Parameters
-        ----------
-        dims_indices : sequence of int, float or slice objects
-            Indices of the slicing plane
-
-        Returns
-        -------
-        slice_indices : list
-            Indices of vectors in the currently viewed slice.
-        alpha : float, (N, ) array
-            The computed, relative opacity of vectors in the current slice.
-            If `out_of_slice_display` is mode is off, this is always 1.
-            Otherwise, vectors originating in the current slice are assigned a value of 1,
-            while vectors passing through the current slice are assigned progressively lower
-            values, based on how far from the current slice they originate.
-        """
-
-        if len(self.data) == 0:
-            return np.array([], dtype=int), np.empty(0)
-
-        dims_not_displayed = self._slice_input.not_displayed
-
-        # We want a numpy array so we can use fancy indexing with the non-displayed
-        # indices, but as dims_indices can (and often/always does) contain slice
-        # objects, the array has dtype=object which is then very slow for the
-        # arithmetic below.
-        # promote slicing plane to array so we can index into it, project as type float
-        not_disp_indices = np.array(dims_indices)[dims_not_displayed].astype(
-            float
-        )
-        # get the anchor points (starting positions) of the vector layers in not displayed dims
-        data = self.data[:, 0, dims_not_displayed]
-        # calculate distances from anchor points to the slicing plane
-        distances = abs(data - not_disp_indices)
-        # if we need to include vectors that are out of this slice
-        if self.out_of_slice_display is True:
-            # get the scaled projected vectors
-            projected_lengths = abs(
-                self.data[:, 1, dims_not_displayed] * self.length
-            )
-            # find where the distance to plane is less than the scaled vector
-            matches = np.all(distances <= projected_lengths, axis=1)
-            alpha_match = projected_lengths[matches]
-            alpha_match[alpha_match == 0] = 1
-            alpha_per_dim = (alpha_match - distances[matches]) / alpha_match
-            alpha_per_dim[alpha_match == 0] = 1
-            alpha = np.prod(alpha_per_dim, axis=1).astype(float)
-        else:
-            matches = np.all(distances <= 0.5, axis=1)
-            alpha = 1.0
-        slice_indices = np.where(matches)[0].astype(int)
-        return slice_indices, alpha
-
-    def _set_view_slice(self) -> None:
+    def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        indices, alphas = self._slice_data(self._slice_indices)
+        # The new slicing code makes a request from the existing state and
+        # executes the request on the calling thread directly.
+        # For async slicing, the calling thread will not be the main thread.
+        request = self._make_slice_request_internal(
+            self._slice_input, self._slice_indices
+        )
+        response = request()
+        self._update_slice_response(response)
+
+    def _make_slice_request(self, dims) -> _VectorSliceRequest:
+        """Make a Vectors slice request based on the given dims and these data."""
+        slice_input = self._make_slice_input(
+            dims.point, dims.ndisplay, dims.order
+        )
+        # TODO: [see Image]
+        #   For the existing sync slicing, slice_indices is passed through
+        # to avoid some performance issues related to the evaluation of the
+        # data-to-world transform and its inverse. Async slicing currently
+        # absorbs these performance issues here, but we can likely improve
+        # things either by caching the world-to-data transform on the layer
+        # or by lazily evaluating it in the slice task itself.
+        slice_indices = slice_input.data_indices(
+            self._data_to_world.inverse, round_index=False
+        )
+        return self._make_slice_request_internal(slice_input, slice_indices)
+
+    def _make_slice_request_internal(
+        self, slice_input: _SliceInput, dims_indices
+    ):
+        return _VectorSliceRequest(
+            dims=slice_input,
+            data=self.data,
+            dims_indices=dims_indices,
+            out_of_slice_display=self.out_of_slice_display,
+            length=self.length,
+        )
+
+    def _update_slice_response(self, response: _VectorSliceResponse):
+        """Handle a slicing response."""
+        self._slice_input = response.dims
+        indices = response.indices
+        alphas = response.alphas
 
         disp = self._slice_input.displayed
 
-        if len(self.data) == 0:
-            self._view_data = np.empty((0, 2, 2))
-            self._view_indices = np.array([], dtype=int)
-        elif self.ndim > 2:
-            indices, alphas = self._slice_data(self._slice_indices)
-            self._view_indices = indices
-            self._view_alphas = alphas
-            self._view_data = self.data[np.ix_(list(indices), [0, 1], disp)]
-        else:
-            self._view_data = self.data[:, :, disp]
-            self._view_indices = np.arange(self.data.shape[0])
-            self._view_alphas = 1.0
+        self._view_indices = indices
+        self._view_alphas = alphas
+        self._view_data = self.data[np.ix_(list(indices), [0, 1], disp)]
 
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""
