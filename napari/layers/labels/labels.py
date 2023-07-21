@@ -994,7 +994,11 @@ class Labels(_ImageBase):
         """Return the color corresponding to a specific label."""
         if label == self._background_label:
             col = None
-        elif label is None:
+        elif (
+            label is None
+            or self.show_selected_label
+            and label != self.selected_label
+        ):
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
             val = self._as_type(np.array([label]))
