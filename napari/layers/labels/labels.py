@@ -352,6 +352,8 @@ class Labels(_ImageBase):
         self._brush_size = 10
 
         self._selected_label = 1
+        self.colormap.selection = self._selected_label
+        self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
         self._updated_slice = None
@@ -669,8 +671,8 @@ class Labels(_ImageBase):
             return
 
         self._prev_selected_label = self.selected_label
-        self._selected_label = selected_label
         self.colormap.selection = selected_label
+        self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
 
         self.events.selected_label()
