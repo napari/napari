@@ -663,6 +663,8 @@ def test_create_non_empty_viewer_model(qtbot):
 def test_label_colors_matching_widget(qtbot, make_napari_viewer):
     """Make sure the rendered label colors match the QtColorBox widget."""
     viewer = make_napari_viewer(show=True)
+    # XXX TODO: this unstable! Seed = 0 fails, for example. This is due to numerical
+    #           imprecision in random colormap on gpu vs cpu
     np.random.seed(0)
     data = np.ones((2, 2), dtype=np.uint64)
     layer = viewer.add_labels(data)
