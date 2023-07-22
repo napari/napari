@@ -438,7 +438,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         cls = type(self)
         return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
 
-    def _mode_setter_helper(self, mode: Union[Mode, str]) -> Mode:
+    def _mode_setter_helper(self, mode_in: Union[Mode, str]) -> StringEnum:
         """
         Helper to manage callbacks in multiple layers
 
@@ -459,10 +459,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             New mode for the current layer.
 
         """
-        mode = self._modeclass(mode)
+        mode = self._modeclass(mode_in)
+        # Sub-classes can have their own Mode enum, so need to get members
+        # from the specific mode class set on this layer.
+        PAN_ZOOM = getattr(self._modeclass, "PAN_ZOOM", None)
+        TRANSFORM = getattr(self._modeclass, "TRANSFORM", None)
+        assert PAN_ZOOM is not None
+        assert TRANSFORM is not None
         assert mode is not None
+
         if not self.editable:
-            mode = self._modeclass.PAN_ZOOM
+            mode = PAN_ZOOM
         if mode == self._mode:
             return mode
 
@@ -488,16 +495,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        self.mouse_pan = mode == self._modeclass.PAN_ZOOM
-        self._overlays['transform_box'].visible = (
-            mode == self._modeclass.TRANSFORM
-        )
+        self.mouse_pan = mode == PAN_ZOOM
+        self._overlays['transform_box'].visible = mode == TRANSFORM
 
-        if mode == self._modeclass.TRANSFORM:
+        if mode == TRANSFORM:
             self.help = trans._(
                 'hold <space> to pan/zoom, hold <shift> to preserve aspect ratio and rotate in 45° increments'
             )
-        elif mode == self._modeclass.PAN_ZOOM:
+        elif mode == PAN_ZOOM:
             self.help = ''
 
         return mode
