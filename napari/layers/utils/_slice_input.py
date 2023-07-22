@@ -21,6 +21,14 @@ class _ThickNDSlice(Generic[_T]):
     margin_left: Tuple[_T, ...]
     margin_right: Tuple[_T, ...]
 
+    @classmethod
+    def make_full(cls, ndim: int):
+        return cls(
+            point=tuple(np.nan for _ in range(ndim)),
+            margin_left=tuple(np.nan for _ in range(ndim)),
+            margin_right=tuple(np.nan for _ in range(ndim)),
+        )
+
 
 @dataclass(frozen=True)
 class _SliceInput:
@@ -117,9 +125,13 @@ class _SliceInput:
             for ax in self.not_displayed
         ]
 
-        data_pts = slice_world_to_data(world_pts)
-        data_margin_left = slice_world_to_data(world_margin_left)
-        data_margin_right = slice_world_to_data(world_margin_right)
+        # stack for transform speed
+        slice_stacked = np.stack(
+            [world_pts, world_margin_left, world_margin_right]
+        )
+        data_pts, data_margin_left, data_margin_right = slice_world_to_data(
+            slice_stacked
+        ).T
 
         if round_index:
             # A round is taken to convert these values to slicing integers
@@ -127,7 +139,7 @@ class _SliceInput:
             data_margin_left = np.round(data_margin_left).astype(int)
             data_margin_right = np.round(data_margin_right).astype(int)
 
-        full_pts = [np.nan for ax in range(self.ndim)]
+        full_pts = [np.nan for _ in range(self.ndim)]
         full_margin_left = [np.nan for _ in range(self.ndim)]
         full_margin_right = [np.nan for _ in range(self.ndim)]
 
@@ -137,9 +149,9 @@ class _SliceInput:
             full_margin_right[ax] = data_margin_right[i]
 
         return _ThickNDSlice(
-            point=full_pts,
-            margin_left=full_margin_left,
-            margin_right=full_margin_right,
+            point=tuple(full_pts),
+            margin_left=tuple(full_margin_left),
+            margin_right=tuple(full_margin_right),
         )
 
     def is_orthogonal(self, world_to_data: Affine) -> bool:

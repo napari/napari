@@ -927,6 +927,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def _data_slice(self) -> _ThickNDSlice:
         """Slice in data coordinates."""
+        if len(self._slice_input.not_displayed) == 0:
+            # early return to avoid evaluating data_to_world.inverse
+            return _ThickNDSlice.make_full(self.ndim)
+
         return self._slice_input.data_slice(
             self._data_to_world.inverse,
             getattr(self, '_round_index', True),
