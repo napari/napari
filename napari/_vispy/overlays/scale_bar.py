@@ -1,6 +1,7 @@
 import bisect
 
 import numpy as np
+import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
@@ -15,7 +16,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def __init__(self, *, viewer, overlay, parent=None) -> None:
         self._target_length = 150
         self._scale = 1
-        self._unit = None
+        self._unit: pint.Unit
 
         super().__init__(
             node=ScaleBar(), viewer=viewer, overlay=overlay, parent=parent
@@ -74,7 +75,9 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         new_value = PREFERRED_VALUES[index]
 
         # get the new pixel length utilizing the user-specified units
-        new_length = ((new_value * factor) / self._unit.magnitude).magnitude
+        new_length = (
+            (new_value * factor) / (1 * self._unit).magnitude
+        ).magnitude
         new_quantity = new_value * new_quantity.units
         return new_length, new_quantity
 
