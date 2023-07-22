@@ -638,8 +638,8 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     def _get_value_3d(
         self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
         dims_displayed: List[int],
     ) -> Tuple[Union[None, float, int], Optional[int]]:
         """Get the layer data value along a ray
