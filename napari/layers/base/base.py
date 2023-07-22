@@ -23,7 +23,7 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.layers.base._base_constants import Blending, Mode
+from napari.layers.base._base_constants import Blending, Mode, ModeBase
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -241,7 +241,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     * `_basename()`: base/default name of the layer
     """
 
-    _modeclass: Type[StringEnum] = Mode
+    _modeclass: Type[ModeBase] = Mode
 
     _drag_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
         Mode.PAN_ZOOM: no_op,

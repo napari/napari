@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from enum import auto
 
+from napari.layers.base._base_constants import ModeBase
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
 
@@ -21,7 +22,7 @@ class ColorMode(StringEnum):
     COLORMAP = auto()
 
 
-class Mode(StringEnum):
+class Mode(ModeBase):
     """
     Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
     allows for normal interactivity with the canvas.

@@ -55,7 +55,13 @@ BLENDING_TRANSLATIONS = OrderedDict(
 )
 
 
-class Mode(StringEnum):
+class ModeBase(StringEnum):
+    """
+    Class use to mark another class as a Mode enum.
+    """
+
+
+class Mode(ModeBase):
     """
     Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
     allows for normal interactivity with the canvas.
