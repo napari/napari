@@ -15,7 +15,12 @@ from vispy.color import (
 from vispy.color.colormap import LUT_len
 
 from napari.utils.colormaps.bop_colors import bopd
-from napari.utils.colormaps.colormap import Colormap, ColormapInterpolationMode
+from napari.utils.colormaps.colormap import (
+    Colormap,
+    ColormapInterpolationMode,
+    DirectLabelColormap,
+    LabelColormap,
+)
 from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.colormaps.vendored import cm
@@ -259,6 +264,9 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256):
     image_out = margin + (1 - 2 * margin) * (
         image_float - np.floor(image_float)
     )
+
+    # Clear zero (background) values, matching the shader behavior in _glsl_label_step
+    image_out[image == 0] = 0.0
     return image_out
 
 
@@ -419,26 +427,47 @@ def label_colormap(num_colors=256, seed=0.5):
     """
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
-    midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors)
+    midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors + 1)
     control_points = np.concatenate(([0], midpoints, [1.0]))
     # make sure to add an alpha channel to the colors
     colors = np.concatenate(
         (
-            _color_random(num_colors + 1, seed=seed),
-            np.full((num_colors + 1, 1), 1),
+            _color_random(num_colors + 2, seed=seed),
+            np.full((num_colors + 2, 1), 1),
         ),
         axis=1,
     )
     # Insert alpha at layer 0
     colors[0, :] = 0  # ensure alpha is 0 for label 0
-
-    return Colormap(
+    return LabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
         colors=colors,
         controls=control_points,
         interpolation='zero',
+        seed=seed,
     )
+
+
+def direct_colormap(color_dict=None):
+    """Make a direct colormap from a dictionary mapping labels to colors.
+
+    Parameters
+    ----------
+    color_dict : dict, optional
+        A dictionary mapping labels to colors.
+
+    Returns
+    -------
+    d : DirectLabelColormap
+        A napari colormap whose map() function applies the color dictionary
+        to an array.
+    """
+    # we don't actually use the color array, so pass dummy.
+    d = DirectLabelColormap(np.zeros(3))
+    if color_dict is not None:
+        d.color_dict.update(color_dict)
+    return d
 
 
 def vispy_or_mpl_colormap(name):
