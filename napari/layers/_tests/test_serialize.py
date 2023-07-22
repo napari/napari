@@ -3,7 +3,11 @@ import inspect
 import numpy as np
 import pytest
 
-from napari._tests.utils import are_objects_equal, layer_test_data
+from napari._tests.utils import (
+    are_objects_equal,
+    count_warning_events,
+    layer_test_data,
+)
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -47,4 +51,4 @@ def test_no_callbacks(Layer, data, ndim):
     # Check that no internal callbacks have been registered
     assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        assert len(em.callbacks) == count_warning_events(em.callbacks)

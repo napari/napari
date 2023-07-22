@@ -266,13 +266,6 @@ class Graph(_BasePoints):
         antialiasing=1,
         shown=True,
     ) -> None:
-        if BaseGraph is None:
-            raise RuntimeError(
-                trans._(
-                    "`napari-graph` module is required by the graph layer."
-                )
-            )
-
         self._data = self._fix_data(data, ndim)
         self._edges_indices_view: ArrayLike = []
 

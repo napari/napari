@@ -11,7 +11,6 @@ def test_deprecation_warning_event() -> None:
     def _print(msg: str) -> None:
         print(msg)
 
-    event.connect(_print)
-
     with pytest.warns(FutureWarning):
+        event.connect(_print)
         event(msg="test")

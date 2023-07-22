@@ -24,6 +24,7 @@ from napari.layers import (
 )
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.utils.color import ColorArray
+from napari.utils.events.event import WarningEmitter
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
@@ -328,3 +329,10 @@ def assert_colors_equal(actual, expected):
     actual_array = ColorArray.validate(actual)
     expected_array = ColorArray.validate(expected)
     np.testing.assert_array_equal(actual_array, expected_array)
+
+
+def count_warning_events(callbacks) -> int:
+    """Counts the number of WarningEmitter in the callback list."""
+    return len(
+        list(filter(lambda x: isinstance(x, WarningEmitter), callbacks))
+    )

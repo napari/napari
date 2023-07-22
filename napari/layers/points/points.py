@@ -2187,43 +2187,27 @@ class Points(_BasePoints):
             shown=shown,
         )
 
-        self.events.add(
-            edge_width=deprecation_warning_event(
+        deprecated_events = {}
+        for attr in [
+            "{}_width",
+            "current_{}_width",
+            "{}_width_is_relative",
+            "{}_color",
+            "current_{}_color",
+        ]:
+            old_attr = attr.format("edge")
+            new_attr = attr.format("border")
+            old_emitter = deprecation_warning_event(
                 "layer.events",
-                "edge_width",
-                "border_width",
+                old_attr,
+                new_attr,
                 since_version="0.5.0",
                 version="0.6.0",
-            ),
-            current_edge_width=deprecation_warning_event(
-                "layer.events",
-                "current_edge_width",
-                "current_border_width",
-                since_version="0.5.0",
-                version="0.6.0",
-            ),
-            edge_width_is_relative=deprecation_warning_event(
-                "layer.events",
-                "edge_width_is_relative",
-                "border_width_is_relative",
-                since_version="0.5.0",
-                version="0.6.0",
-            ),
-            edge_color=deprecation_warning_event(
-                "layer.events",
-                "edge_color",
-                "border_color",
-                since_version="0.5.0",
-                version="0.6.0",
-            ),
-            current_edge_color=deprecation_warning_event(
-                "layer.events",
-                "current_edge_color",
-                "current_border_color",
-                since_version="0.5.0",
-                version="0.6.0",
-            ),
-        )
+            )
+            getattr(self.events, new_attr).connect(old_emitter)
+            deprecated_events[old_attr] = old_emitter
+
+        self.events.add(**deprecated_events)
 
     @classmethod
     def _add_deprecated_properties(cls) -> None:
