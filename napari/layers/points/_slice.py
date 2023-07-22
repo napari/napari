@@ -48,8 +48,8 @@ class _PointSliceRequest:
         Describes the slicing plane or bounding box in the layer's dimensions.
     data : Any
         The layer's data field, which is the main input to slicing.
-    dims_indices : tuple of ints or slices
-        The slice indices in the layer's data space.
+    data_slice : _ThickNDSlice
+        The slicing coordinates and margins in data space.
     size : array like
         Size of each point. This is used in calculating visibility.
     others

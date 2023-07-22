@@ -153,8 +153,8 @@ class _ImageSliceRequest:
         Describes the slicing plane or bounding box in the layer's dimensions.
     data : Any
         The layer's data field, which is the main input to slicing.
-    indices : tuple of ints or slices
-        The slice indices in the layer's data space.
+    data_slice : _ThickNDSlice
+        The slicing coordinates and margins in data space.
     others
         See the corresponding attributes in `Layer` and `Image`.
     id : int
