@@ -126,7 +126,7 @@ fix = true
 "napari/utils/_testsupport.py" = ["B011"]
 "tools/test_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20"]
-"examples/**" = ["INP001", "T20"]
+"examples/**" = ["ICN001", "INP001", "T20"]
 "**/vendored/**" = ["TID"]
 
 [tool.ruff.flake8-quotes]
