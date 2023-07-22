@@ -44,9 +44,9 @@ class ScaleBarOverlay(CanvasOverlay):
     """
 
     colored: bool = False
-    color: ColorValue = [1, 0, 1, 1]
+    color: ColorValue = ColorValue([1, 0, 1, 1])
     ticks: bool = True
     font_size: float = 10
     box: bool = False
-    box_color: ColorValue = [0, 0, 0, 0.6]
+    box_color: ColorValue = ColorValue([0, 0, 0, 0.6])
     unit: Optional[str] = None

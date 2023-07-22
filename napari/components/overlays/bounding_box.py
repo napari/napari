@@ -30,7 +30,7 @@ class BoundingBoxOverlay(SceneOverlay):
 
     lines: bool = True
     line_thickness: float = 1
-    line_color: ColorValue = 'red'
+    line_color: ColorValue = ColorValue('red')
     points: bool = True
     point_size: float = 5
-    point_color: ColorValue = 'blue'
+    point_color: ColorValue = ColorValue('blue')
