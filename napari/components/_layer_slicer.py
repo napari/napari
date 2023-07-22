@@ -6,6 +6,7 @@ See the NAP for more details: https://napari.org/dev/naps/4-async-slicing.html
 from __future__ import annotations
 
 import logging
+import weakref
 from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from threading import RLock
@@ -98,7 +99,7 @@ class _LayerSlicer:
             manager for the slicing threading
         _force_sync: bool
             if true, forces slicing to execute synchronously
-        _layers_to_task : dict of tuples of layers to futures
+        _layers_to_task : dict of tuples of weak layers to futures
             task storage for cancellation logic
         _lock_layers_to_task : threading.RLock
             lock to guard against changes to `_layers_to_task` when finding,
@@ -107,7 +108,9 @@ class _LayerSlicer:
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._force_sync = not get_settings().experimental.async_
-        self._layers_to_task: Dict[Tuple[Layer, ...], Future] = {}
+        self._layers_to_task: Dict[
+            Tuple[weakref.ReferenceType[Layer], ...], Future
+        ] = {}
         self._lock_layers_to_task = RLock()
 
     @contextmanager
@@ -207,7 +210,8 @@ class _LayerSlicer:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
                 logger.debug('Making async slice request for %s', layer)
                 request = layer._make_slice_request(dims)
-                requests[layer] = request
+                weak_layer = weakref.ref(layer)
+                requests[weak_layer] = request
                 layer._set_unloaded_slice_id(request.id)
             else:
                 logger.debug('Sync slicing for %s', layer)
@@ -309,8 +313,9 @@ class _LayerSlicer:
         """
         with self._lock_layers_to_task:
             layer_set = set(layers)
-            for task_layers, task in self._layers_to_task.items():
-                if set(task_layers).issubset(layer_set):
+            for weak_task_layers, task in self._layers_to_task.items():
+                task_layers = {w() for w in weak_task_layers} - {None}
+                if task_layers.issubset(layer_set):
                     logger.debug('Found existing task for %s', task_layers)
                     return task
         return None
