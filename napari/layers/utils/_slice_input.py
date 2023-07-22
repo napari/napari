@@ -125,13 +125,13 @@ class _SliceInput:
             for ax in self.not_displayed
         ]
 
-        # stack for transform speed
+        # stack/unstack for performance
         slice_stacked = np.stack(
             [world_pts, world_margin_left, world_margin_right]
         )
         data_pts, data_margin_left, data_margin_right = slice_world_to_data(
             slice_stacked
-        ).T
+        )
 
         if round_index:
             # A round is taken to convert these values to slicing integers
