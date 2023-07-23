@@ -719,14 +719,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         data_slice = self._data_slice
         for d in self._slice_input.not_displayed:
             pt = data_slice.point[d]
-            low = data_slice.margin_left[d]
-            high = data_slice.margin_right[d]
-            if (
-                (pt < 0)
-                or (pt > self._extent_data[1][d])
-                or (high < 0)
-                or (low > self._extent_data[1][d])
-            ):
+            low = pt - data_slice.margin_left[d]
+            high = pt + data_slice.margin_right[d]
+            if pt < max(0, low) or pt > min(self._extent_data[1][d], high):
                 self._slice = _ImageSliceResponse.make_empty(
                     dims=self._slice_input, rgb=self.rgb
                 )

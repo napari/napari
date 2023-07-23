@@ -258,7 +258,7 @@ class _ImageSliceRequest:
             request_id=self.id,
         )
 
-    def _slice_indices_at_level(self, level: int) -> np.ndarray:
+    def _slice_indices_at_level(self, level: int) -> _ThickNDSlice:
         indices = np.array(self.indices)
         axes = self.dims.not_displayed
         ds_indices = indices[axes] / self.downsample_factors[level][axes]
@@ -269,22 +269,21 @@ class _ImageSliceRequest:
 
     def _get_slice_data(self):
         slices = []
+        slice_not_disp = self.data_slice[self.dims.not_displayed]
         if self.projection_mode == 'none':
-            indices = np.array(self.data_slice.point)[self.dims.not_displayed]
-            return self.data[tuple(indices.astype(int))]
+            indices = np.array(slice_not_disp.point, dtype=int)
+            return self.data[tuple(indices)]
 
-        for dim_len, _point, low, high in zip(
-            self.data.shape,
-            self.data_slice.point,
-            self.data_slice.margin_left,
-            self.data_slice.margin_right,
+        for dim_len, (point, m_left, m_right) in zip(
+            self.data.shape, slice_not_disp
         ):
-            if np.isclose(high, low):
-                # assume slice thickness of 1 in data pixels
-                # (same as before thick slices were implemented)
-                high = low + 1
+            if m_left + m_right < 1:
+                m_left = 0
+                m_right = 1
+            low = point - m_left
+            high = point + m_right
 
-            slice_ = slice(max(0, low), min(dim_len, high))
+            slice_ = slice(max(0, int(low)), min(dim_len, int(high)))
             slices.append(slice_)
 
         return project_slice(

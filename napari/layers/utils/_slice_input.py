@@ -29,6 +29,28 @@ class _ThickNDSlice(Generic[_T]):
             margin_right=tuple(np.nan for _ in range(ndim)),
         )
 
+    def __getitem__(self, key):
+        # this allows to use numpy-like slicing on the whole object
+        return _ThickNDSlice(
+            point=tuple(np.array(self.point)[key]),
+            margin_left=tuple(np.array(self.margin_left)[key]),
+            margin_right=tuple(np.array(self.margin_right)[key]),
+        )
+
+    def as_array(self):
+        return np.array([self.point, self.margin_left, self.margin_right])
+
+    @classmethod
+    def from_array(self, arr):
+        return _ThickNDSlice(
+            point=tuple(arr[0]),
+            margin_left=tuple(arr[1]),
+            margin_right=tuple(arr[2]),
+        )
+
+    def __iter__(self):
+        yield from zip(self.point, self.margin_left, self.margin_right)
+
 
 @dataclass(frozen=True)
 class _SliceInput:
@@ -114,45 +136,20 @@ class _SliceInput:
             )
 
         slice_world_to_data = world_to_data.set_slice(self.not_displayed)
-        world_pts = [self.world_slice.point[ax] for ax in self.not_displayed]
+        world_slice_not_disp = self.world_slice.as_array()
 
-        world_margin_left = [
-            self.world_slice.point[ax] - self.world_slice.margin_left[ax]
-            for ax in self.not_displayed
-        ]
-        world_margin_right = [
-            self.world_slice.point[ax] + self.world_slice.margin_right[ax]
-            for ax in self.not_displayed
-        ]
-
-        # stack/unstack for performance
-        slice_stacked = np.stack(
-            [world_pts, world_margin_left, world_margin_right]
-        )
-        data_pts, data_margin_left, data_margin_right = slice_world_to_data(
-            slice_stacked
-        )
+        data_slice = slice_world_to_data(world_slice_not_disp)
 
         if round_index:
             # A round is taken to convert these values to slicing integers
-            data_pts = np.round(data_pts).astype(int)
-            data_margin_left = np.round(data_margin_left).astype(int)
-            data_margin_right = np.round(data_margin_right).astype(int)
+            data_slice = np.round(data_slice).astype(int)
 
-        full_pts = [np.nan for _ in range(self.ndim)]
-        full_margin_left = [np.nan for _ in range(self.ndim)]
-        full_margin_right = [np.nan for _ in range(self.ndim)]
+        full_data_slice = np.full((3, self.ndim), np.nan)
 
         for i, ax in enumerate(self.not_displayed):
-            full_pts[ax] = data_pts[i]
-            full_margin_left[ax] = data_margin_left[i]
-            full_margin_right[ax] = data_margin_right[i]
+            full_data_slice[:, ax] = data_slice[:, i]
 
-        return _ThickNDSlice(
-            point=tuple(full_pts),
-            margin_left=tuple(full_margin_left),
-            margin_right=tuple(full_margin_right),
-        )
+        return _ThickNDSlice.from_array(full_data_slice)
 
     def is_orthogonal(self, world_to_data: Affine) -> bool:
         """Returns True if this slice represents an orthogonal slice through a layer's data, False otherwise."""
