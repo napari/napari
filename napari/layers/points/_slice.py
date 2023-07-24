@@ -98,19 +98,20 @@ class _PointSliceRequest:
         data = self.data[:, not_disp]
         scale = 1
 
-        point = np.array(self.data_slice.point)[not_disp]
-        low = np.array(self.data_slice.margin_left)[not_disp]
-        high = np.array(self.data_slice.margin_right)[not_disp]
+        point, m_left, m_right = self.data_slice[not_disp].as_array()
 
         if self.projection_mode == 'none':
             low = point
             high = point
+        else:
+            low = point + m_left
+            high = point + m_right
 
         # assume slice thickness of 1 in data pixels
         # (same as before thick slices were implemented)
         too_thin_slice = np.isclose(high, low)
-        low[too_thin_slice] = point - 0.5
-        high[too_thin_slice] = point + 0.5
+        low[too_thin_slice] -= 0.5
+        high[too_thin_slice] += 0.5
 
         inside_slice = np.all((data >= low) & (data <= high), axis=1)
         slice_indices = np.where(inside_slice)[0].astype(int)

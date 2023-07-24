@@ -728,6 +728,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         plane=None,
         experimental_clipping_planes=None,
         custom_interpolation_kernel_2d=None,
+        projection_mode='none',
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -905,6 +906,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'plane': plane,
             'experimental_clipping_planes': experimental_clipping_planes,
             'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
+            'projection_mode': projection_mode,
         }
 
         # these arguments are *already* iterables in the single-channel case.

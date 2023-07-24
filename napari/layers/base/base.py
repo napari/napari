@@ -315,7 +315,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.multiscale = multiscale
         self._experimental_clipping_planes = ClippingPlaneList()
         self._mode = self._modeclass('pan_zoom')
-        self._projection_mode = self._projectionclass('none')
+        self._projection_mode = self._projectionclass(projection_mode)
 
         self._ndim = ndim
 
@@ -424,7 +424,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
         self.name = name
         self.mode = mode
-        self.projection_mode = projection_mode
         self._overlays.update(
             {
                 'transform_box': TransformBoxOverlay(),

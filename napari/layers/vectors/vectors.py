@@ -201,6 +201,7 @@ class Vectors(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
+        projection_mode='none',
     ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
