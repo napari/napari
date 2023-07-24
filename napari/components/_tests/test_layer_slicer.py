@@ -389,7 +389,7 @@ def _wait_for_result(future: 'Future[Any]') -> Any:
 
 # remove quotes in types once we are python 3.9+ only.
 def _wait_for_response(
-    task: 'Future[Dict[weakref.ReferenceType[Any], Any]]'
+    task: 'Future[Dict[weakref.ReferenceType[Any], Any]]',
 ) -> Dict:
     """Waits until the given slice task is finished and returns its result."""
     weak_result = _wait_for_result(task)
