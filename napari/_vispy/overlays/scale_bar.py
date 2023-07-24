@@ -1,4 +1,7 @@
 import bisect
+from decimal import Decimal
+from math import floor, log
+from typing import Tuple
 
 import numpy as np
 import pint
@@ -43,7 +46,9 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._unit = get_unit_registry()(self.overlay.unit)
         self._on_zoom_change(force=True)
 
-    def _calculate_best_length(self, desired_length: float):
+    def _calculate_best_length(
+        self, desired_length: float
+    ) -> Tuple[float, pint.Quantity]:
         """Calculate new quantity based on the pixel length of the bar.
 
         Parameters
@@ -66,13 +71,26 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # that might have occurred (e.g. um -> cm)
         factor = current_quantity / new_quantity
 
-        # select value closest to one of our preferred values
-        index = bisect.bisect_left(PREFERRED_VALUES, new_quantity.magnitude)
+        # select value closest to one of our preferred values and also
+        # validate if quantity is dimensionless and lower than 1 to prevent
+        # the scale bar to extend beyond the canvas when zooming.
+        # If the value falls in those conditions, we use the corresponding
+        # prefered value but scaled to take into account the actual value
+        # magnitude. See https://github.com/napari/napari/issues/5914
+        magnitude_1000 = floor(log(new_quantity.magnitude, 1000))
+        scaled_magnitude = new_quantity.magnitude * 1000 ** (-magnitude_1000)
+        index = bisect.bisect_left(PREFERRED_VALUES, scaled_magnitude)
         if index > 0:
             # When we get the lowest index of the list, removing -1 will
             # return the last index.
             index -= 1
-        new_value = PREFERRED_VALUES[index]
+        new_value: float = PREFERRED_VALUES[index]
+        if new_quantity.dimensionless and new_quantity.magnitude < 1:
+            # using Decimal is necessary to avoid `4.999999e-6`
+            # at really small scale.
+            new_value = float(
+                Decimal(new_value) * Decimal(1000) ** magnitude_1000
+            )
 
         # get the new pixel length utilizing the user-specified units
         new_length = (
