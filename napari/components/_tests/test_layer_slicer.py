@@ -381,13 +381,15 @@ def _wait_until_running(future: Future):
             )
 
 
-def _wait_for_result(future: Future[Any]) -> Any:
+# if remove quotes once we are Python 3.9+
+def _wait_for_result(future: 'Future[Any]') -> Any:
     """Waits until the given future is finished returns its result."""
     return future.result(timeout=DEFAULT_TIMEOUT_SECS)
 
 
+# remove quotes in types once we are python 3.9+ only.
 def _wait_for_response(
-    task: Future[Dict[weakref.ReferenceType[Any], Any]]
+    task: 'Future[Dict[weakref.ReferenceType[Any], Any]]',
 ) -> Dict:
     """Waits until the given slice task is finished and returns its result."""
     weak_result = _wait_for_result(task)
