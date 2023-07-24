@@ -1,5 +1,6 @@
 import pytest
-from qtpy.QtWidgets import QFileDialog, QLineEdit, QMessageBox
+from qtpy.QtCore import QTimer
+from qtpy.QtWidgets import QApplication, QFileDialog, QLineEdit, QMessageBox
 
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
 from napari.utils.history import get_save_history
@@ -10,10 +11,29 @@ def test_screenshot_save(qtbot, tmp_path, filename):
     """Check passing different extensions with the filename."""
 
     def save_function(path):
+        # check incoming path has extension event when a filename without one
+        # was provided
         assert filename in path
         if "." not in filename:
             assert ".png" in path
 
+        # create a file with the given path to check for
+        # non-native qt overwrite message
+        with open(path, "w") as mock_img:
+            mock_img.write("")
+
+    qt_overwrite_shown = False
+
+    def handle_qt_overwrite_message():
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, QMessageBox):
+                # test should not enter here!
+                widget.accept()
+                nonlocal qt_overwrite_shown
+                qt_overwrite_shown = True
+                break
+
+    # setup dialog
     dialog = ScreenshotDialog(
         save_function, directory=str(tmp_path), history=get_save_history()
     )
@@ -21,10 +41,16 @@ def test_screenshot_save(qtbot, tmp_path, filename):
     dialog.setOptions(QFileDialog.DontUseNativeDialog)
     dialog.show()
 
+    # check dialog and set filename
     assert dialog.windowTitle() == 'Save screenshot'
     line_edit = dialog.findChild(QLineEdit)
     line_edit.setText(filename)
+
+    # check that no warning message related with overwriting is shown
+    QTimer.singleShot(100, handle_qt_overwrite_message)
     dialog.accept()
+    qtbot.wait(100)
+    assert not qt_overwrite_shown, "Qt non-native overwrite message was shown!"
 
 
 def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
@@ -35,7 +61,7 @@ def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
     def save_function(path):
         assert "test.png" in path
 
-    def overwritte_message(*args):
+    def overwrite_message(*args):
         box, parent, title, text, buttons, default = args
         assert parent == dialog
         assert title == "Confirm overwrite"
@@ -46,7 +72,8 @@ def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
 
         return QMessageBox.Yes
 
-    monkeypatch.setattr(QMessageBox, "warning", overwritte_message)
+    # monkeypath custom overwrite QMessageBox usage
+    monkeypatch.setattr(QMessageBox, "warning", overwrite_message)
 
     dialog = ScreenshotDialog(
         save_function, directory=str(tmp_path), history=get_save_history()
@@ -55,6 +82,7 @@ def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
     dialog.setOptions(QFileDialog.DontUseNativeDialog)
     dialog.show()
 
+    # check dialog, set filename and trigger accept logic
     assert dialog.windowTitle() == 'Save screenshot'
     line_edit = dialog.findChild(QLineEdit)
     line_edit.setText("test")
