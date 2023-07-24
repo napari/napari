@@ -1,10 +1,10 @@
 import warnings
 from typing import TypeVar
 
-from ...translations import trans
-from ._evented_list import EventedList
-from ._nested_list import NestableEventedList
-from ._selection import Selectable
+from napari.utils.events.containers._evented_list import EventedList
+from napari.utils.events.containers._nested_list import NestableEventedList
+from napari.utils.events.containers._selection import Selectable
+from napari.utils.translations import trans
 
 _T = TypeVar("_T")
 
@@ -27,9 +27,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     moved (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: int, old_value: T, value: T)
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
 
@@ -45,9 +45,6 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     def __init__(self, *args, **kwargs) -> None:
         self._activate_on_insert = True
         super().__init__(*args, **kwargs)
-        self.events.removed.connect(
-            lambda e: self.selection.discard(e.value)
-        )  # FIXME remove lambda
         self.selection._pre_add_hook = self._preselect_hook
 
     def _preselect_hook(self, value):
@@ -61,6 +58,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
                 )
             )
         return value
+
+    def _process_delete_item(self, item: _T):
+        self.selection.discard(item)
 
     def insert(self, index: int, value: _T):
         super().insert(index, value)
@@ -83,7 +83,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
             do_add = len(self) > new
         else:
             *root, _idx = idx
-            new = tuple(root) + (_idx - 1,) if _idx >= 1 else tuple(root)
+            new = (*tuple(root), _idx - 1) if _idx >= 1 else tuple(root)
             do_add = len(self) > new[0]
         if do_add:
             self.selection.add(self[new])

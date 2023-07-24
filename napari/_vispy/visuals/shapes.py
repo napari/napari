@@ -1,6 +1,6 @@
 from vispy.scene.visuals import Compound, Line, Markers, Mesh, Text
 
-from .clipping_planes_mixin import ClippingPlanesMixin
+from napari._vispy.visuals.clipping_planes_mixin import ClippingPlanesMixin
 
 
 class ShapesVisual(ClippingPlanesMixin, Compound):
@@ -16,5 +16,5 @@ class ShapesVisual(ClippingPlanesMixin, Compound):
         - Text labels (vispy.TextVisual)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__([Mesh(), Mesh(), Line(), Markers(), Text()])

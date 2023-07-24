@@ -3,11 +3,13 @@ from typing import Any, Dict, Union
 import numpy as np
 
 from napari.utils.color import ColorValue
-
-from ...utils.events import EventedModel
-from ..translations import trans
-from .categorical_colormap_utils import ColorCycle, compare_colormap_dicts
-from .standardize_color import transform_color
+from napari.utils.colormaps.categorical_colormap_utils import (
+    ColorCycle,
+    compare_colormap_dicts,
+)
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events import EventedModel
+from napari.utils.translations import trans
 
 
 class CategoricalColormap(EventedModel):
@@ -74,10 +76,7 @@ class CategoricalColormap(EventedModel):
                 }
             else:
                 colormap = {}
-            if 'fallback_color' in params:
-                fallback_color = params['fallback_color']
-            else:
-                fallback_color = 'white'
+            fallback_color = params.get("fallback_color", "white")
         else:
             colormap = {k: transform_color(v)[0] for k, v in params.items()}
             fallback_color = 'white'
@@ -92,17 +91,17 @@ class CategoricalColormap(EventedModel):
     def validate_type(cls, val):
         if isinstance(val, cls):
             return val
-        if isinstance(val, list) or isinstance(val, np.ndarray):
+        if isinstance(val, (list, np.ndarray)):
             return cls.from_array(val)
-        elif isinstance(val, dict):
+        if isinstance(val, dict):
             return cls.from_dict(val)
-        else:
-            raise TypeError(
-                trans._(
-                    'colormap should be an array or dict',
-                    deferred=True,
-                )
+
+        raise TypeError(
+            trans._(
+                'colormap should be an array or dict',
+                deferred=True,
             )
+        )
 
     def __eq__(self, other):
         if isinstance(other, CategoricalColormap):
@@ -113,5 +112,5 @@ class CategoricalColormap(EventedModel):
             ):
                 return False
             return True
-        else:
-            return False
+
+        return False

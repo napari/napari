@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from unittest.mock import patch
 
 import numpy as np
@@ -5,6 +6,7 @@ import pytest
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils._proxies import PublicOnlyProxy, ReadOnlyWrapper
+from napari.utils.events.containers._set import EventedSet
 
 
 def test_ReadOnlyWrapper_setitem():
@@ -77,6 +79,26 @@ def test_PublicOnlyProxy(patched_root_dir):
     assert '_private' in dir(t)
 
 
+@pytest.mark.filterwarnings("ignore:Qt libs are available but")
+def test_thread_proxy_guard(monkeypatch, single_threaded_executor):
+    class X:
+        a = 1
+
+    monkeypatch.setenv('NAPARI_ENSURE_PLUGIN_MAIN_THREAD', 'True')
+
+    x = X()
+    x_proxy = PublicOnlyProxy(x)
+
+    f = single_threaded_executor.submit(x.__setattr__, 'a', 2)
+    f.result()
+    assert x.a == 2
+
+    f = single_threaded_executor.submit(x_proxy.__setattr__, 'a', 3)
+    with pytest.raises(RuntimeError):
+        f.result()
+    assert x.a == 2
+
+
 def test_public_proxy_limited_to_napari(patched_root_dir):
     """Test that the recursive public proxy goes no farther than napari."""
     viewer = ViewerModel()
@@ -105,7 +127,7 @@ def test_receive_return_proxy_object():
         layer = pv.layers[-1]
         assert isinstance(layer, PublicOnlyProxy)
         # remove and add it back, should be fine
-        add_layer = getattr(pv, 'add_layer')
+        add_layer = pv.add_layer
         viewer.layers.pop()
 
     add_layer(layer)
@@ -115,3 +137,42 @@ def test_receive_return_proxy_object():
 def test_viewer_method():
     viewer = PublicOnlyProxy(ViewerModel())
     assert viewer.add_points() is not None
+
+
+def test_unwrap_on_call():
+    """Check that PublicOnlyProxy'd arguments to methods of a
+    PublicOnlyProxy'd object are unwrapped before calling the method.
+    """
+    evset = EventedSet()
+    public_only_evset = PublicOnlyProxy(evset)
+    text = "aaa"
+    wrapped_text = PublicOnlyProxy(text)
+    public_only_evset.add(wrapped_text)
+    retrieved_text = list(evset)[0]
+
+    # check that the text in the set is not the version wrapped with
+    # PublicOnlyProxy
+    assert id(text) == id(retrieved_text)
+
+
+def test_unwrap_setattr():
+    """Check that objects added with __setattr__ of an object wrapped with
+    PublicOnlyProxy are unwrapped before setting the attribute.
+    """
+
+    @dataclass
+    class Sample:
+        attribute = "aaa"
+
+    sample = Sample()
+    public_only_sample = PublicOnlyProxy(sample)
+
+    text = "bbb"
+    wrapped_text = PublicOnlyProxy(text)
+
+    public_only_sample.attribute = wrapped_text
+    attribute = sample.attribute  # use original, not wrapped object
+
+    # check that the attribute in the unwrapped sample is itself not the
+    # wrapped text, but the original text.
+    assert id(text) == id(attribute)

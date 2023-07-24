@@ -2,15 +2,15 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from ....utils.misc import argsort
-from ....utils.translations import trans
-from .._shapes_utils import (
+from napari.layers.shapes._shapes_utils import (
     is_collinear,
     path_to_mask,
     poly_to_mask,
     triangulate_edge,
     triangulate_face,
 )
+from napari.utils.misc import argsort
+from napari.utils.translations import trans
 
 
 class Shape(ABC):
@@ -95,8 +95,7 @@ class Shape(ABC):
         z_index=0,
         dims_order=None,
         ndisplay=2,
-    ):
-
+    ) -> None:
         self._dims_order = dims_order or list(range(2))
         self._ndisplay = ndisplay
         self.slice_key = None
@@ -119,16 +118,16 @@ class Shape(ABC):
     @abstractmethod
     def data(self):
         # user writes own docstring
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @data.setter
     @abstractmethod
     def data(self, data):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def _update_displayed_data(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def ndisplay(self):
@@ -352,7 +351,7 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(-center)
 
-    def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
+    def to_mask(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
         """Convert the shape vertices to a boolean mask.
 
         Set points to `True` if they are lying inside the shape if the shape is

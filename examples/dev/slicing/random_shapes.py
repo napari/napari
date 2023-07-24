@@ -1,9 +1,8 @@
 import os
-import logging
-import numpy as np
-import napari
-import napari.viewer
 
+import numpy as np
+
+import napari
 
 """
 This example generates many random shapes.
@@ -27,7 +26,7 @@ def generate_shapes(filename):
     all_shapes = None
 
     np.random.seed(0)
-    for k in range(shapes_per_slice):
+    for _ in range(shapes_per_slice):
 
         planes = np.tile(np.arange(128).reshape((128, 1, 1)), (1, 5, 1))
         corners = np.random.uniform(0, 128, size=(128, 5, 2))
@@ -45,13 +44,12 @@ def generate_shapes(filename):
     good_shapes = []
 
     for shape in all_shapes:
-
         # Use try/except to filter all bad shapes
         try:
             vertices, triangles = PolygonData(
                 vertices=shape[:, 1:]
             ).triangulate()
-        except:
+        except AssertionError:
             pass
         else:
             good_shapes.append(shape)

@@ -14,7 +14,38 @@ VENDOR_FOLDER = "_vendor"
 NAPARI_FOLDER = "napari"
 
 
-def check_vendored_module(org : str, reponame : str, tag : str) -> str:
+def _clone(org, reponame, tag):
+    repo_path = TOOLS_PATH / reponame
+    if repo_path.is_dir():
+        shutil.rmtree(repo_path)
+
+    check_output(
+        [
+            "git",
+            "clone",
+            '--depth',
+            '1',
+            '--branch',
+            tag,
+            f"https://github.com/{org}/{reponame}",
+        ],
+        cwd=TOOLS_PATH,
+    )
+
+    return repo_path
+
+
+def check_vendored_files(
+    org: str, reponame: str, tag: str, source_paths: Path, target_path: Path
+) -> str:
+    repo_path = _clone(org, reponame, tag)
+    vendor_path = REPO_ROOT_PATH / NAPARI_FOLDER / target_path
+    for s in source_paths:
+        shutil.copy(repo_path / s, vendor_path)
+    return check_output(["git", "diff"], cwd=vendor_path).decode("utf-8")
+
+
+def check_vendored_module(org: str, reponame: str, tag: str) -> str:
     """
     Check if the vendored module is up to date.
 
@@ -33,12 +64,7 @@ def check_vendored_module(org : str, reponame : str, tag : str) -> str:
         Returns the diff if the module is not up to date or an empty string
         if it is.
     """
-    repo_path = TOOLS_PATH / reponame
-    if repo_path.is_dir():
-        shutil.rmtree(repo_path)
-
-    check_output(["git", "clone", f"https://github.com/{org}/{reponame}"], cwd=TOOLS_PATH)
-    check_output(["git", "checkout", tag], cwd=repo_path)
+    repo_path = _clone(org, reponame, tag)
 
     vendor_path = REPO_ROOT_PATH / NAPARI_FOLDER / VENDOR_FOLDER / reponame
     if vendor_path.is_dir():
@@ -54,15 +80,41 @@ def check_vendored_module(org : str, reponame : str, tag : str) -> str:
 def main():
     CI = '--ci' in sys.argv
     print("\n\nChecking vendored modules\n")
-    for org, reponame, tag in [("albertosottile", "darkdetect", "master")]:
+    for org, reponame, tag, source, target in [
+        ("albertosottile", "darkdetect", "master", None, None),
+        (
+            "matplotlib",
+            "matplotlib",
+            "v3.2.1",
+            [
+                # this file seem to be post 3.0.3 but pre 3.1
+                # plus there may have been custom changes.
+                # 'lib/matplotlib/colors.py',
+                #
+                # this file seem much more recent, but is touched much more rarely.
+                # it is at least from 3.2.1 as the turbo colormap is present and
+                # was added in matplotlib in 3.2.1
+                #'lib/matplotlib/_cm_listed.py'
+            ],
+            'utils/colormaps/vendored/',
+        ),
+    ]:
         print(f"\n * Checking '{org}/{reponame}'\n")
-        diff = check_vendored_module(org, reponame, tag)
+        if source is None:
+            diff = check_vendored_module(org, reponame, tag)
+        else:
+            diff = check_vendored_files(
+                org, reponame, tag, [Path(s) for s in source], Path(target)
+            )
+
         if CI:
             print(f"::set-output name=vendored::{org}/{reponame}")
             sys.exit(0)
         if diff:
             print(diff)
-            print(f"\n * '{org}/{reponame}' vendor code seems to not be up to date!!!\n")
+            print(
+                f"\n * '{org}/{reponame}' vendor code seems to not be up to date!!!\n"
+            )
             sys.exit(1)
 
 

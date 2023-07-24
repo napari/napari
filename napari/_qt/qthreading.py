@@ -16,8 +16,16 @@ from typing import (
 from superqt.utils import _qthreading
 from typing_extensions import ParamSpec
 
-from ..utils.progress import progress
-from ..utils.translations import trans
+from napari.utils.progress import progress
+from napari.utils.translations import trans
+
+__all__ = [
+    "FunctionWorker",
+    "GeneratorWorker",
+    "create_worker",
+    "thread_worker",
+    "register_threadworker_processors",
+]
 
 wait_for_workers_to_quit = _qthreading.WorkerBase.await_workers
 
@@ -29,12 +37,12 @@ class _NotifyingMixin:
         self.warned.connect(self._relay_warning)
 
     def _relay_error(self, exc: Exception):
-        from ..utils.notifications import notification_manager
+        from napari.utils.notifications import notification_manager
 
         notification_manager.receive_error(type(exc), exc, exc.__traceback__)
 
     def _relay_warning(self, show_warn_args: tuple):
-        from ..utils.notifications import notification_manager
+        from napari.utils.notifications import notification_manager
 
         notification_manager.receive_warning(*show_warn_args)
 
@@ -203,7 +211,6 @@ def thread_worker(
     ] = None,
     ignore_errors: bool = False,
 ):
-
     """Decorator that runs a function in a separate thread when called.
 
     When called, the decorated function returns a :class:`WorkerBase`.  See
@@ -321,7 +328,7 @@ _new_worker_qthread = _qthreading.new_worker_qthread
 
 
 def _add_worker_data(worker: FunctionWorker, return_type, source=None):
-    from .._app_model.injection import _processors
+    from napari._app_model.injection import _processors
 
     cb = _processors._add_layer_data_to_viewer
     worker.signals.returned.connect(
@@ -332,7 +339,7 @@ def _add_worker_data(worker: FunctionWorker, return_type, source=None):
 def _add_worker_data_from_tuple(
     worker: FunctionWorker, return_type, source=None
 ):
-    from .._app_model.injection import _processors
+    from napari._app_model.injection import _processors
 
     cb = _processors._add_layer_data_tuples_to_viewer
     worker.signals.returned.connect(
@@ -345,10 +352,10 @@ def register_threadworker_processors():
 
     import magicgui
 
-    from .. import layers, types
-    from .._app_model import get_app
-    from ..types import LayerDataTuple
-    from ..utils import _magicgui as _mgui
+    from napari import layers, types
+    from napari._app_model import get_app
+    from napari.types import LayerDataTuple
+    from napari.utils import _magicgui as _mgui
 
     app = get_app()
 

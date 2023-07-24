@@ -48,6 +48,7 @@ to emit events. The EmitterGroup groups EventEmitter objects.
 For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
+import contextlib
 import inspect
 import os
 import warnings
@@ -70,7 +71,8 @@ from typing import (
 
 from vispy.util.logs import _handle_exception
 
-from ..translations import trans
+from napari.utils.migrations import rename_argument
+from napari.utils.translations import trans
 
 
 class Event:
@@ -98,13 +100,21 @@ class Event:
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type: str, native: Any = None, **kwargs: Any):
+    @rename_argument(
+        from_name="type",
+        to_name="type_name",
+        version="0.6.0",
+        since_version="0.4.18",
+    )
+    def __init__(
+        self, type_name: str, native: Any = None, **kwargs: Any
+    ) -> None:
         # stack of all sources this event has been emitted through
         self._sources: List[Any] = []
         self._handled: bool = False
         self._blocked: bool = False
         # Store args
-        self._type = type
+        self._type = type_name
         self._native = native
         self._kwargs = kwargs
         for k, v in kwargs.items():
@@ -188,9 +198,9 @@ class Event:
                 attr = getattr(self, name)
 
                 attrs.append(f"{name}={attr!r}")
-            return "<{} {}>".format(self.__class__.__name__, " ".join(attrs))
         finally:
             _event_repr_depth -= 1
+        return f'<{self.__class__.__name__} {" ".join(attrs)}>'
 
     def __str__(self) -> str:
         """Shorter string representation"""
@@ -218,7 +228,7 @@ class _WeakCounter:
     It will only implement the methods we use here.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._counter = weakref.WeakKeyDictionary()
         self._nonecount = 0
 
@@ -267,18 +277,19 @@ class EventEmitter:
     source : object
         The object that the generated events apply to. All emitted Events will
         have their .source property set to this value.
-    type : str or None
+    type_name: str or None
         String indicating the event type (e.g. mouse_press, key_release)
     event_class : subclass of Event
         The class of events that this emitter will generate.
     """
 
+    @rename_argument("type", "type_name", "0.6.0", "0.4.18")
     def __init__(
         self,
         source: Any = None,
-        type: Optional[str] = None,
+        type_name: Optional[str] = None,
         event_class: Type[Event] = Event,
-    ):
+    ) -> None:
         # connected callbacks
         self._callbacks: List[Union[Callback, CallbackRef]] = []
         # used when connecting new callbacks at specific positions
@@ -293,8 +304,8 @@ class EventEmitter:
         self._emitting = False
         self.source = source
         self.default_args = {}
-        if type is not None:
-            self.default_args['type'] = type
+        if type_name is not None:
+            self.default_args['type_name'] = type_name
 
         assert inspect.isclass(event_class)
         self.event_class = event_class
@@ -384,16 +395,18 @@ class EventEmitter:
         core : str
             Name of core module, for example 'napari'.
         """
-        try:
-            if isinstance(callback, partial):
-                callback = callback.func
-            if not isinstance(callback, tuple):
-                return callback.__module__.startswith(core + '.')
-            obj = callback[0]()  # get object behind weakref
-            if obj is None:  # object is dead
+        if isinstance(callback, partial):
+            callback = callback.func
+        if not isinstance(callback, tuple):
+            try:
+                return callback.__module__.startswith(f'{core}.')
+            except AttributeError:
                 return False
-            return obj.__module__.startswith(core + '.')
-
+        obj = callback[0]()  # get object behind weakref
+        if obj is None:  # object is dead
+            return False
+        try:
+            return obj.__module__.startswith(f'{core}.')
         except AttributeError:
             return False
 
@@ -464,7 +477,7 @@ class EventEmitter:
         callback, pass_event = self._normalize_cb(callback)
 
         if callback in callbacks:
-            return
+            return None
 
         # deal with the ref
         _ref: Union[str, None]
@@ -649,15 +662,13 @@ class EventEmitter:
             )
 
         return any(
-            map(
-                lambda x: x.kind
-                in [
-                    inspect.Parameter.POSITIONAL_ONLY,
-                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                    inspect.Parameter.VAR_POSITIONAL,
-                ],
-                signature.parameters.values(),
-            )
+            x.kind
+            in [
+                inspect.Parameter.POSITIONAL_ONLY,
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.VAR_POSITIONAL,
+            ]
+            for x in signature.parameters.values()
         )
 
     def _normalize_cb(
@@ -763,7 +774,8 @@ class EventEmitter:
                 self.disconnect(cb)
         finally:
             self._emitting = False
-            if event._pop_source() != self.source:
+            ps = event._pop_source()
+            if ps is not self.source:
                 raise RuntimeError(
                     trans._(
                         "Event source-stack mismatch.",
@@ -781,7 +793,7 @@ class EventEmitter:
                 cb(event)
             else:
                 cb()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # dead Qt object with living python pointer. not importing Qt
             # here... but this error is consistent across backends
             if (
@@ -883,7 +895,7 @@ class WarningEmitter(EventEmitter):
         stacklevel=3,
         *args,
         **kwargs,
-    ):
+    ) -> None:
         self._message = message
         self._warned = False
         self._category = category
@@ -957,12 +969,12 @@ class EmitterGroup(EventEmitter):
         source: Any = None,
         auto_connect: bool = False,
         **emitters: Union[Type[Event], EventEmitter, None],
-    ):
+    ) -> None:
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
         self.auto_connect_format = "on_%s"
-        self._emitters: Dict[str, EventEmitter] = dict()
+        self._emitters: Dict[str, EventEmitter] = {}
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
         self.add(**emitters)  # type: ignore
@@ -1019,7 +1031,7 @@ class EmitterGroup(EventEmitter):
                         name=name,
                     )
                 )
-            elif hasattr(self, name):
+            if hasattr(self, name):
                 raise ValueError(
                     trans._(
                         "The name '{name}' cannot be used as an emitter; it is already an attribute of EmitterGroup",
@@ -1035,7 +1047,7 @@ class EmitterGroup(EventEmitter):
 
             if inspect.isclass(emitter) and issubclass(emitter, Event):  # type: ignore
                 emitter = EventEmitter(
-                    source=self.source, type=name, event_class=emitter  # type: ignore
+                    source=self.source, type_name=name, event_class=emitter  # type: ignore
                 )
             elif not isinstance(emitter, EventEmitter):
                 raise RuntimeError(
@@ -1087,8 +1099,8 @@ class EmitterGroup(EventEmitter):
     def unblock_all(self):
         """
         Unblock all emitters in this group, by decrease counter of semaphores for each event emitter.
-        if block is called twice and unblock is called once, then events will be still blocked
-        https://en.wikipedia.org/wiki/Semaphore_(programming)
+        if block is called twice and unblock is called once, then events will be still blocked.
+        See `Semaphore (programming) <https://en.wikipedia.org/wiki/Semaphore_(programming)>`__.
         """
         self.unblock()
         for em in self._emitters.values():
@@ -1170,7 +1182,7 @@ class EventBlocker:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target, callback=None):
+    def __init__(self, target, callback=None) -> None:
         self.target = target
         self.callback = callback
         self._base_count = target._block_counter.get(callback, 0)
@@ -1194,7 +1206,7 @@ class EventBlockerAll:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target):
+    def __init__(self, target) -> None:
         self.target = target
 
     def __enter__(self):
@@ -1218,11 +1230,9 @@ def _is_pos_arg(param: inspect.Parameter):
     )
 
 
-try:
+with contextlib.suppress(ModuleNotFoundError):
     # this could move somewhere higher up in napari imports ... but where?
     __import__('dotenv').load_dotenv()
-except ImportError:
-    pass
 
 
 def _noop(*a, **k):
@@ -1235,7 +1245,7 @@ _log_event_stack = _noop
 def set_event_tracing_enabled(enabled=True, cfg=None):
     global _log_event_stack
     if enabled:
-        from .debugging import log_event_stack
+        from napari.utils.events.debugging import log_event_stack
 
         if cfg is not None:
             _log_event_stack = partial(log_event_stack, cfg=cfg)

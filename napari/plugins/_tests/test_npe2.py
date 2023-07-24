@@ -3,6 +3,7 @@ from types import MethodType
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
+import npe2
 import numpy as np
 import pytest
 from npe2 import PluginManifest
@@ -14,11 +15,15 @@ from napari.layers import Image, Points
 from napari.plugins import _npe2
 
 PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
+PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
 
 
 @pytest.fixture
 def mock_pm(npe2pm: 'TestPluginManager'):
+    from napari.plugins import _initialize_plugins
+
+    _initialize_plugins.cache_clear()
     mock_reg = MagicMock()
     npe2pm._command_registry = mock_reg
     with npe2pm.tmp_plugin(manifest=MANIFEST_PATH):
@@ -37,6 +42,30 @@ def test_read(mock_pm: 'TestPluginManager'):
     mock_pm.commands.get.reset_mock()
     assert _npe2.read(["some.randomext"], stack=True) is None
     mock_pm.commands.get.assert_not_called()
+
+    mock_pm.commands.get.reset_mock()
+    assert (
+        _npe2.read(["some.randomext"], stack=True, plugin='not-npe2-plugin')
+        is None
+    )
+    mock_pm.commands.get.assert_not_called()
+
+    mock_pm.commands.get.reset_mock()
+    _, hookimpl = _npe2.read(
+        ["some.fzzy"], stack=False, plugin='my-plugin.some_reader'
+    )
+    mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
+    assert hookimpl.plugin_name == PLUGIN_NAME
+
+
+@pytest.mark.skipif(
+    npe2.__version__ < '0.7.0',
+    reason='Older versions of npe2 do not throw specific error.',
+)
+def test_read_with_plugin_failure(mock_pm: 'TestPluginManager'):
+    match = f"Plugin '{PLUGIN_NAME}' was selected"
+    with pytest.raises(ValueError, match=match):
+        _npe2.read(["some.randomext"], stack=True, plugin=PLUGIN_NAME)
 
 
 def test_write(mock_pm: 'TestPluginManager'):
@@ -134,6 +163,8 @@ def test_sample_iterator(mock_pm):
     for plugin, contribs in samples:
         assert isinstance(plugin, str)
         assert isinstance(contribs, dict)
+        # check that the manifest display_name is used
+        assert plugin == PLUGIN_NAME
         assert contribs
         for i in contribs.values():
             assert 'data' in i

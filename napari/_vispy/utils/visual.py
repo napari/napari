@@ -1,9 +1,41 @@
-from typing import Tuple
+from __future__ import annotations
+
+from typing import Dict, Optional, Tuple, Type
 
 import numpy as np
 from vispy.scene.widgets.viewbox import ViewBox
 
-from ...layers import (
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.layers.image import VispyImageLayer
+from napari._vispy.layers.labels import VispyLabelsLayer
+from napari._vispy.layers.points import VispyPointsLayer
+from napari._vispy.layers.shapes import VispyShapesLayer
+from napari._vispy.layers.surface import VispySurfaceLayer
+from napari._vispy.layers.tracks import VispyTracksLayer
+from napari._vispy.layers.vectors import VispyVectorsLayer
+from napari._vispy.overlays.axes import VispyAxesOverlay
+from napari._vispy.overlays.base import VispyBaseOverlay
+from napari._vispy.overlays.bounding_box import VispyBoundingBoxOverlay
+from napari._vispy.overlays.brush_circle import VispyBrushCircleOverlay
+from napari._vispy.overlays.interaction_box import (
+    VispySelectionBoxOverlay,
+    VispyTransformBoxOverlay,
+)
+from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
+from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
+from napari._vispy.overlays.text import VispyTextOverlay
+from napari.components.overlays import (
+    AxesOverlay,
+    BoundingBoxOverlay,
+    BrushCircleOverlay,
+    LabelsPolygonOverlay,
+    Overlay,
+    ScaleBarOverlay,
+    SelectionBoxOverlay,
+    TextOverlay,
+    TransformBoxOverlay,
+)
+from napari.layers import (
     Image,
     Labels,
     Layer,
@@ -13,16 +45,7 @@ from ...layers import (
     Tracks,
     Vectors,
 )
-from ...utils.config import async_octree
-from ...utils.translations import trans
-from ..layers.base import VispyBaseLayer
-from ..layers.image import VispyImageLayer
-from ..layers.labels import VispyLabelsLayer
-from ..layers.points import VispyPointsLayer
-from ..layers.shapes import VispyShapesLayer
-from ..layers.surface import VispySurfaceLayer
-from ..layers.tracks import VispyTracksLayer
-from ..layers.vectors import VispyVectorsLayer
+from napari.utils.translations import trans
 
 layer_to_visual = {
     Image: VispyImageLayer,
@@ -35,14 +58,16 @@ layer_to_visual = {
 }
 
 
-if async_octree:
-    from ...layers.image.experimental.octree_image import _OctreeImageBase
-    from ..experimental.vispy_tiled_image_layer import VispyTiledImageLayer
-
-    # Insert _OctreeImageBase in front so it gets picked over plain Image.
-    new_mapping = {_OctreeImageBase: VispyTiledImageLayer}
-    new_mapping.update(layer_to_visual)
-    layer_to_visual = new_mapping
+overlay_to_visual: Dict[Type[Overlay], Type[VispyBaseOverlay]] = {
+    ScaleBarOverlay: VispyScaleBarOverlay,
+    TextOverlay: VispyTextOverlay,
+    AxesOverlay: VispyAxesOverlay,
+    BoundingBoxOverlay: VispyBoundingBoxOverlay,
+    TransformBoxOverlay: VispyTransformBoxOverlay,
+    SelectionBoxOverlay: VispySelectionBoxOverlay,
+    BrushCircleOverlay: VispyBrushCircleOverlay,
+    LabelsPolygonOverlay: VispyLabelsPolygonOverlay,
+}
 
 
 def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
@@ -55,8 +80,8 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
 
     Returns
     -------
-    visual : vispy.scene.visuals.VisualNode
-        Vispy visual node
+    visual : VispyBaseLayer
+        Vispy layer
     """
     for layer_type, visual_class in layer_to_visual.items():
         if isinstance(layer, layer_type):
@@ -71,11 +96,38 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
     )
 
 
+def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
+    """
+    Create vispy visual for Overlay  based on its type.
+
+    Parameters
+    ----------
+    overlay : napari.components.overlays.VispyBaseOverlay
+        The overlay to create a visual for.
+
+    Returns
+    -------
+    visual : VispyBaseOverlay
+        Vispy overlay
+    """
+    for overlay_type, visual_class in overlay_to_visual.items():
+        if isinstance(overlay, overlay_type):
+            return visual_class(overlay=overlay, **kwargs)
+
+    raise TypeError(
+        trans._(
+            'Could not find VispyOverlay for overlay of type {dtype}',
+            deferred=True,
+            dtype=type(overlay),
+        )
+    )
+
+
 def get_view_direction_in_scene_coordinates(
     view: ViewBox,
     ndim: int,
     dims_displayed: Tuple[int],
-) -> np.ndarray:
+) -> Optional[np.ndarray]:
     """Calculate the unit vector pointing in the direction of the view.
 
     This is only for 3D viewing, so it returns None when

@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from ....utils.translations import trans
+from napari.utils.translations import trans
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -134,7 +134,7 @@ class Monitor:
     process has fully started.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Both are set when start() is called, and only if we have
         # a parseable config file, have Python 3.9, etc.
         self._service = None
@@ -176,8 +176,10 @@ class Monitor:
 
         # Late imports so no multiprocessing modules are even
         # imported unless we are going to start the service.
-        from ._api import MonitorApi
-        from ._service import MonitorService
+        from napari.components.experimental.monitor._api import MonitorApi
+        from napari.components.experimental.monitor._service import (
+            MonitorService,
+        )
 
         # Create the API first. It will register our callbacks, then
         # we start the manager that will serve those callbacks.

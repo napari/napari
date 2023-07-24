@@ -3,7 +3,7 @@ from https://github.com/cleterrier/ChrisLUTs. To make it compatible with napari'
 colormap classes, all the values in the colormap are normalized (divide by 255).
 """
 
-from ..translations import trans
+from napari.utils.translations import trans
 
 bop_blue = [
     [0.0, 0.0, 0.0],

@@ -27,7 +27,7 @@ import numpy as np
 from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
-from ..translations import trans
+from napari.utils.translations import trans
 
 
 def transform_color(colors: Any) -> np.ndarray:
@@ -62,7 +62,10 @@ def transform_color(colors: Any) -> np.ndarray:
         invalid inputs
     """
     colortype = type(colors)
-    return _color_switch[colortype](colors)
+    for typ, handler in _color_switch.items():
+        if issubclass(colortype, typ):
+            return handler(colors)
+    raise ValueError(f"cannot convert type '{colortype}' to a color array.")
 
 
 @functools.lru_cache(maxsize=1024)
@@ -146,6 +149,7 @@ def _handle_list_like(colors: Sequence) -> np.ndarray:
     # User input was an iterable with strings
     if color_array.dtype.kind in ['U', 'O']:
         return _handle_str_list_like(color_array.ravel())
+    return None
 
 
 def _handle_generator(colors) -> np.ndarray:
@@ -178,17 +182,17 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
         return np.ones((max(len(colors), 1), 4), dtype=np.float32)
 
     # An array of strings will be treated as a list if compatible
-    elif kind == 'U':
+    if kind == 'U':
         if colors.ndim == 1:
             return _handle_str_list_like(colors)
-        else:
-            warnings.warn(
-                trans._(
-                    "String color arrays should be one-dimensional. Converting input to a white color array.",
-                    deferred=True,
-                )
+
+        warnings.warn(
+            trans._(
+                "String color arrays should be one-dimensional. Converting input to a white color array.",
+                deferred=True,
             )
-            return np.ones((len(colors), 4), dtype=np.float32)
+        )
+        return np.ones((len(colors), 4), dtype=np.float32)
 
     # Test the dimensionality of the input array
 
@@ -250,14 +254,13 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     if kind in ['f', 'i', 'u']:
         return _convert_array_to_correct_format(colors)
 
-    else:
-        raise ValueError(
-            trans._(
-                "Data type of array ({color_dtype}) not supported.",
-                deferred=True,
-                color_dtype=colors.dtype,
-            )
+    raise ValueError(
+        trans._(
+            "Data type of array ({color_dtype}) not supported.",
+            deferred=True,
+            color_dtype=colors.dtype,
         )
+    )
 
 
 def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
@@ -321,7 +324,7 @@ def _handle_str_list_like(colors: Sequence) -> np.ndarray:
     for idx, c in enumerate(colors):
         try:
             color_array[idx, :] = _color_switch[type(c)](c)
-        except (ValueError, TypeError, KeyError):
+        except (ValueError, TypeError, KeyError) as e:
             raise ValueError(
                 trans._(
                     "Invalid color found: {color} at index {idx}.",
@@ -329,7 +332,7 @@ def _handle_str_list_like(colors: Sequence) -> np.ndarray:
                     color=c,
                     idx=idx,
                 )
-            )
+            ) from e
     return color_array
 
 

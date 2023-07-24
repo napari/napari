@@ -1,6 +1,7 @@
 from typing import Dict, Optional, Tuple
 
 import numpy as np
+import numpy.typing as npt
 
 # normal vectors for a 3D axis-aligned box
 # coordinates are ordered [z, y, x]
@@ -386,10 +387,10 @@ def inside_triangles(triangles):
 
 
 def intersect_line_with_plane_3d(
-    line_position: np.ndarray,
-    line_direction: np.ndarray,
-    plane_position: np.ndarray,
-    plane_normal: np.ndarray,
+    line_position: npt.ArrayLike,
+    line_direction: npt.ArrayLike,
+    plane_position: npt.ArrayLike,
+    plane_normal: npt.ArrayLike,
 ) -> np.ndarray:
     """Find the intersection of a line with an arbitrarily oriented plane in 3D.
     The line is defined by a position and a direction vector.
@@ -555,10 +556,7 @@ def point_in_quadrilateral_2d(
         (quadrilateral[[0, 1, 2]], quadrilateral[[0, 2, 3]])
     )
     in_triangles = inside_triangles(triangle_vertices - point)
-    if in_triangles.sum() < 1:
-        return False
-    else:
-        return True
+    return in_triangles.sum() >= 1
 
 
 def line_in_quadrilateral_3d(
@@ -690,16 +688,15 @@ def find_front_back_face(
 
     bbox_face_coords = bounding_box_to_face_vertices(bounding_box)
     for k, v in FACE_NORMALS.items():
-        if (np.dot(view_dir, v) + 0.001) < 0:
+        if np.dot(view_dir, v) < -0.001:
             if line_in_quadrilateral_3d(
                 click_pos, view_dir, bbox_face_coords[k]
             ):
                 front_face_normal = v
-        elif (np.dot(view_dir, v) + 0.001) > 0:
-            if line_in_quadrilateral_3d(
-                click_pos, view_dir, bbox_face_coords[k]
-            ):
-                back_face_normal = v
+        elif line_in_quadrilateral_3d(
+            click_pos, view_dir, bbox_face_coords[k]
+        ):
+            back_face_normal = v
         if front_face_normal is not None and back_face_normal is not None:
             # stop looping if both the front and back faces have been found
             break
