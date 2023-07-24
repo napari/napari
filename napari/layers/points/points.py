@@ -72,13 +72,15 @@ class Points(Layer):
         The default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
-        where N is the number of points.
+        where N is the number of points. properties was deprecated in version 0.5.0
+        and will be removed in 0.6. Please use features instead.
     property_choices : dict {str: array (N,)}
-        possible values for each property.
+        possibl e values for each property. properties_choices was deprecated in
+        version 0.5.0 and will be removed in 0.6. Please use feature_defaults instead.
     text : str, dict
-        Text to be displayed with the points. If text is set to a key in properties,
-        the value of that property will be displayed. Multiple properties can be
-        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        Text to be displayed with the points. If text is set to a key in features,
+        the value of that feature will be displayed. Multiple features can be
+        composed using f-string-like syntax (e.g., '{feature_1}, {float_feature:.2f}).
         A dictionary can be provided with keyword arguments to set the text values
         and display properties. See TextManager.__init__() for the valid keyword arguments.
         For example usage, see /napari/examples/add_points_with_text.py.
@@ -183,11 +185,12 @@ class Points(Layer):
         Stores the default value of each feature in a table with one row.
     properties : dict {str: array (N,)} or DataFrame
         Annotations for each point. Each property should be an array of length N,
-        where N is the number of points.
+        where N is the number of points. properties was deprecated in version 0.5.0
+        and will be removed in 0.6. Please use features instead.
     text : str
-        Text to be displayed with the points. If text is set to a key in properties, the value of
-        that property will be displayed. Multiple properties can be composed using f-string-like
-        syntax (e.g., '{property_1}, {float_property:.2f}).
+        Text to be displayed with the points. If text is set to a key in features, the value of
+        that property will be displayed. Multiple features can be composed using f-string-like
+        syntax (e.g., '{feature_1}, {float_float:.2f}).
         For example usage, see /napari/examples/add_points_with_text.py.
     symbol : array of str
         Array of symbols for each point.
@@ -667,12 +670,21 @@ class Points(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point
+
+        properties_choices was deprecated in version 0.5.0 and will be removed.
+        in 0.6. Please use features with categorical dtypes instead.
+        """
         _warn_deprecation(_property_choices_deprecation_message())
         return self._feature_table.choices()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point
+
+        properties was deprecated in version 0.5.0 and will be removed in 0.6.
+        Please use features instead.
+        """
         _warn_deprecation(_properties_deprecation_message())
         return self._feature_table.properties()
 
@@ -707,7 +719,12 @@ class Points(Layer):
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
-        """dict{str: np.ndarray(1,)}: properties for the next added point."""
+        """dict{str: np.ndarray(1,)}: properties for the next added point.
+
+
+        current_properties was deprecated in version 0.5.0 and will be
+        removed in 0.6. Please use feature_defaults instead.
+        """
         _warn_deprecation(_current_properties_deprecation_message())
         return self._feature_table.currents()
 
