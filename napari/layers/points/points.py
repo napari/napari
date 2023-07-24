@@ -999,13 +999,13 @@ class _BasePoints(Layer):
                 if not_empty
                 else [self.current_face_color],
                 'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap.name,
+                'face_colormap': self.face_colormap.dict(),
                 'face_contrast_limits': self.face_contrast_limits,
                 'border_color': self.border_color
                 if not_empty
                 else [self.current_border_color],
                 'border_color_cycle': self.border_color_cycle,
-                'border_colormap': self.border_colormap.name,
+                'border_colormap': self.border_colormap.dict(),
                 'border_contrast_limits': self.border_contrast_limits,
                 'properties': self.properties,
                 'property_choices': self.property_choices,
