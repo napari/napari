@@ -127,6 +127,7 @@ subtrees:
               - file: naps/4-async-slicing
               - file: naps/5-new-logo
               - file: naps/6-contributable-menus
+              - file: naps/7-key-binding-dispatch
           - file: developers/documentation/index
             subtrees:
             - entries:

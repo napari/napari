@@ -169,6 +169,8 @@ myst_substitutions = {
     "conda_create_env": f"```sh\nconda create -y -n napari-env -c conda-forge python={python_version}\nconda activate napari-env\n```",
 }
 
+myst_footnote_transition = False
+
 nb_output_stderr = 'show'
 
 panels_add_bootstrap_css = False
