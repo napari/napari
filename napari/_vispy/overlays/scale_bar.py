@@ -81,7 +81,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             # When we get the lowest index of the list, removing -1 will
             # return the last index.
             index -= 1
-        new_value = PREFERRED_VALUES[index]
+        new_value: float = PREFERRED_VALUES[index]
         if new_quantity.dimensionless and new_quantity.magnitude < 1:
             # using Decimal is necessary to avoid `4.999999e-6`
             # at really small scale.
