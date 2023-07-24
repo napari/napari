@@ -8,6 +8,5 @@ sphinx_autodoc_typehints==1.12.0
 myst-nb
 napari-sphinx-theme
 matplotlib
-qtgallery
 lxml
 imageio-ffmpeg

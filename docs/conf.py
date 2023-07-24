@@ -19,8 +19,8 @@ from importlib import import_module
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
-import qtgallery
 from jinja2.filters import FILTERS
+from sphinx_gallery import scrapers
 from sphinx_gallery.sorting import ExampleTitleSortKey
 
 import napari
@@ -196,13 +196,45 @@ exclude_patterns = [
 napoleon_custom_sections = [('Events', 'params_style')]
 
 
-def reset_napari_theme(gallery_conf, fname):
+def reset_napari(gallery_conf, fname):
     from napari.settings import get_settings
+    from qtpy.QtWidgets import QApplication
 
     settings = get_settings()
     settings.appearance.theme = 'dark'
-    qtgallery.reset_qapp(gallery_conf, fname)
 
+    # Disabling `QApplication.exec_` means example scripts can call `exec_`
+    # (scripts work when run normally) without blocking example execution by
+    # sphinx-gallery. (from qtgallery)
+    QApplication.exec_ = lambda _: None
+
+
+def napari_scraper(block, block_vars, gallery_conf):
+    """Basic napari window scraper.
+
+    Looks for any QtMainWindow instances and takes a screenshot of them.
+
+    `app.processEvents()` allows Qt events to propagateo and prevents hanging.
+    """
+    imgpath_iter = block_vars['image_path_iterator']
+
+    if app := napari.qt.get_app():
+        app.processEvents()
+    else:
+        return ""
+
+    img_paths = []
+    for win, img_path in zip(
+        reversed(napari._qt.qt_main_window._QtMainWindow._instances),
+        imgpath_iter,
+    ):
+        img_paths.append(img_path)
+        win._window.screenshot(img_path, canvas_only=False)
+
+    napari.Viewer.close_all()
+    app.processEvents()
+
+    return scrapers.figure_rst(img_paths, gallery_conf['src_dir'])
 
 sphinx_gallery_conf = {
     'examples_dirs': '../examples',  # path to your example scripts
@@ -217,11 +249,8 @@ sphinx_gallery_conf = {
     'download_all_examples': False,
     'min_reported_time': 10,
     'only_warn_on_example_error': True,
-    'image_scrapers': (
-        "matplotlib",
-        qtgallery.qtscraper,
-    ),
-    'reset_modules': (reset_napari_theme,),
+    'image_scrapers': ("matplotlib", napari_scraper,),
+    'reset_modules': (reset_napari,),
     'reference_url': {'napari': None},
     'within_subsection_order': ExampleTitleSortKey,
 }
