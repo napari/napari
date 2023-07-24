@@ -65,5 +65,6 @@ class ScreenshotDialog(QFileDialog):
                     # standard accept return 1, reject 0. This inform that dialog should be reopened
                     super().accept()
                     self.exec_()
+        base_result = super().accept()
         self.save_function(save_path)
-        return super().accept()
+        return base_result
