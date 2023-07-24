@@ -185,7 +185,7 @@ class _ImageSliceRequest:
 
     def _call_single_scale(self) -> _ImageSliceResponse:
         order = self._get_order()
-        data = self._get_slice_data()
+        data = self._project_thick_slice(self.data, self.data_slice)
         data = np.transpose(data, order)
         image = _ImageView.from_view(data)
         # `Layer.multiscale` is mutable so we need to pass back the identity
@@ -208,17 +208,16 @@ class _ImageSliceRequest:
         else:
             level = self.data_level
 
-        indices = self._slice_indices_at_level(level)
-
         # Calculate the tile-to-data transform.
         scale = np.ones(self.dims.ndim)
         for d in self.dims.displayed:
             scale[d] = self.downsample_factors[level][d]
 
         translate = np.zeros(self.dims.ndim)
+        disp_slice = [slice(None) for _ in self.data.shape]
         if self.dims.ndisplay == 2:
             for d in self.dims.displayed:
-                indices[d] = slice(
+                disp_slice[d] = slice(
                     self.corner_pixels[0, d],
                     self.corner_pixels[1, d] + 1,
                     1,
@@ -234,18 +233,23 @@ class _ImageSliceRequest:
             ndim=self.dims.ndim,
         )
 
+        # slice displayed dimensions to get the right tile data
+        data = np.asarray(self.data[level][tuple(disp_slice)])
+        # project the thick slice
+        data_slice = self._thick_slice_at_level(level)
+        data = self._project_thick_slice(data, data_slice)
+
         order = self._get_order()
-        data = np.asarray(self.data[level][tuple(indices)])
         data = np.transpose(data, order)
         image = _ImageView.from_view(data)
 
         thumbnail = image
         if self.thumbnail_level != level:
-            thumbnail_indices = self._slice_indices_at_level(
+            thumbnail_data_slice = self._thick_slice_at_level(
                 self.thumbnail_level
             )
-            thumbnail_data = np.asarray(
-                self.data[self.thumbnail_level][tuple(thumbnail_indices)]
+            thumbnail_data = self._project_thick_slice(
+                self.data[self.thumbnail_level], thumbnail_data_slice
             )
             thumbnail_data = np.transpose(thumbnail_data, order)
             thumbnail = _ImageView.from_view(thumbnail_data)
@@ -258,28 +262,35 @@ class _ImageSliceRequest:
             request_id=self.id,
         )
 
-    def _slice_indices_at_level(self, level: int) -> _ThickNDSlice:
-        indices = np.array(self.indices)
-        axes = self.dims.not_displayed
-        ds_indices = indices[axes] / self.downsample_factors[level][axes]
-        ds_indices = np.round(ds_indices.astype(float)).astype(int)
-        ds_indices = np.clip(ds_indices, 0, self.level_shapes[level][axes] - 1)
-        indices[axes] = ds_indices
-        return indices
+    def _thick_slice_at_level(self, level: int) -> _ThickNDSlice:
+        """
+        Get the data_slice rescaled for a specific level.
+        """
+        slice_arr = self.data_slice.as_array()
+        # downsample based on level
+        slice_arr /= self.downsample_factors[level]
+        slice_arr[0] = np.clip(slice_arr[0], 0, self.level_shapes[level] - 1)
+        return _ThickNDSlice.from_array(slice_arr)
 
-    def _get_slice_data(self):
+    def _project_thick_slice(self, data, data_slice):
+        """
+        Slice the given data with the given data slice and project the extra dims.
+        """
         slices = []
-        slice_not_disp = self.data_slice[self.dims.not_displayed]
+        slice_not_disp = data_slice[self.dims.not_displayed]
         if self.projection_mode == 'none':
+            # early return with only the dims point being used
             indices = np.array(slice_not_disp.point, dtype=int)
-            return self.data[tuple(indices)]
+            return data[tuple(indices)]
 
         for dim_len, (point, m_left, m_right) in zip(
-            self.data.shape, slice_not_disp
+            data.shape, slice_not_disp
         ):
+            # ensure we always get at least 1 slice
             if m_left + m_right < 1:
                 m_left = 0
                 m_right = 1
+
             low = point - m_left
             high = point + m_right
 
@@ -287,7 +298,7 @@ class _ImageSliceRequest:
             slices.append(slice_)
 
         return project_slice(
-            self.data[tuple(slices)],
+            data[tuple(slices)],
             axis=tuple(self.dims.not_displayed),
             mode=self.projection_mode,
         )
