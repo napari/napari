@@ -801,7 +801,7 @@ class Labels(_ImageBase):
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
 
-    def _as_type(self, data, selected_label=None):
+    def _as_type(self, data):
         return data.astype(np.float32)
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
