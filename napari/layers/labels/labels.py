@@ -40,7 +40,6 @@ from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import (
     direct_colormap,
     label_colormap,
-    low_discrepancy_image,
 )
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
@@ -801,29 +800,6 @@ class Labels(_ImageBase):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
-
-    def _lookup_with_low_discrepancy_image(self, im, selected_label=None):
-        """Returns display version of im using low_discrepancy_image.
-
-        Passes the image through low_discrepancy_image, only coloring
-        selected_label if it's not None.
-
-        Parameters
-        ----------
-        im : array or int
-            Raw integer input image.
-        selected_label : int, optional
-            Value of selected label to color, by default None
-        """
-        if selected_label:
-            image = np.where(
-                im == selected_label,
-                low_discrepancy_image(selected_label, self._seed),
-                0,
-            )
-        else:
-            image = np.where(im != 0, low_discrepancy_image(im, self._seed), 0)
-        return image
 
     def _as_type(self, data, selected_label=None):
         return data.astype(np.float32)
