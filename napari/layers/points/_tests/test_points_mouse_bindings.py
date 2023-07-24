@@ -491,25 +491,29 @@ def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
 
     layer.mode = 'select'
 
+    # drag a box that includes all the points
+    box_drag_begin = (20, 20)
+    box_drag_end = (0, 0)
+
     # Simulate click
-    event = read_only_event(type='mouse_press', position=(20, 20))
+    event = read_only_event(type='mouse_press', position=box_drag_begin)
     mouse_press_callbacks(layer, event)
 
     # Simulate drag start
     event = read_only_event(
-        type='mouse_move', is_dragging=True, position=(20, 20)
+        type='mouse_move', is_dragging=True, position=box_drag_begin
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate drag end
     event = read_only_event(
-        type='mouse_move', is_dragging=True, position=(0, 0)
+        type='mouse_move', is_dragging=True, position=box_drag_end
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = read_only_event(
-        type='mouse_release', is_dragging=True, position=(0, 0)
+        type='mouse_release', is_dragging=True, position=box_drag_end
     )
     mouse_release_callbacks(layer, event)
 
