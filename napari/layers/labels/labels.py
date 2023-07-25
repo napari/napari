@@ -277,6 +277,7 @@ class Labels(_ImageBase):
         cache=True,
         plane=None,
         experimental_clipping_planes=None,
+        projection_mode='none',
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -318,6 +319,7 @@ class Labels(_ImageBase):
             cache=cache,
             plane=plane,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(

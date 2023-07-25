@@ -425,6 +425,7 @@ class Shapes(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
+        projection_mode='none',
     ) -> None:
         if data is None or len(data) == 0:
             if ndim is None:
@@ -457,6 +458,7 @@ class Shapes(Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(

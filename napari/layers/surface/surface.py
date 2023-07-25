@@ -204,6 +204,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         texture=None,
         texcoords=None,
         vertex_colors=None,
+        projection_mode='none',
     ) -> None:
         ndim = data[0].shape[1]
 
@@ -222,6 +223,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(
