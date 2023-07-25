@@ -543,7 +543,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         data_ndim = data.ndim - 1
         if data_ndim >= dims:
             # Get indices for axes corresponding to data dimensions
-            data_indices = self._slice_indices[:-vertex_ndim]
+            data_indices = self._data_slice.point[:-vertex_ndim]
             data = data[data_indices]
             if data.ndim > dims:
                 warnings.warn(

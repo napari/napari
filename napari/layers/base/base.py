@@ -961,6 +961,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             'experimental_clipping_planes': [
                 plane.dict() for plane in self.experimental_clipping_planes
             ],
+            'projection_mode': self.projection_mode,
         }
         return base_dict
 
