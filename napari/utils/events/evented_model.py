@@ -220,9 +220,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     # when field is changed, an event for dependent properties will be emitted.
     __field_dependents__: ClassVar[Dict[str, Set[str]]]
     __eq_operators__: ClassVar[Dict[str, Callable[[Any, Any], bool]]]
-    _check_queue: Dict[str, Any]
-    _primary_changes: Set[str]
-    _value_check_counter: int
+    _changes_queue: Dict[str, Any] = PrivateAttr(default_factory=dict)
+    _primary_changes: Set[str] = PrivateAttr(default_factory=set)
+    _delay_check_semaphore: int = PrivateAttr(0)
     __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
 
     # pydantic BaseModel configuration.  see:
@@ -258,10 +258,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         self._events.add(
             **dict.fromkeys(field_events + list(self.__properties__))
         )
-
-        self._check_queue = {}
-        self._primary_changes = set()
-        self._value_check_counter = 0
 
         # while seemingly redundant, this next line is very important to maintain
         # correct sources; see https://github.com/napari/napari/pull/4138
@@ -304,34 +300,34 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             self._primary_changes.add(name)
             self._setattr_impl(name, value)
 
-    def _check_if_values_changed_and_emit_if_need(self):
+    def _check_if_values_changed_and_emit_if_needed(self):
         """
         This is function to check if values changed and emit events if need.
         The advantage of moving this after whole modification is that comparison will be performed only
         once for every potential change.
         """
-        if self._value_check_counter > 0 or len(self._check_queue) == 0:
+        if self._delay_check_semaphore > 0 or len(self._changes_queue) == 0:
             # do not run whole machinery if there is no need
             return
         to_emit = []
         for name in self._primary_changes:
             # primary changes should contains only fields that are changed directly by assigment
-            if name not in self._check_queue:
+            if name not in self._changes_queue:
                 continue
-            old_value = self._check_queue[name]
+            old_value = self._changes_queue[name]
             if (res := self._check_if_differ(name, old_value))[0]:
                 to_emit.append((name, res[1]))
-            self._check_queue.pop(name)
+            self._changes_queue.pop(name)
         if not to_emit:
             # If no direct changes was made then we can skip whole machinery
-            self._check_queue.clear()
+            self._changes_queue.clear()
             self._primary_changes.clear()
             return
-        for name, old_value in self._check_queue.items():
+        for name, old_value in self._changes_queue.items():
             # check if any of dependent properties changed
             if (res := self._check_if_differ(name, old_value))[0]:
                 to_emit.append((name, res[1]))
-        self._check_queue.clear()
+        self._changes_queue.clear()
         self._primary_changes.clear()
 
         with ComparisonDelayer(self):
@@ -366,12 +362,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             dep for dep, has_cb in has_callbacks.items() if has_cb
         ]
 
-        if name not in self._check_queue:
-            self._check_queue[name] = getattr(self, name, object())
+        if name not in self._changes_queue:
+            self._changes_queue[name] = getattr(self, name, object())
 
         for dep in dep_with_callbacks:
-            if dep not in self._check_queue:
-                self._check_queue[dep] = getattr(self, dep, object())
+            if dep not in self._changes_queue:
+                self._changes_queue[dep] = getattr(self, dep, object())
 
         # set value using original setter
         self._super_setattr_(name, value)
@@ -508,8 +504,8 @@ class ComparisonDelayer:
         self._target = target
 
     def __enter__(self):
-        self._target._value_check_counter += 1
+        self._target._delay_check_semaphore += 1
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._target._value_check_counter -= 1
-        self._target._check_if_values_changed_and_emit_if_need()
+        self._target._delay_check_semaphore -= 1
+        self._target._check_if_values_changed_and_emit_if_needed()
