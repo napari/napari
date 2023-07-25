@@ -38,6 +38,5 @@ Closes #
 - [ ] If I included new strings, I have used `trans.` to make them localizable.
       For more information see our [translations guide](https://napari.org/developers/translations.html).
 
-<!-- If you are waiting for someone to review your PR, please feel free to-->
-<!-- message us in Zulip to ask for a review: -->
-<!-- https://napari.zulipchat.com/#narrow/stream/270578-reviews -->
+<!--Feel free to message us in Zulip for any questions or remind us to review:
+https://napari.zulipchat.com/#narrow/stream/270578-reviews -->
