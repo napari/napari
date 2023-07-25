@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Tuple
 
 import numpy as np
 
@@ -39,13 +39,13 @@ class IntensityVisualizationMixin:
         self._gamma = 1
         self._colormap_name = ''
         self._contrast_limits_msg = ''
-        self._contrast_limits: Tuple[
-            Union[float, None], Union[float, None]
-        ] = (
+        self._contrast_limits: Tuple[Optional[float], Optional[float]] = (
             None,
             None,
         )
-        self._contrast_limits_range = [None, None]
+        self._contrast_limits_range: Tuple[
+            Optional[float], Optional[float]
+        ] = (None, None)
         self._auto_contrast_source = 'slice'
         self._keep_auto_contrast = False
 
@@ -71,14 +71,14 @@ class IntensityVisualizationMixin:
         """napari.utils.Colormap: colormap for luminance images."""
         return self._colormap
 
+    @colormap.setter
+    def colormap(self, colormap):
+        self._set_colormap(colormap)
+
     def _set_colormap(self, colormap):
         self._colormap = ensure_colormap(colormap)
         self._update_thumbnail()
         self.events.colormap()
-
-    @colormap.setter
-    def colormap(self, colormap):
-        self._set_colormap(colormap)
 
     @property
     def colormaps(self):
