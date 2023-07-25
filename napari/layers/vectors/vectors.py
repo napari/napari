@@ -223,6 +223,7 @@ class Vectors(Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         # events for non-napari calculations
