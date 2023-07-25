@@ -281,6 +281,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def _check_if_differ(self, name: str, old_value: Any) -> Tuple[bool, Any]:
         """
         Check new value of a field and emit event if it is different from the old one.
+        
         Returns True if data changed, else False. Return current value.
         """
         new_value = getattr(self, name, object())
@@ -302,9 +303,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     def _check_if_values_changed_and_emit_if_needed(self):
         """
-        This is function to check if values changed and emit events if need.
-        The advantage of moving this after whole modification is that comparison will be performed only
-        once for every potential change.
+        Check if field values changed and emit events if needed.
+        
+        The advantage of moving this to the end of all the modifications is
+        that comparisons will be performed only once for every potential change.
         """
         if self._delay_check_semaphore > 0 or len(self._changes_queue) == 0:
             # do not run whole machinery if there is no need
