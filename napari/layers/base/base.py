@@ -315,7 +315,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.multiscale = multiscale
         self._experimental_clipping_planes = ClippingPlaneList()
         self._mode = self._modeclass('pan_zoom')
-        self._projection_mode = self._projectionclass(projection_mode)
+        self._projection_mode = self._projectionclass(str(projection_mode))
 
         self._ndim = ndim
 
@@ -534,7 +534,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @projection_mode.setter
     def projection_mode(self, mode):
-        mode = self._projectionclass(mode)
+        mode = self._projectionclass(str(mode))
         if self._projection_mode != mode:
             self._projection_mode = mode
             self.events.projection_mode()
