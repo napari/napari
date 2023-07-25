@@ -125,7 +125,7 @@ fix = true
 "napari/utils/_testsupport.py" = ["B011"]
 "tools/test_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20"]
-"examples/**" = ["INP001", "T20"]
+"examples/**" = ["ICN001", "INP001", "T20"]
 "**/vendored/**" = ["TID"]
 
 [tool.ruff.flake8-quotes]
@@ -310,19 +310,9 @@ module = [
     'napari._vispy.experimental.tile_set',
     'napari._vispy.experimental.tiled_image_visual',
     'napari._vispy.experimental.vispy_tiled_image_layer',
-    'napari._vispy.filters.tracks',
     'napari._vispy.layers.base',
-    'napari._vispy.layers.labels',
     'napari._vispy.overlays.base',
-    'napari._vispy.overlays.base',
-    'napari._vispy.overlays.base',
-    'napari._vispy.overlays.base',
-    'napari._vispy.overlays.base',
-    'napari._vispy.overlays.base',
-    'napari._vispy.overlays.scale_bar',
     'napari._vispy.utils.cursor',
-    'napari._vispy.utils.visual',
-    'napari._vispy.visuals.clipping_planes_mixin',
     'napari.components._layer_slicer',
     'napari.components._viewer_key_bindings',
     'napari.components.experimental.chunk._cache',
@@ -373,10 +363,6 @@ module = [
     'napari.utils._tracebacks',
     'napari.utils.action_manager',
     'napari.utils.colormaps.categorical_colormap',
-    'napari.utils.colormaps.categorical_colormap_utils',
-    'napari.utils.colormaps.colormap',
-    'napari.utils.colormaps.colormap_utils',
-    'napari.utils.colormaps.standardize_color',
     'napari.utils.events.containers._dict',
     'napari.utils.events.containers._evented_dict',
     'napari.utils.events.containers._evented_list',
