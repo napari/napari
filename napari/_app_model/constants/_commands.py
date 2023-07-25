@@ -33,6 +33,7 @@ class CommandId(str, Enum):
     TOGGLE_VIEWER_SCALE_BAR = 'napari:window:view:toggle_viewer_scale_bar'
     TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
+
     # Plugins menubar
     DLG_PLUGIN_INSTALL = 'napari:plugins:plugin_install_dialog'
     DLG_PLUGIN_ERR = 'napari:plugins:plugin_err_reporter'
