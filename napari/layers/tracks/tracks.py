@@ -35,6 +35,9 @@ class Tracks(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
     graph : dict {int: list}
         Graph representing associations between tracks. Dictionary defines the
         mapping between a track ID and the parents of the track. This can be
@@ -432,13 +435,23 @@ class Tracks(Layer):
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}: Properties for each track."""
+        """dict {str: np.ndarray (N,)}: Properties for each track.
+
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
+        """
         _warn_deprecation(_properties_deprecation_message())
         return self._manager.properties
 
     @property
     def properties_to_color_by(self) -> List[str]:
-        """track properties that can be used for coloring etc..."""
+        """track properties that can be used for coloring etc...
+
+        .. deprecated:: 0.5.0
+            properties_to_color_by was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features_to_color_by instead.
+        """
         _warn_deprecation(
             trans._(
                 'properties_to_color_by was deprecated in version 0.5.0 and will be removed in 0.6. '

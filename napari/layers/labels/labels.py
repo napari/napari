@@ -77,6 +77,9 @@ class Labels(_ImageBase):
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
         to background.
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
     color : dict of int to str or array
         Custom label to color mapping. Values must be valid color names or RGBA
         arrays.
@@ -533,7 +536,12 @@ class Labels(_ImageBase):
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: array (N,)}, DataFrame: Properties for each label."""
+        """dict {str: array (N,)}, DataFrame: Properties for each label.
+
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
+        """
         _warn_deprecation(_properties_deprecation_message())
         return self._feature_table.properties()
 

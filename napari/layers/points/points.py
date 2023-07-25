@@ -72,11 +72,15 @@ class Points(Layer):
         The default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
-        where N is the number of points. properties was deprecated in version 0.5.0
-        and will be removed in 0.6. Please use features instead.
+        where N is the number of points.
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
     property_choices : dict {str: array (N,)}
-        possibl e values for each property. properties_choices was deprecated in
-        version 0.5.0 and will be removed in 0.6. Please use feature_defaults instead.
+        possible values for each property
+        .. deprecated:: 0.5.0
+            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features with categorical dtypes instead.
     text : str, dict
         Text to be displayed with the points. If text is set to a key in features,
         the value of that feature will be displayed. Multiple features can be
@@ -185,8 +189,10 @@ class Points(Layer):
         Stores the default value of each feature in a table with one row.
     properties : dict {str: array (N,)} or DataFrame
         Annotations for each point. Each property should be an array of length N,
-        where N is the number of points. properties was deprecated in version 0.5.0
-        and will be removed in 0.6. Please use features instead.
+        where N is the number of points.
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
     text : str
         Text to be displayed with the points. If text is set to a key in features, the value of
         that property will be displayed. Multiple features can be composed using f-string-like
@@ -672,8 +678,9 @@ class Points(Layer):
     def property_choices(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point
 
-        properties_choices was deprecated in version 0.5.0 and will be removed.
-        in 0.6. Please use features with categorical dtypes instead.
+        .. deprecated:: 0.5.0
+            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features with categorical dtypes instead.
         """
         _warn_deprecation(_property_choices_deprecation_message())
         return self._feature_table.choices()
@@ -682,8 +689,9 @@ class Points(Layer):
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point
 
-        properties was deprecated in version 0.5.0 and will be removed in 0.6.
-        Please use features instead.
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
         """
         _warn_deprecation(_properties_deprecation_message())
         return self._feature_table.properties()
@@ -721,9 +729,9 @@ class Points(Layer):
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point.
 
-
-        current_properties was deprecated in version 0.5.0 and will be
-        removed in 0.6. Please use feature_defaults instead.
+        .. deprecated:: 0.5.0
+            current_properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use feature_defaults instead.
         """
         _warn_deprecation(_current_properties_deprecation_message())
         return self._feature_table.currents()
