@@ -753,7 +753,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        indices = slice_input.data_indices(self._data_to_world.inverse)
+        indices = slice_input.data_slice(self._data_to_world.inverse)
         return self._make_slice_request_internal(
             slice_input=slice_input,
             data_slice=indices,
