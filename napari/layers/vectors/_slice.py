@@ -118,7 +118,7 @@ class _VectorSliceRequest:
             low = point
             high = point
         else:
-            low = point + m_left
+            low = point - m_left
             high = point + m_right
 
         # assume slice thickness of 1 in data pixels

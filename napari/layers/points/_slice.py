@@ -104,8 +104,10 @@ class _PointSliceRequest:
             low = point
             high = point
         else:
-            low = point + m_left
+            low = point - m_left
             high = point + m_right
+
+        print(low, point, high, m_left, m_right)
 
         # assume slice thickness of 1 in data pixels
         # (same as before thick slices were implemented)
