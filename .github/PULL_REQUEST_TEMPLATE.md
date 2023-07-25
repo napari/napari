@@ -28,7 +28,7 @@ Closes #
 - [ ] example: the test suite for my feature covers cases x, y, and z
 - [ ] example: all tests pass with my change
 - [ ] example: I check if my changes works with both PySide and PyQt backends
-      as there are small differences between the two Qt bindings.  
+      as there are small differences between the two Qt bindings.
 
 ## Final checklist:
 - [ ] My PR is the minimum possible work for the desired functionality
@@ -37,3 +37,7 @@ Closes #
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] If I included new strings, I have used `trans.` to make them localizable.
       For more information see our [translations guide](https://napari.org/developers/translations.html).
+
+<!-- If you are waiting for someone to review your PR, please feel free to-->
+<!-- message us in Zulip to ask for a review: -->
+<!-- https://napari.zulipchat.com/#narrow/stream/270578-reviews -->
