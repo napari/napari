@@ -66,6 +66,5 @@ class ScreenshotDialog(QFileDialog):
                     # file is needed and the dialog need to still be visible
                     return None
         base_result = super().accept()
-        if base_result:
-            self.save_function(save_path)
+        self.save_function(save_path)
         return base_result
