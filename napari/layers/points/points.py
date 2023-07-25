@@ -1745,8 +1745,8 @@ class Points(Layer):
         """Make a Points slice request based on the given dims and these data."""
         slice_input = self._make_slice_input(
             dims.point,
-            dims.left_margin,
-            dims.right_margin,
+            dims.margin_left,
+            dims.margin_right,
             dims.ndisplay,
             dims.order,
         )
