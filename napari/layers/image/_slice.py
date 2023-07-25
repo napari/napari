@@ -281,7 +281,7 @@ class _ImageSliceRequest:
         if self.projection_mode == 'none':
             # early return with only the dims point being used
             indices = np.array(slice_not_disp.point, dtype=int)
-            return data[tuple(indices)]
+            return np.asarray(data[tuple(indices)])
 
         for dim_len, (point, m_left, m_right) in zip(
             data.shape, slice_not_disp
@@ -298,7 +298,7 @@ class _ImageSliceRequest:
             slices.append(slice_)
 
         return project_slice(
-            data[tuple(slices)],
+            np.asarray(data[tuple(slices)]),
             axis=tuple(self.dims.not_displayed),
             mode=self.projection_mode,
         )
