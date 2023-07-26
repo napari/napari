@@ -11,7 +11,11 @@ def np_generator(ndim: int = 3):
     return data
 
 
-class Sample1(EventedModel):
+def empty(event):
+    pass
+
+
+class Model(EventedModel):
     a: int = 3
     b: float = 2.0
     c: np.ndarray = Field(default_factory=np_generator)
@@ -22,7 +26,7 @@ class Sample1(EventedModel):
 
     @c_inv.setter
     def c_inv(self, value):
-        self.b = np.linalg.inv(value)
+        self.c = np.linalg.inv(value)
 
     @property
     def d(self):
@@ -43,16 +47,17 @@ class Sample1(EventedModel):
         return self.c_inv**self.a
 
 
-def empty(event):
-    pass
+class EventedModelSuite:
+    """Benchmarks for EventedModel."""
 
+    def setup(self):
+        self.model = Model()
+        self.model.events.a.connect(empty)
+        self.model.events.b.connect(empty)
+        self.model.events.c.connect(empty)
+        self.model.events.c_inv.connect(empty)
+        self.model.events.e.connect(empty)
+        self.model.events.f.connect(empty)
 
-def time_sample1():
-    s = Sample1()
-    s.events.a.connect(empty)
-    s.events.b.connect(empty)
-    s.events.c.connect(empty)
-    s.events.c_inv.connect(empty)
-    s.events.e.connect(empty)
-    s.events.f.connect(empty)
-    s.d = 4
+    def time_event_firing(self):
+        self.model.d = 4
