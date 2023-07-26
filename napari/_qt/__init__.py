@@ -9,6 +9,8 @@ try:
     from qtpy import API_NAME, QT_VERSION, QtCore
 except Exception as e:
     if 'No Qt bindings could be found' in str(e):
+        from inspect import cleandoc
+
         raise ImportError(
             trans._(
                 cleandoc(
@@ -26,7 +28,7 @@ except Exception as e:
                   $ conda install -c conda-forge pyqt
                   $ conda install -c conda-forge pyside2
                 """
-                )
+                ),
                 deferred=True,
             )
         ) from e
