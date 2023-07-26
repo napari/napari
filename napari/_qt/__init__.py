@@ -11,14 +11,14 @@ except Exception as e:
     if 'No Qt bindings could be found' in str(e):
         from inspect import cleandoc
 
-        installed_with_conda = (
-            list(Path(sys.prefix, "conda-meta").glob("napari-*.json"))
+        installed_with_conda = list(
+            Path(sys.prefix, "conda-meta").glob("napari-*.json")
         )
 
         raise ImportError(
             trans._(
                 cleandoc(
-                """
+                    """
                 No Qt bindings could be found.
 
                 napari requires either PyQt5 (default) or PySide2 to be installed in the environment.
