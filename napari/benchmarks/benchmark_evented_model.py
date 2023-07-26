@@ -18,7 +18,7 @@ class Sample1(EventedModel):
 
     @property
     def c_inv(self):
-        return np.linalg.inv(self.b)
+        return np.linalg.inv(self.c)
 
     @c_inv.setter
     def c_inv(self, value):
