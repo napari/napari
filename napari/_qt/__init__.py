@@ -11,6 +11,10 @@ except Exception as e:
     if 'No Qt bindings could be found' in str(e):
         from inspect import cleandoc
 
+        installed_with_conda = (
+            list(Path(sys.prefix, "conda-meta").glob("napari-*.json"))
+        )
+
         raise ImportError(
             trans._(
                 cleandoc(
@@ -27,9 +31,12 @@ except Exception as e:
                 With conda, you need to do:
                   $ conda install -c conda-forge pyqt
                   $ conda install -c conda-forge pyside2
+
+                Our heuristics suggest you are using '{tool}' to manage your packages.
                 """
                 ),
                 deferred=True,
+                tool="conda" if installed_with_conda else "pip",
             )
         ) from e
     raise
