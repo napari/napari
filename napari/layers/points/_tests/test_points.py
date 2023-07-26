@@ -1640,7 +1640,9 @@ def test_message_3d():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     layer._slice_input = _SliceInput(
-        ndisplay=3, world_slice=_ThickNDSlice.make_full(2), order=(0, 1, 2)
+        ndisplay=3,
+        world_slice=_ThickNDSlice.make_full(ndim=2),
+        order=(0, 1, 2),
     )
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
@@ -1731,7 +1733,7 @@ def test_view_size():
     sizes = np.array([5, 5, 3, 3])
     layer = Points(coords, size=sizes, out_of_slice_display=False)
 
-    layer._slice_dims((1, np.nan, np.nan))
+    layer._slice_dims((0, np.nan, np.nan))
     assert np.all(layer._view_size == sizes[[0, 1]])
 
     layer._slice_dims((1, np.nan, np.nan))
@@ -1742,7 +1744,7 @@ def test_view_size():
 
     # test a slice with no points
     layer.out_of_slice_display = False
-    layer._slice_dims((1, np.nan, np.nan))
+    layer._slice_dims((2, np.nan, np.nan))
     assert np.all(layer._view_size == [])
 
 
@@ -1756,7 +1758,7 @@ def test_view_colors():
     )
 
     layer = Points(coords, face_color=face_color, edge_color=edge_color)
-    layer._slice_dims((1, np.nan, np.nan))
+    layer._slice_dims((0, np.nan, np.nan))
     assert np.all(layer._view_face_color == face_color[[0, 1]])
     assert np.all(layer._view_edge_color == edge_color[[0, 1]])
 
@@ -1765,7 +1767,7 @@ def test_view_colors():
     assert np.all(layer._view_edge_color == edge_color[[2]])
 
     # view colors should return empty array if there are no points
-    layer._slice_dims((1, np.nan, np.nan))
+    layer._slice_dims((2, np.nan, np.nan))
     assert len(layer._view_face_color) == 0
     assert len(layer._view_edge_color) == 0
 
@@ -2421,7 +2423,7 @@ def test_set_drag_start():
 @pytest.mark.parametrize(
     "dims_indices,target_indices",
     [
-        ((8, np.nan), [2]),
+        ((8, np.nan, np.nan), [2]),
         ((10, np.nan, np.nan), [0, 1, 3, 4]),
         ((10 + 2 * 1e-12, np.nan, np.nan), [0, 1, 3, 4]),
         ((10.1, np.nan, np.nan), [0, 1, 3, 4]),
@@ -2439,11 +2441,7 @@ def test_point_slice_request_response(dims_indices, target_indices):
 
     layer = Points(data)
 
-    data_slice = _ThickNDSlice(
-        point=dims_indices,
-        margin_left=tuple(np.nan for _ in dims_indices),
-        margin_right=tuple(np.nan for _ in dims_indices),
-    )
+    data_slice = _ThickNDSlice.make_full(point=dims_indices)
 
     request = layer._make_slice_request_internal(
         layer._slice_input, data_slice

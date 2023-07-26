@@ -21,20 +21,74 @@ class _ThickNDSlice(Generic[_T]):
     margin_left: Tuple[_T, ...]
     margin_right: Tuple[_T, ...]
 
+    @property
+    def ndim(self):
+        return len(self.point)
+
     @classmethod
-    def make_full(cls, ndim: int):
-        return cls(
-            point=tuple(np.nan for _ in range(ndim)),
-            margin_left=tuple(np.nan for _ in range(ndim)),
-            margin_right=tuple(np.nan for _ in range(ndim)),
+    def make_full(
+        cls,
+        point=None,
+        margin_left=None,
+        margin_right=None,
+        ndim=None,
+    ):
+        """
+        Make a full slice based on minimal input.
+
+        If ndim is provided, it will be used to crop or extend the given values.
+        Values not provided will be filled with np.nan for point and zeros for margins.
+        Prepended values are always zeros.
+        """
+        for val in (point, margin_left, margin_right):
+            if val is not None:
+                val_ndim = len(val)
+                break
+        else:
+            if ndim is None:
+                raise ValueError(
+                    'ndim must be provided if no other value is given'
+                )
+            val_ndim = ndim
+
+        ndim = val_ndim if ndim is None else ndim
+
+        point = (np.nan,) * ndim if point is None else tuple(point)
+        margin_left = (
+            (0,) * ndim if margin_left is None else tuple(margin_left)
+        )
+        margin_right = (
+            (0,) * ndim if margin_right is None else tuple(margin_right)
         )
 
-    def __getitem__(self, key):
-        # this allows to use numpy-like slicing on the whole object
-        return _ThickNDSlice(
-            point=tuple(np.array(self.point)[key]),
-            margin_left=tuple(np.array(self.margin_left)[key]),
-            margin_right=tuple(np.array(self.margin_right)[key]),
+        prepend = max(ndim - val_ndim, 0)
+
+        point = (0,) * prepend + point
+        margin_left = (0,) * prepend + margin_left
+        margin_right = (0,) * prepend + margin_right
+
+        return cls(
+            point=point[:ndim],
+            margin_left=margin_left[:ndim],
+            margin_right=margin_right[:ndim],
+        )
+
+    def copy_with(
+        self,
+        point=None,
+        margin_left=None,
+        margin_right=None,
+        ndim=None,
+    ):
+        return self.make_full(
+            point=self.point if point is None else point,
+            margin_left=self.margin_left
+            if margin_left is None
+            else margin_left,
+            margin_right=self.margin_right
+            if margin_right is None
+            else margin_right,
+            ndim=self.ndim if ndim is None else ndim,
         )
 
     def as_array(self):
@@ -46,6 +100,14 @@ class _ThickNDSlice(Generic[_T]):
             point=tuple(arr[0]),
             margin_left=tuple(arr[1]),
             margin_right=tuple(arr[2]),
+        )
+
+    def __getitem__(self, key):
+        # this allows to use numpy-like slicing on the whole object
+        return _ThickNDSlice(
+            point=tuple(np.array(self.point)[key]),
+            margin_left=tuple(np.array(self.margin_left)[key]),
+            margin_right=tuple(np.array(self.margin_right)[key]),
         )
 
     def __iter__(self):
@@ -88,31 +150,15 @@ class _SliceInput:
     def with_ndim(self, ndim: int) -> _SliceInput:
         """Returns a new instance with the given number of layer dimensions."""
         old_ndim = self.ndim
+        world_slice = self.world_slice.copy_with(ndim=ndim)
         if old_ndim > ndim:
-            point = self.world_slice.point[-ndim:]
-            margin_left = self.world_slice.margin_left[-ndim:]
-            margin_right = self.world_slice.margin_right[-ndim:]
             order = reorder_after_dim_reduction(self.order[-ndim:])
         elif old_ndim < ndim:
-            point = (0,) * (ndim - old_ndim) + self.world_slice.point
-            margin_left = (0,) * (
-                ndim - old_ndim
-            ) + self.world_slice.margin_left
-            margin_right = (0,) * (
-                ndim - old_ndim
-            ) + self.world_slice.margin_right
             order = tuple(range(ndim - old_ndim)) + tuple(
                 o + ndim - old_ndim for o in self.order
             )
         else:
-            point = self.world_slice.point
-            margin_left = self.world_slice.margin_left
-            margin_right = self.world_slice.margin_right
             order = self.order
-
-        world_slice = _ThickNDSlice(
-            point=point, margin_left=margin_left, margin_right=margin_right
-        )
 
         return _SliceInput(
             ndisplay=self.ndisplay, world_slice=world_slice, order=order
@@ -129,7 +175,8 @@ class _SliceInput:
         if not self.is_orthogonal(world_to_data):
             warnings.warn(
                 trans._(
-                    'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
+                    'Non-orthogonal slicing is being requested, but is not fully supported. '
+                    'Data is displayed without applying an out-of-slice rotation or shear component.',
                     deferred=True,
                 ),
                 category=UserWarning,

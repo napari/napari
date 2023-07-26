@@ -321,11 +321,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._slice_input = _SliceInput(
             ndisplay=2,
-            world_slice=_ThickNDSlice(
-                point=(0,) * ndim,
-                margin_left=(0,) * ndim,
-                margin_right=(0,) * ndim,
-            ),
+            world_slice=_ThickNDSlice.make_full(point=(0,) * ndim),
             order=tuple(range(ndim)),
         )
         self._loaded: bool = True
@@ -928,7 +924,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Slice in data coordinates."""
         if len(self._slice_input.not_displayed) == 0:
             # early return to avoid evaluating data_to_world.inverse
-            return _ThickNDSlice.make_full(self.ndim)
+            return _ThickNDSlice.make_full(ndim=self.ndim)
 
         return self._slice_input.data_slice(
             self._data_to_world.inverse,
@@ -1188,26 +1184,26 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ndisplay=2,
         order=None,
     ) -> _SliceInput:
-        point = (0,) * self.ndim if point is None else tuple(point)
-        margin_left = (
-            (0,) * self.ndim if margin_left is None else tuple(margin_left)
-        )
-        margin_right = (
-            (0,) * self.ndim if margin_right is None else tuple(margin_right)
-        )
+        # if no inputs are given, make a slice at the origin
+        point = (0,) * self.ndim if point is None else point
 
-        ndim = len(point)
-        order = tuple(range(len(point))) if order is None else tuple(order)
+        world_slice = _ThickNDSlice.make_full(
+            point=point,
+            margin_left=margin_left,
+            margin_right=margin_right,
+        )
 
         # Correspondence between dimensions across all layers and
         # dimensions of this layer.
-        world_slice = _ThickNDSlice(
-            point=point[-self.ndim :],
-            margin_left=margin_left[-self.ndim :],
-            margin_right=margin_right[-self.ndim :],
+        world_slice = world_slice[-self.ndim :]
+
+        order = (
+            tuple(range(world_slice.ndim)) if order is None else tuple(order)
         )
         order = tuple(
-            self._world_to_layer_dims(world_dims=order, ndim_world=ndim)
+            self._world_to_layer_dims(
+                world_dims=order, ndim_world=world_slice.ndim
+            )
         )
 
         return _SliceInput(

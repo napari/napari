@@ -115,8 +115,8 @@ class _VectorSliceRequest:
         point, m_left, m_right = self.data_slice[not_disp].as_array()
 
         if self.projection_mode == 'none':
-            low = point
-            high = point
+            low = point.copy()
+            high = point.copy()
         else:
             low = point - m_left
             high = point + m_right
