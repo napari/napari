@@ -11,7 +11,22 @@ except Exception as e:
     if 'No Qt bindings could be found' in str(e):
         raise ImportError(
             trans._(
-                'No Qt bindings could be found.\n\nnapari requires either PyQt5 (default) or PySide2 to be installed in the environment.\n\nWith pip, you can install either with:\n  $ pip install -U \'napari[all]\'  # default choice\n  $ pip install -U \'napari[pyqt5]\'\n  $ pip install -U \'napari[pyside2]\'\n\nWith conda, you need to do:\n  $ conda install -c conda-forge pyqt\n  $ conda install -c conda-forge pyside2\n',
+                cleandoc(
+                """
+                No Qt bindings could be found.
+
+                napari requires either PyQt5 (default) or PySide2 to be installed in the environment.
+
+                With pip, you can install either with:
+                  $ pip install -U 'napari[all]'  # default choice
+                  $ pip install -U 'napari[pyqt5]'
+                  $ pip install -U 'napari[pyside2]'
+
+                With conda, you need to do:
+                  $ conda install -c conda-forge pyqt
+                  $ conda install -c conda-forge pyside2
+                """
+                )
                 deferred=True,
             )
         ) from e
