@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any, Callable
 
-from qtpy.QtWidgets import QDialog, QFileDialog, QMessageBox
+from qtpy.QtWidgets import QFileDialog, QMessageBox
 
 from napari.utils.misc import in_ipython
 from napari.utils.translations import trans
@@ -66,5 +66,5 @@ class ScreenshotDialog(QFileDialog):
                     # file is needed so the dialog needs to be visible
                     return
         super().accept()
-        if self.result() == QDialog.DialogCode.Accepted:
+        if self.result():
             self.save_function(save_path)
