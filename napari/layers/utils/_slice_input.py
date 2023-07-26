@@ -136,7 +136,7 @@ class _SliceInput:
             )
 
         slice_world_to_data = world_to_data.set_slice(self.not_displayed)
-        world_slice_not_disp = self.world_slice.as_array()
+        world_slice_not_disp = self.world_slice[self.not_displayed].as_array()
 
         data_slice = slice_world_to_data(world_slice_not_disp)
 
