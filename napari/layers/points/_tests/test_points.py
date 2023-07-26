@@ -1729,7 +1729,7 @@ def test_view_data():
 
 def test_view_size():
     """Test out of slice point rendering and slicing with no points."""
-    coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
+    coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [4, 3, 3]])
     sizes = np.array([5, 5, 3, 3])
     layer = Points(coords, size=sizes, out_of_slice_display=False)
 
@@ -1740,6 +1740,9 @@ def test_view_size():
     assert np.all(layer._view_size == sizes[[2]])
 
     layer.out_of_slice_display = True
+    # NOTE: since a dims slice of thickness 0 defaults back to 1,
+    # out_of_slice_display actually compares the half-size with
+    # distance + 0.5, not just distance
     assert len(layer._view_size) == 3
 
     # test a slice with no points
@@ -2336,7 +2339,7 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
     layer = Points(data, out_of_slice_display=True, shown=[True, True], size=3)
     assert layer._view_size.shape[0] == layer._view_data.shape[0]
     assert layer._view_size.shape[0] == 2
-    assert np.array_equal(layer._view_size, [3, 1])
+    assert np.array_equal(layer._view_size, [3, 2])
 
     # Out of slice display == True && shown == [True, False]
     layer = Points(
@@ -2352,7 +2355,7 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
     )
     assert layer._view_size.shape[0] == layer._view_data.shape[0]
     assert layer._view_size.shape[0] == 1
-    assert np.array_equal(layer._view_size, [1])
+    assert np.array_equal(layer._view_size, [2])
 
     # Out of slice display == True && shown == [False, False]
     layer = Points(
