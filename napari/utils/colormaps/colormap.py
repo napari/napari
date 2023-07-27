@@ -112,7 +112,7 @@ class Colormap(EventedModel):
     def __iter__(self):
         yield from (self.colors, self.controls, self.interpolation)
 
-    def map(self, values) -> np.ndarray:
+    def map(self, values):
         values = np.atleast_1d(values)
         if self.interpolation == ColormapInterpolationMode.LINEAR:
             # One color per control point
