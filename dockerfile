@@ -6,6 +6,7 @@ FROM --platform=linux/amd64 ubuntu:22.04 AS napari
 # below env var required to install libglib2.0-0 non-interactively
 ENV TZ=America/Los_Angeles
 ARG DEBIAN_FRONTEND=noninteractive
+ARG NAPARI_COMMIT=main
 
 # install python resources + graphical libraries used by qt and vispy
 RUN apt-get update && \
@@ -33,8 +34,8 @@ RUN apt-get update && \
         libxcb-shape0 \
         && apt-get clean
 
-# install napari release version
-RUN pip3 install napari[all]
+# install napari from repo
+RUN pip3 install 'https://github.com/napari/napari/archive/${NAPARI_COMMIT}.tar.gz'[all]
 
 # copy examples
 COPY examples /tmp/examples

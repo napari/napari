@@ -85,6 +85,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           file: "dockerfile"
           target: ${{ matrix.target }}
+          # We build from the the tag name if triggered by tag, otherwise from the commit hash
+          build-args: |
+            NAPARI_COMMIT=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
 
 # ----
 
