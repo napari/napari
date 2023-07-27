@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,9 @@ from scipy.spatial import cKDTree
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -75,7 +78,14 @@ class TrackManager:
         # store the raw data here
         self.data = data
         self._feature_table = _FeatureTable()
-        self._points_id = None
+
+        self._data: npt.NDArray
+        self._order: List[int]
+        self._kdtree: cKDTree
+        self._points: npt.NDArray
+        self._points_id: npt.NDArray
+        self._points_lookup: Dict[int, slice]
+        self._ordered_points_idx: npt.NDArray
 
         self._track_vertices = None
         self._track_connex = None
@@ -409,9 +419,11 @@ class TrackManager:
             return None, None
         # this is the slice into the time ordered points array
         if current_time not in self._points_lookup:
-            return [], []
+            lbl = []
+            pos = np.array([])
+        else:
+            lookup = self._points_lookup[current_time]
+            pos = self._points[lookup, ...]
+            lbl = [f'ID:{i}' for i in self._points_id[lookup]]
 
-        lookup = self._points_lookup[current_time]
-        pos = self._points[lookup, ...]
-        lbl = [f'ID:{i}' for i in self._points_id[lookup]]
         return lbl, pos
