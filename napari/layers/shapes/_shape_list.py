@@ -1125,7 +1125,9 @@ class ShapeList:
 
     def to_indices(
         self,
-        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        target_shape: Optional[
+            Union[NDArray[np.integer], Tuple[int, ...]]
+        ] = None,
         transform: Optional[Tuple[Callable, ...]] = None,
         zoom_factor: float = 1,
         offset: Tuple[float, ...] = (0, 0),
@@ -1174,7 +1176,9 @@ class ShapeList:
 
     def to_masks(
         self,
-        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        target_shape: Optional[
+            Union[NDArray[np.integer], Tuple[int, ...]]
+        ] = None,
         transform: Optional[Tuple[Callable, ...]] = None,
         zoom_factor: float = 1,
         offset: Tuple[float, ...] = (0, 0),
@@ -1223,7 +1227,9 @@ class ShapeList:
 
     def to_labels(
         self,
-        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        target_shape: Optional[
+            Union[NDArray[np.integer], Tuple[int, ...]]
+        ] = None,
         transform: Optional[Tuple[Callable, ...]] = None,
         zoom_factor: float = 1,
         offset: Tuple[float, ...] = (0, 0),

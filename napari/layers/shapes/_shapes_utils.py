@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, List, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Tuple, Union
 
 import numpy as np
+from numpy.typing import NDArray
 from skimage.draw import line, polygon
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
@@ -858,16 +859,18 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     return centers, offsets, triangles
 
 
-def path_to_indices(shape, vertices):
+def path_to_indices(
+    target_shape: Union[NDArray, Tuple[int, ...]], vertices: NDArray
+) -> Tuple[NDArray]:
     """Converts a path to a boolean mask with `True` for points lying along
     each edge.
 
     Parameters
     ----------
-    shape : array (2,)
+    target_shape : np.ndarray | tuple
         Image shape which is used to determine the maximum extent of output
-        pixel coordinates. This is useful for paths that exceed the image
-        size. If None, the full extent of the path is used. Must be at
+        pixel coordinates. This is useful for polygons that exceed the image
+        size. If None, the full extent of the polygon is used. Must be at
         least length 2. Only the first two values are used to determine the
         extent of the input image.
     vertices : array (N, 2)
@@ -875,11 +878,10 @@ def path_to_indices(shape, vertices):
 
     Returns
     -------
-    mask : np.ndarray
-        Boolean array with `True` for points along the path
-
+    iis, jjs : ndarray of int
+        Pixel coordinates of polygon. May be used to directly index into an array, e.g. img[iis, jjs] = 1.
     """
-    shape = np.asarray(shape, dtype=int)
+    shape = np.asarray(target_shape, dtype=int)
 
     vertices = np.round(np.clip(vertices, 0, shape - 1)).astype(int)
 
@@ -893,12 +895,13 @@ def path_to_indices(shape, vertices):
         ii, jj = line(*v1, *v2)
         iis.extend(ii.tolist())
         jjs.extend(jj.tolist())
-    indices = (iis, jjs)
 
-    return indices
+    return iis, jjs
 
 
-def poly_to_indices(target_shape, vertices):
+def poly_to_indices(
+    target_shape: Union[NDArray, Tuple[int, ...]], vertices: NDArray
+) -> Tuple[NDArray]:
     """Converts a polygon to indices for points lying inside the shape.
     Uses the bounding box of the vertices to reduce computation time.
 
@@ -915,8 +918,8 @@ def poly_to_indices(target_shape, vertices):
 
     Returns
     -------
-    mask : np.ndarray
-        Boolean array with `True` for points inside the polygon
+    rr, cc : ndarray of int
+        Pixel coordinates of polygon. May be used to directly index into an array, e.g. img[rr, cc] = 1.
     """
     return polygon(vertices[:, -2], vertices[:, -1], shape=target_shape)
 

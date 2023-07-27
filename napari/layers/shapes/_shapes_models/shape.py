@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -356,7 +356,9 @@ class Shape(ABC):
 
     def to_indices(
         self,
-        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        target_shape: Optional[
+            Union[NDArray[np.integer], Tuple[int, ...]]
+        ] = None,
         transform: Optional[Tuple[Callable, ...]] = None,
         zoom_factor: float = 1,
         offset: Tuple[float, ...] = (0, 0),
@@ -386,11 +388,16 @@ class Shape(ABC):
             List of index tuples. One tuple per shape.
         """
         if transform:
-            data = np.array(list(map(transform[0], map(transform[1], data))))
+            data = np.round(
+                np.array(
+                    list(map(transform[0], map(transform[1], self.data)))
+                ).T
+            )
+        else:
+            data = np.round(data).T
 
         # We no longer work only with the displayed shapes.
         # Thus, we have to find the dimensions containing the shape
-        data = np.round(self.data).T
         cdims, vdims = get_constant_and_variable_subiterables(data)
         # we always need at least two dimensions
         if not vdims:
@@ -422,7 +429,7 @@ class Shape(ABC):
             )
 
         if self._use_face_vertices:
-            vertices, triangles = triangulate_ellipse(data[vdims].T)
+            vertices, _ = triangulate_ellipse(data[vdims].T)
         else:
             vertices = data[vdims].T
 
@@ -449,7 +456,9 @@ class Shape(ABC):
 
     def to_mask(
         self,
-        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        target_shape: Optional[
+            Union[NDArray[np.integer], Tuple[int, ...]]
+        ] = None,
         transform: Optional[Tuple[Callable, ...]] = None,
         zoom_factor: float = 1,
         offset: Tuple[float, ...] = (0, 0),

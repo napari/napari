@@ -2933,7 +2933,9 @@ class Shapes(Layer):
 
     def to_indices(
         self,
-        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        target_shape: Optional[
+            Union[NDArray[np.integer], Tuple[int, ...]]
+        ] = None,
         target_layer: Optional[Layer] = None,
     ) -> List[Tuple[List[int], ...],]:
         """Return a list of index tuples.
@@ -2980,7 +2982,9 @@ class Shapes(Layer):
 
     def to_masks(
         self,
-        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        target_shape: Optional[
+            Union[NDArray[np.integer], Tuple[int, ...]]
+        ] = None,
         target_layer: Optional[Layer] = None,
     ) -> NDArray:
         """Return an array of binary masks, one for each shape.
@@ -3018,7 +3022,9 @@ class Shapes(Layer):
 
     def to_labels(
         self,
-        target_shape: Optional[NDArray[np.integer] | Tuple[int, ...]] = None,
+        target_shape: Optional[
+            Union[NDArray[np.integer], Tuple[int, ...]]
+        ] = None,
         target_layer: Optional[Layer] = None,
     ) -> NDArray:
         """Return an integer labels image.
