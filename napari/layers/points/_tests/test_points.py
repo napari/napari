@@ -386,7 +386,7 @@ def test_points_selection_with_setter():
     coords = [[10, 10], [15, 15]]
     layer.data = np.append(layer.data, np.atleast_2d(coords), axis=0)
     assert len(layer.data) == 12
-    assert len(layer.selected_data) == 0
+    assert layer.selected_data == set()
 
 
 def test_adding_points_to_empty():
