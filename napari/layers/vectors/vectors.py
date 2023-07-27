@@ -397,7 +397,7 @@ class Vectors(Layer):
                 if self.data.size
                 else [self._edge.current_color],
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap.name,
+                'edge_colormap': self.edge_colormap.dict(),
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,

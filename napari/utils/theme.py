@@ -5,7 +5,7 @@ import re
 import warnings
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, Dict, List, Literal, Union, overload
+from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 import npe2
 from pydantic import validator
@@ -210,7 +210,7 @@ def get_theme(theme_id: str, as_dict: Literal[True]) -> Dict[str, Any]:
     ...
 
 
-def get_theme(theme_id, as_dict=None):
+def get_theme(theme_id: str, as_dict: Optional[bool] = None):
     """Get a copy of theme based on it's id.
 
     If you get a copy of the theme, changes to the theme model will not be

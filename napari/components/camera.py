@@ -149,7 +149,7 @@ class Camera(EventedModel):
         self.angles = euler_angles
 
     def calculate_nd_view_direction(
-        self, ndim: int, dims_displayed: Tuple[int]
+        self, ndim: int, dims_displayed: Tuple[int, ...]
     ) -> Optional[np.ndarray]:
         """Calculate the nD view direction vector of the camera.
 
@@ -172,7 +172,7 @@ class Camera(EventedModel):
         return view_direction_nd
 
     def calculate_nd_up_direction(
-        self, ndim: int, dims_displayed: Tuple[int]
+        self, ndim: int, dims_displayed: Tuple[int, ...]
     ) -> Optional[np.ndarray]:
         """Calculate the nD up direction vector of the camera.
 
