@@ -8,7 +8,6 @@ from typing import (
     Dict,
     Iterable,
     List,
-    Literal,
     NewType,
     Optional,
     Sequence,
@@ -18,6 +17,7 @@ from typing import (
 )
 
 import numpy as np
+from npe2.types import LayerName as LayerTypeName
 from typing_extensions import TypedDict, get_args
 
 if TYPE_CHECKING:
@@ -64,9 +64,9 @@ __all__ = [
 # since it includes all valid arguments for np.array() ( int, float, str...)
 ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 
-LayerTypeName = Literal[
-    "image", "labels", "points", "shapes", "surface", "tracks", "vectors"
-]
+# LayerTypeName = Literal[
+#     "image", "labels", "points", "shapes", "surface", "tracks", "vectors"
+# ]
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
