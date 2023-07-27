@@ -444,13 +444,13 @@ class Tracks(Layer):
         self.events.rebuild_graph()
 
     @property
-    def tail_width(self) -> int:
+    def tail_width(self) -> float:
         """float: Width for all vectors in pixels."""
         return self._tail_width
 
     @tail_width.setter
-    def tail_width(self, tail_width: int):
-        self._tail_width: int = np.clip(tail_width, 0.5, self._max_width)
+    def tail_width(self, tail_width: float):
+        self._tail_width: float = np.clip(tail_width, 0.5, self._max_width)
         self.events.tail_width()
 
     @property
