@@ -389,16 +389,14 @@ class Shape(ABC):
         """
         if transform:
             data = np.round(
-                np.array(
-                    list(map(transform[0], map(transform[1], self.data)))
-                ).T
+                np.array(list(map(transform[0], map(transform[1], self.data))))
             )
         else:
-            data = np.round(data).T
+            data = np.round(self.data)
 
         # We no longer work only with the displayed shapes.
         # Thus, we have to find the dimensions containing the shape
-        cdims, vdims = get_constant_and_variable_subiterables(data)
+        cdims, vdims = get_constant_and_variable_subiterables(data.T)
         # we always need at least two dimensions
         if not vdims:
             # if no vdims exist the shape is equal to a point and the
@@ -429,9 +427,9 @@ class Shape(ABC):
             )
 
         if self._use_face_vertices:
-            vertices, _ = triangulate_ellipse(data[vdims].T)
+            vertices, _ = triangulate_ellipse(data[:, vdims])
         else:
-            vertices = data[vdims].T
+            vertices = data[:, vdims]
 
         if self._filled:
             indices_p = poly_to_indices(
@@ -443,7 +441,7 @@ class Shape(ABC):
             )
 
         if embedded:
-            indices_e = np.zeros((data.shape[0], len(indices_p[0])), dtype=int)
+            indices_e = np.zeros((data.shape[1], len(indices_p[0])), dtype=int)
             indices_e[cdims] = [
                 np.repeat(data[d, 0], indices_e.shape[1]) for d in cdims
             ]
