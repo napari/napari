@@ -4,6 +4,7 @@ from typing import (
     List,
     Literal,
     NamedTuple,
+    Optional,
     Sequence,
     Tuple,
     Union,
@@ -232,15 +233,30 @@ class Dims(EventedModel):
         elif n_rollable > ndim:
             updated['rollable'] = rollable[:ndim]
 
+        # If the last used slider is no longer visible, use the first.
+        last_used = values['last_used']
+        ndisplay = values['ndisplay']
+        dims_range = updated['range']
+        nsteps = cls._nsteps_from_range(dims_range)
+        not_displayed = [
+            d for d in order[:-ndisplay] if len(nsteps) > d and nsteps[d] > 1
+        ]
+        if len(not_displayed) > 0 and last_used not in not_displayed:
+            updated['last_used'] = not_displayed[0]
+
         return {**values, **updated}
 
-    @property
-    def nsteps(self) -> Tuple[float, ...]:
+    @staticmethod
+    def _nsteps_from_range(dims_range) -> Tuple[float, ...]:
         return tuple(
             # "or 1" ensures degenerate dimension works
             int((rng.stop - rng.start) / (rng.step or 1)) + 1
-            for rng in self.range
+            for rng in dims_range
         )
+
+    @property
+    def nsteps(self) -> Tuple[float, ...]:
+        return self._nsteps_from_range(self.range)
 
     @nsteps.setter
     def nsteps(self, value):
@@ -372,7 +388,7 @@ class Dims(EventedModel):
         full_axis_labels = list(self.axis_labels)
         for ax, val in zip(axis, label):
             full_axis_labels[ax] = val
-        self.axis_labels = full_axis_labels
+        self.axis_labels = tuple(full_axis_labels)
 
     def reset(self):
         """Reset dims values to initial states."""
@@ -395,7 +411,7 @@ class Dims(EventedModel):
         order[-2], order[-1] = order[-1], order[-2]
         self.order = order
 
-    def _increment_dims_right(self, axis: int = None):
+    def _increment_dims_right(self, axis: Optional[int] = None):
         """Increment dimensions to the right along given axis, or last used axis if None
 
         Parameters
@@ -407,7 +423,7 @@ class Dims(EventedModel):
             axis = self.last_used
         self.set_current_step(axis, self.current_step[axis] + 1)
 
-    def _increment_dims_left(self, axis: int = None):
+    def _increment_dims_left(self, axis: Optional[int] = None):
         """Increment dimensions to the left along given axis, or last used axis if None
 
         Parameters
@@ -443,7 +459,7 @@ class Dims(EventedModel):
         # we combine "rollable" and "nsteps" into a mask for rolling
         # this mask has to be aligned to "order" as "rollable" and
         # "nsteps" are static but order is dynamic, meaning "rollable"
-        # and "nsteps" encode the axes by position, whereas "order" 
+        # and "nsteps" encode the axes by position, whereas "order"
         # encodes axis by number
         valid = np.logical_and(self.rollable, np.array(self.nsteps) > 1)[order]
         order[valid] = np.roll(order[valid], shift=1)

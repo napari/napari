@@ -7,8 +7,14 @@ from vispy.visuals import VolumeVisual
 
 from napari import Viewer
 from napari._tests.utils import LockableData
-from napari._vispy.layers.image import VispyBaseLayer, VispyImageLayer
-from napari.layers import Image, Layer, Points
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.layers.image import VispyImageLayer
+from napari._vispy.layers.points import VispyPointsLayer
+from napari._vispy.layers.vectors import (
+    VispyVectorsLayer,
+    generate_vector_meshes_2D,
+)
+from napari.layers import Image, Layer, Points, Vectors
 from napari.utils.events import Event
 
 
@@ -158,6 +164,26 @@ def test_async_slice_image_loaded(make_napari_viewer, qtbot, rng):
     assert layer.loaded
 
 
+def test_async_slice_vectors_on_current_step_change(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    data = np.array(
+        [
+            [[0, 2, 3], [1, 2, 2]],
+            [[2, 4, 5], [0, -3, 3]],
+            [[4, 6, 7], [3, 0, -2]],
+        ]
+    )
+    vectors = Vectors(data)
+    vispy_vectors = setup_viewer_for_async_slicing(viewer, vectors)
+    assert viewer.dims.current_step != (2, 0, 0)
+
+    viewer.dims.current_step = (2, 0, 0)
+
+    wait_until_vispy_vectors_data_equal(
+        qtbot, vispy_vectors, np.array([[[2, 4, 5], [0, -3, 3]]])
+    )
+
+
 def setup_viewer_for_async_slicing(
     viewer: Viewer,
     layer: Layer,
@@ -189,7 +215,7 @@ def wait_until_vispy_image_data_equal(
 
 
 def wait_until_vispy_points_data_equal(
-    qtbot, vispy_layer: VispyImageLayer, expected_data: np.ndarray
+    qtbot, vispy_layer: VispyPointsLayer, expected_data: np.ndarray
 ) -> None:
     def assert_vispy_points_data_equal() -> None:
         positions = vispy_layer.node._subvisuals[0]._data['a_position']
@@ -200,3 +226,21 @@ def wait_until_vispy_points_data_equal(
         np.testing.assert_array_equal(data, expected_data)
 
     qtbot.waitUntil(assert_vispy_points_data_equal)
+
+
+def wait_until_vispy_vectors_data_equal(
+    qtbot, vispy_layer: VispyVectorsLayer, expected_data: np.ndarray
+) -> None:
+    def assert_vispy_vectors_data_equal() -> None:
+        displayed = expected_data[..., -2:]
+        exp_vertices, exp_faces = generate_vector_meshes_2D(
+            displayed, 1, 1, 'triangle'
+        )
+        meshdata = vispy_layer.node._meshdata
+        vertices = meshdata.get_vertices()
+        faces = meshdata.get_faces()
+        # invert for vispy
+        np.testing.assert_array_equal(vertices, exp_vertices[..., ::-1])
+        np.testing.assert_array_equal(faces, exp_faces)
+
+    qtbot.waitUntil(assert_vispy_vectors_data_equal)
