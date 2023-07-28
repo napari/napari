@@ -575,10 +575,10 @@ class Shapes(Layer):
         if len(data) > 0:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
-        elif len(data) == 0 and len(self.features.columns) > 0:
+        elif len(data) == 0 and self.features.shape[1] > 0:
             self._initialize_current_color_for_empty_layer(edge_color, 'edge')
             self._initialize_current_color_for_empty_layer(face_color, 'face')
-        elif len(data) == 0 and len(self.features.columns) == 0:
+        elif len(data) == 0 and self.features.shape[1] == 0:
             self._current_edge_color = transform_color_with_defaults(
                 num_entries=1,
                 colors=edge_color,
