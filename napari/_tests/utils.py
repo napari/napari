@@ -1,10 +1,9 @@
 import os
 import sys
-import warnings
 from collections import abc
 from contextlib import suppress
 from threading import RLock
-from typing import Tuple, Union
+from typing import Any, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -283,19 +282,23 @@ def assert_layer_state_equal(
 
     This is useful because some members of state may array-like whereas others
     maybe dataframe-like, which need to be checked for equality differently.
+    This also checks for and handles warnings associated with accessing deprecated state.
     """
     assert actual.keys() == expected.keys()
     for name in actual:
-        # Some state may be deprecated, but we still care about their values.
-        # Testing the deprecation should be handled elsewhere, so just ignore.
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', category=DeprecationWarning)
-            actual_value = actual[name]
-            expected_value = expected[name]
+        actual_value = _get_state_with_deprecation_check(actual, name)
+        expected_value = _get_state_with_deprecation_check(expected, name)
         if isinstance(actual_value, pd.DataFrame):
             pd.testing.assert_frame_equal(actual_value, expected_value)
         else:
             np.testing.assert_equal(actual_value, expected_value)
+
+
+def _get_state_with_deprecation_check(state: LayerStateDict, name: str) -> Any:
+    if name in state.deprecations:
+        with pytest.warns(DeprecationWarning):
+            return state[name]
+    return state[name]
 
 
 def assert_colors_equal(actual, expected):

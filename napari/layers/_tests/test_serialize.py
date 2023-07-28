@@ -24,7 +24,9 @@ def test_attrs_arrays(Layer, data, ndim):
     for prop in properties:
         assert prop in signature.parameters
 
-    # Remove deprecated properties for testing purposes.
+    # TODO: actually, maybe we do want to verify deprecated state/parameters are consistent?
+    # Remove deprecated properties for testing purposes because
+    # that's not the main goal here.
     for deprecated in properties.deprecations:
         del properties[deprecated]
     signature = signature.replace(
