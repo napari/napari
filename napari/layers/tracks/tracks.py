@@ -2,7 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 from warnings import warn
 
 import numpy as np
@@ -109,9 +109,9 @@ class Tracks(Layer):
         features=None,
         properties=None,
         graph=None,
-        tail_width=2,
-        tail_length=30,
-        head_length=0,
+        tail_width: int = 2,
+        tail_length: int = 30,
+        head_length: int = 0,
         name=None,
         metadata=None,
         scale=None,
@@ -171,8 +171,9 @@ class Tracks(Layer):
         )
 
         # track manager deals with data slicing, graph building, and features
-        self._manager = TrackManager()
-        self._track_colors = None
+        self._manager = TrackManager(data)
+
+        self._track_colors: Optional[np.ndarray] = None
         self._colormaps_dict = colormaps_dict or {}  # additional colormaps
         self._color_by = color_by  # default color by ID
         self._colormap = colormap
@@ -445,6 +446,12 @@ class Tracks(Layer):
         _warn_deprecation(_properties_deprecation_message())
         return self._manager.properties
 
+    @properties.setter
+    def properties(self, properties: Dict[str, np.ndarray]):
+        """set track properties"""
+        _warn_deprecation(_properties_deprecation_message())
+        self.features = properties
+
     @property
     def properties_to_color_by(self) -> List[str]:
         """track properties that can be used for coloring etc...
@@ -462,55 +469,51 @@ class Tracks(Layer):
         )
         return list(self.properties.keys())
 
-    @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
-        """set track properties"""
-        _warn_deprecation(_properties_deprecation_message())
-        self.features = properties
-
     @property
-    def graph(self) -> Dict[int, Union[int, List[int]]]:
+    def graph(self) -> Optional[Dict[int, List[int]]]:
         """dict {int: list}: Graph representing associations between tracks."""
         return self._manager.graph
 
     @graph.setter
     def graph(self, graph: Dict[int, Union[int, List[int]]]):
         """Set the track graph."""
-        self._manager.graph = graph
+        # Ignored type, because mypy can't handle different signatures
+        # on getters and setters; see https://github.com/python/mypy/issues/3004
+        self._manager.graph = graph  # type: ignore[assignment]
         self._manager.build_graph()
         self.events.rebuild_graph()
 
     @property
-    def tail_width(self) -> Union[int, float]:
+    def tail_width(self) -> float:
         """float: Width for all vectors in pixels."""
         return self._tail_width
 
     @tail_width.setter
-    def tail_width(self, tail_width: Union[int, float]):
-        self._tail_width = np.clip(tail_width, 0.5, self._max_width)
+    def tail_width(self, tail_width: float):
+        self._tail_width: float = np.clip(tail_width, 0.5, self._max_width)
         self.events.tail_width()
 
     @property
-    def tail_length(self) -> Union[int, float]:
+    def tail_length(self) -> int:
         """float: Width for all vectors in pixels."""
         return self._tail_length
 
     @tail_length.setter
-    def tail_length(self, tail_length: Union[int, float]):
+    def tail_length(self, tail_length: int):
         if tail_length > self._max_length:
             self._max_length = tail_length
-        self._tail_length = tail_length
+        self._tail_length: int = tail_length
         self.events.tail_length()
 
     @property
-    def head_length(self) -> Union[int, float]:
+    def head_length(self) -> int:
         return self._head_length
 
     @head_length.setter
-    def head_length(self, head_length: Union[int, float]):
+    def head_length(self, head_length: int):
         if head_length > self._max_length:
             self._max_length = head_length
-        self._head_length = head_length
+        self._head_length: int = head_length
         self.events.head_length()
 
     @property
@@ -586,7 +589,9 @@ class Tracks(Layer):
     def colormaps_dict(self) -> Dict[str, Colormap]:
         return self._colormaps_dict
 
-    @colormaps_dict.setter
+    # Ignored type because mypy doesn't recognise colormaps_dict as a property
+    # TODO: investigate and fix this - not sure why this is the case?
+    @colormaps_dict.setter  # type: ignore[attr-defined]
     def colomaps_dict(self, colormaps_dict: Dict[str, Colormap]):
         # validate the dictionary entries?
         self._colormaps_dict = colormaps_dict
@@ -618,12 +623,12 @@ class Tracks(Layer):
         self._track_colors = colormap.map(vertex_features)
 
     @property
-    def track_connex(self) -> np.ndarray:
+    def track_connex(self) -> Optional[np.ndarray]:
         """vertex connections for drawing track lines"""
         return self._manager.track_connex
 
     @property
-    def track_colors(self) -> np.ndarray:
+    def track_colors(self) -> Optional[np.ndarray]:
         """return the vertex colors according to the currently selected
         property"""
         return self._track_colors
@@ -634,12 +639,12 @@ class Tracks(Layer):
         return self._manager.graph_connex
 
     @property
-    def track_times(self) -> np.ndarray:
+    def track_times(self) -> Optional[np.ndarray]:
         """time points associated with each track vertex"""
         return self._manager.track_times
 
     @property
-    def graph_times(self) -> np.ndarray:
+    def graph_times(self) -> Optional[np.ndarray]:
         """time points associated with each graph vertex"""
         return self._manager.graph_times
 
