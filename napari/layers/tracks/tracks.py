@@ -426,6 +426,7 @@ class Tracks(Layer):
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()
+        self.events.features()
         self.events.properties()
 
     @property
@@ -601,7 +602,7 @@ class Tracks(Layer):
             self.events.color_by()
 
         # if we change the coloring, rebuild the vertex colors array
-        vertex_properties = self._manager.vertex_properties(self.color_by)
+        vertex_features = self._manager.vertex_features(self.color_by)
 
         def _norm(p):
             return (p - np.min(p)) / np.max([1e-10, np.ptp(p)])
@@ -611,10 +612,10 @@ class Tracks(Layer):
         else:
             # if we don't have a colormap, get one and scale the properties
             colormap = AVAILABLE_COLORMAPS[self.colormap]
-            vertex_properties = _norm(vertex_properties)
+            _norm(vertex_features)
 
         # actually set the vertex colors
-        self._track_colors = colormap.map(vertex_properties)
+        self._track_colors = colormap.map(vertex_features)
 
     @property
     def track_connex(self) -> np.ndarray:

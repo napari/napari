@@ -572,7 +572,7 @@ class Vectors(Layer):
             else:
                 color_property = ''
             if color_property == '':
-                if self.features.shape[1] > 0:
+                if not self.features.empty:
                     color_property = next(iter(self.features))
                     self._edge.color_properties = {
                         'name': color_property,

@@ -328,20 +328,17 @@ class TrackManager:
             self._graph_vertices = None
             self._graph_connex = None
 
-    def vertex_properties(self, color_by: str) -> np.ndarray:
-        """return the properties of tracks by vertex"""
-
-        # TODO: rename to features here?
-        if color_by not in self.properties:
+    def vertex_features(self, color_by: str) -> np.ndarray:
+        """return the features of tracks by vertex"""
+        if color_by not in self.features:
             raise ValueError(
                 trans._(
-                    'Property {color_by} not found',
+                    'Feature {color_by} not found',
                     deferred=True,
                     color_by=color_by,
                 )
             )
-
-        return self.properties[color_by]
+        return self.features[color_by].to_numpy()
 
     def get_value(self, coords):
         """use a kd-tree to lookup the ID of the nearest tree"""

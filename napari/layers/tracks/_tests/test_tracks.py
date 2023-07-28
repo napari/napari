@@ -5,12 +5,6 @@ import pytest
 from napari.layers import Tracks
 from napari.layers.tracks._track_utils import TrackManager
 
-# def test_empty_tracks():
-#     """Test instantiating Tracks layer without data."""
-#     pts = Tracks()
-#     assert pts.data.shape == (0, 4)
-
-
 data_array_2dt = np.zeros((1, 4))
 data_list_2dt = list(data_array_2dt)
 dataframe_2dt = pd.DataFrame(
