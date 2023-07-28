@@ -572,27 +572,25 @@ class Shapes(Layer):
         )
 
         # set the current_* properties
-        # if len(data) > 0:
-        #     self._current_edge_color = self.edge_color[-1]
-        #     self._current_face_color = self.face_color[-1]
-        # elif len(data) == 0 and not self.features.empty:
-        #     self._initialize_current_color_for_empty_layer(edge_color, 'edge')
-        #     self._initialize_current_color_for_empty_layer(face_color, 'face')
-        # elif len(data) == 0 and self.features.empty:
-        #     self._current_edge_color = transform_color_with_defaults(
-        #         num_entries=1,
-        #         colors=edge_color,
-        #         elem_name="edge_color",
-        #         default="black",
-        #     )
-        #     self._current_face_color = transform_color_with_defaults(
-        #         num_entries=1,
-        #         colors=face_color,
-        #         elem_name="face_color",
-        #         default="black",
-        #     )
-        self._initialize_current_color(data, 'edge', edge_color)
-        self._initialize_current_color(data, 'face', face_color)
+        if len(data) > 0:
+            self._current_edge_color = self.edge_color[-1]
+            self._current_face_color = self.face_color[-1]
+        elif len(data) == 0 and len(self.features.columns) > 0:
+            self._initialize_current_color_for_empty_layer(edge_color, 'edge')
+            self._initialize_current_color_for_empty_layer(face_color, 'face')
+        elif len(data) == 0 and len(self.features.columns) == 0:
+            self._current_edge_color = transform_color_with_defaults(
+                num_entries=1,
+                colors=edge_color,
+                elem_name="edge_color",
+                default="black",
+            )
+            self._current_face_color = transform_color_with_defaults(
+                num_entries=1,
+                colors=face_color,
+                elem_name="face_color",
+                default="black",
+            )
 
         self._text = TextManager._from_layer(
             text=text,
