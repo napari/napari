@@ -12,7 +12,7 @@ class AxisModel:
 
     The model keeps track of axis names and allows read / write
     acces on the cossesponding rollable state of a Dims object.
-    
+
     Parameters
     ----------
     dims : napari.components.dims.Dims
@@ -27,6 +27,7 @@ class AxisModel:
     axis : int
         Axis index.
     """
+
     def __init__(self, dims: Dims, axis: int) -> None:
         self.dims = dims
         self.axis = axis
@@ -83,7 +84,7 @@ class AxisList(SelectableEventedList[AxisModel]):
         ----------
         dims : napari.components.dims.Dims
             Dims object to be used for creation.
-        
+
         Returns
         -------
         AxisList
