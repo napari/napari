@@ -3,10 +3,12 @@ from typing import TYPE_CHECKING, Tuple
 import numpy as np
 from qtpy.QtWidgets import QGridLayout, QLabel, QWidget
 
+from napari import current_viewer
 from napari._qt.containers import QtListView
 from napari._qt.containers.qt_axis_model import AxisList, AxisModel
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.components import Dims
+from napari.utils._appdirs import user_cache_dir
 from napari.utils.events import SelectableEventedList
 from napari.utils.translations import trans
 
@@ -16,7 +18,7 @@ if TYPE_CHECKING:
 
 def set_dims_order(dims: Dims, order: Tuple[int, ...]):
     """Set dimension order of Dims object to order.
-    
+
     Parameters
     ----------
     dims : napari.components.dims.Dims
@@ -61,8 +63,8 @@ class QtDimsSorter(QWidget):
     viewer : napari.Viewer
         Main napari viewer instance.
     parent : QWidget, optional
-        QWidget that will be the parent of this widget. 
-    
+        QWidget that will be the parent of this widget.
+
     Attributes
     ----------
     axis_list : napari._qt.containers.qt_axis_model.AxisList
@@ -76,6 +78,21 @@ class QtDimsSorter(QWidget):
 
         view = QtListView(self.axis_list)
         view.setSizeAdjustPolicy(QtListView.AdjustToContents)
+        locked_icon_path = (
+            f'{user_cache_dir()}/_themes/{current_viewer().theme}/lock.svg'
+        )
+        unlocked_icon_path = f'{user_cache_dir()}/_themes/{current_viewer().theme}/lock_open.svg'
+        print(locked_icon_path)
+        view.setStyleSheet(
+            "QListView::indicator:unchecked"
+            "{"
+            f"image: url({locked_icon_path});"
+            "}"
+            "QListView::indicator:checked"
+            "{"
+            f"image: url({unlocked_icon_path});"
+            "}"
+        )
 
         layout = QGridLayout()
         self.setLayout(layout)
