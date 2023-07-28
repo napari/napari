@@ -174,7 +174,7 @@ def get_pr_number() -> int:
 def main():
     branch_name = environ["GITHUB_REF_NAME"]
     event_name = environ["GITHUB_EVENT_NAME"]
-    access_token = environ.get("GITHUB_TOKEN")
+    access_token = environ.get("GHA_TOKEN")
 
     _setup_git_author()
 
