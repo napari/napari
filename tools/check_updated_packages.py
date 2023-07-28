@@ -18,8 +18,13 @@ def main():
     parser.add_argument("--main-packages", action="store_true")
     args = parser.parse_args()
 
+    ref_name = get_ref_name()
+    event = os.environ.get("GITHUB_EVENT_NAME", "")
+
+    base_branch = get_base_branch_name(ref_name, event)
+
     try:
-        res = get_changed_dependencies(not args.main_packages)
+        res = get_changed_dependencies(base_branch, not args.main_packages)
     except ValueError as e:
         print(e)
         sys.exit(1)
@@ -131,7 +136,7 @@ def calc_only_direct_updates(
     return sorted(set(packages) & set(changed_packages))
 
 
-def get_changed_dependencies(all_packages=False):
+def get_changed_dependencies(base_branch: str, all_packages=False):
     """
     Get the changed dependencies.
 
@@ -139,11 +144,6 @@ def get_changed_dependencies(all_packages=False):
         If True, return all packages, not just the direct dependencies.
     """
     src_dir = Path(__file__).parent.parent
-
-    ref_name = get_ref_name()
-    event = os.environ.get("GITHUB_EVENT_NAME", "")
-
-    base_branch = get_base_branch_name(ref_name, event)
 
     branches = get_branches()
 
