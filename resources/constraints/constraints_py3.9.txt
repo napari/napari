@@ -20,6 +20,7 @@ attrs==23.1.0
     # via
     #   hypothesis
     #   jsonschema
+    #   referencing
 babel==2.12.1
     # via
     #   napari (setup.cfg)
@@ -34,9 +35,9 @@ certifi==2023.5.7
     # via
     #   napari (setup.cfg)
     #   requests
-charset-normalizer==3.1.0
+charset-normalizer==3.2.0
     # via requests
-click==8.1.3
+click==8.1.4
     # via
     #   dask
     #   typer
@@ -52,7 +53,7 @@ coverage==7.2.7
     # via pytest-cov
 cycler==0.11.0
     # via matplotlib
-dask==2023.6.0
+dask==2023.7.0
     # via napari (setup.cfg)
 debugpy==1.6.7
     # via ipykernel
@@ -66,7 +67,7 @@ docutils==0.17.1
     # via sphinx
 entrypoints==0.4
     # via numcodecs
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
     # via
     #   hypothesis
     #   pytest
@@ -91,7 +92,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.3
     # via vispy
-hypothesis==6.79.1
+hypothesis==6.81.0
     # via napari (setup.cfg)
 idna==3.4
     # via requests
@@ -102,18 +103,18 @@ imageio==2.31.1
     #   scikit-image
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==6.7.0
+importlib-metadata==6.8.0
     # via
     #   dask
     #   jupyter-client
     #   sphinx
-importlib-resources==5.12.0
+importlib-resources==6.0.0
     # via matplotlib
-in-n-out==0.1.7
+in-n-out==0.1.8
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.23.2
+ipykernel==6.24.0
     # via
     #   napari-console
     #   qtconsole
@@ -131,9 +132,11 @@ jinja2==3.1.2
     #   numpydoc
     #   sphinx
     #   torch
-jsonschema==4.17.3
+jsonschema==4.18.0
     # via napari (setup.cfg)
-jupyter-client==8.2.0
+jsonschema-specifications==2023.6.1
+    # via jsonschema
+jupyter-client==8.3.0
     # via
     #   ipykernel
     #   qtconsole
@@ -146,7 +149,7 @@ kiwisolver==1.4.4
     # via
     #   matplotlib
     #   vispy
-lazy-loader==0.2
+lazy-loader==0.3
     # via
     #   napari (setup.cfg)
     #   scikit-image
@@ -154,7 +157,7 @@ lit==16.0.6
     # via triton
 locket==1.0.0
     # via partd
-lxml==4.9.2
+lxml==4.9.3
     # via napari (setup.cfg)
 magicgui==0.7.2
     # via napari (setup.cfg)
@@ -162,7 +165,7 @@ markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.3
     # via jinja2
-matplotlib==3.7.1
+matplotlib==3.7.2
     # via napari (setup.cfg)
 matplotlib-inline==0.1.6
     # via
@@ -197,7 +200,7 @@ npe2==0.7.0
     #   napari-plugin-manager
 numcodecs==0.11.0
     # via zarr
-numpy==1.25.0
+numpy==1.25.1
     # via
     #   contourpy
     #   dask
@@ -257,7 +260,7 @@ packaging==23.1
     #   superqt
     #   vispy
     #   xarray
-pandas==2.0.2 ; python_version >= "3.9"
+pandas==2.0.3 ; python_version >= "3.9"
     # via
     #   napari (setup.cfg)
     #   xarray
@@ -269,7 +272,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.5.0
+pillow==10.0.0
     # via
     #   imageio
     #   matplotlib
@@ -277,7 +280,7 @@ pillow==9.5.0
     #   scikit-image
 pint==0.22
     # via napari (setup.cfg)
-platformdirs==3.7.0
+platformdirs==3.8.1
     # via
     #   jupyter-core
     #   pooch
@@ -288,7 +291,7 @@ pooch==1.7.0
     # via
     #   napari (setup.cfg)
     #   scikit-image
-prompt-toolkit==3.0.38
+prompt-toolkit==3.0.39
     # via ipython
 psutil==5.9.5
     # via
@@ -304,7 +307,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==1.10.9
+pydantic==1.10.11
     # via
     #   app-model
     #   napari (setup.cfg)
@@ -321,7 +324,7 @@ pyopengl==3.1.6
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (setup.cfg)
-pyparsing==3.1.0
+pyparsing==3.0.9
     # via matplotlib
 pyproject-hooks==1.0.0
     # via build
@@ -337,8 +340,6 @@ pyqt6-qt6==6.5.1
     # via pyqt6
 pyqt6-sip==13.5.1
     # via pyqt6
-pyrsistent==0.19.3
-    # via jsonschema
 pyside2==5.15.2.1 ; python_version != "3.8"
     # via napari (setup.cfg)
 pyside6==6.3.1 ; python_version < "3.10"
@@ -351,7 +352,7 @@ pyside6-essentials==6.3.1
     # via
     #   pyside6
     #   pyside6-addons
-pytest==7.3.2
+pytest==7.4.0
     # via
     #   napari (setup.cfg)
     #   pytest-cov
@@ -404,6 +405,10 @@ qtpy==2.3.1
     #   napari-plugin-manager
     #   qtconsole
     #   superqt
+referencing==0.29.1
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
 requests==2.31.0
     # via
     #   pooch
@@ -413,9 +418,13 @@ rich==13.4.2
     #   napari (setup.cfg)
     #   npe2
     #   pytest-pretty
+rpds-py==0.8.10
+    # via
+    #   jsonschema
+    #   referencing
 scikit-image==0.21.0
     # via napari (setup.cfg)
-scipy==1.10.1 ; python_version >= "3.9"
+scipy==1.11.1 ; python_version >= "3.9"
     # via
     #   napari (setup.cfg)
     #   scikit-image
@@ -459,11 +468,11 @@ superqt==0.4.1
     #   napari-plugin-manager
 sympy==1.12
     # via torch
-tensorstore==0.1.37
+tensorstore==0.1.40
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (setup.cfg)
-tifffile==2023.4.12
+tifffile==2023.7.4
     # via
     #   napari (setup.cfg)
     #   scikit-image
@@ -501,7 +510,7 @@ triton==2.0.0
     # via torch
 typer==0.9.0
     # via npe2
-typing-extensions==4.6.3
+typing-extensions==4.7.1
     # via
     #   app-model
     #   ipython
@@ -519,7 +528,7 @@ urllib3==2.0.3
     # via requests
 virtualenv==20.23.1
     # via napari (setup.cfg)
-vispy==0.12.2
+vispy==0.13.0
     # via
     #   napari (setup.cfg)
     #   napari-svg
@@ -535,11 +544,11 @@ wheel==0.40.0
     #   nvidia-nvtx-cu11
 wrapt==1.15.0
     # via napari (setup.cfg)
-xarray==2023.5.0
+xarray==2023.6.0
     # via napari (setup.cfg)
 zarr==2.15.0
     # via napari (setup.cfg)
-zipp==3.15.0
+zipp==3.16.0
     # via
     #   importlib-metadata
     #   importlib-resources
