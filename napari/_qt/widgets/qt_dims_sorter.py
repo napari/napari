@@ -82,7 +82,6 @@ class QtDimsSorter(QWidget):
             f'{user_cache_dir()}/_themes/{current_viewer().theme}/lock.svg'
         )
         unlocked_icon_path = f'{user_cache_dir()}/_themes/{current_viewer().theme}/lock_open.svg'
-        print(locked_icon_path)
         view.setStyleSheet(
             "QListView::indicator:unchecked"
             "{"
