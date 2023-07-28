@@ -2,7 +2,7 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Any, Dict, List, Sequence, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -599,34 +599,6 @@ class Shapes(Layer):
 
         # Trigger generation of view slice and thumbnail
         self.refresh()
-
-    def _initialize_current_color(
-        self,
-        data,
-        attribute: str,
-        color_value: Union[ColorType, Sequence[ColorType]],
-    ):
-        color_mode = getattr(self, f'_{attribute}_color_mode')
-        if len(data) > 0:
-            colors = getattr(self, f"{attribute}_color")
-            setattr(self, f"_current_{attribute}_color", colors[-1])
-        elif len(data) == 0 and (color_mode is not ColorMode.DIRECT):
-            # empty layer and colormap or color cycle
-            self._initialize_current_color_for_empty_layer(
-                color_value, attribute
-            )
-        else:
-            # empty layer and direct mode
-            setattr(
-                self,
-                f"_current_{attribute}_color",
-                transform_color_with_defaults(
-                    num_entries=1,
-                    colors=color_value,
-                    elem_name=f"{attribute}_color",
-                    default="black",
-                ),
-            )
 
     def _initialize_current_color_for_empty_layer(
         self, color: ColorType, attribute: str
