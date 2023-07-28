@@ -1456,7 +1456,10 @@ def test_labels_state_update():
     layer = Labels(data)
     state = layer._get_state()
     for k, v in state.items():
-        if k not in state.deprecations:
+        if k in state.deprecations:
+            with pytest.warns(DeprecationWarning):
+                setattr(layer, k, v)
+        else:
             setattr(layer, k, v)
 
 
