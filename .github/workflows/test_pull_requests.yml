@@ -2,10 +2,11 @@
 name: PR Test
 
 on:
-  pull_request:
-    branches:
-      - main
-      - "v*x"
+  workflow_dispatch:
+  # pull_request:
+  #   branches:
+  #     - main
+  #     - "v*x"
 
 concurrency:
   group: test-${{ github.ref }}
