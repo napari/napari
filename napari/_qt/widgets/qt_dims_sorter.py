@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Tuple
 import numpy as np
 from qtpy.QtWidgets import QGridLayout, QLabel, QWidget
 
-from napari import current_viewer
 from napari._qt.containers import QtListView
 from napari._qt.containers.qt_axis_model import AxisList, AxisModel
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
@@ -14,6 +13,8 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.viewer import Viewer
+
+USER_CACHE_DIR = user_cache_dir()
 
 
 def set_dims_order(dims: Dims, order: Tuple[int, ...]):
@@ -78,10 +79,10 @@ class QtDimsSorter(QWidget):
 
         view = QtListView(self.axis_list)
         view.setSizeAdjustPolicy(QtListView.AdjustToContents)
-        locked_icon_path = (
-            f'{user_cache_dir()}/_themes/{current_viewer().theme}/lock.svg'
+        locked_icon_path = f'{USER_CACHE_DIR}/_themes/{viewer.theme}/lock.svg'
+        unlocked_icon_path = (
+            f'{USER_CACHE_DIR}/_themes/{viewer.theme}/lock_open.svg'
         )
-        unlocked_icon_path = f'{user_cache_dir()}/_themes/{current_viewer().theme}/lock_open.svg'
         view.setStyleSheet(
             "QListView::indicator:unchecked"
             "{"
