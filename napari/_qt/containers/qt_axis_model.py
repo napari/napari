@@ -12,7 +12,7 @@ class AxisModel:
 
     The model keeps track of axis names and allows read / write
     acces on the cossesponding rollable state of a Dims object.
-    
+
     Parameters
     ----------
     dims : napari.components.dims.Dims
@@ -27,6 +27,7 @@ class AxisModel:
     axis : int
         Axis index.
     """
+
     def __init__(self, dims: Dims, axis: int) -> None:
         self.dims = dims
         self.axis = axis
@@ -83,7 +84,7 @@ class AxisList(SelectableEventedList[AxisModel]):
         ----------
         dims : napari.components.dims.Dims
             Dims object to be used for creation.
-        
+
         Returns
         -------
         AxisList
@@ -117,7 +118,9 @@ class QtAxisListModel(QtListModel[AxisModel]):
     ) -> bool:
         axis = self.getItem(index)
         if role == Qt.ItemDataRole.CheckStateRole:
-            axis.rollable = Qt.CheckState(value) == Qt.CheckState.Checked
+            axis.rollable = bool(
+                value == Qt.CheckState.Checked or value is True
+            )
         elif role == Qt.ItemDataRole.EditRole:
             axis_labels = list(axis.dims.axis_labels)
             axis_labels[axis.axis] = value

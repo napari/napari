@@ -67,14 +67,14 @@ def test_QtAxisListModel_data(qtbot):
     # setData
     idx = 1
     with qtbot.waitSignal(axislistmodel.dataChanged, timeout=100):
-        axislistmodel.setData(
+        assert axislistmodel.setData(
             axislistmodel.index(idx), True, role=Qt.ItemDataRole.CheckStateRole
         )
     assert dims.rollable[idx]
 
     new_name = 'new_name'
     with qtbot.waitSignal(axislistmodel.dataChanged, timeout=100):
-        axislistmodel.setData(
+        assert axislistmodel.setData(
             axislistmodel.index(idx), new_name, role=Qt.ItemDataRole.EditRole
         )
     assert dims.axis_labels[idx] == new_name
@@ -97,4 +97,4 @@ def make_QtAxisListModel(qtbot) -> Tuple[Dims, AxisList, QtAxisListModel]:
     axislist = AxisList.from_dims(dims)
     view = QtListView(axislist)
     axislistmodel = view.model()
-    return dims, axislist, axislistmodel
+    return dims, axislist, view, axislistmodel
