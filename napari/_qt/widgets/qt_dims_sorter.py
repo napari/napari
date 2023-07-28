@@ -92,7 +92,7 @@ class QtDimsSorter(QWidget):
 
         self.layout().addWidget(widget_title, 0, 0)
         self.layout().addWidget(widget_tooltip, 0, 1)
-        self.layout().addWidget(view, 1, 0)
+        self.layout().addWidget(view, 1, 0, 1, 2)
 
         # connect axes_list and dims
         # terminate connections after parent widget is closed
