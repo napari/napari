@@ -618,7 +618,19 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
-            name = colormap
+            # if the name starts with a '#' we assume it to be a hex color
+            # we then check if the hex color is one of r,g,b,c,m,y,w
+            # in which case we can reuse the associated colormap.
+            if colormap.startswith('#') and len(colormap) in [4,5,7,9]:
+                name = _hexcolor_to_name(colormap)
+                if name.startswith('custom'):
+                    # generate a linear colormap from black to that color
+                    # and add it to the dictionary of available colormaps
+                    cmap = _colormap_from_colors(colormap, name)
+                    AVAILABLE_COLORMAPS[name] = cmap
+            else:
+                name = colormap
+
             if name not in AVAILABLE_COLORMAPS:
                 cmap = vispy_or_mpl_colormap(
                     name
@@ -745,14 +757,53 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     return AVAILABLE_COLORMAPS[name]
 
 
-def _colormap_from_colors(colors: ColorType) -> Optional[Colormap]:
+def _hexcolor_to_name(hexcolor):
+    """Returns the name of a colormap according to the input hex value.
+
+    In case the color is recognised (solid color in rgbcmyw),
+    The existing colormap name associated with that color is returned.
+    Otherwise, a custom name is produced (#RgbA -> custom-rrggbbaa).
+
+    Parameters
+    ----------
+    hexcolor : str
+        A hex color value (#rgb, #rgba, #rrggbb, #rrggbbaa)
+
+    Returns
+    -------
+    Name of colormap
+    """
+
+    # A dictionary of known colormaps with lowercase rrggbbaa values as keys
+    rgba_colormaps = {'#ffffffff':'gray', '#ff0000ff':'red', '#00ff00ff':'green', '#0000ffff':'blue',
+            '#00ffffff':'cyan', '#ff00ffff':'magenta', '#ffff00ff':'yellow'}
+
+    #Here we convert the input hexcolor into a rrggbbaa hexcolor
+    hexcolor_rgba = hexcolor
+    # hex value is '#rgb' or '#rgba', need to double repeat each character
+    if len(hexcolor) == 4 or len(hexcolor) == 5:
+        hexcolor_rgba = '#'+''.join([c*2 for c in hexcolor[1:]])
+
+    if len(hexcolor_rgba) == 7:
+        hexcolor_rgba += 'ff'
+
+    name = rgba_colormaps.get(hexcolor_rgba.lower())
+
+    # The hex value isn't associated with a known colormap, so make a custom name for it
+    if name is None:
+        name = 'custom-'+hexcolor[1:].lower()
+
+    return name
+
+
+def _colormap_from_colors(colors: ColorType, name: Optional[str] = 'custom', display_name: Optional[str] = None) -> Optional[Colormap]:
     try:
         color_array = transform_color(colors)
     except (ValueError, AttributeError, KeyError):
         return None
     if color_array.shape[0] == 1:
         color_array = np.array([[0, 0, 0, 1], color_array[0]])
-    return Colormap(color_array)
+    return Colormap(color_array, name=name, display_name=display_name)
 
 
 def make_default_color_array():
