@@ -35,7 +35,8 @@ RUN apt-get update && \
         && apt-get clean
 
 # install napari from repo
-RUN pip3 install https://github.com/napari/napari/archive/${NAPARI_COMMIT}.tar.gz[all]
+# see https://github.com/pypa/pip/issues/6548#issuecomment-498615461 for syntax
+RUN pip3 install "napari[all] @ git+https://github.com/napari/napari.git@${NAPARI_COMMIT}"
 
 # copy examples
 COPY examples /tmp/examples
