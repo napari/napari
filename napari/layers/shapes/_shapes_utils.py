@@ -1171,12 +1171,14 @@ def perpendicular_distance(
     """
 
     if np.array_equal(line_start, line_end):
-        return np.linalg.norm(point - line_start)
+        return float(np.linalg.norm(point - line_start))
 
     t = np.dot(point - line_end, line_start - line_end) / np.dot(
         line_start - line_end, line_start - line_end
     )
-    return np.linalg.norm(t * (line_start - line_end) + line_end - point)
+    return float(
+        np.linalg.norm(t * (line_start - line_end) + line_end - point)
+    )
 
 
 def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:

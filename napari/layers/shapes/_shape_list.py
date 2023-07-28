@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Sequence, Union
+from typing import TYPE_CHECKING, List, Sequence, Union
 
 import numpy as np
 
@@ -13,6 +13,9 @@ from napari.utils.geometry import (
     line_in_triangles_3d,
 )
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
 class ShapeList:
@@ -69,11 +72,11 @@ class ShapeList:
 
     def __init__(self, data=(), ndisplay=2) -> None:
         self._ndisplay = ndisplay
-        self.shapes = []
-        self._displayed = []
-        self._slice_key = []
-        self.displayed_vertices = []
-        self.displayed_index = []
+        self.shapes: List[Shape] = []
+        self._displayed: npt.NDArray
+        self._slice_key: npt.NDArray
+        self.displayed_vertices: npt.NDArray
+        self.displayed_index: npt.NDArray
         self._vertices = np.empty((0, self.ndisplay))
         self._index = np.empty((0), dtype=int)
         self._z_index = np.empty((0), dtype=int)
