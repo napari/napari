@@ -621,7 +621,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             # if the name starts with a '#' we assume it to be a hex color
             # we then check if the hex color is one of r,g,b,c,m,y,w
             # in which case we can reuse the associated colormap.
-            if colormap.startswith('#') and len(colormap) in [4,5,7,9]:
+            if colormap.startswith('#') and len(colormap) in [4, 5, 7, 9]:
                 name = _hexcolor_to_name(colormap)
                 if name.startswith('custom'):
                     # generate a linear colormap from black to that color
@@ -775,14 +775,21 @@ def _hexcolor_to_name(hexcolor):
     """
 
     # A dictionary of known colormaps with lowercase rrggbbaa values as keys
-    rgba_colormaps = {'#ffffffff':'gray', '#ff0000ff':'red', '#00ff00ff':'green', '#0000ffff':'blue',
-            '#00ffffff':'cyan', '#ff00ffff':'magenta', '#ffff00ff':'yellow'}
+    rgba_colormaps = {
+        '#ffffffff': 'gray',
+        '#ff0000ff': 'red',
+        '#00ff00ff': 'green',
+        '#0000ffff': 'blue',
+        '#00ffffff': 'cyan',
+        '#ff00ffff': 'magenta',
+        '#ffff00ff': 'yellow',
+    }
 
-    #Here we convert the input hexcolor into a rrggbbaa hexcolor
+    # Here we convert the input hexcolor into a rrggbbaa hexcolor
     hexcolor_rgba = hexcolor
     # hex value is '#rgb' or '#rgba', need to double repeat each character
     if len(hexcolor) == 4 or len(hexcolor) == 5:
-        hexcolor_rgba = '#'+''.join([c*2 for c in hexcolor[1:]])
+        hexcolor_rgba = '#' + ''.join([c * 2 for c in hexcolor[1:]])
 
     if len(hexcolor_rgba) == 7:
         hexcolor_rgba += 'ff'
@@ -791,12 +798,16 @@ def _hexcolor_to_name(hexcolor):
 
     # The hex value isn't associated with a known colormap, so make a custom name for it
     if name is None:
-        name = 'custom-'+hexcolor[1:].lower()
+        name = 'custom-' + hexcolor[1:].lower()
 
     return name
 
 
-def _colormap_from_colors(colors: ColorType, name: Optional[str] = 'custom', display_name: Optional[str] = None) -> Optional[Colormap]:
+def _colormap_from_colors(
+    colors: ColorType,
+    name: Optional[str] = 'custom',
+    display_name: Optional[str] = None,
+) -> Optional[Colormap]:
     try:
         color_array = transform_color(colors)
     except (ValueError, AttributeError, KeyError):
