@@ -34,7 +34,7 @@ build==0.10.0
     # via npe2
 cachey==0.2.1
     # via napari (setup.cfg)
-certifi==2023.5.7
+certifi==2023.7.22
     # via
     #   napari (setup.cfg)
     #   requests
@@ -77,7 +77,6 @@ docutils==0.17.1
     #   myst-parser
     #   napari-sphinx-theme
     #   sphinx
-    #   sphinx-rtd-theme
     #   sphinx-tabs
 entrypoints==0.4
     # via numcodecs
@@ -89,7 +88,7 @@ executing==1.2.0
     # via stack-data
 fasteners==0.18
     # via zarr
-fastjsonschema==2.17.1
+fastjsonschema==2.18.0
     # via nbformat
 filelock==3.12.2
     # via
@@ -112,7 +111,7 @@ hsluv==5.0.3
     # via vispy
 hypothesis==6.82.0
     # via napari (setup.cfg)
-identify==2.5.25
+identify==2.5.26
     # via pre-commit
 idna==3.4
     # via requests
@@ -134,7 +133,7 @@ in-n-out==0.1.8
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.24.0
+ipykernel==6.25.0
     # via
     #   myst-nb
     #   napari-console
@@ -147,7 +146,7 @@ ipython==8.14.0
     #   napari-console
 ipython-genutils==0.2.0
     # via qtconsole
-jedi==0.18.2
+jedi==0.19.0
     # via ipython
 jinja2==3.0.3
     # via
@@ -250,7 +249,7 @@ nbformat==5.9.1
     #   jupyter-cache
     #   myst-nb
     #   nbclient
-nest-asyncio==1.5.6
+nest-asyncio==1.5.7
     # via ipykernel
 networkx==3.1
     # via
@@ -354,11 +353,10 @@ pillow==10.0.0
     #   imageio
     #   matplotlib
     #   napari (setup.cfg)
-    #   qtgallery
     #   scikit-image
 pint==0.22
     # via napari (setup.cfg)
-platformdirs==3.9.1
+platformdirs==3.10.0
     # via
     #   jupyter-core
     #   pooch
@@ -387,7 +385,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==1.10.11
+pydantic==1.10.12
     # via
     #   app-model
     #   napari (setup.cfg)
@@ -413,13 +411,13 @@ pyqt5==5.15.9
     # via napari (setup.cfg)
 pyqt5-qt5==5.15.2
     # via pyqt5
-pyqt5-sip==12.12.1
+pyqt5-sip==12.12.2
     # via pyqt5
-pyqt6==6.5.1
+pyqt6==6.5.2
     # via napari (setup.cfg)
-pyqt6-qt6==6.5.1
+pyqt6-qt6==6.5.2
     # via pyqt6
-pyqt6-sip==13.5.1
+pyqt6-sip==13.5.2
     # via pyqt6
 pyside2==5.15.2.1 ; python_version != "3.8"
     # via napari (setup.cfg)
@@ -460,8 +458,6 @@ python-dateutil==2.8.2
     #   pandas
 pytz==2023.3
     # via pandas
-pyvirtualdisplay==3.0
-    # via qtgallery
 pywavelets==1.4.1
     # via scikit-image
 pyyaml==6.0.1
@@ -483,8 +479,6 @@ qtconsole==5.4.3
     # via
     #   napari (setup.cfg)
     #   napari-console
-qtgallery==0.0.2
-    # via -r docs/requirements.txt
 qtpy==2.3.1
     # via
     #   magicgui
@@ -492,7 +486,6 @@ qtpy==2.3.1
     #   napari-console
     #   napari-plugin-manager
     #   qtconsole
-    #   qtgallery
     #   superqt
 referencing==0.30.0
     # via
@@ -503,7 +496,7 @@ requests==2.31.0
     #   nilearn
     #   pooch
     #   sphinx
-rich==13.4.2
+rich==13.5.0
     # via
     #   napari (setup.cfg)
     #   npe2
@@ -555,10 +548,8 @@ sphinx==4.5.0
     #   sphinx-external-toc
     #   sphinx-favicon
     #   sphinx-gallery
-    #   sphinx-rtd-theme
     #   sphinx-tabs
     #   sphinx-tags
-    #   sphinxcontrib-jquery
 sphinx-autobuild==2021.3.14
     # via -r docs/requirements.txt
 sphinx-autodoc-typehints==1.12.0
@@ -572,11 +563,7 @@ sphinx-external-toc==0.3.1
 sphinx-favicon==1.0.1
     # via -r docs/requirements.txt
 sphinx-gallery==0.13.0
-    # via
-    #   -r docs/requirements.txt
-    #   qtgallery
-sphinx-rtd-theme==1.2.2
-    # via qtgallery
+    # via -r docs/requirements.txt
 sphinx-tabs==3.4.0
     # via -r docs/requirements.txt
 sphinx-tags==0.2.1
@@ -587,8 +574,6 @@ sphinxcontrib-devhelp==1.0.2
     # via sphinx
 sphinxcontrib-htmlhelp==2.0.1
     # via sphinx
-sphinxcontrib-jquery==4.1
-    # via sphinx-rtd-theme
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
 sphinxcontrib-qthelp==1.0.3
@@ -676,7 +661,7 @@ tzdata==2023.3
     # via pandas
 urllib3==2.0.4
     # via requests
-virtualenv==20.24.1
+virtualenv==20.24.2
     # via
     #   napari (setup.cfg)
     #   pre-commit
@@ -686,7 +671,7 @@ vispy==0.13.0
     #   napari-svg
 wcwidth==0.2.6
     # via prompt-toolkit
-wheel==0.40.0
+wheel==0.41.0
     # via
     #   nvidia-cublas-cu11
     #   nvidia-cuda-cupti-cu11
@@ -704,7 +689,7 @@ zipp==3.16.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.2
+pip==23.2.1
     # via napari-plugin-manager
 setuptools==68.0.0
     # via
