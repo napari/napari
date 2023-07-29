@@ -635,7 +635,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                                 "Unable to convert the hex color string into a colormap",
                                 deferred=True,
                             )
-                        )            else:
+                        )
+                    else:
                 name = colormap
 
             if name not in AVAILABLE_COLORMAPS:
