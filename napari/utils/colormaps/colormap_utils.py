@@ -627,8 +627,15 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     # generate a linear colormap from black to that color
                     # and add it to the dictionary of available colormaps
                     cmap = _colormap_from_colors(colormap, name)
-                    AVAILABLE_COLORMAPS[name] = cmap
-            else:
+                    if cmap is not None:
+                        AVAILABLE_COLORMAPS[name] = cmap
+                    else:
+                        raise ValueError(
+                            trans._(
+                                "Unable to convert the hex color string into a colormap",
+                                deferred=True,
+                            )
+                        )            else:
                 name = colormap
 
             if name not in AVAILABLE_COLORMAPS:
