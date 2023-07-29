@@ -636,7 +636,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                                 deferred=True,
                             )
                         )
-                    else:
+            else:
                 name = colormap
 
             if name not in AVAILABLE_COLORMAPS:
