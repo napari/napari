@@ -73,10 +73,10 @@ class ShapeList:
     def __init__(self, data=(), ndisplay=2) -> None:
         self._ndisplay = ndisplay
         self.shapes: List[Shape] = []
-        self._displayed: npt.NDArray
-        self._slice_key: npt.NDArray
-        self.displayed_vertices: npt.NDArray
-        self.displayed_index: npt.NDArray
+        self._displayed = np.array([])
+        self._slice_key = np.array([])
+        self.displayed_vertices = np.array([])
+        self.displayed_index = np.array([])
         self._vertices = np.empty((0, self.ndisplay))
         self._index = np.empty((0), dtype=int)
         self._z_index = np.empty((0), dtype=int)
