@@ -802,13 +802,7 @@ def _hexcolor_to_name(hexcolor):
     if len(hexcolor_rgba) == 7:
         hexcolor_rgba += 'ff'
 
-    name = rgba_colormaps.get(hexcolor_rgba.lower())
-
-    # The hex value isn't associated with a known colormap, so make a custom name for it
-    if name is None:
-        name = 'custom-' + hexcolor[1:].lower()
-
-    return name
+    return rgba_colormaps.get(hexcolor_rgba.lower(), 'custom-' + hexcolor[1:].lower())
 
 
 def _colormap_from_colors(
