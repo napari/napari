@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, List, Sequence, Union
+from typing import List, Sequence, Union
 
 import numpy as np
 
@@ -13,9 +13,6 @@ from napari.utils.geometry import (
     line_in_triangles_3d,
 )
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
 
 
 class ShapeList:
