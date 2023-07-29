@@ -37,7 +37,7 @@ psygnal==0.9.1
     # via
     #   magicgui
     #   npe2
-pydantic==1.10.11
+pydantic==1.10.12
     # via
     #   -r resources/requirements_mypy.in
     #   npe2
