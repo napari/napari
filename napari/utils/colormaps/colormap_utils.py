@@ -618,27 +618,26 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
-            # if the name starts with a '#' we assume it to be a hex color
-            # we then check if the hex color is one of r,g,b,c,m,y,w
-            # in which case we can reuse the associated colormap.
-            if colormap.startswith('#') and len(colormap) in [4, 5, 7, 9]:
-                name = _hexcolor_to_name(colormap)
-                if name.startswith('custom'):
-                    # generate a linear colormap from black to that color
-                    # and add it to the dictionary of available colormaps
-                    cmap = _colormap_from_colors(colormap, name)
-                    if cmap is not None:
-                        AVAILABLE_COLORMAPS[name] = cmap
-                    else:
-                        raise ValueError(
-                            trans._(
-                                "Unable to convert the hex color string into a colormap",
-                                deferred=True,
-                            )
+            #is a colormap with this name (default or custom) already available?
+            cmap = AVAILABLE_COLORMAPS.get(colormap, AVAILABLE_COLORMAPS.get(f"custom-{colormap.lower()}", None))
+            if cmap is None:
+                cmap = _colormap_from_colors(colormap, name=f"custom-{colormap.lower()}")
+                if cmap is None:
+                    raise ValueError(
+                        trans._(
+                            'Unrecognized Colormap String Value: {name}',
+                            deferred=True,
+                            name=colormap,
                         )
-            else:
-                name = colormap
+                    )
 
+                for cmap_ in AVAILABLE_COLORMAPS.values():
+                    if np.array_equal(cmap_.controls, cmap.controls) and cmap_.colors.shape == cmap.colors.shape and np.all(cmap_.colors == cmap.colors) and cmap_.interpolation == cmap.interpolation:
+                        cmap = cmap_
+                        break
+
+            name = cmap.name
+            AVAILABLE_COLORMAPS[name] = cmap
             if name not in AVAILABLE_COLORMAPS:
                 cmap = vispy_or_mpl_colormap(
                     name
@@ -763,48 +762,6 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 name = 'gray'
 
     return AVAILABLE_COLORMAPS[name]
-
-
-def _hexcolor_to_name(hexcolor):
-    """Returns the name of a colormap according to the input hex value.
-
-    In case the color is recognised (solid color in rgbcmyw),
-    The existing colormap name associated with that color is returned.
-    Otherwise, a custom name is produced (#RgbA -> custom-rrggbbaa).
-
-    Parameters
-    ----------
-    hexcolor : str
-        A hex color value (#rgb, #rgba, #rrggbb, #rrggbbaa)
-
-    Returns
-    -------
-    Name of colormap
-    """
-
-    # A dictionary of known colormaps with lowercase rrggbbaa values as keys
-    rgba_colormaps = {
-        '#ffffffff': 'gray',
-        '#ff0000ff': 'red',
-        '#00ff00ff': 'green',
-        '#0000ffff': 'blue',
-        '#00ffffff': 'cyan',
-        '#ff00ffff': 'magenta',
-        '#ffff00ff': 'yellow',
-    }
-
-    # Here we convert the input hexcolor into a rrggbbaa hexcolor
-    hexcolor_rgba = hexcolor
-    # hex value is '#rgb' or '#rgba', need to double repeat each character
-    if len(hexcolor) == 4 or len(hexcolor) == 5:
-        hexcolor_rgba = '#' + ''.join([c * 2 for c in hexcolor[1:]])
-
-    if len(hexcolor_rgba) == 7:
-        hexcolor_rgba += 'ff'
-
-    return rgba_colormaps.get(
-        hexcolor_rgba.lower(), 'custom-' + hexcolor[1:].lower()
-    )
 
 
 def _colormap_from_colors(
