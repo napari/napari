@@ -618,10 +618,15 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
-            #is a colormap with this name (default or custom) already available?
-            cmap = AVAILABLE_COLORMAPS.get(colormap, AVAILABLE_COLORMAPS.get(f"custom-{colormap.lower()}", None))
+            # is a colormap with this name (default or custom) already available?
+            cmap = AVAILABLE_COLORMAPS.get(
+                colormap,
+                AVAILABLE_COLORMAPS.get(f"custom-{colormap.lower()}", None),
+            )
             if cmap is None:
-                cmap = _colormap_from_colors(colormap, name=f"custom-{colormap.lower()}")
+                cmap = _colormap_from_colors(
+                    colormap, name=f"custom-{colormap.lower()}"
+                )
                 if cmap is None:
                     raise ValueError(
                         trans._(
@@ -632,7 +637,12 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     )
 
                 for cmap_ in AVAILABLE_COLORMAPS.values():
-                    if np.array_equal(cmap_.controls, cmap.controls) and cmap_.colors.shape == cmap.colors.shape and np.all(cmap_.colors == cmap.colors) and cmap_.interpolation == cmap.interpolation:
+                    if (
+                        np.array_equal(cmap_.controls, cmap.controls)
+                        and cmap_.colors.shape == cmap.colors.shape
+                        and np.all(cmap_.colors == cmap.colors)
+                        and cmap_.interpolation == cmap.interpolation
+                    ):
                         cmap = cmap_
                         break
 
