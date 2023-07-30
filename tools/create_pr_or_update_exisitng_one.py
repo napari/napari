@@ -30,7 +30,7 @@ def cd(path: Path):
 
 def _setup_git_author():
     subprocess.run(
-        ["git", "config", "--global", "user.name", "napar-bot"], check=True
+        ["git", "config", "--global", "user.name", "napari-bot"], check=True
     )  # nosec
     subprocess.run(
         [
