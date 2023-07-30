@@ -628,13 +628,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     colormap, name=f"custom-{colormap.lower()}"
                 )
                 if cmap is None:
-                    raise ValueError(
-                        trans._(
-                            'Unrecognized Colormap String Value: {name}',
-                            deferred=True,
-                            name=colormap,
-                        )
-                    )
+                    cmap = vispy_or_mpl_colormap(colormap)
 
                 for cmap_ in AVAILABLE_COLORMAPS.values():
                     if (
