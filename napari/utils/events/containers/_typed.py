@@ -192,7 +192,9 @@ class TypedMutableSequence(MutableSequence[_T]):
         """Add other to self in place (self += other)."""
         return other + list(self)
 
-    def index(self, value: _L, start: int = 0, stop: Optional[int] = None) -> int:
+    def index(
+        self, value: _L, start: int = 0, stop: Optional[int] = None
+    ) -> int:
         """Return first index of value.
 
         Parameters

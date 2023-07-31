@@ -246,7 +246,9 @@ class ShortcutEditor(QWidget):
 
                 # Set the shortcuts in table.
                 item_shortcut = QTableWidgetItem(
-                    Shortcut(next(iter(shortcuts))).platform if shortcuts else ""
+                    Shortcut(next(iter(shortcuts))).platform
+                    if shortcuts
+                    else ""
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
 

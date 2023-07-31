@@ -1,6 +1,6 @@
 import json
 from enum import EnumMeta
-from typing import TYPE_CHECKING, Tuple, cast
+from typing import TYPE_CHECKING, ClassVar, Dict, Tuple, cast
 
 from pydantic.main import BaseModel, ModelMetaclass
 from qtpy.QtCore import QSize, Qt, Signal
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
 
-    ui_schema = {
+    ui_schema: ClassVar[Dict[str, Dict[str, str]]] = {
         "call_order": {"ui:widget": "plugins"},
         "highlight_thickness": {"ui:widget": "highlight"},
         "shortcuts": {"ui:widget": "shortcuts"},

@@ -28,7 +28,9 @@ class QtFontSizePreview(QFrame):
         Preview text to display. Default is None.
     """
 
-    def __init__(self, parent: QWidget = None, text: typing.Optional[str] = None) -> None:
+    def __init__(
+        self, parent: QWidget = None, text: typing.Optional[str] = None
+    ) -> None:
         super().__init__(parent)
 
         self._text = text or ""
