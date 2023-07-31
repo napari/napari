@@ -276,13 +276,16 @@ class _ImageSliceRequest:
         """
         Slice the given data with the given data slice and project the extra dims.
         """
-        slices = []
         slice_not_disp = data_slice[self.dims.not_displayed]
         if self.projection_mode == 'none':
             # early return with only the dims point being used
-            indices = np.array(slice_not_disp.point, dtype=int)
-            return np.asarray(data[tuple(indices)])
+            slices = [
+                slice(None) if np.isnan(p) else int(p)
+                for p in data_slice.point
+            ]
+            return np.asarray(data[tuple(slices)])
 
+        slices = []
         for dim_len, (point, m_left, m_right) in zip(
             data.shape, slice_not_disp
         ):
