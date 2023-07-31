@@ -54,7 +54,7 @@ qtpy==2.3.1
     #   -r resources/requirements_mypy.in
     #   magicgui
     #   superqt
-rich==13.4.2
+rich==13.5.0
     # via npe2
 superqt==0.4.1
     # via magicgui
