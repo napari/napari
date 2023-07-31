@@ -369,10 +369,23 @@ def test_adding_points():
     layer.add(coords)
     assert len(layer.data) == 13
     assert np.all(layer.data[11:, :] == coords)
+    assert layer.selected_data == {11, 12}
 
     # test that the last added points can be deleted
     layer.remove_selected()
     np.testing.assert_equal(layer.data, np.vstack((data, coord)))
+
+
+def test_points_selection_with_setter():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    coords = [[10, 10], [15, 15]]
+    layer.data = np.append(layer.data, np.atleast_2d(coords), axis=0)
+    assert len(layer.data) == 12
+    assert layer.selected_data == set()
 
 
 def test_adding_points_to_empty():
@@ -386,6 +399,7 @@ def test_adding_points_to_empty():
     layer.add(coord)
     assert len(layer.data) == 1
     assert np.all(layer.data[0] == coord)
+    assert layer.selected_data == {0}
 
 
 def test_removing_selected_points():
