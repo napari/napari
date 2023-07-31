@@ -149,6 +149,9 @@ def test_filtering_readers(
         sorted([npy_reader.display_name, builtins.display_name])
         == all_dropdown_items
     )
+    widget._filter_compatible_readers('')
+    assert widget._new_reader_dropdown.count() == 1
+    assert widget._new_reader_dropdown.itemText(0) == "None available"
 
 
 def test_filtering_readers_complex_pattern(

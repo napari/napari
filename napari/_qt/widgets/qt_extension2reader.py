@@ -170,15 +170,16 @@ class Extension2ReaderTable(QWidget):
 
         readers = self._npe2_readers.copy()
         to_delete = []
-        compatible_readers = get_potential_readers(new_pattern)
+        if new_pattern:
+            compatible_readers = get_potential_readers(new_pattern)
+        else:
+            compatible_readers = {}
         for plugin_name in readers:
             if plugin_name not in compatible_readers:
                 to_delete.append(plugin_name)
 
         for reader in to_delete:
             del readers[reader]
-
-        readers.update(self._npe1_readers)
 
         if not readers:
             self._new_reader_dropdown.addItem(trans._("None available"))
