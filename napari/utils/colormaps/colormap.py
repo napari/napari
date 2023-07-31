@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional
 
 import numpy as np
-from pydantic import PrivateAttr, validator
+from pydantic import Field, PrivateAttr, validator
 
 from napari.utils.color import ColorArray
 from napari.utils.colormaps.colorbars import make_colorbar
@@ -189,7 +189,9 @@ class DirectLabelColormap(Colormap):
         The selected label.
     """
 
-    color_dict: defaultdict = defaultdict(lambda: np.zeros(4))
+    color_dict: defaultdict = Field(
+        default_factory=lambda: defaultdict(lambda: np.zeros(4))
+    )
     use_selection: bool = False
     selection: float = 0.0
 
