@@ -245,7 +245,7 @@ def test_ensure_colormap_with_hex_color_string():
     for color in ['#abc', '#abcd', '#abcdef', '#00ABCDEF']:
         cmap = ensure_colormap(color)
         assert isinstance(cmap, Colormap)
-        assert cmap.name == 'custom-'+color.lower()
+        assert cmap.name == 'custom-' + color.lower()
 
 
 def test_ensure_colormap_with_recognized_hex_color_string():
