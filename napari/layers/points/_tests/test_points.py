@@ -992,7 +992,7 @@ def test_edge_width():
 
 @pytest.mark.parametrize(
     "edge_width",
-    [int(1), float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
+    [1, float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
 )
 def test_edge_width_types(edge_width):
     """Test edge_width dtypes with valid values"""

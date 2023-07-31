@@ -1174,7 +1174,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _open_or_raise_error(
         self,
         paths: List[Union[Path, str]],
-        kwargs: Dict[str, Any] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
         layer_type: Optional[str] = None,
         stack: Union[bool, List[List[str]]] = False,
     ):
@@ -1386,7 +1386,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _add_layer_from_data(
         self,
         data,
-        meta: Dict[str, Any] = None,
+        meta: Optional[Dict[str, Any]] = None,
         layer_type: Optional[str] = None,
     ) -> List[Layer]:
         """Add arbitrary layer data to the viewer.
@@ -1526,7 +1526,7 @@ def _unify_data_and_user_kwargs(
     data: LayerData,
     kwargs: Optional[dict] = None,
     layer_type: Optional[str] = None,
-    fallback_name: str = None,
+    fallback_name: Optional[str] = None,
 ) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
 

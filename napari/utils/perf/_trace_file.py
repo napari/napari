@@ -44,7 +44,7 @@ class PerfTraceFile:
 
         # Accumulate events in a list and only write at the end so the cost
         # of writing to a file does not bloat our timings.
-        self.events: List["PerfEvent"] = []
+        self.events: List[PerfEvent] = []
 
     def add_event(self, event: "PerfEvent") -> None:
         """Add one perf event to our in-memory list.

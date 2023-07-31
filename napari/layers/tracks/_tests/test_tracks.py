@@ -111,7 +111,7 @@ def test_track_layer_colorby_nonexistent():
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
     non_existant_property = 'not_a_valid_key'
-    assert non_existant_property not in properties_dict.keys()
+    assert non_existant_property not in properties_dict
     with pytest.raises(ValueError):
         Tracks(
             data, properties=properties_dict, color_by=non_existant_property
