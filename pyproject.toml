@@ -127,6 +127,7 @@ fix = true
 "tools/**" = ["INP001", "T20"]
 "examples/**" = ["ICN001", "INP001", "T20"]
 "**/vendored/**" = ["TID"]
+"napari/benchmarks/**" = ["RUF012"]
 
 [tool.ruff.flake8-quotes]
 docstring-quotes = "double"
