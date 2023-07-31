@@ -26,7 +26,7 @@ mypy-extensions==1.0.0
     #   psygnal
 npe2==0.7.2
     # via -r resources/requirements_mypy.in
-numpy==1.25.1
+numpy==1.25.2
     # via -r resources/requirements_mypy.in
 packaging==23.1
     # via
@@ -54,7 +54,7 @@ qtpy==2.3.1
     #   -r resources/requirements_mypy.in
     #   magicgui
     #   superqt
-rich==13.4.2
+rich==13.5.1
     # via npe2
 superqt==0.4.1
     # via magicgui

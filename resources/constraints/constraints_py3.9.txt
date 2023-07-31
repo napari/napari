@@ -125,7 +125,7 @@ ipython==8.14.0
     #   napari-console
 ipython-genutils==0.2.0
     # via qtconsole
-jedi==0.18.2
+jedi==0.19.0
     # via ipython
 jinja2==3.1.2
     # via
@@ -188,7 +188,7 @@ napari-plugin-manager==0.1.0a2
     # via napari (setup.cfg)
 napari-svg==0.1.10
     # via napari (setup.cfg)
-nest-asyncio==1.5.6
+nest-asyncio==1.5.7
     # via ipykernel
 networkx==3.1
     # via
@@ -200,7 +200,7 @@ npe2==0.7.2
     #   napari-plugin-manager
 numcodecs==0.11.0
     # via zarr
-numpy==1.25.1
+numpy==1.25.2
     # via
     #   contourpy
     #   dask
@@ -280,7 +280,7 @@ pillow==10.0.0
     #   scikit-image
 pint==0.22
     # via napari (setup.cfg)
-platformdirs==3.9.1
+platformdirs==3.10.0
     # via
     #   jupyter-core
     #   pooch
@@ -411,7 +411,7 @@ requests==2.31.0
     # via
     #   pooch
     #   sphinx
-rich==13.4.2
+rich==13.5.1
     # via
     #   napari (setup.cfg)
     #   npe2
