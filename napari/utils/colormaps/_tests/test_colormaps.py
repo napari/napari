@@ -235,3 +235,33 @@ def test_ensure_colormap_with_multi_colors(colors):
     expected_colors = transform_color(colors)
     np.testing.assert_array_equal(colormap.colors, expected_colors)
     assert re.match(r'\[unnamed colormap \d+\]', colormap.name) is not None
+
+
+def test_ensure_colormap_with_hex_color_string():
+    """
+    Test all the accepted hex color representations (single/double digit rgb with/without alpha)
+    """
+
+    for color in ['#abc', '#abcd', '#abcdef', '#00ABCDEF']:
+        cmap = ensure_colormap(color)
+        assert isinstance(cmap, Colormap)
+        assert cmap.name == 'custom-'+color.lower()
+
+
+def test_ensure_colormap_with_recognized_hex_color_string():
+    """
+    Test that a hex color string for magenta is associated with the existing magenta colormap
+    """
+    for color in ['#f0f', '#f0fF', '#ff00ff', '#ff00ffFF']:
+        cmap = ensure_colormap(color)
+        assert isinstance(cmap, Colormap)
+        assert cmap.name == 'magenta'
+
+
+def test_ensure_colormap_error_with_invalid_hex_color_string():
+    """
+    Test that ensure_colormap errors when using an invalid hex color string
+    """
+    color = '#ff'
+    with pytest.raises(KeyError, match=rf"{color}.*Recognized colormaps are"):
+        ensure_colormap(color)
