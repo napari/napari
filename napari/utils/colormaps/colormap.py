@@ -1,6 +1,6 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Optional
+from typing import cast, Optional
 
 import numpy as np
 from pydantic import Field, PrivateAttr, validator
