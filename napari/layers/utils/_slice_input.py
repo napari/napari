@@ -191,7 +191,8 @@ class _SliceInput:
         full_data_slice = np.full((3, self.ndim), np.nan)
 
         for i, ax in enumerate(self.not_displayed):
-            full_data_slice[:, ax] = data_slice[:, i]
+            # we cannot have nan in non-displayed dims, so we default to 0
+            full_data_slice[:, ax] = np.nan_to_num(data_slice[:, i], nan=0)
 
         return _ThickNDSlice.from_array(full_data_slice)
 
