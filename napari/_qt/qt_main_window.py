@@ -618,7 +618,11 @@ class Window:
 
         self._add_menus()
         self._update_theme()
+        self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
+        get_settings().appearance.events.font_size.connect(
+            self._update_theme_font_size
+        )
 
         self._add_viewer_dock_widget(
             self._qt_viewer.dockConsole, tabify=False, menu=self.window_menu
@@ -1307,6 +1311,16 @@ class Window:
 
     def _update_theme_no_event(self):
         self._update_theme()
+
+    def _update_theme_font_size(self, event=None):
+        settings = get_settings()
+        font_size = event.value if event else settings.appearance.font_size
+        theme_name = settings.appearance.theme
+        actual_theme_name = theme_name
+        if theme_name == "system":
+            # system isn't a theme, so get the name
+            actual_theme_name = get_system_theme()
+        _themes[actual_theme_name].font_size = f"{font_size}pt"
 
     def _update_theme(self, event=None):
         """Update widget color theme."""

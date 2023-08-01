@@ -1,3 +1,5 @@
+import sys
+
 from pydantic import Field
 
 from napari.settings._fields import Theme
@@ -12,6 +14,13 @@ class AppearanceSettings(EventedModel):
         title=trans._("Theme"),
         description=trans._("Select the user interface theme."),
         env="napari_theme",
+    )
+    font_size: int = Field(
+        12 if sys.platform == 'darwin' else 9,
+        title=trans._("Font size"),
+        description=trans._("Select the user interface font size."),
+        ge=5,
+        le=20,
     )
     highlight_thickness: int = Field(
         1,
