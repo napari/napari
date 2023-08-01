@@ -546,7 +546,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if data_ndim >= dims:
             # Get indices for axes corresponding to data dimensions
             data_indices = tuple(
-                slice(None) if np.isnan(idx) else int(idx)
+                slice(None) if np.isnan(idx) else int(np.round(idx))
                 for idx in self._data_slice.point[:-vertex_ndim]
             )
             data = data[data_indices]
