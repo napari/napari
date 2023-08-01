@@ -27,6 +27,7 @@ blue_theme.background = 28, 31, 48  # or as tuples
 blue_theme.foreground = [45, 52, 71]  # or as list
 blue_theme.primary = '#50586c'  # or as hexes
 blue_theme.current = 'orange'  # or as color name
+blue_theme.font_size = '10pt'  # you can provide a font size in points (pt) for the application
 
 register_theme('blue', blue_theme, "custom")
 
