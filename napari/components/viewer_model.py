@@ -965,8 +965,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         sample : str
             name of the sample
         reader_plugin : str, optional
-            reader plugin to use, passed to ``viewer.open`` (only used if the
-            sample data is a URI).  By default None.
+            reader plugin to use, passed to ``viewer.open``. Only used if the
+            sample data is an URI (Uniform Resource Identifier). By default None.
         **kwargs
             additional kwargs will be passed to the sample data loader provided
             by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
