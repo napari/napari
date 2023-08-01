@@ -60,6 +60,8 @@ def create_known_shapes_layer():
     n_shapes = len(data)
 
     layer = Shapes(data)
+    # very zoomed in, guaranteed no overlap between vertices
+    layer.scale_factor = 0.001
     assert layer.ndim == 2
     assert len(layer.data) == n_shapes
     assert len(layer.selected_data) == 0
@@ -328,22 +330,14 @@ def test_vertex_remove(create_known_shapes_layer):
     )
     mouse_press_callbacks(layer, event)
 
-    # Simulate drag end
-    event = read_only_event(
-        type='mouse_move',
-        is_dragging=True,
-        position=position,
-    )
-    mouse_move_callbacks(layer, event)
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
         "action": ActionType.CHANGE.value,
         "data_indices": tuple(
             select,
         ),
-        "vertex_indices": ((3,),),
+        "vertex_indices": ((0,),),
     }
-    # Check new shape added at coordinates
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord - 1
 
@@ -506,21 +500,23 @@ def test_drag_vertex(create_known_shapes_layer):
     layer.events.data = Mock()
     layer.mode = 'direct'
     layer.selected_data = {0}
-    position = tuple(layer.data[0][0])
+    old_position = tuple(layer.data[0][0])
 
     # Simulate click
     event = read_only_event(
         type='mouse_press',
-        position=position,
+        position=old_position,
     )
     mouse_press_callbacks(layer, event)
 
-    position = [0, 0]
+    new_position = [0, 0]
+    assert np.all(new_position != old_position)
+
     # Simulate move, click, and release
     event = read_only_event(
         type='mouse_move',
         is_dragging=True,
-        position=position,
+        position=new_position,
     )
     mouse_move_callbacks(layer, event)
 
@@ -528,7 +524,7 @@ def test_drag_vertex(create_known_shapes_layer):
     event = read_only_event(
         type='mouse_release',
         is_dragging=True,
-        position=position,
+        position=new_position,
     )
     mouse_release_callbacks(layer, event)
 
@@ -542,7 +538,7 @@ def test_drag_vertex(create_known_shapes_layer):
         "data_indices": (0,),
         "vertex_indices": vertex_indices,
     }
-    np.testing.assert_allclose(layer.data[0][-1], [0, 0])
+    np.testing.assert_allclose(layer.data[0][0], [0, 0])
 
 
 @pytest.mark.parametrize(

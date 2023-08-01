@@ -41,6 +41,7 @@ from napari.layers.utils.layer_utils import (
     get_extent_world,
 )
 from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
+from napari.settings import get_settings
 from napari.utils._dask_utils import configure_dask
 from napari.utils._magicgui import (
     add_layer_to_viewer,
@@ -435,9 +436,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         cls = type(self)
         return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
 
-    def _mode_setter_helper(self, mode):
+    def _mode_setter_helper(self, mode: Union[Mode, str]) -> Mode:
         """
         Helper to manage callbacks in multiple layers
+
+        This will return a valid mode for the current layer, to for example
+        refuse to set a mode that is not supported by the layer if it is not editable.
+
+        This will as well manage the mouse callbacks.
+
 
         Parameters
         ----------
@@ -446,7 +453,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Returns
         -------
-        bool : whether mode changed
+        mode : type(self._modeclass)
+            New mode for the current layer.
 
         """
         mode = self._modeclass(mode)
@@ -1138,7 +1146,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         slice_input = self._make_slice_input(point, ndisplay, order)
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
-            self.refresh()
+            self._refresh_sync()
 
     def _make_slice_input(
         self, point=None, ndisplay=2, order=None
@@ -1351,6 +1359,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
         logger.debug('Layer.refresh: %s', self)
+        # If async is enabled then emit an event that the viewer should handle.
+        if get_settings().experimental.async_:
+            self.events.reload(layer=self)
+        # Otherwise, slice immediately on the calling thread.
+        else:
+            self._refresh_sync()
+
+    def _refresh_sync(self, event=None):
+        logger.debug('Layer._refresh_sync: %s', self)
         if self.visible:
             self.set_view_slice()
             self.events.set_data()
@@ -1768,7 +1785,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.events.reload(Event('reload', layer=self))
+                self.refresh()
         else:
             # The stored corner_pixels attribute must contain valid indices.
             corners = np.zeros((2, self.ndim), dtype=int)
