@@ -632,9 +632,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
                 for cmap_ in AVAILABLE_COLORMAPS.values():
                     if (
-                        cmap_.controls is not None
-                        and custom_cmap.controls is not None
-                        and np.array_equal(
+                        np.array_equal(
                             cmap_.controls, custom_cmap.controls
                         )
                         and cmap_.colors.shape == custom_cmap.colors.shape
