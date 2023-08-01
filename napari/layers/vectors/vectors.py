@@ -690,7 +690,7 @@ class Vectors(Layer):
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
         slice_indices = slice_input.data_slice(
-            self._data_to_world.inverse, round_index=True
+            self._data_to_world.inverse, round_index=False
         )
         return self._make_slice_request_internal(slice_input, slice_indices)
 

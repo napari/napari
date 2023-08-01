@@ -1762,7 +1762,7 @@ class Points(Layer):
         # See Image._make_slice_request to understand why we evaluate this here
         # instead of using `self._data_slice`.
         data_slice = slice_input.data_slice(
-            self._data_to_world.inverse, round_index=True
+            self._data_to_world.inverse, round_index=False
         )
         return self._make_slice_request_internal(slice_input, data_slice)
 
