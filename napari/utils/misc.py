@@ -148,8 +148,9 @@ def is_iterable(arg, color=False, allow_none=False):
     is taken to not be iterable. If allow_none is True, `None` is considered iterable.
     """
     if (
-        (arg is None and not allow_none)
-        or isinstance(arg, str)
+        isinstance(arg, (str, Enum))
+        or arg is None
+        and not allow_none
         or np.isscalar(arg)
     ):
         return False

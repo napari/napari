@@ -1184,32 +1184,28 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ndisplay=2,
         order=None,
     ) -> _SliceInput:
-        # if no inputs are given, make a slice at the origin
-        point = (0,) * self.ndim if point is None else point
+        # if not point is given, "world" has same dimensionality of self
+        world_ndim = self.ndim if point is None else len(point)
 
         world_slice = _ThickNDSlice.make_full(
             point=point,
             margin_left=margin_left,
             margin_right=margin_right,
+            ndim=world_ndim,
         )
 
-        # Correspondence between dimensions across all layers and
-        # dimensions of this layer.
-        world_slice = world_slice[-self.ndim :]
-
-        order = (
-            tuple(range(world_slice.ndim)) if order is None else tuple(order)
-        )
+        order = tuple(range(world_ndim)) if order is None else tuple(order)
         order = tuple(
             self._world_to_layer_dims(
-                world_dims=order, ndim_world=world_slice.ndim
+                world_dims=order,
+                ndim_world=world_ndim,
             )
         )
 
         return _SliceInput(
             ndisplay=ndisplay,
-            world_slice=world_slice,
-            order=order,
+            world_slice=world_slice[-self.ndim :],
+            order=order[-self.ndim :],
         )
 
     @abstractmethod
