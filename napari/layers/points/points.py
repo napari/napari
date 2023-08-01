@@ -396,7 +396,6 @@ class Points(Layer):
         self._drag_box_stored = None
         self._is_selecting = False
         self._clipboard = {}
-        self._round_index = False
 
         super().__init__(
             data,
@@ -1761,9 +1760,7 @@ class Points(Layer):
         )
         # See Image._make_slice_request to understand why we evaluate this here
         # instead of using `self._data_slice`.
-        data_slice = slice_input.data_slice(
-            self._data_to_world.inverse, round_index=False
-        )
+        data_slice = slice_input.data_slice(self._data_to_world.inverse)
         return self._make_slice_request_internal(slice_input, data_slice)
 
     def _make_slice_request_internal(

@@ -280,7 +280,7 @@ class _ImageSliceRequest:
         if self.projection_mode == 'none':
             # early return with only the dims point being used
             slices = [
-                slice(None) if np.isnan(p) else int(p)
+                slice(None) if np.isnan(p) else np.round(int(p))
                 for p in data_slice.point
             ]
             return np.asarray(data[tuple(slices)])
@@ -297,7 +297,9 @@ class _ImageSliceRequest:
             low = point - m_left
             high = point + m_right
 
-            slice_ = slice(max(0, int(low)), min(dim_len, int(high)))
+            slice_ = slice(
+                max(0, np.round(int(low))), min(dim_len, np.round(int(high)))
+            )
             slices.append(slice_)
 
         return project_slice(

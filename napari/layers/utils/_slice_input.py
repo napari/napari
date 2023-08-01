@@ -165,7 +165,8 @@ class _SliceInput:
         )
 
     def data_slice(
-        self, world_to_data: Affine, round_index: bool = True
+        self,
+        world_to_data: Affine,
     ) -> _ThickNDSlice[Union[float, int]]:
         """Transforms this thick_slice into data coordinates with only relevant dimensions.
 
@@ -186,10 +187,6 @@ class _SliceInput:
         world_slice_not_disp = self.world_slice[self.not_displayed].as_array()
 
         data_slice = slice_world_to_data(world_slice_not_disp)
-
-        if round_index:
-            # A round is taken to convert these values to slicing integers
-            data_slice = np.round(data_slice).astype(int)
 
         full_data_slice = np.full((3, self.ndim), np.nan)
 

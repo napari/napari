@@ -928,7 +928,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return self._slice_input.data_slice(
             self._data_to_world.inverse,
-            getattr(self, '_round_index', True),
         )
 
     @abstractmethod
