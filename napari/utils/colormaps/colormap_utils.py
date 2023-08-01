@@ -618,30 +618,32 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
-            # is a colormap with this name (default or custom) already available?
-            cmap = AVAILABLE_COLORMAPS.get(
+            # Is a colormap with this name (default or custom) already available?
+            custom_cmap = AVAILABLE_COLORMAPS.get(
                 colormap,
                 AVAILABLE_COLORMAPS.get(f"custom-{colormap.lower()}", None),
             )
-            if cmap is None:
-                cmap = _colormap_from_colors(
+            if custom_cmap is None:
+                custom_cmap = _colormap_from_colors(
                     colormap, name=f"custom-{colormap.lower()}"
                 )
-                if cmap is None:
-                    cmap = vispy_or_mpl_colormap(colormap)
+                if custom_cmap is None:
+                    custom_cmap = vispy_or_mpl_colormap(colormap)
 
                 for cmap_ in AVAILABLE_COLORMAPS.values():
                     if (
-                        np.array_equal(cmap_.controls, cmap.controls)
-                        and cmap_.colors.shape == cmap.colors.shape
-                        and np.all(cmap_.colors == cmap.colors)
-                        and cmap_.interpolation == cmap.interpolation
+                        cmap_.controls is not None
+                        and custom_cmap.controls is not None
+                        and np.array_equal(cmap_.controls, custom_cmap.controls)
+                        and cmap_.colors.shape == custom_cmap.colors.shape
+                        and np.all(cmap_.colors == custom_cmap.colors)
+                        and cmap_.interpolation == custom_cmap.interpolation
                     ):
-                        cmap = cmap_
+                        custom_cmap = cmap_
                         break
 
-            name = cmap.name
-            AVAILABLE_COLORMAPS[name] = cmap
+            name = custom_cmap.name
+            AVAILABLE_COLORMAPS[name] = custom_cmap
             if name not in AVAILABLE_COLORMAPS:
                 cmap = vispy_or_mpl_colormap(
                     name
