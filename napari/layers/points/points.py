@@ -584,7 +584,6 @@ class Points(Layer):
                     (self._edge_width, edge_width), axis=0
                 )
                 self.symbol = np.concatenate((self._symbol, symbol), axis=0)
-                self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
         self._reset_editable()
@@ -1914,6 +1913,7 @@ class Points(Layer):
         coords : array
             Point or points to add to the layer data.
         """
+        cur_points = len(self.data)
         self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
         self.events.data(
             value=self.data,
@@ -1921,6 +1921,7 @@ class Points(Layer):
             data_indices=(-1,),
             vertex_indices=((),),
         )
+        self.selected_data = set(np.arange(cur_points, len(self.data)))
 
     def remove_selected(self):
         """Removes selected points if any."""
