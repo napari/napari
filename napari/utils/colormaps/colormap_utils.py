@@ -624,8 +624,12 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 AVAILABLE_COLORMAPS.get(f"custom-{colormap.lower()}", None),
             )
             if custom_cmap is None:
-                name = f"custom-{colormap.lower()}" if '#' in colormap else colormap
-                custom_cmap = _colormap_from_colors( colormap, name)
+                name = (
+                    f"custom-{colormap.lower()}"
+                    if '#' in colormap
+                    else colormap
+                )
+                custom_cmap = _colormap_from_colors(colormap, name)
 
                 if custom_cmap is None:
                     custom_cmap = vispy_or_mpl_colormap(colormap)
