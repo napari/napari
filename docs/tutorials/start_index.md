@@ -22,7 +22,7 @@ How to do a clean install of napari and launch the viewer.
 :::
 
 :::{grid-item-card} Getting started
-:link: getting-started
+:link: getting_started
 :link-type: ref
 
 This tutorial will teach you all the different ways to launch napari.
