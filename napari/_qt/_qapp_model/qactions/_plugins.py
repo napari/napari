@@ -4,11 +4,11 @@ from typing import List
 
 from app_model.types import Action
 
-from ...._app_model.constants import CommandId, MenuId
-from ....utils.translations import trans
-from ...dialogs.qt_plugin_dialog import QtPluginDialog
-from ...dialogs.qt_plugin_report import QtPluginErrReporter
-from ...qt_main_window import Window
+from napari._app_model.constants import CommandId, MenuId
+from napari._qt.dialogs.qt_plugin_dialog import QtPluginDialog
+from napari._qt.dialogs.qt_plugin_report import QtPluginErrReporter
+from napari._qt.qt_main_window import Window
+from napari.utils.translations import trans
 
 
 def _show_plugin_install_dialog(window: Window):
