@@ -626,7 +626,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             if custom_cmap is None:
                 name = (
                     f"custom-{colormap.lower()}"
-                    if '#' in colormap
+                    if colormap.startswith('#')
                     else colormap
                 )
                 custom_cmap = _colormap_from_colors(colormap, name)
