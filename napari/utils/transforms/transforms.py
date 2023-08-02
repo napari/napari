@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Iterable
 
 import numpy as np
 import numpy.typing as npt
@@ -111,7 +111,7 @@ class Transform:
 
 
 class TransformChain(EventedList[Transform], Transform):
-    def __init__(self, transforms: Optional[List[Transform]] = None) -> None:
+    def __init__(self, transforms: Optional[Iterable[Transform]] = None) -> None:
         if transforms is None:
             transforms = []
         super().__init__(
