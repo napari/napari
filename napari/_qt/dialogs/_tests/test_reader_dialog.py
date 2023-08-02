@@ -7,6 +7,7 @@ from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtWidgets import QLabel, QRadioButton
 
+from napari._app_model import get_app
 from napari._qt.dialogs.qt_reader_dialog import (
     QtReaderDialog,
     open_with_dialog_choices,
@@ -151,15 +152,15 @@ def test_open_sample_data_shows_all_readers(
     tmp_plugin.manifest.contributions.sample_data = [my_sample]
     from napari._qt.dialogs.qt_reader_dialog import QtReaderDialog
 
-    viewer = make_napari_viewer()
-    sample_action = viewer.window.file_menu.open_sample_menu.actions()[0]
-
+    app = get_app()
+    # required so setup steps run in init of `Viewer` and `Window`
+    make_napari_viewer()
     with mock.patch(
         'napari._qt.dialogs.qt_reader_dialog.prepare_remaining_readers'
     ) as mock_prepare_readers, mock.patch.object(
         QtReaderDialog, 'get_user_choices', return_value=(None, None)
     ):
-        sample_action.trigger()
+        app.commands.execute_command('tmp_plugin.tmp-sample')
     # Ensure that `prepare_remaining_readers` called with `plugin_name=None`
     mock_prepare_readers.assert_called_once_with(
         ['some-path/some-file.fake'], None, None
