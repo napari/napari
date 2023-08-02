@@ -5,6 +5,8 @@ We welcome your contributions! Please see the provided steps below and never hes
 
 If you are a new user, we recommend checking out the detailed [Github Docs](https://docs.github.com/en).
 
+You can see the general direction for napari development and possible work plans in our current [Roadmap](../roadmaps/index.md).
+
 (dev-installation)=
 ## Setting up a development installation
 
