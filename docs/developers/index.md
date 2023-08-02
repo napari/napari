@@ -1,7 +1,6 @@
-# Contributing resources
+# Contributing
 
-Here you can find resources about the contributing workflow, governance of the
-project and the onboarding of new contributors.
+Here you can find resources about the contributing workflow for both code to napari core and documentation of the project, as well as information for onboarding of new core developers.
 
 ## For contributors
 

@@ -112,33 +112,34 @@ subtrees:
       - file: community/governance
       - file: community/working_groups
       - file: community/meeting_schedule
-      - file: developers/index
+      - file: community/licensing
+  - file: developers/index
+    subtrees:
+    - entries:
+      - file: developers/contributing
+      - file: naps/index
+        subtrees:
+        - maxdepth: 1
+          entries:
+          - file: naps/0-nap-process
+          - file: naps/1-institutional-funding-partners
+          - file: naps/2-conda-based-packaging
+          - file: naps/3-spaces
+          - file: naps/4-async-slicing
+          - file: naps/5-new-logo
+          - file: naps/6-contributable-menus
+          - file: naps/7-key-binding-dispatch
+      - file: developers/documentation/index
         subtrees:
         - entries:
-          - file: developers/contributing
-          - file: naps/index
-            subtrees:
-            - maxdepth: 1
-              entries:
-              - file: naps/0-nap-process
-              - file: naps/1-institutional-funding-partners
-              - file: naps/2-conda-based-packaging
-              - file: naps/3-spaces
-              - file: naps/4-async-slicing
-              - file: naps/5-new-logo
-              - file: naps/6-contributable-menus
-              - file: naps/7-key-binding-dispatch
-          - file: developers/documentation/index
-            subtrees:
-            - entries:
-              - file: developers/documentation/docs_template
-          - file: developers/translations
-          - file: developers/core_dev_guide
-          - file: developers/release
-          - file: developers/testing
-          - file: developers/profiling
-          - file: developers/benchmarks
-          - file: developers/packaging
+          - file: developers/documentation/docs_template
+      - file: developers/translations
+      - file: developers/core_dev_guide
+      - file: developers/release
+      - file: developers/testing
+      - file: developers/profiling
+      - file: developers/benchmarks
+      - file: developers/packaging
       - file: release/index
         subtrees:
         - entries:
@@ -191,7 +192,6 @@ subtrees:
           - file: roadmaps/0_4
           - file: roadmaps/0_3_retrospective
           - file: roadmaps/0_3
-      - file: community/licensing
   - file: api/index
     subtrees:
     - titlesonly: True
