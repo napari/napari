@@ -4,7 +4,7 @@ from typing import List
 
 from app_model.types import Action
 
-from napari._app_model.constants import CommandId, MenuId
+from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari._qt.dialogs.qt_plugin_dialog import QtPluginDialog
 from napari._qt.dialogs.qt_plugin_report import QtPluginErrReporter
 from napari._qt.qt_main_window import Window
@@ -28,7 +28,7 @@ Q_PLUGINS_ACTIONS: List[Action] = [
         menus=[
             {
                 'id': MenuId.MENUBAR_PLUGINS,
-                'group': '1_plugins',
+                'group': MenuGroup.PLUGINS,
                 'order': 1,
             }
         ],
@@ -40,7 +40,7 @@ Q_PLUGINS_ACTIONS: List[Action] = [
         menus=[
             {
                 'id': MenuId.MENUBAR_PLUGINS,
-                'group': '1_plugins',
+                'group': MenuGroup.PLUGINS,
                 'order': 2,
             }
         ],
