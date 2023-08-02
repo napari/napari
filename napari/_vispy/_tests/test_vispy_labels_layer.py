@@ -3,10 +3,13 @@ import tempfile
 import numpy as np
 import pytest
 import zarr
+from qtpy.QtCore import QCoreApplication
 
+from napari._tests.utils import skip_local_popups
 from napari.utils.interactions import mouse_press_callbacks
 
 
+@skip_local_popups
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
 def test_labels_painting(make_napari_viewer, array_type):
     """Check that painting labels paints on the canvas.
@@ -14,7 +17,7 @@ def test_labels_painting(make_napari_viewer, array_type):
     This should work regardless of array type. See:
     https://github.com/napari/napari/issues/6079
     """
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
     with tempfile.TemporaryDirectory(suffix='.zarr') as fn:
         if array_type == 'numpy':
             labels = np.zeros((20, 20), dtype=np.uint32)
@@ -37,11 +40,13 @@ def test_labels_painting(make_napari_viewer, array_type):
             labels = ts.open(spec, create=False, open=True).result()
 
         layer = viewer.add_labels(labels)
+        QCoreApplication.instance().processEvents()
         layer.paint((10, 10), 1, refresh=True)
         visual = viewer.window._qt_viewer.layer_to_visual[layer]
         assert np.any(visual.node._data)
 
 
+@skip_local_popups
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
 def test_labels_painting_with_mouse(
     MouseEvent, make_napari_viewer, array_type
@@ -51,7 +56,7 @@ def test_labels_painting_with_mouse(
     This should work regardless of array type. See:
     https://github.com/napari/napari/issues/6079
     """
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
     with tempfile.TemporaryDirectory(suffix='.zarr') as fn:
         if array_type == 'numpy':
             labels = np.zeros((20, 20), dtype=np.uint32)
@@ -74,6 +79,8 @@ def test_labels_painting_with_mouse(
             labels = ts.open(spec, create=False, open=True).result()
 
         layer = viewer.add_labels(labels)
+        QCoreApplication.instance().processEvents()
+
         layer.mode = 'paint'
         event = MouseEvent(
             type='mouse_press',
@@ -84,5 +91,4 @@ def test_labels_painting_with_mouse(
         visual = viewer.window._qt_viewer.layer_to_visual[layer]
         assert not np.any(visual.node._data)
         mouse_press_callbacks(layer, event)
-        visual = viewer.window._qt_viewer.layer_to_visual[layer]
         assert np.any(visual.node._data)
