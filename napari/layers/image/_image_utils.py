@@ -109,10 +109,14 @@ def guess_labels(data):
 
 
 def project_slice(data, axis, mode):
-    if mode == ProjectionMode.ADDITIVE:
+    if mode == ProjectionMode.SUM:
         func = np.sum
-    elif mode == ProjectionMode.AVERAGE:
+    elif mode == ProjectionMode.MEAN:
         func = np.mean
+    elif mode == ProjectionMode.MAX:
+        func = np.max
+    elif mode == ProjectionMode.MIN:
+        func = np.min
     else:
         raise NotImplementedError(f'unimplemented projection: {mode}')
     return func(data, tuple(axis))

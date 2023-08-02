@@ -289,13 +289,17 @@ class _ImageSliceRequest:
             if dim in self.dims.displayed:
                 continue
 
-            # ensure we always get at least 1 slice
-            if m_left + m_right < 1:
-                m_left = 0
-                m_right = 1
-
             low = int(np.round(point - m_left))
             high = int(np.round(point + m_right))
+
+            # if high is already at an integer, we need to round up to next intereger
+            # because slices have non-inclusive stop
+            if np.isclose(high, point + m_right):
+                high += 1
+
+            # ensure we always get at least 1 slice
+            if low == high:
+                high += 1
 
             slice_ = slice(max(0, low), min(data.shape[dim], high))
             slices[dim] = slice_

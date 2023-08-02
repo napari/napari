@@ -100,10 +100,14 @@ class ProjectionMode(StringEnum):
     Projection mode for aggregating a thick nD slice onto displayed dimensions.
 
         * NONE: ignore slice thickness, only using the dims point
-        * ADDITIVE: sum data across the thick slice
-        * AVERAGE: average data across the thick slice
+        * SUM: sum data across the thick slice
+        * MEAN: average data across the thick slice
+        * MAX: display the maximum value across the thick slice
+        * MIN: display the minimum value across the thick slice
     """
 
     NONE = auto()
-    ADDITIVE = auto()
-    AVERAGE = auto()
+    SUM = auto()
+    MEAN = auto()
+    MAX = auto()
+    MIN = auto()

@@ -874,3 +874,52 @@ def test_rendering_init():
     layer = Image(data, rendering='iso')
 
     assert layer.rendering == ImageRendering.ISO.value
+
+
+def test_thick_slice():
+    data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
+    layer = Image(data)
+
+    layer._slice_dims(point=(0, 0, 0))
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    # round down if at 0.5 and no margins
+    layer._slice_dims(point=(0.5, 0, 0))
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    # no changes if projection mode is 'none'
+    layer._slice_dims(
+        point=(0, 0, 0), margin_left=(1, 0, 0), margin_right=(1, 0, 0)
+    )
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    layer.projection_mode = 'mean'
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[:2], axis=0)
+    )
+
+    layer._slice_dims(
+        point=(1, 0, 0), margin_left=(1, 0, 0), margin_right=(1, 0, 0)
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[:3], axis=0)
+    )
+
+    layer._slice_dims(
+        point=(2.3, 0, 0), margin_left=(0, 0, 0), margin_right=(1.7, 0, 0)
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[2:5], axis=0)
+    )
+
+    layer._slice_dims(
+        point=(2.3, 0, 0), margin_left=(0, 0, 0), margin_right=(1.6, 0, 0)
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[2:4], axis=0)
+    )
+
+    layer.projection_mode = 'max'
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.max(data[2:4], axis=0)
+    )
