@@ -1,6 +1,8 @@
 """Scale bar model."""
 from typing import Optional
 
+from pydantic import Field
+
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
 
@@ -44,9 +46,11 @@ class ScaleBarOverlay(CanvasOverlay):
     """
 
     colored: bool = False
-    color: ColorValue = [1, 0, 1, 1]
+    color: ColorValue = Field(default_factory=lambda: ColorValue([1, 0, 1, 1]))
     ticks: bool = True
     font_size: float = 10
     box: bool = False
-    box_color: ColorValue = [0, 0, 0, 0.6]
+    box_color: ColorValue = Field(
+        default_factory=lambda: ColorValue([0, 0, 0, 0.6])
+    )
     unit: Optional[str] = None

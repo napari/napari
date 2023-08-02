@@ -584,7 +584,6 @@ class Points(Layer):
                     (self._edge_width, edge_width), axis=0
                 )
                 self.symbol = np.concatenate((self._symbol, symbol), axis=0)
-                self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
         self._reset_editable()
@@ -1555,6 +1554,14 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
+    def _update_draw(
+        self, scale_factor, corner_pixels_displayed, shape_threshold
+    ):
+        super()._update_draw(
+            scale_factor, corner_pixels_displayed, shape_threshold
+        )
+        self._set_highlight(force=True)
+
     def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.
 
@@ -1585,10 +1592,10 @@ class Points(Layer):
             # Without this implementation, point hover and selection (and anything depending
             # on self.get_value()) won't be aware of the real extent of points, causing
             # unexpected behaviour. See #3734 for details.
+            sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
-                distances
-                <= np.expand_dims(self._view_size, axis=1) / scale_ratio / 2,
+                distances <= sizes,
                 axis=1,
             )
             indices = np.where(in_slice_matches)[0]
@@ -1645,10 +1652,10 @@ class Points(Layer):
         # so we need to calculate the ratio to correctly map to screen coordinates
         scale_ratio = self.scale[self._slice_input.displayed] / self.scale[-1]
         # find the points the click intersects
+        sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
         distances = abs(rotated_points - rotated_click_point)
         in_slice_matches = np.all(
-            distances
-            <= np.expand_dims(self._view_size, axis=1) / scale_ratio / 2,
+            distances <= sizes,
             axis=1,
         )
         indices = np.where(in_slice_matches)[0]
@@ -1906,6 +1913,7 @@ class Points(Layer):
         coords : array
             Point or points to add to the layer data.
         """
+        cur_points = len(self.data)
         self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
         self.events.data(
             value=self.data,
@@ -1913,6 +1921,7 @@ class Points(Layer):
             data_indices=(-1,),
             vertex_indices=((),),
         )
+        self.selected_data = set(np.arange(cur_points, len(self.data)))
 
     def remove_selected(self):
         """Removes selected points if any."""

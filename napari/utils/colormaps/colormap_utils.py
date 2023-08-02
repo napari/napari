@@ -1,7 +1,7 @@
 import warnings
 from collections import OrderedDict
 from threading import Lock
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import skimage.color as colorconv
@@ -470,7 +470,7 @@ def direct_colormap(color_dict=None):
     return d
 
 
-def vispy_or_mpl_colormap(name):
+def vispy_or_mpl_colormap(name) -> Colormap:
     """Try to get a colormap from vispy, or convert an mpl one to vispy format.
 
     Parameters
@@ -552,7 +552,7 @@ CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
 
 
 def _increment_unnamed_colormap(
-    existing: List[str], name: str = '[unnamed colormap]'
+    existing: Iterable[str], name: str = '[unnamed colormap]'
 ) -> Tuple[str, str]:
     """Increment name for unnamed colormap.
 
@@ -630,16 +630,18 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         elif isinstance(colormap, VispyColormap):
             # if a vispy colormap instance is provided, make sure we don't already
             # know about it before adding a new unnamed colormap
-            name = None
+            _name = None
             for key, val in AVAILABLE_COLORMAPS.items():
                 if colormap == val:
-                    name = key
+                    _name = key
                     break
 
-            if not name:
+            if _name is None:
                 name, _display_name = _increment_unnamed_colormap(
                     AVAILABLE_COLORMAPS
                 )
+            else:
+                name = _name
 
             # Convert from vispy colormap
             cmap = convert_vispy_colormap(colormap, name=name)
@@ -651,7 +653,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 and isinstance(colormap[0], str)
                 and isinstance(colormap[1], (VispyColormap, Colormap))
             ):
-                name, cmap = colormap
+                name = colormap[0]
+                cmap = colormap[1]
                 # Convert from vispy colormap
                 if isinstance(cmap, VispyColormap):
                     cmap = convert_vispy_colormap(cmap, name=name)
