@@ -276,19 +276,19 @@ class _ImageSliceRequest:
         """
         Slice the given data with the given data slice and project the extra dims.
         """
-        slice_not_disp = data_slice[self.dims.not_displayed]
+        slices = [
+            slice(None) if np.isnan(p) else int(np.round(p))
+            for p in data_slice.point
+        ]
+
         if self.projection_mode == 'none':
             # early return with only the dims point being used
-            slices = [
-                slice(None) if np.isnan(p) else int(np.round(p))
-                for p in data_slice.point
-            ]
             return np.asarray(data[tuple(slices)])
 
-        slices = []
-        for dim_len, (point, m_left, m_right) in zip(
-            data.shape, slice_not_disp
-        ):
+        for dim, (point, m_left, m_right) in enumerate(data_slice):
+            if dim in self.dims.displayed:
+                continue
+
             # ensure we always get at least 1 slice
             if m_left + m_right < 1:
                 m_left = 0
@@ -297,8 +297,8 @@ class _ImageSliceRequest:
             low = int(np.round(point - m_left))
             high = int(np.round(point + m_right))
 
-            slice_ = slice(max(0, low), min(dim_len, high))
-            slices.append(slice_)
+            slice_ = slice(max(0, low), min(data.shape[dim], high))
+            slices[dim] = slice_
 
         return project_slice(
             np.asarray(data[tuple(slices)]),
