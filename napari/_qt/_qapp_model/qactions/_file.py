@@ -14,16 +14,16 @@ from napari._qt.qt_viewer import QtViewer
 from napari.utils.translations import trans
 
 
-def _open_files_with_plugin(window: Window):
-    window._qt_viewer._open_files_dialog(choose_plugin=True)
+def _open_files_with_plugin(qt_viewer: QtViewer):
+    qt_viewer._open_files_dialog(choose_plugin=True)
 
 
-def _open_files_as_stack_with_plugin(window: Window):
-    window._qt_viewer._open_files_dialog_as_stack_dialog(choose_plugin=True)
+def _open_files_as_stack_with_plugin(qt_viewer: QtViewer):
+    qt_viewer._open_files_dialog_as_stack_dialog(choose_plugin=True)
 
 
-def _open_folder_with_plugin(window: Window):
-    window._qt_viewer._open_folder_dialog(choose_plugin=True)
+def _open_folder_with_plugin(qt_viewer: QtViewer):
+    qt_viewer._open_folder_dialog(choose_plugin=True)
 
 
 def _save_selected_layers(qt_viewer: QtViewer):
