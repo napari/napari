@@ -237,21 +237,17 @@ def test_ensure_colormap_with_multi_colors(colors):
     assert re.match(r'\[unnamed colormap \d+\]', colormap.name) is not None
 
 
-@pytest.mark.parametrize('color',
-    ['#abc', '#abcd', '#abcdef', '#00ABCDEF']
-)
+@pytest.mark.parametrize('color', ['#abc', '#abcd', '#abcdef', '#00ABCDEF'])
 def test_ensure_colormap_with_hex_color_string(color):
     """
     Test all the accepted hex color representations (single/double digit rgb with/without alpha)
     """
     cmap = ensure_colormap(color)
     assert isinstance(cmap, Colormap)
-    assert cmap.name == 'custom-'+color.lower()
+    assert cmap.name == 'custom-' + color.lower()
 
 
-@pytest.mark.parametrize('color', 
-    ['#f0f', '#f0fF', '#ff00ff', '#ff00ffFF']
-)
+@pytest.mark.parametrize('color', ['#f0f', '#f0fF', '#ff00ff', '#ff00ffFF'])
 def test_ensure_colormap_with_recognized_hex_color_string(color):
     """
     Test that a hex color string for magenta is associated with the existing magenta colormap
@@ -270,9 +266,7 @@ def test_ensure_colormap_error_with_invalid_hex_color_string():
         ensure_colormap(color)
 
 
-@pytest.mark.parametrize('mpl_name', 
-    ['chartreuse', 'chocolate', 'lavender']
-)
+@pytest.mark.parametrize('mpl_name', ['chartreuse', 'chocolate', 'lavender'])
 def test_ensure_colormap_with_recognized_mpl_color_name(mpl_name):
     """
     Test that the colormap name is identical to the the mpl color name passed to ensure_colormap
@@ -280,4 +274,3 @@ def test_ensure_colormap_with_recognized_mpl_color_name(mpl_name):
     cmap = ensure_colormap(mpl_name)
     assert isinstance(cmap, Colormap)
     assert cmap.name == mpl_name
-    
