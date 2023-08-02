@@ -422,7 +422,7 @@ class ColorManager(EventedModel):
                     )
 
     def _update_current_color(
-        self, current_color: np.ndarray, update_indices: list = ()
+        self, current_color: np.ndarray, update_indices: Optional[list] = None
     ):
         """Update the current color and update the colors if requested.
 
@@ -438,6 +438,8 @@ class ColorManager(EventedModel):
             If the ColorManager is not in DIRECT mode, updating the values
             will change the mode to DIRECT.
         """
+        if update_indices is None:
+            update_indices = []
         self.current_color = transform_color(current_color)[0]
         if update_indices:
             self.color_mode = ColorMode.DIRECT

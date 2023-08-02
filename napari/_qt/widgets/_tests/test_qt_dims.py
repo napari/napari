@@ -274,7 +274,16 @@ def test_slider_press_updates_last_used(qtbot):
 
     for i, widg in enumerate(view.slider_widgets):
         widg.slider.sliderPressed.emit()
-        assert view.dims.last_used == i
+        if i in [0, 1, 2]:
+            # only the first three dims should have visible sliders
+            assert widg.isVisibleTo(view)
+            assert view.dims.last_used == i
+        else:
+            # sliders should not be visible for the follwing dims and the
+            # last_used should fallback to the first available dim with a
+            # visible slider (dim 0)
+            assert not widg.isVisibleTo(view)
+            assert view.dims.last_used == 0
 
 
 @pytest.mark.skipif(

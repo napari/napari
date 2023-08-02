@@ -269,7 +269,8 @@
       "index",
       "name",
       "thumbnail",
-      "visible"
+      "visible",
+      "loaded"
     ],
     "napari/_qt/containers/qt_list_model.py": [
       "ItemType",
@@ -328,8 +329,7 @@
       "Activity",
       "QtActivityButton",
       "QtCustomTitleBarLine",
-      "QtCustomTitleLabel",
-      "loading.gif"
+      "QtCustomTitleLabel"
     ],
     "napari/_qt/dialogs/qt_modal.py": [
       "QtModalPopup",
@@ -427,7 +427,7 @@
       "author",
       "error_label",
       "license",
-      "loading.gif",
+      "linux",
       "napari_plugin_engine",
       "outdated",
       "plugin_manager_process_status",
@@ -2314,6 +2314,7 @@
       "warning",
       "logo_silhouette",
       "background",
+      "loading.gif",
       "error",
       "plugin.txt",
       "w"
