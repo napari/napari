@@ -1454,6 +1454,14 @@ class Labels(_ImageBase):
         # tensorstore and xarray do not return their indices in
         # np.ndarray format, so they need to be converted explicitly
         if not isinstance(self.data, np.ndarray):
+            # In the absence of slicing, the current slice becomes
+            # invalidated by data_setitem; only in the special case of a NumPy
+            # array is the slice a view and therefore updated automatically.
+            # For other types, we update it manually here.
+            displayed_indices = tuple(
+                indices[i] for i in self._slice.dims.displayed
+            )
+            self._slice.image.raw[displayed_indices] = value
             indices = [np.array(x).flatten() for x in indices]
 
         updated_slice = tuple(
