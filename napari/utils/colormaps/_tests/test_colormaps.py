@@ -244,7 +244,7 @@ def test_ensure_colormap_with_hex_color_string(color):
     """
     cmap = ensure_colormap(color)
     assert isinstance(cmap, Colormap)
-    assert cmap.name == 'custom-' + color.lower()
+    assert cmap.name == color.lower()
 
 
 @pytest.mark.parametrize('color', ['#f0f', '#f0fF', '#ff00ff', '#ff00ffFF'])
