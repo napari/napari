@@ -21,10 +21,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          # [Optional] Use a separate key to automatically execute checks on the resulting PR
-          # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs
-          ssh-key: ${{ secrets.DEPLOY_KEY }}
           fetch-depth: 0
+
+      - name: Clone docs repo
+        uses: actions/checkout@v3
+        with:
+          path: docs  # place in a named directory
+          repository: napari/docs
 
       # START PYTHON DEPENDENCIES
       - uses: actions/setup-python@v4
@@ -90,6 +93,7 @@ jobs:
           done
 
           python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9_examples.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
+          python3.10 -m piptools compile --upgrade -o resources/constraints/constraints_py3.10_docs.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt ${flags}
           python3.11 -m piptools compile --upgrade -o resources/requirements_mypy.txt resources/requirements_mypy.in --resolver=backtracking
 
       # END PYTHON DEPENDENCIES
