@@ -618,14 +618,14 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
-            # Is a colormap with this name (default or custom) already available?
+            # Is a colormap with this name already available?
             custom_cmap = AVAILABLE_COLORMAPS.get(
                 colormap,
-                AVAILABLE_COLORMAPS.get(f"custom-{colormap.lower()}", None),
+                None
             )
             if custom_cmap is None:
                 name = (
-                    f"custom-{colormap.lower()}"
+                    colormap.lower()
                     if colormap.startswith('#')
                     else colormap
                 )
