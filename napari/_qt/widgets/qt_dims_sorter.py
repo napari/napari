@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 USER_CACHE_DIR = user_cache_dir()
 
 
+# TODO: should `set_dims_order` become a method of QtDimsSorter?
 def set_dims_order(dims: Dims, order: Tuple[int, ...]):
     """Set dimension order of Dims object to order.
 
@@ -36,25 +37,27 @@ def _array_in_range(arr: np.ndarray, low: int, high: int) -> bool:
     return (arr >= low) & (arr < high)
 
 
-def move_indices(axes_list: SelectableEventedList, order: Tuple[int, ...]):
-    with axes_list.events.blocker_all():
-        if tuple(axes_list) == tuple(order):
+# TODO: This function is in the current usecase of QtDimsSorter unnecessary and could be removed
+# TODO: should `move_indices` become a method of QtDimsSorter?
+def move_indices(axis_list: SelectableEventedList, order: Tuple[int, ...]):
+    with axis_list.events.blocker_all():
+        if tuple(axis_list) == tuple(order):
             return
-        axes = [a.axis for a in axes_list]
+        axes = [a.axis for a in axis_list]
         ax_to_existing_position = {a: ix for ix, a in enumerate(axes)}
         move_list = np.asarray(
             [(ax_to_existing_position[order[i]], i) for i in range(len(order))]
         )
         for src, dst in move_list:
-            axes_list.move(src, dst)
+            axis_list.move(src, dst)
             move_list[_array_in_range(move_list[:, 0], dst, src)] += 1
         # remove the elements from the back if order has changed length
-        while len(axes_list) > len(order):
-            axes_list.pop()
+        while len(axis_list) > len(order):
+            axis_list.pop()
 
 
 class QtDimsSorter(QWidget):
-    """Qt widget for dimension / axis reordering.
+    """Qt widget for dimension / axis reordering and locking.
 
     Modified from:
     https://github.com/jni/zarpaint/blob/main/zarpaint/_dims_chooser.py
@@ -63,8 +66,9 @@ class QtDimsSorter(QWidget):
     ----------
     viewer : napari.Viewer
         Main napari viewer instance.
-    parent : QWidget, optional
-        QWidget that will be the parent of this widget.
+    parent : QWidget
+        QWidget that holds this widget. A QtDimsSorter instances will
+        disconnect all callbacks upon closing of it's parent.
 
     Attributes
     ----------
@@ -72,7 +76,7 @@ class QtDimsSorter(QWidget):
         Selectable evented list representing the viewer axes.
     """
 
-    def __init__(self, viewer: 'Viewer', parent=None) -> None:
+    def __init__(self, viewer: 'Viewer', parent: QWidget) -> None:
         super().__init__(parent=parent)
         dims = viewer.dims
         self.axis_list = AxisList.from_dims(dims)
@@ -101,7 +105,7 @@ class QtDimsSorter(QWidget):
         widget_tooltip.setObjectName('help_label')
         widget_tooltip.setToolTip(
             trans._(
-                'Drag dimensions to reorder, uncheck to lock dimension in place.'
+                'Drag dimensions to reorder, click lock icon to lock dimension in place.'
             )
         )
 
@@ -111,13 +115,14 @@ class QtDimsSorter(QWidget):
         self.layout().addWidget(widget_tooltip, 0, 1)
         self.layout().addWidget(view, 1, 0, 1, 2)
 
-        # connect axes_list and dims
+        # connect axis_list and dims
         # terminate connections after parent widget is closed
+        # to allow closure of QtDimsSorter
         self.axis_list.events.reordered.connect(
             lambda event: set_dims_order(dims, event.value),
-            until=self.parent().finished,
+            until=self.parent().destroyed,
         )
         dims.events.order.connect(
             lambda event: move_indices(self.axis_list, event.value),
-            until=self.parent().finished,
+            until=self.parent().destroyed,
         )
