@@ -27,10 +27,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          # [Optional] Use a separate key to automatically execute checks on the resulting PR
-          # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs
-          ssh-key: ${{ secrets.DEPLOY_KEY }}
           fetch-depth: 0
+
+      - name: Clone docs repo
+        uses: actions/checkout@v3
+        with:
+          path: docs  # place in a named directory
+          repository: napari/docs
 
       # START PYTHON DEPENDENCIES
       - uses: actions/setup-python@v4
@@ -96,6 +99,7 @@ jobs:
           done
 
           python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9_examples.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
+          python3.10 -m piptools compile --upgrade -o resources/constraints/constraints_py3.10_docs.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt ${flags}
           python3.11 -m piptools compile --upgrade -o resources/requirements_mypy.txt resources/requirements_mypy.in --resolver=backtracking
 
       # END PYTHON DEPENDENCIES
@@ -104,6 +108,7 @@ jobs:
       - name: Check updated packages
         id: packages
         run: |
+          rm -rf docs
           git fetch --all
           python tools/check_updated_packages.py --main-packages
           python tools/check_updated_packages.py
@@ -133,7 +138,7 @@ jobs:
           title: "test: [Automatic] Constraints upgrades: ${{ steps.packages.outputs.main_packages }}"
           body: |
             This PR is automatically created and updated by this napari GitHub Action:
-            https://github.com/napari/napari/tree/main/.github/workflows/upgrade_test_contraints.yml
+            https://github.com/napari/napari/tree/main/.github/workflows/upgrade_test_constraints.yml
             It ensures that dependencies are tested with the most recent version.
 
             The updated packages are:
