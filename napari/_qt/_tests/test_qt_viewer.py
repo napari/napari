@@ -20,7 +20,6 @@ from napari._tests.utils import (
     skip_on_win_ci,
 )
 from napari._vispy._tests.utils import vispy_image_scene_size
-from napari._vispy.utils.gl import fix_data_dtype
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Points
 from napari.settings import get_settings
@@ -194,7 +193,7 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     data = np.ones((10, 10))
 
     viewer = make_napari_viewer()
-    vis = viewer.window._qt_viewer.layer_to_visual
+    vis = viewer.window._qt_viewer.canvas.layer_to_visual
     viewer.add_image(data, colormap='red', name='red')
     viewer.add_image(data, colormap='green', name='green')
     viewer.add_image(data, colormap='blue', name='blue')
@@ -296,45 +295,6 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
     output_data = imread(expected_filepath)
     expected_data = viewer.window._qt_viewer.screenshot(flash=False)
     assert np.allclose(output_data, expected_data)
-
-
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        'int8',
-        'uint8',
-        'int16',
-        'uint16',
-        'int32',
-        'float16',
-        'float32',
-        'float64',
-    ],
-)
-def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
-    """Test that the viewer doesn't change the underlying array."""
-    image = np.random.rand(10, 32, 32)
-    image *= 200 if dtype.endswith('8') else 2**14
-    image = image.astype(dtype)
-    imean = image.mean()
-
-    viewer = make_napari_viewer()
-    layer = viewer.add_image(image.copy())
-    data = layer.data
-
-    datamean = np.mean(data)
-    assert datamean == imean
-    # toggle dimensions
-    viewer.dims.ndisplay = 3
-    datamean = np.mean(data)
-    assert datamean == imean
-    # back to 2D
-    viewer.dims.ndisplay = 2
-    datamean = np.mean(data)
-    assert datamean == imean
-    # also check that vispy gets (almost) the same data
-    datamean = np.mean(fix_data_dtype(data))
-    assert np.allclose(datamean, imean, rtol=5e-04)
 
 
 def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
@@ -493,11 +453,11 @@ def test_process_mouse_event(make_napari_viewer):
         np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
         assert event.dims_point[0] == data.shape[0] // 2
 
-        expected_position = view._map_canvas2world(new_pos)
+        expected_position = view.canvas._map_canvas2world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
 
     viewer.dims.ndisplay = 3
-    view._process_mouse_event(mouse_press_callbacks, mouse_event)
+    view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
 
 
 @skip_local_popups
@@ -589,7 +549,7 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     img = np.ones((512, 256))
     # canvas size must be large enough that img fits in the canvas
     canvas_size = tuple(3 * s for s in img.shape)
-    expected_corner_pixels = np.asarray([[0, 0], [img.shape[0], img.shape[1]]])
+    expected_corner_pixels = np.asarray([[0, 0], [s - 1 for s in img.shape]])
 
     vol = np.stack([img] * 8, axis=0)
     if multiscale:
@@ -600,15 +560,15 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
 
     viewer.dims.order = (0, 1, 2)
     viewer.window._qt_viewer.canvas.size = canvas_size
-    viewer.window._qt_viewer.on_draw(None)
+    viewer.window._qt_viewer.canvas.on_draw(None)
     assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
 
     viewer.dims.order = (2, 0, 1)
-    viewer.window._qt_viewer.on_draw(None)
+    viewer.window._qt_viewer.canvas.on_draw(None)
     assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
 
     viewer.dims.order = (1, 2, 0)
-    viewer.window._qt_viewer.on_draw(None)
+    viewer.window._qt_viewer.canvas.on_draw(None)
     assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
 
 
@@ -677,8 +637,8 @@ def test_insert_layer_ordering(make_napari_viewer):
     viewer.layers.append(pl1)
     viewer.layers.insert(0, pl2)
 
-    pl1_vispy = viewer.window._qt_viewer.layer_to_visual[pl1].node
-    pl2_vispy = viewer.window._qt_viewer.layer_to_visual[pl2].node
+    pl1_vispy = viewer.window._qt_viewer.canvas.layer_to_visual[pl1].node
+    pl2_vispy = viewer.window._qt_viewer.canvas.layer_to_visual[pl2].node
     assert pl1_vispy.order == 1
     assert pl2_vispy.order == 0
 
@@ -698,12 +658,50 @@ def test_create_non_empty_viewer_model(qtbot):
     gc.collect()
 
 
+@skip_local_popups
+@skip_on_win_ci
+def test_label_colors_matching_widget(qtbot, make_napari_viewer):
+    """Make sure the rendered label colors match the QtColorBox widget."""
+    viewer = make_napari_viewer(show=True)
+    # XXX TODO: this unstable! Seed = 0 fails, for example. This is due to numerical
+    #           imprecision in random colormap on gpu vs cpu
+    np.random.seed(1)
+    data = np.ones((2, 2), dtype=np.uint64)
+    layer = viewer.add_labels(data)
+    layer.opacity = 1.0  # QtColorBox & single layer are blending differently
+
+    test_colors = np.concatenate(
+        (
+            np.arange(1, 10, dtype=np.uint64),
+            np.random.randint(2**20, size=(20), dtype=np.uint64),
+        )
+    )
+
+    for label in test_colors:
+        # Change color & selected color to the same label
+        layer.data = np.full((2, 2), label, dtype=np.uint64)
+        layer.selected_label = label
+
+        qtbot.wait(
+            100
+        )  # wait for .update() to be called on QtColorBox from Qt
+
+        color_box_color = viewer.window._qt_viewer.controls.widgets[
+            layer
+        ].colorBox.color
+        screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
+        shape = np.array(screenshot.shape[:2])
+        middle_pixel = screenshot[tuple(shape // 2)]
+
+        np.testing.assert_equal(color_box_color, middle_pixel)
+
+
 def test_axes_labels(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 
     layer_visual = viewer._window._qt_viewer.layer_to_visual[layer]
-    axes_visual = viewer._window._qt_viewer.overlay_to_visual[
+    axes_visual = viewer._window._qt_viewer.canvas._overlay_to_visual[
         viewer._overlays['axes']
     ]
 

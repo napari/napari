@@ -1,6 +1,8 @@
 from collections.abc import Iterable
+from typing import Optional
 
 import numpy as np
+import numpy.typing as npt
 
 
 def format_float(value):
@@ -37,15 +39,15 @@ def status_format(value):
         return ''
     if isinstance(value, float) or np.issubdtype(type(value), np.floating):
         return format_float(value)
-    elif isinstance(value, int) or np.issubdtype(type(value), np.integer):
-        return str(value)
-    else:
-        return str(value)
+
+    return str(value)
 
 
-def generate_layer_coords_status(position, value):
+def generate_layer_coords_status(
+    position: Optional[npt.ArrayLike], value: Optional[tuple]
+) -> str:
     if position is not None:
-        full_coord = map(str, np.round(position).astype(int))
+        full_coord = map(str, np.round(np.array(position)).astype(int))
         msg = f" [{' '.join(full_coord)}]"
     else:
         msg = ""

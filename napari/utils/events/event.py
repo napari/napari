@@ -100,7 +100,12 @@ class Event:
         All extra keyword arguments become attributes of the event object.
     """
 
-    @rename_argument("type", "type_name", "0.6.0")
+    @rename_argument(
+        from_name="type",
+        to_name="type_name",
+        version="0.6.0",
+        since_version="0.4.18",
+    )
     def __init__(
         self, type_name: str, native: Any = None, **kwargs: Any
     ) -> None:
@@ -193,9 +198,9 @@ class Event:
                 attr = getattr(self, name)
 
                 attrs.append(f"{name}={attr!r}")
-            return "<{} {}>".format(self.__class__.__name__, " ".join(attrs))
         finally:
             _event_repr_depth -= 1
+        return f'<{self.__class__.__name__} {" ".join(attrs)}>'
 
     def __str__(self) -> str:
         """Shorter string representation"""
@@ -272,13 +277,13 @@ class EventEmitter:
     source : object
         The object that the generated events apply to. All emitted Events will
         have their .source property set to this value.
-    type : str or None
+    type_name: str or None
         String indicating the event type (e.g. mouse_press, key_release)
     event_class : subclass of Event
         The class of events that this emitter will generate.
     """
 
-    @rename_argument("type", "type_name", "0.6.0")
+    @rename_argument("type", "type_name", "0.6.0", "0.4.18")
     def __init__(
         self,
         source: Any = None,
@@ -390,16 +395,18 @@ class EventEmitter:
         core : str
             Name of core module, for example 'napari'.
         """
-        try:
-            if isinstance(callback, partial):
-                callback = callback.func
-            if not isinstance(callback, tuple):
-                return callback.__module__.startswith(core + '.')
-            obj = callback[0]()  # get object behind weakref
-            if obj is None:  # object is dead
+        if isinstance(callback, partial):
+            callback = callback.func
+        if not isinstance(callback, tuple):
+            try:
+                return callback.__module__.startswith(f'{core}.')
+            except AttributeError:
                 return False
-            return obj.__module__.startswith(core + '.')
-
+        obj = callback[0]()  # get object behind weakref
+        if obj is None:  # object is dead
+            return False
+        try:
+            return obj.__module__.startswith(f'{core}.')
         except AttributeError:
             return False
 
@@ -470,7 +477,7 @@ class EventEmitter:
         callback, pass_event = self._normalize_cb(callback)
 
         if callback in callbacks:
-            return
+            return None
 
         # deal with the ref
         _ref: Union[str, None]
@@ -1024,7 +1031,7 @@ class EmitterGroup(EventEmitter):
                         name=name,
                     )
                 )
-            elif hasattr(self, name):
+            if hasattr(self, name):
                 raise ValueError(
                     trans._(
                         "The name '{name}' cannot be used as an emitter; it is already an attribute of EmitterGroup",
@@ -1223,7 +1230,7 @@ def _is_pos_arg(param: inspect.Parameter):
     )
 
 
-with contextlib.suppress(ImportError):
+with contextlib.suppress(ModuleNotFoundError):
     # this could move somewhere higher up in napari imports ... but where?
     __import__('dotenv').load_dotenv()
 

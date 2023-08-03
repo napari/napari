@@ -106,6 +106,9 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.preserve_labels.connect(
             self._on_preserve_labels_change
         )
+        self.layer.events.show_selected_label.connect(
+            self._on_show_selected_label_change
+        )
         self.layer.events.color_mode.connect(self._on_color_mode_change)
 
         # selection spinbox
@@ -143,7 +146,7 @@ class QtLabelsControls(QtLayerControls):
         self._on_n_edit_dimensions_change()
 
         self.contourSpinBox = QLargeIntSpinBox()
-        self.contourSpinBox.setRange(*dtype_lims)
+        self.contourSpinBox.setRange(0, dtype_lims[1])
         self.contourSpinBox.setToolTip(trans._('display contours of labels'))
         self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)
@@ -164,6 +167,7 @@ class QtLabelsControls(QtLayerControls):
         )
         selectedColorCheckbox.stateChanged.connect(self.toggle_selected_mode)
         self.selectedColorCheckbox = selectedColorCheckbox
+        self._on_show_selected_label_change()
 
         # shuffle colormap button
         self.colormapUpdate = QtModePushButton(
@@ -175,7 +179,7 @@ class QtLabelsControls(QtLayerControls):
 
         self.panzoom_button = QtModeRadioButton(
             layer,
-            'zoom',
+            'pan',
             Mode.PAN_ZOOM,
             checked=True,
         )
@@ -191,6 +195,14 @@ class QtLabelsControls(QtLayerControls):
         self.paint_button = QtModeRadioButton(layer, 'paint', Mode.PAINT)
         action_manager.bind_button(
             'napari:activate_labels_paint_mode', self.paint_button
+        )
+
+        self.polygon_button = QtModeRadioButton(
+            layer, 'labels_polygon', Mode.POLYGON
+        )
+        action_manager.bind_button(
+            'napari:activate_labels_polygon_mode',
+            self.polygon_button,
         )
 
         self.fill_button = QtModeRadioButton(
@@ -217,6 +229,7 @@ class QtLabelsControls(QtLayerControls):
 
         self._EDIT_BUTTONS = (
             self.paint_button,
+            self.polygon_button,
             self.pick_button,
             self.fill_button,
             self.erase_button,
@@ -225,6 +238,7 @@ class QtLabelsControls(QtLayerControls):
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)
         self.button_group.addButton(self.paint_button)
+        self.button_group.addButton(self.polygon_button)
         self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.fill_button)
         self.button_group.addButton(self.erase_button)
@@ -235,6 +249,7 @@ class QtLabelsControls(QtLayerControls):
         button_row.addWidget(self.colormapUpdate)
         button_row.addWidget(self.erase_button)
         button_row.addWidget(self.paint_button)
+        button_row.addWidget(self.polygon_button)
         button_row.addWidget(self.fill_button)
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.panzoom_button)
@@ -311,6 +326,8 @@ class QtLabelsControls(QtLayerControls):
             self.pick_button.setChecked(True)
         elif mode == Mode.PAINT:
             self.paint_button.setChecked(True)
+        elif mode == Mode.POLYGON:
+            self.polygon_button.setChecked(True)
         elif mode == Mode.FILL:
             self.fill_button.setChecked(True)
         elif mode == Mode.ERASE:
@@ -450,6 +467,8 @@ class QtLabelsControls(QtLayerControls):
         with self.layer.events.n_edit_dimensions.blocker():
             value = self.layer.n_edit_dimensions
             self.ndimSpinBox.setValue(int(value))
+            if hasattr(self, 'polygon_button'):
+                self.polygon_button.setEnabled(self._is_polygon_tool_enabled())
 
     def _on_contiguous_change(self):
         """Receive layer model contiguous change event and update the checkbox."""
@@ -460,6 +479,13 @@ class QtLabelsControls(QtLayerControls):
         """Receive layer model preserve_labels event and update the checkbox."""
         with self.layer.events.preserve_labels.blocker():
             self.preserveLabelsCheckBox.setChecked(self.layer.preserve_labels)
+
+    def _on_show_selected_label_change(self):
+        """Receive layer model show_selected_labels event and update the checkbox."""
+        with self.layer.events.show_selected_label.blocker():
+            self.selectedColorCheckbox.setChecked(
+                self.layer.show_selected_label
+            )
 
     def _on_color_mode_change(self):
         """Receive layer model color."""
@@ -489,6 +515,15 @@ class QtLabelsControls(QtLayerControls):
         self.renderComboBox.setVisible(render_visible)
         self.renderLabel.setVisible(render_visible)
         self._on_editable_or_visible_change()
+        self.polygon_button.setEnabled(self._is_polygon_tool_enabled())
+
+    def _is_polygon_tool_enabled(self):
+        return (
+            self.layer.editable
+            and self.layer.visible
+            and self.layer.n_edit_dimensions == 2
+            and self.ndisplay == 2
+        )
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self.colorBox)
@@ -558,8 +593,7 @@ class QtColorBox(QWidget):
                         painter.setBrush(QColor(25, 25, 25))
                     painter.drawRect(i * 4, j * 4, 5, 5)
         else:
-            color = np.multiply(self.layer._selected_color, self.layer.opacity)
-            color = np.round(255 * color).astype(int)
+            color = np.round(255 * self.layer._selected_color).astype(int)
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)

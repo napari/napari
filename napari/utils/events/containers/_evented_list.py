@@ -71,9 +71,9 @@ class EventedList(TypedMutableSequence[_T]):
     moved (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: int, old_value: T, value: T)
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """
@@ -161,9 +161,9 @@ class EventedList(TypedMutableSequence[_T]):
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
-        elif isinstance(key, slice):
+        if isinstance(key, slice):
             return [(self, i) for i in range(*key.indices(len(self)))]
-        elif type(key) in self._lookup:
+        if type(key) in self._lookup:
             return [(self, self.index(key))]
 
         valid = {int, slice}.union(set(self._lookup))

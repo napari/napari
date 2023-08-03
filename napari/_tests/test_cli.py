@@ -67,7 +67,7 @@ def test_cli_raises(monkeypatch):
         m.setattr(sys, 'argv', ['napari', 'path/to/file', '--nonsense'])
         with pytest.raises(SystemExit) as e:
             __main__._run()
-        assert str(e.value) == 'error: unrecognized arguments: --nonsense'
+        assert str(e.value) == 'error: unrecognized argument: --nonsense'
 
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['napari', 'path/to/file', '--gamma'])
@@ -156,7 +156,7 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
         # it forces garbage collection, and then makes sure that at least one
         # additional reference to our viewer exists.
         gc.collect()
-        if sys.getrefcount(v) <= ref_count:
+        if sys.getrefcount(v) <= ref_count:  # pragma: no cover
             raise AssertionError(
                 "Reference to napari.viewer has been lost by "
                 "the time the event loop started in napari.__main__"

@@ -46,7 +46,7 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             axes=axes,
             reversed_axes=reversed_axes,
             colored=self.overlay.colored,
-            bg_color=get_theme(self.viewer.theme, False).canvas,
+            bg_color=get_theme(self.viewer.theme).canvas,
             dashed=self.overlay.dashed,
             arrows=self.overlay.arrows,
         )

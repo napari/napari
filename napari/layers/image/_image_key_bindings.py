@@ -38,7 +38,7 @@ def orient_plane_normal_along_x(layer: Image):
 @register_image_action(trans._('orient plane normal along view direction'))
 def orient_plane_normal_along_view_direction(layer: Image):
     viewer = napari.viewer.current_viewer()
-    if viewer.dims.ndisplay != 3:
+    if viewer is None or viewer.dims.ndisplay != 3:
         return
 
     def sync_plane_normal_with_view_direction(event=None):
@@ -63,8 +63,8 @@ def activate_image_transform_mode(layer):
 
 
 @register_image_action(trans._('Pan/zoom'))
-def activate_image_pan_zoom_mode(layer):
-    layer.mode = Mode.PAN_ZOOM
+def activate_image_pan_zoom_mode(layer: Image):
+    layer.mode = str(Mode.PAN_ZOOM)
 
 
 image_fun_to_mode = [

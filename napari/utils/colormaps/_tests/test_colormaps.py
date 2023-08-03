@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 import pytest
 from vispy.color import Colormap as VispyColormap
@@ -18,8 +20,12 @@ from napari.utils.colormaps.vendored import cm
 
 @pytest.mark.parametrize("name", list(AVAILABLE_COLORMAPS.keys()))
 def test_colormap(name):
-    np.random.seed(0)
+    if name == 'label_colormap':
+        pytest.skip(
+            'label_colormap is inadvertantly added to AVAILABLE_COLORMAPS but is not a normal colormap'
+        )
 
+    np.random.seed(0)
     cmap = AVAILABLE_COLORMAPS[name]
 
     # Test can map random 0-1 values
@@ -228,3 +234,4 @@ def test_ensure_colormap_with_multi_colors(colors):
     colormap = ensure_colormap(colors)
     expected_colors = transform_color(colors)
     np.testing.assert_array_equal(colormap.colors, expected_colors)
+    assert re.match(r'\[unnamed colormap \d+\]', colormap.name) is not None

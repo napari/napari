@@ -1,3 +1,4 @@
+from collections import defaultdict
 from enum import Enum
 from typing import Optional
 
@@ -50,7 +51,7 @@ class Colormap(EventedModel):
     name: str = 'custom'
     _display_name: Optional[str] = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array[np.float32, (-1,)] = None
+    controls: Optional[Array] = None
 
     def __init__(
         self, colors, display_name: Optional[str] = None, **data
@@ -119,7 +120,7 @@ class Colormap(EventedModel):
                 np.interp(values, self.controls, self.colors[:, i])
                 for i in range(4)
             ]
-            cols = np.stack(cols, axis=1)
+            cols = np.stack(cols, axis=-1)
         elif self.interpolation == ColormapInterpolationMode.ZERO:
             # One color per bin
             # Colors beyond max clipped to final bin
@@ -142,3 +143,68 @@ class Colormap(EventedModel):
     @property
     def colorbar(self):
         return make_colorbar(self)
+
+
+class LabelColormap(Colormap):
+    """Colormap that shuffles values before mapping to colors.
+
+    Attributes
+    ----------
+    seed : float
+    use_selection : bool
+    selection : float
+    """
+
+    seed: float = 0.5
+    use_selection: bool = False
+    selection: float = 0.0
+    interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
+
+    def map(self, values):
+        from napari.utils.colormaps.colormap_utils import low_discrepancy_image
+
+        # Convert to float32 to match the current GL shader implementation
+        values = np.atleast_1d(values).astype(np.float32)
+
+        values_low_discr = low_discrepancy_image(values, seed=self.seed)
+        mapped = super().map(values_low_discr)
+
+        # If using selected, disable all others
+        if self.use_selection:
+            mapped[~np.isclose(values, self.selection)] = 0
+
+        return mapped
+
+
+class DirectLabelColormap(Colormap):
+    """Colormap using a direct mapping from labels to color using a dict.
+
+    Attributes
+    ----------
+    color_dict: defaultdict
+        The dictionary mapping labels to colors.
+    use_selection: bool
+        Whether to color using the selected label.
+    selection: float
+        The selected label.
+    """
+
+    color_dict: defaultdict = defaultdict(lambda: np.zeros(4))
+    use_selection: bool = False
+    selection: float = 0.0
+
+    def map(self, values):
+        # Convert to float32 to match the current GL shader implementation
+        values = np.atleast_1d(values).astype(np.float32)
+        mapped = np.zeros(values.shape + (4,), dtype=np.float32)
+        for idx in np.ndindex(values.shape):
+            value = values[idx]
+            if value in self.color_dict:
+                color = self.color_dict[value]
+                if len(color) == 3:
+                    color = np.append(color, 1)
+                mapped[idx] = color
+        # If using selected, disable all others
+        if self.use_selection:
+            mapped[~np.isclose(values, self.selection)] = 0
+        return mapped
