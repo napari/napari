@@ -10,6 +10,15 @@ from napari._qt.containers import (
 )
 from napari.components import Dims
 
+FLAGS_ROLLABLE_False = (
+    Qt.ItemFlag.ItemIsSelectable
+    | Qt.ItemFlag.ItemIsEditable
+    | Qt.ItemFlag.ItemIsUserCheckable
+    | Qt.ItemFlag.ItemIsEnabled
+    | Qt.ItemFlag.ItemNeverHasChildren
+)
+FLAGS_ROLLABLE_True = FLAGS_ROLLABLE_False | Qt.ItemFlag.ItemIsDragEnabled
+
 
 def test_axismodel():
     dims = Dims()
@@ -84,10 +93,12 @@ def test_QtAxisListModel_flags(qtbot):
     dims, axislist, listview, axislistmodel = make_QtAxisListModel(qtbot)
     assert axislistmodel.flags(QModelIndex()) == Qt.ItemFlag.ItemIsDropEnabled
     flags = [
-        int(axislistmodel.flags(axislistmodel.index(idx)))
-        for idx in dims.order
+        axislistmodel.flags(axislistmodel.index(idx)) for idx in dims.order
     ]
-    ref_flags = [183 if state else 179 for state in dims.rollable]
+    ref_flags = [
+        FLAGS_ROLLABLE_True if state else FLAGS_ROLLABLE_False
+        for state in dims.rollable
+    ]
     assert flags == ref_flags
 
 

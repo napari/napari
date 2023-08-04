@@ -42,6 +42,8 @@ class AxisModel:
         return self.dims.axis_labels[self.axis]
 
     def __eq__(self, other: Union[int, str]) -> bool:
+        if not isinstance(other, AxisModel):
+            return NotImplemented
         if isinstance(other, int):
             return self.axis == other
         return repr(self) == other
@@ -66,7 +68,7 @@ class AxisModel:
     def rollable(self, value: bool) -> None:
         rollable = list(self.dims.rollable)
         rollable[self.axis] = value
-        self.dims.rollable = rollable
+        self.dims.rollable = tuple(rollable)
 
 
 class AxisList(SelectableEventedList[AxisModel]):
@@ -124,7 +126,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
         elif role == Qt.ItemDataRole.EditRole:
             axis_labels = list(axis.dims.axis_labels)
             axis_labels[axis.axis] = value
-            axis.dims.axis_labels = axis_labels
+            axis.dims.axis_labels = tuple(axis_labels)
         else:
             return super().setData(index, value, role=role)
         self.dataChanged.emit(index, index, [role])
@@ -166,4 +168,4 @@ class QtAxisListModel(QtListModel[AxisModel]):
         if self.getItem(index).rollable:
             # we only allow dragging if the item is rollable
             return flags | Qt.ItemFlag.ItemIsDragEnabled
-        return flags & ~Qt.ItemFlag.ItemIsDragEnabled
+        return flags
