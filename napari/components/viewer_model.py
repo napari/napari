@@ -343,7 +343,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Simple string representation"""
         return f'napari.Viewer: {self.title}'
 
-    @property
     def _sliced_extent_world_augmented(self) -> np.ndarray:
         """Extent of layers in world coordinates after slicing.
 
@@ -363,7 +362,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def reset_view(self):
         """Reset the camera view."""
 
-        extent = self._sliced_extent_world_augmented
+        extent = self._sliced_extent_world_augmented()
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         grid_size = list(self.grid.actual_shape(len(self.layers)))
@@ -528,7 +527,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
-        extent = self._sliced_extent_world_augmented
+        extent = self._sliced_extent_world_augmented()
         n_layers = len(self.layers)
         for i, layer in enumerate(self.layers):
             i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)

@@ -657,10 +657,10 @@ def test_sliced_world_extent():
 
     # Empty data is taken to be 512 x 512
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[0], (-0.5, -0.5)
+        viewer._sliced_extent_world_augmented()[0], (-0.5, -0.5)
     )
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[1], (511.5, 511.5)
+        viewer._sliced_extent_world_augmented()[1], (511.5, 511.5)
     )
 
     # Add one layer
@@ -674,19 +674,19 @@ def test_sliced_world_extent():
         viewer.layers._extent_world_augmented[1], (26.5, 29.5, 19.5)
     )
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[0], (19.5, 4.5)
+        viewer._sliced_extent_world_augmented()[0], (19.5, 4.5)
     )
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[1], (29.5, 19.5)
+        viewer._sliced_extent_world_augmented()[1], (29.5, 19.5)
     )
 
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[0], (4.5, 8.5)
+        viewer._sliced_extent_world_augmented()[0], (4.5, 8.5)
     )
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[1], (19.5, 26.5)
+        viewer._sliced_extent_world_augmented()[1], (19.5, 26.5)
     )
 
 
