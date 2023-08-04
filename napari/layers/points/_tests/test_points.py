@@ -2486,3 +2486,12 @@ def test_point_selection_remains_evented_after_update():
     assert isinstance(layer.selected_data, Selection)
     layer.selected_data = {0, 1}
     assert isinstance(layer.selected_data, Selection)
+
+
+def test_points_data_setter_emits_event():
+    data = np.random.random((5, 2))
+    emitted_events = []
+    layer = Points(data)
+    layer.events.data.connect(lambda ev: emitted_events.append(ev))
+    layer.data = np.random.random((5, 2))
+    assert len(emitted_events) == 1
