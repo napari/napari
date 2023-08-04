@@ -123,10 +123,7 @@ class ShortcutEditor(QWidget):
         layout.addWidget(
             QLabel(
                 trans._(
-                    "To edit, double-click the keybinding. To unbind a"
-                    " shortcut, use Backspace or Delete. To set Backspace"
-                    " or Delete, first unbind. Validate Modifiers only"
-                    " shortcut with Enter."
+                    "To edit, double-click the keybinding. To unbind a shortcut, use Backspace or Delete. To set Backspace or Delete, first unbind."
                 )
             )
         )
@@ -647,6 +644,7 @@ class EditorWidget(QLineEdit):
             self.setText(Shortcut(qkey2modelkey(event_key)).platform)
 
         if event_key in {
+            Qt.Key.Key_Return,
             Qt.Key.Key_Tab,
             Qt.Key.Key_CapsLock,
             Qt.Key.Key_Enter,
@@ -659,11 +657,6 @@ class EditorWidget(QLineEdit):
         event_keyseq = translator.keyevent_to_keyseq(event)
         kb = qkeysequence2modelkeybinding(event_keyseq)
         short = Shortcut(kb)
-        if event_key == Qt.Key.Key_Return:
-            # enter should be an invalid shortcut, but we use it as a key to
-            # validate modifiers only shortcuts. thus we let 'Enter' go through,
-            # but remove it from the shortcut we remove +enter from the shortcut
-            short = Shortcut(str(short._kb)[:-6])
         self.setText(short.platform)
         self.clearFocus()
 
