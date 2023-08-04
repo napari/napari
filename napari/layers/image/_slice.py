@@ -213,8 +213,10 @@ class _ImageSliceRequest:
         for d in self.dims.displayed:
             scale[d] = self.downsample_factors[level][d]
 
+        data = self.data[level]
+
         translate = np.zeros(self.dims.ndim)
-        disp_slice = [slice(None) for _ in self.data.shape]
+        disp_slice = [slice(None) for _ in data.shape]
         if self.dims.ndisplay == 2:
             for d in self.dims.displayed:
                 disp_slice[d] = slice(
@@ -234,7 +236,7 @@ class _ImageSliceRequest:
         )
 
         # slice displayed dimensions to get the right tile data
-        data = np.asarray(self.data[level][tuple(disp_slice)])
+        data = np.asarray(data[tuple(disp_slice)])
         # project the thick slice
         data_slice = self._thick_slice_at_level(level)
         data = self._project_thick_slice(data, data_slice)

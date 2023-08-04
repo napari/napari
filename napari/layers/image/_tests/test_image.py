@@ -923,3 +923,45 @@ def test_thick_slice():
     np.testing.assert_array_equal(
         layer._slice.image.raw, np.max(data[2:4], axis=0)
     )
+
+
+def test_thick_slice_multiscale():
+    data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
+    data_zoom = data.repeat(2, 0).repeat(2, 1).repeat(2, 2)
+    layer = Image([data_zoom, data])
+
+    # ensure we're slicing level 0. We also need to update corner_pixels
+    # to ensure the full image is in view
+    layer.corner_pixels = np.array([[0, 0, 0], [10, 10, 10]])
+    layer.data_level = 0
+
+    layer._slice_dims(point=(0, 0, 0))
+    np.testing.assert_array_equal(layer._slice.image.raw, data_zoom[0])
+
+    layer.projection_mode = 'mean'
+    # NOTE that here we rescale slicing to twice the non-multiscale test
+    # in order to get the same results, becase the actual full scale image
+    # is doubled in size
+    layer._slice_dims(
+        point=(4.6, 0, 0), margin_left=(0, 0, 0), margin_right=(3.4, 0, 0)
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data_zoom[4:10], axis=0)
+    )
+
+    # check level 1
+    layer.corner_pixels = np.array([[0, 0, 0], [5, 5, 5]])
+    layer.data_level = 1
+
+    layer._slice_dims(point=(0, 0, 0))
+    np.testing.assert_array_equal(layer._slice.image.raw, data[0])
+
+    layer.projection_mode = 'mean'
+    # here we slice in the same point as earlier, but to get the expected value
+    # we need to slice `data` with halved indices
+    layer._slice_dims(
+        point=(4.6, 0, 0), margin_left=(0, 0, 0), margin_right=(3.4, 0, 0)
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[2:5], axis=0)
+    )
