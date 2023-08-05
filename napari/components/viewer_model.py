@@ -361,7 +361,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self, layers=None):
+    def reset_view(self, *, layers=None):
         """Reset the camera view.
 
         Parameters
@@ -375,7 +375,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         extent = self._sliced_extent_world_augmented(layers)
         scene_size = extent[1] - extent[0]
         corner = extent[0]
-        grid_size = list(self.grid.actual_shape(self.layers))
+        grid_size = list(self.grid.actual_shape(len(self.layers)))
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
