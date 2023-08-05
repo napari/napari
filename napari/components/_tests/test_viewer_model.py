@@ -690,6 +690,20 @@ def test_sliced_world_extent():
     )
 
 
+def test_reset_view_with_input_layers():
+    viewer = ViewerModel()
+    layer0 = viewer.add_image(np.random.random((5, 5)))
+    viewer.reset_view()
+    camera_settings0 = viewer.camera.copy()
+    viewer.add_image(np.random.random((10, 10)))
+    viewer.reset_view()
+    camera_settings1 = viewer.camera.copy()
+    assert camera_settings0 != camera_settings1
+    viewer.reset_view(layers=[layer0])
+    camera_settings2 = viewer.camera.copy()
+    assert camera_settings2 == camera_settings0
+
+
 def test_camera():
     """Test camera."""
     viewer = ViewerModel()
