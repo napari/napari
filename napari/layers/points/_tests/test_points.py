@@ -2497,10 +2497,13 @@ def test_points_data_setter_emits_event():
     assert len(emitted_events) == 1
 
 
-def test_points_add_only_emits_one_event():
+def test_points_add_delete_only_emit_one_event():
     data = np.random.random((5, 2))
     emitted_events = []
     layer = Points(data)
     layer.events.data.connect(lambda ev: emitted_events.append(ev))
     layer.add(np.random.random(2))
     assert len(emitted_events) == 1
+    layer.selected_data = {3}
+    layer.remove_selected()
+    assert len(emitted_events) == 2
