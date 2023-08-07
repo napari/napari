@@ -169,6 +169,7 @@ def test_open_sample_data_shows_all_readers(
     # QtViewer._instances.clear()
     a = viewer.window.sample_menu.findAction('tmp_plugin.tmp-sample')
     a.setData(None)
+    print(a._destroy)
 
 
 def test_open_with_dialog_choices_persist(
