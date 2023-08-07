@@ -41,7 +41,7 @@ class AxisModel:
     def __repr__(self) -> str:
         return self.dims.axis_labels[self.axis]
 
-    def __eq__(self, other: Union[int, str]) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, AxisModel):
             return NotImplemented
         if isinstance(other, int):
