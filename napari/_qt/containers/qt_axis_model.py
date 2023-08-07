@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Union
+from typing import Any, Iterable
 
 from qtpy.QtCore import QModelIndex, Qt
 
