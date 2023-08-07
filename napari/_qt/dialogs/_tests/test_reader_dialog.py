@@ -13,7 +13,6 @@ from napari._qt.dialogs.qt_reader_dialog import (
     open_with_dialog_choices,
     prepare_remaining_readers,
 )
-from napari._qt.qt_viewer import QtViewer
 from napari.errors.reader_errors import ReaderPluginError
 from napari.settings import get_settings
 
@@ -155,7 +154,7 @@ def test_open_sample_data_shows_all_readers(
 
     app = get_app()
     # required so setup steps run in init of `Viewer` and `Window`
-    make_napari_viewer()
+    viewer = make_napari_viewer()
     with mock.patch(
         'napari._qt.dialogs.qt_reader_dialog.prepare_remaining_readers'
     ) as mock_prepare_readers, mock.patch.object(
@@ -166,7 +165,9 @@ def test_open_sample_data_shows_all_readers(
     mock_prepare_readers.assert_called_once_with(
         ['some-path/some-file.fake'], None, None
     )
-    QtViewer._instances.clear()
+    sample_action = viewer.window.file_menu.findAction('tmp_plugin.tmp-sample')
+    sample_action._destroy()
+    # QtViewer._instances.clear()
 
 
 def test_open_with_dialog_choices_persist(
