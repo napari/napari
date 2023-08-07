@@ -189,7 +189,9 @@ class DirectLabelColormap(Colormap):
         The selected label.
     """
 
-    color_dict: defaultdict = defaultdict(lambda: np.zeros(4))
+    color_dict: defaultdict = Field(
+        default_factory=lambda: defaultdict(lambda: np.zeros(4))
+    )
     use_selection: bool = False
     selection: float = 0.0
 
