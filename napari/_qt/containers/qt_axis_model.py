@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Union
+from typing import Any, Iterable
 
 from qtpy.QtCore import QModelIndex, Qt
 
@@ -41,12 +41,14 @@ class AxisModel:
     def __repr__(self) -> str:
         return self.dims.axis_labels[self.axis]
 
-    def __eq__(self, other: Union[int, str]) -> bool:
-        if not isinstance(other, AxisModel):
-            return NotImplemented
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, int):
             return self.axis == other
-        return repr(self) == other
+        if isinstance(other, str):
+            return repr(self) == other
+        if isinstance(other, AxisModel):
+            return (self.dims is other.dims) and (self.axis == other.axis)
+        return NotImplemented
 
     @property
     def rollable(self) -> bool:
