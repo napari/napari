@@ -165,6 +165,8 @@ def test_open_sample_data_shows_all_readers(
     mock_prepare_readers.assert_called_once_with(
         ['some-path/some-file.fake'], None, None
     )
+    action = app.commands.__getitem__('tmp_plugin.tmp-sample')
+    action._destroy()
 
 
 def test_open_with_dialog_choices_persist(
