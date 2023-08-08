@@ -1,25 +1,28 @@
 import numpy as np
+import pytest
 from app_model.types import Action
 
 from napari._app_model import get_app
 from napari._app_model.constants import MenuId
 from napari._app_model.context import LayerListContextKeys as LLCK
+from napari._qt._qapp_model import build_qmodel_menu
 from napari.layers import Image
 
+
 # `builtins` required so there are samples registered, so samples menu exists
-# @pytest.mark.parametrize('menu_id', list(constants.MenuId))
-# def test_build_qmodel_menu(builtins, make_napari_viewer, qtbot, menu_id):
-#     """Test that we can build qmenus for all registered menu IDs."""
-#     app = get_app()
+@pytest.mark.parametrize('menu_id', list(MenuId))
+def test_build_qmodel_menu(builtins, make_napari_viewer, qtbot, menu_id):
+    """Test that we can build qmenus for all registered menu IDs."""
+    app = get_app()
 
-#     # Runs setup actions; `init_qactions` and `initialize_plugins`
-#     make_napari_viewer()
+    # Runs setup actions; `init_qactions` and `initialize_plugins`
+    make_napari_viewer()
 
-#     menu = build_qmodel_menu(menu_id)
-#     qtbot.addWidget(menu)
+    menu = build_qmodel_menu(menu_id)
+    qtbot.addWidget(menu)
 
-#     # `>=` because separator bars count as actions
-#     assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
+    # `>=` because separator bars count as actions
+    assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
 
 
 def test_update_menu_state_context(make_napari_viewer):
