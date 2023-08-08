@@ -1,4 +1,3 @@
-from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from app_model.types import KeyCode, KeyMod
@@ -10,9 +9,6 @@ from napari.layers.utils.layer_utils import (
     register_layer_attr_action,
 )
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    from napari.components.overlays.labels_polygon import LabelsPolygonOverlay
 
 MIN_BRUSH_SIZE = 1
 
@@ -161,4 +157,4 @@ def complete_polygon(layer: Labels):
     # Because layer._overlays has type Overlay, mypy doesn't know that
     # ._overlays["polygon"] has type LabelsPolygonOverlay, so type ignore for now
     # TODO: Improve typing of layer._overlays to fix this
-    layer._overlays["polygon"].add_polygon_to_labels(layer) # type: ignore[attr-defined]
+    layer._overlays["polygon"].add_polygon_to_labels(layer)  # type: ignore[attr-defined]
