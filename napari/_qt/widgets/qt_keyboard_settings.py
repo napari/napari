@@ -354,7 +354,7 @@ class ShortcutEditor(QWidget):
 
         message = trans._(
             "<b>{new_shortcut}</b> is not a valid keybinding.",
-            new_shortcut=new_shortcut,
+            new_shortcut=Shortcut(new_shortcut).platform,
         )
         self._show_warning(new_shortcut, current_action, row, message)
 
@@ -404,6 +404,16 @@ class ShortcutEditor(QWidget):
             current_shortcuts = list(
                 action_manager._shortcuts.get(current_action, [])
             )
+            for mod in {"Shift", "Ctrl", "Alt", "Cmd", "Super", 'Meta'}:
+                # we want to prevent multiple modifiers but still allow single modifiers.
+                if new_shortcut.endswith('-' + mod):
+                    self._show_bind_shortcut_error(
+                        current_action,
+                        current_shortcuts,
+                        row,
+                        new_shortcut,
+                    )
+                    return
 
             # Flag to indicate whether to set the new shortcut.
             replace = self._mark_conflicts(new_shortcut, row)
