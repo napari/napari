@@ -121,12 +121,13 @@ fix = true
 
 [tool.ruff.per-file-ignores]
 "napari/_vispy/__init__.py" = ["E402"]
-"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018"]
+"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
 "napari/utils/_testsupport.py" = ["B011"]
 "tools/test_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20"]
 "examples/**" = ["ICN001", "INP001", "T20"]
 "**/vendored/**" = ["TID"]
+"napari/benchmarks/**" = ["RUF012"]
 
 [tool.ruff.flake8-quotes]
 docstring-quotes = "double"
