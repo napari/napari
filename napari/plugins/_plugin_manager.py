@@ -637,7 +637,7 @@ class NapariPluginManager(PluginManager):
                 )
                 raise ValueError(msg)
 
-            widget_name = list(plg_wdgs)[0]
+            widget_name = next(iter(plg_wdgs))
         else:
             if widget_name not in plg_wdgs:
                 msg = trans._(

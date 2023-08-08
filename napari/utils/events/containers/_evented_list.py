@@ -24,7 +24,17 @@ cover this in test_evented_list.py)
 
 import contextlib
 import logging
-from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
+from typing import (
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from napari.utils.events.containers._typed import (
     _L,
@@ -85,7 +95,7 @@ class EventedList(TypedMutableSequence[_T]):
         data: Iterable[_T] = (),
         *,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-        lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = None,
+        lookup: Optional[Dict[Type[_L], Callable[[_T], Union[_T, _L]]]] = None,
     ) -> None:
         if lookup is None:
             lookup = {}

@@ -25,7 +25,7 @@ class QtReaderDialog(QDialog):
         self,
         pth: str = '',
         parent: QWidget = None,
-        readers: Dict[str, str] = None,
+        readers: Optional[Dict[str, str]] = None,
         error_message: str = '',
         persist_checked: bool = True,
     ) -> None:
@@ -287,9 +287,9 @@ def open_with_dialog_choices(
         viewer to add layers to
     """
     # TODO: disambiguate with reader title
-    plugin_name = [
+    plugin_name = next(
         p_name for p_name, d_name in readers.items() if d_name == display_name
-    ][0]
+    )
     # may throw error, but we let it this time
     qt_viewer.viewer.open(paths, stack=stack, plugin=plugin_name, **kwargs)
 
