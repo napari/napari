@@ -122,11 +122,11 @@ class NapariMenu(QMenu):
 
     def _destroy(self):
         """Clean up action data to avoid widget leaks."""
-        for ax in self.actions():
-            ax.setData(None)
+        # for ax in self.actions():
+        #     ax.setData(None)
 
-            # with contextlib.suppress(AttributeError):
-            #     ax._destroy()
+        # with contextlib.suppress(AttributeError):
+        #     ax._destroy()
         if self in self._INSTANCES:
             self._INSTANCES.remove(self)
 
