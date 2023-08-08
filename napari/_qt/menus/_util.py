@@ -1,4 +1,3 @@
-import contextlib
 from typing import TYPE_CHECKING, Callable, ClassVar, List, Union
 
 from qtpy.QtWidgets import QAction, QMenu
@@ -126,8 +125,8 @@ class NapariMenu(QMenu):
         for ax in self.actions():
             ax.setData(None)
 
-            with contextlib.suppress(AttributeError):
-                ax._destroy()
+            # with contextlib.suppress(AttributeError):
+            #     ax._destroy()
         if self in self._INSTANCES:
             self._INSTANCES.remove(self)
 
