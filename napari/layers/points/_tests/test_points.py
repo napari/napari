@@ -2452,3 +2452,24 @@ def test_point_selection_remains_evented_after_update():
     assert isinstance(layer.selected_data, Selection)
     layer.selected_data = {0, 1}
     assert isinstance(layer.selected_data, Selection)
+
+
+def test_points_data_setter_emits_event():
+    data = np.random.random((5, 2))
+    emitted_events = Mock()
+    layer = Points(data)
+    layer.events.data.connect(emitted_events)
+    layer.data = np.random.random((5, 2))
+    emitted_events.assert_called_once()
+
+
+def test_points_add_delete_only_emit_one_event():
+    data = np.random.random((5, 2))
+    emitted_events = Mock()
+    layer = Points(data)
+    layer.events.data.connect(emitted_events)
+    layer.add(np.random.random(2))
+    assert emitted_events.call_count == 1
+    layer.selected_data = {3}
+    layer.remove_selected()
+    assert emitted_events.call_count == 2

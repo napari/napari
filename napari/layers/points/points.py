@@ -523,6 +523,17 @@ class Points(Layer):
 
     @data.setter
     def data(self, data: Optional[np.ndarray]):
+        """Set the data array and emit a corresponding event."""
+        self._set_data(data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.CHANGE.value,
+            data_indices=slice(None),
+            vertex_indices=((),),
+        )
+
+    def _set_data(self, data: Optional[np.ndarray]):
+        """Set the .data array attribute, without emitting an event."""
         data, _ = fix_data_points(data, self.ndim)
         cur_npoints = len(self._data)
         self._data = data
@@ -1917,7 +1928,7 @@ class Points(Layer):
             Point or points to add to the layer data.
         """
         cur_points = len(self.data)
-        self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
+        self._set_data(np.append(self.data, np.atleast_2d(coords), axis=0))
         self.events.data(
             value=self.data,
             action=ActionType.ADD.value,
@@ -1952,7 +1963,7 @@ class Points(Layer):
                     self._value -= offset
                     self._value_stored -= offset
 
-            self.data = np.delete(self.data, index, axis=0)
+            self._set_data(np.delete(self.data, index, axis=0))
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVE.value,
