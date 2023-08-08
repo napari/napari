@@ -1,3 +1,4 @@
+import contextlib
 from typing import TYPE_CHECKING, Callable, ClassVar, List, Union
 
 from qtpy.QtWidgets import QAction, QMenu
