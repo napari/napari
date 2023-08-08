@@ -65,7 +65,7 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-    from napari.components.overlays.base import SceneOverlay
+    from napari.components.overlays.base import Overlay
 
 
 logger = logging.getLogger("napari.layers.base.base")
@@ -378,7 +378,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             TransformBoxOverlay,
         )
 
-        self._overlays: EventedDict[str, SceneOverlay] = EventedDict()
+        self._overlays: EventedDict[str, Overlay] = EventedDict()
 
         self.events = EmitterGroup(
             source=self,
