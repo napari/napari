@@ -13,7 +13,6 @@ from napari._qt.dialogs.qt_reader_dialog import (
     open_with_dialog_choices,
     prepare_remaining_readers,
 )
-from napari._qt.qt_viewer import QtViewer
 from napari.errors.reader_errors import ReaderPluginError
 from napari.settings import get_settings
 
@@ -151,23 +150,21 @@ def test_open_sample_data_shows_all_readers(
         uri='some-path/some-file.fake',
     )
     tmp_plugin.manifest.contributions.sample_data = [my_sample]
-    from napari._qt.dialogs.qt_reader_dialog import QtReaderDialog
 
     app = get_app()
     # required so setup steps run in init of `Viewer` and `Window`
-    make_napari_viewer()
+    viewer = make_napari_viewer()
+    # Ensure that `handle_gui_reading` called with `plugin_name=None`
     with mock.patch(
-        'napari._qt.dialogs.qt_reader_dialog.prepare_remaining_readers'
-    ) as mock_prepare_readers, mock.patch.object(
-        QtReaderDialog, 'get_user_choices', return_value=(None, None)
-    ):
+        'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
+    ) as mock_read:
         app.commands.execute_command('tmp_plugin.tmp-sample')
-    # Ensure that `prepare_remaining_readers` called with `plugin_name=None`
-    mock_prepare_readers.assert_called_once_with(
-        ['some-path/some-file.fake'], None, None
+
+    mock_read.assert_called_once_with(
+        ['some-path/some-file.fake'],
+        viewer.window._qt_viewer,
+        stack=False,
     )
-    # Ensure no QtViewer leak
-    QtViewer._instances.clear()
 
 
 def test_open_with_dialog_choices_persist(
