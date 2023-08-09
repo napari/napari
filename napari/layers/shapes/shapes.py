@@ -2105,7 +2105,6 @@ class Shapes(Layer):
                 edge_color=edge_color,
                 face_color=face_color,
                 z_index=z_index,
-                z_refresh=False,
             )
             self._data_view._update_z_order()
             self.refresh_colors()
@@ -2119,7 +2118,6 @@ class Shapes(Layer):
         edge_color=None,
         face_color=None,
         z_index=None,
-        z_refresh=True,
     ):
         """Add shapes to the data view.
 
@@ -2160,12 +2158,6 @@ class Shapes(Layer):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        z_refresh : bool
-            If set to true, the mesh elements are reindexed with the new z order.
-            When shape_index is provided, z_refresh will be overwritten to false,
-            as the z indices will not change.
-            When adding a batch of shapes, set to false  and then call
-            ShapesList._update_z_order() once at the end.
         """
         if edge_width is None:
             edge_width = self.current_edge_width
