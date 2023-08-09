@@ -1,5 +1,6 @@
 from unittest import mock
 
+import numpy as np
 import pytest
 import qtpy
 from app_model.types import MenuItem, SubmenuItem
@@ -9,6 +10,7 @@ from qtpy.QtWidgets import QMenu
 
 from napari._app_model import get_app
 from napari._app_model.constants import CommandId
+from napari.layers import Image
 from napari.utils.action_manager import action_manager
 
 
@@ -223,7 +225,7 @@ def test_open_with_plugin(
 
 def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
     """Test that enablement status of save layer actions updated correctly."""
-    app = get_app()
+    get_app()
     viewer = make_napari_viewer()
 
     save_layers_action = viewer.window.file_menu.findAction(
@@ -239,7 +241,8 @@ def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
     assert not save_selected_layers_action.isEnabled()
 
     # Add selected layer and check both save actions enabled
-    app.commands.execute_command('napari.astronaut')
+    layer = Image(np.random.random((10, 10)))
+    viewer.layers.append(layer)
     assert len(viewer.layers) == 1
     viewer.window._update_menu_state('file_menu')
     assert save_layers_action.isEnabled()
