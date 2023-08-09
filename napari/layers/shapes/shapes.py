@@ -1992,10 +1992,6 @@ class Shapes(Layer):
             face_color = self._get_new_shape_color(
                 n_new_shapes, attribute='face'
             )
-        if self._data_view is not None:
-            z_index = z_index or max(self._data_view._z_index, default=-1) + 1
-        else:
-            z_index = z_index or 0
 
         if n_new_shapes > 0:
             total_shapes = n_new_shapes + self.nshapes
