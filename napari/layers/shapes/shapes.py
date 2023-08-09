@@ -1979,19 +1979,7 @@ class Shapes(Layer):
         """
         data, shape_type = extract_shape_type(data, shape_type)
 
-        if edge_width is None:
-            edge_width = self.current_edge_width
-
         n_new_shapes = number_of_shapes(data)
-
-        if edge_color is None:
-            edge_color = self._get_new_shape_color(
-                n_new_shapes, attribute='edge'
-            )
-        if face_color is None:
-            face_color = self._get_new_shape_color(
-                n_new_shapes, attribute='face'
-            )
 
         if n_new_shapes > 0:
             total_shapes = n_new_shapes + self.nshapes
@@ -2004,6 +1992,7 @@ class Shapes(Layer):
                 edge_color=edge_color,
                 face_color=face_color,
                 z_index=z_index,
+                n_new_shapes=n_new_shapes,
             )
             self.events.data(
                 value=self.data,
@@ -2114,6 +2103,7 @@ class Shapes(Layer):
         edge_color=None,
         face_color=None,
         z_index=None,
+        n_new_shapes=None,
     ):
         """Add shapes to the data view.
 
@@ -2155,6 +2145,16 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
+
+        if edge_color is None:
+            edge_color = self._get_new_shape_color(
+                n_new_shapes, attribute='edge'
+            )
+        if face_color is None:
+            face_color = self._get_new_shape_color(
+                n_new_shapes, attribute='face'
+            )
+
         if edge_width is None:
             edge_width = self.current_edge_width
         if edge_color is None:
