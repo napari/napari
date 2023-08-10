@@ -673,13 +673,14 @@ class Shapes(Layer):
         self._data_view.slice_key = np.array(self._slice_indices)[
             self._slice_input.not_displayed
         ]
-        self.add(
+        self._add_shapes(
             data,
             shape_type=shape_type,
             edge_width=edge_widths,
             edge_color=edge_color,
             face_color=face_color,
             z_index=z_indices,
+            n_new_shapes=n_new_shapes,
         )
 
         self._update_dims()
@@ -1982,9 +1983,9 @@ class Shapes(Layer):
         n_new_shapes = number_of_shapes(data)
 
         if n_new_shapes > 0:
-            total_shapes = n_new_shapes + self.nshapes
-            self._feature_table.resize(total_shapes)
-            self.text.apply(self.features)
+            # total_shapes = n_new_shapes + self.nshapes
+            # self._feature_table.resize(total_shapes)
+            # self.text.apply(self.features)
             self._add_shapes(
                 data,
                 shape_type=shape_type,
@@ -2090,6 +2091,7 @@ class Shapes(Layer):
                 edge_color=edge_color,
                 face_color=face_color,
                 z_index=z_index,
+                n_new_shapes=n_shapes,
             )
             self._data_view._update_z_order()
             self.refresh_colors()
@@ -2145,6 +2147,11 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
+        if n_new_shapes > 0:
+            total_shapes = n_new_shapes + self.nshapes
+            self._feature_table.resize(total_shapes)
+            if hasattr(self, "text"):
+                self.text.apply(self.features)
 
         if edge_color is None:
             edge_color = self._get_new_shape_color(
@@ -2202,7 +2209,7 @@ class Shapes(Layer):
             )
 
             self._add_shapes_to_view(shape_inputs, self._data_view)
-
+            print()
         self._display_order_stored = copy(self._slice_input.order)
         self._ndisplay_stored = copy(self._slice_input.ndisplay)
         self._update_dims()
