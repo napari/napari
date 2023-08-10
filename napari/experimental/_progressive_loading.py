@@ -544,13 +544,13 @@ def add_progressive_loading_image(
         canvas_corners < 0
     ] = 0  # required to cast from float64 to int64
     canvas_corners = canvas_corners.astype(np.int64)
-
+    
     top_left = canvas_corners[0, :]
     bottom_right = canvas_corners[1, :]
 
-    # TODO hack for 3D setup
-    # top_left = [viewer.dims.point[-3]] + top_left.tolist()
-    # bottom_right = [viewer.dims.point[-3]] + bottom_right.tolist()
+    # This is required when ndisplay does not match the ndim of the data
+    top_left = [viewer.dims.point[-ndisplay]] + top_left.tolist()
+    bottom_right = [viewer.dims.point[-ndisplay]] + bottom_right.tolist()
 
     LOGGER.debug(f'>>> top left: {top_left}, bottom_right: {bottom_right}')
     # set the extents for each scale in data coordinates
@@ -1566,6 +1566,7 @@ class MultiScaleVirtualData:
         self.dtype = highest_res.dtype
         # This shape is the shape of the true data, but not our hyperslice
         self.shape = highest_res.shape
+
         self.ndim = len(arrays)
 
         self.ndisplay = ndisplay
@@ -1609,9 +1610,11 @@ class MultiScaleVirtualData:
         Parameters
         ----------
         min_coord: np.array
-            top left corner of the visible canvas
+            min coordinate in data space, should correspond to top left corner
+            of the visible canvas
         max_coord: np.array
-            bottom right corner of the visible canvas
+            max coordinate in data space, should correspond to bottom right
+            corner of the visible canvas
         visible_scales: list
             Optional. ???
         """
