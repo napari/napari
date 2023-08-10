@@ -541,7 +541,7 @@ def add_progressive_loading_image(
         canvas_corners < 0
     ] = 0  # required to cast from float64 to int64
     canvas_corners = canvas_corners.astype(np.int64)
-    
+
     top_left = canvas_corners[0, :]
     bottom_right = canvas_corners[1, :]
 
