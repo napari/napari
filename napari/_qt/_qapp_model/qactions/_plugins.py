@@ -2,7 +2,7 @@
 
 from importlib.util import find_spec
 from logging import getLogger
-from typing import List, Optional
+from typing import List
 
 from app_model.types import Action
 
@@ -14,7 +14,7 @@ from napari.utils.translations import trans
 logger = getLogger(__name__)
 
 
-def _plugin_manager_dialog_avail() -> Optional[type]:
+def _plugin_manager_dialog_avail() -> bool:
     """Returns whether the plugin manager class is available."""
 
     plugin_dlg = find_spec('napari_plugin_manager')
