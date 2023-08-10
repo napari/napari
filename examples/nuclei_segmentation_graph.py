@@ -32,7 +32,7 @@ cells = data.cells3d()
 nuclei = cells[:, 1]
 smooth = filters.gaussian(nuclei, sigma=10)
 nodes_coords = feature.peak_local_max(smooth)
-edges = delaunay_edges(nodes_coords)
+edges = delaunay_edges(nodes_coords[:, 1:])
 graph = UndirectedGraph(edges, nodes_coords)
 viewer, image_layer = napari.imshow(
     cells, channel_axis=1, name=['membranes', 'nuclei'], ndisplay=3
