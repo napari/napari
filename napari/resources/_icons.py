@@ -7,6 +7,7 @@ from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
 from napari.utils._appdirs import user_cache_dir
 from napari.utils.translations import trans
 
+LOADING_GIF_PATH = str((Path(__file__).parent / 'loading.gif').resolve())
 ICON_PATH = (Path(__file__).parent / 'icons').resolve()
 ICONS = {x.stem: str(x) for x in ICON_PATH.iterdir() if x.suffix == '.svg'}
 PLUGIN_FILE_NAME = "plugin.txt"
@@ -43,7 +44,7 @@ def get_raw_svg(path: str) -> str:
 
 @lru_cache
 def get_colorized_svg(
-    path_or_xml: Union[str, Path], color: str = None, opacity=1
+    path_or_xml: Union[str, Path], color: Optional[str] = None, opacity=1
 ) -> str:
     """Return a colorized version of the SVG XML at ``path``.
 

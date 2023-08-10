@@ -1,6 +1,6 @@
 """guess_rgb, guess_multiscale, guess_labels.
 """
-from typing import Tuple
+from typing import Sequence, Tuple, Union
 
 import numpy as np
 
@@ -30,7 +30,9 @@ def guess_rgb(shape):
     return ndim > 2 and last_dim in (3, 4)
 
 
-def guess_multiscale(data) -> Tuple[bool, LayerDataProtocol]:
+def guess_multiscale(
+    data,
+) -> Tuple[bool, Union[LayerDataProtocol, Sequence[LayerDataProtocol]]]:
     """Guess whether the passed data is multiscale, process it accordingly.
 
     If shape of arrays along first axis is strictly decreasing, the data is
