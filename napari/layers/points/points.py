@@ -2279,15 +2279,15 @@ class Points(_BasePoints):
         self._data = data
 
         # Add/remove property and style values based on the number of new points.
-        with self.events.blocker_all(), self._edge.events.blocker_all(), self._face.events.blocker_all():
+        with self.events.blocker_all(), self._border.events.blocker_all(), self._face.events.blocker_all():
             self._feature_table.resize(len(data))
             self.text.apply(self.features)
             if len(data) < cur_npoints:
                 # If there are now fewer points, remove the size and colors of the
                 # extra ones
-                if len(self._edge.colors) > len(data):
-                    self._edge._remove(
-                        np.arange(len(data), len(self._edge.colors))
+                if len(self._border.colors) > len(data):
+                    self._border._remove(
+                        np.arange(len(data), len(self._border.colors))
                     )
                 if len(self._face.colors) > len(data):
                     self._face._remove(
@@ -2295,7 +2295,7 @@ class Points(_BasePoints):
                     )
                 self._shown = self._shown[: len(data)]
                 self._size = self._size[: len(data)]
-                self._edge_width = self._edge_width[: len(data)]
+                self._border_width = self._border_width[: len(data)]
                 self._symbol = self._symbol[: len(data)]
 
             elif len(data) > cur_npoints:
@@ -2304,11 +2304,11 @@ class Points(_BasePoints):
                 adding = len(data) - cur_npoints
                 size = np.repeat(self.current_size, adding, axis=0)
 
-                if len(self._edge_width) > 0:
-                    new_edge_width = copy(self._edge_width[-1])
+                if len(self._border_width) > 0:
+                    new_border_width = copy(self._border_width[-1])
                 else:
-                    new_edge_width = self.current_edge_width
-                edge_width = np.repeat([new_edge_width], adding, axis=0)
+                    new_border_width = self.current_border_width
+                border_width = np.repeat([new_border_width], adding, axis=0)
 
                 if len(self._symbol) > 0:
                     new_symbol = copy(self._symbol[-1])
@@ -2320,8 +2320,8 @@ class Points(_BasePoints):
                 # to handle any in-place modification of feature_defaults.
                 # Also see: https://github.com/napari/napari/issues/5634
                 current_properties = self._feature_table.currents()
-                self._edge._update_current_properties(current_properties)
-                self._edge._add(n_colors=adding)
+                self._border._update_current_properties(current_properties)
+                self._border._add(n_colors=adding)
                 self._face._update_current_properties(current_properties)
                 self._face._add(n_colors=adding)
 
@@ -2329,8 +2329,8 @@ class Points(_BasePoints):
                 self._shown = np.concatenate((self._shown, shown), axis=0)
 
                 self.size = np.concatenate((self._size, size), axis=0)
-                self.edge_width = np.concatenate(
-                    (self._edge_width, edge_width), axis=0
+                self.border_width = np.concatenate(
+                    (self._border_width, border_width), axis=0
                 )
                 self.symbol = np.concatenate((self._symbol, symbol), axis=0)
 
