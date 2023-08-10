@@ -1,5 +1,6 @@
 import contextlib
 from collections import OrderedDict
+from typing import Optional
 
 from app_model.backends.qt import (
     qkey2modelkey,
@@ -48,7 +49,7 @@ class ShortcutEditor(QWidget):
         self,
         parent: QWidget = None,
         description: str = "",
-        value: dict = None,
+        value: Optional[dict] = None,
     ) -> None:
         super().__init__(parent=parent)
 
@@ -245,7 +246,9 @@ class ShortcutEditor(QWidget):
 
                 # Set the shortcuts in table.
                 item_shortcut = QTableWidgetItem(
-                    Shortcut(list(shortcuts)[0]).platform if shortcuts else ""
+                    Shortcut(next(iter(shortcuts))).platform
+                    if shortcuts
+                    else ""
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
 
@@ -289,7 +292,7 @@ class ShortcutEditor(QWidget):
         shortcuts = action_manager._shortcuts.get(action_name, [])
         with lock_keybind_update(self):
             self._table.item(row, self._shortcut_col).setText(
-                Shortcut(list(shortcuts)[0]).platform if shortcuts else ""
+                Shortcut(next(iter(shortcuts))).platform if shortcuts else ""
             )
             self._table.item(row, self._shortcut_col2).setText(
                 Shortcut(list(shortcuts)[1]).platform
