@@ -399,8 +399,7 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
         pdb.set_trace()
 
     LOGGER.info(
-        f"dims_update_handler: start render_sequence {corner_pixels} on layer \
-        {get_layer_name_for_scale(0)}"
+        f"dims_update_handler: start render_sequence {corners} on {root_layer}"
     )
 
     # Find the visible scales
@@ -685,9 +684,7 @@ def should_render_scale_2D(scale, viewer, min_scale, max_scale):
     else:
         max_pixel = 4
         min_pixel = 0.5
-    greater_than_min_pixel = pixel_size > min_pixel
-    less_than_max_pixel = pixel_size < max_pixel
-    render = greater_than_min_pixel and less_than_max_pixel
+    render = min_pixel < pixel_size < max_pixel
 
     if not render:
         if scale == min_scale and pixel_size > max_pixel:
