@@ -1,18 +1,34 @@
 """Defines plugins menu actions."""
 
-from typing import List
+from logging import getLogger
+from typing import List, Optional
 
 from app_model.types import Action
 
 from napari._app_model.constants import CommandId, MenuGroup, MenuId
-from napari._qt.dialogs.qt_plugin_dialog import QtPluginDialog
 from napari._qt.dialogs.qt_plugin_report import QtPluginErrReporter
 from napari._qt.qt_main_window import Window
 from napari.utils.translations import trans
 
+logger = getLogger(__name__)
+
+
+def _get_plugin_manager_dialog() -> Optional[type]:
+    """Return the plugin manager class, if available."""
+    try:
+        # TODO: Register via plugin, once plugin menu contributions supported
+        from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
+    except ImportError as exc:
+        logger.debug("QtPluginDialog not available", exc_info=exc)
+        return None
+    else:
+        return QtPluginDialog
+
 
 def _show_plugin_install_dialog(window: Window):
     """Show dialog that allows users to sort the call order of plugins."""
+    # We don't check whether the class is not None, because this
+    # function should only be connected in that case.
     QtPluginDialog(window._qt_window).exec_()
 
 

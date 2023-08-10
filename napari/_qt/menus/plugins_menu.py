@@ -107,7 +107,7 @@ class PluginsMenu(NapariMenu):
     def _plugin_manager_dialog_cls(self) -> Union[type, None]:
         """Return the plugin manager class, if available."""
         try:
-            # TODO: Register via plugin system?
+            # TODO: Register via plugin, once plugin menu contributions supported
             from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
         except ImportError as exc:
             logger.debug("QtPluginDialog not available", exc_info=exc)
