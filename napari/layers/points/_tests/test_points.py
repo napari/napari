@@ -370,10 +370,23 @@ def test_adding_points():
     layer.add(coords)
     assert len(layer.data) == 13
     assert np.all(layer.data[11:, :] == coords)
+    assert layer.selected_data == {11, 12}
 
     # test that the last added points can be deleted
     layer.remove_selected()
     np.testing.assert_equal(layer.data, np.vstack((data, coord)))
+
+
+def test_points_selection_with_setter():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    coords = [[10, 10], [15, 15]]
+    layer.data = np.append(layer.data, np.atleast_2d(coords), axis=0)
+    assert len(layer.data) == 12
+    assert layer.selected_data == set()
 
 
 def test_adding_points_to_empty():
@@ -387,6 +400,7 @@ def test_adding_points_to_empty():
     layer.add(coord)
     assert len(layer.data) == 1
     assert np.all(layer.data[0] == coord)
+    assert layer.selected_data == {0}
 
 
 def test_removing_selected_points():
@@ -978,7 +992,7 @@ def test_border_width():
 
 @pytest.mark.parametrize(
     "border_width",
-    [int(1), float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
+    [1, float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
 )
 def test_border_width_types(border_width):
     """Test border_width dtypes with valid values"""
@@ -2474,3 +2488,24 @@ def test_point_selection_remains_evented_after_update():
     assert isinstance(layer.selected_data, Selection)
     layer.selected_data = {0, 1}
     assert isinstance(layer.selected_data, Selection)
+
+
+def test_points_data_setter_emits_event():
+    data = np.random.random((5, 2))
+    emitted_events = Mock()
+    layer = Points(data)
+    layer.events.data.connect(emitted_events)
+    layer.data = np.random.random((5, 2))
+    emitted_events.assert_called_once()
+
+
+def test_points_add_delete_only_emit_one_event():
+    data = np.random.random((5, 2))
+    emitted_events = Mock()
+    layer = Points(data)
+    layer.events.data.connect(emitted_events)
+    layer.add(np.random.random(2))
+    assert emitted_events.call_count == 1
+    layer.selected_data = {3}
+    layer.remove_selected()
+    assert emitted_events.call_count == 2

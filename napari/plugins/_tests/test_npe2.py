@@ -38,7 +38,6 @@ def test_read(mock_pm: 'TestPluginManager'):
     mock_pm.commands.get.reset_mock()
     _, hookimpl = _npe2.read(["some.fzzy"], stack=True)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
-
     mock_pm.commands.get.reset_mock()
     with pytest.raises(ValueError):
         _npe2.read(["some.randomext"], stack=True)

@@ -3,7 +3,17 @@ import warnings
 from abc import abstractmethod
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 import pandas as pd
@@ -64,20 +74,20 @@ class _BasePoints(Layer):
 
     _modeclass = Mode
 
-    _drag_modes = {
+    _drag_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.ADD: add,
         Mode.SELECT: select,
     }
 
-    _move_modes = {
+    _move_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.ADD: no_op,
         Mode.SELECT: highlight,
     }
-    _cursor_modes = {
+    _cursor_modes: ClassVar[Dict[Mode, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.ADD: 'crosshair',
@@ -1275,6 +1285,14 @@ class _BasePoints(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
+    def _update_draw(
+        self, scale_factor, corner_pixels_displayed, shape_threshold
+    ):
+        super()._update_draw(
+            scale_factor, corner_pixels_displayed, shape_threshold
+        )
+        self._set_highlight(force=True)
+
     def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.
 
@@ -1305,10 +1323,10 @@ class _BasePoints(Layer):
             # Without this implementation, point hover and selection (and anything depending
             # on self.get_value()) won't be aware of the real extent of points, causing
             # unexpected behaviour. See #3734 for details.
+            sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
-                distances
-                <= np.expand_dims(self._view_size, axis=1) / scale_ratio / 2,
+                distances <= sizes,
                 axis=1,
             )
             indices = np.where(in_slice_matches)[0]
@@ -1365,10 +1383,10 @@ class _BasePoints(Layer):
         # so we need to calculate the ratio to correctly map to screen coordinates
         scale_ratio = self.scale[self._slice_input.displayed] / self.scale[-1]
         # find the points the click intersects
+        sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
         distances = abs(rotated_points - rotated_click_point)
         in_slice_matches = np.all(
-            distances
-            <= np.expand_dims(self._view_size, axis=1) / scale_ratio / 2,
+            distances <= sizes,
             axis=1,
         )
         indices = np.where(in_slice_matches)[0]
@@ -2245,20 +2263,31 @@ class Points(_BasePoints):
 
     @data.setter
     def data(self, data: Optional[np.ndarray]):
+        """Set the data array and emit a corresponding event."""
+        self._set_data(data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.CHANGE.value,
+            data_indices=slice(None),
+            vertex_indices=((),),
+        )
+
+    def _set_data(self, data: Optional[np.ndarray]):
+        """Set the .data array attribute, without emitting an event."""
         data, _ = fix_data_points(data, self.ndim)
         cur_npoints = len(self._data)
         self._data = data
 
         # Add/remove property and style values based on the number of new points.
-        with self.events.blocker_all(), self._border.events.blocker_all(), self._face.events.blocker_all():
+        with self.events.blocker_all(), self._edge.events.blocker_all(), self._face.events.blocker_all():
             self._feature_table.resize(len(data))
             self.text.apply(self.features)
             if len(data) < cur_npoints:
                 # If there are now fewer points, remove the size and colors of the
                 # extra ones
-                if len(self._border.colors) > len(data):
-                    self._border._remove(
-                        np.arange(len(data), len(self._border.colors))
+                if len(self._edge.colors) > len(data):
+                    self._edge._remove(
+                        np.arange(len(data), len(self._edge.colors))
                     )
                 if len(self._face.colors) > len(data):
                     self._face._remove(
@@ -2266,20 +2295,20 @@ class Points(_BasePoints):
                     )
                 self._shown = self._shown[: len(data)]
                 self._size = self._size[: len(data)]
-                self._border_width = self._border_width[: len(data)]
+                self._edge_width = self._edge_width[: len(data)]
                 self._symbol = self._symbol[: len(data)]
 
             elif len(data) > cur_npoints:
                 # If there are now more points, add the size and colors of the
                 # new ones
                 adding = len(data) - cur_npoints
-                size = np.repeat(self._current_size, adding, axis=0)
+                size = np.repeat(self.current_size, adding, axis=0)
 
-                if len(self._border_width) > 0:
-                    new_border_width = copy(self._border_width[-1])
+                if len(self._edge_width) > 0:
+                    new_edge_width = copy(self._edge_width[-1])
                 else:
-                    new_border_width = self.current_border_width
-                border_width = np.repeat([new_border_width], adding, axis=0)
+                    new_edge_width = self.current_edge_width
+                edge_width = np.repeat([new_edge_width], adding, axis=0)
 
                 if len(self._symbol) > 0:
                     new_symbol = copy(self._symbol[-1])
@@ -2291,8 +2320,8 @@ class Points(_BasePoints):
                 # to handle any in-place modification of feature_defaults.
                 # Also see: https://github.com/napari/napari/issues/5634
                 current_properties = self._feature_table.currents()
-                self._border._update_current_properties(current_properties)
-                self._border._add(n_colors=adding)
+                self._edge._update_current_properties(current_properties)
+                self._edge._add(n_colors=adding)
                 self._face._update_current_properties(current_properties)
                 self._face._add(n_colors=adding)
 
@@ -2300,11 +2329,10 @@ class Points(_BasePoints):
                 self._shown = np.concatenate((self._shown, shown), axis=0)
 
                 self.size = np.concatenate((self._size, size), axis=0)
-                self.border_width = np.concatenate(
-                    (self._border_width, border_width), axis=0
+                self.edge_width = np.concatenate(
+                    (self._edge_width, edge_width), axis=0
                 )
                 self.symbol = np.concatenate((self._symbol, symbol), axis=0)
-                self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
         self._reset_editable()
@@ -2332,13 +2360,15 @@ class Points(_BasePoints):
         coords : array
             Point or points to add to the layer data.
         """
-        self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
+        cur_points = len(self.data)
+        self._set_data(np.append(self.data, np.atleast_2d(coords), axis=0))
         self.events.data(
             value=self.data,
             action=ActionType.ADD.value,
             data_indices=(-1,),
             vertex_indices=((),),
         )
+        self.selected_data = set(np.arange(cur_points, len(self.data)))
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -2366,7 +2396,7 @@ class Points(_BasePoints):
                     self._value -= offset
                     self._value_stored -= offset
 
-            self.data = np.delete(self.data, index, axis=0)
+            self._set_data(np.delete(self.data, index, axis=0))
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVE.value,
