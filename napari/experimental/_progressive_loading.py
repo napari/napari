@@ -398,10 +398,8 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
 
         pdb.set_trace()
 
-    corners = viewer.layers[get_layer_name_for_scale(0)].corner_pixels
-
     LOGGER.info(
-        f"dims_update_handler: start render_sequence {corners} on layer \
+        f"dims_update_handler: start render_sequence {corner_pixels} on layer \
         {get_layer_name_for_scale(0)}"
     )
 
@@ -440,7 +438,7 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
 
     # Start a new multiscale render
     worker = render_sequence(
-        corners,
+        corner_pixels,
         data=data,
         visible_scales=visible_scales,
         ndisplay=ndisplay,
@@ -448,7 +446,7 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
     )
 
     LOGGER.info(
-        f"dims_update_handler: started render_sequence with corners {corners}"
+        f"dims_update_handler: started render_sequence with corners {corner_pixels}"
     )
 
     # This will consume our chunks and update the numpy "canvas" and refresh
