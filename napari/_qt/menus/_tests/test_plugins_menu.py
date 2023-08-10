@@ -45,7 +45,7 @@ def test_plugin_manager(make_napari_viewer, monkeypatch, qtbot):
     viewer = make_napari_viewer()
 
     plugins_menu = viewer.window.plugins_menu
-    assert plugins_menu._plugin_manager_dialog_cls() is not None
+    assert plugins_menu._plugin_manager_dialog_avail()
 
     actions = plugins_menu.actions()
     for action in actions:
@@ -67,7 +67,7 @@ def test_no_plugin_manager(make_napari_viewer, monkeypatch):
     viewer = make_napari_viewer()
 
     plugins_menu = viewer.window.plugins_menu
-    assert plugins_menu._plugin_manager_dialog_cls() is None
+    assert not plugins_menu._plugin_manager_dialog_avail()
 
     actions = plugins_menu.actions()
     for action in actions:

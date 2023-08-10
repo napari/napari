@@ -1,10 +1,9 @@
 from itertools import chain
 from logging import getLogger
-from typing import TYPE_CHECKING, Sequence, Union
+from typing import TYPE_CHECKING, Sequence
 
 from qtpy.QtWidgets import QAction
 
-from napari._qt.dialogs.qt_plugin_report import QtPluginErrReporter
 from napari._qt.menus._util import NapariMenu
 from napari.plugins import _npe2
 from napari.utils.translations import trans
@@ -103,24 +102,3 @@ class PluginsMenu(NapariMenu):
             if action.text() not in actions:
                 menu.addAction(action)
             action.triggered.connect(_add_toggle_widget)
-
-    def _plugin_manager_dialog_cls(self) -> Union[type, None]:
-        """Return the plugin manager class, if available."""
-        try:
-            # TODO: Register via plugin, once plugin menu contributions supported
-            from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
-        except ImportError as exc:
-            logger.debug("QtPluginDialog not available", exc_info=exc)
-            return None
-        else:
-            return QtPluginDialog
-
-    def _show_plugin_install_dialog(self):
-        """Show dialog that allows users to sort the call order of plugins."""
-        # We don't check whether the class is not None, because this
-        # function should only be connected in that case.
-        self._plugin_manager_dialog_cls()(self._win._qt_window).exec_()
-
-    def _show_plugin_err_reporter(self):
-        """Show dialog that allows users to review and report plugin errors."""
-        QtPluginErrReporter(parent=self._win._qt_window).exec_()
