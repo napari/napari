@@ -684,7 +684,12 @@ class Shapes(Layer):
         )
 
         self._update_dims()
-        self.events.data(value=self.data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.CHANGE.value,
+            data_indices=slice(None),
+            vertex_indices=((),),
+        )
         self._reset_editable()
 
     def _on_selection(self, selected: bool):
