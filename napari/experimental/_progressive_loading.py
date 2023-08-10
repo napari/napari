@@ -548,9 +548,10 @@ def add_progressive_loading_image(
     top_left = canvas_corners[0, :]
     bottom_right = canvas_corners[1, :]
 
-    # This is required when ndisplay does not match the ndim of the data
-    top_left = [viewer.dims.point[-ndisplay]] + top_left.tolist()
-    bottom_right = [viewer.dims.point[-ndisplay]] + bottom_right.tolist()
+    # TODO This is required when ndisplay does not match the ndim of the data
+    if ndisplay != len(img[0].shape):
+        top_left = [viewer.dims.point[-ndisplay]] + top_left.tolist()
+        bottom_right = [viewer.dims.point[-ndisplay]] + bottom_right.tolist()
 
     LOGGER.debug(f'>>> top left: {top_left}, bottom_right: {bottom_right}')
     # set the extents for each scale in data coordinates
