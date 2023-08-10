@@ -2214,7 +2214,7 @@ class Shapes(Layer):
             )
 
             self._add_shapes_to_view(shape_inputs, self._data_view)
-            print()
+
         self._display_order_stored = copy(self._slice_input.order)
         self._ndisplay_stored = copy(self._slice_input.ndisplay)
         self._update_dims()
