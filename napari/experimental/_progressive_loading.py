@@ -399,7 +399,7 @@ def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
         pdb.set_trace()
 
     LOGGER.info(
-        f"dims_update_handler: start render_sequence {corners} on {root_layer}"
+        f"dims_update_handler: start render_sequence {corner_pixels} on {root_layer}"
     )
 
     # Find the visible scales
@@ -541,7 +541,7 @@ def add_progressive_loading_image(
         canvas_corners < 0
     ] = 0  # required to cast from float64 to int64
     canvas_corners = canvas_corners.astype(np.int64)
-    
+
     top_left = canvas_corners[0, :]
     bottom_right = canvas_corners[1, :]
 
@@ -678,12 +678,10 @@ def should_render_scale_2D(scale, viewer, min_scale, max_scale):
 
     pixel_size = viewer.camera.zoom * max(layer_scale)
 
-    if max_scale == 7:
-        max_pixel = 5
-        min_pixel = 0.25
-    else:
-        max_pixel = 4
-        min_pixel = 0.5
+    # Define bounds of expected pixel size
+    max_pixel = 4
+    min_pixel = 0.25
+
     render = min_pixel < pixel_size < max_pixel
 
     if not render:
