@@ -5,6 +5,7 @@ from contextlib import suppress
 from threading import RLock
 from typing import Any, Dict, Tuple, Union
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
@@ -98,6 +99,13 @@ layer_test_data = [
         to_napari_graph(20 * np.random.random((10, 3))),
         3,
     ),  # only nodes, no edges
+    (
+        Graph,
+        nx.convert_node_labels_to_integers(
+            nx.hexagonal_lattice_graph(5, 5, with_positions=True)
+        ),
+        2,
+    ),
 ]
 
 
