@@ -1988,9 +1988,6 @@ class Shapes(Layer):
         n_new_shapes = number_of_shapes(data)
 
         if n_new_shapes > 0:
-            # total_shapes = n_new_shapes + self.nshapes
-            # self._feature_table.resize(total_shapes)
-            # self.text.apply(self.features)
             self._add_shapes(
                 data,
                 shape_type=shape_type,
