@@ -10,6 +10,8 @@ from os import environ
 
 import requests
 
+REPO = 'napari/napari'
+
 
 def remove_html_comments(text):
     # Regular expression to remove HTML comments
@@ -55,10 +57,12 @@ def edit_pull_request_description(repo, pull_request_number, access_token):
 
 
 if __name__ == "__main__":
+    print('Will inspect PR description to remove html comments.')
     # Replace with your repository and pull request number
     # get cuurrent repository name from github actions
     repository_name = environ.get("GITHUB_REPOSITORY")
-    if repository_name == "napari/napari":
+    if repository_name != REPO:
+        print('Not on main repo, aborting with success')
         sys.exit(0)
 
     # get current PR number from github actions
