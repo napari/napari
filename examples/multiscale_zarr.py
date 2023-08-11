@@ -2,7 +2,7 @@ from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
 )
 from napari.experimental._progressive_loading_datasets import (
-    luethi_zenodo_7144919
+    luethi_zenodo_7144919,
 )
 
 if __name__ == "__main__":

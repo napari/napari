@@ -164,7 +164,10 @@ def luethi_zenodo_7144919():
 
     multiscale_data = z_grp[large_image["dataset"]]
 
-    large_image["arrays"] = [multiscale_data[str(scale)] for scale in range(large_image["scale_levels"])]
+    large_image["arrays"] = [
+        multiscale_data[str(scale)]
+        for scale in range(large_image["scale_levels"])
+    ]
 
     return large_image
 
@@ -317,7 +320,7 @@ if __name__ == "__main__":
     max_levels = 16
 
     luethi_zenodo_7144919()
-    
+
     large_image = {
         "container": "mandelbrot.zarr/",
         "dataset": "",
