@@ -1451,17 +1451,37 @@ class Labels(_ImageBase):
         # update the labels image
         self.data[indices] = value
 
+        if not (
+            isinstance(self.data, np.ndarray)  # numpy array, or
+            or hasattr(self.data, 'data')
+            and type(self.data.data) is np.ndarray  # numpy-backed xarray
+        ):
+            # In the absence of slicing, the current slice becomes
+            # invalidated by data_setitem; only in the special case of a NumPy
+            # array, or a NumPy-array-backed Xarray, is the slice a view and
+            # therefore updated automatically.
+            # For other types, we update it manually here.
+            dims = self._slice.dims
+            point = np.round(self.world_to_data(dims.point)).astype(int)
+            point_not_displayed = [point[i] for i in dims.not_displayed]
+            indices_not_displayed = [indices[i] for i in dims.not_displayed]
+            index_in_slice = np.logical_and.reduce(
+                [
+                    index == pt
+                    for index, pt in zip(
+                        indices_not_displayed, point_not_displayed
+                    )
+                ],
+                axis=0,
+            )
+            displayed_indices = tuple(
+                indices[i][index_in_slice] for i in dims.displayed
+            )
+            self._slice.image.raw[displayed_indices] = value
+
         # tensorstore and xarray do not return their indices in
         # np.ndarray format, so they need to be converted explicitly
         if not isinstance(self.data, np.ndarray):
-            # In the absence of slicing, the current slice becomes
-            # invalidated by data_setitem; only in the special case of a NumPy
-            # array is the slice a view and therefore updated automatically.
-            # For other types, we update it manually here.
-            displayed_indices = tuple(
-                indices[i] for i in self._slice.dims.displayed
-            )
-            self._slice.image.raw[displayed_indices] = value
             indices = [np.array(x).flatten() for x in indices]
 
         updated_slice = tuple(
