@@ -1421,9 +1421,9 @@ class Labels(_ImageBase):
 
         Parameters
         ----------
-        indices : tuple of int, slice, or sequence of int
-            Indices in data to overwrite. Can be any valid NumPy indexing
-            expression [1]_.
+        indices : tuple of arrays of int
+            Indices in data to overwrite. Must be a tuple of arrays of length
+            equal to the number of data dimensions. (Fancy indexing in [1]_).
         value : int or array of int
             New label value(s). If more than one value, must match or
             broadcast with the given indices.
