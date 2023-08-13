@@ -1,12 +1,16 @@
 name: Remove html comments from description.
 on:
-  pull_request:
+  # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
+  pull_request_target:
     types:
       - opened
       - synchronize
       - reopened
       - labeled
       - unlabeled
+# see https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+permissions:
+  pull-requests: write
 
 jobs:
   check_labels:
