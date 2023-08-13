@@ -113,7 +113,7 @@ class Selection(EventedSet[_T]):
         (An active item is a single selected item).
         """
         if len(self) == 1:
-            self.active = list(self)[0]
+            self.active = next(iter(self))
         elif self._active is not None:
             self._active = None
             self.events.active(value=None)

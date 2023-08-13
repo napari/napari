@@ -1,5 +1,6 @@
 import contextlib
 from collections import OrderedDict
+from typing import Optional
 
 from app_model.backends.qt import (
     qkey2modelkey,
@@ -48,7 +49,7 @@ class ShortcutEditor(QWidget):
         self,
         parent: QWidget = None,
         description: str = "",
-        value: dict = None,
+        value: Optional[dict] = None,
     ) -> None:
         super().__init__(parent=parent)
 
@@ -245,7 +246,9 @@ class ShortcutEditor(QWidget):
 
                 # Set the shortcuts in table.
                 item_shortcut = QTableWidgetItem(
-                    Shortcut(list(shortcuts)[0]).platform if shortcuts else ""
+                    Shortcut(next(iter(shortcuts))).platform
+                    if shortcuts
+                    else ""
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
 
@@ -289,7 +292,7 @@ class ShortcutEditor(QWidget):
         shortcuts = action_manager._shortcuts.get(action_name, [])
         with lock_keybind_update(self):
             self._table.item(row, self._shortcut_col).setText(
-                Shortcut(list(shortcuts)[0]).platform if shortcuts else ""
+                Shortcut(next(iter(shortcuts))).platform if shortcuts else ""
             )
             self._table.item(row, self._shortcut_col2).setText(
                 Shortcut(list(shortcuts)[1]).platform
@@ -320,7 +323,7 @@ class ShortcutEditor(QWidget):
                     new_shortcut=new_shortcut,
                     action_description=action.description,
                 )
-                self._show_warning(new_shortcut, action, row, message)
+                self._show_warning(row, message)
 
                 self._restore_shortcuts(row)
 
@@ -351,7 +354,7 @@ class ShortcutEditor(QWidget):
             "<b>{new_shortcut}</b> is not a valid keybinding.",
             new_shortcut=new_shortcut,
         )
-        self._show_warning(new_shortcut, current_action, row, message)
+        self._show_warning(row, message)
 
         self._cleanup_warning_icons([row])
         self._restore_shortcuts(row)
@@ -470,15 +473,11 @@ class ShortcutEditor(QWidget):
         for row in rows:
             self._table.setCellWidget(row, self._icon_col, QLabel(""))
 
-    def _show_warning(self, new_shortcut='', action=None, row=0, message=''):
+    def _show_warning(self, row: int, message: str) -> None:
         """Creates and displays warning message when shortcut is already assigned.
 
         Parameters
         ----------
-        new_shortcut : str
-            The new shortcut attempting to be set.
-        action : Action
-            Action that is already assigned with the shortcut.
         row : int
             Row in table where the shortcut is attempting to be set.
         message : str

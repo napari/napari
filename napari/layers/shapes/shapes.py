@@ -2,7 +2,7 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Callable, ClassVar, Dict, List, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -328,7 +328,7 @@ class Shapes(Layer):
     # in the thumbnail
     _max_shapes_thumbnail = 100
 
-    _drag_modes = {
+    _drag_modes: ClassVar[Dict[Mode, Callable[["Shapes", Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.SELECT: select,
@@ -343,7 +343,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
 
-    _move_modes = {
+    _move_modes: ClassVar[Dict[Mode, Callable[["Shapes", Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.SELECT: highlight,
@@ -358,7 +358,9 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: polygon_creating,
     }
 
-    _double_click_modes = {
+    _double_click_modes: ClassVar[
+        Dict[Mode, Callable[["Shapes", Event], Any]]
+    ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: no_op,
         Mode.SELECT: no_op,
@@ -373,7 +375,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: no_op,
     }
 
-    _cursor_modes = {
+    _cursor_modes: ClassVar[Dict[Mode, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.SELECT: 'pointing',
@@ -388,7 +390,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: 'cross',
     }
 
-    _interactive_modes = {
+    _interactive_modes: ClassVar[Set[Mode]] = {
         Mode.PAN_ZOOM,
     }
 
@@ -2333,7 +2335,7 @@ class Shapes(Layer):
             if len(index) == 0:
                 box = None
             elif len(index) == 1:
-                box = copy(self._data_view.shapes[list(index)[0]]._box)
+                box = copy(self._data_view.shapes[next(iter(index))]._box)
             else:
                 indices = np.isin(self._data_view.displayed_index, list(index))
                 box = create_box(self._data_view.displayed_vertices[indices])
