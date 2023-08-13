@@ -190,6 +190,12 @@ plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
 ignore_missing_imports = true
 show_error_codes = true
 warn_redundant_casts = true
+disable_error_code = [
+  # See discussion at https://github.com/python/mypy/issues/2427;
+  # mypy cannot run type checking on method assignment, but we use
+  # that in several places, so ignore the error
+  'method-assign'
+]
 
 
 # gloabl ignore error
@@ -356,14 +362,10 @@ module = [
     'napari.utils._tracebacks',
     'napari.utils.action_manager',
     'napari.utils.colormaps.categorical_colormap',
-    'napari.utils.events.containers._dict',
     'napari.utils.events.containers._evented_dict',
     'napari.utils.events.containers._evented_list',
     'napari.utils.events.containers._nested_list',
     'napari.utils.events.containers._selectable_list',
-    'napari.utils.events.containers._selection',
-    'napari.utils.events.containers._set',
-    'napari.utils.events.containers._typed',
     'napari.utils.events.custom_types',
     'napari.utils.events.debugging',
     'napari.utils.events.event',
