@@ -134,6 +134,7 @@ def test_open_sample_data_shows_all_readers(
     tmp_plugin: DynamicPlugin,
 ):
     """Checks that sample data callback `_add_sample` shows all readers."""
+    # Test for bug fixed in #6058
     tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
@@ -154,7 +155,7 @@ def test_open_sample_data_shows_all_readers(
     app = get_app()
     # required so setup steps run in init of `Viewer` and `Window`
     viewer = make_napari_viewer()
-    # Ensure that `handle_gui_reading` called with `plugin_name=None`
+    # Ensure that `handle_gui_reading`` is not passed the sample plugin name
     with mock.patch(
         'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
     ) as mock_read:

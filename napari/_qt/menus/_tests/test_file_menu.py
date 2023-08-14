@@ -37,7 +37,7 @@ def test_sample_data_triggers_reader_dialog(
     )
     tmp_plugin.manifest.contributions.sample_data = [my_sample]
     app = get_app()
-    # required so setup steps run in init of `Viewer` and `Window`
+    # Configures `app`, registers actions and initializes plugins
     make_napari_viewer()
     with mock.patch(
         'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
@@ -54,7 +54,6 @@ def test_plugin_display_name_use_for_multiple_samples(
 ):
     """Check 'display_name' used for submenu when plugin has >1 sample data."""
     app = get_app()
-    # Note this is required so `init_qactions` is run
     viewer = make_napari_viewer()
 
     # builtins provides more than one sample,
@@ -94,7 +93,7 @@ def test_sample_menu_plugin_state_change(
     )
     tmp_plugin.manifest.contributions.sample_data = [sample1, sample2]
 
-    # Register plugin
+    # Configures `app`, registers actions and initializes plugins
     make_napari_viewer()
 
     samples_menu = app.menus.get_menu('napari/file/samples')
@@ -132,7 +131,7 @@ def test_sample_menu_single_data(
         uri='some-file.tif',
     )
     tmp_plugin.manifest.contributions.sample_data = [sample]
-    # Register plugin
+    # Configures `app`, registers actions and initializes plugins
     make_napari_viewer()
 
     samples_menu = app.menus.get_menu('napari/file/samples')
