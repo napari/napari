@@ -16,14 +16,8 @@ REPO = 'napari/napari'
 def remove_html_comments(text):
     # Regular expression to remove HTML comments
     # [^\S\r\n] is whitespace but not new line
-    html_comment_pattern = r"[^\S\r\n]*<!--(.*?)-->[^\S\r\n]*\n?"
-    return re.sub(html_comment_pattern, "", text, flags=re.DOTALL)
-
-
-def remove_double_empty_lines(text):
-    # Regular expression to remove double empty lines
-    double_empty_lines_pattern = r"\n\s*\n"
-    return re.sub(double_empty_lines_pattern, "\n\n", text)
+    html_comment_pattern = r"[^\S\r\n]*<!--(.*?)-->[^\S\r\n]*\s*"
+    return re.sub(html_comment_pattern, "\n", text, flags=re.DOTALL)
 
 
 def edit_pull_request_description(repo, pull_request_number, access_token):
@@ -41,9 +35,8 @@ def edit_pull_request_description(repo, pull_request_number, access_token):
     current_description = response_json["body"]
 
     # Remove HTML comments from the description
-    edited_description = remove_double_empty_lines(
-        remove_html_comments(current_description)
-    )
+    edited_description = remove_html_comments(current_description)
+
     if edited_description == current_description:
         print("No HTML comments found in the pull request description")
         return
