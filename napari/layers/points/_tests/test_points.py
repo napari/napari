@@ -2514,3 +2514,20 @@ def test_points_add_delete_only_emit_one_event():
     layer.selected_data = {3}
     layer.remove_selected()
     assert emitted_events.call_count == 2
+
+
+def test_thick_slice():
+    data = np.array([[0, 0, 0], [10, 10, 10]])
+    layer = Points(data)
+
+    # only first point shown
+    layer._slice_dims(point=(0, 0, 0))
+    np.testing.assert_array_equal(layer._view_data, data[:1, -2:])
+
+    layer.projection_mode = 'all'
+    np.testing.assert_array_equal(layer._view_data, data[:1, -2:])
+
+    # if margin is thick enough and projection is `all`,
+    # it will take in the other point
+    layer._slice_dims(point=(0, 0, 0), margin_right=(10, 0, 0))
+    np.testing.assert_array_equal(layer._view_data, data[:, -2:])
