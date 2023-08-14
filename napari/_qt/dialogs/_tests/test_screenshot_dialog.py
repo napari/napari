@@ -91,4 +91,4 @@ def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
     dialog.accept()
 
     # check the file was overwrote
-    qtbot.waitUntil(lambda: (tmp_path / "test.png").read_text() == "overwrote")
+    assert (tmp_path / "test.png").read_text() == "overwrote"
