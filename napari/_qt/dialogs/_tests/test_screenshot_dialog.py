@@ -24,7 +24,7 @@ def test_screenshot_save(qtbot, tmp_path, filename):
 
     def qt_overwrite_qmessagebox_warning():
         for widget in QApplication.topLevelWidgets():
-            if isinstance(widget, QMessageBox):
+            if isinstance(widget, QMessageBox):  # pragma: no cover
                 # test should not enter here!
                 widget.accept()
                 nonlocal qt_overwrite_shown
@@ -52,7 +52,7 @@ def test_screenshot_save(qtbot, tmp_path, filename):
 
     # check the file was created
     save_filename = filename if '.' in filename else f'{filename}.png'
-    qtbot.waitUntil(lambda: (tmp_path / save_filename).exists())
+    qtbot.waitUntil((tmp_path / save_filename).exists)
 
 
 def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
