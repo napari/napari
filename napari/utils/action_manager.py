@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from collections import defaultdict
+from collections.abc import Generator
 from dataclasses import dataclass
 from functools import cached_property
 from inspect import isgeneratorfunction
@@ -224,7 +225,13 @@ class ActionManager:
                 )
             )
 
-        button.clicked.connect(lambda: self.trigger(name))
+        def _trigger():
+            res = self.trigger(name)
+            if isinstance(res, Generator):
+                for _ in res:
+                    pass
+
+        button.clicked.connect(_trigger)
         if name in self._actions:
             button.setToolTip(
                 f'{self._build_tooltip(name)} {extra_tooltip_text}'
