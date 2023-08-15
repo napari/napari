@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 from weakref import ref
 
 import numpy as np
@@ -27,6 +27,9 @@ from napari.settings._constants import LoopMode
 from napari.utils.events.event_utils import connect_setattr_value
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from napari._qt.widgets.qt_dims import QtDims
+
 
 class QtDimSliderWidget(QWidget):
     """Compound widget to hold the label, slider and play button for an axis.
@@ -44,7 +47,7 @@ class QtDimSliderWidget(QWidget):
     def __init__(self, parent: QWidget, axis: int) -> None:
         super().__init__(parent=parent)
         self.axis = axis
-        self.qt_dims = parent
+        self.qt_dims: QtDims = parent
         self.dims = parent.dims
         self.axis_label = None
         self.slider = None

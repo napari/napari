@@ -108,6 +108,7 @@ jobs:
 
   coverage_report:
     runs-on: ubuntu-22.04
+    if: ${{ always() }}
     needs: test
     steps:
       - uses: actions/checkout@v3
