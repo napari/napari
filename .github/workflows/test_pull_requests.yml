@@ -101,7 +101,7 @@ jobs:
 
     with:
       python_version: ${{ matrix.python }}
-      os: ${{ matrix.os }}
+      os: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
       min_req: ${{ matrix.MIN_REQ }}
       coverage: True
