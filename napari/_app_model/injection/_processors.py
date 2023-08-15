@@ -70,7 +70,8 @@ def _add_layer_data_to_viewer(
     if data is not None and (viewer := viewer or _provide_viewer()):
         if layer_name:
             with suppress(KeyError):
-                viewer.layers[layer_name].data = data
+                # layerlist also allow lookup by name
+                viewer.layers[layer_name].data = data  # type: ignore [call-overload]
                 return
         if get_origin(return_type) is Union:
             if len(return_type.__args__) != 2 or return_type.__args__[
@@ -137,7 +138,7 @@ def _add_future_data(
     )
 
     def _on_future_ready(f: Future):
-        adder(
+        adder(  # type: ignore [operator]
             f.result(),
             return_type=return_type,
             viewer=viewer,
@@ -168,6 +169,6 @@ for t in types._LayerData.__args__:  # type: ignore [attr-defined]
     PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
     if sys.version_info >= (3, 9):
-        PROCESSORS[Future[t]] = partial(
+        PROCESSORS[Future[t]] = partial(  # type: ignore [valid-type]
             _add_future_data, return_type=t, _from_tuple=False
         )
