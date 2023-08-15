@@ -327,6 +327,8 @@ def pytest_generate_tests(metafunc):
 
 
 def pytest_collection_modifyitems(session, config, items):
+    test_subset = os.environ.get("NAPARI_TEST_SUBSET")
+
     test_order_prefix = [
         os.path.join("napari", "utils"),
         os.path.join("napari", "layers"),
@@ -342,6 +344,17 @@ def pytest_collection_modifyitems(session, config, items):
     test_order = [[] for _ in test_order_prefix]
     test_order.append([])  # for not matching tests
     for item in items:
+        if test_subset:
+            if test_subset.lower() == "qt" and "qapp" not in item.fixturenames:
+                # Skip non Qt tests
+                continue
+            if (
+                test_subset.lower() == "headless"
+                and "qapp" in item.fixturenames
+            ):
+                # Skip Qt tests
+                continue
+
         index = -1
         for i, prefix in enumerate(test_order_prefix):
             if prefix in str(item.fspath):
