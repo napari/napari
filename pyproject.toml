@@ -355,7 +355,6 @@ module = [
     'napari.utils._testsupport',
     'napari.utils._tracebacks',
     'napari.utils.action_manager',
-    'napari.utils.colormaps.categorical_colormap',
     'napari.utils.events.containers._dict',
     'napari.utils.events.containers._evented_dict',
     'napari.utils.events.containers._evented_list',
