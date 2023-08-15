@@ -175,3 +175,4 @@ jobs:
     with:
         toxenv: py39-linux-pyside2-examples
         timeout: 60
+        python_version: 3.9
