@@ -2107,7 +2107,7 @@ class Shapes(Layer):
         edge_color=None,
         face_color=None,
         z_index=None,
-        n_new_shapes=None,
+        n_new_shapes=0,
     ):
         """Add shapes to the data view.
 
@@ -2148,6 +2148,8 @@ class Shapes(Layer):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
+        n_new_shapes: int
+            The number of new shapes to be added to the Shapes layer.
         """
         if n_new_shapes > 0:
             total_shapes = n_new_shapes + self.nshapes
