@@ -54,7 +54,7 @@ jobs:
           semgrep --error --lang python --pattern 'trans._($X.format(...))' napari
 
   test:
-    name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
+    name: ${{ matrix.platform }}
     uses: ./.github/workflows/base_test_workflow.yml
     strategy:
       fail-fast: false

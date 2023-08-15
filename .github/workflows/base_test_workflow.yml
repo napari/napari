@@ -31,7 +31,7 @@ on:
 
 jobs:
   test:
-    name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.qt_backend }}
+    name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.MIN_REQ && 'min_req' }}
     runs-on: ${{ inputs.platform }}
     steps:
       - uses: actions/checkout@v3
@@ -80,7 +80,7 @@ jobs:
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ inputs.min_req }}
           FORCE_COLOR: 1
-          PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python }}${{ inputs.min_req && '_min_req' }}.txt
+          PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}.txt
       - uses: actions/upload-artifact@v3
         with:
           name: upload pytest timing reports as json
