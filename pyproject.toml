@@ -344,7 +344,6 @@ module = [
     'napari.layers.utils._link_layers',
     'napari.layers.utils.color_encoding',
     'napari.layers.utils.color_manager',
-    'napari.layers.utils.color_transformations',
     'napari.layers.utils.stack_utils',
     'napari.layers.utils.string_encoding',
     'napari.layers.utils.style_encoding',
