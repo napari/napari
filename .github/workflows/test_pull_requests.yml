@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version: "3.11"
           cache-dependency-path: setup.cfg
           cache: 'pip'
       - name: Install Dependencies
@@ -55,8 +55,7 @@ jobs:
 
   test:
     name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
-    runs-on: ${{ matrix.platform }}
-    timeout-minutes: 40
+    uses: ./.github/workflows/base_test_workflow.yml
     strategy:
       fail-fast: false
       matrix:
@@ -100,67 +99,44 @@ jobs:
             platform: ubuntu-latest
             backend: pyside6
 
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ github.token }}
+    with:
+      python_version: ${{ matrix.python_version }}
+      os: ${{ matrix.os }}
+      qt_backend: ${{ matrix.backend }}
+      min_req: ${{ matrix.MIN_REQ }}
+      coverage: True
 
+  coverage_report:
+    runs-on: ubuntu-22.04
+    needs: test
+    steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
+          python-version: "3.x"
           cache-dependency-path: setup.cfg
+          cache: 'pip'
 
-      - uses: tlambert03/setup-qt-libs@v1
-
-      # strategy borrowed from vispy for installing opengl libs on windows
-      - name: Install Windows OpenGL
-        if: runner.os == 'Windows'
-        run: |
-          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
-          powershell gl-ci-helpers/appveyor/install_opengl.ps1
-          if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
-
-      # tox and tox-gh-actions will take care of the "actual" installation
-      # of python dependendencies into a virtualenv.  see tox.ini for more
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions tox-min-req
+          pip install codecov
 
-      # here we pass off control of environment creation and running of tests to tox
-      # tox-gh-actions, installed above, helps to convert environment variables into
-      # tox "factors" ... limiting the scope of what gets tested on each platform
-      # for instance, on ubuntu-latest with python 3.8, it would be equivalent to this command:
-      # `tox -e py38-linux-pyqt,py38-linux-pyside`
-      # see tox.ini for more
-      - name: Test with tox
-        # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
-        timeout-minutes: 40
-        uses: aganders3/headless-gui@v1
+      - name: Download coverage data
+        uses: actions/download-artifact@v2
         with:
-          run: python -m tox
-        env:
-          PLATFORM: ${{ matrix.platform }}
-          BACKEND: ${{ matrix.backend }}
-          TOXENV: ${{ matrix.toxenv }}
-          NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
-          PYVISTA_OFF_SCREEN: True
-          MIN_REQ: ${{ matrix.MIN_REQ }}
-          FORCE_COLOR: 1
-          PIP_CONSTRAINT: resources/constraints/constraints_py${{ matrix.python }}${{ matrix.MIN_REQ && '_min_req' }}.txt
-      - uses: actions/upload-artifact@v3
-        with:
-          name: upload pytest timing reports as json
-          path: |
-            ./report-*.json
+          name: coverage reports
+          path: coverage
 
-      - name: Coverage
+      - name: combine coverage data
+        run: |
+          coverage combine coverage
+          coverage xml -o coverage.xml
+
+      - name: Upload coverage data
         uses: codecov/codecov-action@v3
+
 
   test_pip_install:
     name: ubuntu-latest 3.9 pip install
@@ -195,25 +171,7 @@ jobs:
 
   test_examples:
     name: test examples
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          path: napari-from-github
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-          cache-dependency-path: napari-from-github/setup.cfg
-      - uses: tlambert03/setup-qt-libs@v1
-      - name: Install this commit
-        run: |
-          pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions
-
-      - name: Test
-        uses: aganders3/headless-gui@v1
-        with:
-          run: tox -e py39-linux-pyside2-examples
-        env:
-          PIP_CONSTRAINT: resources/constraints/constraints_py3.9_examples.txt
+    uses: ./.github/workflows/base_test_workflow.yml
+    with:
+        toxenv: py39-linux-pyside2-examples
+        timeout: 60
