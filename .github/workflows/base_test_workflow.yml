@@ -4,10 +4,10 @@ on:
       python_version:
         required: true
         type: string
-      os:
+      platform:
         required: false
         type: string
-        default: "ubuntu-20.04"
+        default: "ubuntu-22.04"
       toxenv:
         required: false
         type: string
@@ -18,7 +18,7 @@ on:
         default: "PyQt5"
       min_req:
         required: false
-        type: boolean
+        type: string
         default: ""
       coverage:
         required: false
@@ -31,8 +31,8 @@ on:
 
 jobs:
   test:
-    name: ${{ inputs.os }} py ${{ inputs.python_version }} ${{ inputs.napari }} ${{ inputs.qt_backend }}
-    runs-on: ${{ inputs.os }}
+    name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.qt_backend }}
+    runs-on: ${{ inputs.platform }}
     steps:
       - uses: actions/checkout@v3
 
