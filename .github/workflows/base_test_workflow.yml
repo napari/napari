@@ -19,7 +19,7 @@ on:
       min_req:
         required: false
         type: boolean
-        default: False
+        default: ""
       coverage:
         required: false
         type: boolean
