@@ -36,10 +36,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python ${{ inputs.python }}
+      - name: Set up Python ${{ inputs.python_version }}
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ inputs.python }}
+          python-version: ${{ inputs.python_version }}
           cache: "pip"
           cache-dependency-path: setup.cfg
 

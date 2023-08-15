@@ -100,7 +100,7 @@ jobs:
             backend: pyside6
 
     with:
-      python_version: ${{ matrix.python_version }}
+      python_version: ${{ matrix.python }}
       os: ${{ matrix.os }}
       qt_backend: ${{ matrix.backend }}
       min_req: ${{ matrix.MIN_REQ }}
