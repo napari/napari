@@ -602,7 +602,7 @@ def line_in_quadrilateral_3d(
     rotated_vertices, rotation_matrix = rotate_points(
         points=vertices_plane,
         current_plane_normal=line_direction,
-        new_plane_normal=[0, 0, 1],
+        new_plane_normal=np.array([0, 0, 1]),
     )
     quadrilateral_2D = rotated_vertices[:, :2]
     click_pos_2D = rotation_matrix.dot(line_point)[:2]
