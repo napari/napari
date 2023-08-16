@@ -85,6 +85,7 @@ jobs:
           MIN_REQ: ${{ inputs.min_req }}
           FORCE_COLOR: 1
           PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+          COVERAGE: ${{ inputs.coverage }}
       - uses: actions/upload-artifact@v3
         with:
           name: upload pytest timing reports as json
