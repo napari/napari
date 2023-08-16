@@ -87,7 +87,7 @@ class Dims(EventedModel):
     displayed_order : tuple of int
         Order of only displayed dimensions. These are calculated from the
         ``displayed`` dimensions.
-    rollable :  tuple of int
+    rollable :  tuple of bool
         Tuple of axis roll state. If True the axis is rollable.
     """
 
@@ -224,14 +224,9 @@ class Dims(EventedModel):
             updated['axis_labels'] = axis_labels[-ndim:]
 
         # Check the rollable axes tuple has same number of elements as ndim
-        rollable = values['rollable']
-        n_rollable = len(rollable)
-        if n_rollable < ndim:
-            updated['rollable'] = list(rollable) + (
-                [True] * (ndim - n_rollable)
-            )
-        elif n_rollable > ndim:
-            updated['rollable'] = rollable[:ndim]
+        updated['rollable'] = (values['rollable'] + tuple([True] * ndim))[
+            :ndim
+        ]
 
         # If the last used slider is no longer visible, use the first.
         last_used = values['last_used']
