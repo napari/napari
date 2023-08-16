@@ -53,6 +53,60 @@ jobs:
           semgrep --error --lang python --pattern 'trans._(f"...")' napari
           semgrep --error --lang python --pattern 'trans._($X.format(...))' napari
 
+  test_without_coverage:
+    name: ${{ matrix.platform }} no cov
+    uses: ./.github/workflows/base_test_workflow.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest]
+        python: ["3.8", "3.9", "3.10", "3.11"]
+        backend: [pyqt5, pyside2]
+        exclude:
+          - python: '3.11'
+            backend: pyside2
+        include:
+          # Windows py38
+          - python: 3.8
+            platform: windows-latest
+            backend: pyqt5
+          - python: 3.8
+            platform: windows-latest
+            backend: pyside2
+          - python: 3.9
+            platform: macos-latest
+            backend: pyqt5
+          # minimum specified requirements
+          - python: 3.8
+            platform: ubuntu-20.04
+            backend: pyqt5
+            MIN_REQ: 1
+          # test without any Qt backends
+          - python: 3.8
+            platform: ubuntu-20.04
+            toxenv: headless-py38-linux
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyqt6
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyside6
+          # pyside 6
+          - python: '3.10'
+            platform: ubuntu-latest
+            backend: pyside6
+          - python: '3.11'
+            platform: ubuntu-latest
+            backend: pyside6
+
+    with:
+      python_version: ${{ matrix.python }}
+      platform: ${{ matrix.platform }}
+      qt_backend: ${{ matrix.backend }}
+      min_req: ${{ matrix.MIN_REQ }}
+      coverage: False
+
+
   test:
     name: ${{ matrix.platform }}
     uses: ./.github/workflows/base_test_workflow.yml
@@ -70,34 +124,34 @@ jobs:
           - python: 3.8
             platform: windows-latest
             backend: pyqt5
-#          - python: 3.8
-#            platform: windows-latest
-#            backend: pyside2
+          - python: 3.8
+            platform: windows-latest
+            backend: pyside2
           - python: 3.9
             platform: macos-latest
             backend: pyqt5
-#          # minimum specified requirements
-#          - python: 3.8
-#            platform: ubuntu-20.04
-#            backend: pyqt5
-#            MIN_REQ: 1
-#          # test without any Qt backends
-#          - python: 3.8
-#            platform: ubuntu-20.04
-#            toxenv: headless-py38-linux
-#          - python: 3.9
-#            platform: ubuntu-latest
-#            backend: pyqt6
-#          - python: 3.9
-#            platform: ubuntu-latest
-#            backend: pyside6
-#          # pyside 6
-#          - python: '3.10'
-#            platform: ubuntu-latest
-#            backend: pyside6
-#          - python: '3.11'
-#            platform: ubuntu-latest
-#            backend: pyside6
+          # minimum specified requirements
+          - python: 3.8
+            platform: ubuntu-20.04
+            backend: pyqt5
+            MIN_REQ: 1
+          # test without any Qt backends
+          - python: 3.8
+            platform: ubuntu-20.04
+            toxenv: headless-py38-linux
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyqt6
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyside6
+          # pyside 6
+          - python: '3.10'
+            platform: ubuntu-latest
+            backend: pyside6
+          - python: '3.11'
+            platform: ubuntu-latest
+            backend: pyside6
 
     with:
       python_version: ${{ matrix.python }}
