@@ -1,4 +1,4 @@
-name: Remove html In PR description
+name: Update PR metadata based on PR description
 # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
 on:
   # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
