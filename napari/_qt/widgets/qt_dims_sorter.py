@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 USER_CACHE_DIR = user_cache_dir()
 
 
-# TODO: should `set_dims_order` become a method of QtDimsSorter?
 def set_dims_order(dims: Dims, order: Tuple[int, ...]):
     """Set dimension order of Dims object to order.
 
@@ -38,7 +37,6 @@ def _array_in_range(arr: np.ndarray, low: int, high: int) -> bool:
 
 
 # TODO: This function is in the current usecase of QtDimsSorter unnecessary and could be removed
-# TODO: should `move_indices` become a method of QtDimsSorter?
 def move_indices(axis_list: SelectableEventedList, order: Tuple[int, ...]):
     with axis_list.events.blocker_all():
         if tuple(axis_list) == tuple(order):
@@ -72,14 +70,16 @@ class QtDimsSorter(QWidget):
 
     Attributes
     ----------
+    dims : napari.components.Dims
+        Dimensions object of the current viewer, modeling slicing and displaying.
     axis_list : napari._qt.containers.qt_axis_model.AxisList
         Selectable evented list representing the viewer axes.
     """
 
     def __init__(self, viewer: 'Viewer', parent: QWidget) -> None:
         super().__init__(parent=parent)
-        dims = viewer.dims
-        self.axis_list = AxisList.from_dims(dims)
+        self.dims = viewer.dims
+        self.axis_list = AxisList.from_dims(self.dims)
 
         view = QtListView(self.axis_list)
         view.setSizeAdjustPolicy(QtListView.AdjustToContents)
@@ -119,10 +119,16 @@ class QtDimsSorter(QWidget):
         # terminate connections after parent widget is closed
         # to allow closure of QtDimsSorter
         self.axis_list.events.reordered.connect(
-            lambda event: set_dims_order(dims, event.value),
+            self._axis_list_reorder_callback,
             until=self.parent().destroyed,
         )
-        dims.events.order.connect(
-            lambda event: move_indices(self.axis_list, event.value),
+        self.dims.events.order.connect(
+            self._dims_order_callback,
             until=self.parent().destroyed,
         )
+
+    def _axis_list_reorder_callback(self, event):
+        set_dims_order(self.dims, event.value)
+
+    def _dims_order_callback(self, event):
+        move_indices(self.axis_list, event.value)
