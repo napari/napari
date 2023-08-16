@@ -35,7 +35,7 @@ on:
 
 jobs:
   test:
-    name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.MIN_REQ && 'min_req' }}
+    name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.MIN_REQ && 'min_req' }} ${{ inputs.coverage && 'coverage' }}
     runs-on: ${{ inputs.platform }}
     steps:
       - uses: actions/checkout@v3
@@ -77,7 +77,6 @@ jobs:
         with:
           run: python -m tox
         env:
-          PLATFORM: ${{ inputs.platform }}
           BACKEND: ${{ inputs.qt_backend }}
           TOXENV: ${{ inputs.toxenv }}
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
@@ -86,13 +85,16 @@ jobs:
           FORCE_COLOR: 1
           PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
           COVERAGE: ${{ inputs.coverage }}
-      - uses: actions/upload-artifact@v3
+
+      - name: Upload pytest timing reports as json
+        uses: actions/upload-artifact@v3
         with:
           name: upload pytest timing reports as json
           path: |
             ./report-*.json
 
-      - uses: actions/upload-artifact@v3
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v3
         if: ${{ inputs.coverage }} && always()
         with:
           name: coverage reports
