@@ -10,7 +10,7 @@ Closes #
 <!-- If your change includes user interface changes, please add an image, or an animation "An image is worth a thousand words!" -->
 <!-- You can use https://www.cockos.com/licecap/ or similar to create animations -->
 
-# References
+## References
 <!-- What resources, documentation, and guides were used in the creation of this PR? -->
 
 ## Type of change
@@ -23,7 +23,7 @@ Closes #
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] This change requires a documentation update
 
-# How has this been tested?
+## How has this been tested?
 <!-- Please describe the tests that you ran to verify your changes. -->
 - [ ] example: the test suite for my feature covers cases x, y, and z
 - [ ] example: all tests pass with my change
