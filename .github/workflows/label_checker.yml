@@ -7,12 +7,16 @@ on:
       - reopened
       - labeled
       - unlabeled
+  issues:
+    types:
+      - milestoned
+      - demilestoned
   merge_group: # to be prepared on merge queue
     types: [checks_requested]
 
 jobs:
   check_labels:
-    if: contains(github.event.pull_request.labels.*.name, 'ready to merge')
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ready to merge')
     name: Check labels
     runs-on: ubuntu-latest
     steps:
