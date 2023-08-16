@@ -34,4 +34,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
         run: |
-          python tools/remove_html_comments_from_pr.py
+          python tools/tools/update_PR_meta_information.py
