@@ -57,17 +57,8 @@ class AxisModel:
 
     @property
     def rollable(self) -> bool:
-        """Get or set the 'rollable' state.
-
-        Parameters
-        ----------
-        value : bool
-            True if axis should be rollable.
-
-        Returns
-        -------
-        bool
-            True if axis is rollable.
+        """
+        If the axis should be rollable.
         """
         return self.dims.rollable[self.axis]
 
