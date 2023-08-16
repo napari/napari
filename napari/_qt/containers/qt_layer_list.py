@@ -53,7 +53,10 @@ class QtLayerList(QtListView[Layer]):
         # To be able to update the loading indicator frame in the item delegate
         # smoothly and also be able to leave the item painted in a coherent
         # state (showing the loading indicator or the thumbnail)
-        layer_delegate.loading_frame_changed.connect(self.viewport().update)
+        viewport = self.viewport()
+        assert viewport is not None
+
+        layer_delegate.loading_frame_changed.connect(viewport.update)
 
         self.setToolTip(trans._('Layer list'))
         font = self.font()
@@ -64,8 +67,10 @@ class QtLayerList(QtListView[Layer]):
         # so items at the end of the list are at the top.
         self.setModel(ReverseProxyModel(self.model()))
 
-    def keyPressEvent(self, e: QKeyEvent) -> None:
+    def keyPressEvent(self, e: Optional[QKeyEvent]) -> None:
         """Override Qt event to pass events to the viewer."""
+        if e is None:
+            return
         if e.key() != Qt.Key.Key_Space:
             super().keyPressEvent(e)
         if e.key() not in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
