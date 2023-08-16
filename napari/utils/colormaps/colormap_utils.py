@@ -618,12 +618,29 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
-            name = colormap
-            if name not in AVAILABLE_COLORMAPS:
-                cmap = vispy_or_mpl_colormap(
-                    name
-                )  # raises KeyError if not found
-                AVAILABLE_COLORMAPS[name] = cmap
+            # Is a colormap with this name already available?
+            custom_cmap = AVAILABLE_COLORMAPS.get(colormap, None)
+            if custom_cmap is None:
+                name = (
+                    colormap.lower() if colormap.startswith('#') else colormap
+                )
+                custom_cmap = _colormap_from_colors(colormap, name)
+
+                if custom_cmap is None:
+                    custom_cmap = vispy_or_mpl_colormap(colormap)
+
+                for cmap_ in AVAILABLE_COLORMAPS.values():
+                    if (
+                        np.array_equal(cmap_.controls, custom_cmap.controls)
+                        and cmap_.colors.shape == custom_cmap.colors.shape
+                        and np.all(cmap_.colors == custom_cmap.colors)
+                        and cmap_.interpolation == custom_cmap.interpolation
+                    ):
+                        custom_cmap = cmap_
+                        break
+
+            name = custom_cmap.name
+            AVAILABLE_COLORMAPS[name] = custom_cmap
         elif isinstance(colormap, Colormap):
             AVAILABLE_COLORMAPS[colormap.name] = colormap
             name = colormap.name
@@ -706,9 +723,9 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     colormap[name] = cmap
                 AVAILABLE_COLORMAPS.update(colormap)
                 if len(colormap) == 1:
-                    name = list(colormap)[0]  # first key in dict
+                    name = next(iter(colormap))  # first key in dict
                 elif len(colormap) > 1:
-                    name = list(colormap.keys())[0]
+                    name = next(iter(colormap.keys()))
 
                     warnings.warn(
                         trans._(
@@ -745,14 +762,18 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     return AVAILABLE_COLORMAPS[name]
 
 
-def _colormap_from_colors(colors: ColorType) -> Optional[Colormap]:
+def _colormap_from_colors(
+    colors: ColorType,
+    name: Optional[str] = 'custom',
+    display_name: Optional[str] = None,
+) -> Optional[Colormap]:
     try:
         color_array = transform_color(colors)
     except (ValueError, AttributeError, KeyError):
         return None
     if color_array.shape[0] == 1:
         color_array = np.array([[0, 0, 0, 1], color_array[0]])
-    return Colormap(color_array)
+    return Colormap(color_array, name=name, display_name=display_name)
 
 
 def make_default_color_array():
@@ -764,5 +785,5 @@ def display_name_to_name(display_name):
         v._display_name: k for k, v in AVAILABLE_COLORMAPS.items()
     }
     return display_name_map.get(
-        display_name, list(AVAILABLE_COLORMAPS.keys())[0]
+        display_name, next(iter(AVAILABLE_COLORMAPS.keys()))
     )
