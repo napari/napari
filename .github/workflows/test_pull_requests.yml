@@ -123,11 +123,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install codecov
-      - name: Show directory content
-        run: |
-          pwd
-          ls
-          ls napari
+          pip install -e .
 
       - name: Download coverage data
         uses: actions/download-artifact@v2
