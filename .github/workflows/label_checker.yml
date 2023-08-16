@@ -19,7 +19,7 @@ jobs:
       - name: Check labels
         uses: docker://agilepathway/pull-request-label-checker:latest
         with:
-          one_of: bugfix,feature,documentation,performance,enhancement,maintenance
+          any_of: bugfix,feature,documentation,performance,enhancement,maintenance
           repo_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check milestone
