@@ -99,7 +99,7 @@ class _LayerSlicer:
             manager for the slicing threading
         _force_sync: bool
             if true, forces slicing to execute synchronously
-        _layers_to_task : dict of tuples of weak layers to futures
+        _layers_to_task : dict of tuples of layer weakrefs to futures
             task storage for cancellation logic
         _lock_layers_to_task : threading.RLock
             lock to guard against changes to `_layers_to_task` when finding,
