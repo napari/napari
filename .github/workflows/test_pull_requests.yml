@@ -105,6 +105,7 @@ jobs:
       qt_backend: ${{ matrix.backend }}
       min_req: ${{ matrix.MIN_REQ }}
       coverage: False
+      toxenv: ${{ matrix.toxenv }}
 
 
   test:
@@ -159,6 +160,7 @@ jobs:
       qt_backend: ${{ matrix.backend }}
       min_req: ${{ matrix.MIN_REQ }}
       coverage: True
+      toxenv: ${{ matrix.toxenv }}
 
   coverage_report:
     runs-on: ubuntu-22.04
