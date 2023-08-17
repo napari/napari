@@ -54,6 +54,8 @@ if API_NAME == 'PySide2':
 if API_NAME == 'PySide6' and sys.version_info[:2] < (3, 10):
     from packaging import version
 
+    assert isinstance(QT_VERSION, str)
+
     if version.parse(QT_VERSION) > version.parse("6.3.1"):
         raise RuntimeError(
             trans._(
