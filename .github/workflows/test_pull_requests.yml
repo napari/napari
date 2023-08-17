@@ -82,9 +82,9 @@ jobs:
             backend: pyqt5
             MIN_REQ: 1
           # test without any Qt backends
-          - python: 3.8
+          - python: 3.9
             platform: ubuntu-20.04
-            toxenv: headless-py38-linux
+            toxenv: py39-linux-headless
           - python: 3.9
             platform: ubuntu-latest
             backend: pyqt6
@@ -137,9 +137,9 @@ jobs:
             backend: pyqt5
             MIN_REQ: 1
           # test without any Qt backends
-          - python: 3.8
+          - python: 3.9
             platform: ubuntu-20.04
-            toxenv: headless-py38-linux
+            toxenv: py39-linux-headless
           - python: 3.9
             platform: ubuntu-latest
             backend: pyqt6
