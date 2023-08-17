@@ -121,12 +121,13 @@ fix = true
 
 [tool.ruff.per-file-ignores]
 "napari/_vispy/__init__.py" = ["E402"]
-"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018"]
+"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
 "napari/utils/_testsupport.py" = ["B011"]
 "tools/test_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20"]
 "examples/**" = ["ICN001", "INP001", "T20"]
 "**/vendored/**" = ["TID"]
+"napari/benchmarks/**" = ["RUF012"]
 
 [tool.ruff.flake8-quotes]
 docstring-quotes = "double"
@@ -223,17 +224,13 @@ check_untyped_defs = true
 # individual ignore error
 # we should strive to remove those
 # See https://github.com/napari/napari/issues/2751
+# you can regenerate this list with the following command \047 is single quote. 
+# mypy napari | cut -f1 -d: | sort | uniq  | tr '/' '.'  | sed 's/\.py//' | awk '{ print "    \047" $0 "\047," }'
 [[tool.mypy.overrides]]
 module = [
-    'napari.__main__',
-    'napari._app_model._app',
-    'napari._app_model.actions._layer_actions',
-    'napari._app_model.constants._commands',
     'napari._app_model.context._layerlist_context',
     'napari._app_model.injection._processors',
     'napari._event_loop',
-    'napari._qt',
-    'napari._qt._qapp_model._menus',
     'napari._qt.code_syntax_highlight',
     'napari._qt.containers._base_item_model',
     'napari._qt.containers._base_item_view',
@@ -270,13 +267,11 @@ module = [
     'napari._qt.menus._util',
     'napari._qt.menus.debug_menu',
     'napari._qt.menus.file_menu',
-    'napari._qt.menus.window_menu',
     'napari._qt.perf.qt_event_tracing',
     'napari._qt.perf.qt_performance',
     'napari._qt.qt_event_filters',
     'napari._qt.qt_event_loop',
     'napari._qt.qt_main_window',
-    'napari._qt.qt_resources',
     'napari._qt.qt_resources._svg',
     'napari._qt.qt_viewer',
     'napari._qt.qthreading',
@@ -325,11 +320,6 @@ module = [
     'napari.components.experimental.monitor._service',
     'napari.components.experimental.remote._commands',
     'napari.components.layerlist',
-    'napari.components.overlays.base',
-    'napari.components.overlays.bounding_box',
-    'napari.components.overlays.brush_circle',
-    'napari.components.overlays.scale_bar',
-    'napari.components.overlays.text',
     'napari.components.viewer_model',
     'napari.conftest',
     'napari.layers._layer_actions',
@@ -345,9 +335,6 @@ module = [
     'napari.layers.shapes._shapes_mouse_bindings',
     'napari.layers.shapes._shapes_utils',
     'napari.layers.shapes.shapes',
-    'napari.layers.tracks._track_utils',
-    'napari.layers.tracks._tracks_key_bindings',
-    'napari.layers.tracks.tracks',
     'napari.layers.utils._link_layers',
     'napari.layers.utils.color_encoding',
     'napari.layers.utils.color_manager',
@@ -375,7 +362,6 @@ module = [
     'napari.utils.events.debugging',
     'napari.utils.events.event',
     'napari.utils.events.evented_model',
-    'napari.utils.geometry',
     'napari.utils.interactions',
     'napari.utils.key_bindings',
     'napari.utils.mouse_bindings',

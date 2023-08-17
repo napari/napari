@@ -1,8 +1,10 @@
 import os
+from unittest import mock
 
 import numpy as np
 import pytest
 from npe2 import DynamicPlugin
+from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtWidgets import QLabel, QRadioButton
 
 from napari._qt.dialogs.qt_reader_dialog import (
@@ -124,6 +126,44 @@ def test_prepare_dialog_options_removes_plugin(tmp_plugin: DynamicPlugin):
     )
     assert tmp2.name in readers
     assert tmp_plugin.name not in readers
+
+
+def test_open_sample_data_shows_all_readers(
+    make_napari_viewer,
+    tmp_plugin: DynamicPlugin,
+):
+    """Checks that sample data callback `_add_sample` shows all readers."""
+    tmp2 = tmp_plugin.spawn(register=True)
+
+    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    my_sample = SampleDataURI(
+        key='tmp-sample',
+        display_name='Temp Sample',
+        uri='some-path/some-file.fake',
+    )
+    tmp_plugin.manifest.contributions.sample_data = [my_sample]
+    from napari._qt.dialogs.qt_reader_dialog import QtReaderDialog
+
+    viewer = make_napari_viewer()
+    sample_action = viewer.window.file_menu.open_sample_menu.actions()[0]
+
+    with mock.patch(
+        'napari._qt.dialogs.qt_reader_dialog.prepare_remaining_readers'
+    ) as mock_prepare_readers, mock.patch.object(
+        QtReaderDialog, 'get_user_choices', return_value=(None, None)
+    ):
+        sample_action.trigger()
+    # Ensure that `prepare_remaining_readers` called with `plugin_name=None`
+    mock_prepare_readers.assert_called_once_with(
+        ['some-path/some-file.fake'], None, None
+    )
 
 
 def test_open_with_dialog_choices_persist(
