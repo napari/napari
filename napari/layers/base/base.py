@@ -743,7 +743,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @_translate_grid.setter
     def _translate_grid(self, translate_grid):
-        if np.all(self._translate_grid == translate_grid):
+        if np.array_equal(self._translate_grid, translate_grid):
             return
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
