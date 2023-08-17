@@ -611,22 +611,19 @@ class EditorWidget(QLineEdit):
         event_keyseq = translator.keyevent_to_keyseq(event)
         event_keystr = event_keyseq.toString(QKeySequence.PortableText)
 
-        if len(event_keystr) > 1:
-            # Split the shortcut if it contains a symbol.
-            parsed = re.split('[-(?=.+)]', event_keystr)
+        # Split the shortcut if it contains a symbol.
+        parsed = re.split(r'[-+](?=.+)', event_keystr)
 
-            keys_li = []
-            # Format how the shortcut is written (ex. 'Ctrl+B' is changed to 'Control-B')
-            for val in parsed:
-                if val in KEY_SUBS:
-                    keys_li.append(KEY_SUBS[val])
-                else:
-                    keys_li.append(val)
+        keys_li = []
+        # Format how the shortcut is written (ex. 'Ctrl+B' is changed to 'Control-B')
+        for val in parsed:
+            if val in KEY_SUBS:
+                keys_li.append(KEY_SUBS[val])
+            else:
+                keys_li.append(val)
 
-            keys_li = '-'.join(keys_li)
-            self.setText(keys_li)
-        else:
-            self.setText(event_keystr)
+        keys_li = '-'.join(keys_li)
+        self.setText(keys_li)
 
 
 class ShortcutTranslator(QKeySequenceEdit):
