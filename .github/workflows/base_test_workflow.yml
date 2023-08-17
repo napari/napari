@@ -95,7 +95,7 @@ jobs:
 
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
-        if: ${{ inputs.coverage }} && always()
+        if: ${{ inputs.coverage && always() }}
         with:
           name: coverage reports
           path: |
