@@ -84,7 +84,7 @@ jobs:
           # test without any Qt backends
           - python: 3.9
             platform: ubuntu-20.04
-            toxenv: py39-linux-headless
+            backend: headless
           - python: 3.9
             platform: ubuntu-latest
             backend: pyqt6
@@ -139,7 +139,7 @@ jobs:
           # test without any Qt backends
           - python: 3.9
             platform: ubuntu-20.04
-            toxenv: py39-linux-headless
+            backend: headless
           - python: 3.9
             platform: ubuntu-latest
             backend: pyqt6
