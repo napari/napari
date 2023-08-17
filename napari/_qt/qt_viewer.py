@@ -11,10 +11,11 @@ from weakref import WeakSet, ref
 
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QGuiApplication
-from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from qtpy.QtWidgets import QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
 from napari._qt.containers import QtLayerList
+from napari._qt.dialogs.qt_file_dialog import QCustomFileDialog
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
 from napari._qt.perf.qt_performance import QtPerformance
@@ -669,7 +670,7 @@ class QtViewer(QSplitter):
         )
 
         msg = trans._("selected") if selected else trans._("all")
-        dlg = QFileDialog()
+        dlg = QCustomFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
 
@@ -679,11 +680,6 @@ class QtViewer(QSplitter):
             # home dir by default
             hist[0],  # directory in PyQt, dir in PySide
             filter=ext_str,
-            options=(
-                QFileDialog.DontUseNativeDialog
-                if in_ipython()
-                else QFileDialog.Options()
-            ),
         )
         logging.debug(
             trans._(
@@ -790,24 +786,11 @@ class QtViewer(QSplitter):
         """
         Open dialog to get list of files from user
         """
-        dlg = QFileDialog()
+        dlg = QCustomFileDialog()
         hist = get_open_history()
         dlg.setHistory(hist)
 
-        open_kwargs = {
-            "parent": self,
-            "caption": caption,
-        }
-        if "pyside" in QFileDialog.__module__.lower():
-            # PySide6
-            open_kwargs["dir"] = hist[0]
-        else:
-            open_kwargs["directory"] = hist[0]
-
-        if in_ipython():
-            open_kwargs["options"] = QFileDialog.DontUseNativeDialog
-
-        return dlg.getOpenFileNames(**open_kwargs)[0]
+        return dlg.getOpenFileNames(self, caption, hist[0])[0]
 
     def _open_files_dialog(self, choose_plugin=False):
         """Add files from the menubar."""
@@ -831,7 +814,7 @@ class QtViewer(QSplitter):
 
     def _open_folder_dialog(self, choose_plugin=False):
         """Add a folder of files from the menubar."""
-        dlg = QFileDialog()
+        dlg = QCustomFileDialog()
         hist = get_open_history()
         dlg.setHistory(hist)
 
@@ -839,11 +822,6 @@ class QtViewer(QSplitter):
             self,
             trans._('Select folder...'),
             hist[0],  # home dir by default
-            (
-                QFileDialog.DontUseNativeDialog
-                if in_ipython()
-                else QFileDialog.Options()
-            ),
         )
 
         if folder not in {'', None}:
