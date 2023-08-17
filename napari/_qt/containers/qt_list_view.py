@@ -10,7 +10,7 @@ from napari._qt.containers.qt_list_model import QtListModel
 if TYPE_CHECKING:
     from typing import Optional
 
-    from qtpy.QtWidgets import QWidget
+    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
     from napari.utils.events.containers import SelectableEventedList
 

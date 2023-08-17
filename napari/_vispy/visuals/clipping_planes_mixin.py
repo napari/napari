@@ -10,6 +10,7 @@ class _PVisual(Protocol):
     """
 
     _subvisuals: Optional[List['_PVisual']]
+    _clip_filter: PlanesClipper
 
     def attach(self, filt: Filter, view=None):
         ...
