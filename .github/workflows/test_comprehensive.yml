@@ -57,7 +57,7 @@ jobs:
           # test without any Qt backends
           - python: "3.8"
             platform: ubuntu-20.04
-            toxenv: headless-py38-linux
+            backend: headless
           - python: "3.11"
             platform: ubuntu-latest
             backend: pyqt6
@@ -70,11 +70,6 @@ jobs:
 
 
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ github.token }}
-
       - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python }}
