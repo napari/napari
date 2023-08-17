@@ -574,6 +574,7 @@ class EditorWidget(QLineEdit):
     def keyPressEvent(self, event):
         """Qt method override."""
         event_key = event.key()
+        print(event_key)
         if not event_key or event_key == Qt.Key.Key_unknown:
             return
 
