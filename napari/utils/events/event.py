@@ -1177,7 +1177,7 @@ class EventBlocker:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target, callback=None) -> None:
+    def __init__(self, target: EventEmitter, callback=None) -> None:
         self.target = target
         self.callback = callback
         self._base_count = target._block_counter.get(callback, 0)
@@ -1201,7 +1201,7 @@ class EventBlockerAll:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target) -> None:
+    def __init__(self, target: EmitterGroup) -> None:
         self.target = target
 
     def __enter__(self):
