@@ -61,7 +61,7 @@ def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
 
     def save_function(path):
         assert "test.png" in path
-        (tmp_path / "test.png").write_text("overwrote")
+        (tmp_path / "test.png").write_text("overwritten")
 
     def overwrite_qmessagebox_warning(*args):
         box, parent, title, text, buttons, default = args
@@ -90,5 +90,5 @@ def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
     line_edit.setText("test")
     dialog.accept()
 
-    # check the file was overwrote
-    assert (tmp_path / "test.png").read_text() == "overwrote"
+    # check the file was overwritten
+    assert (tmp_path / "test.png").read_text() == "overwritten"
