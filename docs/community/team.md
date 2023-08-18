@@ -12,7 +12,7 @@ napari is a consensus-based community project. Anyone with an interest in the pr
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - [@jni](https://github.com/jni)*
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - [@kevinyamauchi](https://github.com/kevinyamauchi)*
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - [@kne42](https://github.com/kne42)
-- [Kyle Harrington](https://github.com/napari/napari/commits?author=kephale) - [@royerloic](https://github.com/kephale)
+- [Kyle Harrington](https://github.com/napari/napari/commits?author=kephale) - [@kephale](https://github.com/kephale)
 - [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - [@royerloic](https://github.com/royerloic)^
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - [@brisvag](https://github.com/brisvag)
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - [@melonora](https://github.com/melonora)
