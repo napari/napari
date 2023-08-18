@@ -19,7 +19,7 @@ class ShortcutsSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version']
+        preferences_exclude = ('schema_version',)
 
     @validator('shortcuts', allow_reuse=True)
     def shortcut_validate(cls, v):

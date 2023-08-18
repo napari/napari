@@ -30,7 +30,7 @@ class AppearanceSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version']
+        preferences_exclude = ('schema_version',)
 
     def refresh_themes(self):
         """Updates theme data.

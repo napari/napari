@@ -47,8 +47,8 @@ def rst2html(text):
 
     text = re.sub(r'\*\*([^*]+)\*\*', '<strong>\\1</strong>', text)
     text = re.sub(r'\*([^*]+)\*', '<em>\\1</em>', text)
-    text = re.sub(r':[a-z]+:`([^`]+)`', ref, text, re.DOTALL)
-    text = re.sub(r'`([^`]+)`_', link, text, re.DOTALL)
+    text = re.sub(r':[a-z]+:`([^`]+)`', ref, text, flags=re.DOTALL)
+    text = re.sub(r'`([^`]+)`_', link, text, flags=re.DOTALL)
     text = re.sub(r'``([^`]+)``', '<code>\\1</code>', text)
     return text.replace("\n", "<br>")
 
