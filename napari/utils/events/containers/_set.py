@@ -29,13 +29,13 @@ class EventedSet(MutableSet[_T]):
     events: EmitterGroup
 
     def __init__(self, data: Iterable[_T] = ()) -> None:
-        _events = {'changed': None}
+        changed = None
         # For inheritance: If the mro already provides an EmitterGroup, add...
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
-            self.events.add(**_events)
+            self.events.add(changed=changed)
         else:
             # otherwise create a new one
-            self.events = EmitterGroup(source=self, **_events)
+            self.events = EmitterGroup(source=self, changed=changed)
 
         self._set: set[_T] = set()
         self.update(data)

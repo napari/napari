@@ -356,8 +356,6 @@ module = [
     'napari.utils.events.containers._nested_list',
     'napari.utils.events.containers._selectable_list',
     'napari.utils.events.containers._selection',
-    'napari.utils.events.containers._set',
-    'napari.utils.events.containers._typed',
     'napari.utils.events.custom_types',
     'napari.utils.events.debugging',
     'napari.utils.events.event',
