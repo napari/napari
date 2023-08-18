@@ -1,15 +1,10 @@
 from typing import Any, Iterable
 
-import qtpy
 from qtpy.QtCore import QModelIndex, Qt
 
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.components import Dims
 from napari.utils.events import SelectableEventedList
-
-# add PyQt6 ItemFlags compatibility
-if qtpy.API_NAME == 'PyQt6':
-    Qt.ItemFlags = Qt.ItemFlag
 
 
 class AxisModel:
