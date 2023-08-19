@@ -685,7 +685,7 @@ class ShortcutTranslator(QKeySequenceEdit):
 
         This only works for complete key sequence that do not contain only
         modifiers. If the event is only pressing modifiers, this will return an
-        empty sequence as QKeySequence do support only modifiers
+        empty sequence as QKeySequence does not support only modifiers
 
         """
 
