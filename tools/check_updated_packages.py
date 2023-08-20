@@ -8,9 +8,18 @@ import sys
 from configparser import ConfigParser
 from pathlib import Path
 
-from get_auto_upgrade_branch_name import get_base_branch_name
-
 REPO_DIR = Path(__file__).parent.parent
+DEFAULT_NAME = "auto-dependency-upgrades"
+
+
+def get_base_branch_name(ref_name, event):
+    if ref_name == DEFAULT_NAME:
+        return "main"
+    if ref_name.startswith(DEFAULT_NAME):
+        if event in {"pull_request", "pull_request_target"}:
+            return os.environ.get("GITHUB_BASE_REF")
+        return ref_name[len(DEFAULT_NAME) + 1 :]
+    return ref_name
 
 
 def main():
