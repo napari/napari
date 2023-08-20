@@ -237,6 +237,11 @@ def get_system_theme() -> str:
 
 
 @overload
+def get_theme(theme_id: str) -> Theme:
+    ...
+
+
+@overload
 def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme:
     ...
 
