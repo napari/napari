@@ -57,7 +57,7 @@ jobs:
           # test without any Qt backends
           - python: "3.8"
             platform: ubuntu-20.04
-            toxenv: headless-py38-linux
+            backend: headless
           - python: "3.11"
             platform: ubuntu-latest
             backend: pyqt6

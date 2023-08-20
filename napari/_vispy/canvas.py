@@ -90,7 +90,7 @@ class VispyCanvas:
         for ignoring mousewheel events with modifiers.
     """
 
-    _instances = WeakSet()
+    _instances: WeakSet[VispyCanvas] = WeakSet()
 
     def __init__(
         self,
@@ -157,7 +157,8 @@ class VispyCanvas:
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.theme.connect(self._on_theme_change)
-        self.viewer.camera.events.interactive.connect(self._on_interactive)
+        self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
+        self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
@@ -300,11 +301,14 @@ class VispyCanvas:
 
     def _on_interactive(self) -> None:
         """Link interactive attributes of view and viewer."""
-        self.view.interactive = self.viewer.camera.interactive
+        # Is this should be changed or renamed?
+        self.view.interactive = (
+            self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
+        )
 
     def _map_canvas2world(
         self, position: List[int, int]
-    ) -> Tuple[np.float64, np.float64]:
+    ) -> Tuple[float, float]:
         """Map position from canvas pixels into world coordinates.
 
         Parameters
@@ -521,7 +525,7 @@ class VispyCanvas:
             if nd > self.viewer.dims.ndisplay:
                 displayed_axes = displayed_sorted
             else:
-                displayed_axes = self.viewer.dims.displayed[-nd:]
+                displayed_axes = list(self.viewer.dims.displayed[-nd:])
             layer._update_draw(
                 scale_factor=1 / self.viewer.camera.zoom,
                 corner_pixels_displayed=canvas_corners_world[
@@ -542,7 +546,7 @@ class VispyCanvas:
         -------
         None
         """
-        self.viewer._canvas_size = tuple(self.size)
+        self.viewer._canvas_size = self.size
 
     def add_layer_visual_mapping(self, napari_layer, vispy_layer) -> None:
         """Maps a napari layer to its corresponding vispy layer and sets the parent scene of the vispy layer.

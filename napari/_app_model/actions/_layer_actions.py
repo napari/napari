@@ -132,6 +132,8 @@ LAYER_ACTIONS: List[Action] = [
 ]
 
 
+cmd: CommandId
+
 for _dtype in (
     'int8',
     'int16',
@@ -142,7 +144,7 @@ for _dtype in (
     'uint32',
     'uint64',
 ):
-    cmd: CommandId = getattr(CommandId, f'LAYER_CONVERT_TO_{_dtype.upper()}')
+    cmd = getattr(CommandId, f'LAYER_CONVERT_TO_{_dtype.upper()}')
     LAYER_ACTIONS.append(
         Action(
             id=cmd,
@@ -157,7 +159,7 @@ for _dtype in (
     )
 
 for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
-    cmd: CommandId = getattr(CommandId, f'LAYER_PROJECT_{mode.upper()}')
+    cmd = getattr(CommandId, f'LAYER_PROJECT_{mode.upper()}')
     LAYER_ACTIONS.append(
         Action(
             id=cmd,

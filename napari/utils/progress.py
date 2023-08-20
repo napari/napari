@@ -108,7 +108,9 @@ class progress(tqdm):
         self._total = total
         self.events.total(value=self.total)
 
-    def display(self, msg: str = None, pos: int = None) -> None:
+    def display(
+        self, msg: Optional[str] = None, pos: Optional[int] = None
+    ) -> None:
         """Update the display and emit eta event."""
         # just plain tqdm if we don't have gui
         if not self.gui and not self.is_init:

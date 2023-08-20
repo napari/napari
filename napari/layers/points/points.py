@@ -2,7 +2,17 @@ import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 import pandas as pd
@@ -295,20 +305,20 @@ class Points(Layer):
 
     _modeclass = Mode
 
-    _drag_modes = {
+    _drag_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.ADD: add,
         Mode.SELECT: select,
     }
 
-    _move_modes = {
+    _move_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.ADD: no_op,
         Mode.SELECT: highlight,
     }
-    _cursor_modes = {
+    _cursor_modes: ClassVar[Dict[Mode, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.ADD: 'crosshair',
@@ -525,6 +535,17 @@ class Points(Layer):
 
     @data.setter
     def data(self, data: Optional[np.ndarray]):
+        """Set the data array and emit a corresponding event."""
+        self._set_data(data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.CHANGE.value,
+            data_indices=slice(None),
+            vertex_indices=((),),
+        )
+
+    def _set_data(self, data: Optional[np.ndarray]):
+        """Set the .data array attribute, without emitting an event."""
         data, _ = fix_data_points(data, self.ndim)
         cur_npoints = len(self._data)
         self._data = data
@@ -584,7 +605,6 @@ class Points(Layer):
                     (self._edge_width, edge_width), axis=0
                 )
                 self.symbol = np.concatenate((self._symbol, symbol), axis=0)
-                self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
         self._reset_editable()
@@ -1283,13 +1303,13 @@ class Points(Layer):
                 if self.data.size
                 else [self.current_face_color],
                 'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap.name,
+                'face_colormap': self.face_colormap.dict(),
                 'face_contrast_limits': self.face_contrast_limits,
                 'edge_color': self.edge_color
                 if self.data.size
                 else [self.current_edge_color],
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap.name,
+                'edge_colormap': self.edge_colormap.dict(),
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
                 'property_choices': self.property_choices,
@@ -1555,6 +1575,14 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
+    def _update_draw(
+        self, scale_factor, corner_pixels_displayed, shape_threshold
+    ):
+        super()._update_draw(
+            scale_factor, corner_pixels_displayed, shape_threshold
+        )
+        self._set_highlight(force=True)
+
     def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.
 
@@ -1585,10 +1613,10 @@ class Points(Layer):
             # Without this implementation, point hover and selection (and anything depending
             # on self.get_value()) won't be aware of the real extent of points, causing
             # unexpected behaviour. See #3734 for details.
+            sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
-                distances
-                <= np.expand_dims(self._view_size, axis=1) / scale_ratio / 2,
+                distances <= sizes,
                 axis=1,
             )
             indices = np.where(in_slice_matches)[0]
@@ -1645,10 +1673,10 @@ class Points(Layer):
         # so we need to calculate the ratio to correctly map to screen coordinates
         scale_ratio = self.scale[self._slice_input.displayed] / self.scale[-1]
         # find the points the click intersects
+        sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
         distances = abs(rotated_points - rotated_click_point)
         in_slice_matches = np.all(
-            distances
-            <= np.expand_dims(self._view_size, axis=1) / scale_ratio / 2,
+            distances <= sizes,
             axis=1,
         )
         indices = np.where(in_slice_matches)[0]
@@ -1801,7 +1829,7 @@ class Points(Layer):
         if (
             self.selected_data == self._selected_data_stored
             and self._value == self._value_stored
-            and np.all(self._drag_box == self._drag_box_stored)
+            and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
         self._selected_data_stored = copy(self.selected_data)
@@ -1906,13 +1934,15 @@ class Points(Layer):
         coords : array
             Point or points to add to the layer data.
         """
-        self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
+        cur_points = len(self.data)
+        self._set_data(np.append(self.data, np.atleast_2d(coords), axis=0))
         self.events.data(
             value=self.data,
             action=ActionType.ADD.value,
             data_indices=(-1,),
             vertex_indices=((),),
         )
+        self.selected_data = set(np.arange(cur_points, len(self.data)))
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -1940,7 +1970,7 @@ class Points(Layer):
                     self._value -= offset
                     self._value_stored -= offset
 
-            self.data = np.delete(self.data, index, axis=0)
+            self._set_data(np.delete(self.data, index, axis=0))
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVE.value,
