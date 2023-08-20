@@ -120,7 +120,7 @@ def select(layer: Shapes, event: MouseEvent) -> None:
         )
         layer.events.data(
             value=layer.data,
-            action=ActionType.CHANGE.value,
+            action=ActionType.CHANGED,
             data_indices=tuple(layer.selected_data),
             vertex_indices=vertex_indices,
         )
@@ -675,6 +675,21 @@ def _move_active_element_under_cursor(
     if layer._mode in (
         [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
     ):
+        if layer._mode == Mode.SELECT and not layer._is_moving:
+            vertex_indices = tuple(
+                tuple(
+                    vertex_index
+                    for vertex_index, coord in enumerate(layer.data[i])
+                )
+                for i in layer.selected_data
+            )
+            layer.events.data(
+                value=layer.data,
+                action=ActionType.CHANGING,
+                data_indices=tuple(layer.selected_data),
+                vertex_indices=vertex_indices,
+            )
+
         coord = _set_drag_start(layer, coordinates)
         layer._moving_coordinates = coordinates
         layer._is_moving = True
