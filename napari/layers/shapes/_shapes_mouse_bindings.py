@@ -526,6 +526,12 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
         elif int(ind) == len(vertices) - 1 and loc > 1:
             ind = ind + 1
 
+    layer.events.data(
+        value=layer.data,
+        action=ActionType.CHANGING,
+        data_indices=(index,),
+        vertex_indices=((ind,),),
+    )
     # Insert new vertex at appropriate place in vertices of target shape
     vertices = np.insert(vertices, ind, [coordinates], axis=0)
     with layer.events.set_data.blocker():
@@ -533,7 +539,7 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
         layer._selected_box = layer.interaction_box(layer.selected_data)
     layer.events.data(
         value=layer.data,
-        action=ActionType.CHANGE.value,
+        action=ActionType.CHANGED,
         data_indices=(index,),
         vertex_indices=((ind,),),
     )
