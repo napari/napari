@@ -50,18 +50,9 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: 'setup.cfg'
-      - name: "Calculate branch name"
-        id: branch_name
-        run: |
-          python tools/get_auto_upgrade_branch_name.py --verbose
-          git fetch --all
-          git branch -a
-          echo "branch_name=$(python tools/get_auto_upgrade_branch_name.py)" >> $GITHUB_OUTPUT
-          echo "base_branch_name=$(python tools/get_auto_upgrade_branch_name.py --base_branch)" >> $GITHUB_OUTPUT
 
       - name: Upgrade Python dependencies
         # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
-        if: steps.branch_name.outputs.branch_name != 'skip'
         run: |
           flags=""
           # Explanation of below commands 
@@ -99,7 +90,6 @@ jobs:
       # END PYTHON DEPENDENCIES
 
       - name: Create commit
-        if: (steps.branch_name.outputs.branch_name != 'skip') && (github.event_name == 'push')
         run: |
           pip install requests
           python tools/create_pr_or_update_exising_one.py
