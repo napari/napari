@@ -161,8 +161,6 @@ def hash2d_set(key, value, keys, values, empty_val=0):
 
 
 def build_textures_from_dict(color_dict, empty_val=0, shape=(1000, 1000)):
-    if len(color_dict) > shape[0] * shape[1]:
-        raise OverflowError('too many labels')
     keys = np.full(shape, empty_val, dtype=np.float32)
     values = np.zeros(shape + (4,), dtype=np.float32)
     for key, value in color_dict.items():
