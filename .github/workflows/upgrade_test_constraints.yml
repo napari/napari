@@ -92,4 +92,4 @@ jobs:
       - name: Create commit
         run: |
           pip install requests
-          python tools/create_pr_or_update_exising_one.py
+          python tools/create_pr_or_update_existing_one.py
