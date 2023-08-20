@@ -1,4 +1,4 @@
-name: Label Checker
+name: Label and milestone checker
 on:
   pull_request:
     types:
