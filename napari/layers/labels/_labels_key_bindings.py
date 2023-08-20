@@ -1,4 +1,3 @@
-
 import numpy as np
 from app_model.types import KeyCode, KeyMod
 
