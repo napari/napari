@@ -157,7 +157,8 @@ class VispyCanvas:
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.theme.connect(self._on_theme_change)
-        self.viewer.camera.events.interactive.connect(self._on_interactive)
+        self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
+        self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
@@ -300,7 +301,10 @@ class VispyCanvas:
 
     def _on_interactive(self) -> None:
         """Link interactive attributes of view and viewer."""
-        self.view.interactive = self.viewer.camera.interactive
+        # Is this should be changed or renamed?
+        self.view.interactive = (
+            self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
+        )
 
     def _map_canvas2world(
         self, position: List[int, int]
