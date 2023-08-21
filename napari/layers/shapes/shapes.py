@@ -2602,6 +2602,15 @@ class Shapes(Layer):
             self._data_view.remove(ind)
 
         if len(index) > 0:
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVING,
+                data_indices=tuple(
+                    index,
+                ),
+                vertex_indices=((),),
+            )
+
             self._feature_table.remove(index)
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
@@ -2610,11 +2619,11 @@ class Shapes(Layer):
             self._data_view._face_color = np.delete(
                 self._data_view._face_color, index, axis=0
             )
-        self.selected_data = set()
+        self.selected_data.clear()
         self._finish_drawing()
         self.events.data(
             value=self.data,
-            action=ActionType.REMOVE.value,
+            action=ActionType.REMOVED,
             data_indices=tuple(
                 index,
             ),
