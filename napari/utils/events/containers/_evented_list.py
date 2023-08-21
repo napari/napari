@@ -115,7 +115,9 @@ class EventedList(TypedMutableSequence[_T]):
             self.events.add(**_events)
         else:
             # otherwise create a new one
-            self.events = EmitterGroup(source=self, **_events)
+            self.events = EmitterGroup(
+                source=self, auto_connect=False, **_events
+            )
         super().__init__(data, basetype=basetype, lookup=lookup)
 
     # WAIT!! ... Read the module docstring before reimplement these methods
