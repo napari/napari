@@ -161,13 +161,15 @@ class LabelColormap(Colormap):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
 
     def map(self, values):
-        from napari.utils.colormaps.colormap_utils import low_discrepancy_image
+        print(values)
+        values = np.atleast_1d(values)
+        values[values == None] = 0  # noqa: E711
 
-        # Convert to float32 to match the current GL shader implementation
-        values = np.atleast_1d(values).astype(np.float32)
+        mapped = self.colors[
+            np.mod(values.astype(np.uint64), len(self.colors))
+        ]
 
-        values_low_discr = low_discrepancy_image(values, seed=self.seed)
-        mapped = super().map(values_low_discr)
+        mapped[values == 0] = 0
 
         # If using selected, disable all others
         if self.use_selection:

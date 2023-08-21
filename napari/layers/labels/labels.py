@@ -42,6 +42,7 @@ from napari.utils.colormaps import (
     label_colormap,
     low_discrepancy_image,
 )
+from napari.utils.colormaps.colormap import LabelColormap
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
@@ -215,6 +216,8 @@ class Labels(_ImageBase):
         RGBA tuple of the color of the selected label, or None if the
         background label `0` is selected.
     """
+
+    colormap: LabelColormap
 
     _modeclass = Mode
 

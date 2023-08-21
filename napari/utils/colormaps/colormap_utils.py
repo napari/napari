@@ -405,7 +405,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
     return rgb[:n]
 
 
-def label_colormap(num_colors=256, seed=0.5):
+def label_colormap(num_colors=256, seed=0.5) -> LabelColormap:
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
@@ -418,7 +418,7 @@ def label_colormap(num_colors=256, seed=0.5):
 
     Returns
     -------
-    colormap : napari.utils.Colormap
+    colormap : napari.utils.LabelColormap
         A colormap for use with labels remapped to [0, 1].
 
     Notes
@@ -438,7 +438,7 @@ def label_colormap(num_colors=256, seed=0.5):
         axis=1,
     )
     # Insert alpha at layer 0
-    colors[0, :] = 0  # ensure alpha is 0 for label 0
+    # colors[0, :] = 0  # ensure alpha is 0 for label 0
     return LabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),

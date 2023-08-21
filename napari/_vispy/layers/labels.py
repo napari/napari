@@ -34,6 +34,25 @@ vec4 sample_label_color(float t) {
 }
 """
 
+auto_lookup_shader = """
+uniform sampler2D texture2D_values;
+
+vec4 sample_label_color(float t) {
+    if (t == 0) {
+        return vec4(0);
+    }
+
+    if (($use_selection) && ($selection != t)) {
+        return vec4(0);
+    }
+    t = mod(t, $color_map_size);
+    return texture2D(
+        texture2D_values,
+        vec2(0.0, (t + 0.5) / $color_map_size)
+    );
+}
+"""
+
 
 direct_lookup_shader = """
 uniform sampler2D texture2D_keys;
@@ -110,7 +129,7 @@ class LabelVispyColormap(VispyColormap):
     ):
         super().__init__(colors, controls, interpolation='zero')
         self.glsl_map = (
-            low_disc_lookup_shader.replace('$seed', str(seed))
+            auto_lookup_shader.replace('$color_map_size', str(len(colors)))
             .replace('$use_selection', str(use_selection).lower())
             .replace('$selection', str(selection))
         )
@@ -220,6 +239,14 @@ class VispyLabelsLayer(VispyImageLayer):
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
             )
+            self.node.shared_program['texture2D_values'] = Texture2D(
+                colormap.colors.reshape(
+                    (colormap.colors.shape[0], 1, 4)
+                ).astype(np.float32),
+                internalformat='rgba32f',
+                interpolation='nearest',
+            )
+
         elif mode == 'direct':
             color_dict = (
                 self.layer.color
