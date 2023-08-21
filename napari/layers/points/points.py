@@ -2021,7 +2021,7 @@ class Points(Layer):
             self.refresh()
         self.events.data(
             value=self.data,
-            action=ActionType.CHANGE.value,
+            action=ActionType.CHANGED,
             data_indices=tuple(selection_indices),
             vertex_indices=((),),
         )
