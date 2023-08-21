@@ -45,3 +45,12 @@ def test_datasets(dataset_loader):
 def test_failing_datasets(dataset_loader):
     """Temporary placeholder for datasets that currently fail during creation"""
     dataset_loader()
+
+
+@pytest.mark.parametrize("level", [2, 4])
+def test_mandelbrot_dataset(level):
+    large_image = mandelbrot_dataset(max_levels=level)
+    multiscale_img = large_image["arrays"]
+
+    assert isinstance(multiscale_img[0], zarr.Array)
+    assert len(multiscale_img) == level
