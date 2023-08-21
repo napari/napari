@@ -1,7 +1,7 @@
 import warnings
 from collections import deque
 from contextlib import contextmanager
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Callable, ClassVar, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -45,7 +45,7 @@ from napari.utils.colormaps import (
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
-from napari.utils.misc import _is_array_type
+from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.translations import trans
@@ -218,7 +218,7 @@ class Labels(_ImageBase):
 
     _modeclass = Mode
 
-    _drag_modes = {
+    _drag_modes: ClassVar[Dict[Mode, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -230,7 +230,7 @@ class Labels(_ImageBase):
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes = {
+    _move_modes: ClassVar[Dict[StringEnum, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
@@ -240,7 +240,7 @@ class Labels(_ImageBase):
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
-    _cursor_modes = {
+    _cursor_modes: ClassVar[Dict[Mode, str]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',

@@ -26,7 +26,7 @@ mypy-extensions==1.0.0
     #   psygnal
 npe2==0.7.2
     # via -r resources/requirements_mypy.in
-numpy==1.25.1
+numpy==1.25.2
     # via -r resources/requirements_mypy.in
 packaging==23.1
     # via
@@ -41,7 +41,7 @@ pydantic==1.10.12
     # via
     #   -r resources/requirements_mypy.in
     #   npe2
-pygments==2.15.1
+pygments==2.16.1
     # via
     #   rich
     #   superqt
@@ -54,9 +54,9 @@ qtpy==2.3.1
     #   -r resources/requirements_mypy.in
     #   magicgui
     #   superqt
-rich==13.5.0
+rich==13.5.2
     # via npe2
-superqt==0.4.1
+superqt==0.5.0
     # via magicgui
 tomli-w==1.0.0
     # via npe2

@@ -45,7 +45,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     def __init__(self, *args, **kwargs) -> None:
         self._activate_on_insert = True
         super().__init__(*args, **kwargs)
-        self.selection._pre_add_hook = self._preselect_hook
+        # bound/unbound methods are ambiguous for mypy so we need to ignore
+        # https://mypy.readthedocs.io/en/stable/error_code_list.html?highlight=method-assign#check-that-assignment-target-is-not-a-method-method-assign
+        self.selection._pre_add_hook = self._preselect_hook  # type: ignore[method-assign]
 
     def _preselect_hook(self, value):
         """Called before adding an item to the selection."""
