@@ -17,7 +17,7 @@ on:
 jobs:
   check_labels_and_milestone:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ready to merge')
-    name: Check labels
+    name: Check labels and milestone
     runs-on: ubuntu-latest
     steps:
       - name: Check labels
