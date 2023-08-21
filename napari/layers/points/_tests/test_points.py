@@ -2511,7 +2511,7 @@ def test_points_data_setter_emits_event():
     emitted_events.assert_called_once()
 
 
-def test_points_add_delete_only_emit_one_event():
+def test_points_add_delete_only_emit_two_events():
     data = np.random.random((5, 2))
     emitted_events = Mock()
     layer = Points(data)

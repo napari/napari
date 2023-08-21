@@ -1246,7 +1246,7 @@ def test_removing_selected_shapes():
     layer.remove_selected()
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.REMOVE.value,
+        "action": ActionType.REMOVED,
         "data_indices": tuple(
             selection,
         ),
@@ -2247,10 +2247,10 @@ def test_points_data_setter_emits_event():
     layer = Shapes(data)
     layer.events.data.connect(emitted_events)
     layer.data = np.random.random((4, 2))
-    emitted_events.assert_called_once()
+    assert emitted_events.call_count == 2
 
 
-def test_points_add_delete_only_emit_one_event():
+def test_points_add_delete_only_emit_two_events():
     data = np.random.random((4, 2))
     emitted_events = Mock()
     layer = Shapes(data)
@@ -2259,4 +2259,4 @@ def test_points_add_delete_only_emit_one_event():
     assert emitted_events.call_count == 1
     layer.selected_data = {1}
     layer.remove_selected()
-    assert emitted_events.call_count == 2
+    assert emitted_events.call_count == 4
