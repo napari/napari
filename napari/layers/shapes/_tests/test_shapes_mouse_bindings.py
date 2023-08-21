@@ -349,7 +349,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     n_coord = len(layer.data[0])
     layer.mode = 'vertex_insert'
     layer.selected_data = {0}
-
+    old_data = layer.data
     # Simulate click
     event = ReadOnlyWrapper(
         Event(
@@ -377,9 +377,15 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     # Check new shape added at coordinates
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord + 1
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.CHANGING,
+        "data_indices": tuple(layer.selected_data),
+        "vertex_indices": ((2,),),
+    }
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.CHANGE.value,
+        "action": ActionType.CHANGED,
         "data_indices": tuple(layer.selected_data),
         "vertex_indices": ((2,),),
     }
