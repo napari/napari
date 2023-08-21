@@ -190,6 +190,12 @@ plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
 ignore_missing_imports = true
 show_error_codes = true
 warn_redundant_casts = true
+disable_error_code = [
+  # See discussion at https://github.com/python/mypy/issues/2427;
+  # mypy cannot run type checking on method assignment, but we use
+  # that in several places, so ignore the error
+  'method-assign'
+]
 
 
 # gloabl ignore error
@@ -224,7 +230,7 @@ check_untyped_defs = true
 # individual ignore error
 # we should strive to remove those
 # See https://github.com/napari/napari/issues/2751
-# you can regenerate this list with the following command \047 is single quote. 
+# you can regenerate this list with the following command \047 is single quote.
 # mypy napari | cut -f1 -d: | sort | uniq  | tr '/' '.'  | sed 's/\.py//' | awk '{ print "    \047" $0 "\047," }'
 [[tool.mypy.overrides]]
 module = [
@@ -310,15 +316,6 @@ module = [
     'napari._vispy.utils.cursor',
     'napari.components._layer_slicer',
     'napari.components._viewer_key_bindings',
-    'napari.components.experimental.chunk._cache',
-    'napari.components.experimental.chunk._commands._loader',
-    'napari.components.experimental.chunk._loader',
-    'napari.components.experimental.chunk._pool',
-    'napari.components.experimental.chunk._request',
-    'napari.components.experimental.monitor._api',
-    'napari.components.experimental.monitor._monitor',
-    'napari.components.experimental.monitor._service',
-    'napari.components.experimental.remote._commands',
     'napari.components.layerlist',
     'napari.components.viewer_model',
     'napari.conftest',
@@ -338,7 +335,6 @@ module = [
     'napari.layers.utils._link_layers',
     'napari.layers.utils.color_encoding',
     'napari.layers.utils.color_manager',
-    'napari.layers.utils.color_transformations',
     'napari.layers.utils.stack_utils',
     'napari.layers.utils.string_encoding',
     'napari.layers.utils.style_encoding',
@@ -350,14 +346,9 @@ module = [
     'napari.utils._tracebacks',
     'napari.utils.action_manager',
     'napari.utils.colormaps.categorical_colormap',
-    'napari.utils.events.containers._dict',
     'napari.utils.events.containers._evented_dict',
     'napari.utils.events.containers._evented_list',
     'napari.utils.events.containers._nested_list',
-    'napari.utils.events.containers._selectable_list',
-    'napari.utils.events.containers._selection',
-    'napari.utils.events.containers._set',
-    'napari.utils.events.containers._typed',
     'napari.utils.events.custom_types',
     'napari.utils.events.debugging',
     'napari.utils.events.event',
