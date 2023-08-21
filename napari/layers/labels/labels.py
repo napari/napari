@@ -1453,7 +1453,9 @@ class Labels(_ImageBase):
 
         if not (
             isinstance(self.data, np.ndarray)  # numpy array, or
-            or isinstance(getattr(self.data, 'data'), np.ndarray) # numpy-backed xarray
+            or isinstance(
+                self.data.data, np.ndarray
+            )  # numpy-backed xarray
         ):
             # In the absence of slicing, the current slice becomes
             # invalidated by data_setitem; only in the special case of a NumPy
