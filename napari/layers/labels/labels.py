@@ -44,6 +44,7 @@ from napari.utils.colormaps import (
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
+from napari.utils.indexing import index_in_slice
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
@@ -1464,20 +1465,8 @@ class Labels(_ImageBase):
             # For other types, we update it manually here.
             dims = self._slice.dims
             point = np.round(self.world_to_data(dims.point)).astype(int)
-            point_not_displayed = [point[i] for i in dims.not_displayed]
-            indices_not_displayed = [indices[i] for i in dims.not_displayed]
-            index_in_slice = np.logical_and.reduce(
-                [
-                    index == pt
-                    for index, pt in zip(
-                        indices_not_displayed, point_not_displayed
-                    )
-                ],
-                axis=0,
-            )
-            displayed_indices = tuple(
-                indices[i][index_in_slice] for i in dims.displayed
-            )
+            pt_not_disp = {dim: point[dim] for dim in dims.not_displayed}
+            displayed_indices = index_in_slice(indices, pt_not_disp)
             self._slice.image.raw[displayed_indices] = value
 
         # tensorstore and xarray do not return their indices in
