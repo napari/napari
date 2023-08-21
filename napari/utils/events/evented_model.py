@@ -344,7 +344,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return
 
         # grab current value
-        field_dep = self.__field_dependents__.get(name, {})
+        field_dep = self.__field_dependents__.get(name, set())
         has_callbacks = {
             name: bool(getattr(self.events, name).callbacks)
             for name in field_dep
