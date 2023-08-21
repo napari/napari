@@ -1452,11 +1452,9 @@ class Labels(_ImageBase):
         # update the labels image
         self.data[indices] = value
 
-        if not (
-            isinstance(self.data, np.ndarray)  # numpy array, or
-            or isinstance(
-                self.data.data, np.ndarray
-            )  # numpy-backed xarray
+        if not (  # if not a numpy array or numpy-backed xarray
+            isinstance(self.data, np.ndarray)
+            or isinstance(getattr(self.data, 'data', None), np.ndarray)
         ):
             # In the absence of slicing, the current slice becomes
             # invalidated by data_setitem; only in the special case of a NumPy
