@@ -129,6 +129,8 @@ def chunk_centers(array: da.Array, ndim=3):
     ----------
     array: dask Array
         The input array.
+    ndim: int
+        Dimensions of the array.
 
     Returns
     -------
@@ -158,7 +160,7 @@ def chunk_centers(array: da.Array, ndim=3):
     return mapping
 
 
-def chunk_slices(array: da.Array, ndim=3, interval=None) -> list:
+def chunk_slices(array: da.Array, interval=None) -> list:
     """Create a list of slice objects for each chunk for each dimension.
 
     Make a dictionary mapping chunk centers to chunk slices.
@@ -171,6 +173,8 @@ def chunk_slices(array: da.Array, ndim=3, interval=None) -> list:
     ----------
     array: dask or zarr Array
         The input array, a single scale
+    interval: iterable (D, n)
+        Range in which to limit chunks
 
     Returns
     -------
@@ -229,7 +233,11 @@ def chunk_slices(array: da.Array, ndim=3, interval=None) -> list:
 
 @thread_worker
 def render_sequence(
-    corner_pixels, visible_scales=[], data=None, ndisplay=2, camera=None
+    corner_pixels,
+    camera,
+    visible_scales=None,
+    data=None,
+    ndisplay=2,
 ):
     """Generate multiscale chunk tuples from low to high resolution.
 
@@ -253,6 +261,9 @@ def render_sequence(
         visible_scales {visible_scales}"
     )
 
+    if not visible_scales:
+        visible_scales = []
+
     # TODO 3D needs to change the view interval (e.g. zoom more at each scale)
     for scale in reversed(range(len(data.arrays))):
         if visible_scales[scale]:
@@ -262,9 +273,7 @@ def render_sequence(
             LOGGER.info(
                 f"render_sequence: computing chunk slices for {data_interval}"
             )
-            chunk_keys = chunk_slices(
-                vdata, ndim=ndisplay, interval=data_interval
-            )
+            chunk_keys = chunk_slices(vdata, interval=data_interval)
 
             LOGGER.info("render_sequence: computing priority")
             chunk_queue = []
@@ -341,7 +350,7 @@ def chunk_keys_within_interval(chunk_keys, mins, maxs):
                 above_max and sl.start > maxs[dim]
             ):
                 return []
-            else:
+            else:  # noqa: RET505
                 contained_keys[dim] += [sl]
 
     return contained_keys
@@ -353,7 +362,7 @@ def get_layer_name_for_scale(scale):
 
 
 @tz.curry
-def dims_update_handler(invar, data=None, viewer=None, ndisplay=None):
+def dims_update_handler(invar, viewer, data=None, ndisplay=None):
     """Start a new render sequence with the current viewer state.
 
     Parameters
@@ -706,7 +715,7 @@ def get_chunk_center(chunk_slice):
     return np.array([(sl.start + sl.stop) * 0.5 for sl in chunk_slice])
 
 
-def chunk_priority_3D(chunk_keys, corner_pixels, scale_factor, camera=None):
+def chunk_priority_3D(chunk_keys, corner_pixels, scale_factor, camera):
     """Return the keys for all chunks at this scale within the corner_pixels.
 
     Parameters
@@ -1487,9 +1496,6 @@ class VirtualData:
     @property
     def chunksize(self):
         """Return the size of a chunk."""
-        import pdb
-
-        pdb.set_trace()
         if isinstance(self.array, da.Array):
             return self.chunksize
         else:
