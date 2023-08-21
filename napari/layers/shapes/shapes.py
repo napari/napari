@@ -686,7 +686,7 @@ class Shapes(Layer):
         self._update_dims()
         self.events.data(
             value=self.data,
-            action=ActionType.CHANGE.value,
+            action=ActionType.CHANGED,
             data_indices=slice(None),
             vertex_indices=((),),
         )

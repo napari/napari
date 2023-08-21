@@ -539,7 +539,7 @@ class Points(Layer):
         self._set_data(data)
         self.events.data(
             value=self.data,
-            action=ActionType.CHANGE.value,
+            action=ActionType.CHANGED,
             data_indices=slice(None),
             vertex_indices=((),),
         )
@@ -1937,14 +1937,14 @@ class Points(Layer):
         cur_points = len(self.data)
         self.events.data(
             value=self.data,
-            action=ActionType.ADDING.value,
+            action=ActionType.ADDING,
             data_indices=(-1,),
             vertex_indices=((),),
         )
         self._set_data(np.append(self.data, np.atleast_2d(coords), axis=0))
         self.events.data(
             value=self.data,
-            action=ActionType.ADDED.value,
+            action=ActionType.ADDED,
             data_indices=(-1,),
             vertex_indices=((),),
         )
