@@ -612,7 +612,7 @@ class EditorWidget(QLineEdit):
         event_keystr = event_keyseq.toString(QKeySequence.PortableText)
 
         # Split the shortcut if it contains a symbol.
-        parsed = re.split('[-(?=.+)]', event_keystr)
+        parsed = re.split(r'[-+](?=.+)', event_keystr)
 
         keys_li = []
         # Format how the shortcut is written (ex. 'Ctrl+B' is changed to 'Control-B')
