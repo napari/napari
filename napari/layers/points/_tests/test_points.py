@@ -458,6 +458,7 @@ def test_remove_selected_updates_value():
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
+    old_data = layer.data
     layer.events.data = Mock()
     # set the value
     layer._value = 3
@@ -466,9 +467,15 @@ def test_remove_selected_updates_value():
     selection = {0, 5, 6, 7}
     layer.selected_data = selection
     layer.remove_selected()
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(selection),
+        "vertex_indices": ((),),
+    }
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.REMOVE.value,
+        "action": ActionType.REMOVED,
         "data_indices": tuple(selection),
         "vertex_indices": ((),),
     }
@@ -539,7 +546,7 @@ def test_move():
     assert np.all(layer.data[1:] == unmoved[1:])
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.CHANGE.value,
+        "action": ActionType.CHANGED,
         "data_indices": (0,),
         "vertex_indices": ((),),
     }
@@ -549,7 +556,7 @@ def test_move():
     layer._move([1, 2], np.add([2, 2], [-3, 4]))
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.CHANGE.value,
+        "action": ActionType.CHANGED,
         "data_indices": (1, 2),
         "vertex_indices": ((),),
     }
@@ -1149,6 +1156,7 @@ def test_add_colormap(attribute):
 def test_add_point_direct(attribute: str):
     """Test adding points to layer directly"""
     layer = Points()
+    old_data = layer.data
     assert len(getattr(layer, f'{attribute}_color')) == 0
 
     layer.events.data = Mock()
@@ -1156,9 +1164,15 @@ def test_add_point_direct(attribute: str):
     coord = [18, 18]
 
     layer.add(coord)
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.ADDING,
+        "data_indices": (-1,),
+        "vertex_indices": ((),),
+    }
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.ADD.value,
+        "action": ActionType.ADDED,
         "data_indices": (-1,),
         "vertex_indices": ((),),
     }
@@ -2503,7 +2517,7 @@ def test_points_add_delete_only_emit_one_event():
     layer = Points(data)
     layer.events.data.connect(emitted_events)
     layer.add(np.random.random(2))
-    assert emitted_events.call_count == 1
+    assert emitted_events.call_count == 2
     layer.selected_data = {3}
     layer.remove_selected()
-    assert emitted_events.call_count == 2
+    assert emitted_events.call_count == 4
