@@ -217,7 +217,7 @@ class ActionManager:
         self._validate_action_name(name)
 
         if (action := self._actions.get(name)) and isgeneratorfunction(
-            action.command
+            getattr(action, "command", None)
         ):
             raise ValueError(
                 trans._(
