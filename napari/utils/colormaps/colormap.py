@@ -1,8 +1,9 @@
+from collections import defaultdict
 from enum import Enum
-from typing import Optional
+from typing import Optional, cast
 
 import numpy as np
-from pydantic import PrivateAttr, validator
+from pydantic import Field, PrivateAttr, validator
 
 from napari.utils.color import ColorArray
 from napari.utils.colormaps.colorbars import make_colorbar
@@ -50,7 +51,7 @@ class Colormap(EventedModel):
     name: str = 'custom'
     _display_name: Optional[str] = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array[np.float32, (-1,)] = None
+    controls: Array = Field(default_factory=lambda: cast(Array, []))
 
     def __init__(
         self, colors, display_name: Optional[str] = None, **data
@@ -142,3 +143,70 @@ class Colormap(EventedModel):
     @property
     def colorbar(self):
         return make_colorbar(self)
+
+
+class LabelColormap(Colormap):
+    """Colormap that shuffles values before mapping to colors.
+
+    Attributes
+    ----------
+    seed : float
+    use_selection : bool
+    selection : float
+    """
+
+    seed: float = 0.5
+    use_selection: bool = False
+    selection: float = 0.0
+    interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
+
+    def map(self, values):
+        from napari.utils.colormaps.colormap_utils import low_discrepancy_image
+
+        # Convert to float32 to match the current GL shader implementation
+        values = np.atleast_1d(values).astype(np.float32)
+
+        values_low_discr = low_discrepancy_image(values, seed=self.seed)
+        mapped = super().map(values_low_discr)
+
+        # If using selected, disable all others
+        if self.use_selection:
+            mapped[~np.isclose(values, self.selection)] = 0
+
+        return mapped
+
+
+class DirectLabelColormap(Colormap):
+    """Colormap using a direct mapping from labels to color using a dict.
+
+    Attributes
+    ----------
+    color_dict: defaultdict
+        The dictionary mapping labels to colors.
+    use_selection: bool
+        Whether to color using the selected label.
+    selection: float
+        The selected label.
+    """
+
+    color_dict: defaultdict = Field(
+        default_factory=lambda: defaultdict(lambda: np.zeros(4))
+    )
+    use_selection: bool = False
+    selection: float = 0.0
+
+    def map(self, values):
+        # Convert to float32 to match the current GL shader implementation
+        values = np.atleast_1d(values).astype(np.float32)
+        mapped = np.zeros(values.shape + (4,), dtype=np.float32)
+        for idx in np.ndindex(values.shape):
+            value = values[idx]
+            if value in self.color_dict:
+                color = self.color_dict[value]
+                if len(color) == 3:
+                    color = np.append(color, 1)
+                mapped[idx] = color
+        # If using selected, disable all others
+        if self.use_selection:
+            mapped[~np.isclose(values, self.selection)] = 0
+        return mapped

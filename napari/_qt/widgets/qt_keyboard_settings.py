@@ -1,5 +1,6 @@
 import contextlib
 from collections import OrderedDict
+from typing import Optional
 
 from app_model.backends.qt import (
     qkey2modelkey,
@@ -48,7 +49,7 @@ class ShortcutEditor(QWidget):
         self,
         parent: QWidget = None,
         description: str = "",
-        value: dict = None,
+        value: Optional[dict] = None,
     ) -> None:
         super().__init__(parent=parent)
 
@@ -245,7 +246,9 @@ class ShortcutEditor(QWidget):
 
                 # Set the shortcuts in table.
                 item_shortcut = QTableWidgetItem(
-                    Shortcut(list(shortcuts)[0]).platform if shortcuts else ""
+                    Shortcut(next(iter(shortcuts))).platform
+                    if shortcuts
+                    else ""
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
 
@@ -289,7 +292,7 @@ class ShortcutEditor(QWidget):
         shortcuts = action_manager._shortcuts.get(action_name, [])
         with lock_keybind_update(self):
             self._table.item(row, self._shortcut_col).setText(
-                Shortcut(list(shortcuts)[0]).platform if shortcuts else ""
+                Shortcut(next(iter(shortcuts))).platform if shortcuts else ""
             )
             self._table.item(row, self._shortcut_col2).setText(
                 Shortcut(list(shortcuts)[1]).platform
@@ -388,7 +391,7 @@ class ShortcutEditor(QWidget):
 
             # get the current item from shortcuts column
             current_item = self._table.currentItem()
-            new_shortcut = current_item.text()
+            new_shortcut = Shortcut.parse_platform(current_item.text())
             if new_shortcut:
                 new_shortcut = new_shortcut[0].upper() + new_shortcut[1:]
 
@@ -587,7 +590,7 @@ class EditorWidget(QLineEdit):
             Qt.Key.Key_Meta,
             Qt.Key.Key_Delete,
         ):
-            self.setText(str(qkey2modelkey(event_key)))
+            self.setText(Shortcut(qkey2modelkey(event_key)).platform)
             return
 
         if event_key in {
@@ -603,8 +606,7 @@ class EditorWidget(QLineEdit):
         translator = ShortcutTranslator()
         event_keyseq = translator.keyevent_to_keyseq(event)
         kb = qkeysequence2modelkeybinding(event_keyseq)
-
-        self.setText(str(kb))
+        self.setText(Shortcut(kb).platform)
 
 
 class ShortcutTranslator(QKeySequenceEdit):

@@ -407,11 +407,8 @@ def dims_update_handler(invar, viewer, data=None, ndisplay=None):
 
         pdb.set_trace()
 
-    corners = viewer.layers[get_layer_name_for_scale(0)].corner_pixels
-
     LOGGER.info(
-        f"dims_update_handler: start render_sequence {corners} on layer \
-        {get_layer_name_for_scale(0)}"
+        f"dims_update_handler: start render_sequence {corner_pixels} on {root_layer}"
     )
 
     # Find the visible scales
@@ -449,7 +446,7 @@ def dims_update_handler(invar, viewer, data=None, ndisplay=None):
 
     # Start a new multiscale render
     worker = render_sequence(
-        corners,
+        corner_pixels,
         data=data,
         visible_scales=visible_scales,
         ndisplay=ndisplay,
@@ -457,7 +454,7 @@ def dims_update_handler(invar, viewer, data=None, ndisplay=None):
     )
 
     LOGGER.info(
-        f"dims_update_handler: started render_sequence with corners {corners}"
+        f"dims_update_handler: started render_sequence with corners {corner_pixels}"
     )
 
     # This will consume our chunks and update the numpy "canvas" and refresh
@@ -518,7 +515,12 @@ def dims_update_handler(invar, viewer, data=None, ndisplay=None):
 
 
 def add_progressive_loading_image(
-    img, viewer=None, contrast_limits=[0, 255], colormap='PiYG', ndisplay=2
+    img,
+    viewer=None,
+    contrast_limits=[0, 255],
+    colormap='PiYG',
+    ndisplay=2,
+    rendering="attenuated_mip",
 ):
     """Add tiled multiscale image."""
     # initialize multiscale virtual data (generate scale factors, translations,
@@ -552,9 +554,10 @@ def add_progressive_loading_image(
     top_left = canvas_corners[0, :]
     bottom_right = canvas_corners[1, :]
 
-    # TODO hack for 3D setup
-    # top_left = [viewer.dims.point[-3]] + top_left.tolist()
-    # bottom_right = [viewer.dims.point[-3]] + bottom_right.tolist()
+    # TODO This is required when ndisplay does not match the ndim of the data
+    if ndisplay != len(img[0].shape):
+        top_left = [viewer.dims.point[-ndisplay]] + top_left.tolist()
+        bottom_right = [viewer.dims.point[-ndisplay]] + bottom_right.tolist()
 
     LOGGER.debug(f'>>> top left: {top_left}, bottom_right: {bottom_right}')
     # set the extents for each scale in data coordinates
@@ -583,7 +586,8 @@ def add_progressive_loading_image(
             name=get_layer_name_for_scale(scale),
             colormap=colormap,
             scale=multiscale_data._scale_factors[scale],
-            rendering="attenuated_mip",
+            rendering=rendering,
+            contrast_limits=contrast_limits,
         )
         layers[scale] = layer
         layer.metadata["translated"] = False
@@ -683,15 +687,11 @@ def should_render_scale_2D(scale, viewer, min_scale, max_scale):
 
     pixel_size = viewer.camera.zoom * max(layer_scale)
 
-    if max_scale == 7:
-        max_pixel = 5
-        min_pixel = 0.25
-    else:
-        max_pixel = 4
-        min_pixel = 0.5
-    greater_than_min_pixel = pixel_size > min_pixel
-    less_than_max_pixel = pixel_size < max_pixel
-    render = greater_than_min_pixel and less_than_max_pixel
+    # Define bounds of expected pixel size
+    max_pixel = 4
+    min_pixel = 0.25
+
+    render = min_pixel < pixel_size < max_pixel
 
     if not render:
         if scale == min_scale and pixel_size > max_pixel:
@@ -1566,6 +1566,7 @@ class MultiScaleVirtualData:
         self.dtype = highest_res.dtype
         # This shape is the shape of the true data, but not our hyperslice
         self.shape = highest_res.shape
+
         self.ndim = len(arrays)
 
         self.ndisplay = ndisplay
@@ -1609,9 +1610,11 @@ class MultiScaleVirtualData:
         Parameters
         ----------
         min_coord: np.array
-            top left corner of the visible canvas
+            min coordinate in data space, should correspond to top left corner
+            of the visible canvas
         max_coord: np.array
-            bottom right corner of the visible canvas
+            max coordinate in data space, should correspond to bottom right
+            corner of the visible canvas
         visible_scales: list
             Optional. ???
         """

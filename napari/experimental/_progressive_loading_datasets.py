@@ -164,16 +164,10 @@ def luethi_zenodo_7144919():
 
     multiscale_data = z_grp[large_image["dataset"]]
 
-    large_image["arrays"] = []
-    for scale in range(large_image["scale_levels"]):
-        array = multiscale_data[str(scale)]
-
-        # TODO extract scale_factors now
-
-        # large_image["arrays"].append(result.data.rechunk((3, 10, 256, 256)))
-        large_image["arrays"].append(
-            da.from_array(array, chunks=(1, 10, 256, 256)).squeeze()
-        )
+    large_image["arrays"] = [
+        multiscale_data[str(scale)]
+        for scale in range(large_image["scale_levels"])
+    ]
 
     return large_image
 
@@ -324,6 +318,8 @@ def mandelbrot_dataset(max_levels=14):
 
 if __name__ == "__main__":
     max_levels = 16
+
+    luethi_zenodo_7144919()
 
     large_image = {
         "container": "mandelbrot.zarr/",

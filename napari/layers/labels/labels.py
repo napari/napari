@@ -1,11 +1,13 @@
 import warnings
 from collections import deque
 from contextlib import contextmanager
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Callable, ClassVar, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from scipy import ndimage as ndi
+from skimage.draw import polygon2mask
 
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
@@ -36,14 +38,14 @@ from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import (
-    color_dict_to_colormap,
+    direct_colormap,
     label_colormap,
     low_discrepancy_image,
 )
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
-from napari.utils.misc import _is_array_type
+from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.translations import trans
@@ -216,32 +218,36 @@ class Labels(_ImageBase):
 
     _modeclass = Mode
 
-    _drag_modes = {
+    _drag_modes: ClassVar[Dict[Mode, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
         Mode.PAINT: draw,
         Mode.FILL: draw,
         Mode.ERASE: draw,
+        Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes = {
+    _move_modes: ClassVar[Dict[StringEnum, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
         Mode.PAINT: brush_size_on_mouse_move,
         Mode.FILL: no_op,
         Mode.ERASE: brush_size_on_mouse_move,
+        Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
-    _cursor_modes = {
+
+    _cursor_modes: ClassVar[Dict[Mode, str]] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',
         Mode.PAINT: 'circle',
         Mode.FILL: 'cross',
         Mode.ERASE: 'circle',
+        Mode.POLYGON: 'cross',
     }
 
     _history_limit = 100
@@ -250,7 +256,7 @@ class Labels(_ImageBase):
         self,
         data,
         *,
-        num_colors=50,
+        num_colors=49,
         features=None,
         properties=None,
         color=None,
@@ -278,8 +284,8 @@ class Labels(_ImageBase):
         self._seed = seed
         self._background_label = 0
         self._num_colors = num_colors
-        self._random_colormap = label_colormap(self.num_colors)
-        self._all_vals = np.array([], dtype=np.float32)
+        self._random_colormap = label_colormap(self.num_colors, seed)
+        self._direct_colormap = direct_colormap()
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
@@ -287,13 +293,12 @@ class Labels(_ImageBase):
         self._cached_mapped_labels: Optional[np.ndarray] = None
 
         data = self._ensure_int_labels(data)
-        self._color_lookup_func = None
 
         super().__init__(
             data,
             rgb=False,
             colormap=self._random_colormap,
-            contrast_limits=[0.0, 1.0],
+            contrast_limits=[0.0, 2**23 - 1.0],
             interpolation2d='nearest',
             interpolation3d='nearest',
             rendering=rendering,
@@ -331,6 +336,12 @@ class Labels(_ImageBase):
             labels_update=Event,
         )
 
+        from napari.components.overlays.labels_polygon import (
+            LabelsPolygonOverlay,
+        )
+
+        self._overlays.update({"polygon": LabelsPolygonOverlay()})
+
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
         )
@@ -341,6 +352,8 @@ class Labels(_ImageBase):
         self._brush_size = 10
 
         self._selected_label = 1
+        self.colormap.selection = self._selected_label
+        self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
         self._updated_slice = None
@@ -441,11 +454,10 @@ class Labels(_ImageBase):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-        # invalidate _all_vals to trigger re-generation
-        # in _raw_to_displayed
-        self._all_vals = np.array([], dtype=np.float32)
+        self.colormap.seed = seed
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
+        self.events.colormap()  # Will update the LabelVispyColormap shader
         self.refresh()
         self.events.selected_label()
 
@@ -546,6 +558,7 @@ class Labels(_ImageBase):
             for label, color_str in color.items()
         }
         self._color = colors
+        self._direct_colormap = direct_colormap(colors)
 
         # `colors` may contain just the default None and background label
         # colors, in which case we need to be in AUTO color mode. Otherwise,
@@ -658,12 +671,12 @@ class Labels(_ImageBase):
             return
 
         self._prev_selected_label = self.selected_label
+        self.colormap.selection = selected_label
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
+
         self.events.selected_label()
 
-        # note: self.color_mode returns a string and this comparison fails,
-        # so use self._color_mode
         if self.show_selected_label:
             self._cached_labels = None  # invalidates labels cache
             self.refresh()
@@ -688,22 +701,12 @@ class Labels(_ImageBase):
     @color_mode.setter
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
-
-        if color_mode == LabelColorMode.DIRECT:
-            custom_colormap, label_color_index = color_dict_to_colormap(
-                self.color
-            )
-            super()._set_colormap(custom_colormap)
-            self._label_color_index = label_color_index
-        elif color_mode == LabelColorMode.AUTO:
-            self._label_color_index = {}
-            super()._set_colormap(self._random_colormap)
-
-        else:
-            raise ValueError(trans._("Unsupported Color Mode"))
-
         self._cached_labels = None  # invalidates labels cache
         self._color_mode = color_mode
+        if color_mode == LabelColorMode.AUTO:
+            super()._set_colormap(self._random_colormap)
+        else:
+            super()._set_colormap(self._direct_colormap)
         self._selected_color = self.get_color(self.selected_label)
         self.events.color_mode()
         self.events.colormap()
@@ -716,9 +719,10 @@ class Labels(_ImageBase):
         return self._show_selected_label
 
     @show_selected_label.setter
-    def show_selected_label(self, filter_val):
-        self._show_selected_label = filter_val
-        self.events.show_selected_label(show_selected_label=filter_val)
+    def show_selected_label(self, show_selected):
+        self._show_selected_label = show_selected
+        self.colormap.use_selection = show_selected
+        self.events.show_selected_label(show_selected_label=show_selected)
         self._cached_labels = None
         self.refresh()
 
@@ -760,6 +764,7 @@ class Labels(_ImageBase):
         if mode == self._mode:
             return mode
 
+        self._overlays["polygon"].enabled = mode == Mode.POLYGON
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 
@@ -785,14 +790,8 @@ class Labels(_ImageBase):
 
     @contrast_limits.setter
     def contrast_limits(self, value):
-        # Setting contrast_limits of labels layers leads to wrong visualization of the layer
-        if tuple(value) != (0, 1):
-            raise AttributeError(
-                trans._(
-                    "Setting contrast_limits on labels layers is not allowed.",
-                    deferred=True,
-                )
-            )
+        # Setting contrast_limits of labels layers leads to wrong visualization
+        # of the layer, so we ignore the value
         self._contrast_limits = (0, 1)
 
     def _reset_editable(self) -> None:
@@ -826,95 +825,8 @@ class Labels(_ImageBase):
             image = np.where(im != 0, low_discrepancy_image(im, self._seed), 0)
         return image
 
-    def _lookup_with_index(self, im, selected_label=None):
-        """Returns display version of im using color lookup array by index
-
-        Parameters
-        ----------
-        im : array or int
-            Raw integer input image.
-        selected_label : int, optional
-            Value of selected label to color, by default None
-        """
-        if selected_label:
-            if selected_label > len(self._all_vals):
-                self._color_lookup_func = self._get_color_lookup_func(
-                    im,
-                    min(np.min(im), selected_label),
-                    max(np.max(im), selected_label),
-                )
-            if (
-                self._color_lookup_func
-                == self._lookup_with_low_discrepancy_image
-            ):
-                image = self._color_lookup_func(im, selected_label)
-            else:
-                colors = np.zeros_like(self._all_vals)
-                colors[selected_label] = low_discrepancy_image(
-                    selected_label, self._seed
-                )
-                image = colors[im]
-        else:
-            try:
-                image = self._all_vals[im]
-            except IndexError:
-                self._color_lookup_func = self._get_color_lookup_func(
-                    im, np.min(im), np.max(im)
-                )
-                if (
-                    self._color_lookup_func
-                    == self._lookup_with_low_discrepancy_image
-                ):
-                    # revert to "classic" mode converting all pixels since we
-                    # encountered a large value in the raw labels image
-                    image = self._color_lookup_func(im, selected_label)
-                else:
-                    image = self._all_vals[im]
-        return image
-
-    def _get_color_lookup_func(self, data, min_label_val, max_label_val):
-        """Returns function used for mapping label values to colors
-
-        If array of [0..max(data)] would be larger than data,
-        returns lookup_with_low_discrepancy_image, otherwise returns
-        lookup_with_index
-
-        Parameters
-        ----------
-        data : array
-            labels data
-        min_label_val : int
-            minimum label value in data
-        max_label_val : int
-            maximum label value in data
-
-        Returns
-        -------
-        lookup_func : function
-            function to use for mapping label values to colors
-        """
-
-        # low_discrepancy_image is slow for large images, but large labels can
-        # blow up memory usage of an index array of colors. If the index array
-        # would be larger than the image, we go back to computing the low
-        # discrepancy image on the whole input image. (Up to a minimum value of
-        # 1kB.)
-        min_label_val0 = min(min_label_val, 0)
-        # +1 to allow indexing with max_label_val
-        data_range = max_label_val - min_label_val0 + 1
-        nbytes_low_discrepancy = low_discrepancy_image(np.array([0])).nbytes
-        max_nbytes = max(data.nbytes, 1024)
-        if data_range * nbytes_low_discrepancy > max_nbytes:
-            return self._lookup_with_low_discrepancy_image
-
-        if self._all_vals.size < data_range:
-            new_all_vals = low_discrepancy_image(
-                np.arange(min_label_val0, max_label_val + 1, dtype=np.float32),
-                self._seed,
-            )
-            self._all_vals = np.roll(new_all_vals, min_label_val0)
-            self._all_vals[0] = 0
-        return self._lookup_with_index
+    def _as_type(self, data, selected_label=None):
+        return data.astype(np.float32)
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
         """Override to convert raw slice data to displayed label colors."""
@@ -972,6 +884,7 @@ class Labels(_ImageBase):
         labels = raw  # for readability
         sliced_labels = None
 
+        # lookup function -> self._as_type
         if self.contour > 0:
             if labels.ndim == 2:
                 # Add one more pixel for the correct borders computation
@@ -1020,14 +933,13 @@ class Labels(_ImageBase):
             self._cached_mapped_labels = np.zeros_like(
                 labels, dtype=np.float32
             )
-
             labels_to_map = sliced_labels
 
         # If there are no changes, just return the cached image
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
-        mapped_labels = self._map_labels_to_colors(labels_to_map)
+        mapped_labels = self._as_type(labels_to_map)
 
         if update_mask is not None:
             self._cached_mapped_labels[data_slice][update_mask] = mapped_labels
@@ -1036,79 +948,43 @@ class Labels(_ImageBase):
 
         return self._cached_mapped_labels[data_slice]
 
-    def _map_labels_to_colors(self, labels_to_map):
-        """Convert an integer labels to a float array of encoded colors.
+    def _update_thumbnail(self):
+        """Update the thumbnail with current data and colormap.
 
-        Parameters
-        ----------
-        labels_to_map : array
-            Integer input labels.
-        Returns
-        -------
-             Encoded colors mapped between 0 and 1.
+        This is overridden from _ImageBase because we don't need to do things
+        like adjusting gamma or changing the data based on the contrast
+        limits.
         """
-        if self._color_lookup_func is None:
-            self._color_lookup_func = self._get_color_lookup_func(
-                labels_to_map, np.min(labels_to_map), np.max(labels_to_map)
-            )
-        if (
-            not self.show_selected_label
-            and self._color_mode == LabelColorMode.DIRECT
-        ):
-            min_label_id = labels_to_map.min()
-            max_label_id = labels_to_map.max()
-            upper_bound_n_unique_labels = max_label_id - min_label_id
-            none_color_index = self._label_color_index[None]
+        if not self.loaded:
+            # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
+            # Is there a nicer way to prevent this from getting called?
+            return
 
-            if upper_bound_n_unique_labels < 65536:
-                mapping = np.array(
-                    [
-                        self._label_color_index.get(label_id, none_color_index)
-                        for label_id in range(min_label_id, max_label_id + 1)
-                    ]
-                )
-                mapped_labels = mapping[labels_to_map - min_label_id]
-            else:
-                unique_ids, inv = np.unique(labels_to_map, return_inverse=True)
-                mapped_labels = np.array(
-                    [
-                        self._label_color_index.get(label_id, none_color_index)
-                        for label_id in unique_ids
-                    ]
-                )[inv].reshape(labels_to_map.shape)
-        elif (
-            not self.show_selected_label
-            and self._color_mode == LabelColorMode.AUTO
-        ):
-            mapped_labels = self._color_lookup_func(labels_to_map)
-        elif (
-            self.show_selected_label
-            and self._color_mode == LabelColorMode.AUTO
-        ):
-            mapped_labels = self._color_lookup_func(
-                labels_to_map, self._selected_label
-            )
-        elif (
-            self.show_selected_label
-            and self._color_mode == LabelColorMode.DIRECT
-        ):
-            selected_label = self._selected_label
-            if selected_label not in self._label_color_index:
-                selected_label = None
-            index = self._label_color_index
-            mapped_labels = np.where(
-                labels_to_map == selected_label,
-                index[selected_label],
-                np.where(
-                    labels_to_map != self._background_label,
-                    index[None],
-                    index[self._background_label],
-                ),
-            )
-        else:
-            raise ValueError("Unsupported Color Mode")
+        image = self._slice.thumbnail.view
+        if self._slice_input.ndisplay == 3 and self.ndim > 2:
+            # we are only using the current slice so `image` will never be
+            # bigger than 3. If we are in this clause, it is exactly 3, so we
+            # use max projection. For labels, ideally we would use "first
+            # nonzero projection", but we leave that for a future PR. (TODO)
+            image = np.max(image, axis=0)
+        imshape = np.array(image.shape[:2])
+        thumbshape = np.array(self._thumbnail_shape[:2])
 
-        return mapped_labels
+        raw_zoom_factor = np.min(thumbshape / imshape)
+        new_shape = np.clip(
+            raw_zoom_factor * imshape, a_min=1, a_max=thumbshape
+        )
+        zoom_factor = tuple(new_shape / imshape)
+
+        downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
+        if self.color_mode == LabelColorMode.AUTO:
+            color_array = self.colormap.map(downsampled.ravel())
+        else:  # direct
+            color_array = self._direct_colormap.map(downsampled.ravel())
+        colormapped = color_array.reshape(downsampled.shape + (4,))
+        colormapped[..., 3] *= self.opacity
+
+        self.thumbnail = colormapped
 
     def new_colormap(self):
         self.seed = np.random.rand()
@@ -1117,10 +993,12 @@ class Labels(_ImageBase):
         """Return the color corresponding to a specific label."""
         if label == self._background_label:
             col = None
-        elif label is None:
+        elif label is None or (
+            self.show_selected_label and label != self.selected_label
+        ):
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
-            val = self._map_labels_to_colors(np.array([label]))
+            val = self._as_type(np.array([label]))
             col = self.colormap.map(val)[0]
         return col
 
@@ -1163,7 +1041,7 @@ class Labels(_ImageBase):
                 start_point, end_point, n_points, endpoint=True
             )
             im_slice = self._slice.image.raw
-            bounding_box = self._display_bounding_box(np.array(dims_displayed))
+            bounding_box = self._display_bounding_box(dims_displayed)
             # the display bounding box is returned as a closed interval
             # (i.e. the endpoint is included) by the method, but we need
             # open intervals in the code that follows, so we add 1.
@@ -1435,13 +1313,7 @@ class Labels(_ImageBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
-        shape = self.data.shape
-        dims_to_paint = sorted(
-            self._slice_input.order[-self.n_edit_dimensions :]
-        )
-        dims_not_painted = sorted(
-            self._slice_input.order[: -self.n_edit_dimensions]
-        )
+        shape, dims_to_paint = self._get_shape_and_dims_to_paint()
         paint_scale = np.array(
             [self.scale[i] for i in dims_to_paint], dtype=float
         )
@@ -1449,7 +1321,6 @@ class Labels(_ImageBase):
         slice_coord = [int(np.round(c)) for c in coord]
         if self.n_edit_dimensions < self.ndim:
             coord_paint = [coord[i] for i in dims_to_paint]
-            shape = [shape[i] for i in dims_to_paint]
         else:
             coord_paint = coord
 
@@ -1462,6 +1333,71 @@ class Labels(_ImageBase):
             int
         )
 
+        self._paint_indices(
+            mask_indices, new_label, shape, dims_to_paint, slice_coord, refresh
+        )
+
+    def paint_polygon(self, points, new_label):
+        """Paint a polygon over existing labels with a new label.
+
+        Parameters
+        ----------
+        points : list of coordinates
+            List of coordinates of the vertices of a polygon.
+        new_label : int
+            Value of the new label to be filled in.
+        """
+        shape, dims_to_paint = self._get_shape_and_dims_to_paint()
+
+        if len(dims_to_paint) != 2:
+            raise NotImplementedError(
+                "Polygon painting is implemented only in 2D."
+            )
+
+        points = np.array(points, dtype=int)
+        slice_coord = points[0].tolist()
+        points2d = points[:, dims_to_paint]
+
+        polygon_mask = polygon2mask(shape, points2d)
+        mask_indices = np.argwhere(polygon_mask)
+        self._paint_indices(
+            mask_indices,
+            new_label,
+            shape,
+            dims_to_paint,
+            slice_coord,
+            refresh=True,
+        )
+
+    def _paint_indices(
+        self,
+        mask_indices,
+        new_label,
+        shape,
+        dims_to_paint,
+        slice_coord=None,
+        refresh=True,
+    ):
+        """Paint over existing labels with a new label, using the selected
+        mask indices, either only on the visible slice or in all n dimensions.
+
+        Parameters
+        ----------
+        mask_indices : numpy array of integer coordinates
+            Mask to paint represented by an array of its coordinates.
+        new_label : int
+            Value of the new label to be filled in.
+        shape : list
+            The label data shape upon which painting is performed.
+        dims_to_paint: list
+            List of dimensions of the label data that are used for painting.
+        refresh : bool
+            Whether to refresh view slice or not. Set to False to batch paint
+            calls.
+        """
+        dims_not_painted = sorted(
+            self._slice_input.order[: -self.n_edit_dimensions]
+        )
         # discard candidate coordinates that are out of bounds
         mask_indices = indices_in_shape(mask_indices, shape)
 
@@ -1491,6 +1427,18 @@ class Labels(_ImageBase):
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         self.data_setitem(slice_coord, new_label, refresh)
+
+    def _get_shape_and_dims_to_paint(self) -> Tuple[list, list]:
+        dims_to_paint = sorted(self._get_dims_to_paint())
+        shape = self.data.shape
+
+        if self.n_edit_dimensions < self.ndim:
+            shape = [shape[i] for i in dims_to_paint]
+
+        return shape, dims_to_paint
+
+    def _get_dims_to_paint(self) -> list:
+        return list(self._slice_input.order[-self.n_edit_dimensions :])
 
     def data_setitem(self, indices, value, refresh=True):
         """Set `indices` in `data` to `value`, while writing to edit history.
@@ -1560,9 +1508,9 @@ class Labels(_ImageBase):
 
     def get_status(
         self,
-        position: Optional[Tuple] = None,
+        position: Optional[npt.ArrayLike] = None,
         *,
-        view_direction: Optional[np.ndarray] = None,
+        view_direction: Optional[npt.ArrayLike] = None,
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
     ) -> dict:
@@ -1601,13 +1549,13 @@ class Labels(_ImageBase):
 
         pos = position
         if pos is not None:
-            pos = pos[-self.ndim :]
+            pos = np.asarray(pos)[-self.ndim :]
         source_info['coordinates'] = generate_layer_coords_status(pos, value)
 
         # if this labels layer has properties
         properties = self._get_properties(
             position,
-            view_direction=view_direction,
+            view_direction=np.asarray(view_direction),
             dims_displayed=dims_displayed,
             world=world,
         )

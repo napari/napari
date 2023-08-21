@@ -6,7 +6,7 @@ localization data.
 import gettext
 import os
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import ClassVar, Dict, Optional, Union
 
 from yaml import safe_load
 
@@ -599,7 +599,7 @@ class _Translator:
     Translations manager.
     """
 
-    _TRANSLATORS: Dict[str, TranslationBundle] = {}
+    _TRANSLATORS: ClassVar[Dict[str, TranslationBundle]] = {}
     _LOCALE = _DEFAULT_LOCALE
 
     @staticmethod

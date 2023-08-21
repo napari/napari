@@ -10,7 +10,6 @@ from napari.layers.utils.layer_utils import (
 from napari.utils.translations import trans
 
 MIN_BRUSH_SIZE = 1
-MAX_BRUSH_SIZE = 40
 
 
 def register_label_action(description: str, repeatable: bool = False):
@@ -36,6 +35,11 @@ def activate_labels_paint_mode(layer: Labels):
     layer.mode = Mode.PAINT
 
 
+@register_label_mode_action(trans._("Activate the polygon tool"))
+def activate_labels_polygon_mode(layer: Labels):
+    layer.mode = Mode.POLYGON
+
+
 @register_label_mode_action(trans._("Activate the fill bucket"))
 def activate_labels_fill_mode(layer: Labels):
     layer.mode = Mode.FILL
@@ -57,6 +61,7 @@ labels_fun_to_mode = [
     (activate_labels_transform_mode, Mode.TRANSFORM),
     (activate_labels_erase_mode, Mode.ERASE),
     (activate_labels_paint_mode, Mode.PAINT),
+    (activate_labels_polygon_mode, Mode.POLYGON),
     (activate_labels_fill_mode, Mode.FILL),
     (activate_labels_picker_mode, Mode.PICK),
 ]
@@ -113,11 +118,7 @@ def decrease_brush_size(layer: Labels):
 )
 def increase_brush_size(layer: Labels):
     """Increase the brush size"""
-    if (
-        layer.brush_size < MAX_BRUSH_SIZE
-    ):  # here we should probably add a non-hard-coded
-        # reference to the limit values of brush size?
-        layer.brush_size += 1
+    layer.brush_size += 1
 
 
 @register_layer_attr_action(
@@ -137,3 +138,19 @@ def undo(layer: Labels):
 def redo(layer: Labels):
     """Redo any previously undone actions."""
     layer.redo()
+
+
+@register_label_action(
+    trans._("Reset the current polygon"),
+)
+def reset_polygon(layer: Labels):
+    """Reset the drawing of the current polygon."""
+    layer._overlays["polygon"].points = []
+
+
+@register_label_action(
+    trans._("Complete the current polygon"),
+)
+def complete_polygon(layer: Labels):
+    """Complete the drawing of the current polygon."""
+    layer._overlays["polygon"].add_polygon_to_labels(layer)
