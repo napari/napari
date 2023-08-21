@@ -68,7 +68,8 @@ vec4 sample_label_color(float t) {
     // we get a different value:
     // - if it's the empty key, exit;
     // - otherwise, it's a hash collision: continue searching
-    while ((abs(found - t) > 1e-8) && (abs(found - empty) > 1e-8)) {
+    float initial_t = t;
+    while ((abs(found - initial_t) > 1e-8) && (abs(found - empty) > 1e-8)) {
         t = t + 1;
         // same as above
         vec2 pos = vec2(
@@ -143,12 +144,12 @@ def hash2d_get(key, keys, values, empty_val=0):
     """
     pos = idx_to_2D(key, keys.shape)
     initial_key = key
-    while keys[pos] != key and keys[pos] != empty_val:
+    while keys[pos] != initial_key and keys[pos] != empty_val:
         if key - initial_key > keys.size:
             raise KeyError('label does not exist')
         key += 1
         pos = idx_to_2D(key, keys.shape)
-    return pos if keys[pos] == key else None
+    return pos if keys[pos] == initial_key else None
 
 
 def hash2d_set(key, value, keys, values, empty_val=0):
@@ -164,7 +165,7 @@ def hash2d_set(key, value, keys, values, empty_val=0):
             raise OverflowError('too many labels')
         key += 1
         pos = idx_to_2D(key, keys.shape)
-    keys[pos] = key
+    keys[pos] = initial_key
     values[pos] = value
 
 
