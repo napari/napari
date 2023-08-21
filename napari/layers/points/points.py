@@ -1935,10 +1935,16 @@ class Points(Layer):
             Point or points to add to the layer data.
         """
         cur_points = len(self.data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.ADDING.value,
+            data_indices=(-1,),
+            vertex_indices=((),),
+        )
         self._set_data(np.append(self.data, np.atleast_2d(coords), axis=0))
         self.events.data(
             value=self.data,
-            action=ActionType.ADD.value,
+            action=ActionType.ADDED.value,
             data_indices=(-1,),
             vertex_indices=((),),
         )
