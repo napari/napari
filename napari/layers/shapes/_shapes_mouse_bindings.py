@@ -566,6 +566,13 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
         # No vertex was clicked on so return
         return
 
+    layer.events.data(
+        value=layer.data,
+        action=ActionType.CHANGING,
+        data_indices=(shape_under_cursor,),
+        vertex_indices=((vertex_under_cursor,),),
+    )
+
     # Have clicked on a current vertex so remove
     shape_type = type(layer._data_view.shapes[shape_under_cursor])
     if shape_type == Ellipse:
@@ -596,7 +603,7 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
             layer._selected_box = layer.interaction_box(shapes)
     layer.events.data(
         value=layer.data,
-        action=ActionType.CHANGE.value,
+        action=ActionType.CHANGED,
         data_indices=(shape_under_cursor,),
         vertex_indices=((vertex_under_cursor,),),
     )
