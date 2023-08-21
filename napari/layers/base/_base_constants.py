@@ -123,9 +123,6 @@ class ActionType(StringEnum):
     Action types for layer.events.data of Shapes and Points layer.
     """
 
-    ADD = auto()
-    REMOVE = auto()
-    CHANGE = auto()
     ADDING = auto()
     REMOVING = auto()
     CHANGING = auto()
