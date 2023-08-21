@@ -1999,7 +1999,7 @@ class Shapes(Layer):
             )
             self.events.data(
                 value=self.data,
-                action=ActionType.ADD.value,
+                action=ActionType.ADDING,
                 data_indices=(-1,),
                 vertex_indices=((),),
             )
@@ -2547,6 +2547,12 @@ class Shapes(Layer):
                 )
         self._is_creating = False
         self._update_dims()
+        self.events.data(
+            value=self.data,
+            action=ActionType.ADDED,
+            data_indices=(-1,),
+            vertex_indices=((),),
+        )
 
     @contextmanager
     def block_thumbnail_update(self):
