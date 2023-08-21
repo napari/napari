@@ -57,6 +57,11 @@ def orient_plane_normal_along_view_direction(layer: Image):
     )
 
 
+@register_image_action(trans._('orient plane normal along view direction'))
+def orient_plane_normal_along_view_direction_no_gen(layer: Image):
+    list(orient_plane_normal_along_view_direction(layer))
+
+
 @register_image_action(trans._('Transform'))
 def activate_image_transform_mode(layer):
     layer.mode = Mode.TRANSFORM
