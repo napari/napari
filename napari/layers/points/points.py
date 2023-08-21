@@ -1949,6 +1949,14 @@ class Points(Layer):
         index = list(self.selected_data)
         index.sort()
         if len(index):
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVING,
+                data_indices=tuple(
+                    self.selected_data,
+                ),
+                vertex_indices=((),),
+            )
             self._shown = np.delete(self._shown, index, axis=0)
             self._size = np.delete(self._size, index, axis=0)
             self._symbol = np.delete(self._symbol, index, axis=0)
@@ -1973,7 +1981,7 @@ class Points(Layer):
             self._set_data(np.delete(self.data, index, axis=0))
             self.events.data(
                 value=self.data,
-                action=ActionType.REMOVE.value,
+                action=ActionType.REMOVED,
                 data_indices=tuple(
                     self.selected_data,
                 ),
