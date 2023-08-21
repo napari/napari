@@ -9,31 +9,6 @@ from vispy.visuals.shaders import Function, FunctionChain
 from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
 from napari._vispy.visuals.volume import Volume as VolumeNode
 
-low_disc_lookup_shader = """
-uniform sampler2D texture2D_LUT;
-
-vec4 sample_label_color(float t) {
-    float phi_mod = 0.6180339887498948482;  // phi - 1
-    float value = 0.0;
-    float margin = 1.0 / 256;
-
-    if (t == 0) {
-        return vec4(0);
-    }
-
-    if (($use_selection) && ($selection != t)) {
-        return vec4(0);
-    }
-
-    value = mod((t * phi_mod + $seed), 1.0) * (1 - 2*margin) + margin;
-
-    return texture2D(
-        texture2D_LUT,
-        vec2(0.0, clamp(value, 0.0, 1.0))
-    );
-}
-"""
-
 auto_lookup_shader = """
 uniform sampler2D texture2D_values;
 
@@ -122,12 +97,10 @@ class LabelVispyColormap(VispyColormap):
     def __init__(
         self,
         colors,
-        controls=None,
-        seed=0.5,
         use_selection=False,
         selection=0.0,
     ):
-        super().__init__(colors, controls, interpolation='zero')
+        super().__init__(["w", "w"], None, interpolation='zero')
         self.glsl_map = (
             auto_lookup_shader.replace('$color_map_size', str(len(colors)))
             .replace('$use_selection', str(use_selection).lower())
@@ -199,6 +172,8 @@ def build_textures_from_dict(color_dict, empty_val=0, shape=(1000, 1000)):
 
 
 class VispyLabelsLayer(VispyImageLayer):
+    layer: 'Labels'  # noqa: F821
+
     def __init__(self, layer, node=None, texture_format='r32f') -> None:
         super().__init__(
             layer,
@@ -234,8 +209,6 @@ class VispyLabelsLayer(VispyImageLayer):
         if mode == 'auto':
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,
-                controls=colormap.controls,
-                seed=colormap.seed,
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
             )
