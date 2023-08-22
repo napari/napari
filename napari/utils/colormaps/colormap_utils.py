@@ -428,7 +428,7 @@ def label_colormap(num_colors=256, seed=0.5) -> LabelColormap:
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
     midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors - 1)
-    control_points = np.concatenate(([0], midpoints, [1.0]))
+    control_points = np.concatenate([[0], midpoints, [1.0]])
     # make sure to add an alpha channel to the colors
     colors = np.concatenate(
         (

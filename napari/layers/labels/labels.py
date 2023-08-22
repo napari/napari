@@ -42,8 +42,7 @@ from napari.utils.colormaps import (
     label_colormap,
     low_discrepancy_image,
 )
-from napari.utils.colormaps.colormap import LabelColormap
-from napari.utils.events import Event
+from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.misc import StringEnum, _is_array_type
@@ -217,7 +216,7 @@ class Labels(_ImageBase):
         background label `0` is selected.
     """
 
-    colormap: LabelColormap
+    events: EmitterGroup
 
     _modeclass = Mode
 

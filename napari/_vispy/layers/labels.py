@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.gloo import Texture2D
@@ -8,6 +10,10 @@ from vispy.visuals.shaders import Function, FunctionChain
 
 from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
 from napari._vispy.visuals.volume import Volume as VolumeNode
+
+if TYPE_CHECKING:
+    from napari.layers import Labels
+
 
 auto_lookup_shader = """
 uniform sampler2D texture2D_values;
@@ -169,7 +175,7 @@ def build_textures_from_dict(color_dict, empty_val=0, shape=(1000, 1000)):
 
 
 class VispyLabelsLayer(VispyImageLayer):
-    layer: 'Labels'  # noqa: F821
+    layer: 'Labels'
 
     def __init__(self, layer, node=None, texture_format='r32f') -> None:
         super().__init__(
