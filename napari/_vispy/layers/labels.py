@@ -195,7 +195,7 @@ def _get_shape_from_dict(color_dict):
 def get_shape_from_dict(color_dict):
     global MAX_TEXTURE_SIZE
     if MAX_TEXTURE_SIZE is None:
-        MAX_TEXTURE_SIZE = min(get_max_texture_sizes())
+        MAX_TEXTURE_SIZE = get_max_texture_sizes()[0]
 
     shape = _get_shape_from_dict(color_dict)
 
