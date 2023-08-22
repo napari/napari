@@ -249,9 +249,9 @@ def test_seed():
     assert layer.seed == 0.7
 
     # ensure setting seed updates the random colormap
-    mapped_07 = layer._random_colormap.map(layer.data)
+    mapped_07 = layer.colormap.map(layer.data)
     layer.seed = 0.4
-    mapped_04 = layer._random_colormap.map(layer.data)
+    mapped_04 = layer.colormap.map(layer.data)
     assert_raises(
         AssertionError, assert_array_almost_equal, mapped_07, mapped_04
     )

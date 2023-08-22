@@ -457,7 +457,7 @@ class Labels(_ImageBase):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-        self.colormap.seed = seed
+        self.colormap = label_colormap(self.num_colors, self.seed)
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
@@ -477,7 +477,7 @@ class Labels(_ImageBase):
     @num_colors.setter
     def num_colors(self, num_colors):
         self._num_colors = num_colors
-        self.colormap = label_colormap(num_colors)
+        self.colormap = label_colormap(num_colors, self.seed)
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
@@ -1001,8 +1001,7 @@ class Labels(_ImageBase):
         ):
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
-            val = self._as_type(np.array([label]))
-            col = self.colormap.map(val)[0]
+            col = self.colormap.map(label)[0]
         return col
 
     def _get_value_ray(

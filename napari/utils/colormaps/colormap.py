@@ -161,13 +161,10 @@ class LabelColormap(Colormap):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
 
     def map(self, values):
-        print(values)
         values = np.atleast_1d(values)
         values[values == None] = 0  # noqa: E711
 
-        mapped = self.colors[
-            np.mod(values.astype(np.uint64), len(self.colors))
-        ]
+        mapped = self.colors[np.mod(values.astype(np.int64), len(self.colors))]
 
         mapped[values == 0] = 0
 
