@@ -95,7 +95,7 @@ VOLUME_DEPICTION_TRANSLATION = OrderedDict(
 )
 
 
-class ProjectionMode(StringEnum):
+class ImageProjectionMode(StringEnum):
     """
     Projection mode for aggregating a thick nD slice onto displayed dimensions.
 

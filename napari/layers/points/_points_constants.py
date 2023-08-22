@@ -109,7 +109,7 @@ SHADING_TRANSLATION = {
 }
 
 
-class ProjectionMode(StringEnum):
+class PointsProjectionMode(StringEnum):
     """
     Projection mode for aggregating a thick nD slice onto displayed dimensions.
 

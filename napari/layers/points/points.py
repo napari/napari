@@ -27,7 +27,7 @@ from napari.layers.base._base_mouse_bindings import (
 )
 from napari.layers.points._points_constants import (
     Mode,
-    ProjectionMode,
+    PointsProjectionMode,
     Shading,
 )
 from napari.layers.points._points_mouse_bindings import add, highlight, select
@@ -308,7 +308,7 @@ class Points(Layer):
     """
 
     _modeclass = Mode
-    _projectionclass = ProjectionMode
+    _projectionclass = PointsProjectionMode
 
     _drag_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,

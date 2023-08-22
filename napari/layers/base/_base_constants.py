@@ -128,7 +128,7 @@ class ActionType(StringEnum):
     CHANGE = auto()
 
 
-class ProjectionMode(StringEnum):
+class BaseProjectionMode(StringEnum):
     """
     Projection mode for aggregating a thick nD slice onto displayed dimensions.
 

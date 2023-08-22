@@ -14,9 +14,9 @@ from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers.base import Layer
 from napari.layers.image._image_constants import (
+    ImageProjectionMode,
     ImageRendering,
     Interpolation,
-    ProjectionMode,
     VolumeDepiction,
 )
 from napari.layers.image._image_mouse_bindings import (
@@ -913,7 +913,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
 
 class Image(_ImageBase):
-    _projectionclass = ProjectionMode
+    _projectionclass = ImageProjectionMode
 
     @property
     def rendering(self):

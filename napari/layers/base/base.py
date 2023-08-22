@@ -24,7 +24,11 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.layers.base._base_constants import Blending, Mode, ProjectionMode
+from napari.layers.base._base_constants import (
+    BaseProjectionMode,
+    Blending,
+    Mode,
+)
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
@@ -243,7 +247,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     """
 
     _modeclass: Type[StringEnum] = Mode
-    _projectionclass: Type[StringEnum] = ProjectionMode
+    _projectionclass: Type[StringEnum] = BaseProjectionMode
 
     _drag_modes: ClassVar[Dict[StringEnum, Callable[[Layer, Event], None]]] = {
         Mode.PAN_ZOOM: no_op,

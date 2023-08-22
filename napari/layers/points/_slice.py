@@ -4,7 +4,7 @@ from typing import Any
 import numpy as np
 
 from napari.layers.base._slice import _next_request_id
-from napari.layers.points._points_constants import ProjectionMode
+from napari.layers.points._points_constants import PointsProjectionMode
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
 
@@ -59,7 +59,7 @@ class _PointSliceRequest:
     dims: _SliceInput
     data: Any = field(repr=False)
     data_slice: _ThickNDSlice = field(repr=False)
-    projection_mode: ProjectionMode
+    projection_mode: PointsProjectionMode
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
     id: int = field(default_factory=_next_request_id)

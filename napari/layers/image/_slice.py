@@ -4,7 +4,7 @@ from typing import Any, Callable, Tuple
 import numpy as np
 
 from napari.layers.base._slice import _next_request_id
-from napari.layers.image._image_constants import ProjectionMode
+from napari.layers.image._image_constants import ImageProjectionMode
 from napari.layers.image._image_utils import project_slice
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.types import ArrayLike
@@ -166,7 +166,7 @@ class _ImageSliceRequest:
     data: Any = field(repr=False)
     dask_indexer: DaskIndexer
     data_slice: _ThickNDSlice
-    projection_mode: ProjectionMode
+    projection_mode: ImageProjectionMode
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray
     rgb: bool = field(repr=False)

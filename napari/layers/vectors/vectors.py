@@ -17,7 +17,7 @@ from napari.layers.vectors._slice import (
 )
 from napari.layers.vectors._vector_utils import fix_data_vectors
 from napari.layers.vectors._vectors_constants import (
-    ProjectionMode,
+    VectorsProjectionMode,
     VectorStyle,
 )
 from napari.utils.colormaps import Colormap, ValidColormapArg
@@ -166,7 +166,7 @@ class Vectors(Layer):
         subsampled.
     """
 
-    _projectionclass = ProjectionMode
+    _projectionclass = VectorsProjectionMode
 
     # The max number of vectors that will ever be used to render the thumbnail
     # If more vectors are present then they are randomly subsampled

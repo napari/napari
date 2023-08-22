@@ -32,7 +32,7 @@ VECTORSTYLE_TRANSLATIONS = OrderedDict(
 )
 
 
-class ProjectionMode(StringEnum):
+class VectorsProjectionMode(StringEnum):
     """
     Projection mode for aggregating a thick nD slice onto displayed dimensions.
 
