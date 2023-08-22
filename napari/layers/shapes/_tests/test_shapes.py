@@ -184,6 +184,7 @@ def test_data_setter_with_properties():
     data = 20 * np.random.random(shape)
     properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Shapes(data, properties=properties)
+    layer.events.data = Mock()
 
     # test setting to data with fewer shapes
     n_new_shapes = 4
@@ -1221,10 +1222,24 @@ def test_removing_all_shapes_empty_list():
     data = 20 * np.random.random((10, 4, 2))
     np.random.seed(0)
     layer = Shapes(data)
+    layer.events.data = Mock()
+    old_data = layer.data
     assert layer.nshapes == 10
 
     layer.data = []
     assert layer.nshapes == 0
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(i for i in range(len(old_data))),
+        "vertex_indices": ((),),
+    }
+    assert layer.events.data.call_args_list[1][1] == {
+        "value": layer.data,
+        "action": ActionType.REMOVED,
+        "data_indices": (),
+        "vertex_indices": ((),),
+    }
 
 
 def test_removing_all_shapes_empty_array():
@@ -1232,10 +1247,24 @@ def test_removing_all_shapes_empty_array():
     data = 20 * np.random.random((10, 4, 2))
     np.random.seed(0)
     layer = Shapes(data)
+    layer.events.data = Mock()
+    old_data = layer.data
     assert layer.nshapes == 10
 
     layer.data = np.empty((0, 2))
     assert layer.nshapes == 0
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(i for i in range(len(old_data))),
+        "vertex_indices": ((),),
+    }
+    assert layer.events.data.call_args_list[1][1] == {
+        "value": layer.data,
+        "action": ActionType.REMOVED,
+        "data_indices": (),
+        "vertex_indices": ((),),
+    }
 
 
 def test_removing_selected_shapes():
@@ -2262,7 +2291,7 @@ def test_editing_4d():
     ]
 
 
-def test_points_data_setter_emits_event():
+def test_shapes_data_setter_emits_event():
     data = np.random.random((4, 2))
     emitted_events = Mock()
     layer = Shapes(data)
@@ -2271,7 +2300,7 @@ def test_points_data_setter_emits_event():
     assert emitted_events.call_count == 2
 
 
-def test_points_add_delete_only_emit_two_events():
+def test_shapes_add_delete_only_emit_two_events():
     data = np.random.random((4, 2))
     emitted_events = Mock()
     layer = Shapes(data)

@@ -628,7 +628,7 @@ class Shapes(Layer):
     @data.setter
     def data(self, data):
         self._finish_drawing()
-
+        prior_data = len(self.data) > 0
         data, shape_type = extract_shape_type(data)
         n_new_shapes = number_of_shapes(data)
         # not given a shape_type through data
@@ -668,7 +668,33 @@ class Shapes(Layer):
                     self._get_new_shape_color(n_shapes_difference, 'face'),
                 )
             )
+        data_not_empty = (
+            data is not None
+            and (isinstance(data, np.ndarray) and data.size > 0)
+            or (isinstance(data, list) and len(data) > 0)
+        )
 
+        if prior_data and data_not_empty:
+            self.events.data(
+                value=self.data,
+                action=ActionType.CHANGING,
+                data_indices=tuple(i for i in range(len(self.data))),
+                vertex_indices=((),),
+            )
+        elif data_not_empty:
+            self.events.data(
+                value=self.data,
+                action=ActionType.ADDING,
+                data_indices=tuple(i for i in range(len(data))),
+                vertex_indices=((),),
+            )
+        else:
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVING,
+                data_indices=tuple(i for i in range(len(self.data))),
+                vertex_indices=((),),
+            )
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
         self._data_view.slice_key = np.array(self._slice_indices)[
             self._slice_input.not_displayed
@@ -684,12 +710,28 @@ class Shapes(Layer):
         )
 
         self._update_dims()
-        self.events.data(
-            value=self.data,
-            action=ActionType.CHANGED,
-            data_indices=slice(None),
-            vertex_indices=((),),
-        )
+        if prior_data and data_not_empty:
+            # Here we do use len(self.data) again because previous indices do not exist anymore.
+            self.events.data(
+                value=self.data,
+                action=ActionType.CHANGED,
+                data_indices=tuple(i for i in range(len(self.data))),
+                vertex_indices=((),),
+            )
+        elif data_not_empty:
+            self.events.data(
+                value=self.data,
+                action=ActionType.ADDED,
+                data_indices=tuple(i for i in range(len(data))),
+                vertex_indices=((),),
+            )
+        else:
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVED,
+                data_indices=tuple(i for i in range(len(self.data))),
+                vertex_indices=((),),
+            )
         self._reset_editable()
 
     def _on_selection(self, selected: bool):
