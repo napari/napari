@@ -9,7 +9,7 @@ from vispy.visuals.shaders import Function, FunctionChain
 from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
 from napari._vispy.visuals.volume import Volume as VolumeNode
 
-PRIME_NUM_TABLE = [127, 251, 509, 1021, 2039, 4093, 8191, 16381]
+PRIME_NUM_TABLE = [61, 127, 251, 509, 1021, 2039, 4093, 8191, 16381]
 
 
 low_disc_lookup_shader = """
