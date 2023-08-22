@@ -74,6 +74,9 @@ vec4 sample_label_color(float t) {
     float initial_t = t;
     while ((abs(found - initial_t) > 1e-8) && (abs(found - empty) > 1e-8)) {
         t = t + 1;
+        if (t - initial_t > LUT_shape.x * LUT_shape.y) {
+            return vec4(0);
+        }
         // same as above
         vec2 pos = vec2(
             mod(int(t / LUT_shape.y), LUT_shape.x),
