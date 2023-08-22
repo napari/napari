@@ -200,12 +200,12 @@ def get_shape_from_dict(color_dict):
     shape = _get_shape_from_dict(color_dict)
 
     if MAX_TEXTURE_SIZE is not None and (
-        shape[0] > MAX_TEXTURE_SIZE[0] or shape[1] > MAX_TEXTURE_SIZE[1]
+        shape[0] > MAX_TEXTURE_SIZE[1] or shape[1] > MAX_TEXTURE_SIZE[1]
     ):
         raise OverflowError(
             f'Too many labels. GPU does not support textures of this size.'
             f' Requested size is {shape[0]}x{shape[1]}, but maximum supported'
-            f' size is {MAX_TEXTURE_SIZE[0]}x{MAX_TEXTURE_SIZE[1]}'
+            f' size is {MAX_TEXTURE_SIZE[1]}x{MAX_TEXTURE_SIZE[1]}'
         )
     return shape
 
