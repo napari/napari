@@ -2638,16 +2638,16 @@ class Shapes(Layer):
             self._data_view._face_color = np.delete(
                 self._data_view._face_color, index, axis=0
             )
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVED,
+                data_indices=tuple(
+                    index,
+                ),
+                vertex_indices=((),),
+            )
         self.selected_data.clear()
         self._finish_drawing()
-        self.events.data(
-            value=self.data,
-            action=ActionType.REMOVED,
-            data_indices=tuple(
-                index,
-            ),
-            vertex_indices=((),),
-        )
 
     def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.

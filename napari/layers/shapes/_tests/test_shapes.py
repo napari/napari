@@ -1247,15 +1247,25 @@ def test_removing_selected_shapes():
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
     layer = Shapes(data, shape_type=shape_type)
     layer.events.data = Mock()
+    old_data = layer.data
     # With nothing selected no points should be removed
     layer.remove_selected()
+    layer.events.data.assert_not_called()
     assert len(layer.data) == len(data)
 
     # Select three shapes and remove them
     selection = {1, 7, 8}
     layer.selected_data = selection
     layer.remove_selected()
-    assert layer.events.data.call_args[1] == {
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(
+            selection,
+        ),
+        "vertex_indices": ((),),
+    }
+    assert layer.events.data.call_args_list[1][1] == {
         "value": layer.data,
         "action": ActionType.REMOVED,
         "data_indices": tuple(
