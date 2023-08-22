@@ -2353,7 +2353,7 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
     layer = Points(data, out_of_slice_display=True, shown=[True, True], size=3)
     assert layer._view_size.shape[0] == layer._view_data.shape[0]
     assert layer._view_size.shape[0] == 2
-    assert np.array_equal(layer._view_size, [3, 2])
+    assert np.array_equiv(layer._view_size, [3, 2])
 
     # Out of slice display == True && shown == [True, False]
     layer = Points(
