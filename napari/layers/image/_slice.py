@@ -7,6 +7,7 @@ from napari.layers.base._slice import _next_request_id
 from napari.layers.image._image_constants import ProjectionMode
 from napari.layers.image._image_utils import project_slice
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.types import ArrayLike
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
@@ -274,7 +275,9 @@ class _ImageSliceRequest:
         slice_arr[0] = np.clip(slice_arr[0], 0, self.level_shapes[level] - 1)
         return _ThickNDSlice.from_array(slice_arr)
 
-    def _project_thick_slice(self, data, data_slice):
+    def _project_thick_slice(
+        self, data: ArrayLike, data_slice: _ThickNDSlice
+    ) -> ArrayLike:
         """
         Slice the given data with the given data slice and project the extra dims.
         """
