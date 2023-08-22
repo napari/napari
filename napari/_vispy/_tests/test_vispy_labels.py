@@ -18,8 +18,8 @@ def test_idx_to_2D():
 
 def test_build_textures_from_dict():
     keys, values = build_textures_from_dict({1: (1, 1, 1, 1), 2: (2, 2, 2, 2)})
-    assert keys.shape == (1000, 1000)
-    assert values.shape == (1000, 1000, 4)
+    assert keys.shape == (127, 127)
+    assert values.shape == (127, 127, 4)
     assert keys[0, 1] == 1
     assert keys[0, 2] == 2
     assert np.array_equiv(values[0, 1], (1, 1, 1, 1))
@@ -31,6 +31,14 @@ def test_build_textures_from_dict_too_many_labels():
         build_textures_from_dict(
             {i: (i, i, i, i) for i in range(1001)}, shape=(10, 10)
         )
+
+
+def test_size_of_texture():
+    keys, values = build_textures_from_dict(
+        {i: (i, i, i, i) for i in range(15750)}
+    )
+    assert keys.shape == (251, 251)
+    assert values.shape == (251, 251, 4)
 
 
 def test_build_textures_from_dict_collision():

@@ -9,6 +9,9 @@ from vispy.visuals.shaders import Function, FunctionChain
 from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
 from napari._vispy.visuals.volume import Volume as VolumeNode
 
+PRIME_NUM_TABLE = [127, 251, 509, 1021, 2039, 4093, 8191, 16381]
+
+
 low_disc_lookup_shader = """
 uniform sampler2D texture2D_LUT;
 
@@ -169,9 +172,24 @@ def hash2d_set(key, value, keys, values, empty_val=0):
     values[pos] = value
 
 
-def build_textures_from_dict(color_dict, empty_val=0, shape=(1000, 1000)):
-    if len(color_dict) > shape[0] * shape[1]:
+def get_shape_from_dict(color_dict):
+    size = len(color_dict) * 4
+    # I think that hash table size should be at least 4 times
+    # bigger than the number of labels to avoid collisions
+    for i, prime in enumerate(PRIME_NUM_TABLE[:-1]):
+        if prime * prime > size:
+            return prime, prime
+        if prime * PRIME_NUM_TABLE[i + 1] > size:
+            return PRIME_NUM_TABLE[i + 1], prime
+
+    if size > PRIME_NUM_TABLE[-1] * PRIME_NUM_TABLE[-1]:
         raise OverflowError('too many labels')
+    return PRIME_NUM_TABLE[-1], PRIME_NUM_TABLE[-1]
+
+
+def build_textures_from_dict(color_dict, empty_val=0, shape=None):
+    if shape is None:
+        shape = get_shape_from_dict(color_dict)
     keys = np.full(shape, empty_val, dtype=np.float32)
     values = np.zeros(shape + (4,), dtype=np.float32)
     for key, value in color_dict.items():
