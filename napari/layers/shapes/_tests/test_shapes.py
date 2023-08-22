@@ -949,10 +949,21 @@ def test_polygons(shape):
     assert np.all([s == 'polygon' for s in layer2.shape_type])
 
     # Avoid a.any(), a.all()
-    assert np.array_equal(layer2.events.data.call_args[1]["value"], layer.data)
-    assert layer2.events.data.call_args[1]["action"] == ActionType.ADD.value
-    assert layer2.events.data.call_args[1]["data_indices"] == (-1,)
-    assert layer2.events.data.call_args[1]["vertex_indices"] == ((),)
+    assert layer2.events.data.call_args_list[0][1] == {
+        "value": [],
+        "action": ActionType.ADDING,
+        "data_indices": (-1,),
+        "vertex_indices": ((),),
+    }
+
+    assert np.array_equal(
+        layer2.events.data.call_args_list[1][1]["value"], layer.data
+    )
+    assert (
+        layer2.events.data.call_args_list[0][1]["action"] == ActionType.ADDING
+    )
+    assert layer2.events.data.call_args_list[0][1]["data_indices"] == (-1,)
+    assert layer2.events.data.call_args_list[0][1]["vertex_indices"] == ((),)
 
 
 def test_add_polygons_raises_error():
@@ -2256,7 +2267,7 @@ def test_points_add_delete_only_emit_two_events():
     layer = Shapes(data)
     layer.events.data.connect(emitted_events)
     layer.add(np.random.random((4, 2)))
-    assert emitted_events.call_count == 1
+    assert emitted_events.call_count == 2
     layer.selected_data = {1}
     layer.remove_selected()
     assert emitted_events.call_count == 4

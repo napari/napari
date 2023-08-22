@@ -1988,6 +1988,12 @@ class Shapes(Layer):
         n_new_shapes = number_of_shapes(data)
 
         if n_new_shapes > 0:
+            self.events.data(
+                value=self.data,
+                action=ActionType.ADDING,
+                data_indices=(-1,),
+                vertex_indices=((),),
+            )
             self._add_shapes(
                 data,
                 shape_type=shape_type,
@@ -1997,12 +2003,21 @@ class Shapes(Layer):
                 z_index=z_index,
                 n_new_shapes=n_new_shapes,
             )
-            self.events.data(
-                value=self.data,
-                action=ActionType.ADDING,
-                data_indices=(-1,),
-                vertex_indices=((),),
-            )
+            # This should only emit when programmatically adding as with drawing this leads to premature emit.
+            if self._mode not in [
+                Mode.ADD_RECTANGLE,
+                Mode.ADD_ELLIPSE,
+                Mode.ADD_LINE,
+                Mode.ADD_PATH,
+                Mode.ADD_POLYGON,
+                Mode.ADD_POLYGON_LASSO,
+            ]:
+                self.events.data(
+                    value=self.data,
+                    action=ActionType.ADDED,
+                    data_indices=(-1,),
+                    vertex_indices=((),),
+                )
 
     def _init_shapes(
         self,
@@ -2518,41 +2533,39 @@ class Shapes(Layer):
         self._fixed_vertex = None
         self._value = (None, None)
         self._moving_value = (None, None)
-        if self._is_creating is True and self._mode == Mode.ADD_PATH:
-            vertices = self._data_view.shapes[index].data
-            if len(vertices) <= 2:
-                self._data_view.remove(index)
-            else:
-                self._data_view.edit(index, vertices[:-1])
-        if self._is_creating is True and (
-            self._mode
-            in {
-                Mode.ADD_POLYGON,
-                Mode.ADD_POLYGON_LASSO,
-            }
-        ):
-            vertices = self._data_view.shapes[index].data
-            if len(vertices) <= 3:
-                self._data_view.remove(index)
-            elif self._mode == Mode.ADD_POLYGON:
-                self._data_view.edit(index, vertices[:-1])
-            else:
-                vertices = rdp(
-                    vertices, epsilon=get_settings().experimental.rdp_epsilon
-                )
-                self._data_view.edit(
-                    index,
-                    vertices[:-1],
-                    new_type=shape_classes[ShapeType.POLYGON],
-                )
+        if self._is_creating is True:
+            if self._mode == Mode.ADD_PATH:
+                vertices = self._data_view.shapes[index].data
+                if len(vertices) <= 2:
+                    self._data_view.remove(index)
+                else:
+                    self._data_view.edit(index, vertices[:-1])
+            if self._mode in {Mode.ADD_POLYGON, Mode.ADD_POLYGON_LASSO}:
+                vertices = self._data_view.shapes[index].data
+                if len(vertices) <= 3:
+                    self._data_view.remove(index)
+                elif self._mode == Mode.ADD_POLYGON:
+                    self._data_view.edit(index, vertices[:-1])
+                else:
+                    vertices = rdp(
+                        vertices,
+                        epsilon=get_settings().experimental.rdp_epsilon,
+                    )
+                    self._data_view.edit(
+                        index,
+                        vertices[:-1],
+                        new_type=shape_classes[ShapeType.POLYGON],
+                    )
+        # handles the case that
+        if index is not None:
+            self.events.data(
+                value=self.data,
+                action=ActionType.ADDED,
+                data_indices=(-1,),
+                vertex_indices=((),),
+            )
         self._is_creating = False
         self._update_dims()
-        self.events.data(
-            value=self.data,
-            action=ActionType.ADDED,
-            data_indices=(-1,),
-            vertex_indices=((),),
-        )
 
     @contextmanager
     def block_thumbnail_update(self):
