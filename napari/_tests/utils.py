@@ -101,8 +101,10 @@ layer_test_data = [
     ),  # only nodes, no edges
     (
         Graph,
-        nx.convert_node_labels_to_integers(
-            nx.hexagonal_lattice_graph(5, 5, with_positions=True)
+        to_napari_graph(
+            nx.convert_node_labels_to_integers(
+                nx.hexagonal_lattice_graph(5, 5, with_positions=True)
+            ),
         ),
         2,
     ),
