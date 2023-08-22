@@ -26,19 +26,34 @@ def test_build_textures_from_dict():
     assert np.array_equiv(values[0, 2], (2, 2, 2, 2))
 
 
-def test_build_textures_from_dict_too_many_labels():
+def test_build_textures_from_dict_too_many_labels(monkeypatch):
     with pytest.raises(OverflowError):
         build_textures_from_dict(
             {i: (i, i, i, i) for i in range(1001)}, shape=(10, 10)
         )
+    monkeypatch.setattr(
+        "napari._vispy.layers.labels.PRIME_NUM_TABLE", [127, 251]
+    )
+    with pytest.raises(OverflowError):
+        build_textures_from_dict(
+            {i: (i, i, i, i) for i in range((251**2) // 2)},
+        )
 
 
-def test_size_of_texture():
+def test_size_of_texture_square():
     keys, values = build_textures_from_dict(
         {i: (i, i, i, i) for i in range(15750)}
     )
     assert keys.shape == (251, 251)
     assert values.shape == (251, 251, 4)
+
+
+def test_size_of_texture_rectangle():
+    keys, values = build_textures_from_dict(
+        {i: (i, i, i, i) for i in range(15950)}
+    )
+    assert keys.shape == (509, 251)
+    assert values.shape == (509, 251, 4)
 
 
 def test_build_textures_from_dict_collision():
