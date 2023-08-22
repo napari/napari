@@ -2617,8 +2617,6 @@ class Shapes(Layer):
         """Remove any selected shapes."""
         index = list(self.selected_data)
         to_remove = sorted(index, reverse=True)
-        for ind in to_remove:
-            self._data_view.remove(ind)
 
         if len(index) > 0:
             self.events.data(
@@ -2629,6 +2627,8 @@ class Shapes(Layer):
                 ),
                 vertex_indices=((),),
             )
+            for ind in to_remove:
+                self._data_view.remove(ind)
 
             self._feature_table.remove(index)
             self.text.remove(index)
