@@ -536,13 +536,56 @@ class Points(Layer):
     @data.setter
     def data(self, data: Optional[np.ndarray]):
         """Set the data array and emit a corresponding event."""
-        self._set_data(data)
-        self.events.data(
-            value=self.data,
-            action=ActionType.CHANGED,
-            data_indices=slice(None),
-            vertex_indices=((),),
+        prior_data = len(self.data) > 0
+        data_not_empty = (
+            data is not None
+            and (isinstance(data, np.ndarray) and data.size > 0)
+            or (isinstance(data, list) and len(data) > 0)
         )
+        if prior_data and data_not_empty:
+            self.events.data(
+                value=self.data,
+                action=ActionType.CHANGING,
+                data_indices=tuple(i for i in range(len(self.data))),
+                vertex_indices=((),),
+            )
+        elif data_not_empty:
+            self.events.data(
+                value=self.data,
+                action=ActionType.ADDING,
+                data_indices=tuple(i for i in range(len(data))),
+                vertex_indices=((),),
+            )
+        else:
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVING,
+                data_indices=tuple(i for i in range(len(self.data))),
+                vertex_indices=((),),
+            )
+        self._set_data(data)
+
+        if prior_data and data_not_empty:
+            self.events.data(
+                value=self.data,
+                action=ActionType.CHANGED,
+                data_indices=tuple(i for i in range(len(self.data))),
+                vertex_indices=((),),
+            )
+        elif data_not_empty:
+            self.events.data(
+                value=self.data,
+                action=ActionType.ADDED,
+                data_indices=tuple(i for i in range(len(data))),
+                vertex_indices=((),),
+            )
+        else:
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVED,
+                data_indices=tuple(i for i in range(len(self.data))),
+                vertex_indices=((),),
+            )
 
     def _set_data(self, data: Optional[np.ndarray]):
         """Set the .data array attribute, without emitting an event."""

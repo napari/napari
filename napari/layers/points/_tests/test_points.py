@@ -2521,3 +2521,60 @@ def test_points_add_delete_only_emit_two_events():
     layer.selected_data = {3}
     layer.remove_selected()
     assert emitted_events.call_count == 4
+
+
+def test_data_setter_events():
+    data = np.random.random((5, 2))
+    layer = Points(data)
+    layer.events.data = Mock()
+
+    layer.data = []
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(i for i in range(len(data))),
+        "vertex_indices": ((),),
+    }
+
+    # Avoid truth value of empty array error
+    assert np.array_equal(
+        layer.events.data.call_args_list[1][1]["value"], np.empty((0, 2))
+    )
+    assert (
+        layer.events.data.call_args_list[1][1]["action"] == ActionType.REMOVED
+    )
+    assert layer.events.data.call_args_list[1][1]["data_indices"] == ()
+    assert layer.events.data.call_args_list[1][1]["vertex_indices"] == ((),)
+
+    layer.data = data
+    assert np.array_equal(
+        layer.events.data.call_args_list[2][1]["value"], np.empty((0, 2))
+    )
+    assert (
+        layer.events.data.call_args_list[2][1]["action"] == ActionType.ADDING
+    )
+    assert layer.events.data.call_args_list[2][1]["data_indices"] == tuple(
+        i for i in range(len(data))
+    )
+    assert layer.events.data.call_args_list[2][1]["vertex_indices"] == ((),)
+
+    assert layer.events.data.call_args_list[3][1] == {
+        "value": data,
+        "action": ActionType.ADDED,
+        "data_indices": tuple(i for i in range(len(data))),
+        "vertex_indices": ((),),
+    }
+
+    layer.data = data
+    assert layer.events.data.call_args_list[4][1] == {
+        "value": data,
+        "action": ActionType.CHANGING,
+        "data_indices": tuple(i for i in range(len(layer.data))),
+        "vertex_indices": ((),),
+    }
+    assert layer.events.data.call_args_list[5][1] == {
+        "value": data,
+        "action": ActionType.CHANGED,
+        "data_indices": tuple(i for i in range(len(layer.data))),
+        "vertex_indices": ((),),
+    }
