@@ -7,10 +7,12 @@ from vispy.visuals.image import ImageVisual
 from vispy.visuals.shaders import Function, FunctionChain
 
 from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
+from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.volume import Volume as VolumeNode
 
-PRIME_NUM_TABLE = [61, 127, 251, 509, 1021, 2039, 4093, 8191, 16381]
+PRIME_NUM_TABLE = [61, 127, 251, 509, 1021, 2039, 4093, 8191, 16381, 32749]
 
+MAX_TEXTURE_SIZE = None
 
 low_disc_lookup_shader = """
 uniform sampler2D texture2D_LUT;
@@ -175,7 +177,7 @@ def hash2d_set(key, value, keys, values, empty_val=0):
     values[pos] = value
 
 
-def get_shape_from_dict(color_dict):
+def _get_shape_from_dict(color_dict):
     size = len(color_dict) * 4
     # I think that hash table size should be at least 4 times
     # bigger than the number of labels to avoid collisions
@@ -188,6 +190,24 @@ def get_shape_from_dict(color_dict):
     if size > PRIME_NUM_TABLE[-1] * PRIME_NUM_TABLE[-1]:
         raise OverflowError('too many labels')
     return PRIME_NUM_TABLE[-1], PRIME_NUM_TABLE[-1]
+
+
+def get_shape_from_dict(color_dict):
+    global MAX_TEXTURE_SIZE
+    if MAX_TEXTURE_SIZE is None:
+        MAX_TEXTURE_SIZE = get_max_texture_sizes()
+
+    shape = _get_shape_from_dict(color_dict)
+
+    if MAX_TEXTURE_SIZE is not None and (
+        shape[0] > MAX_TEXTURE_SIZE[0] or shape[1] > MAX_TEXTURE_SIZE[1]
+    ):
+        raise OverflowError(
+            f'Too many labels. GPU does not support textures of this size.'
+            f' Requested size is {shape[0]}x{shape[1]}, but maximum supported'
+            f' size is {MAX_TEXTURE_SIZE[0]}x{MAX_TEXTURE_SIZE[1]}'
+        )
+    return shape
 
 
 def build_textures_from_dict(color_dict, empty_val=0, shape=None):
