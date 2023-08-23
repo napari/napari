@@ -554,6 +554,7 @@ class Points(Layer):
             kwargs["data_indices"] = tuple(i for i in range(len(data)))
         else:
             kwargs["action"] = ActionType.REMOVING
+
         self.events.data(**kwargs)
         self._set_data(data)
         kwargs["data_indices"] = tuple(i for i in range(len(data)))
