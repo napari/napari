@@ -1984,6 +1984,7 @@ class Shapes(Layer):
         edge_color=None,
         face_color=None,
         z_index=None,
+        gui=False,
     ):
         """Add shapes to the current layer.
 
@@ -2024,6 +2025,8 @@ class Shapes(Layer):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
+        gui: bool
+            Whether the shape is drawn by drawing in the gui.
         """
         data, shape_type = extract_shape_type(data, shape_type)
 
@@ -2046,14 +2049,7 @@ class Shapes(Layer):
                 n_new_shapes=n_new_shapes,
             )
             # This should only emit when programmatically adding as with drawing this leads to premature emit.
-            if self._mode not in [
-                Mode.ADD_RECTANGLE,
-                Mode.ADD_ELLIPSE,
-                Mode.ADD_LINE,
-                Mode.ADD_PATH,
-                Mode.ADD_POLYGON,
-                Mode.ADD_POLYGON_LASSO,
-            ]:
+            if not gui:
                 self.events.data(
                     value=self.data,
                     action=ActionType.ADDED,

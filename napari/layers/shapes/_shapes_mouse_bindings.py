@@ -253,7 +253,7 @@ def _add_line_rectangle_ellipse(
     """
     # on press
     # Start drawing rectangle / ellipse / line
-    layer.add(data, shape_type=shape_type)
+    layer.add(data, shape_type=shape_type, gui=True)
     layer.selected_data = {layer.nshapes - 1}
     layer._value = (layer.nshapes - 1, 4)
     layer._moving_value = copy(layer._value)
@@ -305,7 +305,7 @@ def initiate_polygon_draw(
         A tuple with the coordinates of the initial vertex in image data space.
     """
     data = np.array([coordinates, coordinates])
-    layer.add(data, shape_type='path')
+    layer.add(data, shape_type='path', gui=True)
     layer.selected_data = {layer.nshapes - 1}
     layer._value = (layer.nshapes - 1, 1)
     layer._moving_value = copy(layer._value)
