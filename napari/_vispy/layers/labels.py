@@ -243,10 +243,10 @@ class VispyLabelsLayer(VispyImageLayer):
         if not self.layer.loaded:
             return
 
-        raw_displayed = self.layer._slice.image.raw
+        sliced_data = self.layer._slice.image
         ndims = len(event.offset)
 
-        if self.node._texture.shape[:ndims] != raw_displayed.shape[:ndims]:
+        if self.node._texture.shape[:ndims] != sliced_data.shape[:ndims]:
             self.layer.refresh()
             return
 

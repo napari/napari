@@ -385,7 +385,7 @@ def test_swappable_dims():
     # midpoints indices into the data below depend on the data range.
     # This depends on the values in vectors_data and thus the random seed.
     assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 5, :, :]
+        viewer.layers[labels_name]._slice.image == labels_data[3, 5, :, :]
     )
 
     # Swap dims
@@ -395,7 +395,7 @@ def test_swappable_dims():
         viewer.layers[image_name]._data_view == image_data[3, :, 4, :]
     )
     assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 4, :]
+        viewer.layers[labels_name]._slice.image == labels_data[3, :, 4, :]
     )
 
 
@@ -957,14 +957,14 @@ def test_slice_order_with_mixed_dims():
 
     # With standard ordering, the shapes of the slices match,
     # so are trivially numpy-broadcastable.
-    assert image_2d._slice.image.view.shape == (4, 5)
-    assert image_3d._slice.image.view.shape == (4, 5)
-    assert image_4d._slice.image.view.shape == (4, 5)
+    assert image_2d._slice.image.shape == (4, 5)
+    assert image_3d._slice.image.shape == (4, 5)
+    assert image_4d._slice.image.shape == (4, 5)
 
     viewer.dims.order = (2, 1, 0, 3)
 
     # With non-standard ordering, the shapes of the slices do not match,
     # and are not numpy-broadcastable.
-    assert image_2d._slice.image.view.shape == (4, 5)
-    assert image_3d._slice.image.view.shape == (3, 5)
-    assert image_4d._slice.image.view.shape == (2, 5)
+    assert image_2d._slice.image.shape == (4, 5)
+    assert image_3d._slice.image.shape == (3, 5)
+    assert image_4d._slice.image.shape == (2, 5)

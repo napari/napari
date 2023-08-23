@@ -333,7 +333,7 @@ def test_submit_with_one_3d_image(layer_slicer):
         future = layer_slicer.submit(layers=[layer], dims=dims)
         assert not future.done()
     layer_result = _wait_for_response(future)[layer]
-    np.testing.assert_equal(layer_result.image.view, data[2, :, :])
+    np.testing.assert_equal(layer_result.image, data[2, :, :])
 
 
 def test_submit_with_one_3d_points(layer_slicer):
