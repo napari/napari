@@ -74,9 +74,10 @@ vec4 sample_label_color(float t) {
     // - if it's the empty key, exit;
     // - otherwise, it's a hash collision: continue searching
     float initial_t = t;
+    float lut_size = LUT_shape.x * LUT_shape.y
     while ((abs(found - initial_t) > 1e-8) && (abs(found - empty) > 1e-8)) {
         t = t + 1;
-        if (t - initial_t > LUT_shape.x * LUT_shape.y) {
+        if (t - initial_t > lut_size) {
             return vec4(0);
         }
         // same as above
