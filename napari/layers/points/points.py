@@ -542,7 +542,11 @@ class Points(Layer):
             and (isinstance(data, np.ndarray) and data.size > 0)
             or (isinstance(data, list) and len(data) > 0)
         )
-        kwargs = {"value": self.data, "vertex_indices": ((),), "data_indices": tuple(i for i in range(len(self.data)))}
+        kwargs = {
+            "value": self.data,
+            "vertex_indices": ((),),
+            "data_indices": tuple(i for i in range(len(self.data))),
+        }
         if prior_data and data_not_empty:
             kwargs["action"] = ActionType.CHANGING
         elif data_not_empty:
@@ -562,7 +566,6 @@ class Points(Layer):
         else:
             kwargs["action"] = ActionType.REMOVED
         self.events.data(**kwargs)
-
 
     def _set_data(self, data: Optional[np.ndarray]):
         """Set the .data array attribute, without emitting an event."""
