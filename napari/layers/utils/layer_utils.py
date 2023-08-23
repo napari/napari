@@ -272,7 +272,7 @@ def _sample_at_least_3d_data(data, rgb):
     return dask.compute(*reduced_data)
 
 
-def calc_data_range(data: np.ndarray, rgb=False) -> Tuple[float, float]:
+def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
