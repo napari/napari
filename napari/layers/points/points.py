@@ -557,12 +557,13 @@ class Points(Layer):
 
         self.events.data(**kwargs)
         self._set_data(data)
-        kwargs["data_indices"] = tuple(i for i in range(len(data)))
-        kwargs["data"] = self.data
+        kwargs["data_indices"] = tuple(i for i in range(len(self.data)))
+        kwargs["value"] = self.data
 
         if prior_data and data_not_empty:
             kwargs["action"] = ActionType.CHANGED
         elif data_not_empty:
+            kwargs["data_indices"] = tuple(i for i in range(len(data)))
             kwargs["action"] = ActionType.ADDED
         else:
             kwargs["action"] = ActionType.REMOVED

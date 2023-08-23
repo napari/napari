@@ -703,7 +703,7 @@ class Shapes(Layer):
         self._update_dims()
 
         kwargs["data_indices"] = tuple(i for i in range(len(data)))
-        kwargs["data"] = self.data
+        kwargs["value"] = self.data
         if prior_data and data_not_empty:
             kwargs["action"] = ActionType.CHANGED
         elif data_not_empty:
