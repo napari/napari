@@ -73,12 +73,18 @@ def test_calc_data_range():
 
 
 @pytest.mark.parametrize(
-    'data',
-    [data_dask_8b, data_dask, data_dask_1d, data_dask_1d_rgb, data_dask_plane],
+    'data,rgb',
+    [
+        (data_dask_8b, False),
+        (data_dask, False),
+        (data_dask_1d, False),
+        (data_dask_1d_rgb, True),
+        (data_dask_plane, False),
+    ],
 )
-def test_calc_data_range_fast(data):
+def test_calc_data_range_fast(data, rgb):
     now = time.monotonic()
-    val = calc_data_range(data)
+    val = calc_data_range(data, rgb)
     assert len(val) > 0
     elapsed = time.monotonic() - now
     assert elapsed < 5, "test took too long, computation was likely not lazy"

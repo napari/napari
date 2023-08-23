@@ -30,6 +30,9 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
 
+SAMPLE_DATA_THRESHOLD = 1e7
+
+
 class Extent(NamedTuple):
     """Extent of coordinates in a local data space and world space.
 
@@ -204,7 +207,72 @@ def _nanmax(array):
     return max_value
 
 
-def calc_data_range(data, rgb=False) -> Tuple[float, float]:
+def _sample_single_dim_data(data):
+    """sample data along a single dimension"""
+    if isinstance(data, np.ndarray):
+        return data
+    center = int(data.shape[0] // 2)
+    slices = [
+        slice(0, 4096),
+        slice(center - 2048, center + 2048),
+        slice(-4096, None),
+    ]
+    return [
+        [_nanmax(data[sl]) for sl in slices],
+        [_nanmin(data[sl]) for sl in slices],
+    ]
+
+
+def _sample_plane_data(data):
+    if isinstance(data, np.ndarray):
+        return data
+    """sample data along a single plane"""
+    shift = 128
+    center = [int(s // 2) for s in data.shape[:2]]
+    slices = [
+        (slice(0, shift), slice(center[1] - shift, center[1] + shift)),
+        (slice(-shift, None), slice(center[1] - shift, center[1] + shift)),
+        tuple(slice(c - shift, c + shift) for c in center),
+        (slice(center[0] - shift, center[0] + shift), slice(0, shift)),
+        (slice(center[0] - shift, center[0] + shift), slice(-shift, None)),
+    ]
+    return [
+        [_nanmax(data[sl]) for sl in slices],
+        [_nanmin(data[sl]) for sl in slices],
+    ]
+
+
+def _sample_at_least_3d_data(data, rgb):
+    # If data is very large take the average of the top, bottom, and
+    # middle slices
+    offset = 2 + int(rgb)
+    bottom_plane_idx = (0,) * (data.ndim - offset)
+    middle_plane_idx = tuple(s // 2 for s in data.shape[:-offset])
+    top_plane_idx = tuple(s - 1 for s in data.shape[:-offset])
+    idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
+    # If each plane is also very large, look only at a subset of the image
+    if (
+        np.prod(data.shape[-offset:]) > SAMPLE_DATA_THRESHOLD
+        and data.shape[-offset] > 64
+        and data.shape[-offset + 1] > 64
+    ):
+        # Find a central patch of the image to take
+        center = [int(s // 2) for s in data.shape[-offset:]]
+        central_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
+        reduced_data = [
+            [_nanmax(data[idx + central_slice]) for idx in idxs],
+            [_nanmin(data[idx + central_slice]) for idx in idxs],
+        ]
+    else:
+        reduced_data = [
+            [_nanmax(data[idx]) for idx in idxs],
+            [_nanmin(data[idx]) for idx in idxs],
+        ]
+    # compute everything in one go
+    return dask.compute(*reduced_data)
+
+
+def calc_data_range(data: np.ndarray, rgb=False) -> Tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
@@ -227,48 +295,13 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     if data.dtype == np.uint8:
         return 0, 255
 
-    center: Union[int, List[int]]
-
-    if data.size > 1e8 and (data.ndim == 2 or (rgb and data.ndim == 3)):
-        # If data is very large take the average of start, middle and end.
-        center = int(data.shape[0] // 2)
-        slices = [
-            slice(0, 4096),
-            slice(center - 2048, center + 2048),
-            slice(-4096, None),
-        ]
-        reduced_data = [
-            [_nanmax(data[sl]) for sl in slices],
-            [_nanmin(data[sl]) for sl in slices],
-        ]
-    elif data.size > 1e8:
-        # If data is very large take the average of the top, bottom, and
-        # middle slices
-        offset = 2 + int(rgb)
-        bottom_plane_idx = (0,) * (data.ndim - offset)
-        middle_plane_idx = tuple(s // 2 for s in data.shape[:-offset])
-        top_plane_idx = tuple(s - 1 for s in data.shape[:-offset])
-        idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
-        # If each plane is also very large, look only at a subset of the image
-        if (
-            np.prod(data.shape[-offset:]) > 1e8
-            and data.shape[-offset] > 64
-            and data.shape[-offset + 1] > 64
-        ):
-            # Find a central patch of the image to take
-            center = [int(s // 2) for s in data.shape[-offset:]]
-            central_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
-            reduced_data = [
-                [_nanmax(data[idx + central_slice]) for idx in idxs],
-                [_nanmin(data[idx + central_slice]) for idx in idxs],
-            ]
+    if data.size > SAMPLE_DATA_THRESHOLD:
+        if data.ndim == 1 or (rgb and data.ndim == 2):
+            reduced_data = _sample_single_dim_data(data)
+        elif data.ndim == 2 or (rgb and data.ndim == 3):
+            reduced_data = _sample_plane_data(data)
         else:
-            reduced_data = [
-                [_nanmax(data[idx]) for idx in idxs],
-                [_nanmin(data[idx]) for idx in idxs],
-            ]
-        # compute everything in one go
-        reduced_data = dask.compute(*reduced_data)
+            reduced_data = _sample_at_least_3d_data(data, rgb)
     else:
         reduced_data = data
 
@@ -278,7 +311,7 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     if min_val == max_val:
         min_val = 0
         max_val = 1
-    return (float(min_val), float(max_val))
+    return float(min_val), float(max_val)
 
 
 def segment_normal(a, b, p=(0, 0, 1)):
