@@ -225,11 +225,11 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     returned.
     """
     if data.dtype == np.uint8:
-        return (0, 255)
+        return 0, 255
 
     center: Union[int, List[int]]
 
-    if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
+    if data.size > 1e8 and (data.ndim == 2 or (rgb and data.ndim == 3)):
         # If data is very large take the average of start, middle and end.
         center = int(data.shape[0] // 2)
         slices = [
@@ -241,7 +241,7 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
             [_nanmax(data[sl]) for sl in slices],
             [_nanmin(data[sl]) for sl in slices],
         ]
-    elif data.size > 1e7:
+    elif data.size > 1e8:
         # If data is very large take the average of the top, bottom, and
         # middle slices
         offset = 2 + int(rgb)
@@ -251,7 +251,7 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
         idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
         # If each plane is also very large, look only at a subset of the image
         if (
-            np.prod(data.shape[-offset:]) > 1e7
+            np.prod(data.shape[-offset:]) > 1e8
             and data.shape[-offset] > 64
             and data.shape[-offset + 1] > 64
         ):
