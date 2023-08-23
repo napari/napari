@@ -24,7 +24,6 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.components.dims import Dims
 from napari.layers.base._base_constants import (
     BaseProjectionMode,
     Blending,
@@ -70,6 +69,8 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+
+    from napari.components.dims import Dims
 
 
 logger = logging.getLogger("napari.layers.base.base")
