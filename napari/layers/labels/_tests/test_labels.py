@@ -607,7 +607,7 @@ def test_contour_local_updates():
     layer = Labels(data)
     layer.contour = 1
     assert np.allclose(
-        layer._raw_to_displayed(layer._slice.image.raw),
+        layer._raw_to_displayed(layer._slice.image),
         np.zeros((7, 7), dtype=np.float32),
     )
 
@@ -627,7 +627,7 @@ def test_contour_local_updates():
     layer.data_setitem(np.nonzero(painting_mask), 1, refresh=True)
 
     assert np.alltrue(
-        (layer._slice.image.view > 0) == get_contours(painting_mask, 1, 0)
+        (layer._data_view > 0) == get_contours(painting_mask, 1, 0)
     )
 
 
@@ -1435,19 +1435,17 @@ def test_invalidate_cache_when_change_color_mode():
 
     layer = Labels(data)
     layer.selected_label = 0
-    gt_auto = layer._raw_to_displayed(layer._slice.image.raw)
+    gt_auto = layer._raw_to_displayed(layer._slice.image)
     assert gt_auto.dtype == np.float32
 
     layer.color_mode = 'direct'
     layer._cached_labels = None
-    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    assert layer._raw_to_displayed(layer._slice.image).dtype == np.float32
 
     layer.color_mode = 'auto'
     # If the cache is not invalidated, it returns colors for
     # the direct color mode instead of the color for the auto mode
-    assert np.allclose(
-        layer._raw_to_displayed(layer._slice.image.raw), gt_auto
-    )
+    assert np.allclose(layer._raw_to_displayed(layer._slice.image), gt_auto)
 
 
 def test_color_mapping_when_color_is_changed():
@@ -1456,14 +1454,14 @@ def test_color_mapping_when_color_is_changed():
     data = np.zeros((4, 5), dtype=np.int32)
     data[1, :] = np.arange(0, 5)
     layer = Labels(data, color={1: 'green', 2: 'red', 3: 'white'})
-    gt_direct_3colors = layer._raw_to_displayed(layer._slice.image.raw)
+    gt_direct_3colors = layer._raw_to_displayed(layer._slice.image)
 
     layer = Labels(data, color={1: 'green', 2: 'red'})
-    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    assert layer._raw_to_displayed(layer._slice.image).dtype == np.float32
     layer.color = {1: 'green', 2: 'red', 3: 'white'}
 
     assert np.allclose(
-        layer._raw_to_displayed(layer._slice.image.raw), gt_direct_3colors
+        layer._raw_to_displayed(layer._slice.image), gt_direct_3colors
     )
 
 
@@ -1494,10 +1492,10 @@ def test_color_mapping_when_seed_is_changed():
     """Checks if the color mapping is updated when the color palette seed is changed."""
     np.random.seed(0)
     layer = Labels(np.random.randint(50, size=(10, 10)))
-    mapped_colors1 = layer.colormap.map(layer._as_type(layer._slice.image.raw))
+    mapped_colors1 = layer.colormap.map(layer._as_type(layer._slice.image))
 
     layer.new_colormap()
-    mapped_colors2 = layer.colormap.map(layer._as_type(layer._slice.image.raw))
+    mapped_colors2 = layer.colormap.map(layer._as_type(layer._slice.image))
 
     assert not np.allclose(mapped_colors1, mapped_colors2)
 

@@ -15,7 +15,6 @@ from napari.layers.base._base_mouse_bindings import (
     transform_with_box,
 )
 from napari.layers.image._image_utils import guess_multiscale
-from napari.layers.image._slice import _ImageSliceResponse
 from napari.layers.image.image import _ImageBase
 from napari.layers.labels._labels_constants import (
     LabelColorMode,
@@ -828,11 +827,6 @@ class Labels(_ImageBase):
     def _as_type(self, data, selected_label=None):
         return data.astype(np.float32)
 
-    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
-        """Override to convert raw slice data to displayed label colors."""
-        response = response.to_displayed(self._raw_to_displayed)
-        super()._update_slice_response(response)
-
     def _partial_labels_refresh(self):
         """Prepares and displays only an updated part of the labels."""
 
@@ -840,7 +834,7 @@ class Labels(_ImageBase):
             return
 
         dims_displayed = self._slice_input.displayed
-        raw_displayed = self._slice.image.raw
+        raw_displayed = self._slice.image
 
         # Keep only the dimensions that correspond to the current view
         updated_slice = tuple(
@@ -960,7 +954,7 @@ class Labels(_ImageBase):
             # Is there a nicer way to prevent this from getting called?
             return
 
-        image = self._slice.thumbnail.view
+        image = self._slice.thumbnail
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             # we are only using the current slice so `image` will never be
             # bigger than 3. If we are in this clause, it is exactly 3, so we
@@ -1040,7 +1034,7 @@ class Labels(_ImageBase):
             sample_points = np.linspace(
                 start_point, end_point, n_points, endpoint=True
             )
-            im_slice = self._slice.image.raw
+            im_slice = self._slice.image
             bounding_box = self._display_bounding_box(dims_displayed)
             # the display bounding box is returned as a closed interval
             # (i.e. the endpoint is included) by the method, but we need

@@ -405,7 +405,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @property
     def _data_view(self):
         """Viewable image for the current slice. (compatibility)"""
-        return self._slice.image.view
+        return self._raw_to_displayed(self._slice.image)
 
     def _calc_data_range(self, mode='data') -> Tuple[float, float]:
         """
@@ -415,7 +415,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if mode == 'data':
             input_data = self.data[-1] if self.multiscale else self.data
         elif mode == 'slice':
-            data = self._slice.image.view  # ugh
+            data = self._slice.image
             input_data = data[-1] if self.multiscale else data
         else:
             raise ValueError(
@@ -795,7 +795,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        image = self._slice.thumbnail.view
+        image = self._slice.thumbnail
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
@@ -870,7 +870,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         coord = np.round(coord).astype(int)
 
-        raw = self._slice.image.raw
+        raw = self._slice.image
         shape = raw.shape[:-1] if self.rgb else raw.shape
 
         if self.ndim < len(coord):
