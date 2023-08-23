@@ -542,50 +542,27 @@ class Points(Layer):
             and (isinstance(data, np.ndarray) and data.size > 0)
             or (isinstance(data, list) and len(data) > 0)
         )
+        kwargs = {"value": self.data, "vertex_indices": ((),), "data_indices": tuple(i for i in range(len(self.data)))}
         if prior_data and data_not_empty:
-            self.events.data(
-                value=self.data,
-                action=ActionType.CHANGING,
-                data_indices=tuple(i for i in range(len(self.data))),
-                vertex_indices=((),),
-            )
+            kwargs["action"] = ActionType.CHANGING
         elif data_not_empty:
-            self.events.data(
-                value=self.data,
-                action=ActionType.ADDING,
-                data_indices=tuple(i for i in range(len(data))),
-                vertex_indices=((),),
-            )
+            kwargs["action"] = ActionType.ADDING
+            kwargs["data_indices"] = tuple(i for i in range(len(data)))
         else:
-            self.events.data(
-                value=self.data,
-                action=ActionType.REMOVING,
-                data_indices=tuple(i for i in range(len(self.data))),
-                vertex_indices=((),),
-            )
+            kwargs["action"] = ActionType.REMOVING
+        self.events.data(**kwargs)
         self._set_data(data)
+        kwargs["data_indices"] = tuple(i for i in range(len(data)))
+        kwargs["data"] = self.data
 
         if prior_data and data_not_empty:
-            self.events.data(
-                value=self.data,
-                action=ActionType.CHANGED,
-                data_indices=tuple(i for i in range(len(self.data))),
-                vertex_indices=((),),
-            )
+            kwargs["action"] = ActionType.CHANGED
         elif data_not_empty:
-            self.events.data(
-                value=self.data,
-                action=ActionType.ADDED,
-                data_indices=tuple(i for i in range(len(data))),
-                vertex_indices=((),),
-            )
+            kwargs["action"] = ActionType.ADDED
         else:
-            self.events.data(
-                value=self.data,
-                action=ActionType.REMOVED,
-                data_indices=tuple(i for i in range(len(self.data))),
-                vertex_indices=((),),
-            )
+            kwargs["action"] = ActionType.REMOVED
+        self.events.data(**kwargs)
+
 
     def _set_data(self, data: Optional[np.ndarray]):
         """Set the .data array attribute, without emitting an event."""
