@@ -55,18 +55,14 @@ def orient_plane_normal_along_view_direction(layer: Image):
     )
 
 
-@Image.bind_key('Space', overwrite=True)
-def hold_to_pan_zoom(layer):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        layer.mode = Mode.PAN_ZOOM
-
-        yield
-
-        # on key release
-        layer.mode = prev_mode
+@register_image_action(trans._('orient plane normal along view direction'))
+def orient_plane_normal_along_view_direction_no_gen(layer: Image):
+    viewer = napari.viewer.current_viewer()
+    if viewer is None or viewer.dims.ndisplay != 3:
+        return
+    layer.plane.normal = layer._world_to_displayed_data_ray(
+        viewer.camera.view_direction, [-3, -2, -1]
+    )
 
 
 @register_image_action(trans._('Transform'))
@@ -76,7 +72,7 @@ def activate_image_transform_mode(layer):
 
 @register_image_action(trans._('Pan/zoom'))
 def activate_image_pan_zoom_mode(layer: Image):
-    layer.mode = Mode.PAN_ZOOM
+    layer.mode = str(Mode.PAN_ZOOM)
 
 
 image_fun_to_mode = [

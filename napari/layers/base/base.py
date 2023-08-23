@@ -1365,7 +1365,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return tuple(normalized_vector)
 
     def _world_to_displayed_data_ray(
-        self, vector_world, dims_displayed
+        self, vector_world: npt.ArrayLike, dims_displayed: List[int]
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 
