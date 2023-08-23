@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, List, Tuple
 
 import numpy as np
 
@@ -68,7 +68,7 @@ class _ImageSliceResponse:
     tile_to_data: Affine
         The affine transform from the sliced data to the full data at the highest resolution.
         For single-scale images, this will be the identity matrix.
-    dims : _SliceInput
+    slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
     request_id : int
         The identifier of the request from which this was generated.
@@ -77,13 +77,13 @@ class _ImageSliceResponse:
     image: _ImageView = field(repr=False)
     thumbnail: _ImageView = field(repr=False)
     tile_to_data: Affine = field(repr=False)
-    dims: _SliceInput
+    slice_input: _SliceInput
     request_id: int
     empty: bool = False
 
     @classmethod
     def make_empty(
-        cls, *, dims: _SliceInput, rgb: bool
+        cls, *, slice_input: _SliceInput, rgb: bool
     ) -> '_ImageSliceResponse':
         """Returns an empty image slice response.
 
@@ -93,19 +93,19 @@ class _ImageSliceResponse:
 
         Parameters
         ----------
-        dims : _SliceInput
+        slice_input : _SliceInput
             Describes the slicing plane or bounding box in the layer's dimensions.
         rgb : bool
             True if the underlying image is an RGB or RGBA image (i.e. that the
             last dimension represents a color channel that should not be sliced),
             False otherwise.
         """
-        shape = (1,) * dims.ndisplay
+        shape = (1,) * slice_input.ndisplay
         if rgb:
             shape = shape + (3,)
         data = np.zeros(shape)
         image = _ImageView.from_view(data)
-        ndim = dims.ndim
+        ndim = slice_input.ndim
         tile_to_data = Affine(
             name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
         )
@@ -113,7 +113,7 @@ class _ImageSliceResponse:
             image=image,
             thumbnail=image,
             tile_to_data=tile_to_data,
-            dims=dims,
+            slice_input=slice_input,
             request_id=_next_request_id(),
             empty=True,
         )
@@ -132,7 +132,7 @@ class _ImageSliceResponse:
             image=image,
             thumbnail=thumbnail,
             tile_to_data=self.tile_to_data,
-            dims=self.dims,
+            slice_input=self.slice_input,
             request_id=self.request_id,
         )
 
@@ -150,7 +150,7 @@ class _ImageSliceRequest:
 
     Attributes
     ----------
-    dims : _SliceInput
+    slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
     data : Any
         The layer's data field, which is the main input to slicing.
@@ -162,7 +162,7 @@ class _ImageSliceRequest:
         The identifier of this slice request.
     """
 
-    dims: _SliceInput
+    slice_input: _SliceInput
     data: Any = field(repr=False)
     dask_indexer: DaskIndexer
     data_slice: _ThickNDSlice
@@ -191,7 +191,7 @@ class _ImageSliceRequest:
         image = _ImageView.from_view(data)
         # `Layer.multiscale` is mutable so we need to pass back the identity
         # transform to ensure `tile2data` is properly set on the layer.
-        ndim = self.dims.ndim
+        ndim = self.slice_input.ndim
         tile_to_data = Affine(
             name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
         )
@@ -199,27 +199,27 @@ class _ImageSliceRequest:
             image=image,
             thumbnail=image,
             tile_to_data=tile_to_data,
-            dims=self.dims,
+            slice_input=self.slice_input,
             request_id=self.id,
         )
 
     def _call_multi_scale(self) -> _ImageSliceResponse:
-        if self.dims.ndisplay == 3:
+        if self.slice_input.ndisplay == 3:
             level = len(self.data) - 1
         else:
             level = self.data_level
 
         # Calculate the tile-to-data transform.
-        scale = np.ones(self.dims.ndim)
-        for d in self.dims.displayed:
+        scale = np.ones(self.slice_input.ndim)
+        for d in self.slice_input.displayed:
             scale[d] = self.downsample_factors[level][d]
 
         data = self.data[level]
 
-        translate = np.zeros(self.dims.ndim)
+        translate = np.zeros(self.slice_input.ndim)
         disp_slice = [slice(None) for _ in data.shape]
-        if self.dims.ndisplay == 2:
-            for d in self.dims.displayed:
+        if self.slice_input.ndisplay == 2:
+            for d in self.slice_input.displayed:
                 disp_slice[d] = slice(
                     self.corner_pixels[0, d],
                     self.corner_pixels[1, d] + 1,
@@ -233,7 +233,7 @@ class _ImageSliceRequest:
             name='tile2data',
             scale=scale,
             translate=translate,
-            ndim=self.dims.ndim,
+            ndim=self.slice_input.ndim,
         )
 
         # slice displayed dimensions to get the right tile data
@@ -261,7 +261,7 @@ class _ImageSliceRequest:
             image=image,
             thumbnail=thumbnail,
             tile_to_data=tile_to_data,
-            dims=self.dims,
+            slice_input=self.slice_input,
             request_id=self.id,
         )
 
@@ -281,7 +281,7 @@ class _ImageSliceRequest:
         """
         Slice the given data with the given data slice and project the extra dims.
         """
-        slices = [
+        slices: List[slice | int] = [
             slice(None) if np.isnan(p) else int(np.round(p))
             for p in data_slice.point
         ]
@@ -291,7 +291,7 @@ class _ImageSliceRequest:
             return np.asarray(data[tuple(slices)])
 
         for dim, (point, m_left, m_right) in enumerate(data_slice):
-            if dim in self.dims.displayed:
+            if dim in self.slice_input.displayed:
                 continue
 
             low = int(np.round(point - m_left))
@@ -311,13 +311,13 @@ class _ImageSliceRequest:
 
         return project_slice(
             np.asarray(data[tuple(slices)]),
-            axis=tuple(self.dims.not_displayed),
+            axis=tuple(self.slice_input.not_displayed),
             mode=self.projection_mode,
         )
 
     def _get_order(self) -> Tuple[int, ...]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
-        order = reorder_after_dim_reduction(self.dims.displayed)
+        order = reorder_after_dim_reduction(self.slice_input.displayed)
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many

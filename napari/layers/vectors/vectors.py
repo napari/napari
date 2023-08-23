@@ -675,13 +675,7 @@ class Vectors(Layer):
 
     def _make_slice_request(self, dims) -> _VectorSliceRequest:
         """Make a Vectors slice request based on the given dims and these data."""
-        slice_input = self._make_slice_input(
-            dims.point,
-            dims.margin_left,
-            dims.margin_right,
-            dims.ndisplay,
-            dims.order,
-        )
+        slice_input = self._make_slice_input(dims)
         # TODO: [see Image]
         #   For the existing sync slicing, slice_indices is passed through
         # to avoid some performance issues related to the evaluation of the
@@ -696,7 +690,7 @@ class Vectors(Layer):
         self, slice_input: _SliceInput, data_slice: _ThickNDSlice
     ):
         return _VectorSliceRequest(
-            dims=slice_input,
+            slice_input=slice_input,
             data=self.data,
             data_slice=data_slice,
             projection_mode=self.projection_mode,
@@ -706,7 +700,7 @@ class Vectors(Layer):
 
     def _update_slice_response(self, response: _VectorSliceResponse):
         """Handle a slicing response."""
-        self._slice_input = response.dims
+        self._slice_input = response.slice_input
         indices = response.indices
         alphas = response.alphas
 

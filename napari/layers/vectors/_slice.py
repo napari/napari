@@ -19,7 +19,7 @@ class _VectorSliceResponse:
     alphas : array like or scalar
         Used to change the opacity of the sliced vectors for visualization.
         Should be broadcastable to indices.
-    dims : _SliceInput
+    slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
     request_id : int
         The identifier of the request from which this was generated.
@@ -27,7 +27,7 @@ class _VectorSliceResponse:
 
     indices: np.ndarray = field(repr=False)
     alphas: Union[np.ndarray, float] = field(repr=False)
-    dims: _SliceInput
+    slice_input: _SliceInput
     request_id: int
 
 
@@ -44,7 +44,7 @@ class _VectorSliceRequest:
 
     Attributes
     ----------
-    dims : _SliceInput
+    slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
     data : Any
         The layer's data field, which is the main input to slicing.
@@ -54,7 +54,7 @@ class _VectorSliceRequest:
         See the corresponding attributes in `Layer` and `Vectors`.
     """
 
-    dims: _SliceInput
+    slice_input: _SliceInput
     data: Any = field(repr=False)
     data_slice: _ThickNDSlice = field(repr=False)
     projection_mode: VectorsProjectionMode
@@ -68,18 +68,18 @@ class _VectorSliceRequest:
             return _VectorSliceResponse(
                 indices=np.empty(0, dtype=int),
                 alphas=np.empty(0),
-                dims=self.dims,
+                slice_input=self.slice_input,
                 request_id=self.id,
             )
 
-        not_disp = list(self.dims.not_displayed)
+        not_disp = list(self.slice_input.not_displayed)
         if not not_disp:
             # If we want to display everything, then use all indices.
             # alpha is only impacted by not displayed data, therefore 1
             return _VectorSliceResponse(
                 indices=np.arange(len(self.data), dtype=int),
                 alphas=1,
-                dims=self.dims,
+                slice_input=self.slice_input,
                 request_id=self.id,
             )
 
@@ -88,7 +88,7 @@ class _VectorSliceRequest:
         return _VectorSliceResponse(
             indices=slice_indices,
             alphas=alphas,
-            dims=self.dims,
+            slice_input=self.slice_input,
             request_id=self.id,
         )
 
@@ -130,7 +130,7 @@ class _VectorSliceRequest:
         inside_slice = np.all((data >= low) & (data <= high), axis=1)
         slice_indices = np.where(inside_slice)[0].astype(int)
 
-        if self.out_of_slice_display and self.dims.ndim > 2:
+        if self.out_of_slice_display and self.slice_input.ndim > 2:
             projected_lengths = abs(self.data[:, 1, not_disp] * self.length)
 
             # add out of slice points with progressively lower sizes

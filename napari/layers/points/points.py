@@ -1771,13 +1771,7 @@ class Points(Layer):
 
     def _make_slice_request(self, dims) -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
-        slice_input = self._make_slice_input(
-            dims.point,
-            dims.margin_left,
-            dims.margin_right,
-            dims.ndisplay,
-            dims.order,
-        )
+        slice_input = self._make_slice_input(dims)
         # See Image._make_slice_request to understand why we evaluate this here
         # instead of using `self._data_slice`.
         data_slice = slice_input.data_slice(self._data_to_world.inverse)
@@ -1787,7 +1781,7 @@ class Points(Layer):
         self, slice_input: _SliceInput, data_slice: _ThickNDSlice
     ):
         return _PointSliceRequest(
-            dims=slice_input,
+            slice_input=slice_input,
             data=self.data,
             data_slice=data_slice,
             projection_mode=self.projection_mode,
@@ -1797,7 +1791,7 @@ class Points(Layer):
 
     def _update_slice_response(self, response: _PointSliceResponse):
         """Handle a slicing response."""
-        self._slice_input = response.dims
+        self._slice_input = response.slice_input
         indices = response.indices
         scale = response.scale
 

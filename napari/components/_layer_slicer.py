@@ -226,11 +226,7 @@ class _LayerSlicer:
         # Then execute sync slicing tasks to run concurrent with async ones.
         for layer in sync_layers:
             layer._slice_dims(
-                dims.point,
-                dims.margin_left,
-                dims.margin_right,
-                dims.ndisplay,
-                dims.order,
+                dims=dims,
                 force=force,
             )
 

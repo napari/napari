@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple, Union
 import numpy as np
 import pytest
 
+from napari.components.dims import Dims
 from napari.layers import Points
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
@@ -82,7 +83,7 @@ def create_known_points_layer_3d():
     n_points = len(data)
 
     layer = Points(data, size=1)
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
 
     assert np.all(layer.data == data)
     assert layer.ndim == 3

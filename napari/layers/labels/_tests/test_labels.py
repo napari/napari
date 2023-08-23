@@ -15,6 +15,7 @@ from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.components import ViewerModel
+from napari.components.dims import Dims
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
@@ -58,8 +59,7 @@ def test_3D_labels():
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
-    layer._slice_dims(ndisplay=3)
-    assert layer._slice_input.ndisplay == 3
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     assert layer.editable is True
     assert layer.mode == 'pan_zoom'
 
@@ -888,7 +888,7 @@ def test_value_3d(position, view_direction, dims_displayed, world):
     data = np.zeros((20, 20, 20), dtype=int)
     data[0:10, 0:10, 0:10] = 1
     layer = Labels(data)
-    layer._slice_dims([0, 0, 0], ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     value = layer.get_value(
         position,
         view_direction=view_direction,
@@ -1001,7 +1001,7 @@ def test_ndim_paint():
     assert not np.any(layer.data[0]) and not np.any(layer.data[2:])
 
     layer.n_edit_dimensions = 2  # 3x3 square
-    layer._slice_dims(order=[1, 2, 0, 3])
+    layer._slice_dims(Dims(ndim=4, order=(1, 2, 0, 3)))
     layer.paint((4, 5, 6, 7), 8)
     assert len(np.flatnonzero(layer.data == 8)) == 4  # 2D square is in corner
     np.testing.assert_array_equal(
@@ -1145,7 +1145,7 @@ def test_get_value_ray_3d():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
 
     # set the dims to the slice with labels
-    labels._slice_dims([1, 0, 0, 0], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(1, 0, 0, 0)))
 
     value = labels._get_value_ray(
         start_point=np.array([1, 0, 5, 5]),
@@ -1163,7 +1163,7 @@ def test_get_value_ray_3d():
     assert value is None
 
     # set the dims to a slice without labels
-    labels._slice_dims([0, 0, 0, 0], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(0, 0, 0, 0)))
 
     value = labels._get_value_ray(
         start_point=np.array([0, 0, 5, 5]),
@@ -1190,7 +1190,9 @@ def test_get_value_ray_3d_rolled():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
 
     # set the dims to the slice with labels
-    labels._slice_dims((0, 0, 0, 1), ndisplay=3, order=(3, 0, 1, 2))
+    labels._slice_dims(
+        Dims(ndim=4, ndisplay=3, order=(3, 0, 1, 2), point=(0, 0, 0, 1))
+    )
     labels.set_view_slice()
 
     value = labels._get_value_ray(
@@ -1218,7 +1220,9 @@ def test_get_value_ray_3d_transposed():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(0, 5, 5, 5))
 
     # set the dims to the slice with labels
-    labels._slice_dims((1, 0, 0, 0), ndisplay=3, order=(0, 1, 3, 2))
+    labels._slice_dims(
+        Dims(ndim=4, ndisplay=3, order=(0, 1, 3, 2), point=(1, 0, 0, 0))
+    )
     labels.set_view_slice()
 
     value = labels._get_value_ray(
@@ -1246,7 +1250,7 @@ def test_get_value_ray_2d():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
 
     # set the dims to the slice with labels, but 2D
-    labels._slice_dims([1, 10, 0, 0], ndisplay=2)
+    labels._slice_dims(Dims(ndim=4, ndisplay=2, point=(1, 10, 0, 0)))
 
     value = labels._get_value_ray(
         start_point=np.empty([]),
@@ -1270,7 +1274,7 @@ def test_cursor_ray_3d():
     labels = Labels(data, scale=(1, 1, 2, 1), translate=(5, 5, 5))
 
     # set the slice to one with data and the view to 3D
-    labels._slice_dims([1, 0, 0, 0], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(1, 0, 0, 0)))
 
     # axis 0 : [0, 20], bounding box extents along view axis, [1, 0, 0]
     # click is transformed: (value - translation) / scale
@@ -1308,7 +1312,7 @@ def test_cursor_ray_3d():
         dims_displayed=[1, 2, 3],
         view_direction=[0, 1, 0, 0],
     )
-    labels._slice_dims([0, 0, 0, 0], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3))
     start_point, end_point = labels.get_ray_intersections(
         mouse_event_3.position,
         mouse_event_3.view_direction,
@@ -1335,7 +1339,7 @@ def test_cursor_ray_3d_rolled():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
 
     # set the slice to one with data and the view to 3D
-    labels._slice_dims([0, 0, 0, 1], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(0, 0, 0, 1)))
 
     start_point, end_point = labels.get_ray_intersections(
         mouse_event_1.position,
@@ -1363,7 +1367,7 @@ def test_cursor_ray_3d_transposed():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
 
     # set the slice to one with data and the view to 3D
-    labels._slice_dims([0, 0, 0, 1], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(0, 0, 0, 1)))
 
     start_point, end_point = labels.get_ray_intersections(
         mouse_event_1.position,
@@ -1520,7 +1524,7 @@ def test_negative_label_slicing():
     data = np.array([[[0, 1], [-1, -1]], [[100, 100], [-1, -2]]])
     layer = Labels(data)
     assert tuple(layer.get_color(1)) != tuple(layer.get_color(-1))
-    layer._slice_dims(point=(1, 0, 0))
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     assert tuple(layer.get_color(-1)) != tuple(layer.get_color(100))
     assert tuple(layer.get_color(-2)) != tuple(layer.get_color(100))
 
@@ -1534,7 +1538,7 @@ def test_negative_label_doesnt_flicker():
         ]
     )
     layer = Labels(data)
-    layer._slice_dims(point=(1, 0, 0))
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     # This used to fail when negative values were used to index into _all_vals.
     assert tuple(layer.get_color(-1)) != tuple(layer.get_color(5))
     minus_one_color_original = tuple(layer.get_color(-1))

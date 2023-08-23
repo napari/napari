@@ -24,6 +24,7 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
+from napari.components.dims import Dims
 from napari.layers.base._base_constants import (
     BaseProjectionMode,
     Blending,
@@ -1139,11 +1140,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _slice_dims(
         self,
-        point=None,
-        margin_left=None,
-        margin_right=None,
-        ndisplay=2,
-        order=None,
+        dims: Dims = None,
         force: bool = False,
     ):
         """Slice data with values from a global dims model.
@@ -1152,53 +1149,39 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Parameters
         ----------
-        point : list
-            Values of data to slice at in world coordinates.
-        ndisplay : int
-            Number of dimensions to be displayed.
-        order : list of int
-            Order of dimensions, where last `ndisplay` will be
-            rendered in canvas.
+        dims: Dims
+            The dims model to use to slice this layer.
         force: bool
             True if slicing should be forced to occur, even when some cache thinks
             it already has a valid slice ready. False otherwise.
         """
         logger.debug(
-            'Layer._slice_dims: %s, point=%s, margin_left=%s, margin_right=%s, ndisplay=%s, order=%s, force=%s',
+            'Layer._slice_dims: %s, dims=%s, force=%s',
             self,
-            point,
-            margin_left,
-            margin_right,
-            ndisplay,
-            order,
+            dims,
             force,
         )
-        slice_input = self._make_slice_input(
-            point, margin_left, margin_right, ndisplay, order
-        )
+        slice_input = self._make_slice_input(dims)
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
             self._refresh_sync()
 
     def _make_slice_input(
         self,
-        point=None,
-        margin_left=None,
-        margin_right=None,
-        ndisplay=2,
-        order=None,
+        dims: Dims = None,
     ) -> _SliceInput:
         # if not point is given, "world" has same dimensionality of self
-        world_ndim = self.ndim if point is None else len(point)
+        world_ndim = self.ndim if dims is None else dims.ndim
+        if dims is None:
+            world_slice = _ThickNDSlice.make_full(dims=self.ndim)
+        else:
+            world_slice = _ThickNDSlice.from_dims(dims)
 
-        world_slice = _ThickNDSlice.make_full(
-            point=point,
-            margin_left=margin_left,
-            margin_right=margin_right,
-            ndim=world_ndim,
+        order = (
+            tuple(range(world_ndim))
+            if dims.order is None
+            else tuple(dims.order)
         )
-
-        order = tuple(range(world_ndim)) if order is None else tuple(order)
         order = tuple(
             self._world_to_layer_dims(
                 world_dims=order,
@@ -1207,7 +1190,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
 
         return _SliceInput(
-            ndisplay=ndisplay,
+            ndisplay=dims.ndisplay,
             world_slice=world_slice[-self.ndim :],
             order=order[-self.ndim :],
         )

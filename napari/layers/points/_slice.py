@@ -19,7 +19,7 @@ class _PointSliceResponse:
     scale: array like or none
         Used to scale the sliced points for visualization.
         Should be broadcastable to indices.
-    dims : _SliceInput
+    slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
     request_id : int
         The identifier of the request from which this was generated.
@@ -27,7 +27,7 @@ class _PointSliceResponse:
 
     indices: np.ndarray = field(repr=False)
     scale: Any = field(repr=False)
-    dims: _SliceInput
+    slice_input: _SliceInput
     request_id: int
 
 
@@ -56,7 +56,7 @@ class _PointSliceRequest:
         See the corresponding attributes in `Layer` and `Points`.
     """
 
-    dims: _SliceInput
+    slice_input: _SliceInput
     data: Any = field(repr=False)
     data_slice: _ThickNDSlice = field(repr=False)
     projection_mode: PointsProjectionMode
@@ -70,18 +70,18 @@ class _PointSliceRequest:
             return _PointSliceResponse(
                 indices=[],
                 scale=np.empty(0),
-                dims=self.dims,
+                slice_input=self.slice_input,
                 request_id=self.id,
             )
 
-        not_disp = list(self.dims.not_displayed)
+        not_disp = list(self.slice_input.not_displayed)
         if not not_disp:
             # If we want to display everything, then use all indices.
             # scale is only impacted by not displayed data, therefore 1
             return _PointSliceResponse(
                 indices=np.arange(len(self.data), dtype=int),
                 scale=1,
-                dims=self.dims,
+                slice_input=self.slice_input,
                 request_id=self.id,
             )
 
@@ -90,7 +90,7 @@ class _PointSliceRequest:
         return _PointSliceResponse(
             indices=slice_indices,
             scale=scale,
-            dims=self.dims,
+            slice_input=self.slice_input,
             request_id=self.id,
         )
 
@@ -116,7 +116,7 @@ class _PointSliceRequest:
         inside_slice = np.all((data >= low) & (data <= high), axis=1)
         slice_indices = np.where(inside_slice)[0].astype(int)
 
-        if self.out_of_slice_display and self.dims.ndim > 2:
+        if self.out_of_slice_display and self.slice_input.ndim > 2:
             sizes = self.size[:, np.newaxis] / 2
 
             # add out of slice points with progressively lower sizes

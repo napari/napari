@@ -6,6 +6,7 @@ from typing import Generic, List, Tuple, TypeVar, Union
 
 import numpy as np
 
+from napari.components.dims import Dims
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
@@ -73,6 +74,10 @@ class _ThickNDSlice(Generic[_T]):
             margin_right=margin_right[:ndim],
         )
 
+    @classmethod
+    def from_dims(cls, dims: Dims):
+        return cls.make_full(dims.point, dims.margin_left, dims.margin_right)
+
     def copy_with(
         self,
         point=None,
@@ -95,8 +100,8 @@ class _ThickNDSlice(Generic[_T]):
         return np.array([self.point, self.margin_left, self.margin_right])
 
     @classmethod
-    def from_array(self, arr):
-        return _ThickNDSlice(
+    def from_array(cls, arr):
+        return cls(
             point=tuple(arr[0]),
             margin_left=tuple(arr[1]),
             margin_right=tuple(arr[2]),

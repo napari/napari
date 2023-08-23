@@ -12,6 +12,7 @@ from napari._tests.utils import (
     check_layer_world_data_extent,
 )
 from napari.components import ViewerModel
+from napari.components.dims import Dims
 from napari.layers import Shapes
 from napari.layers.base._base_constants import ActionType
 from napari.layers.utils._text_constants import Anchor
@@ -394,11 +395,18 @@ def test_nd_text():
     layer = Shapes(shapes_data, properties=properties, text=text_kwargs)
     assert layer.ndim == 4
 
-    layer._slice_dims(point=[0, 10, 0, 0], ndisplay=2)
+    layer._slice_dims(
+        Dims(
+            ndim=4,
+            ndisplay=2,
+            range=((0, 2, 1), (0, 10, 1), (0, 2, 1), (0, 2, 1)),
+            point=(0, 10, 0, 0),
+        )
+    )
     np.testing.assert_equal(layer._indices_view, [0])
     np.testing.assert_equal(layer._view_text_coords[0], [[15, 15]])
 
-    layer._slice_dims(point=[1, 0, 0, 0], ndisplay=3)
+    layer._slice_dims(Dims(ndim=4, ndisplay=3, point=(1, 0, 0, 0)))
     np.testing.assert_equal(layer._indices_view, [1])
     np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
@@ -2032,7 +2040,7 @@ def test_value_3d(
         ]
     )
     layer = Shapes(data, scale=scale)
-    layer._slice_dims([0, 0, 0, 0], ndisplay=3)
+    layer._slice_dims(Dims(ndim=4, ndisplay=3, point=(0, 0, 0, 0)))
     value, _ = layer.get_value(
         position,
         view_direction=view_direction,
@@ -2208,7 +2216,7 @@ def test_set_data_3d():
         np.array([[0, 0, 0], [0, 0, 200]]),
     ]
     shapes = Shapes(lines, shape_type='line')
-    shapes._slice_dims(ndisplay=3)
+    shapes._slice_dims(Dims(ndim=3, ndisplay=3))
     shapes.data = lines
 
 

@@ -357,7 +357,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
 
         self._slice = _ImageSliceResponse.make_empty(
-            dims=self._slice_input, rgb=self.rgb
+            slice_input=self._slice_input, rgb=self.rgb
         )
 
         # Set contrast limits, colormaps and plane parameters
@@ -723,7 +723,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             high = pt + data_slice.margin_right[d]
             if pt < max(0, low) or pt > min(self._extent_data[1][d], high):
                 self._slice = _ImageSliceResponse.make_empty(
-                    dims=self._slice_input, rgb=self.rgb
+                    slice_input=self._slice_input, rgb=self.rgb
                 )
                 return
 
@@ -740,13 +740,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
         """Make an image slice request based on the given dims and this image."""
-        slice_input = self._make_slice_input(
-            dims.point,
-            dims.margin_left,
-            dims.margin_right,
-            dims.ndisplay,
-            dims.order,
-        )
+        slice_input = self._make_slice_input(dims)
         # For the existing sync slicing, indices is passed through
         # to avoid some performance issues related to the evaluation of the
         # data-to-world transform and its inverse. Async slicing currently
@@ -774,7 +768,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         the async slicing project: https://github.com/napari/napari/issues/4795
         """
         return _ImageSliceRequest(
-            dims=slice_input,
+            slice_input=slice_input,
             data=self.data,
             dask_indexer=dask_indexer,
             data_slice=data_slice,
@@ -792,7 +786,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Update the slice output state currently on the layer. Currently used
         for both sync and async slicing.
         """
-        self._slice_input = response.dims
+        self._slice_input = response.slice_input
         self._transforms[0] = response.tile_to_data
         self._slice = response
 
