@@ -236,7 +236,6 @@ check_untyped_defs = true
 module = [
     'napari._app_model.context._layerlist_context',
     'napari._app_model.injection._processors',
-    'napari._event_loop',
     'napari._qt.code_syntax_highlight',
     'napari._qt.containers._base_item_model',
     'napari._qt.containers._base_item_view',
@@ -318,7 +317,6 @@ module = [
     'napari.components._viewer_key_bindings',
     'napari.components.layerlist',
     'napari.components.viewer_model',
-    'napari.conftest',
     'napari.layers._layer_actions',
     'napari.layers._multiscale_data',
     'napari.layers.base.base',
@@ -339,7 +337,6 @@ module = [
     'napari.layers.utils.string_encoding',
     'napari.layers.utils.style_encoding',
     'napari.layers.utils.text_manager',
-    'napari.resources._icons',
     'napari.utils._magicgui',
     'napari.utils._octree',
     'napari.utils._testsupport',
