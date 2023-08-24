@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from typing import Generic, List, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Generic, List, Tuple, TypeVar, Union
 
 import numpy as np
 
-from napari.components.dims import Dims
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari.components.dims import Dims
 
 _T = TypeVar('_T')
 

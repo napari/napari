@@ -11,6 +11,7 @@ from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from threading import RLock
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Dict,
     Iterable,
@@ -21,10 +22,12 @@ from typing import (
     runtime_checkable,
 )
 
-from napari.components import Dims
 from napari.layers import Layer
 from napari.settings import get_settings
 from napari.utils.events.event import EmitterGroup, Event
+
+if TYPE_CHECKING:
+    from napari.components import Dims
 
 logger = logging.getLogger("napari.components._layer_slicer")
 
