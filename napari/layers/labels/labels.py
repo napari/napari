@@ -802,7 +802,14 @@ class Labels(_ImageBase):
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
 
-    def _as_type(self, data):
+    def _to_vispy_texture_dtype(self, data):
+        """Convert data to a dtype that can be used as a VisPy texture.
+
+        Labels layers allow all integer dtypes for data, but only a subset
+        are supported by VisPy textures. For now, we convert all data to
+        float32 as it can represent all input values (though not losslessly,
+        see https://github.com/napari/napari/issues/6084).
+        """
         return data.astype(np.float32)
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
@@ -916,7 +923,7 @@ class Labels(_ImageBase):
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
-        mapped_labels = self._as_type(labels_to_map)
+        mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
 
         if update_mask is not None:
             self._cached_mapped_labels[data_slice][update_mask] = mapped_labels
@@ -975,7 +982,7 @@ class Labels(_ImageBase):
         ):
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
-            val = self._as_type(np.array([label]))
+            val = self._to_vispy_texture_dtype(np.array([label]))
             col = self.colormap.map(val)[0]
         return col
 
