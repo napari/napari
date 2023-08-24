@@ -44,6 +44,7 @@ direct_lookup_shader = """
 uniform sampler2D texture2D_keys;
 uniform sampler2D texture2D_values;
 uniform vec2 LUT_shape;
+uniform int color_count;
 
 
 vec4 sample_label_color(float t) {
@@ -74,10 +75,11 @@ vec4 sample_label_color(float t) {
     // - if it's the empty key, exit;
     // - otherwise, it's a hash collision: continue searching
     float initial_t = t;
-    float lut_size = LUT_shape.x * LUT_shape.y
+    int count = 0;
     while ((abs(found - initial_t) > 1e-8) && (abs(found - empty) > 1e-8)) {
         t = t + 1;
-        if (t - initial_t > lut_size) {
+        count = count + 1;
+        if (count >= color_count) {
             return vec4(0);
         }
         // same as above
@@ -212,6 +214,11 @@ def get_shape_from_dict(color_dict):
 
 
 def build_textures_from_dict(color_dict, empty_val=0, shape=None):
+    if len(color_dict) > 2**31 - 1:
+        raise OverflowError(
+            'Too many labels. Maximum supported number of labels is 2^31-1'
+        )
+
     if shape is None:
         shape = get_shape_from_dict(color_dict)
     keys = np.full(shape, empty_val, dtype=np.float32)
@@ -281,6 +288,7 @@ class VispyLabelsLayer(VispyImageLayer):
                 interpolation='nearest',
             )
             self.node.shared_program['LUT_shape'] = key_texture.shape
+            self.node.shared_program['color_count'] = len(color_dict) + 1
         else:
             self.node.cmap = VispyColormap(*colormap)
 
