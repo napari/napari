@@ -214,9 +214,9 @@ def get_shape_from_dict(color_dict):
 
 
 def build_textures_from_dict(color_dict, empty_val=0, shape=None):
-    if len(color_dict) > 2**31 - 1:
+    if len(color_dict) > 2**31 - 2:
         raise OverflowError(
-            'Too many labels. Maximum supported number of labels is 2^31-1'
+            'Too many labels. Maximum supported number of labels is 2^31-2'
         )
 
     if shape is None:
