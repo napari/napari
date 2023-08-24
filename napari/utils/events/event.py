@@ -160,7 +160,7 @@ class Event:
         return self._handled
 
     @handled.setter
-    def handled(self, val) -> bool:
+    def handled(self, val) -> None:
         self._handled = bool(val)
 
     @property
@@ -173,7 +173,7 @@ class Event:
         return self._blocked
 
     @blocked.setter
-    def blocked(self, val) -> bool:
+    def blocked(self, val) -> None:
         self._blocked = bool(val)
 
     def __repr__(self) -> str:

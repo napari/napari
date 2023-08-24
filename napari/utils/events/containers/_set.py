@@ -35,7 +35,9 @@ class EventedSet(MutableSet[_T]):
             self.events.add(**_events)
         else:
             # otherwise create a new one
-            self.events = EmitterGroup(source=self, **_events)
+            self.events = EmitterGroup(
+                source=self, auto_connect=False, **_events
+            )
 
         self._set: set[_T] = set()
         self.update(data)

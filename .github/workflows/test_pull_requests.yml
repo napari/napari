@@ -85,7 +85,7 @@ jobs:
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-20.04
-            toxenv: headless-py38-linux
+            backend: headless
           - python: 3.9
             platform: ubuntu-latest
             backend: pyqt6
@@ -198,9 +198,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          path: napari-from-github
-
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9

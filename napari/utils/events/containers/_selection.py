@@ -56,7 +56,7 @@ class Selection(EventedSet[_T]):
 
     def __init__(self, data: Iterable[_T] = ()) -> None:
         self._active: Optional[_T] = None
-        self._current_ = None
+        self._current_: Optional[_T] = None
         self.events = EmitterGroup(source=self, _current=None, active=None)
         super().__init__(data=data)
         self._update_active()

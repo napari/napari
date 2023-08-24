@@ -675,17 +675,23 @@ class Shapes(Layer):
         self._data_view.slice_key = np.array(self._data_slice.point)[
             self._slice_input.not_displayed
         ]
-        self.add(
+        self._add_shapes(
             data,
             shape_type=shape_type,
             edge_width=edge_widths,
             edge_color=edge_color,
             face_color=face_color,
             z_index=z_indices,
+            n_new_shapes=n_new_shapes,
         )
 
         self._update_dims()
-        self.events.data(value=self.data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.CHANGE.value,
+            data_indices=slice(None),
+            vertex_indices=((),),
+        )
         self._reset_editable()
 
     def _on_selection(self, selected: bool):
@@ -1981,28 +1987,9 @@ class Shapes(Layer):
         """
         data, shape_type = extract_shape_type(data, shape_type)
 
-        if edge_width is None:
-            edge_width = self.current_edge_width
-
         n_new_shapes = number_of_shapes(data)
 
-        if edge_color is None:
-            edge_color = self._get_new_shape_color(
-                n_new_shapes, attribute='edge'
-            )
-        if face_color is None:
-            face_color = self._get_new_shape_color(
-                n_new_shapes, attribute='face'
-            )
-        if self._data_view is not None:
-            z_index = z_index or max(self._data_view._z_index, default=-1) + 1
-        else:
-            z_index = z_index or 0
-
         if n_new_shapes > 0:
-            total_shapes = n_new_shapes + self.nshapes
-            self._feature_table.resize(total_shapes)
-            self.text.apply(self.features)
             self._add_shapes(
                 data,
                 shape_type=shape_type,
@@ -2010,6 +1997,7 @@ class Shapes(Layer):
                 edge_color=edge_color,
                 face_color=face_color,
                 z_index=z_index,
+                n_new_shapes=n_new_shapes,
             )
             self.events.data(
                 value=self.data,
@@ -2107,7 +2095,7 @@ class Shapes(Layer):
                 edge_color=edge_color,
                 face_color=face_color,
                 z_index=z_index,
-                z_refresh=False,
+                n_new_shapes=n_shapes,
             )
             self._data_view._update_z_order()
             self.refresh_colors()
@@ -2121,7 +2109,7 @@ class Shapes(Layer):
         edge_color=None,
         face_color=None,
         z_index=None,
-        z_refresh=True,
+        n_new_shapes=0,
     ):
         """Add shapes to the data view.
 
@@ -2162,13 +2150,24 @@ class Shapes(Layer):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        z_refresh : bool
-            If set to true, the mesh elements are reindexed with the new z order.
-            When shape_index is provided, z_refresh will be overwritten to false,
-            as the z indices will not change.
-            When adding a batch of shapes, set to false  and then call
-            ShapesList._update_z_order() once at the end.
+        n_new_shapes: int
+            The number of new shapes to be added to the Shapes layer.
         """
+        if n_new_shapes > 0:
+            total_shapes = n_new_shapes + self.nshapes
+            self._feature_table.resize(total_shapes)
+            if hasattr(self, "text"):
+                self.text.apply(self.features)
+
+        if edge_color is None:
+            edge_color = self._get_new_shape_color(
+                n_new_shapes, attribute='edge'
+            )
+        if face_color is None:
+            face_color = self._get_new_shape_color(
+                n_new_shapes, attribute='face'
+            )
+
         if edge_width is None:
             edge_width = self.current_edge_width
         if edge_color is None:
