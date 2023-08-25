@@ -19,8 +19,8 @@ if TYPE_CHECKING:
     LayerSel = Selection[Layer]
 
 
-def _len(layer: Union[LayerSel, LayerList]) -> int:
-    return len(layer)
+def _len(layers: Union[LayerSel, LayerList]) -> int:
+    return len(layers)
 
 
 class LayerListContextKeys(ContextNamespace['Layer']):

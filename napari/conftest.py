@@ -41,6 +41,8 @@ from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 from weakref import WeakKeyDictionary
 
+from npe2 import PackageMetadata
+
 with suppress(ModuleNotFoundError):
     __import__('dotenv').load_dotenv()
 
@@ -283,7 +285,9 @@ def builtins(_npe2pm: TestPluginManager):
 @pytest.fixture
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
+        plugin.manifest.package_metadata = PackageMetadata(
+            version='0.1.0', name='test'
+        )
         plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
 
