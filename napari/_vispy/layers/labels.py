@@ -1,3 +1,5 @@
+from math import isnan
+
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.gloo import Texture2D
@@ -216,7 +218,7 @@ def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
     """
     Set a value in the 2d hashmap, wrapping around to avoid collision.
     """
-    if key is None:
+    if key is None or isnan(key):
         return False
     pos = idx_to_2D(key, keys.shape)
     initial_key = key
