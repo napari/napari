@@ -50,11 +50,11 @@ from napari.utils.colormaps import (
     direct_colormap,
     ensure_colormap,
     label_colormap,
-    low_discrepancy_image,
 )
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
+from napari.utils.indexing import index_in_slice
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
@@ -591,8 +591,7 @@ class Labels(_ImageBase):
         collision_dkt: Dict[float, int] = {}
         collision_list = []
         for label in labels:
-            # FIXME after merge 6112
-            casted = self._as_type(label)
+            casted = self._to_vispy_texture_dtype(label)
             if casted in collision_dkt:
                 collision_list.append((label, collision_dkt[casted]))
             else:
@@ -832,31 +831,16 @@ class Labels(_ImageBase):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
+            
+    @staticmethod
+    def _to_vispy_texture_dtype(data):
+        """Convert data to a dtype that can be used as a VisPy texture.
 
-    def _lookup_with_low_discrepancy_image(self, im, selected_label=None):
-        """Returns display version of im using low_discrepancy_image.
-
-        Passes the image through low_discrepancy_image, only coloring
-        selected_label if it's not None.
-
-        Parameters
-        ----------
-        im : array or int
-            Raw integer input image.
-        selected_label : int, optional
-            Value of selected label to color, by default None
+        Labels layers allow all integer dtypes for data, but only a subset
+        are supported by VisPy textures. For now, we convert all data to
+        float32 as it can represent all input values (though not losslessly,
+        see https://github.com/napari/napari/issues/6084).
         """
-        if selected_label:
-            image = np.where(
-                im == selected_label,
-                low_discrepancy_image(selected_label, self._seed),
-                0,
-            )
-        else:
-            image = np.where(im != 0, low_discrepancy_image(im, self._seed), 0)
-        return image
-
-    def _as_type(self, data, selected_label=None):
         return np.float32(data)
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
@@ -970,7 +954,7 @@ class Labels(_ImageBase):
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
-        mapped_labels = self._as_type(labels_to_map)
+        mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
 
         if update_mask is not None:
             self._cached_mapped_labels[data_slice][update_mask] = mapped_labels
@@ -1029,7 +1013,7 @@ class Labels(_ImageBase):
         ):
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
-            val = self._as_type(np.array([label]))
+            val = self._to_vispy_texture_dtype(np.array([label]))
             col = self.colormap.map(val)[0]
         return col
 
@@ -1476,9 +1460,9 @@ class Labels(_ImageBase):
 
         Parameters
         ----------
-        indices : tuple of int, slice, or sequence of int
-            Indices in data to overwrite. Can be any valid NumPy indexing
-            expression [1]_.
+        indices : tuple of arrays of int
+            Indices in data to overwrite. Must be a tuple of arrays of length
+            equal to the number of data dimensions. (Fancy indexing in [1]_).
         value : int or array of int
             New label value(s). If more than one value, must match or
             broadcast with the given indices.
@@ -1505,6 +1489,21 @@ class Labels(_ImageBase):
 
         # update the labels image
         self.data[indices] = value
+
+        if not (  # if not a numpy array or numpy-backed xarray
+            isinstance(self.data, np.ndarray)
+            or isinstance(getattr(self.data, 'data', None), np.ndarray)
+        ):
+            # In the absence of slicing, the current slice becomes
+            # invalidated by data_setitem; only in the special case of a NumPy
+            # array, or a NumPy-array-backed Xarray, is the slice a view and
+            # therefore updated automatically.
+            # For other types, we update it manually here.
+            dims = self._slice.dims
+            point = np.round(self.world_to_data(dims.point)).astype(int)
+            pt_not_disp = {dim: point[dim] for dim in dims.not_displayed}
+            displayed_indices = index_in_slice(indices, pt_not_disp)
+            self._slice.image.raw[displayed_indices] = value
 
         # tensorstore and xarray do not return their indices in
         # np.ndarray format, so they need to be converted explicitly
