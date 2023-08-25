@@ -316,7 +316,6 @@ module = [
     'napari.components._layer_slicer',
     'napari.components._viewer_key_bindings',
     'napari.components.layerlist',
-    'napari.components.viewer_model',
     'napari.layers._layer_actions',
     'napari.layers._multiscale_data',
     'napari.layers.base.base',
