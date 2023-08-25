@@ -831,7 +831,7 @@ class Labels(_ImageBase):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
-            
+
     @staticmethod
     def _to_vispy_texture_dtype(data):
         """Convert data to a dtype that can be used as a VisPy texture.
