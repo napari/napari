@@ -258,6 +258,12 @@ class VispyLabelsLayer(VispyImageLayer):
         # self.layer.colormap is a labels_colormap, which is an evented model
         # from napari.utils.colormaps.Colormap (or similar). If we use it
         # in our constructor, we have access to the texture data we need
+        if (
+            event is not None
+            and event.type == 'selected_label'
+            and not self.layer.show_selected_label
+        ):
+            return
         colormap = self.layer.colormap
         mode = self.layer.color_mode
 

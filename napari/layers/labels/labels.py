@@ -39,6 +39,7 @@ from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import (
     direct_colormap,
+    ensure_colormap,
     label_colormap,
     low_discrepancy_image,
 )
@@ -704,9 +705,9 @@ class Labels(_ImageBase):
         self._cached_labels = None  # invalidates labels cache
         self._color_mode = color_mode
         if color_mode == LabelColorMode.AUTO:
-            super()._set_colormap(self._random_colormap)
+            self._colormap = ensure_colormap(self._random_colormap)
         else:
-            super()._set_colormap(self._direct_colormap)
+            self._colormap = ensure_colormap(self._direct_colormap)
         self._selected_color = self.get_color(self.selected_label)
         self.events.color_mode()
         self.events.colormap()
