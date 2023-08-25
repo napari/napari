@@ -949,11 +949,6 @@ class Labels(_ImageBase):
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
-        if not self.loaded:
-            # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
-            # Is there a nicer way to prevent this from getting called?
-            return
-
         image = self._slice.thumbnail
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             # we are only using the current slice so `image` will never be
