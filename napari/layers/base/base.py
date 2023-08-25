@@ -18,6 +18,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 import magicgui as mgui
@@ -1403,7 +1404,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         else:
             coords = [0] * (self.ndim - len(position)) + list(position)
 
-        return self._transforms[1:].simplified.inverse(coords)
+        simplified = cast(Affine, self._transforms[1:].simplified)
+        return simplified.inverse(coords)
 
     def data_to_world(self, position):
         """Convert from data coordinates to world coordinates.
@@ -1459,7 +1461,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         affine * (rotate * shear * scale + translate)
         """
-        return self._transforms[1:3].simplified
+        t = self._transforms[1:3].simplified
+        return cast(Affine, t)
 
     def _world_to_data_ray(self, vector: npt.ArrayLike) -> npt.NDArray:
         """Convert a vector defining an orientation from world coordinates to data coordinates.

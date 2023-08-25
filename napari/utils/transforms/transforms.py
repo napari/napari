@@ -140,7 +140,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         ...
 
     @overload
-    def __getitem__(self, key: slice) -> 'TransformChain':
+    def __getitem__(self, key: slice) -> 'TransformChain[_T]':
         ...
 
     def __getitem__(self, value):
