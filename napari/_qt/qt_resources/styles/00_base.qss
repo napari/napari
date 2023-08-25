@@ -198,6 +198,11 @@ QLabeledSlider > QAbstractSpinBox {
   padding: 0px;
 }
 
+QLabeledRangeSlider > QAbstractSpinBox {
+  min-width: 5px;
+  padding: 0px;
+}
+
 QWidget[emphasized="true"] QAbstractSpinBox {
   background-color: {{ primary }};
 }
@@ -256,10 +261,6 @@ QAbstractSpinBox::up-arrow {
 
 QAbstractSpinBox::down-arrow {
    image: url("theme_{{ id }}:/minus_50.svg");
-}
-
-QLabeledRangeSlider > QAbstractSpinBox {
-  min-width: 5px;
 }
 
 /* ----------------- QCheckBox ------------------ */
