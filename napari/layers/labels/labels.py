@@ -588,7 +588,7 @@ class Labels(_ImageBase):
 
     def _validate_colors(self, labels: Iterable[int]):
         """Check if after cast to float there is a label collisions"""
-        collision_dkt = {}
+        collision_dkt: Dict[float, int] = {}
         collision_list = []
         for label in labels:
             # FIXME after merge 6112
