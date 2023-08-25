@@ -277,7 +277,12 @@ def build_textures_from_dict(color_dict, empty_val=0, shape=None):
     keys = np.full(shape, empty_val, dtype=np.float32)
     values = np.zeros(shape + (4,), dtype=np.float32)
     collision = False
+    collided = set()
     for key, value in color_dict.items():
+        key = np.float32(key)
+        if key in collided:
+            continue
+        collided.add(key)
         collision |= hash2d_set(key, value, keys, values)
     return keys, values, collision
 
