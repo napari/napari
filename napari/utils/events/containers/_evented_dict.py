@@ -60,11 +60,13 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             self.events.add(**_events)
         else:
             # otherwise create a new one
-            self.events = EmitterGroup(source=self, **_events)
+            self.events = EmitterGroup(
+                source=self, auto_connect=False, **_events
+            )
         super().__init__(data, basetype)
 
     def __setitem__(self, key: _K, value: _T):
-        old = self._dict.get(key, None)
+        old = self._dict.get(key)
         if value is old or value == old:
             return
         if old is None:
