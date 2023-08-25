@@ -195,7 +195,7 @@ def idx_to_2D(idx, shape):
 
     The 2D index will wrap around line by line and back to the beginning.
     """
-    return (idx // shape[1]) % shape[0], (idx % shape[1])
+    return int((idx // shape[1]) % shape[0]), int(idx % shape[1])
 
 
 def hash2d_get(key, keys, values, empty_val=0):
