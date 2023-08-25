@@ -52,7 +52,7 @@ colormap_ordered = dict(zip(df['label'].astype(int), colors_ordered))
 from napari._vispy.layers.labels import build_textures_from_dict, hash2d_get  # noqa
 
 tex_shape = (1000, 1000)  # NOTE: this has to be equal to the actual texture shape in build_textures_from_dict!
-keys, values = build_textures_from_dict(colormap_ordered)
+keys, values, _ = build_textures_from_dict(colormap_ordered)
 texel_pos_img = np.zeros((1, nb_steps, 4))
 texel_pos_img[..., -1] = 1  # alpha
 for k in range(nb_steps):

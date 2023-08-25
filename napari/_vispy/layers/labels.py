@@ -110,6 +110,49 @@ vec4 sample_label_color(float t) {
 """
 
 
+direct_lookup_shade_without_collision = """
+uniform sampler2D texture2D_keys;
+uniform sampler2D texture2D_values;
+uniform vec2 LUT_shape;
+uniform int color_count;
+
+
+vec4 sample_label_color(float t) {
+    if (($use_selection) && ($selection != t)) {
+        return vec4(0);
+    }
+
+    float empty = 0.;
+    // get position in the texture grid (same as hash2d_get)
+    vec2 pos = vec2(
+        mod(int(t / LUT_shape.y), LUT_shape.x),
+        mod(t, LUT_shape.y)
+    );
+
+    // add .5 to move to the center of each texel and convert to texture coords
+    vec2 pos_tex = (pos + vec2(.5)) / LUT_shape;
+
+    // sample key texture
+    float found = texture2D(
+        texture2D_keys,
+        pos_tex
+    ).r;
+
+    // return vec4(pos_tex, 0, 1); // debug if texel is calculated correctly (correct)
+    // return vec4(found / 15, 0, 0, 1); // debug if key is calculated correctly (correct, should be a black-to-red gradient)
+
+    if (abs(found - t) > 1e-8) {
+        return vec4(0);
+    }
+
+    return texture2D(
+        texture2D_values,
+        pos_tex
+    );
+}
+"""
+
+
 class LabelVispyColormap(VispyColormap):
     def __init__(
         self,
@@ -132,12 +175,18 @@ class DirectLabelVispyColormap(VispyColormap):
         self,
         use_selection=False,
         selection=0.0,
+        collision=True,
     ):
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
-        self.glsl_map = direct_lookup_shader.replace(
-            '$use_selection', str(use_selection).lower()
-        ).replace('$selection', str(selection))
+        if collision:
+            self.glsl_map = direct_lookup_shader.replace(
+                '$use_selection', str(use_selection).lower()
+            ).replace('$selection', str(selection))
+        else:
+            self.glsl_map = direct_lookup_shade_without_collision.replace(
+                '$use_selection', str(use_selection).lower()
+            ).replace('$selection', str(selection))
 
 
 def idx_to_2D(idx, shape):
@@ -163,21 +212,25 @@ def hash2d_get(key, keys, values, empty_val=0):
     return pos if keys[pos] == initial_key else None
 
 
-def hash2d_set(key, value, keys, values, empty_val=0):
+def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
     """
     Set a value in the 2d hashmap, wrapping around to avoid collision.
     """
     if key is None:
-        return
+        return False
     pos = idx_to_2D(key, keys.shape)
     initial_key = key
+    collision = False
     while keys[pos] != empty_val:
+        collision = True
         if key - initial_key > keys.size:
             raise OverflowError('too many labels')
         key += 1
         pos = idx_to_2D(key, keys.shape)
     keys[pos] = initial_key
     values[pos] = value
+
+    return collision
 
 
 def _get_shape_from_dict(color_dict):
@@ -223,9 +276,10 @@ def build_textures_from_dict(color_dict, empty_val=0, shape=None):
         shape = get_shape_from_dict(color_dict)
     keys = np.full(shape, empty_val, dtype=np.float32)
     values = np.zeros(shape + (4,), dtype=np.float32)
+    collision = False
     for key, value in color_dict.items():
-        hash2d_set(key, value, keys, values)
-    return keys, values
+        collision |= hash2d_set(key, value, keys, values)
+    return keys, values, collision
 
 
 class VispyLabelsLayer(VispyImageLayer):
@@ -279,10 +333,13 @@ class VispyLabelsLayer(VispyImageLayer):
             color_dict = (
                 self.layer.color
             )  # TODO: should probably account for non-given labels
-            key_texture, val_texture = build_textures_from_dict(color_dict)
+            key_texture, val_texture, collision = build_textures_from_dict(
+                color_dict
+            )
             self.node.cmap = DirectLabelVispyColormap(
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
+                collision=collision,
             )
             # note that textures have to be transposed here!
             self.node.shared_program['texture2D_keys'] = Texture2D(
