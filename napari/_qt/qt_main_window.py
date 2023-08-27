@@ -1504,6 +1504,7 @@ def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
     kwargs = {}
     try:
         sig = inspect.signature(wdg_cls.__init__)
+    # For some widgets, inspection fails when adding to bundle
     except ValueError:
         pass
     else:
