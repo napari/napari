@@ -20,6 +20,7 @@ from typing import (
 )
 
 import numpy as np
+import psutil
 from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
@@ -65,6 +66,7 @@ from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
 from napari.settings import get_settings
+from napari.settings._constants import NewLabelsPolicy
 from napari.utils._register import create_func as create_add_method
 from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
@@ -79,6 +81,7 @@ from napari.utils.key_bindings import KeymapProvider
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
+from napari.utils.notifications import show_error
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
@@ -405,10 +408,77 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             np.round(s / sc).astype('int') + 1
             for s, sc in zip(scene_size, scale)
         ]
-        empty_labels = np.zeros(
-            shape, dtype=get_settings().application.new_labels_dtype
-        )
+        label_policy = get_settings().application.new_labels_policy
+        image_class = self._get_class_from_images()
+        dtype_str = get_settings().application.new_labels_dtype
+        if label_policy == NewLabelsPolicy.follow_image_class:
+            module = self._get_module_from_class(image_class)
+        elif label_policy == NewLabelsPolicy.fit_in_ram:
+            max_factor = get_settings().application.new_label_max_factor
+            module = self._check_ram(np.ndarray, shape, dtype_str, max_factor)
+        else:  # label_policy == NewLabelsPolicy.follow_class_with_fit:
+            module = self._check_ram(image_class, shape, dtype_str)
+        if module is None:
+            show_error(
+                "Not enough RAM to allocate labels array. Please install zarr and try again."
+            )
+            return
+        empty_labels = module.zeros(shape, dtype=dtype_str)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
+
+    def _check_ram(self, image_class, shape, dtype_str, max_factor=100):
+        data_size = np.prod(shape) * np.dtype(dtype_str).itemsize
+        free_mem = psutil.virtual_memory().available
+        total_mem = psutil.virtual_memory().total
+
+        if data_size > free_mem or data_size > total_mem * max_factor / 100:
+            try:
+                import zarr
+            except ImportError:
+                return None
+            return zarr
+        return self._get_module_from_class(image_class)
+
+    def _get_class_from_images(self):
+        class_set = {
+            layer.data.__class__
+            for layer in self.layers
+            if isinstance(layer, Image)
+        }
+        if not class_set:
+            return np.ndarray
+        if len(class_set) == 1:
+            return class_set.pop()
+        if np.ndarray in class_set:
+            class_set.remove(np.ndarray)
+
+        if "zarr" in str(class_set):
+            import zarr
+
+            return zarr.core.Array
+
+        return class_set.pop()  # may be a little random
+
+    @staticmethod
+    def _get_module_from_class(class_):
+        if "zarr.core" in str(class_):
+            import zarr
+
+            return zarr
+        if "dask.array" in str(class_):
+            import dask.array as da
+
+            return da
+        if "tensorstore" in str(class_):
+            try:
+                import zarr
+            except ImportError:
+                import dask.array as da
+
+                return da
+            return zarr
+
+        return np
 
     def _on_layer_reload(self, event: Event) -> None:
         self._layer_slicer.submit(

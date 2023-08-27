@@ -41,3 +41,11 @@ class LabelDTypes(str, Enum):
     int64 = 'int64'
     uint = 'uint'
     int = 'int'
+
+
+class NewLabelsPolicy(str, Enum):
+    follow_image_class = 'Follow image class'
+    fit_in_ram = 'Fit in RAM'
+    follow_class_with_fit = (
+        'Follow image class but fallback to fit in RAM if needed'
+    )

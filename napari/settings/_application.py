@@ -9,6 +9,7 @@ from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
     LabelDTypes,
     LoopMode,
+    NewLabelsPolicy,
 )
 from napari.settings._fields import Language
 from napari.utils._base import _DEFAULT_LOCALE
@@ -217,6 +218,23 @@ class ApplicationSettings(EventedModel):
         description=trans._(
             "Select the dtype for new labels layers created using button."
         ),
+    )
+    new_labels_policy: NewLabelsPolicy = Field(
+        default=NewLabelsPolicy.fit_in_ram,
+        title=trans._("New labels policy"),
+        description=trans._(
+            "Select the policy for new labels layers created using button.\n"
+            "Follow image class: Use the same array class as the image layer.\n"
+            "Fit in RAM: if after allocate array there may be a problem with RAM space fallback to dask/zarr.\n"
+            "Follow image class but fallback to fit in RAM if needed: first try to allocate array as image class, if it fails fallback to fit in RAM.\n"
+        ),
+    )
+    new_label_max_factor: int = Field(
+        default=100,
+        ge=1,
+        le=100,
+        title="Maximum percentage of RAM for new labels",
+        description="Maximum percentage of RAM for new labels. If the new labels policy is set to fit in RAM, this value is used to calculate the maximum size of the array. ",
     )
 
     @validator('window_state', allow_reuse=True)
