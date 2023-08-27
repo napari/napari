@@ -17,7 +17,10 @@ def test_idx_to_2D():
 
 
 def test_build_textures_from_dict():
-    keys, values = build_textures_from_dict({1: (1, 1, 1, 1), 2: (2, 2, 2, 2)})
+    keys, values, collison = build_textures_from_dict(
+        {1: (1, 1, 1, 1), 2: (2, 2, 2, 2)}
+    )
+    assert not collison
     assert keys.shape == (61, 61)
     assert values.shape == (61, 61, 4)
     assert keys[0, 1] == 1
@@ -41,7 +44,7 @@ def test_build_textures_from_dict_too_many_labels(monkeypatch):
 
 
 def test_size_of_texture_square():
-    keys, values = build_textures_from_dict(
+    keys, values, _collision = build_textures_from_dict(
         {i: (i, i, i, i) for i in range(4032)}
     )
     assert keys.shape == (127, 127)
@@ -49,7 +52,7 @@ def test_size_of_texture_square():
 
 
 def test_size_of_texture_rectangle():
-    keys, values = build_textures_from_dict(
+    keys, values, _collision = build_textures_from_dict(
         {i: (i, i, i, i) for i in range(4050)}
     )
     assert keys.shape == (251, 127)
@@ -57,9 +60,10 @@ def test_size_of_texture_rectangle():
 
 
 def test_build_textures_from_dict_collision():
-    keys, values = build_textures_from_dict(
+    keys, values, collision = build_textures_from_dict(
         {1: (1, 1, 1, 1), 26: (2, 2, 2, 2), 27: (3, 3, 3, 3)}, shape=(5, 5)
     )
+    assert collision
     assert keys.shape == (5, 5)
     assert keys[0, 1] == 1
     assert keys[0, 2] == 26
