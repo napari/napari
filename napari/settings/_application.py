@@ -5,7 +5,11 @@ from typing import List, Optional, Tuple
 from psutil import virtual_memory
 from pydantic import Field, validator
 
-from napari.settings._constants import BrushSizeOnMouseModifiers, LoopMode
+from napari.settings._constants import (
+    BrushSizeOnMouseModifiers,
+    LabelDTypes,
+    LoopMode,
+)
 from napari.settings._fields import Language
 from napari.utils._base import _DEFAULT_LOCALE
 from napari.utils.events.custom_types import conint
@@ -205,6 +209,13 @@ class ApplicationSettings(EventedModel):
         title=trans._("Dask cache"),
         description=trans._(
             "Settings for dask cache (does not work with distributed arrays)"
+        ),
+    )
+    new_labels_dtype: LabelDTypes = Field(
+        default=LabelDTypes.int,
+        title=trans._("New labels dtype"),
+        description=trans._(
+            "Select the dtype for new labels layers created using button."
         ),
     )
 
