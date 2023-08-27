@@ -58,7 +58,7 @@ def copy_layer_le_4_16(layer: Layer, name: str = ""):
 
 
 def copy_layer(layer: Layer, name: str = ""):
-    if NAPARI_GE_4_16:
+    if not NAPARI_GE_4_16:
         return copy_layer_le_4_16(layer, name)
 
     res_layer = Layer.create(*layer.as_layer_data_tuple())
