@@ -1,16 +1,7 @@
 import warnings
 from collections import deque
 from contextlib import contextmanager
-from typing import (
-    Callable,
-    ClassVar,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Callable, ClassVar, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -567,7 +558,6 @@ class Labels(_ImageBase):
             label: transform_color(color_str)[0]
             for label, color_str in color.items()
         }
-        self._validate_colors(colors)
         self._color = colors
         self._direct_colormap = direct_colormap(colors)
 
@@ -585,25 +575,6 @@ class Labels(_ImageBase):
             color_mode = LabelColorMode.DIRECT
 
         self.color_mode = color_mode
-
-    def _validate_colors(self, labels: Iterable[int]):
-        """Check if after cast to float there is a label collisions"""
-        collision_dkt: Dict[float, int] = {}
-        collision_list = []
-        for label in labels:
-            casted = self._to_vispy_texture_dtype(label)
-            if casted in collision_dkt:
-                collision_list.append((label, collision_dkt[casted]))
-            else:
-                collision_dkt[casted] = label
-        if not collision_list:
-            return
-
-        warn_text = (
-            "Because of the cast to float, the following labels will be merged: "
-            + ", ".join([f"{l1} and {l2}" for l1, l2 in collision_list])
-        )
-        warnings.warn(warn_text, category=RuntimeWarning)
 
     def _is_default_colors(self, color):
         """Returns True if color contains only default colors, otherwise False.
