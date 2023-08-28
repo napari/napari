@@ -23,8 +23,17 @@ from napari._app_model.actions._viewer_actions import VIEWER_ACTIONS
 from napari._app_model.injection._processors import PROCESSORS
 from napari._app_model.injection._providers import PROVIDERS
 from napari.components.viewer_model import ViewerModel
-from napari.layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
+from napari.layers import (
+    Image,
+    Labels,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 from napari.utils.action_manager import action_manager
+from napari.utils.kb.register import NapariKeyBindingsRegistry
 from napari.utils.key_bindings import _bind_plugin_key, _get_plugin_keymap
 
 APP_NAME = 'napari'
@@ -46,16 +55,17 @@ def populate_plugin_keymap():
     """Populate the global plugin keymap from the app's keybinding registry."""
     app = NapariApplication.get_app()
     _get_plugin_keymap().clear()
-    for kb_rule in app.keybindings:
-        # skip built-in keybinds
-        if kb_rule.command_id.startswith('napari:'):
-            continue
+    for _kb, entries in app.keybindings:
+        for entry in entries:
+            # skip built-in keybinds
+            if entry.command_id.startswith('napari:'):
+                continue
 
-        _bind_plugin_key(
-            kb_rule.keybinding,
-            _bindable_cmd(app, kb_rule.command_id),
-            overwrite=True,
-        )
+            _bind_plugin_key(
+                entry.keybinding,
+                _bindable_cmd(app, entry.command_id),
+                overwrite=True,
+            )
 
 
 class NapariApplication(Application):
@@ -67,7 +77,11 @@ class NapariApplication(Application):
         # exceptions with `.result()`, for now, raising immediately should
         # prevent any unexpected silent errors.  We can turn it off later if we
         # adopt asynchronous command execution.
-        super().__init__(app_name, raise_synchronous_exceptions=True)
+        super().__init__(
+            app_name,
+            raise_synchronous_exceptions=True,
+            keybindings_reg_class=NapariKeyBindingsRegistry,
+        )
 
         self._repeatable_actions: Set[str] = set()
 
