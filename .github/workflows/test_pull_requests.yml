@@ -198,6 +198,7 @@ jobs:
   test_pip_install:
     name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v3
         with:
