@@ -382,6 +382,7 @@ def _npe2_manifest_to_actions(
                 else:
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
+                    print('ss')
 
     actions: List[Action] = [
         Action(
