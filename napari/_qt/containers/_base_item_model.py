@@ -12,7 +12,7 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from typing import Optional
 
-    from qtpy.QtWidgets import QWidget
+    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
 
 ItemType = TypeVar("ItemType")

@@ -824,7 +824,7 @@ class Window:
     def add_plugin_dock_widget(
         self,
         plugin_name: str,
-        widget_name: str = None,
+        widget_name: Optional[str] = None,
         tabify: bool = False,
     ) -> Tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
@@ -860,7 +860,7 @@ class Window:
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
-            widget_name = list(plugin_manager._dock_widgets[plugin_name])[0]
+            widget_name = next(iter(plugin_manager._dock_widgets[plugin_name]))
 
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
