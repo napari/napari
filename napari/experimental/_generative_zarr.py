@@ -272,7 +272,7 @@ def mandelbulb(
             for i in range(grid_size):  # X loop
                 creal = from_x + i * step_x
                 nreal = real = imag = imag2 = n_iter = 0
-                for _ in range(maxiter):
+                for n_iter in range(maxiter):
                     nreal, nimag, nimag2 = hypercomplex_exponentiation(
                         real, imag, imag2, n
                     )
@@ -285,7 +285,6 @@ def mandelbulb(
                     if real * real + imag * imag + imag2 * imag2 > 4.0:
                         break
                     out[k * grid_size * grid_size + j * grid_size + i] = n_iter
-                    n_iter += 1
 
     return out
 

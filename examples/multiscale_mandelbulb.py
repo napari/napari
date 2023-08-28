@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     viewer = napari.Viewer(ndisplay=3)
 
-    multiscale_img = mandelbulb_dataset(max_levels=15)
+    multiscale_img = mandelbulb_dataset(max_levels=16)
 
     print(multiscale_img[0])
 
