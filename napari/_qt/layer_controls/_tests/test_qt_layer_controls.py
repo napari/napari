@@ -260,7 +260,7 @@ def test_create_layer_controls_spin(
                 assert any(
                     expected_error in captured.err
                     for expected_error in expected_errors
-                ), captured.err
+                ), f"value: {value}, range {value_range}\nerr: {captured.err}"
 
         assert qspinbox.value() in [qspinbox_max, qspinbox_max - 1]
         qspinbox.setValue(qspinbox_initial_value)
