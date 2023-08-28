@@ -13,6 +13,7 @@ from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.volume import Volume as VolumeNode
 
 PRIME_NUM_TABLE = [61, 127, 251, 509, 1021, 2039, 4093, 8191, 16381, 32749]
+MAX_LOAD_FACTOR = 0.25
 
 MAX_TEXTURE_SIZE = None
 
@@ -236,7 +237,7 @@ def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
 
 
 def _get_shape_from_dict(color_dict):
-    size = len(color_dict) * 4
+    size = len(color_dict) / MAX_LOAD_FACTOR
     # I think that hash table size should be at least 4 times
     # bigger than the number of labels to avoid collisions
     for i, prime in enumerate(PRIME_NUM_TABLE[:-1]):
