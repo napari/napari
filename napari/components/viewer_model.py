@@ -3,8 +3,10 @@ from __future__ import annotations
 import inspect
 import itertools
 import os
+import sys
 import warnings
-from functools import lru_cache
+from collections import Counter
+from functools import lru_cache, partial
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -81,7 +83,7 @@ from napari.utils.key_bindings import KeymapProvider
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
-from napari.utils.notifications import show_error
+from napari.utils.notifications import show_error, show_warning
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
@@ -423,10 +425,51 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 "Not enough RAM to allocate labels array. Please install zarr and try again."
             )
             return
-        empty_labels = module.zeros(shape, dtype=dtype_str)
+        chunk = self._get_chunk_size_from_layers()
+        empty_labels = self._get_zeros_from_module(module, chunk)(
+            shape=shape, dtype=dtype_str
+        )
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
-    def _check_ram(self, image_class, shape, dtype_str, max_factor=100):
+    @staticmethod
+    def _get_zeros_from_module(module, chunk):
+        if module is None:
+            return np.zeros
+
+        if module.__name__ == "numpy":
+            return np.zeros
+
+        if module.__name__ == "zarr":
+            if chunk is None:
+                return module.zeros
+
+            return partial(module.zeros, chunks=chunk)
+
+        if module.__name__ == "dask.array":
+            if chunk is not None:
+                return partial(module.zeros, chunks=chunk)
+            return module.zeros
+
+        if module.__name__ == "tensorstore":
+            spec = {
+                'driver': 'zarr',
+                'kvstore': {'driver': 'memory'},
+            }
+            if chunk is not None:
+                spec['metadata'] = {'chunks': chunk}
+
+            def _zeros(**kwargs):
+                return module.open(
+                    spec=spec, create=True, fill_value=0, **kwargs
+                ).result()
+
+            return _zeros
+
+        show_warning("Unknown data type for labels creation.")
+        return np.zeros
+
+    @classmethod
+    def _check_ram(cls, image_class, shape, dtype_str, max_factor=100):
         data_size = np.prod(shape) * np.dtype(dtype_str).itemsize
         free_mem = psutil.virtual_memory().available
         total_mem = psutil.virtual_memory().total
@@ -437,7 +480,70 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             except ImportError:
                 return None
             return zarr
-        return self._get_module_from_class(image_class)
+        return cls._get_module_from_class(image_class)
+
+    @staticmethod
+    def _get_chunk_size(layer: Image):
+        """Get chunk size from a given layer.
+
+        Parameters
+        ----------
+        layer : napari.layers.Image
+            Layer to determine chunk size for.
+
+        Returns
+        -------
+        chunk_size : tuple or None
+            Chunk size for the layer.
+        """
+        data = layer.data
+
+        if isinstance(data, np.ndarray):
+            return None
+
+        if "zarr" in sys.modules:
+            from zarr.core import Array as ZarrArray
+
+            if isinstance(data, ZarrArray):
+                return data.chunks
+
+        if "dask" in sys.modules:
+            from dask.array import Array as DaskArray
+
+            if isinstance(data, DaskArray):
+                return data.chunksize
+
+        if "tensorstore" in sys.modules:
+            from tensorstore import TensorStore
+
+            if isinstance(data, TensorStore):
+                # TensorStore allow to specify different read and write chunk sizes
+                # we use the read chunk size to have same chuk size for labels like
+                # when load data from drive
+                return data.chunk_layout.read_chunk.shape
+
+        show_warning("Unknown data type for chunk size determination.")
+        return None
+
+    def _get_chunk_size_from_layers(self):
+        sizes = []
+        for layer in self.layers:
+            if isinstance(layer, Image):
+                chunk_size = self._get_chunk_size(layer)
+                if (
+                    chunk_size is not None
+                    and len(chunk_size) == self.dims.ndim
+                ):
+                    # chunk size is for all dimensions
+                    sizes.append(tuple(chunk_size))
+        if not sizes:
+            return None
+        if len(sizes) == 1:
+            return sizes[0]
+
+        count = Counter(sizes)
+        # select most popular chunk size (with some randomization if there are multiple)
+        return sorted(count, key=count.get, reverse=True)[0]
 
     def _get_class_from_images(self):
         class_set = {
@@ -470,13 +576,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
             return da
         if "tensorstore" in str(class_):
-            try:
-                import zarr
-            except ImportError:
-                import dask.array as da
+            import tensorstore
 
-                return da
-            return zarr
+            return tensorstore
 
         return np
 
