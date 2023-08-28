@@ -68,7 +68,7 @@ class TypedMutableSequence(MutableSequence[_T]):
     def __repr__(self) -> str:
         return repr(self._list)
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         return self._list == other
 
     def __hash__(self) -> int:
