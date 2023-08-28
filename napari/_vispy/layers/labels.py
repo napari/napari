@@ -12,7 +12,19 @@ from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.volume import Volume as VolumeNode
 
-PRIME_NUM_TABLE = [61, 127, 251, 509, 1021, 2039, 4093, 8191, 16381, 32749]
+PRIME_NUM_TABLE = [
+    61,
+    127,
+    251,
+    509,
+    1021,
+    2039,
+    4093,
+    8191,
+    16381,
+    32749,
+    65521,
+]
 MAX_LOAD_FACTOR = 0.25
 
 MAX_TEXTURE_SIZE = None
