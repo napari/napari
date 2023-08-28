@@ -591,6 +591,7 @@ class Labels(_ImageBase):
         See https://github.com/napari/napari/issues/6084 for details.
         """
         aliases: Dict[float, List[int]] = defaultdict(list)
+        labels = [k for k in labels if k is not None]
         labels_int = np.fromiter(labels, dtype=int)
         labels_texture = self._to_vispy_texture_dtype(labels_int)
         for integer, texture in zip(labels_int, labels_texture):
