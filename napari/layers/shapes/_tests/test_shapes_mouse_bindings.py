@@ -52,6 +52,8 @@ def create_known_shapes_layer():
     n_shapes = len(data)
 
     layer = Shapes(data)
+    # very zoomed in, guaranteed no overlap between vertices
+    layer.scale_factor = 0.001
     assert layer.ndim == 2
     assert len(layer.data) == n_shapes
     assert len(layer.selected_data) == 0
@@ -347,7 +349,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     n_coord = len(layer.data[0])
     layer.mode = 'vertex_insert'
     layer.selected_data = {0}
-
+    old_data = layer.data
     # Simulate click
     event = ReadOnlyWrapper(
         Event(
@@ -375,9 +377,15 @@ def test_vertex_insert(create_known_shapes_layer, Event):
     # Check new shape added at coordinates
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord + 1
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.CHANGING,
+        "data_indices": tuple(layer.selected_data),
+        "vertex_indices": ((2,),),
+    }
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.CHANGE.value,
+        "action": ActionType.CHANGED,
         "data_indices": tuple(layer.selected_data),
         "vertex_indices": ((2,),),
     }
@@ -389,6 +397,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
 def test_vertex_remove(create_known_shapes_layer, Event):
     """Remove vertex from shape."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
+    old_data = layer.data
     layer.events.data = Mock()
     n_coord = len(layer.data[0])
     layer.mode = 'vertex_remove'
@@ -407,27 +416,22 @@ def test_vertex_remove(create_known_shapes_layer, Event):
         )
     )
     mouse_press_callbacks(layer, event)
-
-    # Simulate drag end
-    event = ReadOnlyWrapper(
-        Event(
-            type='mouse_move',
-            is_dragging=True,
-            modifiers=[],
-            position=position,
-            pos=position,
-        )
-    )
-    mouse_move_callbacks(layer, event)
-    assert layer.events.data.call_args[1] == {
-        "value": layer.data,
-        "action": ActionType.CHANGE.value,
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.CHANGING,
         "data_indices": tuple(
             select,
         ),
-        "vertex_indices": ((3,),),
+        "vertex_indices": ((0,),),
     }
-    # Check new shape added at coordinates
+    assert layer.events.data.call_args[1] == {
+        "value": layer.data,
+        "action": ActionType.CHANGED,
+        "data_indices": tuple(
+            select,
+        ),
+        "vertex_indices": ((0,),),
+    }
     assert len(layer.data) == n_shapes
     assert len(layer.data[0]) == n_coord - 1
 
@@ -474,6 +478,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
     layer, n_shapes, _ = create_known_shapes_layer
     layer.events.data = Mock()
 
+    old_data = layer.data
     layer.mode = 'select'
     # Zoom in so as to not select any vertices
     layer.scale_factor = 0.01
@@ -566,9 +571,15 @@ def test_drag_shape(create_known_shapes_layer, Event):
     vertex_indices = (tuple(range(len(layer.data[0]))),)
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.CHANGING,
+        "data_indices": (0,),
+        "vertex_indices": vertex_indices,
+    }
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.CHANGE.value,
+        "action": ActionType.CHANGED,
         "data_indices": (0,),
         "vertex_indices": vertex_indices,
     }
@@ -644,7 +655,7 @@ def test_drag_vertex(create_known_shapes_layer, Event):
     layer.events.data = Mock()
     layer.mode = 'direct'
     layer.selected_data = {0}
-    position = tuple(layer.data[0][0])
+    old_position = tuple(layer.data[0][0])
 
     # Simulate click
     event = ReadOnlyWrapper(
@@ -652,21 +663,23 @@ def test_drag_vertex(create_known_shapes_layer, Event):
             type='mouse_press',
             is_dragging=False,
             modifiers=[],
-            position=position,
-            pos=position,
+            position=old_position,
+            pos=old_position,
         )
     )
     mouse_press_callbacks(layer, event)
 
-    position = [0, 0]
+    new_position = [0, 0]
+    assert np.all(new_position != old_position)
+
     # Simulate move, click, and release
     event = ReadOnlyWrapper(
         Event(
             type='mouse_move',
             is_dragging=True,
             modifiers=[],
-            position=position,
-            pos=position,
+            position=new_position,
+            pos=new_position,
         )
     )
     mouse_move_callbacks(layer, event)
@@ -677,8 +690,8 @@ def test_drag_vertex(create_known_shapes_layer, Event):
             type='mouse_release',
             is_dragging=True,
             modifiers=[],
-            position=position,
-            pos=position,
+            position=new_position,
+            pos=new_position,
         )
     )
     mouse_release_callbacks(layer, event)
@@ -689,11 +702,11 @@ def test_drag_vertex(create_known_shapes_layer, Event):
     assert layer.selected_data == {0}
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.CHANGE.value,
+        "action": ActionType.CHANGED,
         "data_indices": (0,),
         "vertex_indices": vertex_indices,
     }
-    np.testing.assert_allclose(layer.data[0][-1], [0, 0])
+    np.testing.assert_allclose(layer.data[0][0], [0, 0])
 
 
 @pytest.mark.parametrize(
