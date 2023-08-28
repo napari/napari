@@ -1461,7 +1461,7 @@ class Labels(_ImageBase):
             point = np.round(self.world_to_data(dims.point)).astype(int)
             pt_not_disp = {dim: point[dim] for dim in dims.not_displayed}
             displayed_indices = index_in_slice(indices, pt_not_disp)
-            self._slice.image.raw[displayed_indices] = value
+            self._slice.image[displayed_indices] = value
 
         # tensorstore and xarray do not return their indices in
         # np.ndarray format, so they need to be converted explicitly
