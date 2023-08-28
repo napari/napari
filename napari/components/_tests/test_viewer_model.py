@@ -358,6 +358,7 @@ def test_new_labels_fit_in_ram(virtual_memory, module_name):
     viewer = ViewerModel()
     get_settings().application.new_labels_policy = NewLabelsPolicy.fit_in_ram
     get_settings().application.new_label_max_factor = 100
+    get_settings().application.new_labels_dtype = "uint64"
     viewer.add_image(
         ViewerModel._get_zeros_from_module(module, None)(
             shape=(10, 15), dtype="uint8"
