@@ -33,6 +33,7 @@ class CommandId(str, Enum):
     TOGGLE_VIEWER_SCALE_BAR = 'napari:window:view:toggle_viewer_scale_bar'
     TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
+    TOGGLE_VIEWER_NDISPLAY = "napari:window:view:toggle_ndisplay"
 
     # Help menubar
     NAPARI_GETTING_STARTED = 'napari:window:help:getting_started'
@@ -44,6 +45,8 @@ class CommandId(str, Enum):
     NAPARI_INFO = 'napari:window:help:info'
     NAPARI_GITHUB_ISSUE = 'napari:window:help:github_issue'
     TOGGLE_BUG_REPORT_OPT_IN = 'napari:window:help:bug_report_opt_in'
+
+    NAPARI_SHOW_SHORTCUTS = "napari:window:show_shortcuts"
 
     # Layer menubar
     LAYER_DUPLICATE = 'napari:layer:duplicate'
@@ -74,6 +77,92 @@ class CommandId(str, Enum):
     LAYER_PROJECT_SUM = 'napari:layer:project_sum'
     LAYER_PROJECT_MEAN = 'napari:layer:project_mean'
     LAYER_PROJECT_MEDIAN = 'napari:layer:project_median'
+
+    # Viewer Actions
+    VIEWER_DELETE_SELECTED = "napari:viewer:delete_selected_layers"
+    VIEWER_HOLD_FOR_PAN_ZOOM = "napari:viewer:hold_for_pan_zoom"
+    VIEWER_RESET_SCROLL = "napari:viewer:reset_scroll_progress"
+    VIEWER_TOGGLE_THEME = "napari:viewer:toggle_theme"
+    VIEWER_RESET_VIEW = "napari:viewer:reset_view"
+    VIEWER_INC_DIMS_LEFT = "napari:viewer:increment_dims_left"
+    VIEWER_INC_DIMS_RIGHT = "napari:viewer:increment_dims_right"
+    VIEWER_FOCUS_AXES_UP = "napari:viewer:focus_axes_up"
+    VIEWER_FOCUS_AXES_DOWN = "napari:viewer:focus_axes_down"
+    VIEWER_ROLL_AXES = "napari:viewer:roll_axes"
+    VIEWER_TRANSPOSE_AXES = "napari:viewer:transpose_axes"
+    VIEWER_TOGGLE_GRID = "napari:viewer:toggle_grid"
+    # TODO: captured above in LAYER_TOGGLE_VISIBILITY?
+    VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY = "napari:viewer:toggle_selected_visibility"
+    # TODO: console action should be provided by plugin?
+    VIEWER_TOGGLE_CONSOLE_VISIBILITY = "napari:viewer:toggle_console_visibility"
+
+    # Image layer actions
+    IMAGE_ORIENT_PLANE_NORMAL_ALONG_Z = "napari:image:orient_plane_normal_along_z"
+    IMAGE_ORIENT_PLANE_NORMAL_ALONG_Y = "napari:image:orient_plane_normal_along_y"
+    IMAGE_ORIENT_PLANE_NORMAL_ALONG_X = "napari:image:orient_plane_normal_along_x"
+    IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION = "napari:image:orient_plane_normal_along_view_direction"
+    IMAGE_HOLD_TO_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION = "napari:image:hold_to_orient_plane_normal_along_view_direction"
+    IMAGE_ACTIVATE_TRANSFORM_MODE = "napari:image:activate_image_transform_mode"
+    IMAGE_ACTIVATE_PAN_ZOOM_MODE = "napari:image:activate_image_pan_zoom_mode"
+
+    LABELS_ACTIVATE_PAINT_MODE = "napari:labels:activate_labels_paint_mode"
+    LABELS_ACTIVATE_FILL_MODE = "napari:labels:activate_labels_fill_mode"
+    LABELS_ACTIVATE_PAN_ZOOM_MODE = "napari:labels:activate_labels_pan_zoom_mode"
+    LABELS_ACTIVATE_PICKER_MODE = "napari:labels:activate_labels_picker_mode"
+    LABELS_ACTIVATE_POLYGON_MODE = "napari:labels:activate_labels_polygon_mode"
+    LABELS_ACTIVATE_ERASE_MODE = "napari:labels:activate_labels_erase_mode"
+    LABELS_ACTIVATE_TRANSFORM_MODE = "napari:labels:activate_labels_transform_mode"
+    LABELS_RESET_POLYGON = "napari:labels:reset_polygon"
+    LABELS_COMPLETE_POLYGON = "napari:labels:complete_polygon"
+    LABELS_NEW_LABEL = "napari:labels:new_label"
+    LABELS_DECREMENT_ID = "napari:labels:decrease_label_id"
+    LABELS_INCREMENT_ID = "napari:labels:increase_label_id"
+    LABELS_DECREASE_BRUSH_SIZE = "napari:labels:decrease_brush_size"
+    LABELS_INCREASE_BRUSH_SIZE = "napari:labels:increase_brush_size"
+    LABELS_SWAP = "napari:labels:swap_selected_and_background_labels"
+    LABELS_TOGGLE_PRESERVE_LABELS = "napari:labels:toggle_preserve_labels"
+    LABELS_UNDO = "napari:labels:labels_undo"
+    LABELS_REDO = "napari:labels:labels_redo"
+
+    POINTS_ACTIVATE_ADD_MODE = "napari:points:activate_points_add_mode"
+    POINTS_ACTIVATE_SELECT_MODE = "napari:points:activate_points_select_mode"
+    POINTS_ACTIVATE_PAN_ZOOM_MODE = "napari:points:activate_points_pan_zoom_mode"
+    POINTS_ACTIVATE_TRANSFORM_MODE = "napari:points:activate_points_transform_mode"
+    POINTS_COPY = "napari:points:copy_selected_points"
+    POINTS_PASTE = "napari:points:paste_points"
+    POINTS_SELECT_ALL_IN_SLICE = "napari:points:select_all_in_slice"
+    POINTS_SELECT_ALL_DATA = "napari:points:select_all_data"
+    POINTS_DELETE_SELECTED = "napari:points:delete_selected_points"
+
+    SHAPES_HOLD_TO_LOCK_ASPECT_RATIO = "napari:shapes:hold_to_lock_aspect_ratio"
+    SHAPES_ACTIVATE_ADD_RECTANGLE_MODE = "napari:shapes:activate_add_rectangle_mode"
+    SHAPES_ACTIVATE_ADD_ELLIPSE_MODE = "napari:shapes:activate_add_ellipse_mode"
+    SHAPES_ACTIVATE_ADD_LINE_MODE = "napari:shapes:activate_add_line_mode"
+    SHAPES_ACTIVATE_ADD_PATH_MODE = "napari:shapes:activate_add_path_mode"
+    SHAPES_ACTIVATE_ADD_POLYGON_MODE = "napari:shapes:activate_add_polygon_mode"
+    SHAPES_ACTIVATE_ADD_POLYGON_LASSO_MODE = "napari:shapes:activate_add_polygon_lasso_mode"
+    SHAPES_ACTIVATE_DIRECT_MODE = "napari:shapes:activate_direct_mode"
+    SHAPES_ACTIVATE_SELECT_MODE = "napari:shapes:activate_select_mode"
+    SHAPES_ACTIVATE_PAN_ZOOM_MODE = "napari:shapes:activate_shapes_pan_zoom_mode"
+    SHAPES_ACTIVATE_TRANSFORM_MODE = "napari:shapes:activate_shapes_transform_mode"
+    SHAPES_ACTIVATE_VERTEX_INSERT_MODE = "napari:shapes:activate_vertex_insert_mode"
+    SHAPES_ACTIVATE_VERTEX_REMOVE_MODE = "napari:shapes:activate_vertex_remove_mode"
+    SHAPES_COPY = "napari:shapes:copy_selected_shapes"
+    SHAPES_PASTE = "napari:shapes:paste_shapes"
+    SHAPES_SELECT_ALL = "napari:shapes:select_all_shapes"
+    SHAPES_DELETE = "napari:shapes:delete_selected_shapes"
+    SHAPES_MOVE_TO_FRONT = "napari:shapes:move_shapes_selection_to_front"
+    SHAPES_MOVE_TO_BACK = "napari:shapes:move_shapes_selection_to_back"
+    SHAPES_FINISH_DRAWING_SHAPE = "napari:shapes:finish_drawing_shape"
+
+    SURFACE_ACTIVATE_PAN_ZOOM_MODE = "napari:surface:activate_surface_pan_zoom_mode"
+    SURFACE_ACTIVATE_TRANSFORM_MODE = "napari:surface:activate_surface_transform_mode"
+
+    TRACKS_ACTIVATE_PAN_ZOOM_MODE = "napari:tracks:activate_tracks_pan_zoom_mode"
+    TRACKS_ACTIVATE_TRANSFORM_MODE = "napari:tracks:activate_tracks_transform_mode"
+
+    VECTORS_ACTIVATE_PAN_ZOOM_MODE = "napari:vectors:activate_vectors_pan_zoom_mode"
+    VECTORS_ACTIVATE_TRANSFORM_MODE = "napari:vectors:activate_vectors_transform_mode"
 
     @property
     def title(self) -> str:  # type: ignore[override]
@@ -106,6 +195,7 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_VIEWER_SCALE_BAR: _i(trans._('Scale Bar Visible')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED: _i(trans._('Scale Bar Colored')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
+    CommandId.TOGGLE_VIEWER_NDISPLAY : _i(trans._('Toggle nDisplay')),
 
     # Help menubar
     CommandId.NAPARI_GETTING_STARTED: _i(trans._('Getting started')),
@@ -118,30 +208,117 @@ _COMMAND_INFO = {
     CommandId.NAPARI_GITHUB_ISSUE: _i(trans._('Report an issue on GitHub')),
     CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...')),
 
+    CommandId.NAPARI_SHOW_SHORTCUTS: _i(trans._('Show all key bindings'),),
+
     # Layer menubar
-    CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer')),
-    CommandId.LAYER_SPLIT_STACK: _i(trans._('Split Stack')),
-    CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB')),
-    CommandId.LAYER_MERGE_STACK: _i(trans._('Merge to Stack')),
-    CommandId.LAYER_TOGGLE_VISIBILITY: _i(trans._('Toggle visibility')),
-    CommandId.LAYER_LINK_SELECTED: _i(trans._('Link Layers')),
-    CommandId.LAYER_UNLINK_SELECTED: _i(trans._('Unlink Layers')),
-    CommandId.LAYER_SELECT_LINKED: _i(trans._('Select Linked Layers')),
-    CommandId.LAYER_CONVERT_TO_LABELS: _i(trans._('Convert to Labels')),
-    CommandId.LAYER_CONVERT_TO_IMAGE: _i(trans._('Convert to Image')),
-    CommandId.LAYER_CONVERT_TO_INT8: _i(trans._('Convert to int8')),
-    CommandId.LAYER_CONVERT_TO_INT16: _i(trans._('Convert to int16')),
-    CommandId.LAYER_CONVERT_TO_INT32: _i(trans._('Convert to int32')),
-    CommandId.LAYER_CONVERT_TO_INT64: _i(trans._('Convert to int64')),
-    CommandId.LAYER_CONVERT_TO_UINT8: _i(trans._('Convert to uint8')),
-    CommandId.LAYER_CONVERT_TO_UINT16: _i(trans._('Convert to uint16')),
-    CommandId.LAYER_CONVERT_TO_UINT32: _i(trans._('Convert to uint32')),
-    CommandId.LAYER_CONVERT_TO_UINT64: _i(trans._('Convert to uint64')),
-    CommandId.LAYER_PROJECT_MAX: _i(trans._('Max projection')),
-    CommandId.LAYER_PROJECT_MIN: _i(trans._('Min projection')),
-    CommandId.LAYER_PROJECT_STD: _i(trans._('Std projection')),
-    CommandId.LAYER_PROJECT_SUM: _i(trans._('Sum projection')),
-    CommandId.LAYER_PROJECT_MEAN: _i(trans._('Mean projection')),
-    CommandId.LAYER_PROJECT_MEDIAN: _i(trans._('Median projection')),
+    CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),
+    CommandId.LAYER_SPLIT_STACK: _i(trans._('Split Stack'),),
+    CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB'),),
+    CommandId.LAYER_MERGE_STACK: _i(trans._('Merge to Stack'),),
+    CommandId.LAYER_TOGGLE_VISIBILITY: _i(trans._('Toggle visibility'),),
+    CommandId.LAYER_LINK_SELECTED: _i(trans._('Link Layers'),),
+    CommandId.LAYER_UNLINK_SELECTED: _i(trans._('Unlink Layers'),),
+    CommandId.LAYER_SELECT_LINKED: _i(trans._('Select Linked Layers'),),
+    CommandId.LAYER_CONVERT_TO_LABELS: _i(trans._('Convert to Labels'),),
+    CommandId.LAYER_CONVERT_TO_IMAGE: _i(trans._('Convert to Image'),),
+    CommandId.LAYER_CONVERT_TO_INT8: _i(trans._('Convert to int8'),),
+    CommandId.LAYER_CONVERT_TO_INT16: _i(trans._('Convert to int16'),),
+    CommandId.LAYER_CONVERT_TO_INT32: _i(trans._('Convert to int32'),),
+    CommandId.LAYER_CONVERT_TO_INT64: _i(trans._('Convert to int64'),),
+    CommandId.LAYER_CONVERT_TO_UINT8: _i(trans._('Convert to uint8'),),
+    CommandId.LAYER_CONVERT_TO_UINT16: _i(trans._('Convert to uint16'),),
+    CommandId.LAYER_CONVERT_TO_UINT32: _i(trans._('Convert to uint32'),),
+    CommandId.LAYER_CONVERT_TO_UINT64: _i(trans._('Convert to uint64'),),
+    CommandId.LAYER_PROJECT_MAX: _i(trans._('Max projection'),),
+    CommandId.LAYER_PROJECT_MIN: _i(trans._('Min projection'),),
+    CommandId.LAYER_PROJECT_STD: _i(trans._('Std projection'),),
+    CommandId.LAYER_PROJECT_SUM: _i(trans._('Sum projection'),),
+    CommandId.LAYER_PROJECT_MEAN: _i(trans._('Mean projection'),),
+    CommandId.LAYER_PROJECT_MEDIAN: _i(trans._('Median projection'),),
+
+    CommandId.VIEWER_DELETE_SELECTED: _i(trans._('Delete layers'), trans._('delete all selected layers')),
+    CommandId.VIEWER_HOLD_FOR_PAN_ZOOM: _i(trans._('Hold for pan/zoom'), trans._('Press and hold for pan/zoom mode'),),
+    CommandId.VIEWER_RESET_SCROLL: _i(trans._('Reset scroll'), trans._('Reset dims scroll progress'),),
+    CommandId.VIEWER_TOGGLE_THEME: _i(trans._('Toggle theme'), trans._('Toggle current viewer theme')),
+    CommandId.VIEWER_RESET_VIEW: _i(trans._('Reset view'), trans._('Reset view to original state.'),),
+    CommandId.VIEWER_INC_DIMS_LEFT: _i(trans._('Increment dims left'),),
+    CommandId.VIEWER_INC_DIMS_RIGHT: _i(trans._('Increment dims right'),),
+    CommandId.VIEWER_FOCUS_AXES_UP: _i(trans._('Focus axes up'), trans._('Move focus of dimensions slider up.'),),
+    CommandId.VIEWER_FOCUS_AXES_DOWN: _i(trans._('Focus axes down'), trans._('Move focus of dimensions slider down.'),),
+    # Use non-breaking spaces and non-breaking hyphen for Preferences table
+    CommandId.VIEWER_ROLL_AXES: _i(trans._('Roll axes'), trans._('Change order of the visible axes, e.g.\u00A0[0,\u00A01,\u00A02]\u00A0\u2011>\u00A0[2,\u00A00,\u00A01].'),),
+    CommandId.VIEWER_TRANSPOSE_AXES: _i(trans._('Transpose axes'), trans._('Transpose order of the last two visible axes, e.g.\u00A0[0,\u00A01]\u00A0\u2011>\u00A0[1,\u00A00].'),),
+    # TODO: move to view menu?
+    CommandId.VIEWER_TOGGLE_GRID: _i(trans._('Grid mode'),),
+    # TODO: captured above in LAYER_TOGGLE_VISIBILITY?
+    CommandId.VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY: _i(trans._('Toggle selected layer visibility'),),
+    CommandId.VIEWER_TOGGLE_CONSOLE_VISIBILITY: _i(trans._('Toggle console'), trans._('Show/Hide IPython console (only available when napari started as standalone application)'),),
+
+    CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Z: _i(trans._('Orient along Z'), trans._('orient plane normal along z-axis'),),
+    CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Y: _i(trans._('Orient along Y'), trans._('orient plane normal along y-axis'),),
+    CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_X: _i(trans._('Orient along X'), trans._('orient plane normal along x-axis'),),
+    CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION: _i(trans._('Orient along view'), trans._('orient plane normal along view axis'),),
+    CommandId.IMAGE_HOLD_TO_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION: _i(trans._('Orient along view'), trans._('hold to orient plane normal along view axis'),),
+    CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE: _i(trans._('Transform'), trans._('activate tranform mode'),),
+    CommandId.IMAGE_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'), trans._('activate pan/zoom mode'),),
+
+    CommandId.POINTS_ACTIVATE_ADD_MODE: _i(trans._('Add points'), trans._('activate the adder tool')),
+    CommandId.POINTS_ACTIVATE_SELECT_MODE: _i(trans._('Select points'), trans._('activate the selection tool')),
+    CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'), trans._('activate pan/zoom mode')),
+    CommandId.POINTS_ACTIVATE_TRANSFORM_MODE: _i(trans._('Transform'), trans._('activate the transform tool'),),
+    CommandId.POINTS_COPY: _i(trans._('Copy'), trans._('copy any selected points'),),
+    CommandId.POINTS_PASTE: _i(trans._('Paste'), trans._('paste any copied points'),),
+    CommandId.POINTS_SELECT_ALL_IN_SLICE: _i(trans._('Select all in current slice'), trans._('select all points in the current view slice'),),
+    CommandId.POINTS_SELECT_ALL_DATA: _i(trans._('Select all in layer'), trans._('select all points in the layer'),),
+    CommandId.POINTS_DELETE_SELECTED: _i(trans._('Delete points'), trans._('delete all selected points'),),
+
+    CommandId.LABELS_ACTIVATE_PAINT_MODE: _i(trans._('Paint'), trans._('activate the paint brush tool'),),
+    CommandId.LABELS_ACTIVATE_FILL_MODE: _i(trans._('Fill'), trans._('activate the fill bucket tool'),),
+    CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'), trans._('activate pan/zoom mode'),),
+    CommandId.LABELS_ACTIVATE_PICKER_MODE: _i(trans._('Color Picker'), trans._('activate the color picker tool')),
+    CommandId.LABELS_ACTIVATE_POLYGON_MODE: _i(trans._('Draw Polygon'), trans._('activate polygon tool')),
+    CommandId.LABELS_ACTIVATE_ERASE_MODE: _i(trans._('Erase'), trans._('activate the label eraser'),),
+    CommandId.LABELS_ACTIVATE_TRANSFORM_MODE: _i(trans._('Transform'), trans._('activate the transform tool'),),
+    CommandId.LABELS_RESET_POLYGON: _i(trans._('Reset polygon'), trans._('Reset the drawing of the current polygon'),),
+    CommandId.LABELS_COMPLETE_POLYGON: _i(trans._('Complete polygon'), trans._('Complete the current polygon'),),
+    CommandId.LABELS_NEW_LABEL: _i(trans._('New label'), trans._('set the currently selected label to the largest used label plus one'),),
+    CommandId.LABELS_DECREMENT_ID: _i(trans._('Decrement label'), trans._('decrease the currently selected label by one'),),
+    CommandId.LABELS_INCREMENT_ID: _i(trans._('Increment label'), trans._('increase the currently selected label by one'),),
+    CommandId.LABELS_DECREASE_BRUSH_SIZE: _i(trans._('Decrease brush size'),),
+    CommandId.LABELS_INCREASE_BRUSH_SIZE: _i(trans._('Increase brush size'),),
+    CommandId.LABELS_SWAP: _i(trans._('Swap labels'), trans._('Swap between the selected label and the background label'),),
+    CommandId.LABELS_TOGGLE_PRESERVE_LABELS: _i(trans._('Toggle preserve labels'),),
+    CommandId.LABELS_UNDO: _i(trans._('Undo'), trans._('undo the last paint or fill action since the view slice has changed'),),
+    CommandId.LABELS_REDO: _i(trans._('Redo'), trans._('redo any previously undone actions'),),
+
+    CommandId.SHAPES_HOLD_TO_LOCK_ASPECT_RATIO: _i(trans._('Hold to lock aspect ratio'), trans._('hold to lock aspect ratio when resizing a shape'),),
+    CommandId.SHAPES_ACTIVATE_ADD_RECTANGLE_MODE: _i(trans._('Add rectangles'), trans._('activate the add rectangle tool'),),
+    CommandId.SHAPES_ACTIVATE_ADD_ELLIPSE_MODE: _i(trans._('Add ellipses'), trans._('activate the add ellipse tool'),),
+    CommandId.SHAPES_ACTIVATE_ADD_LINE_MODE: _i(trans._('Add lines'), trans._('activate the add line tool'),),
+    CommandId.SHAPES_ACTIVATE_ADD_PATH_MODE: _i(trans._('Add paths'), trans._('activate the add path tool'),),
+    CommandId.SHAPES_ACTIVATE_ADD_POLYGON_MODE: _i(trans._('Add polygons'), trans._('activate the add polygon tool'),),
+    CommandId.SHAPES_ACTIVATE_ADD_POLYGON_LASSO_MODE: _i(trans._('Add polygons lasso'), trans._('activate the add polygons lasso tool'),),
+    CommandId.SHAPES_ACTIVATE_DIRECT_MODE: _i(trans._('Select vertices'), trans._('activate the vertex selection tool'),),
+    CommandId.SHAPES_ACTIVATE_SELECT_MODE: _i(trans._('Select shapes'), trans._('activate the shape selection tool'),),
+    CommandId.SHAPES_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'), trans._('activate pan/zoom mode'),),
+    CommandId.SHAPES_ACTIVATE_TRANSFORM_MODE: _i(trans._('Transform'), trans._('activate the transform tool'),),
+    CommandId.SHAPES_ACTIVATE_VERTEX_INSERT_MODE: _i(trans._('Insert vertex'), trans._('activate the vertex insertion tool'),),
+    CommandId.SHAPES_ACTIVATE_VERTEX_REMOVE_MODE: _i(trans._('Remove vertex'), trans._('activate the vertex deletion tool'),),
+    CommandId.SHAPES_COPY: _i(trans._('Copy'), trans._('copy any selected shapes'),),
+    CommandId.SHAPES_PASTE: _i(trans._('Paste'), trans._('paste any copied shapes'),),
+    CommandId.SHAPES_SELECT_ALL: _i(trans._('Select all'), trans._('select all shapes in the current view slice'),),
+    CommandId.SHAPES_DELETE: _i(trans._('Delete'), trans._('delete any selected shapes'),),
+    CommandId.SHAPES_MOVE_TO_FRONT: _i(trans._('Move to front'),),
+    CommandId.SHAPES_MOVE_TO_BACK: _i(trans._('Move to back'),),
+    CommandId.SHAPES_FINISH_DRAWING_SHAPE: _i(trans._('Finish drawing shape'), trans._('finish any drawing, for example using the path or polygon tool'),),
+
+    CommandId.SURFACE_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'), trans._('activate pan/zoom mode'),),
+    CommandId.SURFACE_ACTIVATE_TRANSFORM_MODE: _i(trans._('Transform'), trans._('activate the transform tool'),),
+
+    CommandId.TRACKS_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'), trans._('activate pan/zoom mode'),),
+    CommandId.TRACKS_ACTIVATE_TRANSFORM_MODE: _i(trans._('Transform'), trans._('activate the transform tool'),),
+
+    CommandId.VECTORS_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'), trans._('activate pan/zoom mode'),),
+    CommandId.VECTORS_ACTIVATE_TRANSFORM_MODE: _i(trans._('Transform'), trans._('activate the transform tool'),),
 }
 # fmt: on

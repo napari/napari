@@ -20,11 +20,13 @@ from typing import (
 )
 from weakref import WeakSet, ref
 
+import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
-from qtpy.QtGui import QGuiApplication
+from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
+from napari._app_model import get_app
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
@@ -432,10 +434,14 @@ class QtViewer(QSplitter):
 
     def _bind_shortcuts(self):
         """Bind shortcuts stored in SETTINGS to actions."""
+        app = get_app()
         for action, shortcuts in get_settings().shortcuts.shortcuts.items():
-            action_manager.unbind_shortcut(action)
-            for shortcut in shortcuts:
-                action_manager.bind_shortcut(action, shortcut)
+            # filter out non action manager actions
+            if action not in app.commands:
+                # TODO: remove action manager binding once backend refactored
+                action_manager.unbind_shortcut(action)
+                for shortcut in shortcuts:
+                    action_manager.bind_shortcut(action, shortcut)
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
@@ -958,12 +964,10 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtGui.QKeyEvent
             Event from the Qt context.
         """
-        self.canvas._scene_canvas._backend._keyEvent(
-            self.canvas._scene_canvas.events.key_press, event
-        )
+        self.canvas._backend._keyEvent(self.canvas.events.key_press, event)
         event.accept()
 
     def keyReleaseEvent(self, event):
@@ -971,12 +975,10 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtGui.QKeyEvent
             Event from the Qt context.
         """
-        self.canvas._scene_canvas._backend._keyEvent(
-            self.canvas._scene_canvas.events.key_release, event
-        )
+        self.canvas._backend._keyEvent(self.canvas.events.key_release, event)
         event.accept()
 
     def dragEnterEvent(self, event):

@@ -35,10 +35,12 @@ def _assert_shortcuts_exist_for_each_action(type_):
         name.partition(':')[-1] for name in get_settings().shortcuts.shortcuts
     }
     shortcuts.update(func.__name__ for func in type_.class_keymap.values())
-    for action in actions:
-        assert (
-            action.__name__ in shortcuts
-        ), f"missing shortcut for action '{action.__name__}' on '{type_.__name__}' is missing"
+    missing_shortcuts = {action.__name__ for action in actions} - shortcuts
+    # taking the difference and comparing with the empty set allows pytest to
+    # list all missing shortcuts instead of failing at the first one
+    assert (
+        missing_shortcuts == set()
+    ), "one or more actions on '{type_.__name__}' are missing shortcuts"
 
 
 viewer_actions = _get_provider_actions(Viewer)

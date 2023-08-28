@@ -290,6 +290,8 @@ class ActionManager:
             this warning will be emitted.
 
         """
+        self._validate_action_name(name)
+
         action = self._actions.get(name, None)
         if action is None:
             warnings.warn(

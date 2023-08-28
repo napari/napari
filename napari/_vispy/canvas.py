@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
+from app_model.backends.qt import qkey2modelkey, qmods2modelmods
+from app_model.types import KeyBinding
+from qtpy.QtGui import QKeyEvent
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
@@ -38,6 +41,24 @@ if TYPE_CHECKING:
     from napari.components.overlays import Overlay
     from napari.utils.events.event import Event
     from napari.utils.key_bindings import KeymapHandler
+
+
+def _qkeyevent2keybinding(event: QKeyEvent) -> KeyBinding:
+    """Extract a Qt key event's information into an app-model keybinding.
+
+    Parameters
+    ----------
+    event : QKeyEvent
+        Triggering event.
+
+    Returns
+    -------
+    KeyBinding
+        Key combination extracted from the event.
+    """
+    return KeyBinding.from_int(
+        qmods2modelmods(event.modifiers()) | qkey2modelkey(event.key())
+    )
 
 
 class NapariSceneCanvas(SceneCanvas_):
@@ -135,10 +156,10 @@ class VispyCanvas:
 
         # Connecting events from SceneCanvas
         self._scene_canvas.events.key_press.connect(
-            self._key_map_handler.on_key_press
+            self._on_key_press
         )
         self._scene_canvas.events.key_release.connect(
-            self._key_map_handler.on_key_release
+            self._on_key_release
         )
         self._scene_canvas.events.draw.connect(self.enable_dims_play)
         self._scene_canvas.events.draw.connect(self.camera.on_draw)
@@ -483,6 +504,41 @@ class VispyCanvas:
         None
         """
         self._process_mouse_event(mouse_wheel_callbacks, event)
+
+    def _on_key_press(self, event):
+        """Called whenever key pressed in canvas.
+        Parameters
+        ----------
+        event : vispy.util.event.Event
+            The vispy key press event that triggered this method.
+        """
+        if event.native is not None:
+            qevent = event.native
+            if qevent.key() == Qt.Key.Key_unknown:
+                return
+
+            key_bind = _qkeyevent2keybinding(qevent)
+
+            self._key_map_handler.press_key(key_bind, qevent.isAutoRepeat())
+            qevent.accept()
+
+    def _on_key_release(self, event):
+        """Called whenever key released in canvas.
+        Parameters
+        ----------
+        event : vispy.util.event.Event
+            The vispy key release event that triggered this method.
+        """
+        if event.native is not None:
+            qevent = event.native
+            if qevent.key == Qt.Key.Key_unknown or qevent.isAutoRepeat():
+                # on linux press down is treated as multiple press and release
+                return
+
+            key_bind = _qkeyevent2keybinding(qevent)
+
+            self._key_map_handler.release_key(key_bind)
+            qevent.accept()
 
     @property
     def _canvas_corners_in_world(self) -> npt.NDArray:

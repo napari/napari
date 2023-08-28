@@ -12,6 +12,7 @@ from napari.utils.key_bindings import (
     KeymapProvider,
     _bind_keymap,
     _bind_user_key,
+    _get_plugin_keymap,
     _get_user_keymap,
     bind_key,
 )
@@ -145,6 +146,7 @@ def test_handle_single_keymap_provider():
 
     assert handler.keymap_chain.maps == [
         _get_user_keymap(),
+        _get_plugin_keymap(),
         _bind_keymap(foo.keymap, foo),
         _bind_keymap(foo.class_keymap, foo),
     ]
@@ -217,6 +219,7 @@ def test_handle_multiple_keymap_providers():
 
     assert handler.keymap_chain.maps == [
         _get_user_keymap(),
+        _get_plugin_keymap(),
         _bind_keymap(bar.keymap, bar),
         _bind_keymap(bar.class_keymap, bar),
         _bind_keymap(foo.keymap, foo),
@@ -270,6 +273,7 @@ def test_inherited_keymap():
 
     assert handler.keymap_chain.maps == [
         _get_user_keymap(),
+        _get_plugin_keymap(),
         _bind_keymap(baz.keymap, baz),
         _bind_keymap(baz.class_keymap, baz),
         _bind_keymap(Bar.class_keymap, baz),

@@ -1,6 +1,7 @@
+from collections import defaultdict
 from typing import Dict, List
 
-from app_model.types import KeyBinding, KeyCode, KeyMod
+from app_model.types import KeyBinding, KeyBindingRule, KeyCode, KeyMod
 
 _default_shortcuts = {
     # viewer
@@ -22,6 +23,14 @@ _default_shortcuts = {
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyG],
     'napari:hold_for_pan_zoom': [KeyCode.Space],
+    # image
+    'napari:activate_image_pan_zoom_mode': [KeyCode.Digit1],
+    'napari:activate_image_transform_mode': [KeyCode.Digit2],
+    'napari:orient_plane_normal_along_x': [KeyCode.KeyX],
+    'napari:orient_plane_normal_along_y': [KeyCode.KeyY],
+    'napari:orient_plane_normal_along_z': [KeyCode.KeyZ],
+    'napari:hold_to_orient_plane_normal_along_view_direction': [KeyCode.KeyO],
+    'napari:orient_plane_normal_along_view_direction': [KeyMod.CtrlCmd | KeyCode.KeyO],
     # labels
     'napari:activate_labels_erase_mode': [KeyCode.Digit1, KeyCode.KeyE],
     'napari:activate_labels_paint_mode': [KeyCode.Digit2, KeyCode.KeyP],
@@ -39,6 +48,8 @@ _default_shortcuts = {
     'napari:toggle_preserve_labels': [KeyCode.KeyB],
     'napari:reset_polygon': [KeyCode.Escape],
     'napari:complete_polygon': [KeyCode.Enter],
+    'napari:labels_undo': [KeyMod.CtrlCmd | KeyCode.KeyZ],
+    'napari:labels_redo': [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ],
     # points
     'napari:activate_points_add_mode': [KeyCode.Digit2, KeyCode.KeyP],
     'napari:activate_points_select_mode': [KeyCode.Digit3, KeyCode.KeyS],
@@ -54,6 +65,8 @@ _default_shortcuts = {
         KeyCode.Delete,
         KeyCode.Digit1,
     ],
+    'napari:copy_selected_points': [KeyMod.CtrlCmd | KeyCode.KeyC],
+    'napari:paste_points': [KeyMod.CtrlCmd | KeyCode.KeyV],
     # shapes
     'napari:activate_add_rectangle_mode': [KeyCode.KeyR],
     'napari:activate_add_ellipse_mode': [KeyCode.KeyE],
@@ -68,7 +81,7 @@ _default_shortcuts = {
     'napari:activate_vertex_insert_mode': [KeyCode.Digit2, KeyCode.KeyI],
     'napari:activate_vertex_remove_mode': [KeyCode.Digit1, KeyCode.KeyX],
     'napari:copy_selected_shapes': [KeyMod.CtrlCmd | KeyCode.KeyC],
-    'napari:paste_shape': [KeyMod.CtrlCmd | KeyCode.KeyV],
+    'napari:paste_shapes': [KeyMod.CtrlCmd | KeyCode.KeyV],
     'napari:move_shapes_selection_to_front': [KeyCode.KeyF],
     'napari:move_shapes_selection_to_back': [KeyCode.KeyB],
     'napari:select_all_shapes': [KeyCode.KeyA],
@@ -78,9 +91,7 @@ _default_shortcuts = {
         KeyCode.Digit3,
     ],
     'napari:finish_drawing_shape': [KeyCode.Escape],
-    # image
-    'napari:activate_image_pan_zoom_mode': [KeyCode.Digit1],
-    'napari:activate_image_transform_mode': [KeyCode.Digit2],
+    'napari:hold_to_lock_aspect_ratio': [KeyCode.Shift],
     # vectors
     'napari:activate_vectors_pan_zoom_mode': [KeyCode.Digit1],
     'napari:activate_vectors_transform_mode': [KeyCode.Digit2],
@@ -96,3 +107,5 @@ default_shortcuts: Dict[str, List[KeyBinding]] = {
     name: [KeyBinding.from_int(kb) for kb in value]
     for name, value in _default_shortcuts.items()
 }
+
+plugins_shortcuts: Dict[str, List[KeyBindingRule]] = defaultdict(list)
