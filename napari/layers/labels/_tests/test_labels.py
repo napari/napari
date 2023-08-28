@@ -1575,7 +1575,7 @@ def test_get_status_with_custom_index():
 def test_collision_warning():
     label = Labels(data=np.zeros((10, 10), dtype=np.uint8))
     with pytest.warns(
-        RuntimeWarning, match="the following labels will be merged"
+        RuntimeWarning, match="Because integer labels are cast to less-precise"
     ):
         label.color = {2**25 + 1: 'red', 2**25 + 2: 'blue'}
     with warnings.catch_warnings():
