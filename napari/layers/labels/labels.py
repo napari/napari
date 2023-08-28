@@ -1,5 +1,5 @@
 import warnings
-from collections import deque
+from collections import defaultdict, deque
 from contextlib import contextmanager
 from typing import (
     Callable,
@@ -586,22 +586,32 @@ class Labels(_ImageBase):
         self.color_mode = color_mode
 
     def _validate_colors(self, labels: Iterable[int]):
-        """Check if after cast to float there is a label collisions"""
-        collision_dkt = {}
-        collision_list = []
-        for label in labels:
-            # FIXME after merge 6112
-            casted = self._as_type(label)
-            if casted in collision_dkt:
-                collision_list.append((label, collision_dkt[casted]))
-            else:
-                collision_dkt[casted] = label
-        if not collision_list:
-            return
+        """Check whether any of the given labels will be aliased together.
 
-        warn_text = (
-            "Because of the cast to float, the following labels will be merged: "
-            + ", ".join([f"{l1} and {l2}" for l1, l2 in collision_list])
+        See https://github.com/napari/napari/issues/6084 for details.
+        """
+        aliases: Dict[float, List[int]] = defaultdict(list)
+        labels_int = np.fromiter(labels, dtype=int)
+        labels_texture = self._to_vispy_texture_dtype(labels_int)
+        for integer, texture in zip(labels_int, labels_texture):
+            aliases[texture].append(integer)
+        aliased_list = [v for k, v in aliases.items() if len(v) > 1]
+        if not aliased_list:
+            return
+        alias_string = "\n".join(
+            trans._(
+                'Labels {col_li} will display as the same color as {col_la};',
+                col_li=",".join(str(i) for i in lst[:-1]),
+                col_la=str(lst[-1]),
+            )
+            for lst in aliased_list
+        )
+        warn_text = trans._(
+            "Because integer labels are cast to less-precise float for display, "
+            "the following label sets will render as the same color:\n"
+            "{alias_string}\n"
+            "See https://github.com/napari/napari/issues/6084 for details.",
+            alias_string=alias_string,
         )
         warnings.warn(warn_text, category=RuntimeWarning)
 
