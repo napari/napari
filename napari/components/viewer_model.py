@@ -11,7 +11,6 @@ from typing import (
     Any,
     Dict,
     List,
-    Mapping,
     Optional,
     Sequence,
     Set,
@@ -20,6 +19,7 @@ from typing import (
 )
 
 import numpy as np
+from app_model.expressions import Context
 from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
@@ -189,7 +189,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     )
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (800, 600)
-    _ctx: Mapping
+    _ctx: Context
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False

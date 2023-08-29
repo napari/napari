@@ -7,6 +7,7 @@ from weakref import WeakSet
 
 import numpy as np
 from app_model.backends.qt import qkey2modelkey, qmods2modelmods
+from app_model.expressions import Context
 from app_model.types import KeyBinding
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QKeyEvent
@@ -148,7 +149,15 @@ class VispyCanvas:
 
         app = get_app()
 
-        self.kb_dispatcher = KeyBindingDispatcher(app.keybindings, viewer._ctx)
+        ctx = Context(
+            self.viewer._ctx,
+            self.viewer.layers._ctx,
+            self.viewer.layers._selection_ctx,
+        )
+        self.viewer._ctx.changed.connect(ctx.changed)
+        self.viewer.layers._ctx.changed.connect(ctx.changed)
+        self.viewer.layers._selection_ctx.changed.connect(ctx.changed)
+        self.kb_dispatcher = KeyBindingDispatcher(app.keybindings, ctx)
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
         # now while we know a Canvas exists. Later calls to
