@@ -8,6 +8,7 @@ from typing import (
     MutableSequence,
     Optional,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -55,8 +56,8 @@ class TypedMutableSequence(MutableSequence[_T]):
         if lookup is None:
             lookup = {}
         self._list: List[_T] = []
-        self._basetypes = (
-            basetype if isinstance(basetype, Sequence) else (basetype,)
+        self._basetypes: Tuple[Type[_T], ...] = (
+            tuple(basetype) if isinstance(basetype, Sequence) else (basetype,)
         )
         self._lookup = lookup.copy()
         self.extend(data)
