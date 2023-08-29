@@ -27,6 +27,7 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
+from napari.utils.kb.dispatch import KeyBindingDispatcher
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
@@ -142,6 +143,12 @@ class VispyCanvas:
         self.bgcolor = transform_color(
             get_theme(self.viewer.theme).canvas.as_hex()
         )[0]
+
+        from napari._app_model import get_app
+
+        app = get_app()
+
+        self.kb_dispatcher = KeyBindingDispatcher(app.keybindings, viewer._ctx)
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
         # now while we know a Canvas exists. Later calls to
@@ -517,6 +524,11 @@ class VispyCanvas:
             key_bind = _qkeyevent2keybinding(qevent)
 
             self._key_map_handler.press_key(key_bind, qevent.isAutoRepeat())
+
+            mods, key = qmods2modelmods(qevent.modifiers()), qkey2modelkey(
+                qevent.key()
+            )
+            self.kb_dispatcher.on_key_press(mods, key)
             qevent.accept()
 
     def _on_key_release(self, event):
@@ -535,6 +547,11 @@ class VispyCanvas:
             key_bind = _qkeyevent2keybinding(qevent)
 
             self._key_map_handler.release_key(key_bind)
+
+            mods, key = qmods2modelmods(qevent.modifiers()), qkey2modelkey(
+                qevent.key()
+            )
+            self.kb_dispatcher.on_key_release(mods, key)
             qevent.accept()
 
     @property

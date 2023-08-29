@@ -3,6 +3,7 @@ from typing import Dict, List, Mapping, Optional, Set
 
 from app_model.expressions import Context
 from app_model.types import KeyChord, KeyCode, KeyMod
+from app_model.types._constants import OperatingSystem
 
 from napari.utils.kb.constants import PRESS_HOLD_DELAY_MS, VALID_KEYS
 from napari.utils.kb.register import KeyBindingEntry, NapariKeyBindingsRegistry
@@ -93,7 +94,7 @@ class KeyBindingDispatcher:
             self.prefix = 0
             return
 
-        keymod = key2mod(key)
+        keymod = key2mod(key, OperatingSystem.current())
 
         if keymod is not None and not self.prefix:
             # single modifier dispatch only works on first part of key binding
