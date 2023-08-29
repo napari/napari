@@ -1498,10 +1498,14 @@ def test_color_mapping_when_seed_is_changed():
     """Checks if the color mapping is updated when the color palette seed is changed."""
     np.random.seed(0)
     layer = Labels(np.random.randint(50, size=(10, 10)))
-    mapped_colors1 = layer.colormap.map(layer._as_type(layer._slice.image.raw))
+    mapped_colors1 = layer.colormap.map(
+        layer._to_vispy_texture_dtype(layer._slice.image.raw)
+    )
 
     layer.new_colormap()
-    mapped_colors2 = layer.colormap.map(layer._as_type(layer._slice.image.raw))
+    mapped_colors2 = layer.colormap.map(
+        layer._to_vispy_texture_dtype(layer._slice.image.raw)
+    )
 
     assert not np.allclose(mapped_colors1, mapped_colors2)
 
