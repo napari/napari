@@ -1,3 +1,4 @@
+import logging
 from threading import Timer
 from typing import Dict, List, Mapping, Optional, Set
 
@@ -8,6 +9,9 @@ from app_model.types._constants import OperatingSystem
 from napari.utils.kb.constants import PRESS_HOLD_DELAY_MS, VALID_KEYS
 from napari.utils.kb.register import KeyBindingEntry, NapariKeyBindingsRegistry
 from napari.utils.kb.util import create_conflict_filter, key2mod
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def find_active_match(
@@ -58,13 +62,19 @@ class KeyBindingDispatcher:
         self.context.changed.connect(self._on_context_change)
 
     def _on_context_change(self, changes: Set[str]):
+        logger.info(
+            'clearing cache: context change detected with changes %s', changes
+        )
+        logger.debug('current context: %s', self.context)
         self._active_match_cache.clear()
         self._conflicts_cache.clear()
 
     def find_active_match(self, key: int) -> Optional[KeyBindingEntry]:
         try:
-            return self._active_match_cache[key]
+            match = self._active_match_cache[key]
+            logger.info('cached match found for %s: %s', key, match)
         except KeyError:
+            logger.debug('cached match not found for %s', key)
             entries = self.registry.keymap.get(key)
             if not entries:
                 match = None
@@ -72,16 +82,20 @@ class KeyBindingDispatcher:
                 match = find_active_match(entries, self.context)
 
             self._active_match_cache[key] = match
+            logger.info('saved match cache for %s: %s', key, match)
 
-            return match
+        return match
 
     def has_conflicts(self, key: int) -> bool:
         try:
-            return self._conflicts_cache[key]
+            conflicts = self._conflicts_cache[key]
+            logger.info('cached conflicts found for %s: %s', key, conflicts)
         except KeyError:
+            logger.debug('cached conflicts not found for %s', key)
             conflicts = has_conflicts(key, self.registry.keymap, self.context)
             self._conflicts_cache[key] = conflicts
-            return conflicts
+            logger.debug('saved conflict cache for %s: %s', key, conflicts)
+        return conflicts
 
     def on_key_press(self, mods: KeyMod, key: KeyCode):
         self.is_prefix = False
