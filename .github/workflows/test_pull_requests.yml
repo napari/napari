@@ -104,7 +104,7 @@ jobs:
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
       min_req: ${{ matrix.MIN_REQ }}
-      coverage: False
+      coverage: no_cov
       toxenv: ${{ matrix.toxenv }}
 
 
@@ -159,7 +159,7 @@ jobs:
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
       min_req: ${{ matrix.MIN_REQ }}
-      coverage: True
+      coverage: cov
       toxenv: ${{ matrix.toxenv }}
 
   coverage_report:

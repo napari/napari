@@ -22,8 +22,8 @@ on:
         default: ""
       coverage:
         required: false
-        type: boolean
-        default: False
+        type: string
+        default: cov
       timeout:
         required: false
         type: number
@@ -35,7 +35,7 @@ on:
 
 jobs:
   test:
-    name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.MIN_REQ && 'min_req' }} ${{ inputs.coverage && 'coverage' }}
+    name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.MIN_REQ && 'min_req' }} ${{ inputs.coverage }}
     runs-on: ${{ inputs.platform }}
     steps:
       - uses: actions/checkout@v3
