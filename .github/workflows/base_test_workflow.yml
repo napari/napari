@@ -70,7 +70,7 @@ jobs:
       # for instance, on ubuntu-latest with python 3.8, it would be equivalent to this command:
       # `tox -e py38-linux-pyqt,py38-linux-pyside`
       # see tox.ini for more
-      - name: Test with tox
+      - name: Test with tox headless
         # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
         timeout-minutes: ${{ inputs.timeout }}
         uses: aganders3/headless-gui@v1
@@ -85,6 +85,24 @@ jobs:
           FORCE_COLOR: 1
           PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
           COVERAGE: ${{ inputs.coverage }}
+          NAPARI_TEST_SUBSET: headless
+
+      - name: Test with tox qt
+        # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
+        timeout-minutes: ${{ inputs.timeout }}
+        uses: aganders3/headless-gui@v1
+        with:
+          run: python -m tox
+        env:
+          BACKEND: ${{ inputs.qt_backend }}
+          TOXENV: ${{ inputs.toxenv }}
+          NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
+          PYVISTA_OFF_SCREEN: True
+          MIN_REQ: ${{ inputs.min_req }}
+          FORCE_COLOR: 1
+          PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+          COVERAGE: ${{ inputs.coverage }}
+          NAPARI_TEST_SUBSET: qt
 
       - name: Upload pytest timing reports as json
         uses: actions/upload-artifact@v3
