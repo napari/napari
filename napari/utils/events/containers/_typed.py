@@ -15,6 +15,9 @@ from typing import (
     overload,
 )
 
+# change on import from typing when drop python 3.10 support
+from typing_extensions import Self
+
 from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
@@ -174,17 +177,17 @@ class TypedMutableSequence(MutableSequence[_T]):
         new.extend(iterable)
         return new
 
-    def copy(self) -> 'TypedMutableSequence[_T]':
+    def copy(self) -> Self:
         """Return a shallow copy of the list."""
         return self.__newlike__(self)
 
-    def __add__(self, other: Iterable[_T]) -> 'TypedMutableSequence[_T]':
+    def __add__(self, other: Iterable[_T]) -> Self:
         """Add other to self, return new object."""
         copy = self.copy()
         copy.extend(other)
         return copy
 
-    def __iadd__(self, other: Iterable[_T]) -> 'TypedMutableSequence[_T]':
+    def __iadd__(self, other: Iterable[_T]) -> Self:
         """Add other to self in place (self += other)."""
         self.extend(other)
         return self
