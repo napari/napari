@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from napari.components.viewer_model import ViewerModel
 from napari.utils.theme import available_themes, get_system_theme
 
 if TYPE_CHECKING:
@@ -78,7 +77,7 @@ def toggle_console_visibility(viewer: Viewer):
     viewer.window._qt_viewer.toggle_console_visibility()
 
 
-def hold_for_pan_zoom(viewer: ViewerModel):
+def hold_for_pan_zoom(viewer: Viewer):
     selected_layer = viewer.layers.selection.active
     if selected_layer is None:
         yield

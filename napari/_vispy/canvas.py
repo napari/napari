@@ -8,6 +8,7 @@ from weakref import WeakSet
 import numpy as np
 from app_model.backends.qt import qkey2modelkey, qmods2modelmods
 from app_model.types import KeyBinding
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QKeyEvent
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, Widget
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
     from typing import Callable, List, Optional, Tuple, Union
 
     import numpy.typing as npt
-    from qtpy.QtCore import Qt, pyqtBoundSignal
+    from qtpy.QtCore import pyqtBoundSignal
     from qtpy.QtGui import QCursor, QImage
     from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
@@ -155,12 +156,8 @@ class VispyCanvas:
         self._scene_canvas.context.set_depth_func('lequal')
 
         # Connecting events from SceneCanvas
-        self._scene_canvas.events.key_press.connect(
-            self._on_key_press
-        )
-        self._scene_canvas.events.key_release.connect(
-            self._on_key_release
-        )
+        self._scene_canvas.events.key_press.connect(self._on_key_press)
+        self._scene_canvas.events.key_release.connect(self._on_key_release)
         self._scene_canvas.events.draw.connect(self.enable_dims_play)
         self._scene_canvas.events.draw.connect(self.camera.on_draw)
 

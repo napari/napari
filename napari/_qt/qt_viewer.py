@@ -20,9 +20,8 @@ from typing import (
 )
 from weakref import WeakSet, ref
 
-import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
-from qtpy.QtGui import QCursor, QGuiApplication
+from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
@@ -967,7 +966,9 @@ class QtViewer(QSplitter):
         event : qtpy.QtGui.QKeyEvent
             Event from the Qt context.
         """
-        self.canvas._backend._keyEvent(self.canvas.events.key_press, event)
+        self.canvas._scene_canvas._backend._keyEvent(
+            self.canvas._scene_canvas.events.key_press, event
+        )
         event.accept()
 
     def keyReleaseEvent(self, event):
@@ -978,7 +979,9 @@ class QtViewer(QSplitter):
         event : qtpy.QtGui.QKeyEvent
             Event from the Qt context.
         """
-        self.canvas._backend._keyEvent(self.canvas.events.key_release, event)
+        self.canvas._scene_canvas._backend._keyEvent(
+            self.canvas._scene_canvas.events.key_release, event
+        )
         event.accept()
 
     def dragEnterEvent(self, event):
