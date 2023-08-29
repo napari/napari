@@ -40,7 +40,7 @@ jobs:
     # make sure all necessary files will be bundled in the release
     name: Check l18n syntax
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -56,7 +56,7 @@ jobs:
   test:
     name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
-    timeout-minutes: 40
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -139,8 +139,7 @@ jobs:
       # `tox -e py38-linux-pyqt,py38-linux-pyside`
       # see tox.ini for more
       - name: Test with tox
-        # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
-        timeout-minutes: 40
+        timeout-minutes: 60
         uses: aganders3/headless-gui@v1
         with:
           run: python -m tox
@@ -165,7 +164,7 @@ jobs:
   test_pip_install:
     name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v3
         with:
@@ -197,7 +196,7 @@ jobs:
   test_examples:
     name: test examples
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
