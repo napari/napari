@@ -78,6 +78,7 @@ class _ThickNDSlice(Generic[_T]):
 
     @classmethod
     def from_dims(cls, dims: Dims):
+        """Generate from a Dims object's point and margins."""
         return cls.make_full(dims.point, dims.margin_left, dims.margin_right)
 
     def copy_with(
@@ -87,6 +88,7 @@ class _ThickNDSlice(Generic[_T]):
         margin_right=None,
         ndim=None,
     ):
+        """Create a copy, but modifying the given fields."""
         return self.make_full(
             point=self.point if point is None else point,
             margin_left=self.margin_left
@@ -99,10 +101,12 @@ class _ThickNDSlice(Generic[_T]):
         )
 
     def as_array(self):
+        """Return point and left and right margin as a (3, D) array."""
         return np.array([self.point, self.margin_left, self.margin_right])
 
     @classmethod
     def from_array(cls, arr):
+        """Construct from a (3, D) array of point, left margin and right margin."""
         return cls(
             point=tuple(arr[0]),
             margin_left=tuple(arr[1]),

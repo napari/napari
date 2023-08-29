@@ -139,6 +139,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to
         smallest.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimenions.
 
     Attributes
     ----------
@@ -234,6 +237,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         depends on the current zoom level.
     source : Source
         source of the layer (such as a plugin or widget)
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimenions.
 
     Notes
     -----
@@ -533,6 +539,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def projection_mode(self):
+        """Mode of projection of the thick slice onto the viewed dimensions.
+
+        The sliced data is described by an n-dimensional bounding box ("thick slice"),
+        which needs to be projected onto the visible dimensions to be visible.
+        The projection mode controls the projection logic.
+        """
         return self._projection_mode
 
     @projection_mode.setter

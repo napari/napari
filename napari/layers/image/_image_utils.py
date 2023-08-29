@@ -109,6 +109,7 @@ def guess_labels(data):
 
 
 def project_slice(data, axis, mode):
+    """Project a thick slice along axis based on mode."""
     if mode == ImageProjectionMode.SUM:
         func = np.sum
     elif mode == ImageProjectionMode.MEAN:
