@@ -15,7 +15,7 @@ on:
       qt_backend:
         required: false
         type: string
-        default: "PyQt5"
+        default: "headless"
       min_req:
         required: false
         type: string
@@ -91,6 +91,7 @@ jobs:
         # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
         timeout-minutes: ${{ inputs.timeout }}
         uses: aganders3/headless-gui@v1
+        if: ${{ inputs.qt_backend != 'headless' }}
         with:
           run: python -m tox
         env:
