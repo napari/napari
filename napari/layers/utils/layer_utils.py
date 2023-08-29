@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import functools
 import inspect
+import sys
 import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Iterable,
     List,
     NamedTuple,
     Optional,
@@ -28,6 +30,8 @@ if TYPE_CHECKING:
     from typing import Mapping
 
     import numpy.typing as npt
+
+    from napari.layers._multiscale_data import MultiScaleData
 
 
 class Extent(NamedTuple):
@@ -1072,3 +1076,51 @@ def _unique_element(array: Array) -> Optional[Any]:
     if np.any(array[1:] != el):
         return None
     return el
+
+
+def _get_chunk_size(
+    data: MultiScaleData
+    | Iterable
+    | npt.NDArray
+    | int
+    | float
+    | list
+    | Iterable[npt.NDArray]
+    | None,
+):
+    """Get chunk size from a given layer.
+
+    Parameters
+    ----------
+    layer : napari.layers.Image
+        Layer to determine chunk size for.
+    Returns
+    -------
+    chunk_size : tuple or None
+        Chunk size for the layer.
+    """
+    if isinstance(data, np.ndarray):
+        return None
+
+    if "zarr" in sys.modules:
+        from zarr.core import Array as ZarrArray
+
+        if isinstance(data, ZarrArray):
+            return data.chunks
+
+    if "dask" in sys.modules:
+        from dask.array import Array as DaskArray
+
+        if isinstance(data, DaskArray):
+            return data.chunksize
+
+    if "tensorstore" in sys.modules:
+        from tensorstore import TensorStore
+
+        if isinstance(data, TensorStore):
+            # TensorStore allow to specify different read and write chunk sizes
+            # we use the read chunk size to have same chunk size for labels like
+            # when load data from drive
+            return data.chunk_layout.read_chunk.shape
+        return None
+    return None
