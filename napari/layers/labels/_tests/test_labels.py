@@ -12,14 +12,14 @@ import zarr
 from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
-from vispy.color import Colormap as VispyColormap
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.components import ViewerModel
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
+from napari.layers.labels._labels_utils import get_contours
 from napari.utils import Colormap
-from napari.utils.colormaps import label_colormap, low_discrepancy_image
+from napari.utils.colormaps import label_colormap
 
 
 def test_random_labels():
@@ -30,7 +30,7 @@ def test_random_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -42,7 +42,7 @@ def test_all_zeros_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -54,7 +54,7 @@ def test_3D_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1], shape)
+    np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -103,7 +103,9 @@ def test_changing_labels():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape_b]
+    )
     assert layer._data_view.shape == shape_b[-2:]
 
     data_c = np.zeros(shape_c, dtype=bool)
@@ -127,7 +129,9 @@ def test_changing_labels_dims():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
+    np.testing.assert_array_equal(
+        layer.extent.data[1], [s - 1 for s in shape_b]
+    )
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -137,23 +141,27 @@ def test_changing_modes():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'fill'
     assert layer.mode == 'fill'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'paint'
     assert layer.mode == 'paint'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
 
     layer.mode = 'pick'
     assert layer.mode == 'pick'
-    assert layer.interactive is False
+    assert layer.mouse_pan is False
+
+    layer.mode = 'polygon'
+    assert layer.mode == 'polygon'
+    assert layer.mouse_pan is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive is True
+    assert layer.mouse_pan is True
 
     layer.mode = 'paint'
     assert layer.mode == 'paint'
@@ -240,13 +248,12 @@ def test_seed():
     layer = Labels(data, seed=0.7)
     assert layer.seed == 0.7
 
-    # ensure setting seed triggers
-    # recalculation of _all_vals
-    _all_vals_07 = layer._all_vals.copy()
+    # ensure setting seed updates the random colormap
+    mapped_07 = layer._random_colormap.map(layer.data)
     layer.seed = 0.4
-    _all_vals_04 = layer._all_vals.copy()
+    mapped_04 = layer._random_colormap.map(layer.data)
     assert_raises(
-        AssertionError, assert_array_almost_equal, _all_vals_04, _all_vals_07
+        AssertionError, assert_array_almost_equal, mapped_07, mapped_04
     )
 
 
@@ -255,7 +262,7 @@ def test_num_colors():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert layer.num_colors == 50
+    assert layer.num_colors == 49
 
     layer.num_colors = 80
     assert layer.num_colors == 80
@@ -385,8 +392,15 @@ def test_label_colormap():
     # Make sure color 0 is transparent
     assert not np.any(colormap.map([0.0]))
 
-    # Test that out-of-range values map to last value
-    assert np.all(colormap.map([1.0, 1.1, 2.0]) == colormap.colors[-1])
+    # test that all four colors are represented in a large set of random
+    # labels.
+    # we choose non-zero labels, and then there should not be any transparent
+    # values.
+    labels = np.random.randint(1, 2**23, size=(100, 100)).astype(np.float32)
+    colormapped = colormap.map(labels)
+    linear = np.reshape(colormapped, (-1, 4))
+    unique = np.unique(linear, axis=0)
+    assert len(unique) == 4
 
 
 def test_custom_color_dict():
@@ -398,83 +412,16 @@ def test_custom_color_dict():
     )
 
     # test with custom color dict
-    assert type(layer.get_color(2)) == np.ndarray
-    assert type(layer.get_color(1)) == np.ndarray
+    assert isinstance(layer.get_color(2), np.ndarray)
+    assert isinstance(layer.get_color(1), np.ndarray)
     assert (layer.get_color(2) == np.array([1.0, 1.0, 1.0, 1.0])).all()
     assert (layer.get_color(4) == layer.get_color(16)).all()
     assert (layer.get_color(8) == layer.get_color(32)).all()
-
-    # Test to see if our label mapped control points map to those in the colormap
-    # with an extra half step.
-    local_controls = np.array(
-        sorted(np.unique(list(layer._label_color_index.values()) + [1.0]))
-    )
-    colormap_controls = np.array(layer._colormap.controls)
-    assert np.max(np.abs(local_controls - colormap_controls)) == pytest.approx(
-        0.5 / (len(colormap_controls) - 1)
-    )
 
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
     layer.color_mode = 'auto'
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
-
-
-def test_large_custom_color_dict():
-    """Confirm that the napari & vispy colormaps behave the same."""
-
-    label_count = 897
-    colors = {
-        color: (0, (color / 256.0) / 256.0, (color % 256) / 256.0)
-        for color in range(label_count)
-    }
-    data, _ = np.meshgrid(range(label_count), range(5))
-    layer = Labels(data, color=colors)
-
-    # Get color list using layer interface & napari.utils.colormap.ColorMap
-    label_color = layer.get_color(list(range(label_count)))
-
-    # Get the color by converting to control points with the layer and passing
-    # that to a vispy.color.colormap.Colormap
-    vispy_colormap = VispyColormap(
-        colors=layer.colormap.colors,
-        controls=layer.colormap.controls,
-        interpolation='zero',
-    )
-    label_color_controls = [
-        layer._label_color_index[x] for x in range(label_count)
-    ]
-    vispy_colors = vispy_colormap.map(
-        np.array([x for x in label_color_controls])
-    )
-
-    assert (label_color == vispy_colors).all()
-
-
-def test_warning_too_many_colors():
-    label_count = 1500
-    colors = {
-        color: (0, (color / 256.0) / 256.0, (color % 256) / 256.0)
-        for color in range(label_count)
-    }
-    data, _ = np.meshgrid(range(label_count), range(5))
-    with pytest.warns(UserWarning):
-        # Expect a warning for 1500 colors > 1024 in LUT
-        Labels(data, color=colors)
-
-
-def test_add_colors():
-    """Test adding new colors"""
-    data = np.random.randint(20, size=(40, 40))
-    layer = Labels(data)
-    assert len(layer._all_vals) == np.max(data) + 1
-
-    layer.selected_label = 51
-    assert len(layer._all_vals) == 52
-
-    layer.show_selected_label = True
-    layer.selected_label = 53
-    assert len(layer._all_vals) == 54
 
 
 def test_metadata():
@@ -595,7 +542,8 @@ def test_contour(input_data, expected_data_view):
     np.testing.assert_array_equal(layer.data, input_data)
 
     np.testing.assert_array_equal(
-        layer._raw_to_displayed(input_data), layer._data_view
+        layer._raw_to_displayed(input_data.astype(np.float32)),
+        layer._data_view,
     )
     data_view_before_contour = layer._data_view.copy()
 
@@ -610,7 +558,7 @@ def test_contour(input_data, expected_data_view):
         layer._data_view,
         np.where(
             expected_data_view > 0,
-            low_discrepancy_image(expected_data_view),
+            expected_data_view,
             0,
         ),
     )
@@ -628,6 +576,9 @@ def test_contour(input_data, expected_data_view):
     np.testing.assert_array_equal(
         layer._raw_to_displayed(input_data), layer._data_view
     )
+
+    with pytest.raises(ValueError, match='contour value must be >= 0'):
+        layer.contour = -1
 
 
 def test_contour_large_new_labels():
@@ -647,6 +598,37 @@ def test_contour_large_new_labels():
     labels_layer.contour = 1
     # This used to fail with IndexError
     viewer.dims.set_point(axis=0, value=4)
+
+
+def test_contour_local_updates():
+    """Checks if contours are rendered correctly with local updates"""
+    data = np.zeros((7, 7), dtype=np.int32)
+
+    layer = Labels(data)
+    layer.contour = 1
+    assert np.allclose(
+        layer._raw_to_displayed(layer._slice.image.raw),
+        np.zeros((7, 7), dtype=np.float32),
+    )
+
+    painting_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=np.int32,
+    )
+
+    layer.data_setitem(np.nonzero(painting_mask), 1, refresh=True)
+
+    assert np.alltrue(
+        (layer._slice.image.view > 0) == get_contours(painting_mask, 1, 0)
+    )
 
 
 def test_selecting_label():
@@ -695,9 +677,7 @@ def test_show_selected_label():
 
     # color of all others is none color
     other_labels = np.unique(layer.data)[2:]
-    other_colors = np.array(
-        list(map(lambda x: layer.get_color(x), other_labels))
-    )
+    other_colors = np.array([layer.get_color(x) for x in other_labels])
     assert np.allclose(other_colors, none_color)
 
 
@@ -813,6 +793,64 @@ def test_paint_3d():
     assert np.sum(layer.data[4:17, 9:32, 9:32] == 5) == 1103
 
 
+def test_paint_polygon():
+    """Test painting labels with polygons."""
+    data = np.zeros((10, 15), dtype=int)
+    data[:10, :10] = 1
+    layer = Labels(data)
+
+    layer.paint_polygon([[0, 0], [0, 5], [5, 5], [5, 0]], 2)
+    assert np.alltrue(layer.data[:5, :5] == 2)
+    assert np.alltrue(layer.data[:10, 6:10] == 1)
+    assert np.alltrue(layer.data[6:10, :10] == 1)
+
+    layer.paint_polygon([[7, 7], [7, 7], [7, 7]], 3)
+    assert layer.data[7, 7] == 3
+    assert np.alltrue(layer.data[[6, 7, 8, 7, 8, 6], [7, 6, 7, 8, 8, 6]] == 1)
+
+    data[:10, :10] = 0
+    gt_pattern = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 1, 1, 0],
+            [0, 1, 1, 0, 0, 1, 1, 0],
+            [0, 1, 1, 0, 0, 1, 1, 0],
+            [0, 1, 1, 0, 0, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    polygon_points = [
+        [1, 1],
+        [1, 6],
+        [5, 6],
+        [5, 5],
+        [2, 5],
+        [2, 2],
+        [5, 2],
+        [5, 1],
+    ]
+    layer.paint_polygon(polygon_points, 1)
+    assert np.allclose(layer.data[:7, :8], gt_pattern)
+
+    data[:10, :10] = 0
+    layer.paint_polygon(polygon_points[::-1], 1)
+    assert np.allclose(layer.data[:7, :8], gt_pattern)
+
+
+def test_paint_polygon_2d_in_3d():
+    """Test painting labels with polygons in a 3D array"""
+    data = np.zeros((3, 10, 10), dtype=int)
+    layer = Labels(data)
+
+    assert layer.n_edit_dimensions == 2
+
+    layer.paint_polygon([[1, 0, 0], [1, 0, 9], [1, 9, 9], [1, 9, 0]], 1)
+
+    assert np.alltrue(data[1, :] == 1)
+    assert np.alltrue(data[[0, 2], :] == 0)
+
+
 def test_fill():
     """Test filling labels with different brush sizes."""
     np.random.seed(0)
@@ -884,8 +922,8 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.randint(20, size=(shape))
     layer = Labels(data)
-    extent = np.array(((0,) * 3, shape))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
+    extent = np.array(((0,) * 3, [s - 1 for s in shape]))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
 @pytest.mark.parametrize(
@@ -980,40 +1018,21 @@ def test_ndim_paint():
     )
 
 
-def test_switching_display_func():
-    label_data = np.random.randint(2**25, 2**25 + 5, size=(50, 50))
-    layer = Labels(label_data)
-    assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
-
-    label_data = np.random.randint(0, 5, size=(50, 50))
-    layer = Labels(label_data)
-    assert layer._color_lookup_func == layer._lookup_with_index
-
-
 def test_cursor_size_with_negative_scale():
     layer = Labels(np.zeros((5, 5), dtype=int), scale=[-1, -1])
     layer.mode = 'paint'
     assert layer.cursor_size > 0
 
 
-def test_switching_display_func_during_slicing():
-    label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
-    label_array[0, :, :] = [[0, 1], [2, 3]]
+@pytest.mark.xfail(
+    reason="labels are converted to float32 before being mapped"
+)
+def test_large_label_values():
+    label_array = 2**23 + np.arange(4, dtype=np.uint64).reshape((2, 2))
     layer = Labels(label_array)
-    layer._slice_dims(point=(1, 0, 0))
-    assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
-    assert layer._all_vals.size < 1026
+    mapped = layer._random_colormap.map(layer.data)
 
-
-def test_add_large_colors():
-    label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
-    label_array[0, :, :] = [[0, 1], [2, 3]]
-    layer = Labels(label_array)
-    assert len(layer._all_vals) == 4
-
-    layer.show_selected_label = True
-    layer.selected_label = int(5e6)
-    assert layer._all_vals.size < 1026
+    assert len(np.unique(mapped.reshape((-1, 4)), axis=0)) == 4
 
 
 def test_fill_tensorstore():
@@ -1072,7 +1091,7 @@ def test_fill_with_xarray():
 def test_paint_3d_negative_scale(scale):
     labels = np.zeros((3, 5, 11, 11), dtype=int)
     labels_layer = Labels(
-        labels, scale=(1,) + scale, translate=(-200, 100, 100)
+        labels, scale=(1, *scale), translate=(-200, 100, 100)
     )
     labels_layer.n_edit_dimensions = 3
     labels_layer.brush_size = 8
@@ -1398,6 +1417,95 @@ def test_is_default_color():
     assert layer.color_mode == 'direct'
 
 
+def test_large_labels_direct_color():
+    """Make sure direct color works with large label ranges"""
+    data = np.array([[0, 1], [2**16, 2**20]], dtype=np.uint32)
+    colors = {1: 'white', 2**16: 'green', 2**20: 'magenta'}
+    layer = Labels(data)
+    layer.color = colors
+
+    assert layer.color_mode == 'direct'
+    np.testing.assert_allclose(layer.get_color(2**20), [1.0, 0.0, 1.0, 1.0])
+
+
+def test_invalidate_cache_when_change_color_mode():
+    """Checks if the cache is invalidated when color mode is changed."""
+    data = np.zeros((4, 10), dtype=np.int32)
+    data[1, :] = np.arange(0, 10)
+
+    layer = Labels(data)
+    layer.selected_label = 0
+    gt_auto = layer._raw_to_displayed(layer._slice.image.raw)
+    assert gt_auto.dtype == np.float32
+
+    layer.color_mode = 'direct'
+    layer._cached_labels = None
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+
+    layer.color_mode = 'auto'
+    # If the cache is not invalidated, it returns colors for
+    # the direct color mode instead of the color for the auto mode
+    assert np.allclose(
+        layer._raw_to_displayed(layer._slice.image.raw), gt_auto
+    )
+
+
+def test_color_mapping_when_color_is_changed():
+    """Checks if the color mapping is computed correctly when the color palette is changed."""
+
+    data = np.zeros((4, 5), dtype=np.int32)
+    data[1, :] = np.arange(0, 5)
+    layer = Labels(data, color={1: 'green', 2: 'red', 3: 'white'})
+    gt_direct_3colors = layer._raw_to_displayed(layer._slice.image.raw)
+
+    layer = Labels(data, color={1: 'green', 2: 'red'})
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    layer.color = {1: 'green', 2: 'red', 3: 'white'}
+
+    assert np.allclose(
+        layer._raw_to_displayed(layer._slice.image.raw), gt_direct_3colors
+    )
+
+
+def test_color_mapping_with_show_selected_label():
+    """Checks if the color mapping is computed correctly when show_selected_label is activated."""
+
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    mapped_colors_all = layer.colormap.map(data)
+
+    layer.show_selected_label = True
+
+    for selected_label in range(5):
+        layer.selected_label = selected_label
+        label_mask = data == selected_label
+        mapped_colors = layer.colormap.map(data)
+
+        assert np.allclose(
+            mapped_colors[label_mask], mapped_colors_all[label_mask]
+        )
+        assert np.allclose(mapped_colors[np.logical_not(label_mask)], 0)
+
+    layer.show_selected_label = False
+    assert np.allclose(layer.colormap.map(data), mapped_colors_all)
+
+
+def test_color_mapping_when_seed_is_changed():
+    """Checks if the color mapping is updated when the color palette seed is changed."""
+    np.random.seed(0)
+    layer = Labels(np.random.randint(50, size=(10, 10)))
+    mapped_colors1 = layer.colormap.map(
+        layer._to_vispy_texture_dtype(layer._slice.image.raw)
+    )
+
+    layer.new_colormap()
+    mapped_colors2 = layer.colormap.map(
+        layer._to_vispy_texture_dtype(layer._slice.image.raw)
+    )
+
+    assert not np.allclose(mapped_colors1, mapped_colors2)
+
+
 def test_negative_label():
     """Test negative label values are supported."""
     data = np.random.randint(low=-1, high=20, size=(10, 10))
@@ -1421,9 +1529,6 @@ def test_negative_label_slicing():
     assert tuple(layer.get_color(-2)) != tuple(layer.get_color(100))
 
 
-@pytest.mark.xfail(
-    reason='This is a known bug with the current label color implementation'
-)
 def test_negative_label_doesnt_flicker():
     data = np.array(
         [
@@ -1434,16 +1539,12 @@ def test_negative_label_doesnt_flicker():
     )
     layer = Labels(data)
     layer._slice_dims(point=(1, 0, 0))
-    # this is expected to fail: -1 doesn't trigger an index error in
-    # layer._all_vals, it instead just wraps to 5, the previous max label.
+    # This used to fail when negative values were used to index into _all_vals.
     assert tuple(layer.get_color(-1)) != tuple(layer.get_color(5))
     minus_one_color_original = tuple(layer.get_color(-1))
     layer.dims_point = (2, 0, 0)
     layer._set_view_slice()
-    # this is also expected to fail: when we switch layers, we see the 6
-    # label, which causes an index error, which triggers a recalculation of
-    # the label colors. Now -1 is seen so it is taken into account in the
-    # indexing calculation, and changes color
+
     assert tuple(layer.get_color(-1)) == minus_one_color_original
 
 
@@ -1493,5 +1594,5 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {"seed", "num_colors", "show_selected_label", "color"},
+            {"seed", "num_colors", "color"},
         )

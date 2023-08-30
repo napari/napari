@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-from typing import Generator, Iterable, List, TypeVar, Union
+from typing import TYPE_CHECKING, Generator, Iterable, List, TypeVar, Union
 
-from ..events.containers._nested_list import MaybeNestedIndex
-from ..events.containers._selectable_list import SelectableNestableEventedList
-from .node import Node
+from napari.utils.events.containers._selectable_list import (
+    SelectableNestableEventedList,
+)
+from napari.utils.tree.node import Node
+
+if TYPE_CHECKING:
+    from napari.utils.events.containers._nested_list import MaybeNestedIndex
 
 NodeType = TypeVar("NodeType", bound=Node)
 
@@ -37,7 +41,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         children: Iterable[NodeType] = (),
         name: str = "Group",
         basetype=Node,
-    ):
+    ) -> None:
         Node.__init__(self, name=name)
         SelectableNestableEventedList.__init__(
             self,

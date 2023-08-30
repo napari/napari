@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, List
 
 import numpy as np
 
-from ...layers import Image
-from ...layers.image._image_utils import guess_multiscale
-from ...utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
-from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
-from ...utils.translations import trans
+from napari.layers import Image
+from napari.layers.image._image_utils import guess_multiscale
+from napari.utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
+from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ...types import FullLayerData
+    from napari.types import FullLayerData
 
 
 def slice_from_axis(array, *, axis, element):
@@ -94,6 +94,7 @@ def split_channels(
         'metadata',
         'plane',
         'experimental_clipping_planes',
+        'custom_interpolation_kernel_2d',
     }
 
     # turn the kwargs dict into a mapping of {key: iterator}
@@ -124,7 +125,7 @@ def split_channels(
         else:
             kwargs[key] = iter(ensure_iterable(val))
 
-    layerdata_list = list()
+    layerdata_list = []
     for i in range(n_channels):
         if multiscale:
             image = [
@@ -137,7 +138,7 @@ def split_channels(
         for key, val in kwargs.items():
             try:
                 i_kwargs[key] = next(val)
-            except StopIteration:
+            except StopIteration as e:
                 raise IndexError(
                     trans._(
                         "Error adding multichannel image with data shape {data_shape!r}.\nRequested channel_axis ({channel_axis}) had length {n_channels}, but the '{key}' argument only provided {i} values. ",
@@ -148,9 +149,9 @@ def split_channels(
                         key=key,
                         i=i,
                     )
-                )
+                ) from e
 
-        layerdata = (image, i_kwargs, 'image')
+        layerdata: FullLayerData = (image, i_kwargs, 'image')
         layerdata_list.append(layerdata)
 
     return layerdata_list
@@ -286,7 +287,7 @@ def images_to_stack(images: List[Image], axis: int = 0, **kwargs) -> Image:
     return Image(new_data, **meta)
 
 
-def merge_rgb(images: List[Image]) -> List[Image]:
+def merge_rgb(images: List[Image]) -> Image:
     """Variant of images_to_stack that makes an RGB from 3 images."""
     if not (len(images) == 3 and all(isinstance(x, Image) for x in images)):
         raise ValueError(

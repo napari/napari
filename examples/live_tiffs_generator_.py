@@ -9,15 +9,14 @@ an output directory (must be supplied by the user).
 """
 
 
+import argparse
 import os
 import sys
 import time
-import argparse
 
 import numpy as np
-from skimage import data
 import tifffile
-
+from skimage import data
 
 parser = argparse.ArgumentParser()
 parser.add_argument('outdir', help='output directory for tiffs')
@@ -50,8 +49,8 @@ def main(argv=sys.argv[1:]):
         )
         time.sleep(sleep_time)
     # create a final.log file as an indicator for end of acquisition
-    final_file = open(os.path.join(outdir, 'final.log'), 'w')
-    final_file.close()
+    with open(os.path.join(outdir, 'final.log'), 'w'):
+        pass
 
 
 if __name__ == '__main__':

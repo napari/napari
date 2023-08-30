@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QColor, QIntValidator, QPainter, QPainterPath, QPen
@@ -11,7 +13,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.translations import translator
+from napari.utils.translations import translator
 
 trans = translator.load()
 
@@ -28,8 +30,8 @@ class QtStar(QFrame):
     def __init__(
         self,
         parent: QWidget = None,
-        value: int = None,
-    ):
+        value: Optional[int] = None,
+    ) -> None:
         super().__init__(parent)
         self._value = value
 
@@ -115,7 +117,6 @@ class QtStar(QFrame):
             x_adj = star_center_x - x
             y_adj = star_center_y - y + 3
             if n == 0:
-
                 path.moveTo(x_adj, y_adj)
             else:
                 path.lineTo(x_adj, y_adj)
@@ -143,7 +144,7 @@ class QtTriangle(QFrame):
         value: int = 1,
         min_value: int = 1,
         max_value: int = 10,
-    ):
+    ) -> None:
         super().__init__(parent)
         self._max_value = max_value
         self._min_value = min_value
@@ -312,7 +313,7 @@ class QtHighlightSizePreviewWidget(QWidget):
         min_value: int = 1,
         max_value: int = 10,
         unit: str = "px",
-    ):
+    ) -> None:
         super().__init__(parent)
 
         self.setGeometry(300, 300, 125, 110)

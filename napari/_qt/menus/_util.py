@@ -1,12 +1,12 @@
 import contextlib
-from typing import TYPE_CHECKING, Callable, List, Union
+from typing import TYPE_CHECKING, Callable, ClassVar, List, Union
 
 from qtpy.QtWidgets import QAction, QMenu
 
 if TYPE_CHECKING:
     from typing_extensions import TypedDict
 
-    from ...utils.events import EventEmitter
+    from napari.utils.events import EventEmitter
 
     try:
         from qtpy.QtCore import SignalInstance
@@ -115,9 +115,9 @@ class NapariMenu(QMenu):
     close.
     """
 
-    _INSTANCES: List['NapariMenu'] = []
+    _INSTANCES: ClassVar[List['NapariMenu']] = []
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._INSTANCES.append(self)
 

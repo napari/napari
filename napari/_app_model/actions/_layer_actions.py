@@ -15,9 +15,9 @@ from typing import TYPE_CHECKING, List
 
 from app_model.types import Action
 
-from ...layers import _layer_actions
-from ..constants import CommandId, MenuGroup, MenuId
-from ..context import LayerListContextKeys as LLCK
+from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
+from napari.layers import _layer_actions
 
 if TYPE_CHECKING:
     from app_model.types import MenuRuleDict
@@ -37,10 +37,6 @@ LAYERCTX_LINK: MenuRuleDict = {
     'group': MenuGroup.LAYERLIST_CONTEXT.LINK,
 }
 
-_ONLY_LABELS = LLCK.num_selected_labels_layers == LLCK.num_selected_layers
-_IMAGE_IS_3D = (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim > 2
-
-
 # Statically defined Layer actions.
 # modifying this list at runtime has no effect.
 LAYER_ACTIONS: List[Action] = [
@@ -54,15 +50,15 @@ LAYER_ACTIONS: List[Action] = [
         id=CommandId.LAYER_SPLIT_STACK,
         title=CommandId.LAYER_SPLIT_STACK.title,
         callback=_layer_actions._split_stack,
-        menus=[{**LAYERCTX_SPLITMERGE, 'when': ~LLCK.active_layer_is_rgb}],
-        enablement=LLCK.active_layer_type == "image",
+        menus=[{**LAYERCTX_SPLITMERGE, 'when': ~LLSCK.active_layer_is_rgb}],
+        enablement=LLSCK.active_layer_is_image_3d,
     ),
     Action(
         id=CommandId.LAYER_SPLIT_RGB,
         title=CommandId.LAYER_SPLIT_RGB.title,
         callback=_layer_actions._split_rgb,
-        menus=[{**LAYERCTX_SPLITMERGE, 'when': LLCK.active_layer_is_rgb}],
-        enablement=LLCK.active_layer_is_rgb,
+        menus=[{**LAYERCTX_SPLITMERGE, 'when': LLSCK.active_layer_is_rgb}],
+        enablement=LLSCK.active_layer_is_rgb,
     ),
     Action(
         id=CommandId.LAYER_CONVERT_TO_LABELS,
@@ -70,10 +66,11 @@ LAYER_ACTIONS: List[Action] = [
         callback=_layer_actions._convert_to_labels,
         enablement=(
             (
-                (LLCK.num_selected_image_layers >= 1)
-                | (LLCK.num_selected_shapes_layers >= 1)
+                (LLSCK.num_selected_image_layers >= 1)
+                | (LLSCK.num_selected_shapes_layers >= 1)
             )
-            & LLCK.all_selected_layers_same_type
+            & LLSCK.all_selected_layers_same_type
+            & ~LLSCK.selected_empty_shapes_layer
         ),
         menus=[LAYERCTX_CONVERSION],
     ),
@@ -82,8 +79,8 @@ LAYER_ACTIONS: List[Action] = [
         title=CommandId.LAYER_CONVERT_TO_IMAGE.title,
         callback=_layer_actions._convert_to_image,
         enablement=(
-            (LLCK.num_selected_labels_layers >= 1)
-            & LLCK.all_selected_layers_same_type
+            (LLSCK.num_selected_labels_layers >= 1)
+            & LLSCK.all_selected_layers_same_type
         ),
         menus=[LAYERCTX_CONVERSION],
     ),
@@ -92,9 +89,9 @@ LAYER_ACTIONS: List[Action] = [
         title=CommandId.LAYER_MERGE_STACK.title,
         callback=_layer_actions._merge_stack,
         enablement=(
-            (LLCK.num_selected_layers > 1)
-            & (LLCK.num_selected_image_layers == LLCK.num_selected_layers)
-            & LLCK.all_selected_layers_same_shape
+            (LLSCK.num_selected_layers > 1)
+            & (LLSCK.num_selected_image_layers == LLSCK.num_selected_layers)
+            & LLSCK.all_selected_layers_same_shape
         ),
         menus=[LAYERCTX_SPLITMERGE],
     ),
@@ -114,22 +111,22 @@ LAYER_ACTIONS: List[Action] = [
         title=CommandId.LAYER_LINK_SELECTED.title,
         callback=_layer_actions._link_selected_layers,
         enablement=(
-            (LLCK.num_selected_layers > 1) & ~LLCK.num_selected_layers_linked
+            (LLSCK.num_selected_layers > 1) & ~LLSCK.num_selected_layers_linked
         ),
-        menus=[{**LAYERCTX_LINK, 'when': ~LLCK.num_selected_layers_linked}],
+        menus=[{**LAYERCTX_LINK, 'when': ~LLSCK.num_selected_layers_linked}],
     ),
     Action(
         id=CommandId.LAYER_UNLINK_SELECTED,
         title=CommandId.LAYER_UNLINK_SELECTED.title,
         callback=_layer_actions._unlink_selected_layers,
-        enablement=LLCK.num_selected_layers_linked,
-        menus=[{**LAYERCTX_LINK, 'when': LLCK.num_selected_layers_linked}],
+        enablement=LLSCK.num_selected_layers_linked,
+        menus=[{**LAYERCTX_LINK, 'when': LLSCK.num_selected_layers_linked}],
     ),
     Action(
         id=CommandId.LAYER_SELECT_LINKED,
         title=CommandId.LAYER_SELECT_LINKED.title,
         callback=_layer_actions._select_linked_layers,
-        enablement=LLCK.num_unselected_linked_layers,
+        enablement=LLSCK.num_unselected_linked_layers,
         menus=[LAYERCTX_LINK],
     ),
 ]
@@ -145,25 +142,28 @@ for _dtype in (
     'uint32',
     'uint64',
 ):
-    cmd: CommandId = getattr(CommandId, f'LAYER_CONVERT_TO_{_dtype.upper()}')
+    cmd = getattr(CommandId, f'LAYER_CONVERT_TO_{_dtype.upper()}')
     LAYER_ACTIONS.append(
         Action(
             id=cmd,
             title=cmd.title,
             callback=partial(_layer_actions._convert_dtype, mode=_dtype),
-            enablement=(_ONLY_LABELS & (LLCK.active_layer_dtype != _dtype)),
+            enablement=(
+                LLSCK.all_selected_layers_labels
+                & (LLSCK.active_layer_dtype != _dtype)
+            ),
             menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
         )
     )
 
 for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
-    cmd: CommandId = getattr(CommandId, f'LAYER_PROJECT_{mode.upper()}')
+    cmd = getattr(CommandId, f'LAYER_PROJECT_{mode.upper()}')
     LAYER_ACTIONS.append(
         Action(
             id=cmd,
             title=cmd.title,
             callback=partial(_layer_actions._project, mode=mode),
-            enablement=_IMAGE_IS_3D,
+            enablement=LLSCK.active_layer_is_image_3d,
             menus=[{'id': MenuId.LAYERS_PROJECT}],
         )
     )

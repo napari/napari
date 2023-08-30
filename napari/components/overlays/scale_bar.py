@@ -1,8 +1,10 @@
 """Scale bar model."""
 from typing import Optional
 
-from ...utils.color import ColorValue
-from .base import CanvasOverlay
+from pydantic import Field
+
+from napari.components.overlays.base import CanvasOverlay
+from napari.utils.color import ColorValue
 
 
 class ScaleBarOverlay(CanvasOverlay):
@@ -10,8 +12,6 @@ class ScaleBarOverlay(CanvasOverlay):
 
     Attributes
     ----------
-    visible : bool
-        If scale bar is visible or not.
     colored : bool
         If scale bar are colored or not. If colored then
         default color is magenta. If not colored than
@@ -22,10 +22,6 @@ class ScaleBarOverlay(CanvasOverlay):
         See ``ColorValue.validate`` for supported values.
     ticks : bool
         If scale bar has ticks at ends or not.
-    position : str
-        Position of the scale bar in the canvas. Must be one of
-        'top left', 'top right', 'bottom right', 'bottom left'.
-        Default value is 'bottom right'.
     background_color : np.ndarray
         Background color of canvas. If scale bar is not colored
         then it has the color opposite of this color.
@@ -39,12 +35,22 @@ class ScaleBarOverlay(CanvasOverlay):
     unit : Optional[str]
         Unit to be used by the scale bar. The value can be set
         to `None` to display no units.
+    position : CanvasPosition
+        The position of the overlay in the canvas.
+    visible : bool
+        If the overlay is visible or not.
+    opacity : float
+        The opacity of the overlay. 0 is fully transparent.
+    order : int
+        The rendering order of the overlay: lower numbers get rendered first.
     """
 
     colored: bool = False
-    color: ColorValue = [1, 0, 1, 1]
+    color: ColorValue = Field(default_factory=lambda: ColorValue([1, 0, 1, 1]))
     ticks: bool = True
     font_size: float = 10
     box: bool = False
-    box_color: ColorValue = [0, 0, 0, 0.6]
+    box_color: ColorValue = Field(
+        default_factory=lambda: ColorValue([0, 0, 0, 0.6])
+    )
     unit: Optional[str] = None

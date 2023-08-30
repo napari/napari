@@ -1,12 +1,17 @@
-from typing import Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
 from skimage.draw import line, polygon2mask
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
-from ...utils.translations import trans
-from ..utils.layer_utils import segment_normal
+from napari.layers.utils.layer_utils import segment_normal
+from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 try:
     # see https://github.com/vispy/vispy/issues/1029
@@ -260,11 +265,7 @@ def is_collinear(points):
 
     # The collinearity test takes three points, the first two are the first
     # two in the list, and then the third is iterated through in the loop
-    for p in points[2:]:
-        if orientation(points[0], points[1], p) != 0:
-            return False
-
-    return True
+    return all(orientation(points[0], points[1], p) == 0 for p in points[2:])
 
 
 def point_to_lines(point, lines):
@@ -556,7 +557,7 @@ def triangulate_face(data):
         # connect last with first vertex
         edges[-1, 1] = 0
 
-        res = triangulate(dict(vertices=data, segments=edges), "p")
+        res = triangulate({"vertices": data, "segments": edges}, "p")
         vertices, triangles = res['vertices'], res['triangles']
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()
@@ -632,10 +633,10 @@ def _sign_cross(x, y):
     """sign of cross product (faster for 2d)"""
     if x.shape[1] == y.shape[1] == 2:
         return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
-    elif x.shape[1] == y.shape[1] == 3:
+    if x.shape[1] == y.shape[1] == 3:
         return _sign_nonzero(np.cross(x, y))
-    else:
-        raise ValueError(x.shape[1], y.shape[1])
+
+    raise ValueError(x.shape[1], y.shape[1])
 
 
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
@@ -973,7 +974,7 @@ def points_in_poly(points, vertices):
         d = np.where(abs(d) < tolerance, 0, d)
         if d[1] == 0:
             # If y vertices are aligned avoid division by zero
-            cond_4 = 0 < d[0] * (points[:, 1] - vertices[i, 1])
+            cond_4 = d[0] * (points[:, 1] - vertices[i, 1]) > 0
         else:
             cond_4 = points[:, 0] < (
                 d[0] * (points[:, 1] - vertices[i, 1]) / d[1] + vertices[i, 0]
@@ -1144,3 +1145,77 @@ def validate_num_vertices(
                     shape_length=len(shape),
                 )
             )
+
+
+def perpendicular_distance(
+    point: npt.NDArray, line_start: npt.NDArray, line_end: npt.NDArray
+) -> float:
+    """Calculate the perpendicular distance of a point to a given euclidean line.
+
+    Calculates the shortest distance of a point to a euclidean line defined by a line_start point and a line_end point.
+    Works up to any dimension.
+
+    Parameters
+    ---------
+    point : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  which is part of a polygon shape.
+    line_start : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  used to define the starting point of a line.
+    line_end : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  used to define the end point of a line.
+
+    Returns
+    -------
+    float
+        A float number representing the distance of point to a euclidean line defined by line_start and line_end.
+    """
+
+    if np.array_equal(line_start, line_end):
+        return np.linalg.norm(point - line_start)
+
+    t = np.dot(point - line_end, line_start - line_end) / np.dot(
+        line_start - line_end, line_start - line_end
+    )
+    return np.linalg.norm(t * (line_start - line_end) + line_end - point)
+
+
+def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
+    """Reduce the number of vertices that make up a polygon.
+
+    Implementation of the Ramer-Douglas-Peucker algorithm based on:
+    https://github.com/fhirschmann/rdp/blob/master/rdp. This algorithm reduces the amounts of points in a polyline or
+    in this case reduces the number of vertices in a polygon shape.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        A numpy array of shape (n, viewer.ndims) containing the vertices of a polygon shape.
+    epsilon : float
+        A float representing the maximum distance threshold. When the perpendicular distance of a point to a given line
+        is higher, subsequent refinement occurs.
+
+    Returns
+    -------
+    np.ndarray
+        A numpy array of shape (n, viewer.ndims) containing the vertices of a polygon shape.
+    """
+    max_distance_index = -1
+    max_distance = 0.0
+
+    for i in range(1, vertices.shape[0]):
+        d = perpendicular_distance(vertices[i], vertices[0], vertices[-1])
+        if d > max_distance:
+            max_distance_index = i
+            max_distance = d
+
+    if epsilon != 0:
+        if max_distance > epsilon and epsilon:
+            l1 = rdp(vertices[: max_distance_index + 1], epsilon)
+            l2 = rdp(vertices[max_distance_index:], epsilon)
+            return np.vstack((l1[:-1], l2))
+
+        # This part of the algorithm is actually responsible for removing the datapoints.
+        return np.vstack((vertices[0], vertices[-1]))
+
+    # When epsilon is 0, avoid removing datapoints
+    return vertices

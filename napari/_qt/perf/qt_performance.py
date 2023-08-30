@@ -1,6 +1,7 @@
 """QtPerformance widget to show performance information.
 """
 import time
+from typing import ClassVar, List
 
 from qtpy.QtCore import Qt, QTimer
 from qtpy.QtGui import QTextCursor
@@ -16,8 +17,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils import perf
-from ...utils.translations import trans
+from napari.utils import perf
+from napari.utils.translations import trans
 
 
 class TextLog(QTextEdit):
@@ -74,7 +75,7 @@ class QtPerformance(QWidget):
 
     # We log events slower than some threshold (in milliseconds).
     THRESH_DEFAULT = 100
-    THRESH_OPTIONS = [
+    THRESH_OPTIONS: ClassVar[List[str]] = [
         "1",
         "5",
         "10",
@@ -91,7 +92,7 @@ class QtPerformance(QWidget):
     # display will look, but the more we will slow things down.
     UPDATE_MS = 250
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create our windgets."""
         super().__init__()
         layout = QVBoxLayout()
@@ -159,7 +160,6 @@ class QtPerformance(QWidget):
         # Updating widgets can create immediate Qt Events which would modify the
         # timers out from under us!
         for name, timer in perf.timers.timers.items():
-
             # The Qt Event "UpdateRequest" is the main "draw" event, so
             # that's what we use for our progress bar.
             if name == "UpdateRequest":

@@ -1,11 +1,11 @@
-from typing import Tuple
+from typing import Tuple, cast
 
 import numpy as np
 from pydantic import validator
 
-from ...utils.events import EventedModel, SelectableEventedList
-from ...utils.geometry import intersect_line_with_plane_3d
-from ...utils.translations import trans
+from napari.utils.events import EventedModel, SelectableEventedList
+from napari.utils.geometry import intersect_line_with_plane_3d
+from napari.utils.translations import trans
 
 
 class Plane(EventedModel):
@@ -27,17 +27,23 @@ class Plane(EventedModel):
     normal: Tuple[float, float, float] = (1, 0, 0)
     position: Tuple[float, float, float] = (0, 0, 0)
 
-    @validator('normal')
+    @validator('normal', allow_reuse=True)
     def _normalise_vector(cls, v):
         return tuple(v / np.linalg.norm(v))
 
-    @validator('normal', 'position', pre=True)
+    @validator('normal', 'position', pre=True, allow_reuse=True)
     def _ensure_tuple(cls, v):
         return tuple(v)
 
-    def shift_along_normal_vector(self, distance: float):
+    def shift_along_normal_vector(self, distance: float) -> None:
         """Shift the plane along its normal vector by a given distance."""
-        self.position += distance * self.normal
+        assert len(self.position) == len(self.normal) == 3
+        self.position = cast(
+            Tuple[float, float, float],
+            tuple(
+                p + (distance * n) for p, n in zip(self.position, self.normal)
+            ),
+        )
 
     def intersect_with_line(
         self, line_position: np.ndarray, line_direction: np.ndarray

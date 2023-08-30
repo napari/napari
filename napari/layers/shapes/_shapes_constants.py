@@ -1,8 +1,15 @@
 import sys
 from enum import auto
+from typing import ClassVar, List
 
-from ...utils.misc import StringEnum
-from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
+from napari.layers.shapes._shapes_models import (
+    Ellipse,
+    Line,
+    Path,
+    Polygon,
+    Rectangle,
+)
+from napari.utils.misc import StringEnum
 
 
 class Mode(StringEnum):
@@ -24,6 +31,7 @@ class Mode(StringEnum):
     """
 
     PAN_ZOOM = auto()
+    TRANSFORM = auto()
     SELECT = auto()
     DIRECT = auto()
     ADD_RECTANGLE = auto()
@@ -31,9 +39,9 @@ class Mode(StringEnum):
     ADD_LINE = auto()
     ADD_PATH = auto()
     ADD_POLYGON = auto()
+    ADD_POLYGON_LASSO = auto()
     VERTEX_INSERT = auto()
     VERTEX_REMOVE = auto()
-    TRANSFORM = auto()
 
 
 class ColorMode(StringEnum):
@@ -55,9 +63,9 @@ class ColorMode(StringEnum):
 class Box:
     """Box: Constants associated with the vertices of the interaction box"""
 
-    WITH_HANDLE = [0, 1, 2, 3, 4, 5, 6, 7, 9]
-    LINE_HANDLE = [7, 6, 4, 2, 0, 7, 8]
-    LINE = [0, 2, 4, 6, 0]
+    WITH_HANDLE: ClassVar[List[int]] = [0, 1, 2, 3, 4, 5, 6, 7, 9]
+    LINE_HANDLE: ClassVar[List[int]] = [7, 6, 4, 2, 0, 7, 8]
+    LINE: ClassVar[List[int]] = [0, 2, 4, 6, 0]
     TOP_LEFT = 0
     TOP_CENTER = 7
     LEFT_CENTER = 1

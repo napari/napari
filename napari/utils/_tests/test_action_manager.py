@@ -1,9 +1,11 @@
 """
 This module test some of the behavior of action manager.
 """
+from unittest.mock import Mock
+
 import pytest
 
-from ..action_manager import ActionManager
+from napari.utils.action_manager import ActionManager
 
 
 @pytest.fixture
@@ -41,7 +43,6 @@ def test_bind_multiple_action(action_manager):
 
 
 def test_bind_unbind_existing_action(action_manager):
-
     action_manager.register_action(
         'napari:test_action_1', lambda: None, 'this is a test action', None
     )
@@ -49,3 +50,18 @@ def test_bind_unbind_existing_action(action_manager):
     assert action_manager.bind_shortcut('napari:test_action_1', 'X') is None
     assert action_manager.unbind_shortcut('napari:test_action_1') == ['X']
     assert action_manager._shortcuts['napari:test_action_1'] == []
+
+
+def test_bind_key_generator(action_manager):
+    def _sample_generator():
+        yield 'X'
+
+    action_manager.register_action(
+        "napari:test_action_1",
+        _sample_generator,
+        "this is a test action",
+        None,
+    )
+
+    with pytest.raises(ValueError, match="generator functions"):
+        action_manager.bind_button('napari:test_action_1', Mock())

@@ -5,12 +5,12 @@ from weakref import WeakSet
 
 import magicgui as mgui
 
-from .components.viewer_model import ViewerModel
-from .utils import _magicgui, config
+from napari.components.viewer_model import ViewerModel
+from napari.utils import _magicgui
 
 if TYPE_CHECKING:
     # helpful for IDE support
-    from ._qt.qt_main_window import Window
+    from napari._qt.qt_main_window import Window
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -47,7 +47,7 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
-    ):
+    ) -> None:
         super().__init__(
             title=title,
             ndisplay=ndisplay,
@@ -56,11 +56,11 @@ class Viewer(ViewerModel):
         )
         # we delay initialization of plugin system to the first instantiation
         # of a viewer... rather than just on import of plugins module
-        from .plugins import _initialize_plugins
+        from napari.plugins import _initialize_plugins
 
         # having this import here makes all of Qt imported lazily, upon
         # instantiating the first Viewer.
-        from .window import Window
+        from napari.window import Window
 
         _initialize_plugins()
 
@@ -86,9 +86,9 @@ class Viewer(ViewerModel):
             callers frame.
         """
         if self.window._qt_viewer._console is None:
+            self.window._qt_viewer.add_to_console_backlog(variables)
             return
-        else:
-            self.window._qt_viewer.console.push(variables)
+        self.window._qt_viewer.console.push(variables)
 
     def screenshot(
         self,
@@ -106,7 +106,7 @@ class Viewer(ViewerModel):
         path : str
             Filename for saving screenshot image.
         size : tuple (int, int)
-            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
         scale : float
             Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
@@ -140,20 +140,13 @@ class Viewer(ViewerModel):
 
     def close(self):
         """Close the viewer window."""
+        # Shutdown the slicer first to avoid processing any more tasks.
+        self._layer_slicer.shutdown()
         # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window
         self.window.close()
 
-        if config.async_loading:
-            from .components.experimental.chunk import chunk_loader
-
-            # TODO_ASYNC: Find a cleaner way to do this? This fixes some
-            # tests. We are telling the ChunkLoader that this layer is
-            # going away:
-            # https://github.com/napari/napari/issues/1500
-            for layer in self.layers:
-                chunk_loader.on_layer_deleted(layer)
         self._instances.discard(self)
 
     @classmethod
@@ -173,7 +166,7 @@ class Viewer(ViewerModel):
 
         """
         # copy to not iterate while changing.
-        viewers = [v for v in cls._instances]
+        viewers = list(cls._instances)
         ret = len(viewers)
         for viewer in viewers:
             viewer.close()
@@ -184,7 +177,7 @@ def current_viewer() -> Optional[Viewer]:
     """Return the currently active napari viewer."""
     try:
         from napari._qt.qt_main_window import _QtMainWindow
-
-        return _QtMainWindow.current_viewer()
     except ImportError:
         return None
+    else:
+        return _QtMainWindow.current_viewer()

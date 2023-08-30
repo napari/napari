@@ -4,8 +4,10 @@ from typing import Any, Callable
 
 from qtpy.QtWidgets import QFileDialog, QMessageBox
 
-from ...utils.misc import in_ipython
-from ...utils.translations import trans
+from napari.utils.misc import in_ipython
+from napari.utils.translations import trans
+
+HOME_DIRECTORY = str(Path.home())
 
 
 class ScreenshotDialog(QFileDialog):
@@ -27,9 +29,9 @@ class ScreenshotDialog(QFileDialog):
         self,
         save_function: Callable[[str], Any],
         parent=None,
-        directory=str(Path.home()),
+        directory=HOME_DIRECTORY,
         history=None,
-    ):
+    ) -> None:
         super().__init__(parent, trans._("Save screenshot"))
         self.setAcceptMode(QFileDialog.AcceptSave)
         self.setFileMode(QFileDialog.AnyFile)
@@ -60,8 +62,9 @@ class ScreenshotDialog(QFileDialog):
                     QMessageBox.No,
                 )
                 if res != QMessageBox.Yes:
-                    # standard accept return 1, reject 0. This inform that dialog should be reopened
-                    super().accept()
-                    self.exec_()
-        self.save_function(save_path)
-        return super().accept()
+                    # return in this case since a valid name for the
+                    # file is needed so the dialog needs to be visible
+                    return
+        super().accept()
+        if self.result():
+            self.save_function(save_path)

@@ -9,14 +9,14 @@ from typing import TYPE_CHECKING, List, cast
 
 import numpy as np
 
-from ..utils.translations import trans
-from . import Image, Labels, Layer
-from ._source import layer_source
-from .utils import stack_utils
-from .utils._link_layers import get_linked_layers
+from napari.layers import Image, Labels, Layer
+from napari.layers._source import layer_source
+from napari.layers.utils import stack_utils
+from napari.layers.utils._link_layers import get_linked_layers
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ..components import LayerList
+    from napari.components import LayerList
 
 
 def _duplicate_layer(ll: LayerList, *, name: str = ''):
@@ -48,7 +48,7 @@ def _split_rgb(ll: LayerList):
 
 
 def _convert(ll: LayerList, type_: str):
-    from ..layers import Shapes
+    from napari.layers import Shapes
 
     for lay in list(ll.selection):
         idx = ll.index(lay)
@@ -89,8 +89,13 @@ def _merge_stack(ll: LayerList, rgb=False):
 
 
 def _toggle_visibility(ll: LayerList):
-    for lay in ll.selection:
-        lay.visible = not lay.visible
+    current_visibility_state = []
+    for layer in ll.selection:
+        current_visibility_state.append(layer.visible)
+
+    for visibility, layer in zip(current_visibility_state, ll.selection):
+        if layer.visible == visibility:
+            layer.visible = not visibility
 
 
 def _link_selected_layers(ll: LayerList):
@@ -128,8 +133,8 @@ def _convert_dtype(ll: LayerList, mode='int64'):
                 deferred=True,
             )
         )
-    else:
-        layer.data = layer.data.astype(np.dtype(mode))
+
+    layer.data = layer.data.astype(np.dtype(mode))
 
 
 def _project(ll: LayerList, axis: int = 0, mode='max'):

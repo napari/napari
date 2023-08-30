@@ -1,10 +1,13 @@
+from typing import Tuple
+
 import numpy as np
+import numpy.typing as npt
 import scipy.linalg
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
-def compose_linear_matrix(rotate, scale, shear) -> np.array:
+def compose_linear_matrix(rotate, scale, shear) -> npt.NDArray:
     """Compose linear transform matrix from rotate, shear, scale.
 
     Parameters
@@ -168,7 +171,7 @@ def rotate_to_matrix(rotate, *, ndim):
 def _make_rotate_mat(rotate):
     if np.isscalar(rotate):
         return _make_2d_rotation(rotate)
-    elif np.array(rotate).ndim == 1 and len(rotate) == 3:
+    if np.array(rotate).ndim == 1 and len(rotate) == 3:
         return _make_3d_rotation(*rotate)
     return np.array(rotate)
 
@@ -286,7 +289,7 @@ def expand_upper_triangular(vector):
     """
     n = len(vector)
     N = ((-1 + np.sqrt(8 * n + 1)) / 2.0) + 1  # n+1 th root
-    if N != np.floor(N):
+    if np.floor(N) != N:
         raise ValueError(
             trans._(
                 '{number} is a strange number of shear elements',
@@ -328,15 +331,15 @@ def embed_in_identity_matrix(matrix, ndim):
 
     if matrix.shape[0] == ndim:
         return matrix
-    else:
-        full_matrix = np.eye(ndim)
-        full_matrix[-matrix.shape[0] :, -matrix.shape[1] :] = matrix
-        return full_matrix
+
+    full_matrix = np.eye(ndim)
+    full_matrix[-matrix.shape[0] :, -matrix.shape[1] :] = matrix
+    return full_matrix
 
 
 def decompose_linear_matrix(
     matrix, upper_triangular=True
-) -> (np.array, np.array, np.array):
+) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
     """Decompose linear transform matrix into rotate, scale, shear.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
@@ -494,5 +497,5 @@ def is_diagonal(matrix, tol=1e-8):
     non_diag = matrix[~np.eye(matrix.shape[0], dtype=bool)]
     if tol == 0:
         return np.count_nonzero(non_diag) == 0
-    else:
-        return np.max(np.abs(non_diag)) <= tol
+
+    return np.max(np.abs(non_diag)) <= tol

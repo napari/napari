@@ -11,8 +11,8 @@ across the dimensions, specified by their size
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 blobs = np.stack(
     [
@@ -36,7 +36,7 @@ points = np.array(
     ], dtype=float
 )
 viewer.add_points(
-    points, size=[0, 6, 10, 10], face_color='blue', out_of_slice_display=True
+    points, size=10, face_color='blue', out_of_slice_display=True
 )
 
 if __name__ == '__main__':

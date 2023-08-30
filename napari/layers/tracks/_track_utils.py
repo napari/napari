@@ -1,13 +1,16 @@
-from typing import Dict, List, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ..utils.layer_utils import _FeatureTable
+from napari.layers.utils.layer_utils import _FeatureTable
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -24,6 +27,11 @@ def connex(vertices: np.ndarray) -> list:
 
 class TrackManager:
     """Manage track data and simplify interactions with the Tracks layer.
+
+    Parameters
+    ----------
+    data : array
+        See attribute doc below.
 
     Attributes
     ----------
@@ -66,31 +74,42 @@ class TrackManager:
         Track ID for each vertex in track_vertices.
     """
 
-    def __init__(self):
-
+    def __init__(self, data: np.ndarray) -> None:
         # store the raw data here
-        self._data = None
+        self.data = data
         self._feature_table = _FeatureTable()
-        self._order = None
 
-        # use a kdtree to help with fast lookup of the nearest track
-        self._kdtree = None
-
-        # NOTE(arl): _tracks and _connex store raw data for vispy
-        self._points = None
-        self._points_id = None
-        self._points_lookup = None
-        self._ordered_points_idx = None
+        self._data: npt.NDArray
+        self._order: List[int]
+        self._kdtree: cKDTree
+        self._points: npt.NDArray
+        self._points_id: npt.NDArray
+        self._points_lookup: Dict[int, slice]
+        self._ordered_points_idx: npt.NDArray
 
         self._track_vertices = None
         self._track_connex = None
 
-        self._graph = None
+        self._graph: Optional[Dict[int, List[int]]] = None
         self._graph_vertices = None
         self._graph_connex = None
 
-        # lookup table for vertex indices from track id
-        self._id2idxs = None
+    @staticmethod
+    def _fast_points_lookup(sorted_time: np.ndarray) -> Dict[int, slice]:
+        """Computes a fast lookup table from time to their respective points slicing."""
+
+        # finds where t transitions to t + 1
+        transitions = np.nonzero(sorted_time[:-1] - sorted_time[1:])[0] + 1
+        start = np.insert(transitions, 0, 0)
+
+        # compute end of slice
+        end = np.roll(start, -1)
+        end[-1] = len(sorted_time)
+
+        # access first position of each t slice
+        time = sorted_time[start]
+
+        return {t: slice(s, e) for s, e, t in zip(start, end, time)}
 
     @property
     def data(self) -> np.ndarray:
@@ -104,16 +123,16 @@ class TrackManager:
         # convert data to a numpy array if it is not already one
         data = np.asarray(data)
 
+        # check check the formatting of the incoming track data
+        data = self._validate_track_data(data)
+
         # Sort data by ID then time
         self._order = np.lexsort((data[:, 1], data[:, 0]))
-        data = data[self._order]
-
-        # check check the formatting of the incoming track data
-        self._data = self._validate_track_data(data)
+        self._data = data[self._order]
 
         # build the indices for sorting points by time
-        self._ordered_points_idx = np.argsort(self.data[:, 1])
-        self._points = self.data[self._ordered_points_idx, 1:]
+        self._ordered_points_idx = np.argsort(self._data[:, 1])
+        self._points = self._data[self._ordered_points_idx, 1:]
 
         # build a tree of the track data to allow fast lookup of nearest track
         self._kdtree = cKDTree(self._points)
@@ -124,11 +143,7 @@ class TrackManager:
         # will be an integer - however, the time index does not necessarily
         # need to be an int, and the shader will render correctly.
         time = np.round(self._points[:, 0]).astype(np.uint)
-        frames = list(set(time.tolist()))
-        self._points_lookup = {}
-        for f in frames:
-            idx = np.where(time == f)[0]
-            self._points_lookup[f] = slice(min(idx), max(idx) + 1, 1)
+        self._points_lookup = self._fast_points_lookup(time)
 
         # make a second lookup table using a sparse matrix to convert track id
         # to the vertex indices
@@ -138,9 +153,6 @@ class TrackManager:
                 (self.track_ids, np.arange(self.track_ids.size)),
             )
         ).tocsr()
-
-        # sort the data by ID then time
-        # indices = np.lexsort((self.data[:, 1], self.data[:, 0]))
 
     @property
     def features(self):
@@ -166,9 +178,9 @@ class TrackManager:
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
+        self._feature_table.reorder(self._order)
         if 'track_id' not in self._feature_table.values:
             self._feature_table.values['track_id'] = self.track_ids
-        self._feature_table.reorder(self._order)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -181,14 +193,14 @@ class TrackManager:
         self.features = properties
 
     @property
-    def graph(self) -> Dict[int, Union[int, List[int]]]:
+    def graph(self) -> Optional[Dict[int, List[int]]]:
         """dict {int: list}: Graph representing associations between tracks."""
         return self._graph
 
     @graph.setter
     def graph(self, graph: Dict[int, Union[int, List[int]]]):
         """set the track graph"""
-        self._graph = self._validate_track_graph(graph)
+        self._graph = self._normalize_track_graph(graph)
 
     @property
     def track_ids(self):
@@ -226,45 +238,41 @@ class TrackManager:
 
         # check that all IDs are integers
         ids = data[:, 0]
-        if not np.all(np.floor(ids) == ids):
+        if not np.array_equal(np.floor(ids), ids):
             raise ValueError(
                 trans._('track id must be an integer', deferred=True)
             )
 
-        if not all([t >= 0 for t in data[:, 1]]):
+        if not all(t >= 0 for t in data[:, 1]):
             raise ValueError(
                 trans._(
                     'track timestamps must be greater than zero', deferred=True
                 )
             )
 
-        # check that data are sorted by ID then time
-        indices = np.lexsort((data[:, 1], data[:, 0]))
-        if not np.array_equal(indices, np.arange(data[:, 0].size)):
-            raise ValueError(
-                trans._(
-                    'tracks should be ordered by ID and time', deferred=True
-                )
-            )
-
         return data
 
-    def _validate_track_graph(
+    def _normalize_track_graph(
         self, graph: Dict[int, Union[int, List[int]]]
     ) -> Dict[int, List[int]]:
         """validate the track graph"""
+        new_graph: Dict[int, List[int]] = {}
 
         # check that graph nodes are of correct format
         for node_idx, parents_idx in graph.items():
             # make sure parents are always a list
-            if type(parents_idx) != list:
-                graph[node_idx] = [parents_idx]
+            if isinstance(parents_idx, list):
+                new_graph[node_idx] = parents_idx
+            else:
+                new_graph[node_idx] = [parents_idx]
+
+        unique_track_ids = set(self.unique_track_ids)
 
         # check that graph nodes exist in the track id lookup
-        for node_idx, parents_idx in graph.items():
-            nodes = [node_idx] + parents_idx
+        for node_idx, parents_idx in new_graph.items():
+            nodes = [node_idx, *parents_idx]
             for node in nodes:
-                if node not in self.unique_track_ids:
+                if node not in unique_track_ids:
                     raise ValueError(
                         trans._(
                             'graph node {node_idx} not found',
@@ -273,7 +281,7 @@ class TrackManager:
                         )
                     )
 
-        return graph
+        return new_graph
 
     def build_tracks(self):
         """build the tracks"""
@@ -288,7 +296,6 @@ class TrackManager:
 
             # grab the correct vertices and sort by time
             vertices = self.data[indices, 1:]
-            vertices = vertices[vertices[:, 0].argsort()]
 
             # coordinates of the text identifiers, vertices and connections
             points_id += [idx] * vertices.shape[0]
@@ -315,9 +322,7 @@ class TrackManager:
                 parent_stop = self._vertex_indices_from_id(parent_idx)[-1]
                 parent = self.data[parent_stop, 1:]
 
-                verts = np.stack([node, parent], axis=0)
-
-                graph_vertices.append(verts)
+                graph_vertices.append([node, parent])
                 graph_connex.append([True, False])
 
         # if there is a graph, store the vertices and connection arrays,
@@ -346,7 +351,7 @@ class TrackManager:
     def get_value(self, coords):
         """use a kd-tree to lookup the ID of the nearest tree"""
         if self._kdtree is None:
-            return
+            return None
 
         # query can return indices to points that do not exist, trim that here
         # then prune to only those in the current frame/time
@@ -357,7 +362,8 @@ class TrackManager:
 
         # if we have found a point, return it
         if pruned and self._points_id is not None:
-            return self._points_id[pruned[0]]  # return the track ID
+            return self._points_id[pruned[0]]
+        return None  # return the track ID
 
     @property
     def ndim(self) -> int:
@@ -365,22 +371,24 @@ class TrackManager:
         return self.data.shape[1] - 1
 
     @property
-    def max_time(self) -> int:
+    def max_time(self) -> Optional[int]:
         """Determine the maximum timestamp of the dataset"""
-        return int(np.max(self.track_times))
+        if self.track_times is not None:
+            return int(np.max(self.track_times))
+        return None
 
     @property
-    def track_vertices(self) -> np.ndarray:
+    def track_vertices(self) -> Optional[np.ndarray]:
         """return the track vertices"""
         return self._track_vertices
 
     @property
-    def track_connex(self) -> np.ndarray:
+    def track_connex(self) -> Optional[np.ndarray]:
         """vertex connections for drawing track lines"""
         return self._track_connex
 
     @property
-    def graph_vertices(self) -> np.ndarray:
+    def graph_vertices(self) -> Optional[np.ndarray]:
         """return the graph vertices"""
         return self._graph_vertices
 
@@ -390,24 +398,32 @@ class TrackManager:
         return self._graph_connex
 
     @property
-    def track_times(self) -> np.ndarray:
+    def track_times(self) -> Optional[np.ndarray]:
         """time points associated with each track vertex"""
-        return self.track_vertices[:, 0]
+        if self.track_vertices is not None:
+            return self.track_vertices[:, 0]
+        return None
 
     @property
-    def graph_times(self) -> np.ndarray:
+    def graph_times(self) -> Optional[np.ndarray]:
         """time points associated with each graph vertex"""
         if self.graph_vertices is not None:
             return self.graph_vertices[:, 0]
         return None
 
-    def track_labels(self, current_time: int) -> tuple:
+    def track_labels(
+        self, current_time: int
+    ) -> Union[Tuple[None, None], Tuple[List[str], np.ndarray]]:
         """return track labels at the current time"""
+        if self._points_id is None:
+            return None, None
         # this is the slice into the time ordered points array
         if current_time not in self._points_lookup:
-            return [], []
+            lbl = []
+            pos = np.array([])
+        else:
+            lookup = self._points_lookup[current_time]
+            pos = self._points[lookup, ...]
+            lbl = [f'ID:{i}' for i in self._points_id[lookup]]
 
-        lookup = self._points_lookup[current_time]
-        pos = self._points[lookup, ...]
-        lbl = [f'ID:{i}' for i in self._points_id[lookup]]
         return lbl, pos

@@ -34,7 +34,7 @@ class MultipleReaderError(RuntimeError):
         available_readers: List[str],
         paths: List[str],
         *args: object,
-    ):
+    ) -> None:
         super().__init__(message, *args)
         self.available_plugins = available_readers
         self.paths = paths

@@ -1,12 +1,13 @@
+import warnings
 from typing import Optional, Tuple
 
 import numpy as np
 from pydantic import validator
 from scipy.spatial.transform import Rotation as R
 
-from ..utils.events import EventedModel
-from ..utils.misc import ensure_n_tuple
-from ..utils.translations import trans
+from napari.utils.events import EventedModel
+from napari.utils.misc import ensure_n_tuple
+from napari.utils.translations import trans
 
 
 class Camera(EventedModel):
@@ -27,7 +28,13 @@ class Camera(EventedModel):
     perspective : float
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
     interactive : bool
-        If the camera interactivity is enabled or not.
+        If the camera mouse pan/zoom is enabled or not.
+        This attribute is deprecated since 0.5.0 and should not be used.
+        Use the mouse_pan and mouse_zoom attributes instead.
+    mouse_pan : bool
+        If the camera interactive panning with the mouse is enabled or not.
+    mouse_zoom : bool
+        If the camera interactive zooming with the mouse is enabled or not.
     """
 
     # fields
@@ -35,11 +42,12 @@ class Camera(EventedModel):
     zoom: float = 1.0
     angles: Tuple[float, float, float] = (0.0, 0.0, 90.0)
     perspective: float = 0
-    interactive: bool = True
+    mouse_pan: bool = True
+    mouse_zoom: bool = True
 
     # validators
-    @validator('center', 'angles', pre=True)
-    def _ensure_3_tuple(v):
+    @validator('center', 'angles', pre=True, allow_reuse=True)
+    def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
 
     @property
@@ -69,7 +77,11 @@ class Camera(EventedModel):
         rotation_matrix = R.from_euler(
             seq='yzx', angles=self.angles, degrees=True
         ).as_matrix()
-        return tuple(rotation_matrix[:, 2][::-1])
+        return (
+            rotation_matrix[2, 2],
+            rotation_matrix[1, 2],
+            rotation_matrix[0, 2],
+        )
 
     def set_view_direction(
         self,
@@ -110,15 +122,15 @@ class Camera(EventedModel):
             up_direction = (-1, 0, 0)  # align up direction along z axis
 
         # xyz ordering for vispy, normalise vectors for rotation matrix
-        view_direction = np.asarray(view_direction, dtype=float)[::-1]
-        view_direction /= np.linalg.norm(view_direction)
+        view_vector = np.asarray(view_direction, dtype=float)[::-1]
+        view_vector /= np.linalg.norm(view_vector)
 
-        up_direction = np.asarray(up_direction, dtype=float)[::-1]
-        up_direction = np.cross(view_direction, up_direction)
-        up_direction /= np.linalg.norm(up_direction)
+        up_vector = np.asarray(up_direction, dtype=float)[::-1]
+        up_vector = np.cross(view_vector, up_vector)
+        up_vector /= np.linalg.norm(up_vector)
 
         # explicit check for parallel view direction and up direction
-        if np.allclose(np.cross(view_direction, up_direction), 0):
+        if np.allclose(np.cross(view_vector, up_vector), 0):
             raise ValueError(
                 trans._(
                     "view direction and up direction are parallel",
@@ -126,21 +138,19 @@ class Camera(EventedModel):
                 )
             )
 
-        x_direction = np.cross(up_direction, view_direction)
-        x_direction /= np.linalg.norm(x_direction)
+        x_vector = np.cross(up_vector, view_vector)
+        x_vector /= np.linalg.norm(x_vector)
 
         # construct rotation matrix, convert to euler angles
-        rotation_matrix = np.column_stack(
-            (up_direction, view_direction, x_direction)
-        )
+        rotation_matrix = np.column_stack((up_vector, view_vector, x_vector))
         euler_angles = R.from_matrix(rotation_matrix).as_euler(
             seq='yzx', degrees=True
         )
         self.angles = euler_angles
 
     def calculate_nd_view_direction(
-        self, ndim: int, dims_displayed: Tuple[int]
-    ) -> np.ndarray:
+        self, ndim: int, dims_displayed: Tuple[int, ...]
+    ) -> Optional[np.ndarray]:
         """Calculate the nD view direction vector of the camera.
 
         Parameters
@@ -162,7 +172,7 @@ class Camera(EventedModel):
         return view_direction_nd
 
     def calculate_nd_up_direction(
-        self, ndim: int, dims_displayed: Tuple[int]
+        self, ndim: int, dims_displayed: Tuple[int, ...]
     ) -> Optional[np.ndarray]:
         """Calculate the nD up direction vector of the camera.
 
@@ -183,3 +193,20 @@ class Camera(EventedModel):
         up_direction_nd = np.zeros(ndim)
         up_direction_nd[list(dims_displayed)] = self.up_direction
         return up_direction_nd
+
+    @property
+    def interactive(self) -> bool:
+        warnings.warn(
+            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
+            category=DeprecationWarning,
+        )
+        return self.mouse_pan or self.mouse_zoom
+
+    @interactive.setter
+    def interactive(self, interactive: bool):
+        warnings.warn(
+            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
+            category=DeprecationWarning,
+        )
+        self.mouse_pan = interactive
+        self.mouse_zoom = interactive

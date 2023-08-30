@@ -1,5 +1,6 @@
 import time
 
+import dask
 import dask.array as da
 import numpy as np
 import pytest
@@ -74,6 +75,18 @@ def test_guess_multiscale():
     data = [da.ones((s,) * 3), da.ones((s // 2,) * 3), da.ones((s // 4,) * 3)]
     assert guess_multiscale(data)[0]
 
+    # Test for overflow in calculating array sizes
+    s = 17179869184
+    data = [
+        da.from_delayed(
+            dask.delayed(lambda: None), shape=(s,) * 2, dtype=np.float64
+        ),
+        da.from_delayed(
+            dask.delayed(lambda: None), shape=(s // 2,) * 2, dtype=np.float64
+        ),
+    ]
+    assert guess_multiscale(data)[0]
+
 
 def test_guess_multiscale_strip_single_scale():
     data = [np.empty((10, 10))]
@@ -84,9 +97,7 @@ def test_guess_multiscale_strip_single_scale():
 
 def test_guess_multiscale_non_array_list():
     """Check that non-decreasing list input raises ValueError"""
-    data = [
-        np.empty((10, 15, 6)),
-    ] * 2  # noqa: E231
+    data = [np.empty((10, 15, 6))] * 2
     with pytest.raises(ValueError):
         _, _ = guess_multiscale(data)
 

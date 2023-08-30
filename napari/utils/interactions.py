@@ -1,3 +1,4 @@
+import contextlib
 import inspect
 import sys
 import warnings
@@ -5,8 +6,12 @@ from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
-from ..utils.key_bindings import KeyBinding, KeyBindingLike, coerce_keybinding
-from ..utils.translations import trans
+from napari.utils.key_bindings import (
+    KeyBinding,
+    KeyBindingLike,
+    coerce_keybinding,
+)
+from napari.utils.translations import trans
 
 
 def mouse_wheel_callbacks(obj, event):
@@ -207,11 +212,9 @@ def mouse_release_callbacks(obj, event):
     """
     for func, gen in tuple(obj._mouse_drag_gen.items()):
         obj._persisted_mouse_event[gen].__wrapped__ = event
-        try:
+        with contextlib.suppress(StopIteration):
             # Run last part of the function to trigger release event
             next(gen)
-        except StopIteration:
-            pass
         # Finally delete the generator and stored event
         del obj._mouse_drag_gen[func]
         del obj._persisted_mouse_event[gen]
@@ -238,7 +241,7 @@ KEY_SYMBOLS = {
 
 joinchar = '+'
 if sys.platform.startswith('darwin'):
-    KEY_SYMBOLS.update({'Ctrl': '⌘', 'Alt': '⌥', 'Meta': '⌃'})
+    KEY_SYMBOLS.update({'Ctrl': '⌃', 'Alt': '⌥', 'Meta': '⌘'})
     joinchar = ''
 elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
@@ -281,14 +284,14 @@ class Shortcut:
     instead of -.
     """
 
-    def __init__(self, shortcut: KeyBindingLike):
+    def __init__(self, shortcut: KeyBindingLike) -> None:
         """Parameters
         ----------
         shortcut : keybinding-like
             shortcut to format
         """
         error_msg = trans._(
-            "{shortcut} does not seem to be a valid shortcut Key.",
+            "`{shortcut}` does not seem to be a valid shortcut Key.",
             shortcut=shortcut,
         )
         error = False
@@ -305,6 +308,33 @@ class Shortcut:
 
         if error:
             warnings.warn(error_msg, UserWarning, stacklevel=2)
+
+    @staticmethod
+    def parse_platform(text: str) -> str:
+        """
+        Parse a current_platform_specific shortcut, and return a canonical
+        version separated with dashes.
+
+        This replace platform specific symbols, like ↵ by Enter,  ⌘ by Command on MacOS....
+        """
+        # edge case, shortcut combinaison where `+` is a key.
+        # this should be rare as on english keyboard + is Shift-Minus.
+        # but not unheard of. In those case `+` is always at the end with `++`
+        # as you can't get two non-modifier keys,  or alone.
+        if text == '+':
+            return text
+        if joinchar == "+":
+            text.replace('++', '+Plus')
+            text.replace('+', '')
+            text.replace('Plus', '+')
+        for k, v in KEY_SYMBOLS.items():
+            if text.endswith(v):
+                text = text.replace(v, k)
+                assert v not in text
+            else:
+                text = text.replace(v, k + '-')
+
+        return text
 
     @property
     def qt(self) -> str:
@@ -332,7 +362,7 @@ class Shortcut:
         return ' '.join(
             joinchar.join(
                 KEY_SYMBOLS.get(x, x)
-                for x in (_kb2mods(part) + [str(part.key)])
+                for x in ([*_kb2mods(part), str(part.key)])
             )
             for part in self._kb.parts
         )

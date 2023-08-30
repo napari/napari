@@ -1,6 +1,8 @@
+import sys
+
 import pytest
 
-from ..interactions import Shortcut
+from napari.utils.interactions import Shortcut
 
 
 @pytest.mark.parametrize(
@@ -12,7 +14,6 @@ from ..interactions import Shortcut
     ],
 )
 def test_shortcut_invalid(shortcut, reason):
-
     with pytest.warns(UserWarning):
         Shortcut(shortcut)  # Should be Control-A
 
@@ -27,5 +28,23 @@ def test_minus_shortcut():
 
 
 def test_shortcut_qt():
-
     assert Shortcut('Control-A').qt == 'Ctrl+A'
+
+
+@pytest.mark.skipif(
+    sys.platform != 'darwin', reason='Parsing macos specific keys'
+)
+@pytest.mark.parametrize(
+    'expected, shortcut',
+    [
+        ('␣', 'Space'),
+        ('⌥', 'Alt'),
+        ('⌥-', 'Alt--'),
+        ('⌘', 'Meta'),
+        ('⌘-', 'Meta--'),
+        ('⌘⌥', 'Meta-Alt'),
+        ('⌥⌘P', 'Meta-Alt-P'),
+    ],
+)
+def test_partial_shortcuts(shortcut, expected):
+    assert str(Shortcut(shortcut)) == expected

@@ -1,3 +1,5 @@
+from typing import ClassVar, Dict
+
 from vispy.scene.visuals import Markers as BaseMarkers
 
 clamp_shader = """
@@ -13,12 +15,12 @@ new_vshader = old_vshader[:-2] + clamp_shader + '\n}'  # very ugly...
 
 
 class Markers(BaseMarkers):
-    _shaders = {
+    _shaders: ClassVar[Dict[str, str]] = {
         'vertex': new_vshader,
         'fragment': BaseMarkers._shaders['fragment'],
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self._canvas_size_limits = 0, 10000
         super().__init__(*args, **kwargs)
         self.canvas_size_limits = 0, 10000
@@ -33,8 +35,8 @@ class Markers(BaseMarkers):
             return None
         if pos.shape[1] > axis:
             return (pos[:, axis].min(), pos[:, axis].max())
-        else:
-            return (0, 0)
+
+        return (0, 0)
 
     @property
     def canvas_size_limits(self):

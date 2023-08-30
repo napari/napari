@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 
-from ..utils.events import EventedModel
-from ._viewer_constants import CursorStyle
+from napari.components._viewer_constants import CursorStyle
+from napari.utils.events import EventedModel
 
 
 class Cursor(EventedModel):
@@ -17,7 +17,7 @@ class Cursor(EventedModel):
         Only relevant for circle and square cursors which are drawn
         with a particular size.
     size : float
-        Size of the cursor in canvas pixels.Only relevant for circle
+        Size of the cursor in canvas pixels. Only relevant for circle
         and square cursors which are drawn with a particular size.
     style : str
         Style of the cursor. Must be one of
@@ -36,6 +36,6 @@ class Cursor(EventedModel):
     # fields
     position: Tuple[float, ...] = (1, 1)
     scaled: bool = True
-    size: int = 1
+    size = 1.0
     style: CursorStyle = CursorStyle.STANDARD
     _view_direction: Optional[Tuple[float, ...]] = None

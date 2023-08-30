@@ -2,19 +2,24 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QSortFilterProxyModel, Qt
+from qtpy.QtCore import QSortFilterProxyModel, Qt  # type: ignore[attr-defined]
 
-from ...layers import Layer
-from ...utils.translations import trans
-from ._base_item_model import SortRole, _BaseEventedItemModel
-from ._layer_delegate import LayerDelegate
-from .qt_list_view import QtListView
+from napari._qt.containers._base_item_model import (
+    SortRole,
+    _BaseEventedItemModel,
+)
+from napari._qt.containers._layer_delegate import LayerDelegate
+from napari._qt.containers.qt_list_view import QtListView
+from napari.layers import Layer
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from qtpy.QtGui import QKeyEvent
-    from qtpy.QtWidgets import QWidget
+    from typing import Optional
 
-    from ...components.layerlist import LayerList
+    from qtpy.QtGui import QKeyEvent  # type: ignore[attr-defined]
+    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+
+    from napari.components.layerlist import LayerList
 
 
 class ReverseProxyModel(QSortFilterProxyModel):
@@ -39,9 +44,17 @@ class QtLayerList(QtListView[Layer]):
     reversing the view with ReverseProxyModel.
     """
 
-    def __init__(self, root: LayerList, parent: QWidget = None):
+    def __init__(
+        self, root: LayerList, parent: Optional[QWidget] = None
+    ) -> None:
         super().__init__(root, parent)
-        self.setItemDelegate(LayerDelegate())
+        layer_delegate = LayerDelegate()
+        self.setItemDelegate(layer_delegate)
+        # To be able to update the loading indicator frame in the item delegate
+        # smoothly and also be able to leave the item painted in a coherent
+        # state (showing the loading indicator or the thumbnail)
+        layer_delegate.loading_frame_changed.connect(self.viewport().update)
+
         self.setToolTip(trans._('Layer list'))
         font = self.font()
         font.setPointSize(12)

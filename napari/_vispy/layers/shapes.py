@@ -1,15 +1,15 @@
 import numpy as np
 
-from ...settings import get_settings
-from ...utils.events import disconnect_events
-from ..utils.gl import BLENDING_MODES
-from ..utils.text import update_text
-from ..visuals.shapes import ShapesVisual
-from .base import VispyBaseLayer
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.utils.gl import BLENDING_MODES
+from napari._vispy.utils.text import update_text
+from napari._vispy.visuals.shapes import ShapesVisual
+from napari.settings import get_settings
+from napari.utils.events import disconnect_events
 
 
 class VispyShapesLayer(VispyBaseLayer):
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         node = ShapesVisual()
         super().__init__(layer, node)
 
@@ -81,10 +81,11 @@ class VispyShapesLayer(VispyBaseLayer):
             face_color,
             edge_color,
             pos,
-            width,
+            _,
         ) = self.layer._compute_vertices_and_box()
 
-        width = settings.appearance.highlight_thickness
+        # use last dimension of scale like (thickness cannot be anisotropic)
+        width = settings.appearance.highlight_thickness / self.layer.scale[-1]
 
         if vertices is None or len(vertices) == 0:
             vertices = np.zeros((1, self.layer._slice_input.ndisplay))
