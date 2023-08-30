@@ -711,10 +711,6 @@ def install_certifi_opener():
     request.install_opener(opener)
 
 
-def rounded_division(min_val, max_val, precision):
-    return int(((min_val + max_val) / 2) / precision) * precision
-
-
 def reorder_after_dim_reduction(order: Sequence[int]) -> Tuple[int, ...]:
     """Ensure current dimension order is preserved after dims are dropped.
 
