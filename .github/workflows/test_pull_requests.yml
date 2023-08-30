@@ -235,6 +235,7 @@ jobs:
   test_examples:
     name: test examples
     uses: ./.github/workflows/base_test_workflow.yml
+    needs: build_wheel
     with:
         toxenv: py39-linux-pyside2-examples
         timeout: 60

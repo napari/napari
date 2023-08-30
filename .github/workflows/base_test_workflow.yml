@@ -69,6 +69,12 @@ jobs:
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions tox-min-req
 
+      - name: create _version.py file
+        # workaround for not using src layout
+        run: |
+          echo "__version__ = version = '0.5.0a2.dev354+gd9211143.d20230830'" > napari/_version.py
+          echo "__version_tuple__ = version_tuple = (0, 5, 0, 'dev354', 'gd9211143.d20230830')" >> napari/_version.py
+
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform
@@ -80,9 +86,9 @@ jobs:
         timeout-minutes: ${{ inputs.timeout }}
         uses: aganders3/headless-gui@v1
         with:
-          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl --recreate
+          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
         env:
-          BACKEND: headless
+          BACKEND: ${{ inputs.qt_backend }}
           TOXENV: ${{ inputs.toxenv }}
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
@@ -98,7 +104,7 @@ jobs:
         uses: aganders3/headless-gui@v1
         if: ${{ inputs.qt_backend != 'headless' }}
         with:
-          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl --recreate
+          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
         env:
           BACKEND: ${{ inputs.qt_backend }}
           TOXENV: ${{ inputs.toxenv }}
@@ -116,7 +122,7 @@ jobs:
         uses: aganders3/headless-gui@v1
         if: ${{ inputs.qt_backend != 'headless' }}
         with:
-          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl --recreate
+          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
         env:
           BACKEND: ${{ inputs.qt_backend }}
           TOXENV: ${{ inputs.toxenv }}
