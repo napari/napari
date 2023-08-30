@@ -361,7 +361,6 @@ module = [
     'napari.utils.shortcuts',
     'napari.utils.stubgen',
     'napari.utils.theme',
-    'napari.utils.transforms.transform_utils',
     'napari.utils.transforms.transforms',
     'napari.utils.tree.group',
 ]
