@@ -760,7 +760,9 @@ def chunk_priority_3D(chunk_keys, corner_pixels, scale_factor, camera):
         )
 
         # TODO magic numbers
-        priority = (depth + camera.zoom * center_line_dist) * (1 + 0.0001 * np.random.rand())
+        priority = (depth + camera.zoom * center_line_dist) * (
+            1 + 0.0001 * np.random.rand()
+        )
 
         if priority < np.inf:
             heapq.heappush(priority_map, (priority, chunk_key))
