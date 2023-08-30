@@ -80,9 +80,9 @@ jobs:
         timeout-minutes: ${{ inputs.timeout }}
         uses: aganders3/headless-gui@v1
         with:
-          run: python -m tox --installpkg dist/*.whl
+          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl --recreate
         env:
-          BACKEND: ${{ inputs.qt_backend }}
+          BACKEND: headless
           TOXENV: ${{ inputs.toxenv }}
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
@@ -98,7 +98,7 @@ jobs:
         uses: aganders3/headless-gui@v1
         if: ${{ inputs.qt_backend != 'headless' }}
         with:
-          run: python -m tox --installpkg dist/*.whl
+          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl --recreate
         env:
           BACKEND: ${{ inputs.qt_backend }}
           TOXENV: ${{ inputs.toxenv }}
@@ -116,7 +116,7 @@ jobs:
         uses: aganders3/headless-gui@v1
         if: ${{ inputs.qt_backend != 'headless' }}
         with:
-          run: python -m tox --installpkg dist/*.whl
+          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl --recreate
         env:
           BACKEND: ${{ inputs.qt_backend }}
           TOXENV: ${{ inputs.toxenv }}
