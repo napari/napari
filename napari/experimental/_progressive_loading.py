@@ -521,6 +521,7 @@ def add_progressive_loading_image(
     colormap='PiYG',
     ndisplay=2,
     rendering="attenuated_mip",
+    scale=None,
 ):
     """Add tiled multiscale image."""
     # initialize multiscale virtual data (generate scale factors, translations,
@@ -534,7 +535,7 @@ def add_progressive_loading_image(
 
     # The scale bar will help this be more dramatic
     viewer.scale_bar.visible = True
-    viewer.scale_bar.unit = "pixel"
+    viewer.scale_bar.unit = "mm"
 
     viewer.dims.ndim = ndisplay
     # Ensure async slicing is enabled
@@ -580,23 +581,31 @@ def add_progressive_loading_image(
 
     viewer.dims.ndim = ndisplay
 
-    for scale, vdata in list(enumerate(multiscale_data._data)):
+    if scale is None:
+        scale = np.array((1, 1, 1))
+    else:
+        LOGGER.error("scale other than 1 is currently not supported")
+        return None
+        # scale = np.asarray(scale)
+
+    for scale_idx, vdata in list(enumerate(multiscale_data._data)):
+        layer_scale = scale * multiscale_data._scale_factors[scale_idx]
         layer = viewer.add_image(
             vdata,
-            name=get_layer_name_for_scale(scale),
+            name=get_layer_name_for_scale(scale_idx),
             colormap=colormap,
-            scale=multiscale_data._scale_factors[scale],
+            scale=layer_scale,
             rendering=rendering,
             contrast_limits=contrast_limits,
         )
-        layers[scale] = layer
+        layers[scale_idx] = layer
         layer.metadata["translated"] = False
 
     # Linked list of layers for visibility control
-    for scale in reversed(range(len(layers))):
-        layers[scale].metadata["prev_layer"] = (
-            layers[scale + 1]
-            if scale < len(multiscale_data._data) - 1
+    for scale_idx in reversed(range(len(layers))):
+        layers[scale_idx].metadata["prev_layer"] = (
+            layers[scale_idx + 1]
+            if scale_idx < len(multiscale_data._data) - 1
             else None
         )
 
