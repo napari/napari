@@ -53,9 +53,14 @@ jobs:
           semgrep --error --lang python --pattern 'trans._(f"...")' napari
           semgrep --error --lang python --pattern 'trans._($X.format(...))' napari
 
+  build_wheel:
+    name: Build wheel
+    uses: ./.github/workflows/build_wheel.yml
+
   test_without_coverage:
     name: ${{ matrix.platform }} no cov
     uses: ./.github/workflows/base_test_workflow.yml
+    needs: build_wheel
     strategy:
       fail-fast: false
       matrix:
@@ -107,10 +112,10 @@ jobs:
       coverage: no_cov
       toxenv: ${{ matrix.toxenv }}
 
-
   test:
     name: ${{ matrix.platform }}
     uses: ./.github/workflows/base_test_workflow.yml
+    needs: build_wheel
     strategy:
       fail-fast: false
       matrix:

@@ -40,6 +40,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: dist
+
       - name: Set up Python ${{ inputs.python_version }}
         uses: actions/setup-python@v4
         with:
@@ -75,7 +80,7 @@ jobs:
         timeout-minutes: ${{ inputs.timeout }}
         uses: aganders3/headless-gui@v1
         with:
-          run: python -m tox
+          run: python -m tox --installpkg dist/*.whl
         env:
           BACKEND: ${{ inputs.qt_backend }}
           TOXENV: ${{ inputs.toxenv }}
@@ -93,7 +98,7 @@ jobs:
         uses: aganders3/headless-gui@v1
         if: ${{ inputs.qt_backend != 'headless' }}
         with:
-          run: python -m tox
+          run: python -m tox --installpkg dist/*.whl
         env:
           BACKEND: ${{ inputs.qt_backend }}
           TOXENV: ${{ inputs.toxenv }}
@@ -111,7 +116,7 @@ jobs:
         uses: aganders3/headless-gui@v1
         if: ${{ inputs.qt_backend != 'headless' }}
         with:
-          run: python -m tox
+          run: python -m tox --installpkg dist/*.whl
         env:
           BACKEND: ${{ inputs.qt_backend }}
           TOXENV: ${{ inputs.toxenv }}
