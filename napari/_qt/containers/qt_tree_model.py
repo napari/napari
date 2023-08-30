@@ -41,7 +41,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         return None
 
     def index(
-        self, row: int, column: int = 0, parent: QModelIndex = None
+        self, row: int, column: int = 0, parent: Optional[QModelIndex] = None
     ) -> QModelIndex:
         """Return a QModelIndex for item at `row`, `column` and `parent`."""
 
@@ -159,7 +159,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
 
         if isinstance(data, NodeMimeData):
             dest_idx = self.getItem(parent).index_from_root()
-            dest_idx = dest_idx + (destRow,)
+            dest_idx = (*dest_idx, destRow)
             moving_indices = data.node_indices()
 
             logger.debug(

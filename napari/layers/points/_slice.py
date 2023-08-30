@@ -3,12 +3,13 @@ from typing import Any
 
 import numpy as np
 
+from napari.layers.base._slice import _next_request_id
 from napari.layers.utils._slice_input import _SliceInput
 
 
 @dataclass(frozen=True)
 class _PointSliceResponse:
-    """Contains all the output data of slicing an image layer.
+    """Contains all the output data of slicing an points layer.
 
     Attributes
     ----------
@@ -19,11 +20,14 @@ class _PointSliceResponse:
         Should be broadcastable to indices.
     dims : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
+    request_id : int
+        The identifier of the request from which this was generated.
     """
 
     indices: np.ndarray = field(repr=False)
     scale: Any = field(repr=False)
     dims: _SliceInput
+    request_id: int
 
 
 @dataclass(frozen=True)
@@ -48,7 +52,7 @@ class _PointSliceRequest:
     size : array like
         Size of each point. This is used in calculating visibility.
     others
-        See the corresponding attributes in `Layer` and `Image`.
+        See the corresponding attributes in `Layer` and `Points`.
     """
 
     dims: _SliceInput
@@ -56,12 +60,16 @@ class _PointSliceRequest:
     dims_indices: Any = field(repr=False)
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
+    id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _PointSliceResponse:
         # Return early if no data
         if len(self.data) == 0:
             return _PointSliceResponse(
-                indices=[], scale=np.empty(0), dims=self.dims
+                indices=[],
+                scale=np.empty(0),
+                dims=self.dims,
+                request_id=self.id,
             )
 
         not_disp = list(self.dims.not_displayed)
@@ -72,6 +80,7 @@ class _PointSliceRequest:
                 indices=np.arange(len(self.data), dtype=int),
                 scale=1,
                 dims=self.dims,
+                request_id=self.id,
             )
 
         # We want a numpy array so we can use fancy indexing with the non-displayed
@@ -91,18 +100,21 @@ class _PointSliceRequest:
             )
 
         return _PointSliceResponse(
-            indices=slice_indices, scale=scale, dims=self.dims
+            indices=slice_indices,
+            scale=scale,
+            dims=self.dims,
+            request_id=self.id,
         )
 
     def _get_out_of_display_slice_data(self, not_disp, not_disp_indices):
         """This method slices in the out-of-display case."""
         distances = abs(self.data[:, not_disp] - not_disp_indices)
-        sizes = self.size[:, not_disp] / 2
+        sizes = self.size[:, np.newaxis] / 2
         matches = np.all(distances <= sizes, axis=1)
+        if not np.any(matches):
+            return np.empty(0, dtype=int), 1
         size_match = sizes[matches]
-        size_match[size_match == 0] = 1
         scale_per_dim = (size_match - distances[matches]) / size_match
-        scale_per_dim[size_match == 0] = 1
         scale = np.prod(scale_per_dim, axis=1)
         slice_indices = np.where(matches)[0].astype(int)
         return slice_indices, scale

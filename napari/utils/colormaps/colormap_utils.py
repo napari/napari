@@ -1,16 +1,26 @@
 import warnings
 from collections import OrderedDict
 from threading import Lock
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import skimage.color as colorconv
-from vispy.color import BaseColormap as VispyColormap
-from vispy.color import Color, ColorArray, get_colormap, get_colormaps
+from vispy.color import (
+    BaseColormap as VispyColormap,
+    Color,
+    ColorArray,
+    get_colormap,
+    get_colormaps,
+)
 from vispy.color.colormap import LUT_len
 
 from napari.utils.colormaps.bop_colors import bopd
-from napari.utils.colormaps.colormap import Colormap, ColormapInterpolationMode
+from napari.utils.colormaps.colormap import (
+    Colormap,
+    ColormapInterpolationMode,
+    DirectLabelColormap,
+    LabelColormap,
+)
 from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.colormaps.vendored import cm
@@ -248,11 +258,15 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256):
 
     """
     phi_mod = 0.6180339887498948482
-    image_float = seed + image * phi_mod
+    image_float = np.float32(image)
+    image_float = seed + image_float * phi_mod
     # We now map the floats to the range [0 + margin, 1 - margin]
     image_out = margin + (1 - 2 * margin) * (
         image_float - np.floor(image_float)
     )
+
+    # Clear zero (background) values, matching the shader behavior in _glsl_label_step
+    image_out[image == 0] = 0.0
     return image_out
 
 
@@ -373,6 +387,13 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
             # be valid LAB color coordinates. scikit-image handles this by projecting
             # such coordinates into the colorspace, but will also warn when doing this.
             with warnings.catch_warnings():
+                # skimage 0.20.0rc
+                warnings.filterwarnings(
+                    action='ignore',
+                    message='Conversion from CIE-LAB, via XYZ to sRGB color space resulted in',
+                    category=UserWarning,
+                )
+                # skimage <0.20
                 warnings.filterwarnings(
                     action='ignore',
                     message='Color data out of range',
@@ -406,29 +427,50 @@ def label_colormap(num_colors=256, seed=0.5):
     """
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
-    midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors)
+    midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors + 1)
     control_points = np.concatenate(([0], midpoints, [1.0]))
     # make sure to add an alpha channel to the colors
     colors = np.concatenate(
         (
-            _color_random(num_colors + 1, seed=seed),
-            np.full((num_colors + 1, 1), 1),
+            _color_random(num_colors + 2, seed=seed),
+            np.full((num_colors + 2, 1), 1),
         ),
         axis=1,
     )
     # Insert alpha at layer 0
     colors[0, :] = 0  # ensure alpha is 0 for label 0
-
-    return Colormap(
+    return LabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
         colors=colors,
         controls=control_points,
         interpolation='zero',
+        seed=seed,
     )
 
 
-def vispy_or_mpl_colormap(name):
+def direct_colormap(color_dict=None):
+    """Make a direct colormap from a dictionary mapping labels to colors.
+
+    Parameters
+    ----------
+    color_dict : dict, optional
+        A dictionary mapping labels to colors.
+
+    Returns
+    -------
+    d : DirectLabelColormap
+        A napari colormap whose map() function applies the color dictionary
+        to an array.
+    """
+    # we don't actually use the color array, so pass dummy.
+    d = DirectLabelColormap(np.zeros(3))
+    if color_dict is not None:
+        d.color_dict.update(color_dict)
+    return d
+
+
+def vispy_or_mpl_colormap(name) -> Colormap:
     """Try to get a colormap from vispy, or convert an mpl one to vispy format.
 
     Parameters
@@ -452,14 +494,11 @@ def vispy_or_mpl_colormap(name):
     else:
         try:
             mpl_cmap = getattr(cm, name)
-            if name in _MATPLOTLIB_COLORMAP_NAMES:
-                display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
-            else:
-                display_name = name
+            display_name = _MATPLOTLIB_COLORMAP_NAMES.get(name, name)
         except AttributeError as e:
             suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
                 name
-            ) or _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(name)
+            ) or _VISPY_COLORMAPS_TRANSLATIONS_REVERSE.get(name)
             if suggestion:
                 raise KeyError(
                     trans._(
@@ -469,20 +508,18 @@ def vispy_or_mpl_colormap(name):
                         suggestion=suggestion,
                     )
                 ) from e
-            else:
-                colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
-                    set(_MATPLOTLIB_COLORMAP_NAMES)
+
+            colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
+                set(_MATPLOTLIB_COLORMAP_NAMES)
+            )
+            raise KeyError(
+                trans._(
+                    'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
+                    deferred=True,
+                    name=name,
+                    colormaps=", ".join(sorted(f'"{cm}"' for cm in colormaps)),
                 )
-                raise KeyError(
-                    trans._(
-                        'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
-                        deferred=True,
-                        name=name,
-                        colormaps=", ".join(
-                            sorted(f'"{cm}"' for cm in colormaps)
-                        ),
-                    )
-                )
+            ) from e
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         colormap = Colormap(
             name=name, display_name=display_name, colors=mpl_colors
@@ -500,10 +537,9 @@ ALL_COLORMAPS.update(BOP_COLORMAPS)
 ALL_COLORMAPS.update(INVERSE_COLORMAPS)
 
 # ... sorted alphabetically by name
-AVAILABLE_COLORMAPS = {
-    k: v
-    for k, v in sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
-}
+AVAILABLE_COLORMAPS = dict(
+    sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
+)
 # lock to allow update of AVAILABLE_COLORMAPS in threads
 AVAILABLE_COLORMAPS_LOCK = Lock()
 
@@ -516,9 +552,12 @@ CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
 
 
 def _increment_unnamed_colormap(
-    existing: List[str], name: str = '[unnamed colormap]'
+    existing: Iterable[str], name: str = '[unnamed colormap]'
 ) -> Tuple[str, str]:
     """Increment name for unnamed colormap.
+
+    NOTE: this assumes colormaps are *never* deleted, and does not check
+          for name collision. If colormaps can ever be removed, please update.
 
     Parameters
     ----------
@@ -579,28 +618,46 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
-            name = colormap
-            if name not in AVAILABLE_COLORMAPS:
-                cmap = vispy_or_mpl_colormap(
-                    name
-                )  # raises KeyError if not found
-                AVAILABLE_COLORMAPS[name] = cmap
+            # Is a colormap with this name already available?
+            custom_cmap = AVAILABLE_COLORMAPS.get(colormap, None)
+            if custom_cmap is None:
+                name = (
+                    colormap.lower() if colormap.startswith('#') else colormap
+                )
+                custom_cmap = _colormap_from_colors(colormap, name)
+
+                if custom_cmap is None:
+                    custom_cmap = vispy_or_mpl_colormap(colormap)
+
+                for cmap_ in AVAILABLE_COLORMAPS.values():
+                    if (
+                        np.array_equal(cmap_.controls, custom_cmap.controls)
+                        and np.array_equal(cmap_.colors, custom_cmap.colors)
+                        and cmap_.interpolation == custom_cmap.interpolation
+                    ):
+                        custom_cmap = cmap_
+                        break
+
+            name = custom_cmap.name
+            AVAILABLE_COLORMAPS[name] = custom_cmap
         elif isinstance(colormap, Colormap):
             AVAILABLE_COLORMAPS[colormap.name] = colormap
             name = colormap.name
         elif isinstance(colormap, VispyColormap):
             # if a vispy colormap instance is provided, make sure we don't already
             # know about it before adding a new unnamed colormap
-            name = None
+            _name = None
             for key, val in AVAILABLE_COLORMAPS.items():
                 if colormap == val:
-                    name = key
+                    _name = key
                     break
 
-            if not name:
+            if _name is None:
                 name, _display_name = _increment_unnamed_colormap(
                     AVAILABLE_COLORMAPS
                 )
+            else:
+                name = _name
 
             # Convert from vispy colormap
             cmap = convert_vispy_colormap(colormap, name=name)
@@ -612,7 +669,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 and isinstance(colormap[0], str)
                 and isinstance(colormap[1], (VispyColormap, Colormap))
             ):
-                name, cmap = colormap
+                name = colormap[0]
+                cmap = colormap[1]
                 # Convert from vispy colormap
                 if isinstance(cmap, VispyColormap):
                     cmap = convert_vispy_colormap(cmap, name=name)
@@ -621,26 +679,29 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 AVAILABLE_COLORMAPS[name] = cmap
             else:
                 colormap = _colormap_from_colors(colormap)
-                if colormap is not None:
-                    # Return early because we don't have a name for this colormap.
-                    return colormap
-                raise TypeError(
-                    trans._(
-                        "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
-                        deferred=True,
+                if colormap is None:
+                    raise TypeError(
+                        trans._(
+                            "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
+                            deferred=True,
+                        )
                     )
+
+                name, _display_name = _increment_unnamed_colormap(
+                    AVAILABLE_COLORMAPS
                 )
+                colormap.update({'name': name, '_display_name': _display_name})
+                AVAILABLE_COLORMAPS[name] = colormap
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
-                isinstance(colormap['colors'], VispyColormap)
-                or isinstance(colormap['colors'], Colormap)
+                isinstance(colormap['colors'], (VispyColormap, Colormap))
             ):
                 cmap = Colormap(**colormap)
                 name = cmap.name
                 AVAILABLE_COLORMAPS[name] = cmap
             elif not all(
-                (isinstance(i, VispyColormap) or isinstance(i, Colormap))
+                (isinstance(i, (VispyColormap, Colormap)))
                 for i in colormap.values()
             ):
                 raise TypeError(
@@ -661,9 +722,9 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     colormap[name] = cmap
                 AVAILABLE_COLORMAPS.update(colormap)
                 if len(colormap) == 1:
-                    name = list(colormap)[0]  # first key in dict
+                    name = next(iter(colormap))  # first key in dict
                 elif len(colormap) > 1:
-                    name = list(colormap.keys())[0]
+                    name = next(iter(colormap.keys()))
 
                     warnings.warn(
                         trans._(
@@ -681,31 +742,37 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         else:
             colormap = _colormap_from_colors(colormap)
             if colormap is not None:
-                # Return early because we don't have a name for this colormap.
-                return colormap
-
-            warnings.warn(
-                trans._(
-                    'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
-                    deferred=True,
-                    cm_type=type(colormap),
+                name, _display_name = _increment_unnamed_colormap(
+                    AVAILABLE_COLORMAPS
                 )
-            )
-
-            # Use default colormap
-            name = 'gray'
+                colormap.update({'name': name, '_display_name': _display_name})
+                AVAILABLE_COLORMAPS[name] = colormap
+            else:
+                warnings.warn(
+                    trans._(
+                        'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
+                        deferred=True,
+                        cm_type=type(colormap),
+                    )
+                )
+                # Use default colormap
+                name = 'gray'
 
     return AVAILABLE_COLORMAPS[name]
 
 
-def _colormap_from_colors(colors: ColorType) -> Optional[Colormap]:
+def _colormap_from_colors(
+    colors: ColorType,
+    name: Optional[str] = 'custom',
+    display_name: Optional[str] = None,
+) -> Optional[Colormap]:
     try:
         color_array = transform_color(colors)
     except (ValueError, AttributeError, KeyError):
         return None
     if color_array.shape[0] == 1:
         color_array = np.array([[0, 0, 0, 1], color_array[0]])
-    return Colormap(color_array)
+    return Colormap(color_array, name=name, display_name=display_name)
 
 
 def make_default_color_array():
@@ -717,5 +784,5 @@ def display_name_to_name(display_name):
         v._display_name: k for k, v in AVAILABLE_COLORMAPS.items()
     }
     return display_name_map.get(
-        display_name, list(AVAILABLE_COLORMAPS.keys())[0]
+        display_name, next(iter(AVAILABLE_COLORMAPS.keys()))
     )

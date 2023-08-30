@@ -12,7 +12,7 @@ STYLES = {x.stem: str(x) for x in STYLE_PATH.iterdir() if x.suffix == '.qss'}
 
 
 def get_stylesheet(
-    theme_id: str = None, extra: Optional[List[str]] = None
+    theme_id: Optional[str] = None, extra: Optional[List[str]] = None
 ) -> str:
     """Combine all qss files into single, possibly pre-themed, style string.
 
@@ -44,7 +44,7 @@ def get_stylesheet(
     if theme_id:
         from napari.utils.theme import get_theme, template
 
-        return template(stylesheet, **get_theme(theme_id, as_dict=True))
+        return template(stylesheet, **get_theme(theme_id).to_rgb_dict())
 
     return stylesheet
 

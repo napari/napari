@@ -27,7 +27,7 @@ class Theme(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError(trans._('must be a string', deferred=True))
+            raise TypeError(trans._('must be a string', deferred=True))
 
         value = v.lower()
         if not is_theme_available(value):
@@ -64,7 +64,7 @@ class Language(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError(trans._('must be a string', deferred=True))
+            raise TypeError(trans._('must be a string', deferred=True))
 
         language_packs = list(get_language_packs(_load_language()).keys())
         if v not in language_packs:

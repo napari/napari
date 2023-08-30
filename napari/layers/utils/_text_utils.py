@@ -1,6 +1,7 @@
 from typing import Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers.utils._text_constants import Anchor
 from napari.utils.translations import trans
@@ -10,7 +11,7 @@ def get_text_anchors(
     view_data: Union[np.ndarray, list],
     ndisplay: int,
     anchor: Anchor = Anchor.CENTER,
-) -> np.ndarray:
+) -> Tuple[np.ndarray, str, str]:
     # Explicitly convert to an Anchor so that string values can be used.
     text_anchor_func = TEXT_ANCHOR_CALCULATION[Anchor(anchor)]
     text_coords, anchor_x, anchor_y = text_anchor_func(view_data, ndisplay)
@@ -52,7 +53,6 @@ def _calculate_bbox_centers(view_data: Union[np.ndarray, list]) -> np.ndarray:
 def _calculate_anchor_upper_left(
     view_data: Union[np.ndarray, list], ndisplay: int
 ) -> Tuple[np.ndarray, str, str]:
-
     if ndisplay == 2:
         bbox_min, bbox_max = _calculate_bbox_extents(view_data)
         text_anchors = np.array([bbox_min[:, 0], bbox_min[:, 1]]).T
@@ -71,7 +71,6 @@ def _calculate_anchor_upper_left(
 def _calculate_anchor_upper_right(
     view_data: Union[np.ndarray, list], ndisplay: int
 ) -> Tuple[np.ndarray, str, str]:
-
     if ndisplay == 2:
         bbox_min, bbox_max = _calculate_bbox_extents(view_data)
         text_anchors = np.array([bbox_min[:, 0], bbox_max[:, 1]]).T
@@ -123,7 +122,9 @@ def _calculate_anchor_lower_right(
     return text_anchors, anchor_x, anchor_y
 
 
-def _calculate_bbox_extents(view_data: Union[np.ndarray, list]) -> np.ndarray:
+def _calculate_bbox_extents(
+    view_data: Union[np.ndarray, list]
+) -> Tuple[npt.NDArray, npt.NDArray]:
     """Calculate the extents of the bounding box"""
     if isinstance(view_data, np.ndarray):
         if view_data.ndim == 2:

@@ -3,10 +3,14 @@ import typing
 from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
 
+from napari import current_viewer
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.layers import Layer
+from napari.settings import get_settings
+from napari.utils.translations import trans
 
 ThumbnailRole = Qt.UserRole + 2
+LoadedRole = Qt.UserRole + 3
 
 
 class QtLayerListModel(QtListModel[Layer]):
@@ -15,6 +19,14 @@ class QtLayerListModel(QtListModel[Layer]):
         if not index.isValid():
             return None
         layer = self.getItem(index)
+        viewer = current_viewer()
+        layer_loaded = layer.loaded
+        # Playback with async slicing causes flickering between the thumbnail
+        # and loading animation in some cases due quick changes in the loaded
+        # state, so report as unloaded in that case to avoid that.
+        if get_settings().experimental.async_ and (viewer := current_viewer()):
+            viewer_playing = viewer.window._qt_viewer.dims.is_playing
+            layer_loaded = layer.loaded and not viewer_playing
         if role == Qt.ItemDataRole.DisplayRole:  # used for item text
             return layer.name
         if role == Qt.ItemDataRole.TextAlignmentRole:  # alignment of the text
@@ -23,7 +35,10 @@ class QtLayerListModel(QtListModel[Layer]):
             # used to populate line edit when editing
             return layer.name
         if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
-            return layer.get_source_str()
+            layer_source_info = layer.get_source_str()
+            if layer_loaded:
+                return layer_source_info
+            return trans._('{source} (loading)', source=layer_source_info)
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
@@ -42,6 +57,8 @@ class QtLayerListModel(QtListModel[Layer]):
                 thumbnail.shape[0],
                 QImage.Format_RGBA8888,
             )
+        if role == LoadedRole:
+            return layer_loaded
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.
         # if role == Qt.ItemDataRole.DecorationRole:  # icon to show
@@ -59,7 +76,9 @@ class QtLayerListModel(QtListModel[Layer]):
             # partially checked, but we only use the unchecked and checked
             # to correspond to the layer's visibility.
             # https://doc.qt.io/qt-5/qt.html#CheckState-enum
-            self.getItem(index).visible = value == Qt.CheckState.Checked
+            self.getItem(index).visible = (
+                Qt.CheckState(value) == Qt.CheckState.Checked
+            )
         elif role == Qt.ItemDataRole.EditRole:
             self.getItem(index).name = value
             role = Qt.ItemDataRole.DisplayRole
@@ -68,6 +87,13 @@ class QtLayerListModel(QtListModel[Layer]):
 
         self.dataChanged.emit(index, index, [role])
         return True
+
+    def all_loaded(self):
+        """Return if all the layers are loaded."""
+        return all(
+            self.index(row, 0).data(LoadedRole)
+            for row in range(self.rowCount())
+        )
 
     def _process_event(self, event):
         # The model needs to emit `dataChanged` whenever data has changed
@@ -79,6 +105,7 @@ class QtLayerListModel(QtListModel[Layer]):
             'thumbnail': ThumbnailRole,
             'visible': Qt.ItemDataRole.CheckStateRole,
             'name': Qt.ItemDataRole.DisplayRole,
+            'loaded': LoadedRole,
         }.get(event.type)
         roles = [role] if role is not None else []
         row = self.index(event.index)

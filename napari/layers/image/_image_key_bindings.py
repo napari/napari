@@ -16,29 +16,29 @@ def register_image_action(description: str, repeatable: bool = False):
     return register_layer_action(Image, description, repeatable)
 
 
-@Image.bind_key(KeyCode.KeyZ)
+@Image.bind_key(KeyCode.KeyZ, overwrite=True)
 @register_image_action(trans._('Orient plane normal along z-axis'))
 def orient_plane_normal_along_z(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
 
 
-@Image.bind_key(KeyCode.KeyY)
+@Image.bind_key(KeyCode.KeyY, overwrite=True)
 @register_image_action(trans._('orient plane normal along y-axis'))
 def orient_plane_normal_along_y(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
 
 
-@Image.bind_key(KeyCode.KeyX)
+@Image.bind_key(KeyCode.KeyX, overwrite=True)
 @register_image_action(trans._('orient plane normal along x-axis'))
 def orient_plane_normal_along_x(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
 
 
-@Image.bind_key(KeyCode.KeyO)
+@Image.bind_key(KeyCode.KeyO, overwrite=True)
 @register_image_action(trans._('orient plane normal along view direction'))
 def orient_plane_normal_along_view_direction(layer: Image):
     viewer = napari.viewer.current_viewer()
-    if viewer.dims.ndisplay != 3:
+    if viewer is None or viewer.dims.ndisplay != 3:
         return
 
     def sync_plane_normal_with_view_direction(event=None):
@@ -57,18 +57,14 @@ def orient_plane_normal_along_view_direction(layer: Image):
     )
 
 
-@Image.bind_key(KeyCode.Space)
-def hold_to_pan_zoom(layer):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        layer.mode = Mode.PAN_ZOOM
-
-        yield
-
-        # on key release
-        layer.mode = prev_mode
+@register_image_action(trans._('orient plane normal along view direction'))
+def orient_plane_normal_along_view_direction_no_gen(layer: Image):
+    viewer = napari.viewer.current_viewer()
+    if viewer is None or viewer.dims.ndisplay != 3:
+        return
+    layer.plane.normal = layer._world_to_displayed_data_ray(
+        viewer.camera.view_direction, [-3, -2, -1]
+    )
 
 
 @register_image_action(trans._('Transform'))
@@ -77,8 +73,8 @@ def activate_image_transform_mode(layer):
 
 
 @register_image_action(trans._('Pan/zoom'))
-def activate_image_pan_zoom_mode(layer):
-    layer.mode = Mode.PAN_ZOOM
+def activate_image_pan_zoom_mode(layer: Image):
+    layer.mode = str(Mode.PAN_ZOOM)
 
 
 image_fun_to_mode = [

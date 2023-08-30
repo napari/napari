@@ -29,14 +29,13 @@ class EventedSet(MutableSet[_T]):
     events: EmitterGroup
 
     def __init__(self, data: Iterable[_T] = ()) -> None:
-
-        _events = {'changed': None}
+        changed = None
         # For inheritance: If the mro already provides an EmitterGroup, add...
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
-            self.events.add(**_events)
+            self.events.add(changed=changed)
         else:
             # otherwise create a new one
-            self.events = EmitterGroup(source=self, **_events)
+            self.events = EmitterGroup(source=self, changed=changed)
 
         self._set: set[_T] = set()
         self.update(data)
@@ -98,7 +97,7 @@ class EventedSet(MutableSet[_T]):
             self._emit_change(added={}, removed=values)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({repr(self._set)})"
+        return f"{type(self).__name__}({self._set!r})"
 
     def update(self, others: Iterable[_T] = ()) -> None:
         """Update this set with the union of this set and others"""

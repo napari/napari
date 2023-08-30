@@ -1,10 +1,10 @@
-import collections
 import gc
 import os
 import sys
 import warnings
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, List, Tuple
 from unittest.mock import patch
 from weakref import WeakSet
 
@@ -50,7 +50,7 @@ def fail_obj_graph(Klass):
     except ModuleNotFoundError:
         return
 
-    if not len(Klass._instances) == 0:
+    if len(Klass._instances) != 0:
         global COUNTER
         COUNTER += 1
         import gc
@@ -88,11 +88,8 @@ def napari_plugin_manager(monkeypatch):
     # get this test version for the duration of the test.
     monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
     monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
-    try:
+    with suppress(AttributeError):
         monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
-    except AttributeError:  # headless tests
-        pass
-
     # prevent discovery of plugins in the environment
     # you can still use `pm.register` to explicitly register something.
     pm.discovery_blocker = patch.object(pm, 'discover')
@@ -347,17 +344,20 @@ def MouseEvent():
     Returns
     -------
     Event : Type
-        A new tuple subclass named Event that can be used to create a
-        NamedTuple object with fields "type" and "is_dragging".
+        A new dataclass named Event that can be used to create an
+        object with fields "type" and "is_dragging".
     """
-    return collections.namedtuple(
-        'Event',
-        field_names=[
-            'type',
-            'is_dragging',
-            'position',
-            'view_direction',
-            'dims_displayed',
-            'dims_point',
-        ],
-    )
+
+    @dataclass
+    class Event:
+        type: str
+        position: Tuple[float]
+        is_dragging: bool = False
+        dims_displayed: Tuple[int] = (0, 1)
+        dims_point: List[float] = None
+        view_direction: List[int] = None
+        pos: List[int] = (0, 0)
+        button: int = None
+        handled: bool = False
+
+    return Event

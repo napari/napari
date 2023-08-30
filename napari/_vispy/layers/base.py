@@ -49,6 +49,7 @@ class VispyBaseLayer(ABC):
         self.layer = layer
         self._array_like = False
         self.node = node
+        self.first_visible = False
         self.overlays = {}
 
         (
@@ -106,10 +107,11 @@ class VispyBaseLayer(ABC):
     @order.setter
     def order(self, order):
         self.node.order = order
+        self._on_blending_change()
 
     @abstractmethod
     def _on_data_change(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _on_refresh_change(self):
         self.node.update()
@@ -120,8 +122,38 @@ class VispyBaseLayer(ABC):
     def _on_opacity_change(self):
         self.node.opacity = self.layer.opacity
 
-    def _on_blending_change(self):
-        blending_kwargs = BLENDING_MODES[self.layer.blending]
+    def _on_blending_change(self, event=None):
+        blending = self.layer.blending
+        blending_kwargs = BLENDING_MODES[blending].copy()
+
+        if self.first_visible:
+            # if the first layer, then we should blend differently
+            # the goal is to prevent pathological blending with canvas
+            # for minimum, use the src color, ignore alpha & canvas
+            if blending == 'minimum':
+                src_color_blending = 'one'
+                dst_color_blending = 'zero'
+            # for additive, use the src alpha and blend to black
+            elif blending == 'additive':
+                src_color_blending = 'src_alpha'
+                dst_color_blending = 'zero'
+            # for all others, use translucent blending
+            else:
+                src_color_blending = 'src_alpha'
+                dst_color_blending = 'one_minus_src_alpha'
+            blending_kwargs = {
+                "depth_test": blending_kwargs['depth_test'],
+                "cull_face": False,
+                "blend": True,
+                "blend_func": (
+                    src_color_blending,
+                    dst_color_blending,
+                    'one',
+                    'one',
+                ),
+                "blend_equation": 'func_add',
+            }
+
         self.node.set_gl_state(**blending_kwargs)
         self.node.update()
 
@@ -135,7 +167,10 @@ class VispyBaseLayer(ABC):
             if overlay in self.overlays:
                 continue
 
-            overlay_visual = create_vispy_overlay(overlay, layer=self.layer)
+            with self.layer.events._overlays.blocker():
+                overlay_visual = create_vispy_overlay(
+                    overlay, layer=self.layer
+                )
             self.overlays[overlay] = overlay_visual
             if isinstance(overlay, CanvasOverlay):
                 overlay_visual.node.parent = self.node.parent.parent  # viewbox
@@ -190,6 +225,9 @@ class VispyBaseLayer(ABC):
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
+    def _on_camera_move(self, event=None):
+        return
+
     def reset(self):
         self._on_visible_change()
         self._on_opacity_change()
@@ -197,6 +235,7 @@ class VispyBaseLayer(ABC):
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
         self._on_overlays_change()
+        self._on_camera_move()
 
     def _on_poll(self, event=None):  # noqa: B027
         """Called when camera moves, before we are drawn.

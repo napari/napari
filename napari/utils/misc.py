@@ -12,13 +12,13 @@ import re
 import sys
 import warnings
 from enum import Enum, EnumMeta
-from os import fspath
-from os import path as os_path
+from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -48,24 +48,36 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
     try:
         return packaging.version.Version(v)
     except packaging.version.InvalidVersion:
-        return packaging.version.LegacyVersion(v)
+        return packaging.version.LegacyVersion(v)  # type: ignore[attr-defined]
 
 
 def running_as_bundled_app(*, check_conda=True) -> bool:
-    """Infer whether we are running as a briefcase bundle."""
+    """Infer whether we are running as a bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
+    warnings.warn(
+        trans._(
+            "Briefcase installations are no longer supported as of v0.4.18. "
+            "running_as_bundled_app() will be removed in a 0.6.0 release.",
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if (
         check_conda
         and (Path(sys.executable).parent / ".napari_is_bundled").exists()
     ):
         return True
 
+    # TODO: Remove from here on?
     try:
         app_module = sys.modules['__main__'].__package__
     except AttributeError:
+        return False
+
+    if not app_module:
         return False
 
     try:
@@ -81,15 +93,6 @@ def running_as_constructor_app() -> bool:
     return (
         Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
     ).exists()
-
-
-def bundle_bin_dir() -> Optional[str]:
-    """Return path to briefcase app_packages/bin if it exists."""
-    bin_path = os_path.join(
-        os_path.dirname(sys.exec_prefix), 'app_packages', 'bin'
-    )
-    if os_path.isdir(bin_path):
-        return bin_path
 
 
 def in_jupyter() -> bool:
@@ -135,8 +138,8 @@ def ensure_iterable(arg, color=False):
     """
     if is_iterable(arg, color=color):
         return arg
-    else:
-        return itertools.repeat(arg)
+
+    return itertools.repeat(arg)
 
 
 def is_iterable(arg, color=False, allow_none=False):
@@ -144,19 +147,16 @@ def is_iterable(arg, color=False, allow_none=False):
     provided and the argument is a 1-D array of length 3 or 4 then the input
     is taken to not be iterable. If allow_none is True, `None` is considered iterable.
     """
-    if arg is None and not allow_none:
+    if (
+        (arg is None and not allow_none)
+        or isinstance(arg, str)
+        or np.isscalar(arg)
+    ):
         return False
-    elif type(arg) is str:
-        return False
-    elif np.isscalar(arg):
-        return False
-    elif color and isinstance(arg, (list, np.ndarray)):
-        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg) == 4):
-            return False
-        else:
-            return True
-    else:
-        return True
+    if color and isinstance(arg, (list, np.ndarray)):
+        return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
+
+    return True
 
 
 def is_sequence(arg):
@@ -231,18 +231,18 @@ def ensure_sequence_of_iterables(
         obj is not None
         and is_sequence(obj)
         and all(is_iterable(el, allow_none=allow_none) for el in obj)
+        and (not repeat_empty or len(obj) > 0)
     ):
         if length is not None and len(obj) != length:
-            if (len(obj) == 0 and not repeat_empty) or len(obj) > 0:
-                # sequence of iterables of wrong length
-                raise ValueError(
-                    trans._(
-                        "length of {obj} must equal {length}",
-                        deferred=True,
-                        obj=obj,
-                        length=length,
-                    )
+            # sequence of iterables of wrong length
+            raise ValueError(
+                trans._(
+                    "length of {obj} must equal {length}",
+                    deferred=True,
+                    obj=obj,
+                    length=length,
                 )
+            )
 
         if len(obj) > 0 or not repeat_empty:
             return obj
@@ -257,9 +257,9 @@ def formatdoc(obj):
         obj.__doc__ = obj.__doc__.format(
             **{**frame.f_globals, **frame.f_locals}
         )
-        return obj
     finally:
         del frame
+    return obj
 
 
 class StringEnumMeta(EnumMeta):
@@ -285,17 +285,17 @@ class StringEnumMeta(EnumMeta):
         if names is None:
             if isinstance(value, str):
                 return super().__call__(value.lower())
-            elif isinstance(value, cls):
+            if isinstance(value, cls):
                 return value
-            else:
-                raise ValueError(
-                    trans._(
-                        '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
-                        deferred=True,
-                        class_name=cls,
-                        dtype=builtins.type(value),
-                    )
+
+            raise ValueError(
+                trans._(
+                    '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
+                    deferred=True,
+                    class_name=cls,
+                    dtype=builtins.type(value),
                 )
+            )
 
         # otherwise create new Enum class
         return cls._create_(
@@ -325,7 +325,7 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
     def __eq__(self, other):
         if type(self) is type(other):
             return self is other
-        elif isinstance(other, str):
+        if isinstance(other, str):
             return str(self) == other
         return NotImplemented
 
@@ -378,12 +378,12 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
         )
     OriginType = type(relpath)
 
-    relpath = fspath(relpath)
-    urlp = urlparse(relpath)
+    relpath_str = fspath(relpath)
+    urlp = urlparse(relpath_str)
     if urlp.scheme and urlp.netloc:
-        return relpath
+        return OriginType(relpath_str)
 
-    path = os_path.abspath(os_path.expanduser(relpath))
+    path = os_path.abspath(os_path.expanduser(relpath_str))
     if must_exist and not (urlp.scheme or urlp.netloc or os.path.exists(path)):
         raise ValueError(
             trans._(
@@ -518,7 +518,7 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
 
     # yes, it's a little riskier, but we are checking namespaces instead of
     # actual `issubclass` here to avoid slow import times
-    _known_arrays = {
+    _known_arrays: Dict[str, Callable[[Any, Any], bool]] = {
         'numpy.ndarray': _quiet_array_equal,  # numpy.ndarray
         'dask.Array': operator.is_,  # dask.array.core.Array
         'dask.Delayed': operator.is_,  # dask.delayed.Delayed
@@ -592,7 +592,7 @@ def dir_hash(
         for fname in sorted(files):
             if fname.startswith(".") and ignore_hidden:
                 continue
-            _file_hash(_hash, Path(root) / fname, path, include_paths)
+            _file_hash(_hash, Path(root) / fname, Path(path), include_paths)
     return _hash.hexdigest()
 
 

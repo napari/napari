@@ -1,10 +1,13 @@
-from typing import Iterable, Optional
+from itertools import takewhile
+from typing import Callable, Generator, Iterable, Iterator, Optional
 
 from tqdm import tqdm
 
 from napari.utils.events.containers import EventedSet
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.translations import trans
+
+__all__ = ["progress", "progrange", "cancelable_progress"]
 
 
 class progress(tqdm):
@@ -84,6 +87,10 @@ class progress(tqdm):
         self.is_init = True
         super().__init__(iterable, desc, total, *args, **kwargs)
 
+        # if the progress bar is set to disable the 'desc' member is not set by the
+        # tqdm super constructor, so we set it to a dummy value to avoid errors thrown below
+        if self.disable:
+            self.desc = ""
         if not self.desc:
             self.set_description(trans._("progress"))
         progress._all_instances.add(self)
@@ -101,7 +108,9 @@ class progress(tqdm):
         self._total = total
         self.events.total(value=self.total)
 
-    def display(self, msg: str = None, pos: int = None) -> None:
+    def display(
+        self, msg: Optional[str] = None, pos: Optional[int] = None
+    ) -> None:
         """Update the display and emit eta event."""
         # just plain tqdm if we don't have gui
         if not self.gui and not self.is_init:
@@ -150,3 +159,68 @@ def progrange(*args, **kwargs):
 
     """
     return progress(range(*args), **kwargs)
+
+
+class cancelable_progress(progress):
+    """This class inherits from progress, providing the additional
+    ability to cancel expensive executions. When progress is
+    canceled by the user in the napari UI, two things will happen:
+
+    Firstly, the is_canceled attribute will become True, and the
+    for loop will terminate after the current iteration, regardless
+    of whether or not the iterator had more items.
+
+    Secondly, cancel_callback will be called, allowing the computation
+    to close resources, repair state, etc.
+
+    See napari.utils.progress and tqdm.tqdm API for valid args and kwargs:
+    https://tqdm.github.io/docs/tqdm/
+
+    Examples
+    --------
+
+    >>> def long_running(steps=10, delay=0.1):
+    ...     def on_cancel():
+    ...         print("Canceled operation")
+    ...     for i in cancelable_progress(range(steps), cancel_callback=on_cancel):
+    ...         sleep(delay)
+    """
+
+    def __init__(
+        self,
+        iterable: Optional[Iterable] = None,
+        desc: Optional[str] = None,
+        total: Optional[int] = None,
+        nest_under: Optional['progress'] = None,
+        cancel_callback: Optional[Callable] = None,
+        *args,
+        **kwargs,
+    ) -> None:
+        self.cancel_callback = cancel_callback
+        self.is_canceled = False
+
+        super().__init__(iterable, desc, total, nest_under, *args, **kwargs)
+
+    def __iter__(self) -> Iterator:
+        itr = super().__iter__()
+
+        def is_canceled(_):
+            if self.is_canceled:
+                # If we've canceled, run the callback and then notify takewhile
+                if self.cancel_callback:
+                    self.cancel_callback()
+                # Perform additional cleanup for generators
+                if isinstance(self.iterable, Generator):
+                    self.iterable.close()
+                return False
+                # Otherwise, continue
+            return True
+
+        return takewhile(is_canceled, itr)
+
+    def cancel(self):
+        """Cancels the execution of the underlying computation.
+        Note that the current iteration will be allowed to complete, however
+        future iterations will not be run.
+        """
+        self.is_canceled = True

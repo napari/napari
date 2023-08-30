@@ -19,6 +19,14 @@ from typing_extensions import ParamSpec
 from napari.utils.progress import progress
 from napari.utils.translations import trans
 
+__all__ = [
+    "FunctionWorker",
+    "GeneratorWorker",
+    "create_worker",
+    "thread_worker",
+    "register_threadworker_processors",
+]
+
 wait_for_workers_to_quit = _qthreading.WorkerBase.await_workers
 
 
@@ -203,7 +211,6 @@ def thread_worker(
     ] = None,
     ignore_errors: bool = False,
 ):
-
     """Decorator that runs a function in a separate thread when called.
 
     When called, the decorated function returns a :class:`WorkerBase`.  See

@@ -216,16 +216,20 @@ class ActionManager:
         """
         self._validate_action_name(name)
 
-        if action := self._actions.get(name):
-            if isgeneratorfunction(action):
-                raise ValueError(
-                    trans._(
-                        '`bind_button` cannot be used with generator functions',
-                        deferred=True,
-                    )
+        if (action := self._actions.get(name)) and isgeneratorfunction(
+            getattr(action, "command", None)
+        ):
+            raise ValueError(
+                trans._(
+                    '`bind_button` cannot be used with generator functions',
+                    deferred=True,
                 )
+            )
 
-        button.clicked.connect(lambda: self.trigger(name))
+        def _trigger():
+            self.trigger(name)
+
+        button.clicked.connect(_trigger)
         if name in self._actions:
             button.setToolTip(
                 f'{self._build_tooltip(name)} {extra_tooltip_text}'

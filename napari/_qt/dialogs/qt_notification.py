@@ -115,7 +115,7 @@ class NapariQtNotification(QDialog):
 
         settings = get_settings()
         theme = settings.appearance.theme
-        default_color = get_theme(theme, False).icon
+        default_color = get_theme(theme).icon
 
         # FIXME: Should these be defined at the theme level?
         # Currently there is a warning one
@@ -352,7 +352,6 @@ class NapariQtNotification(QDialog):
     def from_notification(
         cls, notification: Notification, parent: QWidget = None
     ) -> NapariQtNotification:
-
         from napari.utils.notifications import ErrorNotification
 
         if isinstance(notification, ErrorNotification):
@@ -363,7 +362,8 @@ class NapariQtNotification(QDialog):
                 )
                 tbdialog.show()
 
-            actions = tuple(notification.actions) + (
+            actions = (
+                *tuple(notification.actions),
                 (trans._('View Traceback'), show_tb),
             )
         else:
@@ -417,10 +417,8 @@ class TracebackDialog(QDialog):
         self.setLayout(QVBoxLayout())
         self.resize(650, 270)
         text = QTextEdit()
-        theme = get_theme(get_settings().appearance.theme, as_dict=False)
-        _highlight = Pylighter(  # noqa: F841
-            text.document(), "python", theme.syntax_style
-        )
+        theme = get_theme(get_settings().appearance.theme)
+        _highlight = Pylighter(text.document(), "python", theme.syntax_style)
         text.setText(exception.as_text())
         text.setReadOnly(True)
         self.btn = QPushButton(trans._('Enter Debugger'))
