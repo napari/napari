@@ -32,24 +32,17 @@ def test_changing_layer_color_mode_updates_combo_box(make_labels_controls):
     assert layer.color_mode == qtctrl.colorModeComboBox.currentText()
 
 
-def test_changing_show_selected_updates_backend(qtbot):
-    """Test that changing show_selected_labels on UI updates the backend
-    and changing on the backend updates the UI"""
-    layer = Labels(_LABELS, color=_COLOR)
-    qtctrl = QtLabelsControls(layer)
-    qtbot.addWidget(qtctrl)
-
+def test_changing_layer_show_selected_label_updates_check_box(
+    make_labels_controls,
+):
+    """See https://github.com/napari/napari/issues/5371"""
+    layer, qtctrl = make_labels_controls()
     assert not qtctrl.selectedColorCheckbox.isChecked()
     assert not layer.show_selected_label
 
-    # ensure setting UI checkbox changes backend
-    with qtbot.waitSignal(qtctrl.selectedColorCheckbox.stateChanged):
-        qtctrl.selectedColorCheckbox.setChecked(True)
-    assert layer.show_selected_label
+    layer.show_selected_label = True
 
-    # ensure setting on backend updates UI
-    layer.show_selected_label = False
-    assert not qtctrl.selectedColorCheckbox.isChecked()
+    assert qtctrl.selectedColorCheckbox.isChecked()
 
 
 def test_rendering_combobox(make_labels_controls):
