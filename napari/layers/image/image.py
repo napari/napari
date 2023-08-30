@@ -4,48 +4,44 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING, List, Sequence, Tuple, Union
+from contextlib import nullcontext
+from typing import TYPE_CHECKING, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers.base import Layer, no_op
+from napari.layers.base import Layer
 from napari.layers.image._image_constants import (
     ImageRendering,
     Interpolation,
-    Mode,
     VolumeDepiction,
 )
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
-)
-from napari.layers.image._image_mouse_bindings import (
     set_plane_position as plane_double_click_callback,
 )
-from napari.layers.image._image_slice import ImageSlice
-from napari.layers.image._image_slice_data import ImageSliceData
 from napari.layers.image._image_utils import guess_multiscale, guess_rgb
 from napari.layers.image._slice import _ImageSliceRequest, _ImageSliceResponse
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.layers.utils.plane import SlicingPlane
-from napari.utils import config
+from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.migrations import rename_argument
-from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
+
     from napari.components import Dims
-    from napari.components.experimental.chunk import ChunkRequest
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -81,8 +77,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     gamma : float
         Gamma correction for determining colormap linearity. Defaults to 1.
     interpolation : str
-        Interpolation mode used by vispy. Must be one of our supported
-        modes.
+        Interpolation mode used by vispy. Must be one of our supported modes.
+        'custom' is a special mode for 2D interpolation in which a regular grid
+        of samples are taken from the texture around a position using 'linear'
+        interpolation before being multiplied with a custom interpolation kernel
+        (provided with 'custom_interpolation_kernel_2d').
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
@@ -143,6 +142,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
+    custom_interpolation_kernel_2d : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
 
     Attributes
     ----------
@@ -186,8 +187,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     gamma : float
         Gamma correction for determining colormap linearity.
     interpolation : str
-        Interpolation mode used by vispy. Must be one of our supported
-        modes.
+        Interpolation mode used by vispy. Must be one of our supported modes.
+        'custom' is a special mode for 2D interpolation in which a regular grid
+        of samples are taken from the texture around a position using 'linear'
+        interpolation before being multiplied with a custom interpolation kernel
+        (provided with 'custom_interpolation_kernel_2d').
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
@@ -202,6 +206,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         {'position', 'normal', 'thickness'}.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
+    custom_interpolation_kernel_2d : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
 
     Notes
     -----
@@ -215,7 +221,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     _colormaps = AVAILABLE_COLORMAPS
 
-    @rename_argument("interpolation", "interpolation2d", "0.6.0")
+    @rename_argument(
+        from_name="interpolation",
+        to_name="interpolation2d",
+        version="0.6.0",
+        since_version="0.4.17",
+    )
     def __init__(
         self,
         data,
@@ -244,7 +255,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         depiction='volume',
         plane=None,
         experimental_clipping_planes=None,
-    ):
+        custom_interpolation_kernel_2d=None,
+    ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
 
@@ -271,8 +283,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     "'rgb' was set to True but data does not have suitable dimensions."
                 )
             )
-        elif rgb is None:
+        if rgb is None:
             rgb = rgb_guess
+        self.rgb = rgb
 
         # Determine dimensionality of the data
         ndim = len(data.shape)
@@ -298,13 +311,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
 
         self.events.add(
-            mode=Event,
             interpolation=WarningEmitter(
                 trans._(
                     "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
                     deferred=True,
                 ),
-                type='select',
+                type_name='select',
             ),
             interpolation2d=Event,
             interpolation3d=Event,
@@ -313,15 +325,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             depiction=Event,
             iso_threshold=Event,
             attenuation=Event,
+            custom_interpolation_kernel_2d=Event,
         )
 
         self._array_like = True
 
         # Set data
-        self.rgb = rgb
         self._data = data
-        if self.multiscale:
-            self._data_level = len(self.data) - 1
+        if isinstance(data, MultiScaleData):
+            self._data_level = len(data) - 1
             # Determine which level of the multiscale to use for the thumbnail.
             # Pick the smallest level with at least one axis >= 64. This is
             # done to prevent the thumbnail from being from one of the very
@@ -337,17 +349,18 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._data_level = 0
             self._thumbnail_level = 0
         displayed_axes = self._slice_input.displayed
-        self.corner_pixels[1][displayed_axes] = self.level_shapes[
-            self._data_level
-        ][displayed_axes]
+        self.corner_pixels[1][displayed_axes] = (
+            np.array(self.level_shapes)[self._data_level][displayed_axes] - 1
+        )
 
-        self._new_empty_slice()
+        self._slice = _ImageSliceResponse.make_empty(
+            dims=self._slice_input, rgb=self.rgb
+        )
 
         # Set contrast limits, colormaps and plane parameters
         self._gamma = gamma
         self._attenuation = attenuation
         self._plane = SlicingPlane(thickness=1, enabled=False, draggable=True)
-        self._mode = Mode.PAN_ZOOM
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
         if contrast_limits is None:
@@ -362,7 +375,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
-        self._contrast_limits = tuple(self.contrast_limits_range)
+        self._contrast_limits: Tuple[float, float] = self.contrast_limits_range
         if iso_threshold is None:
             cmin, cmax = self.contrast_limits_range
             self._iso_threshold = cmin + (cmax - cmin) / 2
@@ -372,7 +385,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # where the intention here is to use the base setter, so we use the
         # _set_colormap method. This is important for Labels layers, because
         # we don't want to use get_color before set_view_slice has been
-        # triggered (self._update_dims(), below).
+        # triggered (self.refresh(), below).
         self._set_colormap(colormap)
         self.contrast_limits = self._contrast_limits
         self._interpolation2d = Interpolation.NEAREST
@@ -384,42 +397,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if plane is not None:
             self.plane = plane
         connect_no_arg(self.plane.events, self.events, 'plane')
+        self.custom_interpolation_kernel_2d = custom_interpolation_kernel_2d
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
-
-    def _new_empty_slice(self):
-        """Initialize the current slice to an empty image."""
-        wrapper = _weakref_hide(self)
-        self._slice = ImageSlice(
-            self._get_empty_image(), wrapper._raw_to_displayed, self.rgb
-        )
-        self._empty = True
-
-    def _get_empty_image(self):
-        """Get empty image to use as the default before data is loaded."""
-        if self.rgb:
-            return np.zeros((1,) * self._slice_input.ndisplay + (3,))
-        else:
-            return np.zeros((1,) * self._slice_input.ndisplay)
-
-    def _get_order(self) -> Tuple[int]:
-        """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
-        order = reorder_after_dim_reduction(self._slice_input.displayed)
-        if self.rgb:
-            # if rgb need to keep the final axis fixed during the
-            # transpose. The index of the final axis depends on how many
-            # axes are displayed.
-            return order + (max(order) + 1,)
-        else:
-            return order
+        self.refresh()
 
     @property
     def _data_view(self):
         """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
 
-    def _calc_data_range(self, mode='data'):
+    def _calc_data_range(self, mode='data') -> Tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
         or full data array
@@ -454,9 +442,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._data
 
     @data.setter
-    def data(
-        self, data: Union[LayerDataProtocol, Sequence[LayerDataProtocol]]
-    ):
+    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
         self._data_raw = data
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
@@ -464,7 +450,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.data(value=self.data)
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
-        self._set_editable()
+        self._reset_editable()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -479,7 +465,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         extent_data : array, shape (2, D)
         """
         shape = self.level_shapes[0]
-        return np.vstack([np.zeros(len(shape)), shape])
+        return np.vstack([np.zeros(len(shape)), shape - 1])
+
+    @property
+    def _extent_data_augmented(self) -> np.ndarray:
+        extent = self._extent_data
+        return extent + [[-0.5], [+0.5]]
 
     @property
     def data_level(self):
@@ -496,7 +487,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @property
     def level_shapes(self) -> np.ndarray:
         """array: Shapes of each level of the multiscale or just of image."""
-        shapes = self.data.shapes if self.multiscale else [self.data.shape]
+        data = self.data
+        if isinstance(data, MultiScaleData):
+            shapes = data.shapes
+        else:
+            shapes = [self.data.shape]
         if self.rgb:
             shapes = [s[:-1] for s in shapes]
         return np.array(shapes)
@@ -538,7 +533,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         vispy/gloo/glsl/misc/spatial_filters.frag
 
         Options include:
-        'bessel', 'bicubic', 'linear', 'blackman', 'catrom', 'gaussian',
+        'bessel', 'cubic', 'linear', 'blackman', 'catrom', 'gaussian',
         'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
         'nearest', 'spline16', 'spline36'
 
@@ -597,6 +592,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
                 ),
             )
+        if value == 'bicubic':
+            value = 'cubic'
+            warnings.warn(
+                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
         self.events.interpolation(value=self._interpolation2d)
@@ -607,6 +609,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation3d.setter
     def interpolation3d(self, value):
+        if value == 'custom':
+            raise NotImplementedError(
+                'custom interpolation is not implemented yet for 3D rendering'
+            )
+        if value == 'bicubic':
+            value = 'cubic'
+            warnings.warn(
+                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
         self._interpolation3d = Interpolation(value)
         self.events.interpolation3d(value=self._interpolation3d)
         self.events.interpolation(value=self._interpolation3d)
@@ -668,51 +681,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.plane()
 
     @property
-    def loaded(self):
-        """Has the data for this layer been loaded yet.
+    def custom_interpolation_kernel_2d(self):
+        return self._custom_interpolation_kernel_2d
 
-        With asynchronous loading the layer might exist but its data
-        for the current slice has not been loaded.
-        """
-        return self._slice.loaded
-
-    @property
-    def mode(self) -> str:
-        """str: Interactive mode
-
-        Interactive mode. The normal, default mode is PAN_ZOOM, which
-        allows for normal interactivity with the canvas.
-
-        TRANSFORM allows for manipulation of the layer transform.
-        """
-        return str(self._mode)
-
-    _drag_modes = {Mode.TRANSFORM: no_op, Mode.PAN_ZOOM: no_op}
-
-    _move_modes = {
-        Mode.TRANSFORM: no_op,
-        Mode.PAN_ZOOM: no_op,
-    }
-    _cursor_modes = {
-        Mode.TRANSFORM: 'standard',
-        Mode.PAN_ZOOM: 'standard',
-    }
-
-    @mode.setter
-    def mode(self, mode):
-        mode, changed = self._mode_setter_helper(mode, Mode)
-        if not changed:
-            return
-        assert mode is not None, mode
-
-        if mode == Mode.PAN_ZOOM:
-            self.help = ''
-        else:
-            self.help = trans._(
-                'hold <space> to pan/zoom, hold <shift> to preserve aspect ratio and rotate in 45° increments'
-            )
-
-        self.events.mode(mode=mode)
+    @custom_interpolation_kernel_2d.setter
+    def custom_interpolation_kernel_2d(self, value):
+        if value is None:
+            value = [[1]]
+        self._custom_interpolation_kernel_2d = np.array(value, np.float32)
+        self.events.custom_interpolation_kernel_2d()
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
@@ -734,44 +711,51 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _set_view_slice(self) -> None:
         """Set the slice output based on this layer's current state."""
-        # Initializes an ImageSlice for the old experimental async code.
-        self._new_empty_slice()
-
         # Skip if any non-displayed data indices are out of bounds.
         # This can happen when slicing layers with different extents.
         indices = self._slice_indices
         for d in self._slice_input.not_displayed:
-            if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d]):
+            if (indices[d] < 0) or (indices[d] > self._extent_data[1][d]):
+                self._slice = _ImageSliceResponse.make_empty(
+                    dims=self._slice_input, rgb=self.rgb
+                )
                 return
-
-        # For the old experimental async code.
-        self._empty = False
 
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
-        request = self._make_slice_request_internal(self._slice_input, indices)
+        request = self._make_slice_request_internal(
+            slice_input=self._slice_input,
+            indices=indices,
+            dask_indexer=nullcontext,
+        )
         response = request()
-        self._update_slice_response(response, indices)
+        self._update_slice_response(response)
 
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
         """Make an image slice request based on the given dims and this image."""
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
         )
-        # TODO: for the existing sync slicing, slice_indices is passed through
+        # For the existing sync slicing, indices is passed through
         # to avoid some performance issues related to the evaluation of the
         # data-to-world transform and its inverse. Async slicing currently
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_indices(self._data_to_world.inverse)
-        return self._make_slice_request_internal(slice_input, slice_indices)
+        indices = slice_input.data_indices(self._data_to_world.inverse)
+        return self._make_slice_request_internal(
+            slice_input=slice_input,
+            indices=indices,
+            dask_indexer=self.dask_optimized_slicing,
+        )
 
     def _make_slice_request_internal(
         self,
+        *,
         slice_input: _SliceInput,
-        slice_indices,
+        indices: Tuple[Union[int, slice], ...],
+        dask_indexer: DaskIndexer,
     ) -> _ImageSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and
         _set_view_slice.
@@ -782,7 +766,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return _ImageSliceRequest(
             dims=slice_input,
             data=self.data,
-            slice_indices=slice_indices,
+            dask_indexer=dask_indexer,
+            indices=indices,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,
             rgb=self.rgb,
@@ -790,26 +775,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             thumbnail_level=self._thumbnail_level,
             level_shapes=self.level_shapes,
             downsample_factors=self.downsample_factors,
-            lazy=True,
         )
 
-    def _update_slice_response(
-        self, response: _ImageSliceResponse, indices
-    ) -> None:
-        """Update the slice output state currently on the layer."""
-        # For the old experimental async code.
-        slice_data = self._SliceDataClass(
-            layer=self,
-            indices=indices,
-            image=response.data,
-            thumbnail_source=response.thumbnail,
-        )
-
+    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+        """Update the slice output state currently on the layer. Currently used
+        for both sync and async slicing.
+        """
+        self._slice_input = response.dims
         self._transforms[0] = response.tile_to_data
-
-        # For the old experimental async code, where loading might be sync
-        # or async.
-        self._load_slice(slice_data)
+        self._slice = response
 
         # Maybe reset the contrast limits based on the new slice.
         if self._should_calc_clims:
@@ -819,78 +793,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         elif self._keep_auto_contrast:
             self.reset_contrast_limits()
 
-    @property
-    def _SliceDataClass(self):
-        # Use special ChunkedSliceData for async.
-        if config.async_loading:
-            from napari.layers.image.experimental._chunked_slice_data import (
-                ChunkedSliceData,
-            )
-
-            return ChunkedSliceData
-        return ImageSliceData
-
-    def _load_slice(self, data: ImageSliceData):
-        """Load the image and maybe thumbnail source.
-
-        Parameters
-        ----------
-        data : Slice
-        """
-        if self._slice.load(data):
-            # The load was synchronous.
-            self._on_data_loaded(data, sync=True)
-        else:
-            # The load will be asynchronous. Signal that our self.loaded
-            # property is now false, since the load is in progress.
-            self.events.loaded()
-
-    def _on_data_loaded(self, data: ImageSliceData, sync: bool) -> None:
-        """The given data a was loaded, use it now.
-
-        This routine is called synchronously from _load_async() above, or
-        it is called asynchronously sometime later when the ChunkLoader
-        finishes loading the data in a worker thread or process.
-
-        Parameters
-        ----------
-        data : ChunkRequest
-            The request that was satisfied/loaded.
-        sync : bool
-            If True the chunk was loaded synchronously.
-        """
-        # Transpose after the load.
-        data.transpose(self._get_order())
-
-        # Pass the loaded data to the slice.
-        if not self._slice.on_loaded(data):
-            # Slice rejected it, was it for the wrong indices?
-            return
-
-        # Notify the world.
-        if self.multiscale:
-            self.events.scale()
-            self.events.translate()
-
-        # Announcing we are in the loaded state will make our node visible
-        # if it was invisible during the load.
-        self.events.loaded()
-
-        if not sync:
-            # TODO_ASYNC: Avoid calling self.refresh(), because it would
-            # call our _set_view_slice(). Do we need a "refresh without
-            # set_view_slice()" method that we can call?
-
-            self.events.set_data(value=self._slice)  # update vispy
-            self._update_thumbnail()
-
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        if not self.loaded:
-            # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
-            # Is there a nicer way to prevent this from getting called?
-            return
-
         image = self._slice.thumbnail.view
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
@@ -911,12 +815,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
         zoom_factor = tuple(new_shape / image.shape[:2])
         if self.rgb:
-            # warning filter can be removed with scipy 1.4
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                downsampled = ndi.zoom(
-                    image, zoom_factor + (1,), prefilter=False, order=0
-                )
+            downsampled = ndi.zoom(
+                image, zoom_factor + (1,), prefilter=False, order=0
+            )
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
                 colormapped[..., 3] = downsampled[..., 3] * self.opacity
@@ -933,12 +834,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
         else:
-            # warning filter can be removed with scipy 1.4
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                downsampled = ndi.zoom(
-                    image, zoom_factor, prefilter=False, order=0
-                )
+            downsampled = ndi.zoom(
+                image, zoom_factor, prefilter=False, order=0
+            )
             low, high = self.contrast_limits
             downsampled = np.clip(downsampled, low, high)
             color_range = high - low
@@ -946,7 +844,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 downsampled = (downsampled - low) / color_range
             downsampled = downsampled**self.gamma
             color_array = self.colormap.map(downsampled.ravel())
-            colormapped = color_array.reshape(downsampled.shape + (4,))
+            colormapped = color_array.reshape((*downsampled.shape, 4))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
@@ -973,10 +871,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         coord = np.round(coord).astype(int)
 
         raw = self._slice.image.raw
-        if self.rgb:
-            shape = raw.shape[:-1]
-        else:
-            shape = raw.shape
+        shape = raw.shape[:-1] if self.rgb else raw.shape
 
         if self.ndim < len(coord):
             # handle 3D views of 2D data by omitting extra coordinate
@@ -995,7 +890,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         return value
 
-    def _get_offset_data_position(self, position: List[float]) -> List[float]:
+    def _get_offset_data_position(self, position: npt.NDArray) -> npt.NDArray:
         """Adjust position for offset between viewer and data coordinates.
 
         VisPy considers the coordinate system origin to be the canvas corner,
@@ -1003,22 +898,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         pixel. To get the correct value under the mouse cursor, we need to
         shift the position by 0.5 pixels on each axis.
         """
-        return [p + 0.5 for p in position]
-
-    # For async we add an on_chunk_loaded() method.
-    if config.async_loading:
-
-        def on_chunk_loaded(self, request: ChunkRequest) -> None:
-            """An asynchronous ChunkRequest was loaded.
-
-            Parameters
-            ----------
-            request : ChunkRequest
-                This request was loaded.
-            """
-            # Convert the ChunkRequest to SliceData and use it.
-            data = self._SliceDataClass.from_request(self, request)
-            self._on_data_loaded(data, sync=False)
+        return position + 0.5
 
 
 class Image(_ImageBase):
@@ -1072,7 +952,7 @@ class Image(_ImageBase):
             {
                 'rgb': self.rgb,
                 'multiscale': self.multiscale,
-                'colormap': self.colormap.name,
+                'colormap': self.colormap.dict(),
                 'contrast_limits': self.contrast_limits,
                 'interpolation2d': self.interpolation2d,
                 'interpolation3d': self.interpolation3d,
@@ -1083,26 +963,10 @@ class Image(_ImageBase):
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
                 'data': self.data,
+                'custom_interpolation_kernel_2d': self.custom_interpolation_kernel_2d,
             }
         )
         return state
 
 
-if config.async_octree:
-    from napari.layers.image.experimental.octree_image import _OctreeImageBase
-
-    class Image(Image, _OctreeImageBase):
-        pass
-
-
 Image.__doc__ = _ImageBase.__doc__
-
-
-class _weakref_hide:
-    def __init__(self, obj):
-        import weakref
-
-        self.obj = weakref.ref(obj)
-
-    def _raw_to_displayed(self, *args, **kwarg):
-        return self.obj()._raw_to_displayed(*args, **kwarg)

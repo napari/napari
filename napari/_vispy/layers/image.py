@@ -13,7 +13,7 @@ from napari.utils.translations import trans
 
 
 class ImageLayerNode:
-    def __init__(self, custom_node: Node = None, texture_format=None):
+    def __init__(self, custom_node: Node = None, texture_format=None) -> None:
         if (
             texture_format == 'auto'
             and 'texture_float' not in get_gl_extensions()
@@ -25,7 +25,9 @@ class ImageLayerNode:
 
         self._custom_node = custom_node
         self._image_node = ImageNode(
-            None,
+            None
+            if (texture_format is None or texture_format == 'auto')
+            else np.array([[0.0]], dtype=np.float32),
             method='auto',
             texture_format=texture_format,
         )
@@ -36,7 +38,6 @@ class ImageLayerNode:
         )
 
     def get_node(self, ndisplay: int) -> Node:
-
         # Return custom node if we have one.
         if self._custom_node is not None:
             return self._custom_node
@@ -48,10 +49,17 @@ class ImageLayerNode:
 
 
 class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer, node=None, texture_format='auto'):
-
+    def __init__(
+        self,
+        layer,
+        node=None,
+        texture_format='auto',
+        layer_node_class=ImageLayerNode,
+    ) -> None:
         # Use custom node from caller, or our standard image/volume nodes.
-        self._layer_node = ImageLayerNode(node, texture_format=texture_format)
+        self._layer_node = layer_node_class(
+            node, texture_format=texture_format
+        )
 
         # Default to 2D (image) node.
         super().__init__(layer, self._layer_node.get_node(2))
@@ -80,6 +88,9 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_plane_thickness_change
         )
         self.layer.plane.events.normal.connect(self._on_plane_normal_change)
+        self.layer.events.custom_interpolation_kernel_2d.connect(
+            self._on_custom_interpolation_kernel_2d_change
+        )
 
         # display_change is special (like data_change) because it requires a self.reset()
         # this means that we have to call it manually. Also, it must be called before reset
@@ -97,30 +108,19 @@ class VispyImageLayer(VispyBaseLayer):
         if data is None:
             data = np.zeros((1,) * ndisplay, dtype=np.float32)
 
-        if self.layer._empty:
-            self.node.visible = False
-        else:
-            self.node.visible = self.layer.visible
+        self.node.visible = not self.layer._slice.empty and self.layer.visible
 
-        if self.layer.loaded:
-            self.node.set_data(data)
+        self.node.set_data(data)
 
         self.node.parent = parent
         self.node.order = self.order
+        for overlay_visual in self.overlays.values():
+            overlay_visual.node.parent = self.node
         self.reset()
 
     def _on_data_change(self):
-        if not self.layer.loaded:
-            # Do nothing if we are not yet loaded. Calling astype below could
-            # be very expensive. Lets not do it until our data has been loaded.
-            return
-
-        self._set_node_data(self.node, self.layer._data_view)
-
-    def _set_node_data(self, node, data):
-        """Our self.layer._data_view has been updated, update our node."""
-
-        data = fix_data_dtype(data)
+        node = self.node
+        data = fix_data_dtype(self.layer._data_view)
         ndisplay = self.layer._slice_input.ndisplay
 
         if ndisplay == 3 and self.layer.ndim == 2:
@@ -140,10 +140,7 @@ class VispyImageLayer(VispyBaseLayer):
         else:
             node.set_data(data)
 
-        if self.layer._empty:
-            node.visible = False
-        else:
-            node.visible = self.layer.visible
+        node.visible = not self.layer._slice.empty and self.layer.visible
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
@@ -155,6 +152,10 @@ class VispyImageLayer(VispyBaseLayer):
             if self.layer._slice_input.ndisplay == 2
             else self.layer.interpolation3d
         )
+
+    def _on_custom_interpolation_kernel_2d_change(self):
+        if self.layer._slice_input.ndisplay == 2:
+            self.node.custom_kernel = self.layer.custom_interpolation_kernel_2d
 
     def _on_rendering_change(self):
         if isinstance(self.node, VolumeNode):
@@ -236,6 +237,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_plane_position_change()
         self._on_plane_normal_change()
         self._on_plane_thickness_change()
+        self._on_custom_interpolation_kernel_2d_change()
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.

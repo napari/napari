@@ -28,7 +28,7 @@ class Node:
         The parent of this Node.
     """
 
-    def __init__(self, name: str = "Node"):
+    def __init__(self, name: str = "Node") -> None:
         self.parent: Optional[Group] = None
         self._name = name
 

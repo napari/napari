@@ -35,6 +35,7 @@ To create a keymap that will block others, ``bind_key(..., ...)```.
 
 import contextlib
 import inspect
+import sys
 import time
 from collections import ChainMap
 from types import MethodType
@@ -45,9 +46,9 @@ from vispy.util import keys
 
 from napari.utils.translations import trans
 
-try:  # remove after min py version 3.10+
+if sys.version_info >= (3, 10):
     from types import EllipsisType
-except ImportError:
+else:
     EllipsisType = type(Ellipsis)
 
 KeyBindingLike = Union[KeyBinding, str, int]
@@ -287,7 +288,7 @@ class KeybindingDescriptor:
         Function to bind.
     """
 
-    def __init__(self, func):
+    def __init__(self, func) -> None:
         self.__func__ = func
 
     def __get__(self, instance, cls):
@@ -306,7 +307,7 @@ class KeymapProvider:
         Instance keymap.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.keymap = {}
 
@@ -355,7 +356,7 @@ class KeymapHandler:
         Classes that provide the keymaps for this class to handle.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._key_release_generators = {}
         self.keymap_providers = []
@@ -413,7 +414,7 @@ class KeymapHandler:
 
         if func is Ellipsis:  # blocker
             return
-        elif not callable(func):
+        if not callable(func):
             raise TypeError(
                 trans._(
                     "expected {func} to be callable",

@@ -21,6 +21,7 @@ __all__ = [
     'disconnect_events',
     'EmitterGroup',
     'Event',
+    'EventedDict',
     'EventedList',
     'EventedModel',
     'EventedSet',

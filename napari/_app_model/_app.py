@@ -7,6 +7,7 @@ from typing import Dict
 from app_model import Application
 
 from napari._app_model._submenus import SUBMENUS
+from napari._app_model.actions._help_actions import HELP_ACTIONS
 from napari._app_model.actions._layer_actions import LAYER_ACTIONS
 from napari._app_model.actions._view_actions import VIEW_ACTIONS
 from napari._app_model.injection._processors import PROCESSORS
@@ -31,14 +32,14 @@ class NapariApplication(Application):
             providers=PROVIDERS, processors=PROCESSORS
         )
 
-        for action in chain(LAYER_ACTIONS, VIEW_ACTIONS):
+        for action in chain(HELP_ACTIONS, LAYER_ACTIONS, VIEW_ACTIONS):
             self.register_action(action)
 
         self.menus.append_menu_items(SUBMENUS)
 
     @classmethod
-    def get_app(cls) -> NapariApplication:
-        return Application.get_app(APP_NAME) or cls()
+    def get_app(cls, app_name: str = APP_NAME) -> NapariApplication:
+        return Application.get_app(app_name) or cls()  # type: ignore[return-value]
 
 
 @lru_cache(maxsize=1)

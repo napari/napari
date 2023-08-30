@@ -2,24 +2,23 @@
 Update console
 ==============
 
-Display one shapes layer ontop of one image layer using the add_shapes and
-add_image APIs. When the window is closed it will print the coordinates of
-your shapes.
+Display one shapes layer on top of one image layer using the add_shapes and
+add_image APIs.
 
 .. tags:: historical
 """
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 # create the viewer and window
 viewer = napari.Viewer()
 
 # add the image
 photographer = data.camera()
-image_layer = napari.view_image(photographer, name='photographer')
+image_layer = viewer.add_image(photographer, name='photographer')
 
 # create a list of polygons
 polygons = [

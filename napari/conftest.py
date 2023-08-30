@@ -28,53 +28,37 @@ Notes for using the plugin-related fixtures here:
        ...
    ```
 """
+
 from __future__ import annotations
 
+import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
-
-try:
-    __import__('dotenv').load_dotenv()
-except ModuleNotFoundError:
-    pass
-
-import os
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+from weakref import WeakKeyDictionary
+
+from npe2 import PackageMetadata
+
+with suppress(ModuleNotFoundError):
+    __import__('dotenv').load_dotenv()
 
 import dask.threaded
 import numpy as np
 import pytest
 from IPython.core.history import HistoryManager
+from packaging.version import parse as parse_version
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
-from napari.utils.config import async_loading
+from napari.utils.misc import ROOT_DIR
+from napari.viewer import Viewer
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
-
-
-def pytest_addoption(parser):
-    """Add napari specific command line options.
-
-    --aysnc_only
-        Run only asynchronous tests, not sync ones.
-
-    Notes
-    -----
-    Due to the placement of this conftest.py file, you must specifically name
-    the napari folder such as "pytest napari --aysnc_only"
-    """
-
-    parser.addoption(
-        "--async_only",
-        action="store_true",
-        default=False,
-        help="run only asynchronous tests",
-    )
 
 
 @pytest.fixture
@@ -133,13 +117,13 @@ def layer(request):
     if request.param == 'image':
         data = np.random.rand(20, 20)
         return Image(data)
-    elif request.param == 'labels':
+    if request.param == 'labels':
         data = np.random.randint(10, size=(20, 20))
         return Labels(data)
-    elif request.param == 'points':
+    if request.param == 'points':
         data = np.random.rand(20, 2)
         return Points(data)
-    elif request.param == 'shapes':
+    if request.param == 'shapes':
         data = [
             np.random.rand(2, 2),
             np.random.rand(2, 2),
@@ -149,14 +133,14 @@ def layer(request):
         ]
         shape_type = ['ellipse', 'line', 'path', 'polygon', 'rectangle']
         return Shapes(data, shape_type=shape_type)
-    elif request.param == 'shapes-rectangles':
+    if request.param == 'shapes-rectangles':
         data = np.random.rand(7, 4, 2)
         return Shapes(data)
-    elif request.param == 'vectors':
+    if request.param == 'vectors':
         data = np.random.rand(20, 2, 2)
         return Vectors(data)
-    else:
-        return None
+
+    return None
 
 
 @pytest.fixture()
@@ -177,56 +161,6 @@ def layers():
         Vectors(np.random.rand(10, 2, 2)),
     ]
     return LayerList(list_of_layers)
-
-
-# Currently we cannot run async and async in the invocation of pytest
-# because we get a segfault for unknown reasons. So for now:
-# "pytest" runs sync_only
-# "pytest napari --async_only" runs async only
-@pytest.fixture(scope="session", autouse=True)
-def configure_loading(request):
-    """Configure async/async loading."""
-    if request.config.getoption("--async_only"):
-        # Late import so we don't import experimental code unless using it.
-        from napari.components.experimental.chunk import synchronous_loading
-
-        with synchronous_loading(False):
-            yield
-    else:
-        yield  # Sync so do nothing.
-
-
-def _is_async_mode() -> bool:
-    """Return True if we are currently loading chunks asynchronously
-
-    Returns
-    -------
-    bool
-        True if we are currently loading chunks asynchronously.
-    """
-    if not async_loading:
-        return False  # Not enabled at all.
-    else:
-        # Late import so we don't import experimental code unless using it.
-        from napari.components.experimental.chunk import chunk_loader
-
-        return not chunk_loader.force_synchronous
-
-
-@pytest.fixture(autouse=True)
-def skip_sync_only(request):
-    """Skip async_only tests if running async."""
-    sync_only = request.node.get_closest_marker('sync_only')
-    if _is_async_mode() and sync_only:
-        pytest.skip("running with --async_only")
-
-
-@pytest.fixture(autouse=True)
-def skip_async_only(request):
-    """Skip async_only tests if running sync."""
-    async_only = request.node.get_closest_marker('async_only')
-    if not _is_async_mode() and async_only:
-        pytest.skip("not running with --async_only")
 
 
 @pytest.fixture(autouse=True)
@@ -313,12 +247,12 @@ HistoryManager.enabled = False
 @pytest.fixture
 def napari_svg_name():
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
-    from importlib.metadata import metadata
+    from importlib.metadata import version
 
-    if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
+    if parse_version(version('napari-svg')) < parse_version('0.1.6'):
         return 'svg'
-    else:
-        return 'napari-svg'
+
+    return 'napari-svg'
 
 
 @pytest.fixture(autouse=True, scope='session')
@@ -351,7 +285,10 @@ def builtins(_npe2pm: TestPluginManager):
 @pytest.fixture
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
+        plugin.manifest.package_metadata = PackageMetadata(
+            version='0.1.0', name='test'
+        )
+        plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
 
 
@@ -427,6 +364,10 @@ def disable_notification_dismiss_timer(monkeypatch):
     without increase of reference counter object could be garbage collected and
     cause segmentation fault error when Qt (C++) code try to access it without
     checking if Python object exists.
+
+    This fixture is used in all tests because it is possible to call Qt code
+    from non Qt test by connection of `NapariQtNotification.show_notification` to
+    `NotificationManager` global instance.
     """
 
     with suppress(ImportError):
@@ -442,6 +383,38 @@ def single_threaded_executor():
     executor = ThreadPoolExecutor(max_workers=1)
     yield executor
     executor.shutdown()
+
+
+@pytest.fixture()
+def mock_console(request):
+    """Mock the qtconsole to avoid starting an interactive IPython session.
+    In-process IPython kernels can interfere with other tests and are difficult
+    (impossible?) to shutdown.
+
+    This fixture is configured to be applied automatically to tests unless they
+    use the `enable_console` marker. It's not autouse to avoid use on headless
+    tests (without Qt); instead it's enabled in `pytest_runtest_setup`.
+    """
+    if "enable_console" in request.keywords:
+        yield
+        return
+
+    from napari_console import QtConsole
+    from qtconsole.rich_jupyter_widget import RichJupyterWidget
+
+    class FakeQtConsole(RichJupyterWidget):
+        def __init__(self, viewer: Viewer):
+            super().__init__()
+            self.viewer = viewer
+            self.kernel_client = None
+            self.kernel_manager = None
+
+        _update_theme = Mock()
+        push = Mock()
+        closeEvent = QtConsole.closeEvent
+
+    with patch("napari_console.QtConsole", FakeQtConsole):
+        yield
 
 
 @pytest.fixture(autouse=True)
@@ -470,3 +443,316 @@ def _mock_app():
             yield app
         finally:
             Application.destroy('test_app')
+
+
+def _get_calling_place(depth=1):
+    if not hasattr(sys, "_getframe"):
+        return ""
+    frame = sys._getframe(1 + depth)
+    result = f"{frame.f_code.co_filename}:{frame.f_lineno}"
+    if not frame.f_code.co_filename.startswith(ROOT_DIR):
+        with suppress(ValueError):
+            while not frame.f_code.co_filename.startswith(ROOT_DIR):
+                frame = frame.f_back
+                if frame is None:
+                    break
+            else:
+                result += f" called from\n{frame.f_code.co_filename}:{frame.f_lineno}"
+    return result
+
+
+@pytest.fixture
+def dangling_qthreads(monkeypatch, qtbot, request):
+    from qtpy.QtCore import QThread
+
+    base_start = QThread.start
+    thread_dict = WeakKeyDictionary()
+    # dict of threads that have been started but not yet terminated
+
+    if "disable_qthread_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self, priority=QThread.InheritPriority):
+            thread_dict[self] = _get_calling_place()
+            base_start(self, priority)
+
+    monkeypatch.setattr(QThread, 'start', my_start)
+    yield
+
+    dangling_threads_li = []
+
+    for thread, calling in thread_dict.items():
+        try:
+            if thread.isRunning():
+                dangling_threads_li.append((thread, calling))
+        except RuntimeError as e:
+            if (
+                "wrapped C/C++ object of type" not in e.args[0]
+                and "Internal C++ object" not in e.args[0]
+            ):
+                raise
+
+    for thread, _ in dangling_threads_li:
+        with suppress(RuntimeError):
+            thread.quit()
+            qtbot.waitUntil(thread.isFinished, timeout=2000)
+
+    long_desc = (
+        "If you see this error, it means that a QThread was started in a test "
+        "but not terminated. This can cause segfaults in the test suite. "
+        "Please use the `qtbot` fixture to wait for the thread to finish. "
+        "If you think that the thread is obsolete for this test, you can "
+        "use the `@pytest.mark.disable_qthread_start` mark or  `monkeypatch` "
+        "fixture to patch the `start` method of the "
+        "QThread class to do nothing.\n"
+    )
+
+    if len(dangling_threads_li) > 1:
+        long_desc += " The QThreads were started in:\n"
+    else:
+        long_desc += " The QThread was started in:\n"
+
+    assert not dangling_threads_li, long_desc + "\n".join(
+        x[1] for x in dangling_threads_li
+    )
+
+
+@pytest.fixture
+def dangling_qthread_pool(monkeypatch, request):
+    from qtpy.QtCore import QThreadPool
+
+    base_start = QThreadPool.start
+    threadpool_dict = WeakKeyDictionary()
+    # dict of threadpools that have been used to run QRunnables
+
+    if "disable_qthread_pool_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self, runnable, priority=0):
+            if self not in threadpool_dict:
+                threadpool_dict[self] = []
+            threadpool_dict[self].append(_get_calling_place())
+            base_start(self, runnable, priority)
+
+    monkeypatch.setattr(QThreadPool, 'start', my_start)
+    yield
+
+    dangling_threads_pools = []
+
+    for thread_pool, calling in threadpool_dict.items():
+        thread_pool.clear()
+        thread_pool.waitForDone(20)
+        if thread_pool.activeThreadCount():
+            dangling_threads_pools.append((thread_pool, calling))
+
+    for thread_pool, _ in dangling_threads_pools:
+        with suppress(RuntimeError):
+            thread_pool.clear()
+            thread_pool.waitForDone(2000)
+
+    long_desc = (
+        "If you see this error, it means that a QThreadPool was used to run "
+        "a QRunnable in a test but not terminated. This can cause segfaults "
+        "in the test suite. Please use the `qtbot` fixture to wait for the "
+        "thread to finish. If you think that the thread is obsolete for this "
+        "use the `@pytest.mark.disable_qthread_pool_start` mark or  `monkeypatch` "
+        "fixture to patch the `start` "
+        "method of the QThreadPool class to do nothing.\n"
+    )
+    if len(dangling_threads_pools) > 1:
+        long_desc += " The QThreadPools were used in:\n"
+    else:
+        long_desc += " The QThreadPool was used in:\n"
+
+    assert not dangling_threads_pools, long_desc + "\n".join(
+        "; ".join(x[1]) for x in dangling_threads_pools
+    )
+
+
+@pytest.fixture
+def dangling_qtimers(monkeypatch, request):
+    from qtpy.QtCore import QTimer
+
+    base_start = QTimer.start
+    timer_dkt = WeakKeyDictionary()
+    single_shot_list = []
+
+    if "disable_qtimer_start" in request.keywords:
+        from pytestqt.qt_compat import qt_api
+
+        def my_start(*_, **__):
+            """dummy function to prevent timer start"""
+
+        _single_shot = my_start
+
+        class OldTimer(QTimer):
+            def start(self, time=None):
+                if time is not None:
+                    base_start(self, time)
+                else:
+                    base_start(self)
+
+        monkeypatch.setattr(qt_api.QtCore, "QTimer", OldTimer)
+        # This monkeypatch is require to keep `qtbot.waitUntil` working
+
+    else:
+
+        def my_start(self, msec=None):
+            timer_dkt[self] = _get_calling_place()
+            if msec is not None:
+                base_start(self, msec)
+            else:
+                base_start(self)
+
+        def single_shot(msec, reciver, method=None):
+            t = QTimer()
+            t.setSingleShot(True)
+            if method is None:
+                t.timeout.connect(reciver)
+            else:
+                t.timeout.connect(getattr(reciver, method))
+            single_shot_list.append((t, _get_calling_place(2)))
+            base_start(t, msec)
+
+        def _single_shot(self, *args):
+            if isinstance(self, QTimer):
+                single_shot(*args)
+            else:
+                single_shot(self, *args)
+
+    monkeypatch.setattr(QTimer, 'start', my_start)
+    monkeypatch.setattr(QTimer, 'singleShot', _single_shot)
+
+    yield
+
+    dangling_timers = []
+
+    for timer, calling in chain(timer_dkt.items(), single_shot_list):
+        if timer.isActive():
+            dangling_timers.append((timer, calling))
+
+    for timer, _ in dangling_timers:
+        with suppress(RuntimeError):
+            timer.stop()
+
+    long_desc = (
+        "If you see this error, it means that a QTimer was started but not stopped. "
+        "This can cause tests to fail, and can also cause segfaults. "
+        "If this test does not require a QTimer to pass you could monkeypatch it out. "
+        "If it does require a QTimer, you should stop or wait for it to finish before test ends. "
+    )
+    if len(dangling_timers) > 1:
+        long_desc += "The QTimers were started in:\n"
+    else:
+        long_desc += "The QTimer was started in:\n"
+
+    def _check_throttle_info(path):
+        if "superqt" in path and "throttler" in path:
+            return (
+                path
+                + " it's possible that there was a problem with unfinished work by a "
+                "qthrottler; to solve this, you can either try to wait (such as with "
+                "`qtbot.wait`) or disable throttling with the disable_throttling fixture"
+            )
+        return path
+
+    assert not dangling_timers, long_desc + "\n".join(
+        _check_throttle_info(x[1]) for x in dangling_timers
+    )
+
+
+def _throttle_mock(self):
+    self.triggered.emit()
+
+
+def _flush_mock(self):
+    """There are no waiting events."""
+
+
+@pytest.fixture
+def disable_throttling(monkeypatch):
+    """Disable qthrottler from superqt.
+
+    This is sometimes necessary to avoid flaky failures in tests
+    due to dangling qt timers.
+    """
+    # if this monkeypath fails then you should update path to GenericSignalThrottler
+    monkeypatch.setattr(
+        "superqt.utils._throttler.GenericSignalThrottler.throttle",
+        _throttle_mock,
+    )
+    monkeypatch.setattr(
+        "superqt.utils._throttler.GenericSignalThrottler.flush", _flush_mock
+    )
+
+
+@pytest.fixture
+def dangling_qanimations(monkeypatch, request):
+    from qtpy.QtCore import QPropertyAnimation
+
+    base_start = QPropertyAnimation.start
+    animation_dkt = WeakKeyDictionary()
+
+    if "disable_qanimation_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self):
+            animation_dkt[self] = _get_calling_place()
+            base_start(self)
+
+    monkeypatch.setattr(QPropertyAnimation, 'start', my_start)
+    yield
+
+    dangling_animations = []
+
+    for animation, calling in animation_dkt.items():
+        if animation.state() == QPropertyAnimation.Running:
+            dangling_animations.append((animation, calling))
+
+    for animation, _ in dangling_animations:
+        with suppress(RuntimeError):
+            animation.stop()
+
+    long_desc = (
+        "If you see this error, it means that a QPropertyAnimation was started but not stopped. "
+        "This can cause tests to fail, and can also cause segfaults. "
+        "If this test does not require a QPropertyAnimation to pass you could monkeypatch it out. "
+        "If it does require a QPropertyAnimation, you should stop or wait for it to finish before test ends. "
+    )
+    if len(dangling_animations) > 1:
+        long_desc += " The QPropertyAnimations were started in:\n"
+    else:
+        long_desc += " The QPropertyAnimation was started in:\n"
+    assert not dangling_animations, long_desc + "\n".join(
+        x[1] for x in dangling_animations
+    )
+
+
+def pytest_runtest_setup(item):
+    if "qapp" in item.fixturenames:
+        # here we do autouse for dangling fixtures only if qapp is used
+        if "qtbot" not in item.fixturenames:
+            # for proper waiting for threads to finish
+            item.fixturenames.append("qtbot")
+
+        item.fixturenames.extend(
+            [
+                "dangling_qthread_pool",
+                "dangling_qanimations",
+                "dangling_qthreads",
+                "dangling_qtimers",
+                "mock_console",
+            ]
+        )

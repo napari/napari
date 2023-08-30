@@ -77,7 +77,7 @@ def read_data_with_plugins(
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
         _ld, hookimpl = res
-        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl  # type: ignore [return-value]
+        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl
 
     hook_caller = plugin_manager.hook.napari_get_reader
     paths = [abspath_or_url(p, must_exist=True) for p in paths]
@@ -100,13 +100,27 @@ def read_data_with_plugins(
             raise ValueError(message)
 
         if plugin not in plugin_manager.plugins:
-            names = {i.plugin_name for i in hook_caller.get_hookimpls()}
+            names = set(_npe2.get_readers().keys()).union(
+                {i.plugin_name for i in hook_caller.get_hookimpls()}
+            )
+            err_helper = (
+                trans._(
+                    "No readers are available. "
+                    "Do you have any plugins installed?",
+                    deferred=True,
+                )
+                if len(names) <= 1
+                else trans._(
+                    f"\nNames of plugins offering readers are: {names}.",
+                    deferred=True,
+                )
+            )
             raise ValueError(
                 trans._(
-                    "There is no registered plugin named '{plugin}'.\nNames of plugins offering readers are: {names}",
+                    "There is no registered plugin named '{plugin}'. {err_helper}",
                     deferred=True,
                     plugin=plugin,
-                    names=names,
+                    err_helper=err_helper,
                 )
             )
         reader = hook_caller._call_plugin(plugin, path=npe1_path)
@@ -135,7 +149,7 @@ def read_data_with_plugins(
         try:
             layer_data = reader(npe1_path)  # try to read data
             hookimpl = result.implementation
-        except Exception as exc:
+        except Exception as exc:  # noqa BLE001
             raise PluginCallError(result.implementation, cause=exc) from exc
 
     if not layer_data:
@@ -196,7 +210,7 @@ def save_layers(
 
     If a ``plugin`` is provided and multiple layers are passed, then
     we call we call ``napari_get_writer`` for that plugin, and if it
-    doesn’t return a WriterFunction we error, otherwise we call it and if
+    doesn`t return a WriterFunction we error, otherwise we call it and if
     that fails if it we error.
 
     Parameters
@@ -299,7 +313,7 @@ def _write_multiple_layers_with_plugins(
     to unique files in the folder.
 
     If a ``plugin_name`` is provided, then call ``napari_get_writer`` for that
-    plugin. If it doesn’t return a ``WriterFunction`` we error, otherwise we
+    plugin. If it doesn`t return a ``WriterFunction`` we error, otherwise we
     call it and if that fails if it we error.
 
     Exceptions will be caught and stored as PluginErrors
@@ -344,7 +358,7 @@ def _write_multiple_layers_with_plugins(
 
     hook_caller = plugin_manager.hook.napari_get_writer
     path = abspath_or_url(path)
-    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
+    logger.debug("Writing to %s.  Hook caller: %s", path, hook_caller)
     if plugin_name:
         # if plugin has been specified we just directly call napari_get_writer
         # with that plugin_name.
@@ -384,15 +398,15 @@ def _write_multiple_layers_with_plugins(
                 layer_types=layer_types,
             )
 
-        raise ValueError(msg)
+        raise TypeError(msg)
 
     try:
         return (
             writer_function(abspath_or_url(path), layer_data),
             implementation.plugin_name,
         )
-    except Exception as exc:
-        raise PluginCallError(implementation, cause=exc)
+    except Exception as exc:  # noqa: BLE001
+        raise PluginCallError(implementation, cause=exc) from exc
 
 
 def _write_single_layer_with_plugins(
@@ -454,7 +468,7 @@ def _write_single_layer_with_plugins(
         extension = os.path.splitext(path)[-1]
         plugin_name = plugin_manager.get_writer_for_extension(extension)
 
-    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
+    logger.debug("Writing to %s.  Hook caller: %s", path, hook_caller)
     if plugin_name and (plugin_name not in plugin_manager.plugins):
         names = {i.plugin_name for i in hook_caller.get_hookimpls()}
         raise ValueError(

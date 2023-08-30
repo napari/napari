@@ -10,11 +10,12 @@ them using magicgui.
 .. tags:: visualization-advanced
 """
 
-import numpy as np
-import napari
 import dask.array as da
+import numpy as np
 from dask.array.lib.stride_tricks import sliding_window_view
 from skimage import data
+
+import napari
 
 ##############################################################################
 # Part 1: using code to view a specific value.
@@ -37,7 +38,8 @@ if __name__ == '__main__':
 ##############################################################################
 # Part 2: using magicgui to vary the slice thickness.
 
-from magicgui import magicgui
+from magicgui import magicgui  # noqa: E402
+
 
 def sliding_window_mean(
     arr: napari.types.ImageData, size: int = 1

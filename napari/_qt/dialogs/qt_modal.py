@@ -32,11 +32,12 @@ class QtPopup(QDialog):
         Frame of the popup dialog box.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:
         super().__init__(parent)
         self.setObjectName("QtModalPopup")
         self.setModal(False)  # if False, then clicking anywhere else closes it
-        self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
+        flags = Qt.Popup | Qt.FramelessWindowHint
+        self.setWindowFlags(flags)
         self.setLayout(QVBoxLayout())
 
         self.frame = QFrame()
@@ -124,7 +125,7 @@ class QtPopup(QDialog):
             assert len(position) == 4, '`position` argument must have length 4'
             left, top, width, height = position
         else:
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     "Wrong type of position {position}",
                     deferred=True,

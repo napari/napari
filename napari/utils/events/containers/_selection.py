@@ -54,19 +54,23 @@ class Selection(EventedSet[_T]):
         emitted when the current item has changed. (Private event)
     """
 
-    def __init__(self, data: Iterable[_T] = ()):
+    def __init__(self, data: Iterable[_T] = ()) -> None:
         self._active: Optional[_T] = None
-        self._current_ = None
+        self._current_: Optional[_T] = None
         self.events = EmitterGroup(source=self, _current=None, active=None)
         super().__init__(data=data)
         self._update_active()
 
-    def _emit_change(self, added=set(), removed=set()):
+    def _emit_change(self, added=None, removed=None):
+        if added is None:
+            added = set()
+        if removed is None:
+            removed = set()
         self._update_active()
         return super()._emit_change(added=added, removed=removed)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({repr(self._set)})"
+        return f"{type(self).__name__}({self._set!r})"
 
     def __hash__(self) -> int:
         """Make selection hashable."""
@@ -109,7 +113,7 @@ class Selection(EventedSet[_T]):
         (An active item is a single selected item).
         """
         if len(self) == 1:
-            self.active = list(self)[0]
+            self.active = next(iter(self))
         elif self._active is not None:
             self._active = None
             self.events.active(value=None)

@@ -13,8 +13,10 @@ current dims point (`viewer.dims.point`).
 """
 
 from copy import deepcopy
+from typing import Optional
 
 import numpy as np
+from packaging.version import parse as parse_version
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -26,7 +28,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt.utils import qthrottled
-from packaging.version import parse as parse_version
 
 import napari
 from napari.components.layerlist import Extent
@@ -57,7 +58,7 @@ def copy_layer_le_4_16(layer: Layer, name: str = ""):
 
 
 def copy_layer(layer: Layer, name: str = ""):
-    if NAPARI_GE_4_16:
+    if not NAPARI_GE_4_16:
         return copy_layer_le_4_16(layer, name)
 
     res_layer = Layer.create(*layer.as_layer_data_tuple())
@@ -121,7 +122,7 @@ class own_partial:
     (Qt widgets are not serializable)
     """
 
-    def __init__(self, func, *args, **kwargs):
+    def __init__(self, func, *args, **kwargs) -> None:
         self.func = func
         self.args = args
         self.kwargs = kwargs
@@ -129,7 +130,9 @@ class own_partial:
     def __call__(self, *args, **kwargs):
         return self.func(*(self.args + args), **{**self.kwargs, **kwargs})
 
-    def __deepcopy__(self, memodict={}):
+    def __deepcopy__(self, memodict=None):
+        if memodict is None:
+            memodict = {}
         return own_partial(
             self.func,
             *deepcopy(self.args, memodict),
@@ -138,7 +141,7 @@ class own_partial:
 
 
 class QtViewerWrap(QtViewer):
-    def __init__(self, main_viewer, *args, **kwargs):
+    def __init__(self, main_viewer, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.main_viewer = main_viewer
 
@@ -146,8 +149,8 @@ class QtViewerWrap(QtViewer):
         self,
         filenames: list,
         stack: bool,
-        plugin: str = None,
-        layer_type: str = None,
+        plugin: Optional[str] = None,
+        layer_type: Optional[str] = None,
         **kwargs,
     ):
         """for drag and drop open files"""
@@ -162,7 +165,7 @@ class CrossWidget(QCheckBox):
     the cross update is throttled
     """
 
-    def __init__(self, viewer: napari.Viewer):
+    def __init__(self, viewer: napari.Viewer) -> None:
         super().__init__("Add cross layer")
         self.viewer = viewer
         self.setChecked(False)
@@ -180,7 +183,7 @@ class CrossWidget(QCheckBox):
     def _update_extent(self):
         """
         Calculate the extent of the data.
-        
+
         Ignores the the cross layer itself in calculating the extent.
         """
         if NAPARI_GE_4_16:
@@ -244,7 +247,7 @@ class ExampleWidget(QWidget):
     of the additional viewers.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.btn = QPushButton("Perform action")
         self.spin = QDoubleSpinBox()
@@ -258,7 +261,7 @@ class ExampleWidget(QWidget):
 class MultipleViewerWidget(QSplitter):
     """The main widget of the example."""
 
-    def __init__(self, viewer: napari.Viewer):
+    def __init__(self, viewer: napari.Viewer) -> None:
         super().__init__()
         self.viewer = viewer
         self.viewer_model1 = ViewerModel(title="model1")
@@ -323,6 +326,8 @@ class MultipleViewerWidget(QSplitter):
     def _point_update(self, event):
         for model in [self.viewer, self.viewer_model1, self.viewer_model2]:
             if model.dims is event.source:
+                continue
+            if len(self.viewer.layers) != len(model.layers):
                 continue
             model.dims.current_step = event.value
 
@@ -444,7 +449,7 @@ class MultipleViewerWidget(QSplitter):
 
 
 if __name__ == "__main__":
-    from qtpy import QtWidgets, QtCore
+    from qtpy import QtCore, QtWidgets
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
     # above two lines are needed to allow to undock the widget with
     # additional viewers
@@ -454,5 +459,7 @@ if __name__ == "__main__":
 
     view.window.add_dock_widget(dock_widget, name="Sample")
     view.window.add_dock_widget(cross, name="Cross", area="left")
+
+    view.open_sample('napari', 'cells3d')
 
     napari.run()

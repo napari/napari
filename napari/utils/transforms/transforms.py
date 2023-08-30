@@ -1,7 +1,8 @@
 from functools import cached_property
-from typing import Sequence
+from typing import Iterable, Optional, Sequence
 
 import numpy as np
+import numpy.typing as npt
 import toolz as tz
 
 from napari.utils.events import EventedList
@@ -34,7 +35,7 @@ class Transform:
         A string name for the transform.
     """
 
-    def __init__(self, func=tz.identity, inverse=None, name=None):
+    def __init__(self, func=tz.identity, inverse=None, name=None) -> None:
         self.func = func
         self._inverse_func = inverse
         self.name = name
@@ -50,10 +51,10 @@ class Transform:
     def inverse(self) -> 'Transform':
         if self._inverse_func is not None:
             return Transform(self._inverse_func, self.func)
-        else:
-            raise ValueError(
-                trans._('Inverse function was not provided.', deferred=True)
-            )
+
+        raise ValueError(
+            trans._('Inverse function was not provided.', deferred=True)
+        )
 
     def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
@@ -109,8 +110,10 @@ class Transform:
         [self.__dict__.pop(p, None) for p in cached_properties]
 
 
-class TransformChain(EventedList, Transform):
-    def __init__(self, transforms=None):
+class TransformChain(EventedList[Transform], Transform):
+    def __init__(
+        self, transforms: Optional[Iterable[Transform]] = None
+    ) -> None:
         if transforms is None:
             transforms = []
         super().__init__(
@@ -141,14 +144,14 @@ class TransformChain(EventedList, Transform):
         return getattr(self.simplified, '_is_diagonal', False)
 
     @property
-    def simplified(self) -> 'Transform':
+    def simplified(self) -> Optional['Transform']:
         """Return the composite of the transforms inside the transform chain."""
         if len(self) == 0:
             return None
         if len(self) == 1:
             return self[0]
-        else:
-            return tz.pipe(self[0], *[tf.compose for tf in self[1:]])
+
+        return tz.pipe(self[0], *[tf.compose for tf in self[1:]])
 
     def set_slice(self, axes: Sequence[int]) -> 'TransformChain':
         """Return a transform chain subset to the visible dimensions.
@@ -205,7 +208,7 @@ class ScaleTranslate(Transform):
         A string name for the transform.
     """
 
-    def __init__(self, scale=(1.0,), translate=(0.0,), *, name=None):
+    def __init__(self, scale=(1.0,), translate=(0.0,), *, name=None) -> None:
         super().__init__(name=name)
 
         if len(scale) > len(translate):
@@ -369,7 +372,7 @@ class Affine(Transform):
         affine_matrix=None,
         ndim=None,
         name=None,
-    ):
+    ) -> None:
         super().__init__(name=name)
         self._upper_triangular = True
         if ndim is None:
@@ -429,14 +432,14 @@ class Affine(Transform):
         return self._linear_matrix.shape[0]
 
     @property
-    def scale(self) -> np.array:
+    def scale(self) -> npt.NDArray:
         """Return the scale of the transform."""
         if self._is_diagonal:
             return np.diag(self._linear_matrix)
-        else:
-            return decompose_linear_matrix(
-                self._linear_matrix, upper_triangular=self._upper_triangular
-            )[1]
+
+        return decompose_linear_matrix(
+            self._linear_matrix, upper_triangular=self._upper_triangular
+        )[1]
 
     @scale.setter
     def scale(self, scale):
@@ -452,7 +455,7 @@ class Affine(Transform):
             self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property
-    def translate(self) -> np.array:
+    def translate(self) -> npt.NDArray:
         """Return the translation of the transform."""
         return self._translate
 
@@ -462,7 +465,7 @@ class Affine(Transform):
         self._translate = translate_to_vector(translate, ndim=self.ndim)
 
     @property
-    def rotate(self) -> np.array:
+    def rotate(self) -> npt.NDArray:
         """Return the rotation of the transform."""
         return decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
@@ -478,7 +481,7 @@ class Affine(Transform):
         self._clean_cache()
 
     @property
-    def shear(self) -> np.array:
+    def shear(self) -> npt.NDArray:
         """Return the shear of the transform."""
         if self._is_diagonal:
             return np.zeros((self.ndim,))
@@ -510,7 +513,7 @@ class Affine(Transform):
         self._clean_cache()
 
     @property
-    def linear_matrix(self) -> np.array:
+    def linear_matrix(self) -> npt.NDArray:
         """Return the linear matrix of the transform."""
         return self._linear_matrix
 
@@ -523,7 +526,7 @@ class Affine(Transform):
         self._clean_cache()
 
     @property
-    def affine_matrix(self) -> np.array:
+    def affine_matrix(self) -> npt.NDArray:
         """Return the affine matrix for the transform."""
         matrix = np.eye(self.ndim + 1, self.ndim + 1)
         matrix[:-1, :-1] = self._linear_matrix
@@ -698,7 +701,7 @@ class CompositeAffine(Affine):
         shear=None,
         ndim=None,
         name=None,
-    ):
+    ) -> None:
         super().__init__(
             scale, translate, rotate=rotate, shear=shear, ndim=ndim, name=name
         )
@@ -713,7 +716,7 @@ class CompositeAffine(Affine):
         self._linear_matrix = self._make_linear_matrix()
 
     @property
-    def scale(self) -> np.array:
+    def scale(self) -> npt.NDArray:
         """Return the scale of the transform."""
         return self._scale
 
@@ -724,7 +727,7 @@ class CompositeAffine(Affine):
         self._linear_matrix = self._make_linear_matrix()
 
     @property
-    def rotate(self) -> np.array:
+    def rotate(self) -> npt.NDArray:
         """Return the rotation of the transform."""
         return self._rotate
 
@@ -736,7 +739,7 @@ class CompositeAffine(Affine):
         self._clean_cache()
 
     @property
-    def shear(self) -> np.array:
+    def shear(self) -> npt.NDArray:
         """Return the shear of the transform."""
         return (
             self._shear[np.triu_indices(n=self.ndim, k=1)]
@@ -751,7 +754,11 @@ class CompositeAffine(Affine):
         self._linear_matrix = self._make_linear_matrix()
         self._clean_cache()
 
-    @Affine.linear_matrix.setter
+    @property
+    def linear_matrix(self):
+        return super().linear_matrix
+
+    @linear_matrix.setter
     def linear_matrix(self, linear_matrix):
         """Setting the linear matrix of a CompositeAffine transform is not supported."""
         raise NotImplementedError(
@@ -761,7 +768,11 @@ class CompositeAffine(Affine):
             )
         )
 
-    @Affine.affine_matrix.setter
+    @property
+    def affine_matrix(self):
+        return super().affine_matrix
+
+    @affine_matrix.setter
     def affine_matrix(self, affine_matrix):
         """Setting the affine matrix of a CompositeAffine transform is not supported."""
         raise NotImplementedError(

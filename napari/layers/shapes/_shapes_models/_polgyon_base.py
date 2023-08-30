@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.interpolate import splev, splprep
 
 from napari.layers.shapes._shapes_models.shape import Shape
 from napari.layers.shapes._shapes_utils import create_box
@@ -25,6 +26,8 @@ class PolygonBase(Shape):
         Flag if array is filled or not.
     name : str
         Name of the shape.
+    interpolation_order : int
+        Order of spline interpolation for the sides. 1 means no interpolation.
     """
 
     def __init__(
@@ -38,8 +41,9 @@ class PolygonBase(Shape):
         filled=True,
         closed=True,
         name='polygon',
-    ):
-
+        interpolation_order=1,
+        interpolation_sampling=50,
+    ) -> None:
         super().__init__(
             edge_width=edge_width,
             z_index=z_index,
@@ -48,8 +52,11 @@ class PolygonBase(Shape):
         )
         self._filled = filled
         self._closed = closed
-        self.data = data
         self.name = name
+        self.interpolation_order = interpolation_order
+        self.interpolation_sampling = interpolation_sampling
+
+        self.data = data
 
     @property
     def data(self):
@@ -77,10 +84,37 @@ class PolygonBase(Shape):
 
     def _update_displayed_data(self):
         """Update the data that is to be displayed."""
+        # Raw vertices
+        data = self.data_displayed
+
+        # splprep fails if two adjacent values are identical, which happens
+        # when a point was just created and the new potential point is set to exactly the same
+        # to prevent issues, we remove the extra points.
+        duplicates = np.isclose(data, np.roll(data, 1, axis=0))
+        # cannot index with bools directly (flattens by design)
+        data_spline = data[~np.all(duplicates, axis=1)]
+
+        if (
+            self.interpolation_order > 1
+            and len(data_spline) > self.interpolation_order
+        ):
+            data = data_spline.copy()
+            if self._closed:
+                data = np.append(data, data[:1], axis=0)
+
+            tck, _ = splprep(
+                data.T, s=0, k=self.interpolation_order, per=self._closed
+            )
+
+            # the number of sampled data points might need to be carefully thought
+            # about (might need to change with image scale?)
+            u = np.linspace(0, 1, self.interpolation_sampling * len(data))
+
+            # get interpolated data (discard last element which is a copy)
+            data = np.stack(splev(u, tck), axis=1)[:-1]
+
         # For path connect every all data
-        self._set_meshes(
-            self.data_displayed, face=self._filled, closed=self._closed
-        )
+        self._set_meshes(data, face=self._filled, closed=self._closed)
         self._box = create_box(self.data_displayed)
 
         data_not_displayed = self.data[:, self.dims_not_displayed]

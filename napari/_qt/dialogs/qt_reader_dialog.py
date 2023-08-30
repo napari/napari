@@ -25,10 +25,12 @@ class QtReaderDialog(QDialog):
         self,
         pth: str = '',
         parent: QWidget = None,
-        readers: Dict[str, str] = {},
+        readers: Optional[Dict[str, str]] = None,
         error_message: str = '',
         persist_checked: bool = True,
-    ):
+    ) -> None:
+        if readers is None:
+            readers = {}
         super().__init__(parent)
         self.setObjectName('Choose reader')
         self.setWindowTitle(trans._('Choose reader'))
@@ -125,6 +127,7 @@ class QtReaderDialog(QDialog):
         checked_btn = self.reader_btn_group.checkedButton()
         if checked_btn:
             return checked_btn.text()
+        return None
 
     def _get_persist_choice(self):
         """Get persistence checkbox choice"""
@@ -284,9 +287,9 @@ def open_with_dialog_choices(
         viewer to add layers to
     """
     # TODO: disambiguate with reader title
-    plugin_name = [
+    plugin_name = next(
         p_name for p_name, d_name in readers.items() if d_name == display_name
-    ][0]
+    )
     # may throw error, but we let it this time
     qt_viewer.viewer.open(paths, stack=stack, plugin=plugin_name, **kwargs)
 

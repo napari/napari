@@ -1,7 +1,7 @@
 import contextlib
 import sys
 import time
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pytest
@@ -13,8 +13,13 @@ from napari.layers import Image, Labels, Layer
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.misc import all_subclasses
 
+if TYPE_CHECKING:
+    import typing
+
+    import napari.types
+
 try:
-    import qtpy  # noqa
+    import qtpy  # noqa: F401 need to be ignored as qtpy may be available but Qt bindings may not be
 except ModuleNotFoundError:
     pytest.skip('Cannot test magicgui without qtpy.', allow_module_level=True)
 except RuntimeError:
@@ -55,6 +60,27 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     assert viewer.layers[0].source.widget == add_data
 
 
+def test_add_layer_data_to_viewer_optional(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    @magicgui
+    def func_optional(a: bool) -> 'typing.Optional[napari.types.ImageData]':
+        if a:
+            return np.zeros((10, 10))
+        return None
+
+    viewer.window.add_dock_widget(func_optional)
+    assert not viewer.layers
+
+    func_optional(a=True)
+
+    assert len(viewer.layers) == 1
+
+    func_optional(a=False)
+
+    assert len(viewer.layers) == 1
+
+
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason='Futures not subscriptable before py3.9'
 )
@@ -92,7 +118,6 @@ def test_magicgui_add_future_data(
     _assert_stuff()
 
 
-@pytest.mark.sync_only
 def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
     """Test that annotating with FunctionWorker works."""
     from napari.qt.threading import FunctionWorker, thread_worker
@@ -287,18 +312,12 @@ NAMES = ('Image', 'Labels', 'Layer', 'Points', 'Shapes', 'Surface')
 
 @pytest.mark.parametrize('name', sorted(MGUI_EXPORTS))
 def test_mgui_forward_refs(name, monkeypatch):
-    """Test magicgui forward ref annotations
-
-    make sure that calling
-    `magicgui.type_map.pick_widget_type` with the string version of a napari
-    object triggers the appropriate imports to resolve the class in time.
+    """make sure that magicgui's `get_widget_class` returns the right widget type
+    for the various napari types... even when expressed as strings.
     """
-    import magicgui.type_map
+    import magicgui.widgets
+    from magicgui.type_map import get_widget_class
 
-    # clearing out the loaded modules that call magicgui.register_type,
-    # to make sure that when the forward ref is evaluated, those modules get imported
-    # again.
-    monkeypatch.setattr(magicgui.type_map, '_TYPE_DEFS', {})
     monkeypatch.delitem(sys.modules, 'napari')
     monkeypatch.delitem(sys.modules, 'napari.viewer')
     monkeypatch.delitem(sys.modules, 'napari.types')
@@ -309,8 +328,7 @@ def test_mgui_forward_refs(name, monkeypatch):
         if m.startswith('napari.layers') and 'utils' not in m:
             monkeypatch.delitem(sys.modules, m)
 
-    assert magicgui.type_map._TYPE_DEFS == {}
-    wdg, options = magicgui.type_map.pick_widget_type(annotation=name)
+    wdg, options = get_widget_class(annotation=name)
     if name == 'napari.Viewer':
         assert wdg == magicgui.widgets.EmptyWidget and 'bind' in options
     else:

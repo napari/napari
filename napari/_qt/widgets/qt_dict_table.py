@@ -47,12 +47,12 @@ class QtDictTable(QTableWidget):
     def __init__(
         self,
         parent=None,
-        source: List[dict] = None,
+        source: Optional[List[dict]] = None,
         *,
-        headers: List[str] = None,
+        headers: Optional[List[str]] = None,
         min_section_width: Optional[int] = None,
         max_section_width: int = 480,
-    ):
+    ) -> None:
         super().__init__(parent=parent)
         if min_section_width:
             self.horizontalHeader().setMinimumSectionSize(min_section_width)

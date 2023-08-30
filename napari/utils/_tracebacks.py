@@ -1,4 +1,5 @@
 import re
+import sys
 from typing import Callable, Dict, Generator
 
 import numpy as np
@@ -53,72 +54,93 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
             return tb_text
 
     except ModuleNotFoundError:
-        import cgitb
         import traceback
 
-        # cgitb does not support error chaining...
-        # see https://peps.python.org/pep-3134/#enhanced-reporting
-        # this is a workaround
-        def cgitb_chain(exc: Exception) -> Generator[str, None, None]:
-            """Recurse through exception stack and chain cgitb_html calls."""
-            if exc.__cause__:
-                yield from cgitb_chain(exc.__cause__)
-                yield (
-                    '<br><br><font color="#51B432">The above exception was '
-                    'the direct cause of the following exception:</font><br>'
-                )
-            elif exc.__context__:
-                yield from cgitb_chain(exc.__context__)
-                yield (
-                    '<br><br><font color="#51B432">During handling of the '
-                    'above exception, another exception occurred:</font><br>'
-                )
-            yield cgitb_html(exc)
+        if sys.version_info < (3, 11):
+            import cgitb
 
-        def cgitb_html(exc: Exception) -> str:
-            """Format exception with cgitb.html."""
-            info = (type(exc), exc, exc.__traceback__)
-            return cgitb.html(info)
+            # cgitb does not support error chaining...
+            # see https://peps.python.org/pep-3134/#enhanced-reporting
+            # this is a workaround
+            def cgitb_chain(exc: Exception) -> Generator[str, None, None]:
+                """Recurse through exception stack and chain cgitb_html calls."""
+                if exc.__cause__:
+                    yield from cgitb_chain(exc.__cause__)
+                    yield (
+                        '<br><br><font color="#51B432">The above exception was '
+                        'the direct cause of the following exception:</font><br>'
+                    )
+                elif exc.__context__:
+                    yield from cgitb_chain(exc.__context__)
+                    yield (
+                        '<br><br><font color="#51B432">During handling of the '
+                        'above exception, another exception occurred:</font><br>'
+                    )
+                yield cgitb_html(exc)
 
-        def format_exc_info(info: ExcInfo, as_html: bool, color=None) -> str:
-            # avoids printing the array data
-            np.set_string_function(
-                lambda arr: f'{type(arr)} {arr.shape} {arr.dtype}'
-            )
-            if as_html:
-                html = "\n".join(cgitb_chain(info[1]))
-                # cgitb has a lot of hardcoded colors that don't work for us
-                # remove bgcolor, and let theme handle it
-                html = re.sub('bgcolor="#.*"', '', html)
-                # remove superfluous whitespace
-                html = html.replace('<br>\n', '\n')
-                # but retain it around the <small> bits
-                html = re.sub(r'(<tr><td><small.*</tr>)', '<br>\\1<br>', html)
-                # weird 2-part syntax is a workaround for hard-to-grep text.
-                html = html.replace(
-                    "<p>A problem occurred in a Python script.  "
-                    "Here is the sequence of",
-                    "",
+            def cgitb_html(exc: Exception) -> str:
+                """Format exception with cgitb.html."""
+                info = (type(exc), exc, exc.__traceback__)
+                return cgitb.html(info)
+
+            def format_exc_info(
+                info: ExcInfo, as_html: bool, color=None
+            ) -> str:
+                # avoids printing the array data
+                np.set_string_function(
+                    lambda arr: f'{type(arr)} {arr.shape} {arr.dtype}'
                 )
-                html = html.replace(
-                    "function calls leading up to the error, "
-                    "in the order they occurred.</p>",
-                    "<br>",
+                if as_html:
+                    html = "\n".join(cgitb_chain(info[1]))
+                    # cgitb has a lot of hardcoded colors that don't work for us
+                    # remove bgcolor, and let theme handle it
+                    html = re.sub('bgcolor="#.*"', '', html)
+                    # remove superfluous whitespace
+                    html = html.replace('<br>\n', '\n')
+                    # but retain it around the <small> bits
+                    html = re.sub(
+                        r'(<tr><td><small.*</tr>)', '<br>\\1<br>', html
+                    )
+                    # weird 2-part syntax is a workaround for hard-to-grep text.
+                    html = html.replace(
+                        "<p>A problem occurred in a Python script.  "
+                        "Here is the sequence of",
+                        "",
+                    )
+                    html = html.replace(
+                        "function calls leading up to the error, "
+                        "in the order they occurred.</p>",
+                        "<br>",
+                    )
+                    # remove hardcoded fonts
+                    html = html.replace('face="helvetica, arial"', "")
+                    html = (
+                        "<span style='font-family: monaco,courier,monospace;'>"
+                        + html
+                        + "</span>"
+                    )
+                    tb_text = html
+                else:
+                    # if we don't need HTML, just use traceback
+                    tb_text = ''.join(traceback.format_exception(*info))
+                # resets to default behavior
+                np.set_string_function(None)
+                return tb_text
+
+        else:
+
+            def format_exc_info(
+                info: ExcInfo, as_html: bool, color=None
+            ) -> str:
+                # avoids printing the array data
+                np.set_string_function(
+                    lambda arr: f'{type(arr)} {arr.shape} {arr.dtype}'
                 )
-                # remove hardcoded fonts
-                html = html.replace('face="helvetica, arial"', "")
-                html = (
-                    "<span style='font-family: monaco,courier,monospace;'>"
-                    + html
-                    + "</span>"
-                )
-                tb_text = html
-            else:
-                # if we don't need HTML, just use traceback
                 tb_text = ''.join(traceback.format_exception(*info))
-            # resets to default behavior
-            np.set_string_function(None)
-            return tb_text
+                if as_html:
+                    tb_text = '<pre>' + tb_text + '</pre>'
+                np.set_string_function(None)
+                return tb_text
 
     return format_exc_info
 
@@ -164,7 +186,7 @@ def ansi2html(
     previous_end = 0
     in_span = False
     ansi_codes = []
-    ansi_finder = re.compile("\033\\[" "([\\d;]*)" "([a-zA-z])")
+    ansi_finder = re.compile("\033\\[([\\d;]*)([a-zA-Z])")
     for match in ansi_finder.finditer(ansi_string):
         yield ansi_string[previous_end : match.start()]
         previous_end = match.end()

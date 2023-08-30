@@ -8,9 +8,9 @@ from napari.layers import Image, Labels
 @pytest.mark.parametrize(
     'image_shape, dims_displayed, expected',
     [
-        ((10, 20, 30), (0, 1, 2), [[0, 10], [0, 20], [0, 30]]),
-        ((10, 20, 30), (0, 2, 1), [[0, 10], [0, 30], [0, 20]]),
-        ((10, 20, 30), (2, 1, 0), [[0, 30], [0, 20], [0, 10]]),
+        ((10, 20, 30), (0, 1, 2), [[0, 9.0], [0, 19.0], [0, 29.0]]),
+        ((10, 20, 30), (0, 2, 1), [[0, 9.0], [0, 29.0], [0, 19.0]]),
+        ((10, 20, 30), (2, 1, 0), [[0, 29.0], [0, 19.0], [0, 9.0]]),
     ],
 )
 def test_layer_bounding_box_order(image_shape, dims_displayed, expected):
@@ -76,7 +76,7 @@ def _check_subpixel_values(layer, val_dict):
                 view_direction = None
                 dims_displayed = None
                 if ndisplay == 3:
-                    position = [0] + position
+                    position = [0, *position]
                     if isinstance(layer, Labels):
                         # Labels implements _get_value_3d, Image does not
                         view_direction = np.asarray([1.0, 0, 0])

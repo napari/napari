@@ -20,7 +20,7 @@ def move_plane_along_normal(layer: Image, event: Event):
     if (
         'Shift' not in event.modifiers
         or layer.visible is False
-        or layer.interactive is False
+        or layer.mouse_pan is False
         or len(event.dims_displayed) < 3
     ):
         return
@@ -52,7 +52,7 @@ def move_plane_along_normal(layer: Image, event: Event):
 
     # Store original plane position and disable interactivity during plane drag
     original_plane_position = np.copy(layer.plane.position)
-    layer.interactive = False
+    layer.mouse_pan = False
 
     yield
 
@@ -72,14 +72,15 @@ def move_plane_along_normal(layer: Image, event: Event):
         )
 
         clamped_plane_position = clamp_point_to_bounding_box(
-            updated_position, layer._display_bounding_box(event.dims_displayed)
+            updated_position,
+            layer._display_bounding_box_augmented(event.dims_displayed),
         )
 
         layer.plane.position = clamped_plane_position
         yield
 
     # Re-enable volume_layer interactivity after the drag
-    layer.interactive = True
+    layer.mouse_pan = True
 
 
 def set_plane_position(layer: Image, event: Event):
@@ -87,7 +88,7 @@ def set_plane_position(layer: Image, event: Event):
     # early exit clauses
     if (
         layer.visible is False
-        or layer.interactive is False
+        or layer.mouse_pan is False
         or len(event.dims_displayed) < 3
     ):
         return

@@ -27,9 +27,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     moved (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: int, old_value: T, value: T)
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
 
@@ -45,10 +45,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     def __init__(self, *args, **kwargs) -> None:
         self._activate_on_insert = True
         super().__init__(*args, **kwargs)
-        self.events.removed.connect(
-            lambda e: self.selection.discard(e.value)
-        )  # FIXME remove lambda
-        self.selection._pre_add_hook = self._preselect_hook
+        # bound/unbound methods are ambiguous for mypy so we need to ignore
+        # https://mypy.readthedocs.io/en/stable/error_code_list.html?highlight=method-assign#check-that-assignment-target-is-not-a-method-method-assign
+        self.selection._pre_add_hook = self._preselect_hook  # type: ignore[method-assign]
 
     def _preselect_hook(self, value):
         """Called before adding an item to the selection."""
@@ -61,6 +60,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
                 )
             )
         return value
+
+    def _process_delete_item(self, item: _T):
+        self.selection.discard(item)
 
     def insert(self, index: int, value: _T):
         super().insert(index, value)
@@ -83,7 +85,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
             do_add = len(self) > new
         else:
             *root, _idx = idx
-            new = tuple(root) + (_idx - 1,) if _idx >= 1 else tuple(root)
+            new = (*tuple(root), _idx - 1) if _idx >= 1 else tuple(root)
             do_add = len(self) > new[0]
         if do_add:
             self.selection.add(self[new])

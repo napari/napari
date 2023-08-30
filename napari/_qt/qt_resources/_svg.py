@@ -1,7 +1,6 @@
 """
 A Class for generating QIcons from SVGs with arbitrary colors at runtime.
 """
-from functools import lru_cache
 from typing import Optional, Union
 
 from qtpy.QtCore import QByteArray, QPoint, QRect, QRectF, Qt
@@ -52,7 +51,6 @@ class QColoredSVGIcon(QIcon):
         colorized = get_colorized_svg(path_or_xml, color, opacity)
         super().__init__(SVGBufferIconEngine(colorized))
 
-    @lru_cache
     def colored(
         self,
         color: Optional[str] = None,
@@ -83,12 +81,11 @@ class QColoredSVGIcon(QIcon):
         if not color and theme:
             from napari.utils.theme import get_theme
 
-            color = getattr(get_theme(theme, False), theme_key).as_hex()
+            color = getattr(get_theme(theme), theme_key).as_hex()
 
         return QColoredSVGIcon(self._svg, color, opacity)
 
     @staticmethod
-    @lru_cache
     def from_resources(
         icon_name: str,
     ) -> 'QColoredSVGIcon':

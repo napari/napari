@@ -9,7 +9,7 @@ from napari.utils.events import disconnect_events
 
 
 class VispyShapesLayer(VispyBaseLayer):
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         node = ShapesVisual()
         super().__init__(layer, node)
 
@@ -81,10 +81,11 @@ class VispyShapesLayer(VispyBaseLayer):
             face_color,
             edge_color,
             pos,
-            width,
+            _,
         ) = self.layer._compute_vertices_and_box()
 
-        width = settings.appearance.highlight_thickness
+        # use last dimension of scale like (thickness cannot be anisotropic)
+        width = settings.appearance.highlight_thickness / self.layer.scale[-1]
 
         if vertices is None or len(vertices) == 0:
             vertices = np.zeros((1, self.layer._slice_input.ndisplay))

@@ -1,5 +1,5 @@
 """MutableMapping that emits events when altered."""
-from typing import Mapping, Sequence, Type, Union
+from typing import Mapping, Optional, Sequence, Type, Union
 
 from napari.utils.events.containers._dict import _K, _T, TypedMutableMapping
 from napari.utils.events.event import EmitterGroup, Event
@@ -9,7 +9,7 @@ from napari.utils.events.types import SupportsEvents
 class EventedDict(TypedMutableMapping[_K, _T]):
     """Mutable dictionary that emits events when altered.
 
-    This class is designed to behave exactly like builting ``dict``, but
+    This class is designed to behave exactly like builtin ``dict``, but
     will emit events before and after all mutations (addition, removal, and
     changing).
 
@@ -23,7 +23,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     Events
     ------
     changed (key: K, old_value: T, value: T)
-        emitted when ``key`` is set from ``old_value`` to ``value``
+        emitted when item at ``key`` is changed from ``old_value`` to ``value``
     adding (key: K)
         emitted before an item is added to the dictionary with ``key``
     added (key: K, value: T)
@@ -43,9 +43,9 @@ class EventedDict(TypedMutableMapping[_K, _T]):
 
     def __init__(
         self,
-        data: Mapping[_K, _T] = None,
+        data: Optional[Mapping[_K, _T]] = None,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-    ):
+    ) -> None:
         _events = {
             "changing": None,
             "changed": None,
@@ -60,11 +60,13 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             self.events.add(**_events)
         else:
             # otherwise create a new one
-            self.events = EmitterGroup(source=self, **_events)
+            self.events = EmitterGroup(
+                source=self, auto_connect=False, **_events
+            )
         super().__init__(data, basetype)
 
     def __setitem__(self, key: _K, value: _T):
-        old = self._dict.get(key, None)
+        old = self._dict.get(key)
         if value is old or value == old:
             return
         if old is None:
@@ -85,10 +87,10 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def _reemit_child_event(self, event: Event):
         """An item in the dict emitted an event.  Re-emit with key"""
         if not hasattr(event, "key"):
-            setattr(event, "key", self.key(event.source))
-        # re-emit with this object's EventEmitter of the same type if present
-        # otherwise just emit with the EmitterGroup itself
-        getattr(self.events, event.type, self.events)(event)
+            event.key = self.key(event.source)
+
+        # re-emit with this object's EventEmitter
+        self.events(event)
 
     def _disconnect_child_emitters(self, child: _T):
         """Disconnect all events from the child from the re-emitter."""
@@ -108,3 +110,4 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         for k, v in self._dict.items():
             if v is value or v == value:
                 return k
+        return None

@@ -9,7 +9,6 @@ from napari.utils.translations import trans
 
 
 class ShortcutsSettings(EventedModel):
-    # FIXME user with modified shortcut will not see new shortcut
     shortcuts: Dict[str, List[KeyBinding]] = Field(
         default_shortcuts,
         title=trans._("shortcuts"),
@@ -20,9 +19,9 @@ class ShortcutsSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version']
+        preferences_exclude = ('schema_version',)
 
-    @validator('shortcuts')
+    @validator('shortcuts', allow_reuse=True)
     def shortcut_validate(cls, v):
         for name, value in default_shortcuts.items():
             if name not in v:
