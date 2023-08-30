@@ -338,7 +338,6 @@ module = [
     'napari.layers.utils.style_encoding',
     'napari.layers.utils.text_manager',
     'napari.utils._magicgui',
-    'napari.utils._octree',
     'napari.utils._testsupport',
     'napari.utils._tracebacks',
     'napari.utils.action_manager',
