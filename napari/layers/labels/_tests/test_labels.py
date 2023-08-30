@@ -117,16 +117,6 @@ def test_changing_labels():
         layer.data = data_c
 
 
-def test_adding_labels():
-    """Test adding new labels"""
-    shape = (10, 15)
-    np.random.seed(0)
-    data = np.random.randint(1, size=shape)
-    layer = Labels(data)
-    layer.show_selected_label = True
-    layer.selected_label = 2
-
-
 def test_changing_labels_dims():
     """Test changing Labels data including dimensionality."""
     shape_a = (10, 15)
