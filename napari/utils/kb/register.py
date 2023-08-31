@@ -1,3 +1,4 @@
+from bisect import insort_left
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterator, List, Optional, Tuple
 
@@ -80,8 +81,6 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
                 when=rule.when,
             )
 
-            print(entry)
-
             kb = KeyBinding.validate(plat_keybinding).to_int()
             if kb not in self.keymap:
                 entries = []
@@ -89,7 +88,7 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
             else:
                 entries = self.keymap[kb]
 
-            entries.append(entry)
+            insort_left(entries, entry)
 
             self.registered.emit()
 
