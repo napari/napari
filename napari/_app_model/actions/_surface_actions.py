@@ -9,8 +9,12 @@ from __future__ import annotations
 
 from app_model.types import Action
 
-from napari._app_model.constants import CommandId
+from napari._app_model.constants import DEFAULT_SHORTCUTS, CommandId
+from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.layers.surface import _surface_key_bindings as _surface_actions
+
+enablement = LLSCK.active_layer_type == 'surface'
+
 
 # actions ported to app_model from layers/surface/_surface_key_bindings
 SURFACE_ACTIONS = [
@@ -19,11 +23,19 @@ SURFACE_ACTIONS = [
         title=CommandId.SURFACE_ACTIVATE_PAN_ZOOM_MODE.description,
         short_title=CommandId.SURFACE_ACTIVATE_PAN_ZOOM_MODE.title,
         callback=_surface_actions.activate_surface_pan_zoom_mode,
+        keybindings=DEFAULT_SHORTCUTS[
+            CommandId.SURFACE_ACTIVATE_PAN_ZOOM_MODE
+        ],
+        enablement=enablement,
     ),
     Action(
         id=CommandId.SURFACE_ACTIVATE_TRANSFORM_MODE,
         title=CommandId.SURFACE_ACTIVATE_TRANSFORM_MODE.description,
         short_title=CommandId.SURFACE_ACTIVATE_TRANSFORM_MODE.title,
         callback=_surface_actions.activate_surface_transform_mode,
+        keybindings=DEFAULT_SHORTCUTS[
+            CommandId.SURFACE_ACTIVATE_TRANSFORM_MODE
+        ],
+        enablement=enablement,
     ),
 ]
