@@ -1,7 +1,15 @@
-from enum import IntEnum
+from enum import IntEnum, IntFlag, auto
 from typing import List
 
 from app_model.types import KeyCode
+
+
+class DispatchFlags(IntFlag):
+    RESET = 0
+    DELAY = auto()
+    SINGLE_MOD = auto()
+    ON_RELEASE = auto()
+    TWO_PART = auto()
 
 
 class KeyBindingWeights(IntEnum):
@@ -9,9 +17,6 @@ class KeyBindingWeights(IntEnum):
     PLUGIN = 300
     USER = 500
 
-
-# TODO: make this a user setting
-PRESS_HOLD_DELAY_MS: int = 200
 
 KEY_MOD_MASK = 0x00000F00
 PART_0_MASK = 0x0000FFFF

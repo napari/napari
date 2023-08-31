@@ -26,11 +26,11 @@ def key2mod(key: KeyCode, os: OperatingSystem) -> Optional[KeyMod]:
     if key == KeyCode.Alt:
         return KeyMod.Alt
     if key == KeyCode.Ctrl:
-        if os.is_mac():
+        if os.is_mac:
             return KeyMod.WinCtrl
         return KeyMod.CtrlCmd
     if key == KeyCode.Meta:
-        if os.is_mac():
+        if os.is_mac:
             return KeyMod.CtrlCmd
         return KeyMod.WinCtrl
     return None

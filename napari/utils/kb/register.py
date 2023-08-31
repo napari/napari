@@ -80,6 +80,8 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
                 when=rule.when,
             )
 
+            print(entry)
+
             kb = KeyBinding.validate(plat_keybinding).to_int()
             if kb not in self.keymap:
                 entries = []
