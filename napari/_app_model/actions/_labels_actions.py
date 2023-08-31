@@ -21,7 +21,7 @@ from napari.layers.labels import _labels_key_bindings as _labels_actions
 
 enablement = LLSCK.active_layer_type == 'labels'
 
-# actions ported to app_model from components/_viewer_key_bindings
+# actions ported to app_model from layers/labels/_labels_key_bindings
 LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_ACTIVATE_PAINT_MODE,

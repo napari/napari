@@ -7,6 +7,8 @@ effect.  Use `app.register_action` to register new actions at runtime.
 
 from __future__ import annotations
 
+from typing import List
+
 from app_model.types import Action
 
 from napari._app_model.constants import DEFAULT_SHORTCUTS, CommandId
@@ -15,9 +17,8 @@ from napari.layers.surface import _surface_key_bindings as _surface_actions
 
 enablement = LLSCK.active_layer_type == 'surface'
 
-
 # actions ported to app_model from layers/surface/_surface_key_bindings
-SURFACE_ACTIONS = [
+SURFACE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.SURFACE_ACTIVATE_PAN_ZOOM_MODE,
         title=CommandId.SURFACE_ACTIVATE_PAN_ZOOM_MODE.description,

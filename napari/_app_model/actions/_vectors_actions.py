@@ -7,6 +7,8 @@ effect.  Use `app.register_action` to register new actions at runtime.
 
 from __future__ import annotations
 
+from typing import List
+
 from app_model.types import Action
 
 from napari._app_model.constants import DEFAULT_SHORTCUTS, CommandId
@@ -16,7 +18,7 @@ from napari.layers.vectors import _vectors_key_bindings as _vectors_actions
 enablement = LLSCK.active_layer_type == 'vectors'
 
 # actions ported to app_model from layers/vectors/_vectors_key_bindings
-VECTORS_ACTIONS = [
+VECTORS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.VECTORS_ACTIVATE_PAN_ZOOM_MODE,
         title=CommandId.VECTORS_ACTIVATE_PAN_ZOOM_MODE.description,

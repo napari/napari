@@ -7,6 +7,8 @@ effect.  Use `app.register_action` to register new actions at runtime.
 
 from __future__ import annotations
 
+from typing import List
+
 from app_model.types import Action
 
 from napari._app_model.actions import GeneratorCallback
@@ -16,8 +18,8 @@ from napari.layers.image import _image_key_bindings as _image_actions
 
 enablement = LLSCK.active_layer_type == 'image'
 
-# actions ported to app_model from components/_viewer_key_bindings
-IMAGE_ACTIONS = [
+# actions ported to app_model from layers/image/_image_key_bindings
+IMAGE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Z,
         title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Z.description,

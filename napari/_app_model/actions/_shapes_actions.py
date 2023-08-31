@@ -7,6 +7,8 @@ effect.  Use `app.register_action` to register new actions at runtime.
 
 from __future__ import annotations
 
+from typing import List
+
 from app_model.types import Action
 
 from napari._app_model.actions import AttrRestoreCallback, GeneratorCallback
@@ -14,10 +16,10 @@ from napari._app_model.constants import DEFAULT_SHORTCUTS, CommandId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.layers.shapes import _shapes_key_bindings as _shapes_actions
 
-enablement = LLSCK.active_layer_type == 'labels'
+enablement = LLSCK.active_layer_type == 'shapes'
 
-# actions ported to app_model from components/_viewer_key_bindings
-SHAPES_ACTIONS = [
+# actions ported to app_model from layers/shapes/_shapes_key_bindings
+SHAPES_ACTIONS: List[Action] = [
     Action(
         id=CommandId.SHAPES_HOLD_TO_LOCK_ASPECT_RATIO,
         title=CommandId.SHAPES_HOLD_TO_LOCK_ASPECT_RATIO.description,
