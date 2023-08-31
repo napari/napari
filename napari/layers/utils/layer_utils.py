@@ -1123,4 +1123,11 @@ def _get_chunk_size(
             # when load data from drive
             return data.chunk_layout.read_chunk.shape
         return None
+    if "xarray" in sys.modules:
+        from xarray import DataArray
+
+        if isinstance(data, DataArray):
+            chunk_size = data.chunksizes
+            if len(chunk_size) != 0:
+                return tuple(dim_chunk[0] for dim_chunk in chunk_size)
     return None
