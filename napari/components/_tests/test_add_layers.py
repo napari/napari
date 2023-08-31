@@ -114,14 +114,16 @@ def test_add_points_layer_with_different_range_updates_all_slices():
     np.testing.assert_array_equal(initial_point._indices_view, [0])
     assert viewer.dims.point == (10, 5, 5)
 
-    # Adding an earlier point should keep the dim slider at the position and therefore should not change the viewport
+    # Adding an earlier point should keep the dim slider at the position
+    # and therefore should not change the viewport.
     earlier_point = viewer.add_points([[8, 1, 1]])
     np.testing.assert_array_equal(initial_point._indices_view, [0])
     np.testing.assert_array_equal(earlier_point._indices_view, [])
     assert viewer.dims.point == (10, 5, 5)
 
-    # Adding a point on the same slice as the initial  point should keep the dim slider at the position
-    # and should additionally show the added point in the viewport
+    # Adding a point on the same slice as the initial point should keep the
+    # dim slider at the position and should additionally show the added point
+    # in the viewport.
     same_slice_as_initial_point = viewer.add_points([[10, 1, 1]])
     np.testing.assert_array_equal(initial_point._indices_view, [0])
     np.testing.assert_array_equal(earlier_point._indices_view, [])
@@ -130,7 +132,8 @@ def test_add_points_layer_with_different_range_updates_all_slices():
     )
     assert viewer.dims.point == (10, 5, 5)
 
-    # Adding a later point should keep the dim slider at the position and therefore should not change the viewport
+    # Adding a later point should keep the dim slider at the position
+    # and therefore should not change the viewport.
     later_point = viewer.add_points([[14, 1, 1]])
     np.testing.assert_array_equal(initial_point._indices_view, [0])
     np.testing.assert_array_equal(earlier_point._indices_view, [])
@@ -140,7 +143,8 @@ def test_add_points_layer_with_different_range_updates_all_slices():
     np.testing.assert_array_equal(later_point._indices_view, [])
     assert viewer.dims.point == (10, 5, 5)
 
-    # Removing the earlier point should keep the dim slider at the position and therefore should not change the viewport
+    # Removing the earlier point should keep the dim slider at the position
+    # and therefore should not change the viewport.
     viewer.layers.remove(earlier_point)
     np.testing.assert_array_equal(initial_point._indices_view, [0])
     np.testing.assert_array_equal(
@@ -149,52 +153,69 @@ def test_add_points_layer_with_different_range_updates_all_slices():
     np.testing.assert_array_equal(later_point._indices_view, [])
     assert viewer.dims.point == (10, 5, 5)
 
-    # Removing the point on the same slice as the initial point should keep the dim slider at the position
-    # and should additionally remove the added point from the viewport
+    # Removing the point on the same slice as the initial point should keep
+    # the dim slider at the position and should additionally remove the added
+    # point from the viewport.
     viewer.layers.remove(same_slice_as_initial_point)
     np.testing.assert_array_equal(initial_point._indices_view, [0])
     np.testing.assert_array_equal(later_point._indices_view, [])
     assert viewer.dims.point == (10, 5, 5)
 
-    # Removing the initial point should move the dim slider to the later position and update the viewport
+    # Removing the initial point should move the dim slider to the later
+    # position and update the viewport.
     viewer.layers.remove(initial_point)
     np.testing.assert_array_equal(later_point._indices_view, [0])
     assert viewer.dims.point == (14, 1, 1)
 
-    # Adding an earlier point should keep the dim slider at the position and therefore should not change the viewport
+    # Adding an earlier point should keep the dim slider at the position
+    # and therefore should not change the viewport.
     earlier_point2 = viewer.add_points([[8, 0, 0]])
     np.testing.assert_array_equal(initial_point._indices_view, [0])
     np.testing.assert_array_equal(earlier_point._indices_view, [])
     assert viewer.dims.point == (14, 1, 1)
 
-    # Removing the second earlier point should move the dim slider to the later position and update the viewport
+    # Removing the second earlier point should move the dim slider to the
+    # later position and update the viewport.
     viewer.layers.remove(later_point)
     np.testing.assert_array_equal(earlier_point2._indices_view, [0])
     assert viewer.dims.point == (8, 0, 0)
 
-    # Removing all points should reset the viewport
+    # Removing all points should reset the viewport.
     viewer.layers.remove(earlier_point2)
     assert viewer.dims.point == (0, 0)
 
 
+@pytest.mark.xfail(reason="https://github.com/napari/napari/issues/6198")
 def test_last_point_is_visible_in_viewport():
     viewer = ViewerModel()
 
+    # Removing the last point while viewing it should cause
+    # us to view the first point due to the layer's new extent.
     points = viewer.add_points([[0, 1, 1], [1, 2, 2]])
-    viewer.dims.set_current_step(0, 1)
+    viewer.dims.set_point(0, 1)
+    assert viewer.dims.point[0] == 1
     np.testing.assert_array_equal(points._indices_view, [1])
+
     points.data = [[0, 1, 1]]
+
+    assert viewer.dims.point[0] == 0
     np.testing.assert_array_equal(points._indices_view, [0])
     viewer.layers.remove(points)
 
+    # Removing the first point while viewing it should cause us
+    # to view the last point due to the layer's new extent.
     points = viewer.add_points([[0, 1, 1], [1, 2, 2]])
-    viewer.dims.set_current_step(0, 0)
+    viewer.dims.set_point(0, 0)
+    assert viewer.dims.point[0] == 0
     np.testing.assert_array_equal(points._indices_view, [0])
+
     points.data = [[1, 2, 2]]
+
+    assert viewer.dims.point[0] == 1
     np.testing.assert_array_equal(points._indices_view, [0])
-    viewer.layers.remove(points)
 
 
+@pytest.mark.xfail(reason="https://github.com/napari/napari/issues/6199")
 def test_dimension_change_is_visible_in_viewport():
     viewer = ViewerModel()
 
@@ -211,18 +232,19 @@ def test_dimension_change_is_visible_in_viewport():
     np.testing.assert_array_equal(point_4d._indices_view, [0])
     np.testing.assert_array_equal(point_5d._indices_view, [])
 
-    # Removing the 4d point leads to an update of the viewport and dims
+    # Removing the 4d point leads to an update of the viewport and dims.
     viewer.layers.remove(point_4d)
     assert viewer.dims.point == tuple([2] * 5)
     np.testing.assert_array_equal(point_5d._indices_view, [0])
 
     # Adding another 4d point does not lead to an update of the viewport
+    # because the current dims.point is still in the unified extent.
     point_4d = viewer.add_points([[0] * 4])
     assert viewer.dims.point == tuple([2] * 5)
     np.testing.assert_array_equal(point_4d._indices_view, [])
     np.testing.assert_array_equal(point_5d._indices_view, [0])
 
-    # Removing the 5d point leads to an update of the viewport and dims
+    # Removing the 5d point leads to an update of the viewport and dims.
     viewer.layers.remove(point_5d)
     assert viewer.dims.point == tuple([0] * 4)
     np.testing.assert_array_equal(point_4d._indices_view, [0])
