@@ -44,8 +44,8 @@ LAYER_ACTIONS: List[Action] = [
         id=CommandId.LAYER_DUPLICATE,
         title=CommandId.LAYER_DUPLICATE.title,
         callback=_layer_actions._duplicate_layer,
-        enablement=(LLCK.num_selected_layers >= 1)
-        & ~LLCK.selected_errored_layer,
+        enablement=(LLSCK.num_selected_layers >= 1)
+        & ~LLSCK.selected_errored_layer,
         menus=[LAYERCTX_SPLITMERGE],
     ),
     Action(
@@ -104,8 +104,8 @@ LAYER_ACTIONS: List[Action] = [
         id=CommandId.LAYER_TOGGLE_VISIBILITY,
         title=CommandId.LAYER_TOGGLE_VISIBILITY.title,
         callback=_layer_actions._toggle_visibility,
-        enablement=(LLCK.num_selected_layers >= 1)
-        & ~LLCK.selected_errored_layer,
+        enablement=(LLSCK.num_selected_layers >= 1)
+        & ~LLSCK.selected_errored_layer,
         menus=[
             {
                 'id': MenuId.LAYERLIST_CONTEXT,
