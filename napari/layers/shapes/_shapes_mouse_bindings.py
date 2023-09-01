@@ -120,7 +120,7 @@ def select(layer: Shapes, event: MouseEvent) -> None:
         )
         layer.events.data(
             value=layer.data,
-            action=ActionType.CHANGE.value,
+            action=ActionType.CHANGED,
             data_indices=tuple(layer.selected_data),
             vertex_indices=vertex_indices,
         )
@@ -163,7 +163,7 @@ def add_line(layer: Shapes, event: MouseEvent) -> None:
         A proxy read only wrapper around a vispy mouse event.
     """
     # full size is the initial offset of the second point compared to the first point of the line.
-    size = layer._vertex_size * layer.scale_factor / 4
+    size = layer._normalized_vertex_radius / 2
     full_size = np.zeros(layer.ndim, dtype=float)
     for i in layer._slice_input.displayed:
         full_size[i] = size
@@ -192,7 +192,7 @@ def add_ellipse(layer: Shapes, event: MouseEvent):
     event: MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
-    size = layer._vertex_size * layer.scale_factor / 4
+    size = layer._normalized_vertex_radius / 2
     size_h = np.zeros(layer.ndim, dtype=float)
     size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
@@ -218,7 +218,7 @@ def add_rectangle(layer: Shapes, event: MouseEvent) -> None:
     event: MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
-    size = layer._vertex_size * layer.scale_factor / 4
+    size = layer._normalized_vertex_radius / 2
     size_h = np.zeros(layer.ndim, dtype=float)
     size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
@@ -253,7 +253,7 @@ def _add_line_rectangle_ellipse(
     """
     # on press
     # Start drawing rectangle / ellipse / line
-    layer.add(data, shape_type=shape_type)
+    layer.add(data, shape_type=shape_type, gui=True)
     layer.selected_data = {layer.nshapes - 1}
     layer._value = (layer.nshapes - 1, 4)
     layer._moving_value = copy(layer._value)
@@ -305,7 +305,7 @@ def initiate_polygon_draw(
         A tuple with the coordinates of the initial vertex in image data space.
     """
     data = np.array([coordinates, coordinates])
-    layer.add(data, shape_type='path')
+    layer.add(data, shape_type='path', gui=True)
     layer.selected_data = {layer.nshapes - 1}
     layer._value = (layer.nshapes - 1, 1)
     layer._moving_value = copy(layer._value)
@@ -526,6 +526,12 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
         elif int(ind) == len(vertices) - 1 and loc > 1:
             ind = ind + 1
 
+    layer.events.data(
+        value=layer.data,
+        action=ActionType.CHANGING,
+        data_indices=(index,),
+        vertex_indices=((ind,),),
+    )
     # Insert new vertex at appropriate place in vertices of target shape
     vertices = np.insert(vertices, ind, [coordinates], axis=0)
     with layer.events.set_data.blocker():
@@ -533,7 +539,7 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
         layer._selected_box = layer.interaction_box(layer.selected_data)
     layer.events.data(
         value=layer.data,
-        action=ActionType.CHANGE.value,
+        action=ActionType.CHANGED,
         data_indices=(index,),
         vertex_indices=((ind,),),
     )
@@ -559,6 +565,13 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
     if vertex_under_cursor is None:
         # No vertex was clicked on so return
         return
+
+    layer.events.data(
+        value=layer.data,
+        action=ActionType.CHANGING,
+        data_indices=(shape_under_cursor,),
+        vertex_indices=((vertex_under_cursor,),),
+    )
 
     # Have clicked on a current vertex so remove
     shape_type = type(layer._data_view.shapes[shape_under_cursor])
@@ -590,7 +603,7 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
             layer._selected_box = layer.interaction_box(shapes)
     layer.events.data(
         value=layer.data,
-        action=ActionType.CHANGE.value,
+        action=ActionType.CHANGED,
         data_indices=(shape_under_cursor,),
         vertex_indices=((vertex_under_cursor,),),
     )
@@ -669,6 +682,21 @@ def _move_active_element_under_cursor(
     if layer._mode in (
         [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
     ):
+        if layer._mode == Mode.SELECT and not layer._is_moving:
+            vertex_indices = tuple(
+                tuple(
+                    vertex_index
+                    for vertex_index, coord in enumerate(layer.data[i])
+                )
+                for i in layer.selected_data
+            )
+            layer.events.data(
+                value=layer.data,
+                action=ActionType.CHANGING,
+                data_indices=tuple(layer.selected_data),
+                vertex_indices=vertex_indices,
+            )
+
         coord = _set_drag_start(layer, coordinates)
         layer._moving_coordinates = coordinates
         layer._is_moving = True
@@ -736,10 +764,10 @@ def _move_active_element_under_cursor(
 
             # prevent box from shrinking below a threshold size
             size = (np.linalg.norm(box[Box.TOP_LEFT] - box_center),)
-            threshold = (
-                layer._vertex_size * layer.scale_factor / layer.scale[-1] / 2
-            )
-            if np.linalg.norm(size * drag_scale) < threshold:
+            if (
+                np.linalg.norm(size * drag_scale)
+                < layer._normalized_vertex_radius
+            ):
                 drag_scale[:] = 1
             # on vertical/horizontal drags we get scale of 0
             # when we actually simply don't want to scale

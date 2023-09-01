@@ -11,6 +11,7 @@ from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Callable,
+    ClassVar,
     Dict,
     List,
     Optional,
@@ -41,6 +42,7 @@ from napari.layers.utils.layer_utils import (
     get_extent_world,
 )
 from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
+from napari.settings import get_settings
 from napari.utils._dask_utils import configure_dask
 from napari.utils._magicgui import (
     add_layer_to_viewer,
@@ -242,16 +244,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     _modeclass: Type[StringEnum] = Mode
 
-    _drag_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
+    _drag_modes: ClassVar[Dict[StringEnum, Callable[[Layer, Event], None]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
+    _move_modes: ClassVar[Dict[StringEnum, Callable[[Layer, Event], None]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
-    _cursor_modes: Dict[StringEnum, str] = {
+    _cursor_modes: ClassVar[Dict[StringEnum, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
@@ -437,9 +439,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         cls = type(self)
         return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
 
-    def _mode_setter_helper(self, mode):
+    def _mode_setter_helper(self, mode: Union[Mode, str]) -> Mode:
         """
         Helper to manage callbacks in multiple layers
+
+        This will return a valid mode for the current layer, to for example
+        refuse to set a mode that is not supported by the layer if it is not editable.
+
+        This will as well manage the mouse callbacks.
+
 
         Parameters
         ----------
@@ -448,7 +456,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Returns
         -------
-        bool : whether mode changed
+        mode : type(self._modeclass)
+            New mode for the current layer.
 
         """
         mode = self._modeclass(mode)
@@ -458,7 +467,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if mode == self._mode:
             return mode
 
-        if mode.value not in self._modeclass.keys():
+        if mode not in self._modeclass:
             raise ValueError(
                 trans._(
                     "Mode not recognized: {mode}", deferred=True, mode=mode
@@ -746,7 +755,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @_translate_grid.setter
     def _translate_grid(self, translate_grid):
-        if np.all(self._translate_grid == translate_grid):
+        if np.array_equal(self._translate_grid, translate_grid):
             return
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
@@ -1150,7 +1159,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         slice_input = self._make_slice_input(point, ndisplay, order)
         if force or (self._slice_input != slice_input):
             self._slice_input = slice_input
-            self.refresh()
+            self._refresh_sync()
 
     def _make_slice_input(
         self, point=None, ndisplay=2, order=None
@@ -1363,6 +1372,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
         logger.debug('Layer.refresh: %s', self)
+        # If async is enabled then emit an event that the viewer should handle.
+        if get_settings().experimental.async_:
+            self.events.reload(layer=self)
+        # Otherwise, slice immediately on the calling thread.
+        else:
+            self._refresh_sync()
+
+    def _refresh_sync(self, event=None):
+        logger.debug('Layer._refresh_sync: %s', self)
         if self.visible:
             self.set_view_slice()
             self.events.set_data()
@@ -1469,7 +1487,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return normalized_vector
 
     def _world_to_displayed_data_ray(
-        self, vector_world: npt.NDArray, dims_displayed: List[int]
+        self, vector_world: npt.ArrayLike, dims_displayed: List[int]
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 
@@ -1780,7 +1798,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.events.reload(Event('reload', layer=self))
+                self.refresh()
         else:
             # The stored corner_pixels attribute must contain valid indices.
             corners = np.zeros((2, self.ndim), dtype=int)

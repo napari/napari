@@ -681,6 +681,7 @@ class Window:
         theme.events.warning.connect(self._update_theme_no_event)
         theme.events.current.connect(self._update_theme_no_event)
         theme.events.icon.connect(self._update_theme_no_event)
+        theme.events.font_size.connect(self._update_theme_no_event)
         theme.events.canvas.connect(
             lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -705,6 +706,7 @@ class Window:
         theme.events.warning.disconnect(self._update_theme_no_event)
         theme.events.current.disconnect(self._update_theme_no_event)
         theme.events.icon.disconnect(self._update_theme_no_event)
+        theme.events.font_size.disconnect(self._update_theme_no_event)
         theme.events.canvas.disconnect(
             lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -817,7 +819,7 @@ class Window:
     def add_plugin_dock_widget(
         self,
         plugin_name: str,
-        widget_name: str = None,
+        widget_name: Optional[str] = None,
         tabify: bool = False,
     ) -> Tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
@@ -853,7 +855,7 @@ class Window:
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
-            widget_name = list(plugin_manager._dock_widgets[plugin_name])[0]
+            widget_name = next(iter(plugin_manager._dock_widgets[plugin_name]))
 
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
@@ -1312,14 +1314,12 @@ class Window:
         with contextlib.suppress(AttributeError, RuntimeError):
             value = event.value if event else settings.appearance.theme
             self._qt_viewer.viewer.theme = value
+            actual_theme_name = value
             if value == "system":
-                # system isn't a theme, so get the name and set style sheet
+                # system isn't a theme, so get the name
                 actual_theme_name = get_system_theme()
-                self._qt_window.setStyleSheet(
-                    get_stylesheet(actual_theme_name)
-                )
-            else:
-                self._qt_window.setStyleSheet(get_stylesheet(value))
+            # set the style sheet with the theme name
+            self._qt_window.setStyleSheet(get_stylesheet(actual_theme_name))
 
     def _status_changed(self, event):
         """Update status bar.
