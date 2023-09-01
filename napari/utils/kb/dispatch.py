@@ -217,7 +217,7 @@ class KeyBindingDispatcher:
             logger.debug('cached conflicts not found for %s', key)
             conflicts = has_conflicts(key, self.registry.keymap, self.context)
             self._conflicts_cache[key] = conflicts
-            logger.debug('saved conflict cache for %s: %s', key, conflicts)
+            logger.info('saved conflict cache for %s: %s', key, conflicts)
         return conflicts
 
     def on_key_press(self, mods: KeyMod, key: KeyCode, is_auto_repeat=False):
@@ -251,7 +251,6 @@ class KeyBindingDispatcher:
 
         if keymod and not self.prefix:
             # single modifier dispatch only works on first part of key binding
-            flags |= DispatchFlags.SINGLE_MOD
 
             if mods & keymod:
                 mods ^= keymod

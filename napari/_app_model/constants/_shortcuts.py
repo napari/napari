@@ -10,7 +10,7 @@ _default_shortcuts: Dict[CommandId, List[int]] = {
     CommandId.VIEWER_TOGGLE_CONSOLE_VISIBILITY: [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
     ],
-    CommandId.VIEWER_RESET_SCROLL: [KeyCode.Ctrl],
+    CommandId.VIEWER_RESET_SCROLL: [KeyMod.CtrlCmd],
     CommandId.TOGGLE_VIEWER_NDISPLAY: [KeyMod.CtrlCmd | KeyCode.KeyY],
     CommandId.VIEWER_TOGGLE_THEME: [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyT
