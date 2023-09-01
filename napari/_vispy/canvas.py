@@ -7,14 +7,12 @@ from weakref import WeakSet
 
 import numpy as np
 from app_model.backends.qt import qkey2modelkey, qmods2modelmods
-from app_model.expressions import Context
 from app_model.types import KeyBinding
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QKeyEvent
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
-from napari._app_model.key_bindings import KeyBindingDispatcher
 from napari._vispy import VispyCamera
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
@@ -147,17 +145,7 @@ class VispyCanvas:
 
         from napari._app_model import get_app
 
-        app = get_app()
-
-        ctx = Context(
-            self.viewer._ctx,
-            self.viewer.layers._ctx,
-            self.viewer.layers._selection_ctx,
-        )
-        self.viewer._ctx.changed.connect(ctx.changed)
-        self.viewer.layers._ctx.changed.connect(ctx.changed)
-        self.viewer.layers._selection_ctx.changed.connect(ctx.changed)
-        self.kb_dispatcher = KeyBindingDispatcher(app.keybindings, ctx)
+        get_app()
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
         # now while we know a Canvas exists. Later calls to
@@ -530,14 +518,16 @@ class VispyCanvas:
             if qevent.key() == Qt.Key.Key_unknown:
                 return
 
-            key_bind = _qkeyevent2keybinding(qevent)
+            _qkeyevent2keybinding(qevent)
 
-            self._key_map_handler.press_key(key_bind, qevent.isAutoRepeat())
+            # self._key_map_handler.press_key(key_bind, qevent.isAutoRepeat())
 
             mods, key = qmods2modelmods(qevent.modifiers()), qkey2modelkey(
                 qevent.key()
             )
-            self.kb_dispatcher.on_key_press(mods, key)
+            self.viewer._dispatcher.on_key_press(
+                mods, key, qevent.isAutoRepeat()
+            )
             qevent.accept()
 
     def _on_key_release(self, event):
@@ -553,14 +543,14 @@ class VispyCanvas:
                 # on linux press down is treated as multiple press and release
                 return
 
-            key_bind = _qkeyevent2keybinding(qevent)
+            _qkeyevent2keybinding(qevent)
 
-            self._key_map_handler.release_key(key_bind)
+            # self._key_map_handler.release_key(key_bind)
 
             mods, key = qmods2modelmods(qevent.modifiers()), qkey2modelkey(
                 qevent.key()
             )
-            self.kb_dispatcher.on_key_release(mods, key)
+            self.viewer._dispatcher.on_key_release(mods, key)
             qevent.accept()
 
     @property

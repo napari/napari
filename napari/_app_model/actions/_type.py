@@ -23,6 +23,8 @@ class GeneratorCallback:
     as-needed.
     """
 
+    GENERATOR = True
+
     def __init__(self, func: Callable):
         if not inspect.isgeneratorfunction(func):
             raise TypeError(f"'{func.__name__}' is not a generator function")
@@ -39,6 +41,9 @@ class GeneratorCallback:
         except StopIteration:
             self._gen = None
 
+    def reset(self):
+        self._gen = None
+
 
 class AttrRestoreCallback:
     """Wrapper for callbacks that should restore the value of some attribute after running.
@@ -54,22 +59,19 @@ class AttrRestoreCallback:
         sig = inspect.signature(func)
         try:
             first_variable_name = next(iter(sig.parameters))
-        except StopIteration:
+        except StopIteration as e:
             raise RuntimeError(
                 trans._(
                     "If actions has no arguments there is no way to know what to set the attribute to.",
                     deferred=True,
                 ),
-            )
+            ) from e
 
         # create a wrapper that stores the previous state of obj.attribute_name
         # and returns a callback to restore it
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
-            if args:
-                obj = args[0]
-            else:
-                obj = kwargs[first_variable_name]
+            obj = args[0] if args else kwargs[first_variable_name]
             prev_mode = getattr(obj, attribute_name)
             func(*args, **kwargs)
 

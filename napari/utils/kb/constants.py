@@ -10,6 +10,7 @@ class DispatchFlags(IntFlag):
     SINGLE_MOD = auto()
     ON_RELEASE = auto()
     TWO_PART = auto()
+    IS_AUTO_REPEAT = auto()
 
 
 class KeyBindingWeights(IntEnum):

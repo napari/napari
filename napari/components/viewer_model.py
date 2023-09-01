@@ -75,6 +75,7 @@ from napari.utils.events import (
     disconnect_events,
 )
 from napari.utils.events.event import WarningEmitter
+from napari.utils.kb import KeyBindingDispatcher
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
@@ -190,6 +191,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (800, 600)
     _ctx: Context
+    _dispatch_ctx: Context
+    _dispatcher: KeyBindingDispatcher
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
@@ -202,7 +205,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
         # max_depth=0 means don't look for parent contexts.
+        from napari._app_model._app import get_app
         from napari._app_model.context import create_context
+
+        app = get_app()
 
         # FIXME: just like the LayerList, this object should ideally be created
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.
@@ -218,6 +224,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
+
+        self._dispatch_ctx = Context(
+            self._ctx, self.layers._ctx, self.layers._selection_ctx
+        )
+        self._ctx.changed.connect(self._dispatch_ctx.changed)
+        self.layers._ctx.changed.connect(self._dispatch_ctx.changed)
+        self.layers._selection_ctx.changed.connect(self._dispatch_ctx.changed)
+        # FIXME: ideally the dispatcher should live in the app and then switch contexts
+        # depending on the selected viewer
+        self._dispatcher = KeyBindingDispatcher(
+            app.keybindings, self._dispatch_ctx
+        )
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility

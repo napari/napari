@@ -85,7 +85,6 @@ class LayerList(SelectableEventedList[Layer]):
             self._ctx_keys = LayerListContextKeys(self._ctx)
             self.events.inserted.connect(self._ctx_keys.update)
             self.events.removed.connect(self._ctx_keys.update)
-            self._ctx.changed.connect(lambda changes: print(f'ctx: {changes}'))
 
         self._selection_ctx = create_context(self)
         if (
@@ -96,9 +95,6 @@ class LayerList(SelectableEventedList[Layer]):
             )
             self.selection.events.changed.connect(
                 self._selection_ctx_keys.update
-            )
-            self._selection_ctx.changed.connect(
-                lambda changes: print(f'sel: {changes}')
             )
 
     def _process_delete_item(self, item: Layer):

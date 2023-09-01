@@ -6,12 +6,12 @@ from app_model.types import KeyChord, KeyCode, KeyMod
 from app_model.types._constants import OperatingSystem
 from psygnal import Signal
 
-from napari._app_model.key_bindings.constants import VALID_KEYS, DispatchFlags
-from napari._app_model.key_bindings.register import (
+from napari.utils.kb.constants import VALID_KEYS, DispatchFlags
+from napari.utils.kb.register import (
     KeyBindingEntry,
     NapariKeyBindingsRegistry,
 )
-from napari._app_model.key_bindings.util import create_conflict_filter, key2mod
+from napari.utils.kb.util import create_conflict_filter, key2mod
 
 logger = logging.getLogger(__name__)
 
@@ -220,7 +220,7 @@ class KeyBindingDispatcher:
             logger.debug('saved conflict cache for %s: %s', key, conflicts)
         return conflicts
 
-    def on_key_press(self, mods: KeyMod, key: KeyCode):
+    def on_key_press(self, mods: KeyMod, key: KeyCode, is_auto_repeat=False):
         """Processes a key press.
 
         See `NAP 7 <https://napari.org/dev/naps/7-key-binding-dispatch.html#key-binding-properties>`_.
@@ -232,6 +232,8 @@ class KeyBindingDispatcher:
             Modifiers held during the press.
         key: KeyCode
             Base key that was pressed.
+        is_auto_repeat: bool
+            If the key press is an auto-repeat instance.
         """
         logger.info('key press %s with mods %s', key, mods)
         logger.debug(
@@ -241,6 +243,9 @@ class KeyBindingDispatcher:
         self.active_combo = 0
         flags = DispatchFlags.RESET
         command_id = None
+
+        if is_auto_repeat:
+            flags |= DispatchFlags.IS_AUTO_REPEAT
 
         keymod = key2mod(key, self.os)
 

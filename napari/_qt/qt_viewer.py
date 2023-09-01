@@ -26,6 +26,7 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
 from napari._app_model import get_app
+from napari._qt._qapp_model import QKeyBindingDispatcher
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
@@ -189,6 +190,10 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
+
+        self._qdispatcher = QKeyBindingDispatcher(self)
+        viewer._dispatcher.dispatch.connect(self._qdispatcher.onDispatch)
+
         self.dims = QtDims(self.viewer.dims)
         self._controls = None
         self._layers = None
