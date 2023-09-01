@@ -157,6 +157,7 @@ class KeyBindingDispatcher:
 
         self._active_match_cache = {}
         self._conflicts_cache = {}
+        self._active_keymap = None
 
         self.context.changed.connect(self._on_context_change)
 
@@ -165,6 +166,7 @@ class KeyBindingDispatcher:
         logger.debug('current context: %s', self.context)
         self._active_match_cache.clear()
         self._conflicts_cache.clear()
+        self._active_keymap = None
 
     def find_active_match(self, key: int) -> Optional[KeyBindingEntry]:
         """Find the active match for the key sequence provided.
@@ -320,3 +322,13 @@ class KeyBindingDispatcher:
                 'dispatching %s with flags %s', self.active_command, flags
             )
             self.active_command = None
+
+    @property
+    def active_keymap(self) -> Mapping[int, str]:
+        """Mapping[int, str]: Active mapping of keys to commands given the current context."""
+        if self._active_keymap is None:
+            self._active_keymap = {}
+            for key in self.registry.keymap:
+                if match := self.find_active_match(key):
+                    self._active_keymap[key] = match
+        return self._active_keymap
