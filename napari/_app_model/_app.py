@@ -22,6 +22,7 @@ from napari._app_model.actions._view_actions import VIEW_ACTIONS
 from napari._app_model.actions._viewer_actions import VIEWER_ACTIONS
 from napari._app_model.injection._processors import PROCESSORS
 from napari._app_model.injection._providers import PROVIDERS
+from napari._app_model.key_bindings import NapariKeyBindingsRegistry
 from napari.components.viewer_model import ViewerModel
 from napari.layers import (
     Image,
@@ -33,7 +34,6 @@ from napari.layers import (
     Vectors,
 )
 from napari.utils.action_manager import action_manager
-from napari.utils.kb.register import NapariKeyBindingsRegistry
 from napari.utils.key_bindings import _bind_plugin_key, _get_plugin_keymap
 
 APP_NAME = 'napari'

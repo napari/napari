@@ -14,6 +14,7 @@ from qtpy.QtGui import QKeyEvent
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
+from napari._app_model.key_bindings import KeyBindingDispatcher
 from napari._vispy import VispyCamera
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
@@ -28,7 +29,6 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
-from napari.utils.kb.dispatch import KeyBindingDispatcher
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
