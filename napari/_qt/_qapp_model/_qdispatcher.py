@@ -61,13 +61,13 @@ class QKeyBindingDispatcher(QObject):
                 # execute press and release logic at the same time
                 self.executeCommand(command_id, on_press=True)
         else:
-            if flags & (DispatchFlags.SINGLE_MOD | DispatchFlags.DELAY):
+            if command_id and flags & (
+                DispatchFlags.SINGLE_MOD | DispatchFlags.DELAY
+            ):
                 self.timer = QTimer(self)
                 self.timer.setSingleShot(True)
                 self.timer.timeout.connect(
-                    lambda: self.executeCommandOnPress(
-                        command_id, on_press=True
-                    )
+                    lambda: self.executeCommand(command_id, on_press=True)
                 )
                 self.timer.start(PRESS_HOLD_DELAY_MS)
                 return
