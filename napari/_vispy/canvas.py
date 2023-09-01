@@ -7,9 +7,7 @@ from weakref import WeakSet
 
 import numpy as np
 from app_model.backends.qt import qkey2modelkey, qmods2modelmods
-from app_model.types import KeyBinding
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QKeyEvent
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
@@ -41,25 +39,6 @@ if TYPE_CHECKING:
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
     from napari.utils.events.event import Event
-    from napari.utils.key_bindings import KeymapHandler
-
-
-def _qkeyevent2keybinding(event: QKeyEvent) -> KeyBinding:
-    """Extract a Qt key event's information into an app-model keybinding.
-
-    Parameters
-    ----------
-    event : QKeyEvent
-        Triggering event.
-
-    Returns
-    -------
-    KeyBinding
-        Key combination extracted from the event.
-    """
-    return KeyBinding.from_int(
-        qmods2modelmods(event.modifiers()) | qkey2modelkey(event.key())
-    )
 
 
 class NapariSceneCanvas(SceneCanvas_):
@@ -100,8 +79,6 @@ class VispyCanvas:
         A QtCursorVisual enum with as names the names of particular cursor styles and as value either a staticmethod
         creating a bitmap or a Qt.CursorShape enum value corresponding to the particular cursor name. This enum only
         contains cursors supported by Napari in Vispy.
-    _key_map_handler : napari.utils.key_bindings.KeymapHandler
-        KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
     _last_theme_color : Optional[npt.NDArray[np.float]]
         Theme color represented as numpy ndarray of shape (4,) before theme change
         was applied.
@@ -117,7 +94,6 @@ class VispyCanvas:
     def __init__(
         self,
         viewer: ViewerModel,
-        key_map_handler: KeymapHandler,
         *args,
         **kwargs,
     ) -> None:
@@ -136,16 +112,11 @@ class VispyCanvas:
         )
         self.layer_to_visual = {}
         self._overlay_to_visual = {}
-        self._key_map_handler = key_map_handler
         self._instances.add(self)
 
         self.bgcolor = transform_color(
             get_theme(self.viewer.theme).canvas.as_hex()
         )[0]
-
-        from napari._app_model import get_app
-
-        get_app()
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
         # now while we know a Canvas exists. Later calls to
@@ -518,10 +489,6 @@ class VispyCanvas:
             if qevent.key() == Qt.Key.Key_unknown:
                 return
 
-            _qkeyevent2keybinding(qevent)
-
-            # self._key_map_handler.press_key(key_bind, qevent.isAutoRepeat())
-
             mods, key = qmods2modelmods(qevent.modifiers()), qkey2modelkey(
                 qevent.key()
             )
@@ -542,10 +509,6 @@ class VispyCanvas:
             if qevent.key == Qt.Key.Key_unknown or qevent.isAutoRepeat():
                 # on linux press down is treated as multiple press and release
                 return
-
-            _qkeyevent2keybinding(qevent)
-
-            # self._key_map_handler.release_key(key_bind)
 
             mods, key = qmods2modelmods(qevent.modifiers()), qkey2modelkey(
                 qevent.key()

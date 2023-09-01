@@ -3,7 +3,7 @@ from typing import Dict, List
 from app_model.types import KeyBindingRule, KeyChord, KeyCode, KeyMod
 
 from napari._app_model.constants import CommandId
-from napari.utils.kb import KeyBindingWeights
+from napari.utils.key_bindings import KeyBindingWeights
 
 _default_shortcuts: Dict[CommandId, List[int]] = {
     # viewer

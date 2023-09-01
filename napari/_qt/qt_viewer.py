@@ -55,7 +55,7 @@ from napari.utils.history import (
     update_save_history,
 )
 from napari.utils.io import imsave
-from napari.utils.key_bindings import KeymapHandler
+from napari.utils.key_bindings.legacy import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
@@ -213,7 +213,6 @@ class QtViewer(QSplitter):
         self.canvas = canvas_class(
             viewer=viewer,
             parent=self,
-            key_map_handler=self._key_map_handler,
             size=self.viewer._canvas_size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )

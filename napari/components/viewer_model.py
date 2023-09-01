@@ -75,8 +75,8 @@ from napari.utils.events import (
     disconnect_events,
 )
 from napari.utils.events.event import WarningEmitter
-from napari.utils.kb import KeyBindingDispatcher
-from napari.utils.key_bindings import KeymapProvider
+from napari.utils.key_bindings import KeyBindingDispatcher
+from napari.utils.key_bindings.legacy import KeymapProvider
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider

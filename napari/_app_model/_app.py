@@ -33,8 +33,11 @@ from napari.layers import (
     Vectors,
 )
 from napari.utils.action_manager import action_manager
-from napari.utils.kb import NapariKeyBindingsRegistry
-from napari.utils.key_bindings import _bind_plugin_key, _get_plugin_keymap
+from napari.utils.key_bindings import NapariKeyBindingsRegistry
+from napari.utils.key_bindings.legacy import (
+    _bind_plugin_key,
+    _get_plugin_keymap,
+)
 
 APP_NAME = 'napari'
 

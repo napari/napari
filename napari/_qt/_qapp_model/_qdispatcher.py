@@ -4,7 +4,7 @@ from typing import Optional
 
 from qtpy.QtCore import QObject, QTimer
 
-from napari.utils.kb import DispatchFlags
+from napari.utils.key_bindings import DispatchFlags
 
 # TODO: make this a user setting
 PRESS_HOLD_DELAY_MS = 200
@@ -28,7 +28,6 @@ class QKeyBindingDispatcher(QObject):
         if getattr(func, 'GENERATOR', False):
             # has release logic too
             if on_press:
-                print(f'reset {command_id}')
                 func.reset()
             elif func._gen is None:
                 return

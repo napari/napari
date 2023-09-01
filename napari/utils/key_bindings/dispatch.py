@@ -6,12 +6,12 @@ from app_model.types import KeyChord, KeyCode, KeyMod
 from app_model.types._constants import OperatingSystem
 from psygnal import Signal
 
-from napari.utils.kb.constants import VALID_KEYS, DispatchFlags
-from napari.utils.kb.register import (
+from napari.utils.key_bindings.constants import VALID_KEYS, DispatchFlags
+from napari.utils.key_bindings.register import (
     KeyBindingEntry,
     NapariKeyBindingsRegistry,
 )
-from napari.utils.kb.util import create_conflict_filter, key2mod
+from napari.utils.key_bindings.util import create_conflict_filter, key2mod
 
 logger = logging.getLogger(__name__)
 

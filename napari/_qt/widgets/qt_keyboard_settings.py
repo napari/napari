@@ -38,10 +38,12 @@ from napari.layers import (
     Vectors,
 )
 from napari.settings import get_settings
-from napari.utils.action_manager import Action as ActionManagerAction
-from napari.utils.action_manager import action_manager
+from napari.utils.action_manager import (
+    Action as ActionManagerAction,
+    action_manager,
+)
 from napari.utils.interactions import Shortcut
-from napari.utils.key_bindings import coerce_keybinding
+from napari.utils.key_bindings.legacy import coerce_keybinding
 from napari.utils.shortcuts import plugins_shortcuts
 from napari.utils.translations import trans
 

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from concurrent.futures import Future
     from typing import Protocol
 
-    from napari.utils.key_bindings import KeymapProvider
+    from napari.utils.key_bindings.legacy import KeymapProvider
 
     class SignalInstance(Protocol):
         def connect(self, callback: Callable) -> None:

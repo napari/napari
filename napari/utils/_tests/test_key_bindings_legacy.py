@@ -6,8 +6,8 @@ from unittest.mock import patch
 import pytest
 from app_model.types import KeyCode, KeyMod
 
-from napari.utils import key_bindings
-from napari.utils.key_bindings import (
+from napari.utils.key_bindings import legacy
+from napari.utils.key_bindings.legacy import (
     KeymapHandler,
     KeymapProvider,
     _bind_keymap,
@@ -352,7 +352,7 @@ def test_bind_key_doc():
     doc = inspect.getdoc(bind_key)
     doc = doc.split('Notes\n-----\n')[-1]
 
-    assert doc == inspect.getdoc(key_bindings)
+    assert doc == inspect.getdoc(legacy)
 
 
 def test_key_release_callback(monkeypatch):

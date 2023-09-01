@@ -3,7 +3,7 @@ from typing import Callable, Optional
 from app_model.types import KeyCode, KeyMod
 from app_model.types._constants import OperatingSystem
 
-from napari.utils.kb.constants import KEY_MOD_MASK, PART_0_MASK
+from napari.utils.key_bindings.constants import KEY_MOD_MASK, PART_0_MASK
 
 
 def key2mod(key: KeyCode, os: OperatingSystem) -> Optional[KeyMod]:

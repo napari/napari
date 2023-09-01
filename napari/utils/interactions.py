@@ -6,7 +6,7 @@ from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
-from napari.utils.key_bindings import (
+from napari.utils.key_bindings.legacy import (
     KeyBinding,
     KeyBindingLike,
     coerce_keybinding,
