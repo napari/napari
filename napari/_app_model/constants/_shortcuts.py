@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from app_model.types import KeyBindingRule, KeyCode, KeyMod
+from app_model.types import KeyBindingRule, KeyChord, KeyCode, KeyMod
 
 from napari._app_model.constants import CommandId
 from napari.utils.kb import KeyBindingWeights
@@ -29,6 +29,15 @@ _default_shortcuts: Dict[CommandId, List[int]] = {
     CommandId.VIEWER_TOGGLE_GRID: [KeyMod.CtrlCmd | KeyCode.KeyG],
     CommandId.VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY: [KeyCode.KeyG],
     CommandId.VIEWER_HOLD_FOR_PAN_ZOOM: [KeyCode.Space],
+    CommandId.VIEWER_NEW_LABELS: [
+        KeyChord(KeyMod.CtrlCmd | KeyCode.KeyN, KeyCode.KeyL)
+    ],
+    CommandId.VIEWER_NEW_SHAPES: [
+        KeyChord(KeyMod.CtrlCmd | KeyCode.KeyN, KeyCode.KeyS)
+    ],
+    CommandId.VIEWER_NEW_POINTS: [
+        KeyChord(KeyMod.CtrlCmd | KeyCode.KeyN, KeyCode.KeyP)
+    ],
     # image
     CommandId.IMAGE_ACTIVATE_PAN_ZOOM_MODE: [KeyCode.Digit1],
     CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE: [KeyCode.Digit2],

@@ -426,6 +426,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         empty_labels = np.zeros(shape, dtype=int)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
+    def _new_shapes(self):
+        """Create new default shapes layer"""
+        self.add_shapes(
+            ndim=max(self.dims.ndim, 2),
+            scale=self.layers.extent.step,
+        )
+
+    def _new_points(self):
+        """Create new default points layer"""
+        self.add_points(
+            ndim=max(self.dims.ndim, 2),
+            scale=self.layers.extent.step,
+        )
+
     def _on_layer_reload(self, event: Event) -> None:
         self._layer_slicer.submit(
             layers=[event.layer], dims=self.dims, force=True

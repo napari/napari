@@ -117,6 +117,24 @@ VIEWER_ACTIONS: List[Action] = [
         callback=_viewer_actions.show_shortcuts,
         keybindings=DEFAULT_SHORTCUTS[CommandId.NAPARI_SHOW_SHORTCUTS],
     ),
+    Action(
+        id=CommandId.VIEWER_NEW_LABELS,
+        title=CommandId.VIEWER_NEW_LABELS.title,
+        callback=_viewer_actions.new_labels,
+        keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_NEW_LABELS],
+    ),
+    Action(
+        id=CommandId.VIEWER_NEW_SHAPES,
+        title=CommandId.VIEWER_NEW_SHAPES.title,
+        callback=_viewer_actions.new_shapes,
+        keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_NEW_SHAPES],
+    ),
+    Action(
+        id=CommandId.VIEWER_NEW_POINTS,
+        title=CommandId.VIEWER_NEW_POINTS.title,
+        callback=_viewer_actions.new_points,
+        keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_NEW_POINTS],
+    ),
 ]
 
 

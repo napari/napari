@@ -96,3 +96,15 @@ def show_shortcuts(viewer: Viewer):
     for i in range(pref_list.count()):
         if pref_list.item(i).text() == "Shortcuts":
             pref_list.setCurrentRow(i)
+
+
+def new_labels(viewer: Viewer):
+    viewer._new_labels()
+
+
+def new_shapes(viewer: Viewer):
+    viewer._new_shapes()
+
+
+def new_points(viewer: Viewer):
+    viewer._new_points()
