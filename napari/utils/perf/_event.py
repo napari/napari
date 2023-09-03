@@ -68,10 +68,10 @@ class PerfEvent:
         start_ns: int,
         end_ns: int,
         category: Optional[str] = None,
-        process_id: int = None,
-        thread_id: int = None,
+        process_id: Optional[int] = None,
+        thread_id: Optional[int] = None,
         phase: str = "X",  # "X" is a "complete event" in their spec.
-        **kwargs: dict,
+        **kwargs: float,
     ) -> None:
         if process_id is None:
             process_id = os.getpid()
@@ -80,7 +80,7 @@ class PerfEvent:
 
         self.name: str = name
         self.span: Span = Span(start_ns, end_ns)
-        self.category: str = category
+        self.category: Optional[str] = category
         self.origin: Origin = Origin(process_id, thread_id)
         self.args = kwargs
         self.phase: str = phase
