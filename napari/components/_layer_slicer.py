@@ -5,14 +5,15 @@ See the NAP for more details: https://napari.org/dev/naps/4-async-slicing.html
 
 from __future__ import annotations
 
+import abc
 import logging
 import weakref
 from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from threading import RLock
 from typing import (
-    Callable,
     Dict,
+    Generic,
     Iterable,
     Optional,
     Protocol,
@@ -36,7 +37,14 @@ logger = logging.getLogger("napari.components._layer_slicer")
 # result of ``_slice_layers`` cannot be fixed to a single type.
 
 _SliceResponse = TypeVar('_SliceResponse')
-_SliceRequest = Callable[[], _SliceResponse]
+
+
+class _SliceRequest(abc.ABC, Generic[_SliceResponse]):
+    id: int
+
+    @abc.abstractmethod
+    def __call__(self) -> _SliceResponse:  # type: ignore[]
+        ...
 
 
 @runtime_checkable
@@ -203,7 +211,7 @@ class _LayerSlicer:
         # The following logic gives us a way to handle those in the short
         # term as we develop, and also in the long term if there are cases
         # when we want to perform sync slicing anyway.
-        requests = {}
+        requests: Dict[weakref.ref, _SliceRequest] = {}
         sync_layers = []
         visible_layers = (layer for layer in layers if layer.visible)
         for layer in visible_layers:
