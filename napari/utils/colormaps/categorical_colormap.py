@@ -60,7 +60,7 @@ class CategoricalColormap(EventedModel):
             ]
             for prop in props_to_add:
                 new_color = next(self.fallback_color.cycle)
-                self.colormap[prop] = np.squeeze(transform_color(new_color))
+                self.colormap[prop] = ColorValue(new_color)
         # map the colors
         colors = np.array([self.colormap[x] for x in color_properties])
         return colors
