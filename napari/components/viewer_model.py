@@ -1142,10 +1142,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             else [os.fspath(p) for p in path]
         )
 
-        paths: Sequence[PathOrPaths]
+        paths: Sequence[PathOrPaths] = paths_
         # If stack is a bool and True, add an additional layer of nesting.
-        if isinstance(stack, bool):
-            paths = [paths_] if stack else paths_
+        if isinstance(stack, bool) and stack:
+            paths = [paths_]
         # If stack is a list and True, extend the paths with the inner lists.
         elif isinstance(stack, list):
             paths = [paths_]
