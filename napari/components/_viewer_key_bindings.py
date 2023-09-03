@@ -150,8 +150,8 @@ def hold_for_pan_zoom(viewer: ViewerModel):
         yield
         return
     previous_mode = selected_layer.mode
-    if previous_mode != selected_layer._modeclass.PAN_ZOOM:
-        selected_layer.mode = selected_layer._modeclass.PAN_ZOOM
+    if previous_mode != (pan_zoom := selected_layer._modeclass.PAN_ZOOM):  # type: ignore[attr-defined]
+        selected_layer.mode = pan_zoom
         yield
 
         selected_layer.mode = previous_mode
