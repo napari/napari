@@ -1,6 +1,6 @@
 from itertools import product
 from math import ceil, isnan, log2, sqrt
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -237,7 +237,7 @@ def _get_shape_from_keys(
 
 
 def _get_shape_from_dict(
-    color_dict: dict[float, Tuple[float, float, float, float]]
+    color_dict: Dict[float, Tuple[float, float, float, float]]
 ) -> Tuple[int, int]:
     """
     Get the shape of the 2D hashmap from the number of labels.
