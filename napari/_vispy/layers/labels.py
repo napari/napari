@@ -254,7 +254,7 @@ def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
 
 def _get_shape_from_keys(keys, fst_dim, snd_dim):
     """
-    Check if there is a collision in the hashmap.
+    Get the smallest hashmap size without collisions, if any.
     """
     for fst_size, snd_size in product(
         PRIME_NUM_TABLE[fst_dim - START_TWO_POWER],
@@ -272,14 +272,16 @@ def _get_shape_from_keys(keys, fst_dim, snd_dim):
 def _get_shape_from_dict(color_dict):
     """
     Get the shape of the 2D hashmap from the number of labels.
-    For each dimension, the shape is the prime number to avoid collisions.
+    The hardcoded shapes use prime numbers designed to avoid collisions.
     As the current collision resolution is non-linear, we decide to
     use hash table of size around four times bigger than the number
-    of labels, instead of the classical 1.3 times bigger.
+    of labels, instead of the classical 1.3 times bigger, to
+    minimize the chance of collision in the shader at the cost
+    of some video memory.
 
     We use PRIME_NUM_TABLE to get precomputed prime numbers.
     We decided to use primes close to powers of two, as they
-    allowed to keep fill of has table between 0.125 to 0.25
+    allowed to keep fill of hash table between 0.125 to 0.25
     """
     size = len(color_dict) / MAX_LOAD_FACTOR
     size_sqrt = sqrt(size)
