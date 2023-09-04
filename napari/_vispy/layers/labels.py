@@ -1,4 +1,5 @@
-from math import isnan
+from itertools import product
+from math import ceil, isnan, log2, sqrt
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -13,18 +14,21 @@ from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.volume import Volume as VolumeNode
 
 PRIME_NUM_TABLE = [
-    61,
-    127,
-    251,
-    509,
-    1021,
-    2039,
-    4093,
-    8191,
-    16381,
-    32749,
-    65521,
+    [61, 59, 53],
+    [127, 113, 109],
+    [251, 241, 239],
+    [509, 503, 499],
+    [1021, 1019, 1013],
+    [2039, 2029, 2027],
+    [4093, 4091, 4079],
+    [8191, 8179, 8171],
+    [16381, 16369, 16363],
+    [32749, 32719, 32717],
+    [65521, 65519, 65497],
 ]
+
+START_TWO_POWER = 6
+
 MAX_LOAD_FACTOR = 0.25
 
 MAX_TEXTURE_SIZE = None
@@ -248,34 +252,51 @@ def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
     return collision
 
 
-def _get_shape_from_dict(color_dict):
-    size = len(color_dict) / MAX_LOAD_FACTOR
+def _get_shape_from_keys(keys, fst_dim, snd_dim):
     """
-    I think that hash table size should be at least four times
-    bigger than the number of labels to avoid collisions
-    The prime number table is table of largest primes less than 2^n
-    for n from 6 to 16.
-    I decide to use it as a hash table size because the next size of hash
-    table will be around two times bigger.
-    Primes are used to reduce collisions probability
-    (to have collision both keys requires to return same modulo against
-    both dimensions of hash table).
-    MAX_LOAD_FACTOR is used to determined the maximum number of labels
-    as factor of hash table size. Literature propose to use table at
-    least 1.3 times bigger than number of labels. But it is for classical
-    approach where hash table entry could store a list of values. In our case
-    we have to store only one value per entry.
-    So I think that we could use bigger load factor.
+    Check if there is a collision in the hashmap.
     """
-    for i, prime in enumerate(PRIME_NUM_TABLE[:-1]):
-        if prime * prime > size:
-            return prime, prime
-        if prime * PRIME_NUM_TABLE[i + 1] > size:
-            return PRIME_NUM_TABLE[i + 1], prime
+    for fst_size, snd_size in product(
+        PRIME_NUM_TABLE[fst_dim - START_TWO_POWER],
+        PRIME_NUM_TABLE[snd_dim - START_TWO_POWER],
+    ):
+        fst_crd = (keys / snd_size) % fst_size
+        snd_crd = keys % snd_size
 
-    if size > PRIME_NUM_TABLE[-1] * PRIME_NUM_TABLE[-1]:
-        raise OverflowError('too many labels')
-    return PRIME_NUM_TABLE[-1], PRIME_NUM_TABLE[-1]
+        collision_set = set(zip(fst_crd, snd_crd))
+        if len(collision_set) == len(keys):
+            return fst_size, snd_size
+    return None
+
+
+def _get_shape_from_dict(color_dict):
+    """
+    Get the shape of the 2D hashmap from the number of labels.
+    For each dimension, the shape is the prime number to avoid collisions.
+    As the current collision resolution is non-linear, we decide to
+    use hash table of size around four times bigger than the number
+    of labels, instead of the classical 1.3 times bigger.
+
+    We use PRIME_NUM_TABLE to get precomputed prime numbers.
+    We decided to use primes close to powers of two, as they
+    allowed to keep fill of has table between 0.125 to 0.25
+    """
+    size = len(color_dict) / MAX_LOAD_FACTOR
+    size_sqrt = sqrt(size)
+    size_log2 = log2(size_sqrt)
+    fst_dim = int(ceil(size_log2))
+    snd_dim = int(round(size_log2, 0))
+    keys = np.array(color_dict, dtype=np.int64)
+
+    try:
+        res = _get_shape_from_keys(keys, fst_dim, snd_dim)
+        if res is None:
+            res = _get_shape_from_keys(keys, fst_dim, snd_dim + 1)
+        if res is None:
+            return PRIME_NUM_TABLE[fst_dim][0], PRIME_NUM_TABLE[snd_dim][0]
+    except IndexError:
+        return PRIME_NUM_TABLE[-1], PRIME_NUM_TABLE[-1]
+    return res
 
 
 def get_shape_from_dict(color_dict):
