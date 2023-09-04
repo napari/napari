@@ -1123,6 +1123,7 @@ def _get_chunk_size(
             # when load data from drive
             return data.chunk_layout.read_chunk.shape
         return None
+
     if "xarray" in sys.modules:
         from xarray import DataArray
 
