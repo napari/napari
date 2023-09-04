@@ -200,6 +200,7 @@ class ShapeList:
         # Slice key must exactly match mins and maxs of shape as then the
         # shape is entirely contained within the current slice.
         if len(self.shapes) > 0:
+            print(self.slice_keys.shape, slice_key.shape)
             self._displayed = np.all(self.slice_keys == slice_key, axis=(1, 2))
         else:
             self._displayed = []
