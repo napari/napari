@@ -120,6 +120,10 @@ INVERSE_COLORMAPS = {
     for name, (display_name, value) in inverse_cmaps.items()
 }
 
+# This is the hardcoded default colormap that is produced by
+# napari code up to version 0.4.18.
+# To keep user experience consistent,
+# we keep this colormap as the default for now.
 CLASSICAL_LABEL_COLORMAP = np.array(
     [
         [0.56607443, 0.41737616, 0.35140616, 1.0],
