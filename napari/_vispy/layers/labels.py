@@ -68,7 +68,13 @@ uniform int color_count;
 
 
 vec4 sample_label_color(float t) {
-    if (($use_selection) && ($selection != t)) {
+    if ($use_selection) {
+        if ($selection == t) {
+            texture2D(
+            texture2D_values,
+            vec2(0.0, 0.0)
+        );
+        };
         return vec4(0);
     }
 
@@ -96,23 +102,25 @@ vec4 sample_label_color(float t) {
     // - otherwise, it's a hash collision: continue searching
     float initial_t = t;
     int count = 0;
-    while ((abs(found - initial_t) > 1e-8) && (abs(found - empty) > 1e-8)) {
-        count = count + 1;
-        t = initial_t + float(count);
-        if (count >= color_count) {
-            return vec4(0);
-        }
-        // same as above
-        vec2 pos = vec2(
-            mod(int(t / LUT_shape.y), LUT_shape.x),
-            mod(t, LUT_shape.y)
-        );
-        pos_tex = (pos + vec2(.5)) / LUT_shape;
+    if ($collision) {
+        while ((abs(found - initial_t) > 1e-8) && (abs(found - empty) > 1e-8)) {
+            count = count + 1;
+            t = initial_t + float(count);
+            if (count >= color_count) {
+                return vec4(0);
+            }
+            // same as above
+            vec2 pos = vec2(
+                mod(int(t / LUT_shape.y), LUT_shape.x),
+                mod(t, LUT_shape.y)
+            );
+            pos_tex = (pos + vec2(.5)) / LUT_shape;
 
-        found = texture2D(
-            texture2D_keys,
-            pos_tex
-        ).r;
+            found = texture2D(
+                texture2D_keys,
+                pos_tex
+            ).r;
+        }
     }
 
     // return vec4(pos_tex, 0, 1); // debug if final texel is calculated correctly
@@ -127,49 +135,6 @@ vec4 sample_label_color(float t) {
     return color;
 }
 
-"""
-
-
-direct_lookup_shader_without_collision = """
-uniform sampler2D texture2D_keys;
-uniform sampler2D texture2D_values;
-uniform vec2 LUT_shape;
-uniform int color_count;
-
-
-vec4 sample_label_color(float t) {
-    if (($use_selection) && ($selection != t)) {
-        return vec4(0);
-    }
-
-    float empty = 0.;
-    // get position in the texture grid (same as hash2d_get)
-    vec2 pos = vec2(
-        mod(int(t / LUT_shape.y), LUT_shape.x),
-        mod(t, LUT_shape.y)
-    );
-
-    // add .5 to move to the center of each texel and convert to texture coords
-    vec2 pos_tex = (pos + vec2(.5)) / LUT_shape;
-
-    // sample key texture
-    float found = texture2D(
-        texture2D_keys,
-        pos_tex
-    ).r;
-
-    // return vec4(pos_tex, 0, 1); // debug if texel is calculated correctly (correct)
-    // return vec4(found / 15, 0, 0, 1); // debug if key is calculated correctly (correct, should be a black-to-red gradient)
-
-    if (abs(found - t) > 1e-8) {
-        return vec4(0);
-    }
-
-    return texture2D(
-        texture2D_values,
-        pos_tex
-    );
-}
 """
 
 
@@ -199,14 +164,13 @@ class DirectLabelVispyColormap(VispyColormap):
     ):
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
-        if collision:
-            self.glsl_map = direct_lookup_shader.replace(
-                '$use_selection', str(use_selection).lower()
-            ).replace('$selection', str(selection))
-        else:
-            self.glsl_map = direct_lookup_shader_without_collision.replace(
-                '$use_selection', str(use_selection).lower()
-            ).replace('$selection', str(selection))
+        self.glsl_map = (
+            direct_lookup_shader.replace(
+                "$use_selection", str(use_selection).lower()
+            )
+            .replace("$selection", str(selection))
+            .replace("$collision", str(collision).lower())
+        )
 
 
 def idx_to_2d(idx, shape):
@@ -218,7 +182,7 @@ def idx_to_2d(idx, shape):
     return int((idx // shape[1]) % shape[0]), int(idx % shape[1])
 
 
-def hash2d_get(key, keys, values, empty_val=0):
+def hash2d_get(key, keys, empty_val=0):
     """
     Given a key, retrieve its location in the keys table.
     """
@@ -258,8 +222,8 @@ def _get_shape_from_keys(keys, fst_dim, snd_dim):
     Get the smallest hashmap size without collisions, if any.
     """
     for fst_size, snd_size in product(
-        PRIME_NUM_TABLE[fst_dim - START_TWO_POWER],
-        PRIME_NUM_TABLE[snd_dim - START_TWO_POWER],
+        PRIME_NUM_TABLE[fst_dim],
+        PRIME_NUM_TABLE[snd_dim],
     ):
         fst_crd = (keys / snd_size) % fst_size
         snd_crd = keys % snd_size
@@ -284,14 +248,14 @@ def _get_shape_from_dict(
 
     We use PRIME_NUM_TABLE to get precomputed prime numbers.
     We decided to use primes close to powers of two, as they
-    allowed to keep fill of hash table between 0.125 to 0.25
+    allowed to keeping fill of hash table between 0.125 to 0.25
     """
     size = len(color_dict) / MAX_LOAD_FACTOR
     size_sqrt = sqrt(size)
     size_log2 = log2(size_sqrt)
-    fst_dim = int(ceil(size_log2))
-    snd_dim = int(round(size_log2, 0))
-    keys = np.array(color_dict, dtype=np.int64)
+    fst_dim = max(int(ceil(size_log2)) - START_TWO_POWER, 0)
+    snd_dim = max(int(round(size_log2, 0)) - START_TWO_POWER, 0)
+    keys = np.array([x for x in color_dict if x is not None], dtype=np.int64)
 
     try:
         res = _get_shape_from_keys(keys, fst_dim, snd_dim)
@@ -327,7 +291,15 @@ def get_shape_from_dict(color_dict):
     return shape
 
 
-def build_textures_from_dict(color_dict, empty_val=0, shape=None):
+def build_textures_from_dict(
+    color_dict, empty_val=0, shape=None, use_selection=False, selection=0.0
+):
+    if use_selection:
+        keys = np.full((1, 1), selection, dtype=np.float32)
+        values = np.zeros((1, 1, 4), dtype=np.float32)
+        values[0, 0] = color_dict[selection]
+        return keys, values, False
+
     if len(color_dict) > 2**31 - 2:
         raise OverflowError(
             f'Too many labels ({len(color_dict)}). Maximum supported number of labels is 2^31-2'
@@ -400,8 +372,11 @@ class VispyLabelsLayer(VispyImageLayer):
                 self.layer.color
             )  # TODO: should probably account for non-given labels
             key_texture, val_texture, collision = build_textures_from_dict(
-                color_dict
+                color_dict,
+                use_selection=colormap.use_selection,
+                selection=colormap.selection,
             )
+            print("shape", key_texture.shape, val_texture.shape)
             self.node.cmap = DirectLabelVispyColormap(
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,

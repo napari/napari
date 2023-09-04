@@ -56,7 +56,7 @@ keys, values, _ = build_textures_from_dict(colormap_ordered)
 texel_pos_img = np.zeros((1, nb_steps, 4))
 texel_pos_img[..., -1] = 1  # alpha
 for k in range(nb_steps):
-    grid_position = hash2d_get(k + 1, keys, values)[0]
+    grid_position = hash2d_get(k + 1, keys)[0]
     # divide by shape and set to RG values like in shader (tex coords)
     texel_pos_img[:, k, :2] = (np.array(grid_position) + 0.5) / tex_shape
 

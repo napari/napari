@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 
@@ -7,6 +9,12 @@ from napari._vispy.layers.labels import (
     hash2d_get,
     idx_to_2d,
 )
+
+
+@pytest.fixture(scope='session', autouse=True)
+def mock_max_texture_size():
+    with patch('napari._vispy.layers.labels.MAX_TEXTURE_SIZE', 2**16):
+        yield
 
 
 def test_idx_to_2d():
@@ -36,7 +44,7 @@ def test_build_textures_from_dict_too_many_labels(monkeypatch):
             {i: (i, i, i, i) for i in range(1001)}, shape=(10, 10)
         )
     monkeypatch.setattr(
-        "napari._vispy.layers.labels.PRIME_NUM_TABLE", [127, 251]
+        "napari._vispy.layers.labels.PRIME_NUM_TABLE", [[61], [127]]
     )
     with pytest.raises(OverflowError):
         build_textures_from_dict(
@@ -54,7 +62,7 @@ def test_size_of_texture_square():
 
 
 def test_size_of_texture_rectangle():
-    count = int(127 * 127 * MAX_LOAD_FACTOR) + 5
+    count = int(128 * 128 * MAX_LOAD_FACTOR) + 5
     keys, values, _collision = build_textures_from_dict(
         {i: (i, i, i, i) for i in range(count)}
     )
@@ -75,6 +83,6 @@ def test_build_textures_from_dict_collision():
     assert np.array_equiv(values[0, 2], (2, 2, 2, 2))
     assert np.array_equiv(values[0, 3], (3, 3, 3, 3))
 
-    assert hash2d_get(1, keys, values) == (0, 1)
-    assert hash2d_get(26, keys, values) == (0, 2)
-    assert hash2d_get(27, keys, values) == (0, 3)
+    assert hash2d_get(1, keys) == (0, 1)
+    assert hash2d_get(26, keys) == (0, 2)
+    assert hash2d_get(27, keys) == (0, 3)
