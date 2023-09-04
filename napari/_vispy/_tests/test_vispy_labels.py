@@ -5,16 +5,16 @@ from napari._vispy.layers.labels import (
     MAX_LOAD_FACTOR,
     build_textures_from_dict,
     hash2d_get,
-    idx_to_2D,
+    idx_to_2d,
 )
 
 
 def test_idx_to_2d():
-    assert idx_to_2D(0, (100, 100)) == (0, 0)
-    assert idx_to_2D(1, (100, 100)) == (0, 1)
-    assert idx_to_2D(101, (100, 100)) == (1, 1)
-    assert idx_to_2D(521, (100, 100)) == (5, 21)
-    assert idx_to_2D(100 * 100 + 521, (100, 100)) == (5, 21)
+    assert idx_to_2d(0, (100, 100)) == (0, 0)
+    assert idx_to_2d(1, (100, 100)) == (0, 1)
+    assert idx_to_2d(101, (100, 100)) == (1, 1)
+    assert idx_to_2d(521, (100, 100)) == (5, 21)
+    assert idx_to_2d(100 * 100 + 521, (100, 100)) == (5, 21)
 
 
 def test_build_textures_from_dict():

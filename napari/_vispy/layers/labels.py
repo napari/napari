@@ -1,5 +1,6 @@
 from itertools import product
 from math import ceil, isnan, log2, sqrt
+from typing import Tuple
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -208,7 +209,7 @@ class DirectLabelVispyColormap(VispyColormap):
             ).replace('$selection', str(selection))
 
 
-def idx_to_2D(idx, shape):
+def idx_to_2d(idx, shape):
     """
     From a 1D index generate a 2D index that fits the given shape.
 
@@ -221,13 +222,13 @@ def hash2d_get(key, keys, values, empty_val=0):
     """
     Given a key, retrieve its location in the keys table.
     """
-    pos = idx_to_2D(key, keys.shape)
+    pos = idx_to_2d(key, keys.shape)
     initial_key = key
     while keys[pos] != initial_key and keys[pos] != empty_val:
         if key - initial_key > keys.size:
             raise KeyError('label does not exist')
         key += 1
-        pos = idx_to_2D(key, keys.shape)
+        pos = idx_to_2d(key, keys.shape)
     return pos if keys[pos] == initial_key else None
 
 
@@ -237,7 +238,7 @@ def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
     """
     if key is None or isnan(key):
         return False
-    pos = idx_to_2D(key, keys.shape)
+    pos = idx_to_2d(key, keys.shape)
     initial_key = key
     collision = False
     while keys[pos] != empty_val:
@@ -245,7 +246,7 @@ def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
         if key - initial_key > keys.size:
             raise OverflowError('too many labels')
         key += 1
-        pos = idx_to_2D(key, keys.shape)
+        pos = idx_to_2d(key, keys.shape)
     keys[pos] = initial_key
     values[pos] = value
 
@@ -269,7 +270,9 @@ def _get_shape_from_keys(keys, fst_dim, snd_dim):
     return None
 
 
-def _get_shape_from_dict(color_dict):
+def _get_shape_from_dict(
+    color_dict: dict[float, Tuple[float, float, float, float]]
+) -> Tuple[int, int]:
     """
     Get the shape of the 2D hashmap from the number of labels.
     The hardcoded shapes use prime numbers designed to avoid collisions.
@@ -297,7 +300,12 @@ def _get_shape_from_dict(color_dict):
         if res is None:
             return PRIME_NUM_TABLE[fst_dim][0], PRIME_NUM_TABLE[snd_dim][0]
     except IndexError:
-        return PRIME_NUM_TABLE[-1], PRIME_NUM_TABLE[-1]
+        # Index error means that we have too many labels to fit in 2**16.
+        if (max_size := PRIME_NUM_TABLE[-1][0] ** 2) <= len(color_dict):
+            raise OverflowError(
+                f'Too many labels. We support maximally {max_size} labels'
+            ) from None
+        return PRIME_NUM_TABLE[-1][0], PRIME_NUM_TABLE[-1][0]
     return res
 
 
@@ -471,6 +479,6 @@ class LabelNode(BaseLabel):  # type: ignore [valid-type,misc]
         if self._data is None:
             return None
         elif axis > 1:  # noqa: RET505
-            return (0, 0)
+            return 0, 0
         else:
-            return (0, self.size[axis])
+            return 0, self.size[axis]
