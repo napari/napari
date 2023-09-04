@@ -1,5 +1,6 @@
 import functools
 import inspect
+import weakref
 from typing import Callable
 
 from app_model.types import Action
@@ -74,9 +75,11 @@ class AttrRestoreCallback:
             obj = args[0] if args else kwargs[first_variable_name]
             prev_mode = getattr(obj, attribute_name)
             func(*args, **kwargs)
+            obj_ref = weakref.ref(obj)
 
             def _callback():
-                setattr(obj, attribute_name, prev_mode)
+                if concrete := obj_ref() is not None:
+                    setattr(concrete, attribute_name, prev_mode)
 
             return _callback
 

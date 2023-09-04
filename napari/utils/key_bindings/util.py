@@ -43,27 +43,32 @@ def create_conflict_filter(conflict_key: int) -> Callable[[int], bool]:
     Parameters
     ----------
     conflict_key : int
-        32-bit key sequence which may be
-        represented by a KeyCode, KeyMod, KeyCombo, or KeyChord.
+        16-bit key sequence which may be represented by a KeyCode, KeyMod, or KeyCombo.
+
+    Raises
+    ------
+    TypeError
+        When the given conflict key sequence is not 16 bits or less
 
     Returns
     -------
     filter_func : Callable[[int], bool]
         Generated filter function.
     """
+    if conflict_key > PART_0_MASK:
+        # don't handle anything more complex
+        raise TypeError(
+            f'filter creation only works on one-part key sequences (16-bit integers), not {conflict_key}'
+        )
+
     if conflict_key & KEY_MOD_MASK == conflict_key:
         # only comprised of modifier keys in first part
         def inner(key: int) -> bool:
-            return key != conflict_key and key & conflict_key
+            return key != conflict_key and key & conflict_key == conflict_key
 
-    elif conflict_key <= PART_0_MASK:
+    else:
         # one-part key sequence
         def inner(key: int) -> bool:
             return key > PART_0_MASK and key & PART_0_MASK == conflict_key
-
-    else:
-        # don't handle anything more complex
-        def inner(key: int) -> bool:
-            return NotImplemented
 
     return inner
