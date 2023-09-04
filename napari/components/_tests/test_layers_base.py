@@ -1,7 +1,8 @@
-from napari.layers.base import Layer
-import pytest
 import numpy as np
+import pytest
 from numpy import array
+
+from napari.layers.base import Layer
 
 
 @pytest.mark.parametrize(
