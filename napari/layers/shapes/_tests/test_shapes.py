@@ -384,24 +384,40 @@ def test_refresh_text():
     np.testing.assert_equal(layer.text.values, new_properties['shape_type'])
 
 
-def test_nd_text():
-    """Test slicing of text coords with nD shapes"""
+@pytest.mark.parametrize('prepend', [[], [7], [8, 9]])
+def test_nd_text(prepend):
+    """Test slicing of text coords with nD shapes
+
+    We can prepend as many dimensions as we want it should not change the result
+    """
     shapes_data = [
-        [[0, 10, 10, 10], [0, 10, 20, 20], [0, 10, 10, 20], [0, 10, 20, 10]],
-        [[1, 20, 30, 30], [1, 20, 50, 50], [1, 20, 50, 30], [1, 20, 30, 50]],
+        # t, z, y, x
+        [
+            prepend + [0, 10, 10, 10],
+            prepend + [0, 10, 20, 20],
+            prepend + [0, 10, 10, 20],
+            prepend + [0, 10, 20, 10],
+        ],
+        [
+            prepend + [1, 20, 30, 30],
+            prepend + [1, 20, 50, 50],
+            prepend + [1, 20, 50, 30],
+            prepend + [1, 20, 30, 50],
+        ],
     ]
     properties = {'shape_type': ['A', 'B']}
     text_kwargs = {'string': 'shape_type', 'anchor': 'center'}
     layer = Shapes(shapes_data, properties=properties, text=text_kwargs)
-    assert layer.ndim == 4
+    assert layer.ndim == 4 + len(prepend)
 
-    layer._slice_dims(point=[0, 10, 0, 0], ndisplay=2)
+    layer._slice_dims(point=prepend + [0, 10, 0, 0], ndisplay=2)
     np.testing.assert_equal(layer._indices_view, [0])
     np.testing.assert_equal(layer._view_text_coords[0], [[15, 15]])
-
-    layer._slice_dims(point=[1, 0, 0, 0], ndisplay=3)
-    np.testing.assert_equal(layer._indices_view, [1])
-    np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
+    # TODO: 1st bug #6205, ndisplay 3 is buggy in 5+ dimensions
+    if len(prepend) == 0:
+        layer._slice_dims(point=prepend + [1, 0, 0, 0], ndisplay=3)
+        np.testing.assert_equal(layer._indices_view, [1])
+        np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
