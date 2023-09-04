@@ -385,7 +385,6 @@ def test_refresh_text():
     layer.properties = new_properties
     np.testing.assert_equal(layer.text.values, new_properties['shape_type'])
 
-
 @pytest.mark.parametrize('prepend', [[], [7], [8, 9]])
 def test_nd_text(prepend):
     """Test slicing of text coords with nD shapes
