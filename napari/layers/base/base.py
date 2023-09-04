@@ -1510,6 +1510,40 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         as those correspond to the relative order of the last two and three world dimensions
         respectively.
 
+        Let's keep in mind a few facts:
+
+         - each dimension index is present exactly once.
+         - the lowest represented dimension both in dims order is going to be 0.
+
+        That is to say both the `world_dims` input and return results are _some_
+        permutation of 0...N
+
+        Examples
+        --------
+
+        `[2, 1, 0, 3]`  sliced in N=2 dimensions.
+
+          - we want to keep the N=2 dimensions with the biggest index
+          - `[2, None, None, 3]`
+          - we filter the None
+          - `[2, 3]`
+          - reindex so that the lowest dimension is going to be 0, so substract 2
+          - `[0, 1]`
+
+          `[2, 1, 0, 3]`  sliced in N=3 dimensions.
+
+          - we want to keep the N=3 dimensions with the biggest index
+          - `[2, 1, None, 3]`
+          - we filter the None
+          - `[2, 1, 3]`
+          - reindex so that the lowest dimension is going to be 0, so substract 1
+          - `[1, 0, 2]`
+
+        Conveniently if the world (layer) dimension is bigger than our displayed
+        dims, we can return everything
+
+
+
         Parameters
         ----------
         world_dims : ndarray
@@ -1522,14 +1556,27 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ndarray
             The corresponding layer dimensions with the same ordering as the given world dimensions.
         """
-        offset = ndim_world - self.ndim
-        order = np.array(world_dims)
-        if offset == 0:
-            return order
-        if offset < 0:
-            return np.concatenate(np.arange(-offset), order - offset)
+        return self._world_to_layer_dims_impl(
+            world_dims, ndim_world, self.ndim
+        )
 
-        return order[order >= offset] - offset
+    @staticmethod
+    def _world_to_layer_dims_impl(
+        world_dims: npt.NDArray, ndim_world: int, ndim: int
+    ):
+        """
+        Static for ease of testing
+        """
+        # TODO: check world_dims is already a np array ?
+        # I think some things pass it as a tuple
+        world_dims = np.array(world_dims)
+        assert world_dims.min() == 0
+        assert world_dims.max() == len(world_dims) - 1
+        assert world_dims.ndim == 1
+        offset = ndim_world - ndim
+        order = world_dims - offset
+        order = order[order >= 0]
+        return order - order.min()
 
     def _display_bounding_box(self, dims_displayed: List[int]) -> npt.NDArray:
         """An axis aligned (ndisplay, 2) bounding box around the data"""
