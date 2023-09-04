@@ -710,7 +710,7 @@ class Labels(_ImageBase):
             self._colormap = ensure_colormap(self._direct_colormap)
         self._selected_color = self.get_color(self.selected_label)
         self.events.color_mode()
-        self.events.colormap()
+        self.events.colormap()  # If remove this emitting, connect shader update to color_mode
         self.events.selected_label()
         self.refresh()
 

@@ -331,7 +331,7 @@ class VispyLabelsLayer(VispyImageLayer):
             layer_node_class=LabelLayerNode,
         )
 
-        self.layer.events.color_mode.connect(self._on_colormap_change)
+        # self.layer.events.color_mode.connect(self._on_colormap_change)
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
         self.layer.events.selected_label.connect(self._on_colormap_change)
         self.layer.events.show_selected_label.connect(self._on_colormap_change)
