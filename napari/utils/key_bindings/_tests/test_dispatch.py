@@ -277,6 +277,11 @@ def test_dispatcher():
         DispatchFlags.SINGLE_MOD | DispatchFlags.DELAY, 'single_mod'
     )
 
+    dispatcher.on_key_release(KeyMod.NONE, KeyCode.Shift)
+    mock.assert_called_with(
+        DispatchFlags.ON_RELEASE | DispatchFlags.SINGLE_MOD, 'single_mod'
+    )
+
     # single mod dispatch no conflicts
     context['block_shift_a'] = True
     dispatcher.on_key_press(KeyMod.NONE, KeyCode.Shift)
@@ -346,7 +351,7 @@ def test_dispatcher():
 
     # try different order of releasing the keys
     mock.reset_mock()
-    dispatcher.on_key_release(KeyMod.NONE, KeyCode.KeyS)
+    dispatcher.on_key_release(KeyMod.Shift, KeyCode.KeyS)
     mock.assert_called_with(
         DispatchFlags.ON_RELEASE | DispatchFlags.TWO_PART, 'chord'
     )

@@ -191,7 +191,13 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
 
-        self._qdispatcher = QKeyBindingDispatcher(self)
+        from napari._app_model._app import get_app
+
+        app = get_app()
+
+        self._qdispatcher = QKeyBindingDispatcher(
+            app.commands, app.action_is_repeatable, parent=self
+        )
         viewer._dispatcher.dispatch.connect(self._qdispatcher.onDispatch)
 
         self.dims = QtDims(self.viewer.dims)
