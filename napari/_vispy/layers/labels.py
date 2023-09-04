@@ -250,8 +250,23 @@ def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
 
 def _get_shape_from_dict(color_dict):
     size = len(color_dict) / MAX_LOAD_FACTOR
-    # I think that hash table size should be at least 4 times
-    # bigger than the number of labels to avoid collisions
+    """
+    I think that hash table size should be at least four times
+    bigger than the number of labels to avoid collisions
+    The prime number table is table of largest primes less than 2^n
+    for n from 6 to 16.
+    I decide to use it as a hash table size because the next size of hash
+    table will be around two times bigger.
+    Primes are used to reduce collisions probability
+    (to have collision both keys requires to return same modulo against
+    both dimensions of hash table).
+    MAX_LOAD_FACTOR is used to determined the maximum number of labels
+    as factor of hash table size. Literature propose to use table at
+    least 1.3 times bigger than number of labels. But it is for classical
+    approach where hash table entry could store a list of values. In our case
+    we have to store only one value per entry.
+    So I think that we could use bigger load factor.
+    """
     for i, prime in enumerate(PRIME_NUM_TABLE[:-1]):
         if prime * prime > size:
             return prime, prime
