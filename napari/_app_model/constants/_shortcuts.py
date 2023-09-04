@@ -118,7 +118,7 @@ _default_shortcuts: Dict[CommandId, List[int]] = {
         KeyCode.Digit3,
     ],
     CommandId.SHAPES_FINISH_DRAWING_SHAPE: [KeyCode.Escape],
-    CommandId.SHAPES_HOLD_TO_LOCK_ASPECT_RATIO: [KeyCode.Shift],
+    CommandId.SHAPES_HOLD_TO_LOCK_ASPECT_RATIO: [KeyMod.Shift],
     # vectors
     CommandId.VECTORS_ACTIVATE_PAN_ZOOM_MODE: [KeyCode.Digit1],
     CommandId.VECTORS_ACTIVATE_TRANSFORM_MODE: [KeyCode.Digit2],

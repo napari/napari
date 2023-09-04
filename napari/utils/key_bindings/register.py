@@ -1,3 +1,4 @@
+import warnings
 from bisect import insort_left
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterator, List, Optional, Tuple
@@ -7,6 +8,8 @@ from app_model.registries import KeyBindingsRegistry
 from app_model.registries._keybindings_reg import _RegisteredKeyBinding
 from app_model.types import KeyBinding, KeyBindingRule
 from psygnal import Signal
+
+from napari.utils.key_bindings.util import validate_key_binding
 
 
 @dataclass(order=True)
@@ -72,6 +75,16 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
         rule : KeyBindingRule
             KeyBinding information
 
+        Raises
+        ------
+        TypeError
+            When the key binding is invalid
+
+        Warns
+        -----
+        UserWarning
+            When the key binding is a single modifier encoded as a KeyCode instead of a KeyMod
+
         Returns
         -------
         Optional[Callable[[], None]]
@@ -84,7 +97,18 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
                 when=rule.when,
             )
 
-            key_bind = KeyBinding.validate(plat_keybinding)
+            with warnings.catch_warnings(record=True) as w:
+                key_bind = validate_key_binding(
+                    KeyBinding.validate(plat_keybinding)
+                )
+
+            if len(w) == 1:
+                warnings.warn(
+                    f'{w[0].message} for entry {entry}',
+                    UserWarning,
+                    stacklevel=2,
+                )
+
             kb = key_bind.to_int()
 
             if kb not in self.keymap:

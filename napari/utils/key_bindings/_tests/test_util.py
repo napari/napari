@@ -1,8 +1,12 @@
 import pytest
-from app_model.types import KeyChord, KeyCode, KeyMod
+from app_model.types import KeyBinding, KeyChord, KeyCode, KeyMod
 from app_model.types._constants import OperatingSystem
 
-from napari.utils.key_bindings.util import create_conflict_filter, key2mod
+from napari.utils.key_bindings.util import (
+    create_conflict_filter,
+    key2mod,
+    validate_key_binding,
+)
 
 
 def test_key2mod():
@@ -90,3 +94,50 @@ def test_create_conflict_filter():
     # test exception
     with pytest.raises(TypeError):
         create_conflict_filter(KeyChord(KeyCode.KeyA, KeyCode.KeyB))
+
+
+def test_validate_key_binding():
+    kb = KeyBinding.from_str
+    kbi = KeyBinding.from_int
+
+    assert validate_key_binding(kb('a b')) == kb('a b')
+
+    with pytest.raises(TypeError) as e:
+        validate_key_binding(kbi(KeyCode.IntlBackslash))
+    assert e.match('invalid base key')
+
+    with pytest.raises(TypeError) as e:
+        validate_key_binding(kb('shift a'))
+    assert e.match(
+        'cannot have single modifier as base key in a two-part chord'
+    )
+
+    with pytest.raises(TypeError) as e:
+        validate_key_binding(kb('shift+alt'))
+    assert e.match('key combination cannot be comprised of only modifier keys')
+
+    with pytest.raises(TypeError) as e:
+        validate_key_binding(
+            kbi(KeyChord(KeyCode.KeyA, KeyCode.IntlBackslash))
+        )
+    assert e.match('invalid base key')
+
+    with pytest.warns(UserWarning):
+        assert validate_key_binding(kb('shift+shift')) == kbi(KeyMod.Shift)
+
+    with pytest.warns(UserWarning):
+        assert validate_key_binding(kbi(KeyCode.Alt)) == kbi(KeyMod.Alt)
+
+    assert validate_key_binding(kbi(KeyMod.Alt)) == kbi(KeyMod.Alt)
+
+    with pytest.raises(TypeError) as e:
+        validate_key_binding(kbi(KeyMod.Alt | KeyMod.Shift))
+    assert e.match('must have exactly one modifier as a standalone base key')
+
+    assert validate_key_binding(kb('ctrl+a ctrl+v')) == kb('ctrl+a ctrl+v')
+
+    with pytest.raises(TypeError) as e:
+        validate_key_binding(kb('ctrl+a ctrl'))
+    assert e.match(
+        'cannot have single modifier as base key in a two-part chord'
+    )
