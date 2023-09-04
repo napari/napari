@@ -1,6 +1,6 @@
 from itertools import product
 from math import ceil, isnan, log2, sqrt
-from typing import Tuple
+from typing import Any, Optional, Tuple
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -64,8 +64,6 @@ direct_lookup_shader = """
 uniform sampler2D texture2D_keys;
 uniform sampler2D texture2D_values;
 uniform vec2 LUT_shape;
-uniform int color_count;
-
 
 vec4 sample_label_color(float t) {
     if ($use_selection) {
@@ -106,7 +104,7 @@ vec4 sample_label_color(float t) {
         while ((abs(found - initial_t) > 1e-8) && (abs(found - empty) > 1e-8)) {
             count = count + 1;
             t = initial_t + float(count);
-            if (count >= color_count) {
+            if (count >= $color_count) {
                 return vec4(0);
             }
             // same as above
@@ -161,6 +159,7 @@ class DirectLabelVispyColormap(VispyColormap):
         use_selection=False,
         selection=0.0,
         collision=True,
+        color_count=1,
     ):
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
@@ -170,6 +169,7 @@ class DirectLabelVispyColormap(VispyColormap):
             )
             .replace("$selection", str(selection))
             .replace("$collision", str(collision).lower())
+            .replace("$color_count", str(color_count))
         )
 
 
@@ -217,7 +217,9 @@ def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
     return collision
 
 
-def _get_shape_from_keys(keys, fst_dim, snd_dim):
+def _get_shape_from_keys(
+    keys: dict[int, Any], fst_dim: int, snd_dim: int
+) -> Optional[Tuple[int, int]]:
     """
     Get the smallest hashmap size without collisions, if any.
     """
@@ -229,7 +231,7 @@ def _get_shape_from_keys(keys, fst_dim, snd_dim):
         snd_crd = keys % snd_size
 
         collision_set = set(zip(fst_crd, snd_crd))
-        if len(collision_set) == len(keys):
+        if len(collision_set) == len(set(keys)):
             return fst_size, snd_size
     return None
 
@@ -376,11 +378,11 @@ class VispyLabelsLayer(VispyImageLayer):
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
             )
-            print("shape", key_texture.shape, val_texture.shape)
             self.node.cmap = DirectLabelVispyColormap(
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
                 collision=collision,
+                color_count=len(color_dict) + 1,
             )
             # note that textures have to be transposed here!
             self.node.shared_program['texture2D_keys'] = Texture2D(
@@ -392,7 +394,6 @@ class VispyLabelsLayer(VispyImageLayer):
                 interpolation='nearest',
             )
             self.node.shared_program['LUT_shape'] = key_texture.shape
-            self.node.shared_program['color_count'] = len(color_dict) + 1
         else:
             self.node.cmap = VispyColormap(*colormap)
 
