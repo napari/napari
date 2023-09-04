@@ -6,7 +6,11 @@ from app_model.types import KeyChord, KeyCode, KeyMod
 from app_model.types._constants import OperatingSystem
 from psygnal import Signal
 
-from napari.utils.key_bindings.constants import VALID_KEYS, DispatchFlags
+from napari.utils.key_bindings.constants import (
+    BASE_KEY_MASK,
+    VALID_KEYS,
+    DispatchFlags,
+)
 from napari.utils.key_bindings.register import (
     KeyBindingEntry,
     NapariKeyBindingsRegistry,
@@ -33,15 +37,14 @@ def next_active_match(
 
     Yields
     ------
-    match: KeyBindingEntry or None
-        Next match encountered, if found.
+    match: KeyBindingEntry
+        Next match encountered.
     """
     ignored_commands = []
 
     for entry in reversed(entries):
         if entry.when is None or entry.when.eval(context):
             if entry.block_rule:
-                yield None
                 break
             elif entry.negate_rule:
                 command_id = entry.command_id[1:]
@@ -160,10 +163,16 @@ class KeyBindingDispatcher:
         self._active_keymap = None
 
         self.context.changed.connect(self._on_context_change)
+        self.registry.registered.connect(self._refresh_cache)
+        self.registry.unregistered.connect(self._refresh_cache)
 
     def _on_context_change(self, changes: Set[str]):
-        logger.info('clearing cache: context change detected')
+        logger.info('context change detected for keys %s', changes)
+        self._refresh_cache()
         logger.debug('current context: %s', self.context)
+
+    def _refresh_cache(self):
+        logger.info('clearing cache')
         self._active_match_cache.clear()
         self._conflicts_cache.clear()
         self._active_keymap = None
@@ -239,6 +248,10 @@ class KeyBindingDispatcher:
         logger.debug(
             'active combo: %s, prefix: %s', self.active_combo, self.prefix
         )
+
+        if self.is_prefix:
+            self.prefix = self.active_combo
+
         self.is_prefix = False
         self.active_combo = 0
         flags = DispatchFlags.RESET
@@ -249,29 +262,29 @@ class KeyBindingDispatcher:
 
         keymod = key2mod(key, self.os)
 
-        if keymod and not self.prefix:
-            # single modifier dispatch only works on first part of key binding
-
-            if mods & keymod:
-                mods ^= keymod
-
-            if mods == KeyMod.NONE and (
-                match := self.find_active_match(keymod)
-            ):
-                # single modifier
-                self.active_combo = key
-                flags |= DispatchFlags.SINGLE_MOD
-                if self.has_conflicts(keymod):
-                    # conflicts; exec after delay
-                    flags |= DispatchFlags.DELAY
+        if keymod:
+            if self.prefix:
+                # modifier not in prefix;
+                if self.prefix & keymod == 0:
+                    self.prefix = 0
+            else:
+                # single modifier dispatch only works on first part of key binding
+                if mods == KeyMod.NONE and (
+                    match := self.find_active_match(keymod)
+                ):
+                    # single modifier
+                    self.active_combo = key
+                    flags |= DispatchFlags.SINGLE_MOD
                     command_id = match.command_id
+                    if self.has_conflicts(keymod):
+                        # conflicts; exec after delay
+                        flags |= DispatchFlags.DELAY
         elif key in VALID_KEYS:
             # non-modifier base key
             key_seq = mods | key
             self.active_combo = key_seq
 
             if self.prefix:
-                flags |= DispatchFlags.TWO_PART
                 key_seq = KeyChord(self.prefix, key_seq)
 
             if not self.prefix and self.has_conflicts(key_seq):
@@ -283,6 +296,8 @@ class KeyBindingDispatcher:
             # ignore input
             self.prefix = 0
 
+        if self.prefix:
+            flags |= DispatchFlags.TWO_PART
         self.active_command = command_id
         self.dispatch(flags, command_id)
         logger.info('dispatching %s with flags %s', command_id, flags)
@@ -304,7 +319,7 @@ class KeyBindingDispatcher:
         logger.debug(
             'active combo: %s, prefix: %s', self.active_combo, self.prefix
         )
-        if self.active_combo & key:
+        if self.active_combo & BASE_KEY_MASK == key:
             flags = DispatchFlags.ON_RELEASE
 
             if self.prefix:
@@ -334,5 +349,5 @@ class KeyBindingDispatcher:
             self._active_keymap = {}
             for key in self.registry.keymap:
                 if match := self.find_active_match(key):
-                    self._active_keymap[key] = match
+                    self._active_keymap[key] = match.command_id
         return self._active_keymap

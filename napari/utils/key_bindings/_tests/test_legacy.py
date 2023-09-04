@@ -185,7 +185,7 @@ def test_handle_single_keymap_provider():
     assert not hasattr(foo, 'C')
 
 
-@patch('napari.utils.key_bindings.USER_KEYMAP', new_callable=dict)
+@patch('napari.utils.key_bindings.legacy.USER_KEYMAP', new_callable=dict)
 def test_bind_user_key(keymap_mock):
     foo = Foo()
     bar = Bar()

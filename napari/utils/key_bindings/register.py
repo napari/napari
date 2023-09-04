@@ -6,6 +6,7 @@ from app_model.expressions import Expr
 from app_model.registries import KeyBindingsRegistry
 from app_model.registries._keybindings_reg import _RegisteredKeyBinding
 from app_model.types import KeyBinding, KeyBindingRule
+from psygnal import Signal
 
 
 @dataclass(order=True)
@@ -36,7 +37,7 @@ class KeyBindingEntry:
 
     command_id: str = field(compare=False)
     weight: int
-    when: Optional[Expr] = field(compare=False)
+    when: Optional[Expr] = field(compare=False, default=None)
     block_rule: bool = field(init=False)
     negate_rule: bool = field(init=False)
 
@@ -53,6 +54,8 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
     keymap : Dict[int, List[KeyBindingEntry]]
         Keymap generated from registered key bindings.
     """
+
+    unregistered = Signal()
 
     def __init__(self) -> None:
         self.keymap: Dict[int, List[KeyBindingEntry]] = {}
@@ -81,7 +84,9 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
                 when=rule.when,
             )
 
-            kb = KeyBinding.validate(plat_keybinding).to_int()
+            key_bind = KeyBinding.validate(plat_keybinding)
+            kb = key_bind.to_int()
+
             if kb not in self.keymap:
                 entries = []
                 self.keymap[kb] = entries
@@ -94,6 +99,7 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
 
             def _dispose() -> None:
                 entries.remove(entry)
+                self.unregistered.emit()
                 if len(entries) == 0:
                     del self.keymap[kb]
 

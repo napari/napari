@@ -21,6 +21,7 @@ class KeyBindingWeights(IntEnum):
 
 KEY_MOD_MASK = 0x00000F00
 PART_0_MASK = 0x0000FFFF
+BASE_KEY_MASK = 0x000000FF
 
 VALID_KEYS: List[KeyCode] = [
     # a-z
