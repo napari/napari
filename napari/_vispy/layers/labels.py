@@ -125,7 +125,7 @@ vec4 sample_label_color(float t) {
 """
 
 
-direct_lookup_shade_without_collision = """
+direct_lookup_shader_without_collision = """
 uniform sampler2D texture2D_keys;
 uniform sampler2D texture2D_values;
 uniform vec2 LUT_shape;
@@ -199,7 +199,7 @@ class DirectLabelVispyColormap(VispyColormap):
                 '$use_selection', str(use_selection).lower()
             ).replace('$selection', str(selection))
         else:
-            self.glsl_map = direct_lookup_shade_without_collision.replace(
+            self.glsl_map = direct_lookup_shader_without_collision.replace(
                 '$use_selection', str(use_selection).lower()
             ).replace('$selection', str(selection))
 
@@ -284,7 +284,7 @@ def get_shape_from_dict(color_dict):
 def build_textures_from_dict(color_dict, empty_val=0, shape=None):
     if len(color_dict) > 2**31 - 2:
         raise OverflowError(
-            'Too many labels. Maximum supported number of labels is 2^31-2'
+            f'Too many labels ({len(color_dict)}). Maximum supported number of labels is 2^31-2'
         )
 
     if shape is None:
