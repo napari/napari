@@ -15,7 +15,6 @@ from napari.utils.misc import running_as_constructor_app
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari import Viewer
     from napari._qt.qt_main_window import Window
 
 

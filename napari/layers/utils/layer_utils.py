@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import functools
-import inspect
 import warnings
 from typing import (
     TYPE_CHECKING,

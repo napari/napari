@@ -1,6 +1,5 @@
 from napari.layers.base._base_constants import Mode
 from napari.layers.surface.surface import Surface
-from napari.utils.translations import trans
 
 
 def activate_surface_transform_mode(layer: Surface):

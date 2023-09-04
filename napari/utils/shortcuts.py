@@ -30,7 +30,9 @@ _default_shortcuts = {
     'napari:orient_plane_normal_along_y': [KeyCode.KeyY],
     'napari:orient_plane_normal_along_z': [KeyCode.KeyZ],
     'napari:hold_to_orient_plane_normal_along_view_direction': [KeyCode.KeyO],
-    'napari:orient_plane_normal_along_view_direction': [KeyMod.CtrlCmd | KeyCode.KeyO],
+    'napari:orient_plane_normal_along_view_direction': [
+        KeyMod.CtrlCmd | KeyCode.KeyO
+    ],
     # labels
     'napari:activate_labels_erase_mode': [KeyCode.Digit1, KeyCode.KeyE],
     'napari:activate_labels_paint_mode': [KeyCode.Digit2, KeyCode.KeyP],
