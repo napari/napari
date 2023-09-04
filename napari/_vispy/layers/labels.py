@@ -1,6 +1,6 @@
 from itertools import product
 from math import ceil, isnan, log2, sqrt
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -218,7 +218,7 @@ def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
 
 
 def _get_shape_from_keys(
-    keys: dict[int, Any], fst_dim: int, snd_dim: int
+    keys: np.ndarray, fst_dim: int, snd_dim: int
 ) -> Optional[Tuple[int, int]]:
     """
     Get the smallest hashmap size without collisions, if any.
