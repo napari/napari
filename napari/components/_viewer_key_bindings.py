@@ -44,7 +44,7 @@ def reset_scroll_progress(viewer: Viewer):
 reset_scroll_progress.__doc__ = trans._("Reset dims scroll progress")
 
 
-@register_viewer_action(trans._("Toggle ndisplay."))
+@register_viewer_action(trans._("Toggle 2D/3D view."))
 def toggle_ndisplay(viewer: Viewer):
     viewer.dims.ndisplay = 2 + (viewer.dims.ndisplay == 2)
 
