@@ -81,8 +81,8 @@ jobs:
       - name: create _version.py file
         # workaround for not using src layout
         run: |
-          echo "__version__ = version = '0.5.0a2'" > napari/_version.py
-          echo "__version_tuple__ = version_tuple = (0, 5, 0, 0, '0')" >> napari/_version.py
+          echo "__version__ = version = '0.5.0a2.dev364'" > napari/_version.py
+          echo "__version_tuple__ = version_tuple = (0, 5, 0, 'dev364', '')" >> napari/_version.py
 
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
