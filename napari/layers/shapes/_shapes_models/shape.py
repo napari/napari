@@ -98,7 +98,7 @@ class Shape(ABC):
     ) -> None:
         self._dims_order = dims_order or list(range(2))
         self._ndisplay = ndisplay
-        self._slice_key = None
+        self.slice_key = None
 
         self._face_vertices = np.empty((0, self.ndisplay))
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
@@ -113,16 +113,6 @@ class Shape(ABC):
         self.edge_width = edge_width
         self.z_index = z_index
         self.name = ''
-
-    @property
-    def slice_key(self):
-        print('RS', self._slice_key)
-        return self._slice_key
-
-    @slice_key.setter
-    def slice_key(self, slice_key):
-        print('RS Set', slice_key)
-        self._slice_key = slice_key
 
     @property
     @abstractmethod
