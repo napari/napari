@@ -26,10 +26,13 @@ from napari.layers.image._image_utils import guess_multiscale, guess_rgb
 from napari.layers.image._slice import _ImageSliceRequest, _ImageSliceResponse
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.utils._slice_input import _SliceInput
-from napari.layers.utils.layer_utils import _get_chunk_size, calc_data_range
+from napari.layers.utils.layer_utils import (
+    _get_chunk_size,
+    calc_data_range,
+)
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
-from napari.utils._dtype import get_dtype_limits, normalize_dtype
+from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
@@ -368,10 +371,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             if not isinstance(data, np.ndarray):
                 dtype = normalize_dtype(getattr(data, 'dtype', None))
                 if np.issubdtype(dtype, np.integer):
-                    self.contrast_limits_range = get_dtype_limits(dtype)
+                    self.contrast_limits_range = self._calc_data_range()
                 else:
                     self.contrast_limits_range = (0, 1)
-                self._should_calc_clims = dtype != np.uint8
             else:
                 self.contrast_limits_range = self._calc_data_range()
         else:
