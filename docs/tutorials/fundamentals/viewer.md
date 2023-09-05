@@ -340,7 +340,7 @@ The console (when available) appears at the bottom of the viewer as shown below:
 
 +++
 
-#### Toggle ndisplay (2D/3D) button
+#### Toggle 2D/3D button
 
 The second button from the left is the 2D/3D button which toggles between `2D` and `3D` renderings of the data.
 For example, run the following code:
