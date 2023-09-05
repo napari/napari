@@ -461,7 +461,7 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(e, list):
             return self.__newlike__(e)
         if self._basetypes:
-            _types = (*tuple(self._basetypes), NestableEventedList)
+            _types = self._basetypes + (NestableEventedList,)
             if not isinstance(e, _types):
                 raise TypeError(
                     trans._(

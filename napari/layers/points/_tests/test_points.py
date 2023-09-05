@@ -458,6 +458,7 @@ def test_remove_selected_updates_value():
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
+    old_data = layer.data
     layer.events.data = Mock()
     # set the value
     layer._value = 3
@@ -466,9 +467,15 @@ def test_remove_selected_updates_value():
     selection = {0, 5, 6, 7}
     layer.selected_data = selection
     layer.remove_selected()
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(selection),
+        "vertex_indices": ((),),
+    }
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.REMOVE.value,
+        "action": ActionType.REMOVED,
         "data_indices": tuple(selection),
         "vertex_indices": ((),),
     }
@@ -539,7 +546,7 @@ def test_move():
     assert np.all(layer.data[1:] == unmoved[1:])
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.CHANGE.value,
+        "action": ActionType.CHANGED,
         "data_indices": (0,),
         "vertex_indices": ((),),
     }
@@ -549,7 +556,7 @@ def test_move():
     layer._move([1, 2], np.add([2, 2], [-3, 4]))
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.CHANGE.value,
+        "action": ActionType.CHANGED,
         "data_indices": (1, 2),
         "vertex_indices": ((),),
     }
@@ -992,7 +999,7 @@ def test_edge_width():
 
 @pytest.mark.parametrize(
     "edge_width",
-    [int(1), float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
+    [1, float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
 )
 def test_edge_width_types(edge_width):
     """Test edge_width dtypes with valid values"""
@@ -1149,6 +1156,7 @@ def test_add_colormap(attribute):
 def test_add_point_direct(attribute: str):
     """Test adding points to layer directly"""
     layer = Points()
+    old_data = layer.data
     assert len(getattr(layer, f'{attribute}_color')) == 0
 
     layer.events.data = Mock()
@@ -1156,9 +1164,15 @@ def test_add_point_direct(attribute: str):
     coord = [18, 18]
 
     layer.add(coord)
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.ADDING,
+        "data_indices": (-1,),
+        "vertex_indices": ((),),
+    }
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.ADD.value,
+        "action": ActionType.ADDED,
         "data_indices": (-1,),
         "vertex_indices": ((),),
     }
@@ -1644,7 +1658,7 @@ def test_message():
     data[-1] = [0, 0]
     layer = Points(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_message_3d():
@@ -1659,7 +1673,7 @@ def test_message_3d():
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_thumbnail():
@@ -2486,3 +2500,81 @@ def test_point_selection_remains_evented_after_update():
     assert isinstance(layer.selected_data, Selection)
     layer.selected_data = {0, 1}
     assert isinstance(layer.selected_data, Selection)
+
+
+def test_points_data_setter_emits_event():
+    data = np.random.random((5, 2))
+    emitted_events = Mock()
+    layer = Points(data)
+    layer.events.data.connect(emitted_events)
+    layer.data = np.random.random((5, 2))
+    assert emitted_events.call_count == 2
+
+
+def test_points_add_delete_only_emit_two_events():
+    data = np.random.random((5, 2))
+    emitted_events = Mock()
+    layer = Points(data)
+    layer.events.data.connect(emitted_events)
+    layer.add(np.random.random(2))
+    assert emitted_events.call_count == 2
+    layer.selected_data = {3}
+    layer.remove_selected()
+    assert emitted_events.call_count == 4
+
+
+def test_data_setter_events():
+    data = np.random.random((5, 2))
+    layer = Points(data)
+    layer.events.data = Mock()
+
+    layer.data = []
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(i for i in range(len(data))),
+        "vertex_indices": ((),),
+    }
+
+    # Avoid truth value of empty array error
+    assert np.array_equal(
+        layer.events.data.call_args_list[1][1]["value"], np.empty((0, 2))
+    )
+    assert (
+        layer.events.data.call_args_list[1][1]["action"] == ActionType.REMOVED
+    )
+    assert layer.events.data.call_args_list[1][1]["data_indices"] == ()
+    assert layer.events.data.call_args_list[1][1]["vertex_indices"] == ((),)
+
+    layer.data = data
+    assert np.array_equal(
+        layer.events.data.call_args_list[2][1]["value"], np.empty((0, 2))
+    )
+    assert (
+        layer.events.data.call_args_list[2][1]["action"] == ActionType.ADDING
+    )
+    assert layer.events.data.call_args_list[2][1]["data_indices"] == tuple(
+        i for i in range(len(data))
+    )
+    assert layer.events.data.call_args_list[2][1]["vertex_indices"] == ((),)
+
+    assert layer.events.data.call_args_list[3][1] == {
+        "value": data,
+        "action": ActionType.ADDED,
+        "data_indices": tuple(i for i in range(len(data))),
+        "vertex_indices": ((),),
+    }
+
+    layer.data = data
+    assert layer.events.data.call_args_list[4][1] == {
+        "value": data,
+        "action": ActionType.CHANGING,
+        "data_indices": tuple(i for i in range(len(layer.data))),
+        "vertex_indices": ((),),
+    }
+    assert layer.events.data.call_args_list[5][1] == {
+        "value": data,
+        "action": ActionType.CHANGED,
+        "data_indices": tuple(i for i in range(len(layer.data))),
+        "vertex_indices": ((),),
+    }

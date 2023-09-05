@@ -160,7 +160,7 @@ class Event:
         return self._handled
 
     @handled.setter
-    def handled(self, val) -> bool:
+    def handled(self, val) -> None:
         self._handled = bool(val)
 
     @property
@@ -173,7 +173,7 @@ class Event:
         return self._blocked
 
     @blocked.setter
-    def blocked(self, val) -> bool:
+    def blocked(self, val) -> None:
         self._blocked = bool(val)
 
     def __repr__(self) -> str:
@@ -343,12 +343,7 @@ class EventEmitter:
     @print_callback_errors.setter
     def print_callback_errors(
         self,
-        val: Union[
-            Literal['first'],
-            Literal['reminders'],
-            Literal['always'],
-            Literal['never'],
-        ],
+        val: Literal['first', 'reminders', 'always', 'never'],
     ):
         if val not in ('first', 'reminders', 'always', 'never'):
             raise ValueError(
@@ -414,7 +409,7 @@ class EventEmitter:
         self,
         callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
         ref: Union[bool, str] = False,
-        position: Union[Literal['first'], Literal['last']] = 'first',
+        position: Literal['first', 'last'] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
         until: Optional['EventEmitter'] = None,
@@ -1110,7 +1105,7 @@ class EmitterGroup(EventEmitter):
         self,
         callback: Union[Callback, CallbackRef, 'EmitterGroup'],
         ref: Union[bool, str] = False,
-        position: Union[Literal['first'], Literal['last']] = 'first',
+        position: Literal['first', 'last'] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
     ):
@@ -1182,7 +1177,7 @@ class EventBlocker:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target, callback=None) -> None:
+    def __init__(self, target: EventEmitter, callback=None) -> None:
         self.target = target
         self.callback = callback
         self._base_count = target._block_counter.get(callback, 0)
@@ -1206,7 +1201,7 @@ class EventBlockerAll:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target) -> None:
+    def __init__(self, target: EmitterGroup) -> None:
         self.target = target
 
     def __enter__(self):
