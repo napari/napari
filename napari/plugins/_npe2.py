@@ -18,7 +18,7 @@ from app_model.types import SubmenuItem
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
-from napari.utils.shortcuts import plugins_shortcuts
+from napari.utils.key_bindings import KeyBindingWeights
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -374,6 +374,8 @@ def _npe2_manifest_to_actions(
 
     cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
     submenus: List[Tuple[str, SubmenuItem]] = []
+    keybindings: Dict[str, List[KeyBindingRule]] = DefaultDict(list)
+
     for menu_id, items in mf.contributions.menus.items():
         if is_menu_contributable(menu_id):
             for item in items:
@@ -385,13 +387,14 @@ def _npe2_manifest_to_actions(
                     submenus.append((menu_id, subitem))
 
     for key_bind in mf.contributions.keybindings or ():
-        # TODO: once supported, add when conditional
-        plugins_shortcuts[key_bind.command].append(
+        keybindings[key_bind.command].append(
             KeyBindingRule(
                 primary=key_bind.key,
                 win=key_bind.win,
                 mac=key_bind.mac,
                 linux=key_bind.linux,
+                when=key_bind.when,
+                weight=KeyBindingWeights.PLUGIN,
             )
         )
 
@@ -405,6 +408,7 @@ def _npe2_manifest_to_actions(
             enablement=cmd.enablement,
             callback=cmd.python_name or '',
             menus=cmds.get(cmd.id),
+            keybindings=keybindings.get(cmd.id),
         )
         for cmd in mf.contributions.commands or ()
     ]

@@ -4,7 +4,7 @@ from napari.utils.key_bindings.constants import (
     KeyBindingWeights,
 )
 from napari.utils.key_bindings.dispatch import KeyBindingDispatcher
-from napari.utils.key_bindings.legacy import KeymapHandler, KeymapProvider
+from napari.utils.key_bindings.legacy import KeymapProvider
 from napari.utils.key_bindings.register import NapariKeyBindingsRegistry
 
 __all__ = [
@@ -13,6 +13,5 @@ __all__ = [
     'DispatchFlags',
     'VALID_KEYS',
     'NapariKeyBindingsRegistry',
-    'KeymapHandler',
     'KeymapProvider',
 ]

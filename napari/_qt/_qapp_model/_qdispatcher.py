@@ -26,7 +26,7 @@ class QKeyBindingDispatcher(QObject):
         self.timer = None
 
     def executeCommand(self, command_id, *, on_press=False):
-        func = self._commands[command_id].callback
+        func = self._commands[command_id].resolved_callback
 
         if getattr(func, 'GENERATOR', False):
             # has release logic too

@@ -55,7 +55,6 @@ from napari.utils.history import (
     update_save_history,
 )
 from napari.utils.io import imsave
-from napari.utils.key_bindings.legacy import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
@@ -205,8 +204,6 @@ class QtViewer(QSplitter):
         self._layers = None
         self._layersButtons = None
         self._viewerButtons = None
-        self._key_map_handler = KeymapHandler()
-        self._key_map_handler.keymap_providers = [self.viewer]
         self._console_backlog = []
         self._console = None
 
@@ -243,12 +240,8 @@ class QtViewer(QSplitter):
 
         self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
 
-        self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
         self.viewer.layers.events.removed.connect(self._update_welcome_screen)
-        self.viewer.layers.selection.events.active.connect(
-            self._on_active_change
-        )
 
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
 
@@ -624,14 +617,6 @@ class QtViewer(QSplitter):
                 layer.events.set_data()
                 layer._update_thumbnail()
                 layer._set_highlight(force=True)
-
-    def _on_active_change(self):
-        """When active layer changes change keymap handler."""
-        self._key_map_handler.keymap_providers = (
-            [self.viewer]
-            if self.viewer.layers.selection.active is None
-            else [self.viewer.layers.selection.active, self.viewer]
-        )
 
     def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.

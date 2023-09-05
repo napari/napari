@@ -34,41 +34,8 @@ from napari.layers import (
 )
 from napari.utils.action_manager import action_manager
 from napari.utils.key_bindings import NapariKeyBindingsRegistry
-from napari.utils.key_bindings.legacy import (
-    _bind_plugin_key,
-    _get_plugin_keymap,
-)
 
 APP_NAME = 'napari'
-
-
-def _bindable_cmd(app, cmd_id):
-    """Given a command, return a function that will execute it when called.
-
-    This was factored out into its own function to clarify scoping behaviour.
-    """
-
-    def exec_cmd():
-        app.commands.execute_command(cmd_id).result()
-
-    return exec_cmd
-
-
-def populate_plugin_keymap():
-    """Populate the global plugin keymap from the app's keybinding registry."""
-    app = NapariApplication.get_app()
-    _get_plugin_keymap().clear()
-    for _kb, entries in app.keybindings:
-        for entry in entries:
-            # skip built-in keybinds
-            if entry.command_id.startswith('napari:'):
-                continue
-
-            _bind_plugin_key(
-                entry.keybinding,
-                _bindable_cmd(app, entry.command_id),
-                overwrite=True,
-            )
 
 
 class NapariApplication(Application):
@@ -123,8 +90,6 @@ class NapariApplication(Application):
                 self._register_action_manager_shim(action, keymapprovider)
 
         self.menus.append_menu_items(SUBMENUS)
-
-        self.keybindings.registered.connect(populate_plugin_keymap)
 
     def _register_action_manager_shim(self, action: Action, keymapprovider):
         """Shim from app-model Action to action_manager for keybinding.
