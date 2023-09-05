@@ -328,10 +328,10 @@ def _build_collision_table(
     values_array = np.zeros(
         (selected_table_size, second_dim, 4), dtype=np.float32
     )
-    for key, value in mapping_dict.items():
+    for key, value_li in mapping_dict.items():
         if isnan(key):
             continue
-        for i, (key_, value_) in enumerate(value):
+        for i, (key_, value_) in enumerate(value_li):
             keys_array[int(key), i] = key_
             values_array[int(key), i] = value_
 
