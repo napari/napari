@@ -269,7 +269,7 @@ def _get_shape_from_dict(
             return PRIME_NUM_TABLE[fst_dim][0], PRIME_NUM_TABLE[snd_dim][0]
     except IndexError:
         # Index error means that we have too many labels to fit in 2**16.
-        if (max_size := PRIME_NUM_TABLE[-1][0] ** 2) <= len(color_dict):
+        if (max_size := PRIME_NUM_TABLE[-1][0] ** 2) < len(color_dict):
             raise OverflowError(
                 f'Too many labels. We support maximally {max_size} labels'
             ) from None
