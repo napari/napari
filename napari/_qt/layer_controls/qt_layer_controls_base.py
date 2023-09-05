@@ -1,24 +1,105 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QFormLayout,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
+from superqt import QCollapsible, QElidingLineEdit
 
-from napari._qt.widgets._slider_compat import QDoubleSlider
-from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
+from napari._qt.layer_controls.widgets import QtOpacityBlendingControls
+from napari._qt.qt_resources import QColoredSVGIcon
+from napari._qt.utils import (
+    set_widgets_enabled_with_opacity,
+)
+from napari._qt.widgets.qt_mode_buttons import (
+    QtModePushButton,
+    QtModeRadioButton,
+)
+from napari.layers.base._base_constants import Mode
 from napari.layers.base.base import Layer
+from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
+from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
-
-# opaque and minimum blending do not support changing alpha (opacity)
-NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
 
 
 class LayerFormLayout(QFormLayout):
     """Reusable form layout for subwidgets in each QtLayerControls class"""
 
-    def __init__(self, QWidget=None) -> None:
-        super().__init__(QWidget)
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
         self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        # Needed since default aligment depends on OS
+        # self.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+
+
+class QtCollapsibleLayerControlsSection(QCollapsible):
+    """
+    Customization of the QCollapsible class to set default icons and style.
+    Uses a `LayerFormLayout` internally to organize added widgets to create
+    layer controls collapsible sections. See `addRowToSection`
+    """
+
+    def __init__(self, title="", parent=None):
+        super().__init__(
+            title=title,
+            parent=parent,
+        )
+        # Set themed icons
+        # TODO: Is there a better way to handle a theme change to set icons?
+        self._setIconsByTheme()
+        get_settings().appearance.events.theme.connect(self._setIconsByTheme)
+
+        # Setup internal layout
+        self.content().layout().setContentsMargins(0, 0, 0, 0)
+        self.setProperty('emphasized', True)
+        form_widget = QWidget()
+        form_widget.setProperty('emphasized', True)
+        self._internal_layout = LayerFormLayout()
+        form_widget.setLayout(self._internal_layout)
+        self.addWidget(form_widget)
+
+        self.expand()
+
+    # ---- Overridden methods
+    def expand(self, animate=True):
+        super().expand(animate=animate)
+        self._toggle_btn.setToolTip(
+            trans._("Collapse {title} controls", title=self._text)
+        )
+
+    def collapse(self, animate=True):
+        super().collapse(animate=animate)
+        self._toggle_btn.setToolTip(
+            trans._("Expand {title} controls", title=self._text)
+        )
+
+    # ---- New methods to follow napari theme and enable easy widget addition
+    def _setIconsByTheme(self, theme_event=None):
+        if theme_event:
+            theme = theme_event.value
+        else:
+            theme = get_settings().appearance.theme
+        coll_icon = QColoredSVGIcon.from_resources('right_arrow').colored(
+            theme=theme
+        )
+        exp_icon = QColoredSVGIcon.from_resources('down_arrow').colored(
+            theme=theme
+        )
+        self.setCollapsedIcon(icon=coll_icon)
+        self.setExpandedIcon(icon=exp_icon)
+
+    def addRowToSection(self, *args):
+        self._internal_layout.addRow(*args)
 
 
 class QtLayerControls(QFrame):
@@ -43,96 +124,248 @@ class QtLayerControls(QFrame):
         Label for the opacity slider widget.
     """
 
-    def __init__(self, layer: Layer) -> None:
+    # Enable setting expecific Mode enum type but also define as
+    # default one the base one with only PAN_ZOOM and TRANSFORM values
+    # to create base buttons
+    def __init__(self, layer: Layer, mode_options: StringEnum = Mode) -> None:
         super().__init__()
-
+        # Base attributes
+        self._mode_buttons: dict = {}
+        self._edit_buttons: list = []
         self._ndisplay: int = 2
-
         self.layer = layer
-        self.layer.events.blending.connect(self._on_blending_change)
-        self.layer.events.opacity.connect(self._on_opacity_change)
+        self._mode_options = mode_options
+
+        # Layer base events connection
+        self.layer.events.editable.connect(self._on_editable_or_visible_change)
+        self.layer.events.name.connect(self._on_name_change)
+        self.layer.events.mode.connect(self._on_mode_change)
+        self.layer.events.visible.connect(self._on_editable_or_visible_change)
 
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
-        self.setLayout(LayerFormLayout(self))
+        # Setup layer name section
+        name_layout = QHBoxLayout()
 
-        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        sld.setMinimum(0)
-        sld.setMaximum(1)
-        sld.setSingleStep(0.01)
-        sld.valueChanged.connect(self.changeOpacity)
-        self.opacitySlider = sld
-        self.opacityLabel = QLabel(trans._('opacity:'))
+        icon_label = QLabel()
+        icon_label.setProperty('layer_type_icon_label', True)
+        icon_label.setObjectName(f'{self.layer._basename()}')
 
-        self._on_opacity_change()
+        self.name_label = QElidingLineEdit(self.layer.name)
+        self.name_label.setToolTip(self.layer.name)
+        self.name_label.setObjectName('layer_name')
+        self.name_label.textChanged.connect(self._on_widget_name_change)
+        self.name_label.editingFinished.connect(self.setFocus)
 
-        blend_comboBox = QComboBox(self)
-        for index, (data, text) in enumerate(BLENDING_TRANSLATIONS.items()):
-            data = data.value
-            blend_comboBox.addItem(text, data)
-            if data == self.layer.blending:
-                blend_comboBox.setCurrentIndex(index)
+        name_layout.addWidget(icon_label)
+        name_layout.addWidget(self.name_label)
 
-        blend_comboBox.currentTextChanged.connect(self.changeBlending)
-        self.blendComboBox = blend_comboBox
-        # opaque and minimum blending do not support changing alpha
-        self.opacitySlider.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        # Setup buttons section
+        self.buttons_grid = QGridLayout()
+        self.buttons_grid.setContentsMargins(0, 0, 0, 0)
+        # Need to set spacing to have same spacing over all platforms
+        self.buttons_grid.setSpacing(10)  # +-6 win/linux def; +-10 macos def
+        # Need to set strech for a last column to prevent the spacing between
+        # buttons to change when the layer control width changes
+        self.buttons_grid.setColumnStretch(7, 1)
+        self.button_group = QButtonGroup(self)
+
+        # Setup layer controls sections
+        self._annotation_controls_section = QtCollapsibleLayerControlsSection(
+            trans._("annotation")
         )
-        self.opacityLabel.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        self._display_controls_section = QtCollapsibleLayerControlsSection(
+            trans._("display")
         )
+        controls_scrollarea = QScrollArea()
+        controls_scrollarea.setWidgetResizable(True)
+        controls_scrollarea.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        # TODO: Should the scrollbar be always visible?
+        controls_scrollarea.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
+        )
+        controls_widget = QWidget()
+        controls_layout = QVBoxLayout()
+        controls_layout.setContentsMargins(0, 0, 5, 0)
+        controls_layout.addWidget(self._annotation_controls_section)
+        controls_layout.addWidget(self._display_controls_section)
+        controls_layout.addStretch(1)
+        controls_widget.setLayout(controls_layout)
+        controls_scrollarea.setWidget(controls_widget)
 
-    def changeOpacity(self, value):
-        """Change opacity value on the layer model.
+        self._annotation_controls_section.hide()
+        self._display_controls_section.hide()
+
+        # Setup base layout
+        self.setLayout(QVBoxLayout())
+        self.layout().setContentsMargins(8, 0, 0, 0)
+        self.layout().addLayout(name_layout)
+        self.layout().addLayout(self.buttons_grid)
+        self.layout().addWidget(controls_scrollarea)
+
+        # Setup base widget controls
+        # TODO: Should be done when instanciating layer controls class
+        # at the layer controls container via some sort of mapping between
+        # layer attributes and QObject classes with QWidgets-Layer atts
+        # connection logic
+        self.opacity_blending_controls = QtOpacityBlendingControls(self, layer)
+
+    def _radio_button_mode(
+        self,
+        parent,
+        btn_name,
+        mode,
+        action_name,
+        row,
+        column,
+        extra_tooltip_text='',
+        edit_button=True,
+        **kwargs,
+    ):
+        """
+        Convenience function to create a RadioButton and bind it to
+        an action at the same time.
 
         Parameters
         ----------
-        value : float
-            Opacity value for shapes.
-            Input range 0 - 100 (transparent to fully opaque).
-        """
-        with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.opacity = value
+        parent : Any
+            Parent of the generated QtModeRadioButton
+        btn_name : str
+            name fo the button
+        mode : Enum
+            Value Associated to current button
+        action_name : str
+            Action triggered when button pressed
+        row : int
+            Row to position the button in the buttons layout
+        column : int
+            Column to position the button in the buttons layout
+        extra_tooltip_text : str, optional
+            Text you want added after the automatic tooltip set by the
+            action manager
+        **kwargs:
+            Passed to QtModeRadioButton
 
-    def changeBlending(self, text):
-        """Change blending mode on the layer model.
+        Returns
+        -------
+        button: QtModeRadioButton
+            button bound (or that will be bound to) to action `action_name`
+
+        Notes
+        -----
+        When shortcuts are modifed/added/removed via the action manager, the
+        tooltip will be updated to reflect the new shortcut.
+        """
+        action_name = f'napari:{action_name}'
+        btn = QtModeRadioButton(parent, btn_name, mode, **kwargs)
+        action_manager.bind_button(
+            action_name,
+            btn,
+            extra_tooltip_text=extra_tooltip_text,
+        )
+        self._mode_buttons[mode] = btn
+        if edit_button:
+            self._edit_buttons.append(btn)
+        self.button_group.addButton(btn)
+        self.buttons_grid.addWidget(btn, row, column)
+
+        return btn
+
+    def _push_button_action(
+        self,
+        layer,
+        btn_name,
+        row,
+        column,
+        action_name=None,
+        slot=None,
+        tooltip='',
+        edit_button=True,
+    ):
+        """
+        Convenience function to create a PushButton and bind it to
+        an action at the same time.
 
         Parameters
         ----------
-        text : str
-            Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
+        layer : napari.layers.Layer
+            The layer instance that this button controls.
+        btn_name : str
+            Name for the button.  This is mostly used to identify the button
+            in stylesheets (e.g. to add a custom icon).
+        row : int
+            Row to position the button in the buttons layout
+        column : int
+            Column to position the button in the buttons layout
+        action_name : str, optional
+            Action triggered when button pressed.
+        slot : callable, optional
+            The function to call when this button is clicked.
+        tooltip : str, optional
+            A tooltip to display when hovering the mouse on this button.
+
+        Returns
+        -------
+        button: QtModeRadioButton
+            button bound (or that will be bound to) to action `action_name`
+
         """
-        self.layer.blending = self.blendComboBox.currentData()
-        # opaque and minimum blending do not support changing alpha
-        self.opacitySlider.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        btn = QtModePushButton(
+            layer,
+            btn_name,
+            slot=slot,
+            tooltip=tooltip,
         )
-        self.opacityLabel.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        if action_name:
+            action_name = f'napari:{action_name}'
+            action_manager.bind_button(action_name, btn)
+        if edit_button:
+            self._edit_buttons.append(btn)
+        self.buttons_grid.addWidget(btn, row, column)
+
+        return btn
+
+    def _on_mode_change(self, event):
+        if event.mode in self._mode_buttons:
+            self._mode_buttons[event.mode].setChecked(True)
+        elif event.mode != self._mode_options.TRANSFORM:
+            raise ValueError(
+                trans._("Mode '{mode}' not recognized", mode=event.mode)
+            )
+
+    def _on_editable_or_visible_change(self):
+        """Receive layer model editable/visible change event & enable/disable buttons."""
+        set_widgets_enabled_with_opacity(
+            self,
+            self._edit_buttons,
+            self.layer.editable and self.layer.visible,
         )
 
-        blending_tooltip = ''
-        if self.layer.blending == str(Blending.MINIMUM):
-            blending_tooltip = trans._(
-                '`minimum` blending mode works best with inverted colormaps with a white background.',
-            )
-        self.blendComboBox.setToolTip(blending_tooltip)
-        self.layer.help = blending_tooltip
+    def _on_widget_name_change(self, text):
+        """
+        Receive widget name change signal and update layer name.
 
-    def _on_opacity_change(self):
-        """Receive layer model opacity change event and update opacity slider."""
-        with self.layer.events.opacity.blocker():
-            self.opacitySlider.setValue(self.layer.opacity)
+        Also, update widget tooltip with new full text (without ellipsis).
+        """
+        with self.layer.events.blocker(self._on_name_change):
+            new_name = self.name_label.text()
+            self.layer.name = new_name
+            self.name_label.setToolTip(new_name)
 
-    def _on_blending_change(self):
-        """Receive layer model blending mode change event and update slider."""
-        with self.layer.events.blending.blocker():
-            self.blendComboBox.setCurrentIndex(
-                self.blendComboBox.findData(self.layer.blending)
-            )
+    def _on_name_change(self):
+        """Receive layer model name change event and update name label and tooltip."""
+        self.name_label.setText(self.layer.name)
+        self.name_label.setToolTip(self.layer.name)
+
+    def _on_ndisplay_changed(self) -> None:
+        """Respond to a change to the number of dimensions displayed in the viewer.
+
+        This is needed because some layer controls may have options that are specific
+        to 2D or 3D visualization only.
+        """
 
     @property
     def ndisplay(self) -> int:
@@ -144,12 +377,49 @@ class QtLayerControls(QFrame):
         self._ndisplay = ndisplay
         self._on_ndisplay_changed()
 
-    def _on_ndisplay_changed(self) -> None:
-        """Respond to a change to the number of dimensions displayed in the viewer.
-
-        This is needed because some layer controls may have options that are specific
-        to 2D or 3D visualization only.
+    def add_annotation_control_widgets(self, controls: list[tuple]) -> None:
         """
+        Add controls to the collapsible annotation controls section.
+
+        Parameters
+        ----------
+        controls : list[tuple]
+            A list of widget controls tuples. Each tuple has the label for the
+            control and the respective control widget to show.
+
+        Returns
+        -------
+        None.
+
+        """
+        for label_text, control_widget in controls:
+            self._annotation_controls_section.addRowToSection(
+                label_text, control_widget
+            )
+        if not self._annotation_controls_section.isVisible():
+            self._annotation_controls_section.show()
+
+    def add_display_control_widgets(self, controls: list[tuple]) -> None:
+        """
+        Add widget controls to the collapsible display controls section.
+
+        Parameters
+        ----------
+        controls : list[tuple]
+            A list of widget controls tuples. Each tuple has the label for the
+            control and the respective control widget to show.
+
+        Returns
+        -------
+        None.
+
+        """
+        for label_text, control_widget in controls:
+            self._display_controls_section.addRowToSection(
+                label_text, control_widget
+            )
+        if not self._display_controls_section.isVisible():
+            self._display_controls_section.show()
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self)

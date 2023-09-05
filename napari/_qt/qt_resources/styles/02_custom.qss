@@ -269,23 +269,8 @@ QLabel#logo_silhouette {
 /* ------------------------------------------------------ */
 
 QFrame#empty_controls_widget {
-    min-height: 225px;
-    min-width: 240px;
-}
-
-QtLayerControlsContainer {
-    border-radius: 2px;
-    padding: 0px;
-    margin: 10px;
-    margin-left: 10px;
-    margin-right: 8px;
-    margin-bottom: 4px;
-}
-
-QtLayerControlsContainer > QFrame {
-  padding: 5px;
-  padding-right: 8px;
-  border-radius: 2px;
+    min-height: 125px;
+    min-width: 278px;
 }
 
 /* the box that shows the current Label color */
@@ -305,6 +290,29 @@ QtColorBox {
 QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
   font-size: {{ decrease(font_size, 1) }};
   color: {{ text }};
+}
+
+QtLayerControls > QElidingLineEdit#layer_name {
+  background-color: {{ background }};
+  font-size: {{ increase(font_size, 2) }};
+  font-weight: bold;
+  margin: 0px;
+  padding: 0px;
+}
+
+QtLayerControls > QElidingLineEdit#layer_name:focus {
+  background-color: {{ darken(background, 20) }};
+  selection-background-color: {{ lighten(current, 20) }};
+}
+
+QLabel[layer_type_icon_label="true"] {
+  max-width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  margin-left: 5px;
+  margin-right: 0px;
+  padding-right: 0px;
 }
 
 QLabeledRangeSlider > QAbstractSpinBox {
@@ -337,6 +345,81 @@ PlaneNormalButtons QPushButton {
     font-size: {{ decrease(font_size, 3) }};
     padding: 4;
 }
+
+/* ------------ Narrow scrollbars for QtLayerControlsContainer --------- */
+
+QtLayerControlsContainer QAbstractScrollArea::corner,
+QtLayerControlsContainer QScrollArea > QWidget,
+QtLayerControlsContainer QFrame {
+  background: {{ background }};
+}
+
+QtLayerControlsContainer QScrollBar:vertical {
+  max-width: 8px;
+}
+
+QtLayerControlsContainer QScrollBar::add-line:vertical,
+QtLayerControlsContainer QScrollBar::sub-line:vertical  {
+  height: 10px;
+  width: 8px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+QtLayerControlsContainer QScrollBar:up-arrow,
+QtLayerControlsContainer QScrollBar:down-arrow {
+  min-height: 6px;
+  min-width: 6px;
+  max-height: 6px;
+  max-width: 6px;
+  background: {{ foreground }};
+}
+
+QtLayerControlsContainer QScrollBar:horizontal {
+  min-height: 6px;
+  max-height: 8px;
+}
+
+QtLayerControlsContainer QScrollBar::add-line:horizontal,
+QtLayerControlsContainer QScrollBar::sub-line:horizontal {
+  height: 8px;
+  width: 10px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+QtLayerControlsContainer QScrollBar:left-arrow,
+QtLayerControlsContainer QScrollBar:right-arrow {
+  min-height: 6px;
+  min-width: 6px;
+  max-height: 6px;
+  max-width: 6px;
+  background: {{ foreground }};
+  padding: 2px 1px;
+}
+
+
+/* ---- Customize QCollapsible sections for layer controls ---- */
+
+QtLayerControlsContainer QCollapsible[emphasized="true"] {
+  padding: 0px;
+  margin: 0px;
+  border-radius: 2px;
+  min-width: 255px;
+}
+
+QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton,
+QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:disabled,
+QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:hover,
+QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:pressed,
+QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:checked {
+   background-color: {{ foreground }};
+   padding: 0px;
+   margin: 0px;
+}
+
+
+
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
