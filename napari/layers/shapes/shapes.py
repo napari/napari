@@ -2336,7 +2336,7 @@ class Shapes(Layer):
         slice_key = np.array(self._slice_indices)[
             self._slice_input.not_displayed
         ]
-        if not np.all(slice_key == self._data_view.slice_key):
+        if not np.array_equal(slice_key, self._data_view.slice_key):
             self.selected_data = set()
         self._data_view.slice_key = slice_key
 
