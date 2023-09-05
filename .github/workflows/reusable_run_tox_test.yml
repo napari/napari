@@ -23,7 +23,7 @@ on:
       coverage:
         required: false
         type: string
-        default: cov
+        default: no_cov
       timeout:
         required: false
         type: number
@@ -37,6 +37,15 @@ jobs:
   test:
     name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.MIN_REQ && 'min_req' }} ${{ inputs.coverage }}
     runs-on: ${{ inputs.platform }}
+    env:
+      TOXENV: ${{ inputs.toxenv }}
+      NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
+      PYVISTA_OFF_SCREEN: True
+      MIN_REQ: ${{ inputs.min_req }}
+      FORCE_COLOR: 1
+      PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      COVERAGE: ${{ inputs.coverage }}
+      TOX_WORK_DIR: .tox
     steps:
       - uses: actions/checkout@v3
 
@@ -72,8 +81,8 @@ jobs:
       - name: create _version.py file
         # workaround for not using src layout
         run: |
-          echo "__version__ = version = '0.5.0a2.dev354+gd9211143.d20230830'" > napari/_version.py
-          echo "__version_tuple__ = version_tuple = (0, 5, 0, 'dev354', 'gd9211143.d20230830')" >> napari/_version.py
+          echo "__version__ = version = '0.5.0a2'" > napari/_version.py
+          echo "__version_tuple__ = version_tuple = (0, 5, 0, 0, '0')" >> napari/_version.py
 
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
@@ -81,57 +90,64 @@ jobs:
       # for instance, on ubuntu-latest with python 3.8, it would be equivalent to this command:
       # `tox -e py38-linux-pyqt,py38-linux-pyside`
       # see tox.ini for more
-      - name: Test with tox headless
-        # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
-        timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v1
-        with:
-          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
-        env:
-          BACKEND: ${{ inputs.qt_backend }}
-          TOXENV: ${{ inputs.toxenv }}
-          NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
-          PYVISTA_OFF_SCREEN: True
-          MIN_REQ: ${{ inputs.min_req }}
-          FORCE_COLOR: 1
-          PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
-          COVERAGE: ${{ inputs.coverage }}
-          NAPARI_TEST_SUBSET: headless
 
-      - name: Test with tox qt
-        # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
+      - name: Split qt backend
+        run: | 
+          python tools/split_qt_backend.py 0 ${{ inputs.qt_backend }} >> $GITHUB_ENV
+          python tools/split_qt_backend.py 1 ${{ inputs.qt_backend }} >> $GITHUB_ENV
+          python tools/split_qt_backend.py 2 ${{ inputs.qt_backend }} >> $GITHUB_ENV
+          python tools/split_qt_backend.py 3 ${{ inputs.qt_backend }} >> $GITHUB_ENV
+
+      - name: Test with tox main
         timeout-minutes: ${{ inputs.timeout }}
         uses: aganders3/headless-gui@v1
-        if: ${{ inputs.qt_backend != 'headless' }}
         with:
-          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+          shell: bash
+          run: |
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            rm -r .tox
         env:
-          BACKEND: ${{ inputs.qt_backend }}
-          TOXENV: ${{ inputs.toxenv }}
-          NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
-          PYVISTA_OFF_SCREEN: True
-          MIN_REQ: ${{ inputs.min_req }}
-          FORCE_COLOR: 1
-          PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
-          COVERAGE: ${{ inputs.coverage }}
+          BACKEND: ${{ env.MAIN }}
+          TOX_WORK_DIR: .tox
+
+      - name: Test with tox second
+        timeout-minutes: ${{ inputs.timeout }}
+        uses: aganders3/headless-gui@v1
+        if : ${{ env.SECOND != 'none' }}
+        with:
+          shell: bash
+          run: |
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            rm -r .tox
+        env:
+          BACKEND: ${{ env.SECOND }}
           NAPARI_TEST_SUBSET: qt
 
-      - name: Test with tox
-        # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
+      - name: Test with tox third
         timeout-minutes: ${{ inputs.timeout }}
         uses: aganders3/headless-gui@v1
-        if: ${{ inputs.qt_backend != 'headless' }}
+        if : ${{ env.THIRD != 'none' }}
         with:
-          run: python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+          shell: bash
+          run: |
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            rm -r .tox
         env:
-          BACKEND: ${{ inputs.qt_backend }}
-          TOXENV: ${{ inputs.toxenv }}
-          NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
-          PYVISTA_OFF_SCREEN: True
-          MIN_REQ: ${{ inputs.min_req }}
-          FORCE_COLOR: 1
-          PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
-          COVERAGE: ${{ inputs.coverage }}
+          BACKEND: ${{ env.THIRD }}
+          NAPARI_TEST_SUBSET: qt
+
+      - name: Test with tox fourth
+        timeout-minutes: ${{ inputs.timeout }}
+        uses: aganders3/headless-gui@v1
+        if: ${{ env.FOURTH != 'none' }}
+        with:
+          shell: bash
+          run: |
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            rm -r .tox
+        env:
+          BACKEND: ${{ env.FOURTH }}
+          NAPARI_TEST_SUBSET: qt
 
       - name: Upload pytest timing reports as json
         uses: actions/upload-artifact@v3

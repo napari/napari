@@ -1,0 +1,35 @@
+on:
+  workflow_call:
+
+
+jobs:
+  upload_coverage:
+    name: Upload coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+          cache-dependency-path: setup.cfg
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install codecov
+
+      - name: Download coverage data
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage reports
+          path: coverage
+
+      - name: combine coverage data
+        run: |
+          coverage combine coverage
+          coverage xml -o coverage.xml
+
+      - name: Upload coverage data
+        uses: codecov/codecov-action@v3

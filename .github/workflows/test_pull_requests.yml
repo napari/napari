@@ -57,184 +57,86 @@ jobs:
     name: Build wheel
     uses: ./.github/workflows/build_wheel.yml
 
-  test_without_coverage:
-    name: ${{ matrix.platform }} no cov
-    uses: ./.github/workflows/base_test_workflow.yml
+  test_initial:
+    name: Initial test
+    uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     strategy:
-      fail-fast: false
       matrix:
-        platform: [ubuntu-latest]
-        python: ["3.8", "3.9", "3.10", "3.11"]
-        backend: [pyqt5, pyside2]
-        exclude:
-          - python: '3.11'
-            backend: pyside2
         include:
-          # Windows py38
           - python: 3.8
-            platform: windows-latest
+            platform: ubuntu-latest
             backend: pyqt5
-          - python: 3.8
-            platform: windows-latest
-            backend: pyside2
-          - python: 3.9
-            platform: macos-latest
-            backend: pyqt5
-          # minimum specified requirements
-          - python: 3.8
-            platform: ubuntu-20.04
-            backend: pyqt5
-            MIN_REQ: 1
-          # test without any Qt backends
-          - python: 3.9
-            platform: ubuntu-20.04
-            backend: headless
-          - python: 3.9
+          - python: 3.11
             platform: ubuntu-latest
             backend: pyqt6
-          - python: 3.9
-            platform: ubuntu-latest
-            backend: pyside6
-          # pyside 6
-          - python: '3.10'
-            platform: ubuntu-latest
-            backend: pyside6
-          - python: '3.11'
-            platform: ubuntu-latest
-            backend: pyside6
-
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
-      min_req: ${{ matrix.MIN_REQ }}
       coverage: no_cov
-      toxenv: ${{ matrix.toxenv }}
 
   test:
     name: ${{ matrix.platform }}
-    uses: ./.github/workflows/base_test_workflow.yml
-    needs: build_wheel
+    uses: ./.github/workflows/reusable_run_tox_test.yml
+    needs: test_initial
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest]
-        python: ["3.8", "3.9", "3.10", "3.11"]
-        backend: [pyqt5, pyside2]
-        exclude:
-          - python: '3.11'
-            backend: pyside2
+        platform: [ ubuntu-latest ]
+        python: [ "3.9", "3.10" ]
+        backend: [ "pyqt5,pyside2" ]
+        coverage: [ cov ]
         include:
           # Windows py38
           - python: 3.8
             platform: windows-latest
-            backend: pyqt5
-          - python: 3.8
+            backend: pyqt5,pyside2
+            coverage: no_cov
+          - python: 3.11
             platform: windows-latest
-            backend: pyside2
-          - python: 3.9
+            backend: pyqt6
+            coverage: no_cov
+          - python: 3.11
             platform: macos-latest
             backend: pyqt5
+            coverage: no_cov
           # minimum specified requirements
           - python: 3.8
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
+            coverage: cov
           # test without any Qt backends
           - python: 3.9
             platform: ubuntu-20.04
             backend: headless
-          - python: 3.9
+            coverage: no_cov
+          - python: 3.11
             platform: ubuntu-latest
-            backend: pyqt6
-          - python: 3.9
-            platform: ubuntu-latest
-            backend: pyside6
-          # pyside 6
-          - python: '3.10'
-            platform: ubuntu-latest
-            backend: pyside6
-          - python: '3.11'
-            platform: ubuntu-latest
-            backend: pyside6
+            backend: pyqt6,pyside6
+            coverage: no_cov
 
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
       min_req: ${{ matrix.MIN_REQ }}
-      coverage: cov
+      coverage: ${{ matrix.coverage }}
       toxenv: ${{ matrix.toxenv }}
 
   coverage_report:
-    runs-on: ubuntu-22.04
     if: ${{ always() }}
     needs: test
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-          cache-dependency-path: setup.cfg
-          cache: 'pip'
-
-      - name: Install Dependencies
-        run: |
-          pip install --upgrade pip
-          pip install codecov
-
-      - name: Download coverage data
-        uses: actions/download-artifact@v3
-        with:
-          name: coverage reports
-          path: coverage
-
-      - name: combine coverage data
-        run: |
-          coverage combine coverage
-          coverage xml -o coverage.xml
-
-      - name: Upload coverage data
-        uses: codecov/codecov-action@v3
-
+    uses: ./.github/workflows/reusable_coverage_upload.yml
 
   test_pip_install:
-    name: ubuntu-latest 3.9 pip install
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          path: napari-from-github
-
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-          cache: "pip"
-          cache-dependency-path: napari-from-github/setup.cfg
-
-      - uses: tlambert03/setup-qt-libs@v1
-
-      - name: Install this commit
-        run: |
-          pip install --upgrade pip
-          pip install ./napari-from-github[all,testing]
-        env:
-          PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
-
-      - name: Test
-        uses: aganders3/headless-gui@v1
-        with:
-          run: |
-            python -m pytest --pyargs napari --color=yes
-            python -m pytest --pyargs napari_builtins --color=yes
+    name: pip install
+    uses: ./.github/workflows/reusable_pip_test.yml
 
   test_examples:
     name: test examples
-    uses: ./.github/workflows/base_test_workflow.yml
+    uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     with:
         toxenv: py39-linux-pyside2-examples
