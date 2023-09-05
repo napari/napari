@@ -2,14 +2,37 @@
 """
 import os
 import threading
-from collections import namedtuple
-from typing import Optional
+from typing import NamedTuple, Optional
 
-# The span of time that the event ocurred.
-Span = namedtuple("Span", "start_ns end_ns")
 
-# What process/thread produced the event.
-Origin = namedtuple("Origin", "process_id thread_id")
+class Span(NamedTuple):
+    """The span of time that the event ocurred.
+
+    Parameters
+    ----------
+    start_ns : int
+        Start time in nanoseconds.
+    end_ns : int
+        End time in nanoseconds.
+    """
+
+    start_ns: int
+    end_ns: int
+
+
+class Origin(NamedTuple):
+    """What process/thread produced the event.
+
+    Parameters
+    ----------
+    process_id : int
+        The process id that produced the event.
+    thread_id : int
+        The thread id that produced the event.
+    """
+
+    process_id: int
+    thread_id: int
 
 
 class PerfEvent:

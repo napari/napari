@@ -374,7 +374,7 @@ def test_message():
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_thumbnail():

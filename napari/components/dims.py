@@ -231,7 +231,7 @@ class Dims(EventedModel):
     def set_point(
         self,
         axis: Union[int, Sequence[int]],
-        value: Union[Union[int, float], Sequence[Union[int, float]]],
+        value: Union[float, Sequence[float]],
     ):
         """Sets point to slice dimension in world coordinates.
 

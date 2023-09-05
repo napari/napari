@@ -442,12 +442,12 @@ class Vectors(Layer):
         self.refresh()
 
     @property
-    def edge_width(self) -> Union[int, float]:
+    def edge_width(self) -> float:
         """float: Width for all vectors in pixels."""
         return self._edge_width
 
     @edge_width.setter
-    def edge_width(self, edge_width: Union[int, float]):
+    def edge_width(self, edge_width: float):
         self._edge_width = edge_width
 
         self.events.edge_width()
@@ -475,12 +475,12 @@ class Vectors(Layer):
             self.refresh()
 
     @property
-    def length(self) -> Union[int, float]:
+    def length(self) -> float:
         """float: Multiplicative factor for length of all vectors."""
         return self._length
 
     @length.setter
-    def length(self, length: Union[int, float]):
+    def length(self, length: float):
         self._length = float(length)
 
         self.events.length()
