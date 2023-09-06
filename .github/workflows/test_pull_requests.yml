@@ -131,14 +131,14 @@ jobs:
     uses: ./.github/workflows/reusable_coverage_upload.yml
 
   test_pip_install:
-    needs: initial_test
+    needs: test_initial
     name: pip install
     uses: ./.github/workflows/reusable_pip_test.yml
 
   test_examples:
     name: test examples
     uses: ./.github/workflows/reusable_run_tox_test.yml
-    needs: initial_test
+    needs: test_initial
     with:
         toxenv: py39-linux-pyside2-examples
         timeout: 60
