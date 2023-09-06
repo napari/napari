@@ -769,3 +769,38 @@ def pytest_runtest_setup(item):
                 "mock_console",
             ]
         )
+
+
+from datetime import timedelta  # noqa: E402
+from time import perf_counter  # noqa: E402
+
+from _pytest.pathlib import bestrelpath  # noqa: E402
+from pytest_pretty import CustomTerminalReporter  # noqa: E402
+
+
+class NapariTerminalReporter(CustomTerminalReporter):
+    def write_fspath_result(self, nodeid: str, res, **markup: bool) -> None:
+        if getattr(self, "_start_time", None) is None:
+            self._start_time = perf_counter()
+        fspath = self.config.rootpath / nodeid.split("::")[0]
+        if self.currentfspath is None or fspath != self.currentfspath:
+            if self.currentfspath is not None and self._show_progress_info:
+                self._write_progress_information_filling_space()
+                if os.environ.get("CI", False):
+                    self.write(
+                        f" [{timedelta(seconds=int(perf_counter() - self._start_time))}]"
+                    )
+            self.currentfspath = fspath
+            relfspath = bestrelpath(self.startpath, fspath)
+            self._tw.line()
+            self.write(relfspath + " ")
+        self.write(res, flush=True, **markup)
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config):
+    # Get the standard terminal reporter plugin and replace it with our
+    standard_reporter = config.pluginmanager.getplugin('terminalreporter')
+    custom_reporter = NapariTerminalReporter(config, sys.stdout)
+    config.pluginmanager.unregister(standard_reporter)
+    config.pluginmanager.register(custom_reporter, 'terminalreporter')
