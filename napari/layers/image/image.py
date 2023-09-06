@@ -32,7 +32,6 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
-from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
@@ -368,14 +367,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
         if contrast_limits is None:
-            if not isinstance(data, np.ndarray):
-                dtype = normalize_dtype(getattr(data, 'dtype', None))
-                if np.issubdtype(dtype, np.integer):
-                    self.contrast_limits_range = self._calc_data_range()
-                else:
-                    self.contrast_limits_range = (0, 1)
-            else:
-                self.contrast_limits_range = self._calc_data_range()
+            self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits: Tuple[float, float] = self.contrast_limits_range
