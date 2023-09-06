@@ -37,7 +37,8 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from itertools import chain
 from multiprocessing.pool import ThreadPool
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 from unittest.mock import Mock, patch
 from weakref import WeakKeyDictionary
 
@@ -780,6 +781,8 @@ from pytest_pretty import CustomTerminalReporter  # noqa: E402
 
 
 class NapariTerminalReporter(CustomTerminalReporter):
+    currentfspath: Optional[Path]
+
     def write_fspath_result(self, nodeid: str, res, **markup: bool) -> None:
         if getattr(self, "_start_time", None) is None:
             self._start_time = perf_counter()

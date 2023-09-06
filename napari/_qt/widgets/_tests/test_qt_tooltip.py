@@ -11,7 +11,7 @@ from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 
 @pytest.mark.skipif(
     sys.platform == "darwin" and os.environ.get("CI", False),
-    reason="Timing issues with CI on macOS",
+    reason="Timeouts when running on macOS CI",
 )
 def test_qt_tooltip_label(qtbot):
     tooltip_text = "Test QtToolTipLabel showing a tooltip"
