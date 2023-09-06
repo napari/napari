@@ -1,7 +1,7 @@
 from collections import defaultdict
 from itertools import product
 from math import ceil, isnan, log2, sqrt
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -223,7 +223,9 @@ def hash2d_get(
     return None, False
 
 
-def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
+def hash2d_set(
+    key: Union[float, vispy_texture_dtype], value, keys, values, empty_val=0
+) -> bool:
     """
     Set a value in the 2d hashmap if possible, returning True on collision.
     """
@@ -338,7 +340,7 @@ def get_shape_from_dict(color_dict):
 
 
 def _build_collision_table(
-    dkt: Dict[float, ColorTuple]
+    dkt: Dict[vispy_texture_dtype, ColorTuple]
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Build a secondary array for resolving hash collision.
@@ -362,7 +364,9 @@ def _build_collision_table(
     mapping_dict = defaultdict(list)
 
     for key, value in dkt.items():
-        mapping_dict[key % selected_table_size].append((key, value))
+        mapping_dict[vispy_texture_dtype(key % selected_table_size)].append(
+            (key, value)
+        )
 
     second_dim = max(len(x) for x in mapping_dict.values())
 
@@ -456,14 +460,14 @@ def build_textures_from_dict(
     keys = np.full(shape, empty_val, dtype=vispy_texture_dtype)
     values = np.zeros(shape + (4,), dtype=vispy_texture_dtype)
     collided = set()
-    collision_dict: Dict[float, ColorTuple] = {}
+    collision_dict: Dict[vispy_texture_dtype, ColorTuple] = {}
     for key, value in color_dict.items():
-        key = vispy_texture_dtype(key)
-        if key in collided:
+        key_ = vispy_texture_dtype(key)
+        if key_ in collided:
             continue
-        collided.add(key)
-        if hash2d_set(key, value, keys, values):
-            collision_dict[key] = value
+        collided.add(key_)
+        if hash2d_set(key_, value, keys, values):
+            collision_dict[key_] = value
 
     collision_keys, collision_values = _build_collision_table(collision_dict)
 
