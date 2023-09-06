@@ -774,6 +774,7 @@ def pytest_runtest_setup(item):
 from datetime import timedelta  # noqa: E402
 from time import perf_counter  # noqa: E402
 
+from _pytest.main import Session  # noqa: E402
 from _pytest.pathlib import bestrelpath  # noqa: E402
 from pytest_pretty import CustomTerminalReporter  # noqa: E402
 
@@ -796,11 +797,17 @@ class NapariTerminalReporter(CustomTerminalReporter):
             self.write(relfspath + " ")
         self.write(res, flush=True, **markup)
 
+    @pytest.hookimpl(trylast=True)
+    def pytest_sessionstart(self, session: Session) -> None:
+        super().pytest_sessionstart(session)
+
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
     # Get the standard terminal reporter plugin and replace it with our
     standard_reporter = config.pluginmanager.getplugin('terminalreporter')
     custom_reporter = NapariTerminalReporter(config, sys.stdout)
+    if standard_reporter._session is not None:
+        custom_reporter._session = standard_reporter._session
     config.pluginmanager.unregister(standard_reporter)
     config.pluginmanager.register(custom_reporter, 'terminalreporter')
