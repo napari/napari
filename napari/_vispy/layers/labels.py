@@ -71,11 +71,12 @@ uniform vec2 collision_shape;
 
 vec4 sample_label_color(float t) {
     if ($use_selection) {
+        // just single-color texture is passed in this case
         if ($selection == t) {
             return texture2D(
-            texture2D_values,
-            vec2(0.5, 0.5)
-        );
+                texture2D_values,
+                vec2(0.5, 0.5)
+            );
         };
         return vec4(0);
     }
@@ -203,7 +204,7 @@ def hash2d_get(key, keys, col_key) -> Tuple[Optional[Tuple[int, int]], bool]:
 
 def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
     """
-    Set a value in the 2d hashmap, wrapping around to avoid collision.
+    Set a value in the 2d hashmap if possible, returning True on collision.
     """
     if key is None or isnan(key):
         return False
