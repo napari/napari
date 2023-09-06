@@ -14,8 +14,10 @@ from vispy.visuals.shaders import Function, FunctionChain
 from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.volume import Volume as VolumeNode
+from napari.utils._dtype import vispy_texture_dtype
 
 PRIME_NUM_TABLE = [
+    [37, 31, 29],
     [61, 59, 53],
     [127, 113, 109],
     [251, 241, 239],
@@ -29,11 +31,13 @@ PRIME_NUM_TABLE = [
     [65521, 65519, 65497],
 ]
 
-START_TWO_POWER = 6
+START_TWO_POWER = 5
 
 MAX_LOAD_FACTOR = 0.25
 
 MAX_TEXTURE_SIZE = None
+
+ColorTuple = Tuple[float, float, float, float]
 
 low_disc_lookup_shader = """
 uniform sampler2D texture2D_LUT;
@@ -163,7 +167,6 @@ class DirectLabelVispyColormap(VispyColormap):
         use_selection=False,
         selection=0.0,
         collision=True,
-        color_count=1,
     ):
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
@@ -173,7 +176,6 @@ class DirectLabelVispyColormap(VispyColormap):
             )
             .replace("$selection", str(selection))
             .replace("$collision", str(collision).lower())
-            .replace("$color_count", str(color_count))
         )
 
 
@@ -186,18 +188,37 @@ def idx_to_2d(idx, shape):
     return int((idx // shape[1]) % shape[0]), int(idx % shape[1])
 
 
-def hash2d_get(key, keys, col_key) -> Tuple[Optional[Tuple[int, int]], bool]:
+def hash2d_get(
+    key, keys_array, collision_keys_array
+) -> Tuple[Optional[Tuple[int, int]], bool]:
     """
-    Given a key, retrieve its location in the keys table and information if
+    Given a key, retrieve its location in the keys_array table and information if
     it is in the main table or collision table.
     If the key is not found, return None.
+
+    Parameters
+    ----------
+    key: float
+        Key to search for
+    keys_array: np.ndarray
+        Texture of keys for the main table
+    collision_keys_array: np.ndarray
+        Texture of keys for the collision table
+
+    Returns
+    -------
+    Optional[Tuple[int, int]
+        if key is found, return its location in the table.
+        Otherwise, return None
+    bool
+        True if the key is in the main table, False if it is in the collision table
     """
-    pos = idx_to_2d(key, keys.shape)
-    if keys[pos] == key:
+    pos = idx_to_2d(key, keys_array.shape)
+    if keys_array[pos] == key:
         return pos, True
-    x = key % col_key.shape[0]
-    for i in range(col_key.shape[1]):
-        if col_key[x, i] == key:
+    x = key % collision_keys_array.shape[0]
+    for i in range(collision_keys_array.shape[1]):
+        if collision_keys_array[x, i] == key:
             return (x, i), False
     return None, False
 
@@ -206,6 +227,7 @@ def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
     """
     Set a value in the 2d hashmap if possible, returning True on collision.
     """
+    key = vispy_texture_dtype(key)
     if key is None or isnan(key):
         return False
     pos = idx_to_2d(key, keys.shape)
@@ -221,16 +243,33 @@ def hash2d_set(key: float, value, keys, values, empty_val=0) -> bool:
 
 
 def _get_shape_from_keys(
-    keys: np.ndarray, fst_dim: int, snd_dim: int
+    keys: np.ndarray, first_dim_index: int, second_dim_index: int
 ) -> Optional[Tuple[int, int]]:
     """
     Get the smallest hashmap size without collisions, if any.
+    The function uses precomputed prime numbers from PRIME_NUM_TABLE.
+    For index, it gets a list of prime numbers close to 2**(index + START_TWO_POWER).
+    It iterates over all combinations of prime numbers from the lists and
+    checks if there are no collisions for the given keys.
+    If yes, it returns the shape of the hashmap.
+
+    For example of collisions, see test_collide_keys and test_collide_keys2.
+
+    Parameters
+    ----------
+    keys: np.ndarray
+        array of keys to be inserted into the hashmap,
+        used for collision detection
+    first_dim_index: int
+        index for first dimension of PRIME_NUM_TABLE
+    second_dim_index: int
+        index for second dimension of PRIME_NUM_TABLE
     """
     for fst_size, snd_size in product(
-        PRIME_NUM_TABLE[fst_dim],
-        PRIME_NUM_TABLE[snd_dim],
+        PRIME_NUM_TABLE[first_dim_index],
+        PRIME_NUM_TABLE[second_dim_index],
     ):
-        fst_crd = (keys / snd_size) % fst_size
+        fst_crd = (keys // snd_size) % fst_size
         snd_crd = keys % snd_size
 
         collision_set = set(zip(fst_crd, snd_crd))
@@ -253,7 +292,7 @@ def _get_shape_from_dict(
 
     We use PRIME_NUM_TABLE to get precomputed prime numbers.
     We decided to use primes close to powers of two, as they
-    allowed to keeping fill of hash table between 0.125 to 0.25
+    allow for keep fill of hash table between 0.125 to 0.25
     """
     size = len(color_dict) / MAX_LOAD_FACTOR
     size_sqrt = sqrt(size)
@@ -267,6 +306,8 @@ def _get_shape_from_dict(
         if res is None:
             res = _get_shape_from_keys(keys, fst_dim, snd_dim + 1)
         if res is None:
+            # To see a set of keys that cause collision,
+            # and lands in this branch, see test_collide_keys2.
             return PRIME_NUM_TABLE[fst_dim][0], PRIME_NUM_TABLE[snd_dim][0]
     except IndexError:
         # Index error means that we have too many labels to fit in 2**16.
@@ -297,22 +338,22 @@ def get_shape_from_dict(color_dict):
 
 
 def _build_collision_table(
-    dkt: Dict[float, Tuple[float, float, float]]
+    dkt: Dict[float, ColorTuple]
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Build a secondary array for resolving hash collision.
-    Using a separate array allow to reducing number of collisions in the main table as
+    Using a separate array allows reducing the number of collisions in the main table as
     a collided key cannot generate new collision.
     """
     if not dkt:
-        return np.zeros((1, 1), dtype=np.float32), np.zeros(
-            (1, 1, 4), dtype=np.float32
+        return np.zeros((1, 1), dtype=vispy_texture_dtype), np.zeros(
+            (1, 1, 4), dtype=vispy_texture_dtype
         )
 
     table_size_index = max(int(ceil(log2(len(dkt)))) - START_TWO_POWER, 0)
     collision_count = len(dkt) + 10
     selected_table_size = PRIME_NUM_TABLE[table_size_index][0]
-    keys = np.array(list(dkt.keys()), dtype=np.float32)
+    keys = np.array(list(dkt.keys()), dtype=vispy_texture_dtype)
     for table_size in PRIME_NUM_TABLE[table_size_index]:
         collision_count_ = len(dkt) - len(set(keys % table_size))
         if collision_count_ < collision_count:
@@ -325,9 +366,11 @@ def _build_collision_table(
 
     second_dim = max(len(x) for x in mapping_dict.values())
 
-    keys_array = np.zeros((selected_table_size, second_dim), dtype=np.float32)
+    keys_array = np.zeros(
+        (selected_table_size, second_dim), dtype=vispy_texture_dtype
+    )
     values_array = np.zeros(
-        (selected_table_size, second_dim, 4), dtype=np.float32
+        (selected_table_size, second_dim, 4), dtype=vispy_texture_dtype
     )
     for key, value_li in mapping_dict.items():
         if isnan(key):
@@ -340,11 +383,60 @@ def _build_collision_table(
 
 
 def build_textures_from_dict(
-    color_dict, empty_val=0, shape=None, use_selection=False, selection=0.0
-):
+    color_dict: Dict[float, ColorTuple],
+    empty_val=0,
+    shape=None,
+    use_selection=False,
+    selection=0.0,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, bool]:
+    """
+    This function construct hash table for fast lookup of colors.
+    It uses two pairs of textures.
+    Each pair is table of keys and table of values.
+    The first pair is for the main table, the second
+    pair is for the collision table.
+
+    The procedure of selection table and collision table is
+    implemented in hash2d_get function.
+    In general, it is the first checks if an element is in the main table,
+    checking if the key is equal to the value in the main key table.
+    If it is not, it iterates over the column of the collision table.
+
+    This approach allows reducing the number of collisions in the main table
+    and limits the number of iterations in the collision table
+    as columns should be short.
+
+    Parameters
+    ----------
+    color_dict: Dict[float, Tuple[float, float, float, float]]
+        Dictionary from labels to colors
+    empty_val: float
+        Value to use for empty cells in the hash table
+    shape: Optional[Tuple[int, int]]
+        Shape of the hash table.
+        If None, it is calculated from the number of
+        labels using _get_shape_from_dict
+    use_selection: bool
+        If True, only the selected label is shown.
+        The generated colormap is single-color of size (1, 1)
+    selection: float
+        used only if use_selection is True.
+        Determines the selected label.
+
+    Returns
+    -------
+        keys: np.ndarray
+            Texture of keys for the main table
+        values: np.ndarray
+            Texture of values for the main table
+        key_collision: np.ndarray
+            Texture of keys for the collision table
+        val_collision: np.ndarray
+            Texture of values for the collision table
+    """
     if use_selection:
-        keys = np.full((1, 1), selection, dtype=np.float32)
-        values = np.zeros((1, 1, 4), dtype=np.float32)
+        keys = np.full((1, 1), selection, dtype=vispy_texture_dtype)
+        values = np.zeros((1, 1, 4), dtype=vispy_texture_dtype)
         values[0, 0] = color_dict[selection]
         return keys, values, keys, values, False
 
@@ -361,12 +453,12 @@ def build_textures_from_dict(
             f'Too many labels ({len(color_dict)}). Maximum supported number of labels for the given shape is {shape[0] * shape[1]}'
         )
 
-    keys = np.full(shape, empty_val, dtype=np.float32)
-    values = np.zeros(shape + (4,), dtype=np.float32)
+    keys = np.full(shape, empty_val, dtype=vispy_texture_dtype)
+    values = np.zeros(shape + (4,), dtype=vispy_texture_dtype)
     collided = set()
-    collision_dict = {}
+    collision_dict: Dict[float, ColorTuple] = {}
     for key, value in color_dict.items():
-        key = np.float32(key)
+        key = vispy_texture_dtype(key)
         if key in collided:
             continue
         collided.add(key)
@@ -393,7 +485,7 @@ class VispyLabelsLayer(VispyImageLayer):
         self.layer.events.show_selected_label.connect(self._on_colormap_change)
 
     def _on_rendering_change(self):
-        # overriding the Image method so we can maintain the same old rendering name
+        # overriding the Image method, so we can maintain the same old rendering name
         if isinstance(self.node, VolumeNode):
             rendering = self.layer.rendering
             self.node.method = (
@@ -445,7 +537,6 @@ class VispyLabelsLayer(VispyImageLayer):
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
                 collision=collision,
-                color_count=len(color_dict) + 1,
             )
             # note that textures have to be transposed here!
             self.node.shared_program['texture2D_keys'] = Texture2D(

@@ -36,7 +36,7 @@ from napari.layers.labels._labels_utils import (
 )
 from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
-from napari.utils._dtype import normalize_dtype
+from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
 from napari.utils.colormaps import (
     direct_colormap,
     ensure_colormap,
@@ -813,7 +813,7 @@ class Labels(_ImageBase):
         float32 as it can represent all input values (though not losslessly,
         see https://github.com/napari/napari/issues/6084).
         """
-        return np.float32(data)
+        return vispy_texture_dtype(data)
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
         """Override to convert raw slice data to displayed label colors."""
@@ -831,7 +831,7 @@ class Labels(_ImageBase):
 
         # Keep only the dimensions that correspond to the current view
         updated_slice = tuple(
-            [self._updated_slice[index] for index in dims_displayed]
+            self._updated_slice[index] for index in dims_displayed
         )
 
         offset = [axis_slice.start for axis_slice in updated_slice]

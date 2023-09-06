@@ -1,3 +1,4 @@
+from itertools import product
 from unittest.mock import patch
 
 import numpy as np
@@ -5,6 +6,7 @@ import pytest
 
 from napari._vispy.layers.labels import (
     MAX_LOAD_FACTOR,
+    PRIME_NUM_TABLE,
     build_textures_from_dict,
     hash2d_get,
     idx_to_2d,
@@ -30,8 +32,8 @@ def test_build_textures_from_dict():
         {1: (1, 1, 1, 1), 2: (2, 2, 2, 2)}
     )
     assert not collision
-    assert keys.shape == (61, 61)
-    assert values.shape == (61, 61, 4)
+    assert keys.shape == (37, 37)
+    assert values.shape == (37, 37, 4)
     assert col_keys.shape == (1, 1)
     assert val_keys.shape == (1, 1, 4)
     assert keys[0, 1] == 1
@@ -88,3 +90,39 @@ def test_build_textures_from_dict_collision():
     assert hash2d_get(1, keys, key_col) == ((0, 1), True)
     assert hash2d_get(26, keys, key_col) == ((26, 0), False)
     assert hash2d_get(27, keys, key_col) == ((0, 2), True)
+
+
+def test_collide_keys():
+    base_keys = [x * y for x, y in product(PRIME_NUM_TABLE[0], repeat=2)]
+    colors = {0: (0, 0, 0, 0), 1: (1, 1, 1, 1)}
+    colors.update({i + 10: (1, 0, 0, 1) for i in base_keys})
+    colors.update({2 * i + 10: (0, 1, 0, 1) for i in base_keys})
+    keys, values, _key_col, _val_col, collision = build_textures_from_dict(
+        colors
+    )
+    assert not collision
+    assert keys.shape == (37, 61)
+    assert values.shape == (37, 61, 4)
+
+
+def test_collide_keys2():
+    base_keys = [x * y for x, y in product(PRIME_NUM_TABLE[0], repeat=2)] + [
+        x * y for x, y in product(PRIME_NUM_TABLE[0], PRIME_NUM_TABLE[1])
+    ]
+    colors = {0: (0, 0, 0, 0), 1: (1, 1, 1, 1)}
+    colors.update({i + 10: (1, 0, 0, 1) for i in base_keys})
+    colors.update({2 * i + 10: (0, 1, 0, 1) for i in base_keys})
+
+    # enforce collision for collision table of size 31
+    colors.update({31 * i + 10: (0, 0, 1, 1) for i in base_keys})
+    # enforce collision for collision table of size 29
+    colors.update({29 * i + 10: (0, 0, 1, 1) for i in base_keys})
+
+    keys, values, key_col, val_col, collision = build_textures_from_dict(
+        colors
+    )
+    assert collision
+    assert keys.shape == (37, 37)
+    assert values.shape == (37, 37, 4)
+    assert key_col.shape == (31, 3)
+    assert val_col.shape == (31, 3, 4)
