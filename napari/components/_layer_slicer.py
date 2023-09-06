@@ -5,20 +5,18 @@ See the NAP for more details: https://napari.org/dev/naps/4-async-slicing.html
 
 from __future__ import annotations
 
-import abc
 import logging
 import weakref
 from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from threading import RLock
 from typing import (
+    Any,
     Dict,
-    Generic,
     Iterable,
     Optional,
     Protocol,
     Tuple,
-    TypeVar,
     runtime_checkable,
 )
 
@@ -36,26 +34,23 @@ logger = logging.getLogger("napari.components._layer_slicer")
 # vary per layer type, which means that the values of the dictionary
 # result of ``_slice_layers`` cannot be fixed to a single type.
 
-_SliceResponse = TypeVar('_SliceResponse')
 
-
-class _SliceRequest(abc.ABC, Generic[_SliceResponse]):
+class _SliceRequest(Protocol):
     id: int
 
-    @abc.abstractmethod
-    def __call__(self) -> _SliceResponse:  # type: ignore[]
+    def __call__(self) -> Any:
         ...
 
 
 @runtime_checkable
-class _AsyncSliceable(Protocol[_SliceResponse]):
+class _AsyncSliceable(Protocol):
     """The methods needed for async slicing to be supported on a layer.
 
     These methods are private to avoid inflating the public API of
     layers while async slicing is being developed.
     """
 
-    def _make_slice_request(self, dims: Dims) -> _SliceRequest[_SliceResponse]:
+    def _make_slice_request(self, dims: Dims) -> _SliceRequest:
         """Makes a callable slice request that returns a response.
 
         This method should run quickly, as it is expected to run on the main thread.
@@ -66,7 +61,7 @@ class _AsyncSliceable(Protocol[_SliceResponse]):
         other design choices, this allows us to avoid using locks while slicing.
         """
 
-    def _update_slice_response(self, response: _SliceResponse) -> None:
+    def _update_slice_response(self, response: Any) -> None:
         """Passes through a completed slice response.
 
         This method should run on the main thread and is mostly needed to update
