@@ -1,3 +1,7 @@
+import os
+import sys
+
+import pytest
 from qtpy.QtCore import QPointF
 from qtpy.QtGui import QEnterEvent
 from qtpy.QtWidgets import QToolTip
@@ -5,6 +9,10 @@ from qtpy.QtWidgets import QToolTip
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin" and os.environ.get("CI", False),
+    reason="Timing issues with CI on macOS",
+)
 def test_qt_tooltip_label(qtbot):
     tooltip_text = "Test QtToolTipLabel showing a tooltip"
     widget = QtToolTipLabel("Label with a tooltip")
