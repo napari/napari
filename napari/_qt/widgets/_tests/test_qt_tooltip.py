@@ -10,7 +10,7 @@ from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 
 
 @pytest.mark.skipif(
-    sys.platform == "darwin" and os.environ.get("CI", False),
+    os.environ.get("CI", False) and sys.platform == "darwin",
     reason="Timeouts when running on macOS CI",
 )
 def test_qt_tooltip_label(qtbot):
