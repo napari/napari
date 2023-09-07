@@ -951,7 +951,7 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
-        if isinstance(indices, int):
+        if not isinstance(indices, Sequence):
             triangle_indices = np.all(
                 self._mesh.triangles_index == [indices, 1], axis=1
             )
@@ -978,7 +978,7 @@ class ShapeList:
         centers = self._mesh.vertices_centers[vertices_indices]
         triangles = self._mesh.triangles[triangle_indices]
 
-        if not isinstance(indices, int):
+        if isinstance(indices, Sequence):
             t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
             inds = self._mesh.vertices_index[vertices_indices][:, 0]
             starts = np.unique(inds, return_index=True)[1]
