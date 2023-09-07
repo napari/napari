@@ -100,7 +100,9 @@ def test_add_multiscale():
     data = [np.random.random(s) for s in shapes]
     viewer.add_image(data, multiscale=True)
     assert len(viewer.layers) == 1
-    assert np.array_equal(viewer.layers[0].data, data)
+    # this is not an nd array but a list of ndarray.
+    # I think that might be a edge case of MultiScaleData.
+    assert viewer.layers[0].data == data
     assert viewer.dims.ndim == 2
 
 
@@ -115,7 +117,9 @@ def test_add_multiscale_image_with_negative_floats():
     viewer.add_image(data, multiscale=True)
 
     assert len(viewer.layers) == 1
-    assert np.array_equal(viewer.layers[0].data, data)
+    # this is not an nd array but a list of ndarray.
+    # I think that might be a edge case of MultiScaleData.
+    assert viewer.layers[0].data == data
     assert viewer.dims.ndim == 2
 
 
