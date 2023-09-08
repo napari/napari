@@ -386,7 +386,7 @@ qtconsole==5.4.3
     # via
     #   napari (setup.cfg)
     #   napari-console
-qtpy==2.3.1
+qtpy==2.4.0
     # via
     #   magicgui
     #   napari (setup.cfg)

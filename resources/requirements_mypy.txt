@@ -49,7 +49,7 @@ pyproject-hooks==1.0.0
     # via build
 pyyaml==6.0.1
     # via npe2
-qtpy==2.3.1
+qtpy==2.4.0
     # via
     #   -r resources/requirements_mypy.in
     #   magicgui
