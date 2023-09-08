@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
-    from qtpy.QtWidgets import QMenu  # type: ignore [attr-defined]
+    from qtpy.QtWidgets import QMenu
 
     from napari.layers import Layer
     from napari.types import SampleDict
