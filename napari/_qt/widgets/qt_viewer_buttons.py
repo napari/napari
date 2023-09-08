@@ -82,7 +82,7 @@ class QtLayerButtons(QFrame):
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         # Need to set spacing to have same spacing over all platforms
-        layout.setSpacing(10)  # +-6 win/linux def; +-10 macos def
+        layout.setSpacing(15)  # +-6 win/linux def; +-15 macos def
         layout.addWidget(self.newPointsButton)
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)
@@ -169,7 +169,7 @@ class QtViewerButtons(QFrame):
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         # Need to set spacing to have same spacing over all platforms
-        layout.setSpacing(10)  # +-6 win/linux def; +-10 macos def
+        layout.setSpacing(15)  # +-6 win/linux def; +-15 macos def
         layout.addWidget(self.consoleButton)
         layout.addWidget(self.ndisplayButton)
         layout.addWidget(self.rollDimsButton)

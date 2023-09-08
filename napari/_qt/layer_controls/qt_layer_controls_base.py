@@ -166,7 +166,7 @@ class QtLayerControls(QFrame):
         self._buttons_grid = QGridLayout()
         self._buttons_grid.setContentsMargins(0, 0, 0, 0)
         # Need to set spacing to have same spacing over all platforms
-        self._buttons_grid.setSpacing(10)  # +-6 win/linux def; +-10 macos def
+        self._buttons_grid.setSpacing(10)  # +-6 win/linux def; +-15 macos def
         # Need to set strech for a last column to prevent the spacing between
         # buttons to change when the layer control width changes
         self._buttons_grid.setColumnStretch(7, 1)
