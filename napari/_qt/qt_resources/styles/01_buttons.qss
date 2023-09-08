@@ -185,7 +185,7 @@ QtModePushButton[mode="delete_shape"] {
    image: url("theme_{{ id }}:/delete_shape.svg");
 }
 
-QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
+QtModePushButton[mode="delete_shape"]:pressed {
   background-color: {{ error }};
 }
 
