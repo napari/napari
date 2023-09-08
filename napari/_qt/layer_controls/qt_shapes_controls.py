@@ -170,34 +170,32 @@ class QtShapesControls(QtLayerControls):
         self._on_editable_or_visible_change()
 
         # Setup widget controls
-        # TODO: Should be done when instanciating layer controls class via some
+        # TODO: Should be done when instantiating layer controls class via some
         # sort of mapping between layer attributes and QObject classes
         # with QWidgets-Layer atts connection logic
-        opacity_blending_controls = self.opacity_blending_controls
-        self.edge_width_controls = QtEdgeWidthSliderControl(self, layer)
-        self.face_color_controls = QtFaceColorControl(self, layer)
-        self.edge_color_controls = QtEdgeColorControl(self, layer)
-        self.text_visibility_controls = QtTextVisibilityControl(self, layer)
+        opacity_blending_controls = self._widget_controls[
+            "opacity_blending_controls"
+        ]
+        edge_width_controls = QtEdgeWidthSliderControl(self, layer)
+        self._widget_controls["edge_width_controls"] = edge_width_controls
+        face_color_controls = QtFaceColorControl(self, layer)
+        self._widget_controls["face_color_controls"] = face_color_controls
+        edge_color_controls = QtEdgeColorControl(self, layer)
+        self._widget_controls["face_color_controls"] = face_color_controls
+        text_visibility_controls = QtTextVisibilityControl(self, layer)
+        self._widget_controls[
+            "text_visibility_controls"
+        ] = text_visibility_controls
 
         display_controls = [opacity_blending_controls.get_widget_controls()[0]]
-        display_controls += self.edge_width_controls.get_widget_controls()
+        display_controls += edge_width_controls.get_widget_controls()
         display_controls += [
             opacity_blending_controls.get_widget_controls()[1]
         ]
-        display_controls += self.face_color_controls.get_widget_controls()
-        display_controls += self.edge_color_controls.get_widget_controls()
-        display_controls += self.text_visibility_controls.get_widget_controls()
-        self.add_display_control_widgets(display_controls)
+        display_controls += face_color_controls.get_widget_controls()
+        display_controls += edge_color_controls.get_widget_controls()
+        display_controls += text_visibility_controls.get_widget_controls()
+        self.add_display_widget_controls(display_controls)
 
     def _on_ndisplay_changed(self) -> None:
         self._layer.editable = self.ndisplay == 2
-
-    def close(self) -> bool:
-        """Disconnect events when widget is closing."""
-        # TODO: Maybe these calls could be done in the base class by putting a
-        # reference to the QObject with the widget controls in a list/dict attribute?
-        self.edge_width_controls.disconnect_widget_controls()
-        self.face_color_controls.disconnect_widget_controls()
-        self.edge_color_controls.disconnect_widget_controls()
-        self.text_visibility_controls.disconnect_widget_controls()
-        return super().close()

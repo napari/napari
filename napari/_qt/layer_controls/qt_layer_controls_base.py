@@ -116,11 +116,6 @@ class QtLayerControls(QFrame):
     mode_options: napari.utils.misc.StringEnum
         Enum definition with the layer modes. Default enum counts with PAN_ZOOM
         and TRANSFORM modes values.
-
-    Attributes
-    ----------
-    opacity_blending_controls : napari._qt.layer_controls.widgets.QtOpacityBlendingControls
-        A QObject instance to handle opacity and blending control widgets for a layer.
     """
 
     # Enable setting expecific Mode enum type but also define as
@@ -129,9 +124,10 @@ class QtLayerControls(QFrame):
     def __init__(self, layer: Layer, mode_options: StringEnum = Mode) -> None:
         super().__init__()
         # Base attributes
-        self._mode_buttons: dict = {}
         self._edit_buttons: list = []
+        self._mode_buttons: dict = {}
         self._ndisplay: int = 2
+        self._widget_controls: dict = {}
         self._layer = layer
         self._mode_options = mode_options
 
@@ -212,7 +208,9 @@ class QtLayerControls(QFrame):
         # at the layer controls container via some sort of mapping between
         # layer attributes and QObject classes with QWidgets-Layer atts
         # connection logic
-        self.opacity_blending_controls = QtOpacityBlendingControls(self, layer)
+        self._widget_controls[
+            "opacity_blending_controls"
+        ] = QtOpacityBlendingControls(self, layer)
 
     def _radio_button_mode(
         self,
@@ -384,7 +382,7 @@ class QtLayerControls(QFrame):
         self._ndisplay = ndisplay
         self._on_ndisplay_changed()
 
-    def add_annotation_control_widgets(
+    def add_annotation_widget_controls(
         self, controls: list[tuple[QLabel, QWidget]]
     ) -> None:
         """
@@ -403,7 +401,7 @@ class QtLayerControls(QFrame):
         if not self._annotation_controls_section.isVisible():
             self._annotation_controls_section.show()
 
-    def add_display_control_widgets(
+    def add_display_widget_controls(
         self, controls: list[tuple[QLabel, QWidget]]
     ) -> None:
         """
@@ -428,7 +426,8 @@ class QtLayerControls(QFrame):
 
     def close(self) -> bool:
         """Disconnect events when widget is closing."""
-        self.opacity_blending_controls.disconnect_widget_controls()
+        for widget_control in self._widget_controls.values():
+            widget_control.disconnect_widget_controls()
         for child in self.children():
             close_method = getattr(child, 'close', None)
             if close_method is not None:
