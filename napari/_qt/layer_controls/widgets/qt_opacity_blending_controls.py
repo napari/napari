@@ -1,10 +1,13 @@
-from qtpy.QtCore import QObject, Qt
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
     QLabel,
     QWidget,
 )
 
+from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
+    QtWidgetControlsBase,
+)
 from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
 from napari.layers.base.base import Layer
@@ -14,7 +17,7 @@ from napari.utils.translations import trans
 NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
 
 
-class QtOpacityBlendingControls(QObject):
+class QtOpacityBlendingControls(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between opacity/blending
     layer attributes and Qt widgets.
@@ -39,9 +42,8 @@ class QtOpacityBlendingControls(QObject):
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
-        super().__init__(parent)
+        super().__init__(parent, layer)
         # Setup layer
-        self._layer = layer
         self._layer.events.blending.connect(self._on_blending_change)
         self._layer.events.opacity.connect(self._on_opacity_change)
 
@@ -127,15 +129,6 @@ class QtOpacityBlendingControls(QObject):
             )
 
     def get_widget_controls(self) -> list[tuple[QLabel, QWidget]]:
-        """
-        Enable access to the created labels and control widgets.
-
-        Returns
-        -------
-        list : list[tuple[QLabel, QWidget]]
-            List of tuples of the label and widget controls available.
-
-        """
         return [
             (self.opacityLabel, self.opacitySlider),
             (self.blendLabel, self.blendComboBox),

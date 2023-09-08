@@ -1,15 +1,18 @@
 from collections.abc import Iterable
 
 import numpy as np
-from qtpy.QtCore import QObject, Qt
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QWidget
 
+from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
+    QtWidgetControlsBase,
+)
 from napari._qt.widgets._slider_compat import QSlider
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
 
 
-class QtEdgeWidthSliderControl(QObject):
+class QtEdgeWidthSliderControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current edge
     width layer attribute and Qt widgets.
@@ -30,9 +33,8 @@ class QtEdgeWidthSliderControl(QObject):
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
-        super().__init__(parent)
+        super().__init__(parent, layer)
         # Setup layer
-        self._layer = layer
         self._layer.events.edge_width.connect(self._on_edge_width_change)
 
         # Setup widgets
@@ -69,13 +71,4 @@ class QtEdgeWidthSliderControl(QObject):
             self.edgeWidthSlider.setValue(value)
 
     def get_widget_controls(self) -> list[tuple[QLabel, QWidget]]:
-        """
-        Enable access to the created labels and control widgets.
-
-        Returns
-        -------
-        list : list[tuple[QLabel, QWidget]]
-            List of tuples of the label and widget controls available.
-
-        """
         return [(self.edgeWidthLabel, self.edgeWidthSlider)]

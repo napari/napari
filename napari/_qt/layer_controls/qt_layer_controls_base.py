@@ -392,7 +392,7 @@ class QtLayerControls(QFrame):
 
         Parameters
         ----------
-        controls : list[tuple]
+        controls : list[tuple[QLabel, QWidget]]
             A list of widget controls tuples. Each tuple has the label for the
             control and the respective control widget to show.
         """
@@ -411,7 +411,7 @@ class QtLayerControls(QFrame):
 
         Parameters
         ----------
-        controls : list[tuple]
+        controls : list[tuple[QLabel, QWidget]]
             A list of widget controls tuples. Each tuple has the label for the
             control and the respective control widget to show.
         """
@@ -422,13 +422,13 @@ class QtLayerControls(QFrame):
         if not self._display_controls_section.isVisible():
             self._display_controls_section.show()
 
-    def deleteLater(self):
+    def deleteLater(self) -> None:
         disconnect_events(self._layer.events, self)
         super().deleteLater()
 
-    def close(self):
+    def close(self) -> bool:
         """Disconnect events when widget is closing."""
-        disconnect_events(self._layer.events, self)
+        self.opacity_blending_controls.disconnect_widget_controls()
         for child in self.children():
             close_method = getattr(child, 'close', None)
             if close_method is not None:

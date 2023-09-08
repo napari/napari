@@ -1,14 +1,16 @@
 import numpy as np
-from qtpy.QtCore import QObject
 from qtpy.QtWidgets import QLabel, QWidget
 
+from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
+    QtWidgetControlsBase,
+)
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
 
 
-class QtFaceColorControl(QObject):
+class QtFaceColorControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current face
     color layer attribute and Qt widgets.
@@ -29,9 +31,8 @@ class QtFaceColorControl(QObject):
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
-        super().__init__(parent)
+        super().__init__(parent, layer)
         # Setup layer
-        self._layer = layer
         self._layer.events.current_face_color.connect(
             self._on_current_face_color_change
         )
@@ -63,13 +64,4 @@ class QtFaceColorControl(QObject):
             self.faceColorEdit.setColor(self._layer.current_face_color)
 
     def get_widget_controls(self) -> list[tuple[QLabel, QWidget]]:
-        """
-        Enable access to the created labels and control widgets.
-
-        Returns
-        -------
-        list : list[tuple[QLabel, QWidget]]
-            List of tuples of the label and widget controls available.
-
-        """
         return [(self.faceColorLabel, self.faceColorEdit)]
