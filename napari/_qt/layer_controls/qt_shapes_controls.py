@@ -26,10 +26,6 @@ class QtShapesControls(QtLayerControls):
 
     Attributes
     ----------
-    button_group : qtpy.QtWidgets.QButtonGroup
-        Button group for shapes layer modes
-        (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
-        ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE).
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete selected shapes
     direct_button : qtpy.QtWidgets.QtModeRadioButton
@@ -66,8 +62,6 @@ class QtShapesControls(QtLayerControls):
         Button to insert vertex into shape.
     vertex_remove_button : qtpy.QtWidgets.QtModeRadioButton
         Button to remove vertex from shapes.
-    edgeWidthSlider : qtpy.QtWidgets.QSlider
-        Slider controlling line edge width of shapes.
 
     Raises
     ------
@@ -75,13 +69,16 @@ class QtShapesControls(QtLayerControls):
         Raise error if shapes mode is not recognized.
     """
 
-    layer: 'napari.layers.Shapes'
+    _layer: 'napari.layers.Shapes'
 
-    def __init__(self, layer) -> None:
+    def __init__(self, layer: 'napari.layers.Shapes') -> None:
+        # Shapes Mode enum counts with the following modes:
+        #    SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
+        #    ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE
         super().__init__(layer, mode_options=Mode)
         # Setup buttons
+        # TODO: Creating attributtes for the buttons is needed?
         self.panzoom_button = self._radio_button_mode(
-            layer,
             'pan_zoom',
             Mode.PAN_ZOOM,
             "activate_shapes_pan_zoom_mode",
@@ -92,7 +89,6 @@ class QtShapesControls(QtLayerControls):
             checked=True,
         )
         self.polygon_button = self._radio_button_mode(
-            layer,
             'polygon',
             Mode.ADD_POLYGON,
             "activate_add_polygon_mode",
@@ -100,13 +96,12 @@ class QtShapesControls(QtLayerControls):
             1,
         )
         self.line_button = self._radio_button_mode(
-            layer, 'line', Mode.ADD_LINE, "activate_add_line_mode", 0, 2
+            'line', Mode.ADD_LINE, "activate_add_line_mode", 0, 2
         )
         self.path_button = self._radio_button_mode(
-            layer, 'path', Mode.ADD_PATH, "activate_add_path_mode", 0, 3
+            'path', Mode.ADD_PATH, "activate_add_path_mode", 0, 3
         )
         self.polygon_lasso_button = self._radio_button_mode(
-            layer,
             'polygon_lasso',
             Mode.ADD_POLYGON_LASSO,
             "activate_add_polygon_lasso_mode",
@@ -114,7 +109,6 @@ class QtShapesControls(QtLayerControls):
             4,
         )
         self.rectangle_button = self._radio_button_mode(
-            layer,
             'rectangle',
             Mode.ADD_RECTANGLE,
             "activate_add_rectangle_mode",
@@ -122,7 +116,6 @@ class QtShapesControls(QtLayerControls):
             5,
         )
         self.ellipse_button = self._radio_button_mode(
-            layer,
             'ellipse',
             Mode.ADD_ELLIPSE,
             "activate_add_ellipse_mode",
@@ -130,24 +123,22 @@ class QtShapesControls(QtLayerControls):
             6,
         )
         self.direct_button = self._radio_button_mode(
-            layer, 'direct', Mode.DIRECT, "activate_direct_mode", 1, 0
+            'direct', Mode.DIRECT, "activate_direct_mode", 1, 0
         )
         self.select_button = self._radio_button_mode(
-            layer, 'select', Mode.SELECT, "activate_select_mode", 1, 1
+            'select', Mode.SELECT, "activate_select_mode", 1, 1
         )
         self.delete_button = self._push_button_action(
-            layer,
             'delete_shape',
             1,
             2,
-            slot=self.layer.remove_selected,
+            slot=self._layer.remove_selected,
             tooltip=trans._(
                 "Delete selected shapes ({shortcut})",
                 shortcut=Shortcut('Backspace').platform,
             ),
         )
         self.vertex_insert_button = self._radio_button_mode(
-            layer,
             'vertex_insert',
             Mode.VERTEX_INSERT,
             "activate_vertex_insert_mode",
@@ -155,7 +146,6 @@ class QtShapesControls(QtLayerControls):
             3,
         )
         self.vertex_remove_button = self._radio_button_mode(
-            layer,
             'vertex_remove',
             Mode.VERTEX_REMOVE,
             "activate_vertex_remove_mode",
@@ -163,21 +153,19 @@ class QtShapesControls(QtLayerControls):
             4,
         )
         self.move_front_button = self._push_button_action(
-            layer,
             'move_front',
             1,
             5,
             action_name='move_shapes_selection_to_front',
-            slot=self.layer.move_to_front,
+            slot=self._layer.move_to_front,
             tooltip=trans._('Move to front'),
         )
         self.move_back_button = self._push_button_action(
-            layer,
             'move_back',
             1,
             6,
             action_name='move_shapes_selection_to_back',
-            slot=self.layer.move_to_back,
+            slot=self._layer.move_to_back,
             tooltip=trans._('Move to back'),
         )
         self._on_editable_or_visible_change()
@@ -202,10 +190,10 @@ class QtShapesControls(QtLayerControls):
         display_controls += text_visibility_controls.get_widget_controls()
         self.add_display_control_widgets(display_controls)
 
-    def _on_ndisplay_changed(self):
-        self.layer.editable = self.ndisplay == 2
+    def _on_ndisplay_changed(self) -> None:
+        self._layer.editable = self.ndisplay == 2
 
     def close(self):
         """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.text.events, self)
+        disconnect_events(self._layer.text.events, self)
         super().close()

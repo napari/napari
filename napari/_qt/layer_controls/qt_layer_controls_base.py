@@ -1,3 +1,5 @@
+from typing import Optional
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -25,7 +27,7 @@ from napari.layers.base._base_constants import Mode
 from napari.layers.base.base import Layer
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
-from napari.utils.events import disconnect_events
+from napari.utils.events import Event, disconnect_events
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
 
@@ -33,7 +35,7 @@ from napari.utils.translations import trans
 class LayerFormLayout(QFormLayout):
     """Reusable form layout for subwidgets in each QtLayerControls class"""
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
@@ -49,7 +51,7 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
     layer controls collapsible sections. See `addRowToSection`
     """
 
-    def __init__(self, title="", parent=None):
+    def __init__(self, title: str = "", parent: QWidget = None) -> None:
         super().__init__(
             title=title,
             parent=parent,
@@ -71,20 +73,20 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
         self.expand()
 
     # ---- Overridden methods
-    def expand(self, animate=True):
+    def expand(self, animate: bool = True) -> None:
         super().expand(animate=animate)
         self._toggle_btn.setToolTip(
             trans._("Collapse {title} controls", title=self._text)
         )
 
-    def collapse(self, animate=True):
+    def collapse(self, animate: bool = True) -> None:
         super().collapse(animate=animate)
         self._toggle_btn.setToolTip(
             trans._("Expand {title} controls", title=self._text)
         )
 
     # ---- New methods to follow napari theme and enable easy widget addition
-    def _setIconsByTheme(self, theme_event=None):
+    def _setIconsByTheme(self, theme_event: Event = None) -> None:
         if theme_event:
             theme = theme_event.value
         else:
@@ -98,7 +100,7 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
         self.setCollapsedIcon(icon=coll_icon)
         self.setExpandedIcon(icon=exp_icon)
 
-    def addRowToSection(self, *args):
+    def addRowToSection(self, *args) -> None:
         self._internal_layout.addRow(*args)
 
 
@@ -111,17 +113,14 @@ class QtLayerControls(QFrame):
     ----------
     layer : napari.layers.Layer
         An instance of a napari layer.
+    mode_options: napari.utils.misc.StringEnum
+        Enum definition with the layer modes. Default enum counts with PAN_ZOOM
+        and TRANSFORM modes values.
 
     Attributes
     ----------
-    blendComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select blending mode of layer.
-    layer : napari.layers.Layer
-        An instance of a napari layer.
-    opacitySlider : qtpy.QtWidgets.QSlider
-        Slider controlling opacity of the layer.
-    opacityLabel : qtpy.QtWidgets.QLabel
-        Label for the opacity slider widget.
+    opacity_blending_controls : napari._qt.layer_controls.widgets.QtOpacityBlendingControls
+        A QObject instance to handle opacity and blending control widgets for a layer.
     """
 
     # Enable setting expecific Mode enum type but also define as
@@ -133,14 +132,16 @@ class QtLayerControls(QFrame):
         self._mode_buttons: dict = {}
         self._edit_buttons: list = []
         self._ndisplay: int = 2
-        self.layer = layer
+        self._layer = layer
         self._mode_options = mode_options
 
         # Layer base events connection
-        self.layer.events.editable.connect(self._on_editable_or_visible_change)
-        self.layer.events.name.connect(self._on_name_change)
-        self.layer.events.mode.connect(self._on_mode_change)
-        self.layer.events.visible.connect(self._on_editable_or_visible_change)
+        self._layer.events.editable.connect(
+            self._on_editable_or_visible_change
+        )
+        self._layer.events.name.connect(self._on_name_change)
+        self._layer.events.mode.connect(self._on_mode_change)
+        self._layer.events.visible.connect(self._on_editable_or_visible_change)
 
         self.setObjectName('layer')
         self.setMouseTracking(True)
@@ -150,26 +151,26 @@ class QtLayerControls(QFrame):
 
         icon_label = QLabel()
         icon_label.setProperty('layer_type_icon_label', True)
-        icon_label.setObjectName(f'{self.layer._basename()}')
+        icon_label.setObjectName(f'{self._layer._basename()}')
 
-        self.name_label = QElidingLineEdit(self.layer.name)
-        self.name_label.setToolTip(self.layer.name)
-        self.name_label.setObjectName('layer_name')
-        self.name_label.textChanged.connect(self._on_widget_name_change)
-        self.name_label.editingFinished.connect(self.setFocus)
+        self._name_label = QElidingLineEdit(self._layer.name)
+        self._name_label.setToolTip(self._layer.name)
+        self._name_label.setObjectName('layer_name')
+        self._name_label.textChanged.connect(self._on_widget_name_change)
+        self._name_label.editingFinished.connect(self.setFocus)
 
         name_layout.addWidget(icon_label)
-        name_layout.addWidget(self.name_label)
+        name_layout.addWidget(self._name_label)
 
         # Setup buttons section
-        self.buttons_grid = QGridLayout()
-        self.buttons_grid.setContentsMargins(0, 0, 0, 0)
+        self._buttons_grid = QGridLayout()
+        self._buttons_grid.setContentsMargins(0, 0, 0, 0)
         # Need to set spacing to have same spacing over all platforms
-        self.buttons_grid.setSpacing(10)  # +-6 win/linux def; +-10 macos def
+        self._buttons_grid.setSpacing(10)  # +-6 win/linux def; +-10 macos def
         # Need to set strech for a last column to prevent the spacing between
         # buttons to change when the layer control width changes
-        self.buttons_grid.setColumnStretch(7, 1)
-        self.button_group = QButtonGroup(self)
+        self._buttons_grid.setColumnStretch(7, 1)
+        self._button_group = QButtonGroup(self)
 
         # Setup layer controls sections
         self._annotation_controls_section = QtCollapsibleLayerControlsSection(
@@ -203,7 +204,7 @@ class QtLayerControls(QFrame):
         self.setLayout(QVBoxLayout())
         self.layout().setContentsMargins(8, 0, 0, 0)
         self.layout().addLayout(name_layout)
-        self.layout().addLayout(self.buttons_grid)
+        self.layout().addLayout(self._buttons_grid)
         self.layout().addWidget(controls_scrollarea)
 
         # Setup base widget controls
@@ -215,24 +216,21 @@ class QtLayerControls(QFrame):
 
     def _radio_button_mode(
         self,
-        parent,
-        btn_name,
-        mode,
-        action_name,
-        row,
-        column,
-        extra_tooltip_text='',
-        edit_button=True,
+        btn_name: str,
+        mode: StringEnum,
+        action_name: str,
+        row: int,
+        column: int,
+        extra_tooltip_text: str = '',
+        edit_button: bool = True,
         **kwargs,
-    ):
+    ) -> QtModeRadioButton:
         """
         Convenience function to create a RadioButton and bind it to
         an action at the same time.
 
         Parameters
         ----------
-        parent : Any
-            Parent of the generated QtModeRadioButton
         btn_name : str
             name fo the button
         mode : Enum
@@ -246,6 +244,9 @@ class QtLayerControls(QFrame):
         extra_tooltip_text : str, optional
             Text you want added after the automatic tooltip set by the
             action manager
+        edit_button : bool, optional
+            If the button is related with edition actions and should handle
+            a disable state when the layer is not visible.
         **kwargs:
             Passed to QtModeRadioButton
 
@@ -260,7 +261,7 @@ class QtLayerControls(QFrame):
         tooltip will be updated to reflect the new shortcut.
         """
         action_name = f'napari:{action_name}'
-        btn = QtModeRadioButton(parent, btn_name, mode, **kwargs)
+        btn = QtModeRadioButton(self._layer, btn_name, mode, **kwargs)
         action_manager.bind_button(
             action_name,
             btn,
@@ -269,30 +270,27 @@ class QtLayerControls(QFrame):
         self._mode_buttons[mode] = btn
         if edit_button:
             self._edit_buttons.append(btn)
-        self.button_group.addButton(btn)
-        self.buttons_grid.addWidget(btn, row, column)
+        self._button_group.addButton(btn)
+        self._buttons_grid.addWidget(btn, row, column)
 
         return btn
 
     def _push_button_action(
         self,
-        layer,
-        btn_name,
-        row,
-        column,
-        action_name=None,
-        slot=None,
-        tooltip='',
-        edit_button=True,
-    ):
+        btn_name: str,
+        row: int,
+        column: int,
+        action_name: Optional[str] = None,
+        slot: Optional[callable] = None,
+        tooltip: str = '',
+        edit_button: bool = True,
+    ) -> QtModePushButton:
         """
         Convenience function to create a PushButton and bind it to
         an action at the same time.
 
         Parameters
         ----------
-        layer : napari.layers.Layer
-            The layer instance that this button controls.
         btn_name : str
             Name for the button.  This is mostly used to identify the button
             in stylesheets (e.g. to add a custom icon).
@@ -306,6 +304,9 @@ class QtLayerControls(QFrame):
             The function to call when this button is clicked.
         tooltip : str, optional
             A tooltip to display when hovering the mouse on this button.
+        edit_button : bool, optional
+            If the button is related with edition actions and should handle
+            a disable state when the layer is not visible.
 
         Returns
         -------
@@ -314,7 +315,7 @@ class QtLayerControls(QFrame):
 
         """
         btn = QtModePushButton(
-            layer,
+            self._layer,
             btn_name,
             slot=slot,
             tooltip=tooltip,
@@ -324,11 +325,11 @@ class QtLayerControls(QFrame):
             action_manager.bind_button(action_name, btn)
         if edit_button:
             self._edit_buttons.append(btn)
-        self.buttons_grid.addWidget(btn, row, column)
+        self._buttons_grid.addWidget(btn, row, column)
 
         return btn
 
-    def _on_mode_change(self, event):
+    def _on_mode_change(self, event: Event) -> None:
         if event.mode in self._mode_buttons:
             self._mode_buttons[event.mode].setChecked(True)
         elif event.mode != self._mode_options.TRANSFORM:
@@ -336,29 +337,35 @@ class QtLayerControls(QFrame):
                 trans._("Mode '{mode}' not recognized", mode=event.mode)
             )
 
-    def _on_editable_or_visible_change(self):
+    def _on_editable_or_visible_change(self) -> None:
         """Receive layer model editable/visible change event & enable/disable buttons."""
         set_widgets_enabled_with_opacity(
             self,
             self._edit_buttons,
-            self.layer.editable and self.layer.visible,
+            self._layer.editable and self._layer.visible,
         )
 
-    def _on_widget_name_change(self, text):
+    def _on_widget_name_change(self, text) -> None:
         """
         Receive widget name change signal and update layer name.
 
         Also, update widget tooltip with new full text (without ellipsis).
-        """
-        with self.layer.events.blocker(self._on_name_change):
-            new_name = self.name_label.text()
-            self.layer.name = new_name
-            self.name_label.setToolTip(new_name)
 
-    def _on_name_change(self):
+        Parameters
+        ----------
+        text : str
+            Updated text. Not used here to prevent setting text with ellipsis.
+
+        """
+        with self._layer.events.blocker(self._on_name_change):
+            new_name = self._name_label.text()
+            self._layer.name = new_name
+            self._name_label.setToolTip(new_name)
+
+    def _on_name_change(self) -> None:
         """Receive layer model name change event and update name label and tooltip."""
-        self.name_label.setText(self.layer.name)
-        self.name_label.setToolTip(self.layer.name)
+        self._name_label.setText(self._layer.name)
+        self._name_label.setToolTip(self._layer.name)
 
     def _on_ndisplay_changed(self) -> None:
         """Respond to a change to the number of dimensions displayed in the viewer.
@@ -377,7 +384,9 @@ class QtLayerControls(QFrame):
         self._ndisplay = ndisplay
         self._on_ndisplay_changed()
 
-    def add_annotation_control_widgets(self, controls: list[tuple]) -> None:
+    def add_annotation_control_widgets(
+        self, controls: list[tuple[QLabel, QWidget]]
+    ) -> None:
         """
         Add controls to the collapsible annotation controls section.
 
@@ -386,11 +395,6 @@ class QtLayerControls(QFrame):
         controls : list[tuple]
             A list of widget controls tuples. Each tuple has the label for the
             control and the respective control widget to show.
-
-        Returns
-        -------
-        None.
-
         """
         for label_text, control_widget in controls:
             self._annotation_controls_section.addRowToSection(
@@ -399,7 +403,9 @@ class QtLayerControls(QFrame):
         if not self._annotation_controls_section.isVisible():
             self._annotation_controls_section.show()
 
-    def add_display_control_widgets(self, controls: list[tuple]) -> None:
+    def add_display_control_widgets(
+        self, controls: list[tuple[QLabel, QWidget]]
+    ) -> None:
         """
         Add widget controls to the collapsible display controls section.
 
@@ -408,11 +414,6 @@ class QtLayerControls(QFrame):
         controls : list[tuple]
             A list of widget controls tuples. Each tuple has the label for the
             control and the respective control widget to show.
-
-        Returns
-        -------
-        None.
-
         """
         for label_text, control_widget in controls:
             self._display_controls_section.addRowToSection(
@@ -422,12 +423,12 @@ class QtLayerControls(QFrame):
             self._display_controls_section.show()
 
     def deleteLater(self):
-        disconnect_events(self.layer.events, self)
+        disconnect_events(self._layer.events, self)
         super().deleteLater()
 
     def close(self):
         """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.events, self)
+        disconnect_events(self._layer.events, self)
         for child in self.children():
             close_method = getattr(child, 'close', None)
             if close_method is not None:

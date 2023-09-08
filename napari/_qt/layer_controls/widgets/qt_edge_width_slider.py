@@ -10,11 +10,30 @@ from napari.utils.translations import trans
 
 
 class QtEdgeWidthSliderControl(QObject):
-    def __init__(self, parent: QWidget, layer: Layer):
+    """
+    Class that wraps the connection of events/signals between the current edge
+    width layer attribute and Qt widgets.
+
+    Parameters
+    ----------
+    parent: qtpy.QtWidgets.QWidget
+        An instance of QWidget that will be used as widgets parent
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+
+    Attributes
+    ----------
+        edgeWidthSlider : qtpy.QtWidgets.QSlider
+            Slider controlling line edge width of layer.
+        edgeWidthLabel : qtpy.QtWidgets.QLabel
+            Label for the current edge width widget.
+    """
+
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent)
         # Setup layer
-        self.layer = layer
-        self.layer.events.edge_width.connect(self._on_edge_width_change)
+        self._layer = layer
+        self._layer.events.edge_width.connect(self._on_edge_width_change)
 
         # Setup widgets
         sld = QSlider(Qt.Orientation.Horizontal)
@@ -22,7 +41,7 @@ class QtEdgeWidthSliderControl(QObject):
         sld.setMinimum(0)
         sld.setMaximum(40)
         sld.setSingleStep(1)
-        value = self.layer.current_edge_width
+        value = self._layer.current_edge_width
         if isinstance(value, Iterable):
             if isinstance(value, list):
                 value = np.asarray(value)
@@ -32,7 +51,7 @@ class QtEdgeWidthSliderControl(QObject):
         self.edgeWidthSlider = sld
         self.edgeWidthLabel = QLabel(trans._('edge width:'))
 
-    def changeWidth(self, value):
+    def changeWidth(self, value: float) -> None:
         """Change edge line width of shapes on the layer model.
 
         Parameters
@@ -40,22 +59,22 @@ class QtEdgeWidthSliderControl(QObject):
         value : float
             Line width of shapes.
         """
-        self.layer.current_edge_width = float(value)
+        self._layer.current_edge_width = float(value)
 
-    def _on_edge_width_change(self):
+    def _on_edge_width_change(self) -> None:
         """Receive layer model edge line width change event and update slider."""
-        with self.layer.events.edge_width.blocker():
-            value = self.layer.current_edge_width
+        with self._layer.events.edge_width.blocker():
+            value = self._layer.current_edge_width
             value = np.clip(int(value), 0, 40)
             self.edgeWidthSlider.setValue(value)
 
-    def get_widget_controls(self):
+    def get_widget_controls(self) -> list[tuple[QLabel, QWidget]]:
         """
         Enable access to the created labels and control widgets.
 
         Returns
         -------
-        list
+        list : list[tuple[QLabel, QWidget]]
             List of tuples of the label and widget controls available.
 
         """

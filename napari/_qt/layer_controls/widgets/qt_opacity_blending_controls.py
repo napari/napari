@@ -15,12 +15,35 @@ NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
 
 
 class QtOpacityBlendingControls(QObject):
-    def __init__(self, parent: QWidget, layer: Layer):
+    """
+    Class that wraps the connection of events/signals between opacity/blending
+    layer attributes and Qt widgets.
+
+    Parameters
+    ----------
+    parent: qtpy.QtWidgets.QWidget
+        An instance of QWidget that will be used as widgets parent
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+
+    Attributes
+    ----------
+        blendComboBox : qtpy.QtWidgets.QComboBox
+            Dropdown widget to select blending mode of layer.
+        blendLabel : qtpy.QtWidgets.QLabel
+            Label for the blending combobox widget.
+        opacitySlider : qtpy.QtWidgets.QSlider
+            Slider controlling opacity of the layer.
+        opacityLabel : qtpy.QtWidgets.QLabel
+            Label for the opacity slider widget.
+    """
+
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent)
         # Setup layer
-        self.layer = layer
-        self.layer.events.blending.connect(self._on_blending_change)
-        self.layer.events.opacity.connect(self._on_opacity_change)
+        self._layer = layer
+        self._layer.events.blending.connect(self._on_blending_change)
+        self._layer.events.opacity.connect(self._on_opacity_change)
 
         # Setup widgets
         sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
@@ -37,7 +60,7 @@ class QtOpacityBlendingControls(QObject):
         for index, (data, text) in enumerate(BLENDING_TRANSLATIONS.items()):
             data = data.value
             blend_comboBox.addItem(text, data)
-            if data == self.layer.blending:
+            if data == self._layer.blending:
                 blend_comboBox.setCurrentIndex(index)
 
         blend_comboBox.currentTextChanged.connect(self.changeBlending)
@@ -46,13 +69,13 @@ class QtOpacityBlendingControls(QObject):
 
         # opaque and minimum blending do not support changing alpha
         self.opacitySlider.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+            self._layer.blending not in NO_OPACITY_BLENDING_MODES
         )
         self.opacityLabel.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+            self._layer.blending not in NO_OPACITY_BLENDING_MODES
         )
 
-    def changeOpacity(self, value):
+    def changeOpacity(self, value: float) -> None:
         """Change opacity value on the layer model.
 
         Parameters
@@ -61,10 +84,10 @@ class QtOpacityBlendingControls(QObject):
             Opacity value for shapes.
             Input range 0 - 100 (transparent to fully opaque).
         """
-        with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.opacity = value
+        with self._layer.events.blocker(self._on_opacity_change):
+            self._layer.opacity = value
 
-    def changeBlending(self, text):
+    def changeBlending(self, text: str) -> None:
         """Change blending mode on the layer model.
 
         Parameters
@@ -72,44 +95,44 @@ class QtOpacityBlendingControls(QObject):
         text : str
             Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
         """
-        self.layer.blending = self.blendComboBox.currentData()
+        self._layer.blending = self.blendComboBox.currentData()
         # opaque and minimum blending do not support changing alpha
         self.opacitySlider.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+            self._layer.blending not in NO_OPACITY_BLENDING_MODES
         )
         self.opacityLabel.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+            self._layer.blending not in NO_OPACITY_BLENDING_MODES
         )
 
         blending_tooltip = ''
-        if self.layer.blending == str(Blending.MINIMUM):
+        if self._layer.blending == str(Blending.MINIMUM):
             blending_tooltip = trans._(
                 '`minimum` blending mode works best with inverted colormaps with a white background.',
             )
         self.blendComboBox.setToolTip(blending_tooltip)
-        self.layer.help = blending_tooltip
+        self._layer.help = blending_tooltip
 
-    def _on_opacity_change(self):
+    def _on_opacity_change(self) -> None:
         """
         Receive layer model opacity change event and update opacity slider.
         """
-        with self.layer.events.opacity.blocker():
-            self.opacitySlider.setValue(self.layer.opacity)
+        with self._layer.events.opacity.blocker():
+            self.opacitySlider.setValue(self._layer.opacity)
 
-    def _on_blending_change(self):
+    def _on_blending_change(self) -> None:
         """Receive layer model blending mode change event and update slider."""
-        with self.layer.events.blending.blocker():
+        with self._layer.events.blending.blocker():
             self.blendComboBox.setCurrentIndex(
-                self.blendComboBox.findData(self.layer.blending)
+                self.blendComboBox.findData(self._layer.blending)
             )
 
-    def get_widget_controls(self):
+    def get_widget_controls(self) -> list[tuple[QLabel, QWidget]]:
         """
         Enable access to the created labels and control widgets.
 
         Returns
         -------
-        list
+        list : list[tuple[QLabel, QWidget]]
             List of tuples of the label and widget controls available.
 
         """

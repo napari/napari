@@ -1,6 +1,6 @@
 import numpy as np
 from qtpy.QtCore import QObject
-from qtpy.QtWidgets import QWidget
+from qtpy.QtWidgets import QLabel, QWidget
 
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
@@ -9,24 +9,43 @@ from napari.utils.translations import trans
 
 
 class QtEdgeColorControl(QObject):
-    def __init__(self, parent: QWidget, layer: Layer):
+    """
+    Class that wraps the connection of events/signals between the current edge
+    color layer attribute and Qt widgets.
+
+    Parameters
+    ----------
+    parent: qtpy.QtWidgets.QWidget
+        An instance of QWidget that will be used as widgets parent
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+
+    Attributes
+    ----------
+        edgeColorEdit : qtpy.QtWidgets.QSlider
+            ColorSwatchEdit controlling current edge color of the layer.
+        edgeColorLabel : qtpy.QtWidgets.QLabel
+            Label for the current edge color chooser widget.
+    """
+
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent)
         # Setup layer
-        self.layer = layer
-        self.layer.events.current_edge_color.connect(
+        self._layer = layer
+        self._layer.events.current_edge_color.connect(
             self._on_current_edge_color_change
         )
 
         # Setup widgets
         self.edgeColorEdit = QColorSwatchEdit(
-            initial_color=self.layer.current_edge_color,
+            initial_color=self._layer.current_edge_color,
             tooltip=trans._('click to set current edge color'),
         )
-        self.edgeColorLabel = trans._('edge color:')
+        self.edgeColorLabel = QLabel(trans._('edge color:'))
         self._on_current_edge_color_change()
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
-    def changeEdgeColor(self, color: np.ndarray):
+    def changeEdgeColor(self, color: np.ndarray) -> None:
         """Change edge color of shapes.
 
         Parameters
@@ -35,21 +54,21 @@ class QtEdgeColorControl(QObject):
             Edge color for shapes, color name or hex string.
             Eg: 'white', 'red', 'blue', '#00ff00', etc.
         """
-        with self.layer.events.current_edge_color.blocker():
-            self.layer.current_edge_color = color
+        with self._layer.events.current_edge_color.blocker():
+            self._layer.current_edge_color = color
 
-    def _on_current_edge_color_change(self):
+    def _on_current_edge_color_change(self) -> None:
         """Receive layer model edge color change event and update color swatch."""
         with qt_signals_blocked(self.edgeColorEdit):
-            self.edgeColorEdit.setColor(self.layer.current_edge_color)
+            self.edgeColorEdit.setColor(self._layer.current_edge_color)
 
-    def get_widget_controls(self):
+    def get_widget_controls(self) -> list[tuple[QLabel, QWidget]]:
         """
         Enable access to the created labels and control widgets.
 
         Returns
         -------
-        list
+        list : list[tuple[QLabel, QWidget]]
             List of tuples of the label and widget controls available.
 
         """
