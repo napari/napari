@@ -368,8 +368,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
         if contrast_limits is None:
-            self.contrast_limits_range = self._calc_data_range()
-            if not self.contrast_limits_range:
+            contrast_limits_range = self._calc_data_range()
+            if not contrast_limits_range:
                 # Required when chunk size product goes over the size threshold so we wait until data is in memory.
                 dtype = normalize_dtype(getattr(data, 'dtype', None))
                 self.contrast_limits_range = (
@@ -378,6 +378,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     else get_dtype_limits(dtype)
                 )
                 self._should_calc_clims = True
+            else:
+                self.contrast_limits_range = contrast_limits_range
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits: Tuple[float, float] = self.contrast_limits_range
