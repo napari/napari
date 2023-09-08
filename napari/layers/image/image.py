@@ -372,7 +372,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             if not self.contrast_limits_range:
                 # Required when chunk size product goes over the size threshold so we wait until data is in memory.
                 dtype = normalize_dtype(getattr(data, 'dtype', None))
-                self.contrast_limits_range = get_dtype_limits(dtype)
+                self.contrast_limits_range = (
+                    (0, 1)
+                    if not np.issubdtype(dtype, np.integer)
+                    else get_dtype_limits(dtype)
+                )
                 self._should_calc_clims = True
         else:
             self.contrast_limits_range = contrast_limits
