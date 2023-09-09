@@ -231,7 +231,6 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     If the data type is uint8, no calculation is performed, and 0-255 is
     returned.
     """
-    center: Union[int, List[int]]
     shape = data.shape
     chunk_size = (
         _get_chunk_size(data) if not isinstance(data, np.ndarray) else None
@@ -246,18 +245,10 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     if chunk_size:
         shape = _get_blocks_grid_shape(data.shape, chunk_size)
 
-    if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
-        # If data is very large take the average of start, middle and end.
-        center = int(data.shape[0] // 2)
-        slices = [
-            slice(0, 4096),
-            slice(center - 2048, center + 2048),
-            slice(-4096, None),
-        ]
-        reduced_data = [
-            [_nanmax(data[sl]) for sl in slices],
-            [_nanmin(data[sl]) for sl in slices],
-        ]
+    if data.size > pixel_threshold and (
+        data.ndim == 1 or (rgb and data.ndim == 2)
+    ):
+        reduced_data = _calc_1d_data_range(data, shape, chunk_size, rgb)
     elif data.size > pixel_threshold:
         # If data is very large take the top, bottom, and middle slices
         offset = 2 + int(rgb)
@@ -295,9 +286,53 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     return float(min_val), float(max_val)
 
 
+def _calc_1d_data_range(data, shape, chunk_size, rgb):
+    # If data is very large take the average of start, middle and end.
+    n_slices = 3
+    center = shape[0] // 2 * chunk_size[0] if chunk_size else shape[0] // 2
+    slice_size = pixel_threshold // n_slices
+    slices = [
+        slice(0, slice_size),
+        slice(center - int(slice_size // 2), center + int(slice_size // 2)),
+        slice(-slice_size, -1),
+    ]
+    if chunk_size:
+        chunk_size_product = np.prod(chunk_size)
+        allowed_chunks = pixel_threshold // chunk_size_product
+        multiplier = allowed_chunks // n_slices
+
+        if rgb:
+            # To ensure the chunks include all rgb channels
+            chunk_size_product = chunk_size_product * shape[-1]
+            allowed_chunks = pixel_threshold // chunk_size_product
+            # if shape[0] >= 3:
+            multiplier = allowed_chunks // n_slices
+        if shape[0] >= 3:
+            if multiplier >= 1:
+                slices = [
+                    slice(0, chunk_size[0] * multiplier),
+                    slice(
+                        center - chunk_size[0] * (multiplier - 1),
+                        center + chunk_size[0] * multiplier,
+                    ),
+                    slice(-chunk_size * multiplier, -1),
+                ]
+            else:
+                # Means we have less than 3 allowed chunks so we just take a center slice.
+                slices = [slice(center, center + chunk_size[0])]
+        # due to earlier check we now data is above pixel threshold so 2 chunks is above as well
+        elif shape[0] == 2:
+            slices = [slice(0, chunk_size[0])]
+
+    return [
+        [_nanmax(data[sl]) for sl in slices],
+        [_nanmin(data[sl]) for sl in slices],
+    ]
+
+
 def _get_blocks_grid_shape(
-    data_shape: Sequence[int, ...], chunk_size: Iterable[int, ...]
-) -> tuple[int, ...]:
+    data_shape: Sequence[int], chunk_size: Sequence[int]
+) -> tuple[int]:
     """
     Get the approximate shape of the grid of array chunks.
 
@@ -307,14 +342,14 @@ def _get_blocks_grid_shape(
 
     Parameters
     ----------
-    data_shape: tuple[int, ...]
+    data_shape: tuple[int]
         The shape of an array of chunked data.
-    chunk_size: tuple[int, ...]
+    chunk_size: tuple[int]
         The size per dimension of the chunks in the chunked data array.
 
     Returns
     -------
-    tuple[int, ...]
+    tuple[int]
         shape indicating the number of chunks per dimension.
     """
     return tuple(
@@ -322,9 +357,7 @@ def _get_blocks_grid_shape(
     )
 
 
-def _get_plane_indices(
-    shape: Sequence[int, ...], offset: int
-) -> list[tuple[int, ...], ...]:
+def _get_plane_indices(shape: Sequence[int], offset: int) -> list[tuple[int]]:
     """
     Get the indices that correspond to the lowest, middle and highest index of the non-visible dimensions in shape.
 
@@ -339,7 +372,7 @@ def _get_plane_indices(
 
     Returns
     -------
-    idxs: list[tuple[int, ...], ...]
+    idxs: list[tuple[int], ...]
         Bottom, middle and top plane for each non-visible dimension or single plane
     """
     bottom_plane_idx = (0,) * (len(shape) - offset)
@@ -356,7 +389,11 @@ def _get_crop_slices(
     plane_indices: Sequence[Sequence[int]],
     offset: int,
     chunk_shape: Optional[tuple[int]] = None,
-) -> None | list[tuple[int | slice, ...]]:
+) -> (
+    None
+    | list[tuple[slice, slice]]
+    | list[tuple[tuple[int | slice], tuple[int | slice]]]
+):
     """
     Get the crop slices to be used for determining contrast limits when data is larger than the pixel threshold.
 
@@ -391,7 +428,7 @@ def _get_crop_slices(
         # in case of the chunk size going over the pixel threshold, we can wait until data is in memory.
         if max_allowed_chunks == 0:
             return None
-        plane_size = chunk_shape[:offset]
+        plane_size = chunk_shape[:-offset]
         # Go from chunk indices to pixel indices.
         plane_indices = [
             (x * plane_size[0], y * plane_size[1], z * plane_size[2])
@@ -444,11 +481,11 @@ def _get_crop_slices(
     slices_x = _get_slices(
         start_indices, len(x_start_indices), chunk_size_x, 1, chunk_multiplier
     )
-    plane_slices = list(zip(slices_y, slices_x))
+    plane_slices: list[tuple[slice, slice]] = list(zip(slices_y, slices_x))
     if len(plane_indices[0]) == 0:
         return plane_slices
     return [
-        (plane + (plane_slice[0]), plane + (plane_slice[1]))
+        (plane + (plane_slice[0],), plane + (plane_slice[1],))
         for plane in plane_indices
         for plane_slice in plane_slices
     ]
@@ -1339,7 +1376,7 @@ def _get_chunk_size(
     | list
     | Iterable[npt.NDArray]
     | None,
-) -> None | tuple[int, ...]:
+) -> None | tuple[int]:
     """Get chunk size from a given layer.
 
     Parameters
