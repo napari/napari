@@ -414,7 +414,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
 
-    def _calc_data_range(self, mode='data') -> Tuple[float, float]:
+    def _calc_data_range(self, mode='data') -> None | tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
         or full data array
