@@ -249,6 +249,8 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
         data.ndim == 1 or (rgb and data.ndim == 2)
     ):
         reduced_data = _calc_1d_data_range(data, shape, chunk_size, rgb)
+        if not reduced_data:
+            return None
     elif data.size > pixel_threshold:
         # If data is very large take the top, bottom, and middle slices
         offset = 2 + int(rgb)
@@ -307,6 +309,8 @@ def _calc_1d_data_range(data, shape, chunk_size, rgb):
             allowed_chunks = pixel_threshold // chunk_size_product
             # if shape[0] >= 3:
             multiplier = allowed_chunks // n_slices
+        if chunk_size_product > pixel_threshold:
+            return None
         if shape[0] >= 3:
             if multiplier >= 1:
                 slices = [
@@ -315,7 +319,7 @@ def _calc_1d_data_range(data, shape, chunk_size, rgb):
                         center - chunk_size[0] * (multiplier - 1),
                         center + chunk_size[0] * multiplier,
                     ),
-                    slice(-chunk_size * multiplier, -1),
+                    slice(-chunk_size[0] * multiplier, -1),
                 ]
             else:
                 # Means we have less than 3 allowed chunks so we just take a center slice.
