@@ -17,18 +17,26 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.utils.key_bindings import KeymapHandler, KeymapProvider
 
-data_dask = da.random.random(
-    size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
+data_dask = da.random.randint(
+    15000,
+    25000,
+    size=(100_000, 1000, 1000),
+    chunks=(1, 1000, 1000),
+    dtype=np.uint16,
 )
 data_dask_8b = da.random.randint(
     0, 100, size=(1_000, 10, 10), chunks=(1, 10, 10), dtype=np.uint8
 )
-data_dask_1d = da.random.random(size=(20_000_000,), chunks=(5000,))
+data_dask_1d = da.random.randint(
+    25000, 30000, size=(20_000_000,), chunks=(5000,), dtype=np.uint16
+)
 
-data_dask_1d_rgb = da.random.random(size=(5_000_000, 3), chunks=(50_000, 3))
+data_dask_1d_rgb = da.random.randint(
+    1500, 15000, size=(5_000_000, 3), chunks=(50_000, 3)
+)
 
-data_dask_plane = da.random.random(
-    size=(100_000, 100_000), chunks=(1000, 1000)
+data_dask_plane = da.random.randint(
+    250, 15000, size=(100_000, 100_000), chunks=(1000, 1000), dtype=np.uint16
 )
 
 
