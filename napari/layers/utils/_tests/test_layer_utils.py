@@ -85,8 +85,9 @@ def test_calc_data_range():
     [data_dask_8b, data_dask, data_dask_1d, data_dask_1d_rgb, data_dask_plane],
 )
 def test_calc_data_range_fast(data):
+    rgb = data.shape[-1] == 3
     now = time.monotonic()
-    val = calc_data_range(data)
+    val = calc_data_range(data, rgb)
     assert len(val) > 0
     elapsed = time.monotonic() - now
     assert elapsed < 5, "test took too long, computation was likely not lazy"
