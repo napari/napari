@@ -251,6 +251,8 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
         reduced_data = _calc_1d_data_range(data, shape, chunk_size, rgb)
         if not reduced_data:
             return None
+        if chunk_size:
+            reduced_data = dask.compute(*reduced_data)
     elif data.size > pixel_threshold:
         # If data is very large take the top, bottom, and middle slices
         offset = 2 + int(rgb)
@@ -296,7 +298,7 @@ def _calc_1d_data_range(data, shape, chunk_size, rgb):
     slices = [
         slice(0, slice_size),
         slice(center - int(slice_size // 2), center + int(slice_size // 2)),
-        slice(-slice_size, -1),
+        slice(-slice_size, None),
     ]
     if chunk_size:
         chunk_size_product = np.prod(chunk_size)
@@ -435,8 +437,9 @@ def _get_crop_slices(
         plane_size = chunk_shape[:-offset]
         # Go from chunk indices to pixel indices.
         plane_indices = [
-            (x * plane_size[0], y * plane_size[1], z * plane_size[2])
-            for x, y, z in plane_indices
+            (plane_index[size_index] * size,)
+            for size_index, size in enumerate(plane_size)
+            for plane_index in plane_indices
         ]
         chunk_plane_size = chunk_shape[-offset:]
         chunk_size_y, chunk_size_x = chunk_plane_size[0], chunk_plane_size[1]
