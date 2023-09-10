@@ -490,7 +490,7 @@ def _get_crop_slices(
         start_indices, len(x_start_indices), chunk_size_x, 1, chunk_multiplier
     )
     plane_slices: list[tuple[slice, slice]] = list(zip(slices_y, slices_x))
-    if len(plane_indices[0]) == 0:
+    if len(plane_indices) == 0 or len(plane_indices[0]) == 0:
         return plane_slices
     return [
         (plane + (plane_slice[0],) + (plane_slice[1],))
