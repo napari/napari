@@ -137,8 +137,12 @@ class LockableData:
         return self.data.dtype
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         return self.data.shape
+
+    @property
+    def size(self) -> tuple[int]:
+        return self.data.size
 
     def __getitem__(
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
