@@ -248,7 +248,11 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     if data.size > pixel_threshold and (
         data.ndim == 1 or (rgb and data.ndim == 2)
     ):
-        reduced_data = _calc_1d_data_range(data, shape, chunk_size, rgb)
+        slices = _get_1d_slices(shape, chunk_size, rgb)
+        reduced_data = [
+            [_nanmax(data[sl]) for sl in slices],
+            [_nanmin(data[sl]) for sl in slices],
+        ]
         if not reduced_data:
             return None
         if chunk_size:
@@ -290,7 +294,24 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     return float(min_val), float(max_val)
 
 
-def _calc_1d_data_range(data, shape, chunk_size, rgb):
+def _get_1d_slices(shape, chunk_size, rgb):
+    """
+    Calculate data range in case of 1D data, whether RGB or not.
+
+    Parameters
+    ----------
+    shape: Sequence[int]
+        Shape of the data either in pixels or chunks.
+    chunk_size: Sequence[int]
+        The size in pixels per dimension of the chunks if data is lazy.
+    rgb: bool
+        Flag whether RGB
+
+    Returns
+    -------
+    slices: list[slice]
+        Slices to be taken from data for calculating contrast limits.
+    """
     # If data is very large take the average of start, middle and end.
     n_slices = 3
     center = shape[0] // 2 * chunk_size[0] if chunk_size else shape[0] // 2
@@ -330,10 +351,7 @@ def _calc_1d_data_range(data, shape, chunk_size, rgb):
         elif shape[0] == 2:
             slices = [slice(0, chunk_size[0])]
 
-    return [
-        [_nanmax(data[sl]) for sl in slices],
-        [_nanmin(data[sl]) for sl in slices],
-    ]
+    return slices
 
 
 def _get_blocks_grid_shape(
