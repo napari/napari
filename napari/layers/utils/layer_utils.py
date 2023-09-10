@@ -263,8 +263,8 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
             slices = _get_crop_slices(shape, idxs, offset, chunk_size)
             if slices:
                 reduced_data = [
-                    [_nanmax(data[slicer[0], slicer[1]]) for slicer in slices],
-                    [_nanmin(data[slicer[0], slicer[1]]) for slicer in slices],
+                    [_nanmax(data[sl]) for sl in slices],
+                    [_nanmin(data[sl]) for sl in slices],
                 ]
                 reduced_data = dask.compute(*reduced_data)
             # This is to ensure there are clim values for determining the iso threshold.
@@ -302,7 +302,7 @@ def _calc_1d_data_range(data, shape, chunk_size, rgb):
     ]
     if chunk_size:
         chunk_size_product = np.prod(chunk_size)
-        allowed_chunks = pixel_threshold // chunk_size_product
+        allowed_chunks = int(pixel_threshold // chunk_size_product)
         multiplier = allowed_chunks // n_slices
 
         if rgb:
@@ -318,8 +318,8 @@ def _calc_1d_data_range(data, shape, chunk_size, rgb):
                 slices = [
                     slice(0, chunk_size[0] * multiplier),
                     slice(
-                        center - chunk_size[0] * (multiplier - 1),
-                        center + chunk_size[0] * multiplier,
+                        center - chunk_size[0] * (multiplier // 2 - 1),
+                        center + chunk_size[0] * multiplier // 2,
                     ),
                     slice(-chunk_size[0] * multiplier, -1),
                 ]
@@ -443,7 +443,8 @@ def _get_crop_slices(
         ]
         chunk_plane_size = chunk_shape[-offset:]
         chunk_size_y, chunk_size_x = chunk_plane_size[0], chunk_plane_size[1]
-        max_chunks_per_plane = max_allowed_chunks // len(plane_indices)
+        if len(plane_indices) != 0:
+            max_chunks_per_plane = max_allowed_chunks // len(plane_indices)
 
         y_start_indices = _get_start_indices(plane_shape[0], chunk_size_y)
         x_start_indices = _get_start_indices(plane_shape[1], chunk_size_x)
@@ -492,7 +493,7 @@ def _get_crop_slices(
     if len(plane_indices[0]) == 0:
         return plane_slices
     return [
-        (plane + (plane_slice[0],), plane + (plane_slice[1],))
+        (plane + (plane_slice[0],) + (plane_slice[1],))
         for plane in plane_indices
         for plane_slice in plane_slices
     ]
