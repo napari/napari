@@ -628,7 +628,7 @@ class Shapes(Layer):
     @data.setter
     def data(self, data):
         self._finish_drawing()
-
+        prior_data = len(self.data) > 0
         data, shape_type = extract_shape_type(data)
         n_new_shapes = number_of_shapes(data)
         # not given a shape_type through data
@@ -668,7 +668,25 @@ class Shapes(Layer):
                     self._get_new_shape_color(n_shapes_difference, 'face'),
                 )
             )
+        data_not_empty = (
+            data is not None
+            and (isinstance(data, np.ndarray) and data.size > 0)
+            or (isinstance(data, list) and len(data) > 0)
+        )
+        kwargs = {
+            "value": self.data,
+            "vertex_indices": ((),),
+            "data_indices": tuple(i for i in range(len(self.data))),
+        }
+        if prior_data and data_not_empty:
+            kwargs["action"] = ActionType.CHANGING
+        elif data_not_empty:
+            kwargs["action"] = ActionType.ADDING
+            kwargs["data_indices"] = tuple(i for i in range(len(data)))
+        else:
+            kwargs["action"] = ActionType.REMOVING
 
+        self.events.data(**kwargs)
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
         self._data_view.slice_key = np.array(self._slice_indices)[
             self._slice_input.not_displayed
@@ -682,14 +700,18 @@ class Shapes(Layer):
             z_index=z_indices,
             n_new_shapes=n_new_shapes,
         )
-
         self._update_dims()
-        self.events.data(
-            value=self.data,
-            action=ActionType.CHANGE.value,
-            data_indices=slice(None),
-            vertex_indices=((),),
-        )
+
+        kwargs["data_indices"] = tuple(i for i in range(len(data)))
+        kwargs["value"] = self.data
+        if prior_data and data_not_empty:
+            kwargs["action"] = ActionType.CHANGED
+        elif data_not_empty:
+            kwargs["action"] = ActionType.ADDED
+        else:
+            kwargs["action"] = ActionType.REMOVED
+        self.events.data(**kwargs)
+
         self._reset_editable()
 
     def _on_selection(self, selected: bool):
@@ -1942,6 +1964,7 @@ class Shapes(Layer):
         edge_color=None,
         face_color=None,
         z_index=None,
+        gui=False,
     ):
         """Add shapes to the current layer.
 
@@ -1982,12 +2005,20 @@ class Shapes(Layer):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
+        gui: bool
+            Whether the shape is drawn by drawing in the gui.
         """
         data, shape_type = extract_shape_type(data, shape_type)
 
         n_new_shapes = number_of_shapes(data)
 
         if n_new_shapes > 0:
+            self.events.data(
+                value=self.data,
+                action=ActionType.ADDING,
+                data_indices=(-1,),
+                vertex_indices=((),),
+            )
             self._add_shapes(
                 data,
                 shape_type=shape_type,
@@ -1997,12 +2028,14 @@ class Shapes(Layer):
                 z_index=z_index,
                 n_new_shapes=n_new_shapes,
             )
-            self.events.data(
-                value=self.data,
-                action=ActionType.ADD.value,
-                data_indices=(-1,),
-                vertex_indices=((),),
-            )
+            # This should only emit when programmatically adding as with drawing this leads to premature emit.
+            if not gui:
+                self.events.data(
+                    value=self.data,
+                    action=ActionType.ADDED,
+                    data_indices=(-1,),
+                    vertex_indices=((),),
+                )
 
     def _init_shapes(
         self,
@@ -2518,33 +2551,37 @@ class Shapes(Layer):
         self._fixed_vertex = None
         self._value = (None, None)
         self._moving_value = (None, None)
-        if self._is_creating is True and self._mode == Mode.ADD_PATH:
-            vertices = self._data_view.shapes[index].data
-            if len(vertices) <= 2:
-                self._data_view.remove(index)
-            else:
-                self._data_view.edit(index, vertices[:-1])
-        if self._is_creating is True and (
-            self._mode
-            in {
-                Mode.ADD_POLYGON,
-                Mode.ADD_POLYGON_LASSO,
-            }
-        ):
-            vertices = self._data_view.shapes[index].data
-            if len(vertices) <= 3:
-                self._data_view.remove(index)
-            elif self._mode == Mode.ADD_POLYGON:
-                self._data_view.edit(index, vertices[:-1])
-            else:
-                vertices = rdp(
-                    vertices, epsilon=get_settings().experimental.rdp_epsilon
-                )
-                self._data_view.edit(
-                    index,
-                    vertices[:-1],
-                    new_type=shape_classes[ShapeType.POLYGON],
-                )
+        if self._is_creating is True:
+            if self._mode == Mode.ADD_PATH:
+                vertices = self._data_view.shapes[index].data
+                if len(vertices) <= 2:
+                    self._data_view.remove(index)
+                else:
+                    self._data_view.edit(index, vertices[:-1])
+            if self._mode in {Mode.ADD_POLYGON, Mode.ADD_POLYGON_LASSO}:
+                vertices = self._data_view.shapes[index].data
+                if len(vertices) <= 3:
+                    self._data_view.remove(index)
+                elif self._mode == Mode.ADD_POLYGON:
+                    self._data_view.edit(index, vertices[:-1])
+                else:
+                    vertices = rdp(
+                        vertices,
+                        epsilon=get_settings().experimental.rdp_epsilon,
+                    )
+                    self._data_view.edit(
+                        index,
+                        vertices[:-1],
+                        new_type=shape_classes[ShapeType.POLYGON],
+                    )
+        # handles the case that
+        if index is not None:
+            self.events.data(
+                value=self.data,
+                action=ActionType.ADDED,
+                data_indices=(-1,),
+                vertex_indices=((),),
+            )
         self._is_creating = False
         self._update_dims()
 
@@ -2598,10 +2635,19 @@ class Shapes(Layer):
         """Remove any selected shapes."""
         index = list(self.selected_data)
         to_remove = sorted(index, reverse=True)
-        for ind in to_remove:
-            self._data_view.remove(ind)
 
         if len(index) > 0:
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVING,
+                data_indices=tuple(
+                    index,
+                ),
+                vertex_indices=((),),
+            )
+            for ind in to_remove:
+                self._data_view.remove(ind)
+
             self._feature_table.remove(index)
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
@@ -2610,16 +2656,16 @@ class Shapes(Layer):
             self._data_view._face_color = np.delete(
                 self._data_view._face_color, index, axis=0
             )
-        self.selected_data = set()
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVED,
+                data_indices=tuple(
+                    index,
+                ),
+                vertex_indices=((),),
+            )
+        self.selected_data.clear()
         self._finish_drawing()
-        self.events.data(
-            value=self.data,
-            action=ActionType.REMOVE.value,
-            data_indices=tuple(
-                index,
-            ),
-            vertex_indices=((),),
-        )
 
     def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.
