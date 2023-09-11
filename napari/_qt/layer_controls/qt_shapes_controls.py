@@ -78,7 +78,7 @@ class QtShapesControls(QtLayerControls):
         super().__init__(layer, mode_options=Mode)
         # Setup buttons
         # TODO: Creating attributtes for the buttons is needed?
-        self.panzoom_button = self._radio_button_mode(
+        self.panzoom_button = self._add_radio_button_mode(
             'pan_zoom',
             Mode.PAN_ZOOM,
             "activate_shapes_pan_zoom_mode",
@@ -88,47 +88,47 @@ class QtShapesControls(QtLayerControls):
             edit_button=False,
             checked=True,
         )
-        self.polygon_button = self._radio_button_mode(
+        self.polygon_button = self._add_radio_button_mode(
             'polygon',
             Mode.ADD_POLYGON,
             "activate_add_polygon_mode",
             0,
             1,
         )
-        self.line_button = self._radio_button_mode(
+        self.line_button = self._add_radio_button_mode(
             'line', Mode.ADD_LINE, "activate_add_line_mode", 0, 2
         )
-        self.path_button = self._radio_button_mode(
+        self.path_button = self._add_radio_button_mode(
             'path', Mode.ADD_PATH, "activate_add_path_mode", 0, 3
         )
-        self.polygon_lasso_button = self._radio_button_mode(
+        self.polygon_lasso_button = self._add_radio_button_mode(
             'polygon_lasso',
             Mode.ADD_POLYGON_LASSO,
             "activate_add_polygon_lasso_mode",
             0,
             4,
         )
-        self.rectangle_button = self._radio_button_mode(
+        self.rectangle_button = self._add_radio_button_mode(
             'rectangle',
             Mode.ADD_RECTANGLE,
             "activate_add_rectangle_mode",
             0,
             5,
         )
-        self.ellipse_button = self._radio_button_mode(
+        self.ellipse_button = self._add_radio_button_mode(
             'ellipse',
             Mode.ADD_ELLIPSE,
             "activate_add_ellipse_mode",
             0,
             6,
         )
-        self.direct_button = self._radio_button_mode(
+        self.direct_button = self._add_radio_button_mode(
             'direct', Mode.DIRECT, "activate_direct_mode", 1, 0
         )
-        self.select_button = self._radio_button_mode(
+        self.select_button = self._add_radio_button_mode(
             'select', Mode.SELECT, "activate_select_mode", 1, 1
         )
-        self.delete_button = self._push_button_action(
+        self.delete_button = self._add_push_button_action(
             'delete_shape',
             1,
             2,
@@ -138,21 +138,21 @@ class QtShapesControls(QtLayerControls):
                 shortcut=Shortcut('Backspace').platform,
             ),
         )
-        self.vertex_insert_button = self._radio_button_mode(
+        self.vertex_insert_button = self._add_radio_button_mode(
             'vertex_insert',
             Mode.VERTEX_INSERT,
             "activate_vertex_insert_mode",
             1,
             3,
         )
-        self.vertex_remove_button = self._radio_button_mode(
+        self.vertex_remove_button = self._add_radio_button_mode(
             'vertex_remove',
             Mode.VERTEX_REMOVE,
             "activate_vertex_remove_mode",
             1,
             4,
         )
-        self.move_front_button = self._push_button_action(
+        self.move_front_button = self._add_push_button_action(
             'move_front',
             1,
             5,
@@ -160,7 +160,7 @@ class QtShapesControls(QtLayerControls):
             slot=self._layer.move_to_front,
             tooltip=trans._('Move to front'),
         )
-        self.move_back_button = self._push_button_action(
+        self.move_back_button = self._add_push_button_action(
             'move_back',
             1,
             6,

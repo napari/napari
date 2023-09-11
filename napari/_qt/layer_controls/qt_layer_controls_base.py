@@ -205,7 +205,7 @@ class QtLayerControls(QFrame):
         self.layout().addLayout(self._buttons_grid)
         self.layout().addWidget(controls_scrollarea)
 
-    def _radio_button_mode(
+    def _add_radio_button_mode(
         self,
         btn_name: str,
         mode: StringEnum,
@@ -217,8 +217,8 @@ class QtLayerControls(QFrame):
         **kwargs,
     ) -> QtModeRadioButton:
         """
-        Convenience function to create a RadioButton and bind it to
-        an action at the same time.
+        Convenience function to create a RadioButton, add it to the buttons layout
+        and bind it to an action at the same time.
 
         Parameters
         ----------
@@ -266,7 +266,7 @@ class QtLayerControls(QFrame):
 
         return btn
 
-    def _push_button_action(
+    def _add_push_button_action(
         self,
         btn_name: str,
         row: int,
@@ -277,8 +277,8 @@ class QtLayerControls(QFrame):
         edit_button: bool = True,
     ) -> QtModePushButton:
         """
-        Convenience function to create a PushButton and bind it to
-        an action at the same time.
+        Convenience method to create a PushButton, add it to the buttons layout
+        and bind it to an action at the same time.
 
         Parameters
         ----------
