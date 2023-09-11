@@ -28,8 +28,11 @@ jobs:
 
       - name: combine coverage data
         run: |
-          coverage combine coverage
-          coverage xml -o coverage.xml
+          python -Im coverage combine coverage
+          python -Im coverage xml -o coverage.xml
+          
+          # Report and write to summary.
+          python -Im coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
 
       - name: Upload coverage data
         uses: codecov/codecov-action@v3
