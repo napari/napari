@@ -5,6 +5,7 @@ from napari._qt.layer_controls.widgets import (
     QtEdgeColorControl,
     QtEdgeWidthSliderControl,
     QtFaceColorControl,
+    QtOpacityBlendingControls,
     QtTextVisibilityControl,
 )
 from napari.layers.shapes._shapes_constants import Mode
@@ -173,29 +174,20 @@ class QtShapesControls(QtLayerControls):
         # TODO: Should be done when instantiating layer controls class via some
         # sort of mapping between layer attributes and QObject classes
         # with QWidgets-Layer atts connection logic
-        opacity_blending_controls = self._widget_controls[
-            "opacity_blending_controls"
-        ]
-        edge_width_controls = QtEdgeWidthSliderControl(self, layer)
-        self._widget_controls["edge_width_controls"] = edge_width_controls
-        face_color_controls = QtFaceColorControl(self, layer)
-        self._widget_controls["face_color_controls"] = face_color_controls
-        edge_color_controls = QtEdgeColorControl(self, layer)
-        self._widget_controls["face_color_controls"] = face_color_controls
-        text_visibility_controls = QtTextVisibilityControl(self, layer)
-        self._widget_controls[
-            "text_visibility_controls"
-        ] = text_visibility_controls
-
-        display_controls = [opacity_blending_controls.get_widget_controls()[0]]
-        display_controls += edge_width_controls.get_widget_controls()
-        display_controls += [
-            opacity_blending_controls.get_widget_controls()[1]
-        ]
-        display_controls += face_color_controls.get_widget_controls()
-        display_controls += edge_color_controls.get_widget_controls()
-        display_controls += text_visibility_controls.get_widget_controls()
-        self.add_display_widget_controls(display_controls)
+        opacity_blending_controls = QtOpacityBlendingControls(self, layer)
+        self.add_display_widget_controls(
+            opacity_blending_controls,
+            controls=[opacity_blending_controls.get_widget_controls()[0]],
+        )
+        self.add_display_widget_controls(QtEdgeWidthSliderControl(self, layer))
+        self.add_display_widget_controls(
+            opacity_blending_controls,
+            controls=[opacity_blending_controls.get_widget_controls()[1]],
+            add_wrapper=False,
+        )
+        self.add_display_widget_controls(QtFaceColorControl(self, layer))
+        self.add_display_widget_controls(QtEdgeColorControl(self, layer))
+        self.add_display_widget_controls(QtTextVisibilityControl(self, layer))
 
     def _on_ndisplay_changed(self) -> None:
         self._layer.editable = self.ndisplay == 2

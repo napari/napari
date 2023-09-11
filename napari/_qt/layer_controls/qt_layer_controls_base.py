@@ -14,7 +14,9 @@ from qtpy.QtWidgets import (
 )
 from superqt import QCollapsible, QElidingLineEdit
 
-from napari._qt.layer_controls.widgets import QtOpacityBlendingControls
+from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
+    QtWidgetControlsBase,
+)
 from napari._qt.qt_resources import QColoredSVGIcon
 from napari._qt.utils import (
     set_widgets_enabled_with_opacity,
@@ -127,7 +129,7 @@ class QtLayerControls(QFrame):
         self._edit_buttons: list = []
         self._mode_buttons: dict = {}
         self._ndisplay: int = 2
-        self._widget_controls: dict = {}
+        self._widget_controls: list = []
         self._layer = layer
         self._mode_options = mode_options
 
@@ -202,15 +204,6 @@ class QtLayerControls(QFrame):
         self.layout().addLayout(name_layout)
         self.layout().addLayout(self._buttons_grid)
         self.layout().addWidget(controls_scrollarea)
-
-        # Setup base widget controls
-        # TODO: Should be done when instanciating layer controls class
-        # at the layer controls container via some sort of mapping between
-        # layer attributes and QObject classes with QWidgets-Layer atts
-        # connection logic
-        self._widget_controls[
-            "opacity_blending_controls"
-        ] = QtOpacityBlendingControls(self, layer)
 
     def _radio_button_mode(
         self,
@@ -372,6 +365,48 @@ class QtLayerControls(QFrame):
         to 2D or 3D visualization only.
         """
 
+    def _add_widget_controls(
+        self,
+        section_att: str,
+        wrapper: QtWidgetControlsBase,
+        controls: Optional[list[tuple[QLabel, QWidget]]] = None,
+        add_wrapper: bool = True,
+    ) -> None:
+        """
+        Add widget controls to the collapsible controls section given.
+
+        If the section is not visible when adding a control visibility is changed.
+
+        Parameters
+        ----------
+        section_att : str
+            Attribute of the section where the controls should be added.
+            It should be either `_annotation_controls_section` or `_display_controls_section`
+        wrapper : QtWidgetControlsBase
+            An instance of a QtWidgetControlsBase subclass that setup
+            widgets for the layer attributes.
+        controls : list[tuple[QLabel, QWidget]]
+            A list of widget controls tuples. Each tuple has the label for the
+            control and the respective control widget to show.
+        add_wrapper : bool
+            True if a reference to the wrapper class should be kept.
+            False otherwise.
+        """
+        if controls is None:
+            controls = []
+        section = getattr(self, section_att)
+
+        if add_wrapper:
+            self._widget_controls.append(wrapper)
+
+        if len(controls) == 0:
+            controls = wrapper.get_widget_controls()
+
+        for label_text, control_widget in controls:
+            section.addRowToSection(label_text, control_widget)
+        if not section.isVisible():
+            section.show()
+
     @property
     def ndisplay(self) -> int:
         """The number of dimensions displayed in the canvas."""
@@ -383,42 +418,64 @@ class QtLayerControls(QFrame):
         self._on_ndisplay_changed()
 
     def add_annotation_widget_controls(
-        self, controls: list[tuple[QLabel, QWidget]]
+        self,
+        wrapper: QtWidgetControlsBase,
+        controls: Optional[list[tuple[QLabel, QWidget]]] = None,
+        add_wrapper: bool = True,
     ) -> None:
         """
         Add controls to the collapsible annotation controls section.
 
         Parameters
         ----------
+        wrapper : QtWidgetControlsBase
+            An instance of a QtWidgetControlsBase subclass that setup
+            widgets for the layer attributes.
         controls : list[tuple[QLabel, QWidget]]
             A list of widget controls tuples. Each tuple has the label for the
             control and the respective control widget to show.
+        add_wrapper : bool
+            True if a reference to the wrapper class should be kept.
+            False otherwise.
         """
-        for label_text, control_widget in controls:
-            self._annotation_controls_section.addRowToSection(
-                label_text, control_widget
-            )
-        if not self._annotation_controls_section.isVisible():
-            self._annotation_controls_section.show()
+        if controls is None:
+            controls = []
+        self._add_widget_controls(
+            "_annotation_controls_section",
+            wrapper,
+            controls=controls,
+            add_wrapper=add_wrapper,
+        )
 
     def add_display_widget_controls(
-        self, controls: list[tuple[QLabel, QWidget]]
+        self,
+        wrapper: QtWidgetControlsBase,
+        controls: Optional[list[tuple[QLabel, QWidget]]] = None,
+        add_wrapper: bool = True,
     ) -> None:
         """
         Add widget controls to the collapsible display controls section.
 
         Parameters
         ----------
+        wrapper : QtWidgetControlsBase
+            An instance of a QtWidgetControlsBase subclass that setup
+            widgets for the layer attributes.
         controls : list[tuple[QLabel, QWidget]]
             A list of widget controls tuples. Each tuple has the label for the
             control and the respective control widget to show.
+        add_wrapper : bool
+            True if a reference to the wrapper class should be kept.
+            False otherwise.
         """
-        for label_text, control_widget in controls:
-            self._display_controls_section.addRowToSection(
-                label_text, control_widget
-            )
-        if not self._display_controls_section.isVisible():
-            self._display_controls_section.show()
+        if controls is None:
+            controls = []
+        self._add_widget_controls(
+            "_display_controls_section",
+            wrapper,
+            controls=controls,
+            add_wrapper=add_wrapper,
+        )
 
     def deleteLater(self) -> None:
         disconnect_events(self._layer.events, self)
