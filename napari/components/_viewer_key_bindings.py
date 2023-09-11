@@ -150,7 +150,12 @@ def hold_for_pan_zoom(viewer: ViewerModel):
         yield
         return
     previous_mode = selected_layer.mode
-    if previous_mode != (pan_zoom := selected_layer._modeclass.PAN_ZOOM):  # type: ignore[attr-defined]
+    # Each layer has its own Mode enum class with different values,
+    # but they should all have a PAN_ZOOM value. At the time of writing
+    # these enums do not share a base class or protocol, so ignore the
+    # attribute check for now.
+    pan_zoom = selected_layer._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
+    if previous_mode != pan_zoom:
         selected_layer.mode = pan_zoom
         yield
 
