@@ -32,16 +32,29 @@ def test_shape_list_outline():
 
     shape_list.add(shape)
 
+    # Check passing an int
     outline_by_index = shape_list.outline(0)
     assert isinstance(outline_by_index, tuple)
 
-    outline_by_index_list = shape_list.outline(np.array(0))
+    # Check passing a list
+    outline_by_index_list = shape_list.outline([0])
     assert isinstance(outline_by_index_list, tuple)
 
+    # Check return value for `int` and `list` are the same
     for value_by_idx, value_by_idx_list in zip(
         outline_by_index, outline_by_index_list
     ):
         assert np.array_equal(value_by_idx, value_by_idx_list)
+
+    # Check passing a `numpy.int_` (`numpy.int32/64` depending on platform)
+    outline_by_index_np = shape_list.outline(np.int_(0))
+    assert isinstance(outline_by_index_np, tuple)
+
+    # Check return value for `int` and `numpy.int_` are the same
+    for value_by_idx, value_by_idx_np in zip(
+        outline_by_index, outline_by_index_np
+    ):
+        assert np.array_equal(value_by_idx, value_by_idx_np)
 
 
 def test_nD_shapes():
