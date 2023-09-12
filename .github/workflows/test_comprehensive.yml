@@ -37,7 +37,7 @@ jobs:
 
   build_wheel:
     name: Build wheel
-    uses: ./.github/workflows/build_wheel.yml
+    uses: ./.github/workflows/resuable_build_wheel.yml
 
   test:
     name: ${{ matrix.platform }}
@@ -88,7 +88,8 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     with:
-        toxenv: py39-linux-pyside2-examples
+        toxenv: py39-linux-pyside2-examples-cov
         timeout: 60
         python_version: 3.9
         constraints_suffix: _examples
+        coverage: cov

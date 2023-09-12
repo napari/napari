@@ -55,7 +55,7 @@ jobs:
 
   build_wheel:
     name: Build wheel
-    uses: ./.github/workflows/build_wheel.yml
+    uses: ./.github/workflows/resuable_build_wheel.yml
 
   test_initial:
     name: Initial test
