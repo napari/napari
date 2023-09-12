@@ -125,11 +125,6 @@ jobs:
       coverage: ${{ matrix.coverage }}
       toxenv: ${{ matrix.toxenv }}
 
-  coverage_report:
-    if: ${{ always() }}
-    needs: test
-    uses: ./.github/workflows/reusable_coverage_upload.yml
-
   test_pip_install:
     needs: test_initial
     name: pip install
@@ -145,6 +140,13 @@ jobs:
         python_version: 3.9
         constraints_suffix: _examples
         coverage: cov
+
+  coverage_report:
+    if: ${{ always() }}
+    needs:
+      - test
+      - test_examples
+    uses: ./.github/workflows/reusable_coverage_upload.yml
 
   build_docs:
     name: build docs
