@@ -145,3 +145,8 @@ jobs:
         python_version: 3.9
         constraints_suffix: _examples
         coverage: cov
+
+  build_docs:
+    name: build docs
+    uses: ./.github/workflows/build_docs.yml
+    needs: test_initial
