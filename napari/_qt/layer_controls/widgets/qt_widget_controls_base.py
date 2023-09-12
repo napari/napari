@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 from qtpy.QtCore import QObject
 from qtpy.QtWidgets import (
     QLabel,
@@ -28,13 +30,13 @@ class QtWidgetControlsBase(QObject):
         # Setup layer
         self._layer = layer
 
-    def get_widget_controls(self) -> list[tuple[QLabel, QWidget]]:
+    def get_widget_controls(self) -> List[Tuple[QLabel, QWidget]]:
         """
         Enable access to the created labels and control widgets.
 
         Returns
         -------
-        list : list[tuple[QLabel, QWidget]]
+        list : List[Tuple[QLabel, QWidget]]
             List of tuples of the label and widget controls available.
 
         """

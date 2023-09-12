@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 import numpy as np
 from qtpy.QtWidgets import QLabel, QWidget
 
@@ -63,5 +65,5 @@ class QtFaceColorControl(QtWidgetControlsBase):
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self._layer.current_face_color)
 
-    def get_widget_controls(self) -> list[tuple[QLabel, QWidget]]:
+    def get_widget_controls(self) -> List[Tuple[QLabel, QWidget]]:
         return [(self.faceColorLabel, self.faceColorEdit)]
