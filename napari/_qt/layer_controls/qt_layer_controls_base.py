@@ -651,6 +651,8 @@ class NewQtLayerControls(
 
     def deleteLater(self) -> None:
         disconnect_events(self._layer.events, self)
+        for widget_control in self._widget_controls:
+            widget_control.disconnect_widget_controls()
         super(
             QtLayerControls, self
         ).deleteLater()  # TODO: Call super without args
