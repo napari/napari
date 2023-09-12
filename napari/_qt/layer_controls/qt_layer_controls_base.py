@@ -282,9 +282,9 @@ class NewQtLayerControls(
     # default one the base one with only PAN_ZOOM and TRANSFORM values
     # to create base buttons
     def __init__(self, layer: Layer, mode_options: StringEnum = Mode) -> None:
-        # TODO: Restore super call
+        # TODO: Restore super call without args
         # super().__init__()
-        QFrame.__init__(self)
+        super(QtLayerControls, self).__init__()
         # Base attributes
         self._edit_buttons: list = []
         self._mode_buttons: dict = {}
@@ -639,7 +639,9 @@ class NewQtLayerControls(
 
     def deleteLater(self) -> None:
         disconnect_events(self._layer.events, self)
-        super().deleteLater()
+        super(
+            QtLayerControls, self
+        ).deleteLater()  # TODO: Call super without args
 
     def close(self) -> bool:
         """Disconnect events when widget is closing."""
@@ -649,4 +651,6 @@ class NewQtLayerControls(
             close_method = getattr(child, 'close', None)
             if close_method is not None:
                 close_method()
-        return super().close()
+        return super(
+            QtLayerControls, self
+        ).close()  # TODO: Call super without args
