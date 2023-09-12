@@ -49,6 +49,57 @@ class KeyBindingEntry:
         self.negate_rule = self.command_id.startswith('-')
 
 
+def filter_entries_by_command(
+    entries: List[KeyBindingEntry], command_id: str
+) -> Iterator[KeyBindingEntry]:
+    """Filter entries to ones directly referencing the specified command (includes negate rules).
+
+    Parameters
+    ----------
+    entries : List[KeyBindingEntry]
+        Entries to filter.
+    command_id : str
+        Command to filter for.
+
+    Returns
+    -------
+    Iterator[KeyBindingEntry]
+        Filtered entries.
+    """
+    return (
+        entry
+        for entry in entries
+        if entry.command_id[entry.negate_rule :] == command_id
+    )
+
+
+def group_entries_by_when(
+    entries: List[KeyBindingEntry],
+) -> Dict[Optional[Expr], List[KeyBindingEntry]]:
+    """Group entries by their when condition.
+
+    Parameters
+    ----------
+    entries : List[KeyBindingEntry]
+        Entries to group.
+
+    Returns
+    -------
+    groups : Dict[Optional[Expr], List[KeyBindingEntry]]
+        Grouped entries.
+    """
+    # fortunately Expr has a working hash so its weird comparison logic doesn't mess with dicts
+    groups = {}
+
+    for entry in entries:
+        if entry.when in groups:
+            groups[entry.when].append(entry)
+        else:
+            groups[entry.when] = [entry]
+
+    return groups
+
+
 class NapariKeyBindingsRegistry(KeyBindingsRegistry):
     """Registry for key bindings.
 
@@ -139,13 +190,60 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
     def get_keybinding(
         self, command_id: str
     ) -> Optional[_RegisteredKeyBinding]:
+        return next(self.get_next_entry(command_id), None)
+
+    def get_next_entry(
+        self, command_id: str
+    ) -> Iterator[_RegisteredKeyBinding]:
         for kb, entries in self.keymap.items():
             for entry in entries:
-                if entry.command_id == command_id:
-                    return _RegisteredKeyBinding(
+                if entry.command_id[entry.negate_rule :] == command_id:
+                    yield _RegisteredKeyBinding(
                         keybinding=KeyBinding.from_int(kb),
-                        command_id=command_id,
+                        command_id=entry.command_id,
                         weight=entry.weight,
                         when=entry.when,
                     )
-        return None
+
+    def get_non_canceling_entries(
+        self, command_id: str
+    ) -> List[_RegisteredKeyBinding]:
+        """Get all entries for the given command that don't cancel each other out.
+
+        Parameters
+        ----------
+        command_id : str
+            Command to search for.
+
+        Returns
+        -------
+        List[_RegisteredKeyBinding]
+            Non canceling entries.
+        """
+        nc_entries = []
+
+        for key, entries in self.keymap.items():
+            kb = KeyBinding.from_int(key)
+            groups = group_entries_by_when(
+                filter_entries_by_command(entries, command_id)
+            )
+
+            for expr, group_entries in groups.items():
+                temp_entries = []
+
+                for entry in group_entries:
+                    if entry.block_rule or entry.negate_rule:
+                        temp_entries.clear()
+                    else:
+                        temp_entries.append(
+                            _RegisteredKeyBinding(
+                                keybinding=kb,
+                                command_id=command_id,
+                                weight=entry.weight,
+                                when=expr,
+                            )
+                        )
+
+                nc_entries.extend(temp_entries)
+
+        return nc_entries
