@@ -598,8 +598,16 @@ def make_layer_controls(qtbot, layer):
 
 
 def assert_all_edit_buttons_enabled(controls) -> None:
-    assert all(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
+    # TODO: Simplify after only new base layer class exists
+    edit_buttons = getattr(controls, '_EDIT_BUTTONS', None)
+    if edit_buttons is None:
+        edit_buttons = controls._edit_buttons
+    assert all(map(QAbstractButton.isEnabled, edit_buttons))
 
 
 def assert_no_edit_buttons_enabled(controls) -> None:
-    assert not any(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
+    # TODO: Simplify after only new base layer class exists
+    edit_buttons = getattr(controls, '_EDIT_BUTTONS', None)
+    if edit_buttons is None:
+        edit_buttons = controls._edit_buttons
+    assert not any(map(QAbstractButton.isEnabled, edit_buttons))

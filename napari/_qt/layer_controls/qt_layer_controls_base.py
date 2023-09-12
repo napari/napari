@@ -367,6 +367,16 @@ class NewQtLayerControls(
         self.layout().addLayout(self._buttons_grid)
         self.layout().addWidget(controls_scrollarea)
 
+    def __getattr__(self, attr: str):
+        """
+        Redefinition of __getattr__ to enable access to widget controls.
+        """
+        for widget_control in self._widget_controls:
+            widget_attr = getattr(widget_control, attr, None)
+            if widget_attr:
+                return widget_attr
+        return super().__getattr__(attr)
+
     def _add_radio_button_mode(
         self,
         btn_name: str,
@@ -647,7 +657,7 @@ class NewQtLayerControls(
 
     def close(self) -> bool:
         """Disconnect events when widget is closing."""
-        for widget_control in self._widget_controls.values():
+        for widget_control in self._widget_controls:
             widget_control.disconnect_widget_controls()
         for child in self.children():
             close_method = getattr(child, 'close', None)
