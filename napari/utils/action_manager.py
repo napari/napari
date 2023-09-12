@@ -435,3 +435,20 @@ class ActionManager:
 
 
 action_manager = ActionManager()
+
+
+def new_name_to_old(name: str) -> str:
+    """Converts a new name to its corresponding old one for action manager use.
+
+    Parameters
+    ----------
+    name : str
+        Current name.
+
+    Returns
+    -------
+    str
+        Legacy name.
+    """
+    prefix, *group, command = name.split(':')
+    return f'{prefix}:{command}'

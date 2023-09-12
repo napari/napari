@@ -25,7 +25,6 @@ from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
-from napari._app_model import get_app
 from napari._qt._qapp_model import QKeyBindingDispatcher
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
@@ -255,9 +254,6 @@ class QtViewer(QSplitter):
             self.viewer.layers, self._qt_poll
         )
 
-        # bind shortcuts stored in settings last.
-        self._bind_shortcuts()
-
         settings = get_settings()
         self._update_dask_cache_settings(settings.application.dask)
 
@@ -433,17 +429,6 @@ class QtViewer(QSplitter):
     def _ensure_connect(self):
         # lazy load console
         id(self.console)
-
-    def _bind_shortcuts(self):
-        """Bind shortcuts stored in SETTINGS to actions."""
-        app = get_app()
-        for action, shortcuts in get_settings().shortcuts.shortcuts.items():
-            # filter out non action manager actions
-            if action not in app.commands:
-                # TODO: remove action manager binding once backend refactored
-                action_manager.unbind_shortcut(action)
-                for shortcut in shortcuts:
-                    action_manager.bind_shortcut(action, shortcut)
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""

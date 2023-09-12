@@ -20,6 +20,7 @@ from typing import (
 
 import numpy as np
 from app_model.expressions import Context
+from app_model.types import KeyBinding
 from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
@@ -66,7 +67,6 @@ from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
 from napari.settings import get_settings
 from napari.utils._register import create_func as create_add_method
-from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
@@ -636,11 +636,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.reset_view()
             self.dims._go_to_center_step()
 
-    @staticmethod
-    def _layer_help_from_mode(layer: Layer):
+    def _layer_help_from_mode(self, layer: Layer):
         """
-        Update layer help text base on layer mode.
+        Update layer help text based on layer mode.
         """
+        from napari._app_model import get_app
+
+        app = get_app()
+
         layer_to_func_and_mode = {
             Points: points_fun_to_mode,
             Labels: labels_fun_to_mode,
@@ -652,22 +655,25 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         }
 
         help_li = []
-        shortcuts = get_settings().shortcuts.shortcuts
 
         for fun, mode_ in layer_to_func_and_mode.get(layer.__class__, []):
             if mode_ == layer.mode:
                 continue
-            action_name = f"napari:{fun.__name__}"
-            desc = action_manager._actions[action_name].description.lower()
-            if not shortcuts.get(action_name, []):
-                continue
-            help_li.append(
-                trans._(
-                    "use <{shortcut}> for {desc}",
-                    shortcut=shortcuts[action_name][0],
-                    desc=desc,
-                )
+            command_id = (
+                f"napari:{layer.__class__.__name__.lower()}:{fun.__name__}"
             )
+            command = app.commands[command_id]
+            desc = command.title.lower()
+
+            for key, cmd in self._dispatcher.active_keymap.items():
+                if cmd == command_id:
+                    help_li.append(
+                        trans._(
+                            "use <{shortcut}> for {desc}",
+                            shortcut=str(KeyBinding.from_int(key)),
+                            desc=desc,
+                        )
+                    )
 
         layer.help = ", ".join(help_li)
 

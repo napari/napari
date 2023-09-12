@@ -1,7 +1,6 @@
-from collections import defaultdict
 from typing import Dict, List
 
-from app_model.types import KeyBinding, KeyBindingRule, KeyCode, KeyMod
+from app_model.types import KeyBinding, KeyCode, KeyMod
 
 _default_shortcuts = {
     # viewer
@@ -109,5 +108,3 @@ default_shortcuts: Dict[str, List[KeyBinding]] = {
     name: [KeyBinding.from_int(kb) for kb in value]
     for name, value in _default_shortcuts.items()
 }
-
-plugins_shortcuts: Dict[str, List[KeyBindingRule]] = defaultdict(list)

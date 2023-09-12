@@ -1,7 +1,7 @@
 import contextlib
 import sys
 from collections import OrderedDict
-from typing import Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from app_model.backends.qt import (
     qkey2modelkey,
@@ -27,6 +27,13 @@ from qtpy.QtWidgets import (
 )
 
 from napari._app_model import get_app
+from napari._app_model.actions._image_actions import IMAGE_ACTIONS
+from napari._app_model.actions._labels_actions import LABELS_ACTIONS
+from napari._app_model.actions._points_actions import POINTS_ACTIONS
+from napari._app_model.actions._shapes_actions import SHAPES_ACTIONS
+from napari._app_model.actions._surface_actions import SURFACE_ACTIONS
+from napari._app_model.actions._tracks_actions import TRACKS_ACTIONS
+from napari._app_model.actions._vectors_actions import VECTORS_ACTIONS
 from napari._qt.widgets.qt_message_popup import WarnPopup
 from napari.layers import (
     Image,
@@ -44,8 +51,13 @@ from napari.utils.action_manager import (
 )
 from napari.utils.interactions import Shortcut
 from napari.utils.key_bindings.legacy import coerce_keybinding
-from napari.utils.shortcuts import plugins_shortcuts
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from app_model.types import Action
+
+    from napari.layers import Layer
+    from napari.utils.key_bindings import NapariKeyBindingsRegistry
 
 
 class ShortcutEditor(QWidget):
@@ -69,14 +81,14 @@ class ShortcutEditor(QWidget):
         self._skip = False
         self._app = get_app()
 
-        layers = [
-            Image,
-            Labels,
-            Points,
-            Shapes,
-            Surface,
-            Tracks,
-            Vectors,
+        layers_actions: Tuple[Layer, List[Action]] = [
+            (Image, IMAGE_ACTIONS),
+            (Labels, LABELS_ACTIONS),
+            (Points, POINTS_ACTIONS),
+            (Shapes, SHAPES_ACTIONS),
+            (Surface, SURFACE_ACTIONS),
+            (Tracks, TRACKS_ACTIONS),
+            (Vectors, VECTORS_ACTIONS),
         ]
 
         self.key_bindings_strs = OrderedDict()
@@ -91,26 +103,25 @@ class ShortcutEditor(QWidget):
         self._restore_button = QPushButton(trans._("Restore All Keybindings"))
 
         # Set up dictionary for layers and associated actions.
-        all_actions = action_manager._actions.copy()
+        all_commands = dict(self._app.commands)
         self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = {}
         self.key_bindings_strs[self.PLUGINS_KEYBINDINGS] = {}
 
-        for layer in layers:
-            if len(layer.class_keymap) == 0:
-                actions = {}
-            else:
-                actions = action_manager._get_provider_actions(layer)
-                for name in actions:
-                    all_actions.pop(name)
-            self.key_bindings_strs[f"{layer.__name__} layer"] = actions
+        for layer, actions in layers_actions:
+            commands = {}
+            for action in actions:
+                if cmd := all_commands.pop(action.id):
+                    commands[action.id] = cmd
+
+            self.key_bindings_strs[f"{layer.__name__} layer"] = commands
 
         # Left over actions can go here.
-        self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = all_actions
+        self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = all_commands
 
-        self.key_bindings_strs[self.PLUGINS_KEYBINDINGS] = {
-            key: get_settings().shortcuts.shortcuts.get(key, value)
-            for key, value in plugins_shortcuts.items()
-        }
+        # self.key_bindings_strs[self.PLUGINS_KEYBINDINGS] = {
+        #     key: get_settings().shortcuts.shortcuts.get(key, value)
+        #     for key, value in plugins_shortcuts.items()
+        # }
 
         # Widget set up
         self.layer_combo_box.addItems(list(self.key_bindings_strs))
@@ -163,32 +174,11 @@ class ShortcutEditor(QWidget):
         """Reset shortcuts to default settings."""
 
         get_settings().shortcuts.reset()
-        self._app.keybindings._keybindings.clear()
-
-        for (
-            action,
-            shortcuts,
-        ) in get_settings().shortcuts.shortcuts.items():
-            if action not in self._app.commands:
-                action_manager.unbind_shortcut(action)
-                for shortcut in shortcuts:
-                    action_manager.bind_shortcut(action, shortcut)
-
-        for command_id, keybindings in plugins_shortcuts.items():
-            for keybinding in keybindings:
-                self._app.keybindings.register_keybinding_rule(
-                    command_id, keybinding
-                )
-
         self._set_table(layer_str=self.layer_combo_box.currentText())
 
-    def _find_shortcuts(self, action_name):
-        """Find all matching shortcuts for an action."""
-        return [
-            str(rule.keybinding)
-            for rule in self._app.keybindings
-            if rule.command_id == action_name
-        ]
+    def _find_shortcuts(self, command_id):
+        registry: NapariKeyBindingsRegistry = self._app.keybindings
+        return registry.get_non_canceling_entries(command_id)
 
     def _set_table(self, layer_str: str = ''):
         """Builds and populates keybindings table.
@@ -263,18 +253,10 @@ class ShortcutEditor(QWidget):
             self._table.setStyleSheet("QTableView::item { padding: 6px; }")
 
             # Go through all the actions in the layer and add them to the table.
-            for row, (action_name, action) in enumerate(actions.items()):
-                if isinstance(
-                    action, ActionManagerAction
-                ):  # action is registered through keymap handler
-                    description = action.description
-                    tooltip = action_name
-                    shortcuts = action_manager._shortcuts.get(action_name, [])
-                else:  # action is registered through app model
-                    command = self._app.commands[action_name]
-                    description = command.title
-                    tooltip = command.id
-                    shortcuts = self._find_shortcuts(action_name)
+            for row, (command_id, command) in enumerate(actions.items()):
+                description = command.title
+                tooltip = command_id
+                shortcuts = self._find_shortcuts(command_id)
 
                 # Set action description.  Make sure its not selectable/editable.
                 item = QTableWidgetItem(description)
@@ -292,21 +274,21 @@ class ShortcutEditor(QWidget):
 
                 # Set the shortcuts in table.
                 item_shortcut = QTableWidgetItem(
-                    Shortcut(next(iter(shortcuts))).platform
+                    Shortcut(shortcuts[0].keybinding).platform
                     if shortcuts
                     else ""
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
 
                 item_shortcut2 = QTableWidgetItem(
-                    Shortcut(list(shortcuts)[1]).platform
+                    Shortcut(shortcuts[1].keybinding).platform
                     if len(shortcuts) > 1
                     else ""
                 )
                 self._table.setItem(row, self._shortcut_col2, item_shortcut2)
 
                 # action_name is stored in the table to use later, but is not shown on dialog.
-                item_action = QTableWidgetItem(action_name)
+                item_action = QTableWidgetItem(command_id)
                 self._table.setItem(row, self._action_col, item_action)
 
             # If a cell is changed, run .set_keybinding.
@@ -345,13 +327,14 @@ class ShortcutEditor(QWidget):
         if action_name in self._app.commands:
             shortcuts = self._find_shortcuts(action_name)
         else:
+            raise TypeError(action_name)
             shortcuts = action_manager._shortcuts.get(action_name, [])
         with lock_keybind_update(self):
             self._table.item(row, self._shortcut_col).setText(
-                Shortcut(next(iter(shortcuts))).platform if shortcuts else ""
+                Shortcut(shortcuts[0].keybinding).platform if shortcuts else ""
             )
             self._table.item(row, self._shortcut_col2).setText(
-                Shortcut(list(shortcuts)[1]).platform
+                Shortcut(shortcuts[1].keybinding).platform
                 if len(shortcuts) > 1
                 else ""
             )
@@ -447,6 +430,7 @@ class ShortcutEditor(QWidget):
             if current_action in self._app.commands:
                 current_shortcuts = self._find_shortcuts(current_action)
             else:
+                raise TypeError(current_action)
                 current_shortcuts = list(
                     action_manager._shortcuts.get(current_action, [])
                 )

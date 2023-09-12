@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from napari import Viewer, layers
+from napari._app_model.constants import DEFAULT_SHORTCUTS
 from napari._tests.utils import (
     add_layer_by_type,
     check_view_transform_consistency,
@@ -12,7 +13,6 @@ from napari._tests.utils import (
     skip_local_popups,
     skip_on_win_ci,
 )
-from napari.settings import get_settings
 from napari.utils._tests.test_naming import eval_with_filename
 from napari.utils.action_manager import action_manager
 
@@ -31,10 +31,7 @@ def _get_provider_actions(type_):
 
 def _assert_shortcuts_exist_for_each_action(type_):
     actions = _get_provider_actions(type_)
-    shortcuts = {
-        name.partition(':')[-1] for name in get_settings().shortcuts.shortcuts
-    }
-    shortcuts.update(func.__name__ for func in type_.class_keymap.values())
+    shortcuts = {name.partition(':')[-1] for name in DEFAULT_SHORTCUTS}
     missing_shortcuts = {action.__name__ for action in actions} - shortcuts
     # taking the difference and comparing with the empty set allows pytest to
     # list all missing shortcuts instead of failing at the first one

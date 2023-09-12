@@ -317,7 +317,7 @@ class Shortcut:
 
         This replace platform specific symbols, like ↵ by Enter,  ⌘ by Command on MacOS....
         """
-        # edge case, shortcut combinaison where `+` is a key.
+        # edge case, shortcut combination where `+` is a key.
         # this should be rare as on english keyboard + is Shift-Minus.
         # but not unheard of. In those case `+` is always at the end with `++`
         # as you can't get two non-modifier keys,  or alone.
