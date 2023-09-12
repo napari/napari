@@ -70,6 +70,9 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
             title=title,
             parent=parent,
         )
+        # Use `clicked` instead of `toggled` to prevent QPropertyAnimation leak
+        self._toggle_btn.toggled.disconnect()
+        self._toggle_btn.clicked.connect(self._toggle)
         # Set themed icons
         # TODO: Is there a better way to handle a theme change to set icons?
         self._setIconsByTheme()
@@ -83,8 +86,7 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
         self._internal_layout = LayerFormLayout()
         form_widget.setLayout(self._internal_layout)
         self.addWidget(form_widget)
-
-        self.expand()
+        self.expand(animate=False)
 
     # ---- Overridden methods
     def expand(self, animate: bool = True) -> None:
