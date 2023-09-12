@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import NewQtLayerControls
 from napari._qt.layer_controls.widgets import (
     QtEdgeColorControl,
     QtEdgeWidthSliderControl,
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     import napari.layers
 
 
-class QtShapesControls(QtLayerControls):
+class QtShapesControls(NewQtLayerControls):
     """Qt view and controls for the napari Shapes layer.
 
     Parameters
