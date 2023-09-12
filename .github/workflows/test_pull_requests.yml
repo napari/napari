@@ -140,7 +140,8 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: test_initial
     with:
-        toxenv: py39-linux-pyside2-examples
+        toxenv: py39-linux-pyside2-examples-cov
         timeout: 60
         python_version: 3.9
         constraints_suffix: _examples
+        coverage: cov

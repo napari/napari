@@ -160,7 +160,7 @@ jobs:
 
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
-        if: ${{ inputs.coverage }}
+        if: ${{ inputs.coverage == 'cov' }}
         with:
           name: coverage reports
           path: |
