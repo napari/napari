@@ -237,7 +237,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     )
 
     dtype = normalize_dtype(getattr(data, 'dtype', None))
-    if dtype == np.uint8:
+    if dtype == np.uint8 or rgb:
         return 0, 255
     if not np.issubdtype(dtype, np.integer) and chunk_size:
         return None
@@ -245,10 +245,8 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     if chunk_size:
         shape = _get_blocks_grid_shape(data.shape, chunk_size)
 
-    if data.size > pixel_threshold and (
-        data.ndim == 1 or (rgb and data.ndim == 2)
-    ):
-        slices = _get_1d_slices(shape, chunk_size, rgb)
+    if data.size > pixel_threshold and (data.ndim == 1):
+        slices = _get_1d_slices(shape, chunk_size)
         reduced_data = [
             [_nanmax(data[sl]) for sl in slices],
             [_nanmin(data[sl]) for sl in slices],
@@ -294,9 +292,9 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     return float(min_val), float(max_val)
 
 
-def _get_1d_slices(shape, chunk_size, rgb):
+def _get_1d_slices(shape, chunk_size):
     """
-    Calculate data range in case of 1D data, whether RGB or not.
+    Calculate data range in case of 1D data.
 
     Parameters
     ----------
@@ -304,8 +302,6 @@ def _get_1d_slices(shape, chunk_size, rgb):
         Shape of the data either in pixels or chunks.
     chunk_size: Sequence[int]
         The size in pixels per dimension of the chunks if data is lazy.
-    rgb: bool
-        Flag whether RGB
 
     Returns
     -------
@@ -316,40 +312,37 @@ def _get_1d_slices(shape, chunk_size, rgb):
     n_slices = 3
     center = shape[0] // 2 * chunk_size[0] if chunk_size else shape[0] // 2
     slice_size = pixel_threshold // n_slices
-    slices = [
-        slice(0, slice_size),
-        slice(center - int(slice_size // 2), center + int(slice_size // 2)),
-        slice(-slice_size, None),
-    ]
-    if chunk_size:
-        chunk_size_product = np.prod(chunk_size)
-        allowed_chunks = int(pixel_threshold // chunk_size_product)
-        multiplier = allowed_chunks // n_slices
+    if not chunk_size:
+        return [
+            slice(0, slice_size),
+            slice(
+                center - int(slice_size // 2), center + int(slice_size // 2)
+            ),
+            slice(-slice_size, None),
+        ]
 
-        if rgb:
-            # To ensure the chunks include all rgb channels
-            chunk_size_product = chunk_size_product * shape[-1]
-            allowed_chunks = pixel_threshold // chunk_size_product
-            # if shape[0] >= 3:
-            multiplier = allowed_chunks // n_slices
-        if chunk_size_product > pixel_threshold:
-            return None
-        if shape[0] >= 3:
-            if multiplier >= 1:
-                slices = [
-                    slice(0, chunk_size[0] * multiplier),
-                    slice(
-                        center - chunk_size[0] * (multiplier // 2 - 1),
-                        center + chunk_size[0] * multiplier // 2,
-                    ),
-                    slice(-chunk_size[0] * multiplier, -1),
-                ]
-            else:
-                # Means we have less than 3 allowed chunks so we just take a center slice.
-                slices = [slice(center, center + chunk_size[0])]
-        # due to earlier check we now data is above pixel threshold so 2 chunks is above as well
-        elif shape[0] == 2:
-            slices = [slice(0, chunk_size[0])]
+    chunk_size_product = np.prod(chunk_size)
+    allowed_chunks = int(pixel_threshold // chunk_size_product)
+    multiplier = allowed_chunks // n_slices
+
+    if chunk_size_product > pixel_threshold:
+        return None
+    if shape[0] >= 3:
+        if multiplier >= 1:
+            slices = [
+                slice(0, chunk_size[0] * multiplier),
+                slice(
+                    center - chunk_size[0] * (multiplier // 2 - 1),
+                    center + chunk_size[0] * multiplier // 2,
+                ),
+                slice(-chunk_size[0] * multiplier, -1),
+            ]
+        else:
+            # Means we have less than 3 allowed chunks so we just take a center slice.
+            slices = [slice(center, center + chunk_size[0])]
+    # due to earlier check we now data is above pixel threshold so 2 chunks is above as well
+    elif shape[0] == 2:
+        slices = [slice(0, chunk_size[0])]
 
     return slices
 
