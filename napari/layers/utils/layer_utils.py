@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
     from napari.layers._multiscale_data import MultiScaleData
 
-pixel_threshold = 1e7
+PIXEL_THRESHOLD = 1e7
 
 
 class Extent(NamedTuple):
@@ -245,7 +245,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     if chunk_size:
         shape = _get_blocks_grid_shape(data.shape, chunk_size)
 
-    if data.size > pixel_threshold and (data.ndim == 1):
+    if data.size > PIXEL_THRESHOLD and (data.ndim == 1):
         slices = _get_1d_slices(shape, chunk_size)
         reduced_data = [
             [_nanmax(data[sl]) for sl in slices],
@@ -255,7 +255,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
             return None
         if chunk_size:
             reduced_data = dask.compute(*reduced_data)
-    elif data.size > pixel_threshold:
+    elif data.size > PIXEL_THRESHOLD:
         # If data is very large take the top, bottom, and middle slices
         offset = 2 + int(rgb)
         # Indices are either numpy array or chunk indices dependent on data structure of data and are 0 < length <= 3
@@ -310,7 +310,7 @@ def _get_1d_slices(shape, chunk_size):
     # If data is very large take the average of start, middle and end.
     n_slices = 3
     center = shape[0] // 2 * chunk_size[0] if chunk_size else shape[0] // 2
-    slice_size = pixel_threshold // n_slices
+    slice_size = PIXEL_THRESHOLD // n_slices
     if not chunk_size:
         return [
             slice(0, slice_size),
@@ -321,10 +321,10 @@ def _get_1d_slices(shape, chunk_size):
         ]
 
     chunk_size_product = np.prod(chunk_size)
-    allowed_chunks = int(pixel_threshold // chunk_size_product)
+    allowed_chunks = int(PIXEL_THRESHOLD // chunk_size_product)
     multiplier = allowed_chunks // n_slices
 
-    if chunk_size_product > pixel_threshold:
+    if chunk_size_product > PIXEL_THRESHOLD:
         return None
     if shape[0] >= 3:
         if multiplier >= 1:
@@ -435,12 +435,12 @@ def _get_crop_slices(
     max_chunks_per_plane = 9
     max_allowed_chunks = len(plane_indices) * max_chunks_per_plane
     chunk_size_y = chunk_size_x = int(
-        (pixel_threshold // max_allowed_chunks) ** 0.5
+        (PIXEL_THRESHOLD // max_allowed_chunks) ** 0.5
     )
 
     if chunk_shape:
         chunk_size_product = np.prod(chunk_shape)
-        max_allowed_chunks = pixel_threshold // chunk_size_product
+        max_allowed_chunks = PIXEL_THRESHOLD // chunk_size_product
         # in case of the chunk size going over the pixel threshold, we can wait until data is in memory.
         if max_allowed_chunks == 0:
             return None
