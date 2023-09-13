@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from napari.layers._multiscale_data import MultiScaleData
 
 PIXEL_THRESHOLD = 1e7
+MAX_NUMBER_OF_CHUNKS = 20
 
 
 class Extent(NamedTuple):
@@ -219,7 +220,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     data : array
         Data to calculate range of values over.
     rgb : bool
-        Flag if data is rgb.
+        Flag if data is rgb. If so, return [0, 255].
 
     Returns
     -------
@@ -228,7 +229,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
 
     Notes
     -----
-    If the data type is uint8, no calculation is performed, and 0-255 is
+    If the data type is uint8 or rgb, no calculation is performed, and 0-255 is
     returned.
     """
     shape = data.shape
@@ -322,7 +323,7 @@ def _get_1d_slices(shape, chunk_size):
 
     chunk_size_product = np.prod(chunk_size)
     allowed_chunks = int(PIXEL_THRESHOLD // chunk_size_product)
-    multiplier = allowed_chunks // n_slices
+    multiplier = min(allowed_chunks // n_slices, MAX_NUMBER_OF_CHUNKS)
 
     if chunk_size_product > PIXEL_THRESHOLD:
         return None
@@ -340,7 +341,7 @@ def _get_1d_slices(shape, chunk_size):
             # Means we have less than 3 allowed chunks so we just take a center slice.
             slices = [slice(center, center + chunk_size[0])]
     # due to earlier check we now data is above pixel threshold so 2 chunks is above as well
-    elif shape[0] == 2:
+    else:  # shape[0] == 2 or 1
         slices = [slice(0, chunk_size[0])]
 
     return slices
@@ -468,7 +469,10 @@ def _get_crop_slices(
         for x_start in x_start_indices
     ]
     num_start_indices = len(start_indices)
-    chunk_multiplier = max(max_chunks_per_plane // num_start_indices - 1, 0)
+    chunk_multiplier = min(
+        max(max_chunks_per_plane // num_start_indices - 1, 0),
+        MAX_NUMBER_OF_CHUNKS,
+    )
 
     # We have at least 1 chunk per plane, but not all chunks are allowed to be loaded. Only lazy data
     if num_start_indices > max_chunks_per_plane >= 1:
