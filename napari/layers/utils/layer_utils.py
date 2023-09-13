@@ -269,7 +269,6 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
                     [_nanmin(data[sl]) for sl in slices],
                 ]
                 reduced_data = dask.compute(*reduced_data)
-            # This is to ensure there are clim values for determining the iso threshold.
             else:
                 # this is none when the chunk size product goes over the pixel threshold of 1e7
                 return None
@@ -1390,7 +1389,6 @@ def _get_chunk_size(
     data: MultiScaleData
     | Iterable
     | npt.NDArray
-    | int
     | float
     | list
     | Iterable[npt.NDArray]
