@@ -184,6 +184,7 @@ def test_data_setter_with_properties():
     data = 20 * np.random.random(shape)
     properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Shapes(data, properties=properties)
+    layer.events.data = Mock()
 
     # test setting to data with fewer shapes
     n_new_shapes = 4
@@ -949,10 +950,21 @@ def test_polygons(shape):
     assert np.all([s == 'polygon' for s in layer2.shape_type])
 
     # Avoid a.any(), a.all()
-    assert np.array_equal(layer2.events.data.call_args[1]["value"], layer.data)
-    assert layer2.events.data.call_args[1]["action"] == ActionType.ADD.value
-    assert layer2.events.data.call_args[1]["data_indices"] == (-1,)
-    assert layer2.events.data.call_args[1]["vertex_indices"] == ((),)
+    assert layer2.events.data.call_args_list[0][1] == {
+        "value": [],
+        "action": ActionType.ADDING,
+        "data_indices": (-1,),
+        "vertex_indices": ((),),
+    }
+
+    assert np.array_equal(
+        layer2.events.data.call_args_list[1][1]["value"], layer.data
+    )
+    assert (
+        layer2.events.data.call_args_list[0][1]["action"] == ActionType.ADDING
+    )
+    assert layer2.events.data.call_args_list[0][1]["data_indices"] == (-1,)
+    assert layer2.events.data.call_args_list[0][1]["vertex_indices"] == ((),)
 
 
 def test_add_polygons_raises_error():
@@ -1210,10 +1222,24 @@ def test_removing_all_shapes_empty_list():
     data = 20 * np.random.random((10, 4, 2))
     np.random.seed(0)
     layer = Shapes(data)
+    layer.events.data = Mock()
+    old_data = layer.data
     assert layer.nshapes == 10
 
     layer.data = []
     assert layer.nshapes == 0
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(i for i in range(len(old_data))),
+        "vertex_indices": ((),),
+    }
+    assert layer.events.data.call_args_list[1][1] == {
+        "value": layer.data,
+        "action": ActionType.REMOVED,
+        "data_indices": (),
+        "vertex_indices": ((),),
+    }
 
 
 def test_removing_all_shapes_empty_array():
@@ -1221,10 +1247,24 @@ def test_removing_all_shapes_empty_array():
     data = 20 * np.random.random((10, 4, 2))
     np.random.seed(0)
     layer = Shapes(data)
+    layer.events.data = Mock()
+    old_data = layer.data
     assert layer.nshapes == 10
 
     layer.data = np.empty((0, 2))
     assert layer.nshapes == 0
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(i for i in range(len(old_data))),
+        "vertex_indices": ((),),
+    }
+    assert layer.events.data.call_args_list[1][1] == {
+        "value": layer.data,
+        "action": ActionType.REMOVED,
+        "data_indices": (),
+        "vertex_indices": ((),),
+    }
 
 
 def test_removing_selected_shapes():
@@ -1236,17 +1276,27 @@ def test_removing_selected_shapes():
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
     layer = Shapes(data, shape_type=shape_type)
     layer.events.data = Mock()
+    old_data = layer.data
     # With nothing selected no points should be removed
     layer.remove_selected()
+    layer.events.data.assert_not_called()
     assert len(layer.data) == len(data)
 
     # Select three shapes and remove them
     selection = {1, 7, 8}
     layer.selected_data = selection
     layer.remove_selected()
-    assert layer.events.data.call_args[1] == {
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(
+            selection,
+        ),
+        "vertex_indices": ((),),
+    }
+    assert layer.events.data.call_args_list[1][1] == {
         "value": layer.data,
-        "action": ActionType.REMOVE.value,
+        "action": ActionType.REMOVED,
         "data_indices": tuple(
             selection,
         ),
@@ -2052,7 +2102,7 @@ def test_message():
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_message_3d():
@@ -2064,7 +2114,7 @@ def test_message_3d():
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_thumbnail():
@@ -2241,22 +2291,22 @@ def test_editing_4d():
     ]
 
 
-def test_points_data_setter_emits_event():
+def test_shapes_data_setter_emits_event():
     data = np.random.random((4, 2))
     emitted_events = Mock()
     layer = Shapes(data)
     layer.events.data.connect(emitted_events)
     layer.data = np.random.random((4, 2))
-    emitted_events.assert_called_once()
+    assert emitted_events.call_count == 2
 
 
-def test_points_add_delete_only_emit_one_event():
+def test_shapes_add_delete_only_emit_two_events():
     data = np.random.random((4, 2))
     emitted_events = Mock()
     layer = Shapes(data)
     layer.events.data.connect(emitted_events)
     layer.add(np.random.random((4, 2)))
-    assert emitted_events.call_count == 1
+    assert emitted_events.call_count == 2
     layer.selected_data = {1}
     layer.remove_selected()
-    assert emitted_events.call_count == 2
+    assert emitted_events.call_count == 4

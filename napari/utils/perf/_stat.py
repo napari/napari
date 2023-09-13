@@ -57,5 +57,5 @@ class Stat:
         average value : int.
         """
         if self.count > 0:
-            return self.sum / self.count
+            return self.sum // self.count
         raise ValueError("no values")  # impossible for us

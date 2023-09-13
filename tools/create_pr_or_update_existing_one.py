@@ -2,6 +2,7 @@
 This file contains the code to create a PR or update an existing one based on the state of the current branch.
 """
 
+import logging
 import subprocess  # nosec
 from contextlib import contextmanager
 from os import chdir, environ, getcwd
@@ -117,6 +118,7 @@ def create_pr(branch_name: str, access_token: str, repo="napari/napari"):
     comment_url = f"{BASE_URL}/repos/{repo}/pulls"
     response = requests.post(comment_url, headers=headers, json=payload)
     response.raise_for_status()
+    logging.info("PR created: %s", response.json()["html_url"])
 
 
 def add_comment_to_pr(
@@ -153,6 +155,7 @@ def update_pr(branch_name: str, access_token: str):
         long_description(branch_name),
         access_token,
     )
+    logging.info("PR updated: %s", pr_number)
 
 
 def get_pr_number() -> int:
@@ -178,10 +181,18 @@ def main():
 
     _setup_git_author()
 
+    logging.basicConfig(level=logging.INFO)
+    logging.info("Branch name: %s", branch_name)
+    logging.info("Event name: %s", event_name)
+
     if event_name in {"schedule", "workflow_dispatch"}:
-        create_pr(branch_name)
-    elif event_name == "labeled":
+        logging.info("Creating PR")
+        create_pr(branch_name, access_token)
+    elif event_name == "issue_comment":
+        logging.info("Updating PR")
         update_pr(branch_name, access_token)
+    else:
+        raise ValueError(f"Unknown event name: {event_name}")
 
 
 if __name__ == "__main__":

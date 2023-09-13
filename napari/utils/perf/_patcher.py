@@ -94,7 +94,9 @@ def _patch_attribute(
     patch_func(parent, callable_str, label)
 
 
-def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
+def _import_module(
+    target_str: str,
+) -> Union[Tuple[types.ModuleType, str], Tuple[None, None]]:
     """Import the module portion of this target string.
 
     Try importing successively longer segments of the target_str. For example:
@@ -146,7 +148,7 @@ def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
             # the module_path we didn't use.
             attribute_str = '.'.join(parts[i - 1 :])
             return module, attribute_str
-    return None
+    return None, None
 
 
 def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
@@ -190,7 +192,8 @@ def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
         # Patch the target and note that we did.
         try:
             module, attribute_str = _import_module(target_str)
-            _patch_attribute(module, attribute_str, patch_func)
+            if module is not None and attribute_str is not None:
+                _patch_attribute(module, attribute_str, patch_func)
         except PatchError as exc:
             # We don't stop on error because if you switch around branches
             # but keep the same config file, it's easy for your config
