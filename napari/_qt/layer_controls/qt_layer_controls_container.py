@@ -101,6 +101,7 @@ class QtLayerControlsContainer(QStackedWidget):
         self.viewer.layers.events.removed.connect(self._remove)
         viewer.layers.selection.events.active.connect(self._display)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
+        viewer.events.theme.connect(self._on_viewer_theme_changed)
 
     def _on_ndisplay_changed(self, event):
         """Responds to a change in the dimensionality displayed in the canvas.
@@ -113,6 +114,21 @@ class QtLayerControlsContainer(QStackedWidget):
         for widget in self.widgets.values():
             if widget is not self.empty_widget:
                 widget.ndisplay = event.value
+
+    def _on_viewer_theme_changed(self, event):
+        """Responds to a change of the viewer theme.
+
+        Parameters
+        ----------
+        event : Event
+            Event with the new theme value at `event.value`.
+        """
+        for widget in self.widgets.values():
+            if widget is not self.empty_widget:
+                # TODO: Validation should be removed
+                on_theme_changed = getattr(widget, "on_theme_changed", None)
+                if on_theme_changed:
+                    on_theme_changed(event)
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.

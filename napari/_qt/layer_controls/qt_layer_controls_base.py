@@ -70,13 +70,13 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
             title=title,
             parent=parent,
         )
-        # Use `clicked` instead of `toggled` to prevent QPropertyAnimation leak
+        # Use `clicked` instead of `toggled` to prevent `QPropertyAnimation` leak
         self._toggle_btn.toggled.disconnect()
         self._toggle_btn.clicked.connect(self._toggle)
         # Set themed icons
         # TODO: Is there a better way to handle a theme change to set icons?
-        self._setIconsByTheme()
-        get_settings().appearance.events.theme.connect(self._setIconsByTheme)
+        get_settings().appearance.events.theme.connect(self.setThemedIcons)
+        self.setThemedIcons()
 
         # Setup internal layout
         self.content().layout().setContentsMargins(0, 0, 0, 0)
@@ -102,7 +102,16 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
         )
 
     # ---- New methods to follow napari theme and enable easy widget addition
-    def _setIconsByTheme(self, theme_event: Event = None) -> None:
+    def setThemedIcons(self, theme_event: Event = None) -> None:
+        """
+        Set the correct icons for the widget toggle button following the given
+        theme event value or the current theme in the settings.
+
+        Parameters
+        ----------
+        theme_event : Event, optional
+            Event with the new theme value to use. The default is None.
+        """
         if theme_event:
             theme = theme_event.value
         else:
@@ -117,6 +126,16 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
         self.setExpandedIcon(icon=exp_icon)
 
     def addRowToSection(self, *args) -> None:
+        """
+        Add a new row to the bottom of the internal `LayerFormLayout` with the
+        given arguments.
+
+        Parameters
+        ----------
+        *args :
+            Arguments that a `QFormLayout` expects. For more information you
+            can check https://doc.qt.io/qt-5/qformlayout.html#addRow
+        """
         self._internal_layout.addRow(*args)
 
 
@@ -648,6 +667,20 @@ class NewQtLayerControls(
             controls=controls,
             add_wrapper=add_wrapper,
         )
+
+    def on_theme_changed(self, event: Event) -> None:
+        """
+        Handle theme changes.
+
+        Needed to update the icon in the collapsible widget controls sections.
+
+        Parameters
+        ----------
+        event : Event
+            Theme event.
+        """
+        self._annotation_controls_section.setThemedIcons(event)
+        self._display_controls_section.setThemedIcons(event)
 
     def deleteLater(self) -> None:
         disconnect_events(self._layer.events, self)
