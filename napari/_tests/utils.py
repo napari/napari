@@ -137,11 +137,11 @@ class LockableData:
         return self.data.dtype
 
     @property
-    def shape(self) -> tuple[int, ...]:
+    def shape(self) -> Tuple[int, ...]:
         return self.data.shape
 
     @property
-    def size(self) -> tuple[int]:
+    def size(self) -> Tuple[int]:
         return self.data.size
 
     @property
