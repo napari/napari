@@ -952,42 +952,27 @@ class ShapeList:
             Mx3 array of any indices of vertices for triangles of outline
         """
         if not isinstance(indices, Sequence):
-            triangle_indices = np.all(
-                self._mesh.triangles_index == [indices, 1], axis=1
-            )
-            triangle_indices = np.where(triangle_indices)[0]
-            vertices_indices = np.all(
-                self._mesh.vertices_index == [indices, 1], axis=1
-            )
-            vertices_indices = np.where(vertices_indices)[0]
-        else:
-            meshes = self._mesh.triangles_index
-            triangle_indices = [
-                i
-                for i, x in enumerate(meshes)
-                if x[0] in indices and x[1] == 1
-            ]
-            meshes = self._mesh.vertices_index
-            vertices_indices = [
-                i
-                for i, x in enumerate(meshes)
-                if x[0] in indices and x[1] == 1
-            ]
+            indices = [indices]
+        meshes = self._mesh.triangles_index
+        triangle_indices = [
+            i for i, x in enumerate(meshes) if x[0] in indices and x[1] == 1
+        ]
+        meshes = self._mesh.vertices_index
+        vertices_indices = [
+            i for i, x in enumerate(meshes) if x[0] in indices and x[1] == 1
+        ]
 
         offsets = self._mesh.vertices_offsets[vertices_indices]
         centers = self._mesh.vertices_centers[vertices_indices]
         triangles = self._mesh.triangles[triangle_indices]
 
-        if isinstance(indices, Sequence):
-            t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
-            inds = self._mesh.vertices_index[vertices_indices][:, 0]
-            starts = np.unique(inds, return_index=True)[1]
-            for i, ind in enumerate(indices):
-                inds = t_ind == ind
-                adjust_index = starts[i] - vertices_indices[starts[i]]
-                triangles[inds] = triangles[inds] + adjust_index
-        else:
-            triangles = triangles - vertices_indices[0]
+        t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
+        inds = self._mesh.vertices_index[vertices_indices][:, 0]
+        starts = np.unique(inds, return_index=True)[1]
+        for i, ind in enumerate(indices):
+            inds = t_ind == ind
+            adjust_index = starts[i] - vertices_indices[starts[i]]
+            triangles[inds] = triangles[inds] + adjust_index
 
         return centers, offsets, triangles
 
