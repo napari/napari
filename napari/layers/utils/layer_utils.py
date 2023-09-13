@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
     from napari.layers._multiscale_data import MultiScaleData
 
-PIXEL_THRESHOLD = 1e7
+PIXEL_THRESHOLD = int(1e7)
 MAX_NUMBER_OF_CHUNKS = 20
 
 
@@ -349,7 +349,7 @@ def _get_1d_slices(shape, chunk_size):
 
 def _get_blocks_grid_shape(
     data_shape: Sequence[int], chunk_size: Sequence[int]
-) -> tuple[int]:
+) -> Tuple[int, ...]:
     """
     Get the approximate shape of the grid of array chunks.
 
@@ -359,14 +359,14 @@ def _get_blocks_grid_shape(
 
     Parameters
     ----------
-    data_shape: tuple[int]
+    data_shape: tuple[int, ...]
         The shape of an array of chunked data.
-    chunk_size: tuple[int]
+    chunk_size: tuple[int, ...]
         The size per dimension of the chunks in the chunked data array.
 
     Returns
     -------
-    tuple[int]
+    tuple[int, ...]
         shape indicating the number of chunks per dimension.
     """
     return tuple(
@@ -374,7 +374,9 @@ def _get_blocks_grid_shape(
     )
 
 
-def _get_plane_indices(shape: Sequence[int], offset: int) -> list[tuple[int]]:
+def _get_plane_indices(
+    shape: Sequence[int], offset: int
+) -> List[Tuple[int, ...]]:
     """
     Get the indices that correspond to the lowest, middle and highest index of the non-visible dimensions in shape.
 
@@ -389,7 +391,7 @@ def _get_plane_indices(shape: Sequence[int], offset: int) -> list[tuple[int]]:
 
     Returns
     -------
-    idxs: list[tuple[int], ...]
+    idxs: list[tuple[int, ..;], ...]
         Bottom, middle and top plane for each non-visible dimension or single plane
     """
     bottom_plane_idx = (0,) * (len(shape) - offset)
@@ -406,11 +408,7 @@ def _get_crop_slices(
     plane_indices: Sequence[Sequence[int]],
     offset: int,
     chunk_shape: Optional[tuple[int]] = None,
-) -> (
-    None
-    | list[tuple[slice, slice]]
-    | list[tuple[tuple[int | slice], tuple[int | slice]]]
-):
+) -> Union[None, List[Tuple[Union[int, slice], ...]]]:
     """
     Get the crop slices to be used for determining contrast limits when data is larger than the pixel threshold.
 
@@ -440,7 +438,7 @@ def _get_crop_slices(
     )
 
     if chunk_shape:
-        chunk_size_product = np.prod(chunk_shape)
+        chunk_size_product = int(np.prod(chunk_shape))
         max_allowed_chunks = PIXEL_THRESHOLD // chunk_size_product
         # in case of the chunk size going over the pixel threshold, we can wait until data is in memory.
         if max_allowed_chunks == 0:
@@ -475,6 +473,7 @@ def _get_crop_slices(
     )
 
     # We have at least 1 chunk per plane, but not all chunks are allowed to be loaded. Only lazy data
+    indices: Tuple[int, ...]
     if num_start_indices > max_chunks_per_plane >= 1:
         if num_start_indices == 3:
             # center chunk
@@ -495,7 +494,7 @@ def _get_crop_slices(
         index = 1 if num_start_indices == 3 else 5
         start_indices = [start_indices[index]]
         # get the middle plane if 3 planes exist, otherwise first plane.
-        plane_indices = plane_indices[max(1, len(plane_indices) - 1)]
+        plane_indices = [plane_indices[max(1, len(plane_indices) - 1)]]
 
     slices_y = _get_slices(
         start_indices, len(y_start_indices), chunk_size_y, 0, chunk_multiplier
@@ -503,11 +502,13 @@ def _get_crop_slices(
     slices_x = _get_slices(
         start_indices, len(x_start_indices), chunk_size_x, 1, chunk_multiplier
     )
-    plane_slices: list[tuple[slice, slice]] = list(zip(slices_y, slices_x))
+    plane_slices: List[Tuple[Union[slice, int], ...]] = list(
+        zip(slices_y, slices_x)
+    )
     if len(plane_indices) == 0 or len(plane_indices[0]) == 0:
         return plane_slices
     return [
-        (plane + (plane_slice[0],) + (plane_slice[1],))
+        (tuple(plane) + (plane_slice[0], plane_slice[1]))
         for plane in plane_indices
         for plane_slice in plane_slices
     ]
@@ -1438,7 +1439,5 @@ def _get_chunk_size(
         from xarray import DataArray
 
         if isinstance(data, DataArray):
-            chunk_size = data.chunksizes
-            if len(chunk_size) != 0:
-                return tuple(dim_chunk[0] for dim_chunk in chunk_size)
+            return _get_chunk_size(data.data)
     return None
