@@ -90,7 +90,6 @@ def test_calc_data_range_fast(data):
     val = calc_data_range(data, rgb)
     assert len(val) > 0
     elapsed = time.monotonic() - now
-    print(data.shape, elapsed)
     assert elapsed < 5, "test took too long, computation was likely not lazy"
 
 
