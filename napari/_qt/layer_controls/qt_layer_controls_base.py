@@ -23,15 +23,13 @@ from napari._qt.utils import (
     set_widgets_enabled_with_opacity,
 )
 from napari._qt.widgets._slider_compat import QDoubleSlider  # TODO: Remove
-
-# TODO: Remove
 from napari._qt.widgets.qt_mode_buttons import (
     QtModePushButton,
     QtModeRadioButton,
 )
 from napari.layers.base._base_constants import (
-    BLENDING_TRANSLATIONS,
-    Blending,
+    BLENDING_TRANSLATIONS,  # TODO: Remove
+    Blending,  # TODO: Remove
     Mode,
 )
 from napari.layers.base.base import Layer
@@ -54,8 +52,8 @@ class LayerFormLayout(QFormLayout):
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
         self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
-        # Needed since default aligment depends on OS
-        # self.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        # Needed since default aligment depends on OS (win/linux left, macos right)
+        self.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
 
 class QtCollapsibleLayerControlsSection(QCollapsible):
@@ -66,10 +64,7 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
     """
 
     def __init__(self, title: str = "", parent: QWidget = None) -> None:
-        super().__init__(
-            title=title,
-            parent=parent,
-        )
+        super().__init__(title=title, parent=parent)
         # Use `clicked` instead of `toggled` to prevent `QPropertyAnimation` leak
         self._toggle_btn.toggled.disconnect()
         self._toggle_btn.clicked.connect(self._toggle)
@@ -285,7 +280,7 @@ class QtLayerControls(QFrame):  # TODO: Remove
 
 class NewQtLayerControls(
     QtLayerControls
-):  # TODO: Inherit from QFrame directly
+):  # TODO: Inherit from `QFrame` directly
     """Superclass for all the other LayerControl classes.
 
     This class is never directly instantiated anywhere.
@@ -295,8 +290,13 @@ class NewQtLayerControls(
     layer : napari.layers.Layer
         An instance of a napari layer.
     mode_options: napari.utils.misc.StringEnum
-        Enum definition with the layer modes. Default enum counts with PAN_ZOOM
-        and TRANSFORM modes values.
+        Enum definition with the layer modes. Default enum counts with `PAN_ZOOM`
+        and `TRANSFORM` modes values.
+
+    Raises
+    ------
+    ValueError
+        Raise error if layer mode is not recognized.
     """
 
     # Enable setting specific Mode enum type but also define as
@@ -363,7 +363,6 @@ class NewQtLayerControls(
         controls_scrollarea.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
-        # TODO: Should the scrollbar be always visible?
         controls_scrollarea.setVerticalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOn
         )
@@ -430,11 +429,11 @@ class NewQtLayerControls(
             If the button is related with edition actions and should handle
             a disable state when the layer is not visible.
         **kwargs:
-            Passed to QtModeRadioButton
+            Passed to napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
 
         Returns
         -------
-        button: QtModeRadioButton
+        button: napari._qt.widgets.qt_mode_buttons.QtModeRadioButton
             button bound (or that will be bound to) to action `action_name`
 
         Notes
@@ -492,7 +491,7 @@ class NewQtLayerControls(
 
         Returns
         -------
-        button: QtModeRadioButton
+        button: napari._qt.widgets.qt_mode_buttons.QtModePushButton
             button bound (or that will be bound to) to action `action_name`
 
         """
@@ -511,7 +510,65 @@ class NewQtLayerControls(
 
         return btn
 
+    def _add_widget_controls(
+        self,
+        section_att: str,
+        wrapper: QtWidgetControlsBase,
+        controls: Optional[List[Tuple[QLabel, QWidget]]] = None,
+        add_wrapper: bool = True,
+    ) -> None:
+        """
+        Add widget controls to the given collapsible controls section.
+
+        If the section is not visible when adding a control visibility is changed.
+
+        Parameters
+        ----------
+        section_att : str
+            Attribute of the section where the controls should be added.
+            It should be either `_annotation_controls_section` or `_display_controls_section`
+        wrapper : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWidgetControlsBase
+            An instance of a `QtWidgetControlsBase` subclass that setups
+            widgets for a layer attribute.
+        controls : List[Tuple[QLabel, QWidget]]
+            A list of widget controls tuples. Each tuple has the label for the
+            control and the respective control widget to show.
+        add_wrapper : bool
+            True if a reference to the wrapper class should be kept.
+            False otherwise.
+        """
+        if controls is None:
+            controls = []
+        section = getattr(self, section_att)
+
+        if add_wrapper:
+            self._widget_controls.append(wrapper)
+
+        if len(controls) == 0:
+            controls = wrapper.get_widget_controls()
+
+        for label_text, control_widget in controls:
+            section.addRowToSection(label_text, control_widget)
+        if not section.isVisible():
+            section.show()
+
     def _on_mode_change(self, event: Event) -> None:
+        """Update checked button mode when layer mode changes.
+
+        Available default modes for a layer are:
+            * PAN_ZOOM
+            * TRANSFORM
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+
+        Raises
+        ------
+        ValueError
+            Raise error if event.mode is not recognized.
+        """
         if event.mode in self._mode_buttons:
             self._mode_buttons[event.mode].setChecked(True)
         elif event.mode != self._mode_options.TRANSFORM:
@@ -556,48 +613,6 @@ class NewQtLayerControls(
         to 2D or 3D visualization only.
         """
 
-    def _add_widget_controls(
-        self,
-        section_att: str,
-        wrapper: QtWidgetControlsBase,
-        controls: Optional[List[Tuple[QLabel, QWidget]]] = None,
-        add_wrapper: bool = True,
-    ) -> None:
-        """
-        Add widget controls to the collapsible controls section given.
-
-        If the section is not visible when adding a control visibility is changed.
-
-        Parameters
-        ----------
-        section_att : str
-            Attribute of the section where the controls should be added.
-            It should be either `_annotation_controls_section` or `_display_controls_section`
-        wrapper : QtWidgetControlsBase
-            An instance of a QtWidgetControlsBase subclass that setup
-            widgets for the layer attributes.
-        controls : List[Tuple[QLabel, QWidget]]
-            A list of widget controls tuples. Each tuple has the label for the
-            control and the respective control widget to show.
-        add_wrapper : bool
-            True if a reference to the wrapper class should be kept.
-            False otherwise.
-        """
-        if controls is None:
-            controls = []
-        section = getattr(self, section_att)
-
-        if add_wrapper:
-            self._widget_controls.append(wrapper)
-
-        if len(controls) == 0:
-            controls = wrapper.get_widget_controls()
-
-        for label_text, control_widget in controls:
-            section.addRowToSection(label_text, control_widget)
-        if not section.isVisible():
-            section.show()
-
     @property
     def ndisplay(self) -> int:
         """The number of dimensions displayed in the canvas."""
@@ -615,13 +630,13 @@ class NewQtLayerControls(
         add_wrapper: bool = True,
     ) -> None:
         """
-        Add controls to the collapsible annotation controls section.
+        Add widget controls to the collapsible annotation controls section.
 
         Parameters
         ----------
-        wrapper : QtWidgetControlsBase
-            An instance of a QtWidgetControlsBase subclass that setup
-            widgets for the layer attributes.
+        wrapper : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWidgetControlsBase
+            An instance of a `QtWidgetControlsBase` subclass that setups
+            widgets for a layer attribute.
         controls : List[Tuple[QLabel, QWidget]]
             A list of widget controls tuples. Each tuple has the label for the
             control and the respective control widget to show.
@@ -649,9 +664,9 @@ class NewQtLayerControls(
 
         Parameters
         ----------
-        wrapper : QtWidgetControlsBase
-            An instance of a QtWidgetControlsBase subclass that setup
-            widgets for the layer attributes.
+        wrapper : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWidgetControlsBase
+            An instance of a `QtWidgetControlsBase` subclass that setups
+            widgets for a layer attribute.
         controls : List[Tuple[QLabel, QWidget]]
             A list of widget controls tuples. Each tuple has the label for the
             control and the respective control widget to show.
@@ -676,7 +691,7 @@ class NewQtLayerControls(
 
         Parameters
         ----------
-        event : Event
+        event : napari.utils.events.Event
             Theme event.
         """
         self._annotation_controls_section.setThemedIcons(event)
