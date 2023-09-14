@@ -289,20 +289,31 @@ def test_feature_table_from_layer_with_properties_and_num_data():
     properties = {
         'class': np.array(['sky', 'person', 'building', 'person']),
         'confidence': np.array([0.2, 0.5, 1, 0.8]),
+        'varying_length_prop': np.array(
+            [[0], [0, 0, 0], [0, 0], [0]], dtype=object
+        ),
     }
 
     feature_table = _FeatureTable.from_layer(properties=properties, num_data=4)
 
     features = feature_table.values
-    assert features.shape == (4, 2)
+    assert features.shape == (4, 3)
     np.testing.assert_array_equal(features['class'], properties['class'])
     np.testing.assert_array_equal(
         features['confidence'], properties['confidence']
     )
+    np.testing.assert_array_equal(
+        features['varying_length_prop'], properties['varying_length_prop']
+    )
+
     defaults = feature_table.defaults
-    assert defaults.shape == (1, 2)
+    assert defaults.shape == (1, 3)
     assert defaults['class'][0] == properties['class'][-1]
     assert defaults['confidence'][0] == properties['confidence'][-1]
+    assert (
+        defaults['varying_length_prop'][0]
+        == properties['varying_length_prop'][-1]
+    )
 
 
 def test_feature_table_from_layer_with_properties_and_choices():
