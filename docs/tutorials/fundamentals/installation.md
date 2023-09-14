@@ -15,7 +15,7 @@ jupyter:
 
 (installation)=
 
-# Installing
+# How to install napari
 
 Welcome to the **napari** installation guide!
 

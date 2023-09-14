@@ -5,7 +5,7 @@ napari. For more detailed use-cases, check out the [napari tutorials](./index)
 or [How-to guides](../howtos/index).
 
 ::::{grid}
-:::{grid-item-card} napari quick start
+:::{grid-item-card} Quick start
 :link: napari-quick-start
 :link-type: ref
 
@@ -21,7 +21,7 @@ A quick glance of what napari does aimed at first-timers.
 How to do a clean install of napari and launch the viewer.
 :::
 
-:::{grid-item-card} Getting started
+:::{grid-item-card} How to launch napari
 :link: getting_started
 :link-type: ref
 
@@ -30,7 +30,7 @@ This tutorial will teach you all the different ways to launch napari.
 ::::
 
 ::::{grid}
-:::{grid-item-card} napari viewer tutorial
+:::{grid-item-card} Viewer tutorial
 :link: viewer-tutorial
 :link-type: ref
 
