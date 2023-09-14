@@ -43,19 +43,19 @@ click==8.1.6
     #   typer
 cloudpickle==2.2.1
     # via dask
-cmake==3.27.1
+cmake==3.27.2
     # via triton
 comm==0.1.4
     # via ipykernel
 contourpy==1.1.0
     # via matplotlib
-coverage==7.2.7
+coverage==7.3.0
     # via pytest-cov
 cycler==0.11.0
     # via matplotlib
 dask==2023.8.0
     # via napari (setup.cfg)
-debugpy==1.6.7
+debugpy==1.6.7.post1
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -92,7 +92,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.3
     # via vispy
-hypothesis==6.82.2
+hypothesis==6.82.4
     # via napari (setup.cfg)
 idna==3.4
     # via requests
@@ -109,7 +109,7 @@ in-n-out==0.1.8
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.25.0
+ipykernel==6.25.1
     # via
     #   napari-console
     #   qtconsole
@@ -154,7 +154,7 @@ locket==1.0.0
     # via partd
 lxml==4.9.3
     # via napari (setup.cfg)
-magicgui==0.7.2
+magicgui==0.7.3
     # via napari (setup.cfg)
 markdown-it-py==3.0.0
     # via rich
@@ -292,7 +292,7 @@ psutil==5.9.5
     # via
     #   ipykernel
     #   napari (setup.cfg)
-psygnal==0.9.1
+psygnal==0.9.2
     # via
     #   app-model
     #   magicgui
@@ -381,7 +381,7 @@ pyyaml==6.0.1
     #   dask
     #   napari (setup.cfg)
     #   npe2
-pyzmq==25.1.0
+pyzmq==25.1.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -461,11 +461,11 @@ superqt==0.5.0
     #   napari-plugin-manager
 sympy==1.12
     # via torch
-tensorstore==0.1.40
+tensorstore==0.1.41
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (setup.cfg)
-tifffile==2023.7.18
+tifffile==2023.8.12
     # via
     #   napari (setup.cfg)
     #   scikit-image
@@ -487,11 +487,11 @@ torch==2.0.1
     # via
     #   napari (setup.cfg)
     #   triton
-tornado==6.3.2
+tornado==6.3.3
     # via
     #   ipykernel
     #   jupyter-client
-tqdm==4.65.0
+tqdm==4.66.1
     # via napari (setup.cfg)
 traitlets==5.9.0
     # via
@@ -521,7 +521,7 @@ tzdata==2023.3
     # via pandas
 urllib3==2.0.4
     # via requests
-virtualenv==20.24.2
+virtualenv==20.24.3
     # via napari (setup.cfg)
 vispy==0.13.0
     # via
