@@ -327,6 +327,8 @@ class NewQtLayerControls(
 
         # Setup layer name section
         name_layout = QHBoxLayout()
+        # Needed to put icon and text side by side with the same spacing in all platforms
+        name_layout.setSpacing(0)
 
         icon_label = QLabel()
         icon_label.setProperty('layer_type_icon_label', True)
@@ -381,6 +383,8 @@ class NewQtLayerControls(
         # Setup base layout
         self.setLayout(QVBoxLayout())
         self.layout().setContentsMargins(8, 0, 0, 0)
+        # Need to set spacing to have same spacing over all platforms
+        self.layout().setSpacing(15)  # +-6 win/linux def; +-15 macos def
         self.layout().addLayout(name_layout)
         self.layout().addLayout(self._buttons_grid)
         self.layout().addWidget(controls_scrollarea)
@@ -407,7 +411,7 @@ class NewQtLayerControls(
         **kwargs,
     ) -> QtModeRadioButton:
         """
-        Convenience function to create a RadioButton, add it to the buttons layout
+        Convenience method to create a QtModeRadioButton, add it to the buttons layout
         and bind it to an action at the same time.
 
         Parameters
@@ -467,8 +471,8 @@ class NewQtLayerControls(
         edit_button: bool = True,
     ) -> QtModePushButton:
         """
-        Convenience method to create a PushButton, add it to the buttons layout
-        and bind it to an action at the same time.
+        Convenience method to create a QtModePushButton, add it to the buttons layout
+        and bind it to an action at the same time if necessary.
 
         Parameters
         ----------
