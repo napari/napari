@@ -42,6 +42,7 @@ class MenuGroup:
     NAVIGATION = 'navigation'  # always the first group in any menu
     RENDER = '1_render'
     PLUGINS = '1_plugins'
+    PLUGIN_CONTRIBUTIONS = '2_plugin_contributions'
     # File menubar
     PREFERENCES = '2_preferences'
     SAVE = '3_save'
@@ -54,7 +55,7 @@ class MenuGroup:
 
 
 # TODO: add these to docs, with a lookup for what each menu is/does.
-_CONTRIBUTABLES = {MenuId.LAYERLIST_CONTEXT.value}
+_CONTRIBUTABLES = {MenuId.LAYERLIST_CONTEXT.value, MenuId.MENUBAR_HELP.value}
 """Set of all menu ids that can be contributed to by plugins."""
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -12,6 +13,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
     cast,
 )
 
@@ -20,6 +22,7 @@ from app_model.types import SubmenuItem
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
+from napari._app_model.constants import MenuGroup, MenuId
 from napari.errors.reader_errors import MultipleReaderError
 from napari.utils.translations import trans
 
@@ -510,6 +513,92 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
         context.register_disposable(app.register_actions(sample_actions))
 
 
+
+from magicgui.type_map._magicgui import MagicFactory
+from magicgui.widgets import FunctionGui, Widget
+from qtpy.QtWidgets import QWidget
+
+
+def _rebuild_plugin_menu():
+    """Build widget contributions."""
+    from napari._app_model import get_app
+    from napari.plugins import _npe2
+    from napari.viewer import Viewer
+
+    app = get_app()
+    actions: List[Action] = []
+    for _, (plugin_name, widgets) in _npe2.widget_iterator():
+        for widget_name in widgets:
+            if result := _npe2.get_widget_contribution(
+                plugin_name, widget_name
+            ):
+                widget_callable, widget_name = result
+                print(f' wid {widget_callable}, type {type(Widget)}')
+                if isinstance(widget_callable, MagicFactory):
+                    # Viewer injection done by `magicgui.register_type`
+                    def _widget_wrapper(
+                        mf_widget: MagicFactory = widget_callable,
+                    ) -> FunctionGui:
+                        return mf_widget()
+
+                elif issubclass(widget_callable, (QWidget, Widget)):
+                    # Only request `Viewer` if widget asks for it
+                    param_name = ""
+                    try:
+                        sig = inspect.signature(widget_callable.__init__)
+                    except ValueError:
+                        pass
+                    else:
+                        for param in sig.parameters.values():
+                            if param_name := param.name == 'napari_viewer':
+                                break
+                            if param.annotation in (
+                                'napari.viewer.Viewer',
+                                Viewer,
+                            ):
+                                param_name = param.name
+                                break
+                    if param_name:
+
+                        def _widget_wrapper(
+                            napari_viewer: Viewer,
+                        ) -> Union[QWidget, Widget]:
+                            return widget_callable(param_name=napari_viewer)
+
+                    else:
+
+                        def _widget_wrapper() -> Union[QWidget, Widget]:
+                            return widget_callable()
+
+                elif callable(widget_callable):
+
+                    def _widget_wrapper() -> (
+                        Union[FunctionGui, QWidget, Widget]
+                    ):
+                        return widget_callable()
+
+                else:
+                    pass
+                    # warn ?
+
+                actions.append(
+                    Action(
+                        id=f'{widget_name} ({plugin_name})',
+                        title=widget_name,
+                        # tooltip=cmd.short_title or cmd.title,
+                        callback=_widget_wrapper,
+                        menus=[
+                            {
+                                'id': MenuId.MENUBAR_PLUGINS,
+                                'group': MenuGroup.PLUGIN_CONTRIBUTIONS,
+                            }
+                        ],
+                    )
+                )
+    app.register_actions(actions)
+    # return actions
+
+
 def _npe2_manifest_to_actions(
     mf: PluginManifest,
 ) -> Tuple[List[Action], List[Tuple[str, SubmenuItem]]]:
@@ -532,28 +621,33 @@ def _npe2_manifest_to_actions(
 
     # Filter sample data commands (not URIs) as they are registered via
     # `_get_samples_submenu_actions`
-    sample_data_commands = {
+    sample_data_ids = {
         contrib.command
         for contrib in mf.contributions.sample_data or ()
         if hasattr(contrib, 'command')
     }
+    # Filter widgets as they go into the plugin menu
+    widget_ids = {widget.command for widget in mf.contributions.widgets or ()}
 
     actions: List[Action] = []
     for cmd in mf.contributions.commands or ():
-        if cmd.id not in sample_data_commands:
-            actions.append(
-                Action(
-                    id=cmd.id,
-                    title=cmd.title,
-                    category=cmd.category,
-                    tooltip=cmd.short_title or cmd.title,
-                    icon=cmd.icon,
-                    enablement=cmd.enablement,
-                    callback=cmd.python_name or '',
-                    menus=cmds.get(cmd.id),
-                    keybindings=[],
-                )
-            )
+        if cmd.id not in sample_data_ids | widget_ids:
+            actions: List[Action] = []
+            for cmd in mf.contributions.commands or ():
+                if cmd.id not in widget_ids:
+                    actions.append(
+                        Action(
+                            id=cmd.id,
+                            title=cmd.title,
+                            category=cmd.category,
+                            tooltip=cmd.short_title or cmd.title,
+                            icon=cmd.icon,
+                            enablement=cmd.enablement,
+                            callback=cmd.python_name or '',
+                            menus=cmds.get(cmd.id),
+                            keybindings=[],
+                        )
+                    )
 
     return actions, submenus
 

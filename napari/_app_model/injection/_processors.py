@@ -158,11 +158,26 @@ def _add_future_data(
     _FUTURES.add(future)
 
 
+from magicgui.widgets import FunctionGui
+from qtpy.QtWidgets import QWidget
+
+
+def _add_plugin_dock_widget(
+    widget: Union[FunctionGui, QWidget], viewer: viewer.Viewer = None
+):
+    print('widget processor')
+    if viewer is None:
+        viewer = _provide_viewer()
+    viewer.window.add_dock_widget(widget, name='test')
+
+
 # Add future and LayerData processors for each layer type.
 PROCESSORS: Dict[object, Callable] = {
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
     List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
     layers.Layer: _add_layer_to_viewer,
+    FunctionGui: _add_plugin_dock_widget,
+    QWidget: _add_plugin_dock_widget,
 }
 for t in types._LayerData.__args__:  # type: ignore [attr-defined]
     PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
