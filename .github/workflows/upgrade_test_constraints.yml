@@ -9,6 +9,10 @@ on:
   issue_comment:
     types: [ created ]
 
+  pull_request:
+    paths:
+      - '.github/workflows/upgrade_test_constraints.yml'
+
 concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
