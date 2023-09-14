@@ -27,8 +27,6 @@ it will call {meth}`~napari.layers.Image.on_chunk_loaded` with
 the loaded data. The next frame {class}`~napari.layers.Image`
 can display the new data.
 
-### Time-series data
-
 Without `NAPARI_ASYNC` napari will block when switching slices. Napari
 will hang until the new slice has loaded. If the slice loads slowly enough
 you might see the "spinning wheel of death" on a Mac indicating the process
@@ -57,7 +55,7 @@ improvement, but working with slow-loading data is still slow. Most large
 image viewers improve on this experience with chunks or tiles. With chunks
 or tiles when the image is panned the existing tiles are translated and
 re-used. Then the viewer only needs to fetch tiles which newly slid onto
-the screen. This style of rendering what our `NAPARI_OCTREE` flag
+the screen. This style of rendering is what the `NAPARI_OCTREE` flag
 enables.
 
 ## NAPARI_OCTREE
