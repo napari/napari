@@ -69,7 +69,7 @@ not within scope for this NAP, but will be made available to users via a command
 
 ### What is a Menu Contribution?
 
-A `MenuItem` contribution in the [`npe2` manifest](https://github.com/napari/npe2/blob/main/npe2/manifest/contributions/_menus.py)
+A `MenuItem` contribution in the [`npe2` manifest](https://github.com/napari/npe2/blob/main/src/npe2/manifest/contributions/_menus.py)
 adds a new item to one of the `napari` menus (defined by an ID). When this item is clicked,
 the associated `command` is executed. Additionally, `enablement` clauses can be defined
 that control when this menu item is available for clicking and when it is disabled. Similarly,
@@ -99,9 +99,9 @@ contributions:
   menus:
     napari/layers/context:
       - submenu: context_submenu
-      - command: napari-demo.submenu_item
-    hello_world:
       - command: napari-demo.menu_item
+    context_submenu:
+      - command: napari-demo.submenu_item
 
   submenus:
     - id: context_submenu
@@ -116,9 +116,10 @@ This NAP proposes new menu IDs and new top level menus to open for contribution.
 ### What do Menu Contributions do?
 
 `MenuItem` contributions can be thought of as auxiliary contributions that
-provide a dispatch mechanism for other existing contributions. Currently
-these would strictly be `widget` contributions, but this mechanism
-can easily be extended to other commands, which can take as input
+provide a dispatch mechanism for binding an existing contribution to a menu item and
+executing it. Currently these would strictly be `widget` contributions as the other
+contribution types (reader, writer, sample data) have defined menu locations. However,
+this mechanism can easily be extended to other commands, which can take as input
 `napari` objects like specific layers, or the `Viewer`, and produce
 output the `Viewer` uses - currently this would be new layers.
 
@@ -152,7 +153,7 @@ actions.
 
 ### The `Layers` Menu
 Currently the foremost example of such an object is the napari `Layers`, and this
-menu therefore contains five submenus organized by the types of processing
+top level menu therefore contains five submenus organized by the types of processing
 the user may wish to perform on the selected `Layer` or `Layers`.
 
 The `Layers` submenus are organized to give the user an immediate
@@ -238,6 +239,9 @@ Layers
 │  ├─ Tracks
 │  ├─ Classification
 Acquisition
+Plugins/<my_plugin>    # only individual plugins submenu contributable
+
+Layers Context  # already open for contribution
 ```
 
 As a case study, we take four plugins offering between 9 and 14 widget contributions and arrange their widgets in these menus:
