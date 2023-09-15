@@ -79,13 +79,15 @@ def create_conflict_filter(conflict_key: int) -> Callable[[int], bool]:
     return inner
 
 
-def validate_key_binding(key: KeyBinding) -> KeyBinding:
+def validate_key_binding(key: KeyBinding, warn: bool = True) -> KeyBinding:
     """Check if the given key binding matches the criteria for a valid key binding and normalizes it as needed.
 
     Parameters
     ----------
-    key: KeyBinding
+    key : KeyBinding
         Key binding to validate.
+    warn : bool, optional
+        Whether to raise a warning when a single modifier binding has a modifier as the base key.
 
     Raises
     ------
@@ -129,11 +131,12 @@ def validate_key_binding(key: KeyBinding) -> KeyBinding:
                 raise TypeError(
                     'key combination cannot be comprised of only modifier keys'
                 )
-            warnings.warn(
-                f"using '{base_key}' as base key; use as a modifier instead",
-                UserWarning,
-                stacklevel=2,
-            )
+            if warn:
+                warnings.warn(
+                    f"using '{base_key}' as base key; use as a modifier instead",
+                    UserWarning,
+                    stacklevel=2,
+                )
             return KeyBinding.from_int(
                 key2mod(key.part0.key, OperatingSystem.current())
             )
@@ -151,3 +154,11 @@ def validate_key_binding(key: KeyBinding) -> KeyBinding:
             raise TypeError(f'invalid base key {key.parts[1].key}')
 
     return key
+
+
+def kb2str(kb: KeyBinding) -> str:
+    result = str(kb)
+    # when only modifier keys present the default implementation will add a + at the end
+    if result.endswith('+'):
+        result = result[:-1]
+    return result.lower()

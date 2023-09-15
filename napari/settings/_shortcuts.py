@@ -1,23 +1,27 @@
 from typing import List, Optional
 
 from app_model.types import KeyBinding
-from pydantic import Field, validator
+from pydantic import BaseModel, Field, validator
 
 from napari.utils.action_manager import new_name_to_old
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.key_bindings.legacy import coerce_keybinding
+from napari.utils.key_bindings.util import kb2str, validate_key_binding
 from napari.utils.translations import trans
 
 
-class ShortcutRule(EventedModel):
-    key: str
-    command: str
-    when: Optional[str] = None
+class ShortcutRule(BaseModel):
+    key: str = Field(allow_mutation=False)
+    command: str = Field(allow_mutation=False)
+    when: Optional[str] = Field(None, allow_mutation=False)
+
+    class Config:
+        validate_assignment = True
 
 
 class ShortcutsSettings(EventedModel):
     shortcuts: List[ShortcutRule] = Field(
-        default_factory=list,
+        default=[],
         title=trans._("shortcuts"),
         description=trans._(
             "Set keyboard shortcuts for actions.",
@@ -29,57 +33,100 @@ class ShortcutsSettings(EventedModel):
         preferences_exclude = ('schema_version',)
 
     def remove_shortcut(self, key, command, when=None):
-        rule = ShortcutRule(key=key, command=f'-{command}', when=when)
+        add_rule = ShortcutRule(key=key, command=command, when=when)
+        negate_rule = ShortcutRule(key=key, command=f'-{command}', when=when)
 
-        if rule not in self.shortcuts:
-            self.shortcuts.append(rule)
+        if negate_rule not in self.shortcuts:
+            if add_rule in self.shortcuts:
+                self.shortcuts.remove(add_rule)
+            else:
+                self.shortcuts.append(negate_rule)
+            self.events.shortcuts()
 
     def add_shortcut(self, key, command, when=None):
-        rule = ShortcutRule(key=key, command=command, when=when)
+        add_rule = ShortcutRule(key=key, command=command, when=when)
+        negate_rule = ShortcutRule(key=key, command=f'-{command}', when=when)
 
-        if rule not in self.shortcuts:
-            self.shortcuts.append(rule)
+        if add_rule not in self.shortcuts:
+            self.shortcuts.append(add_rule)
+        elif negate_rule in self.shortcuts:
+            self.shortcuts.remove(negate_rule)
+        else:
+            return
 
-    def overwrite_shortcut(self, new_key, old_key, command, when=None):
-        self.remove_shortcut(old_key, command, when)
-        self.add_shortcut(new_key, command, when)
+        self.events.shortcuts()
 
-    @validator('shortcuts', allow_reuse=True)
+    def overwrite_shortcut(self, old_key, new_key, command, when=None):
+        with self.events.shortcuts.blocker():
+            self.remove_shortcut(old_key, command, when)
+            self.add_shortcut(new_key, command, when)
+        self.events.shortcuts()
+
+    @validator('shortcuts', allow_reuse=True, pre=True)
     def shortcut_validate(cls, shortcuts):
         if isinstance(shortcuts, dict):
             # legacy case
-            from napari._app_model.constants import DEFAULT_SHORTCUTS
+            from napari.constants import DEFAULT_SHORTCUTS
 
             new = []
             skip = []
 
             # handle defaults
             for command, entries in DEFAULT_SHORTCUTS.items():
+                # special casing since paste_shape was renamed to paste_shapes
+                if command == 'napari:shapes:paste_shapes':
+                    command = command[:-1]
                 legacy_name = new_name_to_old(command)
 
                 if legacy_entries := shortcuts.get(legacy_name):
                     skip.append(legacy_name)
                     default_entries = [
-                        KeyBinding.validate(entry.primary) for entry in entries
+                        KeyBinding.validate(entry._bind_to_current_platform())
+                        for entry in entries
+                    ]
+                    legacy_kbs = [
+                        validate_key_binding(
+                            coerce_keybinding(entry), warn=False
+                        )
+                        for entry in legacy_entries
                     ]
 
-                    for i, entry in enumerate(legacy_entries):
-                        kb = coerce_keybinding(entry)
+                    for i, kb in enumerate(legacy_kbs):
                         if kb in default_entries:
                             # redundant
                             continue
 
-                        if i < len(default_entries):
+                        when = None
+
+                        prefix, group, *suffix = command.split(':')
+                        if group in (
+                            'image',
+                            'labels',
+                            'points',
+                            'shapes',
+                            'surface',
+                            'tracks',
+                            'vectors',
+                        ):
+                            when = f'active_layer_type == "{group}"'
+
+                        if (
+                            i < len(default_entries)
+                            and default_entries[i] not in legacy_kbs
+                        ):
                             # unbind default
                             new.append(
                                 ShortcutRule(
-                                    key=str(default_entries[i]).lower(),
+                                    key=kb2str(default_entries[i]),
                                     command=f'-{command}',
+                                    when=when,
                                 )
                             )
 
                         new.append(
-                            ShortcutRule(key=str(kb).lower(), command=command)
+                            ShortcutRule(
+                                key=kb2str(kb), command=command, when=when
+                            )
                         )
 
             for command, entries in shortcuts.items():
@@ -88,7 +135,7 @@ class ShortcutsSettings(EventedModel):
                 for entry in entries:
                     new.append(
                         ShortcutRule(
-                            key=str(coerce_keybinding(entry)).lower(),
+                            key=str(kb2str(entry)),
                             command=command,
                         )
                     )

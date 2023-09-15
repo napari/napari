@@ -1,4 +1,4 @@
-from napari._app_model.constants import CommandId, MenuId
+from napari.constants import CommandId, MenuId
 
 
 def test_command_titles():

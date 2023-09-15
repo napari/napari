@@ -10,7 +10,7 @@ from app_model.types import Action
 from packaging.version import parse
 
 from napari import __version__
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari.constants import CommandId, MenuGroup, MenuId
 
 v = parse(__version__)
 VERSION = "dev" if v.is_devrelease else str(v)

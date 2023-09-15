@@ -179,7 +179,7 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
     active_layer_type = ContextKey['LayerSel', Optional[str]](
         None,
         trans._(
-            "Lowercase name of active layer type, or None if none active."
+            "Lowercase name of active layer type, or None of none active."
         ),
         _active_type,
     )

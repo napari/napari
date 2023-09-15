@@ -1,16 +1,24 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 
-from app_model.types import KeyBindingRule, KeyChord, KeyCode, KeyMod
+from app_model.types import (
+    KeyBindingRule,
+    KeyBindingRuleDict,
+    KeyChord,
+    KeyCode,
+    KeyMod,
+)
 
-from napari._app_model.constants import CommandId
+from napari.constants._commands import CommandId
 from napari.utils.key_bindings import KeyBindingWeights
 
-_default_shortcuts: Dict[CommandId, List[int]] = {
+_default_shortcuts: Dict[CommandId, List[Union[int, KeyBindingRuleDict]]] = {
     # viewer
     CommandId.VIEWER_TOGGLE_CONSOLE_VISIBILITY: [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
     ],
-    CommandId.VIEWER_RESET_SCROLL: [KeyMod.CtrlCmd],
+    CommandId.VIEWER_RESET_SCROLL: [
+        {'primary': KeyMod.CtrlCmd, 'mac': KeyMod.WinCtrl}
+    ],
     CommandId.TOGGLE_VIEWER_NDISPLAY: [KeyMod.CtrlCmd | KeyCode.KeyY],
     CommandId.VIEWER_TOGGLE_THEME: [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyT
@@ -132,7 +140,9 @@ _default_shortcuts: Dict[CommandId, List[int]] = {
 
 DEFAULT_SHORTCUTS: Dict[CommandId, List[KeyBindingRule]] = {
     cmd: [
-        KeyBindingRule(primary=entry, weight=KeyBindingWeights.CORE)
+        KeyBindingRule(**entry, weight=KeyBindingWeights.CORE)
+        if isinstance(entry, dict)
+        else KeyBindingRule(primary=entry, weight=KeyBindingWeights.CORE)
         for entry in entries
     ]
     for cmd, entries in _default_shortcuts.items()

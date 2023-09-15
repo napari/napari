@@ -4,10 +4,10 @@ import sys
 import warnings
 from typing import List
 
+from app_model.types import KeyBinding, KeyCode, SimpleKeyBinding
 from numpydoc.docscrape import FunctionDoc
 
 from napari.utils.key_bindings.legacy import (
-    KeyBinding,
     KeyBindingLike,
     coerce_keybinding,
 )
@@ -247,12 +247,12 @@ elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-def _kb2mods(key_bind: KeyBinding) -> List[str]:
+def _kb2mods(key_bind: SimpleKeyBinding) -> List[str]:
     """Extract list of modifiers from a key binding.
 
     Parameters
     ----------
-    key_bind : KeyBinding
+    key_bind : SimpleKeyBinding
         The key binding whose mods are to be extracted.
 
     Returns
@@ -298,6 +298,11 @@ class Shortcut:
 
         try:
             self._kb = coerce_keybinding(shortcut)
+            if len(self._kb.parts) == 1:
+                part0 = self._kb.part0
+                mods = _kb2mods(part0)
+                if part0.key == KeyCode.UNKNOWN and len(mods) == 1:
+                    self._kb = KeyBinding.from_str(mods[0])
         except ValueError:
             error = True
         else:

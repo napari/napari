@@ -15,8 +15,8 @@ from typing import TYPE_CHECKING, List
 
 from app_model.types import Action
 
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
+from napari.constants import CommandId, MenuGroup, MenuId
 from napari.layers import _layer_actions
 
 if TYPE_CHECKING:

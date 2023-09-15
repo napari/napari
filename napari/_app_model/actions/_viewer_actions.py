@@ -12,8 +12,8 @@ from app_model.types import Action, ToggleRule
 
 from napari._app_model.actions import GeneratorCallback
 from napari._app_model.actions._toggle_action import ViewerToggleAction
-from napari._app_model.constants import DEFAULT_SHORTCUTS, CommandId, MenuId
 from napari.components import _viewer_key_bindings as _viewer_actions
+from napari.constants import DEFAULT_SHORTCUTS, CommandId, MenuId
 
 if TYPE_CHECKING:
     from napari.viewer import Viewer

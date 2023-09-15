@@ -12,8 +12,8 @@ from typing import List
 from app_model.types import Action
 
 from napari._app_model.actions import AttrRestoreCallback
-from napari._app_model.constants import DEFAULT_SHORTCUTS, CommandId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
+from napari.constants import DEFAULT_SHORTCUTS, CommandId
 from napari.layers.points import _points_key_bindings as _points_actions
 
 enablement = LLSCK.active_layer_type == 'points'

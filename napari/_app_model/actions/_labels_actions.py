@@ -15,8 +15,8 @@ from napari._app_model.actions import (
     AttrRestoreCallback,
     RepeatableAction,
 )
-from napari._app_model.constants import DEFAULT_SHORTCUTS, CommandId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
+from napari.constants import DEFAULT_SHORTCUTS, CommandId
 from napari.layers.labels import _labels_key_bindings as _labels_actions
 
 enablement = LLSCK.active_layer_type == 'labels'

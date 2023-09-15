@@ -11,8 +11,8 @@ from typing import List
 
 from app_model.types import Action
 
-from napari._app_model.constants import DEFAULT_SHORTCUTS, CommandId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
+from napari.constants import DEFAULT_SHORTCUTS, CommandId
 from napari.layers.surface import _surface_key_bindings as _surface_actions
 
 enablement = LLSCK.active_layer_type == 'surface'
