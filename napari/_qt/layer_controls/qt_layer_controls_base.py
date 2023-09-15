@@ -79,6 +79,7 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
         form_widget = QWidget()
         form_widget.setProperty('emphasized', True)
         self._internal_layout = LayerFormLayout()
+        self._internal_layout.setContentsMargins(15, 0, 0, 0)
         form_widget.setLayout(self._internal_layout)
         self.addWidget(form_widget)
         self.expand(animate=False)
@@ -383,10 +384,12 @@ class NewQtLayerControls(
         # Setup base layout
         self.setLayout(QVBoxLayout())
         self.layout().setContentsMargins(8, 0, 0, 0)
-        # Need to set spacing to have same spacing over all platforms
-        self.layout().setSpacing(15)  # +-6 win/linux def; +-15 macos def
+        # Need to set 0 def spacing to set different spacing values between sections
+        self.layout().setSpacing(0)
         self.layout().addLayout(name_layout)
+        self.layout().addSpacing(10)
         self.layout().addLayout(self._buttons_grid)
+        self.layout().addSpacing(15)
         self.layout().addWidget(controls_scrollarea)
 
     def __getattr__(self, attr: str):

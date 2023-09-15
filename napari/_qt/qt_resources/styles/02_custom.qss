@@ -294,7 +294,7 @@ QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneC
 
 QtLayerControls > QElidingLineEdit#layer_name {
   background-color: {{ background }};
-  font-size: {{ increase(font_size, 2) }};
+  font-size: {{ increase(font_size, 1) }};
   font-weight: bold;
   margin: 0px;
   padding: 0px;
@@ -399,25 +399,35 @@ QtLayerControlsContainer QScrollBar:right-arrow {
 }
 
 
-/* ---- Customize QCollapsible sections for layer controls ---- */
+/* ---- Customize QtCollapsibleLayerControlsSection for layer controls ---- */
 
-QtLayerControlsContainer QCollapsible[emphasized="true"] {
+QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] {
   padding: 0px;
   margin: 0px;
   border-radius: 2px;
   min-width: 255px;
 }
 
-QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton,
-QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:disabled,
-QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:hover,
-QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:pressed,
-QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:checked {
+QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton,
+QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:disabled,
+QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:hover,
+QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:pressed,
+QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:checked {
    background-color: {{ foreground }};
+   font-weight: bold;
    padding: 0px;
    margin: 0px;
 }
 
+
+QtCollapsibleLayerControlsSection[emphasized="true"] QLineEdit {
+  background-color: {{ primary }};
+}
+
+QtCollapsibleLayerControlsSection[emphasized="true"] QLineEdit:focus {
+  background-color: {{ darken(background, 20) }};
+  selection-background-color: {{ lighten(current, 20) }};
+}
 
 
 /* ------------- DimsSliders --------- */

@@ -81,21 +81,21 @@ class QtShapesControls(NewQtLayerControls):
             edit_button=False,
             checked=True,
         )
+        # path_button
+        self._add_radio_button_mode(
+            'path', Mode.ADD_PATH, "activate_add_path_mode", 0, 1
+        )
+        # line_button
+        self._add_radio_button_mode(
+            'line', Mode.ADD_LINE, "activate_add_line_mode", 0, 2
+        )
         # polygon_button
         self._add_radio_button_mode(
             'polygon',
             Mode.ADD_POLYGON,
             "activate_add_polygon_mode",
             0,
-            1,
-        )
-        # line_button
-        self._add_radio_button_mode(
-            'line', Mode.ADD_LINE, "activate_add_line_mode", 0, 2
-        )
-        # path_button
-        self._add_radio_button_mode(
-            'path', Mode.ADD_PATH, "activate_add_path_mode", 0, 3
+            3,
         )
         # polygon_lasso_button
         self._add_radio_button_mode(
@@ -121,13 +121,13 @@ class QtShapesControls(NewQtLayerControls):
             0,
             6,
         )
-        # direct_button
-        self._add_radio_button_mode(
-            'direct', Mode.DIRECT, "activate_direct_mode", 1, 0
-        )
         # select_button
         self._add_radio_button_mode(
-            'select', Mode.SELECT, "activate_select_mode", 1, 1
+            'select', Mode.SELECT, "activate_select_mode", 1, 0
+        )
+        # direct_button
+        self._add_radio_button_mode(
+            'direct', Mode.DIRECT, "activate_direct_mode", 1, 1
         )
         # delete_button
         self._add_push_button_action(
@@ -180,19 +180,12 @@ class QtShapesControls(NewQtLayerControls):
         # TODO: Should be done when instantiating layer controls class via some
         # sort of mapping between layer attributes and QObject classes
         # with QWidgets-Layer atts connection logic
-        opacity_blending_controls = QtOpacityBlendingControls(self, layer)
         self.add_display_widget_controls(
-            opacity_blending_controls,
-            controls=[opacity_blending_controls.get_widget_controls()[0]],
+            QtOpacityBlendingControls(self, layer)
         )
         self.add_display_widget_controls(QtEdgeWidthSliderControl(self, layer))
-        self.add_display_widget_controls(
-            opacity_blending_controls,
-            controls=[opacity_blending_controls.get_widget_controls()[1]],
-            add_wrapper=False,
-        )
-        self.add_display_widget_controls(QtFaceColorControl(self, layer))
         self.add_display_widget_controls(QtEdgeColorControl(self, layer))
+        self.add_display_widget_controls(QtFaceColorControl(self, layer))
         self.add_display_widget_controls(QtTextVisibilityControl(self, layer))
 
     def _on_ndisplay_changed(self) -> None:
