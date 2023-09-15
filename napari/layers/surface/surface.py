@@ -259,7 +259,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         if contrast_limits is not None:
             self._contrast_limits_range = contrast_limits
         else:
-            self._contrast_limits_range = calc_data_range(self._vertex_values)
+            self._contrast_limits_range = self._contrast_limits_range(
+                self._vertex_values
+            )
 
         self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
@@ -290,6 +292,17 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
+
+    @property
+    def _contrast_limits_range(self):
+        if self._contrast_limits_range is not None:
+            return self._contrast_limits_range
+        return calc_data_range(self._vertex_values)
+
+    @_contrast_limits_range.setter
+    def _contrast_limits_range(self, value):
+        # If you want to allow setting the contrast_limits_range, you can define a setter method.
+        self._contrast_limits_range = value
 
     @property
     def dtype(self):
