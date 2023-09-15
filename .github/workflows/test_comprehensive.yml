@@ -192,7 +192,7 @@ jobs:
   synchronize_bot_repository:
     name: Synchronize bot repository
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.repository != 'napari-bot/napari'
+    if: github.ref == 'refs/heads/main' && github.repository == 'napari/napari'
     steps:
       - uses: actions/checkout@v3
         with:
