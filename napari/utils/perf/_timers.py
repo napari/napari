@@ -78,7 +78,7 @@ class PerfTimers:
 
         Parameters
         ----------
-        name : PerfEvent
+        name : str
             Add this event.
         **kwargs
             Arguments to display in the Args section of the Tracing GUI.
@@ -193,7 +193,7 @@ def _create_timer():
 
         Parameters
         ----------
-        name : PerfEvent
+        name : str
             Add this event.
         **kwargs
             Arguments to display in the Args section of the Chrome Tracing GUI.
