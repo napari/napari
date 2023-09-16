@@ -41,8 +41,8 @@ def test_group_entries_by_when():
     groups = group_entries_by_when([a, b, c, d, e])
 
     assert groups[None] == [e]
-    assert groups[parse_expression('pigs_fly')] == [a, b]
-    assert groups[parse_expression('answer == 42')] == [c, d]
+    assert groups['pigs_fly'] == [a, b]
+    assert groups['answer == 42'] == [c, d]
 
 
 def test_key_binding_entry_ordering():
@@ -293,3 +293,147 @@ def test_registry_get_non_canceling_entries():
     )
     assert entries[0].weight == KeyBindingWeights.USER
     assert entries[0].when is None
+
+
+def test_registry_discard():
+    registry = NapariKeyBindingsRegistry()
+
+    # CORE
+    registry.register_keybinding_rule(
+        'select_all',
+        KeyBindingRule(
+            primary=KeyMod.Shift | KeyCode.KeyA,
+            weight=KeyBindingWeights.CORE,
+            when=None,
+        ),
+    )
+
+    registry.register_keybinding_rule(
+        'undo',
+        KeyBindingRule(
+            primary=KeyMod.CtrlCmd | KeyCode.KeyZ,
+            weight=KeyBindingWeights.CORE,
+            when=None,
+        ),
+    )
+
+    registry.register_keybinding_rule(
+        'redo',
+        KeyBindingRule(
+            primary=KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ,
+            weight=KeyBindingWeights.CORE,
+            when=parse_expression('~alternative_redo'),
+        ),
+    )
+
+    registry.register_keybinding_rule(
+        'redo',
+        KeyBindingRule(
+            primary=KeyMod.CtrlCmd | KeyCode.KeyY,
+            weight=KeyBindingWeights.CORE,
+            when=parse_expression('alternative_redo'),
+        ),
+    )
+
+    # PLUGIN
+    registry.register_keybinding_rule(
+        '-select_all',
+        KeyBindingRule(
+            primary=KeyMod.Shift | KeyCode.KeyA,
+            weight=KeyBindingWeights.PLUGIN,
+            when=None,
+        ),
+    )
+
+    registry.register_keybinding_rule(
+        'select_all',
+        KeyBindingRule(
+            primary=KeyCode.KeyA,
+            weight=KeyBindingWeights.PLUGIN,
+            when=parse_expression('selection_mode'),
+        ),
+    )
+
+    registry.register_keybinding_rule(
+        '-redo',
+        KeyBindingRule(
+            primary=KeyMod.CtrlCmd | KeyCode.KeyY,
+            weight=KeyBindingWeights.PLUGIN,
+            when=parse_expression('alternative_redo'),
+        ),
+    )
+
+    # USER
+    registry.register_keybinding_rule(
+        '-select_all',
+        KeyBindingRule(
+            primary=KeyCode.KeyA,
+            weight=KeyBindingWeights.USER,
+            when=parse_expression('selection_mode'),
+        ),
+    )
+
+    registry.register_keybinding_rule(
+        'select_all',
+        KeyBindingRule(
+            primary=KeyMod.Shift | KeyCode.KeyA,
+            weight=KeyBindingWeights.USER,
+            when=None,
+        ),
+    )
+
+    registry.register_keybinding_rule(
+        '-redo',
+        KeyBindingRule(
+            primary=KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ,
+            weight=KeyBindingWeights.USER,
+            when=parse_expression('~alternative_redo'),
+        ),
+    )
+
+    registry.register_keybinding_rule(
+        'redo',
+        KeyBindingRule(
+            primary=KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ,
+            weight=KeyBindingWeights.USER,
+            when=None,
+        ),
+    )
+
+    # should only have core + plugin entries
+    registry.discard_entries(KeyBindingWeights.USER)
+
+    entries = registry.get_non_canceling_entries('select_all')
+    assert len(entries) == 1
+    assert entries[0].keybinding == KeyBinding.from_int(KeyCode.KeyA)
+
+    entries = registry.get_non_canceling_entries('redo')
+    assert len(entries) == 1
+    assert entries[0].keybinding == KeyBinding.from_int(
+        KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ
+    )
+
+    # should only have core entries
+    registry.discard_entries(KeyBindingWeights.PLUGIN)
+
+    entries = registry.get_non_canceling_entries('select_all')
+    assert len(entries) == 1
+    assert entries[0].keybinding == KeyBinding.from_int(
+        KeyMod.Shift | KeyCode.KeyA
+    )
+
+    entries = registry.get_non_canceling_entries('undo')
+    assert len(entries) == 1
+    assert entries[0].command_id == 'undo'
+
+    entries = registry.get_non_canceling_entries('redo')
+    assert len(entries) == 2
+    assert {entry.keybinding for entry in entries} == {
+        KeyBinding.from_int(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ),
+        KeyBinding.from_int(KeyMod.CtrlCmd | KeyCode.KeyY),
+    }
+
+    # should have no entries
+    registry.discard_entries(KeyBindingWeights.CORE)
+
+    assert registry.keymap == {}

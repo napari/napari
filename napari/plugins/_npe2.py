@@ -370,7 +370,7 @@ def _npe2_manifest_to_actions(
     """Gather actions and submenus from a npe2 manifest, export app_model types."""
     from app_model.types import Action, KeyBindingRule, MenuRule
 
-    from napari._app_model.constants._menus import is_menu_contributable
+    from napari.constants._menus import is_menu_contributable
 
     cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
     submenus: List[Tuple[str, SubmenuItem]] = []

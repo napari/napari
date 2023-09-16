@@ -47,7 +47,6 @@ from qtpy.QtWidgets import (
 )
 from superqt.utils import QSignalThrottler
 
-from napari._app_model.constants import MenuId
 from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
@@ -63,6 +62,7 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
     QtViewerDockWidget,
 )
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
+from napari.constants import MenuId
 from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
     plugin_manager,

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import warnings
 from functools import lru_cache
 from itertools import chain
 from typing import Callable, Dict, Set
 
 from app_model import Application
-from app_model.types import Action
+from app_model.expressions import parse_expression
+from app_model.types import Action, KeyBinding, KeyBindingRule
 
 from napari._app_model._submenus import SUBMENUS
 from napari._app_model.actions import GeneratorCallback, RepeatableAction
@@ -32,13 +34,19 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
-from napari.utils.key_bindings import NapariKeyBindingsRegistry
+from napari.utils.key_bindings import (
+    KeyBindingWeights,
+    NapariKeyBindingsRegistry,
+)
 
 APP_NAME = 'napari'
 
 
 class NapariApplication(Application):
+    keybindings: NapariKeyBindingsRegistry
+
     def __init__(self, app_name=APP_NAME) -> None:
         # raise_synchronous_exceptions means that commands triggered via
         # ``execute_command`` will immediately raise exceptions. Normally,
@@ -90,6 +98,11 @@ class NapariApplication(Application):
                 self._register_action_manager_shim(action, keymapprovider)
 
         self.menus.append_menu_items(SUBMENUS)
+
+        self._on_shortcuts_changed(None)
+        get_settings().shortcuts.events.shortcuts.connect(
+            self._on_shortcuts_changed
+        )
 
     def _register_action_manager_shim(self, action: Action, keymapprovider):
         """Shim from app-model Action to action_manager for keybinding.
@@ -181,6 +194,22 @@ class NapariApplication(Application):
             Whether the action is repeatable or not.
         """
         return action_id in self._repeatable_actions
+
+    def _on_shortcuts_changed(self, _):
+        self.keybindings.discard_entries(KeyBindingWeights.USER)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            for entry in get_settings().shortcuts.shortcuts:
+                self.keybindings.register_keybinding_rule(
+                    entry.command,
+                    KeyBindingRule(
+                        primary=KeyBinding.from_str(entry.key),
+                        weight=KeyBindingWeights.USER,
+                        when=parse_expression(entry.when)
+                        if entry.when
+                        else None,
+                    ),
+                )
 
 
 @lru_cache(maxsize=1)

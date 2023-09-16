@@ -27,7 +27,6 @@ class WidgetBuilder:
             "horizontal_object": widgets.HorizontalObjectSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
             "plugins": widgets.PluginWidget,
-            "shortcuts": widgets.ShortcutsWidget,
             "extension2reader": widgets.Extension2ReaderWidget,
         },
         "number": {
@@ -53,6 +52,7 @@ class WidgetBuilder:
         "array": {
             "array": widgets.ArraySchemaWidget,
             "enum": widgets.EnumSchemaWidget,
+            "shortcuts": widgets.ShortcutsWidget,
         },
     }
 

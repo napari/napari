@@ -1,6 +1,6 @@
 import json
 from enum import EnumMeta
-from typing import TYPE_CHECKING, ClassVar, Dict, Tuple, cast
+from typing import TYPE_CHECKING, ClassVar, Dict, Tuple, cast, get_origin
 
 from pydantic.main import BaseModel, ModelMetaclass
 from qtpy.QtCore import QSize, Qt, Signal
@@ -135,29 +135,7 @@ class PreferencesDialog(QDialog):
         properties for each setting."""
         ftype = cast('BaseModel', field.type_)
 
-        # TODO make custom shortcuts dialog to properly capture new
-        #      functionality once we switch to app-model's keybinding system
-        #      then we can remove the below code used for autogeneration
-        if field.name == 'shortcuts':
-            # hardcode workaround because pydantic's schema generation
-            # does not allow you to specify custom JSON serialization
-            schema = {
-                "title": "ShortcutsSettings",
-                "type": "object",
-                "properties": {
-                    "shortcuts": {
-                        "title": field.type_.__fields__[
-                            "shortcuts"
-                        ].field_info.title,
-                        "description": field.type_.__fields__[
-                            "shortcuts"
-                        ].field_info.description,
-                        "type": "object",
-                    }
-                },
-            }
-        else:
-            schema = json.loads(ftype.schema_json())
+        schema = json.loads(ftype.schema_json())
 
         if field.field_info.title:
             schema["title"] = field.field_info.title
@@ -166,6 +144,8 @@ class PreferencesDialog(QDialog):
 
         # find enums:
         for name, subfield in ftype.__fields__.items():
+            if get_origin(subfield.annotation) in (list, set, tuple):
+                continue
             if isinstance(subfield.type_, EnumMeta):
                 enums = [s.value for s in subfield.type_]  # type: ignore
                 schema["properties"][name]["enum"] = enums

@@ -607,14 +607,14 @@ class HighlightSizePreviewWidget(
 
 class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
     @state_property
-    def state(self) -> dict:
+    def state(self) -> list:
         return self.value()
 
     def setDescription(self, description: str):
         self.description = description
 
     @state.setter
-    def state(self, state: dict):
+    def state(self, state: list):
         # self.setValue(state)
         return None
 
@@ -802,6 +802,7 @@ class FormWidget(QtWidgets.QWidget):
         self.widget = widget
 
     def display_errors(self, errors: List[Exception]):
+        raise errors[0]
         self.error_widget.show()
 
         layout = self.error_widget.layout()

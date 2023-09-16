@@ -211,7 +211,7 @@ class KeymapProvider:
     ):
         warnings.warn(
             trans._(
-                'This function is deprecated and will be removed in version 0.6.0'
+                'This function is deprecated and will be removed in version 0.6.0. Shortcuts set via the GUI will overwrite this.'
             ),
             DeprecationWarning,
             stacklevel=2,

@@ -7,7 +7,6 @@ from app_model.backends.qt import (
     qkey2modelkey,
     qkeysequence2modelkeybinding,
 )
-from app_model.types import KeyBindingRule
 from qtpy.QtCore import QEvent, QPoint, Qt, Signal
 from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import (
@@ -27,13 +26,19 @@ from qtpy.QtWidgets import (
 )
 
 from napari._app_model import get_app
+from napari._app_model.actions._help_actions import HELP_ACTIONS
 from napari._app_model.actions._image_actions import IMAGE_ACTIONS
 from napari._app_model.actions._labels_actions import LABELS_ACTIONS
+from napari._app_model.actions._layer_actions import LAYER_ACTIONS
 from napari._app_model.actions._points_actions import POINTS_ACTIONS
 from napari._app_model.actions._shapes_actions import SHAPES_ACTIONS
 from napari._app_model.actions._surface_actions import SURFACE_ACTIONS
 from napari._app_model.actions._tracks_actions import TRACKS_ACTIONS
 from napari._app_model.actions._vectors_actions import VECTORS_ACTIONS
+from napari._app_model.actions._view_actions import VIEW_ACTIONS
+from napari._app_model.actions._viewer_actions import VIEWER_ACTIONS
+from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
+from napari._qt._qapp_model.qactions._view import Q_VIEW_ACTIONS
 from napari._qt.widgets.qt_message_popup import WarnPopup
 from napari.layers import (
     Image,
@@ -45,12 +50,9 @@ from napari.layers import (
     Vectors,
 )
 from napari.settings import get_settings
-from napari.utils.action_manager import (
-    Action as ActionManagerAction,
-    action_manager,
-)
 from napari.utils.interactions import Shortcut
 from napari.utils.key_bindings.legacy import coerce_keybinding
+from napari.utils.key_bindings.util import kb2str
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -63,7 +65,7 @@ if TYPE_CHECKING:
 class ShortcutEditor(QWidget):
     """Widget to edit keybindings for napari."""
 
-    valueChanged = Signal(dict)
+    valueChanged = Signal(list)
     VIEWER_KEYBINDINGS = trans._('Viewer key bindings')
     PLUGINS_KEYBINDINGS = trans._('Plugins key bindings')
 
@@ -91,6 +93,15 @@ class ShortcutEditor(QWidget):
             (Vectors, VECTORS_ACTIONS),
         ]
 
+        viewer_actions: List[Action] = [
+            *VIEWER_ACTIONS,
+            *VIEW_ACTIONS,
+            *Q_VIEW_ACTIONS,
+            *LAYER_ACTIONS,
+            *HELP_ACTIONS,
+            *Q_HELP_ACTIONS,
+        ]
+
         self.key_bindings_strs = OrderedDict()
 
         # widgets
@@ -115,13 +126,16 @@ class ShortcutEditor(QWidget):
 
             self.key_bindings_strs[f"{layer.__name__} layer"] = commands
 
-        # Left over actions can go here.
-        self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = all_commands
+        viewer_commands = {}
 
-        # self.key_bindings_strs[self.PLUGINS_KEYBINDINGS] = {
-        #     key: get_settings().shortcuts.shortcuts.get(key, value)
-        #     for key, value in plugins_shortcuts.items()
-        # }
+        for action in viewer_actions:
+            if cmd := all_commands.pop(action.id):
+                viewer_commands[action.id] = cmd
+
+        self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = viewer_commands
+
+        # Left over actions can go here.
+        self.key_bindings_strs[self.PLUGINS_KEYBINDINGS] = all_commands
 
         # Widget set up
         self.layer_combo_box.addItems(list(self.key_bindings_strs))
@@ -323,12 +337,8 @@ class ShortcutEditor(QWidget):
 
     def _restore_shortcuts(self, row):
         action_name = self._table.item(row, self._action_col).text()
+        shortcuts = self._find_shortcuts(action_name)
 
-        if action_name in self._app.commands:
-            shortcuts = self._find_shortcuts(action_name)
-        else:
-            raise TypeError(action_name)
-            shortcuts = action_manager._shortcuts.get(action_name, [])
         with lock_keybind_update(self):
             self._table.item(row, self._shortcut_col).setText(
                 Shortcut(shortcuts[0].keybinding).platform if shortcuts else ""
@@ -344,8 +354,8 @@ class ShortcutEditor(QWidget):
         current_action = self._table.item(row, self._action_col).text()
         actions_all = self._get_layer_actions()
         current_item = self._table.currentItem()
-        for row1, (action_name, action) in enumerate(actions_all.items()):
-            shortcuts = action_manager._shortcuts.get(action_name, [])
+        for row1, (action_name, _action) in enumerate(actions_all.items()):
+            shortcuts = self._find_shortcuts(action_name)
 
             if new_shortcut not in shortcuts:
                 continue
@@ -358,15 +368,13 @@ class ShortcutEditor(QWidget):
 
                 # show warning message
                 message = trans._(
-                    "The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.",
+                    "The keybinding <b>{new_shortcut}</b> is already assigned to <b>{action_description}</b> and may conflict with it.",
                     new_shortcut=new_shortcut,
-                    action_description=action.description
-                    if isinstance(action, ActionManagerAction)
-                    else self._app.commands[action_name].title,
+                    action_description=self._app.commands[action_name].title,
                 )
                 self._show_warning(row, message)
 
-                self._restore_shortcuts(row)
+                # self._restore_shortcuts(row)
 
                 self._cleanup_warning_icons([row, row1])
 
@@ -382,12 +390,6 @@ class ShortcutEditor(QWidget):
     def _show_bind_shortcut_error(
         self, current_action, current_shortcuts, row, new_shortcut
     ):
-        action_manager._shortcuts[current_action] = []
-        # need to rebind the old shortcut
-        action_manager.unbind_shortcut(current_action)
-        for short in current_shortcuts:
-            action_manager.bind_shortcut(current_action, short)
-
         # Show warning message to let user know this shortcut is invalid.
         self._show_warning_icons([row])
 
@@ -427,53 +429,56 @@ class ShortcutEditor(QWidget):
             current_action = self._table.item(row, self._action_col).text()
 
             # get the original shortcuts
-            if current_action in self._app.commands:
-                current_shortcuts = self._find_shortcuts(current_action)
-            else:
-                raise TypeError(current_action)
-                current_shortcuts = list(
-                    action_manager._shortcuts.get(current_action, [])
-                )
+            current_shortcuts = self._find_shortcuts(current_action)
 
-            # Flag to indicate whether to set the new shortcut.
-            replace = self._mark_conflicts(new_shortcut, row)
+            # FIXME change conflict detection method to match new system
+            # replace = self._mark_conflicts(new_shortcut, row)
+            replace = True
 
             if replace is True:
                 # This shortcut is not taken.
 
-                #  Unbind current action from shortcuts in action manager.
-                if current_action in self._app.commands:
-                    unbinds = []
-                    for keybinding in self._app.keybindings:
-                        if keybinding.command_id == current_action:
-                            unbinds.append(keybinding)
-
-                    for unbind in unbinds:
-                        self._app.keybindings._keybindings.remove(unbind)
-                else:
-                    action_manager.unbind_shortcut(current_action)
-                shortcuts_list = list(current_shortcuts)
+                shortcut_str = kb2str(coerce_keybinding(new_shortcut))
+                shorts = get_settings().shortcuts
                 ind = col - self._shortcut_col
-                if new_shortcut != "":
-                    if ind < len(shortcuts_list):
-                        shortcuts_list[ind] = new_shortcut
-                    else:
-                        shortcuts_list.append(new_shortcut)
-                elif ind < len(shortcuts_list):
-                    shortcuts_list.pop(col - self._shortcut_col)
-
-                # Bind the new shortcut.
                 try:
-                    for short in shortcuts_list:
-                        if current_action in self._app.commands:
-                            self._app.keybindings.register_keybinding_rule(
-                                current_action,
-                                KeyBindingRule(
-                                    primary=coerce_keybinding(short)
-                                ),
+                    if new_shortcut != "":
+                        if ind < len(current_shortcuts):
+                            old_shortcut = current_shortcuts[ind]
+                            when = None
+                            if old_shortcut.when is not None:
+                                when = str(old_shortcut.when)
+
+                            shorts.overwrite_shortcut(
+                                old_key=kb2str(old_shortcut.keybinding),
+                                new_key=shortcut_str,
+                                command=current_action,
+                                when=when,
                             )
                         else:
-                            action_manager.bind_shortcut(current_action, short)
+                            current_spinner_value: str = (
+                                self.layer_combo_box.currentText()
+                            )
+                            when = None
+                            if current_spinner_value.endswith('layer'):
+                                layer_name, _ = current_spinner_value.split()
+                                when = f'active_layer_type == "{layer_name.lower()}"'
+
+                            shorts.add_shortcut(
+                                shortcut_str, current_action, when
+                            )
+                    elif ind < len(current_shortcuts):
+                        old_shortcut = current_shortcuts[
+                            col - self._shortcut_col
+                        ]
+                        when = None
+                        if old_shortcut.when is not None:
+                            when = str(old_shortcut.when)
+                        shorts.remove_shortcut(
+                            kb2str(old_shortcut.keybinding),
+                            old_shortcut.command_id,
+                            when,
+                        )
                 except TypeError:
                     self._show_bind_shortcut_error(
                         current_action,
@@ -485,13 +490,10 @@ class ShortcutEditor(QWidget):
 
                 # The new shortcut is valid and can be displayed in widget.
 
-                # Keep track of what changed.
-                new_value_dict = {current_action: shortcuts_list}
-
                 self._restore_shortcuts(row)
 
                 # Emit signal when new value set for shortcut.
-                self.valueChanged.emit(new_value_dict)
+                self.valueChanged.emit(shorts.shortcuts)
 
     def _show_warning_icons(self, rows):
         """Creates and displays the warning icons.
@@ -567,17 +569,9 @@ class ShortcutEditor(QWidget):
         value: dict
             Dictionary of action names and shortcuts assigned to them.
         """
-
-        value = {}
-
-        for action_name in action_manager._actions:
-            shortcuts = action_manager._shortcuts.get(action_name, [])
-            value[action_name] = list(shortcuts)
-
-        for keybinding in self._app.keybindings:
-            value[keybinding.command_id] = [keybinding.keybinding]
-
-        return value
+        return get_settings().shortcuts.dict(exclude_defaults=True)[
+            'shortcuts'
+        ]
 
 
 class ShortcutDelegate(QItemDelegate):
@@ -585,6 +579,9 @@ class ShortcutDelegate(QItemDelegate):
 
     def createEditor(self, widget, style_option, model_index):
         self._editor = EditorWidget(widget)
+        # FIXME: in qt6+ use app_model.backends.qt.QModelKeyBindingEdit
+        # self._editor = QModelKeyBindingEdit(widget)
+        # self._editor.setMaximumSequenceLength(2)
         return self._editor
 
     def setEditorData(self, widget, model_index):

@@ -40,6 +40,7 @@ class KeyBindingEntry:
 
     command_id: str = field(compare=False)
     weight: int
+    _index: int
     when: Optional[Expr] = field(compare=False, default=None)
     block_rule: bool = field(init=False)
     negate_rule: bool = field(init=False)
@@ -75,7 +76,7 @@ def filter_entries_by_command(
 
 def group_entries_by_when(
     entries: List[KeyBindingEntry],
-) -> Dict[Optional[Expr], List[KeyBindingEntry]]:
+) -> Dict[Optional[str], List[KeyBindingEntry]]:
     """Group entries by their when condition.
 
     Parameters
@@ -85,17 +86,20 @@ def group_entries_by_when(
 
     Returns
     -------
-    groups : Dict[Optional[Expr], List[KeyBindingEntry]]
+    groups : Dict[Optional[str], List[KeyBindingEntry]]
         Grouped entries.
     """
-    # fortunately Expr has a working hash so its weird comparison logic doesn't mess with dicts
+    # hashing isn't consistent with expressions; use a str instead
     groups = {}
 
     for entry in entries:
-        if entry.when in groups:
-            groups[entry.when].append(entry)
+        when = None
+        if when is not None:
+            when = str(entry.when)
+        if when in groups:
+            groups[when].append(entry)
         else:
-            groups[entry.when] = [entry]
+            groups[when] = [entry]
 
     return groups
 
@@ -113,6 +117,7 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
 
     def __init__(self) -> None:
         self.keymap: Dict[int, List[KeyBindingEntry]] = {}
+        self._index = 0
 
     def register_keybinding_rule(
         self, command_id: str, rule: KeyBindingRule
@@ -145,8 +150,10 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
             entry = KeyBindingEntry(
                 command_id=command_id,
                 weight=rule.weight,
+                _index=self._index,
                 when=rule.when,
             )
+            self._index += 1
 
             with warnings.catch_warnings(record=True) as w:
                 key_bind = validate_key_binding(
@@ -186,6 +193,42 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
 
     def __repr__(self) -> str:
         return repr(self.keymap)
+
+    def discard_entries(self, weight_threshold: int) -> bool:
+        """Discard all entries of the given weight threshold or higher.
+
+        Parameters
+        ----------
+        weight_threshold : int
+            Threshold for which to discard entries based on.
+
+        Returns
+        -------
+        discarded : bool
+            If any entries were discarded.
+        """
+        discarded = False
+        del_keys = []
+
+        for kb in self.keymap:
+            entries = self.keymap[kb]
+            culled_entries = [
+                entry for entry in entries if entry.weight < weight_threshold
+            ]
+            if len(entries) != len(culled_entries):
+                discarded = True
+                self.keymap[kb] = culled_entries
+
+            if len(culled_entries) == 0:
+                del_keys.append(kb)
+
+        for key in del_keys:
+            del self.keymap[key]
+
+        if discarded:
+            self.unregistered()
+
+        return discarded
 
     def get_keybinding(
         self, command_id: str
@@ -228,7 +271,7 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
                 filter_entries_by_command(entries, command_id)
             )
 
-            for expr, group_entries in groups.items():
+            for group_entries in groups.values():
                 temp_entries = []
 
                 for entry in group_entries:
@@ -236,14 +279,19 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
                         temp_entries.clear()
                     else:
                         temp_entries.append(
-                            _RegisteredKeyBinding(
-                                keybinding=kb,
-                                command_id=command_id,
-                                weight=entry.weight,
-                                when=expr,
+                            (
+                                entry,
+                                _RegisteredKeyBinding(
+                                    keybinding=kb,
+                                    command_id=command_id,
+                                    weight=entry.weight,
+                                    when=entry.when,
+                                ),
                             )
                         )
 
                 nc_entries.extend(temp_entries)
 
-        return nc_entries
+        return [
+            e2 for (e1, e2) in sorted(nc_entries, key=lambda ab: ab[0]._index)
+        ]

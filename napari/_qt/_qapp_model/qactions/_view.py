@@ -15,8 +15,8 @@ from app_model.types import (
     ToggleRule,
 )
 
-from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari._qt.qt_main_window import Window
+from napari.constants import CommandId, MenuGroup, MenuId
 from napari.utils.translations import trans
 
 

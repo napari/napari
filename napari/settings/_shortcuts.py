@@ -47,14 +47,18 @@ class ShortcutsSettings(EventedModel):
         add_rule = ShortcutRule(key=key, command=command, when=when)
         negate_rule = ShortcutRule(key=key, command=f'-{command}', when=when)
 
+        changed = False
+
+        if negate_rule in self.shortcuts:
+            self.shortcuts.remove(negate_rule)
+            changed = True
+
         if add_rule not in self.shortcuts:
             self.shortcuts.append(add_rule)
-        elif negate_rule in self.shortcuts:
-            self.shortcuts.remove(negate_rule)
-        else:
-            return
+            changed = True
 
-        self.events.shortcuts()
+        if changed:
+            self.events.shortcuts()
 
     def overwrite_shortcut(self, old_key, new_key, command, when=None):
         with self.events.shortcuts.blocker():
