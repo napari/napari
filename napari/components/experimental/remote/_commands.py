@@ -62,4 +62,4 @@ class RemoteCommands:
                 LOGGER.info("Calling RemoteCommands.%s(%s)", name, args)
                 method(args)
             except AttributeError:
-                LOGGER.error("RemoteCommands.%s does not exist.", name)
+                LOGGER.exception("RemoteCommands.%s does not exist.", name)

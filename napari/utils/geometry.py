@@ -98,7 +98,9 @@ def rotation_matrix_from_vectors_2d(
     return rotation_matrix
 
 
-def rotation_matrix_from_vectors_3d(vec_1, vec_2):
+def rotation_matrix_from_vectors_3d(
+    vec_1: np.ndarray, vec_2: np.ndarray
+) -> np.ndarray:
     """Calculate the rotation matrix that aligns vec1 to vec2.
 
     Parameters
@@ -602,7 +604,7 @@ def line_in_quadrilateral_3d(
     rotated_vertices, rotation_matrix = rotate_points(
         points=vertices_plane,
         current_plane_normal=line_direction,
-        new_plane_normal=[0, 0, 1],
+        new_plane_normal=np.array([0, 0, 1]),
     )
     quadrilateral_2D = rotated_vertices[:, :2]
     click_pos_2D = rotation_matrix.dot(line_point)[:2]
@@ -644,7 +646,7 @@ def line_in_triangles_3d(
 
     # rotate the plane to make the triangles 2D
     rotation_matrix = rotation_matrix_from_vectors_3d(
-        line_direction, [0, 0, 1]
+        line_direction, np.array([0, 0, 1])
     )
     rotated_vertices = vertices_plane @ rotation_matrix.T
 

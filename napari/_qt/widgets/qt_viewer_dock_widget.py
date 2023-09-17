@@ -79,7 +79,7 @@ class QtViewerDockWidget(QDockWidget):
         add_vertical_stretch=True,
         close_btn=True,
     ) -> None:
-        self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
+        self._ref_qt_viewer: ReferenceType[QtViewer] = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer
         self.name = name

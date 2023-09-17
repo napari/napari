@@ -238,7 +238,7 @@ class TrackManager:
 
         # check that all IDs are integers
         ids = data[:, 0]
-        if not np.all(np.floor(ids) == ids):
+        if not np.array_equal(np.floor(ids), ids):
             raise ValueError(
                 trans._('track id must be an integer', deferred=True)
             )

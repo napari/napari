@@ -105,7 +105,7 @@ def _add_future_data(
     return_type: Any,
     _from_tuple=True,
     viewer: Optional[viewer.Viewer] = None,
-    source: dict = None,
+    source: Optional[dict] = None,
 ):
     """Process a Future object.
 
