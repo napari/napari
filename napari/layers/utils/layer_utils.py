@@ -24,6 +24,7 @@ import pandas as pd
 from napari.utils._dtype import normalize_dtype
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
+from napari.utils.notifications import show_info
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
@@ -238,8 +239,16 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     )
 
     dtype = normalize_dtype(getattr(data, 'dtype', None))
-    if dtype == np.uint8 or rgb:
+    if dtype == np.uint8 or (rgb and dtype == np.uint8):
         return 0, 255
+    if rgb:
+        # Vispy does not display rgb other than uint8, so it casts it to uint8
+        show_info(
+            trans._(
+                "RGB dtype is not np.uint8. Vispy will cast to np.uint8",
+                deferred=True,
+            )
+        )
     if not np.issubdtype(dtype, np.integer) and chunk_size:
         return None
 
