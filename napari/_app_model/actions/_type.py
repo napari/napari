@@ -24,8 +24,6 @@ class GeneratorCallback:
     as-needed.
     """
 
-    GENERATOR = True
-
     def __init__(self, func: Callable):
         if not inspect.isgeneratorfunction(func):
             raise TypeError(f"'{func.__name__}' is not a generator function")
@@ -78,7 +76,7 @@ class AttrRestoreCallback:
             obj_ref = weakref.ref(obj)
 
             def _callback():
-                if concrete := obj_ref() is not None:
+                if (concrete := obj_ref()) is not None:
                     setattr(concrete, attribute_name, prev_mode)
 
             return _callback

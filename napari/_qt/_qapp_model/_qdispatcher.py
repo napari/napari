@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import time
 from functools import partial
 from typing import Callable, Optional
 
 from app_model.registries import CommandsRegistry
 from qtpy.QtCore import QObject, QTimer
 
+from napari._app_model.actions import AttrRestoreCallback, GeneratorCallback
+from napari.settings import get_settings
 from napari.utils.key_bindings import DispatchFlags
 
 # TODO: make this a user setting
@@ -24,11 +27,29 @@ class QKeyBindingDispatcher(QObject):
         self._commands = commands
         self._action_is_repeatable = check_repeatable_action
         self.timer = None
+        self._attr_restore_start_time = 0
+        self._attr_restore_callback = None
 
     def executeCommand(self, command_id, *, on_press=False):
         func = self._commands[command_id].resolved_callback
 
-        if getattr(func, 'GENERATOR', False):
+        if isinstance(func, AttrRestoreCallback):
+            if on_press:
+                self._attr_restore_callback = self._commands.execute_command(
+                    command_id
+                ).result()
+                self._attr_restore_start_time = time.time()
+            elif (
+                self._attr_restore_callback is not None
+                and time.time() - self._attr_restore_start_time
+                > get_settings().application.hold_button_delay
+            ):
+                self._attr_restore_callback()
+                self._attr_restore_callback = None
+                self._attr_restore_start_time = 0
+            return
+
+        if isinstance(func, GeneratorCallback):
             # has release logic too
             if on_press:
                 func.reset()
