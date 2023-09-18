@@ -224,8 +224,8 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
 
     Returns
     -------
-    values : pair of floats
-        Minimum and maximum values in that order.
+    values : None | Tuple[float, float]
+        Minimum and maximum values in that order or None if dtype is float.
 
     Notes
     -----
@@ -384,14 +384,14 @@ def _get_plane_indices(
 
     Parameters
     ----------
-    shape: Iterable[int, ...]
+    shape: Sequence[int]
         Either the shape of the raw data (in pixels) or the block shape of the data (chunks)
     offset: int
         Number of visible dimensions
 
     Returns
     -------
-    idxs: list[tuple[int, ..;], ...]
+    idxs: list[tuple[int, ...]]
         Bottom, middle and top plane for each non-visible dimension or single plane
     """
     bottom_plane_idx = (0,) * (len(shape) - offset)
@@ -407,25 +407,25 @@ def _get_crop_slices(
     shape: Sequence[int],
     plane_indices: Sequence[Sequence[int]],
     offset: int,
-    chunk_shape: Optional[tuple[int]] = None,
+    chunk_shape: None | Tuple[int] = None,
 ) -> Union[None, List[Tuple[Union[int, slice], ...]]]:
     """
     Get the crop slices to be used for determining contrast limits when data is larger than the pixel threshold.
 
     Parameters
     ----------
-    shape: tuple[int, ...]
+    shape: Sequence[int]
         Either the shape of the raw data (in pixels) or the block shape of the data (chunks)
-    plane_indices: list[tuple[int, ...], ...]
+    plane_indices: Sequence[Sequence[int]]
         Bottom, middle and top plane or single plane index for each non-visible dimension.
     offset: int
         Number of visible dimensions.
-    chunk_shape: tuple[int, ...]
+    chunk_shape: None | Tuple[int]
         The size per dimension of the chunks.
 
     Returns
     -------
-    slices: None | list[tuple[int | slice], ...]
+    slices: Union[None, List[Tuple[Union[int, slice], ...]]]
         A list of crop slices.
     """
     plane_shape = shape[-offset:]
@@ -559,7 +559,7 @@ def _get_slices(
 
 
 def _get_start_indices(
-    dim_size: int, chunk_dim_size: Optional[int] = None
+    dim_size: int, chunk_dim_size: None | int = None
 ) -> list[int]:
     """
     Get the crop start indices for extracting crops in a 3 x 3 pattern.
