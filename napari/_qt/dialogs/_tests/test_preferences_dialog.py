@@ -33,7 +33,7 @@ def test_prefdialog_populated(pref):
 
 def test_dask_widget(qtbot, pref):
     assert isinstance(
-        pref._stack.currentWidget().widget.widgets['dask'],
+        pref._stack.currentWidget().widget().widget.widgets['dask'],
         HorizontalObjectSchemaWidget,
     )
 
