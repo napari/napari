@@ -49,4 +49,4 @@ class ExperimentalSettings(EventedSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version']
+        preferences_exclude = ('schema_version',)

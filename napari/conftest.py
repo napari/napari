@@ -2,7 +2,7 @@
 
 Notes for using the plugin-related fixtures here:
 
-1. The `_mock_npe2_pm` fixture is always used, and it mocks the global npe2 plugin
+1. The `_npe2pm` fixture is always used, and it mocks the global npe2 plugin
    manager instance with a discovery-deficient plugin manager.  No plugins should be
    discovered in tests without explicit registration.
 2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
@@ -40,6 +40,8 @@ from multiprocessing.pool import ThreadPool
 from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 from weakref import WeakKeyDictionary
+
+from npe2 import PackageMetadata
 
 with suppress(ModuleNotFoundError):
     __import__('dotenv').load_dotenv()
@@ -265,7 +267,7 @@ def _no_error_reports():
 
 @pytest.fixture(autouse=True)
 def _npe2pm(npe2pm, monkeypatch):
-    """Autouse the npe2 mock plugin manager with no registered plugins."""
+    """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
     from napari.plugins import NapariPluginManager
 
     monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
@@ -281,7 +283,9 @@ def builtins(_npe2pm: TestPluginManager):
 @pytest.fixture
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
+        plugin.manifest.package_metadata = PackageMetadata(
+            version='0.1.0', name='test'
+        )
         plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
 
@@ -422,9 +426,12 @@ def _mock_app():
     Note that `NapariApplication` registers app-model actions, providers and
     processors. If this is not desired, please create a clean
     `app_model.Application` in the test. It does not however, register Qt
-    related actions or providers. If this is required for a unit test,
-    `napari._qt._qapp_model.qactions.init_qactions()` can be used within
-    the test.
+    related actions or providers or register plugins.
+    If these are required, the `make_napari_viewer` fixture can be used, which
+    will run both these function and automatically clear the lru cache.
+    Alternatively, you can specifically run `init_qactions()` or
+    `_initialize_plugins` within the test, ensuring that you `cache_clear()`
+    first.
     """
     from app_model import Application
 

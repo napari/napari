@@ -220,7 +220,7 @@ def test_random_points():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
@@ -233,7 +233,7 @@ def test_integer_points():
     np.random.seed(0)
     data = np.random.randint(20, size=shape)
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
@@ -245,7 +245,7 @@ def test_negative_points():
     np.random.seed(0)
     data = 20 * np.random.random(shape) - 10
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
@@ -256,7 +256,7 @@ def test_empty_points_array():
     shape = (0, 2)
     data = np.empty(shape)
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 0
@@ -268,7 +268,7 @@ def test_3D_points():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
@@ -279,9 +279,9 @@ def test_single_point_extent():
     shape = (1, 3)
     data = np.zeros(shape)
     layer = Points(data)
-    assert np.all(layer.extent.data == 0)
-    assert np.all(layer.extent.world == 0)
-    assert np.all(layer.extent.step == 1)
+    assert np.array_equal(layer.extent.data, np.zeros((2, 3)))
+    assert np.array_equal(layer.extent.world, np.zeros((2, 3)))
+    assert np.array_equal(layer.extent.step, np.ones(3))
 
 
 def test_4D_points():
@@ -290,7 +290,7 @@ def test_4D_points():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert np.all(layer.data == data)
+    assert np.array_equal(layer.data, data)
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
@@ -305,7 +305,7 @@ def test_changing_points():
     data_b = 20 * np.random.random(shape_b)
     layer = Points(data_a)
     layer.data = data_b
-    assert np.all(layer.data == data_b)
+    assert np.array_equal(layer.data, data_b)
     assert layer.ndim == shape_b[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 20
@@ -357,7 +357,7 @@ def test_adding_points():
     coord = [20, 20]
     layer.add(coord)
     assert len(layer.data) == 11
-    assert np.all(layer.data[10] == coord)
+    assert np.array_equal(layer.data[10], coord)
     # the added point should be selected
     assert layer.selected_data == {10}
 
@@ -365,11 +365,24 @@ def test_adding_points():
     coords = [[10, 10], [15, 15]]
     layer.add(coords)
     assert len(layer.data) == 13
-    assert np.all(layer.data[11:, :] == coords)
+    assert np.array_equal(layer.data[11:, :], coords)
+    assert layer.selected_data == {11, 12}
 
     # test that the last added points can be deleted
     layer.remove_selected()
     np.testing.assert_equal(layer.data, np.vstack((data, coord)))
+
+
+def test_points_selection_with_setter():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    coords = [[10, 10], [15, 15]]
+    layer.data = np.append(layer.data, np.atleast_2d(coords), axis=0)
+    assert len(layer.data) == 12
+    assert layer.selected_data == set()
 
 
 def test_adding_points_to_empty():
@@ -382,7 +395,8 @@ def test_adding_points_to_empty():
     coord = [20, 20]
     layer.add(coord)
     assert len(layer.data) == 1
-    assert np.all(layer.data[0] == coord)
+    assert np.array_equal(layer.data[0], coord)
+    assert layer.selected_data == {0}
 
 
 def test_removing_selected_points():
@@ -402,7 +416,7 @@ def test_removing_selected_points():
     assert len(layer.data) == shape[0] - 2
     assert len(layer.selected_data) == 0
     keep = [1, 2, *range(4, 10)]
-    assert np.all(layer.data == data[keep])
+    assert np.array_equal(layer.data, data[keep])
     assert layer._value is None
 
     # Select another point and remove it
@@ -440,6 +454,7 @@ def test_remove_selected_updates_value():
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
+    old_data = layer.data
     layer.events.data = Mock()
     # set the value
     layer._value = 3
@@ -448,9 +463,15 @@ def test_remove_selected_updates_value():
     selection = {0, 5, 6, 7}
     layer.selected_data = selection
     layer.remove_selected()
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(selection),
+        "vertex_indices": ((),),
+    }
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.REMOVE.value,
+        "action": ActionType.REMOVED,
         "data_indices": tuple(selection),
         "vertex_indices": ((),),
     }
@@ -517,11 +538,11 @@ def test_move():
     layer._move([0], [0, 0])
     layer._move([0], [10, 10])
     layer._drag_start = None
-    assert np.all(layer.data[0] == unmoved[0] + [10, 10])
-    assert np.all(layer.data[1:] == unmoved[1:])
+    assert np.array_equal(layer.data[0], unmoved[0] + [10, 10])
+    assert np.array_equal(layer.data[1:], unmoved[1:])
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.CHANGE.value,
+        "action": ActionType.CHANGED,
         "data_indices": (0,),
         "vertex_indices": ((),),
     }
@@ -531,11 +552,11 @@ def test_move():
     layer._move([1, 2], np.add([2, 2], [-3, 4]))
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.CHANGE.value,
+        "action": ActionType.CHANGED,
         "data_indices": (1, 2),
         "vertex_indices": ((),),
     }
-    assert np.all(layer.data[1:2] == unmoved[1:2] + [-3, 4])
+    assert np.array_equal(layer.data[1:2], unmoved[1:2] + [-3, 4])
 
 
 def test_changing_modes():
@@ -633,18 +654,18 @@ def test_symbol():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert np.all(layer.symbol == 'disc')
+    assert np.array_equiv(layer.symbol, 'disc')
 
     layer.symbol = 'cross'
-    assert np.all(layer.symbol == 'cross')
+    assert np.array_equiv(layer.symbol, 'cross')
 
     symbol = ['o', 's'] * 5
     expected = ['disc', 'square'] * 5
     layer.symbol = symbol
-    assert np.all(layer.symbol == expected)
+    assert np.array_equal(layer.symbol, expected)
 
     layer = Points(data, symbol='star')
-    assert np.all(layer.symbol == 'star')
+    assert np.array_equiv(layer.symbol, 'star')
 
 
 @pytest.fixture
@@ -680,7 +701,7 @@ def test_properties(properties):
     with pytest.warns(DeprecationWarning):
         layer_properties = layer.properties['point_type']
     assert len(layer_properties) == (shape[0] - 2)
-    assert np.all(layer_properties == remove_properties)
+    assert np.array_equal(layer_properties, remove_properties)
 
     # test selection of properties
     layer.selected_data = {0}
@@ -694,18 +715,20 @@ def test_properties(properties):
     add_annotations = np.concatenate((remove_properties, ['A']), axis=0)
     with pytest.warns(DeprecationWarning):
         layer_properties = layer.properties['point_type']
-    assert np.all(layer_properties == add_annotations)
+    assert np.array_equal(layer_properties, add_annotations)
 
     # test copy/paste
     layer.selected_data = {0, 1}
     layer._copy_data()
-    assert np.all(layer._clipboard['features']['point_type'] == ['A', 'B'])
+    assert np.array_equal(
+        layer._clipboard['features']['point_type'], ['A', 'B']
+    )
 
     layer._paste_data()
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
     with pytest.warns(DeprecationWarning):
         layer_properties = layer.properties['point_type']
-    assert np.all(layer_properties == paste_annotations)
+    assert np.array_equal(layer_properties, paste_annotations)
 
     assert layer.get_status(data[0])['coordinates'].endswith("point_type: B")
     assert layer.get_status(data[1])['coordinates'].endswith("point_type: A")
@@ -1059,7 +1082,7 @@ def test_edge_width():
 
 @pytest.mark.parametrize(
     "edge_width",
-    [int(1), float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
+    [1, float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
 )
 def test_edge_width_types(edge_width):
     """Test edge_width dtypes with valid values"""
@@ -1219,6 +1242,7 @@ def test_add_colormap(attribute):
 def test_add_point_direct(attribute: str):
     """Test adding points to layer directly"""
     layer = Points()
+    old_data = layer.data
     assert len(getattr(layer, f'{attribute}_color')) == 0
 
     layer.events.data = Mock()
@@ -1226,9 +1250,15 @@ def test_add_point_direct(attribute: str):
     coord = [18, 18]
 
     layer.add(coord)
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": old_data,
+        "action": ActionType.ADDING,
+        "data_indices": (-1,),
+        "vertex_indices": ((),),
+    }
     assert layer.events.data.call_args[1] == {
         "value": layer.data,
-        "action": ActionType.ADD.value,
+        "action": ActionType.ADDED,
         "data_indices": (-1,),
         "vertex_indices": ((),),
     }
@@ -1490,12 +1520,12 @@ def test_color_colormap(attribute):
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     attribute_color = getattr(layer, f'{attribute}_color')
-    assert np.all(attribute_color == color_array)
+    assert np.array_equal(attribute_color, color_array)
 
     # change the color cycle - face_color should not change
     setattr(layer, f'{attribute}_color_cycle', ['red', 'blue'])
     attribute_color = getattr(layer, f'{attribute}_color')
-    assert np.all(attribute_color == color_array)
+    assert np.array_equal(attribute_color, color_array)
 
     # Add new point and test its color
     coord = [18, 18]
@@ -1564,7 +1594,7 @@ def test_size():
     layer.add(coord)
     assert layer.size.shape == (12,)
     assert np.unique(layer.size[:11])[0] == 10
-    assert np.all(layer.size[11] == 20)
+    assert np.array_equal(layer.size[11], 20)
 
     # Select data and change size
     layer.selected_data = {0, 1}
@@ -1588,7 +1618,7 @@ def test_size_with_arrays(ndim):
     layer = Points(data)
     sizes = 5 * np.random.random(10)
     layer.size = sizes
-    assert np.all(layer.size == sizes)
+    assert np.array_equal(layer.size, sizes)
 
     # Un-broadcastable array should raise an exception
     sizes = [5, 5]
@@ -1657,12 +1687,12 @@ def test_copy_and_paste():
     layer._paste_data()
     assert len(layer._clipboard.keys()) > 0
     assert len(layer.data) == shape[0] + 2
-    assert np.all(layer.data[:2] == layer.data[-2:])
+    assert np.array_equal(layer.data[:2], layer.data[-2:])
 
     # Pasting again adds two more points to data
     layer._paste_data()
     assert len(layer.data) == shape[0] + 4
-    assert np.all(layer.data[:2] == layer.data[-2:])
+    assert np.array_equal(layer.data[:2], layer.data[-2:])
 
     # Unselecting everything and copying and pasting will empty the clipboard
     # and add no new data
@@ -1728,7 +1758,7 @@ def test_message():
     data[-1] = [0, 0]
     layer = Points(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_message_3d():
@@ -1743,7 +1773,7 @@ def test_message_3d():
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_thumbnail():
@@ -1814,13 +1844,13 @@ def test_view_data():
     layer = Points(coords)
 
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(layer._view_data == coords[np.ix_([0, 1], [1, 2])])
+    assert np.array_equal(layer._view_data, coords[np.ix_([0, 1], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(layer._view_data == coords[np.ix_([2], [1, 2])])
+    assert np.array_equal(layer._view_data, coords[np.ix_([2], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)], ndisplay=3)
-    assert np.all(layer._view_data == coords)
+    assert np.array_equal(layer._view_data, coords)
 
 
 def test_view_size():
@@ -1830,10 +1860,10 @@ def test_view_size():
     layer = Points(coords, size=sizes, out_of_slice_display=False)
 
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(layer._view_size == sizes[[0, 1]])
+    assert np.array_equal(layer._view_size, sizes[[0, 1]])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(layer._view_size == sizes[[2]])
+    assert np.array_equal(layer._view_size, sizes[[2]])
 
     layer.out_of_slice_display = True
     assert len(layer._view_size) == 3
@@ -1841,7 +1871,7 @@ def test_view_size():
     # test a slice with no points
     layer.out_of_slice_display = False
     layer._slice_dims([2, slice(None), slice(None)])
-    assert np.all(layer._view_size == [])
+    assert np.array_equal(layer._view_size, [])
 
 
 def test_view_colors():
@@ -1855,12 +1885,12 @@ def test_view_colors():
 
     layer = Points(coords, face_color=face_color, edge_color=edge_color)
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(layer._view_face_color == face_color[[0, 1]])
-    assert np.all(layer._view_edge_color == edge_color[[0, 1]])
+    assert np.array_equal(layer._view_face_color, face_color[[0, 1]])
+    assert np.array_equal(layer._view_edge_color, edge_color[[0, 1]])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(layer._view_face_color == face_color[[2]])
-    assert np.all(layer._view_edge_color == edge_color[[2]])
+    assert np.array_equal(layer._view_face_color, face_color[[2]])
+    assert np.array_equal(layer._view_edge_color, edge_color[[2]])
 
     # view colors should return empty array if there are no points
     layer._slice_dims([2, slice(None), slice(None)])
@@ -2397,18 +2427,18 @@ def test_shown():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert len(layer.shown) == shape[0]
-    assert np.all(layer.shown == True)  # noqa
+    assert np.all(layer.shown)
 
     # Hide the last point
     layer.shown[-1] = False
-    assert np.all(layer.shown[:-1] == True)  # noqa
+    assert np.all(layer.shown[:-1])
     assert layer.shown[-1] == False  # noqa
 
     # Add a new point, it should be shown but not affect the others
     coord = [17, 17]
     layer.add(coord)
     assert len(layer.shown) == shape[0] + 1
-    assert np.all(layer.shown[:-2] == True)  # noqa
+    assert np.all(layer.shown[:-2])
     assert layer.shown[-2] == False  # noqa
     assert layer.shown[-1] == True  # noqa
 
@@ -2592,3 +2622,81 @@ def test_point_selection_remains_evented_after_update():
     assert isinstance(layer.selected_data, Selection)
     layer.selected_data = {0, 1}
     assert isinstance(layer.selected_data, Selection)
+
+
+def test_points_data_setter_emits_event():
+    data = np.random.random((5, 2))
+    emitted_events = Mock()
+    layer = Points(data)
+    layer.events.data.connect(emitted_events)
+    layer.data = np.random.random((5, 2))
+    assert emitted_events.call_count == 2
+
+
+def test_points_add_delete_only_emit_two_events():
+    data = np.random.random((5, 2))
+    emitted_events = Mock()
+    layer = Points(data)
+    layer.events.data.connect(emitted_events)
+    layer.add(np.random.random(2))
+    assert emitted_events.call_count == 2
+    layer.selected_data = {3}
+    layer.remove_selected()
+    assert emitted_events.call_count == 4
+
+
+def test_data_setter_events():
+    data = np.random.random((5, 2))
+    layer = Points(data)
+    layer.events.data = Mock()
+
+    layer.data = []
+    assert layer.events.data.call_args_list[0][1] == {
+        "value": data,
+        "action": ActionType.REMOVING,
+        "data_indices": tuple(i for i in range(len(data))),
+        "vertex_indices": ((),),
+    }
+
+    # Avoid truth value of empty array error
+    assert np.array_equal(
+        layer.events.data.call_args_list[1][1]["value"], np.empty((0, 2))
+    )
+    assert (
+        layer.events.data.call_args_list[1][1]["action"] == ActionType.REMOVED
+    )
+    assert layer.events.data.call_args_list[1][1]["data_indices"] == ()
+    assert layer.events.data.call_args_list[1][1]["vertex_indices"] == ((),)
+
+    layer.data = data
+    assert np.array_equal(
+        layer.events.data.call_args_list[2][1]["value"], np.empty((0, 2))
+    )
+    assert (
+        layer.events.data.call_args_list[2][1]["action"] == ActionType.ADDING
+    )
+    assert layer.events.data.call_args_list[2][1]["data_indices"] == tuple(
+        i for i in range(len(data))
+    )
+    assert layer.events.data.call_args_list[2][1]["vertex_indices"] == ((),)
+
+    assert layer.events.data.call_args_list[3][1] == {
+        "value": data,
+        "action": ActionType.ADDED,
+        "data_indices": tuple(i for i in range(len(data))),
+        "vertex_indices": ((),),
+    }
+
+    layer.data = data
+    assert layer.events.data.call_args_list[4][1] == {
+        "value": data,
+        "action": ActionType.CHANGING,
+        "data_indices": tuple(i for i in range(len(layer.data))),
+        "vertex_indices": ((),),
+    }
+    assert layer.events.data.call_args_list[5][1] == {
+        "value": data,
+        "action": ActionType.CHANGED,
+        "data_indices": tuple(i for i in range(len(layer.data))),
+        "vertex_indices": ((),),
+    }

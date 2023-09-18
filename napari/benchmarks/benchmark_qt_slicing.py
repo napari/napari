@@ -30,7 +30,7 @@ SAMPLE_PARAMS = {
 
 def get_image_params():
     # chunksizes = [(64,64,64), (256,256,256), (512,512,512)]
-    latencies = [0.05 * i for i in range(0, 3)]
+    latencies = [0.05 * i for i in range(3)]
     datanames = SAMPLE_PARAMS.keys()
     params = (latencies, datanames)
 
@@ -161,7 +161,7 @@ class QtViewerAsyncPointsAndImage2DSuite:
 
     n_points = [2**i for i in range(12, 18, 2)]
     chunksize = [256, 512, 1024]
-    latency = [0.05 * i for i in range(0, 3)]
+    latency = [0.05 * i for i in range(3)]
     params = (n_points, latency, chunksize)
     timeout = 600
 

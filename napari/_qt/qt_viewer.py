@@ -5,8 +5,19 @@ import sys
 import traceback
 import typing
 import warnings
+import weakref
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 from weakref import WeakSet, ref
 
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -582,21 +593,22 @@ class QtViewer(QSplitter):
         Provides updates after slicing using the slice response data.
         This only gets triggered on the async slicing path.
         """
-        responses = event.value
+        responses: Dict[weakref.ReferenceType[Layer], Any] = event.value
         logging.debug('QtViewer._on_slice_ready: %s', responses)
-        for layer, response in responses.items():
-            # Update the layer slice state to temporarily support behavior
-            # that depends on it.
-            layer._update_slice_response(response)
-            # Update the layer's loaded state before everything else,
-            # because they may rely on its updated value.
-            layer._update_loaded_slice_id(response.request_id)
-            # The rest of `Layer.refresh` after `set_view_slice`, where
-            # `set_data` notifies the corresponding vispy layer of the new
-            # slice.
-            layer.events.set_data()
-            layer._update_thumbnail()
-            layer._set_highlight(force=True)
+        for weak_layer, response in responses.items():
+            if layer := weak_layer():
+                # Update the layer slice state to temporarily support behavior
+                # that depends on it.
+                layer._update_slice_response(response)
+                # Update the layer's loaded state before everything else,
+                # because they may rely on its updated value.
+                layer._update_loaded_slice_id(response.request_id)
+                # The rest of `Layer.refresh` after `set_view_slice`, where
+                # `set_data` notifies the corresponding vispy layer of the new
+                # slice.
+                layer.events.set_data()
+                layer._update_thumbnail()
+                layer._set_highlight(force=True)
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""
@@ -809,25 +821,22 @@ class QtViewer(QSplitter):
 
         return dlg.getOpenFileNames(**open_kwargs)[0]
 
-    def _open_files_dialog(self, choose_plugin=False):
+    def _open_files_dialog(self, choose_plugin=False, stack=False):
         """Add files from the menubar."""
         filenames = self._open_file_dialog_uni(trans._('Select file(s)...'))
 
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
                 self._qt_open(
-                    [filename], stack=False, choose_plugin=choose_plugin
+                    [filename],
+                    choose_plugin=choose_plugin,
+                    stack=stack,
                 )
             update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self, choose_plugin=False):
         """Add files as a stack, from the menubar."""
-
-        filenames = self._open_file_dialog_uni(trans._('Select files...'))
-
-        if (filenames != []) and (filenames is not None):
-            self._qt_open(filenames, stack=True, choose_plugin=choose_plugin)
-            update_open_history(filenames[0])
+        return self._open_files_dialog(choose_plugin=choose_plugin, stack=True)
 
     def _open_folder_dialog(self, choose_plugin=False):
         """Add a folder of files from the menubar."""
@@ -855,8 +864,8 @@ class QtViewer(QSplitter):
         filenames: List[str],
         stack: Union[bool, List[List[str]]],
         choose_plugin: bool = False,
-        plugin: str = None,
-        layer_type: str = None,
+        plugin: Optional[str] = None,
+        layer_type: Optional[str] = None,
         **kwargs,
     ):
         """Open files, potentially popping reader dialog for plugin selection.
