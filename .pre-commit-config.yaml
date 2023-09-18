@@ -6,7 +6,7 @@ repos:
       pass_filenames: true
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.288
+    rev: v0.0.290
     hooks:
       - id: ruff
         exclude: _vendor|vendored
