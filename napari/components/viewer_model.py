@@ -228,9 +228,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self._dispatch_ctx = Context(
             self._ctx, self.layers._ctx, self.layers._selection_ctx
         )
-        self._ctx.changed.connect(self._dispatch_ctx.changed)
-        self.layers._ctx.changed.connect(self._dispatch_ctx.changed)
-        self.layers._selection_ctx.changed.connect(self._dispatch_ctx.changed)
         # FIXME: ideally the dispatcher should live in the app and then switch contexts
         # depending on the selected viewer
         self._dispatcher = KeyBindingDispatcher(
