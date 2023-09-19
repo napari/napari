@@ -11,6 +11,7 @@ from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Callable,
+    ClassVar,
     Dict,
     List,
     Optional,
@@ -243,16 +244,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     _modeclass: Type[StringEnum] = Mode
 
-    _drag_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
+    _drag_modes: ClassVar[Dict[StringEnum, Callable[[Layer, Event], None]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes: Dict[StringEnum, Callable[[Layer, Event], None]] = {
+    _move_modes: ClassVar[Dict[StringEnum, Callable[[Layer, Event], None]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
-    _cursor_modes: Dict[StringEnum, str] = {
+    _cursor_modes: ClassVar[Dict[StringEnum, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
@@ -464,7 +465,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if mode == self._mode:
             return mode
 
-        if mode.value not in self._modeclass.keys():
+        if mode not in self._modeclass:
             raise ValueError(
                 trans._(
                     "Mode not recognized: {mode}", deferred=True, mode=mode
@@ -742,7 +743,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @_translate_grid.setter
     def _translate_grid(self, translate_grid):
-        if np.all(self._translate_grid == translate_grid):
+        if np.array_equal(self._translate_grid, translate_grid):
             return
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
@@ -1474,7 +1475,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return normalized_vector
 
     def _world_to_displayed_data_ray(
-        self, vector_world: npt.NDArray, dims_displayed: List[int]
+        self, vector_world: npt.ArrayLike, dims_displayed: List[int]
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 
