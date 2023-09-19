@@ -7,6 +7,7 @@ from typing import List
 from app_model.types import KeyBinding, KeyCode, SimpleKeyBinding
 from numpydoc.docscrape import FunctionDoc
 
+from napari.utils.key_bindings.constants import VALID_KEYS
 from napari.utils.key_bindings.legacy import (
     KeyBindingLike,
     coerce_keybinding,
@@ -316,8 +317,11 @@ class Shortcut:
             error = True
         else:
             for part in self._kb.parts:
-                shortcut_key = str(part.key)
-                if len(shortcut_key) > 1 and shortcut_key not in KEY_SYMBOLS:
+                if (
+                    not part.is_modifier_key()
+                    and part.key not in VALID_KEYS
+                    or part.key == KeyCode.UNKNOWN
+                ):
                     error = True
 
         if error:
