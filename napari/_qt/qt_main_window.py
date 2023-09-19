@@ -1398,7 +1398,12 @@ class Window:
         self._qt_window.restart()
 
     def _screenshot(
-        self, size=None, scale=None, flash=True, canvas_only=False
+        self,
+        size=None,
+        scale=None,
+        flash=True,
+        canvas_only=False,
+        fit_to_data=False,
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
@@ -1417,6 +1422,9 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
             By default, True.
+        fit_to_data: bool
+            Flag to indicate whether the screenshot should be tightly bound around the data visualized
+            in the viewer.
 
         Returns
         -------
@@ -1425,7 +1433,8 @@ class Window:
         from napari._qt.utils import add_flash_animation
 
         if canvas_only:
-            self._qt_viewer.viewer.reset_view()
+            if fit_to_data:
+                self._qt_viewer.viewer.reset_view()
             camera = self._qt_viewer.viewer.camera
             old_zoom = camera.zoom
             canvas = self._qt_viewer.canvas
@@ -1460,7 +1469,7 @@ class Window:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
                 # make sure we always go back to the right canvas size
-                if size is not None or scale is not None:
+                if size is not None or scale is not None or fit_to_data:
                     camera.zoom = old_zoom
                     canvas.size = prev_size
         else:
@@ -1470,7 +1479,13 @@ class Window:
         return img
 
     def screenshot(
-        self, path=None, size=None, scale=None, flash=True, canvas_only=False
+        self,
+        path=None,
+        size=None,
+        scale=None,
+        flash=True,
+        canvas_only=False,
+        fit_to_data=False,
     ):
         """Take currently displayed viewer and convert to an image array.
 
@@ -1491,6 +1506,9 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
             By default, True.
+        fit_to_data: bool
+            Flag to indicate whether the screenshot should be tightly bound around the data visualized
+            in the viewer.
 
         Returns
         -------
@@ -1499,7 +1517,9 @@ class Window:
             upper-left corner of the rendered region.
         """
 
-        img = QImg2array(self._screenshot(size, scale, flash, canvas_only))
+        img = QImg2array(
+            self._screenshot(size, scale, flash, canvas_only, fit_to_data)
+        )
         if path is not None:
             imsave(path, img)
         return img
