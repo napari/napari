@@ -3,7 +3,7 @@ import sys
 from collections import abc
 from contextlib import suppress
 from threading import RLock
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -21,6 +21,7 @@ from napari.layers import (
     Vectors,
 )
 from napari.layers._data_protocols import Index, LayerDataProtocol
+from napari.layers.utils._state_dict import LayerStateDict
 from napari.utils.color import ColorArray
 
 skip_on_win_ci = pytest.mark.skipif(
@@ -280,21 +281,29 @@ def check_layer_world_data_extent(layer, extent, scale, translate):
 
 
 def assert_layer_state_equal(
-    actual: Dict[str, Any], expected: Dict[str, Any]
+    actual: LayerStateDict, expected: LayerStateDict
 ) -> None:
     """Asserts that an layer state dictionary is equal to an expected one.
 
     This is useful because some members of state may array-like whereas others
     maybe dataframe-like, which need to be checked for equality differently.
+    This also checks for and handles warnings associated with accessing deprecated state.
     """
     assert actual.keys() == expected.keys()
     for name in actual:
-        actual_value = actual[name]
-        expected_value = expected[name]
+        actual_value = _get_state_with_deprecation_check(actual, name)
+        expected_value = _get_state_with_deprecation_check(expected, name)
         if isinstance(actual_value, pd.DataFrame):
             pd.testing.assert_frame_equal(actual_value, expected_value)
         else:
             np.testing.assert_equal(actual_value, expected_value)
+
+
+def _get_state_with_deprecation_check(state: LayerStateDict, name: str) -> Any:
+    if name in state.deprecations:
+        with pytest.warns(DeprecationWarning):
+            return state[name]
+    return state[name]
 
 
 def assert_colors_equal(actual, expected):

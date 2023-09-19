@@ -280,13 +280,13 @@ def _points_csv_to_layerdata(
     data_axes = [cn.startswith('axis-') for cn in column_names]
     data = np.array(table[:, data_axes]).astype('float')
 
-    # Add properties to metadata if provided
+    # Add features to metadata if provided
     prop_axes = np.logical_not(data_axes)
     if column_names[0] == 'index':
         prop_axes[0] = False
     meta: dict = {}
     if np.any(prop_axes):
-        meta['properties'] = {}
+        meta['features'] = {}
         for ind in np.nonzero(prop_axes)[0]:
             values = table[:, ind]
             try:
@@ -294,7 +294,7 @@ def _points_csv_to_layerdata(
             except ValueError:
                 with suppress(ValueError):
                     values = np.array(values).astype('float')
-            meta['properties'][column_names[ind]] = values
+            meta['features'][column_names[ind]] = values
 
     return data, meta, 'points'
 

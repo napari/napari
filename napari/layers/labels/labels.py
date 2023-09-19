@@ -44,7 +44,11 @@ from napari.layers.labels._labels_utils import (
     sphere_indices,
 )
 from napari.layers.utils.color_transformations import transform_color
-from napari.layers.utils.layer_utils import _FeatureTable
+from napari.layers.utils.layer_utils import (
+    _FeatureTable,
+    _properties_deprecation_message,
+    _warn_deprecation,
+)
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import (
     direct_colormap,
@@ -52,6 +56,7 @@ from napari.utils.colormaps import (
 )
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.indexing import index_in_slice
 from napari.utils.misc import StringEnum, _is_array_type
@@ -81,6 +86,9 @@ class Labels(_ImageBase):
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
         to background.
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
     color : dict of int to str or array
         Custom label to color mapping. Values must be valid color names or RGBA
         arrays.
@@ -332,7 +340,10 @@ class Labels(_ImageBase):
         self.events.add(
             preserve_labels=Event,
             show_selected_label=Event,
-            properties=Event,
+            properties=WarningEmitter(
+                _properties_deprecation_message(),
+                type_name='properties',
+            ),
             n_edit_dimensions=Event,
             contiguous=Event,
             brush_size=Event,
@@ -350,6 +361,9 @@ class Labels(_ImageBase):
         )
 
         self._overlays.update({"polygon": LabelsPolygonOverlay()})
+
+        if properties is not None:
+            _warn_deprecation(_properties_deprecation_message())
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -531,11 +545,18 @@ class Labels(_ImageBase):
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: array (N,)}, DataFrame: Properties for each label."""
+        """dict {str: array (N,)}, DataFrame: Properties for each label.
+
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
+        """
+        _warn_deprecation(_properties_deprecation_message())
         return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
+        _warn_deprecation(_properties_deprecation_message())
         self.features = properties
 
     def _make_label_index(self) -> Dict[int, int]:
@@ -697,7 +718,7 @@ class Labels(_ImageBase):
             {
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
-                'properties': self.properties,
+                'properties': self._feature_table.properties(),
                 'rendering': self.rendering,
                 'depiction': self.depiction,
                 'plane': self.plane.dict(),
@@ -710,6 +731,9 @@ class Labels(_ImageBase):
                 'features': self.features,
             }
         )
+        state.deprecations = {
+            'properties': _properties_deprecation_message(),
+        }
         return state
 
     @property

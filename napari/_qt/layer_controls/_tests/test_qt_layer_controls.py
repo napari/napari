@@ -47,46 +47,44 @@ class LayerTypeWithData(NamedTuple):
     type: Type[Layer]
     data: np.ndarray
     color: Optional[dict]
-    properties: Optional[dict]
+    features: Optional[dict]
     expected_isinstance: Type[QtLayerControlsContainer]
 
 
 np.random.seed(0)
-
-
 _IMAGE = LayerTypeWithData(
     type=Image,
     data=np.random.rand(8, 8),
     color=None,
-    properties=None,
+    features=None,
     expected_isinstance=QtImageControls,
 )
 _LABELS_WITH_COLOR = LayerTypeWithData(
     type=Labels,
     data=np.random.randint(5, size=(10, 15)),
     color={1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'},
-    properties=None,
+    features=None,
     expected_isinstance=QtLabelsControls,
 )
 _LABELS = LayerTypeWithData(
     type=Labels,
     data=np.random.randint(5, size=(10, 15)),
     color=None,
-    properties=None,
+    features=None,
     expected_isinstance=QtLabelsControls,
 )
 _POINTS = LayerTypeWithData(
     type=Points,
     data=np.random.random((5, 2)),
     color=None,
-    properties=None,
+    features=None,
     expected_isinstance=QtPointsControls,
 )
 _SHAPES = LayerTypeWithData(
     type=Shapes,
     data=np.random.random((10, 4, 2)),
     color=None,
-    properties=None,
+    features=None,
     expected_isinstance=QtShapesControls,
 )
 _SURFACE = LayerTypeWithData(
@@ -97,14 +95,14 @@ _SURFACE = LayerTypeWithData(
         np.random.random(10),
     ),
     color=None,
-    properties=None,
+    features=None,
     expected_isinstance=QtSurfaceControls,
 )
 _TRACKS = LayerTypeWithData(
     type=Tracks,
     data=np.zeros((2, 4)),
     color=None,
-    properties={
+    features={
         'track_id': [0, 0],
         'time': [0, 0],
         'speed': [50, 30],
@@ -115,7 +113,7 @@ _VECTORS = LayerTypeWithData(
     type=Vectors,
     data=np.zeros((2, 2, 2)),
     color=None,
-    properties=None,
+    features=None,
     expected_isinstance=QtVectorsControls,
 )
 _LINES_DATA = np.random.random((6, 2, 2))
@@ -128,10 +126,10 @@ def create_layer_controls(qtbot):
             layer = layer_type_with_data.type(
                 layer_type_with_data.data, color=layer_type_with_data.color
             )
-        elif layer_type_with_data.properties:
+        elif layer_type_with_data.features:
             layer = layer_type_with_data.type(
                 layer_type_with_data.data,
-                properties=layer_type_with_data.properties,
+                features=layer_type_with_data.features,
             )
         else:
             layer = layer_type_with_data.type(layer_type_with_data.data)

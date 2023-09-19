@@ -25,6 +25,8 @@ def _duplicate_layer(ll: LayerList, *, name: str = ''):
     for lay in list(ll.selection):
         data, state, type_str = lay.as_layer_data_tuple()
         state["name"] = trans._('{name} copy', name=lay.name)
+        for deprecated in state.deprecations:
+            del state[deprecated]
         with layer_source(parent=lay):
             new = Layer.create(deepcopy(data), state, type_str)
         ll.insert(ll.index(lay) + 1, new)

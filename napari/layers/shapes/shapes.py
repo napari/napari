@@ -56,7 +56,14 @@ from napari.layers.utils.color_transformations import (
 from napari.layers.utils.interactivity_utils import (
     nd_line_segment_to_displayed_data_ray,
 )
-from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
+from napari.layers.utils.layer_utils import (
+    _current_properties_deprecation_message,
+    _FeatureTable,
+    _properties_deprecation_message,
+    _property_choices_deprecation_message,
+    _unique_element,
+    _warn_deprecation,
+)
 from napari.layers.utils.text_manager import TextManager
 from napari.settings import get_settings
 from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
@@ -68,6 +75,7 @@ from napari.utils.colormaps.standardize_color import (
 )
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
 from napari.utils.misc import ensure_iterable
 from napari.utils.translations import trans
 
@@ -94,8 +102,14 @@ class Shapes(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
     property_choices : dict {str: array (N,)}
         possible values for each property.
+        .. deprecated:: 0.5.0
+            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features with categorical dtypes instead.
     text : str, dict
         Text to be displayed with the shapes. If text is set to a key in properties,
         the value of that property will be displayed. Multiple properties can be
@@ -200,6 +214,9 @@ class Shapes(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
     text : str, dict
         Text to be displayed with the shapes. If text is set to a key in properties,
         the value of that property will be displayed. Multiple properties can be
@@ -465,10 +482,16 @@ class Shapes(Layer):
             edge_width=Event,
             edge_color=Event,
             face_color=Event,
-            properties=Event,
+            properties=WarningEmitter(
+                _properties_deprecation_message(),
+                type_name='properties',
+            ),
+            current_properties=WarningEmitter(
+                _current_properties_deprecation_message(),
+                type_name='current_properties',
+            ),
             current_edge_color=Event,
             current_face_color=Event,
-            current_properties=Event,
             highlight=Event,
             features=Event,
             feature_defaults=Event,
@@ -480,6 +503,10 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._slice_input.ndisplay
 
+        if properties is not None:
+            _warn_deprecation(_properties_deprecation_message())
+        if property_choices is not None:
+            _warn_deprecation(_property_choices_deprecation_message())
         self._feature_table = _FeatureTable.from_layer(
             features=features,
             feature_defaults=feature_defaults,
@@ -550,10 +577,10 @@ class Shapes(Layer):
         if len(data) > 0:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
-        elif len(data) == 0 and len(self.properties) > 0:
+        elif len(data) == 0 and self.features.shape[1] > 0:
             self._initialize_current_color_for_empty_layer(edge_color, 'edge')
             self._initialize_current_color_for_empty_layer(face_color, 'face')
-        elif len(data) == 0 and len(self.properties) == 0:
+        elif len(data) == 0 and self.features.shape[1] == 0:
             self._current_edge_color = transform_color_with_defaults(
                 num_entries=1,
                 colors=edge_color,
@@ -790,15 +817,29 @@ class Shapes(Layer):
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape
+
+        .. deprecated:: 0.5.0
+            properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features instead.
+        """
+        _warn_deprecation(_properties_deprecation_message())
         return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
+        _warn_deprecation(_properties_deprecation_message())
         self.features = properties
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
+        """possible values for each property
+
+        .. deprecated:: 0.5.0
+            property_choices was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use features with categorical dtypes instead.
+        """
+        _warn_deprecation(_property_choices_deprecation_message())
         return self._feature_table.choices()
 
     def _get_ndim(self):
@@ -874,11 +915,18 @@ class Shapes(Layer):
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
-        """dict{str: np.ndarray(1,)}: properties for the next added shape."""
+        """dict{str: np.ndarray(1,)}: properties for the next added shape
+
+        .. deprecated:: 0.5.0
+            current_properties was deprecated in version 0.5.0 and will be removed in 0.6.
+            Please use feature_defaults instead.
+        """
+        _warn_deprecation(_current_properties_deprecation_message())
         return self._feature_table.currents()
 
     @current_properties.setter
     def current_properties(self, current_properties):
+        _warn_deprecation(_current_properties_deprecation_message())
         update_indices = None
         if (
             self._update_properties
@@ -1074,8 +1122,8 @@ class Shapes(Layer):
         elif color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
             color_property = getattr(self, f'_{attribute}_color_property')
             if color_property == '':
-                if self.properties:
-                    new_color_property = next(iter(self.properties))
+                if self.features.shape[1] > 0:
+                    new_color_property = next(iter(self.features))
                     setattr(
                         self,
                         f'_{attribute}_color_property',
@@ -1101,7 +1149,7 @@ class Shapes(Layer):
             # ColorMode.COLORMAP can only be applied to numeric properties
             color_property = getattr(self, f'_{attribute}_color_property')
             if (color_mode == ColorMode.COLORMAP) and not issubclass(
-                self.properties[color_property].dtype.type, np.number
+                self.features[color_property].dtype.type, np.number
             ):
                 raise TypeError(
                     trans._(
@@ -1238,14 +1286,14 @@ class Shapes(Layer):
                     self.current_edge_width = unique_edge_width
 
             unique_properties = {}
-            for k, v in self.properties.items():
+            for k, v in self._feature_table.properties().items():
                 unique_properties[k] = _unique_element(
                     v[selected_data_indices]
                 )
 
             if all(p is not None for p in unique_properties.values()):
                 with self.block_update_properties():
-                    self.current_properties = unique_properties
+                    self._feature_table.set_currents(unique_properties)
 
     def _set_color(self, color, attribute: str):
         """Set the face_color or edge_color property
@@ -1259,7 +1307,7 @@ class Shapes(Layer):
             Should be 'edge' for edge_color or 'face' for face_color.
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.features[color]):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -1347,7 +1395,7 @@ class Shapes(Layer):
             The calculated values for setting edge or face_color
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.features[color]):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -1399,7 +1447,7 @@ class Shapes(Layer):
         color_mode = getattr(self, f'_{attribute}_color_mode')
         if color_mode == ColorMode.CYCLE:
             color_property = getattr(self, f'_{attribute}_color_property')
-            color_properties = self.properties[color_property]
+            color_properties = self.features[color_property]
             if update_color_mapping:
                 color_cycle = getattr(self, f'_{attribute}_color_cycle')
                 color_cycle_map = {
@@ -1414,7 +1462,7 @@ class Shapes(Layer):
                 color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
                 color_cycle_keys = [*color_cycle_map]
                 props_in_map = np.in1d(color_properties, color_cycle_keys)
-                if not np.all(props_in_map):
+                if not np.all(props_in_map) or (len(color_properties) == 0):
                     props_to_add = np.unique(
                         color_properties[np.logical_not(props_in_map)]
                     )
@@ -1434,7 +1482,7 @@ class Shapes(Layer):
 
         elif color_mode == ColorMode.COLORMAP:
             color_property = getattr(self, f'_{attribute}_color_property')
-            color_properties = self.properties[color_property]
+            color_properties = self.features[color_property]
             if len(color_properties) > 0:
                 contrast_limits = getattr(self, f'{attribute}_contrast_limits')
                 colormap = getattr(self, f'{attribute}_colormap')
@@ -1481,7 +1529,9 @@ class Shapes(Layer):
             new_colors = np.tile(current_face_color, (adding, 1))
         elif color_mode == ColorMode.CYCLE:
             property_name = getattr(self, f'_{attribute}_color_property')
-            color_property_value = self.current_properties[property_name][0]
+            color_property_value = self._feature_table.currents()[
+                property_name
+            ][0]
 
             # check if the new color property is in the cycle map
             # and add it if it is not
@@ -1500,7 +1550,9 @@ class Shapes(Layer):
             )
         elif color_mode == ColorMode.COLORMAP:
             property_name = getattr(self, f'_{attribute}_color_property')
-            color_property_value = self.current_properties[property_name][0]
+            color_property_value = self._feature_table.currents()[
+                property_name
+            ][0]
             colormap = getattr(self, f'{attribute}_colormap')
             contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
 
@@ -1516,7 +1568,7 @@ class Shapes(Layer):
     def _is_color_mapped(self, color):
         """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
-            return color in self.properties
+            return color in self.features
         if isinstance(color, (list, np.ndarray)):
             return False
 
@@ -1545,8 +1597,8 @@ class Shapes(Layer):
         state.update(
             {
                 'ndim': self.ndim,
-                'properties': self.properties,
-                'property_choices': self.property_choices,
+                'properties': self._feature_table.properties(),
+                'property_choices': self._feature_table.choices(),
                 'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
@@ -1565,6 +1617,10 @@ class Shapes(Layer):
                 'feature_defaults': self.feature_defaults,
             }
         )
+        state.deprecations = {
+            'properties': _properties_deprecation_message(),
+            'property_choices': _property_choices_deprecation_message(),
+        }
         return state
 
     @property
