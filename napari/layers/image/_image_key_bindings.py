@@ -51,7 +51,7 @@ def orient_plane_normal_along_view_direction(layer: Image):
 
 
 def activate_image_transform_mode(layer: Image):
-    layer.mode = Mode.TRANSFORM
+    layer.mode = str(Mode.TRANSFORM)
 
 
 def activate_image_pan_zoom_mode(layer: Image):

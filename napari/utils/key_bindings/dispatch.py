@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def next_active_match(
     entries: List[KeyBindingEntry], context: Mapping[str, object]
-) -> Generator[KeyBindingEntry]:
+) -> Generator[KeyBindingEntry, None, None]:
     """Find and yield active matches while traversing through the entries.
 
     See `NAP 7 <https://napari.org/dev/naps/7-key-binding-dispatch.html#key-binding-properties>`_.
@@ -139,7 +139,7 @@ class KeyBindingDispatcher:
         Current active prefix.
     """
 
-    dispatch = Signal(DispatchFlags, str | None)
+    dispatch = Signal(DispatchFlags, str | None)  # type: ignore
 
     def __init__(
         self,

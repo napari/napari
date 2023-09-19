@@ -1,4 +1,3 @@
-# type: ignore
 from __future__ import annotations
 
 import time
@@ -6,7 +5,7 @@ from functools import partial
 from typing import Callable, Optional
 
 from app_model.registries import CommandsRegistry
-from qtpy.QtCore import QObject, QTimer
+from qtpy.QtCore import QObject, QTimer  # type: ignore
 
 from napari._app_model.actions import AttrRestoreCallback, GeneratorCallback
 from napari.settings import get_settings
@@ -27,7 +26,7 @@ class QKeyBindingDispatcher(QObject):
         super().__init__(parent)
         self._commands = commands
         self._action_is_repeatable = check_repeatable_action
-        self.timer = None
+        self.timer: Optional[QTimer] = None
         self._attr_restore_start_time = 0
         self._attr_restore_callback = None
 
@@ -77,7 +76,7 @@ class QKeyBindingDispatcher(QObject):
             cancel_timer = True
 
         if flags & DispatchFlags.ON_RELEASE:
-            if self.timer:
+            if self.timer is not None:
                 active_timer = self.timer.isActive()
                 cancel_timer = True
         else:

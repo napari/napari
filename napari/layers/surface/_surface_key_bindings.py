@@ -3,7 +3,7 @@ from napari.layers.surface.surface import Surface
 
 
 def activate_surface_transform_mode(layer: Surface):
-    layer.mode = Mode.TRANSFORM
+    layer.mode = str(Mode.TRANSFORM)
 
 
 def activate_surface_pan_zoom_mode(layer: Surface):

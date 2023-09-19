@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from napari.utils.theme import available_themes, get_system_theme
 
 if TYPE_CHECKING:
-    from napari._qt.dialogs.preferences_dialog import PreferencesDialog
     from napari.viewer import Viewer
 
 
@@ -98,8 +97,7 @@ def hold_for_pan_zoom(viewer: Viewer):
 
 def show_shortcuts(viewer: Viewer):
     viewer.window._open_preferences_dialog()
-    viewer.window._pref_dialog: PreferencesDialog
-    pref_list = viewer.window._pref_dialog._list
+    pref_list = viewer.window._pref_dialog._list  # type: ignore
     for i in range(pref_list.count()):
         if pref_list.item(i).text() == "Shortcuts":
             pref_list.setCurrentRow(i)

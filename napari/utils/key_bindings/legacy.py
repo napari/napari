@@ -228,12 +228,12 @@ class KeymapProvider:
 
         kb = coerce_keybinding(key_bind)
 
-        try:
+        if hasattr(cls, '_type_string'):
             type_string = cls._type_string()
             when = parse_expression(
                 f"num_selected_layers == 1 and active_layer_type == '{type_string}'"
             )
-        except AttributeError:
+        else:
             when = None
 
         if func is None:
