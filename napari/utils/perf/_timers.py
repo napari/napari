@@ -78,7 +78,7 @@ class PerfTimers:
 
         Parameters
         ----------
-        name : PerfEvent
+        name : str
             Add this event.
         **kwargs
             Arguments to display in the Args section of the Tracing GUI.
@@ -86,14 +86,14 @@ class PerfTimers:
         now = perf_counter_ns()
         self.add_event(PerfEvent(name, now, now, phase="I", **kwargs))
 
-    def add_counter_event(self, name: str, **kwargs: Dict[str, float]) -> None:
+    def add_counter_event(self, name: str, **kwargs: float) -> None:
         """Add one counter event.
 
         Parameters
         ----------
         name : str
             The name of this event like "draw".
-        **kwargs : Dict[str, float]
+        **kwargs : float
             The individual counters for this event.
 
         Notes
@@ -101,7 +101,18 @@ class PerfTimers:
         For example add_counter_event("draw", triangles=5, squares=10).
         """
         now = perf_counter_ns()
-        self.add_event(PerfEvent(name, now, now, phase="C", **kwargs))
+        self.add_event(
+            PerfEvent(
+                name,
+                now,
+                now,
+                phase="C",
+                category=None,
+                process_id=None,
+                thread_id=None,
+                **kwargs,
+            )
+        )
 
     def clear(self):
         """Clear all timers."""
@@ -193,7 +204,7 @@ def _create_timer():
 
         Parameters
         ----------
-        name : PerfEvent
+        name : str
             Add this event.
         **kwargs
             Arguments to display in the Args section of the Chrome Tracing GUI.

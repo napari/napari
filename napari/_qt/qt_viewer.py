@@ -806,25 +806,22 @@ class QtViewer(QSplitter):
 
         return dlg.getOpenFileNames(**open_kwargs)[0]
 
-    def _open_files_dialog(self, choose_plugin=False):
+    def _open_files_dialog(self, choose_plugin=False, stack=False):
         """Add files from the menubar."""
         filenames = self._open_file_dialog_uni(trans._('Select file(s)...'))
 
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
                 self._qt_open(
-                    [filename], stack=False, choose_plugin=choose_plugin
+                    [filename],
+                    choose_plugin=choose_plugin,
+                    stack=stack,
                 )
             update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self, choose_plugin=False):
         """Add files as a stack, from the menubar."""
-
-        filenames = self._open_file_dialog_uni(trans._('Select files...'))
-
-        if (filenames != []) and (filenames is not None):
-            self._qt_open(filenames, stack=True, choose_plugin=choose_plugin)
-            update_open_history(filenames[0])
+        return self._open_files_dialog(choose_plugin=choose_plugin, stack=True)
 
     def _open_folder_dialog(self, choose_plugin=False):
         """Add a folder of files from the menubar."""

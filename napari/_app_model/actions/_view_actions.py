@@ -10,7 +10,7 @@ from typing import List
 from app_model.types import Action, ToggleRule
 
 from napari._app_model.actions._toggle_action import ViewerToggleAction
-from napari.constants import CommandId, MenuId
+from napari.constants import CommandId, MenuGroup, MenuId
 from napari.settings import get_settings
 
 VIEW_ACTIONS: List[Action] = []
@@ -46,14 +46,22 @@ def _get_current_tooltip_visibility():
     return get_settings().appearance.layer_tooltip_visibility
 
 
-VIEW_ACTIONS.append(
-    # TODO: this could be made into a toggle setting Action subclass
-    # using a similar pattern to the above ViewerToggleAction classes
-    Action(
-        id=CommandId.TOGGLE_LAYER_TOOLTIPS,
-        title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
-        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}],
-        callback=_tooltip_visibility_toggle,
-        toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
-    ),
+VIEW_ACTIONS.extend(
+    [
+        # TODO: this could be made into a toggle setting Action subclass
+        # using a similar pattern to the above ViewerToggleAction classes
+        Action(
+            id=CommandId.TOGGLE_LAYER_TOOLTIPS,
+            title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
+            menus=[
+                {
+                    'id': MenuId.MENUBAR_VIEW,
+                    'group': MenuGroup.RENDER,
+                    'order': 10,
+                }
+            ],
+            callback=_tooltip_visibility_toggle,
+            toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
+        ),
+    ]
 )
