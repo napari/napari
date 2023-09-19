@@ -186,7 +186,9 @@ PROCESSORS: Dict[object, Callable] = {
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
     List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
     layers.Layer: _add_layer_to_viewer,
-    Tuple[Union[FunctionGui, QWidget, Widget], str]: _add_plugin_dock_widget,
+    Optional[
+        Tuple[Union[FunctionGui, QWidget, Widget], str]
+    ]: _add_plugin_dock_widget,
 }
 for t in types._LayerData.__args__:  # type: ignore [attr-defined]
     PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)

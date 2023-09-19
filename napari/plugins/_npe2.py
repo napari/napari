@@ -15,6 +15,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Type,
     Union,
     cast,
 )
@@ -578,12 +579,10 @@ def _get_widgets_submenu_actions(
             # added to main window by a processor
             def _widget_callback(
                 napari_viewer: Viewer,
-                widget: Union[
-                    MagicFactory, QWidget, Widget, Callable
-                ] = widget_callable,
+                widget: Union[MagicFactory, Type, Callable] = widget_callable,
                 name: str = full_display_name,
                 param: str = widget_param,
-            ) -> Tuple[Union[FunctionGui, QWidget, Widget], str]:
+            ) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
                 window = napari_viewer.window
                 if name in window._dock_widgets:
                     dock_widget = window._dock_widgets[name]
@@ -599,7 +598,8 @@ def _get_widgets_submenu_actions(
                 return widget(**kwargs), name
 
             def _get_current_dock_status(
-                window: Window, name: str = full_display_name
+                window: Window,
+                name: str = full_display_name,
             ):
                 if name in window._dock_widgets:
                     return window._dock_widgets[name].isVisible()
