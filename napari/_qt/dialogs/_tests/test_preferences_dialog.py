@@ -2,6 +2,7 @@ import pytest
 from pydantic import BaseModel
 from qtpy.QtCore import Qt
 
+from napari._qt._qapp_model.qactions import init_qactions
 from napari._qt.dialogs.preferences_dialog import (
     PreferencesDialog,
     QMessageBox,
@@ -14,6 +15,7 @@ from napari.settings import NapariSettings, get_settings
 
 @pytest.fixture
 def pref(qtbot):
+    init_qactions.__wrapped__()
     dlg = PreferencesDialog()
     qtbot.addWidget(dlg)
     settings = get_settings()

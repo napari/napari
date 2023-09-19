@@ -126,7 +126,7 @@ class KeyBindingDispatcher:
 
     Attributes
     ----------
-    dispatch: Signal(DispatchFlags, str | None)
+    dispatch: Signal(DispatchFlags, Optional[str])
         Signal used to dispatch key binding related logic, containing flags for
         how the dispatch should be done as well as the command, if found.
     active_combo: int
@@ -139,7 +139,7 @@ class KeyBindingDispatcher:
         Current active prefix.
     """
 
-    dispatch = Signal(DispatchFlags, str | None)  # type: ignore
+    dispatch = Signal(DispatchFlags, Optional[str])  # type: ignore
 
     def __init__(
         self,
@@ -158,9 +158,9 @@ class KeyBindingDispatcher:
         self.is_prefix: bool = False
         self.prefix: int = 0
 
-        self._active_match_cache: Dict[int, KeyBindingEntry | None] = {}
+        self._active_match_cache: Dict[int, Optional[KeyBindingEntry]] = {}
         self._conflicts_cache: Dict[int, bool] = {}
-        self._active_keymap: Mapping[int, str] | None = None
+        self._active_keymap: Optional[Mapping[int, str]] = None
 
         self.context.changed.connect(self._on_context_change)
         self.registry.registered.connect(self._refresh_cache)

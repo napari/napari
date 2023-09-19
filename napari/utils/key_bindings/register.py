@@ -40,8 +40,8 @@ class KeyBindingEntry:
 
     command_id: str = field(compare=False)
     weight: int
-    _index: int
     when: Optional[Expr] = field(compare=False, default=None)
+    _index: int = field(compare=False, default=0)
     block_rule: bool = field(init=False)
     negate_rule: bool = field(init=False)
 
@@ -94,8 +94,9 @@ def group_entries_by_when(
 
     for entry in entries:
         when = None
-        if when is not None:
+        if entry.when is not None:
             when = str(entry.when)
+
         if when in groups:
             groups[when].append(entry)
         else:

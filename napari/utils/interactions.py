@@ -303,6 +303,15 @@ class Shortcut:
                 mods = _kb2mods(part0)
                 if part0.key == KeyCode.UNKNOWN and len(mods) == 1:
                     self._kb = KeyBinding.from_str(mods[0])
+                    if isinstance(shortcut, str) and shortcut.lower() not in (
+                        'meta',
+                        'ctrl',
+                        'control',
+                        'alt',
+                        'option',
+                        'shift',
+                    ):
+                        error = True
         except ValueError:
             error = True
         else:

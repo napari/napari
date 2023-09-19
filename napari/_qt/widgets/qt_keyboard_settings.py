@@ -37,6 +37,7 @@ from napari._app_model.actions._tracks_actions import TRACKS_ACTIONS
 from napari._app_model.actions._vectors_actions import VECTORS_ACTIONS
 from napari._app_model.actions._view_actions import VIEW_ACTIONS
 from napari._app_model.actions._viewer_actions import VIEWER_ACTIONS
+from napari._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
 from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
 from napari._qt._qapp_model.qactions._view import Q_VIEW_ACTIONS
 from napari._qt.widgets.qt_message_popup import WarnPopup
@@ -100,6 +101,7 @@ class ShortcutEditor(QWidget):
             *LAYER_ACTIONS,
             *HELP_ACTIONS,
             *Q_HELP_ACTIONS,
+            *Q_FILE_ACTIONS,
         ]
 
         self.key_bindings_strs = OrderedDict()

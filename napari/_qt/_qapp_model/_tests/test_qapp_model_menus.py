@@ -3,9 +3,9 @@ import pytest
 from app_model.types import Action
 
 from napari._app_model import get_app
-from napari._app_model.constants import MenuId
 from napari._app_model.context import LayerListContextKeys as LLCK
 from napari._qt._qapp_model import build_qmodel_menu
+from napari.constants import MenuId
 from napari.layers import Image
 
 

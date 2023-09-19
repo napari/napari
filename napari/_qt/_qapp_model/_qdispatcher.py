@@ -66,7 +66,8 @@ class QKeyBindingDispatcher(QObject):
         on_press = False
 
         if (
-            flags & DispatchFlags.IS_AUTO_REPEAT
+            command_id is not None
+            and flags & DispatchFlags.IS_AUTO_REPEAT
             and not self._action_is_repeatable(command_id)
         ):
             # ignore repeats for non-repeatable keys
