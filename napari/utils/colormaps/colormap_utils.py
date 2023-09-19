@@ -632,8 +632,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 for cmap_ in AVAILABLE_COLORMAPS.values():
                     if (
                         np.array_equal(cmap_.controls, custom_cmap.controls)
-                        and cmap_.colors.shape == custom_cmap.colors.shape
-                        and np.all(cmap_.colors == custom_cmap.colors)
+                        and np.array_equal(cmap_.colors, custom_cmap.colors)
                         and cmap_.interpolation == custom_cmap.interpolation
                     ):
                         custom_cmap = cmap_

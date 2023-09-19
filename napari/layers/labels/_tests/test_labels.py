@@ -1,5 +1,6 @@
 import itertools
 import time
+import warnings
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 from typing import List
@@ -904,7 +905,7 @@ def test_message():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     msg = layer.get_status((0, 0))
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_thumbnail():
@@ -1494,10 +1495,14 @@ def test_color_mapping_when_seed_is_changed():
     """Checks if the color mapping is updated when the color palette seed is changed."""
     np.random.seed(0)
     layer = Labels(np.random.randint(50, size=(10, 10)))
-    mapped_colors1 = layer.colormap.map(layer._as_type(layer._slice.image.raw))
+    mapped_colors1 = layer.colormap.map(
+        layer._to_vispy_texture_dtype(layer._slice.image.raw)
+    )
 
     layer.new_colormap()
-    mapped_colors2 = layer.colormap.map(layer._as_type(layer._slice.image.raw))
+    mapped_colors2 = layer.colormap.map(
+        layer._to_vispy_texture_dtype(layer._slice.image.raw)
+    )
 
     assert not np.allclose(mapped_colors1, mapped_colors2)
 
@@ -1565,6 +1570,17 @@ def test_get_status_with_custom_index():
         layer.get_status((6, 6))['coordinates']
         == ' [6 6]: 2; text1: 3, text2: -2'
     )
+
+
+def test_collision_warning():
+    label = Labels(data=np.zeros((10, 10), dtype=np.uint8))
+    with pytest.warns(
+        RuntimeWarning, match="Because integer labels are cast to less-precise"
+    ):
+        label.color = {2**25 + 1: 'red', 2**25 + 2: 'blue'}
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        label.color = {1: 'red', 2: 'blue'}
 
 
 def test_labels_features_event():
