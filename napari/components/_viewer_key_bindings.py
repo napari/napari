@@ -165,7 +165,7 @@ def hold_for_pan_zoom(viewer: ViewerModel):
 @register_viewer_action(trans._("Show all key bindings"))
 def show_shortcuts(viewer: Viewer):
     viewer.window._open_preferences_dialog()
-    pref_list = viewer.window._pref_dialog._list  # type: ignore[union-attr]
+    pref_list = viewer.window._pref_dialog._list
     for i in range(pref_list.count()):
         if pref_list.item(i).text() == "Shortcuts":
             pref_list.setCurrentRow(i)
