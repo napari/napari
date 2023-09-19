@@ -385,7 +385,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.camera.zoom = scale_factor * np.min(
                 np.array(self._canvas_size) / scale
             )
-        self.camera.angles = (0, 0, 90)
+        self.camera.angles = (
+            (0, 0, 90) if not screenshot else self.camera.angles
+        )
 
         # Emit a reset view event, which is no longer used internally, but
         # which maybe useful for building on napari.
