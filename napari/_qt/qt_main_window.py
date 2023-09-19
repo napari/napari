@@ -48,6 +48,7 @@ from qtpy.QtWidgets import (
 from superqt.utils import QSignalThrottler
 
 from napari._app_model.constants import MenuId
+from napari._app_model.context import get_context
 from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
@@ -67,6 +68,7 @@ from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
     plugin_manager,
 )
+from napari.plugins._npe2 import _rebuild_npe1_samples_menu
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
@@ -586,7 +588,6 @@ class Window:
         Help menu.
     main_menu : qtpy.QtWidgets.QMainWindow.menuBar
         Main menubar.
-
     view_menu : qtpy.QtWidgets.QMenu
         View menu.
     window_menu : qtpy.QtWidgets.QMenu
@@ -602,6 +603,8 @@ class Window:
             str, QtViewerDockWidget
         ] = WeakValueDictionary()
         self._unnamed_dockwidget_count = 1
+
+        self._pref_dialog = None
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
@@ -639,7 +642,6 @@ class Window:
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
-        viewer.layers.events.connect(self.file_menu.update)
         viewer.events.status.connect(self._status_changed)
 
         if show:
@@ -754,6 +756,21 @@ class Window:
         # TODO: remove from window
         return self._qt_window.statusBar()
 
+    def _update_menu_state(self, menu):
+        """Update enabled/visible state of menu item with context."""
+        layerlist = self._qt_viewer._layers.model().sourceModel()._root
+        menu_model = getattr(self, menu)
+        menu_model.update_from_context(get_context(layerlist))
+
+    def _setup_npe1_samples_menu(self):
+        """Register npe1 sample data, build menu and connect to events."""
+        plugin_manager.discover_sample_data()
+        plugin_manager.events.enabled.connect(_rebuild_npe1_samples_menu)
+        plugin_manager.events.disabled.connect(_rebuild_npe1_samples_menu)
+        plugin_manager.events.registered.connect(_rebuild_npe1_samples_menu)
+        plugin_manager.events.unregistered.connect(_rebuild_npe1_samples_menu)
+        _rebuild_npe1_samples_menu()
+
     def _add_menus(self):
         """Add menubar to napari app."""
         # TODO: move this to _QMainWindow... but then all of the Menu()
@@ -771,19 +788,35 @@ class Window:
         self._main_menu_shortcut.activated.connect(
             self._toggle_menubar_visible
         )
-
-        self.file_menu = menus.FileMenu(self)
+        # file menu
+        self.file_menu = build_qmodel_menu(
+            MenuId.MENUBAR_FILE, title=trans._('&File'), parent=self._qt_window
+        )
+        self._setup_npe1_samples_menu()
+        self.file_menu.aboutToShow.connect(
+            lambda: self._update_menu_state('file_menu')
+        )
         self.main_menu.addMenu(self.file_menu)
+        # view menu
         self.view_menu = build_qmodel_menu(
             MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
         )
+        self.view_menu.aboutToShow.connect(
+            lambda: self._update_menu_state('view_menu')
+        )
         self.main_menu.addMenu(self.view_menu)
+        # plugin menu
         self.plugins_menu = menus.PluginsMenu(self)
         self.main_menu.addMenu(self.plugins_menu)
+        # window menu
         self.window_menu = menus.WindowMenu(self)
         self.main_menu.addMenu(self.window_menu)
+        # help menu
         self.help_menu = build_qmodel_menu(
             MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
+        )
+        self.help_menu.aboutToShow.connect(
+            lambda: self._update_menu_state('help_menu')
         )
         self.main_menu.addMenu(self.help_menu)
 
@@ -1481,10 +1514,6 @@ class Window:
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.removed.disconnect(self._remove_theme)
-        self._qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
-        for menu in self.file_menu._INSTANCES:
-            with contextlib.suppress(RuntimeError):
-                menu._destroy()
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
@@ -1495,6 +1524,42 @@ class Window:
             self._qt_viewer.close()
             self._qt_window.close()
             del self._qt_window
+
+    def _open_preferences_dialog(self):
+        """Edit preferences from the menubar."""
+        from napari._qt.dialogs.preferences_dialog import PreferencesDialog
+
+        if self._pref_dialog is None:
+            win = PreferencesDialog(parent=self._qt_window)
+            self._pref_dialog = win
+
+            app_pref = get_settings().application
+            if app_pref.preferences_size:
+                win.resize(*app_pref.preferences_size)
+
+            @win.resized.connect
+            def _save_size(sz: QSize):
+                app_pref.preferences_size = (sz.width(), sz.height())
+
+            def _clean_pref_dialog():
+                self._pref_dialog = None
+
+            win.finished.connect(_clean_pref_dialog)
+            win.show()
+        else:
+            self._pref_dialog.raise_()
+
+    def _screenshot_dialog(self):
+        """Save screenshot of current display with viewer, default .png"""
+        from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
+        from napari.utils.history import get_save_history, update_save_history
+
+        hist = get_save_history()
+        dial = ScreenshotDialog(
+            self.screenshot, self._qt_viewer, hist[0], hist
+        )
+        if dial.exec_():
+            update_save_history(dial.selectedFiles()[0])
 
 
 def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
