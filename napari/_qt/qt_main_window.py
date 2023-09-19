@@ -812,9 +812,6 @@ class Window:
             title=trans._('&Plugins'),
             parent=self._qt_window,
         )
-        from napari.plugins._npe2 import _rebuild_plugin_menu
-
-        _rebuild_plugin_menu()
         self.main_menu.addMenu(self.plugins_menu)
         # window menu
         self.window_menu = menus.WindowMenu(self)

@@ -2,7 +2,20 @@ import sys
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Set, Union, get_origin
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    get_origin,
+)
+
+from magicgui.widgets import FunctionGui, Widget
+from qtpy.QtWidgets import QWidget
 
 from napari import layers, types, viewer
 from napari._app_model.injection._providers import _provide_viewer
@@ -158,17 +171,14 @@ def _add_future_data(
     _FUTURES.add(future)
 
 
-from magicgui.widgets import FunctionGui
-from qtpy.QtWidgets import QWidget
-
-
 def _add_plugin_dock_widget(
-    widget: Union[FunctionGui, QWidget], viewer: viewer.Viewer = None
+    widget_name_tuple: Union[FunctionGui, QWidget, Widget],
+    viewer: viewer.Viewer = None,
 ):
-    print('widget processor')
     if viewer is None:
         viewer = _provide_viewer()
-    viewer.window.add_dock_widget(widget, name='test')
+    widget, display_name = widget_name_tuple
+    viewer.window.add_dock_widget(widget, name=display_name)
 
 
 # Add future and LayerData processors for each layer type.
@@ -176,8 +186,7 @@ PROCESSORS: Dict[object, Callable] = {
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
     List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
     layers.Layer: _add_layer_to_viewer,
-    FunctionGui: _add_plugin_dock_widget,
-    QWidget: _add_plugin_dock_widget,
+    Tuple[Union[FunctionGui, QWidget, Widget], str]: _add_plugin_dock_widget,
 }
 for t in types._LayerData.__args__:  # type: ignore [attr-defined]
     PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
