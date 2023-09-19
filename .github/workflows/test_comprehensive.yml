@@ -209,7 +209,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_ID: ${{ github.run_id }}
-          TITLE: '[bot-repo] bor repo update is failing'
+          TITLE: '[bot-repo] bot repo update is failing'
         with:
           filename: .github/BOT_REPO_UPDATE_FAIL_TEMPLATE.md
           update_existing: true
