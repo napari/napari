@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Mapping, Optional, Set
+from typing import Dict, Generator, List, Mapping, Optional, Set
 
 from app_model.expressions import Context
 from app_model.types import KeyChord, KeyCode, KeyMod
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def next_active_match(
     entries: List[KeyBindingEntry], context: Mapping[str, object]
-) -> Optional[KeyBindingEntry]:
+) -> Generator[KeyBindingEntry]:
     """Find and yield active matches while traversing through the entries.
 
     See `NAP 7 <https://napari.org/dev/naps/7-key-binding-dispatch.html#key-binding-properties>`_.
@@ -126,7 +126,7 @@ class KeyBindingDispatcher:
 
     Attributes
     ----------
-    dispatch: Signal(DispatchFlags, Optional[str])
+    dispatch: Signal(DispatchFlags, str | None)
         Signal used to dispatch key binding related logic, containing flags for
         how the dispatch should be done as well as the command, if found.
     active_combo: int
@@ -139,7 +139,7 @@ class KeyBindingDispatcher:
         Current active prefix.
     """
 
-    dispatch = Signal(DispatchFlags, Optional[str])
+    dispatch = Signal(DispatchFlags, str | None)
 
     def __init__(
         self,
@@ -158,9 +158,9 @@ class KeyBindingDispatcher:
         self.is_prefix: bool = False
         self.prefix: int = 0
 
-        self._active_match_cache = {}
-        self._conflicts_cache = {}
-        self._active_keymap = None
+        self._active_match_cache: Dict[int, KeyBindingEntry | None] = {}
+        self._conflicts_cache: Dict[int, bool] = {}
+        self._active_keymap: Mapping[int, str] | None = None
 
         self.context.changed.connect(self._on_context_change)
         self.registry.registered.connect(self._refresh_cache)

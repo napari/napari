@@ -188,7 +188,7 @@ class KeymapProvider:
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.keymap = {}
+        self.keymap = {}  # type: ignore
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -233,7 +233,7 @@ class KeymapProvider:
             when = parse_expression(
                 f"num_selected_layers == 1 and active_layer_type == '{type_string}'"
             )
-        except AssertionError:
+        except AttributeError:
             when = None
 
         if func is None:

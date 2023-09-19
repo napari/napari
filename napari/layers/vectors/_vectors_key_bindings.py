@@ -3,7 +3,7 @@ from napari.layers.vectors.vectors import Vectors
 
 
 def activate_vectors_transform_mode(layer: Vectors):
-    layer.mode = Mode.TRANSFORM
+    layer.mode = str(Mode.TRANSFORM)
 
 
 def activate_vectors_pan_zoom_mode(layer: Vectors):

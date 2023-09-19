@@ -3,7 +3,7 @@ from napari.layers.tracks.tracks import Tracks
 
 
 def activate_tracks_transform_mode(layer: Tracks):
-    layer.mode = Mode.TRANSFORM
+    layer.mode = str(Mode.TRANSFORM)
 
 
 def activate_tracks_pan_zoom_mode(layer: Tracks):

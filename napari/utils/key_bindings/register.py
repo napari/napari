@@ -1,7 +1,7 @@
 import warnings
 from bisect import insort_left
 from dataclasses import dataclass, field
-from typing import Callable, Dict, Iterator, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, Iterator, List, Optional, Tuple
 
 from app_model.expressions import Expr
 from app_model.registries import KeyBindingsRegistry
@@ -75,13 +75,13 @@ def filter_entries_by_command(
 
 
 def group_entries_by_when(
-    entries: List[KeyBindingEntry],
+    entries: Iterable[KeyBindingEntry],
 ) -> Dict[Optional[str], List[KeyBindingEntry]]:
     """Group entries by their when condition.
 
     Parameters
     ----------
-    entries : List[KeyBindingEntry]
+    entries : Iterable[KeyBindingEntry]
         Entries to group.
 
     Returns
@@ -90,7 +90,7 @@ def group_entries_by_when(
         Grouped entries.
     """
     # hashing isn't consistent with expressions; use a str instead
-    groups = {}
+    groups: Dict[Optional[str], List[KeyBindingEntry]] = {}
 
     for entry in entries:
         when = None
@@ -170,7 +170,7 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
             kb = key_bind.to_int()
 
             if kb not in self.keymap:
-                entries = []
+                entries: List[KeyBindingEntry] = []
                 self.keymap[kb] = entries
             else:
                 entries = self.keymap[kb]
@@ -263,7 +263,7 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
         List[_RegisteredKeyBinding]
             Non canceling entries.
         """
-        nc_entries = []
+        nc_entries: List[Tuple[KeyBindingEntry, _RegisteredKeyBinding]] = []
 
         for key, entries in self.keymap.items():
             kb = KeyBinding.from_int(key)
@@ -272,7 +272,9 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
             )
 
             for group_entries in groups.values():
-                temp_entries = []
+                temp_entries: List[
+                    Tuple[KeyBindingEntry, _RegisteredKeyBinding]
+                ] = []
 
                 for entry in group_entries:
                     if entry.block_rule or entry.negate_rule:

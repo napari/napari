@@ -79,7 +79,7 @@ class ShortcutsSettings(EventedModel):
             for command, entries in DEFAULT_SHORTCUTS.items():
                 # special casing since paste_shape was renamed to paste_shapes
                 if command == 'napari:shapes:paste_shapes':
-                    command = command[:-1]
+                    command = command[:-1]  # type: ignore
                 legacy_name = new_name_to_old(command)
 
                 if legacy_entries := shortcuts.get(legacy_name):
