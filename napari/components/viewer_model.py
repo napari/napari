@@ -373,7 +373,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
         center = [0] * (self.dims.ndisplay - len(center)) + list(center)
         self.camera.center = center if not screenshot else self.camera.center
-        scale_factor = 0.95 if not screenshot else (1 / 0.95)
+        if not screenshot:
+            scale_factor = 0.95
+        elif len(self.layers) == 1:
+            scale_factor = 1 / 0.95
+        else:
+            scale_factor = 1
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
         # of view will occupy 95% of the canvas on the most filled axis
