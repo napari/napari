@@ -15,7 +15,7 @@ from napari.settings import NapariSettings, get_settings
 
 @pytest.fixture
 def pref(qtbot):
-    init_qactions.__wrapped__()
+    init_qactions()
     dlg = PreferencesDialog()
     qtbot.addWidget(dlg)
     settings = get_settings()
@@ -23,6 +23,7 @@ def pref(qtbot):
     dlg._settings.appearance.theme = 'light'
     assert get_settings().appearance.theme == 'light'
     yield dlg
+    init_qactions.cache_clear()
 
 
 def test_prefdialog_populated(pref):

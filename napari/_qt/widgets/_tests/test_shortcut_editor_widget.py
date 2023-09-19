@@ -6,15 +6,17 @@ from napari._qt.widgets.qt_keyboard_settings import ShortcutEditor
 
 @pytest.fixture
 def shortcut_editor_widget(qtbot):
+    init_qactions()
+
     def _shortcut_editor_widget(**kwargs):
-        init_qactions.__wrapped__()
         widget = ShortcutEditor(**kwargs)
         widget.show()
         qtbot.addWidget(widget)
 
         return widget
 
-    return _shortcut_editor_widget
+    yield _shortcut_editor_widget
+    init_qactions.cache_clear()
 
 
 def test_shortcut_editor_defaults(

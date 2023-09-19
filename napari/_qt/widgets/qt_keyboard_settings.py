@@ -37,6 +37,7 @@ from napari._app_model.actions._tracks_actions import TRACKS_ACTIONS
 from napari._app_model.actions._vectors_actions import VECTORS_ACTIONS
 from napari._app_model.actions._view_actions import VIEW_ACTIONS
 from napari._app_model.actions._viewer_actions import VIEWER_ACTIONS
+from napari._qt._qapp_model.qactions import init_qactions
 from napari._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
 from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
 from napari._qt._qapp_model.qactions._view import Q_VIEW_ACTIONS
@@ -119,6 +120,9 @@ class ShortcutEditor(QWidget):
         all_commands = dict(self._app.commands)
         self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = {}
         self.key_bindings_strs[self.PLUGINS_KEYBINDINGS] = {}
+
+        # double check qactions are initialized for e.g. testing, docs, etc.
+        init_qactions()
 
         for layer, actions in layers_actions:
             commands = {}
