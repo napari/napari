@@ -6,7 +6,7 @@
 #
 alabaster==0.7.13
     # via sphinx
-app-model==0.2.0
+app-model==0.2.1
     # via napari (setup.cfg)
 appdirs==1.4.4
     # via
