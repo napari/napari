@@ -13,16 +13,46 @@ on:
     paths:
       - '.github/workflows/upgrade_test_constraints.yml'
 
-concurrency:
-  group: test-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   upgrade:
     name: Upgrade & Open Pull Request
-    if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')) || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')) || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      - name: Add eye reaction
+        if: github.event_name == 'issue_comment'
+        run: |
+          COMMENT_ID=${{ github.event.comment.id }}
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions" \
+            -d '{"content": "eyes"}'
+
+      - name: Get PR details
+        if: github.event_name == 'issue_comment'
+        run: |
+          PR_number=${{ github.event.issue.number }}
+          PR_data=$(curl \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_number")
+          
+          FULL_NAME=$(echo $PR_data  | jq -r .head.repo.full_name)
+          echo "FULL_NAME=$FULL_NAME" >> $GITHUB_ENV
+          
+          BRANCH=$(echo $PR_data  | jq -r .head.ref)
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get repo info
+        if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
+        run: |
+          echo "FULL_NAME=${{ github.repository }}" >> $GITHUB_ENV
+          echo "BRANCH=${{ github.ref_name }}" >> $GITHUB_ENV
+
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -32,6 +62,37 @@ jobs:
         with:
           path: docs  # place in a named directory
           repository: napari/docs
+
+      - name: Clone target repo (remote)
+        uses: actions/checkout@v3
+        if: github.event_name == 'issue_comment'
+        with:
+          path: napari_repo  # place in a named directory
+          repository: ${{ env.FULL_NAME }}
+          ref: ${{ env.BRANCH }}
+          token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
+
+      - name: Clone target repo (pull request)
+        uses: actions/checkout@v3
+        if: github.event_name == 'pull_request'
+        with:
+          path: napari_repo  # place in a named directory
+
+      - name: Clone target repo (main)
+        uses: actions/checkout@v3
+        if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
+        with:
+          path: napari_repo  # place in a named directory
+          repository: ${{ env.FULL_NAME }}
+          ref: ${{ env.BRANCH }}
+          token: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
+
+      - name: Add napari-bot/napari to napari_repo upstreams
+        run: |
+          cd napari_repo
+          git remote -v
+          git remote add napari-bot https://github.com/napari-bot/napari.git
+          git remote -v
 
       # START PYTHON DEPENDENCIES
       - uses: actions/setup-python@v4
@@ -71,6 +132,9 @@ jobs:
           flags+=" --extra pyside2"
           flags+=" --extra pyside6_experimental"
           flags+=" --extra testing"
+          prefix="napari_repo"
+          setup_cfg="${prefix}/setup.cfg"
+          constraints="${prefix}/resources/constraints"
 
 
           # allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
@@ -84,16 +148,39 @@ jobs:
 
           for pyv in 3.8 3.9 3.10 3.11; do
             python${pyv}  -m pip install -U pip pip-tools
-            python${pyv}  -m piptools compile --upgrade -o resources/constraints/constraints_py${pyv}.txt  setup.cfg resources/constraints/version_denylist.txt ${flags}
+            python${pyv}  -m piptools compile --upgrade -o $constraints/constraints_py${pyv}.txt  $setup_cfg $constraints/version_denylist.txt ${flags}
           done
 
-          python3.9 -m piptools compile --upgrade -o resources/constraints/constraints_py3.9_examples.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
-          python3.10 -m piptools compile --upgrade -o resources/constraints/constraints_py3.10_docs.txt setup.cfg resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt ${flags}
+          python3.9 -m piptools compile --upgrade -o $constraints/constraints_py3.9_examples.txt $setup_cfg $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
+          python3.10 -m piptools compile --upgrade -o $constraints/constraints_py3.10_docs.txt $setup_cfg $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt ${flags}
           python3.11 -m piptools compile --upgrade -o resources/requirements_mypy.txt resources/requirements_mypy.in --resolver=backtracking
 
       # END PYTHON DEPENDENCIES
+
+      - name: Upload constraints
+        uses: actions/upload-artifact@v3
+        with:
+          name: constraints
+          path: |
+            napari_repo/resources/constraints/constraints*.txt
+
+      - name: Add rocket reaction
+        if: github.event_name == 'issue_comment'
+        run: |
+          COMMENT_ID=${{ github.event.comment.id }}
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions" \
+            -d '{"content": "rocket"}'
 
       - name: Create commit
         run: |
           pip install requests
           python tools/create_pr_or_update_existing_one.py
+        env:
+            GHA_TOKEN_MAIN_REPO: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
+            PR_NUMBER: ${{ github.event.issue.number }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
