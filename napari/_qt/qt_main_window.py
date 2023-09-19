@@ -1427,6 +1427,13 @@ class Window:
         if canvas_only:
             canvas = self._qt_viewer.canvas
             prev_size = canvas.size
+
+            ndisplay = self._qt_viewer.viewer.dims.ndisplay
+            # Size the canvas to the shape of the data
+            canvas.size = self._qt_viewer.viewer.layers.extent.world[
+                ndisplay - 1
+            ][-ndisplay:].astype(int)
+            self._qt_viewer.viewer.reset_view(screenshot=True)
             if size is not None:
                 if len(size) != 2:
                     raise ValueError(
