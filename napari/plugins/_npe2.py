@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import inspect
 from collections import defaultdict
-from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -428,6 +427,7 @@ def _get_multiprovider_submenu(
     group: Optional[str] = None,
 ) -> Tuple[str, List[Any]]:
     """Get sample/widget multiprovider plugin submenu id and `SubmenuItem`."""
+    submenu: List[Tuple[str, SubmenuItem]] = []
     if multiprovider:
         submenu_id = f'{parent_menu}/{display_name}'
         submenu = [
@@ -442,7 +442,6 @@ def _get_multiprovider_submenu(
         ]
     else:
         submenu_id = parent_menu
-        submenu = []
     return submenu_id, submenu
 
 
@@ -450,7 +449,7 @@ def _get_samples_submenu_actions(
     mf: PluginManifest,
 ) -> Tuple[List[Any], List[Any]]:
     """Get sample data submenu and actions for a single npe2 plugin manifest."""
-    from napari._app_model.constants import MenuGroup, MenuId
+    from napari._app_model.constants import MenuId
     from napari.plugins import menu_item_template
 
     if TYPE_CHECKING:
@@ -468,7 +467,7 @@ def _get_samples_submenu_actions(
         mf.display_name,
     )
 
-    sample_actions = []
+    sample_actions: List[Action] = []
     for sample in sample_data:
 
         def _add_sample(
@@ -496,14 +495,16 @@ def _get_samples_submenu_actions(
         action: Action = Action(
             id=f'{mf.name}:{sample.key}',
             title=title,
-            menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
+            menus=[{'id': submenu_id}],
             callback=_add_sample,
         )
         sample_actions.append(action)
     return submenu, sample_actions
 
 
-def _get_widgets_submenu_actions(mf: PluginManifest) -> List[Action]:
+def _get_widgets_submenu_actions(
+    mf: PluginManifest,
+) -> Tuple[List[Any], List[Any]]:
     """Get widget submenu and actions for a single npe2 plugin manifest."""
     from napari._app_model.constants import MenuGroup, MenuId
     from napari.plugins import _npe2, menu_item_template
@@ -525,7 +526,7 @@ def _get_widgets_submenu_actions(mf: PluginManifest) -> List[Action]:
         MenuGroup.PLUGIN_CONTRIBUTIONS,
     )
 
-    widget_actions = []
+    widget_actions: List[Action] = []
     for widget in widgets:
         full_display_name = menu_item_template.format(
             mf.display_name, widget.display_name
@@ -537,7 +538,8 @@ def _get_widgets_submenu_actions(mf: PluginManifest) -> List[Action]:
             widget_callable, widget_name = widget_contribution
 
             if inspect.isclass(widget_callable) and issubclass(
-                widget_callable, (QWidget, Widget)
+                widget_callable,
+                (QWidget, Widget),
             ):
                 widget_param = ""
                 # Inspection can fail when adding to bundle as it thinks widget is
@@ -635,10 +637,10 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     context = pm.get_context(cast('PluginName', mf.name))
 
     # Register and connect dispose callback to plugin deactivate ('unregistered') event
-    actions = chain(actions, sample_actions, widget_actions)
+    actions = actions + sample_actions + widget_actions
     if actions:
         context.register_disposable(app.register_actions(actions))
-    submenus = chain(submenus, samples_submenu, widgets_submenu)
+    submenus = submenus + samples_submenu + widgets_submenu
     if submenus:
         context.register_disposable(app.menus.append_menu_items(submenus))
 
@@ -647,9 +649,12 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     _qmainwin = _QtMainWindow.current()
     if _qmainwin:
         window = _qmainwin._window
-        event = NamedTuple('event', 'value')
+
+        class Event(NamedTuple):
+            value: str
+
         for widget in mf.contributions.widgets or ():
-            widget_event = event(widget.display_name)
+            widget_event = Event(widget.display_name)
 
             def _remove_widget(event=widget_event):
                 window._remove_dock_widget(event)
@@ -691,22 +696,19 @@ def _npe2_manifest_to_actions(
     actions: List[Action] = []
     for cmd in mf.contributions.commands or ():
         if cmd.id not in sample_data_ids | widget_ids:
-            actions: List[Action] = []
-            for cmd in mf.contributions.commands or ():
-                if cmd.id not in widget_ids:
-                    actions.append(
-                        Action(
-                            id=cmd.id,
-                            title=cmd.title,
-                            category=cmd.category,
-                            tooltip=cmd.short_title or cmd.title,
-                            icon=cmd.icon,
-                            enablement=cmd.enablement,
-                            callback=cmd.python_name or '',
-                            menus=menu_cmds.get(cmd.id),
-                            keybindings=[],
-                        )
-                    )
+            actions.append(
+                Action(
+                    id=cmd.id,
+                    title=cmd.title,
+                    category=cmd.category,
+                    tooltip=cmd.short_title or cmd.title,
+                    icon=cmd.icon,
+                    enablement=cmd.enablement,
+                    callback=cmd.python_name or '',
+                    menus=menu_cmds.get(cmd.id),
+                    keybindings=[],
+                )
+            )
 
     return actions, submenus
 
