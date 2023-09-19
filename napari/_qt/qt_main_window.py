@@ -1433,10 +1433,12 @@ class Window:
         from napari._qt.utils import add_flash_animation
 
         if canvas_only:
-            if fit_to_data:
-                self._qt_viewer.viewer.reset_view()
             camera = self._qt_viewer.viewer.camera
             old_zoom = camera.zoom
+            if fit_to_data:
+                old_center = camera.center
+                self._qt_viewer.viewer.reset_view()
+
             canvas = self._qt_viewer.canvas
             prev_size = canvas.size
 
@@ -1470,8 +1472,10 @@ class Window:
             finally:
                 # make sure we always go back to the right canvas size
                 if size is not None or scale is not None or fit_to_data:
-                    camera.zoom = old_zoom
                     canvas.size = prev_size
+                if fit_to_data:
+                    camera.zoom = old_zoom
+                    camera.center = old_center
         else:
             img = self._qt_window.grab().toImage()
             if flash:
