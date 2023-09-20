@@ -424,19 +424,19 @@ def _rebuild_npe1_samples_menu() -> None:
 def _get_multiprovider_submenu(
     multiprovider: bool,
     parent_menu: MenuId,
-    display_name: str,
+    mf: PluginManifest,
     group: Optional[str] = None,
 ) -> Tuple[str, List[Any]]:
     """Get sample/widget multiprovider plugin submenu id and `SubmenuItem`."""
     submenu: List[Tuple[str, SubmenuItem]] = []
     if multiprovider:
-        submenu_id = f'{parent_menu}/{display_name}'
+        submenu_id = f'{parent_menu}/{mf.name}'
         submenu = [
             (
                 parent_menu,
                 SubmenuItem(
                     submenu=submenu_id,
-                    title=trans._(display_name),
+                    title=trans._(mf.display_name),
                     group=group,
                 ),
             ),
@@ -465,7 +465,7 @@ def _get_samples_submenu_actions(
     submenu_id, submenu = _get_multiprovider_submenu(
         multiprovider,
         MenuId.FILE_SAMPLES,
-        mf.display_name,
+        mf,
     )
 
     sample_actions: List[Action] = []
@@ -526,7 +526,7 @@ def _get_widgets_submenu_actions(
     submenu_id, submenu = _get_multiprovider_submenu(
         multiprovider,
         MenuId.MENUBAR_PLUGINS,
-        mf.display_name,
+        mf,
         MenuGroup.PLUGIN_CONTRIBUTIONS,
     )
 

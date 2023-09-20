@@ -62,9 +62,9 @@ def test_plugin_display_name_use_for_multiple_samples(
     assert samples_menu[0].title == 'napari builtins'
     # Now ensure that the actions are still correct
     # trigger the action, opening the first sample: `Astronaut`
-    assert 'napari.astronaut' in app.commands
+    assert 'napari:astronaut' in app.commands
     assert len(viewer.layers) == 0
-    app.commands.execute_command('napari.astronaut')
+    app.commands.execute_command('napari:astronaut')
     assert len(viewer.layers) == 1
     assert viewer.layers[0].name == 'astronaut'
 
