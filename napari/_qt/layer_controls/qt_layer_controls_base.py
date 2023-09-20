@@ -333,6 +333,7 @@ class NewQtLayerControls(
         # Setup layer name section
         name_layout = QHBoxLayout()
         # Needed to put icon and text side by side with the same spacing in all platforms
+        name_layout.setContentsMargins(0, 0, 0, 0)
         name_layout.setSpacing(0)
 
         icon_label = QLabel()
@@ -347,6 +348,7 @@ class NewQtLayerControls(
 
         name_layout.addWidget(icon_label)
         name_layout.addWidget(self._name_label)
+        name_layout.addStretch(1)
 
         # Setup buttons section
         self._buttons_grid = QGridLayout()

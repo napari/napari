@@ -296,6 +296,10 @@ QtLayerControls > QElidingLineEdit#layer_name {
   background-color: {{ background }};
   font-size: {{ increase(font_size, 1) }};
   font-weight: bold;
+  min-width: 220px;
+  max-width: 220px;
+  min-height: 14px;
+  max-height: 14px;
   margin: 0px;
   padding: 0px;
 }
@@ -303,16 +307,22 @@ QtLayerControls > QElidingLineEdit#layer_name {
 QtLayerControls > QElidingLineEdit#layer_name:focus {
   background-color: {{ darken(background, 20) }};
   selection-background-color: {{ lighten(current, 20) }};
+  min-width: 220px;
+  max-width: 220px;
+  min-height: 14px;
+  max-height: 14px;
+  margin: 0px;
+  padding: 0px;
 }
 
 QLabel[layer_type_icon_label="true"] {
-  max-width: 20px;
-  min-width: 20px;
-  min-height: 20px;
-  max-height: 20px;
-  margin-left: 5px;
-  margin-right: 0px;
-  padding-right: 0px;
+  max-width: 14px;
+  min-width: 14px;
+  min-height: 14px;
+  max-height: 14px;
+  margin-left: 10px;
+  margin-right: 5px;
+  padding: 0px;
 }
 
 QLabeledRangeSlider > QAbstractSpinBox {
