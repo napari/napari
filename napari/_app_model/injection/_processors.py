@@ -15,7 +15,7 @@ from typing import (
 )
 
 from magicgui.widgets import FunctionGui, Widget
-from qtpy.QtWidgets import QWidget
+from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
 from napari import layers, types, viewer
 from napari._app_model.injection._providers import _provide_viewer
