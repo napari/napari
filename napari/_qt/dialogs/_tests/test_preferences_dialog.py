@@ -2,7 +2,6 @@ import pytest
 from pydantic import BaseModel
 from qtpy.QtCore import Qt
 
-from napari._qt._qapp_model.qactions import init_qactions
 from napari._qt.dialogs.preferences_dialog import (
     PreferencesDialog,
     QMessageBox,
@@ -15,7 +14,6 @@ from napari.settings import NapariSettings, get_settings
 
 @pytest.fixture
 def pref(qtbot):
-    init_qactions()
     dlg = PreferencesDialog()
     qtbot.addWidget(dlg)
     settings = get_settings()
@@ -23,7 +21,6 @@ def pref(qtbot):
     dlg._settings.appearance.theme = 'light'
     assert get_settings().appearance.theme == 'light'
     yield dlg
-    init_qactions.cache_clear()
 
 
 def test_prefdialog_populated(pref):

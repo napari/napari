@@ -37,7 +37,6 @@ from napari._app_model.actions._tracks_actions import TRACKS_ACTIONS
 from napari._app_model.actions._vectors_actions import VECTORS_ACTIONS
 from napari._app_model.actions._view_actions import VIEW_ACTIONS
 from napari._app_model.actions._viewer_actions import VIEWER_ACTIONS
-from napari._qt._qapp_model.qactions import init_qactions
 from napari._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
 from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
 from napari._qt._qapp_model.qactions._view import Q_VIEW_ACTIONS
@@ -121,13 +120,10 @@ class ShortcutEditor(QWidget):
         self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = {}
         self.key_bindings_strs[self.PLUGINS_KEYBINDINGS] = {}
 
-        # double check qactions are initialized for e.g. testing, docs, etc.
-        init_qactions()
-
         for layer, actions in layers_actions:
             commands = {}
             for action in actions:
-                if cmd := all_commands.pop(action.id):
+                if cmd := all_commands.pop(action.id, None):
                     commands[action.id] = cmd
 
             self.key_bindings_strs[f"{layer.__name__} layer"] = commands
@@ -135,7 +131,7 @@ class ShortcutEditor(QWidget):
         viewer_commands = {}
 
         for action in viewer_actions:
-            if cmd := all_commands.pop(action.id):
+            if cmd := all_commands.pop(action.id, None):
                 viewer_commands[action.id] = cmd
 
         self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = viewer_commands
