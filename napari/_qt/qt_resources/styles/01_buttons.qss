@@ -62,19 +62,21 @@ QtViewerPushButton[mode="grid_view_button"] {
   image: url("theme_{{ id }}:/grid.svg");
 }
 
-QtModeRadioButton::indicator:unchecked {
+QtModeRadioButton,
+QtModePushButton,
+QtModeRadioButton::indicator:unchecked,
+QtModeRadioButton::indicator:checked {
   border-radius: 3px;
   width: 28px;
   height: 28px;
   padding: 0;
+}
+
+QtModeRadioButton::indicator:unchecked {
   background-color: {{ foreground }};
 }
 
 QtModeRadioButton::indicator:checked {
-  border-radius: 3px;
-  height: 28px;
-  width: 28px;
-  padding: 0;
   background-color: {{ current }};
 }
 

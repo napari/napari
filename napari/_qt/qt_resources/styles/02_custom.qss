@@ -270,7 +270,7 @@ QLabel#logo_silhouette {
 
 QFrame#empty_controls_widget {
     min-height: 125px;
-    min-width: 278px;
+    min-width: 272px;
 }
 
 /* the box that shows the current Label color */
@@ -405,18 +405,23 @@ QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] {
   padding: 0px;
   margin: 0px;
   border-radius: 2px;
-  min-width: 255px;
+  min-width: 250px;
+}
+
+QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:hover,
+QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:checked:hover {
+  background-color: {{ highlight }};
+  font-weight: bold;
+  padding-left: 8px;
 }
 
 QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton,
 QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:disabled,
-QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:hover,
 QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:pressed,
 QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:checked {
-   background-color: {{ foreground }};
-   font-weight: bold;
-   padding: 0px;
-   margin: 0px;
+  background-color: {{ foreground }};
+  font-weight: bold;
+  padding-left: 8px;
 }
 
 

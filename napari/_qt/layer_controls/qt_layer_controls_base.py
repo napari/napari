@@ -50,7 +50,7 @@ class LayerFormLayout(QFormLayout):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.setContentsMargins(0, 0, 0, 0)
-        self.setSpacing(4)
+        self.setSpacing(5)  # Spacing between rows
         self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         # Needed since default aligment depends on OS (win/linux left, macos right)
         self.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
@@ -74,12 +74,14 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
         self.setThemedIcons()
 
         # Setup internal layout
+        self.layout().setContentsMargins(0, 0, 0, 0)
+        self.layout().setSpacing(0)
         self.content().layout().setContentsMargins(0, 0, 0, 0)
         self.setProperty('emphasized', True)
         form_widget = QWidget()
         form_widget.setProperty('emphasized', True)
         self._internal_layout = LayerFormLayout()
-        self._internal_layout.setContentsMargins(15, 0, 0, 0)
+        self._internal_layout.setContentsMargins(36, 10, 18, 13)
         form_widget.setLayout(self._internal_layout)
         self.addWidget(form_widget)
         self.expand(animate=False)
@@ -88,14 +90,16 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
     def expand(self, animate: bool = True) -> None:
         super().expand(animate=animate)
         self._toggle_btn.setToolTip(
-            trans._("Collapse {title} controls", title=self._text)
+            trans._("Collapse {title} layer controls", title=self._text)
         )
+        self._content.show()
 
     def collapse(self, animate: bool = True) -> None:
         super().collapse(animate=animate)
         self._toggle_btn.setToolTip(
-            trans._("Expand {title} controls", title=self._text)
+            trans._("Expand {title} layer controls", title=self._text)
         )
+        self._content.hide()
 
     # ---- New methods to follow napari theme and enable easy widget addition
     def setThemedIcons(self, theme_event: Event = None) -> None:
@@ -349,6 +353,7 @@ class NewQtLayerControls(
         self._buttons_grid.setContentsMargins(0, 0, 0, 0)
         # Need to set spacing to have same spacing over all platforms
         self._buttons_grid.setSpacing(10)  # +-6 win/linux def; +-15 macos def
+        self._buttons_grid.setHorizontalSpacing(9)
         # Need to set strech for a last column to prevent the spacing between
         # buttons to change when the layer control width changes
         self._buttons_grid.setColumnStretch(7, 1)
@@ -372,6 +377,7 @@ class NewQtLayerControls(
         controls_widget = QWidget()
         controls_layout = QVBoxLayout()
         controls_layout.setContentsMargins(0, 0, 5, 0)
+        controls_layout.setSpacing(4)
         controls_layout.addWidget(self._annotation_controls_section)
         controls_layout.addWidget(self._display_controls_section)
         controls_layout.addStretch(1)
@@ -384,12 +390,10 @@ class NewQtLayerControls(
         # Setup base layout
         self.setLayout(QVBoxLayout())
         self.layout().setContentsMargins(8, 0, 0, 0)
-        # Need to set 0 def spacing to set different spacing values between sections
-        self.layout().setSpacing(0)
+        # Spacing between sections (layer name, buttons and controls)
+        self.layout().setSpacing(10)
         self.layout().addLayout(name_layout)
-        self.layout().addSpacing(10)
         self.layout().addLayout(self._buttons_grid)
-        self.layout().addSpacing(15)
         self.layout().addWidget(controls_scrollarea)
 
     def __getattr__(self, attr: str):
