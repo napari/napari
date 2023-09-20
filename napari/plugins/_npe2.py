@@ -26,7 +26,7 @@ from magicgui.type_map._magicgui import MagicFactory
 from magicgui.widgets import FunctionGui, Widget
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
-from qtpy.QtWidgets import QWidget
+from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
 
 from napari.errors.reader_errors import MultipleReaderError
 from napari.utils.translations import trans
@@ -487,11 +487,14 @@ def _get_samples_submenu_actions(
                     stack=False,
                 )
 
-        display_name = sample.display_name.replace("&", "&&")
         if multiprovider:
-            title = display_name
+            title = sample.display_name
         else:
-            title = menu_item_template.format(mf.display_name, display_name)
+            title = menu_item_template.format(
+                mf.display_name, sample.display_name
+            )
+        # To display '&' instead of creating a shortcut
+        title = title.replace("&", "&&")
 
         action: Action = Action(
             id=f'{mf.name}:{sample.key}',
@@ -529,7 +532,7 @@ def _get_widgets_submenu_actions(
 
     widget_actions: List[Action] = []
     for widget in widgets:
-        full_display_name = menu_item_template.format(
+        full_name = menu_item_template.format(
             mf.display_name, widget.display_name
         )
         if widget_contribution := _npe2.get_widget_contribution(
@@ -568,19 +571,19 @@ def _get_widgets_submenu_actions(
             else:
                 raise TypeError(
                     trans._(
-                        "Widgets must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or callable, but {widget} is of type {type_}. Please raise an issue in napari GitHub about the plugin and widget you were trying to use.",
+                        "Widgets must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or callable, but {widget} is of type {type_}. Please raise an issue in napari GitHub with the plugin and widget you were trying to use.",
                         deferred=True,
                         widget=widget_name,
                         type_=type(widget_callable),
                     )
                 )
 
-            # Toggle if widget already built otherwise return # widget so can be
+            # Toggle if widget already built otherwise return widget so it can be
             # added to main window by a processor
             def _widget_callback(
                 napari_viewer: Viewer,
                 widget: Union[MagicFactory, Type, Callable] = widget_callable,
-                name: str = full_display_name,
+                name: str = full_name,
                 param: str = widget_param,
             ) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
                 window = napari_viewer.window
@@ -599,16 +602,22 @@ def _get_widgets_submenu_actions(
 
             def _get_current_dock_status(
                 window: Window,
-                name: str = full_display_name,
+                name: str = full_name,
             ):
                 if name in window._dock_widgets:
                     return window._dock_widgets[name].isVisible()
                 return False
 
+            title = widget.display_name
+            if multiprovider:
+                title = full_name
+            # To display '&' instead of creating a shortcut
+            title = title.replace("&", "&&")
+
             widget_actions.append(
                 Action(
                     id=f'{mf.name}:{widget_name})',
-                    title=widget_name,
+                    title=title,
                     callback=_widget_callback,
                     menus=[
                         {
@@ -689,7 +698,7 @@ def _npe2_manifest_to_actions(
         for contrib in mf.contributions.sample_data or ()
         if hasattr(contrib, 'command')
     }
-    # Filter widgets as are registered in
+    # Filter widgets as are registered in `_get_widgets_submenu_actions`
     widget_ids = {widget.command for widget in mf.contributions.widgets or ()}
 
     # We want to register all `Actions` so they appear in the command pallete
