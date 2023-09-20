@@ -15,17 +15,16 @@ from napari.utils.translations import trans
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum
-
-    bases = (StrEnum,)
 else:
     # in 3.11+, using str as a mixin with enum causes it to put the enum name in f-strings
     from enum import Enum
 
-    bases = (str, Enum)
+    class StrEnum(str, Enum):
+        pass
 
 
 # fmt: off
-class CommandId(*bases):
+class CommandId(StrEnum):
     """Id representing a napari command."""
 
     # File menubar

@@ -11,7 +11,7 @@ from app_model.types import (
 from napari.constants._commands import CommandId
 from napari.utils.key_bindings import KeyBindingWeights
 
-_default_shortcuts: Dict[CommandId, List[Union[int, KeyBindingRuleDict]]] = {
+_default_shortcuts: Dict[str, List[Union[int, KeyBindingRuleDict]]] = {
     # viewer
     CommandId.VIEWER_TOGGLE_CONSOLE_VISIBILITY: [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
@@ -138,7 +138,7 @@ _default_shortcuts: Dict[CommandId, List[Union[int, KeyBindingRuleDict]]] = {
     CommandId.SURFACE_ACTIVATE_TRANSFORM_MODE: [KeyCode.Digit2],
 }
 
-DEFAULT_SHORTCUTS: Dict[CommandId, List[KeyBindingRule]] = {
+DEFAULT_SHORTCUTS: Dict[str, List[KeyBindingRule]] = {
     cmd: [
         KeyBindingRule(**entry, weight=KeyBindingWeights.CORE)
         if isinstance(entry, dict)
