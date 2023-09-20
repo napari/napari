@@ -8,14 +8,24 @@ documentation.
 CommandId values should be namespaced, e.g. 'napari:layer:something' for a command
 that operates on layers.
 """
-from enum import Enum
+import sys
 from typing import NamedTuple, Optional
 
 from napari.utils.translations import trans
 
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+
+    bases = (StrEnum,)
+else:
+    # in 3.11+, using str as a mixin with enum causes it to put the enum name in f-strings
+    from enum import Enum
+
+    bases = (str, Enum)
+
 
 # fmt: off
-class CommandId(str, Enum):
+class CommandId(*bases):
     """Id representing a napari command."""
 
     # File menubar
