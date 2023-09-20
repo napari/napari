@@ -62,17 +62,12 @@ QtViewerPushButton[mode="grid_view_button"] {
   image: url("theme_{{ id }}:/grid.svg");
 }
 
-QtModeRadioButton {
-  min-height : 28px;
-  padding: 0px;
-}
-
 QtModeRadioButton::indicator:unchecked {
   border-radius: 3px;
   width: 28px;
   height: 28px;
   padding: 0;
-  background-color: {{ primary }};
+  background-color: {{ foreground }};
 }
 
 QtModeRadioButton::indicator:checked {
@@ -83,13 +78,8 @@ QtModeRadioButton::indicator:checked {
   background-color: {{ current }};
 }
 
-
-QtModeRadioButton::indicator:disabled {
-  background-color: {{ darken(foreground, 20) }}
-}
-
 QtModeRadioButton::indicator:unchecked:hover {
-  background-color: {{ highlight }};
+  background-color: {{ primary }};
 }
 
 QtModeRadioButton[mode="pan"]::indicator {
