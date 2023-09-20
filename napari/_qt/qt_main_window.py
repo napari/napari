@@ -1433,16 +1433,16 @@ class Window:
         from napari._qt.utils import add_flash_animation
 
         if canvas_only:
+            ndisplay = self._qt_viewer.viewer.dims.ndisplay
             camera = self._qt_viewer.viewer.camera
             old_zoom = camera.zoom
             if fit_to_data:
                 old_center = camera.center
-                self._qt_viewer.viewer.reset_view()
+                self._qt_viewer.viewer.reset_view(fit_to_data=True)
 
             canvas = self._qt_viewer.canvas
             prev_size = canvas.size
 
-            ndisplay = self._qt_viewer.viewer.dims.ndisplay
             # Size the canvas to the shape of the data
             canvas.size = self._qt_viewer.viewer.layers.extent.world[1][
                 -ndisplay:

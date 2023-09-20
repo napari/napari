@@ -360,7 +360,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self, screenshot=False):
+    def reset_view(self, screenshot=False, fit_to_data=False):
         """Reset the camera view."""
 
         extent = self._sliced_extent_world_augmented
@@ -390,9 +390,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.camera.zoom = scale_factor * np.min(
                 np.array(self._canvas_size) / scale
             )
-        self.camera.angles = (
-            (0, 0, 90) if not screenshot else self.camera.angles
-        )
+        if not fit_to_data and self.dims.ndisplay == 3:
+            self.camera.angles = (
+                (0, 0, 90) if not screenshot else self.camera.angles
+            )
 
         # Emit a reset view event, which is no longer used internally, but
         # which maybe useful for building on napari.
