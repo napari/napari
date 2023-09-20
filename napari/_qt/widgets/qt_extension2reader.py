@@ -170,9 +170,11 @@ class Extension2ReaderTable(QWidget):
 
         readers = self._npe2_readers.copy()
         to_delete = []
-        if new_pattern:
+        try:
             compatible_readers = get_potential_readers(new_pattern)
-        else:
+        except ValueError as e:
+            if "empty name" not in str(e):
+                raise
             compatible_readers = {}
         for plugin_name in readers:
             if plugin_name not in compatible_readers:
@@ -181,13 +183,14 @@ class Extension2ReaderTable(QWidget):
         for reader in to_delete:
             del readers[reader]
 
-        if not readers:
+        readers.update(self._npe1_readers)
+
+        for i, (plugin_name, display_name) in enumerate(
+            sorted(readers.items())
+        ):
+            self._add_reader_choice(i, plugin_name, display_name)
+        if self._new_reader_dropdown.count() == 0:
             self._new_reader_dropdown.addItem(trans._("None available"))
-        else:
-            for i, (plugin_name, display_name) in enumerate(
-                sorted(readers.items())
-            ):
-                self._add_reader_choice(i, plugin_name, display_name)
 
     def _save_new_preference(self, event):
         """Save current preference to settings and show in table"""
