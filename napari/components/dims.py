@@ -156,7 +156,7 @@ class Dims(EventedModel):
 
     @root_validator(skip_on_failure=True, allow_reuse=True)
     def _check_dims(cls, values):
-        """Check the consitency of dimensionaity for all attributes
+        """Check the consistency of dimensionality for all attributes.
 
         Parameters
         ----------
@@ -224,9 +224,7 @@ class Dims(EventedModel):
             updated['axis_labels'] = axis_labels[-ndim:]
 
         # Check the rollable axes tuple has same number of elements as ndim
-        updated['rollable'] = (values['rollable'] + tuple([True] * ndim))[
-            :ndim
-        ]
+        updated['rollable'] = ensure_len(values['rollable'], ndim, True)
 
         # If the last used slider is no longer visible, use the first.
         last_used = values['last_used']
