@@ -208,7 +208,7 @@ class QtViewerButtons(QFrame):
         pop = QtPopup(self)
 
         # dims sorter widget
-        dim_sorter = QtDimsSorter(self.viewer, pop)
+        dim_sorter = QtDimsSorter(self.viewer.dims, pop)
         dim_sorter.setObjectName('dim_sorter')
 
         # make layout

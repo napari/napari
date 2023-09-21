@@ -883,6 +883,16 @@ QtLayerList::indicator:checked {
   min-width: 36px;
 }
 
+/* ------------- Lock check buttons for dims sorter --------- */
+
+QtDimsSorter > QtListView::indicator::unchecked {
+  image: url("theme_{{ id }}:/lock.svg");
+}
+
+QtDimsSorter > QtListView::indicator::checked {
+  image: url("theme_{{ id }}:/lock_open.svg");
+}
+
 /* --------------- Menus (application and context menus) ---------------- */
 
 QMenu::separator, QModelMenu::separator {
