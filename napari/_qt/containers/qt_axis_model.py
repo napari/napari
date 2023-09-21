@@ -11,7 +11,7 @@ class AxisModel:
     """View of an axis within a dims model.
 
     The model keeps track of axis names and allows read / write
-    acces on the cossesponding rollable state of a Dims object.
+    access on the corresponding rollable state of a Dims object.
 
     Parameters
     ----------
@@ -85,7 +85,7 @@ class AxisList(SelectableEventedList[AxisModel]):
         AxisList
             A selectable evented list of the viewer axes.
         """
-        return cls(AxisModel(dims, ord) for ord in dims.order)
+        return cls(AxisModel(dims, d) for d in dims.order)
 
 
 class QtAxisListModel(QtListModel[AxisModel]):
@@ -113,10 +113,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
     ) -> bool:
         axis = self.getItem(index)
         if role == Qt.ItemDataRole.CheckStateRole:
-            axis.rollable = bool(
-                value
-                in {Qt.CheckState.Checked, Qt.CheckState.Checked.value, True}
-            )
+            axis.rollable = Qt.CheckState(value) == Qt.CheckState.Checked
         elif role == Qt.ItemDataRole.EditRole:
             axis_labels = list(axis.dims.axis_labels)
             axis_labels[axis.axis] = value
@@ -147,6 +144,11 @@ class QtAxisListModel(QtListModel[AxisModel]):
         qtpy.QtCore.Qt.ItemFlags
             ItemFlags specific to the given index.
         """
+        if not index.isValid():
+            # We only allow drops outside and in between the items
+            # (and not inside them), in which case the index is not valid.
+            return Qt.ItemFlag.ItemIsDropEnabled
+
         flags = (
             Qt.ItemFlag.ItemIsSelectable
             | Qt.ItemFlag.ItemIsEditable
@@ -154,12 +156,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
             | Qt.ItemFlag.ItemIsEnabled
             | Qt.ItemFlag.ItemNeverHasChildren
         )
-
-        if not index.isValid():
-            # we allow drops outside the items
-            return Qt.ItemFlag.ItemIsDropEnabled
-
         if self.getItem(index).rollable:
             # we only allow dragging if the item is rollable
-            return flags | Qt.ItemFlag.ItemIsDragEnabled
+            flags |= Qt.ItemFlag.ItemIsDragEnabled
         return flags

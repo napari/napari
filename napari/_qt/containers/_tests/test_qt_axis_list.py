@@ -77,7 +77,9 @@ def test_QtAxisListModel_data(qtbot):
     idx = 1
     with qtbot.waitSignal(axislistmodel.dataChanged, timeout=100):
         assert axislistmodel.setData(
-            axislistmodel.index(idx), True, role=Qt.ItemDataRole.CheckStateRole
+            axislistmodel.index(idx),
+            Qt.CheckState.Checked,
+            role=Qt.ItemDataRole.CheckStateRole,
         )
     assert dims.rollable[idx]
 
