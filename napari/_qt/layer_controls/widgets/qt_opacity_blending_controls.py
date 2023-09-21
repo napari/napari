@@ -3,12 +3,12 @@ from typing import List, Tuple
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
-    QLabel,
     QWidget,
 )
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
+    QtWrappedLabel,
 )
 from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
@@ -35,11 +35,11 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
     ----------
         blendComboBox : qtpy.QtWidgets.QComboBox
             Dropdown widget to select blending mode of layer.
-        blendLabel : qtpy.QtWidgets.QLabel
+        blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
             Label for the blending combobox widget.
         opacitySlider : qtpy.QtWidgets.QSlider
             Slider controlling opacity of the layer.
-        opacityLabel : qtpy.QtWidgets.QLabel
+        opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
             Label for the opacity slider widget.
     """
 
@@ -57,7 +57,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         sld.setSingleStep(0.01)
         sld.valueChanged.connect(self.changeOpacity)
         self.opacitySlider = sld
-        self.opacityLabel = QLabel(trans._('opacity:'))
+        self.opacityLabel = QtWrappedLabel(trans._('opacity:'))
         self._on_opacity_change()
 
         blend_comboBox = QComboBox(parent)
@@ -69,7 +69,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
 
         blend_comboBox.currentTextChanged.connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
-        self.blendLabel = QLabel(trans._('blending:'))
+        self.blendLabel = QtWrappedLabel(trans._('blending:'))
 
         # opaque and minimum blending do not support changing alpha
         self.opacitySlider.setEnabled(
@@ -130,7 +130,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
                 self.blendComboBox.findData(self._layer.blending)
             )
 
-    def get_widget_controls(self) -> List[Tuple[QLabel, QWidget]]:
+    def get_widget_controls(self) -> List[Tuple[QtWrappedLabel, QWidget]]:
         return [
             (self.opacityLabel, self.opacitySlider),
             (self.blendLabel, self.blendComboBox),

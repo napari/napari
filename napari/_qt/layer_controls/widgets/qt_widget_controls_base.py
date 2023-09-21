@@ -1,13 +1,22 @@
 from typing import List, Tuple
 
-from qtpy.QtCore import QObject
-from qtpy.QtWidgets import (
-    QLabel,
-    QWidget,
-)
+from qtpy.QtCore import QObject, Qt
+from qtpy.QtWidgets import QLabel, QWidget
 
 from napari.layers.base.base import Layer
 from napari.utils.events import disconnect_events
+
+
+class QtWrappedLabel(QLabel):
+    """
+    QLabel subclass with the `wordWrap` activated (True) and text aligned
+    to the right by default.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setWordWrap(True)
+        self.setAlignment(Qt.AlignmentFlag.AlignRight)
 
 
 class QtWidgetControlsBase(QObject):
@@ -30,13 +39,13 @@ class QtWidgetControlsBase(QObject):
         # Setup layer
         self._layer = layer
 
-    def get_widget_controls(self) -> List[Tuple[QLabel, QWidget]]:
+    def get_widget_controls(self) -> List[Tuple[QtWrappedLabel, QWidget]]:
         """
         Enable access to the created labels and control widgets.
 
         Returns
         -------
-        list : List[Tuple[QLabel, QWidget]]
+        list : List[Tuple[QtWrappedLabel, QWidget]]
             List of tuples of the label and widget controls available.
 
         """

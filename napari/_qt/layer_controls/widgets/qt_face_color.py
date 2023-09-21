@@ -1,10 +1,11 @@
 from typing import List, Tuple
 
 import numpy as np
-from qtpy.QtWidgets import QLabel, QWidget
+from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
+    QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
@@ -28,7 +29,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
     ----------
         faceColorEdit : qtpy.QtWidgets.QSlider
             ColorSwatchEdit controlling current face color of the layer.
-        faceColorLabel : qtpy.QtWidgets.QLabel
+        faceColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
             Label for the current face color widget.
     """
 
@@ -44,7 +45,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
             initial_color=self._layer.current_face_color,
             tooltip=trans._('click to set current face color'),
         )
-        self.faceColorLabel = QLabel(trans._('face color:'))
+        self.faceColorLabel = QtWrappedLabel(trans._('face color:'))
         self._on_current_face_color_change()
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
 
@@ -65,5 +66,5 @@ class QtFaceColorControl(QtWidgetControlsBase):
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self._layer.current_face_color)
 
-    def get_widget_controls(self) -> List[Tuple[QLabel, QWidget]]:
+    def get_widget_controls(self) -> List[Tuple[QtWrappedLabel, QWidget]]:
         return [(self.faceColorLabel, self.faceColorEdit)]

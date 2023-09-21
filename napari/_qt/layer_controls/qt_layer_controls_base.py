@@ -49,9 +49,14 @@ class LayerFormLayout(QFormLayout):
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
-        self.setContentsMargins(0, 0, 0, 0)
-        self.setSpacing(5)  # Spacing between rows
-        self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        self.setContentsMargins(36, 5, 18, 8)
+        self.setVerticalSpacing(5)  # Spacing between rows
+        self.setHorizontalSpacing(
+            10
+        )  # Spacing between field label and widget control
+        self.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
         # Needed since default aligment depends on OS (win/linux left, macos right)
         self.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
@@ -81,7 +86,6 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
         form_widget = QWidget()
         form_widget.setProperty('emphasized', True)
         self._internal_layout = LayerFormLayout()
-        self._internal_layout.setContentsMargins(36, 10, 18, 13)
         form_widget.setLayout(self._internal_layout)
         self.addWidget(form_widget)
         self.expand(animate=False)
@@ -354,7 +358,9 @@ class NewQtLayerControls(
         self._buttons_grid = QGridLayout()
         self._buttons_grid.setContentsMargins(0, 0, 0, 0)
         # Need to set spacing to have same spacing over all platforms
-        self._buttons_grid.setSpacing(10)  # +-6 win/linux def; +-15 macos def
+        self._buttons_grid.setVerticalSpacing(
+            10
+        )  # +-6 win/linux def; +-15 macos def
         self._buttons_grid.setHorizontalSpacing(9)
         # Need to set strech for a last column to prevent the spacing between
         # buttons to change when the layer control width changes
@@ -391,7 +397,7 @@ class NewQtLayerControls(
 
         # Setup base layout
         self.setLayout(QVBoxLayout())
-        self.layout().setContentsMargins(8, 0, 0, 0)
+        self.layout().setContentsMargins(6, 0, 0, 0)
         # Spacing between sections (layer name, buttons and controls)
         self.layout().setSpacing(10)
         self.layout().addLayout(name_layout)

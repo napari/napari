@@ -3,10 +3,11 @@ from typing import List, Tuple
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QWidget
+from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
+    QtWrappedLabel,
 )
 from napari._qt.widgets._slider_compat import QSlider
 from napari.layers.base.base import Layer
@@ -29,7 +30,7 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
     ----------
         edgeWidthSlider : qtpy.QtWidgets.QSlider
             Slider controlling line edge width of layer.
-        edgeWidthLabel : qtpy.QtWidgets.QLabel
+        edgeWidthLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
             Label for the current edge width widget.
     """
 
@@ -52,7 +53,7 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
         sld.setValue(int(value))
         sld.valueChanged.connect(self.changeWidth)
         self.edgeWidthSlider = sld
-        self.edgeWidthLabel = QLabel(trans._('edge width:'))
+        self.edgeWidthLabel = QtWrappedLabel(trans._('edge width:'))
 
     def changeWidth(self, value: float) -> None:
         """Change edge line width of shapes on the layer model.
@@ -71,5 +72,5 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
             value = np.clip(int(value), 0, 40)
             self.edgeWidthSlider.setValue(value)
 
-    def get_widget_controls(self) -> List[Tuple[QLabel, QWidget]]:
+    def get_widget_controls(self) -> List[Tuple[QtWrappedLabel, QWidget]]:
         return [(self.edgeWidthLabel, self.edgeWidthSlider)]

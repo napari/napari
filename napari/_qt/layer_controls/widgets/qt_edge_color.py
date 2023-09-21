@@ -1,10 +1,11 @@
 from typing import List, Tuple
 
 import numpy as np
-from qtpy.QtWidgets import QLabel, QWidget
+from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
+    QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
@@ -28,7 +29,7 @@ class QtEdgeColorControl(QtWidgetControlsBase):
     ----------
         edgeColorEdit : qtpy.QtWidgets.QSlider
             ColorSwatchEdit controlling current edge color of the layer.
-        edgeColorLabel : qtpy.QtWidgets.QLabel
+        edgeColorLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
             Label for the current edge color chooser widget.
     """
 
@@ -44,7 +45,7 @@ class QtEdgeColorControl(QtWidgetControlsBase):
             initial_color=self._layer.current_edge_color,
             tooltip=trans._('click to set current edge color'),
         )
-        self.edgeColorLabel = QLabel(trans._('edge color:'))
+        self.edgeColorLabel = QtWrappedLabel(trans._('edge color:'))
         self._on_current_edge_color_change()
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
@@ -65,5 +66,5 @@ class QtEdgeColorControl(QtWidgetControlsBase):
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self._layer.current_edge_color)
 
-    def get_widget_controls(self) -> List[Tuple[QLabel, QWidget]]:
+    def get_widget_controls(self) -> List[Tuple[QtWrappedLabel, QWidget]]:
         return [(self.edgeColorLabel, self.edgeColorEdit)]

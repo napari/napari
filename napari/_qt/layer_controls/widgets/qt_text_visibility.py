@@ -1,10 +1,11 @@
 from typing import List, Tuple
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QLabel, QWidget
+from qtpy.QtWidgets import QCheckBox, QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
+    QtWrappedLabel,
 )
 from napari.layers.base.base import Layer
 from napari.utils.events import disconnect_events
@@ -27,7 +28,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
     ----------
         textDispCheckBox : qtpy.QtWidgets.QCheckbox
             Checkbox controlling if text on the layer is visible or not.
-        textDispLabel : qtpy.QtWidgets.QLabel
+        textDispLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
             Label for the text visibility widget.
     """
 
@@ -44,7 +45,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         text_disp_cb.setChecked(self._layer.text.visible)
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb
-        self.textDispLabel = QLabel(trans._('display text:'))
+        self.textDispLabel = QtWrappedLabel(trans._('display text:'))
 
     def change_text_visibility(self, state: int) -> None:
         """Toggle the visibility of the text.
@@ -63,7 +64,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         with self._layer.text.events.visible.blocker():
             self.textDispCheckBox.setChecked(self._layer.text.visible)
 
-    def get_widget_controls(self) -> List[Tuple[QLabel, QWidget]]:
+    def get_widget_controls(self) -> List[Tuple[QtWrappedLabel, QWidget]]:
         return [(self.textDispLabel, self.textDispCheckBox)]
 
     def disconnect_widget_controls(self) -> None:

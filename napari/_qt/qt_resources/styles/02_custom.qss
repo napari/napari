@@ -287,8 +287,9 @@ QtColorBox {
 
 /* ----------------- QtLayerControls -------------------- */
 
+/* TODO: Should be removed */
 QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
-  font-size: {{ decrease(font_size, 1) }};
+  font-size: {{ decrease(font_size, 2) }};
   color: {{ text }};
 }
 
@@ -298,8 +299,8 @@ QtLayerControls > QElidingLineEdit#layer_name {
   font-weight: bold;
   min-width: 220px;
   max-width: 220px;
-  min-height: 14px;
-  max-height: 14px;
+  min-height: 18px;
+  max-height: 18px;
   margin: 0px;
   padding: 0px;
 }
@@ -309,19 +310,20 @@ QtLayerControls > QElidingLineEdit#layer_name:focus {
   selection-background-color: {{ lighten(current, 20) }};
   min-width: 220px;
   max-width: 220px;
-  min-height: 14px;
-  max-height: 14px;
+  min-height: 18px;
+  max-height: 18px;
   margin: 0px;
   padding: 0px;
 }
 
+/* width defined following `_layer_delegate.py` size definition for decoration element (layer type icon) */
 QLabel[layer_type_icon_label="true"] {
-  max-width: 14px;
-  min-width: 14px;
-  min-height: 14px;
-  max-height: 14px;
-  margin-left: 10px;
-  margin-right: 5px;
+  max-width: 18px;  /* width defined following `_layer_delegate.py` size definition for decoration element (layer type icon) */
+  min-width: 18px;
+  min-height: 18px;  /* height defined following `_layer_delegate.py` size definition for decoration element (layer type icon) */
+  max-height: 18px;
+  margin-left: 8px;  /* Should be 10px but less is set since the layer type images have some internal padding +-2px */
+  margin-right: 3px;   /* Should be 5px but less is set since the layer type images have some internal padding +-2px*/
   padding: 0px;
 }
 
@@ -415,23 +417,24 @@ QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] {
   padding: 0px;
   margin: 0px;
   border-radius: 2px;
-  min-width: 250px;
+  min-width: 252px;
 }
 
-QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:hover,
-QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:checked:hover {
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:hover,
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:checked:hover {
   background-color: {{ highlight }};
   font-weight: bold;
   padding-left: 8px;
 }
 
-QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton,
-QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:disabled,
-QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:pressed,
-QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:checked {
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton,
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:disabled,
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:pressed,
+QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:checked {
   background-color: {{ foreground }};
   font-weight: bold;
   padding-left: 8px;
+  padding-right: 8px;
 }
 
 
@@ -444,6 +447,10 @@ QtCollapsibleLayerControlsSection[emphasized="true"] QLineEdit:focus {
   selection-background-color: {{ lighten(current, 20) }};
 }
 
+QtCollapsibleLayerControlsSection[emphasized="true"] QtWrappedLabel {
+  max-width: 75px; /* TODO: Check value. Design sets it at 60px but using that value makes the text wrap*/
+  min-width: 75px;
+}
 
 /* ------------- DimsSliders --------- */
 
