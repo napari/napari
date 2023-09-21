@@ -114,7 +114,8 @@ class QtAxisListModel(QtListModel[AxisModel]):
         axis = self.getItem(index)
         if role == Qt.ItemDataRole.CheckStateRole:
             axis.rollable = bool(
-                value in {Qt.CheckState.Checked, Qt.CheckState.Checked.value, True}
+                value
+                in {Qt.CheckState.Checked, Qt.CheckState.Checked.value, True}
             )
         elif role == Qt.ItemDataRole.EditRole:
             axis_labels = list(axis.dims.axis_labels)
