@@ -85,7 +85,7 @@ class AxisList(SelectableEventedList[AxisModel]):
         AxisList
             A selectable evented list of the viewer axes.
         """
-        return cls([AxisModel(dims, dims.order[i]) for i in range(dims.ndim)])
+        return cls(AxisModel(dims, ord) for ord in dims.order)
 
 
 class QtAxisListModel(QtListModel[AxisModel]):
@@ -114,7 +114,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
         axis = self.getItem(index)
         if role == Qt.ItemDataRole.CheckStateRole:
             axis.rollable = bool(
-                value == Qt.CheckState.Checked or value is True
+                value in {Qt.CheckState.Checked, Qt.CheckState.Checked.value, True}
             )
         elif role == Qt.ItemDataRole.EditRole:
             axis_labels = list(axis.dims.axis_labels)
