@@ -1,6 +1,7 @@
 from typing import Any, Iterable
 
 from qtpy.QtCore import QModelIndex, Qt
+from typing_extensions import Self
 
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.components import Dims
@@ -69,7 +70,7 @@ class AxisList(SelectableEventedList[AxisModel]):
         super().__init__(axes)
 
     @classmethod
-    def from_dims(cls, dims: Dims) -> 'AxisList':
+    def from_dims(cls, dims: Dims) -> Self:
         """Create AxisList instance from Dims object.
 
         The AxisList is filled with a number of AxisModels based
