@@ -259,6 +259,16 @@ viewer.layers.pop(i)
 One of the main strengths of **napari** is that it has been designed from the beginning to handle n-dimensional data. While much consumer photography is 2D and `RGB`, scientific image data can often be volumetric (i.e. 3D), volumetric timeseries (i.e. 4D), or even higher dimensional. **napari** places no limits on the dimensionality of its input data for all its layer types.
 
 Adding data with a dimensionality greater than 2D will cause dimension sliders to appear directly underneath the canvas and above the status bar. As many sliders as needed will appear to ensure the data can be fully browsed. For example, a 3D dataset needs one slider, a 4D dataset needs two sliders, and so on. The widths of the scroll bars of the dimension sliders are directly related to how many slices are in each dimension.
+To the left of each slider will be an integer indicating which dimension is being controlled by that slider. These integers are automatically updated when changing which dimensions are to be displayed. Alternately, the sliders can be labeled by double-clicking on the integer and editing the field. The labels can be retrieved programatically as follows:
+```{code-cell} python
+# To get the dimension labels
+viewer.dims.axis_labels
+```
+You can also set the axis labels programatically as follows:
+```{code-cell} python
+# To set new axis labels
+viewer.dims.axis_labels = ("label_1", "label_2")
+``` 
 
 It is also possible to mix data of different shapes and dimensionality in different layers. If a 2D and 4D dataset are both added to the viewer then the sliders will affect only the 4D dataset, the 2D dataset will remain the
 same. Effectively, the two datasets are broadcast together using [NumPy broadcasting rules](https://numpy.org/doc/stable/user/basics.broadcasting.html).
@@ -291,16 +301,20 @@ viewer.add_image(blobs, name='blobs', opacity=0.5, colormap='red')
 nbscreenshot(viewer, alt_text="A 2d view of the moon on top of which is overlaid a 3d volume containing blobs through which you can navigate using the dimension slider.")
 ```
 
-In order to get or update the current position of the slider, use:
+In this example there are three dimensions. In order to get or update the current position of the sliders, use:
 
-```python
-# to get the current position
-viewer.dims.current_step
-# to change the current position
-viewer.dims.current_step = 3
+```{code-cell} python
+# To get the current position returned as tuple of length 3
+viewer.dims.current_step 
 ```
+And to change the current position of the sliders use:
+```{code-cell} python
+# To change the current position of this example to step 3
+viewer.dims.current_step = (3, 255, 255)
+```
+The length of the `current_step` tuple corresponds to the number of dimensions. Note that in this example, the last two dimensions are *displayed* (don't have a slider) and thus changing the last two elements of the tuple will have no effect [until the axes order is changed](#roll-dimensions).
 
-`viewer.dims.point` contains the position in world coordinates (i.e., including
+Lastly, `viewer.dims.point` contains the position in world coordinates (i.e., including
 scale and translate transformations).
 
 ### Scroll buttons
@@ -396,6 +410,20 @@ viewer.camera.perspective = 45
 #### Roll dimensions
 
 The third button rolls the dimensions that are currently displayed in the viewer. For example if you have a `ZYX` volume and are looking at the `YX` slice, this will then show you the `ZY` slice. You can also right-click this button to re-order the dimensions by drag-and-drop.
+
+The dimension order can also be checked programatically as follows:
+
+```{code-cell} python
+# To get the current dimension order as tuple of int
+viewer.dims.order
+```
+And then, changed programatically as follows:
+```{code-cell} python
+# To change the current dimension order
+viewer.dims.order = (2, 1, 0)
+```
+In this case the third dimension will be controlled by the slider and the first and second dimension will be visible.
+Note that this has no effect on the order of `viewer.dims.current_step`. The first element still corresponds to the first dimension for example. These are just examples; the only requirement is that the length of the tuple is the same as the number of dimensions.
 
 #### Transpose dimensions
 

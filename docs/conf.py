@@ -152,7 +152,7 @@ myst_enable_extensions = [
     'tasklist',
 ]
 
-myst_heading_anchors = 3
+myst_heading_anchors = 4
 
 version_string = '.'.join(str(x) for x in __version_tuple__[:3])
 python_version = '3.9'
