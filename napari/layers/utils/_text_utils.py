@@ -36,9 +36,12 @@ def _calculate_bbox_centers(view_data: Union[np.ndarray, list]) -> np.ndarray:
     Parameters
     ----------
     view_data : np.ndarray | list of ndarray
-        if an ndarray, return the
+        if an ndarray, return the center across the 0-th axis.
+        if a list, return the bbox center for each items.
 
-
+    Returns
+    -------
+    An ndarray of the centers.
 
     """
     if isinstance(view_data, np.ndarray):
