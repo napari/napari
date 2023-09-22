@@ -48,11 +48,17 @@ def perf_config(tmp_path: Path):
 
 
 @pytest.fixture()
-def perfmon_script():
+def perfmon_script(tmp_path):
     script = PERFMON_SCRIPT
     if "coverage" in sys.modules:
+        script_path = tmp_path / "script.py"
+        with script_path.open("w") as f:
+            f.write(script)
+        return "-m", "coverage", "run", str(script_path)
         script = "import coverage\ncoverage.process_startup()\n" + script
-    return script
+
+        assert False, os.environ.get("COVERAGE_PROCESS_START")
+    return "-c", script
 
 
 @skip_on_win_ci
@@ -63,7 +69,7 @@ def test_trace_on_start(tmp_path: Path, perf_config, perfmon_script):
     env = os.environ.copy()
     env.update({'NAPARI_PERFMON': str(perf_config.path), 'NAPARI_CONFIG': ''})
 
-    subprocess.run([sys.executable, '-c', perfmon_script], env=env, check=True)
+    subprocess.run([sys.executable, *perfmon_script], env=env, check=True)
 
     # Make sure file exists and is not empty.
     assert perf_config.trace_path.exists(), "Trace file not written"
