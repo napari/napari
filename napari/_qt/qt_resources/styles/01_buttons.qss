@@ -81,7 +81,7 @@ QtModeRadioButton::indicator:checked {
 }
 
 QtModeRadioButton::indicator:unchecked:hover {
-  background-color: {{ primary }};
+  background-color: {{ highlight }};
 }
 
 QtModeRadioButton[mode="pan"]::indicator {

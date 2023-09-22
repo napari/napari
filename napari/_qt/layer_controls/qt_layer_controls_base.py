@@ -58,7 +58,12 @@ class LayerFormLayout(QFormLayout):
             QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
         )
         # Needed since default aligment depends on OS (win/linux left, macos right)
-        self.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        self.setLabelAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.setFormAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
 
 
 class QtCollapsibleLayerControlsSection(QCollapsible):

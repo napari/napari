@@ -289,13 +289,13 @@ QtColorBox {
 
 /* TODO: Should be removed */
 QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
-  font-size: {{ decrease(font_size, 2) }};
+  font-size: {{ decrease(font_size, 1) }};
   color: {{ text }};
 }
 
 QtLayerControls > QElidingLineEdit#layer_name {
   background-color: {{ background }};
-  font-size: {{ increase(font_size, 1) }};
+  font-size: {{ font_size }};
   font-weight: bold;
   min-width: 220px;
   max-width: 220px;
@@ -417,7 +417,13 @@ QtLayerControlsContainer QtCollapsibleLayerControlsSection[emphasized="true"] {
   padding: 0px;
   margin: 0px;
   border-radius: 2px;
-  min-width: 252px;
+  min-width: 250px;
+  font-size: {{ decrease(font_size, 1) }};
+}
+
+QtCollapsibleLayerControlsSection[emphasized="true"] QWidget{
+  font-size: {{ decrease(font_size, 1) }}; /* TODO: Check font-size value */
+  color: {{ text }};
 }
 
 QtCollapsibleLayerControlsSection[emphasized="true"] > QPushButton:hover,
@@ -448,8 +454,11 @@ QtCollapsibleLayerControlsSection[emphasized="true"] QLineEdit:focus {
 }
 
 QtCollapsibleLayerControlsSection[emphasized="true"] QtWrappedLabel {
-  max-width: 75px; /* TODO: Check value. Design sets it at 60px but using that value makes the text wrap*/
-  min-width: 75px;
+  max-width: 65px; /* TODO: Check value. Design sets it at 60px but using that value makes the text wrap*/
+  min-width: 65px;
+  max-height: 25px;
+  padding: 0px;
+  margin: 0px;
 }
 
 /* ------------- DimsSliders --------- */

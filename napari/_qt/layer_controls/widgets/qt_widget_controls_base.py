@@ -10,13 +10,15 @@ from napari.utils.events import disconnect_events
 class QtWrappedLabel(QLabel):
     """
     QLabel subclass with the `wordWrap` activated (True) and text aligned
-    to the right by default.
+    to the right and vertically centered by default.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setWordWrap(True)
-        self.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
 
 
 class QtWidgetControlsBase(QObject):
