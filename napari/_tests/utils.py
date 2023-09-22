@@ -141,7 +141,7 @@ class LockableData:
         return self.data.shape
 
     @property
-    def size(self) -> Tuple[int]:
+    def size(self) -> int:
         return self.data.size
 
     @property
