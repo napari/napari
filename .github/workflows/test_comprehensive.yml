@@ -65,9 +65,11 @@ jobs:
           - python: "3.11"
             platform: ubuntu-latest
             backend: pyqt6
+            tox_extras: "testing_extra"
           - python: "3.11"
             platform: ubuntu-latest
             backend: pyside6
+            tox_extras: "testing_extra"
         exclude:
           - python: "3.11"
             backend: pyside2
@@ -78,6 +80,7 @@ jobs:
       min_req: ${{ matrix.MIN_REQ }}
       coverage: cov
       toxenv: ${{ matrix.toxenv }}
+      tox_extras: ${{ matrix.tox_extras }}
 
   test_pip_install:
     name: pip install

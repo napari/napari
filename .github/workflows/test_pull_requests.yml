@@ -115,7 +115,8 @@ jobs:
           - python: 3.11
             platform: ubuntu-latest
             backend: pyqt6,pyside6
-            coverage: no_cov
+            coverage: cov
+            tox_extras: "testing_extra"
 
     with:
       python_version: ${{ matrix.python }}
@@ -124,6 +125,7 @@ jobs:
       min_req: ${{ matrix.MIN_REQ }}
       coverage: ${{ matrix.coverage }}
       toxenv: ${{ matrix.toxenv }}
+      tox_extras: ${{ matrix.tox_extras }}
 
   test_pip_install:
     needs: test_initial

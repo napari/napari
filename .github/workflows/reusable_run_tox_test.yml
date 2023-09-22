@@ -32,6 +32,10 @@ on:
         required: false
         type: string
         default: ""
+      tox_extras:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   test:
@@ -46,6 +50,7 @@ jobs:
       PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       COVERAGE: ${{ inputs.coverage }}
       TOX_WORK_DIR: .tox
+      TOX_EXTRAS: ${{ inputs.tox_extras }}
     steps:
       - uses: actions/checkout@v3
 
