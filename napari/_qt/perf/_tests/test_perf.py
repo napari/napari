@@ -49,13 +49,9 @@ def perf_config(tmp_path: Path):
 
 @pytest.fixture()
 def perfmon_script():
+    script = PERFMON_SCRIPT
     if "coverage" in sys.modules:
-        script = (
-            "import coverage\ncoverage.process_startup()\n" + PERFMON_SCRIPT
-        )
-    else:
-        script = PERFMON_SCRIPT
-
+        script = "import coverage\ncoverage.process_startup()\n" + script
     return script
 
 
