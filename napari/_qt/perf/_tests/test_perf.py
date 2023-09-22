@@ -55,9 +55,6 @@ def perfmon_script(tmp_path):
         with script_path.open("w") as f:
             f.write(script)
         return "-m", "coverage", "run", str(script_path)
-        script = "import coverage\ncoverage.process_startup()\n" + script
-
-        assert False, os.environ.get("COVERAGE_PROCESS_START")
     return "-c", script
 
 
