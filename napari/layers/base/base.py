@@ -1513,7 +1513,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Let's keep in mind a few facts:
 
          - each dimension index is present exactly once.
-         - the lowest represented dimension both in dims order is going to be 0.
+         - the lowest represented dimension index will be 0
 
         That is to say both the `world_dims` input and return results are _some_
         permutation of 0...N
@@ -1527,7 +1527,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
           - `[2, None, None, 3]`
           - we filter the None
           - `[2, 3]`
-          - reindex so that the lowest dimension is going to be 0, so substract 2
+          - reindex so that the lowest dimension is 0 by subtracting 2 from all indices
           - `[0, 1]`
 
           `[2, 1, 0, 3]`  sliced in N=3 dimensions.
@@ -1536,7 +1536,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
           - `[2, 1, None, 3]`
           - we filter the None
           - `[2, 1, 3]`
-          - reindex so that the lowest dimension is going to be 0, so substract 1
+          - reindex so that the lowest dimension is 0 by subtracting 1 from all indices
           - `[1, 0, 2]`
 
         Conveniently if the world (layer) dimension is bigger than our displayed
@@ -1567,9 +1567,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         Static for ease of testing
         """
-        # TODO: check world_dims is already a np array ?
-        # I think some things pass it as a tuple
-        world_dims = np.array(world_dims)
+        world_dims = np.asarray(world_dims)
         assert world_dims.min() == 0
         assert world_dims.max() == len(world_dims) - 1
         assert world_dims.ndim == 1

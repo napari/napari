@@ -117,9 +117,9 @@ class ShapeList:
         `_update_displayed()` is called at _most_ once on exit of the context
         manager.
 
-        There are two reason for that:
+        There are two reason for this:
 
-         1. Some updates are triggered by events, but sometime multiple pieces
+         1. Some updates are triggered by events, but sometimes multiple pieces
             of data that trigger events must be set before the data can be
             recomputed. For example changing number of dimension cause broacast
             error on partially update structures.
