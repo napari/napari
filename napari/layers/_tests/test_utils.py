@@ -2,7 +2,18 @@ import numpy as np
 import pytest
 from skimage.util import img_as_ubyte
 
-from napari.layers.utils.layer_utils import convert_to_uint8
+from napari.layers.utils.layer_utils import _get_1d_slices, convert_to_uint8
+
+DATA_1D = [
+    ((5,), (int(15e6),), None),  # Case of chunk going over pixel threshold
+    ((5,), (int(9e6),), 1),  # Only stay below threshold with 1 chunk
+    (
+        (4000,),
+        (5000,),
+        3,
+    ),  # Chunk shape and size sufficient to get all slices
+    ((2,), (int(9e6),), 1),
+]
 
 
 @pytest.mark.filterwarnings("ignore:Downcasting uint:UserWarning:skimage")
@@ -57,3 +68,12 @@ def test_bool():
     converted = convert_to_uint8(data)
     assert converted.dtype == np.uint8
     assert np.array_equal(img_as_ubyte(data), converted)
+
+
+@pytest.mark.parametrize(["shape", "chunk_size", "expected_length"], DATA_1D)
+def test_1d_slices(shape, chunk_size, expected_length):
+    slices = _get_1d_slices(shape, chunk_size)
+    if not expected_length:
+        assert expected_length == slices
+    else:
+        assert expected_length == len(slices)
