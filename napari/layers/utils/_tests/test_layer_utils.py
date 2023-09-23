@@ -7,6 +7,7 @@ from dask import array as da
 
 from napari.layers.utils.layer_utils import (
     _FeatureTable,
+    _get_1d_slices,
     calc_data_range,
     coerce_current_properties,
     dataframe_to_properties,
@@ -38,6 +39,18 @@ data_dask_1d_rgb = da.random.randint(
 data_dask_plane = da.random.randint(
     250, 15000, size=(100_000, 100_000), chunks=(1000, 1000), dtype=np.uint16
 )
+
+TEST_DATA_1D = [
+    ((5,), (int(15e6),), None),  # Case of chunk going over pixel threshold
+    ((5,), (int(9e6),), 1),  # Only stay below threshold with 1 chunk
+    (
+        (4000,),
+        (5000,),
+        3,
+    ),  # Chunk shape and size sufficient to get all slices
+    ((2,), (int(9e6),), 1),
+    ((int(20e6),), None, 3),
+]
 
 
 def test_calc_data_range():
@@ -497,3 +510,14 @@ def test_register_label_attr_action(monkeypatch):
     monkeypatch.setattr(time, "time", lambda: 2)
     handler.release_key("K")
     assert foo.value == 0
+
+
+@pytest.mark.parametrize(
+    ["shape", "chunk_size", "expected_length"], TEST_DATA_1D
+)
+def test_1d_slices(shape, chunk_size, expected_length):
+    slices = _get_1d_slices(shape, chunk_size)
+    if not expected_length:
+        assert expected_length == slices
+    else:
+        assert expected_length == len(slices)
