@@ -1,7 +1,7 @@
-from enum import Enum
+from napari.utils.compat import StrEnum
 
 
-class CanvasPosition(str, Enum):
+class CanvasPosition(StrEnum):
     """Canvas overlay position.
 
     Sets the position of an object in the canvas
@@ -21,7 +21,7 @@ class CanvasPosition(str, Enum):
     BOTTOM_LEFT = 'bottom_left'
 
 
-class CursorStyle(str, Enum):
+class CursorStyle(StrEnum):
     """CursorStyle: Style on the cursor.
 
     Sets the style of the cursor

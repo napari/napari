@@ -1,5 +1,4 @@
 from collections import defaultdict
-from enum import Enum
 from typing import Optional, cast
 
 import numpy as np
@@ -7,12 +6,13 @@ from pydantic import Field, PrivateAttr, validator
 
 from napari.utils.color import ColorArray
 from napari.utils.colormaps.colorbars import make_colorbar
+from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 
-class ColormapInterpolationMode(str, Enum):
+class ColormapInterpolationMode(StrEnum):
     """INTERPOLATION: Interpolation mode for colormaps.
 
     Selects an interpolation mode for the colormap.
