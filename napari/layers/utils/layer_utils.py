@@ -416,7 +416,7 @@ def _get_crop_slices(
     shape: Sequence[int],
     plane_indices: Sequence[Sequence[int]],
     offset: int,
-    chunk_shape: None | Tuple[int] = None,
+    chunk_shape: None | Tuple[int, ...] = None,
 ) -> Union[None, List[Tuple[Union[int, slice], ...]]]:
     """
     Get the crop slices to be used for determining contrast limits when data is larger than the pixel threshold.
@@ -1407,7 +1407,7 @@ def _get_chunk_size(
     | list
     | Iterable[npt.NDArray]
     | None,
-) -> None | tuple[int]:
+) -> None | tuple[int, ...]:
     """Get chunk size from a given layer.
 
     Parameters
