@@ -17,6 +17,10 @@ from enum import Enum
 class MenuId(str, Enum):
     """Id representing a menu somewhere in napari."""
 
+    MENUBAR_FILE = 'napari/file'
+    FILE_OPEN_WITH_PLUGIN = 'napari/file/open_with_plugin'
+    FILE_SAMPLES = 'napari/file/samples'
+
     MENUBAR_VIEW = 'napari/view'
     VIEW_AXES = 'napari/view/axes'
     VIEW_SCALEBAR = 'napari/view/scalebar'
@@ -35,6 +39,9 @@ class MenuId(str, Enum):
 class MenuGroup:
     NAVIGATION = 'navigation'  # always the first group in any menu
     RENDER = '1_render'
+    PREFERENCES = '2_preferences'
+    SAVE = '3_save'
+    CLOSE = '4_close'
 
     class LAYERLIST_CONTEXT:
         CONVERSION = '1_conversion'

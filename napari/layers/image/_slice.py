@@ -236,16 +236,12 @@ class _ImageSliceRequest:
         data = np.transpose(data, order)
         image = _ImageView.from_view(data)
 
-        thumbnail = image
-        if self.thumbnail_level != level:
-            thumbnail_indices = self._slice_indices_at_level(
-                self.thumbnail_level
-            )
-            thumbnail_data = np.asarray(
-                self.data[self.thumbnail_level][tuple(thumbnail_indices)]
-            )
-            thumbnail_data = np.transpose(thumbnail_data, order)
-            thumbnail = _ImageView.from_view(thumbnail_data)
+        thumbnail_indices = self._slice_indices_at_level(self.thumbnail_level)
+        thumbnail_data = np.asarray(
+            self.data[self.thumbnail_level][tuple(thumbnail_indices)]
+        )
+        thumbnail_data = np.transpose(thumbnail_data, order)
+        thumbnail = _ImageView.from_view(thumbnail_data)
 
         return _ImageSliceResponse(
             image=image,

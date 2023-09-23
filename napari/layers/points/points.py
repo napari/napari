@@ -861,7 +861,7 @@ class Points(Layer):
         return self._size
 
     @size.setter
-    def size(self, size: Union[int, float, np.ndarray, list]) -> None:
+    def size(self, size: Union[float, np.ndarray, list]) -> None:
         try:
             self._size = np.broadcast_to(size, len(self.data)).copy()
         except ValueError as e:
@@ -993,9 +993,7 @@ class Points(Layer):
         return self._edge_width
 
     @edge_width.setter
-    def edge_width(
-        self, edge_width: Union[int, float, np.ndarray, list]
-    ) -> None:
+    def edge_width(self, edge_width: Union[float, np.ndarray, list]) -> None:
         # broadcast to np.array
         edge_width = np.broadcast_to(edge_width, self.data.shape[0]).copy()
 

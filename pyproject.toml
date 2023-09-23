@@ -313,8 +313,6 @@ module = [
     'napari._vispy.layers.base',
     'napari._vispy.overlays.base',
     'napari._vispy.utils.cursor',
-    'napari.components._layer_slicer',
-    'napari.components._viewer_key_bindings',
     'napari.components.layerlist',
     'napari.layers._layer_actions',
     'napari.layers._multiscale_data',
