@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from typing import Mapping
 
     import numpy.typing as npt
+    from xarray import DataArray
 
     from napari.layers._multiscale_data import MultiScaleData
 
@@ -1406,6 +1407,7 @@ def _get_chunk_size(
     | float
     | list
     | Iterable[npt.NDArray]
+    | DataArray
     | None,
 ) -> None | tuple[int, ...]:
     """Get chunk size from a given layer.

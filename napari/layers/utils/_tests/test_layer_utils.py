@@ -8,6 +8,7 @@ from dask import array as da
 from napari.layers.utils.layer_utils import (
     _FeatureTable,
     _get_1d_slices,
+    _get_chunk_size,
     _get_crop_slices,
     _get_plane_indices,
     calc_data_range,
@@ -565,3 +566,25 @@ def test_insufficient_chunks_get_crop_slices():
     chunk_size = (1, 1825, 1825)
     slices = _get_crop_slices(shape, idxs, offset, chunk_size)
     assert len(slices) == 3
+
+
+def test_get_chunk_size():
+    import zarr
+
+    data_shape = (100, 100)
+    chunk_shape = (10, 10)
+    data = zarr.zeros(data_shape, chunks=chunk_shape, dtype='u2')
+    chunk_size = _get_chunk_size(data)
+    assert np.array_equal(chunk_size, chunk_shape)
+
+    import xarray as xr
+
+    coords = list(range(100))
+    data = xr.DataArray(
+        np.zeros((100, 100)),
+        dims=['y', 'x'],
+        coords={'y': coords, 'x': coords},
+    )
+    data = data.chunk(chunk_shape)
+    chunk_size = _get_chunk_size(data)
+    assert np.array_equal(chunk_size, chunk_shape)
