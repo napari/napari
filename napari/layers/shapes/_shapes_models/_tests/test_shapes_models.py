@@ -15,7 +15,7 @@ def test_rectangle():
     np.random.seed(0)
     data = 20 * np.random.random((4, 2))
     shape = Rectangle(data)
-    assert np.all(shape.data == data)
+    np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 0)
 
@@ -34,7 +34,7 @@ def test_nD_rectangle():
     data = 20 * np.random.random((4, 3))
     data[:, 0] = 0
     shape = Rectangle(data)
-    assert np.all(shape.data == data)
+    np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 1)
 
@@ -48,7 +48,7 @@ def test_polygon():
     np.random.seed(0)
     data = 20 * np.random.random((6, 2))
     shape = Polygon(data)
-    assert np.all(shape.data == data)
+    np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
     # should get few triangles
@@ -76,7 +76,7 @@ def test_nD_polygon():
     data = 20 * np.random.random((6, 3))
     data[:, 0] = 0
     shape = Polygon(data)
-    assert np.all(shape.data == data)
+    np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 1)
 
@@ -90,7 +90,7 @@ def test_path():
     np.random.seed(0)
     data = 20 * np.random.random((6, 2))
     shape = Path(data)
-    assert np.all(shape.data == data)
+    np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
 
@@ -101,7 +101,7 @@ def test_nD_path():
     np.random.seed(0)
     data = 20 * np.random.random((6, 3))
     shape = Path(data)
-    assert np.all(shape.data == data)
+    np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 1)
 
@@ -115,7 +115,7 @@ def test_line():
     np.random.seed(0)
     data = 20 * np.random.random((2, 2))
     shape = Line(data)
-    assert np.all(shape.data == data)
+    np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (2, 2)
     assert shape.slice_key.shape == (2, 0)
 
@@ -126,7 +126,7 @@ def test_nD_line():
     np.random.seed(0)
     data = 20 * np.random.random((2, 3))
     shape = Line(data)
-    assert np.all(shape.data == data)
+    np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (2, 2)
     assert shape.slice_key.shape == (2, 1)
 
@@ -140,7 +140,7 @@ def test_ellipse():
     np.random.seed(0)
     data = 20 * np.random.random((4, 2))
     shape = Ellipse(data)
-    assert np.all(shape.data == data)
+    np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 0)
 
@@ -159,7 +159,7 @@ def test_nD_ellipse():
     data = 20 * np.random.random((4, 3))
     data[:, 0] = 0
     shape = Ellipse(data)
-    assert np.all(shape.data == data)
+    np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 1)
 

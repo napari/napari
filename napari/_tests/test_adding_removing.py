@@ -75,7 +75,7 @@ def test_adding_removing_layer(make_napari_viewer):
 
     # Add layer
     viewer.layers.append(layer)
-    assert np.all(viewer.layers[0].data == data)
+    np.testing.assert_array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 4
     # check that adding a layer created new callbacks
