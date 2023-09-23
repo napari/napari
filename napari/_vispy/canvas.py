@@ -26,7 +26,7 @@ from napari.utils.interactions import (
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from typing import Callable, List, Optional, Tuple, Union
+    from typing import Callable, Dict, Optional, Tuple, Union
 
     import numpy.typing as npt
     from qtpy.QtCore import Qt, pyqtBoundSignal
@@ -34,8 +34,11 @@ if TYPE_CHECKING:
     from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
 
+    from napari._vispy.layers.base import VispyBaseLayer
+    from napari._vispy.overlays.base import VispyBaseOverlay
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
+    from napari.layers import Layer
     from napari.utils.events.event import Event
     from napari.utils.key_bindings import KeymapHandler
 
@@ -112,8 +115,8 @@ class VispyCanvas:
         self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
-        self.layer_to_visual = {}
-        self._overlay_to_visual = {}
+        self.layer_to_visual: Dict[Layer, VispyBaseLayer] = {}
+        self._overlay_to_visual: Dict[Overlay, VispyBaseOverlay] = {}
         self._key_map_handler = key_map_handler
         self._instances.add(self)
 
@@ -307,7 +310,7 @@ class VispyCanvas:
         )
 
     def _map_canvas2world(
-        self, position: List[int, int]
+        self, position: Tuple[int, int]
     ) -> Tuple[float, float]:
         """Map position from canvas pixels into world coordinates.
 
@@ -335,7 +338,7 @@ class VispyCanvas:
         position_world = list(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):
             position_world[d] = position_world_slice[i]
-        return tuple(position_world)
+        return position_world[0], position_world[1]
 
     def _process_mouse_event(
         self, mouse_callbacks: Callable, event: MouseEvent
@@ -384,7 +387,7 @@ class VispyCanvas:
 
         # Update the cursor position
         self.viewer.cursor._view_direction = event.view_direction
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
+        self.viewer.cursor.position = self._map_canvas2world(event.pos)
 
         # Add the cursor position to the event
         event.position = self.viewer.cursor.position
@@ -494,7 +497,7 @@ class VispyCanvas:
             Coordinates of top left and bottom right canvas pixel in the world.
         """
         # Find corners of canvas in world coordinates
-        top_left = self._map_canvas2world([0, 0])
+        top_left = self._map_canvas2world((0, 0))
         bottom_right = self._map_canvas2world(self._scene_canvas.size)
         return np.array([top_left, bottom_right])
 
@@ -548,14 +551,16 @@ class VispyCanvas:
         """
         self.viewer._canvas_size = self.size
 
-    def add_layer_visual_mapping(self, napari_layer, vispy_layer) -> None:
+    def add_layer_visual_mapping(
+        self, napari_layer: Layer, vispy_layer: VispyBaseLayer
+    ) -> None:
         """Maps a napari layer to its corresponding vispy layer and sets the parent scene of the vispy layer.
 
         Paremeters
         ----------
-        napari_layer : napari.layers
+        napari_layer :
             Any napari layer, the layer type is the same as the vispy layer.
-        vispy_layer : napari._vispy.layers
+        vispy_layer :
             Any vispy layer, the layer type is the same as the napari layer.
 
         Returns

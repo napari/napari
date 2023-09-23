@@ -8,6 +8,7 @@ from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import fix_data_dtype, get_gl_extensions
 from napari._vispy.visuals.image import Image as ImageNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
+from napari.layers import Image
 from napari.layers.base._base_constants import Blending
 from napari.utils.translations import trans
 
@@ -48,10 +49,10 @@ class ImageLayerNode:
         return self._volume_node
 
 
-class VispyImageLayer(VispyBaseLayer):
+class VispyImageLayer(VispyBaseLayer[Image]):
     def __init__(
         self,
-        layer,
+        layer: Image,
         node=None,
         texture_format='auto',
         layer_node_class=ImageLayerNode,
