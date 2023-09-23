@@ -221,7 +221,7 @@ class ApplicationSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = [
+        preferences_exclude = (
             "schema_version",
             "preferences_size",
             "first_time",
@@ -234,4 +234,4 @@ class ApplicationSettings(EventedModel):
             "open_history",
             "save_history",
             "ipy_interactive",
-        ]
+        )

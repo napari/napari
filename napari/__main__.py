@@ -82,13 +82,13 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
             continue
         arg = raw_arg.lstrip('-')
 
-        key, *value = arg.split("=", maxsplit=1)
+        key, *values = arg.split("=", maxsplit=1)
         key = key.replace('-', '_')
         if key not in valid:
             sys.exit(f"error: unrecognized argument: {raw_arg}")
 
-        if value:
-            value = value[0]
+        if values:
+            value = values[0]
         else:
             if len(unknown) <= i + 1 or unknown[i + 1].startswith("--"):
                 sys.exit(f"error: argument {raw_arg} expected one argument")
