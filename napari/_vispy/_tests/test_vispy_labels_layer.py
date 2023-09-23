@@ -7,40 +7,39 @@ from napari._tests.utils import skip_local_popups
 from napari.utils.interactions import mouse_press_callbacks
 
 
-def make_labels_layer(array_type, path, shape):
+def make_labels_layer(array_type, shape):
     """Make a labels layer, either NumPy, zarr, or tensorstore."""
     chunks = tuple(s // 2 for s in shape)
     if array_type == 'numpy':
         labels = np.zeros(shape, dtype=np.uint32)
-    elif array_type in {'zarr', 'tensorstore'}:
-        labels = zarr.open(path, shape=shape, dtype=np.uint32, chunks=chunks)
-    if array_type == 'tensorstore':
+    elif array_type == 'zarr':
+        labels = zarr.zeros(shape=shape, dtype=np.uint32, chunks=chunks)
+    elif array_type == 'tensorstore':
         ts = pytest.importorskip('tensorstore')
         spec = {
             'driver': 'zarr',
-            'kvstore': {'driver': 'file', 'path': str(path)},
-            'path': '',
-            'metadata': {
-                'dtype': labels.dtype.str,
-                'order': labels.order,
-                'shape': labels.shape,
-            },
+            'kvstore': {'driver': 'memory'},
+            "metadata": {"chunks": chunks},
         }
-        labels = ts.open(spec, create=False, open=True).result()
+        labels = ts.open(
+            spec, create=True, dtype="uint32", shape=shape
+        ).result()
+    else:
+        pytest.fail("array_type must be 'numpy', 'zarr', or 'tensorstore'")
 
     return labels
 
 
 @skip_local_popups
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
-def test_labels_painting(make_napari_viewer, array_type, tmp_path):
+def test_labels_painting(make_napari_viewer, array_type):
     """Check that painting labels paints on the canvas.
 
     This should work regardless of array type. See:
     https://github.com/napari/napari/issues/6079
     """
     viewer = make_napari_viewer(show=True)
-    labels = make_labels_layer(array_type, tmp_path, shape=(20, 20))
+    labels = make_labels_layer(array_type, shape=(20, 20))
     layer = viewer.add_labels(labels)
     QCoreApplication.instance().processEvents()
     layer.paint((10, 10), 1, refresh=True)
@@ -50,14 +49,14 @@ def test_labels_painting(make_napari_viewer, array_type, tmp_path):
 
 @skip_local_popups
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
-def test_labels_fill_slice(make_napari_viewer, array_type, tmp_path):
+def test_labels_fill_slice(make_napari_viewer, array_type):
     """Check that painting labels paints only on current slice.
 
     This should work regardless of array type. See:
     https://github.com/napari/napari/issues/6079
     """
     viewer = make_napari_viewer(show=True)
-    labels = make_labels_layer(array_type, tmp_path, shape=(3, 20, 20))
+    labels = make_labels_layer(array_type, shape=(3, 20, 20))
     labels[0, :, :] = 1
     labels[1, 10, 10] = 1
     labels[2, :, :] = 1
@@ -72,7 +71,7 @@ def test_labels_fill_slice(make_napari_viewer, array_type, tmp_path):
 @skip_local_popups
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
 def test_labels_painting_with_mouse(
-    MouseEvent, make_napari_viewer, array_type, tmp_path
+    MouseEvent, make_napari_viewer, array_type
 ):
     """Check that painting labels paints on the canvas when using mouse.
 
@@ -80,7 +79,7 @@ def test_labels_painting_with_mouse(
     https://github.com/napari/napari/issues/6079
     """
     viewer = make_napari_viewer(show=True)
-    labels = make_labels_layer(array_type, tmp_path, shape=(20, 20))
+    labels = make_labels_layer(array_type, shape=(20, 20))
 
     layer = viewer.add_labels(labels)
     QCoreApplication.instance().processEvents()

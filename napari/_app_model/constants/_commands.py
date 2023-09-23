@@ -17,6 +17,25 @@ from napari.utils.translations import trans
 # fmt: off
 class CommandId(str, Enum):
     """Id representing a napari command."""
+    # File menubar
+    DLG_OPEN_FILES = 'napari:window:file:open_files_dialog'
+    DLG_OPEN_FILES_AS_STACK = 'napari:window:file:open_files_as_stack_dialog'
+    DLG_OPEN_FOLDER = 'napari:window:file:open_folder_dialog'
+    DLG_OPEN_FILES_WITH_PLUGIN = 'napari:window:file:_open_files_with_plugin'
+    DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN = 'napari:window:file:_open_files_as_stack_with_plugin'
+    DLG_OPEN_FOLDER_WITH_PLUGIN = 'napari:window:file:_open_folder_with_plugin'
+    DLG_SHOW_PREFERENCES = 'napari:window:file:show_preferences_dialog'
+    DLG_SAVE_LAYERS = 'napari:window:file:save_layers_dialog'
+    # `DLG_SAVE_SELECTED_LAYERS` uses the same callback as `DLG_SAVE_LAYERS`,
+    # just with different kwarg
+    DLG_SAVE_SELECTED_LAYERS = 'napari:window:file:save_layers_dialog:selected'
+    DLG_SAVE_CANVAS_SCREENSHOT = 'napari:window:file:save_canvas_screenshot_dialog'
+    DLG_SAVE_VIEWER_SCREENSHOT = 'napari:window:file:save_viewer_screenshot_dialog'
+    COPY_CANVAS_SCREENSHOT = 'napari:window:file:copy_canvas_screenshot'
+    COPY_VIEWER_SCREENSHOT = 'napari:window:file:copy_viewer_screenshot'
+    DLG_CLOSE = 'napari:window:file:close_dialog'
+    DLG_QUIT = 'napari:window:file:quit_dialog'
+    RESTART = 'napari:window:file:restart'
 
     # View menubar
     TOGGLE_FULLSCREEN = 'napari:window:view:toggle_fullscreen'
@@ -92,6 +111,24 @@ class _i(NamedTuple):
 
 
 _COMMAND_INFO = {
+    # File menubar
+    CommandId.DLG_OPEN_FILES: _i(trans._('Open File(s)...')),
+    CommandId.DLG_OPEN_FILES_AS_STACK: _i(trans._('Open Files as Stack...')),
+    CommandId.DLG_OPEN_FOLDER: _i(trans._('Open Folder...')),
+    CommandId.DLG_OPEN_FILES_WITH_PLUGIN: _i(trans._('Open File(s)...')),
+    CommandId.DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN: _i(trans._('Open Files as Stack...')),
+    CommandId.DLG_OPEN_FOLDER_WITH_PLUGIN: _i(trans._('Open Folder...')),
+    CommandId.DLG_SHOW_PREFERENCES: _i(trans._('Preferences')),
+    CommandId.DLG_SAVE_LAYERS: _i(trans._('Save All Layers...')),
+    CommandId.DLG_SAVE_SELECTED_LAYERS: _i(trans._('Save Selected Layers...')),
+    CommandId.DLG_SAVE_CANVAS_SCREENSHOT: _i(trans._('Save Screenshot...')),
+    CommandId.DLG_SAVE_VIEWER_SCREENSHOT: _i(trans._('Save Screenshot with Viewer...')),
+    CommandId.COPY_CANVAS_SCREENSHOT: _i(trans._('Copy Screenshot to Clipboard')),
+    CommandId.COPY_VIEWER_SCREENSHOT: _i(trans._('Copy Screenshot with Viewer to Clipboard')),
+    CommandId.DLG_CLOSE: _i(trans._('Close Window')),
+    CommandId.DLG_QUIT: _i(trans._('Exit')),
+    CommandId.RESTART: _i(trans._('Restart')),
+
     # View menubar
     CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen')),
     CommandId.TOGGLE_MENUBAR: _i(trans._('Toggle Menubar Visibility')),

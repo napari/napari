@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
+    Any,
     DefaultDict,
     Dict,
     Iterator,
@@ -14,14 +15,15 @@ from typing import (
     cast,
 )
 
+from app_model import Action
 from app_model.types import SubmenuItem
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
+from napari.errors.reader_errors import MultipleReaderError
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from app_model import Action
     from npe2.manifest import PluginManifest
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
@@ -333,7 +335,6 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     # list them explicitly)
     for v in Viewer._instances:
         v.window.plugins_menu._build()
-        v.window.file_menu._rebuild_samples_menu()
 
 
 def on_plugins_registered(manifests: Set[PluginManifest]):
@@ -346,7 +347,145 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
             _register_manifest_actions(mf)
 
 
-def _register_manifest_actions(manifest: PluginManifest) -> None:
+# TODO: This is a separate function from `_get_samples_submenu_actions` so it
+# can be easily deleted once npe1 is no longer supported.
+def _rebuild_npe1_samples_menu() -> None:
+    """Register submenu and actions for all npe1 plugins, clearing all first."""
+    from napari._app_model import get_app
+    from napari._app_model.constants import MenuGroup, MenuId
+    from napari._qt.qt_viewer import QtViewer
+    from napari.plugins import menu_item_template, plugin_manager
+
+    app = get_app()
+    # Unregister all existing npe1 sample menu actions and submenus
+    if unreg := plugin_manager._unreg_sample_submenus:
+        unreg()
+    if unreg := plugin_manager._unreg_sample_actions:
+        unreg()
+
+    sample_actions: List[Action] = []
+    for plugin_name, samples in plugin_manager._sample_data.items():
+        multiprovider = len(samples) > 1
+        if multiprovider:
+            submenu_id = f'napari/file/samples/{plugin_name}'
+            submenu = [
+                (
+                    MenuId.FILE_SAMPLES,
+                    SubmenuItem(
+                        submenu=submenu_id, title=trans._(plugin_name)
+                    ),
+                ),
+            ]
+        else:
+            submenu_id = MenuId.FILE_SAMPLES
+            submenu = []
+
+        for sample_name, sample_dict in samples.items():
+
+            def _add_sample(
+                qt_viewer: QtViewer,
+                plugin=plugin_name,
+                sample=sample_name,
+            ):
+                from napari._qt.dialogs.qt_reader_dialog import (
+                    handle_gui_reading,
+                )
+
+                try:
+                    qt_viewer.viewer.open_sample(plugin, sample)
+                except MultipleReaderError as e:
+                    handle_gui_reading(
+                        e.paths,
+                        qt_viewer,
+                        stack=False,
+                    )
+
+            display_name = sample_dict['display_name'].replace("&", "&&")
+            if multiprovider:
+                title = display_name
+            else:
+                title = menu_item_template.format(plugin_name, display_name)
+
+            action: Action = Action(
+                id=f"{plugin_name}.{display_name}",
+                title=title,
+                menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
+                callback=_add_sample,
+            )
+            sample_actions.append(action)
+
+        unreg_sample_submenus = app.menus.append_menu_items(submenu)
+        plugin_manager._unreg_sample_submenus = unreg_sample_submenus
+        unreg_sample_actions = app.register_actions(sample_actions)
+        plugin_manager._unreg_sample_actions = unreg_sample_actions
+
+
+def _get_samples_submenu_actions(
+    mf: PluginManifest,
+) -> Tuple[List[Any], List[Any]]:
+    """Get sample data submenu and actions for a single npe2 plugin manifest."""
+    from napari._app_model.constants import MenuGroup, MenuId
+    from napari.plugins import menu_item_template
+
+    if TYPE_CHECKING:
+        from napari._qt.qt_viewer import QtViewer
+
+    # If no sample data, return
+    if not mf.contributions.sample_data:
+        return [], []
+
+    sample_data = mf.contributions.sample_data
+    multiprovider = len(sample_data) > 1
+    if multiprovider:
+        submenu_id = f'napari/file/samples/{mf.name}'
+        submenu = [
+            (
+                MenuId.FILE_SAMPLES,
+                SubmenuItem(
+                    submenu=submenu_id, title=trans._(mf.display_name)
+                ),
+            ),
+        ]
+    else:
+        submenu_id = MenuId.FILE_SAMPLES
+        submenu = []
+
+    sample_actions = []
+    for sample in sample_data:
+
+        def _add_sample(
+            qt_viewer: QtViewer,
+            plugin=mf.name,
+            sample=sample.key,
+        ):
+            from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
+
+            try:
+                qt_viewer.viewer.open_sample(plugin, sample)
+            except MultipleReaderError as e:
+                handle_gui_reading(
+                    e.paths,
+                    qt_viewer,
+                    stack=False,
+                )
+
+        display_name = sample.display_name.replace("&", "&&")
+        if multiprovider:
+            title = display_name
+        else:
+            title = menu_item_template.format(mf.display_name, display_name)
+
+        action: Action = Action(
+            id=f'{mf.name}.{sample.key}',
+            title=title,
+            menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
+            callback=_add_sample,
+        )
+        sample_actions.append(action)
+    return submenu, sample_actions
+
+
+def _register_manifest_actions(mf: PluginManifest) -> None:
     """Gather and register actions from a manifest.
 
     This is called when a plugin is registered or enabled and it adds the
@@ -355,12 +494,20 @@ def _register_manifest_actions(manifest: PluginManifest) -> None:
     from napari._app_model import get_app
 
     app = get_app()
-    actions, submenus = _npe2_manifest_to_actions(manifest)
-    context = pm.get_context(cast('PluginName', manifest.name))
+    actions, submenus = _npe2_manifest_to_actions(mf)
+    samples_submenu, sample_actions = _get_samples_submenu_actions(mf)
+    context = pm.get_context(cast('PluginName', mf.name))
+    # Connect 'unregister' callback to plugin deactivate ('unregistered') event
     if actions:
         context.register_disposable(app.register_actions(actions))
     if submenus:
         context.register_disposable(app.menus.append_menu_items(submenus))
+    if samples_submenu:
+        context.register_disposable(
+            app.menus.append_menu_items(samples_submenu)
+        )
+    if sample_actions:
+        context.register_disposable(app.register_actions(sample_actions))
 
 
 def _npe2_manifest_to_actions(
@@ -383,20 +530,31 @@ def _npe2_manifest_to_actions(
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
 
-    actions: List[Action] = [
-        Action(
-            id=cmd.id,
-            title=cmd.title,
-            category=cmd.category,
-            tooltip=cmd.short_title or cmd.title,
-            icon=cmd.icon,
-            enablement=cmd.enablement,
-            callback=cmd.python_name or '',
-            menus=cmds.get(cmd.id),
-            keybindings=[],
-        )
-        for cmd in mf.contributions.commands or ()
-    ]
+    # Filter sample data commands (not URIs) as they are registered via
+    # `_get_samples_submenu_actions`
+    sample_data_commands = {
+        contrib.command
+        for contrib in mf.contributions.sample_data or ()
+        if hasattr(contrib, 'command')
+    }
+
+    actions: List[Action] = []
+    for cmd in mf.contributions.commands or ():
+        if cmd.id not in sample_data_commands:
+            actions.append(
+                Action(
+                    id=cmd.id,
+                    title=cmd.title,
+                    category=cmd.category,
+                    tooltip=cmd.short_title or cmd.title,
+                    icon=cmd.icon,
+                    enablement=cmd.enablement,
+                    callback=cmd.python_name or '',
+                    menus=cmds.get(cmd.id),
+                    keybindings=[],
+                )
+            )
+
     return actions, submenus
 
 
