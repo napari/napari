@@ -1,3 +1,45 @@
+# This is a workflow for upgrade test constraints. It is triggered by:
+# - On-demand workflow_dispatch
+# - weekly schedule (every Monday at 8:00 UTC)
+# - issue_comment with text "@napari-bot update constraints"
+# - pull_request with changed .github/workflows/upgrade_test_constraints.yml
+#
+# The GitHub workflows have the following limitations:
+# - There is no pull request comment trigger for workflow.
+#   The `issue_comment` trigger is used instead (it is used on pull requests too).
+# - If a workflow is triggered by pull_requests from forked repository,
+#   then it does not have access to secrets.
+#   So it is not possible to create PR from forked repository.
+# - If workflow is triggered by issue comment, then it is triggered on the main branch
+#   and not on the branch where the comment was created.
+# - In workflow triggers it is only possible to depend on created event, without any conditions.
+#   So it is not possible to trigger workflow only when the comment contains specific text.
+#   So we need to check it in the workflow.
+#   It will produce multiple empty runs that will create multiple empty entries in actions
+#   making it harder to find the right one.
+# - It is not possible to update pull request from forked repository using Fine grained personal token.
+# - It is not possible to create pull request to forked repository using Fine grained personal token.
+# - There is no interface indicator that the workflow triggered by issue comment is running.
+#
+# Also, for safety reason, it is better to store automatically generated changes outside the main repository.
+#
+# Because of the above limitations, the following approach is used:
+# - We use `napari-bot/napari` repository to store automatically generated changes.
+# - We don't push changes to `napari-bot/napari` repository if PR contains changes in workflows.
+# - We use two checkouts of repository:
+#   * First into `.` directory from which we run the workflow.
+#   * Second into `napari_repo` directory from which we create pull request.
+#     If comment triggers the workflow, then this will contain the branch from which the PR was created.
+#     Changes will be pushed to `napari-bot/napari` repository.
+#     If schedule or workflow_dispatch triggers workflow, then this will contain the main branch.
+#     Changes will not be pushed to `napari/napari` repository.
+#     If pull_request triggers workflow, then this will contain PR branch.
+#     Changes will be only accessible as artifacts.
+# - If workflow is triggered by issue comment,
+#   then we add eye reaction to the comment to show that workflow has started.
+#   After finishing calculation of new constraints, we add rocket reaction to the comment.
+#   Then pushing changes to `napari-bot/napari` repository and adding comment to the PR is
+#   done by `tools/create_pr_or_update_existing_one.py`.
 name: Upgrade test constraints
 
 on:
@@ -20,6 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Add eye reaction
+        # show that workflow has started
         if: github.event_name == 'issue_comment'
         run: |
           COMMENT_ID=${{ github.event.comment.id }}
@@ -31,6 +74,7 @@ jobs:
             -d '{"content": "eyes"}'
 
       - name: Get PR details
+        # extract PR number and branch name from issue_comment event
         if: github.event_name == 'issue_comment'
         run: |
           PR_number=${{ github.event.issue.number }}
@@ -49,6 +93,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get repo info
+        # when schedule or workflow_dispatch triggers workflow, then we need to get info about which branch to use
         if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
         run: |
           echo "FULL_NAME=${{ github.repository }}" >> $GITHUB_ENV
@@ -74,6 +119,7 @@ jobs:
           token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
 
       - name: Clone target repo (pull request)
+        # we need separate step as passing empty token to actions/checkout@v3 will not work
         uses: actions/checkout@v3
         if: github.event_name == 'pull_request'
         with:
@@ -166,6 +212,7 @@ jobs:
             napari_repo/resources/constraints/constraints*.txt
 
       - name: Add rocket reaction
+        # inform that new constraints are available in artifacts
         if: github.event_name == 'issue_comment'
         run: |
           COMMENT_ID=${{ github.event.comment.id }}
