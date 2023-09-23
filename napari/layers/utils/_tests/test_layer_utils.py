@@ -65,9 +65,9 @@ def test_calc_data_range():
     assert np.all(clim == (0, 1))
 
     # return min and max
-    data = np.random.random((10, 15))
-    data[0, 0] = 0
-    data[0, 1] = 2
+    data = np.random.random((1_000_000, 11))
+    data[5_000_00, 5] = 0
+    data[5_000_01, 5] = 2
     clim = calc_data_range(data)
     assert np.all(clim == (0, 2))
 
