@@ -109,7 +109,9 @@ def test_multichannel(shape, kwargs):
 
     for i in range(n_channels):
         # make sure that the data has been divided into layers
-        assert np.all(viewer.layers[i].data == data.take(i, axis=channel_axis))
+        np.testing.assert_array_equal(
+            viewer.layers[i].data, data.take(i, axis=channel_axis)
+        )
         # make sure colors have been assigned properly
         if 'colormap' not in kwargs:
             if n_channels == 1:
