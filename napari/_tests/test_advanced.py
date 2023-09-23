@@ -15,7 +15,7 @@ def test_4D_5D_images(make_napari_viewer):
     # add 4D image data
     data = np.random.random((2, 6, 30, 40))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 4
     assert view.dims.nsliders == viewer.dims.ndim
@@ -24,7 +24,7 @@ def test_4D_5D_images(make_napari_viewer):
     # now add 5D image data - check an extra slider has been created
     data = np.random.random((4, 4, 5, 30, 40))
     viewer.add_image(data)
-    assert np.all(viewer.layers[1].data == data)
+    assert np.array_equal(viewer.layers[1].data, data)
     assert len(viewer.layers) == 2
     assert viewer.dims.ndim == 5
     assert view.dims.nsliders == viewer.dims.ndim
@@ -40,7 +40,7 @@ def test_5D_image_3D_rendering(make_napari_viewer):
     # add 4D image data
     data = np.random.random((2, 10, 12, 13, 14))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 5
     assert viewer.dims.ndisplay == 2
@@ -66,7 +66,7 @@ def test_change_image_dims(make_napari_viewer):
     # add 3D image data
     data = np.random.random((10, 30, 40))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
@@ -74,7 +74,7 @@ def test_change_image_dims(make_napari_viewer):
 
     # switch number of displayed dimensions
     viewer.layers[0].data = data[0]
-    assert np.all(viewer.layers[0].data == data[0])
+    assert np.array_equal(viewer.layers[0].data, data[0])
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -82,7 +82,7 @@ def test_change_image_dims(make_napari_viewer):
 
     # switch number of displayed dimensions
     viewer.layers[0].data = data[:6]
-    assert np.all(viewer.layers[0].data == data[:6])
+    assert np.array_equal(viewer.layers[0].data, data[:6])
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
@@ -90,7 +90,7 @@ def test_change_image_dims(make_napari_viewer):
 
     # change the shape of the data
     viewer.layers[0].data = data[:3]
-    assert np.all(viewer.layers[0].data == data[:3])
+    assert np.array_equal(viewer.layers[0].data, data[:3])
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
@@ -110,7 +110,7 @@ def test_range_one_image(make_napari_viewer):
     # add 5D image data with range one dimensions
     data = np.random.random((1, 1, 1, 100, 200))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 5
     assert view.dims.nsliders == viewer.dims.ndim
@@ -120,7 +120,7 @@ def test_range_one_image(make_napari_viewer):
     points = np.floor(5 * np.random.random((1000, 5))).astype(int)
     points[:, -2:] = 20 * points[:, -2:]
     viewer.add_points(points)
-    assert np.all(viewer.layers[1].data == points)
+    assert np.array_equal(viewer.layers[1].data, points)
     assert len(viewer.layers) == 2
     assert viewer.dims.ndim == 5
     assert view.dims.nsliders == viewer.dims.ndim
@@ -140,7 +140,7 @@ def test_range_one_images_and_points(make_napari_viewer):
     # add 5D image data with range one dimensions
     data = np.random.random((1, 1, 1, 100, 200))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 5
     assert view.dims.nsliders == viewer.dims.ndim
@@ -150,7 +150,7 @@ def test_range_one_images_and_points(make_napari_viewer):
     points = np.floor(5 * np.random.random((1000, 5))).astype(int)
     points[:, -2:] = 20 * points[:, -2:]
     viewer.add_points(points)
-    assert np.all(viewer.layers[1].data == points)
+    assert np.array_equal(viewer.layers[1].data, points)
     assert len(viewer.layers) == 2
     assert viewer.dims.ndim == 5
     assert view.dims.nsliders == viewer.dims.ndim
@@ -244,7 +244,7 @@ def test_changing_display_surface(make_napari_viewer):
     data = (vertices, faces, values)
     viewer.add_surface(data)
     assert np.all(
-        [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
+        [np.array_equal(vd, d) for vd, d in zip(viewer.layers[0].data, data)]
     )
 
     assert len(viewer.layers) == 1

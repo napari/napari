@@ -1,5 +1,3 @@
-from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Union
 from unittest.mock import Mock
 
 import numpy as np
@@ -9,38 +7,13 @@ from napari.layers import Shapes
 from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes.shapes import Mode
 from napari.settings import get_settings
-from napari.utils._proxies import ReadOnlyWrapper
+from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
 )
-
-
-@dataclass
-class MouseEvent:
-    """Create a subclass for simulating vispy mouse events."""
-
-    type: str
-    is_dragging: bool = False
-    modifiers: List[str] = field(default_factory=list)
-    position: Union[Tuple[int, int], Tuple[int, int, int]] = (
-        0,
-        0,
-    )  # world coords
-    pos: np.ndarray = field(
-        default_factory=lambda: np.zeros(2)
-    )  # canvas coords
-    view_direction: Optional[List[float]] = None
-    up_direction: Optional[List[float]] = None
-    dims_displayed: List[int] = field(default_factory=lambda: [0, 1])
-
-
-def read_only_mouse_event(*args, **kwargs):
-    return ReadOnlyWrapper(
-        MouseEvent(*args, **kwargs), exceptions=('handled',)
-    )
 
 
 @pytest.fixture

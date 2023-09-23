@@ -11,7 +11,7 @@ import pytest
 from napari._tests.utils import DEFAULT_TIMEOUT_SECS, LockableData
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
-from napari.layers import Image, Points
+from napari.layers import Image, Labels, Points
 
 # The following fakes are used to control execution of slicing across
 # multiple threads, while also allowing us to mimic real classes
@@ -332,6 +332,26 @@ def test_submit_with_one_3d_image(layer_slicer):
     with lockable_data.lock:
         future = layer_slicer.submit(layers=[layer], dims=dims)
         assert not future.done()
+    layer_result = _wait_for_response(future)[layer]
+    np.testing.assert_equal(layer_result.image.view, data[2, :, :])
+
+
+def test_submit_with_3d_labels(layer_slicer):
+    np.random.seed(0)
+    data = np.random.randint(20, size=(8, 7, 6))
+    lockable_data = LockableData(data)
+    layer = Labels(lockable_data, multiscale=False)
+    dims = Dims(
+        ndim=3,
+        ndisplay=2,
+        range=((0, 8, 1), (0, 7, 1), (0, 6, 1)),
+        point=(2, 0, 0),
+    )
+
+    with lockable_data.lock:
+        future = layer_slicer.submit(layers=[layer], dims=dims)
+        assert not future.done()
+
     layer_result = _wait_for_response(future)[layer]
     np.testing.assert_equal(layer_result.image.view, data[2, :, :])
 
