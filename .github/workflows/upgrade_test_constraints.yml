@@ -35,8 +35,9 @@ jobs:
         run: |
           PR_number=${{ github.event.issue.number }}
           PR_data=$(curl \
-          -H "Accept: application/vnd.github.v3+json" \
-          "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_number")
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_number" \
+          )
           
           FULL_NAME=$(echo $PR_data  | jq -r .head.repo.full_name)
           echo "FULL_NAME=$FULL_NAME" >> $GITHUB_ENV
