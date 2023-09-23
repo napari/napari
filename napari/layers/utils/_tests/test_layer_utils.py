@@ -92,6 +92,11 @@ def test_calc_data_range():
     clim = calc_data_range(data)
     assert np.all(clim == (0, 2))
 
+    # Test return None if no integer
+    data = da.random.random((500, 10, 10), chunks=(100, 2, 2))
+    clim = calc_data_range(data)
+    assert clim is None
+
 
 @pytest.mark.parametrize(
     'data',
