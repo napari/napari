@@ -1,12 +1,12 @@
-# This is a workflow for upgrade test constraints. It is triggered by:
+# This is a workflow for upgrading test constraints. It is triggered by:
 # - On-demand workflow_dispatch
 # - weekly schedule (every Monday at 8:00 UTC)
 # - issue_comment with text "@napari-bot update constraints"
 # - pull_request with changed .github/workflows/upgrade_test_constraints.yml
 #
 # The GitHub workflows have the following limitations:
-# - There is no pull request comment trigger for workflow.
-#   The `issue_comment` trigger is used instead (it is used on pull requests too).
+# - There is no pull request comment trigger for workflows.
+#   The `issue_comment` trigger is used instead, because it is used for pull requests too.
 # - If a workflow is triggered by pull_requests from forked repository,
 #   then it does not have access to secrets.
 #   So it is not possible to create PR from forked repository.
@@ -36,7 +36,7 @@
 #     If pull_request triggers workflow, then this will contain PR branch.
 #     Changes will be only accessible as artifacts.
 # - If workflow is triggered by issue comment,
-#   then we add eye reaction to the comment to show that workflow has started.
+#   then we add eyes reaction to the comment to show that workflow has started.
 #   After finishing calculation of new constraints, we add rocket reaction to the comment.
 #   Then pushing changes to `napari-bot/napari` repository and adding comment to the PR is
 #   done by `tools/create_pr_or_update_existing_one.py`.
@@ -61,7 +61,7 @@ jobs:
     if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')) || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Add eye reaction
+      - name: Add eyes reaction
         # show that workflow has started
         if: github.event_name == 'issue_comment'
         run: |
