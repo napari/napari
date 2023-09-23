@@ -8,6 +8,8 @@ from dask import array as da
 from napari.layers.utils.layer_utils import (
     _FeatureTable,
     _get_1d_slices,
+    _get_crop_slices,
+    _get_plane_indices,
     calc_data_range,
     coerce_current_properties,
     dataframe_to_properties,
@@ -526,3 +528,40 @@ def test_1d_slices(shape, chunk_size, expected_length):
         assert expected_length == slices
     else:
         assert expected_length == len(slices)
+
+
+def test_insufficient_chunks_get_crop_slices():
+    offset = 2
+
+    # Test less then 1 chunk per plane
+    shape = (9, 12, 12)
+    chunk_size = (1, 3000, 3000)
+    idxs = _get_plane_indices(shape, offset)
+    slices = _get_crop_slices(shape, idxs, offset, chunk_size)
+    assert len(slices) == 1
+
+    # In this case there should be 5 chunks allowed per plane
+    chunk_size = (1, 745, 745)
+    slices = _get_crop_slices(shape, idxs, offset, chunk_size)
+    assert len(slices) == 15
+
+    # 3 crops per plane allowed
+    chunk_size = (1, 1054, 1054)
+    slices = _get_crop_slices(shape, idxs, offset, chunk_size)
+    assert len(slices) == 9
+
+    # 1 crop per plane allowed
+    chunk_size = (1, 1290, 1290)
+    slices = _get_crop_slices(shape, idxs, offset, chunk_size)
+    assert len(slices) == 3
+
+    # Chunk size goes over pixel threshold
+    chunk_size = (1, 4000, 4000)
+    slices = _get_crop_slices(shape, idxs, offset, chunk_size)
+    assert slices is None
+
+    # Shape only allows for 3 slices per plane
+    shape = (9, 1, 3)
+    chunk_size = (1, 1825, 1825)
+    slices = _get_crop_slices(shape, idxs, offset, chunk_size)
+    assert len(slices) == 3
