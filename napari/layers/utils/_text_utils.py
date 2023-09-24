@@ -46,7 +46,6 @@ def _calculate_bbox_centers(view_data: Union[np.ndarray, list]) -> np.ndarray:
     """
     if isinstance(view_data, np.ndarray):
         if view_data.ndim == 2:
-            assert view_data.ndim == 2
             # shape[1] is 2 for a 2D center, 3 for a 3D center.
             # It should work is N > 3 Dimension, but this catches mistakes
             # when the caller passed a transposed view_data
