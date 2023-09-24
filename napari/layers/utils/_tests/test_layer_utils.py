@@ -581,7 +581,7 @@ def test_get_chunk_size():
 
     coords = list(range(100))
     data = xr.DataArray(
-        np.zeros((100, 100)),
+        np.zeros(data_shape),
         dims=['y', 'x'],
         coords={'y': coords, 'x': coords},
     )
