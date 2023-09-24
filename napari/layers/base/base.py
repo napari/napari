@@ -464,10 +464,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         mode = self._modeclass(mode_in)
         # Sub-classes can have their own Mode enum, so need to get members
         # from the specific mode class set on this layer.
-        PAN_ZOOM = getattr(self._modeclass, "PAN_ZOOM", None)
-        TRANSFORM = getattr(self._modeclass, "TRANSFORM", None)
-        assert PAN_ZOOM is not None
-        assert TRANSFORM is not None
+        PAN_ZOOM = getattr(self._modeclass, "PAN_ZOOM")
+        TRANSFORM = getattr(self._modeclass, "TRANSFORM")
         assert mode is not None
 
         if not self.editable:
