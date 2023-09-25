@@ -58,9 +58,7 @@ class VispyCamera:
 
         if self._view.camera == self._3D_camera:
             # Do conversion from quaternion representation to euler angles
-            angles = quaternion2euler(
-                self._view.camera._quaternion, degrees=True
-            )
+            angles = quaternion2euler(self._view.camera._quaternion)
         else:
             angles = (0, 0, 90)
         return angles

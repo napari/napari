@@ -3,7 +3,7 @@ import warnings
 from scipy.spatial.transform import Rotation
 
 
-def quaternion2euler(quaternion, degrees=False):
+def quaternion2euler(quaternion):
     """Converts VisPy quaternion into euler angle representation.
 
     Euler angles have degeneracies, so the output might different
@@ -15,8 +15,6 @@ def quaternion2euler(quaternion, degrees=False):
     ----------
     quaternion : vispy.util.Quaternion
         Quaternion for conversion.
-    degrees : bool
-        If output is returned in degrees or radians.
 
     Returns
     -------
@@ -36,6 +34,6 @@ def quaternion2euler(quaternion, degrees=False):
         # the same results a previously.
         # as_euler('zyx') does not work as composition order matters
         z, y, x = Rotation.from_quat([q.x, q.y, q.z, q.w]).as_euler(
-            'xyz', degrees=degrees
+            'xyz', degrees=True
         )
     return x, y, z
