@@ -35,7 +35,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: "3.10"
           cache-dependency-path: |
             setup.cfg
             docs/requirements.txt
@@ -45,7 +45,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "napari-repo/[all]"
+          python -m pip install "napari-repo/[all]" -c "napari-repo/resources/constraints/constraints_py3.10_docs.txt"
 
       - name: Testing
         run: |
@@ -57,10 +57,12 @@ jobs:
         env:
           GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
           GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
+          PIP_CONSTRAINTS: ${{ github.workspace }}/napari-repo/resources/constraints/constraints_py3.10_docs.txt
         with:
           # the napari-docs repo is cloned into a docs/ folder, hence the
           # invocation below. Locally, you should simply run make docs
-          run: make -C docs docs GALLERY_PATH=../examples/
+          run:  make -C docs docs GALLERY_PATH=../examples/
+
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3

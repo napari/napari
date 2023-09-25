@@ -32,6 +32,19 @@ def test_changing_layer_color_mode_updates_combo_box(make_labels_controls):
     assert layer.color_mode == qtctrl.colorModeComboBox.currentText()
 
 
+def test_changing_layer_show_selected_label_updates_check_box(
+    make_labels_controls,
+):
+    """See https://github.com/napari/napari/issues/5371"""
+    layer, qtctrl = make_labels_controls()
+    assert not qtctrl.selectedColorCheckbox.isChecked()
+    assert not layer.show_selected_label
+
+    layer.show_selected_label = True
+
+    assert qtctrl.selectedColorCheckbox.isChecked()
+
+
 def test_rendering_combobox(make_labels_controls):
     """Changing the model attribute should update the view"""
     layer, qtctrl = make_labels_controls()
@@ -57,7 +70,7 @@ def test_changing_colormap_updates_colorbox(make_labels_controls):
 
     np.testing.assert_equal(
         color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255 * layer.opacity),
+        np.round(np.asarray(layer._selected_color) * 255),
     )
 
     layer.colormap = colormap_utils.label_colormap(num_colors=5)
@@ -67,7 +80,7 @@ def test_changing_colormap_updates_colorbox(make_labels_controls):
 
     np.testing.assert_equal(
         color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255 * layer.opacity),
+        np.round(np.asarray(layer._selected_color) * 255),
     )
 
 

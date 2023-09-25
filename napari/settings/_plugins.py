@@ -61,8 +61,8 @@ class PluginsSettings(EventedSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = [
+        preferences_exclude = (
             'schema_version',
             'disabled_plugins',
             'extension2writer',
-        ]
+        )

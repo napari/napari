@@ -1,7 +1,7 @@
-from enum import Enum
+from napari.utils.compat import StrEnum
 
 
-class CanvasPosition(str, Enum):
+class CanvasPosition(StrEnum):
     """Canvas overlay position.
 
     Sets the position of an object in the canvas
@@ -21,12 +21,15 @@ class CanvasPosition(str, Enum):
     BOTTOM_LEFT = 'bottom_left'
 
 
-class CursorStyle(str, Enum):
+class CursorStyle(StrEnum):
     """CursorStyle: Style on the cursor.
 
     Sets the style of the cursor
             * square: A square
             * circle: A circle
+            * circle_frozen:
+                A brush circle with a frozen position along with the standard cursor.
+                It is used to show the brush size change while using Ctrl+Alt + mouse move.
             * cross: A cross
             * forbidden: A forbidden symbol
             * pointing: A finger for pointing
@@ -36,6 +39,7 @@ class CursorStyle(str, Enum):
 
     SQUARE = 'square'
     CIRCLE = 'circle'
+    CIRCLE_FROZEN = 'circle_frozen'
     CROSS = 'cross'
     FORBIDDEN = 'forbidden'
     POINTING = 'pointing'

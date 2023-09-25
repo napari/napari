@@ -59,7 +59,7 @@ def format_exceptions(
 
     for n, err in enumerate(_plugin_errors):
         _pad = _linewidth - len(str(err)) - 10
-        msg += ['', f'ERROR #{n + 1}:  {str(err)} {"-" * _pad}', '']
+        msg += ['', f'ERROR #{n + 1}:  {err!s} {"-" * _pad}', '']
         msg.append(format_exc_info(err.info(), as_html, color))
 
     msg.append('=' * _linewidth)

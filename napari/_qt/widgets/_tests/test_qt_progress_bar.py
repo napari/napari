@@ -4,6 +4,7 @@ from napari._qt.widgets.qt_progress_bar import (
     QtLabeledProgressBar,
     QtProgressBarGroup,
 )
+from napari.utils.progress import cancelable_progress
 
 
 def test_create_qt_labeled_progress_bar(qtbot):
@@ -40,6 +41,14 @@ def test_qt_labeled_progress_bar_event_handle(qtbot):
     assert progress.eta_label.text() == "test"
     progress._make_indeterminate(None)
     assert progress.qt_progress_bar.maximum() == 0
+
+
+def test_qt_labeled_progress_bar_cancel(qtbot):
+    prog = cancelable_progress(total=10)
+    progress = QtLabeledProgressBar(prog=prog)
+
+    progress.cancel_button.clicked.emit()
+    qtbot.waitUntil(lambda: prog.is_canceled, timeout=500)
 
 
 def test_create_qt_progress_bar_group(qtbot):

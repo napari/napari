@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 from psutil import virtual_memory
 from pydantic import Field, validator
 
-from napari.settings._constants import LoopMode
+from napari.settings._constants import BrushSizeOnMouseModifiers, LoopMode
 from napari.settings._fields import Language
 from napari.utils._base import _DEFAULT_LOCALE
 from napari.utils.events.custom_types import conint
@@ -54,7 +54,7 @@ class ApplicationSettings(EventedModel):
         ),
     )
     language: Language = Field(
-        _DEFAULT_LOCALE,
+        Language(_DEFAULT_LOCALE),
         title=trans._("Language"),
         description=trans._(
             "Select the display language for the user interface."
@@ -190,9 +190,18 @@ class ApplicationSettings(EventedModel):
             "This affects certain actions where a short press and a long press have different behaviors, such as changing the mode of a layer permanently or only during the long press."
         ),
     )
+
+    brush_size_on_mouse_move_modifiers: BrushSizeOnMouseModifiers = Field(
+        BrushSizeOnMouseModifiers.ALT,
+        title=trans._("Brush size on mouse move modifiers"),
+        description=trans._(
+            "Modifiers to activate changing the brush size by moving the mouse."
+        ),
+    )
+
     # convert cache (and max cache) from bytes to mb for widget
     dask: DaskSettings = Field(
-        default=DaskSettings().dict(),
+        default=DaskSettings(),
         title=trans._("Dask cache"),
         description=trans._(
             "Settings for dask cache (does not work with distributed arrays)"
@@ -212,7 +221,7 @@ class ApplicationSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = [
+        preferences_exclude = (
             "schema_version",
             "preferences_size",
             "first_time",
@@ -225,4 +234,4 @@ class ApplicationSettings(EventedModel):
             "open_history",
             "save_history",
             "ipy_interactive",
-        ]
+        )

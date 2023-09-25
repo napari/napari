@@ -15,7 +15,7 @@ def test_4D_5D_images(make_napari_viewer):
     # add 4D image data
     data = np.random.random((2, 6, 30, 40))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 4
     assert view.dims.nsliders == viewer.dims.ndim
@@ -24,7 +24,7 @@ def test_4D_5D_images(make_napari_viewer):
     # now add 5D image data - check an extra slider has been created
     data = np.random.random((4, 4, 5, 30, 40))
     viewer.add_image(data)
-    assert np.all(viewer.layers[1].data == data)
+    assert np.array_equal(viewer.layers[1].data, data)
     assert len(viewer.layers) == 2
     assert viewer.dims.ndim == 5
     assert view.dims.nsliders == viewer.dims.ndim
@@ -40,7 +40,7 @@ def test_5D_image_3D_rendering(make_napari_viewer):
     # add 4D image data
     data = np.random.random((2, 10, 12, 13, 14))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 5
     assert viewer.dims.ndisplay == 2
@@ -66,7 +66,7 @@ def test_change_image_dims(make_napari_viewer):
     # add 3D image data
     data = np.random.random((10, 30, 40))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
@@ -74,7 +74,7 @@ def test_change_image_dims(make_napari_viewer):
 
     # switch number of displayed dimensions
     viewer.layers[0].data = data[0]
-    assert np.all(viewer.layers[0].data == data[0])
+    assert np.array_equal(viewer.layers[0].data, data[0])
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -82,7 +82,7 @@ def test_change_image_dims(make_napari_viewer):
 
     # switch number of displayed dimensions
     viewer.layers[0].data = data[:6]
-    assert np.all(viewer.layers[0].data == data[:6])
+    assert np.array_equal(viewer.layers[0].data, data[:6])
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
@@ -90,7 +90,7 @@ def test_change_image_dims(make_napari_viewer):
 
     # change the shape of the data
     viewer.layers[0].data = data[:3]
-    assert np.all(viewer.layers[0].data == data[:3])
+    assert np.array_equal(viewer.layers[0].data, data[:3])
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
@@ -110,7 +110,7 @@ def test_range_one_image(make_napari_viewer):
     # add 5D image data with range one dimensions
     data = np.random.random((1, 1, 1, 100, 200))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 5
     assert view.dims.nsliders == viewer.dims.ndim
@@ -120,7 +120,7 @@ def test_range_one_image(make_napari_viewer):
     points = np.floor(5 * np.random.random((1000, 5))).astype(int)
     points[:, -2:] = 20 * points[:, -2:]
     viewer.add_points(points)
-    assert np.all(viewer.layers[1].data == points)
+    assert np.array_equal(viewer.layers[1].data, points)
     assert len(viewer.layers) == 2
     assert viewer.dims.ndim == 5
     assert view.dims.nsliders == viewer.dims.ndim
@@ -140,7 +140,7 @@ def test_range_one_images_and_points(make_napari_viewer):
     # add 5D image data with range one dimensions
     data = np.random.random((1, 1, 1, 100, 200))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 5
     assert view.dims.nsliders == viewer.dims.ndim
@@ -150,13 +150,14 @@ def test_range_one_images_and_points(make_napari_viewer):
     points = np.floor(5 * np.random.random((1000, 5))).astype(int)
     points[:, -2:] = 20 * points[:, -2:]
     viewer.add_points(points)
-    assert np.all(viewer.layers[1].data == points)
+    assert np.array_equal(viewer.layers[1].data, points)
     assert len(viewer.layers) == 2
     assert viewer.dims.ndim == 5
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 3
 
 
+@pytest.mark.enable_console
 @pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
 def test_update_console(make_napari_viewer):
     """Test updating the console with local variables."""
@@ -180,6 +181,57 @@ def test_update_console(make_napari_viewer):
         del viewer.window._qt_viewer.console.shell.user_ns[k]
 
 
+@pytest.mark.enable_console
+@pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
+def test_update_lazy_console(make_napari_viewer, capsys):
+    """Test updating the console with local variables,
+    before console is instantiated."""
+    viewer = make_napari_viewer()
+    view = viewer.window._qt_viewer
+
+    a = 4
+    b = 5
+    viewer.update_console(["a", "b"])
+
+    x = np.arange(5)
+    viewer.update_console("x")
+
+    viewer.update_console("missing")
+    captured = capsys.readouterr()
+    assert 'Could not get' in captured.out
+    with pytest.raises(TypeError):
+        viewer.update_console(x)
+
+    # Create class objects that will have weakrefs
+    class Foo:
+        pass
+
+    obj1 = Foo()
+    obj2 = Foo()
+    viewer.update_console({'obj1': obj1, 'obj2': obj2})
+    del obj1
+
+    # Check viewer in console
+    assert view.console.kernel_client is not None
+    assert 'viewer' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['viewer'] == viewer
+
+    # Check backlog is cleared
+    assert len(view.console_backlog) == 0
+
+    assert 'a' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['a'] == a
+    assert 'b' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['b'] == b
+    assert 'x' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['x'] is x
+    assert 'obj1' not in view.console.shell.user_ns
+    assert 'obj2' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['obj2'] == obj2
+    del viewer.window._qt_viewer.console.shell.user_ns['obj2']
+    del viewer.window._qt_viewer.console.shell.user_ns['x']
+
+
 def test_changing_display_surface(make_napari_viewer):
     """Test adding 3D surface and changing its display."""
     viewer = make_napari_viewer()
@@ -192,7 +244,7 @@ def test_changing_display_surface(make_napari_viewer):
     data = (vertices, faces, values)
     viewer.add_surface(data)
     assert np.all(
-        [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
+        [np.array_equal(vd, d) for vd, d in zip(viewer.layers[0].data, data)]
     )
 
     assert len(viewer.layers) == 1

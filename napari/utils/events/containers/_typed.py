@@ -6,12 +6,17 @@ from typing import (
     Iterable,
     List,
     MutableSequence,
+    Optional,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
     overload,
 )
+
+# change on import from typing when drop python 3.10 support
+from typing_extensions import Self
 
 from napari.utils.translations import trans
 
@@ -49,13 +54,13 @@ class TypedMutableSequence(MutableSequence[_T]):
         data: Iterable[_T] = (),
         *,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-        lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = None,
+        lookup: Optional[Dict[Type[_L], Callable[[_T], Union[_T, _L]]]] = None,
     ) -> None:
         if lookup is None:
             lookup = {}
         self._list: List[_T] = []
-        self._basetypes = (
-            basetype if isinstance(basetype, Sequence) else (basetype,)
+        self._basetypes: Tuple[Type[_T], ...] = (
+            tuple(basetype) if isinstance(basetype, Sequence) else (basetype,)
         )
         self._lookup = lookup.copy()
         self.extend(data)
@@ -66,7 +71,7 @@ class TypedMutableSequence(MutableSequence[_T]):
     def __repr__(self) -> str:
         return repr(self._list)
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         return self._list == other
 
     def __hash__(self) -> int:
@@ -75,14 +80,14 @@ class TypedMutableSequence(MutableSequence[_T]):
         return id(self)
 
     @overload
-    def __setitem__(self, key: int, value: _T):  # noqa: F811
+    def __setitem__(self, key: int, value: _T):
         ...  # pragma: no cover
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[_T]):  # noqa: F811
+    def __setitem__(self, key: slice, value: Iterable[_T]):
         ...  # pragma: no cover
 
-    def __setitem__(self, key, value):  # noqa: F811
+    def __setitem__(self, key, value):
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError(
@@ -109,14 +114,14 @@ class TypedMutableSequence(MutableSequence[_T]):
         return super().__contains__(key)
 
     @overload
-    def __getitem__(self, key: int) -> _T:  # noqa: F811
+    def __getitem__(self, key: int) -> _T:
         ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: slice) -> 'TypedMutableSequence[_T]':  # noqa
+    def __getitem__(self, key: slice) -> 'TypedMutableSequence[_T]':
         ...  # pragma: no cover
 
-    def __getitem__(self, key):  # noqa: F811
+    def __getitem__(self, key):
         """Get an item from the list
 
         Parameters
@@ -172,17 +177,17 @@ class TypedMutableSequence(MutableSequence[_T]):
         new.extend(iterable)
         return new
 
-    def copy(self) -> 'TypedMutableSequence[_T]':
+    def copy(self) -> Self:
         """Return a shallow copy of the list."""
         return self.__newlike__(self)
 
-    def __add__(self, other: Iterable[_T]) -> 'TypedMutableSequence[_T]':
+    def __add__(self, other: Iterable[_T]) -> Self:
         """Add other to self, return new object."""
         copy = self.copy()
         copy.extend(other)
         return copy
 
-    def __iadd__(self, other: Iterable[_T]) -> 'TypedMutableSequence[_T]':
+    def __iadd__(self, other: Iterable[_T]) -> Self:
         """Add other to self in place (self += other)."""
         self.extend(other)
         return self
@@ -191,7 +196,9 @@ class TypedMutableSequence(MutableSequence[_T]):
         """Add other to self in place (self += other)."""
         return other + list(self)
 
-    def index(self, value: _L, start: int = 0, stop: int = None) -> int:
+    def index(
+        self, value: _L, start: int = 0, stop: Optional[int] = None
+    ) -> int:
         """Return first index of value.
 
         Parameters
@@ -245,7 +252,8 @@ class TypedMutableSequence(MutableSequence[_T]):
 
     def _ipython_key_completions_(self):
         if str in self._lookup:
-            return (self._lookup[str](x) for x in self)  # type: ignore
+            return (self._lookup[str](x) for x in self)
+        return None  # type: ignore
 
 
 def _noop(x):

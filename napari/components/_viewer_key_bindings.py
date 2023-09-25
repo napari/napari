@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
@@ -8,6 +8,7 @@ from napari.utils.theme import available_themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from napari._qt.dialogs.preferences_dialog import PreferencesDialog
     from napari.viewer import Viewer
 
 
@@ -44,9 +45,12 @@ def reset_scroll_progress(viewer: Viewer):
 reset_scroll_progress.__doc__ = trans._("Reset dims scroll progress")
 
 
-@register_viewer_action(trans._("Toggle ndisplay."))
+@register_viewer_action(trans._("Toggle 2D/3D view."))
 def toggle_ndisplay(viewer: Viewer):
-    viewer.dims.ndisplay = 2 + (viewer.dims.ndisplay == 2)
+    if viewer.dims.ndisplay == 2:
+        viewer.dims.ndisplay = 3
+    else:
+        viewer.dims.ndisplay = 2
 
 
 # Making this an action makes vispy really unhappy during the tests
@@ -76,6 +80,11 @@ def reset_view(viewer: Viewer):
     viewer.reset_view()
 
 
+@register_viewer_action(trans._("Delete selected layers."))
+def delete_selected_layers(viewer: Viewer):
+    viewer.layers.remove_selected()
+
+
 @register_viewer_action(trans._("Increment dimensions slider to the left."))
 def increment_dims_left(viewer: Viewer):
     viewer.dims._increment_dims_left()
@@ -96,16 +105,20 @@ def focus_axes_down(viewer: Viewer):
     viewer.dims._focus_down()
 
 
+# Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
-    trans._("Change order of the visible axes, e.g. [0, 1, 2] -> [2, 0, 1]."),
+    trans._(
+        "Change order of the visible axes, e.g.\u00A0[0,\u00A01,\u00A02]\u00A0\u2011>\u00A0[2,\u00A00,\u00A01]."
+    ),
 )
 def roll_axes(viewer: Viewer):
     viewer.dims._roll()
 
 
+# Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        "Transpose order of the last two visible axes, e.g. [0, 1] -> [1, 0]."
+        "Transpose order of the last two visible axes, e.g.\u00A0[0,\u00A01]\u00A0\u2011>\u00A0[1,\u00A00]."
     ),
 )
 def transpose_axes(viewer: Viewer):
@@ -129,3 +142,32 @@ def toggle_selected_visibility(viewer: Viewer):
 )
 def toggle_console_visibility(viewer: Viewer):
     viewer.window._qt_viewer.toggle_console_visibility()
+
+
+@register_viewer_action(trans._("Press and hold for pan/zoom mode"))
+def hold_for_pan_zoom(viewer: ViewerModel):
+    selected_layer = viewer.layers.selection.active
+    if selected_layer is None:
+        yield
+        return
+    previous_mode = selected_layer.mode
+    # Each layer has its own Mode enum class with different values,
+    # but they should all have a PAN_ZOOM value. At the time of writing
+    # these enums do not share a base class or protocol, so ignore the
+    # attribute check for now.
+    pan_zoom = selected_layer._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
+    if previous_mode != pan_zoom:
+        selected_layer.mode = pan_zoom
+        yield
+
+        selected_layer.mode = previous_mode
+
+
+@register_viewer_action(trans._("Show all key bindings"))
+def show_shortcuts(viewer: Viewer):
+    viewer.window._open_preferences_dialog()
+    pref_dialog = cast('PreferencesDialog', viewer.window._pref_dialog)
+    pref_list = pref_dialog._list
+    for i in range(pref_list.count()):
+        if pref_list.item(i).text() == "Shortcuts":
+            pref_list.setCurrentRow(i)

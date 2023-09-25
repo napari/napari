@@ -279,7 +279,7 @@ class ShapeList:
                 z_refresh=z_refresh,
             )
         else:
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     'Cannot add single nor multiple shape',
                     deferred=True,
@@ -313,7 +313,7 @@ class ShapeList:
             ShapesList._update_z_order() once at the end.
         """
         if not issubclass(type(shape), Shape):
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     'shape must be subclass of Shape',
                     deferred=True,
@@ -709,7 +709,7 @@ class ShapeList:
         """
         if new_type is not None:
             cur_shape = self.shapes[index]
-            if type(new_type) == str:
+            if isinstance(new_type, str):
                 shape_type = ShapeType(new_type)
                 if shape_type in shape_classes:
                     shape_cls = shape_classes[shape_type]
@@ -933,7 +933,7 @@ class ShapeList:
         self.add(shape, shape_index=index)
         self._update_z_order()
 
-    def outline(self, indices):
+    def outline(self, indices: Union[int, Sequence[int]]):
         """Finds outlines of shapes listed in indices
 
         Parameters
@@ -951,7 +951,16 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
-        if type(indices) is list:
+        if isinstance(indices, int):
+            triangle_indices = np.all(
+                self._mesh.triangles_index == [indices, 1], axis=1
+            )
+            triangle_indices = np.where(triangle_indices)[0]
+            vertices_indices = np.all(
+                self._mesh.vertices_index == [indices, 1], axis=1
+            )
+            vertices_indices = np.where(vertices_indices)[0]
+        else:
             meshes = self._mesh.triangles_index
             triangle_indices = [
                 i
@@ -964,21 +973,12 @@ class ShapeList:
                 for i, x in enumerate(meshes)
                 if x[0] in indices and x[1] == 1
             ]
-        else:
-            triangle_indices = np.all(
-                self._mesh.triangles_index == [indices, 1], axis=1
-            )
-            triangle_indices = np.where(triangle_indices)[0]
-            vertices_indices = np.all(
-                self._mesh.vertices_index == [indices, 1], axis=1
-            )
-            vertices_indices = np.where(vertices_indices)[0]
 
         offsets = self._mesh.vertices_offsets[vertices_indices]
         centers = self._mesh.vertices_centers[vertices_indices]
         triangles = self._mesh.triangles[triangle_indices]
 
-        if type(indices) is list:
+        if not isinstance(indices, int):
             t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
             inds = self._mesh.vertices_index[vertices_indices][:, 0]
             starts = np.unique(inds, return_index=True)[1]
@@ -1034,13 +1034,13 @@ class ShapeList:
         indices = inside_triangles(triangles - coord)
         shapes = self._mesh.displayed_triangles_index[indices, 0]
 
-        if len(shapes) > 0:
-            z_list = self._z_order.tolist()
-            order_indices = np.array([z_list.index(m) for m in shapes])
-            ordered_shapes = shapes[np.argsort(order_indices)]
-            return ordered_shapes[0]
-        else:
+        if len(shapes) == 0:
             return None
+
+        z_list = self._z_order.tolist()
+        order_indices = np.array([z_list.index(m) for m in shapes])
+        ordered_shapes = shapes[np.argsort(order_indices)]
+        return ordered_shapes[0]
 
     def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
         """Determines if any shape is intersected by a ray by looking inside triangle
@@ -1072,20 +1072,20 @@ class ShapeList:
             triangles=triangles,
         )
         intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
-        if len(intersected_shapes) > 0:
-            intersection_points = self._triangle_intersection(
-                triangle_indices=inside,
-                ray_position=ray_position,
-                ray_direction=ray_direction,
-            )
-            start_to_intersection = intersection_points - ray_position
-            distances = np.linalg.norm(start_to_intersection, axis=1)
-            closest_shape_index = np.argmin(distances)
-            shape = intersected_shapes[closest_shape_index]
-            intersection = intersection_points[closest_shape_index]
-            return shape, intersection
-        else:
+        if len(intersected_shapes) == 0:
             return None, None
+
+        intersection_points = self._triangle_intersection(
+            triangle_indices=inside,
+            ray_position=ray_position,
+            ray_direction=ray_direction,
+        )
+        start_to_intersection = intersection_points - ray_position
+        distances = np.linalg.norm(start_to_intersection, axis=1)
+        closest_shape_index = np.argmin(distances)
+        shape = intersected_shapes[closest_shape_index]
+        intersection = intersection_points[closest_shape_index]
+        return shape, intersection
 
     def _triangle_intersection(
         self,
@@ -1181,7 +1181,7 @@ class ShapeList:
             integer up to N for points inside the corresponding shape.
         """
         if labels_shape is None:
-            labels_shape = self.displayed_vertices.max(axis=0).astype(np.int)
+            labels_shape = self.displayed_vertices.max(axis=0).astype(int)
 
         labels = np.zeros(labels_shape, dtype=int)
 
@@ -1226,9 +1226,9 @@ class ShapeList:
             value of the shape for points inside the corresponding shape.
         """
         if colors_shape is None:
-            colors_shape = self.displayed_vertices.max(axis=0).astype(np.int)
+            colors_shape = self.displayed_vertices.max(axis=0).astype(int)
 
-        colors = np.zeros(tuple(colors_shape) + (4,), dtype=float)
+        colors = np.zeros((*colors_shape, 4), dtype=float)
         colors[..., 3] = 1
 
         z_order = self._z_order[::-1]

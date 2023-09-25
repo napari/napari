@@ -79,7 +79,7 @@ class QtViewerDockWidget(QDockWidget):
         add_vertical_stretch=True,
         close_btn=True,
     ) -> None:
-        self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
+        self._ref_qt_viewer: ReferenceType[QtViewer] = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer
         self.name = name
@@ -228,6 +228,12 @@ class QtViewerDockWidget(QDockWidget):
         # method, be sure to call super().keyPressEvent(event) at the end of
         # your method to pass uncaught key-combinations to the viewer.
         return self._ref_qt_viewer().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        # if you subclass QtViewerDockWidget and override the keyReleaseEvent
+        # method, be sure to call super().keyReleaseEvent(event) at the end of
+        # your method to pass uncaught key-combinations to the viewer.
+        return self._ref_qt_viewer().keyReleaseEvent(event)
 
     def _set_title_orientation(self, area):
         if area in (

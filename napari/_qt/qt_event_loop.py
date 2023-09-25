@@ -3,10 +3,10 @@ from __future__ import annotations
 import os
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from warnings import warn
 
-from qtpy import PYQT5
+from qtpy import PYQT5, PYSIDE2
 from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
@@ -63,13 +63,13 @@ _IPYTHON_WAS_HERE_FIRST = "IPython" in sys.modules
 
 def get_app(
     *,
-    app_name: str = None,
-    app_version: str = None,
-    icon: str = None,
-    org_name: str = None,
-    org_domain: str = None,
-    app_id: str = None,
-    ipy_interactive: bool = None,
+    app_name: Optional[str] = None,
+    app_version: Optional[str] = None,
+    icon: Optional[str] = None,
+    org_name: Optional[str] = None,
+    org_domain: Optional[str] = None,
+    app_id: Optional[str] = None,
+    ipy_interactive: Optional[bool] = None,
 ) -> QApplication:
     """Get or create the Qt QApplication.
 
@@ -125,20 +125,26 @@ def get_app(
                     "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
                     deferred=True,
                     args=set_values,
-                )
+                ),
+                stacklevel=2,
             )
         if perf_config and perf_config.trace_qt_events:
             warn(
                 trans._(
                     "Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.",
                     deferred=True,
-                )
+                ),
+                stacklevel=2,
             )
 
     else:
         # automatically determine monitor DPI.
-        # Note: this MUST be set before the QApplication is instantiated
-        if PYQT5:
+        # Note: this MUST be set before the QApplication is instantiated. Also, this
+        # attributes need to be applied only to Qt5 bindings (PyQt5 and PySide2)
+        # since the High DPI scaling attributes are deactivated by default while on Qt6
+        # they are deprecated and activated by default. For more info see:
+        # https://doc.qt.io/qtforpython-6/gettingstarted/porting_from2.html#class-function-deprecations
+        if PYQT5 or PYSIDE2:
             QApplication.setAttribute(
                 Qt.ApplicationAttribute.AA_EnableHighDpiScaling
             )
@@ -251,12 +257,6 @@ def quit_app():
 
         monitor.stop()
 
-    if config.async_loading:
-        # Shutdown the chunkloader
-        from napari.components.experimental.chunk import chunk_loader
-
-        chunk_loader.shutdown()
-
 
 @contextmanager
 def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
@@ -288,6 +288,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
             deferred=True,
         ),
         FutureWarning,
+        stacklevel=2,
     )
 
     app = get_app()
@@ -401,7 +402,8 @@ def run(
                 "Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`",
                 deferred=True,
                 _func_name=_func_name,
-            )
+            ),
+            stacklevel=2,
         )
         return
 
@@ -415,7 +417,8 @@ def run(
                 deferred=True,
                 _func_name=_func_name,
                 max_loop_level=loops + 1,
-            )
+            ),
+            stacklevel=2,
         )
         return
     with notification_manager, _maybe_allow_interrupt(app):

@@ -65,7 +65,7 @@ import itertools
 import re
 
 import numpy as np
-from napari.utils.colormaps.vendored._color_data import (BASE_COLORS, TABLEAU_COLORS, CSS4_COLORS,
+from ._color_data import (BASE_COLORS, TABLEAU_COLORS, CSS4_COLORS,
                           XKCD_COLORS, NTH_COLORS)
 
 
@@ -513,8 +513,9 @@ class Colormap(object):
     def is_gray(self):
         if not self._isinit:
             self._init()
-        return (np.all(self._lut[:, 0] == self._lut[:, 1]) and
-                np.all(self._lut[:, 0] == self._lut[:, 2]))
+        return np.array_equal(
+            self._lut[:, 0], self._lut[:, 1]
+        ) and np.array_equal(self._lut[:, 0], self._lut[:, 2])
 
     def _resample(self, lutsize):
         """
