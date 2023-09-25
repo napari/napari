@@ -115,7 +115,7 @@ class NapariQtNotification(QDialog):
 
         settings = get_settings()
         theme = settings.appearance.theme
-        default_color = get_theme(theme).icon
+        default_color = get_theme(theme).icon.as_hex()
 
         # FIXME: Should these be defined at the theme level?
         # Currently there is a warning one

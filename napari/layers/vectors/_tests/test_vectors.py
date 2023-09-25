@@ -21,7 +21,7 @@ def test_random_vectors():
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
@@ -62,7 +62,7 @@ def test_empty_vectors():
     shape = (0, 2, 2)
     data = np.empty(shape)
     layer = Vectors(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
@@ -95,7 +95,7 @@ def test_empty_vectors_with_property_choices():
     data = np.empty(shape)
     property_choices = {'angle': np.array([0.5], dtype=float)}
     layer = Vectors(data, property_choices=property_choices)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
@@ -146,7 +146,7 @@ def test_random_3D_vectors():
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
@@ -175,7 +175,7 @@ def test_empty_3D_vectors():
     shape = (0, 2, 3)
     data = np.empty(shape)
     layer = Vectors(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
@@ -283,7 +283,7 @@ def test_changing_data():
     data_b[:, 0, :] = 20 * data_b[:, 0, :]
     layer = Vectors(data_b)
     layer.data = data_b
-    assert np.all(layer.data == data_b)
+    np.testing.assert_array_equal(layer.data, data_b)
     assert layer.data.shape == shape_b
     assert layer.ndim == shape_b[2]
     assert layer._view_data.shape[2] == 2
@@ -429,7 +429,7 @@ def test_edge_color_cycle():
     )
     np.testing.assert_equal(layer.properties, properties)
     edge_color_array = transform_color(color_cycle * int(shape[0] / 2))
-    assert np.all(layer.edge_color == edge_color_array)
+    np.testing.assert_array_equal(layer.edge_color, edge_color_array)
 
 
 def test_edge_color_colormap():
@@ -448,11 +448,11 @@ def test_edge_color_colormap():
     np.testing.assert_equal(layer.properties, properties)
     assert layer.edge_color_mode == 'colormap'
     edge_color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
-    assert np.all(layer.edge_color == edge_color_array)
+    np.testing.assert_array_equal(layer.edge_color, edge_color_array)
 
     # change the color cycle - edge_color should not change
     layer.edge_color_cycle = ['red', 'blue']
-    assert np.all(layer.edge_color == edge_color_array)
+    np.testing.assert_array_equal(layer.edge_color, edge_color_array)
 
     # adjust the clims
     layer.edge_contrast_limits = (0, 3)

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import re
 import subprocess  # nosec
 import sys
 from configparser import ConfigParser
 from pathlib import Path
+from typing import Optional
 
 REPO_DIR = Path(__file__).parent.parent
 DEFAULT_NAME = "auto-dependency-upgrades"
@@ -58,9 +60,11 @@ def get_branches() -> list[str]:
     return out.stdout.decode().split("\n")
 
 
-def calc_changed_packages(base_branch: str, src_dir: Path) -> list[str]:
+def calc_changed_packages(
+    base_branch: str, src_dir: Path, python_version: str
+) -> list[str]:
     """
-    Calculate a list of changed packages based on python 3.10
+    Calculate a list of changed packages based on python_version
 
     Parameters
     ----------
@@ -68,6 +72,8 @@ def calc_changed_packages(base_branch: str, src_dir: Path) -> list[str]:
         branch against which to compare
     src_dir: Path
         path to the root of the repository
+    python_version: str
+        python version to use
 
     Returns
     -------
@@ -76,19 +82,21 @@ def calc_changed_packages(base_branch: str, src_dir: Path) -> list[str]:
     """
     changed_name_re = re.compile(r"\+([\w-]+)")
 
+    command = [
+        "git",
+        "diff",
+        base_branch,
+        str(
+            src_dir
+            / "resources"
+            / "constraints"
+            / f"constraints_py{python_version}.txt"
+        ),
+    ]
+    logging.info("Git diff call: %s", " ".join(command))
     try:
         out = subprocess.run(  # nosec
-            [
-                "git",
-                "diff",
-                base_branch,
-                str(
-                    src_dir
-                    / "resources"
-                    / "constraints"
-                    / "constraints_py3.10.txt"
-                ),
-            ],
+            command,
             capture_output=True,
             check=True,
         )
@@ -145,14 +153,20 @@ def calc_only_direct_updates(
     return sorted(set(packages) & set(changed_packages))
 
 
-def get_changed_dependencies(base_branch: str, all_packages=False):
+def get_changed_dependencies(
+    base_branch: str,
+    all_packages=False,
+    python_version="3.10",
+    src_dir: Optional[Path] = None,
+):
     """
     Get the changed dependencies.
 
     all_packages: bool
         If True, return all packages, not just the direct dependencies.
     """
-    src_dir = Path(__file__).parent.parent
+    if src_dir is None:
+        src_dir = Path(__file__).parent.parent
 
     branches = get_branches()
 
@@ -163,7 +177,9 @@ def get_changed_dependencies(base_branch: str, all_packages=False):
             )
         base_branch = f"origin/{base_branch}"
 
-    changed_packages = calc_changed_packages(base_branch, src_dir)
+    changed_packages = calc_changed_packages(
+        base_branch, src_dir, python_version=python_version
+    )
 
     if all_packages:
         return sorted(set(changed_packages))
