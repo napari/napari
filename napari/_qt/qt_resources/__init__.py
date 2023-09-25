@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from napari._qt.qt_resources._svg import QColoredSVGIcon
 from napari.settings import get_settings
@@ -12,7 +12,9 @@ STYLES = {x.stem: str(x) for x in STYLE_PATH.iterdir() if x.suffix == '.qss'}
 
 
 def get_stylesheet(
-    theme_id: Optional[str] = None, extra: Optional[List[str]] = None
+    theme_id: Optional[str] = None,
+    override_variables: Optional[Dict[str, str]] = None,
+    extra: Optional[List[str]] = None,
 ) -> str:
     """Combine all qss files into single, possibly pre-themed, style string.
 
@@ -23,6 +25,8 @@ def get_stylesheet(
         stylesheet will still have ``{{ template_variables }}`` that need to be
         replaced using the :func:`napari.utils.theme.template` function prior
         to using the stylesheet.
+    override_variables : dict, optional
+        Dictionary of variables values that replace default theme values
     extra : list of str, optional
         Additional paths to QSS files to include in stylesheet, by default None
 
@@ -44,7 +48,11 @@ def get_stylesheet(
     if theme_id:
         from napari.utils.theme import get_theme, template
 
-        return template(stylesheet, **get_theme(theme_id).to_rgb_dict())
+        theme_dict = get_theme(theme_id).to_rgb_dict()
+        if override_variables:
+            theme_dict.update(override_variables)
+
+        return template(stylesheet, **theme_dict)
 
     return stylesheet
 

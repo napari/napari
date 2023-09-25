@@ -128,6 +128,7 @@ class PreferencesDialog(QDialog):
         form.widget.on_changed.connect(
             lambda d: getattr(self._settings, name.lower()).update(d)
         )
+        # TODO: Events connection only in one way from widget to settings?
 
         page_scrollarea = QScrollArea()
         page_scrollarea.setWidgetResizable(True)

@@ -1353,7 +1353,12 @@ class Window:
         if theme_name == "system":
             # system isn't a theme, so get the name
             actual_theme_name = get_system_theme()
-        _themes[actual_theme_name].font_size = f"{font_size}pt"
+        self._qt_window.setStyleSheet(
+            get_stylesheet(
+                actual_theme_name,
+                override_variables={"font_size": f"{font_size}pt"},
+            )
+        )
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
