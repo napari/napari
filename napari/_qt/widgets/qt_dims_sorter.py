@@ -76,7 +76,8 @@ class QtDimsSorter(QWidget):
         self.axis_list = AxisList.from_dims(self.dims)
 
         view = QtListView(self.axis_list)
-        view.setSizeAdjustPolicy(QtListView.AdjustToContents)
+        if len(self.axis_list) <= 2:
+            view.setSizeAdjustPolicy(QtListView.AdjustToContents)
 
         layout = QGridLayout()
         self.setLayout(layout)
@@ -100,12 +101,13 @@ class QtDimsSorter(QWidget):
         # to allow closure of QtDimsSorter
         self.axis_list.events.reordered.connect(
             self._axis_list_reorder_callback,
-            until=self.parent().destroyed,
+            until=self.parent().finished,
         )
-        self.dims.events.order.connect(
-            self._dims_order_callback,
-            until=self.parent().destroyed,
-        )
+        self.parent().destroyed.connect(lambda: print('parent dead'))
+        # self.dims.events.order.connect(
+        #    self._dims_order_callback,
+        #    until=self.parent().destroyed,
+        # )
 
     def _axis_list_reorder_callback(self, event):
         set_dims_order(self.dims, event.value)
