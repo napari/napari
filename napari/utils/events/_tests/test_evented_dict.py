@@ -8,7 +8,7 @@ from napari.utils.events.containers import EventedDict
 
 @pytest.fixture
 def regular_dict():
-    return {"A": 0, "B": 1, "C": 2}
+    return {"A": 0, "B": 1, "C": 2, False: "3", 4: 5}
 
 
 @pytest.fixture(params=[EventedDict])
@@ -53,6 +53,10 @@ def test_dict_interface_parity(test_dict, regular_dict, meth):
 def test_copy(test_dict, regular_dict):
     """Copying an evented dict should return a same-class evented dict."""
     new_test = test_dict.copy()
+    assert (
+        len({type(k) for k in new_test}) >= 2
+    ), "We want at least non-string keys to test edge cases"
+
     new_reg = regular_dict.copy()
     assert id(new_test) != id(test_dict)
     assert new_test == test_dict

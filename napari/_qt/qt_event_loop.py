@@ -3,10 +3,10 @@ from __future__ import annotations
 import os
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from warnings import warn
 
-from qtpy import PYQT5
+from qtpy import PYQT5, PYSIDE2
 from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
@@ -63,13 +63,13 @@ _IPYTHON_WAS_HERE_FIRST = "IPython" in sys.modules
 
 def get_app(
     *,
-    app_name: str = None,
-    app_version: str = None,
-    icon: str = None,
-    org_name: str = None,
-    org_domain: str = None,
-    app_id: str = None,
-    ipy_interactive: bool = None,
+    app_name: Optional[str] = None,
+    app_version: Optional[str] = None,
+    icon: Optional[str] = None,
+    org_name: Optional[str] = None,
+    org_domain: Optional[str] = None,
+    app_id: Optional[str] = None,
+    ipy_interactive: Optional[bool] = None,
 ) -> QApplication:
     """Get or create the Qt QApplication.
 
@@ -139,8 +139,12 @@ def get_app(
 
     else:
         # automatically determine monitor DPI.
-        # Note: this MUST be set before the QApplication is instantiated
-        if PYQT5:
+        # Note: this MUST be set before the QApplication is instantiated. Also, this
+        # attributes need to be applied only to Qt5 bindings (PyQt5 and PySide2)
+        # since the High DPI scaling attributes are deactivated by default while on Qt6
+        # they are deprecated and activated by default. For more info see:
+        # https://doc.qt.io/qtforpython-6/gettingstarted/porting_from2.html#class-function-deprecations
+        if PYQT5 or PYSIDE2:
             QApplication.setAttribute(
                 Qt.ApplicationAttribute.AA_EnableHighDpiScaling
             )
@@ -252,12 +256,6 @@ def quit_app():
         from napari.components.experimental.monitor import monitor
 
         monitor.stop()
-
-    if config.async_loading:
-        # Shutdown the chunkloader
-        from napari.components.experimental.chunk import chunk_loader
-
-        chunk_loader.shutdown()
 
 
 @contextmanager

@@ -13,6 +13,7 @@ current dims point (`viewer.dims.point`).
 """
 
 from copy import deepcopy
+from typing import Optional
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -57,7 +58,7 @@ def copy_layer_le_4_16(layer: Layer, name: str = ""):
 
 
 def copy_layer(layer: Layer, name: str = ""):
-    if NAPARI_GE_4_16:
+    if not NAPARI_GE_4_16:
         return copy_layer_le_4_16(layer, name)
 
     res_layer = Layer.create(*layer.as_layer_data_tuple())
@@ -148,8 +149,8 @@ class QtViewerWrap(QtViewer):
         self,
         filenames: list,
         stack: bool,
-        plugin: str = None,
-        layer_type: str = None,
+        plugin: Optional[str] = None,
+        layer_type: Optional[str] = None,
         **kwargs,
     ):
         """for drag and drop open files"""

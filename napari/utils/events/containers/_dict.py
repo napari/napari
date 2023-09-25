@@ -5,6 +5,7 @@ from typing import (
     Iterator,
     Mapping,
     MutableMapping,
+    Optional,
     Sequence,
     Type,
     TypeVar,
@@ -20,7 +21,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
 
     def __init__(
         self,
-        data: Mapping[_K, _T] = None,
+        data: Optional[Mapping[_K, _T]] = None,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
     ) -> None:
         if data is None:
@@ -33,7 +34,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
 
     # #### START Required Abstract Methods
 
-    def __setitem__(self, key: int, value: _T):
+    def __setitem__(self, key: _K, value: _T):
         self._dict[key] = self._type_check(value)
 
     def __delitem__(self, key: _K) -> None:
@@ -45,7 +46,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
     def __len__(self) -> int:
         return len(self._dict)
 
-    def __iter__(self) -> Iterator[_T]:
+    def __iter__(self) -> Iterator[_K]:
         return iter(self._dict)
 
     def __repr__(self):
@@ -64,9 +65,9 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
         new = self.__class__()
         # separating this allows subclasses to omit these from their `__init__`
         new._basetypes = self._basetypes
-        new.update(**iterable)
+        new.update(iterable)
         return new
 
-    def copy(self) -> "TypedMutableMapping[_T]":
+    def copy(self) -> "TypedMutableMapping[_K, _T]":
         """Return a shallow copy of the dictionary."""
         return self.__newlike__(self)

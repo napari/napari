@@ -47,13 +47,15 @@ jobs:
           name: Install napari-dev
           command: |
             . venv/bin/activate
-            python -m pip install -e ".[pyside,dev]"
+            python -m pip install -e ".[pyside,dev]" -c resources/constraints/constraints_py3.10_docs.txt
       - run:
           name: Build docs
           command: |
             . venv/bin/activate
             cd napari-docs
             xvfb-run --auto-servernum make docs GALLERY_PATH=../../examples/
+          environment:
+            PIP_CONSTRAINTS: ../resources/constraints/constraints_py3.10_docs.txt
       - store_artifacts:
           path: napari-docs/docs/_build/
       - persist_to_workspace:

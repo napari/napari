@@ -82,13 +82,13 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
             continue
         arg = raw_arg.lstrip('-')
 
-        key, *value = arg.split("=", maxsplit=1)
+        key, *values = arg.split("=", maxsplit=1)
         key = key.replace('-', '_')
         if key not in valid:
             sys.exit(f"error: unrecognized argument: {raw_arg}")
 
-        if value:
-            value = value[0]
+        if values:
+            value = values[0]
         else:
             if len(unknown) <= i + 1 or unknown[i + 1].startswith("--"):
                 sys.exit(f"error: argument {raw_arg} expected one argument")
@@ -221,7 +221,7 @@ def _run():
     level = levels[min(2, args.verbose)]  # prevent index error
     logging.basicConfig(
         level=level,
-        format="%(asctime)s %(levelname)s %(message)s",
+        format="%(asctime)s : %(levelname)s : %(threadName)s : %(message)s",
         datefmt='%H:%M:%S',
     )
 
@@ -381,10 +381,10 @@ def _run():
         # only necessary in bundled app, but see #3596
         from napari.utils.misc import (
             install_certifi_opener,
-            running_as_bundled_app,
+            running_as_constructor_app,
         )
 
-        if running_as_bundled_app():
+        if running_as_constructor_app():
             install_certifi_opener()
         run(gui_exceptions=True)
 

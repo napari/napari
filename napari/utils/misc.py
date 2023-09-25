@@ -18,6 +18,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -47,27 +48,36 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
     try:
         return packaging.version.Version(v)
     except packaging.version.InvalidVersion:
-        return packaging.version.LegacyVersion(v)
+        return packaging.version.LegacyVersion(v)  # type: ignore[attr-defined]
 
 
 def running_as_bundled_app(*, check_conda=True) -> bool:
-    """Infer whether we are running as a briefcase bundle."""
+    """Infer whether we are running as a bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
+    warnings.warn(
+        trans._(
+            "Briefcase installations are no longer supported as of v0.4.18. "
+            "running_as_bundled_app() will be removed in a 0.6.0 release.",
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if (
         check_conda
         and (Path(sys.executable).parent / ".napari_is_bundled").exists()
     ):
         return True
 
+    # TODO: Remove from here on?
     try:
         app_module = sys.modules['__main__'].__package__
     except AttributeError:
         return False
 
-    if app_module is None:
+    if not app_module:
         return False
 
     try:
@@ -83,16 +93,6 @@ def running_as_constructor_app() -> bool:
     return (
         Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
     ).exists()
-
-
-def bundle_bin_dir() -> Optional[str]:
-    """Return path to briefcase app_packages/bin if it exists."""
-    bin_path = os_path.join(
-        os_path.dirname(sys.exec_prefix), 'app_packages', 'bin'
-    )
-    if os_path.isdir(bin_path):
-        return bin_path
-    return None
 
 
 def in_jupyter() -> bool:
@@ -378,12 +378,12 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
         )
     OriginType = type(relpath)
 
-    relpath = fspath(relpath)
-    urlp = urlparse(relpath)
+    relpath_str = fspath(relpath)
+    urlp = urlparse(relpath_str)
     if urlp.scheme and urlp.netloc:
-        return relpath
+        return OriginType(relpath_str)
 
-    path = os_path.abspath(os_path.expanduser(relpath))
+    path = os_path.abspath(os_path.expanduser(relpath_str))
     if must_exist and not (urlp.scheme or urlp.netloc or os.path.exists(path)):
         raise ValueError(
             trans._(
@@ -518,7 +518,7 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
 
     # yes, it's a little riskier, but we are checking namespaces instead of
     # actual `issubclass` here to avoid slow import times
-    _known_arrays = {
+    _known_arrays: Dict[str, Callable[[Any, Any], bool]] = {
         'numpy.ndarray': _quiet_array_equal,  # numpy.ndarray
         'dask.Array': operator.is_,  # dask.array.core.Array
         'dask.Delayed': operator.is_,  # dask.delayed.Delayed
@@ -592,7 +592,7 @@ def dir_hash(
         for fname in sorted(files):
             if fname.startswith(".") and ignore_hidden:
                 continue
-            _file_hash(_hash, Path(root) / fname, path, include_paths)
+            _file_hash(_hash, Path(root) / fname, Path(path), include_paths)
     return _hash.hexdigest()
 
 

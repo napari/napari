@@ -25,7 +25,9 @@ class ImageLayerNode:
 
         self._custom_node = custom_node
         self._image_node = ImageNode(
-            None,
+            None
+            if (texture_format is None or texture_format == 'auto')
+            else np.array([[0.0]], dtype=np.float32),
             method='auto',
             texture_format=texture_format,
         )
@@ -47,9 +49,17 @@ class ImageLayerNode:
 
 
 class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer, node=None, texture_format='auto') -> None:
+    def __init__(
+        self,
+        layer,
+        node=None,
+        texture_format='auto',
+        layer_node_class=ImageLayerNode,
+    ) -> None:
         # Use custom node from caller, or our standard image/volume nodes.
-        self._layer_node = ImageLayerNode(node, texture_format=texture_format)
+        self._layer_node = layer_node_class(
+            node, texture_format=texture_format
+        )
 
         # Default to 2D (image) node.
         super().__init__(layer, self._layer_node.get_node(2))
@@ -98,13 +108,9 @@ class VispyImageLayer(VispyBaseLayer):
         if data is None:
             data = np.zeros((1,) * ndisplay, dtype=np.float32)
 
-        if self.layer._empty:
-            self.node.visible = False
-        else:
-            self.node.visible = self.layer.visible
+        self.node.visible = not self.layer._slice.empty and self.layer.visible
 
-        if self.layer.loaded:
-            self.node.set_data(data)
+        self.node.set_data(data)
 
         self.node.parent = parent
         self.node.order = self.order
@@ -113,17 +119,8 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
 
     def _on_data_change(self):
-        if not self.layer.loaded:
-            # Do nothing if we are not yet loaded. Calling astype below could
-            # be very expensive. Lets not do it until our data has been loaded.
-            return
-
-        self._set_node_data(self.node, self.layer._data_view)
-
-    def _set_node_data(self, node, data):
-        """Our self.layer._data_view has been updated, update our node."""
-
-        data = fix_data_dtype(data)
+        node = self.node
+        data = fix_data_dtype(self.layer._data_view)
         ndisplay = self.layer._slice_input.ndisplay
 
         if ndisplay == 3 and self.layer.ndim == 2:
@@ -143,10 +140,7 @@ class VispyImageLayer(VispyBaseLayer):
         else:
             node.set_data(data)
 
-        if self.layer._empty:
-            node.visible = False
-        else:
-            node.visible = self.layer.visible
+        node.visible = not self.layer._slice.empty and self.layer.visible
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()

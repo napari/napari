@@ -173,7 +173,7 @@ def test_singleton_dims(qtbot):
     """
     ndim = 4
     dims = Dims(ndim=ndim)
-    dims.set_range(0, (0, 1, 1))
+    dims.set_range(0, (0, 0, 1))
     view = QtDims(dims)
     qtbot.addWidget(view)
 
@@ -244,11 +244,16 @@ def test_order_when_changing_ndim(qtbot):
 def test_update_dims_labels(qtbot):
     """
     Test that the slider_widget axis labels are updated with the dims model
-    and vice versa.
+    and vice versa with eliding capabilites.
     """
     ndim = 4
     view = QtDims(Dims(ndim=ndim))
     qtbot.addWidget(view)
+
+    # set initial widget width and show it to be able to trigger `resizeEvent`
+    view.setFixedWidth(100)
+    view.show()
+
     view.dims.axis_labels = list('TZYX')
     assert [w.axis_label.text() for w in view.slider_widgets] == list('TZYX')
 
@@ -261,9 +266,18 @@ def test_update_dims_labels(qtbot):
     view.dims.events.axis_labels.connect(on_axis_labels_changed)
     first_label = view.slider_widgets[0].axis_label
     assert first_label.text() == view.dims.axis_labels[0]
+
+    # check that the label text corresponds with the dims model
+    # while being elided on the GUI
     first_label.setText('napari')
     assert first_label.text() == view.dims.axis_labels[0]
+    assert "…" in first_label._elidedText()
     assert observed_axis_labels_event
+
+    # increase width to check the full text is shown
+    view.setFixedWidth(250)
+    assert first_label.text() == view.dims.axis_labels[0]
+    assert first_label._elidedText() == view.dims.axis_labels[0]
 
 
 def test_slider_press_updates_last_used(qtbot):
@@ -274,7 +288,16 @@ def test_slider_press_updates_last_used(qtbot):
 
     for i, widg in enumerate(view.slider_widgets):
         widg.slider.sliderPressed.emit()
-        assert view.dims.last_used == i
+        if i in [0, 1, 2]:
+            # only the first three dims should have visible sliders
+            assert widg.isVisibleTo(view)
+            assert view.dims.last_used == i
+        else:
+            # sliders should not be visible for the follwing dims and the
+            # last_used should fallback to the first available dim with a
+            # visible slider (dim 0)
+            assert not widg.isVisibleTo(view)
+            assert view.dims.last_used == 0
 
 
 @pytest.mark.skipif(
@@ -304,67 +327,12 @@ def test_play_button(qtbot):
         qtbot.mouseClick(button, Qt.RightButton)
         mock_popup.assert_called_once()
 
-
-def test_slice_labels(qtbot):
-    ndim = 4
-    dims = Dims(ndim=ndim)
-    dims.set_range(0, (0, 20, 1))
-    view = QtDims(dims)
-    qtbot.addWidget(view)
-
-    # make sure the totslice_label is showing the correct number
-    assert int(view.slider_widgets[0].totslice_label.text()) == 19
-
-    # make sure setting the dims.point updates the slice label
-    label_edit = view.slider_widgets[0].curslice_label
-    dims.set_point(0, 15)
-    assert int(label_edit.text()) == 15
-
-    # make sure setting the current slice label updates the model
-    label_edit.setText(str(8))
-    label_edit.editingFinished.emit()
-    assert dims.point[0] == 8
-
-
-def test_not_playing_after_ndim_changes(qtbot):
-    """See https://github.com/napari/napari/issues/3998"""
-    dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
-    view = QtDims(dims)
-    qtbot.addWidget(view)
-    # Loop to prevent finishing before the assertions in this test.
-    view.play(loop_mode='loop')
-    qtbot.waitUntil(lambda: view.is_playing)
-
-    dims.ndim = 2
-
-    qtbot.waitUntil(lambda: not view.is_playing)
-    qtbot.waitUntil(lambda: view._animation_worker is None)
-
-
-def test_not_playing_after_ndisplay_changes(qtbot):
-    """See https://github.com/napari/napari/issues/3998"""
-    dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
-    view = QtDims(dims)
-    qtbot.addWidget(view)
-    # Loop to prevent finishing before the assertions in this test.
-    view.play(loop_mode='loop')
-    qtbot.waitUntil(lambda: view.is_playing)
-
-    dims.ndisplay = 3
-
-    qtbot.waitUntil(lambda: not view.is_playing)
-    qtbot.waitUntil(lambda: view._animation_worker is None)
-
-
-def test_set_axis_labels_after_ndim_changes(qtbot):
-    """See https://github.com/napari/napari/issues/3753"""
-    dims = Dims(ndim=3, ndisplay=2)
-    view = QtDims(dims)
-    qtbot.addWidget(view)
-
-    dims.ndim = 2
-    dims.axis_labels = ['y', 'x']
-
-    assert len(view.slider_widgets) == 2
-    assert view.slider_widgets[0].axis_label.text() == 'y'
-    assert view.slider_widgets[1].axis_label.text() == 'x'
+    # Check popup updates widget properties (fps, play mode and loop mode)
+    button.fpsspin.clear()
+    qtbot.keyClicks(button.fpsspin, "11")
+    qtbot.keyClick(button.fpsspin, Qt.Key_Enter)
+    assert slider.fps == button.fpsspin.value() == 11
+    button.reverse_check.setChecked(True)
+    assert slider.fps == -button.fpsspin.value() == -11
+    button.mode_combo.setCurrentText('once')
+    assert slider.loop_mode == button.mode_combo.currentText() == 'once'

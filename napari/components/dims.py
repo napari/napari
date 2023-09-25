@@ -4,6 +4,7 @@ from typing import (
     List,
     Literal,
     NamedTuple,
+    Optional,
     Sequence,
     Tuple,
     Union,
@@ -34,7 +35,7 @@ class Dims(EventedModel):
         Number of displayed dimensions.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
-        coordinates space.
+        coordinates space. Lower and upper bounds are inclusive.
     point : tuple of floats
         Dims position in world coordinates for each dimension.
     margin_left : tuple of floats
@@ -56,7 +57,7 @@ class Dims(EventedModel):
         Number of displayed dimensions.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension in world
-        coordinates space.
+        coordinates space. Lower and upper bounds are inclusive.
     point : tuple of floats
         Dims position in world coordinates for each dimension.
     margin_left : tuple of floats
@@ -218,20 +219,37 @@ class Dims(EventedModel):
         elif labels_ndim > ndim:
             updated['axis_labels'] = axis_labels[-ndim:]
 
+        # If the last used slider is no longer visible, use the first.
+        last_used = values['last_used']
+        ndisplay = values['ndisplay']
+        dims_range = updated['range']
+        nsteps = cls._nsteps_from_range(dims_range)
+        not_displayed = [
+            d for d in order[:-ndisplay] if len(nsteps) > d and nsteps[d] > 1
+        ]
+        if len(not_displayed) > 0 and last_used not in not_displayed:
+            updated['last_used'] = not_displayed[0]
+
         return {**values, **updated}
+
+    @staticmethod
+    def _nsteps_from_range(dims_range) -> Tuple[float, ...]:
+        return tuple(
+            # "or 1" ensures degenerate dimension works
+            int((rng.stop - rng.start) / (rng.step or 1)) + 1
+            for rng in dims_range
+        )
 
     @property
     def nsteps(self) -> Tuple[float, ...]:
-        return tuple(
-            # "or 1" ensures degenerate dimension works
-            int((rng.stop - rng.start) / (rng.step or 1))
-            for rng in self.range
-        )
+        return self._nsteps_from_range(self.range)
 
     @nsteps.setter
     def nsteps(self, value):
         self.range = tuple(
-            RangeTuple(rng.start, rng.stop, (rng.stop - rng.start) / nsteps)
+            RangeTuple(
+                rng.start, rng.stop, (rng.stop - rng.start) / (nsteps - 1)
+            )
             for rng, nsteps in zip(self.range, value)
         )
 
@@ -302,7 +320,7 @@ class Dims(EventedModel):
     def set_point(
         self,
         axis: Union[int, Sequence[int]],
-        value: Union[Union[int, float], Sequence[Union[int, float]]],
+        value: Union[float, Sequence[float]],
     ):
         """Sets point to slice dimension in world coordinates.
 
@@ -356,7 +374,7 @@ class Dims(EventedModel):
         full_axis_labels = list(self.axis_labels)
         for ax, val in zip(axis, label):
             full_axis_labels[ax] = val
-        self.axis_labels = full_axis_labels
+        self.axis_labels = tuple(full_axis_labels)
 
     def reset(self):
         """Reset dims values to initial states."""
@@ -379,7 +397,7 @@ class Dims(EventedModel):
         order[-2], order[-1] = order[-1], order[-2]
         self.order = order
 
-    def _increment_dims_right(self, axis: int = None):
+    def _increment_dims_right(self, axis: Optional[int] = None):
         """Increment dimensions to the right along given axis, or last used axis if None
 
         Parameters
@@ -391,7 +409,7 @@ class Dims(EventedModel):
             axis = self.last_used
         self.set_current_step(axis, self.current_step[axis] + 1)
 
-    def _increment_dims_left(self, axis: int = None):
+    def _increment_dims_left(self, axis: Optional[int] = None):
         """Increment dimensions to the left along given axis, or last used axis if None
 
         Parameters
@@ -427,6 +445,9 @@ class Dims(EventedModel):
         nsteps = np.array(self.nsteps)
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
+
+    def _go_to_center_step(self):
+        self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
 
     def _sanitize_input(
         self, axis, value, value_is_sequence=False

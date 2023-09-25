@@ -23,6 +23,7 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
+from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from typing import Callable, List, Optional, Tuple, Union
@@ -89,7 +90,7 @@ class VispyCanvas:
         for ignoring mousewheel events with modifiers.
     """
 
-    _instances = WeakSet()
+    _instances: WeakSet[VispyCanvas] = WeakSet()
 
     def __init__(
         self,
@@ -115,6 +116,10 @@ class VispyCanvas:
         self._overlay_to_visual = {}
         self._key_map_handler = key_map_handler
         self._instances.add(self)
+
+        self.bgcolor = transform_color(
+            get_theme(self.viewer.theme).canvas.as_hex()
+        )[0]
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
         # now while we know a Canvas exists. Later calls to
@@ -152,7 +157,8 @@ class VispyCanvas:
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.theme.connect(self._on_theme_change)
-        self.viewer.camera.events.interactive.connect(self._on_interactive)
+        self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
+        self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
@@ -204,7 +210,7 @@ class VispyCanvas:
         # Note 2. the reason for using the `as_hex` here is to avoid
         # `UserWarning` which is emitted when RGB values are above 1
         self._last_theme_color = transform_color(
-            get_theme(theme, False).canvas.as_hex()
+            get_theme(theme).canvas.as_hex()
         )[0]
         self.bgcolor = self._last_theme_color
 
@@ -257,8 +263,10 @@ class VispyCanvas:
         """Create a QCursor based on the napari cursor settings and set in Vispy."""
 
         cursor = self.viewer.cursor.style
-        brush_cursor = False
-        if cursor in {'square', 'circle'}:
+        brush_overlay = self.viewer._brush_circle_overlay
+        brush_overlay.visible = False
+
+        if cursor in {'square', 'circle', 'circle_frozen'}:
             # Scale size by zoom if needed
             size = self.viewer.cursor.size
             if self.viewer.cursor.scaled:
@@ -267,12 +275,19 @@ class VispyCanvas:
             size = int(size)
 
             # make sure the square fits within the current canvas
-            if size < 8 or size > (min(*self.size) - 4):
+            if (
+                size < 8 or size > (min(*self.size) - 4)
+            ) and cursor != 'circle_frozen':
                 self.cursor = QtCursorVisual['cross'].value
-            elif cursor == 'circle':
-                self.viewer._brush_circle_overlay.size = size
-                self.cursor = QtCursorVisual.blank()
-                brush_cursor = True
+            elif cursor.startswith('circle'):
+                brush_overlay.size = size
+                if cursor == 'circle_frozen':
+                    self.cursor = QtCursorVisual['standard'].value
+                    brush_overlay.position_is_frozen = True
+                else:
+                    self.cursor = QtCursorVisual.blank()
+                    brush_overlay.position_is_frozen = False
+                brush_overlay.visible = True
             else:
                 self.cursor = QtCursorVisual.square(size)
         elif cursor == 'crosshair':
@@ -280,19 +295,20 @@ class VispyCanvas:
         else:
             self.cursor = QtCursorVisual[cursor].value
 
-        self.viewer._brush_circle_overlay.visible = brush_cursor
-
     def delete(self) -> None:
         """Schedules the native widget for deletion"""
         self.native.deleteLater()
 
     def _on_interactive(self) -> None:
         """Link interactive attributes of view and viewer."""
-        self.view.interactive = self.viewer.camera.interactive
+        # Is this should be changed or renamed?
+        self.view.interactive = (
+            self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
+        )
 
     def _map_canvas2world(
         self, position: List[int, int]
-    ) -> Tuple[np.float64, np.float64]:
+    ) -> Tuple[float, float]:
         """Map position from canvas pixels into world coordinates.
 
         Parameters
@@ -362,6 +378,9 @@ class VispyCanvas:
         event.up_direction = self.viewer.camera.calculate_nd_up_direction(
             self.viewer.dims.ndim, self.viewer.dims.displayed
         )
+
+        # Add the camera zoom scale to the event
+        event.camera_zoom = self.viewer.camera.zoom
 
         # Update the cursor position
         self.viewer.cursor._view_direction = event.view_direction
@@ -506,7 +525,7 @@ class VispyCanvas:
             if nd > self.viewer.dims.ndisplay:
                 displayed_axes = displayed_sorted
             else:
-                displayed_axes = self.viewer.dims.displayed[-nd:]
+                displayed_axes = list(self.viewer.dims.displayed[-nd:])
             layer._update_draw(
                 scale_factor=1 / self.viewer.camera.zoom,
                 corner_pixels_displayed=canvas_corners_world[
@@ -527,7 +546,7 @@ class VispyCanvas:
         -------
         None
         """
-        self.viewer._canvas_size = tuple(self.size)
+        self.viewer._canvas_size = self.size
 
     def add_layer_visual_mapping(self, napari_layer, vispy_layer) -> None:
         """Maps a napari layer to its corresponding vispy layer and sets the parent scene of the vispy layer.
@@ -548,6 +567,7 @@ class VispyCanvas:
         self.layer_to_visual[napari_layer] = vispy_layer
 
         napari_layer.events.visible.connect(self._reorder_layers)
+        self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
         self._reorder_layers()
 
@@ -566,6 +586,7 @@ class VispyCanvas:
         layer = event.value
         layer.events.visible.disconnect(self._reorder_layers)
         vispy_layer = self.layer_to_visual[layer]
+        self.viewer.camera.events.disconnect(vispy_layer._on_camera_move)
         vispy_layer.close()
         del vispy_layer
         del self.layer_to_visual[layer]

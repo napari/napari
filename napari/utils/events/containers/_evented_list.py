@@ -24,7 +24,17 @@ cover this in test_evented_list.py)
 
 import contextlib
 import logging
-from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
+from typing import (
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from napari.utils.events.containers._typed import (
     _L,
@@ -71,9 +81,9 @@ class EventedList(TypedMutableSequence[_T]):
     moved (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: int, old_value: T, value: T)
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """
@@ -85,7 +95,7 @@ class EventedList(TypedMutableSequence[_T]):
         data: Iterable[_T] = (),
         *,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-        lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = None,
+        lookup: Optional[Dict[Type[_L], Callable[[_T], Union[_T, _L]]]] = None,
     ) -> None:
         if lookup is None:
             lookup = {}
@@ -105,7 +115,9 @@ class EventedList(TypedMutableSequence[_T]):
             self.events.add(**_events)
         else:
             # otherwise create a new one
-            self.events = EmitterGroup(source=self, **_events)
+            self.events = EmitterGroup(
+                source=self, auto_connect=False, **_events
+            )
         super().__init__(data, basetype=basetype, lookup=lookup)
 
     # WAIT!! ... Read the module docstring before reimplement these methods

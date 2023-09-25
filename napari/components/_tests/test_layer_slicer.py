@@ -1,18 +1,17 @@
 import time
+import weakref
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
-from typing import Any, Tuple, Union
+from typing import Any, Dict
 
 import numpy as np
 import pytest
-from numpy.typing import DTypeLike
 
-from napari._tests.utils import DEFAULT_TIMEOUT_SECS
+from napari._tests.utils import DEFAULT_TIMEOUT_SECS, LockableData
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
-from napari.layers import Image, Points
-from napari.layers._data_protocols import Index, LayerDataProtocol
+from napari.layers import Image, Labels, Points
 
 # The following fakes are used to control execution of slicing across
 # multiple threads, while also allowing us to mimic real classes
@@ -39,8 +38,10 @@ class FakeSliceRequest:
 
 class FakeAsyncLayer:
     def __init__(self) -> None:
+        self._last_slice_id: int = 0
         self._slice_request_count: int = 0
         self.slice_count: int = 0
+        self.visible: bool = True
         self.lock: RLock = RLock()
 
     def _make_slice_request(self, dims: Dims) -> FakeSliceRequest:
@@ -54,42 +55,17 @@ class FakeAsyncLayer:
     def _slice_dims(self, *args, **kwargs) -> None:
         self.slice_count += 1
 
+    def _set_unloaded_slice_id(self, slice_id: int) -> None:
+        self._last_slice_id = slice_id
+
 
 class FakeSyncLayer:
     def __init__(self) -> None:
         self.slice_count: int = 0
+        self.visible: bool = True
 
     def _slice_dims(self, *args, **kwargs) -> None:
         self.slice_count += 1
-
-
-class LockableData:
-    """A wrapper for napari layer data that blocks read-access with a lock.
-
-    This is useful when testing async slicing with real napari layers because
-    it allows us to control when slicing tasks complete.
-    """
-
-    def __init__(self, data: LayerDataProtocol) -> None:
-        self.data = data
-        self.lock = RLock()
-
-    @property
-    def dtype(self) -> DTypeLike:
-        return self.data.dtype
-
-    @property
-    def shape(self) -> Tuple[int, ...]:
-        return self.data.shape
-
-    def __getitem__(
-        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
-    ) -> LayerDataProtocol:
-        with self.lock:
-            return self.data[key]
-
-    def __len__(self):
-        return len(self.data)
 
 
 @pytest.fixture()
@@ -105,8 +81,8 @@ def test_submit_with_one_async_layer_no_block(layer_slicer):
 
     future = layer_slicer.submit(layers=[layer], dims=Dims())
 
-    assert _wait_for_result(future)[layer].id == 1
-    assert _wait_for_result(future)[layer].id == 1
+    assert _wait_for_response(future)[layer].id == 1
+    assert _wait_for_response(future)[layer].id == 1
 
 
 def test_submit_with_multiple_async_layer_no_block(layer_slicer):
@@ -115,8 +91,8 @@ def test_submit_with_multiple_async_layer_no_block(layer_slicer):
 
     future = layer_slicer.submit(layers=[layer1, layer2], dims=Dims())
 
-    assert _wait_for_result(future)[layer1].id == 1
-    assert _wait_for_result(future)[layer2].id == 1
+    assert _wait_for_response(future)[layer1].id == 1
+    assert _wait_for_response(future)[layer2].id == 1
 
 
 def test_submit_emits_ready_event_when_done(layer_slicer):
@@ -167,8 +143,8 @@ def test_submit_with_mixed_layers(layer_slicer):
     future = layer_slicer.submit(layers=[layer1, layer2], dims=Dims())
 
     assert layer2.slice_count == 1
-    assert _wait_for_result(future)[layer1].id == 1
-    assert layer2 not in _wait_for_result(future)
+    assert _wait_for_response(future)[layer1].id == 1
+    assert layer2 not in _wait_for_response(future)
 
 
 def test_submit_lock_blocking(layer_slicer):
@@ -180,7 +156,7 @@ def test_submit_lock_blocking(layer_slicer):
         blocked = layer_slicer.submit(layers=[layer], dims=dims)
         assert not blocked.done()
 
-    assert _wait_for_result(blocked)[layer].id == 1
+    assert _wait_for_response(blocked)[layer].id == 1
 
 
 def test_submit_multiple_calls_cancels_pending(layer_slicer):
@@ -209,7 +185,7 @@ def test_submit_mixed_allows_sync_to_run(layer_slicer):
         assert layer2.slice_count == 1
         assert not blocked.done()
 
-    assert _wait_for_result(blocked)[layer1].id == 1
+    assert _wait_for_response(blocked)[layer1].id == 1
 
 
 def test_submit_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
@@ -223,7 +199,7 @@ def test_submit_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
         assert layer2.slice_count == 1
         assert not blocked.done()
 
-    assert _wait_for_result(blocked)[layer1].id == 1
+    assert _wait_for_response(blocked)[layer1].id == 1
 
 
 def test_submit_with_multiple_async_layer_with_all_locked(
@@ -238,8 +214,8 @@ def test_submit_with_multiple_async_layer_with_all_locked(
         blocked = layer_slicer.submit(layers=[layer1, layer2], dims=dims)
         assert not blocked.done()
 
-    assert _wait_for_result(blocked)[layer1].id == 1
-    assert _wait_for_result(blocked)[layer2].id == 1
+    assert _wait_for_response(blocked)[layer1].id == 1
+    assert _wait_for_response(blocked)[layer2].id == 1
 
 
 def test_submit_task_to_layers_lock(layer_slicer):
@@ -252,7 +228,7 @@ def test_submit_task_to_layers_lock(layer_slicer):
         task = layer_slicer.submit(layers=[layer], dims=dims)
         assert task in layer_slicer._layers_to_task.values()
 
-    assert _wait_for_result(task)[layer].id == 1
+    assert _wait_for_response(task)[layer].id == 1
     assert task not in layer_slicer._layers_to_task
 
 
@@ -292,7 +268,7 @@ def test_submit_exception_subthread_on_result(layer_slicer):
     done, _ = wait([future], timeout=DEFAULT_TIMEOUT_SECS)
     assert done, 'Test future did not complete within timeout.'
     with pytest.raises(RuntimeError, match='FakeSliceRequestError'):
-        _wait_for_result(future)
+        _wait_for_response(future)
 
 
 def test_wait_until_idle(layer_slicer, single_threaded_executor):
@@ -356,9 +332,28 @@ def test_submit_with_one_3d_image(layer_slicer):
     with lockable_data.lock:
         future = layer_slicer.submit(layers=[layer], dims=dims)
         assert not future.done()
+    layer_result = _wait_for_response(future)[layer]
+    np.testing.assert_equal(layer_result.image.view, data[2, :, :])
 
-    layer_result = _wait_for_result(future)[layer]
-    np.testing.assert_equal(layer_result.data, data[2, :, :])
+
+def test_submit_with_3d_labels(layer_slicer):
+    np.random.seed(0)
+    data = np.random.randint(20, size=(8, 7, 6))
+    lockable_data = LockableData(data)
+    layer = Labels(lockable_data, multiscale=False)
+    dims = Dims(
+        ndim=3,
+        ndisplay=2,
+        range=((0, 8, 1), (0, 7, 1), (0, 6, 1)),
+        point=(2, 0, 0),
+    )
+
+    with lockable_data.lock:
+        future = layer_slicer.submit(layers=[layer], dims=dims)
+        assert not future.done()
+
+    layer_result = _wait_for_response(future)[layer]
+    np.testing.assert_equal(layer_result.image.view, data[2, :, :])
 
 
 def test_submit_with_one_3d_points(layer_slicer):
@@ -406,6 +401,20 @@ def _wait_until_running(future: Future):
             )
 
 
-def _wait_for_result(future: Future) -> Any:
-    """Waits until the given future is finished using a default finite timeout, and returns its result."""
+# if remove quotes once we are Python 3.9+
+def _wait_for_result(future: 'Future[Any]') -> Any:
+    """Waits until the given future is finished returns its result."""
     return future.result(timeout=DEFAULT_TIMEOUT_SECS)
+
+
+# remove quotes in types once we are python 3.9+ only.
+def _wait_for_response(
+    task: 'Future[Dict[weakref.ReferenceType[Any], Any]]',
+) -> Dict:
+    """Waits until the given slice task is finished and returns its result."""
+    weak_result = _wait_for_result(task)
+    result = {}
+    for weak_layer, response in weak_result.items():
+        if layer := weak_layer():
+            result[layer] = response
+    return result

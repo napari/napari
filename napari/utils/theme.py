@@ -2,10 +2,11 @@
 # pygments - see here for examples https://help.farbox.com/pygments.html
 import logging
 import re
+import sys
 import warnings
 from ast import literal_eval
 from contextlib import suppress
-from typing import List, Union
+from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 import npe2
 from pydantic import validator
@@ -64,6 +65,8 @@ class Theme(EventedModel):
         Color used to indicate something is wrong or could stop functionality.
     current : Color
         Color used to highlight Qt widget.
+    font_size : str
+        Font size (in points, pt) used in the application.
     """
 
     id: str
@@ -81,6 +84,7 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
+    font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
     @validator("syntax_style", pre=True, allow_reuse=True)
     def _ensure_syntax_style(value: str) -> str:
@@ -94,11 +98,43 @@ class Theme(EventedModel):
         )
         return value
 
+    @validator("font_size", pre=True)
+    def _ensure_font_size(value: str) -> str:
+        assert value.endswith('pt'), trans._(
+            "Font size must be in points (pt).", deferred=True
+        )
+        assert int(value[:-2]) > 0, trans._(
+            "Font size must be greater than 0.", deferred=True
+        )
+        return value
 
+    def to_rgb_dict(self) -> Dict[str, Any]:
+        """
+        This differs from baseclass `dict()` by converting colors to rgb.
+        """
+        th = super().dict()
+        return {
+            k: v if not isinstance(v, Color) else v.as_rgb()
+            for (k, v) in th.items()
+        }
+
+
+increase_pattern = re.compile(r"{{\s?increase\((\w+),?\s?([-\d]+)?\)\s?}}")
+decrease_pattern = re.compile(r"{{\s?decrease\((\w+),?\s?([-\d]+)?\)\s?}}")
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
 darken_pattern = re.compile(r'{{\s?darken\((\w+),?\s?([-\d]+)?\)\s?}}')
 lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
+
+
+def decrease(font_size: str, pt: int):
+    """Decrease fontsize."""
+    return f"{int(font_size[:-2]) - int(pt)}pt"
+
+
+def increase(font_size: str, pt: int):
+    """Increase fontsize."""
+    return f"{int(font_size[:-2]) + int(pt)}pt"
 
 
 def darken(color: Union[str, Color], percentage=10):
@@ -152,6 +188,14 @@ def gradient(stops, horizontal=True):
 
 
 def template(css: str, **theme):
+    def _increase_match(matchobj):
+        font_size, to_add = matchobj.groups()
+        return increase(theme[font_size], to_add)
+
+    def _decrease_match(matchobj):
+        font_size, to_subtract = matchobj.groups()
+        return decrease(theme[font_size], to_subtract)
+
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
         return darken(theme[color], percentage)
@@ -170,6 +214,8 @@ def template(css: str, **theme):
         return gradient(stops, horizontal)
 
     for k, v in theme.items():
+        css = increase_pattern.sub(_increase_match, css)
+        css = decrease_pattern.sub(_decrease_match, css)
         css = gradient_pattern.sub(gradient_match, css)
         css = darken_pattern.sub(darken_match, css)
         css = lighten_pattern.sub(lighten_match, css)
@@ -190,7 +236,22 @@ def get_system_theme() -> str:
     return id_
 
 
-def get_theme(theme_id, as_dict=None):
+@overload
+def get_theme(theme_id: str) -> Theme:
+    ...
+
+
+@overload
+def get_theme(theme_id: str, as_dict: Literal[False]) -> Theme:
+    ...
+
+
+@overload
+def get_theme(theme_id: str, as_dict: Literal[True]) -> Dict[str, Any]:
+    ...
+
+
+def get_theme(theme_id: str, as_dict: Optional[bool] = None):
     """Get a copy of theme based on it's id.
 
     If you get a copy of the theme, changes to the theme model will not be
@@ -202,6 +263,10 @@ def get_theme(theme_id, as_dict=None):
     theme_id : str
         ID of requested theme.
     as_dict : bool
+        .. deprecated:: 0.5.0
+
+            Use ``get_theme(...).to_rgb_dict()``
+
         Flag to indicate that the old-style dictionary
         should be returned. This will emit deprecation warning.
 
@@ -224,27 +289,20 @@ def get_theme(theme_id, as_dict=None):
                 themes=available_themes(),
             )
         )
-    theme = _themes[theme_id]
-    _theme = theme.copy()
-    if as_dict is None:
+    theme = _themes[theme_id].copy()
+    if as_dict is not None:
         warnings.warn(
             trans._(
-                "The `as_dict` kwarg default to False` since Napari 0.4.17, "
-                "and will become a mandatory parameter in the future.",
+                "The `as_dict` kwarg has been deprecated since Napari 0.5.0 and "
+                "will be removed in future version. You can use `get_theme(...).to_rgb_dict()`",
                 deferred=True,
             ),
             category=FutureWarning,
             stacklevel=2,
         )
-        as_dict = False
     if as_dict:
-        _theme = _theme.dict()
-        _theme = {
-            k: v if not isinstance(v, Color) else v.as_rgb()
-            for (k, v) in _theme.items()
-        }
-        return _theme
-    return _theme
+        return theme.to_rgb_dict()
+    return theme
 
 
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
@@ -347,6 +405,7 @@ DARK = Theme(
     syntax_style='native',
     console='rgb(18, 18, 18)',
     canvas='black',
+    font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 LIGHT = Theme(
     id='light',
@@ -364,6 +423,7 @@ LIGHT = Theme(
     syntax_style='default',
     console='rgb(255, 255, 255)',
     canvas='white',
+    font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 
 register_theme('dark', DARK, "builtin")
