@@ -128,6 +128,11 @@ class PreferencesDialog(QDialog):
         form.widget.on_changed.connect(
             lambda d: getattr(self._settings, name.lower()).update(d)
         )
+        for name_, emitter in getattr(
+            self._settings, name.lower()
+        ).events.emitters.items():
+            emitter.connect(update_widget_state(name_, form.widget))
+
         # TODO: Events connection only in one way from widget to settings?
 
         page_scrollarea = QScrollArea()
@@ -233,3 +238,10 @@ class PreferencesDialog(QDialog):
 
             plugin_manager.set_call_order(self._starting_pm_order)
         super().reject()
+
+
+def update_widget_state(name, widget):
+    def _update_widget_state(event):
+        widget.state = {name: event.value}
+
+    return _update_widget_state
