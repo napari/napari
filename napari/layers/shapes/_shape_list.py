@@ -972,13 +972,18 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
+        indices_set = set(indices)
         meshes = self._mesh.triangles_index
         triangle_indices = [
-            i for i, x in enumerate(meshes) if x[0] in indices and x[1] == 1
+            i
+            for i, x in enumerate(meshes)
+            if x[0] in indices_set and x[1] == 1
         ]
         meshes = self._mesh.vertices_index
         vertices_indices = [
-            i for i, x in enumerate(meshes) if x[0] in indices and x[1] == 1
+            i
+            for i, x in enumerate(meshes)
+            if x[0] in indices_set and x[1] == 1
         ]
 
         offsets = self._mesh.vertices_offsets[vertices_indices]
