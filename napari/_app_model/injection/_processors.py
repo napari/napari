@@ -2,7 +2,16 @@ import sys
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Set, Union, get_origin
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Union,
+    get_origin,
+)
 
 from napari import layers, types, viewer
 from napari._app_model.injection._providers import _provide_viewer
@@ -71,7 +80,7 @@ def _add_layer_data_to_viewer(
         if layer_name:
             with suppress(KeyError):
                 # layerlist also allow lookup by name
-                viewer.layers[layer_name].data = data  # type: ignore [call-overload]
+                viewer.layers[layer_name].data = data
                 return
         if get_origin(return_type) is Union:
             if len(return_type.__args__) != 2 or return_type.__args__[
@@ -131,19 +140,18 @@ def _add_future_data(
 
     # when the future is done, add layer data to viewer, dispatching
     # to the appropriate method based on the Future data type.
-    adder = (
-        _add_layer_data_tuples_to_viewer
-        if _from_tuple
-        else _add_layer_data_to_viewer
-    )
+
+    add_kwargs = {
+        'return_type': return_type,
+        'viewer': viewer,
+        'source': source,
+    }
 
     def _on_future_ready(f: Future):
-        adder(  # type: ignore [operator]
-            f.result(),
-            return_type=return_type,
-            viewer=viewer,
-            source=source,
-        )
+        if _from_tuple:
+            _add_layer_data_tuples_to_viewer(f.result(), **add_kwargs)
+        else:
+            _add_layer_data_to_viewer(f.result(), **add_kwargs)
         _FUTURES.discard(future)
 
     # We need the callback to happen in the main thread...
