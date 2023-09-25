@@ -43,6 +43,8 @@ jobs:
     name: ${{ matrix.platform }}
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
+    concurrency:
+      group: comprehensive-test-${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
