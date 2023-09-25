@@ -6,7 +6,7 @@
 #
 alabaster==0.7.13
     # via sphinx
-app-model==0.2.1
+app-model==0.2.2
     # via napari (napari_repo/setup.cfg)
 appdirs==1.4.4
     # via
@@ -155,7 +155,7 @@ lazy-loader==0.3
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
-lit==16.0.6
+lit==17.0.1
     # via triton
 locket==1.0.0
     # via partd
@@ -268,7 +268,7 @@ pandas==2.1.1 ; python_version >= "3.9"
     #   xarray
 parso==0.8.3
     # via jedi
-partd==1.4.0
+partd==1.4.1
     # via dask
 pexpect==4.8.0
     # via ipython
@@ -461,7 +461,7 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 stack-data==0.6.2
     # via ipython
-superqt==0.5.4
+superqt==0.6.0
     # via
     #   magicgui
     #   napari (napari_repo/setup.cfg)
