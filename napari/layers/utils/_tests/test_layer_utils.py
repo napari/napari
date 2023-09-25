@@ -36,40 +36,40 @@ def test_calc_data_range():
     # all zeros should return [0, 1] by default
     data = np.zeros((10, 10))
     clim = calc_data_range(data)
-    assert np.all(clim == (0, 1))
+    np.testing.assert_array_equal(clim, (0, 1))
 
     # all ones should return [0, 1] by default
     data = np.ones((10, 10))
     clim = calc_data_range(data)
-    assert np.all(clim == (0, 1))
+    np.testing.assert_array_equal(clim, (0, 1))
 
     # return min and max
     data = np.random.random((10, 15))
     data[0, 0] = 0
     data[0, 1] = 2
     clim = calc_data_range(data)
-    assert np.all(clim == (0, 2))
+    np.testing.assert_array_equal(clim, (0, 2))
 
     # return min and max
     data = np.random.random((6, 10, 15))
     data[0, 0, 0] = 0
     data[0, 0, 1] = 2
     clim = calc_data_range(data)
-    assert np.all(clim == (0, 2))
+    np.testing.assert_array_equal(clim, (0, 2))
 
     # Try large data
     data = np.zeros((1000, 2000))
     data[0, 0] = 0
     data[0, 1] = 2
     clim = calc_data_range(data)
-    assert np.all(clim == (0, 2))
+    np.testing.assert_array_equal(clim, (0, 2))
 
     # Try large data mutlidimensional
     data = np.zeros((3, 1000, 1000))
     data[0, 0, 0] = 0
     data[0, 0, 1] = 2
     clim = calc_data_range(data)
-    assert np.all(clim == (0, 2))
+    np.testing.assert_array_equal(clim, (0, 2))
 
 
 @pytest.mark.parametrize(
@@ -89,7 +89,7 @@ def test_segment_normal_2d():
     b = np.array([1, 10])
 
     unit_norm = segment_normal(a, b)
-    assert np.all(unit_norm == np.array([1, 0]))
+    np.testing.assert_array_equal(unit_norm, np.array([1, 0]))
 
 
 def test_segment_normal_3d():
@@ -98,7 +98,7 @@ def test_segment_normal_3d():
     p = np.array([1, 0, 0])
 
     unit_norm = segment_normal(a, b, p)
-    assert np.all(unit_norm == np.array([0, 0, -1]))
+    np.testing.assert_array_equal(unit_norm, np.array([0, 0, -1]))
 
 
 def test_dataframe_to_properties():
