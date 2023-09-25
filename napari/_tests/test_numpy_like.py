@@ -2,6 +2,7 @@ import dask.array as da
 import numpy as np
 import xarray as xr
 import zarr
+from numpy.testing import assert_array_equal
 
 from napari.components.viewer_model import ViewerModel
 
@@ -13,7 +14,7 @@ def test_dask_2D():
     da.random.seed(0)
     data = da.random.random((10, 15))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert_array_equal(viewer.layers[0].data, data)
 
 
 def test_dask_nD():
@@ -23,7 +24,7 @@ def test_dask_nD():
     da.random.seed(0)
     data = da.random.random((10, 15, 6, 16))
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
+    assert_array_equal(viewer.layers[0].data, data)
 
 
 def test_zarr_2D():
@@ -34,7 +35,7 @@ def test_zarr_2D():
     data[53:63, 10:20] = 1
     # If passing a zarr file directly, must pass contrast_limits
     viewer.add_image(data, contrast_limits=[0, 1])
-    assert np.all(viewer.layers[0].data == data)
+    assert_array_equal(viewer.layers[0].data, data)
 
 
 def test_zarr_nD():
@@ -45,7 +46,7 @@ def test_zarr_nD():
     data[53:63, 10:20, :] = 1
     # If passing a zarr file directly, must pass contrast_limits
     viewer.add_image(data, contrast_limits=[0, 1])
-    assert np.all(viewer.layers[0].data == data)
+    assert_array_equal(viewer.layers[0].data, data)
 
 
 def test_zarr_dask_2D():
@@ -56,7 +57,7 @@ def test_zarr_dask_2D():
     data[53:63, 10:20] = 1
     zdata = da.from_zarr(data)
     viewer.add_image(zdata)
-    assert np.all(viewer.layers[0].data == zdata)
+    assert_array_equal(viewer.layers[0].data, zdata)
 
 
 def test_zarr_dask_nD():
@@ -67,7 +68,7 @@ def test_zarr_dask_nD():
     data[53:63, 10:20, :] = 1
     zdata = da.from_zarr(data)
     viewer.add_image(zdata)
-    assert np.all(viewer.layers[0].data == zdata)
+    assert_array_equal(viewer.layers[0].data, zdata)
 
 
 def test_xarray_2D():
@@ -78,7 +79,7 @@ def test_xarray_2D():
     data = np.random.random((10, 15))
     xdata = xr.DataArray(data, dims=['y', 'x'])
     viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == xdata)
+    assert_array_equal(viewer.layers[0].data, xdata)
 
 
 def test_xarray_nD():
@@ -89,4 +90,4 @@ def test_xarray_nD():
     data = np.random.random((10, 15, 6, 16))
     xdata = xr.DataArray(data, dims=['t', 'z', 'y', 'x'])
     viewer.add_image(xdata)
-    assert np.all(viewer.layers[0].data == xdata)
+    assert_array_equal(viewer.layers[0].data, xdata)
