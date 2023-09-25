@@ -38,4 +38,4 @@ def quaternion2euler(quaternion, degrees=False):
         z, y, x = Rotation.from_quat([q.x, q.y, q.z, q.w]).as_euler(
             'xyz', degrees=degrees
         )
-    return (x, y, z)
+    return x, y, z
