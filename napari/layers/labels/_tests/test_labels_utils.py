@@ -31,7 +31,7 @@ def test_interpolate_coordinates():
             [0, 10],
         ]
     )
-    assert np.all(coords == expected_coords)
+    np.testing.assert_array_equal(coords, expected_coords)
 
 
 def test_interpolate_with_none():
