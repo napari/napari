@@ -43,6 +43,10 @@ class AxisModel:
         return self.dims.axis_labels[self.axis]
 
     def __eq__(self, other: object) -> bool:
+        # to allow comparisons between a list of AxisModels and the current dims order
+        # we need to overload the int and str equality check, this is necessary as the
+        # comparison will either be against a list of ints (Dims.order) or a list of
+        # strings (Dims.axis_labels)
         if isinstance(other, int):
             return self.axis == other
         if isinstance(other, str):
