@@ -953,6 +953,25 @@ class ShapeList:
         """
         if not isinstance(indices, Sequence):
             indices = [indices]
+        return self.outlines(indices)
+
+    def outlines(self, indices: Sequence[int]):
+        """Finds outlines of shapes listed in indices
+
+        Parameters
+        ----------
+        indices : Sequence[int]
+            Location in list of the shapes to be outline.
+
+        Returns
+        -------
+        centers : np.ndarray
+            Nx2 array of centers of outline
+        offsets : np.ndarray
+            Nx2 array of offsets of outline
+        triangles : np.ndarray
+            Mx3 array of any indices of vertices for triangles of outline
+        """
         meshes = self._mesh.triangles_index
         triangle_indices = [
             i for i, x in enumerate(meshes) if x[0] in indices and x[1] == 1
