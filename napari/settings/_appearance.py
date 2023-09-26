@@ -53,8 +53,9 @@ class AppearanceSettings(EventedModel):
     def __setattr__(self, key, value):
         if key == "theme" and value != self.theme:
             with ComparisonDelayer(self):
-                new_theme = get_theme(value)
-                self.font_size = int(new_theme.font_size[:-2])
+                if value in available_themes():
+                    new_theme = get_theme(value)
+                    self.font_size = int(new_theme.font_size[:-2])
                 super().__setattr__(key, value)
         else:
             super().__setattr__(key, value)
