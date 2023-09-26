@@ -13,8 +13,9 @@ from napari._vispy.layers.labels import (
 )
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope='module', autouse=True)
 def mock_max_texture_size():
+    """When running tests in this file, pretend max texture size is 2^16."""
     with patch('napari._vispy.layers.labels.MAX_TEXTURE_SIZE', 2**16):
         yield
 
