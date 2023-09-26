@@ -54,6 +54,9 @@ def init_qactions() -> None:
     # register actions
     app.register_actions(
         chain(
-            Q_FILE_ACTIONS, Q_HELP_ACTIONS, Q_PLUGINS_ACTIONS, Q_VIEW_ACTIONS,
+            Q_FILE_ACTIONS,
+            Q_HELP_ACTIONS,
+            Q_PLUGINS_ACTIONS,
+            Q_VIEW_ACTIONS,
         )
     )
