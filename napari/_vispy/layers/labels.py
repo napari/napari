@@ -16,6 +16,10 @@ from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.utils._dtype import vispy_texture_dtype
 
+# We use table sizes that are prime numbers near powers of 2.
+# For each power of 2, we keep three candidate sizes. This allows us to
+# maximize the chances of finding a collision-free table for a given set of
+# keys (which we typically know at build time).
 PRIME_NUM_TABLE = [
     [37, 31, 29],
     [61, 59, 53],
