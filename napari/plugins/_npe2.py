@@ -616,7 +616,7 @@ def _get_widgets_submenu_actions(
 
             widget_actions.append(
                 Action(
-                    id=f'{mf.name}:{widget_name})',
+                    id=f'{mf.name}:{widget_name}',
                     title=title,
                     callback=_widget_callback,
                     menus=[
