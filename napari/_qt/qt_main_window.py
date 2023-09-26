@@ -1447,7 +1447,7 @@ class Window:
                 )
 
             else:
-                self._qt_viewer.viewer.reset_view(fit_to_data=True)
+                self._qt_viewer.viewer.reset_view()
 
                 # Size the canvas to the shape of the data
                 canvas.size = self._qt_viewer.viewer.layers.extent.world[1][

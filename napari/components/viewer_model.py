@@ -360,7 +360,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self, *, screenshot=False, fit_to_data=False):
+    def reset_view(self, *, screenshot=False):
         """Reset the camera view."""
 
         extent = self._sliced_extent_world_augmented
