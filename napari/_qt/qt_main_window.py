@@ -1528,8 +1528,6 @@ class Window:
 
     def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""
-        from napari._qt.dialogs.preferences_dialog import PreferencesDialog
-
         if self._pref_dialog is None:
             win = PreferencesDialog(parent=self._qt_window)
             self._pref_dialog = win
