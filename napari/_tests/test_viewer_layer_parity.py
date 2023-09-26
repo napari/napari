@@ -20,6 +20,7 @@ def test_imshow_signature_consistency():
     # Remove unique parameters
     del imshow_parameters['viewer']
     del viewer_parameters['self']
+    del viewer_parameters['kwargs']
 
     # Ensure both have the same parameter names
     assert imshow_parameters.keys() == viewer_parameters.keys()

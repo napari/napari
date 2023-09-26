@@ -95,6 +95,11 @@ class NapariPluginManager(PluginManager):
         self._function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = {}
         self._theme_data: Dict[str, Dict[str, Theme]] = {}
 
+        # appmodel sample menu actions/submenu unregister functions used in
+        # `napari.plugins._npe2._build_npe1_samples_menu`
+        self._unreg_sample_submenus = None
+        self._unreg_sample_actions = None
+
     def _initialize(self):
         with self.discovery_blocked():
             from napari.settings import get_settings

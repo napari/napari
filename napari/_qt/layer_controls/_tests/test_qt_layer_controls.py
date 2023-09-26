@@ -1,7 +1,7 @@
 import os
 import random
 import sys
-from collections import namedtuple
+from typing import NamedTuple, Optional, Type
 
 import numpy as np
 import pytest
@@ -34,6 +34,7 @@ from napari.components import ViewerModel
 from napari.layers import (
     Image,
     Labels,
+    Layer,
     Points,
     Shapes,
     Surface,
@@ -41,11 +42,18 @@ from napari.layers import (
     Vectors,
 )
 
+
+class LayerTypeWithData(NamedTuple):
+    type: Type[Layer]
+    data: np.ndarray
+    color: Optional[dict]
+    properties: Optional[dict]
+    expected_isinstance: Type[QtLayerControlsContainer]
+
+
 np.random.seed(0)
-LayerTypeWithData = namedtuple(
-    'LayerTypeWithData',
-    ['type', 'data', 'color', 'properties', 'expected_isinstance'],
-)
+
+
 _IMAGE = LayerTypeWithData(
     type=Image,
     data=np.random.rand(8, 8),
