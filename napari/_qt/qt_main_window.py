@@ -806,11 +806,13 @@ class Window:
         )
         self.main_menu.addMenu(self.view_menu)
         # plugin menu
-        self.plugins_menu = menus.PluginsMenu(self)
         self.plugins_menu = build_qmodel_menu(
             MenuId.MENUBAR_PLUGINS,
             title=trans._('&Plugins'),
             parent=self._qt_window,
+        )
+        self.plugins_menu.aboutToShow.connect(
+            lambda: self._update_menu_state('plugins_menu')
         )
         self.main_menu.addMenu(self.plugins_menu)
         # window menu
