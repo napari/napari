@@ -1,9 +1,9 @@
 """ExperimentalNamespace and CommandProcessor classes.
 """
-from napari.components.experimental.chunk._commands._utils import highlight
 
-HELP_STR = f"""
-{highlight("Available Commands:")}
+HELP_STR = """
+Available Commands
+------------------
 experimental.cmds.loader
 """
 
