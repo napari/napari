@@ -1402,7 +1402,7 @@ class Window:
         size=None,
         scale=None,
         flash=True,
-        canvas_only=False,
+        canvas_only=True,
         fit_to_data=False,
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
@@ -1432,22 +1432,22 @@ class Window:
         """
         from napari._qt.utils import add_flash_animation
 
-        if canvas_only or fit_to_data:
+        canvas = self._qt_viewer.canvas
+        prev_size = canvas.size
+        if fit_to_data:
             ndisplay = self._qt_viewer.viewer.dims.ndisplay
             camera = self._qt_viewer.viewer.camera
-            canvas = self._qt_viewer.canvas
-            prev_size = canvas.size
 
-            if fit_to_data:
-                old_center = camera.center
-                old_zoom = camera.zoom
-                self._qt_viewer.viewer.reset_view(fit_to_data=True)
+            old_center = camera.center
+            old_zoom = camera.zoom
+            self._qt_viewer.viewer.reset_view(fit_to_data=True)
 
-                # Size the canvas to the shape of the data
-                canvas.size = self._qt_viewer.viewer.layers.extent.world[1][
-                    -ndisplay:
-                ].astype(int)
-                self._qt_viewer.viewer.reset_view(screenshot=True)
+            # Size the canvas to the shape of the data
+            canvas.size = self._qt_viewer.viewer.layers.extent.world[1][
+                -ndisplay:
+            ].astype(int)
+            self._qt_viewer.viewer.reset_view(screenshot=True)
+        if canvas_only:
             if size is not None:
                 if len(size) != 2:
                     raise ValueError(
@@ -1480,6 +1480,10 @@ class Window:
             img = self._qt_window.grab().toImage()
             if flash:
                 add_flash_animation(self._qt_window)
+            if fit_to_data:
+                canvas.size = prev_size
+                camera.zoom = old_zoom
+                camera.center = old_center
         return img
 
     def screenshot(
@@ -1488,7 +1492,7 @@ class Window:
         size=None,
         scale=None,
         flash=True,
-        canvas_only=False,
+        canvas_only=True,
         fit_to_data=False,
     ):
         """Take currently displayed viewer and convert to an image array.
