@@ -79,7 +79,7 @@ from napari.utils.misc import (
     in_python_repl,
     running_as_constructor_app,
 )
-from napari.utils.notifications import Notification
+from napari.utils.notifications import Notification, show_info
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
@@ -1440,13 +1440,20 @@ class Window:
 
             old_center = camera.center
             old_zoom = camera.zoom
-            self._qt_viewer.viewer.reset_view(fit_to_data=True)
 
-            # Size the canvas to the shape of the data
-            canvas.size = self._qt_viewer.viewer.layers.extent.world[1][
-                -ndisplay:
-            ].astype(int)
-            self._qt_viewer.viewer.reset_view(screenshot=True)
+            if ndisplay == 3:
+                show_info(
+                    "fit_to_data currently not implemented for the case of ndisplay == 3"
+                )
+
+            else:
+                self._qt_viewer.viewer.reset_view(fit_to_data=True)
+
+                # Size the canvas to the shape of the data
+                canvas.size = self._qt_viewer.viewer.layers.extent.world[1][
+                    -ndisplay:
+                ].astype(int)
+                self._qt_viewer.viewer.reset_view(screenshot=True)
         if canvas_only:
             if size is not None:
                 if len(size) != 2:
