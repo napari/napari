@@ -295,7 +295,7 @@ def _validate_rgb(colors, *, tolerance=0.0):
     return filtered_colors
 
 
-def low_discrepancy_image(image, seed=0.5, margin=1 / 256):
+def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
     """Generate a 1d low discrepancy sequence of coordinates.
 
     Parameters
@@ -485,23 +485,31 @@ def label_colormap(num_colors=256, seed=0.5) -> LabelColormap:
     """
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
-    midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors - 1)
-    control_points = np.concatenate([[0], midpoints, [1.0]])
+    midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors + 1)
+    control_points = np.concatenate(
+        (np.array([0]), midpoints, np.array([1.0]))
+    )
     # make sure to add an alpha channel to the colors
-    if num_colors == 49:
-        colors = np.array(CLASSICAL_LABEL_COLORMAP)
-    else:
-        colors = np.concatenate(
-            (
-                _color_random(num_colors),
-                np.full((num_colors, 1), 1),
-            ),
-            axis=1,
-        )
 
-    colors = colors[
-        np.random.default_rng(int(seed * 1000)).permutation(num_colors)
-    ]
+    colors = np.concatenate(
+        (
+            _color_random(num_colors + 2, seed=seed),
+            np.full((num_colors + 2, 1), 1),
+        ),
+        axis=1,
+    )
+    colors[0, :] = 0  # set background to transparent
+
+    values_ = np.arange(num_colors + 2)
+    randomized_values = low_discrepancy_image(values_, seed=seed)
+
+    indices = np.clip(
+        np.searchsorted(control_points, randomized_values, side="right") - 1,
+        0,
+        len(control_points) - 1,
+    )
+
+    colors = colors[indices]
 
     return LabelColormap(
         name='label_colormap',

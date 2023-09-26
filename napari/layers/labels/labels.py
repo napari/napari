@@ -284,6 +284,7 @@ class Labels(_ImageBase):
             name = magic_name(data)
 
         self._seed = seed
+        self._seed_rng = None
         self._background_label = 0
         self._num_colors = num_colors
         self._random_colormap = label_colormap(self.num_colors, seed)
@@ -455,6 +456,12 @@ class Labels(_ImageBase):
 
     @seed.setter
     def seed(self, seed):
+        warnings.warn(
+            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, please use seed_rng instead",
+            FutureWarning,
+            stacklevel=2,
+        )
+
         self._seed = seed
         self.colormap = label_colormap(self.num_colors, self.seed)
         self._cached_labels = None  # invalidate the cached color mapping
@@ -462,6 +469,29 @@ class Labels(_ImageBase):
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.refresh()
         self.events.selected_label()
+
+    @property
+    def seed_rng(self) -> Optional[int]:
+        return self._seed_rng
+
+    @seed_rng.setter
+    def seed_rng(self, seed_rng: Optional[int]) -> None:
+        if seed_rng == self._seed_rng:
+            return
+        self._seed_rng = seed_rng
+
+        if self._seed_rng is None:
+            self.colormap = label_colormap(self.num_colors, self.seed)
+        else:
+            self.colormap.shuffle(self._seed_rng)
+        self._cached_labels = None  # invalidate the cached color mapping
+        self._selected_color = self.get_color(self.selected_label)
+        self.events.colormap()  # Will update the LabelVispyColormap shader
+        self.refresh()
+        self.events.selected_label()
+
+        self.events.seed_rng()
+        self.refresh()
 
     @_ImageBase.colormap.setter
     def colormap(self, colormap):
@@ -973,7 +1003,7 @@ class Labels(_ImageBase):
         self.thumbnail = colormapped
 
     def new_colormap(self):
-        self.seed = np.random.rand()
+        self.seed_rng = np.random.default_rng().integers(2**32 - 1)
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""

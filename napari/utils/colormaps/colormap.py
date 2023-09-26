@@ -174,6 +174,17 @@ class LabelColormap(Colormap):
 
         return mapped
 
+    def shuffle(self, seed: int):
+        """Shuffle the colormap colors.
+
+        Parameters
+        ----------
+        seed : int
+            Seed for the random number generator.
+        """
+        np.random.default_rng(seed).shuffle(self.colors[1:])
+        self.events.colors(value=self.colors)
+
 
 class DirectLabelColormap(Colormap):
     """Colormap using a direct mapping from labels to color using a dict.
