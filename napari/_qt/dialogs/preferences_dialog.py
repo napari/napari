@@ -129,10 +129,17 @@ class PreferencesDialog(QDialog):
             lambda d: getattr(self._settings, name.lower()).update(d)
         )
         # make widgets follow values of the settings
-        for name_, emitter in getattr(
-            self._settings, name.lower()
-        ).events.emitters.items():
-            emitter.connect(update_widget_state(name_, form.widget))
+        settings_category = getattr(self._settings, name.lower())
+        excluded = set(
+            getattr(
+                getattr(settings_category, 'NapariConfig', None),
+                "preferences_exclude",
+                {},
+            )
+        )
+        for name_, emitter in settings_category.events.emitters.items():
+            if name_ not in excluded:
+                emitter.connect(update_widget_state(name_, form.widget))
 
         page_scrollarea = QScrollArea()
         page_scrollarea.setWidgetResizable(True)
@@ -241,7 +248,6 @@ class PreferencesDialog(QDialog):
 
 def update_widget_state(name, widget):
     def _update_widget_state(event):
-        if name == "font_size":
-            widget.state = {name: event.value}
+        widget.state = {name: event.value}
 
     return _update_widget_state
