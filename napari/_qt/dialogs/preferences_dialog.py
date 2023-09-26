@@ -128,12 +128,11 @@ class PreferencesDialog(QDialog):
         form.widget.on_changed.connect(
             lambda d: getattr(self._settings, name.lower()).update(d)
         )
+        # make widgets follow values of the settings
         for name_, emitter in getattr(
             self._settings, name.lower()
         ).events.emitters.items():
             emitter.connect(update_widget_state(name_, form.widget))
-
-        # TODO: Events connection only in one way from widget to settings?
 
         page_scrollarea = QScrollArea()
         page_scrollarea.setWidgetResizable(True)
@@ -242,6 +241,7 @@ class PreferencesDialog(QDialog):
 
 def update_widget_state(name, widget):
     def _update_widget_state(event):
-        widget.state = {name: event.value}
+        if name == "font_size":
+            widget.state = {name: event.value}
 
     return _update_widget_state

@@ -13,8 +13,8 @@ STYLES = {x.stem: str(x) for x in STYLE_PATH.iterdir() if x.suffix == '.qss'}
 
 def get_stylesheet(
     theme_id: Optional[str] = None,
-    override_variables: Optional[Dict[str, str]] = None,
     extra: Optional[List[str]] = None,
+    override_variables: Optional[Dict[str, str]] = None,
 ) -> str:
     """Combine all qss files into single, possibly pre-themed, style string.
 

@@ -1,5 +1,5 @@
 import sys
-from typing import Union
+from typing import Union, cast
 
 from pydantic import Field
 
@@ -43,6 +43,7 @@ class AppearanceSettings(EventedModel):
     ) -> None:
         if isinstance(values, self.__class__):
             values = values.dict()
+        values = cast(dict, values)
 
         if "theme" in values and values["theme"] != self.theme:
             new_theme = get_theme(values["theme"])
