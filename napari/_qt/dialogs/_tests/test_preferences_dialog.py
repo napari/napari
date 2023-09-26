@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from pydantic import BaseModel
 from qtpy.QtCore import Qt
@@ -8,6 +10,7 @@ from napari._qt.dialogs.preferences_dialog import (
 )
 from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
     HorizontalObjectSchemaWidget,
+    SpinSchemaWidget,
 )
 from napari.settings import NapariSettings, get_settings
 
@@ -36,6 +39,25 @@ def test_dask_widget(qtbot, pref):
         pref._stack.currentWidget().widget().widget.widgets['dask'],
         HorizontalObjectSchemaWidget,
     )
+
+
+def test_font_size_widget(qtbot, pref):
+    font_size_widget = (
+        pref._stack.widget(1).widget().widget.widgets['font_size']
+    )
+    def_font_size = 12 if sys.platform == 'darwin' else 9
+
+    assert isinstance(font_size_widget, SpinSchemaWidget)
+    assert get_settings().appearance.font_size == def_font_size
+    assert font_size_widget.state == def_font_size
+
+    font_size_widget.state = 14
+    assert get_settings().appearance.font_size == 14
+
+    assert get_settings().appearance.theme == 'light'
+    get_settings().appearance.theme = 'dark'
+    assert get_settings().appearance.font_size == def_font_size
+    assert font_size_widget.state == def_font_size
 
 
 def test_preferences_dialog_accept(qtbot, pref):
