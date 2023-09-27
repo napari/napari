@@ -169,5 +169,5 @@ def show_shortcuts(viewer: Viewer):
     pref_dialog = cast('PreferencesDialog', viewer.window._pref_dialog)
     pref_list = pref_dialog._list
     for i in range(pref_list.count()):
-        if pref_list.item(i).text() == "Shortcuts":
+        if (item := pref_list.item(i)) and item.text() == "Shortcuts":
             pref_list.setCurrentRow(i)
