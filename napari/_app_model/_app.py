@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from functools import lru_cache
 from itertools import chain
 from typing import Callable, Dict, Set
@@ -197,19 +196,16 @@ class NapariApplication(Application):
 
     def _on_shortcuts_changed(self, _):
         self.keybindings.discard_entries(KeyBindingWeights.USER)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            for entry in get_settings().shortcuts.shortcuts:
-                self.keybindings.register_keybinding_rule(
-                    entry.command,
-                    KeyBindingRule(
-                        primary=KeyBinding.from_str(entry.key),
-                        weight=KeyBindingWeights.USER,
-                        when=parse_expression(entry.when)
-                        if entry.when
-                        else None,
-                    ),
-                )
+        for entry in get_settings().shortcuts.shortcuts:
+            self.keybindings.register_keybinding_rule(
+                entry.command,
+                KeyBindingRule(
+                    primary=KeyBinding.from_str(entry.key),
+                    weight=KeyBindingWeights.USER,
+                    when=parse_expression(entry.when) if entry.when else None,
+                ),
+                warn=False,
+            )
 
 
 @lru_cache(maxsize=1)

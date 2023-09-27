@@ -1,4 +1,3 @@
-import warnings
 from bisect import insort_left
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterable, Iterator, List, Optional, Tuple
@@ -121,7 +120,10 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
         self._index = 0
 
     def register_keybinding_rule(
-        self, command_id: str, rule: KeyBindingRule
+        self,
+        command_id: str,
+        rule: KeyBindingRule,
+        warn=True,
     ) -> Optional[Callable[[], None]]:
         """Register a new keybinding rule.
 
@@ -131,6 +133,8 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
             Command identifier that should be run when the keybinding is triggered
         rule : KeyBindingRule
             KeyBinding information
+        warn : bool
+            Whether to warn when a single modifier is encoded as a KeyCode instead of a KeyMod
 
         Raises
         ------
@@ -156,17 +160,10 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
             )
             self._index += 1
 
-            with warnings.catch_warnings(record=True) as w:
-                key_bind = validate_key_binding(
-                    KeyBinding.validate(plat_keybinding)
-                )
-
-            if len(w) == 1:
-                warnings.warn(
-                    f'{w[0].message} for entry {entry}',
-                    UserWarning,
-                    stacklevel=2,
-                )
+            key_bind = validate_key_binding(
+                KeyBinding.validate(plat_keybinding),
+                warn=warn,
+            )
 
             kb = key_bind.to_int()
 
