@@ -1,7 +1,7 @@
 from collections import defaultdict
 from itertools import product
 from math import ceil, isnan, log2, sqrt
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -198,7 +198,7 @@ def hash2d_get(key, keys, empty_val=0):
 
 
 def hash2d_set(
-    key: float,
+    key: Union[float, np.floating],
     value: ColorTuple,
     keys: np.ndarray,
     values: np.ndarray,
