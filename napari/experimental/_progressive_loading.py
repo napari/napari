@@ -517,7 +517,7 @@ def dims_update_handler(invar, viewer, data=None, ndisplay=None):
 def add_progressive_loading_image(
     img,
     viewer=None,
-    contrast_limits=[0, 255],
+    contrast_limits=None,
     colormap='PiYG',
     ndisplay=2,
     rendering="attenuated_mip",
@@ -526,6 +526,8 @@ def add_progressive_loading_image(
     """Add tiled multiscale image."""
     # initialize multiscale virtual data (generate scale factors, translations,
     # and chunk slices)
+    if contrast_limits is None:
+        contrast_limits = [0, 255]
     multiscale_data = MultiScaleVirtualData(img, ndisplay=ndisplay)
 
     if not viewer:
@@ -853,7 +855,7 @@ def render_sequence_3D_caller(
     arrays=None,
     chunk_maps=None,
     alpha=0.8,
-    scale_factors=[],
+    scale_factors=None,
     dtype=np.uint16,
     dims=None,
 ):
@@ -862,6 +864,8 @@ def render_sequence_3D_caller(
 
     See render_sequence for docs.
     """
+    if scale_factors is None:
+        scale_factors = []
     yield from render_sequence_3D(
         view_slice,
         scale=scale,
@@ -882,7 +886,7 @@ def render_sequence_3D(
     arrays=None,
     chunk_maps=None,
     alpha=0.8,
-    scale_factors=[],
+    scale_factors=None,
     dtype=np.uint16,
     dims=None,
 ):
@@ -921,6 +925,8 @@ def render_sequence_3D(
         dtype of data
     """
     # Get some variables specific to this scale level
+    if scale_factors is None:
+        scale_factors = []
     min_coord = [st.start for st in view_slice]
     max_coord = [st.stop for st in view_slice]
     array = arrays[scale]
@@ -1606,7 +1612,7 @@ class MultiScaleVirtualData:
             ]
             self._data += [virtual_data]
 
-    def set_interval(self, min_coord, max_coord, visible_scales=[]):
+    def set_interval(self, min_coord, max_coord, visible_scales=None):
         """Set the extents for each of the scales.
 
         Extents are set in the coordinates of each individual scale array
@@ -1631,6 +1637,8 @@ class MultiScaleVirtualData:
             Optional. ???
         """
         # Bound min_coord and max_coord
+        if visible_scales is None:
+            visible_scales = []
         max_coord = np.min((max_coord, self._data[0].shape), axis=0)
         min_coord = np.max((min_coord, np.zeros_like(min_coord)), axis=0)
 

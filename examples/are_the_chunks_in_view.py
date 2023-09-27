@@ -127,7 +127,7 @@ def render_sequence_caller(
     arrays=None,
     chunk_maps=None,
     alpha=0.8,
-    scale_factors=[],
+    scale_factors=None,
     dtype=np.uint16,
     dims=None,
 ):
@@ -136,6 +136,8 @@ def render_sequence_caller(
 
     See render_sequence for docs.
     """
+    if scale_factors is None:
+        scale_factors = []
     yield from render_sequence(
         view_slice,
         scale=scale,
@@ -156,7 +158,7 @@ def render_sequence(
     arrays=None,
     chunk_maps=None,
     alpha=0.8,
-    scale_factors=[],
+    scale_factors=None,
     dtype=np.uint16,
     dims=None,
 ):
@@ -189,6 +191,8 @@ def render_sequence(
     """
 
     # Get some variables specific to this scale level
+    if scale_factors is None:
+        scale_factors = []
     min_coord = [st.start for st in view_slice]
     max_coord = [st.stop for st in view_slice]
     array = arrays[scale]
@@ -557,8 +561,8 @@ def add_subnodes(
     arrays=None,
     chunk_maps=None,
     alpha=0.8,
-    scale_factors=[],
-    worker_map={},
+    scale_factors=None,
+    worker_map=None,
     viewer_lock=None,
 ):
     """Recursively add multiscale chunks to a napari viewer for some multiscale arrays
@@ -585,6 +589,10 @@ def add_subnodes(
         a list of tuples of scale factors for each array
     """
 
+    if worker_map is None:
+        worker_map = {}
+    if scale_factors is None:
+        scale_factors = []
     camera = viewer.camera.copy()
 
     # TODO hardcoded dtype
