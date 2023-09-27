@@ -450,7 +450,7 @@ def _get_samples_submenu_actions(
     mf: PluginManifest,
 ) -> Tuple[List[Any], List[Any]]:
     """Get sample data submenu and actions for a single npe2 plugin manifest."""
-    from napari._app_model.constants import MenuId
+    from napari._app_model.constants import MenuId, MenuGroup
     from napari.plugins import menu_item_template
 
     if TYPE_CHECKING:
@@ -499,7 +499,7 @@ def _get_samples_submenu_actions(
         action: Action = Action(
             id=f'{mf.name}:{sample.key}',
             title=title,
-            menus=[{'id': submenu_id}],
+            menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}}],
             callback=_add_sample,
         )
         sample_actions.append(action)
