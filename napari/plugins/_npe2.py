@@ -408,7 +408,7 @@ def _rebuild_npe1_samples_menu() -> None:
                 title = menu_item_template.format(plugin_name, display_name)
 
             action: Action = Action(
-                id=f"{plugin_name}.{display_name}",
+                id=f"{plugin_name}:{display_name}",
                 title=title,
                 menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
                 callback=_add_sample,

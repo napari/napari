@@ -47,12 +47,14 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
+        **kwargs,
     ) -> None:
         super().__init__(
             title=title,
             ndisplay=ndisplay,
             order=order,
             axis_labels=axis_labels,
+            **kwargs,
         )
         # we delay initialization of plugin system to the first instantiation
         # of a viewer... rather than just on import of plugins module
