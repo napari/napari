@@ -407,7 +407,7 @@ def _rebuild_npe1_samples_menu() -> None:
                 title = menu_item_template.format(plugin_name, display_name)
 
             action: Action = Action(
-                id=f"{plugin_name}.{display_name}",
+                id=f"{plugin_name}:{display_name}",
                 title=title,
                 menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
                 callback=_add_sample,
@@ -450,7 +450,7 @@ def _get_samples_submenu_actions(
         submenu_id = MenuId.FILE_SAMPLES
         submenu = []
 
-    sample_actions = []
+    sample_actions: List[Action] = []
     for sample in sample_data:
 
         def _add_sample(
@@ -469,14 +469,17 @@ def _get_samples_submenu_actions(
                     stack=False,
                 )
 
-        display_name = sample.display_name.replace("&", "&&")
         if multiprovider:
-            title = display_name
+            title = sample.display_name
         else:
-            title = menu_item_template.format(mf.display_name, display_name)
+            title = menu_item_template.format(
+                mf.display_name, sample.display_name
+            )
+        # To display '&' instead of creating a shortcut
+        title = title.replace("&", "&&")
 
         action: Action = Action(
-            id=f'{mf.name}.{sample.key}',
+            id=f'{mf.name}:{sample.key}',
             title=title,
             menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
             callback=_add_sample,
