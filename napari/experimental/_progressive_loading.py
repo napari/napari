@@ -362,7 +362,7 @@ def get_layer_name_for_scale(scale):
 
 
 @tz.curry
-def dims_update_handler(invar, viewer, data=None, ndisplay=None):
+def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
     """Start a new render sequence with the current viewer state.
 
     Parameters
@@ -408,7 +408,7 @@ def dims_update_handler(invar, viewer, data=None, ndisplay=None):
         pdb.set_trace()
 
     LOGGER.info(
-        f"dims_update_handler: start render_sequence {corner_pixels} on {root_layer}"
+        f"progressively_update_layer: start render_sequence {corner_pixels} on {root_layer}"
     )
 
     # Find the visible scales
@@ -454,7 +454,7 @@ def dims_update_handler(invar, viewer, data=None, ndisplay=None):
     )
 
     LOGGER.info(
-        f"dims_update_handler: started render_sequence with corners {corner_pixels}"
+        f"progressively_update_layer: started render_sequence with corners {corner_pixels}"
     )
 
     # This will consume our chunks and update the numpy "canvas" and refresh
@@ -621,7 +621,7 @@ def add_progressive_loading_image(
         listener.connect(
             debounced(
                 ensure_main_thread(
-                    dims_update_handler(
+                    progressively_update_layer(
                         data=multiscale_data,
                         viewer=viewer,
                         ndisplay=ndisplay,
@@ -632,7 +632,7 @@ def add_progressive_loading_image(
         )
 
     # Trigger first render
-    dims_update_handler(
+    progressively_update_layer(
         None, data=multiscale_data, viewer=viewer, ndisplay=ndisplay
     )
 
