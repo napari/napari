@@ -467,7 +467,7 @@ def dims_update_handler(invar, viewer, data=None, ndisplay=None):
 
         # TODO this relies on the coincidence that node indices are 2 or 3 for
         #      the image and volume members of an Image layer
-        node = viewer.window.qt_viewer.layer_to_visual[
+        node = viewer.window._qt_viewer.layer_to_visual[
             layer
         ]._layer_node.get_node(viewer.dims.ndisplay)
 
@@ -545,7 +545,7 @@ def add_progressive_loading_image(
 
     # Get initial extent for rendering
     canvas_corners = (
-        viewer.window.qt_viewer.canvas._canvas_corners_in_world.copy()
+        viewer.window._qt_viewer.canvas._canvas_corners_in_world.copy()
     )
     canvas_corners[
         canvas_corners < 0
