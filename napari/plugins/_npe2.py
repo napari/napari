@@ -608,9 +608,9 @@ def _get_widgets_submenu_actions(
                     return window._dock_widgets[name].isVisible()
                 return False
 
-            title = widget.display_name
+            title = full_name
             if multiprovider:
-                title = full_name
+                title = widget.display_name
             # To display '&' instead of creating a shortcut
             title = title.replace("&", "&&")
 
