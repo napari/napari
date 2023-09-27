@@ -29,14 +29,12 @@ def test_idx_to_2d():
 
 
 def test_build_textures_from_dict():
-    keys, values, col_keys, val_keys, collision = build_textures_from_dict(
+    keys, values, collision = build_textures_from_dict(
         {1: (1, 1, 1, 1), 2: (2, 2, 2, 2)}
     )
     assert not collision
     assert keys.shape == (37, 37)
     assert values.shape == (37, 37, 4)
-    assert col_keys.shape == (1, 1)
-    assert val_keys.shape == (1, 1, 4)
     assert keys[0, 1] == 1
     assert keys[0, 2] == 2
     assert np.array_equiv(values[0, 1], (1, 1, 1, 1))
@@ -76,21 +74,21 @@ def test_size_of_texture_rectangle():
 
 
 def test_build_textures_from_dict_collision():
-    keys, values, key_col, val_col, collision = build_textures_from_dict(
+    keys, values, collision = build_textures_from_dict(
         {1: (1, 1, 1, 1), 26: (2, 2, 2, 2), 27: (3, 3, 3, 3)}, shape=(5, 5)
     )
     assert collision
     assert keys.shape == (5, 5)
     assert keys[0, 1] == 1
-    assert keys[0, 2] == 27
-    assert key_col[26, 0] == 26
+    assert keys[0, 2] == 26
+    assert keys[0, 3] == 27
     assert np.array_equiv(values[0, 1], (1, 1, 1, 1))
-    assert np.array_equiv(val_col[26, 0], (2, 2, 2, 2))
-    assert np.array_equiv(values[0, 2], (3, 3, 3, 3))
+    assert np.array_equiv(values[0, 2], (2, 2, 2, 2))
+    assert np.array_equiv(values[0, 3], (3, 3, 3, 3))
 
-    assert hash2d_get(1, keys, key_col) == ((0, 1), True)
-    assert hash2d_get(26, keys, key_col) == ((26, 0), False)
-    assert hash2d_get(27, keys, key_col) == ((0, 2), True)
+    assert hash2d_get(1, keys) == (0, 1)
+    assert hash2d_get(26, keys) == (0, 2)
+    assert hash2d_get(27, keys) == (0, 3)
 
 
 def test_collide_keys():
@@ -98,9 +96,7 @@ def test_collide_keys():
     colors = {0: (0, 0, 0, 0), 1: (1, 1, 1, 1)}
     colors.update({i + 10: (1, 0, 0, 1) for i in base_keys})
     colors.update({2 * i + 10: (0, 1, 0, 1) for i in base_keys})
-    keys, values, _key_col, _val_col, collision = build_textures_from_dict(
-        colors
-    )
+    keys, values, collision = build_textures_from_dict(colors)
     assert not collision
     assert keys.shape == (37, 61)
     assert values.shape == (37, 61, 4)
@@ -119,11 +115,7 @@ def test_collide_keys2():
     # enforce collision for collision table of size 29
     colors.update({29 * i + 10: (0, 0, 1, 1) for i in base_keys})
 
-    keys, values, key_col, val_col, collision = build_textures_from_dict(
-        colors
-    )
+    keys, values, collision = build_textures_from_dict(colors)
     assert collision
     assert keys.shape == (37, 37)
     assert values.shape == (37, 37, 4)
-    assert key_col.shape == (31, 3)
-    assert val_col.shape == (31, 3, 4)

@@ -1,7 +1,7 @@
 from collections import defaultdict
 from itertools import product
 from math import ceil, isnan, log2, sqrt
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -72,20 +72,12 @@ vec4 sample_label_color(float t) {
 direct_lookup_shader = """
 uniform sampler2D texture2D_keys;
 uniform sampler2D texture2D_values;
-uniform sampler2D texture2D_keys_collision;
-uniform sampler2D texture2D_values_collision;
 uniform vec2 LUT_shape;
-uniform vec2 collision_shape;
+uniform int color_count;
+
 
 vec4 sample_label_color(float t) {
-    if ($use_selection) {
-        // just single-color texture is passed in this case
-        if ($selection == t) {
-            return texture2D(
-                texture2D_values,
-                vec2(0.5, 0.5)
-            );
-        };
+    if (($use_selection) && ($selection != t)) {
         return vec4(0);
     }
 
@@ -113,24 +105,23 @@ vec4 sample_label_color(float t) {
     // - otherwise, it's a hash collision: continue searching
     float initial_t = t;
     int count = 0;
-    if ($collision && (abs(found - initial_t) > 1e-8)) {
-        float column = mod(int(t), collision_shape.x);
-        for (int i = 0; i < int(collision_shape.y); i++) {
-            pos = vec2(column, i);
-            pos_tex = (pos + vec2(.5)) / collision_shape;
-            found = texture2D(
-                texture2D_keys_collision,
-                pos_tex
-            ).r;
-            if (abs(found - initial_t) < 1e-8) {
-                return texture2D(
-                    texture2D_values_collision,
-                    pos_tex
-                );
-            }
+    while ((abs(found - initial_t) > 1e-8) && (abs(found - empty) > 1e-8)) {
+        count = count + 1;
+        t = initial_t + float(count);
+        if (count >= color_count) {
+            return vec4(0);
         }
-        // not found in collision table
-        return vec4(0);
+        // same as above
+        vec2 pos = vec2(
+            mod(int(t / LUT_shape.y), LUT_shape.x),
+            mod(t, LUT_shape.y)
+        );
+        pos_tex = (pos + vec2(.5)) / LUT_shape;
+
+        found = texture2D(
+            texture2D_keys,
+            pos_tex
+        ).r;
     }
 
     // return vec4(pos_tex, 0, 1); // debug if final texel is calculated correctly
@@ -192,60 +183,45 @@ def idx_to_2d(idx, shape):
     return int((idx // shape[1]) % shape[0]), int(idx % shape[1])
 
 
-def hash2d_get(
-    key, keys_array, collision_keys_array
-) -> Tuple[Optional[Tuple[int, int]], bool]:
+def hash2d_get(key, keys, empty_val=0):
     """
-    Given a key, retrieve its location in the keys_array table and information if
-    it is in the main table or collision table.
-    If the key is not found, return None.
-
-    Parameters
-    ----------
-    key: float
-        Key to search for
-    keys_array: np.ndarray
-        Texture of keys for the main table
-    collision_keys_array: np.ndarray
-        Texture of keys for the collision table
-
-    Returns
-    -------
-    Optional[Tuple[int, int]
-        if key is found, return its location in the table.
-        Otherwise, return None
-    bool
-        True if the key is in the main table, False if it is in the collision table
+    Given a key, retrieve its location in the keys table.
     """
-    pos = idx_to_2d(key, keys_array.shape)
-    if keys_array[pos] == key:
-        return pos, True
-    x = key % collision_keys_array.shape[0]
-    for i in range(collision_keys_array.shape[1]):
-        if collision_keys_array[x, i] == key:
-            return (x, i), False
-    return None, False
+    pos = idx_to_2d(key, keys.shape)
+    initial_key = key
+    while keys[pos] != initial_key and keys[pos] != empty_val:
+        if key - initial_key > keys.size:
+            raise KeyError('label does not exist')
+        key += 1
+        pos = idx_to_2d(key, keys.shape)
+    return pos if keys[pos] == initial_key else None
 
 
 def hash2d_set(
-    key: Union[float, vispy_texture_dtype], value, keys, values, empty_val=0
+    key: float,
+    value: ColorTuple,
+    keys: np.ndarray,
+    values: np.ndarray,
+    empty_val=0,
 ) -> bool:
     """
-    Set a value in the 2d hashmap if possible, returning True on collision.
+    Set a value in the 2d hashmap, wrapping around to avoid collision.
     """
-    key = vispy_texture_dtype(key)
     if key is None or isnan(key):
         return False
     pos = idx_to_2d(key, keys.shape)
-    if keys[pos] == key:
-        # casting to float32 and collision with a close key for values above 2**23
-        return False
-    if keys[pos] == empty_val:
-        keys[pos] = key
-        values[pos] = value
-        return False
+    initial_key = key
+    collision = False
+    while keys[pos] != empty_val:
+        collision = True
+        if key - initial_key > keys.size:
+            raise OverflowError('too many labels')
+        key += 1
+        pos = idx_to_2d(key, keys.shape)
+    keys[pos] = initial_key
+    values[pos] = value
 
-    return True
+    return collision
 
 
 def _get_shape_from_keys(
@@ -396,23 +372,15 @@ def build_textures_from_dict(
     shape=None,
     use_selection=False,
     selection=0.0,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, bool]:
+) -> Tuple[np.ndarray, np.ndarray, bool]:
     """
     This function construct hash table for fast lookup of colors.
-    It uses two pairs of textures.
-    Each pair is table of keys and table of values.
-    The first pair is for the main table, the second
-    pair is for the collision table.
+    It uses pair of textures.
+    First texture is a table of keys, used to determine position,
+    second is a table of values.
 
     The procedure of selection table and collision table is
     implemented in hash2d_get function.
-    In general, it is the first checks if an element is in the main table,
-    checking if the key is equal to the value in the main key table.
-    If it is not, it iterates over the column of the collision table.
-
-    This approach allows reducing the number of collisions in the main table
-    and limits the number of iterations in the collision table
-    as columns should be short.
 
     Parameters
     ----------
@@ -434,19 +402,17 @@ def build_textures_from_dict(
     Returns
     -------
         keys: np.ndarray
-            Texture of keys for the main table
+            Texture of keys for the hash table
         values: np.ndarray
-            Texture of values for the main table
-        key_collision: np.ndarray
-            Texture of keys for the collision table
-        val_collision: np.ndarray
-            Texture of values for the collision table
+            Texture of values for the hash table
+        collision: bool
+            True if there are collisions in the hash table
     """
     if use_selection:
         keys = np.full((1, 1), selection, dtype=vispy_texture_dtype)
         values = np.zeros((1, 1, 4), dtype=vispy_texture_dtype)
         values[0, 0] = color_dict[selection]
-        return keys, values, keys, values, False
+        return keys, values, False
 
     if len(color_dict) > 2**31 - 2:
         raise OverflowError(
@@ -463,19 +429,16 @@ def build_textures_from_dict(
 
     keys = np.full(shape, empty_val, dtype=vispy_texture_dtype)
     values = np.zeros(shape + (4,), dtype=vispy_texture_dtype)
-    collided = set()
-    collision_dict: Dict[vispy_texture_dtype, ColorTuple] = {}
+    visited = set()
+    collision = False
     for key, value in color_dict.items():
         key_ = vispy_texture_dtype(key)
-        if key_ in collided:
+        if key_ in visited:
             continue
-        collided.add(key_)
-        if hash2d_set(key_, value, keys, values):
-            collision_dict[key_] = value
+        visited.add(key_)
+        collision |= hash2d_set(key_, value, keys, values)
 
-    collision_keys, collision_values = _build_collision_table(collision_dict)
-
-    return keys, values, collision_keys, collision_values, bool(collision_dict)
+    return keys, values, collision
 
 
 class VispyLabelsLayer(VispyImageLayer):
@@ -532,8 +495,6 @@ class VispyLabelsLayer(VispyImageLayer):
             (
                 key_texture,
                 val_texture,
-                key_collision,
-                val_collision,
                 collision,
             ) = build_textures_from_dict(
                 color_dict,
@@ -555,16 +516,7 @@ class VispyLabelsLayer(VispyImageLayer):
                 internalformat='rgba32f',
                 interpolation='nearest',
             )
-            self.node.shared_program['texture2D_keys_collision'] = Texture2D(
-                key_collision.T, internalformat='r32f', interpolation='nearest'
-            )
-            self.node.shared_program['texture2D_values_collision'] = Texture2D(
-                val_collision.swapaxes(0, 1),
-                internalformat='rgba32f',
-                interpolation='nearest',
-            )
             self.node.shared_program['LUT_shape'] = key_texture.shape
-            self.node.shared_program['collision_shape'] = key_collision.shape
         else:
             self.node.cmap = VispyColormap(*colormap)
 
