@@ -641,7 +641,10 @@ def add_progressive_loading_image(
 
 # ---------- 2D specific ----------
 
-def chunk_priority_2D(chunk_keys, corner_pixels, scale_factor, center_weight=5):
+
+def chunk_priority_2D(
+    chunk_keys, corner_pixels, scale_factor, center_weight=5
+):
     """
     Return a priority map of chunk keys within the corner_pixels at a specific
     scale level.
@@ -696,12 +699,15 @@ def chunk_priority_2D(chunk_keys, corner_pixels, scale_factor, center_weight=5):
         center_view_dist = np.linalg.norm(chunk_center - view_center)
 
         # Calculate priority based on center_view_dist and center_weight
-        priority = center_weight * center_view_dist * (1 + 0.0001 * np.random.rand())
+        priority = (
+            center_weight * center_view_dist * (1 + 0.0001 * np.random.rand())
+        )
 
         if priority < np.inf:
             heapq.heappush(priority_map, (priority, chunk_key))
 
     return priority_map
+
 
 def should_render_scale_2D(scale, viewer, min_scale, max_scale):
     """Test if a scale should be rendered.
