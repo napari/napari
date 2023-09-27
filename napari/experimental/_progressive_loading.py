@@ -726,17 +726,38 @@ def get_chunk_center(chunk_slice):
     return np.array([(sl.start + sl.stop) * 0.5 for sl in chunk_slice])
 
 
-def chunk_priority_3D(chunk_keys, corner_pixels, scale_factor, camera):
-    """Return the keys for all chunks at this scale within the corner_pixels.
+def chunk_priority_3D(
+    chunk_keys, corner_pixels, scale_factor, camera, center_weight=5
+):
+    """
+    Return a priority map of chunk keys within the corner_pixels at a specific scale level.
+
+    The function calculates the priority of each chunk based on its visual depth,
+    distance from the camera's center line, and distance from the center of the camera's view.
+    The priority is influenced by the provided `center_weight` parameter to emphasize
+    the loading of chunks near the center of the camera's view.
 
     Parameters
     ----------
     chunk_keys : list of list of slices for each dimension
-        a list of list of slices for each dimension
-    corner_pixels : tuple
-        ND top left and bottom right coordinates for the current view
+        A list of list of slices representing the chunk keys for each dimension.
+    corner_pixels : tuple of np.ndarray
+        ND top left and bottom right coordinates for the current view in the format
+        (top_left_coords, bottom_right_coords), where each is a 1-D array of length N.
     scale_factor : float
-        the scale factor for this scale level
+        The scale factor for this scale level.
+    camera : object
+        A camera object containing necessary camera parameters such as zoom level.
+    center_weight : float, optional
+        A weight factor to control the influence of the distance from the center of the
+        camera's view in the priority calculation. Higher values give more weight
+        to the centrality of the chunk. Default is 5.
+
+    Returns
+    -------
+    priority_map : list of tuple
+        A priority map represented as a list of tuples, where each tuple contains the
+        priority value and the corresponding chunk key. The list is sorted by priority.
 
     """
     mins = corner_pixels[0, :] / scale_factor
@@ -761,10 +782,20 @@ def chunk_priority_3D(chunk_keys, corner_pixels, scale_factor, camera):
             chunk_center, camera
         )
 
-        # TODO magic numbers
-        priority = (depth + camera.zoom * center_line_dist) * (
-            1 + 0.0001 * np.random.rand()
-        )
+        # New measure: distance from chunk center to the center of the camera's view
+        camera_center = np.mean(corner_pixels, axis=0) / scale_factor
+        center_view_dist = np.linalg.norm(chunk_center - camera_center)
+
+        # Define weights for each factor
+        depth_weight = 1
+        center_line_weight = camera.zoom
+
+        # Updated priority calculation
+        priority = (
+            depth_weight * depth
+            + center_line_weight * center_line_dist
+            + center_weight * center_view_dist
+        ) * (1 + 0.0001 * np.random.rand())
 
         if priority < np.inf:
             heapq.heappush(priority_map, (priority, chunk_key))
