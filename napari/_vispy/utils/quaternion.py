@@ -3,7 +3,7 @@ import warnings
 from scipy.spatial.transform import Rotation
 
 
-def quaternion2euler(quaternion):
+def quaternion2euler_degrees(quaternion):
     """Converts VisPy quaternion into euler angle representation.
 
     Euler angles have degeneracies, so the output might different
