@@ -44,7 +44,7 @@ def _get_current_activity_dock_status(window: Window):
 Q_VIEW_ACTIONS: List[Action] = [
     Action(
         id=CommandId.TOGGLE_FULLSCREEN,
-        title=CommandId.TOGGLE_FULLSCREEN.title,
+        title=CommandId.TOGGLE_FULLSCREEN.command_title,
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -58,7 +58,7 @@ Q_VIEW_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.TOGGLE_MENUBAR,
-        title=CommandId.TOGGLE_MENUBAR.title,
+        title=CommandId.TOGGLE_MENUBAR.command_title,
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -81,7 +81,7 @@ Q_VIEW_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.TOGGLE_PLAY,
-        title=CommandId.TOGGLE_PLAY.title,
+        title=CommandId.TOGGLE_PLAY.command_title,
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -95,7 +95,7 @@ Q_VIEW_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.TOGGLE_ACTIVITY_DOCK,
-        title=CommandId.TOGGLE_ACTIVITY_DOCK.title,
+        title=CommandId.TOGGLE_ACTIVITY_DOCK.command_title,
         menus=[
             {'id': MenuId.MENUBAR_VIEW, 'group': MenuGroup.RENDER, 'order': 11}
         ],

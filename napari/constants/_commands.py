@@ -8,19 +8,10 @@ documentation.
 CommandId values should be namespaced, e.g. 'napari:layer:something' for a command
 that operates on layers.
 """
-import sys
 from typing import NamedTuple, Optional
 
+from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
-
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:
-    # in 3.11+, using str as a mixin with enum causes it to put the enum name in f-strings
-    from enum import Enum
-
-    class StrEnum(str, Enum):
-        pass
 
 
 # fmt: off
@@ -197,7 +188,7 @@ class CommandId(StrEnum):
     VECTORS_ACTIVATE_TRANSFORM_MODE = "napari:vectors:activate_vectors_transform_mode"
 
     @property
-    def title(self) -> str:  # type: ignore[override]
+    def command_title(self) -> str:
         return _COMMAND_INFO[self].title
 
     @property

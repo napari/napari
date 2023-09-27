@@ -11,10 +11,10 @@ SOME of these (but definitely not all) will be exposed as "contributable"
 menus for plugins to contribute commands and submenu items to.
 """
 
-from enum import Enum
+from napari.utils.compat import StrEnum
 
 
-class MenuId(str, Enum):
+class MenuId(StrEnum):
     """Id representing a menu somewhere in napari."""
 
     MENUBAR_FILE = 'napari/file'

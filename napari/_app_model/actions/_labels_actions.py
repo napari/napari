@@ -26,7 +26,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_ACTIVATE_PAINT_MODE,
         title=CommandId.LABELS_ACTIVATE_PAINT_MODE.description,
-        short_title=CommandId.LABELS_ACTIVATE_PAINT_MODE.title,
+        short_title=CommandId.LABELS_ACTIVATE_PAINT_MODE.command_title,
         callback=AttrRestoreCallback(
             _labels_actions.activate_labels_paint_mode, "mode"
         ),
@@ -36,7 +36,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_ACTIVATE_FILL_MODE,
         title=CommandId.LABELS_ACTIVATE_FILL_MODE.description,
-        short_title=CommandId.LABELS_ACTIVATE_FILL_MODE.title,
+        short_title=CommandId.LABELS_ACTIVATE_FILL_MODE.command_title,
         callback=AttrRestoreCallback(
             _labels_actions.activate_labels_fill_mode, "mode"
         ),
@@ -46,7 +46,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE,
         title=CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE.description,
-        short_title=CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE.title,
+        short_title=CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE.command_title,
         callback=AttrRestoreCallback(
             _labels_actions.activate_labels_pan_zoom_mode, "mode"
         ),
@@ -56,7 +56,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_ACTIVATE_PICKER_MODE,
         title=CommandId.LABELS_ACTIVATE_PICKER_MODE.description,
-        short_title=CommandId.LABELS_ACTIVATE_PICKER_MODE.title,
+        short_title=CommandId.LABELS_ACTIVATE_PICKER_MODE.command_title,
         callback=AttrRestoreCallback(
             _labels_actions.activate_labels_picker_mode, "mode"
         ),
@@ -66,7 +66,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_ACTIVATE_POLYGON_MODE,
         title=CommandId.LABELS_ACTIVATE_POLYGON_MODE.description,
-        short_title=CommandId.LABELS_ACTIVATE_POLYGON_MODE.title,
+        short_title=CommandId.LABELS_ACTIVATE_POLYGON_MODE.command_title,
         callback=AttrRestoreCallback(
             _labels_actions.activate_labels_polygon_mode, "mode"
         ),
@@ -76,7 +76,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_ACTIVATE_ERASE_MODE,
         title=CommandId.LABELS_ACTIVATE_ERASE_MODE.description,
-        short_title=CommandId.LABELS_ACTIVATE_ERASE_MODE.title,
+        short_title=CommandId.LABELS_ACTIVATE_ERASE_MODE.command_title,
         callback=AttrRestoreCallback(
             _labels_actions.activate_labels_erase_mode, "mode"
         ),
@@ -86,7 +86,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_ACTIVATE_TRANSFORM_MODE,
         title=CommandId.LABELS_ACTIVATE_TRANSFORM_MODE.description,
-        short_title=CommandId.LABELS_ACTIVATE_TRANSFORM_MODE.title,
+        short_title=CommandId.LABELS_ACTIVATE_TRANSFORM_MODE.command_title,
         callback=AttrRestoreCallback(
             _labels_actions.activate_labels_transform_mode, "mode"
         ),
@@ -98,7 +98,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_RESET_POLYGON,
         title=CommandId.LABELS_RESET_POLYGON.description,
-        short_title=CommandId.LABELS_RESET_POLYGON.title,
+        short_title=CommandId.LABELS_RESET_POLYGON.command_title,
         callback=_labels_actions.reset_polygon,
         keybindings=DEFAULT_SHORTCUTS[CommandId.LABELS_RESET_POLYGON],
         enablement=enablement,
@@ -106,7 +106,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_COMPLETE_POLYGON,
         title=CommandId.LABELS_COMPLETE_POLYGON.description,
-        short_title=CommandId.LABELS_COMPLETE_POLYGON.title,
+        short_title=CommandId.LABELS_COMPLETE_POLYGON.command_title,
         callback=_labels_actions.complete_polygon,
         keybindings=DEFAULT_SHORTCUTS[CommandId.LABELS_COMPLETE_POLYGON],
         enablement=enablement,
@@ -114,7 +114,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_NEW_LABEL,
         title=CommandId.LABELS_NEW_LABEL.description,
-        short_title=CommandId.LABELS_NEW_LABEL.title,
+        short_title=CommandId.LABELS_NEW_LABEL.command_title,
         callback=_labels_actions.new_label,
         keybindings=DEFAULT_SHORTCUTS[CommandId.LABELS_NEW_LABEL],
         enablement=enablement,
@@ -122,7 +122,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_DECREMENT_ID,
         title=CommandId.LABELS_DECREMENT_ID.description,
-        short_title=CommandId.LABELS_DECREMENT_ID.title,
+        short_title=CommandId.LABELS_DECREMENT_ID.command_title,
         callback=_labels_actions.decrease_label_id,
         keybindings=DEFAULT_SHORTCUTS[CommandId.LABELS_DECREMENT_ID],
         enablement=enablement,
@@ -130,21 +130,21 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_INCREMENT_ID,
         title=CommandId.LABELS_INCREMENT_ID.description,
-        short_title=CommandId.LABELS_INCREMENT_ID.title,
+        short_title=CommandId.LABELS_INCREMENT_ID.command_title,
         callback=_labels_actions.increase_label_id,
         keybindings=DEFAULT_SHORTCUTS[CommandId.LABELS_INCREMENT_ID],
         enablement=enablement,
     ),
     RepeatableAction(
         id=CommandId.LABELS_DECREASE_BRUSH_SIZE,
-        title=CommandId.LABELS_DECREASE_BRUSH_SIZE.title,
+        title=CommandId.LABELS_DECREASE_BRUSH_SIZE.command_title,
         callback=_labels_actions.decrease_brush_size,
         keybindings=DEFAULT_SHORTCUTS[CommandId.LABELS_DECREASE_BRUSH_SIZE],
         enablement=enablement,
     ),
     RepeatableAction(
         id=CommandId.LABELS_INCREASE_BRUSH_SIZE,
-        title=CommandId.LABELS_INCREASE_BRUSH_SIZE.title,
+        title=CommandId.LABELS_INCREASE_BRUSH_SIZE.command_title,
         callback=_labels_actions.increase_brush_size,
         keybindings=DEFAULT_SHORTCUTS[CommandId.LABELS_INCREASE_BRUSH_SIZE],
         enablement=enablement,
@@ -152,14 +152,14 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_SWAP,
         title=CommandId.LABELS_SWAP.description,
-        short_title=CommandId.LABELS_SWAP.title,
+        short_title=CommandId.LABELS_SWAP.command_title,
         callback=_labels_actions.swap_selected_and_background_labels,
         keybindings=DEFAULT_SHORTCUTS[CommandId.LABELS_SWAP],
         enablement=enablement,
     ),
     Action(
         id=CommandId.LABELS_TOGGLE_PRESERVE_LABELS,
-        title=CommandId.LABELS_TOGGLE_PRESERVE_LABELS.title,
+        title=CommandId.LABELS_TOGGLE_PRESERVE_LABELS.command_title,
         callback=_labels_actions.toggle_preserve_labels,
         toggled=ToggleRule(
             get_current=_labels_actions._get_preserve_labels_toggled
@@ -170,7 +170,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_UNDO,
         title=CommandId.LABELS_UNDO.description,
-        short_title=CommandId.LABELS_UNDO.title,
+        short_title=CommandId.LABELS_UNDO.command_title,
         callback=_labels_actions.undo,
         keybindings=DEFAULT_SHORTCUTS[CommandId.LABELS_UNDO],
         enablement=enablement,
@@ -178,7 +178,7 @@ LABELS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LABELS_REDO,
         title=CommandId.LABELS_REDO.description,
-        short_title=CommandId.LABELS_REDO.title,
+        short_title=CommandId.LABELS_REDO.command_title,
         callback=_labels_actions.redo,
         keybindings=DEFAULT_SHORTCUTS[CommandId.LABELS_REDO],
         enablement=enablement,

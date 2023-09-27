@@ -23,7 +23,7 @@ IMAGE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Z,
         title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Z.description,
-        short_title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Z.title,
+        short_title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Z.command_title,
         callback=_image_actions.orient_plane_normal_along_z,
         keybindings=DEFAULT_SHORTCUTS[
             CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Z
@@ -33,7 +33,7 @@ IMAGE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Y,
         title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Y.description,
-        short_title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Y.title,
+        short_title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Y.command_title,
         callback=_image_actions.orient_plane_normal_along_y,
         keybindings=DEFAULT_SHORTCUTS[
             CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Y
@@ -43,7 +43,7 @@ IMAGE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_X,
         title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_X.description,
-        short_title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_X.title,
+        short_title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_X.command_title,
         callback=_image_actions.orient_plane_normal_along_x,
         keybindings=DEFAULT_SHORTCUTS[
             CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_X
@@ -53,7 +53,7 @@ IMAGE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION,
         title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION.description,
-        short_title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION.title,
+        short_title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION.command_title,
         callback=_image_actions.orient_plane_normal_along_view_direction,
         keybindings=DEFAULT_SHORTCUTS[
             CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION
@@ -63,7 +63,7 @@ IMAGE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.IMAGE_HOLD_TO_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION,
         title=CommandId.IMAGE_HOLD_TO_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION.description,
-        short_title=CommandId.IMAGE_HOLD_TO_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION.title,
+        short_title=CommandId.IMAGE_HOLD_TO_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION.command_title,
         callback=GeneratorCallback(
             _image_actions.hold_to_orient_plane_normal_along_view_direction
         ),
@@ -75,7 +75,7 @@ IMAGE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE,
         title=CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE.description,
-        short_title=CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE.title,
+        short_title=CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE.command_title,
         callback=_image_actions.activate_image_transform_mode,
         keybindings=DEFAULT_SHORTCUTS[CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE],
         enablement=enablement,
@@ -83,7 +83,7 @@ IMAGE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.IMAGE_ACTIVATE_PAN_ZOOM_MODE,
         title=CommandId.IMAGE_ACTIVATE_PAN_ZOOM_MODE.description,
-        short_title=CommandId.IMAGE_ACTIVATE_PAN_ZOOM_MODE.title,
+        short_title=CommandId.IMAGE_ACTIVATE_PAN_ZOOM_MODE.command_title,
         callback=_image_actions.activate_image_pan_zoom_mode,
         keybindings=DEFAULT_SHORTCUTS[CommandId.IMAGE_ACTIVATE_PAN_ZOOM_MODE],
         enablement=enablement,

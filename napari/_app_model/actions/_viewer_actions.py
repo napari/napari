@@ -24,80 +24,80 @@ VIEWER_ACTIONS: List[Action] = [
     Action(
         id=CommandId.VIEWER_HOLD_FOR_PAN_ZOOM,
         title=CommandId.VIEWER_HOLD_FOR_PAN_ZOOM.description,
-        short_title=CommandId.VIEWER_HOLD_FOR_PAN_ZOOM.title,
+        short_title=CommandId.VIEWER_HOLD_FOR_PAN_ZOOM.command_title,
         callback=GeneratorCallback(_viewer_actions.hold_for_pan_zoom),
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_HOLD_FOR_PAN_ZOOM],
     ),
     Action(
         id=CommandId.VIEWER_DELETE_SELECTED,
         title=CommandId.VIEWER_DELETE_SELECTED.description,
-        short_title=CommandId.VIEWER_DELETE_SELECTED.title,
+        short_title=CommandId.VIEWER_DELETE_SELECTED.command_title,
         callback=_viewer_actions.delete_selected_layers,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_DELETE_SELECTED],
     ),
     Action(
         id=CommandId.VIEWER_RESET_SCROLL,
         title=CommandId.VIEWER_RESET_SCROLL.description,
-        short_title=CommandId.VIEWER_RESET_SCROLL.title,
+        short_title=CommandId.VIEWER_RESET_SCROLL.command_title,
         callback=GeneratorCallback(_viewer_actions.reset_scroll_progress),
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_RESET_SCROLL],
     ),
     Action(
         id=CommandId.VIEWER_TOGGLE_THEME,
-        title=CommandId.VIEWER_TOGGLE_THEME.title,
+        title=CommandId.VIEWER_TOGGLE_THEME.command_title,
         callback=_viewer_actions.toggle_theme,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_TOGGLE_THEME],
     ),
     Action(
         id=CommandId.VIEWER_RESET_VIEW,
         title=CommandId.VIEWER_RESET_VIEW.description,
-        short_title=CommandId.VIEWER_RESET_VIEW.title,
+        short_title=CommandId.VIEWER_RESET_VIEW.command_title,
         callback=_viewer_actions.reset_view,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_RESET_VIEW],
     ),
     Action(
         id=CommandId.VIEWER_INC_DIMS_LEFT,
-        title=CommandId.VIEWER_INC_DIMS_LEFT.title,
+        title=CommandId.VIEWER_INC_DIMS_LEFT.command_title,
         callback=_viewer_actions.increment_dims_left,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_INC_DIMS_LEFT],
     ),
     Action(
         id=CommandId.VIEWER_INC_DIMS_RIGHT,
-        title=CommandId.VIEWER_INC_DIMS_RIGHT.title,
+        title=CommandId.VIEWER_INC_DIMS_RIGHT.command_title,
         callback=_viewer_actions.increment_dims_right,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_INC_DIMS_RIGHT],
     ),
     Action(
         id=CommandId.VIEWER_FOCUS_AXES_UP,
-        short_title=CommandId.VIEWER_FOCUS_AXES_UP.title,
+        short_title=CommandId.VIEWER_FOCUS_AXES_UP.command_title,
         title=CommandId.VIEWER_FOCUS_AXES_UP.description,
         callback=_viewer_actions.focus_axes_up,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_FOCUS_AXES_UP],
     ),
     Action(
         id=CommandId.VIEWER_FOCUS_AXES_DOWN,
-        short_title=CommandId.VIEWER_FOCUS_AXES_DOWN.title,
+        short_title=CommandId.VIEWER_FOCUS_AXES_DOWN.command_title,
         title=CommandId.VIEWER_FOCUS_AXES_DOWN.description,
         callback=_viewer_actions.focus_axes_down,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_FOCUS_AXES_DOWN],
     ),
     Action(
         id=CommandId.VIEWER_ROLL_AXES,
-        short_title=CommandId.VIEWER_ROLL_AXES.title,
+        short_title=CommandId.VIEWER_ROLL_AXES.command_title,
         title=CommandId.VIEWER_ROLL_AXES.description,
         callback=_viewer_actions.roll_axes,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_ROLL_AXES],
     ),
     Action(
         id=CommandId.VIEWER_TRANSPOSE_AXES,
-        short_title=CommandId.VIEWER_TRANSPOSE_AXES.title,
+        short_title=CommandId.VIEWER_TRANSPOSE_AXES.command_title,
         title=CommandId.VIEWER_TRANSPOSE_AXES.description,
         callback=_viewer_actions.transpose_axes,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_TRANSPOSE_AXES],
     ),
     Action(
         id=CommandId.VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY,
-        title=CommandId.VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY.title,
+        title=CommandId.VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY.command_title,
         callback=_viewer_actions.toggle_selected_layer_visibility,
         keybindings=DEFAULT_SHORTCUTS[
             CommandId.VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY
@@ -105,7 +105,7 @@ VIEWER_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.VIEWER_TOGGLE_CONSOLE_VISIBILITY,
-        title=CommandId.VIEWER_TOGGLE_CONSOLE_VISIBILITY.title,
+        title=CommandId.VIEWER_TOGGLE_CONSOLE_VISIBILITY.command_title,
         callback=_viewer_actions.toggle_console_visibility,
         keybindings=DEFAULT_SHORTCUTS[
             CommandId.VIEWER_TOGGLE_CONSOLE_VISIBILITY
@@ -113,25 +113,25 @@ VIEWER_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.NAPARI_SHOW_SHORTCUTS,
-        title=CommandId.NAPARI_SHOW_SHORTCUTS.title,
+        title=CommandId.NAPARI_SHOW_SHORTCUTS.command_title,
         callback=_viewer_actions.show_shortcuts,
         keybindings=DEFAULT_SHORTCUTS[CommandId.NAPARI_SHOW_SHORTCUTS],
     ),
     Action(
         id=CommandId.VIEWER_NEW_LABELS,
-        title=CommandId.VIEWER_NEW_LABELS.title,
+        title=CommandId.VIEWER_NEW_LABELS.command_title,
         callback=_viewer_actions.new_labels,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_NEW_LABELS],
     ),
     Action(
         id=CommandId.VIEWER_NEW_SHAPES,
-        title=CommandId.VIEWER_NEW_SHAPES.title,
+        title=CommandId.VIEWER_NEW_SHAPES.command_title,
         callback=_viewer_actions.new_shapes,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_NEW_SHAPES],
     ),
     Action(
         id=CommandId.VIEWER_NEW_POINTS,
-        title=CommandId.VIEWER_NEW_POINTS.title,
+        title=CommandId.VIEWER_NEW_POINTS.command_title,
         callback=_viewer_actions.new_points,
         keybindings=DEFAULT_SHORTCUTS[CommandId.VIEWER_NEW_POINTS],
     ),
@@ -151,7 +151,7 @@ VIEWER_ACTIONS.extend(
     [
         Action(
             id=CommandId.TOGGLE_VIEWER_NDISPLAY,
-            title=CommandId.TOGGLE_VIEWER_NDISPLAY.title,
+            title=CommandId.TOGGLE_VIEWER_NDISPLAY.command_title,
             menus=[
                 {'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 0}
             ],
@@ -161,7 +161,7 @@ VIEWER_ACTIONS.extend(
         ),
         ViewerToggleAction(
             id=CommandId.VIEWER_TOGGLE_GRID,
-            title=CommandId.VIEWER_TOGGLE_GRID.title,
+            title=CommandId.VIEWER_TOGGLE_GRID.command_title,
             viewer_attribute="grid",
             sub_attribute="enabled",
             menus=[

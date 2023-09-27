@@ -22,7 +22,7 @@ TRACKS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.TRACKS_ACTIVATE_PAN_ZOOM_MODE,
         title=CommandId.TRACKS_ACTIVATE_PAN_ZOOM_MODE.description,
-        short_title=CommandId.TRACKS_ACTIVATE_PAN_ZOOM_MODE.title,
+        short_title=CommandId.TRACKS_ACTIVATE_PAN_ZOOM_MODE.command_title,
         callback=_tracks_actions.activate_tracks_pan_zoom_mode,
         keybindings=DEFAULT_SHORTCUTS[CommandId.TRACKS_ACTIVATE_PAN_ZOOM_MODE],
         enablement=enablement,
@@ -30,7 +30,7 @@ TRACKS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.TRACKS_ACTIVATE_TRANSFORM_MODE,
         title=CommandId.TRACKS_ACTIVATE_TRANSFORM_MODE.description,
-        short_title=CommandId.TRACKS_ACTIVATE_TRANSFORM_MODE.title,
+        short_title=CommandId.TRACKS_ACTIVATE_TRANSFORM_MODE.command_title,
         callback=_tracks_actions.activate_tracks_transform_mode,
         keybindings=DEFAULT_SHORTCUTS[
             CommandId.TRACKS_ACTIVATE_TRANSFORM_MODE

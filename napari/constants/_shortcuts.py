@@ -35,7 +35,7 @@ _default_shortcuts: Dict[str, List[Union[int, KeyBindingRuleDict]]] = {
     CommandId.VIEWER_ROLL_AXES: [KeyMod.CtrlCmd | KeyCode.KeyE],
     CommandId.VIEWER_TRANSPOSE_AXES: [KeyMod.CtrlCmd | KeyCode.KeyT],
     CommandId.VIEWER_TOGGLE_GRID: [KeyMod.CtrlCmd | KeyCode.KeyG],
-    CommandId.VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY: [KeyCode.KeyG],
+    CommandId.VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY: [KeyCode.KeyV],
     CommandId.VIEWER_HOLD_FOR_PAN_ZOOM: [KeyCode.Space],
     CommandId.VIEWER_NEW_LABELS: [
         KeyChord(KeyMod.CtrlCmd | KeyCode.KeyN, KeyCode.KeyL)

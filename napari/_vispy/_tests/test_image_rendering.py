@@ -90,4 +90,4 @@ def test_clipping_planes_dims():
     # needed to get volume node
     image_layer._slice_dims(ndisplay=3)
     vispy_clip = vispy_layer.node.clipping_planes
-    assert np.all(napari_clip == vispy_clip[..., ::-1])
+    np.testing.assert_array_equal(napari_clip, vispy_clip[..., ::-1])

@@ -45,21 +45,21 @@ def _close_app(window: Window):
 Q_FILE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.DLG_OPEN_FILES,
-        title=CommandId.DLG_OPEN_FILES.title,
+        title=CommandId.DLG_OPEN_FILES.command_title,
         callback=QtViewer._open_files_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
         keybindings=[StandardKeyBinding.Open],
     ),
     Action(
         id=CommandId.DLG_OPEN_FILES_AS_STACK,
-        title=CommandId.DLG_OPEN_FILES_AS_STACK.title,
+        title=CommandId.DLG_OPEN_FILES_AS_STACK.command_title,
         callback=QtViewer._open_files_dialog_as_stack_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyO}],
     ),
     Action(
         id=CommandId.DLG_OPEN_FOLDER,
-        title=CommandId.DLG_OPEN_FOLDER.title,
+        title=CommandId.DLG_OPEN_FOLDER.command_title,
         callback=QtViewer._open_files_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
         keybindings=[
@@ -68,7 +68,7 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.DLG_OPEN_FILES_WITH_PLUGIN,
-        title=CommandId.DLG_OPEN_FILES_WITH_PLUGIN.title,
+        title=CommandId.DLG_OPEN_FILES_WITH_PLUGIN.command_title,
         callback=_open_files_with_plugin,
         menus=[
             {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
@@ -76,7 +76,7 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN,
-        title=CommandId.DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN.title,
+        title=CommandId.DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN.command_title,
         callback=_open_files_as_stack_with_plugin,
         menus=[
             {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
@@ -84,7 +84,7 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.DLG_OPEN_FOLDER_WITH_PLUGIN,
-        title=CommandId.DLG_OPEN_FOLDER_WITH_PLUGIN.title,
+        title=CommandId.DLG_OPEN_FOLDER_WITH_PLUGIN.command_title,
         callback=_open_folder_with_plugin,
         menus=[
             {'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.NAVIGATION}
@@ -92,7 +92,7 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.DLG_SHOW_PREFERENCES,
-        title=CommandId.DLG_SHOW_PREFERENCES.title,
+        title=CommandId.DLG_SHOW_PREFERENCES.command_title,
         callback=Window._open_preferences_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.PREFERENCES}],
         # TODO: revert to `StandardKeyBinding.Preferences` after app-model>0.2.0
@@ -105,7 +105,7 @@ Q_FILE_ACTIONS: List[Action] = [
     # we can re-use `DLG_SAVE_LAYERS` below.
     Action(
         id=CommandId.DLG_SAVE_SELECTED_LAYERS,
-        title=CommandId.DLG_SAVE_SELECTED_LAYERS.title,
+        title=CommandId.DLG_SAVE_SELECTED_LAYERS.command_title,
         callback=_save_selected_layers,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[StandardKeyBinding.Save],
@@ -113,7 +113,7 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.DLG_SAVE_LAYERS,
-        title=CommandId.DLG_SAVE_LAYERS.title,
+        title=CommandId.DLG_SAVE_LAYERS.command_title,
         callback=QtViewer._save_layers_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyS}],
@@ -121,7 +121,7 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.DLG_SAVE_CANVAS_SCREENSHOT,
-        title=CommandId.DLG_SAVE_CANVAS_SCREENSHOT.title,
+        title=CommandId.DLG_SAVE_CANVAS_SCREENSHOT.command_title,
         callback=QtViewer._screenshot_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyCode.KeyS}],
@@ -129,7 +129,7 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.DLG_SAVE_VIEWER_SCREENSHOT,
-        title=CommandId.DLG_SAVE_VIEWER_SCREENSHOT.title,
+        title=CommandId.DLG_SAVE_VIEWER_SCREENSHOT.command_title,
         callback=Window._screenshot_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyMod.Shift | KeyCode.KeyS}],
@@ -137,7 +137,7 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.COPY_CANVAS_SCREENSHOT,
-        title=CommandId.COPY_CANVAS_SCREENSHOT.title,
+        title=CommandId.COPY_CANVAS_SCREENSHOT.command_title,
         callback=QtViewer.clipboard,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyCode.KeyC}],
@@ -147,7 +147,7 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.COPY_VIEWER_SCREENSHOT,
-        title=CommandId.COPY_VIEWER_SCREENSHOT.title,
+        title=CommandId.COPY_VIEWER_SCREENSHOT.command_title,
         callback=Window.clipboard,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyMod.Shift | KeyCode.KeyC}],
@@ -157,14 +157,14 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.DLG_CLOSE,
-        title=CommandId.DLG_CLOSE.title,
+        title=CommandId.DLG_CLOSE.command_title,
         callback=_close_window,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
         keybindings=[StandardKeyBinding.Close],
     ),
     Action(
         id=CommandId.RESTART,
-        title=CommandId.RESTART.title,
+        title=CommandId.RESTART.command_title,
         callback=_restart,
         menus=[
             {
@@ -178,7 +178,7 @@ Q_FILE_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.DLG_QUIT,
-        title=CommandId.DLG_QUIT.title,
+        title=CommandId.DLG_QUIT.command_title,
         callback=_close_app,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
     ),

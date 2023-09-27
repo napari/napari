@@ -22,7 +22,7 @@ VECTORS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.VECTORS_ACTIVATE_PAN_ZOOM_MODE,
         title=CommandId.VECTORS_ACTIVATE_PAN_ZOOM_MODE.description,
-        short_title=CommandId.VECTORS_ACTIVATE_PAN_ZOOM_MODE.title,
+        short_title=CommandId.VECTORS_ACTIVATE_PAN_ZOOM_MODE.command_title,
         callback=_vectors_actions.activate_vectors_pan_zoom_mode,
         keybindings=DEFAULT_SHORTCUTS[
             CommandId.VECTORS_ACTIVATE_PAN_ZOOM_MODE
@@ -32,7 +32,7 @@ VECTORS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.VECTORS_ACTIVATE_TRANSFORM_MODE,
         title=CommandId.VECTORS_ACTIVATE_TRANSFORM_MODE.description,
-        short_title=CommandId.VECTORS_ACTIVATE_TRANSFORM_MODE.title,
+        short_title=CommandId.VECTORS_ACTIVATE_TRANSFORM_MODE.command_title,
         callback=_vectors_actions.activate_vectors_transform_mode,
         keybindings=DEFAULT_SHORTCUTS[
             CommandId.VECTORS_ACTIVATE_TRANSFORM_MODE

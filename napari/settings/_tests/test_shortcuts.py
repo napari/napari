@@ -26,7 +26,7 @@ def test_shortcut_settings_load_legacy():
         'napari:roll_axes': [KeyMod.CtrlCmd | KeyCode.KeyE],
         'napari:transpose_axes': [KeyMod.CtrlCmd | KeyCode.KeyT],
         'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
-        'napari:toggle_selected_visibility': [KeyCode.KeyG],
+        'napari:toggle_selected_visibility': [KeyCode.KeyV],
         'napari:hold_for_pan_zoom': [KeyCode.Space],
         # labels
         'napari:activate_labels_erase_mode': [KeyCode.Digit1, KeyCode.KeyE],

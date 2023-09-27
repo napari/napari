@@ -5,7 +5,7 @@ def test_command_titles():
     """make sure all command start with napari: and have a title"""
     for command in CommandId:
         assert command.value.startswith('napari:')
-        assert command.title is not None
+        assert command.command_title is not None
 
 
 def test_menus():

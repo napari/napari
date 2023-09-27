@@ -22,7 +22,7 @@ SURFACE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.SURFACE_ACTIVATE_PAN_ZOOM_MODE,
         title=CommandId.SURFACE_ACTIVATE_PAN_ZOOM_MODE.description,
-        short_title=CommandId.SURFACE_ACTIVATE_PAN_ZOOM_MODE.title,
+        short_title=CommandId.SURFACE_ACTIVATE_PAN_ZOOM_MODE.command_title,
         callback=_surface_actions.activate_surface_pan_zoom_mode,
         keybindings=DEFAULT_SHORTCUTS[
             CommandId.SURFACE_ACTIVATE_PAN_ZOOM_MODE
@@ -32,7 +32,7 @@ SURFACE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.SURFACE_ACTIVATE_TRANSFORM_MODE,
         title=CommandId.SURFACE_ACTIVATE_TRANSFORM_MODE.description,
-        short_title=CommandId.SURFACE_ACTIVATE_TRANSFORM_MODE.title,
+        short_title=CommandId.SURFACE_ACTIVATE_TRANSFORM_MODE.command_title,
         callback=_surface_actions.activate_surface_transform_mode,
         keybindings=DEFAULT_SHORTCUTS[
             CommandId.SURFACE_ACTIVATE_TRANSFORM_MODE

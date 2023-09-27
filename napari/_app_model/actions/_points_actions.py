@@ -23,7 +23,7 @@ POINTS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.POINTS_ACTIVATE_ADD_MODE,
         title=CommandId.POINTS_ACTIVATE_ADD_MODE.description,
-        short_title=CommandId.POINTS_ACTIVATE_ADD_MODE.title,
+        short_title=CommandId.POINTS_ACTIVATE_ADD_MODE.command_title,
         callback=AttrRestoreCallback(
             _points_actions.activate_points_add_mode, "mode"
         ),
@@ -33,7 +33,7 @@ POINTS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.POINTS_ACTIVATE_SELECT_MODE,
         title=CommandId.POINTS_ACTIVATE_SELECT_MODE.description,
-        short_title=CommandId.POINTS_ACTIVATE_SELECT_MODE.title,
+        short_title=CommandId.POINTS_ACTIVATE_SELECT_MODE.command_title,
         callback=AttrRestoreCallback(
             _points_actions.activate_points_select_mode, "mode"
         ),
@@ -43,7 +43,7 @@ POINTS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE,
         title=CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE.description,
-        short_title=CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE.title,
+        short_title=CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE.command_title,
         callback=AttrRestoreCallback(
             _points_actions.activate_points_pan_zoom_mode, "mode"
         ),
@@ -53,7 +53,7 @@ POINTS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.POINTS_ACTIVATE_TRANSFORM_MODE,
         title=CommandId.POINTS_ACTIVATE_TRANSFORM_MODE.description,
-        short_title=CommandId.POINTS_ACTIVATE_TRANSFORM_MODE.title,
+        short_title=CommandId.POINTS_ACTIVATE_TRANSFORM_MODE.command_title,
         callback=AttrRestoreCallback(
             _points_actions.activate_points_transform_mode, "mode"
         ),
@@ -65,7 +65,7 @@ POINTS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.POINTS_COPY,
         title=CommandId.POINTS_COPY.description,
-        short_title=CommandId.POINTS_COPY.title,
+        short_title=CommandId.POINTS_COPY.command_title,
         callback=_points_actions.copy,
         keybindings=DEFAULT_SHORTCUTS[CommandId.POINTS_COPY],
         enablement=enablement,
@@ -73,7 +73,7 @@ POINTS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.POINTS_PASTE,
         title=CommandId.POINTS_PASTE.description,
-        short_title=CommandId.POINTS_PASTE.title,
+        short_title=CommandId.POINTS_PASTE.command_title,
         callback=_points_actions.paste,
         keybindings=DEFAULT_SHORTCUTS[CommandId.POINTS_PASTE],
         enablement=enablement,
@@ -81,7 +81,7 @@ POINTS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.POINTS_SELECT_ALL_IN_SLICE,
         title=CommandId.POINTS_SELECT_ALL_IN_SLICE.description,
-        short_title=CommandId.POINTS_SELECT_ALL_IN_SLICE.title,
+        short_title=CommandId.POINTS_SELECT_ALL_IN_SLICE.command_title,
         callback=_points_actions.select_all_in_slice,
         keybindings=DEFAULT_SHORTCUTS[CommandId.POINTS_SELECT_ALL_IN_SLICE],
         enablement=enablement,
@@ -89,7 +89,7 @@ POINTS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.POINTS_SELECT_ALL_DATA,
         title=CommandId.POINTS_SELECT_ALL_DATA.description,
-        short_title=CommandId.POINTS_SELECT_ALL_DATA.title,
+        short_title=CommandId.POINTS_SELECT_ALL_DATA.command_title,
         callback=_points_actions.select_all_data,
         keybindings=DEFAULT_SHORTCUTS[CommandId.POINTS_SELECT_ALL_DATA],
         enablement=enablement,
@@ -97,7 +97,7 @@ POINTS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.POINTS_DELETE_SELECTED,
         title=CommandId.POINTS_DELETE_SELECTED.description,
-        short_title=CommandId.POINTS_DELETE_SELECTED.title,
+        short_title=CommandId.POINTS_DELETE_SELECTED.command_title,
         callback=_points_actions.delete_selected_points,
         keybindings=DEFAULT_SHORTCUTS[CommandId.POINTS_DELETE_SELECTED],
         enablement=enablement,
