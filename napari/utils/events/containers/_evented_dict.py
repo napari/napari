@@ -22,6 +22,8 @@ class EventedDict(TypedMutableMapping[_K, _T]):
 
     Events
     ------
+    changing (key: K)
+        emitted before an item at ``key`` is changed
     changed (key: K, old_value: T, value: T)
         emitted when item at ``key`` is changed from ``old_value`` to ``value``
     adding (key: K)
@@ -73,6 +75,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             self.events.added(key=key, value=value)
             self._connect_child_emitters(value)
         else:
+            self.events.changing(key=key)
             super().__setitem__(key, value)
             self.events.changed(key=key, old_value=old, value=value)
 
