@@ -76,10 +76,7 @@ def _iter_imports(hint) -> Iterator[str]:
     if isinstance(hint, list):
         for i in hint:
             yield from _iter_imports(i)
-    elif (
-        hasattr(hint, '__module__')
-        and hint.__module__ != 'builtins'
-    ):
+    elif hasattr(hint, '__module__') and hint.__module__ != 'builtins':
         yield hint.__module__
 
 
