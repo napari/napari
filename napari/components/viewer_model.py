@@ -67,6 +67,14 @@ from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
 from napari.settings import get_settings
+from napari.types import (
+    FullLayerData,
+    LayerData,
+    LayerTypeName,
+    PathLike,
+    PathOrPaths,
+    SampleData,
+)
 from napari.utils._register import create_func as create_add_method
 from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
@@ -87,15 +95,6 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from npe2.types import SampleDataCreator
-
-    from napari.types import (
-        FullLayerData,
-        LayerData,
-        LayerTypeName,
-        PathLike,
-        PathOrPaths,
-        SampleData,
-    )
 
 
 DEFAULT_THEME = 'dark'
