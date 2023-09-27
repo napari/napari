@@ -584,7 +584,7 @@ def add_progressive_loading_image(
     viewer.dims.ndim = ndisplay
 
     if scale is None:
-        scale = np.array((1, 1, 1))
+        scale = np.ones(ndisplay)
     else:
         LOGGER.error("scale other than 1 is currently not supported")
         return None
@@ -641,18 +641,37 @@ def add_progressive_loading_image(
 
 # ---------- 2D specific ----------
 
+def chunk_priority_2D(chunk_keys, corner_pixels, scale_factor, center_weight=5):
+    """
+    Return a priority map of chunk keys within the corner_pixels at a specific
+    scale level.
 
-def chunk_priority_2D(chunk_keys, corner_pixels, scale_factor):
-    """Return the keys for all chunks at this scale within the corner_pixels.
+    The function calculates the priority of each chunk based on its distance
+    from the center of the view. The priority is influenced by the provided
+    `center_weight` parameter to emphasize the loading of chunks near the
+    center of the view.
 
     Parameters
     ----------
     chunk_keys : list of list of slices for each dimension
-        a list of list of slices for each dimension
-    corner_pixels : tuple
-        ND top left and bottom right coordinates for the current view
+        A list of list of slices representing the chunk keys for each dimension
+    corner_pixels : tuple of np.ndarray
+        2D top left and bottom right coordinates for the current view in the
+        format (top_left_coords, bottom_right_coords), where each is a 1-D
+        array of length 2.
     scale_factor : float
-        the scale factor for this scale level
+        The scale factor for this scale level.
+    center_weight : float, optional
+        A weight factor to control the influence of the distance from the
+        center of the  view in the priority calculation. Higher values give
+        more weight to the centrality of the chunk. Default is 5.
+
+    Returns
+    -------
+    priority_map : list of tuple
+        A priority map represented as a list of tuples, where each tuple
+        contains the priority value and the corresponding chunk key. The list
+        is sorted by priority.
 
     """
     mins = corner_pixels[0, :] / scale_factor
@@ -669,14 +688,20 @@ def chunk_priority_2D(chunk_keys, corner_pixels, scale_factor):
             )
         )
     ):
-        priority = 0
-        # TODO filter priority here
-        priority = 0 if True else np.inf
+        # Calculate the center of each chunk
+        chunk_center = get_chunk_center(chunk_key)
+
+        # Calculate the distance from chunk center to the center of the view
+        view_center = np.mean(corner_pixels, axis=0) / scale_factor
+        center_view_dist = np.linalg.norm(chunk_center - view_center)
+
+        # Calculate priority based on center_view_dist and center_weight
+        priority = center_weight * center_view_dist * (1 + 0.0001 * np.random.rand())
+
         if priority < np.inf:
             heapq.heappush(priority_map, (priority, chunk_key))
 
     return priority_map
-
 
 def should_render_scale_2D(scale, viewer, min_scale, max_scale):
     """Test if a scale should be rendered.
@@ -729,35 +754,39 @@ def get_chunk_center(chunk_slice):
 def chunk_priority_3D(
     chunk_keys, corner_pixels, scale_factor, camera, center_weight=5
 ):
-    """
-    Return a priority map of chunk keys within the corner_pixels at a specific scale level.
+    """Return a priority map of chunk keys within the corner_pixels at a
+    specific scale level.
 
-    The function calculates the priority of each chunk based on its visual depth,
-    distance from the camera's center line, and distance from the center of the camera's view.
-    The priority is influenced by the provided `center_weight` parameter to emphasize
-    the loading of chunks near the center of the camera's view.
+    The function calculates the priority of each chunk based on its visual
+    depth, distance from the camera's center line, and distance from the center
+    of the camera's view. The priority is influenced by the provided
+    `center_weight` parameter to emphasize the loading of chunks near the
+    center of the camera's view.
 
     Parameters
     ----------
     chunk_keys : list of list of slices for each dimension
-        A list of list of slices representing the chunk keys for each dimension.
+        A list of list of slices representing the chunk keys for each dimension
     corner_pixels : tuple of np.ndarray
-        ND top left and bottom right coordinates for the current view in the format
-        (top_left_coords, bottom_right_coords), where each is a 1-D array of length N.
+        ND top left and bottom right coordinates for the current view in the
+        format (top_left_coords, bottom_right_coords), where each is a 1-D
+        array of length N.
     scale_factor : float
         The scale factor for this scale level.
     camera : object
-        A camera object containing necessary camera parameters such as zoom level.
+        A camera object containing necessary camera parameters such as zoom
+        level.
     center_weight : float, optional
-        A weight factor to control the influence of the distance from the center of the
-        camera's view in the priority calculation. Higher values give more weight
-        to the centrality of the chunk. Default is 5.
+        A weight factor to control the influence of the distance from the
+        center of the camera's view in the priority calculation. Higher values
+        give more weight to the centrality of the chunk. Default is 5.
 
     Returns
     -------
     priority_map : list of tuple
-        A priority map represented as a list of tuples, where each tuple contains the
-        priority value and the corresponding chunk key. The list is sorted by priority.
+        A priority map represented as a list of tuples, where each tuple
+        contains the priority value and the corresponding chunk key. The
+        list is sorted by priority.
 
     """
     mins = corner_pixels[0, :] / scale_factor
