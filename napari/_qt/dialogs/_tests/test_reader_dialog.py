@@ -159,7 +159,7 @@ def test_open_sample_data_shows_all_readers(
     with mock.patch(
         'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
     ) as mock_read:
-        app.commands.execute_command('tmp_plugin.tmp-sample')
+        app.commands.execute_command('tmp_plugin:tmp-sample')
 
     mock_read.assert_called_once_with(
         ['some-path/some-file.fake'],

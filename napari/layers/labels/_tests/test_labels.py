@@ -29,7 +29,7 @@ def test_random_labels():
     np.random.seed(0)
     data = np.random.randint(20, size=shape)
     layer = Labels(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.ndim == len(shape)
     np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
@@ -41,7 +41,7 @@ def test_all_zeros_labels():
     shape = (10, 15)
     data = np.zeros(shape, dtype=int)
     layer = Labels(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.ndim == len(shape)
     np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
@@ -53,7 +53,7 @@ def test_3D_labels():
     np.random.seed(0)
     data = np.random.randint(20, size=shape)
     layer = Labels(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.ndim == len(shape)
     np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
     assert layer._data_view.shape == shape[-2:]
@@ -102,7 +102,7 @@ def test_changing_labels():
     data_b = np.random.randint(20, size=shape_b)
     layer = Labels(data_a)
     layer.data = data_b
-    assert np.all(layer.data == data_b)
+    np.testing.assert_array_equal(layer.data, data_b)
     assert layer.ndim == len(shape_b)
     np.testing.assert_array_equal(
         layer.extent.data[1], [s - 1 for s in shape_b]
@@ -128,7 +128,7 @@ def test_changing_labels_dims():
     layer = Labels(data_a)
 
     layer.data = data_b
-    assert np.all(layer.data == data_b)
+    np.testing.assert_array_equal(layer.data, data_b)
     assert layer.ndim == len(shape_b)
     np.testing.assert_array_equal(
         layer.extent.data[1], [s - 1 for s in shape_b]

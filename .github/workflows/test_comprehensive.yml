@@ -23,7 +23,7 @@ jobs:
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Set up Python 3.11"
         uses: actions/setup-python@v4
         with:
@@ -75,7 +75,7 @@ jobs:
         with:
           access_token: ${{ github.token }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
@@ -142,7 +142,7 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: napari-from-github
 
@@ -172,7 +172,7 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: "3.9"
@@ -188,3 +188,28 @@ jobs:
           run: tox -e py39-linux-pyside2-examples
         env:
           PIP_CONSTRAINT: resources/constraints/constraints_py3.9_examples.txt
+
+  synchronize_bot_repository:
+    name: Synchronize bot repository
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.repository == 'napari/napari'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHA_TOKEN_BOT_REPO_WORKFLOW }}
+      - name: Synchronize bot repository
+        run: |
+          git remote add napari-bot https://github.com/napari-bot/napari.git
+          git fetch napari-bot
+          git push --force --set-upstream napari-bot main
+
+      - name: Report Failures
+        if: ${{ failure() }}
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.run_id }}
+          TITLE: '[bot-repo] bot repo update is failing'
+        with:
+          filename: .github/BOT_REPO_UPDATE_FAIL_TEMPLATE.md
+          update_existing: true
