@@ -43,7 +43,7 @@ def _show_plugin_err_reporter(window: Window):
 Q_PLUGINS_ACTIONS: List[Action] = [
     Action(
         id=CommandId.DLG_PLUGIN_INSTALL,
-        title=CommandId.DLG_PLUGIN_INSTALL.title,
+        title=CommandId.DLG_PLUGIN_INSTALL.command_title,
         menus=[
             {
                 'id': MenuId.MENUBAR_PLUGINS,
@@ -56,7 +56,7 @@ Q_PLUGINS_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.DLG_PLUGIN_ERR,
-        title=CommandId.DLG_PLUGIN_ERR.title,
+        title=CommandId.DLG_PLUGIN_ERR.command_title,
         menus=[
             {
                 'id': MenuId.MENUBAR_PLUGINS,
