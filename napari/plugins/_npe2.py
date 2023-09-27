@@ -499,7 +499,7 @@ def _get_samples_submenu_actions(
         action: Action = Action(
             id=f'{mf.name}:{sample.key}',
             title=title,
-            menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}}],
+            menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
             callback=_add_sample,
         )
         sample_actions.append(action)
