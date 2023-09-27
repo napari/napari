@@ -28,31 +28,31 @@ HELP_URLS = {
 HELP_ACTIONS: List[Action] = [
     Action(
         id=CommandId.NAPARI_GETTING_STARTED,
-        title=CommandId.NAPARI_GETTING_STARTED.title,
+        title=CommandId.NAPARI_GETTING_STARTED.command_title,
         callback=lambda: webbrowser.open(HELP_URLS['getting_started']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id=CommandId.NAPARI_TUTORIALS,
-        title=CommandId.NAPARI_TUTORIALS.title,
+        title=CommandId.NAPARI_TUTORIALS.command_title,
         callback=lambda: webbrowser.open(HELP_URLS['tutorials']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id=CommandId.NAPARI_LAYERS_GUIDE,
-        title=CommandId.NAPARI_LAYERS_GUIDE.title,
+        title=CommandId.NAPARI_LAYERS_GUIDE.command_title,
         callback=lambda: webbrowser.open(HELP_URLS['layers_guide']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id=CommandId.NAPARI_EXAMPLES,
-        title=CommandId.NAPARI_EXAMPLES.title,
+        title=CommandId.NAPARI_EXAMPLES.command_title,
         callback=lambda: webbrowser.open(HELP_URLS['examples_gallery']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id=CommandId.NAPARI_RELEASE_NOTES,
-        title=CommandId.NAPARI_RELEASE_NOTES.title,
+        title=CommandId.NAPARI_RELEASE_NOTES.command_title,
         callback=lambda: webbrowser.open(
             HELP_URLS['release_notes'],
         ),
@@ -66,7 +66,7 @@ HELP_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.NAPARI_GITHUB_ISSUE,
-        title=CommandId.NAPARI_GITHUB_ISSUE.title,
+        title=CommandId.NAPARI_GITHUB_ISSUE.command_title,
         callback=lambda: webbrowser.open(
             HELP_URLS['github_issue'],
         ),
@@ -80,7 +80,7 @@ HELP_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.NAPARI_HOMEPAGE,
-        title=CommandId.NAPARI_HOMEPAGE.title,
+        title=CommandId.NAPARI_HOMEPAGE.command_title,
         callback=lambda: webbrowser.open(HELP_URLS['homepage']),
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
