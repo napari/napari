@@ -12,6 +12,7 @@ def build_qmodel_menu(
     parent: Optional['QWidget'] = None,
 ) -> QModelMenu:
     """Build a QModelMenu from the napari app model
+
     Parameters
     ----------
     menu_id : str
