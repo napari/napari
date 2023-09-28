@@ -216,3 +216,24 @@ jobs:
           run: tox -e py39-linux-pyside2-examples
         env:
           PIP_CONSTRAINT: resources/constraints/constraints_py3.9_examples.txt
+
+
+  test_benchmarks:
+    name: test benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache-dependency-path: napari-from-github/setup.cfg
+
+      - name: install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install asv[virtualenv] 
+
+      - name: Run benchmarks
+        run: |
+          asv run --show-stderr --quick  --attribute timeout=300

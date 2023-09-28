@@ -4,6 +4,7 @@
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import numpy as np
 
+from napari.components import Dims
 from napari.layers import Points
 
 
@@ -100,11 +101,11 @@ class PointsSlicingSuite:
         if flatten_slice_axis:
             self.data[:, 0] = np.round(self.data[:, 0])
         self.layer = Points(self.data)
-        self.slice = np.s_[249, :, :]
+        self.dims = Dims(ndim=3, point=(249, 0, 0))
 
     def time_slice_points(self, flatten_slice_axis):
         """Time to take one slice of points"""
-        self.layer._slice_data(self.slice)
+        self.layer._make_slice_request(self.dims)()
 
 
 class PointsToMaskSuite:

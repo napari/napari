@@ -124,6 +124,7 @@ class Labels3DSuite:
         np.random.seed(0)
         self.data = np.random.randint(20, size=(n, n, n))
         self.layer = Labels(self.data)
+        self.layer._slice_dims((0, 0, 0), 3, (0, 1, 2))
 
     def time_create_layer(self, n):
         """Time to create layer."""
