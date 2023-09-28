@@ -45,9 +45,9 @@ class AppearanceSettings(EventedModel):
             values = values.dict()
         values = cast(dict, values)
 
-        # Check if a font_size change is needed:
-        # If the setting has already being changed and doesn't correspond to
-        # the default value of the current theme no change is done, otherwise
+        # Check if a font_size change is needed when changing theme:
+        # If the font_size setting doesn't correspond to the default value
+        # of the current theme no change is done, otherwise
         # the font_size value is set to the new selected theme font size value
         if "theme" in values and values["theme"] != self.theme:
             current_theme = get_theme(self.theme)
@@ -57,11 +57,17 @@ class AppearanceSettings(EventedModel):
         super().update(values, recurse)
 
     def __setattr__(self, key, value):
+        # Check if a font_size change is needed when changing theme:
+        # If the font_size setting doesn't correspond to the default value
+        # of the current theme no change is done, otherwise
+        # the font_size value is set to the new selected theme font size value
         if key == "theme" and value != self.theme:
             with ComparisonDelayer(self):
                 if value in available_themes():
                     new_theme = get_theme(value)
-                    self.font_size = int(new_theme.font_size[:-2])
+                    current_theme = get_theme(self.theme)
+                    if self.font_size == int(current_theme.font_size[:-2]):
+                        self.font_size = int(new_theme.font_size[:-2])
                 super().__setattr__(key, value)
         else:
             super().__setattr__(key, value)

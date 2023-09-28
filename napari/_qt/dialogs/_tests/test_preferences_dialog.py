@@ -9,8 +9,8 @@ from napari._qt.dialogs.preferences_dialog import (
     QMessageBox,
 )
 from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
+    FontSizeSchemaWidget,
     HorizontalObjectSchemaWidget,
-    SpinSchemaWidget,
 )
 from napari.settings import NapariSettings, get_settings
 
@@ -47,15 +47,25 @@ def test_font_size_widget(qtbot, pref):
     )
     def_font_size = 12 if sys.platform == 'darwin' else 9
 
-    assert isinstance(font_size_widget, SpinSchemaWidget)
+    # check custom widget definition usage for the font size setting
+    # and default values
+    assert isinstance(font_size_widget, FontSizeSchemaWidget)
     assert get_settings().appearance.font_size == def_font_size
     assert font_size_widget.state == def_font_size
 
-    font_size_widget.state = 14
-    assert get_settings().appearance.font_size == 14
+    # check setting a new font size value via widget
+    new_font_size = 14
+    font_size_widget.state = new_font_size
+    assert get_settings().appearance.font_size == new_font_size
 
+    # check a theme change keeps setted font size value
     assert get_settings().appearance.theme == 'light'
     get_settings().appearance.theme = 'dark'
+    assert get_settings().appearance.font_size == new_font_size
+    assert font_size_widget.state == new_font_size
+
+    # check reset button works
+    font_size_widget._reset_button.click()
     assert get_settings().appearance.font_size == def_font_size
     assert font_size_widget.state == def_font_size
 
