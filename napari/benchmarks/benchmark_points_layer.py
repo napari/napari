@@ -6,9 +6,10 @@ import os
 
 import numpy as np
 
-from napari.benchmarks.utils import Skiper
 from napari.components import Dims
 from napari.layers import Points
+
+from .utils import Skiper
 
 
 class Points2DSuite:

@@ -2,8 +2,9 @@ import os
 
 import numpy as np
 
-from napari.benchmarks.utils import Skiper
 from napari.layers import Tracks
+
+from .utils import Skiper
 
 
 class TracksSuite:

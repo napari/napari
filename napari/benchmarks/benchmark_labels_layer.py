@@ -6,8 +6,9 @@ import os
 
 import numpy as np
 
-from napari.benchmarks.utils import Skiper
 from napari.layers import Labels
+
+from .utils import Skiper
 
 
 class Labels2DSuite:

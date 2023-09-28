@@ -10,8 +10,9 @@ import zarr
 from qtpy.QtWidgets import QApplication
 
 import napari
-from napari.benchmarks.utils import Skiper
 from napari.layers import Image
+
+from .utils import Skiper
 
 SAMPLE_PARAMS = {
     'skin_data': {

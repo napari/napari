@@ -7,8 +7,9 @@ import os
 import numpy as np
 import pandas as pd
 
-from napari.benchmarks.utils import Skiper
 from napari.layers.utils.text_manager import TextManager
+
+from .utils import Skiper
 
 
 class TextManagerSuite:
