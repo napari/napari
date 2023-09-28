@@ -229,12 +229,18 @@ jobs:
           python-version: 3.11
           cache-dependency-path: napari-from-github/setup.cfg
 
+      - uses: tlambert03/setup-qt-libs@v1
+
       - name: install dependencies
         run: |
           pip install --upgrade pip
           pip install asv[virtualenv] 
 
       - name: Run benchmarks
-        run: |
-          asv machine --yes
-          asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
+        uses: aganders3/headless-gui@v1
+        with:
+          run: |
+            asv machine --yes
+            asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
+        env:
+          PR: 1

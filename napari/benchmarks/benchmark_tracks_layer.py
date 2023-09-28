@@ -1,11 +1,17 @@
+import os
+
 import numpy as np
 
+from napari.benchmarks.utils import Skiper
 from napari.layers import Tracks
 
 
 class TracksSuite:
     param_names = ['size', 'n_tracks']
     params = [(5 * np.power(10, np.arange(7))).tolist(), [1, 10, 100, 1000]]
+
+    if "PR" in os.environ:
+        skip_params = Skiper(lambda x: x[0] > 500 or x[1] > 10)
 
     def setup(self, size, n_tracks):
         """

@@ -2,7 +2,7 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
-
+import os
 import time
 
 import numpy as np
@@ -10,6 +10,7 @@ import zarr
 from qtpy.QtWidgets import QApplication
 
 import napari
+from napari.benchmarks.utils import Skiper
 from napari.layers import Image
 
 SAMPLE_PARAMS = {
@@ -164,6 +165,11 @@ class QtViewerAsyncPointsAndImage2DSuite:
     latency = [0.05 * i for i in range(3)]
     params = (n_points, latency, chunksize)
     timeout = 600
+
+    if "PR" in os.environ:
+        skip_params = Skiper(
+            lambda x: x[0] > 2**14 or x[2] > 512 or x[1] > 0.05
+        )
 
     def setup(self, n_points, latency, chunksize):
         store = SlowMemoryStore(load_delay=latency)
