@@ -236,4 +236,5 @@ jobs:
 
       - name: Run benchmarks
         run: |
+          asv machine --yes
           asv run --show-stderr --quick  --attribute timeout=300 ${GITHUB_HEAD_REF}^!
