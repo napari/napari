@@ -44,7 +44,7 @@ class Image2DSuite:
         """Time to refresh view."""
         self.layer.refresh()
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
         return self.layer
 
@@ -91,7 +91,7 @@ class Image3DSuite:
         """Time to refresh view."""
         self.layer.refresh()
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
         return Image(self.data)
 

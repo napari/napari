@@ -45,7 +45,7 @@ class Vectors2DSuite:
         """Time to update length."""
         self.layer.length = 2
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
         return self.layer
 
@@ -92,7 +92,7 @@ class Vectors3DSuite:
         """Time to update length."""
         self.layer.length = 2
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
         return self.layer
 

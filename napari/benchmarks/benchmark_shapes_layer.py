@@ -44,7 +44,7 @@ class Shapes2DSuite:
         """Time to get current value."""
         self.layer.get_value((0,) * 2)
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
         return self.layer
 
@@ -83,7 +83,7 @@ class Shapes3DSuite:
         """Time to get current value."""
         self.layer.get_value((0,) * 3)
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
         return self.layer
 

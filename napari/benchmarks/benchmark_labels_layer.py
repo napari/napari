@@ -56,7 +56,7 @@ class Labels2DSuite:
             self.layer.selected_label,
         )
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
         return self.layer
 
@@ -162,7 +162,7 @@ class Labels3DSuite:
             self.layer.selected_label,
         )
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
         return self.layer
 
