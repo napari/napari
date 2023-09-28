@@ -63,11 +63,18 @@ class AppearanceSettings(EventedModel):
         # the font_size value is set to the new selected theme font size value
         if key == "theme" and value != self.theme:
             with ComparisonDelayer(self):
+                new_theme = None
+                current_theme = None
                 if value in available_themes():
                     new_theme = get_theme(value)
+                if self.theme in available_themes():
                     current_theme = get_theme(self.theme)
-                    if self.font_size == int(current_theme.font_size[:-2]):
-                        self.font_size = int(new_theme.font_size[:-2])
+                if (
+                    new_theme
+                    and current_theme
+                    and self.font_size == int(current_theme.font_size[:-2])
+                ):
+                    self.font_size = int(new_theme.font_size[:-2])
                 super().__setattr__(key, value)
         else:
             super().__setattr__(key, value)
