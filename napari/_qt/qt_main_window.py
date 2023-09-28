@@ -1348,20 +1348,13 @@ class Window:
     def _update_theme_font_size(self, event=None):
         settings = get_settings()
         font_size = event.value if event else settings.appearance.font_size
-        theme_name = settings.appearance.theme
-        actual_theme_name = theme_name
-        if theme_name == "system":
-            # system isn't a theme, so get the name
-            actual_theme_name = get_system_theme()
-        self._qt_window.setStyleSheet(
-            get_stylesheet(
-                actual_theme_name,
-                override_variables={"font_size": f"{font_size}pt"},
-            )
-        )
+        extra_variables = {"font_size": f"{font_size}pt"}
+        self._update_theme(extra_variables=extra_variables)
 
-    def _update_theme(self, event=None):
+    def _update_theme(self, event=None, extra_variables=None):
         """Update widget color theme."""
+        if extra_variables is None:
+            extra_variables = {}
         settings = get_settings()
         with contextlib.suppress(AttributeError, RuntimeError):
             value = event.value if event else settings.appearance.theme
@@ -1370,8 +1363,17 @@ class Window:
             if value == "system":
                 # system isn't a theme, so get the name
                 actual_theme_name = get_system_theme()
-            # set the style sheet with the theme name
-            self._qt_window.setStyleSheet(get_stylesheet(actual_theme_name))
+            # check `font_size` value is always passed when updating style
+            if "font_size" not in extra_variables:
+                extra_variables.update(
+                    {"font_size": f"{settings.appearance.font_size}pt"}
+                )
+            # set the style sheet with the theme name and extra_variables
+            self._qt_window.setStyleSheet(
+                get_stylesheet(
+                    actual_theme_name, extra_variables=extra_variables
+                )
+            )
 
     def _status_changed(self, event):
         """Update status bar.
