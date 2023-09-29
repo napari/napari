@@ -66,6 +66,17 @@ class LayerFormLayout(QFormLayout):
         )
 
 
+class QtLayerName(QElidingLineEdit):
+    """
+    Customization of the QElidingLineEdit class to implement a select all
+    text on double click.
+    """
+
+    # ---- Overridden Qt methods
+    def mouseDoubleClickEvent(self, event):
+        self.selectAll()
+
+
 class QtCollapsibleLayerControlsSection(QCollapsible):
     """
     Customization of the QCollapsible class to set default icons and style.
@@ -349,14 +360,14 @@ class NewQtLayerControls(
         icon_label.setProperty('layer_type_icon_label', True)
         icon_label.setObjectName(f'{self._layer._basename()}')
 
-        self._name_label = QElidingLineEdit(self._layer.name)
-        self._name_label.setToolTip(self._layer.name)
-        self._name_label.setObjectName('layer_name')
-        self._name_label.textChanged.connect(self._on_widget_name_change)
-        self._name_label.editingFinished.connect(self.setFocus)
+        self._name_edit = QtLayerName(self._layer.name)
+        self._name_edit.setToolTip(self._layer.name)
+        self._name_edit.setObjectName('layer_name')
+        self._name_edit.textChanged.connect(self._on_widget_name_change)
+        self._name_edit.editingFinished.connect(self.setFocus)
 
         name_layout.addWidget(icon_label)
-        name_layout.addWidget(self._name_label)
+        name_layout.addWidget(self._name_edit)
         name_layout.addStretch(1)
 
         # Setup buttons section
@@ -621,14 +632,16 @@ class NewQtLayerControls(
 
         """
         with self._layer.events.blocker(self._on_name_change):
-            new_name = self._name_label.text()
+            new_name = self._name_edit.text()
             self._layer.name = new_name
-            self._name_label.setToolTip(new_name)
+            self._name_edit.setToolTip(new_name)
 
     def _on_name_change(self) -> None:
-        """Receive layer model name change event and update name label and tooltip."""
-        self._name_label.setText(self._layer.name)
-        self._name_label.setToolTip(self._layer.name)
+        """
+        Receive layer model name change event to update name and tooltip.
+        """
+        self._name_edit.setText(self._layer.name)
+        self._name_edit.setToolTip(self._layer.name)
 
     def _on_ndisplay_changed(self) -> None:
         """Respond to a change to the number of dimensions displayed in the viewer.

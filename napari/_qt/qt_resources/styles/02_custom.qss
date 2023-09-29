@@ -306,7 +306,7 @@ QtLayerControls > QElidingLineEdit#layer_name {
 }
 
 QtLayerControls > QElidingLineEdit#layer_name:focus {
-  background-color: {{ darken(background, 20) }};
+  background-color: {{ canvas }};
   selection-background-color: {{ lighten(current, 20) }};
   min-width: 220px;
   max-width: 220px;
@@ -454,9 +454,9 @@ QtCollapsibleLayerControlsSection[emphasized="true"] QLineEdit:focus {
 }
 
 QtCollapsibleLayerControlsSection[emphasized="true"] QtWrappedLabel {
-  max-width: 65px; /* TODO: Check value. Design sets it at 60px but using that value makes the text wrap*/
-  min-width: 65px;
-  max-height: 25px;
+  max-width: 64px; /* TODO: Check values. Design sets it at 60px but using that value makes the text wrap.*/
+  min-width: 64px; /*       Seems like depending on screen scale/resolution text could get wrap*/
+  min-height: 20px;
   padding: 0px;
   margin: 0px;
 }
