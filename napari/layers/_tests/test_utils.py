@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from numpy.testing import assert_array_equal
 from skimage.util import img_as_ubyte
 
 from napari.layers.utils.layer_utils import convert_to_uint8
@@ -11,9 +12,11 @@ def test_uint(dtype):
     data = np.arange(50, dtype=dtype)
     data_scaled = data * 256 ** (data.dtype.itemsize - 1)
     assert convert_to_uint8(data_scaled).dtype == np.uint8
-    assert np.all(data == convert_to_uint8(data_scaled))
-    assert np.all(img_as_ubyte(data) == convert_to_uint8(data))
-    assert np.all(img_as_ubyte(data_scaled) == convert_to_uint8(data_scaled))
+    assert_array_equal(data, convert_to_uint8(data_scaled))
+    assert_array_equal(img_as_ubyte(data), convert_to_uint8(data))
+    assert_array_equal(
+        img_as_ubyte(data_scaled), convert_to_uint8(data_scaled)
+    )
 
 
 @pytest.mark.filterwarnings("ignore:Downcasting int:UserWarning:skimage")
@@ -23,12 +26,14 @@ def test_int(dtype):
     data_scaled = data * 256 ** (data.dtype.itemsize - 1)
     assert convert_to_uint8(data).dtype == np.uint8
     assert convert_to_uint8(data_scaled).dtype == np.uint8
-    assert np.all(img_as_ubyte(data) == convert_to_uint8(data))
-    assert np.all(2 * data == convert_to_uint8(data_scaled))
-    assert np.all(img_as_ubyte(data_scaled) == convert_to_uint8(data_scaled))
-    assert np.all(img_as_ubyte(data - 10) == convert_to_uint8(data - 10))
-    assert np.all(
-        img_as_ubyte(data_scaled - 10) == convert_to_uint8(data_scaled - 10)
+    assert_array_equal(img_as_ubyte(data), convert_to_uint8(data))
+    assert_array_equal(2 * data, convert_to_uint8(data_scaled))
+    assert_array_equal(
+        img_as_ubyte(data_scaled), convert_to_uint8(data_scaled)
+    )
+    assert_array_equal(img_as_ubyte(data - 10), convert_to_uint8(data - 10))
+    assert_array_equal(
+        img_as_ubyte(data_scaled - 10), convert_to_uint8(data_scaled - 10)
     )
 
 
@@ -37,12 +42,12 @@ def test_float(dtype):
     data = np.linspace(0, 0.5, 128, dtype=dtype, endpoint=False)
     res = np.arange(128, dtype=np.uint8)
     assert convert_to_uint8(data).dtype == np.uint8
-    assert np.all(convert_to_uint8(data) == res)
+    assert_array_equal(convert_to_uint8(data), res)
     data = np.linspace(0, 1, 256, dtype=dtype)
     res = np.arange(256, dtype=np.uint8)
-    assert np.all(convert_to_uint8(data) == res)
-    assert np.all(img_as_ubyte(data) == convert_to_uint8(data))
-    assert np.all(img_as_ubyte(data - 0.5) == convert_to_uint8(data - 0.5))
+    assert_array_equal(convert_to_uint8(data), res)
+    assert_array_equal(img_as_ubyte(data), convert_to_uint8(data))
+    assert_array_equal(img_as_ubyte(data - 0.5), convert_to_uint8(data - 0.5))
 
 
 def test_bool():
@@ -50,4 +55,4 @@ def test_bool():
     data[2:-2, 2:-2] = 1
     converted = convert_to_uint8(data)
     assert converted.dtype == np.uint8
-    assert np.all(img_as_ubyte(data) == converted)
+    assert_array_equal(img_as_ubyte(data), converted)
