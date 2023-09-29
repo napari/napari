@@ -8,14 +8,14 @@ documentation.
 CommandId values should be namespaced, e.g. 'napari:layer:something' for a command
 that operates on layers.
 """
-from enum import Enum
 from typing import NamedTuple, Optional
 
+from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
 
 
 # fmt: off
-class CommandId(str, Enum):
+class CommandId(StrEnum):
     """Id representing a napari command."""
     # File menubar
     DLG_OPEN_FILES = 'napari:window:file:open_files_dialog'
@@ -95,7 +95,7 @@ class CommandId(str, Enum):
     LAYER_PROJECT_MEDIAN = 'napari:layer:project_median'
 
     @property
-    def title(self) -> str:  # type: ignore[override]
+    def command_title(self) -> str:
         return _COMMAND_INFO[self].title
 
     @property

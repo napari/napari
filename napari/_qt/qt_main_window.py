@@ -53,6 +53,7 @@ from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
+from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
@@ -1546,10 +1547,8 @@ class Window:
             self._qt_window.close()
             del self._qt_window
 
-    def _open_preferences_dialog(self):
+    def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""
-        from napari._qt.dialogs.preferences_dialog import PreferencesDialog
-
         if self._pref_dialog is None:
             win = PreferencesDialog(parent=self._qt_window)
             self._pref_dialog = win
@@ -1569,6 +1568,8 @@ class Window:
             win.show()
         else:
             self._pref_dialog.raise_()
+
+        return self._pref_dialog
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
@@ -1590,6 +1591,7 @@ def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
     kwargs = {}
     try:
         sig = inspect.signature(wdg_cls.__init__)
+    # Inspection can fail when adding to bundle as it thinks widget is a builtin
     except ValueError:
         pass
     else:
