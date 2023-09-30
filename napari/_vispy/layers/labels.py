@@ -227,15 +227,22 @@ def hash2d_set(
 def _get_shape_from_keys(
     keys: np.ndarray, first_dim_index: int, second_dim_index: int
 ) -> Optional[Tuple[int, int]]:
-    """
-    Get the smallest hashmap size without collisions, if any.
-    The function uses precomputed prime numbers from PRIME_NUM_TABLE.
-    For index, it gets a list of prime numbers close to 2**(index + START_TWO_POWER).
-    It iterates over all combinations of prime numbers from the lists and
-    checks if there are no collisions for the given keys.
-    If yes, it returns the shape of the hashmap.
+    """Get the smallest hashmap size without collisions, if any.
 
-    For example of collisions, see test_collide_keys and test_collide_keys2.
+    This function uses precomputed prime numbers from PRIME_NUM_TABLE.
+
+    For each index, it gets a list of prime numbers close to
+    ``2**(index + START_TWO_POWER)`` (where ``START_TWO_POWER=5``), that is,
+    the smallest table is close to ``32 * 32``.
+
+    The function then iterates over all combinations of prime numbers from the
+    lists and checks for a combination that has no collisions for the
+    given keys, returning that combination.
+
+    If no combination can be found, returns None.
+
+    Although keys that collide for all table combinations are rare, they are
+    possible: see ``test_collide_keys`` and ``test_collide_keys2``.
 
     Parameters
     ----------
@@ -246,6 +253,11 @@ def _get_shape_from_keys(
         index for first dimension of PRIME_NUM_TABLE
     second_dim_index: int
         index for second dimension of PRIME_NUM_TABLE
+
+    Returns
+    shp : 2-tuple of int, optional
+        If a table shape can be found that has no collisions for the given
+        keys, return that shape. Otherwise, return None.
     """
     for fst_size, snd_size in product(
         PRIME_NUM_TABLE[first_dim_index],
