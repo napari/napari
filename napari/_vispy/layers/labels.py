@@ -369,12 +369,12 @@ def build_textures_from_dict(
 
     Returns
     -------
-        keys: np.ndarray
-            Texture of keys for the hash table
-        values: np.ndarray
-            Texture of values for the hash table
-        collision: bool
-            True if there are collisions in the hash table
+    keys: np.ndarray
+        Texture of keys for the hash table
+    values: np.ndarray
+        Texture of values for the hash table
+    collision: bool
+        True if there are collisions in the hash table
     """
     if use_selection:
         keys = np.full((1, 1), selection, dtype=vispy_texture_dtype)
