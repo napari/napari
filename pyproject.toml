@@ -353,6 +353,5 @@ module = [
     'napari.utils.stubgen',
     'napari.utils.theme',
     'napari.utils.transforms.transforms',
-    'napari.utils.tree.group',
 ]
 ignore_errors = true

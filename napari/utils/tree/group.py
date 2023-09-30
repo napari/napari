@@ -1,6 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generator, Iterable, List, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Generator,
+    Iterable,
+    List,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from napari.utils.events.containers._selectable_list import (
     SelectableNestableEventedList,
@@ -44,7 +52,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
     ) -> None:
         Node.__init__(self, name=name)
         SelectableNestableEventedList.__init__(
-            self,
+            self,  # type: ignore [arg-type]
             data=children,
             basetype=basetype,
             lookup={str: lambda e: e.name},
@@ -70,7 +78,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         new._list.extend(iterable)
         return new
 
-    def __getitem__(self, key) -> Union[NodeType, Group[NodeType]]:
+    def __getitem__(self, key) -> Union[NodeType, Group[NodeType]]:  # type: ignore [override]
         return super().__getitem__(key)
 
     def __delitem__(self, key: MaybeNestedIndex):
@@ -78,9 +86,9 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         if isinstance(key, (int, tuple)):
             self[key].parent = None  # type: ignore
         else:
-            for item in self[key]:
+            for item in self[key]:  # type: ignore [union-attr]
                 item.parent = None
-        super().__delitem__(key)
+        super().__delitem__(key)  # type: ignore [arg-type]
 
     def insert(self, index: int, value):
         """Insert ``value`` as child of this group at position ``index``."""
@@ -101,8 +109,8 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         """Recursive all nodes and leaves of the Group tree."""
         obj = self.root() if with_ancestors else self
         if not leaves_only:
-            yield obj
-        for child in obj:
+            yield cast(NodeType, obj)
+        for child in obj:  # type: ignore [attr-defined]
             yield from child.traverse(leaves_only)
 
     def _render(self) -> List[str]:
