@@ -286,29 +286,35 @@ def _get_shape_from_dict(
     factors to minimize the chance of collisions and trade a bit of GPU
     memory for speed.
     """
-    size = len(color_dict) / MAX_LOAD_FACTOR
-    size_sqrt = sqrt(size)
-    size_log2 = log2(size_sqrt)
-    fst_dim = max(int(ceil(size_log2)) - START_TWO_POWER, 0)
-    snd_dim = max(int(round(size_log2, 0)) - START_TWO_POWER, 0)
     keys = np.array([x for x in color_dict if x is not None], dtype=np.int64)
 
-    try:
-        res = _get_shape_from_keys(keys, fst_dim, snd_dim)
-        if res is None:
-            res = _get_shape_from_keys(keys, fst_dim, snd_dim + 1)
-        if res is None:
-            # To see a set of keys that cause collision,
-            # and lands in this branch, see test_collide_keys2.
-            return PRIME_NUM_TABLE[fst_dim][0], PRIME_NUM_TABLE[snd_dim][0]
-    except IndexError:
-        # Index error means that we have too many labels to fit in 2**16.
-        if (max_size := PRIME_NUM_TABLE[-1][0] ** 2) < len(color_dict):
-            raise OverflowError(
-                f'Too many labels. We support maximally {max_size} labels'
-            ) from None
-        return PRIME_NUM_TABLE[-1][0], PRIME_NUM_TABLE[-1][0]
-    return res
+    size = len(keys) / MAX_LOAD_FACTOR
+    size_sqrt = sqrt(size)
+    size_log2 = log2(size_sqrt)
+    max_idx = len(PRIME_NUM_TABLE) - 1
+    max_size = PRIME_NUM_TABLE[max_idx][0] ** 2
+    fst_dim = min(max(int(ceil(size_log2)) - START_TWO_POWER, 0), max_idx)
+    snd_dim = min(max(int(round(size_log2, 0)) - START_TWO_POWER, 0), max_idx)
+
+    if len(keys) > max_size:
+        raise MemoryError(
+            f'Too many labels: napari supports at most {max_size} labels, '
+            f'got {len(keys)}.'
+        )
+
+    shp = _get_shape_from_keys(keys, fst_dim, snd_dim)
+    if shp is None and snd_dim < max_idx:
+        # if we still have room to grow, try the next size up to get a
+        # collision-free table
+        shp = _get_shape_from_keys(keys, fst_dim, snd_dim + 1)
+    if shp is None:
+        # at this point, if there's still collisions, we give up and return
+        # the largest possible table given these indices and the target load
+        # factor.
+        # (To see a set of keys that cause collision,
+        # and land on this branch, see test_collide_keys2.)
+        shp = PRIME_NUM_TABLE[fst_dim][0], PRIME_NUM_TABLE[snd_dim][0]
+    return shp
 
 
 def get_shape_from_dict(color_dict):
@@ -425,7 +431,7 @@ def build_textures_from_dict(
         return keys, values, False
 
     if len(color_dict) > 2**31 - 2:
-        raise OverflowError(
+        raise MemoryError(
             f'Too many labels ({len(color_dict)}). Maximum supported number of labels is 2^31-2'
         )
 
@@ -433,7 +439,7 @@ def build_textures_from_dict(
         shape = get_shape_from_dict(color_dict)
 
     if len(color_dict) > shape[0] * shape[1]:
-        raise OverflowError(
+        raise MemoryError(
             f'Too many labels ({len(color_dict)}). Maximum supported number of labels for the given shape is {shape[0] * shape[1]}'
         )
 

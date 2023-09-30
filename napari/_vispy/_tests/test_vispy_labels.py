@@ -42,14 +42,14 @@ def test_build_textures_from_dict():
 
 
 def test_build_textures_from_dict_too_many_labels(monkeypatch):
-    with pytest.raises(OverflowError):
+    with pytest.raises(MemoryError):
         build_textures_from_dict(
             {i: (i, i, i, i) for i in range(1001)}, shape=(10, 10)
         )
     monkeypatch.setattr(
         "napari._vispy.layers.labels.PRIME_NUM_TABLE", [[61], [127]]
     )
-    with pytest.raises(OverflowError):
+    with pytest.raises(MemoryError):
         build_textures_from_dict(
             {i: (i, i, i, i) for i in range((251**2) // 2)},
         )
