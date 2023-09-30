@@ -275,18 +275,16 @@ def _get_shape_from_keys(
 def _get_shape_from_dict(
     color_dict: Dict[float, Tuple[float, float, float, float]]
 ) -> Tuple[int, int]:
-    """
-    Get the shape of the 2D hashmap from the number of labels.
-    The hardcoded shapes use prime numbers designed to avoid collisions.
-    As the current collision resolution is non-linear, we decide to
-    use hash table of size around four times bigger than the number
-    of labels, instead of the classical 1.3 times bigger, to
-    minimize the chance of collision in the shader at the cost
-    of some video memory.
+    """Compute the shape of a 2D hashmap based on the keys in `color_dict`.
 
-    We use PRIME_NUM_TABLE to get precomputed prime numbers.
-    We decided to use primes close to powers of two, as they
-    allow for keep fill of hash table between 0.125 to 0.25
+    This function finds indices for the first and second dimensions of a
+    table in PRIME_NUM_TABLE based on a target load factor of 0.125-0.25,
+    then calls `_get_shape_from_keys` based on those indices.
+
+    This is quite a low load-factor, but, ultimately, the hash table
+    textures are tiny compared to most datasets, so we choose these
+    factors to minimize the chance of collisions and trade a bit of GPU
+    memory for speed.
     """
     size = len(color_dict) / MAX_LOAD_FACTOR
     size_sqrt = sqrt(size)
