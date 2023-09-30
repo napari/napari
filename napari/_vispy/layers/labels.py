@@ -462,11 +462,7 @@ class VispyLabelsLayer(VispyImageLayer):
             color_dict = (
                 self.layer.color
             )  # TODO: should probably account for non-given labels
-            (
-                key_texture,
-                val_texture,
-                collision,
-            ) = build_textures_from_dict(
+            key_texture, val_texture, collision = build_textures_from_dict(
                 color_dict,
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
