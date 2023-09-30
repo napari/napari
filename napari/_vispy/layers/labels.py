@@ -1,4 +1,3 @@
-from collections import defaultdict
 from itertools import product
 from math import ceil, isnan, log2, sqrt
 from typing import Dict, Optional, Tuple, Union
@@ -333,53 +332,6 @@ def get_shape_from_dict(color_dict):
             f' size is {MAX_TEXTURE_SIZE}x{MAX_TEXTURE_SIZE}'
         )
     return shape
-
-
-def _build_collision_table(
-    dkt: Dict[vispy_texture_dtype, ColorTuple]
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Build a secondary array for resolving hash collision.
-    Using a separate array allows reducing the number of collisions in the main table as
-    a collided key cannot generate new collision.
-    """
-    if not dkt:
-        return np.zeros((1, 1), dtype=vispy_texture_dtype), np.zeros(
-            (1, 1, 4), dtype=vispy_texture_dtype
-        )
-
-    table_size_index = max(int(ceil(log2(len(dkt)))) - START_TWO_POWER, 0)
-    collision_count = len(dkt) + 10
-    selected_table_size = PRIME_NUM_TABLE[table_size_index][0]
-    keys = np.array(list(dkt.keys()), dtype=vispy_texture_dtype)
-    for table_size in PRIME_NUM_TABLE[table_size_index]:
-        collision_count_ = len(dkt) - len(set(keys % table_size))
-        if collision_count_ < collision_count:
-            collision_count = collision_count_
-            selected_table_size = table_size
-    mapping_dict = defaultdict(list)
-
-    for key, value in dkt.items():
-        mapping_dict[vispy_texture_dtype(key % selected_table_size)].append(
-            (key, value)
-        )
-
-    second_dim = max(len(x) for x in mapping_dict.values())
-
-    keys_array = np.zeros(
-        (selected_table_size, second_dim), dtype=vispy_texture_dtype
-    )
-    values_array = np.zeros(
-        (selected_table_size, second_dim, 4), dtype=vispy_texture_dtype
-    )
-    for key, value_li in mapping_dict.items():
-        if isnan(key):
-            continue
-        for i, (key_, value_) in enumerate(value_li):
-            keys_array[int(key), i] = key_
-            values_array[int(key), i] = value_
-
-    return keys_array, values_array
 
 
 def build_textures_from_dict(
