@@ -402,6 +402,8 @@ def build_textures_from_dict(
     for key, value in color_dict.items():
         key_ = vispy_texture_dtype(key)
         if key_ in visited:
+            # input int keys are unique but can map to the same float.
+            # if so, we ignore all but the first appearance.
             continue
         visited.add(key_)
         collision |= hash2d_set(key_, value, keys, values)
