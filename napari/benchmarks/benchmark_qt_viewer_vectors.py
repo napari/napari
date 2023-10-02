@@ -2,6 +2,8 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
+import os
+
 import numpy as np
 from qtpy.QtWidgets import QApplication
 
@@ -12,6 +14,9 @@ class QtViewerViewVectorSuite:
     """Benchmarks for viewing vectors in the viewer."""
 
     params = [2**i for i in range(4, 18, 2)]
+
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(8, 18, 2)]
 
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])

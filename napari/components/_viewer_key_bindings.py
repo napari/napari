@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
@@ -8,7 +8,6 @@ from napari.utils.theme import available_themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari._qt.dialogs.preferences_dialog import PreferencesDialog
     from napari.viewer import Viewer
 
 
