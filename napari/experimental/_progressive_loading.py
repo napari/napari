@@ -358,6 +358,9 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
     if "worker" in root_layer.metadata:
         worker = root_layer.metadata["worker"]
 
+    if "MultiScaleVirtualData" in root_layer.metadata:
+        data = root_layer.metadata["MultiScaleVirtualData"]
+
     # TODO global worker usage is not viable for real implementation
     # Terminate existing multiscale render pass
     if worker:
@@ -536,6 +539,10 @@ def initialize_multiscale_virtual_data(img, viewer, ndisplay):
     top_left = canvas_corners[0, :]
     bottom_right = canvas_corners[1, :]
 
+    if np.any(bottom_right < top_left):
+        LOGGER.warning(f"Issue with bottom_right values detected, returning early. top_left {top_left} and bottom_right {bottom_right}")
+        return None
+    
     if max_size is not None:
         # Bound the interval with the maximum texture size
         for i in range(len(top_left)):
@@ -546,6 +553,12 @@ def initialize_multiscale_virtual_data(img, viewer, ndisplay):
         bottom_right = [viewer.dims.point[-ndisplay]] + bottom_right.tolist()
 
     multiscale_data.set_interval(top_left, bottom_right)
+
+    # TODO this goes away when we stop using multiple layers
+    if get_layer_name_for_scale(0) in viewer.layers:
+        root_layer = viewer.layers[get_layer_name_for_scale(0)]
+        root_layer.metadata["MultiScaleVirtualData"] = multiscale_data
+    
     return multiscale_data
 
 def add_progressive_loading_image(

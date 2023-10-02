@@ -55,13 +55,15 @@ def update_timepoint(timepoint: int, timeseries_img=None, viewer=None):
     # Initialize multiscale virtual data for the new timepoint
     multiscale_vdata = initialize_multiscale_virtual_data(multiscale_img, viewer, ndisplay=3)
 
-    # Update the image layer with the new timepoint data
-    for scale, img in enumerate(multiscale_vdata._data):
-        scale_name = get_layer_name_for_scale(scale)
-        if scale_name in viewer.layers:
-            viewer.layers[scale_name].data = img
-        else:
-            print(f"Layer {scale_name} not found in viewer.")
+    if multiscale_vdata is not None:
+    
+        # Update the image layer with the new timepoint data
+        for scale, img in enumerate(multiscale_vdata._data):
+            scale_name = get_layer_name_for_scale(scale)
+            if scale_name in viewer.layers:
+                viewer.layers[scale_name].data = img
+            else:
+                print(f"Layer {scale_name} not found in viewer.")
 
 if __name__ == "__main__":
     import napari
@@ -82,7 +84,7 @@ if __name__ == "__main__":
     slider.setMaximum(
         timeseries_img[-1].shape[0] - 1
     )  # Set the maximum value to the number of timepoints
-    slider.setValue(1100)
+    slider.setValue(0)
 
     print(multiscale_img[0])
 
@@ -103,7 +105,7 @@ if __name__ == "__main__":
     viewer.window.add_dock_widget(slider, area='left')
 
     # Initial loading of the image at timepoint 550
-    update_timepoint(550, timeseries_img=timeseries_img, viewer=viewer)
+    update_timepoint(0, timeseries_img=timeseries_img, viewer=viewer)
 
     viewer.axes.visible = True
 
