@@ -423,6 +423,13 @@ def _get_crop_slices(
     """
     Get the crop slices to be used for determining contrast limits when data is larger than the pixel threshold.
 
+    Currently, we support a maximum of 9 crops per plane taken for both the y and x dimension as the first quantile,
+    second quantile and the third quantile. In case of having a numpy array this number is never changed, only the size
+    of the crops changes. In case of having chunked data, this number can be changed dependent on the PIXEL_THRESHOLD
+    and the chunk size. The overall behaviour if with 9 chunks we go over the PIXEL_THRESHOLD is that we first sacrifice
+    in the number of chunks per plane and only when this still causes to go over the PIXEL_TRESHOLD do we sacrifice on
+    also sampling planes.
+
     Parameters
     ----------
     shape: Sequence[int]
@@ -441,9 +448,9 @@ def _get_crop_slices(
     """
     plane_shape = shape[-offset:]
 
-    # defaults in case we are dealing with numpy array. If not these will be overwritten.
-    max_chunks_per_plane = 9
-    max_allowed_chunks = len(plane_indices) * max_chunks_per_plane
+    # defaults in case we are dealing with numpy array. If not these can be overwritten.
+    max_crops_per_plane = 9
+    max_allowed_chunks = len(plane_indices) * max_crops_per_plane
     chunk_size_y = chunk_size_x = int(
         (PIXEL_THRESHOLD // max_allowed_chunks) ** 0.5
     )
@@ -464,7 +471,7 @@ def _get_crop_slices(
         chunk_plane_size = chunk_shape[-offset:]
         chunk_size_y, chunk_size_x = chunk_plane_size[0], chunk_plane_size[1]
         if len(plane_indices) != 0:
-            max_chunks_per_plane = max_allowed_chunks // len(plane_indices)
+            max_crops_per_plane = max_allowed_chunks // len(plane_indices)
 
         y_start_indices = _get_start_indices(plane_shape[0], chunk_size_y)
         x_start_indices = _get_start_indices(plane_shape[1], chunk_size_x)
@@ -479,29 +486,29 @@ def _get_crop_slices(
     ]
     num_start_indices = len(start_indices)
     chunk_multiplier = min(
-        max(max_chunks_per_plane // num_start_indices - 1, 0),
+        max(max_crops_per_plane // num_start_indices - 1, 0),
         MAX_NUMBER_OF_CHUNKS,
     )
 
     # We have at least 1 chunk per plane, but not all chunks are allowed to be loaded. Only lazy data
     indices: Tuple[int, ...]
-    if num_start_indices > max_chunks_per_plane >= 1:
+    if num_start_indices > max_crops_per_plane >= 1:
         if num_start_indices == 3:
             # center chunk
             indices = (1,)
         # Below num_start_indices can only be 9
         else:
-            if max_chunks_per_plane // 5 == 1:
+            if max_crops_per_plane // 5 == 1:
                 # + pattern of chunks
                 indices = (1, 3, 4, 5, 7)
-            elif max_chunks_per_plane // 3 == 1:
+            elif max_crops_per_plane // 3 == 1:
                 # horizontal dashed line of chunks
                 indices = (3, 4, 5)
             else:
                 # center chunk
                 indices = (4,)
         start_indices = [start_indices[i] for i in indices]
-    elif max_chunks_per_plane < 1:
+    elif max_crops_per_plane < 1:
         index = 1 if num_start_indices == 3 else 5
         start_indices = [start_indices[index]]
         # get the middle plane if 3 planes exist, otherwise first plane.
