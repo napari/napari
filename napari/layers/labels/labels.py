@@ -294,7 +294,7 @@ class Labels(_ImageBase):
             name = magic_name(data)
 
         self._seed = seed
-        self._seed_rng = None
+        self._seed_rng: Optional[int] = None
         self._background_label = 0
         self._num_colors = num_colors
         self._random_colormap = label_colormap(self.num_colors, seed)
