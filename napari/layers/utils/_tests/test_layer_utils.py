@@ -568,19 +568,26 @@ def test_insufficient_chunks_get_crop_slices():
     assert len(slices) == 3
 
 
-@pytest.mark.skip(
-    reason="Currently passes only locally due to xarray chunk size being false on CI."
-)
-def test_get_chunk_size():
+def test_zarr_get_chunk_size():
     import zarr
 
     data_shape = (100, 100)
     chunk_shape = (10, 10)
+
     data = zarr.zeros(data_shape, chunks=chunk_shape, dtype='u2')
     chunk_size = _get_chunk_size(data)
     assert np.array_equal(chunk_size, chunk_shape)
 
+
+#
+# @pytest.mark.skip(
+#     reason="Currently passes only locally due to xarray chunk size being false on CI."
+# )
+def test_xarray_get_chunk_size():
     import xarray as xr
+
+    data_shape = (100, 100)
+    chunk_shape = (10, 10)
 
     coords = list(range(100))
     data = xr.DataArray(
@@ -591,3 +598,8 @@ def test_get_chunk_size():
     data = data.chunk(chunk_shape)
     chunk_size = _get_chunk_size(data)
     assert np.array_equal(chunk_size, chunk_shape)
+
+
+def test_dask_get_chunk_size():
+    chunk_size = _get_chunk_size(data_dask_plane)
+    assert np.array_equal(chunk_size, (1000, 1000))
