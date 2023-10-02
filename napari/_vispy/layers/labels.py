@@ -1,6 +1,6 @@
 from itertools import product
 from math import ceil, isnan, log2, sqrt
-from typing import Dict, Optional, Tuple, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
