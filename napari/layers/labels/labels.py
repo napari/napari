@@ -45,9 +45,10 @@ from napari.layers.labels._labels_utils import (
 )
 from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
-from napari.utils._dtype import normalize_dtype
+from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
 from napari.utils.colormaps import (
     direct_colormap,
+    ensure_colormap,
     label_colormap,
 )
 from napari.utils.events import EmitterGroup, Event
@@ -788,12 +789,12 @@ class Labels(_ImageBase):
         self._cached_labels = None  # invalidates labels cache
         self._color_mode = color_mode
         if color_mode == LabelColorMode.AUTO:
-            super()._set_colormap(self._random_colormap)
+            self._colormap = ensure_colormap(self._random_colormap)
         else:
-            super()._set_colormap(self._direct_colormap)
+            self._colormap = ensure_colormap(self._direct_colormap)
         self._selected_color = self.get_color(self.selected_label)
         self.events.color_mode()
-        self.events.colormap()
+        self.events.colormap()  # If remove this emitting, connect shader update to color_mode
         self.events.selected_label()
         self.refresh()
 
@@ -806,6 +807,7 @@ class Labels(_ImageBase):
     def show_selected_label(self, show_selected):
         self._show_selected_label = show_selected
         self.colormap.use_selection = show_selected
+        self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
         self._cached_labels = None
         self.refresh()
@@ -895,7 +897,7 @@ class Labels(_ImageBase):
         float32 as it can represent all input values (though not losslessly,
         see https://github.com/napari/napari/issues/6084).
         """
-        return data.astype(np.float32)
+        return vispy_texture_dtype(data)
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
         """Override to convert raw slice data to displayed label colors."""
@@ -913,7 +915,7 @@ class Labels(_ImageBase):
 
         # Keep only the dimensions that correspond to the current view
         updated_slice = tuple(
-            [self._updated_slice[index] for index in dims_displayed]
+            self._updated_slice[index] for index in dims_displayed
         )
 
         offset = [axis_slice.start for axis_slice in updated_slice]
