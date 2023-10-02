@@ -471,6 +471,64 @@ def _calculate_chunk_parameters(
     return max_chunks_per_plane, max_allowed_chunks, chunk_size_y, chunk_size_x
 
 
+def _get_pixel_start_indices(
+    plane_indices: Sequence[Sequence[int]],
+    plane_shape,
+    offset: int,
+    chunk_size_y: int,
+    chunk_size_x: int,
+    chunk_shape: None | Tuple[int, ...] = None,
+) -> Tuple[List[Tuple[int, ...]], List[int], List[int]]:
+    """
+    Get the start indices of the individual planes and the y and x dimension in pixel space.
+
+    In case of chunked array data, the plane_indices are converted to "voxel space". For y and x start indices, if
+    dealing with chunked array data the index refers to the actual chunk and not pixel. In case of dealing with
+    numpy array it refers to the starting pixels for each slice.
+
+    Parameters
+    ----------
+    plane_indices: Sequence[Sequence[int]]
+        Bottom, middle and top plane or single plane index for each non-visible dimension.
+    plane_shape
+    offset: int
+        Number of visible dimensions.
+    chunk_shape: None | Tuple[int]
+        The size per dimension of the chunks.
+    chunk_size_y: int
+        Size of the slice of the y dimension if dealing with numpy array, otherwise the y dim size of the chunk when
+        dealing with chunked array data.
+    chunk_size_x: int
+        Size of the slice of the x dimension if dealing with numpy array, otherwise the x dim size of the chunk when
+        dealing with chunked array data.
+
+    Returns
+    -------
+    plane_indices: Sequence[Sequence[int]]
+        Bottom, middle and top plane or single plane index in "voxel" space for each non-visible dimension.
+    y_start_indices: list[int]
+        The y chunk start indices in array indices.
+    x_start_indices: list[int]
+        The x chunk start indices in array indices.
+    """
+    if chunk_shape:
+        plane_size = chunk_shape[:-offset]
+        # Go from chunk indices to pixel indices.
+        plane_indices = [
+            (plane_index[size_index] * size,)
+            for size_index, size in enumerate(plane_size)
+            for plane_index in plane_indices
+        ]
+
+        y_start_indices = _get_start_indices(plane_shape[0], chunk_size_y)
+        x_start_indices = _get_start_indices(plane_shape[1], chunk_size_x)
+    else:
+        y_start_indices = _get_start_indices(plane_shape[0])
+        x_start_indices = _get_start_indices(plane_shape[1])
+
+    return plane_indices, y_start_indices, x_start_indices
+
+
 def _get_crop_slices(
     shape: Sequence[int],
     plane_indices: Sequence[Sequence[int]],
@@ -514,20 +572,15 @@ def _get_crop_slices(
     # chunk size over PIXEL_THRESHOLD, we wait until something is in memory for calculating the contrast limits.
     if not max_allowed_chunks:
         return None
-    if chunk_shape:
-        plane_size = chunk_shape[:-offset]
-        # Go from chunk indices to pixel indices.
-        plane_indices = [
-            (plane_index[size_index] * size,)
-            for size_index, size in enumerate(plane_size)
-            for plane_index in plane_indices
-        ]
 
-        y_start_indices = _get_start_indices(plane_shape[0], chunk_size_y)
-        x_start_indices = _get_start_indices(plane_shape[1], chunk_size_x)
-    else:
-        y_start_indices = _get_start_indices(plane_shape[0])
-        x_start_indices = _get_start_indices(plane_shape[1])
+    plane_indices, y_start_indices, x_start_indices = _get_pixel_start_indices(
+        plane_indices,
+        plane_shape,
+        offset,
+        chunk_size_y,
+        chunk_size_x,
+        chunk_shape,
+    )
 
     start_indices = [
         (y_start, x_start)
@@ -645,7 +698,7 @@ def _get_start_indices(
     Returns
     -------
     indices: list[int, ...]
-        The chunk start indices in array indices along a given dimension.
+        The chunk start indices converted to array indices along a given dimension.
     """
     if dim_size <= 2:
         indices = [0]
