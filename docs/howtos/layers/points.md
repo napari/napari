@@ -153,8 +153,10 @@ additional points, or by dragging a bounding box around the points you want to
 select. You can quickly select the select points tool by pressing the `S` key
 when the points layer is selected.
 
-You can select all the points in the currently viewed slice by clicking the `A`
-key if you are in select mode.
+Additionally, you can select all the points in the currently viewed slice by pressing 
+the `A` key and all the points in the layer (across all slices) using `Shift-A`. 
+Note: Pressing either keybinding again will toggle the selection, so you can select 
+all points in a layer and the *deselect* points from a slice. 
 
 Once selected you can delete the selected points by clicking on the delete
 button in the layer controls panel or pressing the delete key.
