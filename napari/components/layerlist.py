@@ -173,7 +173,7 @@ class LayerList(SelectableEventedList[Layer]):
         ...
 
     def __getitem__(self, item):
-        super().__getitem__(item)
+        return super().__getitem__(item)
 
     def __setitem__(self, key, value):
         old = self._list[key]
