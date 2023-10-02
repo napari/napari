@@ -1,29 +1,21 @@
 import dask.array as da
-import numpy as np
-import zarr
-
-from napari.experimental._generative_zarr import MandelbulbStore
-from napari.experimental._progressive_loading import (
-    add_progressive_loading_image,
-    MultiScaleVirtualData,
-    initialize_multiscale_virtual_data,
-    get_layer_name_for_scale,
-)
-
 from ome_zarr.io import parse_url
 from ome_zarr.reader import Reader
-
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication, QVBoxLayout, QWidget, QSlider
+from qtpy.QtWidgets import QSlider
 
-from napari._qt.qt_main_window import Window
+from napari.experimental._progressive_loading import (
+    add_progressive_loading_image,
+    get_layer_name_for_scale,
+    initialize_multiscale_virtual_data,
+)
 
 
 def open_zebrahub():
     url = "https://public.czbiohub.org/royerlab/zebrahub/imaging/single-objective/ZSNS002.ome.zarr/"
 
     # read the image data
-    store = parse_url(url, mode="r").store
+    parse_url(url, mode="r").store
 
     reader = Reader(parse_url(url))
     # nodes may include images, labels etc
@@ -38,10 +30,11 @@ def open_zebrahub():
 
 import toolz as tz
 
+
 @tz.curry
 def update_timepoint(timepoint: int, timeseries_img=None, viewer=None):
     # TODO reconnect the new data to the event listeners
-    
+
     print(f"Updating timepoint {timepoint}")
 
     if timeseries_img is None or viewer is None:
@@ -56,7 +49,7 @@ def update_timepoint(timepoint: int, timeseries_img=None, viewer=None):
     multiscale_vdata = initialize_multiscale_virtual_data(multiscale_img, viewer, ndisplay=3)
 
     if multiscale_vdata is not None:
-    
+
         # Update the image layer with the new timepoint data
         for scale, img in enumerate(multiscale_vdata._data):
             scale_name = get_layer_name_for_scale(scale)
