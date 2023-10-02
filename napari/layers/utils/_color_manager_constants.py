@@ -1,7 +1,7 @@
-from enum import Enum
+from napari.utils.compat import StrEnum
 
 
-class ColorMode(str, Enum):
+class ColorMode(StrEnum):
     """
     ColorMode: Color setting mode.
     DIRECT (default mode) allows each point to be set arbitrarily

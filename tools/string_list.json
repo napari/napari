@@ -149,7 +149,6 @@
       "napari:window:view:toggle_fullscreen",
       "napari:window:view:toggle_layer_tooltips",
       "napari:window:view:toggle_menubar",
-      "napari:window:view:toggle_octree_chunk_outlines",
       "napari:window:view:toggle_play",
       "napari:window:view:toggle_viewer_axes",
       "napari:window:view:toggle_viewer_axes_arrows",
@@ -285,7 +284,6 @@
       "NodeMimeData",
       "NodeType",
       "application/x-tree-node",
-      "dropMimeData: indices {moving_indices} \u27a1 {dest_idx}",
       "text/plain"
     ],
     "napari/_qt/containers/qt_tree_view.py": ["NodeType"],
@@ -299,7 +297,6 @@
       "error_icon_btn"
     ],
     "napari/_qt/dialogs/preferences_dialog.py": [
-      "0",
       "BaseModel",
       "ModelField",
       "QCloseEvent",
@@ -314,14 +311,10 @@
       "plugins",
       "properties",
       "ui:widget",
-      "async_",
       "enum",
-      "experimental",
-      "octree",
       "string",
       "type",
       "extension2reader",
-      "Set keyboard shortcuts for actions.",
       "ShortcutsSettings",
       "description",
       "object",
@@ -363,8 +356,6 @@
       "info",
       "none",
       "warning",
-      "opacity",
-      "geometry",
       "QPushButton{padding: 4px 12px 4px 12px; font-size: 11px;min-height: 18px; border-radius: 0;}",
       "python",
       "resized",
@@ -519,7 +510,6 @@
       "paint",
       "picker",
       "shuffle",
-      "zoom",
       "napari.layers.Labels",
       "napari:activate_labels_erase_mode",
       "napari:activate_labels_fill_mode",
@@ -535,7 +525,6 @@
     "napari/_qt/layer_controls/qt_points_controls.py": [
       "add_points",
       "delete_shape",
-      "pan_zoom",
       "select_points",
       "napari:activate_points_add_mode",
       "napari:activate_points_select_mode",
@@ -553,13 +542,10 @@
       "move_front",
       "path",
       "polygon",
-      "polygon_button",
-      "polygon_lasso_button",
       "rectangle",
       "select",
       "vertex_insert",
       "vertex_remove",
-      "zoom",
       "activate_add_ellipse_mode",
       "activate_add_line_mode",
       "activate_add_path_mode",
@@ -569,7 +555,6 @@
       "activate_select_mode",
       "activate_vertex_insert_mode",
       "activate_vertex_remove_mode",
-      "activate_shape_pan_zoom_mode",
       "napari:move_shapes_selection_to_back",
       "napari:move_shapes_selection_to_front",
       "napari.layers.Shapes",
@@ -766,16 +751,10 @@
     ],
     "napari/_qt/qt_viewer.py": [
       "bottom",
-      "circle",
-      "cross",
       "expanded",
-      "forbidden",
       "layerList",
       "left",
-      "pointing",
       "right",
-      "square",
-      "standard",
       "top",
       ";;",
       "action_manager",
@@ -784,7 +763,6 @@
       "points",
       "*{val}",
       "Saved %s",
-      "crosshair",
       "ignore",
       "Ready",
       "caption",
@@ -815,8 +793,7 @@
       "pyqtRestoreInputHook",
       "int",
       "<[^\n]+>",
-      "PySide",
-      "color"
+      "PySide"
     ],
     "napari/_qt/widgets/__init__.py": [],
     "napari/_qt/widgets/qt_action_context_menu.py": [
@@ -836,13 +813,11 @@
       "\\(?([\\d.]+),\\s*([\\d.]+),\\s*([\\d.]+),?\\s*([\\d.]+)?\\)?",
       "colorSwatch",
       "int",
-      "rgba({\",\".join(map(lambda x: str(int(x*255)), self._color))})",
       "transparent"
     ],
     "napari/_qt/widgets/qt_dict_table.py": [
       "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$",
-      "mailto:{text}",
-      "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)"
+      "mailto:{text}"
     ],
     "napari/_qt/widgets/qt_dims.py": [
       "8",
@@ -884,9 +859,6 @@
       "white"
     ],
     "napari/_qt/widgets/qt_keyboard_settings.py": [
-      "Control",
-      "Ctrl",
-      "[-(?=.+)]",
       "border-bottom: 2px solid white;",
       "error_label",
       "{layer.__name__} layer"
@@ -936,7 +908,6 @@
       "napari:toggle_ndisplay",
       "napari:delete_selected_layers",
       "perspective",
-      "Control-Backspace",
       "console",
       "expanded",
       "grid_view_button",
@@ -1095,7 +1066,6 @@
       "src_alpha",
       "translucent",
       "translucent_no_depth",
-      "zero",
       "func_add",
       "minimum",
       "min"
@@ -1275,14 +1245,10 @@
       "transform"
     ],
     "napari/components/_layer_slicer.py": [
-        "Cancelled task",
-        "Cancelling task for %s",
         "Found existing task for %s",
         "Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).",
-        "Task not found",
         "_SliceResponse",
-        "napari.components._layer_slicer",
-        "ready"
+        "napari.components._layer_slicer"
     ],
     "napari/components/_viewer_constants.py": [
       "bottom_left",
@@ -1309,7 +1275,6 @@
     "napari/components/cursor.py": [],
     "napari/components/dims.py": [
       "axis_labels",
-      "current_step",
       "ndim",
       "order",
       "range"
@@ -1456,7 +1421,6 @@
     ],
     "napari/components/experimental/chunk/_utils.py": ["EMPTY", "dask"],
     "napari/components/experimental/commands.py": [
-      "\n{highlight(\"Available Commands:\")}\nexperimental.cmds.loader\n",
       "Available Commands:\nexperimental.cmds.loader"
     ],
     "napari/components/experimental/monitor/__init__.py": [],
@@ -1512,16 +1476,13 @@
     ],
     "napari/components/grid.py": [],
     "napari/components/layerlist.py": [
-      "Extent",
-      "data world step",
       "ignore",
       "WriterContribution",
       "link_layers",
       "unlink_layers",
       "extent",
       "_extent_world",
-      "_step_size",
-      "_ranges"
+      "_step_size"
     ],
     "napari/components/overlays/bounding_box.py": [
         "blue",
@@ -1641,21 +1602,15 @@
         "transform_box"
     ],
     "napari/layers/base/base.py": [
-      "<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>",
-      "Extent",
       "_round_index",
       "blending",
       "constant",
       "data",
-      "data world step",
-      "deselect",
-      "ignore",
       "metadata",
       "name",
       "opacity",
       "rotate",
       "scale",
-      "select",
       "shear",
       "standard",
       "tile2data",
@@ -1785,7 +1740,6 @@
       "data",
       "gamma",
       "gray",
-      "ignore",
       "interpolation",
       "iso_threshold",
       "mip",
@@ -1867,10 +1821,7 @@
     "napari/layers/points/_points_key_bindings.py": ["mode"],
     "napari/layers/points/_points_mouse_bindings.py": [
       "Control",
-      "Shift",
-      "mouse_move",
-      "mouse_press",
-      "mouse_release"
+      "Shift"
     ],
     "napari/layers/points/_points_utils.py": [],
     "napari/layers/points/points.py": [
@@ -2242,7 +2193,6 @@
       "dock",
       "enabled",
       "func",
-      "linux",
       "name",
       "napari",
       "napari.plugin",
@@ -2318,7 +2268,6 @@
     "napari/plugins/exceptions.py": [
       "<br>",
       "=",
-      "ERROR #{n + 1}:  {str(err)} {\"-\" * _pad}",
       "{\"module\": >16}: {err0.plugin}",
       "{\"napari version\": >16}: {__version__}",
       "{\"plugin package\": >16}: {package_meta[\"package\"]}",
@@ -2429,7 +2378,6 @@
       "{path_.stem}.BAK{path_.suffix}"
     ],
     "napari/settings/_experimental.py": [
-      "boolean",
       "napari_async",
       "schema_version"
     ],
@@ -2463,16 +2411,12 @@
     "napari/settings/_plugins.py": [
       "disabled_plugins",
       "extension2writer",
-      "schema_version",
-      "PyPI",
-      "plugin_api"
+      "schema_version"
     ],
     "napari/settings/_shortcuts.py": ["schema_version"],
     "napari/settings/_utils.py": ["*", "*{pattern}"],
     "napari/settings/_yaml.py": ["Model", "yaml_dumper", "sort_keys"],
     "napari/types.py": [
-      "1",
-      "20",
       "FunctionGui",
       "ImageData",
       "LabelsData",
@@ -2484,21 +2428,10 @@
       "TracksData",
       "VectorsData",
       "dask.array.Array",
-      "zarr.Array",
-      "_DType_co"
+      "zarr.Array"
     ],
     "napari/utils/__init__.py": [],
-    "napari/utils/_appdirs.py": [
-      "Lib",
-      "darwin",
-      "lib",
-      "napari",
-      "nt",
-      "plugins",
-      "site-packages",
-      "python{sys.version_info.major}.{sys.version_info.minor}",
-      "{os.path.basename(sys.prefix)}_{hashlib.sha1(sys.prefix.encode()).hexdigest()}"
-    ],
+    "napari/utils/_appdirs.py": [],
     "napari/utils/_base.py": ["en", "settings.yaml"],
     "napari/utils/_dask_utils.py": ["optimization.fuse.active"],
     "napari/utils/_magicgui.py": [
@@ -2592,7 +2525,6 @@
       "yellow",
       "{k}: {v}",
       "{type(arr)} {arr.shape} {arr.dtype}",
-      "\u001b\\[([\\d;]*)([a-zA-z])",
       "<br><br><font color=\"#51B432\">During handling of the above exception, another exception occurred:</font><br>",
       "<br><br><font color=\"#51B432\">The above exception was the direct cause of the following exception:</font><br>",
       "<p>A problem occurred in a Python script.  Here is the sequence of",
@@ -2665,12 +2597,8 @@
       "#{\"%02x\" * 4}"
     ],
     "napari/utils/config.py": [
-      "\nExperimental Features\n\nAsync Loading\n-------------\nImage layers will use the ChunkLoader to load data instead of loading\nthe data directly. Image layers will not call np.asarray() in the GUI\nthread. The ChunkLoader will call np.asarray() in a worker thread. That\nmeans any IO or computation done as part of the load will not block the\nGUI thread.\n\nSet NAPARI_ASYNC=1 to turn on async loading with default settings.\n\nOctree Rendering\n----------------\nImage layers use an octree for rendering. The octree organizes the image\ninto chunks/tiles. Only a subset of those chunks/tiles are loaded and\ndrawn at a time. Octree rendering is a work in progress.\n\nEnabled one of two ways:\n\n1) Set NAPARI_OCTREE=1 to enabled octree rendering with defaults.\n\n2) Set NAPARI_OCTREE=/tmp/config.json use a config file.\n\nSee napari/utils/_octree.py for the config file format.\n\nShared Memory Server\n--------------------\nExperimental shared memory service. Only enabled if NAPARI_MON is set to\nthe path of a config file. See this PR for more info:\nhttps://github.com/napari/napari/pull/1909.\n",
-      "\nOther Config Options\n",
       "0",
-      "NAPARI_MON",
-      "enabled",
-      "octree"
+      "NAPARI_MON"
     ],
     "napari/utils/context/_context.py": [
       "__new__",
@@ -2792,15 +2720,13 @@
       "_T",
       "_current",
       "current",
-      "selection",
-      "{type(self).__name__}({repr(self._set)})"
+      "selection"
     ],
     "napari/utils/events/containers/_set.py": [
       "[{i}]",
       "_T",
       "changed",
-      "events",
-      "{type(self).__name__}({repr(self._set)})"
+      "events"
     ],
     "napari/utils/events/containers/_typed.py": [
       "TypedMutableSequence[_T]",
@@ -2840,7 +2766,6 @@
     ],
     "napari/utils/events/event.py": [
       "<...>",
-      "<{} {}>",
       "EmitterGroup",
       "EventBlockerAll",
       "_",
@@ -2872,8 +2797,7 @@
       "use_enum_values",
       "EventedModel",
       "Unrecognized field dependency: {field}",
-      "dependencies",
-      "Fields with dependencies must be property.setters. {prop!r} is not."
+      "dependencies"
     ],
     "napari/utils/events/types.py": [],
     "napari/utils/geometry.py": [
@@ -3026,8 +2950,6 @@
       "TerminalInteractiveShell",
       "ZMQInteractiveShell",
       "__main__",
-      "app_packages",
-      "bin",
       "dask.Array",
       "n must be greater than 0",
       "numpy.ndarray",
@@ -3040,8 +2962,6 @@
       ".napari_is_bundled",
       "dask.Delayed",
       ".napari_is_bundled_constructor",
-      "\u0001_\u0002",
-      " \u0001",
       "ignore",
       "elementwise comparison",
       "NoneType",
@@ -3054,7 +2974,6 @@
       "{sep}[{start}]"
     ],
     "napari/utils/notebook_display.py": [
-      "png",
       "data:image/png;base64,",
       "utf-8",
       "<img src=\"{url}\" alt=\"{_alt}\"></img>",
@@ -3270,15 +3189,13 @@
       "{locale}.UTF-8",
       "The `language` setting defined in the napari configuration file could not be read.\n\nThe default language will be used.\n\nError:\n{err}"
     ],
-    "napari/utils/tree/__init__.py": [],
     "napari/utils/tree/group.py": [
       "  {bul}",
       "  \u2502",
       "Group",
       "NodeType",
       "\u2514\u2500\u2500",
-      "\u251c\u2500\u2500",
-      "MaybeNestedIndex"
+      "\u251c\u2500\u2500"
     ],
     "napari/utils/tree/node.py": ["Node"],
     "napari/utils/validators.py": ["__getitem__"],

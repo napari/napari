@@ -120,7 +120,7 @@ class QtImageControls(QtBaseImageControls):
             self.planeNormalButtons.xButton,
         )
         action_manager.bind_button(
-            'napari:orient_plane_normal_along_view_direction',
+            'napari:orient_plane_normal_along_view_direction_no_gen',
             self.planeNormalButtons.obliqueButton,
         )
 

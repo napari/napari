@@ -298,9 +298,44 @@ class _BasePoints(Layer):
     def data(self) -> Any:
         raise NotImplementedError
 
-    @data.setter
-    def data(self, data: Any) -> None:
+    def _set_data(self, data: Any) -> None:
         raise NotImplementedError
+
+    @data.setter
+    def data(self, data: Optional[np.ndarray]) -> None:
+        """Set the data array and emit a corresponding event."""
+        prior_data = len(self.data) > 0
+        data_not_empty = (
+            data is not None
+            and (isinstance(data, np.ndarray) and data.size > 0)
+            or (isinstance(data, list) and len(data) > 0)
+        )
+        kwargs = {
+            "value": self.data,
+            "vertex_indices": ((),),
+            "data_indices": tuple(i for i in range(len(self.data))),
+        }
+        if prior_data and data_not_empty:
+            kwargs["action"] = ActionType.CHANGING
+        elif data_not_empty:
+            kwargs["action"] = ActionType.ADDING
+            kwargs["data_indices"] = tuple(i for i in range(len(data)))
+        else:
+            kwargs["action"] = ActionType.REMOVING
+
+        self.events.data(**kwargs)
+        self._set_data(data)
+        kwargs["data_indices"] = tuple(i for i in range(len(self.data)))
+        kwargs["value"] = self.data
+
+        if prior_data and data_not_empty:
+            kwargs["action"] = ActionType.CHANGED
+        elif data_not_empty:
+            kwargs["data_indices"] = tuple(i for i in range(len(data)))
+            kwargs["action"] = ActionType.ADDED
+        else:
+            kwargs["action"] = ActionType.REMOVED
+        self.events.data(**kwargs)
 
     def _on_selection(self, selected):
         if selected:
@@ -532,7 +567,7 @@ class _BasePoints(Layer):
         return self._size
 
     @size.setter
-    def size(self, size: Union[int, float, np.ndarray, list]) -> None:
+    def size(self, size: Union[float, np.ndarray, list]) -> None:
         size = np.asarray(size)
         try:
             self._size = np.broadcast_to(size, len(self._points_data)).copy()
@@ -1661,6 +1696,7 @@ class _BasePoints(Layer):
         position : tuple
             Position to move points to in data coordinates.
         """
+
         if len(selection_indices) > 0:
             selection_indices = list(selection_indices)
             disp = list(self._slice_input.displayed)
@@ -1672,7 +1708,7 @@ class _BasePoints(Layer):
             self.refresh()
         self.events.data(
             value=self.data,
-            action=ActionType.CHANGE.value,
+            action=ActionType.CHANGED,
             data_indices=tuple(selection_indices),
             vertex_indices=((),),
         )
@@ -2260,17 +2296,12 @@ class Points(_BasePoints):
     def data(self) -> np.ndarray:
         """(N, D) array: coordinates for N points in D dimensions."""
         return self._data
-
+    
     @data.setter
-    def data(self, data: Optional[np.ndarray]):
+    def data(self, data: np.ndarray) -> None:
         """Set the data array and emit a corresponding event."""
-        self._set_data(data)
-        self.events.data(
-            value=self.data,
-            action=ActionType.CHANGE.value,
-            data_indices=slice(None),
-            vertex_indices=((),),
-        )
+        # Inhering _BasePoints data.setter
+        return _BasePoints.data.fset(self, data)
 
     def _set_data(self, data: Optional[np.ndarray]):
         """Set the .data array attribute, without emitting an event."""
@@ -2361,10 +2392,16 @@ class Points(_BasePoints):
             Point or points to add to the layer data.
         """
         cur_points = len(self.data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.ADDING,
+            data_indices=(-1,),
+            vertex_indices=((),),
+        )
         self._set_data(np.append(self.data, np.atleast_2d(coords), axis=0))
         self.events.data(
             value=self.data,
-            action=ActionType.ADD.value,
+            action=ActionType.ADDED,
             data_indices=(-1,),
             vertex_indices=((),),
         )
@@ -2375,6 +2412,14 @@ class Points(_BasePoints):
         index = list(self.selected_data)
         index.sort()
         if len(index):
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVING,
+                data_indices=tuple(
+                    self.selected_data,
+                ),
+                vertex_indices=((),),
+            )
             self._shown = np.delete(self._shown, index, axis=0)
             self._size = np.delete(self._size, index, axis=0)
             self._symbol = np.delete(self._symbol, index, axis=0)
@@ -2399,7 +2444,7 @@ class Points(_BasePoints):
             self._set_data(np.delete(self.data, index, axis=0))
             self.events.data(
                 value=self.data,
-                action=ActionType.REMOVE.value,
+                action=ActionType.REMOVED,
                 data_indices=tuple(
                     self.selected_data,
                 ),

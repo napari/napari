@@ -59,7 +59,7 @@ class VispyPointsLayer(VispyBaseLayer):
             border_color = self.layer._view_border_color
             face_color = self.layer._view_face_color
             border_width = self.layer._view_border_width
-            symbol = self.layer._view_symbol
+            symbol = [str(x) for x in self.layer._view_symbol]
 
         set_data = self.node._subvisuals[0].set_data
 

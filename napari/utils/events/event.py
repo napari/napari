@@ -60,11 +60,14 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Generic,
+    Iterable,
     List,
     Literal,
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
     cast,
 )
@@ -221,7 +224,10 @@ CallbackStr = Tuple[
 ]  # dereferenced method
 
 
-class _WeakCounter:
+_T = TypeVar("_T")
+
+
+class _WeakCounter(Generic[_T]):
     """
     Similar to collection counter but has weak keys.
 
@@ -229,17 +235,19 @@ class _WeakCounter:
     """
 
     def __init__(self) -> None:
-        self._counter = weakref.WeakKeyDictionary()
+        self._counter: weakref.WeakKeyDictionary[
+            _T, int
+        ] = weakref.WeakKeyDictionary()
         self._nonecount = 0
 
-    def update(self, iterable):
+    def update(self, iterable: Iterable[_T]):
         for it in iterable:
             if it is None:
                 self._nonecount += 1
             else:
                 self._counter[it] = self.get(it, 0) + 1
 
-    def get(self, key, default):
+    def get(self, key: _T, default: int) -> int:
         if key is None:
             return self._nonecount
         return self._counter.get(key, default)
