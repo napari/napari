@@ -165,16 +165,13 @@ class LayerList(SelectableEventedList[Layer]):
         return values
 
     @typing.overload
-    def __getitem__(self, item: int) -> Layer:
+    def __getitem__(self, item: Union[int, str]) -> Layer:
         ...
 
     @typing.overload
     def __getitem__(self, item: slice) -> Self:
         ...
 
-    @typing.overload
-    def __getitem__(self, item: str) -> Layer:
-        ...
 
     def __getitem__(self, item):
         super().__getitem__(item)
