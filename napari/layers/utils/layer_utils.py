@@ -414,6 +414,63 @@ def _get_plane_indices(
     return idxs
 
 
+def _calculate_chunk_parameters(
+    plane_indices: Sequence[Sequence[int]],
+    offset: int,
+    chunk_shape: None | Tuple[int, ...] = None,
+) -> Tuple[int, None | int, int, int]:
+    """
+    Calculate the chunk parameters for the contrast limit calculation.
+
+    As a default when dealing for numpy arrays we allow for 9 crops / chunks per plane taken at the first, second and
+    third quantile of the y and x dimension. Based on this the default value of the maximum number of crops / slices is
+    n plane_indices * 9. The size per slice, chunk_size_x and chunk_size_y, is initially based on these values too.
+    In case of dealing with chunked array data, chunk_shape is not None and these values get overwritten with the
+    numbers that we allow which are based on the PIXEL_THRESHOLD, the size of the chunks and the number of planes.
+
+    Parameters
+    ----------
+    plane_indices: Sequence[Sequence[int]]
+        Bottom, middle and top plane or single plane index for each non-visible dimension.
+    offset: int
+        Number of visible dimensions.
+    chunk_shape: None | Tuple[int]
+        The size per dimension of the chunks.
+
+    Returns
+    -------
+    max_chunks_per_plane: int
+        The maximum number of crops per plane in case of dealing with numpy array defaulting to 9, otherwise the
+        maximum number of chunks per plane.
+    max_allowed_chunks: None | int
+        The total number of chunks that is allowed based on the chunk size and the PIXEL_TRESHOLD. None if the
+        chunk size is higher than the PIXEL_THRESHOLD.
+    chunk_size_y: int
+        Size of the slice of the y dimension if dealing with numpy array, otherwise the y dim size of the chunk when
+        dealing with chunked array data.
+    chunk_size_x: int
+        Size of the slice of the x dimension if dealing with numpy array, otherwise the x dim size of the chunk when
+        dealing with chunked array data.
+    """
+    # defaults in case we are dealing with numpy array in which case chunks are crops and chunk size is just size of the
+    # slice. If chunked array these can be overwritten.
+    max_chunks_per_plane = 9
+    max_allowed_chunks = len(plane_indices) * max_chunks_per_plane
+    chunk_size_y = chunk_size_x = int(
+        (PIXEL_THRESHOLD // max_allowed_chunks) ** 0.5
+    )
+    if chunk_shape:
+        chunk_size_product = int(np.prod(chunk_shape))
+        chunk_plane_size = chunk_shape[-offset:]
+        chunk_size_y, chunk_size_x = chunk_plane_size[0], chunk_plane_size[1]
+        max_allowed_chunks = PIXEL_THRESHOLD // chunk_size_product
+        # in case of the chunk size going over the pixel threshold, we can wait until data is in memory.
+        if max_allowed_chunks and len(plane_indices) != 0:
+            max_chunks_per_plane = max_allowed_chunks // len(plane_indices)
+
+    return max_chunks_per_plane, max_allowed_chunks, chunk_size_y, chunk_size_x
+
+
 def _get_crop_slices(
     shape: Sequence[int],
     plane_indices: Sequence[Sequence[int]],
@@ -448,19 +505,16 @@ def _get_crop_slices(
     """
     plane_shape = shape[-offset:]
 
-    # defaults in case we are dealing with numpy array. If not these can be overwritten.
-    max_chunks_per_plane = 9
-    max_allowed_chunks = len(plane_indices) * max_chunks_per_plane
-    chunk_size_y = chunk_size_x = int(
-        (PIXEL_THRESHOLD // max_allowed_chunks) ** 0.5
-    )
-
+    (
+        max_chunks_per_plane,
+        max_allowed_chunks,
+        chunk_size_y,
+        chunk_size_x,
+    ) = _calculate_chunk_parameters(plane_indices, offset, chunk_shape)
+    # chunk size over PIXEL_THRESHOLD, we wait until something is in memory for calculating the contrast limits.
+    if not max_allowed_chunks:
+        return None
     if chunk_shape:
-        chunk_size_product = int(np.prod(chunk_shape))
-        max_allowed_chunks = PIXEL_THRESHOLD // chunk_size_product
-        # in case of the chunk size going over the pixel threshold, we can wait until data is in memory.
-        if max_allowed_chunks == 0:
-            return None
         plane_size = chunk_shape[:-offset]
         # Go from chunk indices to pixel indices.
         plane_indices = [
@@ -468,10 +522,6 @@ def _get_crop_slices(
             for size_index, size in enumerate(plane_size)
             for plane_index in plane_indices
         ]
-        chunk_plane_size = chunk_shape[-offset:]
-        chunk_size_y, chunk_size_x = chunk_plane_size[0], chunk_plane_size[1]
-        if len(plane_indices) != 0:
-            max_chunks_per_plane = max_allowed_chunks // len(plane_indices)
 
         y_start_indices = _get_start_indices(plane_shape[0], chunk_size_y)
         x_start_indices = _get_start_indices(plane_shape[1], chunk_size_x)
