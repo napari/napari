@@ -172,7 +172,6 @@ class LayerList(SelectableEventedList[Layer]):
     def __getitem__(self, item: slice) -> Self:
         ...
 
-
     def __getitem__(self, item):
         super().__getitem__(item)
 
