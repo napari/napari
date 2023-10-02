@@ -161,6 +161,7 @@ QListView {
   background-color: {{ foreground }};
   color: {{ text }};
   border-radius: 2px;
+  font-size: {{ font_size }};
 }
 
 QListView:item:selected {
