@@ -893,9 +893,9 @@ class WarningEmitter(EventEmitter):
 
     def __init__(
         self,
-        message,
-        category=FutureWarning,
-        stacklevel=3,
+        message: str,
+        category: Type[Warning] = FutureWarning,
+        stacklevel: int = 3,
         *args,
         **kwargs,
     ) -> None:
