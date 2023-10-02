@@ -2296,7 +2296,7 @@ class Points(_BasePoints):
     def data(self) -> np.ndarray:
         """(N, D) array: coordinates for N points in D dimensions."""
         return self._data
-    
+
     @data.setter
     def data(self, data: np.ndarray) -> None:
         """Set the data array and emit a corresponding event."""
