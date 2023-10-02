@@ -2,6 +2,7 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
+import os
 
 import numpy as np
 
@@ -18,6 +19,9 @@ class Shapes2DSuite:
     """Benchmarks for the Shapes layer with 2D data"""
 
     params = [2**i for i in range(4, 9)]
+
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(6, 9)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -44,8 +48,9 @@ class Shapes2DSuite:
         """Time to get current value."""
         self.layer.get_value((0,) * 2)
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
+        # Disabled because of __sizeof__ bug on the main branch and outdated asizeof in pympler
         return self.layer
 
     def mem_data(self, n):
@@ -57,6 +62,8 @@ class Shapes3DSuite:
     """Benchmarks for the Shapes layer with 3D data."""
 
     params = [2**i for i in range(4, 9)]
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(6, 9)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -83,8 +90,9 @@ class Shapes3DSuite:
         """Time to get current value."""
         self.layer.get_value((0,) * 3)
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
+        # Disabled because of __sizeof__ bug on the main branch and outdated asizeof in pympler
         return self.layer
 
     def mem_data(self, n):
