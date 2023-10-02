@@ -9,4 +9,4 @@ updates:
     commit-message:
       prefix: "ci(dependabot):"
     labels:
-      - "dependencies"
+      - "maintenance"
