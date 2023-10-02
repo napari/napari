@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
+from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
 from napari.utils.theme import available_themes, get_system_theme
@@ -165,7 +166,6 @@ def hold_for_pan_zoom(viewer: ViewerModel):
 @register_viewer_action(trans._("Show all key bindings"))
 def show_shortcuts(viewer: Viewer):
     viewer.window._open_preferences_dialog()
-
     pref_dialog = cast('PreferencesDialog', viewer.window._pref_dialog)
     pref_list = pref_dialog._list
     for i in range(pref_list.count()):
