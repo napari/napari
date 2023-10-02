@@ -377,26 +377,8 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
 
     LOGGER.info(f"corner pixels: {corner_pixels}")
 
-    # top_left = np.max(corner_pixels, axis=0)[0, :]
-    # bottom_right = np.min(corner_pixels, axis=0)[1, :]
     top_left = corner_pixels[0, :]
     bottom_right = corner_pixels[1, :]
-
-    # Calculate the dimensions of the texture
-    texture_dims = bottom_right - top_left
-
-    # If any of the texture dimensions exceed the maximum texture size
-    # adjust top_left and bottom_right accordingly
-    if np.any(texture_dims > max_texture_size):
-        # Adjust the interval to fit within the texture size limit
-        bottom_right = top_left + np.minimum(texture_dims, max_texture_size)
-
-        # Update corner_pixels with adjusted values
-        corner_pixels = np.array([top_left, bottom_right])
-
-        LOGGER.warning(
-            f"Adjusting corner_pixels, original interval was too large. New value: {corner_pixels}"
-        )
 
     camera = viewer.camera.copy()
 
