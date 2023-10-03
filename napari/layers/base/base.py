@@ -334,7 +334,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._slice_input = _SliceInput(
             ndisplay=2,
-            world_slice=_ThickNDSlice.make_full(point=(0,) * ndim),
+            world_slice=_ThickNDSlice.make_full(ndim=ndim),
             order=tuple(range(ndim)),
         )
         self._loaded: bool = True
@@ -942,8 +942,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _data_slice(self) -> _ThickNDSlice:
         """Slice in data coordinates."""
         if len(self._slice_input.not_displayed) == 0:
+            # all dims are displayed dimensions
             # early return to avoid evaluating data_to_world.inverse
-            return _ThickNDSlice.make_full(ndim=self.ndim)
+            return _ThickNDSlice.make_full(point=(np.nan,) * self.ndim)
 
         return self._slice_input.data_slice(
             self._data_to_world.inverse,
@@ -1183,10 +1184,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self,
         dims: Dims = None,
     ) -> _SliceInput:
-        # if no point is given, "world" has same dimensionality of self
         world_ndim = self.ndim if dims is None else dims.ndim
         if dims is None:
-            world_slice = _ThickNDSlice.make_full(dims=self.ndim)
+            # if no dims is given, "world" has same dimensionality of self
+            # this happens for example if a layer is not in a viewer
+            # in this case, we assume all dims are displayed dimensions
+            world_slice = _ThickNDSlice.make_full((np.nan,) * self.ndim)
         else:
             world_slice = _ThickNDSlice.from_dims(dims)
 

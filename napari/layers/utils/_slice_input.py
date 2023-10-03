@@ -39,9 +39,8 @@ class _ThickNDSlice(Generic[_T]):
         """
         Make a full slice based on minimal input.
 
-        If ndim is provided, it will be used to crop or extend the given values.
-        Values not provided will be filled with np.nan for point and zeros for margins.
-        Prepended values are always zeros.
+        If ndim is provided, it will be used to crop or prepend zeros to the given values.
+        Values not provided will be filled zeros.
         """
         for val in (point, margin_left, margin_right):
             if val is not None:
@@ -56,7 +55,8 @@ class _ThickNDSlice(Generic[_T]):
 
         ndim = val_ndim if ndim is None else ndim
 
-        point = (np.nan,) * ndim if point is None else tuple(point)
+        # not provided arguments are just all zeros
+        point = (0,) * ndim if point is None else tuple(point)
         margin_left = (
             (0,) * ndim if margin_left is None else tuple(margin_left)
         )
@@ -64,16 +64,18 @@ class _ThickNDSlice(Generic[_T]):
             (0,) * ndim if margin_right is None else tuple(margin_right)
         )
 
+        # prepend zeros if ndim is bigger than the given values
         prepend = max(ndim - val_ndim, 0)
 
         point = (0,) * prepend + point
         margin_left = (0,) * prepend + margin_left
         margin_right = (0,) * prepend + margin_right
 
+        # crop to ndim in case given values are longer (keeping last dims)
         return cls(
-            point=point[:ndim],
-            margin_left=margin_left[:ndim],
-            margin_right=margin_right[:ndim],
+            point=point[-ndim:],
+            margin_left=margin_left[-ndim:],
+            margin_right=margin_right[-ndim:],
         )
 
     @classmethod
@@ -90,14 +92,10 @@ class _ThickNDSlice(Generic[_T]):
     ):
         """Create a copy, but modifying the given fields."""
         return self.make_full(
-            point=self.point if point is None else point,
-            margin_left=self.margin_left
-            if margin_left is None
-            else margin_left,
-            margin_right=self.margin_right
-            if margin_right is None
-            else margin_right,
-            ndim=self.ndim if ndim is None else ndim,
+            point=point or self.point,
+            margin_left=margin_left or self.margin_left,
+            margin_right=margin_right or self.margin_right,
+            ndim=ndim or self.ndim,
         )
 
     def as_array(self):
