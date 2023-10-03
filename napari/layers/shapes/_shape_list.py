@@ -187,7 +187,7 @@ class ShapeList:
     @slice_key.setter
     def slice_key(self, slice_key):
         slice_key = list(slice_key)
-        if not np.all(self._slice_key == slice_key):
+        if not np.array_equal(self._slice_key, slice_key):
             self._slice_key = slice_key
             self._update_displayed()
 
