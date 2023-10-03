@@ -31,7 +31,7 @@ class BrushSizeOnMouseModifiers(StrEnum):
     DISABLED = 'Disabled'  # a non-existent modifier that is never activated
 
 
-class LabelDTypes(str, Enum):
+class LabelDTypes(StrEnum):
     uint8 = 'uint8'
     int8 = 'int8'
     uint16 = 'uint16'
@@ -44,7 +44,7 @@ class LabelDTypes(str, Enum):
     int = 'int'
 
 
-class NewLabelsPolicy(str, Enum):
+class NewLabelsPolicy(StrEnum):
     follow_image_class = 'Follow image class'
     fit_in_ram = 'Fit in RAM'
     follow_class_with_fit = (
