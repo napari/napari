@@ -478,7 +478,7 @@ def _get_pixel_start_indices(
     chunk_size_y: int,
     chunk_size_x: int,
     chunk_shape: None | Tuple[int, ...] = None,
-) -> Tuple[List[Tuple[int, ...]], List[int], List[int]]:
+) -> Tuple[Sequence[Sequence[int]], List[int], List[int]]:
     """
     Get the start indices of the individual planes and the y and x dimension in pixel space.
 
