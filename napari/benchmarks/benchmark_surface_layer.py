@@ -41,7 +41,7 @@ class Surface2DSuite:
         """Time to get current value."""
         self.layer.get_value((0,) * 2)
 
-    def _mem_layer(self, n):
+    def mem_layer(self, n):
         """Memory used by layer."""
         # Disabled because of __sizeof__ bug on the main branch and outdated asizeof in pympler
         return self.layer
@@ -85,7 +85,7 @@ class Surface3DSuite:
         """Time to get current value."""
         self.layer.get_value((0,) * 3)
 
-    def _mem_layer(self, n):
+    def mem_layer(self, n):
         """Memory used by layer."""
         # Disabled because of __sizeof__ bug on the main branch and outdated asizeof in pympler
         return self.layer
