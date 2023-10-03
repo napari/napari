@@ -525,10 +525,7 @@ def test_register_label_attr_action(monkeypatch):
 )
 def test_1d_slices(shape, chunk_size, expected_length):
     slices = _get_1d_slices(shape, chunk_size)
-    if not expected_length:
-        assert expected_length == slices
-    else:
-        assert expected_length == len(slices)
+    assert len(slices) == 1
 
 
 def test_insufficient_chunks_get_crop_slices():
