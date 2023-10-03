@@ -319,43 +319,25 @@ def _get_1d_slices(shape, chunk_size):
     slices: list[slice]
         Slices to be taken from data for calculating contrast limits.
     """
-    # If data is very large take the average of start, middle and end.
-    n_slices = 3
+    # If data is very large we only aim to take data around the center.
     center = shape[0] // 2 * chunk_size[0] if chunk_size else shape[0] // 2
-    slice_size = PIXEL_THRESHOLD // n_slices
+
     if not chunk_size:
         return [
-            slice(0, slice_size),
             slice(
-                center - int(slice_size // 2), center + int(slice_size // 2)
-            ),
-            slice(-slice_size, None),
+                center - int(PIXEL_THRESHOLD // 2),
+                center + int(PIXEL_THRESHOLD // 2),
+            )
         ]
 
     chunk_size_product = np.prod(chunk_size)
-    allowed_chunks = int(PIXEL_THRESHOLD // chunk_size_product)
-    multiplier = min(allowed_chunks // n_slices, MAX_NUMBER_OF_CHUNKS)
-
     if chunk_size_product > PIXEL_THRESHOLD:
         return None
-    if shape[0] >= 3:
-        if multiplier >= 1:
-            slices = [
-                slice(0, chunk_size[0] * multiplier),
-                slice(
-                    center - chunk_size[0] * (multiplier // 2 - 1),
-                    center + chunk_size[0] * multiplier // 2,
-                ),
-                slice(-chunk_size[0] * multiplier, -1),
-            ]
-        else:
-            # Means we have less than 3 allowed chunks so we just take a center slice.
-            slices = [slice(center, center + chunk_size[0])]
-    # due to earlier check we now data is above pixel threshold so 2 chunks is above as well
-    else:  # shape[0] == 2 or 1
-        slices = [slice(0, chunk_size[0])]
 
-    return slices
+    allowed_chunks = int(PIXEL_THRESHOLD // chunk_size_product)
+    multiplier = min(allowed_chunks, MAX_NUMBER_OF_CHUNKS)
+
+    return [slice(center + chunk_size[0] * multiplier)]
 
 
 def _get_blocks_grid_shape(
@@ -1555,7 +1537,6 @@ def _get_chunk_size(
             # we use the read chunk size to have same chunk size for labels like
             # when load data from drive
             return data.chunk_layout.read_chunk.shape
-        return None
 
     if "xarray" in sys.modules:
         from xarray import DataArray
