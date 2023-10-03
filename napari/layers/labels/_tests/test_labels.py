@@ -236,6 +236,7 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
+@pytest.mark.filterwarnings("ignore:.*seed is deprecated.*")
 def test_seed():
     """Test setting seed."""
     np.random.seed(0)
@@ -1606,5 +1607,5 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {"seed", "num_colors", "color"},
+            {"seed", "num_colors", "color", "seed_rng"},
         )

@@ -164,7 +164,9 @@ class LabelColormap(Colormap):
         values = np.atleast_1d(values)
         values[values == None] = 0  # noqa: E711
 
-        mapped = self.colors[np.mod(values, len(self.colors)).astype(np.int64)]
+        mapped = self.colors[1:][
+            np.mod(values, len(self.colors) - 1).astype(np.int64)
+        ]
 
         mapped[values == 0] = 0
 

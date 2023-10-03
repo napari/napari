@@ -55,6 +55,7 @@ from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.indexing import index_in_slice
+from napari.utils.migrations import deprecated_constructor_arg_by_attr
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
@@ -264,6 +265,7 @@ class Labels(_ImageBase):
 
     _history_limit = 100
 
+    @deprecated_constructor_arg_by_attr("seed")
     def __init__(
         self,
         data,
@@ -272,7 +274,7 @@ class Labels(_ImageBase):
         features=None,
         properties=None,
         color=None,
-        seed=0.5,
+        seed_rng=None,
         name=None,
         metadata=None,
         scale=None,
@@ -293,11 +295,11 @@ class Labels(_ImageBase):
         if name is None and data is not None:
             name = magic_name(data)
 
-        self._seed = seed
-        self._seed_rng: Optional[int] = None
+        self._seed = 0.5
+        self._seed_rng: Optional[int] = seed_rng
         self._background_label = 0
         self._num_colors = num_colors
-        self._random_colormap = label_colormap(self.num_colors, seed)
+        self._random_colormap = label_colormap(self.num_colors, self.seed)
         self._direct_colormap = direct_colormap()
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
@@ -500,7 +502,6 @@ class Labels(_ImageBase):
         self.refresh()
         self.events.selected_label()
 
-        self.events.seed_rng()
         self.refresh()
 
     @_ImageBase.colormap.setter
@@ -737,7 +738,7 @@ class Labels(_ImageBase):
                 'experimental_clipping_planes': [
                     plane.dict() for plane in self.experimental_clipping_planes
                 ],
-                'seed': self.seed,
+                'seed_rng': self.seed_rng,
                 'data': self.data,
                 'color': self.color,
                 'features': self.features,
