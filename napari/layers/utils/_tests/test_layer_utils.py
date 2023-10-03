@@ -54,6 +54,22 @@ TEST_DATA_1D = [
     ((int(20e6),), None),
 ]
 
+INSUFFICIENT_CHUNKS = [
+    ((9, 12, 12), (1, 3000, 3000), 1),  # Test less than 1 chunk per plane
+    (
+        (9, 12, 12),
+        (1, 745, 745),
+        15,
+    ),  # In this case there should be 5 chunks allowed per plane
+    ((9, 12, 12), (1, 1054, 1054), 9),  # 3 crops per plane allowed
+    ((9, 12, 12), (1, 1290, 1290), 3),  # 1 crop per plane allowed
+    (
+        (9, 1, 3),
+        (1, 1825, 1825),
+        3,
+    ),  # Shape only allows for 3 slices per plane
+]
+
 
 def test_calc_data_range():
     # all zeros should return [0, 1] by default
@@ -525,36 +541,17 @@ def test_1d_slices(shape, chunk_size):
     assert len(slices) == 1
 
 
-def test_insufficient_chunks_get_crop_slices():
+@pytest.mark.parametrize(
+    ["shape", "chunk_size", "expected_length"], INSUFFICIENT_CHUNKS
+)
+def test_insufficient_chunks_get_crop_slices(
+    shape, chunk_size, expected_length
+):
     offset = 2
 
-    # Test less then 1 chunk per plane
-    shape = (9, 12, 12)
-    chunk_size = (1, 3000, 3000)
     idxs = _get_plane_indices(shape, offset)
     slices = _get_crop_slices(shape, idxs, offset, chunk_size)
-    assert len(slices) == 1
-
-    # In this case there should be 5 chunks allowed per plane
-    chunk_size = (1, 745, 745)
-    slices = _get_crop_slices(shape, idxs, offset, chunk_size)
-    assert len(slices) == 15
-
-    # 3 crops per plane allowed
-    chunk_size = (1, 1054, 1054)
-    slices = _get_crop_slices(shape, idxs, offset, chunk_size)
-    assert len(slices) == 9
-
-    # 1 crop per plane allowed
-    chunk_size = (1, 1290, 1290)
-    slices = _get_crop_slices(shape, idxs, offset, chunk_size)
-    assert len(slices) == 3
-
-    # Shape only allows for 3 slices per plane
-    shape = (9, 1, 3)
-    chunk_size = (1, 1825, 1825)
-    slices = _get_crop_slices(shape, idxs, offset, chunk_size)
-    assert len(slices) == 3
+    assert len(slices) == expected_length
 
 
 def test_zarr_get_chunk_size():
