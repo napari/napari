@@ -1183,7 +1183,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self,
         dims: Dims = None,
     ) -> _SliceInput:
-        # if not point is given, "world" has same dimensionality of self
+        # if no point is given, "world" has same dimensionality of self
         world_ndim = self.ndim if dims is None else dims.ndim
         if dims is None:
             world_slice = _ThickNDSlice.make_full(dims=self.ndim)

@@ -297,7 +297,7 @@ class _ImageSliceRequest:
             low = int(np.round(point - m_left))
             high = int(np.round(point + m_right))
 
-            # if high is already at an integer, we need to round up to next intereger
+            # if high is already at an integer, we need to round up to next integer
             # because slices have non-inclusive stop
             if np.isclose(high, point + m_right):
                 high += 1
