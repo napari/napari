@@ -228,7 +228,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
 
     Returns
     -------
-    values : None | Tuple[float, float]
+    values : None | tuple[float, float]
         Minimum and maximum values in that order or None if dtype is float.
 
     Notes
