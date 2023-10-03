@@ -1633,7 +1633,8 @@ class Shapes(Layer):
             position[:, self._slice_input.displayed]
             for position in in_view_shapes_coords
         ]
-
+        # TODO: fix types here with np.asarray(sliced_in_view_coords)
+        # but blocked by https://github.com/napari/napari/issues/6294
         return self.text.compute_text_coords(
             sliced_in_view_coords, ndisplay, order
         )
