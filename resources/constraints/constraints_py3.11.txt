@@ -21,7 +21,7 @@ attrs==23.1.0
     #   hypothesis
     #   jsonschema
     #   referencing
-babel==2.12.1
+babel==2.13.0
     # via
     #   napari (napari_repo/setup.cfg)
     #   sphinx
@@ -35,7 +35,7 @@ certifi==2023.7.22
     # via
     #   napari (napari_repo/setup.cfg)
     #   requests
-charset-normalizer==3.2.0
+charset-normalizer==3.3.0
     # via requests
 click==8.1.7
     # via
@@ -43,17 +43,17 @@ click==8.1.7
     #   typer
 cloudpickle==2.2.1
     # via dask
-cmake==3.27.5
+cmake==3.27.6
     # via triton
 comm==0.1.4
     # via ipykernel
 contourpy==1.1.1
     # via matplotlib
-coverage==7.3.1
+coverage==7.3.2
     # via pytest-cov
-cycler==0.11.0
+cycler==0.12.0
     # via matplotlib
-dask==2023.9.2
+dask==2023.9.3
     # via napari (napari_repo/setup.cfg)
 debugpy==1.8.0
     # via ipykernel
@@ -67,7 +67,7 @@ docutils==0.20.1
     # via sphinx
 entrypoints==0.4
     # via numcodecs
-executing==1.2.0
+executing==2.0.0
     # via stack-data
 fasteners==0.19
     # via zarr
@@ -76,7 +76,7 @@ filelock==3.12.4
     #   torch
     #   triton
     #   virtualenv
-fonttools==4.42.1
+fonttools==4.43.0
     # via matplotlib
 freetype-py==2.4.0
     # via vispy
@@ -88,11 +88,11 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.87.0
+hypothesis==6.87.1
     # via napari (napari_repo/setup.cfg)
 idna==3.4
     # via requests
-imageio==2.31.4
+imageio==2.31.5
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-svg
@@ -109,14 +109,14 @@ ipykernel==6.25.2
     # via
     #   napari-console
     #   qtconsole
-ipython==8.15.0
+ipython==8.16.1
     # via
     #   ipykernel
     #   napari (napari_repo/setup.cfg)
     #   napari-console
 ipython-genutils==0.2.0
     # via qtconsole
-jedi==0.19.0
+jedi==0.19.1
     # via ipython
 jinja2==3.1.2
     # via
@@ -144,7 +144,7 @@ lazy-loader==0.3
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
-lit==17.0.1
+lit==17.0.2
     # via triton
 locket==1.0.0
     # via partd
@@ -201,7 +201,6 @@ numpy==1.26.0
     #   napari-svg
     #   numcodecs
     #   pandas
-    #   pywavelets
     #   scikit-image
     #   scipy
     #   tensorstore
@@ -236,7 +235,7 @@ nvidia-nccl-cu11==2.14.3
     # via torch
 nvidia-nvtx-cu11==11.7.91
     # via torch
-packaging==23.1
+packaging==23.2
     # via
     #   build
     #   dask
@@ -271,7 +270,7 @@ pillow==10.0.1
     #   scikit-image
 pint==0.22
     # via napari (napari_repo/setup.cfg)
-platformdirs==3.10.0
+platformdirs==3.11.0
     # via
     #   jupyter-core
     #   pooch
@@ -370,8 +369,6 @@ python-dateutil==2.8.2
     #   pandas
 pytz==2023.3.post1
     # via pandas
-pywavelets==1.4.1
-    # via scikit-image
 pyyaml==6.0.1
     # via
     #   dask
@@ -402,7 +399,7 @@ requests==2.31.0
     # via
     #   pooch
     #   sphinx
-rich==13.5.3
+rich==13.6.0
     # via
     #   napari (napari_repo/setup.cfg)
     #   npe2
@@ -411,7 +408,7 @@ rpds-py==0.10.3
     # via
     #   jsonschema
     #   referencing
-scikit-image==0.21.0
+scikit-image==0.22.0
     # via napari (napari_repo/setup.cfg)
 scipy==1.11.3 ; python_version >= "3.9"
     # via
@@ -452,7 +449,7 @@ sphinxcontrib-qthelp==1.0.6
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.9
     # via sphinx
-stack-data==0.6.2
+stack-data==0.6.3
     # via ipython
 superqt==0.6.0
     # via
@@ -463,7 +460,7 @@ sympy==1.12
     # via torch
 tabulate==0.9.0
     # via numpydoc
-tensorstore==0.1.44
+tensorstore==0.1.45
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/setup.cfg)
@@ -488,7 +485,7 @@ tornado==6.3.3
     #   jupyter-client
 tqdm==4.66.1
     # via napari (napari_repo/setup.cfg)
-traitlets==5.10.1
+traitlets==5.11.2
     # via
     #   comm
     #   ipykernel
@@ -514,15 +511,15 @@ typing-extensions==4.8.0
     #   typer
 tzdata==2023.3
     # via pandas
-urllib3==2.0.5
+urllib3==2.0.6
     # via requests
 virtualenv==20.24.5
     # via napari (napari_repo/setup.cfg)
-vispy==0.14.0
+vispy==0.14.1
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-svg
-wcwidth==0.2.6
+wcwidth==0.2.8
     # via prompt-toolkit
 wheel==0.41.2
     # via

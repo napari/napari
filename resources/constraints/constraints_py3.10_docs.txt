@@ -22,7 +22,7 @@ attrs==23.1.0
     #   jsonschema
     #   jupyter-cache
     #   referencing
-babel==2.12.1
+babel==2.13.0
     # via
     #   napari (napari_repo/setup.cfg)
     #   sphinx
@@ -40,7 +40,7 @@ certifi==2023.7.22
     #   requests
 cfgv==3.4.0
     # via pre-commit
-charset-normalizer==3.2.0
+charset-normalizer==3.3.0
     # via requests
 click==8.1.7
     # via
@@ -50,7 +50,7 @@ click==8.1.7
     #   typer
 cloudpickle==2.2.1
     # via dask
-cmake==3.27.5
+cmake==3.27.6
     # via triton
 colorama==0.4.6
     # via sphinx-autobuild
@@ -58,11 +58,11 @@ comm==0.1.4
     # via ipykernel
 contourpy==1.1.1
     # via matplotlib
-coverage==7.3.1
+coverage==7.3.2
     # via pytest-cov
-cycler==0.11.0
+cycler==0.12.0
     # via matplotlib
-dask==2023.9.2
+dask==2023.9.3
     # via napari (napari_repo/setup.cfg)
 debugpy==1.8.0
     # via ipykernel
@@ -85,18 +85,18 @@ exceptiongroup==1.1.3
     #   hypothesis
     #   ipython
     #   pytest
-executing==1.2.0
+executing==2.0.0
     # via stack-data
 fasteners==0.19
     # via zarr
-fastjsonschema==2.18.0
+fastjsonschema==2.18.1
     # via nbformat
 filelock==3.12.4
     # via
     #   torch
     #   triton
     #   virtualenv
-fonttools==4.42.1
+fonttools==4.43.0
     # via matplotlib
 freetype-py==2.4.0
     # via vispy
@@ -104,19 +104,19 @@ fsspec==2023.9.2
     # via
     #   dask
     #   napari (napari_repo/setup.cfg)
-greenlet==2.0.2
+greenlet==3.0.0
     # via sqlalchemy
 heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.87.0
+hypothesis==6.87.1
     # via napari (napari_repo/setup.cfg)
-identify==2.5.29
+identify==2.5.30
     # via pre-commit
 idna==3.4
     # via requests
-imageio==2.31.4
+imageio==2.31.5
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-svg
@@ -139,7 +139,7 @@ ipykernel==6.25.2
     #   myst-nb
     #   napari-console
     #   qtconsole
-ipython==8.15.0
+ipython==8.16.1
     # via
     #   ipykernel
     #   myst-nb
@@ -147,7 +147,7 @@ ipython==8.15.0
     #   napari-console
 ipython-genutils==0.2.0
     # via qtconsole
-jedi==0.19.0
+jedi==0.19.1
     # via ipython
 jinja2==3.0.3
     # via
@@ -188,7 +188,7 @@ lazy-loader==0.3
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
-lit==17.0.1
+lit==17.0.2
     # via triton
 livereload==2.6.3
     # via sphinx-autobuild
@@ -258,7 +258,7 @@ networkx==3.1
     #   torch
 nibabel==5.1.0
     # via nilearn
-nilearn==0.10.1
+nilearn==0.10.2
     # via -r resources/constraints/version_denylist_examples.txt
 nodeenv==1.8.0
     # via pre-commit
@@ -281,7 +281,6 @@ numpy==1.23.5
     #   nilearn
     #   numcodecs
     #   pandas
-    #   pywavelets
     #   scikit-image
     #   scikit-learn
     #   scipy
@@ -317,7 +316,7 @@ nvidia-nccl-cu11==2.14.3
     # via torch
 nvidia-nvtx-cu11==11.7.91
     # via torch
-packaging==23.1
+packaging==23.2
     # via
     #   -r resources/constraints/version_denylist_examples.txt
     #   build
@@ -357,7 +356,7 @@ pillow==10.0.1
     #   scikit-image
 pint==0.22
     # via napari (napari_repo/setup.cfg)
-platformdirs==3.10.0
+platformdirs==3.11.0
     # via
     #   jupyter-core
     #   pooch
@@ -459,8 +458,6 @@ python-dateutil==2.8.2
     #   pandas
 pytz==2023.3.post1
     # via pandas
-pywavelets==1.4.1
-    # via scikit-image
 pyyaml==6.0.1
     # via
     #   dask
@@ -497,7 +494,7 @@ requests==2.31.0
     #   nilearn
     #   pooch
     #   sphinx
-rich==13.5.3
+rich==13.6.0
     # via
     #   napari (napari_repo/setup.cfg)
     #   npe2
@@ -506,7 +503,7 @@ rpds-py==0.10.3
     # via
     #   jsonschema
     #   referencing
-scikit-image==0.21.0
+scikit-image==0.22.0
     # via napari (napari_repo/setup.cfg)
 scikit-learn==1.3.1
     # via nilearn
@@ -582,7 +579,7 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 sqlalchemy==2.0.21
     # via jupyter-cache
-stack-data==0.6.2
+stack-data==0.6.3
     # via ipython
 superqt==0.6.0
     # via
@@ -593,7 +590,7 @@ sympy==1.12
     # via torch
 tabulate==0.9.0
     # via jupyter-cache
-tensorstore==0.1.44
+tensorstore==0.1.45
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/setup.cfg)
@@ -628,7 +625,7 @@ tornado==6.3.3
     #   livereload
 tqdm==4.66.1
     # via napari (napari_repo/setup.cfg)
-traitlets==5.10.1
+traitlets==5.11.2
     # via
     #   comm
     #   ipykernel
@@ -659,17 +656,17 @@ typing-extensions==4.8.0
     #   typer
 tzdata==2023.3
     # via pandas
-urllib3==2.0.5
+urllib3==2.0.6
     # via requests
 virtualenv==20.24.5
     # via
     #   napari (napari_repo/setup.cfg)
     #   pre-commit
-vispy==0.14.0
+vispy==0.14.1
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-svg
-wcwidth==0.2.6
+wcwidth==0.2.8
     # via prompt-toolkit
 wheel==0.41.2
     # via
