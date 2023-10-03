@@ -6,16 +6,16 @@ repos:
       pass_filenames: true
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.290
+    rev: v0.0.292
     hooks:
       - id: ruff
         exclude: _vendor|vendored
 -   repo: https://github.com/seddonym/import-linter
-    rev: v1.11.1
+    rev: v1.12.0
     hooks:
     - id: import-linter
       stages: [manual]
 -   repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.26.3
+    rev: 0.27.0
     hooks:
       - id: check-github-workflows

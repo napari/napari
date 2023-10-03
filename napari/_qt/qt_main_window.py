@@ -53,6 +53,7 @@ from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
+from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
@@ -738,7 +739,7 @@ class Window:
     def qt_viewer(self):
         warnings.warn(
             trans._(
-                'Public access to Window.qt_viewer is deprecated and will be removed in\nv0.5.0. It is considered an "implementation detail" of the napari\napplication, not part of the napari viewer model. If your use case\nrequires access to qt_viewer, please open an issue to discuss.',
+                'Public access to Window.qt_viewer is deprecated and will be removed in\nv0.6.0. It is considered an "implementation detail" of the napari\napplication, not part of the napari viewer model. If your use case\nrequires access to qt_viewer, please open an issue to discuss.',
                 deferred=True,
             ),
             category=FutureWarning,
@@ -1525,10 +1526,8 @@ class Window:
             self._qt_window.close()
             del self._qt_window
 
-    def _open_preferences_dialog(self):
+    def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""
-        from napari._qt.dialogs.preferences_dialog import PreferencesDialog
-
         if self._pref_dialog is None:
             win = PreferencesDialog(parent=self._qt_window)
             self._pref_dialog = win
@@ -1548,6 +1547,8 @@ class Window:
             win.show()
         else:
             self._pref_dialog.raise_()
+
+        return self._pref_dialog
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
