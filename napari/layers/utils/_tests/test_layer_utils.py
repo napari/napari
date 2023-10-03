@@ -579,10 +579,6 @@ def test_zarr_get_chunk_size():
     assert np.array_equal(chunk_size, chunk_shape)
 
 
-#
-# @pytest.mark.skip(
-#     reason="Currently passes only locally due to xarray chunk size being false on CI."
-# )
 def test_xarray_get_chunk_size():
     import xarray as xr
 
