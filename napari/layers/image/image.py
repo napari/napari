@@ -714,25 +714,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _set_view_slice(self) -> None:
         """Set the slice output based on this layer's current state."""
-        # Skip if any non-displayed data indices are out of bounds.
-        # This can happen when slicing layers with different extents.
-        data_slice = self._data_slice
-        for d in self._slice_input.not_displayed:
-            pt = data_slice.point[d]
-            low = pt - data_slice.margin_left[d]
-            high = pt + data_slice.margin_right[d]
-            if pt < max(0, low) or pt > min(self._extent_data[1][d], high):
-                self._slice = _ImageSliceResponse.make_empty(
-                    slice_input=self._slice_input, rgb=self.rgb
-                )
-                return
-
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request_internal(
             slice_input=self._slice_input,
-            data_slice=data_slice,
+            data_slice=self._data_slice,
             dask_indexer=nullcontext,
         )
         response = request()

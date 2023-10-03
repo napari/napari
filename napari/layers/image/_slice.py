@@ -177,6 +177,10 @@ class _ImageSliceRequest:
     id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _ImageSliceResponse:
+        if self._slice_out_of_bounds():
+            return _ImageSliceResponse.make_empty(
+                slice_input=self.slice_input, rgb=self.rgb
+            )
         with self.dask_indexer():
             return (
                 self._call_multi_scale()
@@ -320,3 +324,20 @@ class _ImageSliceRequest:
             # axes are displayed.
             return (*order, max(order) + 1)
         return order
+
+    def _slice_out_of_bounds(self):
+        """Check if the data slice is out of bounds for any dimension."""
+        data = self.data[0] if self.multiscale else self.data
+        for d in self._slice_input.not_displayed:
+            pt = self.data_slice.point[d]
+            max_idx = data.shape[d] - 1
+            if self.projection_mode == 'none':
+                if pt < 0 or pt > max_idx:
+                    return True
+            else:
+                pt = self.data_slice.point[d]
+                low = pt - self.data_slice.margin_left[d]
+                high = pt + self.data_slice.margin_right[d]
+                if high < 0 or low > max_idx:
+                    return True
+        return False
