@@ -95,7 +95,7 @@ def add_deprecated_property(
         raise RuntimeError(f"{new_name} property must exist.")
 
     msg = trans._(
-        f"{obj}.{previous_name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}",
+        f"{obj.__name__}.{previous_name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}",
         deferred=True,
     )
 
