@@ -1781,8 +1781,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             )
             if any(s == 0 for s in display_shape):
                 return
-            if self.data_level != level or not np.all(
-                self.corner_pixels == corners
+            if self.data_level != level or not np.array_equal(
+                self.corner_pixels, corners
             ):
                 self._data_level = level
                 self.corner_pixels = corners
