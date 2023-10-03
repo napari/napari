@@ -79,9 +79,9 @@ def add_deprecated_property(
     obj:
         Class instances to add property
     previous_name : str
-        Name of previous property, it methods must be removed.
+        Name of previous property, its methods must be removed.
     new_name : str
-        Name of new property, must have its setter and getter implemented.
+        Name of new property, must have its getter (and setter if applicable) implemented.
     version : str
         Version where deprecated property will be removed.
     since_version : str
@@ -89,13 +89,13 @@ def add_deprecated_property(
     """
 
     if hasattr(obj, previous_name):
-        raise RuntimeError(f"{previous_name} attribute already exists.")
+        raise RuntimeError(f"{previous_name} property already exists.")
 
     if not hasattr(obj, new_name):
-        raise RuntimeError(f"{new_name} property must exists.")
+        raise RuntimeError(f"{new_name} property must exist.")
 
     msg = trans._(
-        f"{previous_name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}",
+        f"{obj}.{previous_name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}",
         deferred=True,
     )
 
