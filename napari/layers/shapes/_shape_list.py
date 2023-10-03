@@ -709,7 +709,7 @@ class ShapeList:
         """
         if new_type is not None:
             cur_shape = self.shapes[index]
-            if type(new_type) == str:
+            if isinstance(new_type, str):
                 shape_type = ShapeType(new_type)
                 if shape_type in shape_classes:
                     shape_cls = shape_classes[shape_type]
@@ -933,7 +933,7 @@ class ShapeList:
         self.add(shape, shape_index=index)
         self._update_z_order()
 
-    def outline(self, indices):
+    def outline(self, indices: Union[int, Sequence[int]]):
         """Finds outlines of shapes listed in indices
 
         Parameters
@@ -951,43 +951,52 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
-        if type(indices) is list:
-            meshes = self._mesh.triangles_index
-            triangle_indices = [
-                i
-                for i, x in enumerate(meshes)
-                if x[0] in indices and x[1] == 1
-            ]
-            meshes = self._mesh.vertices_index
-            vertices_indices = [
-                i
-                for i, x in enumerate(meshes)
-                if x[0] in indices and x[1] == 1
-            ]
-        else:
-            triangle_indices = np.all(
-                self._mesh.triangles_index == [indices, 1], axis=1
-            )
-            triangle_indices = np.where(triangle_indices)[0]
-            vertices_indices = np.all(
-                self._mesh.vertices_index == [indices, 1], axis=1
-            )
-            vertices_indices = np.where(vertices_indices)[0]
+        if not isinstance(indices, Sequence):
+            indices = [indices]
+        return self.outlines(indices)
+
+    def outlines(self, indices: Sequence[int]):
+        """Finds outlines of shapes listed in indices
+
+        Parameters
+        ----------
+        indices : Sequence[int]
+            Location in list of the shapes to be outline.
+
+        Returns
+        -------
+        centers : np.ndarray
+            Nx2 array of centers of outline
+        offsets : np.ndarray
+            Nx2 array of offsets of outline
+        triangles : np.ndarray
+            Mx3 array of any indices of vertices for triangles of outline
+        """
+        indices_set = set(indices)
+        meshes = self._mesh.triangles_index
+        triangle_indices = [
+            i
+            for i, x in enumerate(meshes)
+            if x[0] in indices_set and x[1] == 1
+        ]
+        meshes = self._mesh.vertices_index
+        vertices_indices = [
+            i
+            for i, x in enumerate(meshes)
+            if x[0] in indices_set and x[1] == 1
+        ]
 
         offsets = self._mesh.vertices_offsets[vertices_indices]
         centers = self._mesh.vertices_centers[vertices_indices]
         triangles = self._mesh.triangles[triangle_indices]
 
-        if type(indices) is list:
-            t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
-            inds = self._mesh.vertices_index[vertices_indices][:, 0]
-            starts = np.unique(inds, return_index=True)[1]
-            for i, ind in enumerate(indices):
-                inds = t_ind == ind
-                adjust_index = starts[i] - vertices_indices[starts[i]]
-                triangles[inds] = triangles[inds] + adjust_index
-        else:
-            triangles = triangles - vertices_indices[0]
+        t_ind = self._mesh.triangles_index[triangle_indices][:, 0]
+        inds = self._mesh.vertices_index[vertices_indices][:, 0]
+        starts = np.unique(inds, return_index=True)[1]
+        for i, ind in enumerate(indices):
+            inds = t_ind == ind
+            adjust_index = starts[i] - vertices_indices[starts[i]]
+            triangles[inds] = triangles[inds] + adjust_index
 
         return centers, offsets, triangles
 

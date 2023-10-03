@@ -1,7 +1,16 @@
 import warnings
 from collections import deque
 from contextlib import contextmanager
-from typing import Callable, ClassVar, Dict, List, Optional, Tuple, Union
+from typing import (
+    Callable,
+    ClassVar,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 import numpy.typing as npt
@@ -36,9 +45,10 @@ from napari.layers.labels._labels_utils import (
 )
 from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
-from napari.utils._dtype import normalize_dtype
+from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
 from napari.utils.colormaps import (
     direct_colormap,
+    ensure_colormap,
     label_colormap,
 )
 from napari.utils.events import Event
@@ -552,13 +562,17 @@ class Labels(_ImageBase):
 
         if self._background_label not in color:
             color[self._background_label] = 'transparent'
-        if None not in color:
-            color[None] = 'black'
+
+        none_color = color.pop(None, 'black')
+        self._validate_colors(color)
+
+        color[None] = none_color
 
         colors = {
             label: transform_color(color_str)[0]
             for label, color_str in color.items()
         }
+
         self._color = colors
         self._direct_colormap = direct_colormap(colors)
 
@@ -576,6 +590,45 @@ class Labels(_ImageBase):
             color_mode = LabelColorMode.DIRECT
 
         self.color_mode = color_mode
+
+    @classmethod
+    def _validate_colors(cls, labels: Iterable[int]):
+        """Check whether any of the given labels will be aliased together.
+
+        See https://github.com/napari/napari/issues/6084 for details.
+        """
+        labels_int = np.fromiter(labels, dtype=int)
+        labels_unique = np.unique(cls._to_vispy_texture_dtype(labels_int))
+        if labels_unique.size == labels_int.size:
+            return
+
+        # recalculate here second time to provide best performance on colors that are not colliding
+        labels_unique, inverse, count = np.unique(
+            cls._to_vispy_texture_dtype(labels_int),
+            return_inverse=True,
+            return_counts=True,
+        )
+        collided_idx = np.where(count > 1)[0]
+        aliased_list = [
+            labels_int[np.where(inverse == idx)[0]] for idx in collided_idx
+        ]
+
+        alias_string = "\n".join(
+            trans._(
+                'Labels {col_li} will display as the same color as {col_la};',
+                col_li=",".join(str(i) for i in lst[:-1]),
+                col_la=str(lst[-1]),
+            )
+            for lst in aliased_list
+        )
+        warn_text = trans._(
+            "Because integer labels are cast to less-precise float for display, "
+            "the following label sets will render as the same color:\n"
+            "{alias_string}\n"
+            "See https://github.com/napari/napari/issues/6084 for details.",
+            alias_string=alias_string,
+        )
+        warnings.warn(warn_text, category=RuntimeWarning)
 
     def _is_default_colors(self, color):
         """Returns True if color contains only default colors, otherwise False.
@@ -706,12 +759,12 @@ class Labels(_ImageBase):
         self._cached_labels = None  # invalidates labels cache
         self._color_mode = color_mode
         if color_mode == LabelColorMode.AUTO:
-            super()._set_colormap(self._random_colormap)
+            self._colormap = ensure_colormap(self._random_colormap)
         else:
-            super()._set_colormap(self._direct_colormap)
+            self._colormap = ensure_colormap(self._direct_colormap)
         self._selected_color = self.get_color(self.selected_label)
         self.events.color_mode()
-        self.events.colormap()
+        self.events.colormap()  # If remove this emitting, connect shader update to color_mode
         self.events.selected_label()
         self.refresh()
 
@@ -724,6 +777,7 @@ class Labels(_ImageBase):
     def show_selected_label(self, show_selected):
         self._show_selected_label = show_selected
         self.colormap.use_selection = show_selected
+        self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
         self._cached_labels = None
         self.refresh()
@@ -804,7 +858,8 @@ class Labels(_ImageBase):
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
 
-    def _to_vispy_texture_dtype(self, data):
+    @staticmethod
+    def _to_vispy_texture_dtype(data):
         """Convert data to a dtype that can be used as a VisPy texture.
 
         Labels layers allow all integer dtypes for data, but only a subset
@@ -812,7 +867,7 @@ class Labels(_ImageBase):
         float32 as it can represent all input values (though not losslessly,
         see https://github.com/napari/napari/issues/6084).
         """
-        return data.astype(np.float32)
+        return vispy_texture_dtype(data)
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
         """Override to convert raw slice data to displayed label colors."""
@@ -830,7 +885,7 @@ class Labels(_ImageBase):
 
         # Keep only the dimensions that correspond to the current view
         updated_slice = tuple(
-            [self._updated_slice[index] for index in dims_displayed]
+            self._updated_slice[index] for index in dims_displayed
         )
 
         offset = [axis_slice.start for axis_slice in updated_slice]

@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: "3.x"
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: "3.x"
@@ -106,7 +106,7 @@ jobs:
         with:
           access_token: ${{ github.token }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
@@ -167,7 +167,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: napari-from-github
 
@@ -199,7 +199,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9
@@ -216,3 +216,31 @@ jobs:
           run: tox -e py39-linux-pyside2-examples
         env:
           PIP_CONSTRAINT: resources/constraints/constraints_py3.9_examples.txt
+
+
+  test_benchmarks:
+    name: test benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache-dependency-path: napari-from-github/setup.cfg
+
+      - uses: tlambert03/setup-qt-libs@v1
+
+      - name: install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install asv[virtualenv] 
+
+      - name: Run benchmarks
+        uses: aganders3/headless-gui@v1
+        with:
+          run: |
+            asv machine --yes
+            asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
+        env:
+          PR: 1
