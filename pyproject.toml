@@ -311,6 +311,7 @@ module = [
     'napari._vispy.experimental.tiled_image_visual',
     'napari._vispy.experimental.vispy_tiled_image_layer',
     'napari._vispy.overlays.base',
+    'napari._vispy.utils.cursor',
     'napari.components.layerlist',
     'napari.components.viewer_model',
     'napari.layers._layer_actions',
