@@ -251,7 +251,10 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
                 deferred=True,
             )
         )
-    if not np.issubdtype(dtype, np.integer) and chunk_size:
+    if chunk_size and (
+        not np.issubdtype(dtype, np.integer)
+        or np.prod(chunk_size) > PIXEL_THRESHOLD
+    ):
         return None
 
     if chunk_size:
@@ -263,8 +266,6 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
             [_nanmax(data[sl]) for sl in slices],
             [_nanmin(data[sl]) for sl in slices],
         ]
-        if not reduced_data:
-            return None
         if chunk_size:
             reduced_data = dask.compute(*reduced_data)
     elif data.size > PIXEL_THRESHOLD:
@@ -281,9 +282,6 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
                     [_nanmin(data[sl]) for sl in slices],
                 ]
                 reduced_data = dask.compute(*reduced_data)
-            else:
-                # this is none when the chunk size product goes over the pixel threshold of 1e7
-                return None
         # If we get here we are dealing with a numpy array and shape corresponds to the shape of this array.
         else:
             slices = _get_crop_slices(shape, idxs, offset)
@@ -331,9 +329,6 @@ def _get_1d_slices(shape, chunk_size):
         ]
 
     chunk_size_product = np.prod(chunk_size)
-    if chunk_size_product > PIXEL_THRESHOLD:
-        return None
-
     allowed_chunks = int(PIXEL_THRESHOLD // chunk_size_product)
     multiplier = min(allowed_chunks, MAX_NUMBER_OF_CHUNKS)
 
@@ -400,7 +395,7 @@ def _calculate_chunk_parameters(
     plane_indices: Sequence[Sequence[int]],
     offset: int,
     chunk_shape: None | Tuple[int, ...] = None,
-) -> Tuple[int, None | int, int, int]:
+) -> Tuple[int, int, int, int]:
     """
     Calculate the chunk parameters for the contrast limit calculation.
 
@@ -516,7 +511,7 @@ def _get_crop_slices(
     plane_indices: Sequence[Sequence[int]],
     offset: int,
     chunk_shape: None | Tuple[int, ...] = None,
-) -> Union[None, List[Tuple[Union[int, slice], ...]]]:
+) -> List[Tuple[Union[int, slice], ...]]:
     """
     Get the crop slices to be used for determining contrast limits when data is larger than the pixel threshold.
 
@@ -551,9 +546,6 @@ def _get_crop_slices(
         chunk_size_y,
         chunk_size_x,
     ) = _calculate_chunk_parameters(plane_indices, offset, chunk_shape)
-    # chunk size over PIXEL_THRESHOLD, we wait until something is in memory for calculating the contrast limits.
-    if not max_allowed_chunks:
-        return None
 
     plane_indices, y_start_indices, x_start_indices = _get_pixel_start_indices(
         plane_indices,
