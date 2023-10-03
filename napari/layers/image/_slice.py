@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable, Tuple
 
 import numpy as np
 
@@ -281,36 +281,18 @@ class _ImageSliceRequest:
         """
         Slice the given data with the given data slice and project the extra dims.
         """
-        slices: List[slice | int] = [
-            slice(None) if np.isnan(p) else int(np.round(p))
-            for p in data_slice.point
-        ]
 
         if self.projection_mode == 'none':
             # early return with only the dims point being used
-            return np.asarray(data[tuple(slices)])
+            slices = self._point_to_slices(data_slice.point)
+            return np.asarray(data[slices])
 
-        for dim, (point, m_left, m_right) in enumerate(data_slice):
-            if dim in self.slice_input.displayed:
-                continue
-
-            low = int(np.round(point - m_left))
-            high = int(np.round(point + m_right))
-
-            # if high is already at an integer, we need to round up to next integer
-            # because slices have non-inclusive stop
-            if np.isclose(high, point + m_right):
-                high += 1
-
-            # ensure we always get at least 1 slice
-            if low == high:
-                high += 1
-
-            slice_ = slice(max(0, low), min(data.shape[dim], high))
-            slices[dim] = slice_
+        slices = self._data_slice_to_slices(
+            data_slice, self.slice_input.displayed
+        )
 
         return project_slice(
-            np.asarray(data[tuple(slices)]),
+            data=np.asarray(data[slices]),
             axis=tuple(self.slice_input.not_displayed),
             mode=self.projection_mode,
         )
@@ -332,12 +314,53 @@ class _ImageSliceRequest:
             pt = self.data_slice.point[d]
             max_idx = data.shape[d] - 1
             if self.projection_mode == 'none':
-                if pt < 0 or pt > max_idx:
+                if np.round(pt) < 0 or np.round(pt) > max_idx:
                     return True
             else:
                 pt = self.data_slice.point[d]
-                low = pt - self.data_slice.margin_left[d]
-                high = pt + self.data_slice.margin_right[d]
+                low = np.round(pt - self.data_slice.margin_left[d])
+                high = np.round(pt + self.data_slice.margin_right[d])
                 if high < 0 or low > max_idx:
                     return True
         return False
+
+    @staticmethod
+    def _point_to_slices(point):
+        # no need to check out of bounds here cause it's guaranteed
+
+        # values in point and margins are np.nan if no slicing should happen along that dimension
+        # which is always the case for displayed dims, so that becomes `slice(None)` for actually
+        # indexing the layer.
+        # For the rest, indices are rounded to the closest integer
+        return tuple(
+            slice(None) if np.isnan(p) else int(np.round(p)) for p in point
+        )
+
+    @staticmethod
+    def _data_slice_to_slices(data_slice, dims_displayed):
+        slices = [slice(None) for _ in range(data_slice.ndim)]
+
+        for dim, (point, m_left, m_right) in enumerate(data_slice):
+            if dim in dims_displayed:
+                # leave slice(None) for displayed dimensions
+                # point and margin values here are np.nan; if np.nans pass through this check,
+                # something is likely wrong with the data_slice creation at a previous step!
+                continue
+
+            # max here ensures we don't start slicing from negative values (=end of array)
+            low = max(int(np.round(point - m_left)), 0)
+            high = max(int(np.round(point + m_right)), 0)
+
+            # if high is already exactly at an integer value, we need to round up
+            # to next integer because slices have non-inclusive stop
+            if np.isclose(high, point + m_right):
+                high += 1
+
+            # ensure we always get at least 1 slice (we're guaranteed to be
+            # in bounds from a previous check)
+            if low == high:
+                high += 1
+
+            slices[dim] = slice(low, high)
+
+        return tuple(slices)
