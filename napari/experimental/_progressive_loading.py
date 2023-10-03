@@ -370,7 +370,7 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
         worker.await_workers()
         # worker.await_workers(msecs=30000)
 
-    max_texture_size = get_max_texture_sizes()[ndisplay - 2]
+    get_max_texture_sizes()[ndisplay - 2]
 
     # Find the corners of visible data in the highest resolution
     corner_pixels = root_layer.corner_pixels
