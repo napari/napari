@@ -38,7 +38,7 @@ def test_add_image():
     data = np.random.random((10, 15))
     viewer.add_image(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
 
@@ -93,7 +93,7 @@ def test_add_volume():
     data = np.random.random((10, 15, 20))
     viewer.add_image(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 3
 
 
@@ -105,7 +105,9 @@ def test_add_multiscale():
     data = [np.random.random(s) for s in shapes]
     viewer.add_image(data, multiscale=True)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    # this is not an nd array but a list of ndarray.
+    # I think that might be a edge case of MultiScaleData.
+    assert viewer.layers[0].data == data
     assert viewer.dims.ndim == 2
 
 
@@ -120,7 +122,9 @@ def test_add_multiscale_image_with_negative_floats():
     viewer.add_image(data, multiscale=True)
 
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    # this is not an nd array but a list of ndarray.
+    # I think that might be a edge case of MultiScaleData.
+    assert viewer.layers[0].data == data
     assert viewer.dims.ndim == 2
 
 
@@ -131,7 +135,7 @@ def test_add_labels():
     data = np.random.randint(20, size=(10, 15))
     viewer.add_labels(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
 
@@ -142,7 +146,7 @@ def test_add_points():
     data = 20 * np.random.random((10, 2))
     viewer.add_points(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
 
@@ -190,7 +194,7 @@ def test_add_vectors():
     data = 20 * np.random.random((10, 2, 2))
     viewer.add_vectors(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
 
@@ -201,7 +205,7 @@ def test_add_shapes():
     data = 20 * np.random.random((10, 4, 2))
     viewer.add_shapes(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
 
@@ -216,7 +220,7 @@ def test_add_surface():
     viewer.add_surface(data)
     assert len(viewer.layers) == 1
     assert np.all(
-        [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
+        [np.array_equal(vd, d) for vd, d in zip(viewer.layers[0].data, data)]
     )
     assert viewer.dims.ndim == 3
 
@@ -228,13 +232,13 @@ def test_mix_dims():
     data = np.random.random((10, 15))
     viewer.add_image(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 2
 
     data = np.random.random((6, 10, 15))
     viewer.add_image(data)
     assert len(viewer.layers) == 2
-    assert np.all(viewer.layers[1].data == data)
+    assert np.array_equal(viewer.layers[1].data, data)
     assert viewer.dims.ndim == 3
 
 
@@ -492,8 +496,8 @@ def test_swappable_dims():
     np.random.seed(0)
     image_data = np.random.random((7, 12, 10, 15))
     image_name = viewer.add_image(image_data).name
-    assert np.all(
-        viewer.layers[image_name]._data_view == image_data[3, 5, :, :]
+    assert np.array_equal(
+        viewer.layers[image_name]._data_view, image_data[3, 5, :, :]
     )
 
     points_data = np.random.randint(6, size=(10, 4))
@@ -506,18 +510,18 @@ def test_swappable_dims():
     labels_name = viewer.add_labels(labels_data).name
     # midpoints indices into the data below depend on the data range.
     # This depends on the values in vectors_data and thus the random seed.
-    assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 5, :, :]
+    assert np.array_equal(
+        viewer.layers[labels_name]._slice.image.raw, labels_data[3, 5, :, :]
     )
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
     assert viewer.dims.order == (0, 2, 1, 3)
-    assert np.all(
-        viewer.layers[image_name]._data_view == image_data[3, :, 4, :]
+    assert np.array_equal(
+        viewer.layers[image_name]._data_view, image_data[3, :, 4, :]
     )
-    assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 4, :]
+    assert np.array_equal(
+        viewer.layers[labels_name]._slice.image.raw, labels_data[3, :, 4, :]
     )
 
 
@@ -592,7 +596,7 @@ def test_add_remove_layer_dims_change():
     data = np.random.random((10, 15, 20))
     layer = viewer.add_image(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 3
 
     # Remove layer and check ndim returns to 2
@@ -819,7 +823,7 @@ def test_camera():
     data = np.random.random((10, 15, 20))
     viewer.add_image(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.array_equal(viewer.layers[0].data, data)
     assert viewer.dims.ndim == 3
 
     assert viewer.dims.ndisplay == 2

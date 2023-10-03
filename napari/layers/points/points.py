@@ -536,13 +536,38 @@ class Points(Layer):
     @data.setter
     def data(self, data: Optional[np.ndarray]):
         """Set the data array and emit a corresponding event."""
-        self._set_data(data)
-        self.events.data(
-            value=self.data,
-            action=ActionType.CHANGE.value,
-            data_indices=slice(None),
-            vertex_indices=((),),
+        prior_data = len(self.data) > 0
+        data_not_empty = (
+            data is not None
+            and (isinstance(data, np.ndarray) and data.size > 0)
+            or (isinstance(data, list) and len(data) > 0)
         )
+        kwargs = {
+            "value": self.data,
+            "vertex_indices": ((),),
+            "data_indices": tuple(i for i in range(len(self.data))),
+        }
+        if prior_data and data_not_empty:
+            kwargs["action"] = ActionType.CHANGING
+        elif data_not_empty:
+            kwargs["action"] = ActionType.ADDING
+            kwargs["data_indices"] = tuple(i for i in range(len(data)))
+        else:
+            kwargs["action"] = ActionType.REMOVING
+
+        self.events.data(**kwargs)
+        self._set_data(data)
+        kwargs["data_indices"] = tuple(i for i in range(len(self.data)))
+        kwargs["value"] = self.data
+
+        if prior_data and data_not_empty:
+            kwargs["action"] = ActionType.CHANGED
+        elif data_not_empty:
+            kwargs["data_indices"] = tuple(i for i in range(len(data)))
+            kwargs["action"] = ActionType.ADDED
+        else:
+            kwargs["action"] = ActionType.REMOVED
+        self.events.data(**kwargs)
 
     def _set_data(self, data: Optional[np.ndarray]):
         """Set the .data array attribute, without emitting an event."""
@@ -836,7 +861,7 @@ class Points(Layer):
         return self._size
 
     @size.setter
-    def size(self, size: Union[int, float, np.ndarray, list]) -> None:
+    def size(self, size: Union[float, np.ndarray, list]) -> None:
         try:
             self._size = np.broadcast_to(size, len(self.data)).copy()
         except ValueError as e:
@@ -968,9 +993,7 @@ class Points(Layer):
         return self._edge_width
 
     @edge_width.setter
-    def edge_width(
-        self, edge_width: Union[int, float, np.ndarray, list]
-    ) -> None:
+    def edge_width(self, edge_width: Union[float, np.ndarray, list]) -> None:
         # broadcast to np.array
         edge_width = np.broadcast_to(edge_width, self.data.shape[0]).copy()
 
@@ -1935,10 +1958,16 @@ class Points(Layer):
             Point or points to add to the layer data.
         """
         cur_points = len(self.data)
+        self.events.data(
+            value=self.data,
+            action=ActionType.ADDING,
+            data_indices=(-1,),
+            vertex_indices=((),),
+        )
         self._set_data(np.append(self.data, np.atleast_2d(coords), axis=0))
         self.events.data(
             value=self.data,
-            action=ActionType.ADD.value,
+            action=ActionType.ADDED,
             data_indices=(-1,),
             vertex_indices=((),),
         )
@@ -1949,6 +1978,14 @@ class Points(Layer):
         index = list(self.selected_data)
         index.sort()
         if len(index):
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVING,
+                data_indices=tuple(
+                    self.selected_data,
+                ),
+                vertex_indices=((),),
+            )
             self._shown = np.delete(self._shown, index, axis=0)
             self._size = np.delete(self._size, index, axis=0)
             self._symbol = np.delete(self._symbol, index, axis=0)
@@ -1973,7 +2010,7 @@ class Points(Layer):
             self._set_data(np.delete(self.data, index, axis=0))
             self.events.data(
                 value=self.data,
-                action=ActionType.REMOVE.value,
+                action=ActionType.REMOVED,
                 data_indices=tuple(
                     self.selected_data,
                 ),
@@ -2007,7 +2044,7 @@ class Points(Layer):
             self.refresh()
         self.events.data(
             value=self.data,
-            action=ActionType.CHANGE.value,
+            action=ActionType.CHANGED,
             data_indices=tuple(selection_indices),
             vertex_indices=((),),
         )
