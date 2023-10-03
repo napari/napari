@@ -234,15 +234,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     If the data type is uint8 or rgb, no calculation is performed, and 0-255 is
     returned.
     """
-    shape = data.shape
-    chunk_size = (
-        _get_chunk_size(data) if not isinstance(data, np.ndarray) else None
-    )
-
-    dtype = normalize_dtype(getattr(data, 'dtype', None))
     # Vispy only supports uint8 RGB for which we set these clims
-    if dtype == np.uint8 or rgb:
-        return 0, 255
     if rgb and dtype != np.uint8:
         # Vispy does not display rgb other than uint8, so it casts it to uint8
         show_info(
@@ -251,6 +243,15 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
                 deferred=True,
             )
         )
+    if dtype == np.uint8 or rgb:
+        return 0, 255
+    
+    shape = data.shape
+    chunk_size = (
+        _get_chunk_size(data) if not isinstance(data, np.ndarray) else None
+    )
+
+    dtype = normalize_dtype(getattr(data, 'dtype', None))
     if not np.issubdtype(dtype, np.integer) and chunk_size:
         return None
 
