@@ -37,7 +37,9 @@ if TYPE_CHECKING:
     from napari.layers._multiscale_data import MultiScaleData
 
 PIXEL_THRESHOLD = int(1e7)
+# We allow for a maximum of 10 million pixels to be used for the contrast limit calculation
 MAX_NUMBER_OF_CHUNKS = 20
+# We keep the number of chunks relatively low in order to keep the calculation fast when lazy.
 
 
 class Extent(NamedTuple):
