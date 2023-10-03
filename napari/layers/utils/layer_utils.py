@@ -379,9 +379,7 @@ def _get_plane_indices(
     middle_plane_idx = tuple(s // 2 for s in shape[:-offset])
     top_plane_idx = tuple(s - 1 for s in shape[:-offset])
     idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
-    if len(idxs) != len(set(idxs)):
-        return list(set(idxs))
-    return idxs
+    return list(set(idxs))
 
 
 def _calculate_chunk_parameters(
