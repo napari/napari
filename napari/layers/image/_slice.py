@@ -328,7 +328,7 @@ class _ImageSliceRequest:
     def _slice_out_of_bounds(self):
         """Check if the data slice is out of bounds for any dimension."""
         data = self.data[0] if self.multiscale else self.data
-        for d in self._slice_input.not_displayed:
+        for d in self.slice_input.not_displayed:
             pt = self.data_slice.point[d]
             max_idx = data.shape[d] - 1
             if self.projection_mode == 'none':
