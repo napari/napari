@@ -245,7 +245,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
         )
     if dtype == np.uint8 or rgb:
         return 0, 255
-    
+
     shape = data.shape
     chunk_size = (
         _get_chunk_size(data) if not isinstance(data, np.ndarray) else None
