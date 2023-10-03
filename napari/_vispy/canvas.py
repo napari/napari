@@ -338,6 +338,7 @@ class VispyCanvas:
         position_world = list(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):
             position_world[d] = position_world_slice[i]
+        assert len(position_world) == 2
         return position_world[0], position_world[1]
 
     def _process_mouse_event(
