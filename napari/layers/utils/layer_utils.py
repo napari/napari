@@ -268,31 +268,22 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
             [_nanmax(data[sl]) for sl in slices],
             [_nanmin(data[sl]) for sl in slices],
         ]
-        if chunk_size:
-            reduced_data = dask.compute(*reduced_data)
     elif data.size > PIXEL_THRESHOLD:
         # If data is very large take the top, bottom, and middle slices
         offset = 2 + int(rgb)
         # Indices are either numpy array or chunk indices dependent on data structure of data and are 0 < length <= 3
         idxs = _get_plane_indices(shape, offset)
+        slices = _get_crop_slices(shape, idxs, offset, chunk_size)
 
-        if chunk_size:
-            slices = _get_crop_slices(shape, idxs, offset, chunk_size)
-            if slices:
-                reduced_data = [
-                    [_nanmax(data[sl]) for sl in slices],
-                    [_nanmin(data[sl]) for sl in slices],
-                ]
-                reduced_data = dask.compute(*reduced_data)
-        # If we get here we are dealing with a numpy array and shape corresponds to the shape of this array.
-        else:
-            slices = _get_crop_slices(shape, idxs, offset)
-            reduced_data = [
-                [_nanmax(data[slicer[0], slicer[1]]) for slicer in slices],
-                [_nanmin(data[slicer[0], slicer[1]]) for slicer in slices],
-            ]
+        reduced_data = [
+            [_nanmax(data[sl]) for sl in slices],
+            [_nanmin(data[sl]) for sl in slices],
+        ]
     else:
         reduced_data = data
+
+    if chunk_size:
+        reduced_data = dask.compute(*reduced_data)
 
     min_val = _nanmin(reduced_data)
     max_val = _nanmax(reduced_data)
