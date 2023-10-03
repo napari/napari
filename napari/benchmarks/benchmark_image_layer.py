@@ -14,6 +14,9 @@ class Image2DSuite:
 
     params = [2**i for i in range(4, 13)]
 
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(6, 13)]
+
     def setup(self, n):
         np.random.seed(0)
         self.data = np.random.random((n, n))
@@ -44,8 +47,9 @@ class Image2DSuite:
         """Time to refresh view."""
         self.layer.refresh()
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
+        # Disabled because of __sizeof__ bug on the main branch and outdated asizeof in pympler
         return self.layer
 
     def mem_data(self, n):
@@ -57,6 +61,8 @@ class Image3DSuite:
     """Benchmarks for the Image layer with 3D data."""
 
     params = [2**i for i in range(4, 11)]
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(6, 11)]
 
     def setup(self, n):
         if "CI" in os.environ and n > 512:
@@ -91,8 +97,9 @@ class Image3DSuite:
         """Time to refresh view."""
         self.layer.refresh()
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
+        # Disabled because of __sizeof__ bug on the main branch and outdated asizeof in pympler
         return Image(self.data)
 
     def mem_data(self, n):

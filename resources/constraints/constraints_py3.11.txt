@@ -63,7 +63,7 @@ distlib==0.3.7
     # via virtualenv
 docstring-parser==0.15
     # via magicgui
-docutils==0.17.1
+docutils==0.20.1
     # via sphinx
 entrypoints==0.4
     # via numcodecs
@@ -131,7 +131,7 @@ jupyter-client==8.3.1
     # via
     #   ipykernel
     #   qtconsole
-jupyter-core==5.3.1
+jupyter-core==5.3.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -209,7 +209,7 @@ numpy==1.26.0
     #   vispy
     #   xarray
     #   zarr
-numpydoc==1.5.0
+numpydoc==1.6.0
     # via napari (napari_repo/setup.cfg)
 nvidia-cublas-cu11==11.10.3.66
     # via
@@ -298,7 +298,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==1.10.12
+pydantic==1.10.13
     # via
     #   app-model
     #   napari (napari_repo/setup.cfg)
@@ -413,7 +413,7 @@ rpds-py==0.10.3
     #   referencing
 scikit-image==0.21.0
     # via napari (napari_repo/setup.cfg)
-scipy==1.11.2 ; python_version >= "3.9"
+scipy==1.11.3 ; python_version >= "3.9"
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
@@ -432,21 +432,25 @@ snowballstemmer==2.2.0
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
-sphinx==4.5.0
+sphinx==7.2.6
     # via
-    #   napari (napari_repo/setup.cfg)
     #   numpydoc
-sphinxcontrib-applehelp==1.0.4
+    #   sphinxcontrib-applehelp
+    #   sphinxcontrib-devhelp
+    #   sphinxcontrib-htmlhelp
+    #   sphinxcontrib-qthelp
+    #   sphinxcontrib-serializinghtml
+sphinxcontrib-applehelp==1.0.7
     # via sphinx
-sphinxcontrib-devhelp==1.0.2
+sphinxcontrib-devhelp==1.0.5
     # via sphinx
-sphinxcontrib-htmlhelp==2.0.1
+sphinxcontrib-htmlhelp==2.0.4
     # via sphinx
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-qthelp==1.0.3
+sphinxcontrib-qthelp==1.0.6
     # via sphinx
-sphinxcontrib-serializinghtml==1.1.5
+sphinxcontrib-serializinghtml==1.1.9
     # via sphinx
 stack-data==0.6.2
     # via ipython
@@ -457,11 +461,13 @@ superqt==0.6.0
     #   napari-plugin-manager
 sympy==1.12
     # via torch
+tabulate==0.9.0
+    # via numpydoc
 tensorstore==0.1.44
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/setup.cfg)
-tifffile==2023.9.18
+tifffile==2023.9.26
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
@@ -482,7 +488,7 @@ tornado==6.3.3
     #   jupyter-client
 tqdm==4.66.1
     # via napari (napari_repo/setup.cfg)
-traitlets==5.10.0
+traitlets==5.10.1
     # via
     #   comm
     #   ipykernel
@@ -528,7 +534,7 @@ wheel==0.41.2
     #   nvidia-nvtx-cu11
 wrapt==1.15.0
     # via napari (napari_repo/setup.cfg)
-xarray==2023.8.0
+xarray==2023.9.0
     # via napari (napari_repo/setup.cfg)
 zarr==2.16.1
     # via napari (napari_repo/setup.cfg)

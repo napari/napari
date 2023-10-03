@@ -151,6 +151,18 @@ def test_filtering_readers(
     )
 
 
+@pytest.mark.parametrize("pattern", [".", "", "/"])
+def test_filtering_readers_problematic_patterns(
+    extension2reader_widget, builtins, tif_reader, npy_reader, pattern
+):
+    widget = extension2reader_widget(
+        npe1_readers={builtins.display_name: builtins.display_name}
+    )
+    widget._filter_compatible_readers(pattern)
+    assert widget._new_reader_dropdown.count() == 1
+    assert widget._new_reader_dropdown.itemText(0) == "None available"
+
+
 def test_filtering_readers_complex_pattern(
     extension2reader_widget, npy_reader, tif_reader
 ):

@@ -173,7 +173,7 @@ jupyter-client==8.3.1
     #   ipykernel
     #   nbclient
     #   qtconsole
-jupyter-core==5.3.1
+jupyter-core==5.3.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -386,7 +386,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==1.10.12
+pydantic==1.10.13
     # via
     #   app-model
     #   napari (napari_repo/setup.cfg)
@@ -510,7 +510,7 @@ scikit-image==0.21.0
     # via napari (napari_repo/setup.cfg)
 scikit-learn==1.3.1
     # via nilearn
-scipy==1.11.2 ; python_version >= "3.9"
+scipy==1.11.3 ; python_version >= "3.9"
     # via
     #   napari (napari_repo/setup.cfg)
     #   nilearn
@@ -539,7 +539,6 @@ sphinx==4.5.0
     #   -r docs/requirements.txt
     #   myst-nb
     #   myst-parser
-    #   napari (napari_repo/setup.cfg)
     #   napari-sphinx-theme
     #   numpydoc
     #   sphinx-autobuild
@@ -600,7 +599,7 @@ tensorstore==0.1.44
     #   napari (napari_repo/setup.cfg)
 threadpoolctl==3.2.0
     # via scikit-learn
-tifffile==2023.9.18
+tifffile==2023.9.26
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
@@ -629,7 +628,7 @@ tornado==6.3.3
     #   livereload
 tqdm==4.66.1
     # via napari (napari_repo/setup.cfg)
-traitlets==5.10.0
+traitlets==5.10.1
     # via
     #   comm
     #   ipykernel
@@ -682,7 +681,7 @@ wheel==0.41.2
     #   nvidia-nvtx-cu11
 wrapt==1.15.0
     # via napari (napari_repo/setup.cfg)
-xarray==2023.8.0
+xarray==2023.9.0
     # via napari (napari_repo/setup.cfg)
 zarr==2.16.1
     # via napari (napari_repo/setup.cfg)
