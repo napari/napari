@@ -6,6 +6,7 @@ import os
 
 import numpy as np
 
+from napari.components.dims import Dims
 from napari.layers import Labels
 
 from .utils import Skiper
@@ -137,7 +138,7 @@ class Labels3DSuite:
         np.random.seed(0)
         self.data = np.random.randint(20, size=(n, n, n))
         self.layer = Labels(self.data)
-        self.layer._slice_dims((0, 0, 0), 3, (0, 1, 2))
+        self.layer._slice_dims(Dims(ndim=3))
 
     # @mark.skip_params_if([(2**i,) for i in range(6, 11)], condition="PR" in os.environ)
     def time_create_layer(self, n):
