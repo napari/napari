@@ -1635,7 +1635,7 @@ class Shapes(Layer):
         ]
 
         return self.text.compute_text_coords(
-            np.asarray(sliced_in_view_coords), ndisplay, order
+            sliced_in_view_coords, ndisplay, order
         )
 
     @property
