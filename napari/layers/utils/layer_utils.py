@@ -515,6 +515,16 @@ def _get_crop_slices(
     in the number of chunks per plane and only when this still causes to go over the PIXEL_TRESHOLD do we sacrifice on
     also sampling planes. If we can support n fold 9 chunks we will extend the crops by n.
 
+    Regarding sampling strategy the 9 crops allows are in the following pattern at first, second and third quantile
+    of both the y and x dimension:
+    ---------------
+    | |0| |1| |2| |
+    ---------------
+    | |3| |4| |5| |
+    ---------------
+    | |6| |7| |8| |
+    ---------------
+
     Parameters
     ----------
     shape: Sequence[int]
@@ -569,13 +579,13 @@ def _get_crop_slices(
         # Below num_start_indices can only be 9
         else:
             if max_chunks_per_plane // 5 == 1:
-                # + pattern of chunks
+                # + pattern of chunks, check function doc string
                 indices = (1, 3, 4, 5, 7)
             elif max_chunks_per_plane // 3 == 1:
-                # horizontal dashed line of chunks
+                # horizontal dashed line of chunks, check function doc string
                 indices = (3, 4, 5)
             else:
-                # center chunk
+                # center chunk, check function doc string
                 indices = (4,)
         start_indices = [start_indices[i] for i in indices]
     elif max_chunks_per_plane < 1:
