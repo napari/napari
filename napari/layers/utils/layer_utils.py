@@ -234,15 +234,8 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     If the data type is uint8 or rgb, no calculation is performed, and 0-255 is
     returned.
     """
-    shape = data.shape
-    chunk_size = (
-        _get_chunk_size(data) if not isinstance(data, np.ndarray) else None
-    )
-
     dtype = normalize_dtype(getattr(data, 'dtype', None))
     # Vispy only supports uint8 RGB for which we set these clims
-    if dtype == np.uint8 or rgb:
-        return 0, 255
     if rgb and dtype != np.uint8:
         # Vispy does not display rgb other than uint8, so it casts it to uint8
         show_info(
@@ -251,6 +244,15 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
                 deferred=True,
             )
         )
+
+    if dtype == np.uint8 or rgb:
+        return 0, 255
+
+    shape = data.shape
+    chunk_size = (
+        _get_chunk_size(data) if not isinstance(data, np.ndarray) else None
+    )
+
     if chunk_size and (
         not np.issubdtype(dtype, np.integer)
         or np.prod(chunk_size) > PIXEL_THRESHOLD
@@ -332,7 +334,7 @@ def _get_1d_slices(shape, chunk_size):
     allowed_chunks = int(PIXEL_THRESHOLD // chunk_size_product)
     multiplier = min(allowed_chunks, MAX_NUMBER_OF_CHUNKS)
 
-    return [slice(center + chunk_size[0] * multiplier)]
+    return [slice(center, center + chunk_size[0] * multiplier)]
 
 
 def _get_blocks_grid_shape(
