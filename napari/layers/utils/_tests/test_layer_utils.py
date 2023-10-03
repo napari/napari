@@ -49,10 +49,10 @@ TEST_DATA_1D = [
     (
         (4000,),
         (5000,),
-        3,
+        1,
     ),  # Chunk shape and size sufficient to get all slices
     ((2,), (int(9e6),), 1),
-    ((int(20e6),), None, 3),
+    ((int(20e6),), None, 1),
 ]
 
 
@@ -525,7 +525,12 @@ def test_register_label_attr_action(monkeypatch):
 )
 def test_1d_slices(shape, chunk_size, expected_length):
     slices = _get_1d_slices(shape, chunk_size)
-    assert len(slices) == 1
+    if (not chunk_size and shape[0] >= 10e6) or (
+        chunk_size and np.prod(chunk_size) < 10e6
+    ):
+        assert len(slices) == expected_length
+    else:
+        assert slices is None
 
 
 def test_insufficient_chunks_get_crop_slices():
