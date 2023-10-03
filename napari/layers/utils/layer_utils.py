@@ -1542,5 +1542,5 @@ def _get_chunk_size(
         from xarray import DataArray
 
         if isinstance(data, DataArray):
-            return data.data.chunksize
+            return _get_chunk_size(data.data)
     return None
