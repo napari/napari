@@ -21,7 +21,7 @@ def test_qt_tooltip_label(qtbot):
     widget.show()
 
     assert QToolTip.text() == ""
-    # put mouse outside of widget
+    # simulate movement mouse from outside the widget to the center
     pos = QPointF(widget.rect().center())
     event = QEnterEvent(pos, pos, QPointF(widget.pos()) + pos)
     widget.enterEvent(event)

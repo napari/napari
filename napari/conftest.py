@@ -47,11 +47,16 @@ from npe2 import PackageMetadata
 with suppress(ModuleNotFoundError):
     __import__('dotenv').load_dotenv()
 
+from datetime import timedelta
+from time import perf_counter
+
 import dask.threaded
 import numpy as np
 import pytest
+from _pytest.pathlib import bestrelpath
 from IPython.core.history import HistoryManager
 from packaging.version import parse as parse_version
+from pytest_pretty import CustomTerminalReporter
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -775,15 +780,14 @@ def pytest_runtest_setup(item):
         )
 
 
-from datetime import timedelta  # noqa: E402
-from time import perf_counter  # noqa: E402
-
-from _pytest.main import Session  # noqa: E402
-from _pytest.pathlib import bestrelpath  # noqa: E402
-from pytest_pretty import CustomTerminalReporter  # noqa: E402
-
-
 class NapariTerminalReporter(CustomTerminalReporter):
+    """
+    This ia s custom terminal reporter to how long it takes to finish given part of tests.
+    It prints time each time when test from different file is started.
+
+    It is created to be able to see if timeout is caused by long time execution, or it is just hanging.
+    """
+
     currentfspath: Optional[Path]
 
     def write_fspath_result(self, nodeid: str, res, **markup: bool) -> None:
@@ -802,10 +806,6 @@ class NapariTerminalReporter(CustomTerminalReporter):
             self._tw.line()
             self.write(relfspath + " ")
         self.write(res, flush=True, **markup)
-
-    @pytest.hookimpl(trylast=True)
-    def pytest_sessionstart(self, session: Session) -> None:
-        super().pytest_sessionstart(session)
 
 
 @pytest.hookimpl(trylast=True)

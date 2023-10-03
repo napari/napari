@@ -97,6 +97,16 @@ jobs:
       # see tox.ini for more
 
       - name: Split qt backend
+        # This is a hack to split the qt_backend variable into four parts
+        # This is required as github actions allow setting only one environment variable in
+        # a single line (redirection to $GITHUB_ENV).
+        #
+        # For example, if qt_backend is set to "pyqt5,pyside2", then the following four
+        # environment variables will be set:
+        # MAIN=pyqt5
+        # SECOND=pyside2
+        # THIRD=none
+        # FOURTH=none
         shell: bash
         run: | 
           python tools/split_qt_backend.py 0 ${{ inputs.qt_backend }} >> $GITHUB_ENV
