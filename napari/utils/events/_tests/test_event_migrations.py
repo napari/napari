@@ -8,9 +8,17 @@ def test_deprecation_warning_event() -> None:
         "obj.events", "old", "new", "0.1.0", "0.0.0"
     )
 
-    def _print(msg: str) -> None:
-        print(msg)
+    class Counter:
+        def __init__(self) -> None:
+            self.count = 0
+
+        def add(self, event) -> None:
+            self.count += event.value
+
+    counter = Counter()
 
     with pytest.warns(FutureWarning):
-        event.connect(_print)
-        event(msg="test")
+        event.connect(counter.add)
+        event(value=1)
+
+    assert counter.count == 1
