@@ -44,15 +44,14 @@ data_dask_plane = da.random.randint(
 )
 
 TEST_DATA_1D = [
-    ((5,), (int(15e6),), None),  # Case of chunk going over pixel threshold
-    ((5,), (int(9e6),), 1),  # Only stay below threshold with 1 chunk
+    ((5,), (int(15e6),)),  # Case of chunk going over pixel threshold
+    ((5,), (int(9e6),)),  # Only stay below threshold with 1 chunk
     (
         (4000,),
         (5000,),
-        1,
     ),  # Chunk shape and size sufficient to get all slices
-    ((2,), (int(9e6),), 1),
-    ((int(20e6),), None, 1),
+    ((2,), (int(9e6),)),
+    ((int(20e6),), None),
 ]
 
 
@@ -520,17 +519,10 @@ def test_register_label_attr_action(monkeypatch):
     assert foo.value == 0
 
 
-@pytest.mark.parametrize(
-    ["shape", "chunk_size", "expected_length"], TEST_DATA_1D
-)
-def test_1d_slices(shape, chunk_size, expected_length):
+@pytest.mark.parametrize(["shape", "chunk_size"], TEST_DATA_1D)
+def test_1d_slices(shape, chunk_size):
     slices = _get_1d_slices(shape, chunk_size)
-    if (not chunk_size and shape[0] >= 10e6) or (
-        chunk_size and np.prod(chunk_size) < 10e6
-    ):
-        assert len(slices) == expected_length
-    else:
-        assert slices is None
+    assert len(slices) == 1
 
 
 def test_insufficient_chunks_get_crop_slices():
@@ -557,11 +549,6 @@ def test_insufficient_chunks_get_crop_slices():
     chunk_size = (1, 1290, 1290)
     slices = _get_crop_slices(shape, idxs, offset, chunk_size)
     assert len(slices) == 3
-
-    # Chunk size goes over pixel threshold
-    chunk_size = (1, 4000, 4000)
-    slices = _get_crop_slices(shape, idxs, offset, chunk_size)
-    assert slices is None
 
     # Shape only allows for 3 slices per plane
     shape = (9, 1, 3)
