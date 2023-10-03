@@ -358,7 +358,6 @@ def test_generate_2D_edge_meshes(
     bevel,
     expected,
 ):
-    pass
     c, o, t = generate_2D_edge_meshes(path, closed, limit, bevel)
     expected_center, expected_offsets, expected_triangles = expected
     assert np.allclose(c, expected_center)
