@@ -57,10 +57,10 @@ vec4 sample_label_color(float t) {
     if (($use_selection) && ($selection != t)) {
         return vec4(0);
     }
-    t = mod(t, $color_map_size);
+    t = mod(t, $color_map_size - 1);
     return texture2D(
         texture2D_values,
-        vec2(0.0, (t + 0.5) / $color_map_size)
+        vec2(0.0, (t + 1.5) / $color_map_size)
     );
 }
 """
