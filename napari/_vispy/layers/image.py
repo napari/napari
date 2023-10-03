@@ -167,7 +167,7 @@ class VispyImageLayer(VispyBaseLayer):
         if isinstance(self.node, VolumeNode):
             self.node.raycasting_mode = str(self.layer.depiction)
 
-    def _on_colormap_change(self):
+    def _on_colormap_change(self, event=None):
         self.node.cmap = VispyColormap(*self.layer.colormap)
 
     def _update_mip_minip_cutoff(self):

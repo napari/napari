@@ -2358,7 +2358,7 @@ class Shapes(Layer):
         slice_key = np.array(self._slice_indices)[
             self._slice_input.not_displayed
         ]
-        if not np.all(slice_key == self._data_view.slice_key):
+        if not np.array_equal(slice_key, self._data_view.slice_key):
             self.selected_data = set()
         self._data_view.slice_key = slice_key
 
@@ -2553,8 +2553,8 @@ class Shapes(Layer):
         # Check if any shape or vertex ids have changed since last call
         if (
             self.selected_data == self._selected_data_stored
-            and np.all(self._value == self._value_stored)
-            and np.all(self._drag_box == self._drag_box_stored)
+            and np.array_equal(self._value, self._value_stored)
+            and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
         self._selected_data_stored = copy(self.selected_data)
@@ -2720,7 +2720,7 @@ class Shapes(Layer):
             scale = [scale, scale]
         box = self._selected_box - center
         box = np.array(box * scale)
-        if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
+        if not np.array_equal(box[Box.TOP_CENTER], box[Box.HANDLE]):
             r = self._rotation_handle_length * self._normalized_scale_factor
             handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
@@ -2739,7 +2739,7 @@ class Shapes(Layer):
         """
         box = self._selected_box - center
         box = box @ transform.T
-        if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
+        if not np.array_equal(box[Box.TOP_CENTER], box[Box.HANDLE]):
             r = self._rotation_handle_length * self._normalized_scale_factor
             handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)

@@ -2,7 +2,7 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
-
+import os
 import time
 
 import numpy as np
@@ -11,6 +11,8 @@ from qtpy.QtWidgets import QApplication
 
 import napari
 from napari.layers import Image
+
+from .utils import Skiper
 
 SAMPLE_PARAMS = {
     'skin_data': {
@@ -30,7 +32,7 @@ SAMPLE_PARAMS = {
 
 def get_image_params():
     # chunksizes = [(64,64,64), (256,256,256), (512,512,512)]
-    latencies = [0.05 * i for i in range(0, 3)]
+    latencies = [0.05 * i for i in range(3)]
     datanames = SAMPLE_PARAMS.keys()
     params = (latencies, datanames)
 
@@ -161,9 +163,14 @@ class QtViewerAsyncPointsAndImage2DSuite:
 
     n_points = [2**i for i in range(12, 18, 2)]
     chunksize = [256, 512, 1024]
-    latency = [0.05 * i for i in range(0, 3)]
+    latency = [0.05 * i for i in range(3)]
     params = (n_points, latency, chunksize)
     timeout = 600
+
+    if "PR" in os.environ:
+        skip_params = Skiper(
+            lambda x: x[0] > 2**14 or x[2] > 512 or x[1] > 0.05
+        )
 
     def setup(self, n_points, latency, chunksize):
         store = SlowMemoryStore(load_delay=latency)
