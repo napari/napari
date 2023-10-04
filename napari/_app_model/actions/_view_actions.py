@@ -28,7 +28,7 @@ for cmd, viewer_attr, sub_attr in (
     VIEW_ACTIONS.append(
         ViewerToggleAction(
             id=cmd,
-            title=cmd.title,
+            title=cmd.command_title,
             viewer_attribute=viewer_attr,
             sub_attribute=sub_attr,
             menus=[{'id': MENUID_DICT[viewer_attr]}],
@@ -51,7 +51,7 @@ VIEW_ACTIONS.extend(
         # using a similar pattern to the above ViewerToggleAction classes
         Action(
             id=CommandId.TOGGLE_LAYER_TOOLTIPS,
-            title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
+            title=CommandId.TOGGLE_LAYER_TOOLTIPS.command_title,
             menus=[
                 {
                     'id': MenuId.MENUBAR_VIEW,

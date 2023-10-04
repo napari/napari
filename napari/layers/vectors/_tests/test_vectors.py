@@ -7,6 +7,7 @@ from napari._tests.utils import (
     assert_colors_equal,
     check_layer_world_data_extent,
 )
+from napari.components.dims import Dims
 from napari.layers import Vectors
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -631,7 +632,7 @@ def test_value_3d(position, view_direction, dims_displayed, world):
     data = np.random.random((10, 2, 3))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    layer._slice_dims([0, 0, 0], ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     value = layer.get_value(
         position,
         view_direction=view_direction,
