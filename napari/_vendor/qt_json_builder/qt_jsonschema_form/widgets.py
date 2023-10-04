@@ -675,6 +675,9 @@ class FontSizeSchemaWidget(SchemaWidgetMixin, QtFontSizeWidget):
 
         self.setRange(minimum, maximum)
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
     def __init__(

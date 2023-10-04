@@ -1,4 +1,3 @@
-import sys
 from typing import Union, cast
 
 from pydantic import Field
@@ -17,9 +16,9 @@ class AppearanceSettings(EventedModel):
         env="napari_theme",
     )
     font_size: int = Field(
-        12 if sys.platform == 'darwin' else 9,
+        int(get_theme("dark").font_size[:-2]),
         title=trans._("Font size"),
-        # description=trans._("Select the user interface font size."),
+        description=trans._("Select the user interface font size."),
         ge=5,
         le=20,
     )
