@@ -112,8 +112,8 @@ jobs:
           token: ${{ secrets.GHA_TOKEN_BOT_REPO_WORKFLOW }}
       - name: Synchronize bot repository
         run: |
-          git fetch napari-bot
           git remote add napari-bot https://github.com/napari-bot/napari.git
+          git fetch napari-bot
           git push --force --set-upstream napari-bot main
       - name: Report Failures
 
