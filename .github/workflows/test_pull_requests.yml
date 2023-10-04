@@ -85,7 +85,7 @@ jobs:
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-20.04
-            toxenv: headless-py38-linux
+            backend: headless
           - python: 3.9
             platform: ubuntu-latest
             backend: pyqt6
@@ -165,6 +165,7 @@ jobs:
   test_pip_install:
     name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v3
         with:
@@ -196,11 +197,9 @@ jobs:
   test_examples:
     name: test examples
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
-        with:
-          path: napari-from-github
-
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9

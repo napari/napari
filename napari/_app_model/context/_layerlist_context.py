@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 from app_model.expressions import ContextKey
 
@@ -12,14 +12,29 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
 
+    from napari.components.layerlist import LayerList
     from napari.layers import Layer
     from napari.utils.events import Selection
 
     LayerSel = Selection[Layer]
 
 
-def _len(s: LayerSel) -> int:
-    return len(s)
+def _len(layers: Union[LayerSel, LayerList]) -> int:
+    return len(layers)
+
+
+class LayerListContextKeys(ContextNamespace['Layer']):
+    """These are the available context keys relating to a LayerList.
+
+    Consists of a default value, a description, and a function to retrieve the
+    current value from `layers`.
+    """
+
+    num_layers = ContextKey(
+        0,
+        trans._("Number of layers."),
+        _len,
+    )
 
 
 def _all_linked(s: LayerSel) -> bool:
@@ -134,11 +149,11 @@ def _empty_shapes_layer_selected(s: LayerSel) -> bool:
     return any(x._type_string == "shapes" and not len(x.data) for x in s)
 
 
-class LayerListContextKeys(ContextNamespace['LayerSel']):
-    """These are the available context keys relating to a LayerList.
+class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
+    """Available context keys relating to the selection in a LayerList.
 
-    along with default value, a description, and a function to retrieve the
-    current value from layers.selection
+    Consists of a default value, a description, and a function to retrieve the
+    current value from `layers.selection`.
     """
 
     num_selected_layers = ContextKey(

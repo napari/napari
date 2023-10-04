@@ -743,7 +743,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @_translate_grid.setter
     def _translate_grid(self, translate_grid):
-        if np.all(self._translate_grid == translate_grid):
+        if np.array_equal(self._translate_grid, translate_grid):
             return
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
@@ -1475,7 +1475,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return normalized_vector
 
     def _world_to_displayed_data_ray(
-        self, vector_world: npt.NDArray, dims_displayed: List[int]
+        self, vector_world: npt.ArrayLike, dims_displayed: List[int]
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 
