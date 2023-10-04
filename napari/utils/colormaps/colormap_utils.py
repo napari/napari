@@ -519,7 +519,7 @@ def label_colormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
         colors=colors[1:],
-        controls=control_points[1:],
+        controls=np.concatenate((np.array([0]), control_points[2:])),
         interpolation='zero',
         background_value=background_value,
     )
