@@ -4,7 +4,9 @@ from numpy.testing import (
     assert_raises,
 )
 
-from napari.experimental import _progressive_loading
+import numpy as np
+
+from napari.experimental import _progressive_loading, _virtual_data
 from napari.experimental._progressive_loading_datasets import (
     mandelbrot_dataset,
 )
@@ -24,14 +26,12 @@ def mandelbrot_arrays(max_level):
 
 def test_virtualdata_init(mandelbrot_arrays, max_level):
     scale = max_level - 1
-    _progressive_loading.VirtualData(mandelbrot_arrays[scale], scale=scale)
+    _virtual_data.VirtualData(mandelbrot_arrays[scale], scale=scale)
 
 
 def test_virtualdata_set_interval(mandelbrot_arrays, max_level):
     scale = max_level - 1
-    vdata = _progressive_loading.VirtualData(
-        mandelbrot_arrays[scale], scale=scale
-    )
+    vdata = _virtual_data.VirtualData(mandelbrot_arrays[scale], scale=scale)
     coords = (slice(513, 1024, None), slice(513, 1024, None))
     vdata.set_interval(coords)
 
@@ -46,20 +46,18 @@ def test_virtualdata_set_interval(mandelbrot_arrays, max_level):
 
 def test_virtualdata_getitem(mandelbrot_arrays, max_level):
     scale = max_level - 1
-    vdata = _progressive_loading.VirtualData(mandelbrot_arrays[scale], scale=scale)
+    vdata = _virtual_data.VirtualData(mandelbrot_arrays[scale], scale=scale)
     coords = (slice(0, 1024, None), slice(0, 1024, None))
     vdata.set_interval(coords)
     retrieved_data = vdata[(500, 500)]
     # Ensure the retrieved data matches expected value
     print(vdata[0:1024, 0:1024])
     assert retrieved_data == 0
-    
-    
+
+
 def test_virtualdata_hyperslice_reuse(mandelbrot_arrays, max_level):
     scale = max_level - 1
-    vdata = _progressive_loading.VirtualData(
-        mandelbrot_arrays[scale], scale=scale
-    )
+    vdata = _virtual_data.VirtualData(mandelbrot_arrays[scale], scale=scale)
     coords = (slice(0, 1024, None), slice(0, 1024, None))
     vdata.set_interval(coords)
     first_hyperslice = vdata.hyperslice
@@ -70,9 +68,7 @@ def test_virtualdata_hyperslice_reuse(mandelbrot_arrays, max_level):
 
 def test_virtualdata_hyperslice(mandelbrot_arrays, max_level):
     scale = max_level - 1
-    vdata = _progressive_loading.VirtualData(
-        mandelbrot_arrays[scale], scale=scale
-    )
+    vdata = _virtual_data.VirtualData(mandelbrot_arrays[scale], scale=scale)
     coords = (slice(0, 1024, None), slice(0, 1024, None))
     vdata.set_interval(coords)
     first_hyperslice = vdata.hyperslice
@@ -102,18 +98,36 @@ def test_multiscalevirtualdata_set_interval(mandelbrot_arrays):
     assert mvdata._data[0]._min_coord <= min_coord
     assert mvdata._data[0]._max_coord <= max_coord
 
+
+def test_get_offset_default(mandelbrot_arrays, max_level):
+    scale = max_level - 1
+    vdata = _virtual_data.VirtualData(mandelbrot_arrays[scale], scale=scale)
+
+    # Interval not set - should return zeros
+    assert_array_equal(vdata[100, 100], np.zeros((1, 1)))
+
+
+def test_multiscale_set_interval(mandelbrot_arrays):
+    mvdata = _progressive_loading.MultiScaleVirtualData(mandelbrot_arrays)
+    mvdata.set_interval([0, 0], [1024, 1024])
+
+    assert mvdata._data[0]._min_coord == [0, 0]
+    assert mvdata._data[1]._min_coord == [0, 0]
+
+    assert mvdata._data[0]._max_coord == [1024, 1024]
+    assert mvdata._data[1]._max_coord == [512, 512]
+
+
 if __name__ == "__main__":
     max_level = 8
 
     large_image = mandelbrot_dataset(max_levels=8)
     multiscale_img = large_image["arrays"]
 
-
     scale = max_level - 1
-    vdata = _progressive_loading.VirtualData(multiscale_img[-1], scale=scale)
+    vdata = _virtual_data.VirtualData(multiscale_img[-1], scale=scale)
     coords = (slice(0, 1024, None), slice(0, 1024, None))
     vdata.set_interval(coords)
     retrieved_data = np.asarray(vdata[0:1024, 0:1024])
     # Ensure the retrieved data matches expected value
     print(retrieved_data)
-
