@@ -68,7 +68,7 @@ def rename_argument(
 def deprecated_constructor_arg_by_attr(name):
     """
     Decorator to deprecate a constructor argument and remove it from the signature.
-    
+
     It works by popping the argument from kwargs, but thne setting it later via setattr.
     The property setter should take care of issuing the deprecation warning.
 

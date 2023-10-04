@@ -143,7 +143,9 @@ class LabelVispyColormap(VispyColormap):
         use_selection=False,
         selection=0.0,
     ):
-        super().__init__(colors=["w", "w"], controls=None, interpolation='zero')
+        super().__init__(
+            colors=["w", "w"], controls=None, interpolation='zero'
+        )
         self.glsl_map = (
             auto_lookup_shader.replace('$color_map_size', str(len(colors)))
             .replace('$use_selection', str(use_selection).lower())
