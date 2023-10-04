@@ -414,8 +414,7 @@ def test_nd_text(prepend):
         Dims(
             ndim=layer.ndim,
             ndisplay=2,
-            range=((0, 2, 1),) * len(prepend)
-            + ((0, 2, 1), (0, 10, 1), (0, 2, 1), (0, 2, 1)),
+            range=((0, 100, 1),) * layer.ndim,
             point=prepend + (0, 10, 0, 0),
         )
     )
@@ -424,7 +423,14 @@ def test_nd_text(prepend):
 
     # TODO: 1st bug #6205, ndisplay 3 is buggy in 5+ dimensions
     # may need to call _update_dims
-    layer._slice_dims(Dims(ndim=4, ndisplay=3, point=prepend + (0, 0, 0, 0)))
+    layer._slice_dims(
+        Dims(
+            ndim=layer.ndim,
+            ndisplay=3,
+            range=((0, 100, 1),) * layer.ndim,
+            point=prepend + (1, 0, 0, 0),
+        )
+    )
     np.testing.assert_equal(layer._indices_view, [1])
     np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
@@ -2313,7 +2319,7 @@ def test_set_data_3d():
         np.array([[0, 0, 0], [0, 0, 200]]),
     ]
     shapes = Shapes(lines, shape_type='line')
-    shapes._slice_dims(ndisplay=3)
+    shapes._slice_dims(Dims(ndim=3, ndisplay=3))
     shapes.data = lines
 
 
