@@ -103,17 +103,17 @@ class QtLayerControlsContainer(QStackedWidget):
         viewer.layers.selection.events.active.connect(self._display)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
 
-    def _on_ndisplay_changed(self, event):
+    def _on_ndisplay_changed(self, value: int):
         """Responds to a change in the dimensionality displayed in the canvas.
 
         Parameters
         ----------
-        event : Event
-            Event with the new dimensionality value at `event.value`.
+        event : int
+            The new dimensionality value.
         """
         for widget in self.widgets.values():
             if widget is not self.empty_widget:
-                widget.ndisplay = event.value
+                widget.ndisplay = value
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.

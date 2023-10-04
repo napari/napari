@@ -37,9 +37,9 @@ class VispyCamera:
         # Set 2D camera by default
         self._view.camera = self._2D_camera
 
-        self._dims.events.ndisplay.connect(
-            self._on_ndisplay_change, position='first'
-        )
+        # TODO: why does this need to be position='first'?
+        # Is there another way to enforce this?
+        self._dims.events.ndisplay.connect(self._on_ndisplay_change)
 
         self._camera.events.center.connect(self._on_center_change)
         self._camera.events.zoom.connect(self._on_zoom_change)
@@ -188,15 +188,15 @@ class VispyCamera:
 
         Update camera model angles, center, and zoom.
         """
-        with self._camera.events.angles.blocker(self._on_angles_change):
+        # TODO: unsure how to block specific callbacks with psygnal,
+        # so may need a different approach here.
+        with self._camera.events.angles.blocked():
             self._camera.angles = self.angles
-        with self._camera.events.center.blocker(self._on_center_change):
+        with self._camera.events.center.blocked():
             self._camera.center = self.center
-        with self._camera.events.zoom.blocker(self._on_zoom_change):
+        with self._camera.events.zoom.blocked():
             self._camera.zoom = self.zoom
-        with self._camera.events.perspective.blocker(
-            self._on_perspective_change
-        ):
+        with self._camera.events.perspective.blocked():
             self._camera.perspective = self.perspective
 
 

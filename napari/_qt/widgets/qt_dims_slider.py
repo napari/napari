@@ -748,7 +748,7 @@ class AnimationWorker(QObject):
                 self.current = self.min_point + self.current - self.max_point
             else:  # loop_mode == 'once'
                 return self.finish()
-        with self.dims.events.current_step.blocker(self._on_axis_changed):
+        with self.dims.events.current_step.blocked():
             self.frame_requested.emit(self.axis, self.current)
         self.timer.start()
         return None
