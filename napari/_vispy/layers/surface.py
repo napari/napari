@@ -192,6 +192,8 @@ class VispySurfaceLayer(VispyBaseLayer):
             )
 
     def _on_camera_move(self, event=None):
+        # TODO: I don't think we actually need camera here and can calculate
+        # the light direction from angles alone.
         if (
             event is not None
             and event.type == 'angles'
