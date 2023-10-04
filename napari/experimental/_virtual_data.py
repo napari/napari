@@ -1,9 +1,9 @@
 import logging
 import sys
-import numpy as np
-import dask.array as da
+from typing import Tuple, Union
 
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+import dask.array as da
+import numpy as np
 
 from napari.layers._data_protocols import Index, LayerDataProtocol
 
