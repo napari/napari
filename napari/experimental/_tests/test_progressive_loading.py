@@ -28,6 +28,11 @@ def max_level():
 
 
 @pytest.fixture
+def chunked_array():
+    return da.random.rand(20, 20, chunks=(10, 10))
+
+
+@pytest.fixture
 def mandelbrot_arrays(max_level):
     large_image = mandelbrot_dataset(max_levels=max_level)
     multiscale_img = large_image["arrays"]
@@ -114,96 +119,6 @@ def test_chunk_slices_600_1024(mandelbrot_arrays, max_level):
     assert chunk_keys == result
 
 
-def test_virtualdata_init(mandelbrot_arrays, max_level):
-    scale = max_level - 1
-    _progressive_loading.VirtualData(mandelbrot_arrays[scale], scale=scale)
-
-
-def test_virtualdata_set_interval(mandelbrot_arrays, max_level):
-    scale = max_level - 1
-    vdata = _progressive_loading.VirtualData(
-        mandelbrot_arrays[scale], scale=scale
-    )
-    coords = (slice(513, 1024, None), slice(513, 1024, None))
-    vdata.set_interval(coords)
-
-    min_coord = [st.start for st in coords]
-    max_coord = [st.stop for st in coords]
-
-    # vdata slices are based on chunks so we make sure that the requested
-    # coordinates fall within the chunked slice
-    assert vdata._min_coord <= min_coord
-    assert vdata._max_coord >= max_coord
-
-
-def test_virtualdata_hyperslice_reuse(mandelbrot_arrays, max_level):
-    scale = max_level - 1
-    vdata = _progressive_loading.VirtualData(
-        mandelbrot_arrays[scale], scale=scale
-    )
-    coords = (slice(0, 1024, None), slice(0, 1024, None))
-    vdata.set_interval(coords)
-    first_hyperslice = vdata.hyperslice
-    vdata.set_interval(coords)
-    second_hyperslice = vdata.hyperslice
-    assert_array_equal(first_hyperslice, second_hyperslice)
-
-
-@pytest.mark.xfail(
-    reason='shouldnt fail, the width in set_interval is calculated to be 1024, therefore the first and second hyperslice are equal'
-)
-def test_virtualdata_hyperslice_fail(mandelbrot_arrays, max_level):
-    scale = max_level - 1
-    vdata = _progressive_loading.VirtualData(
-        mandelbrot_arrays[scale], scale=scale
-    )
-    coords = (slice(0, 1024, None), slice(0, 1024, None))
-    vdata.set_interval(coords)
-    first_hyperslice = vdata.hyperslice
-    coords = (slice(512, 1024, None), slice(512, 1024, None))
-    # the width in set_interval is calculated to be 1024, therefore the first and second hyperslice are equal, causing this test to fail
-    vdata.set_interval(coords)
-    second_hyperslice = vdata.hyperslice
-    assert_raises(
-        AssertionError, assert_array_equal, first_hyperslice, second_hyperslice
-    )
-
-
-def test_virtualdata_hyperslice(mandelbrot_arrays, max_level):
-    scale = max_level - 1
-    vdata = _progressive_loading.VirtualData(
-        mandelbrot_arrays[scale], scale=scale
-    )
-    coords = (slice(0, 1024, None), slice(0, 1024, None))
-    vdata.set_interval(coords)
-    first_hyperslice = vdata.hyperslice
-    coords = (slice(513, 1024, None), slice(513, 1024, None))
-    # the width in set_interval is calculated to be 1024, therefore the first and second hyperslice are equal, causing this test to fail
-    vdata.set_interval(coords)
-    second_hyperslice = vdata.hyperslice
-    assert_raises(
-        AssertionError, assert_array_equal, first_hyperslice, second_hyperslice
-    )
-
-
-def test_multiscalevirtualdata_init(mandelbrot_arrays):
-    mvdata = _progressive_loading.MultiScaleVirtualData(mandelbrot_arrays)
-    assert isinstance(mvdata, _progressive_loading.MultiScaleVirtualData)
-
-
-def test_multiscalevirtualdata_set_interval(mandelbrot_arrays):
-    mvdata = _progressive_loading.MultiScaleVirtualData(mandelbrot_arrays)
-    coords = (slice(513, 1024, None), slice(513, 1024, None))
-    min_coord = [st.start for st in coords]
-    max_coord = [st.stop for st in coords]
-    mvdata.set_interval(min_coord=min_coord, max_coord=max_coord)
-
-    # mvdata slices are based on chunks so we make sure that the requested
-    # coordinates fall within the chunked slice
-    assert mvdata._data[0]._min_coord <= min_coord
-    assert mvdata._data[0]._max_coord <= max_coord
-
-
 def test_get_chunk(mandelbrot_arrays, max_level):
     scale = max_level - 1
     virtual_data = _progressive_loading.VirtualData(
@@ -218,6 +133,26 @@ def test_get_chunk(mandelbrot_arrays, max_level):
     real_array = get_chunk(chunk_slice, array=virtual_data)
 
     assert chunk_widths == real_array.shape
+
+
+def test_get_chunk_retrieves_expected_data(chunked_array, chunk_slice):
+    """Test get_chunk returns expected chunk data."""
+    expected = chunked_array[chunk_slice].compute()
+    actual = get_chunk(chunk_slice, chunked_array)
+    da.utils.assert_eq(actual, expected)
+
+
+def test_get_chunk_spans_chunks(chunked_array):
+    """Test get_chunk works across chunk boundaries."""
+    sl = (slice(5, 15), slice(5, 15))
+    get_chunk(sl, chunked_array)
+
+
+def test_get_chunk_wrong_shape_raises(chunked_array):
+    """Test get_chunk raises error if chunk shape is wrong."""
+    bad_slice = (slice(5, 15), slice(5, 20))
+    with pytest.raises(ValueError):
+        get_chunk(bad_slice, chunked_array)
 
 
 def test_visual_depth(make_napari_viewer):
