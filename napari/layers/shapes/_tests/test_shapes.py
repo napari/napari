@@ -12,6 +12,7 @@ from napari._tests.utils import (
     check_layer_world_data_extent,
 )
 from napari.components import ViewerModel
+from napari.components.dims import Dims
 from napari.layers import Shapes
 from napari.layers.base._base_constants import ActionType
 from napari.layers.utils._text_constants import Anchor
@@ -386,7 +387,7 @@ def test_refresh_text():
     np.testing.assert_equal(layer.text.values, new_properties['shape_type'])
 
 
-@pytest.mark.parametrize('prepend', [[], [7], [8, 9]])
+@pytest.mark.parametrize('prepend', [(), (7,), (8, 9)])
 def test_nd_text(prepend):
     """Test slicing of text coords with nD shapes
 
@@ -394,28 +395,42 @@ def test_nd_text(prepend):
     """
     shapes_data = [
         [
-            prepend + [0, 10, 10, 10],
-            prepend + [0, 10, 20, 20],
-            prepend + [0, 10, 10, 20],
-            prepend + [0, 10, 20, 10],
+            prepend + (0, 10, 10, 10),
+            prepend + (0, 10, 20, 20),
+            prepend + (0, 10, 10, 20),
+            prepend + (0, 10, 20, 10),
         ],
         [
-            prepend + [1, 20, 30, 30],
-            prepend + [1, 20, 50, 50],
-            prepend + [1, 20, 50, 30],
-            prepend + [1, 20, 30, 50],
+            prepend + (1, 20, 30, 30),
+            prepend + (1, 20, 50, 50),
+            prepend + (1, 20, 50, 30),
+            prepend + (1, 20, 30, 50),
         ],
     ]
     layer = Shapes(shapes_data)
     assert layer.ndim == 4 + len(prepend)
 
-    layer._slice_dims(point=prepend + [0, 10, 0, 0], ndisplay=2)
+    layer._slice_dims(
+        Dims(
+            ndim=layer.ndim,
+            ndisplay=2,
+            range=((0, 100, 1),) * layer.ndim,
+            point=prepend + (0, 10, 0, 0),
+        )
+    )
     np.testing.assert_equal(layer._indices_view, [0])
     np.testing.assert_equal(layer._view_text_coords[0], [[15, 15]])
 
     # TODO: 1st bug #6205, ndisplay 3 is buggy in 5+ dimensions
     # may need to call _update_dims
-    layer._slice_dims(point=prepend + [1, 0, 0, 0], ndisplay=3)
+    layer._slice_dims(
+        Dims(
+            ndim=layer.ndim,
+            ndisplay=3,
+            range=((0, 100, 1),) * layer.ndim,
+            point=prepend + (1, 0, 0, 0),
+        )
+    )
     np.testing.assert_equal(layer._indices_view, [1])
     np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
@@ -2128,7 +2143,7 @@ def test_value_3d(
         ]
     )
     layer = Shapes(data, scale=scale)
-    layer._slice_dims([0, 0, 0, 0], ndisplay=3)
+    layer._slice_dims(Dims(ndim=4, ndisplay=3, point=(0, 0, 0, 0)))
     value, _ = layer.get_value(
         position,
         view_direction=view_direction,
@@ -2304,7 +2319,7 @@ def test_set_data_3d():
         np.array([[0, 0, 0], [0, 0, 200]]),
     ]
     shapes = Shapes(lines, shape_type='line')
-    shapes._slice_dims(ndisplay=3)
+    shapes._slice_dims(Dims(ndim=3, ndisplay=3))
     shapes.data = lines
 
 
