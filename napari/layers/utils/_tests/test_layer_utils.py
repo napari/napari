@@ -67,7 +67,8 @@ INSUFFICIENT_CHUNKS = [
         (9, 1, 3),
         (1, 1825, 1825),
         3,
-    ),  # Shape only allows for 3 slices per plane
+    ),  #  Shape only allows for 3 slices per plane
+    ((3, 15, 15, 8), (1, 11, 311, 621), 3),  #  test 4 dimensional data
 ]
 
 
@@ -552,6 +553,7 @@ def test_insufficient_chunks_get_crop_slices(
     idxs = _get_plane_indices(shape, offset)
     slices = _get_crop_slices(shape, idxs, offset, chunk_size)
     assert len(slices) == expected_length
+    assert len(shape) == len(slices[0])
 
 
 def test_zarr_get_chunk_size():

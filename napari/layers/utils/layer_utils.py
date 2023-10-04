@@ -485,9 +485,11 @@ def _get_pixel_start_indices(
         plane_size = chunk_shape[:-offset]
         # Go from chunk indices to pixel indices.
         plane_indices = [
-            (plane_index[size_index] * size,)
-            for size_index, size in enumerate(plane_size)
-            for plane_index in plane_indices
+            tuple(
+                plane[dim_index] * dim_size
+                for dim_index, dim_size in enumerate(plane_size)
+            )
+            for plane in plane_indices
         ]
 
         y_start_indices = _get_start_indices(plane_shape[0], chunk_size_y)
