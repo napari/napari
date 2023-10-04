@@ -224,7 +224,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     data : array
         Data to calculate range of values over.
     rgb : bool
-        Flag if data is rgb. If so, return [0, 255].
+        Flag if data is rgb. If so, return (0, 255).
 
     Returns
     -------
