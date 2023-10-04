@@ -352,9 +352,7 @@ def _get_blocks_grid_shape(
     tuple[int, ...]
         shape indicating the number of chunks per dimension.
     """
-    return tuple(
-        data_shape[i] // chunk_size[i] for i in range(len(data_shape))
-    )
+    return tuple(shape//size for shape, size in zip(data_shape, chunk_size))
 
 
 def _get_plane_indices(
