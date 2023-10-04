@@ -2321,26 +2321,27 @@ class Shapes(Layer):
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        ndisplay = self._slice_input.ndisplay
-        if ndisplay != self._ndisplay_stored:
-            self.selected_data = set()
-            self._data_view.ndisplay = min(self.ndim, ndisplay)
-            self._ndisplay_stored = ndisplay
-            self._clipboard = {}
+        with self._data_view.batched_updates():
+            ndisplay = self._slice_input.ndisplay
+            if ndisplay != self._ndisplay_stored:
+                self.selected_data = set()
+                self._data_view.ndisplay = min(self.ndim, ndisplay)
+                self._ndisplay_stored = ndisplay
+                self._clipboard = {}
 
-        if self._slice_input.order != self._display_order_stored:
-            self.selected_data = set()
-            self._data_view.update_dims_order(self._slice_input.order)
-            self._display_order_stored = copy(self._slice_input.order)
-            # Clear clipboard if dimensions swap
-            self._clipboard = {}
+            if self._slice_input.order != self._display_order_stored:
+                self.selected_data = set()
+                self._data_view.update_dims_order(self._slice_input.order)
+                self._display_order_stored = copy(self._slice_input.order)
+                # Clear clipboard if dimensions swap
+                self._clipboard = {}
 
-        slice_key = np.array(self._data_slice.point)[
-            self._slice_input.not_displayed
-        ]
-        if not np.array_equal(slice_key, self._data_view.slice_key):
-            self.selected_data = set()
-        self._data_view.slice_key = slice_key
+            slice_key = np.array(self._data_slice.point)[
+                self._slice_input.not_displayed
+            ]
+            if not np.array_equal(slice_key, self._data_view.slice_key):
+                self.selected_data = set()
+            self._data_view.slice_key = slice_key
 
     def interaction_box(self, index):
         """Create the interaction box around a shape or list of shapes.
