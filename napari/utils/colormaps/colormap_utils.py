@@ -500,7 +500,6 @@ def label_colormap(
         ),
         axis=1,
     )
-    colors[0, :] = 0  # set background to transparent
 
     # from here
     values_ = np.arange(num_colors + 2)
@@ -518,8 +517,8 @@ def label_colormap(
     return LabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
-        colors=colors[1:],
-        controls=np.concatenate((np.array([0]), control_points[2:])),
+        colors=colors,
+        controls=control_points,
         interpolation='zero',
         background_value=background_value,
     )
