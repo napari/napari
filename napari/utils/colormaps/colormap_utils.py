@@ -463,7 +463,9 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
     return rgb[:n]
 
 
-def label_colormap(num_colors=256, seed=0.5) -> LabelColormap:
+def label_colormap(
+    num_colors=256, seed=0.5, background_value=0
+) -> LabelColormap:
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
@@ -500,6 +502,7 @@ def label_colormap(num_colors=256, seed=0.5) -> LabelColormap:
     )
     colors[0, :] = 0  # set background to transparent
 
+    # from here
     values_ = np.arange(num_colors + 2)
     randomized_values = low_discrepancy_image(values_, seed=seed)
 
@@ -510,13 +513,15 @@ def label_colormap(num_colors=256, seed=0.5) -> LabelColormap:
     )
 
     colors = colors[indices]
+    # here is an ugly hack to restore classical napari color order.
 
     return LabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
-        colors=colors,
-        controls=control_points,
+        colors=colors[1:],
+        controls=control_points[1:],
         interpolation='zero',
+        background_value=background_value,
     )
 
 

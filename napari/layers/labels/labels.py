@@ -299,7 +299,9 @@ class Labels(_ImageBase):
         self._seed_rng: Optional[int] = seed_rng
         self._background_label = 0
         self._num_colors = num_colors
-        self._random_colormap = label_colormap(self.num_colors, self.seed)
+        self._random_colormap = label_colormap(
+            self.num_colors, self.seed, self._background_label
+        )
         self._direct_colormap = direct_colormap()
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
@@ -475,7 +477,9 @@ class Labels(_ImageBase):
         )
 
         self._seed = seed
-        self.colormap = label_colormap(self.num_colors, self.seed)
+        self.colormap = label_colormap(
+            self.num_colors, self.seed, self._background_label
+        )
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
@@ -493,13 +497,14 @@ class Labels(_ImageBase):
         self._seed_rng = seed_rng
 
         if self._seed_rng is None:
-            self.colormap = label_colormap(self.num_colors, self.seed)
+            self.colormap = label_colormap(
+                self.num_colors, self.seed, self._background_label
+            )
         else:
             self.colormap.shuffle(self._seed_rng)
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.refresh()
         self.events.selected_label()
 
         self.refresh()
@@ -517,7 +522,9 @@ class Labels(_ImageBase):
     @num_colors.setter
     def num_colors(self, num_colors):
         self._num_colors = num_colors
-        self.colormap = label_colormap(num_colors, self.seed)
+        self.colormap = label_colormap(
+            num_colors, self.seed, self._background_label
+        )
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()

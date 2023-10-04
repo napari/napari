@@ -50,17 +50,17 @@ auto_lookup_shader = """
 uniform sampler2D texture2D_values;
 
 vec4 sample_label_color(float t) {
-    if (t == 0) {
+    if (t == $background_value) {
         return vec4(0);
     }
 
     if (($use_selection) && ($selection != t)) {
         return vec4(0);
     }
-    t = mod(t, $color_map_size - 1);
+    t = mod(t, $color_map_size);
     return texture2D(
         texture2D_values,
-        vec2(0.0, (t + 1.5) / $color_map_size)
+        vec2(0.0, (t + 0.5) / $color_map_size)
     );
 }
 """
@@ -150,6 +150,7 @@ class LabelVispyColormap(VispyColormap):
             auto_lookup_shader.replace('$color_map_size', str(len(colors)))
             .replace('$use_selection', str(use_selection).lower())
             .replace('$selection', str(selection))
+            .replace('$background_value', str(0.0))
         )
 
 

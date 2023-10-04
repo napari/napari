@@ -159,16 +159,15 @@ class LabelColormap(Colormap):
     use_selection: bool = False
     selection: float = 0.0
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
+    background_value: float = 0.0
 
     def map(self, values):
         values = np.atleast_1d(values)
-        values[values == None] = 0  # noqa: E711
+        values[values == None] = self.background_value  # noqa: E711
 
-        mapped = self.colors[1:][
-            np.mod(values, len(self.colors) - 1).astype(np.int64)
-        ]
+        mapped = self.colors[np.mod(values, len(self.colors)).astype(np.int64)]
 
-        mapped[values == 0] = 0
+        mapped[values == self.background_value] = 0
 
         # If using selected, disable all others
         if self.use_selection:
