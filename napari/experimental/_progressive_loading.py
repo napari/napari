@@ -4,7 +4,7 @@ import logging
 import sys
 import time
 from collections import defaultdict
-
+from typing import Dict, Iterable, List, Optional, Union
 
 import dask.array as da
 import numpy as np
@@ -12,17 +12,11 @@ import toolz as tz
 from psygnal import debounced
 from superqt import ensure_main_thread
 
-from typing import Dict, Iterable, List, Optional, Tuple, Union
-
-
 from napari._vispy.utils.gl import get_max_texture_sizes
-
-from napari.qt.threading import thread_worker
-
 from napari.experimental._virtual_data import (
     MultiScaleVirtualData,
-    VirtualData,
 )
+from napari.qt.threading import thread_worker
 
 LOGGER = logging.getLogger("napari.experimental._progressive_loading")
 LOGGER.setLevel(logging.DEBUG)

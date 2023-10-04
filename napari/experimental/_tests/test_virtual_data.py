@@ -1,22 +1,10 @@
-import dask.array as da
-import numpy as np
 import pytest
 from numpy.testing import (
-    assert_array_almost_equal,
     assert_array_equal,
     assert_raises,
 )
 
-import napari
 from napari.experimental import _progressive_loading
-from napari.experimental._progressive_loading import (
-    add_progressive_loading_image,
-    chunk_centers,
-    chunk_slices,
-    distance_from_camera_center_line,
-    get_chunk,
-    visual_depth,
-)
 from napari.experimental._progressive_loading_datasets import (
     mandelbrot_dataset,
 )
@@ -32,6 +20,7 @@ def mandelbrot_arrays(max_level):
     large_image = mandelbrot_dataset(max_levels=max_level)
     multiscale_img = large_image["arrays"]
     return multiscale_img
+
 
 def test_virtualdata_init(mandelbrot_arrays, max_level):
     scale = max_level - 1
@@ -101,4 +90,3 @@ def test_multiscalevirtualdata_set_interval(mandelbrot_arrays):
     # coordinates fall within the chunked slice
     assert mvdata._data[0]._min_coord <= min_coord
     assert mvdata._data[0]._max_coord <= max_coord
-
