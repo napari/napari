@@ -176,7 +176,7 @@ CLASSICAL_LABEL_COLORMAP = np.array(
         [0.9122511, 0.7068656, 0.42555025, 1.0],
         [0.23882896, 0.1612251, 0.2637005, 1.0],
     ]
-)[np.argsort(np.random.default_rng(500).permutation(49))]
+)
 
 
 def _all_rgb():
@@ -511,14 +511,14 @@ def label_colormap(
         len(control_points) - 1,
     )
 
-    colors = colors[indices]
+    colors = colors[indices][:-2]
     # here is an ugly hack to restore classical napari color order.
 
     return LabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
         colors=colors,
-        controls=control_points,
+        controls=np.linspace(0, 1, len(colors) + 1),
         interpolation='zero',
         background_value=background_value,
     )
