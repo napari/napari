@@ -1,12 +1,5 @@
-from napari.layers import (
-    Image,
-    Layer
-)
-
-from napari._fastplotlib import (
-    FastplotlibImageLayer
-)
-
+from napari._fastplotlib import FastplotlibImageLayer
+from napari.layers import Image, Layer
 from napari.utils.translations import trans
 
 layer_to_visual = {

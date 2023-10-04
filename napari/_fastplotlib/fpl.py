@@ -1,7 +1,7 @@
 import imageio.v3 as iio
-import napari
 
-from napari._fastplotlib import FastplotlibImageLayer, FastplotlibCanvas
+import napari
+from napari._fastplotlib import FastplotlibCanvas, FastplotlibImageLayer
 from napari.layers import Image
 
 # create napari viewer

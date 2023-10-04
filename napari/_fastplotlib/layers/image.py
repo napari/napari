@@ -1,12 +1,10 @@
 from fastplotlib import ImageGraphic
+
 from napari.layers import Image
 
 
 class FastplotlibImageLayer:
-    def __init__(
-            self,
-            napari_layer: Image
-    ) -> None:
+    def __init__(self, napari_layer: Image) -> None:
         """Create a fastplotlib ImageGraphic from a napari Image layer
 
         Parameters
@@ -29,7 +27,9 @@ class FastplotlibImageLayer:
         self._on_data_change()
 
         self.napari_layer.events.colormap.connect(self._on_colormap_change)
-        self.napari_layer.events.contrast_limits.connect(self._on_contrast_limits_change)
+        self.napari_layer.events.contrast_limits.connect(
+            self._on_contrast_limits_change
+        )
 
     def _on_data_change(self):
         # create image graphic
@@ -39,14 +39,19 @@ class FastplotlibImageLayer:
                 name=self.napari_layer.name,
                 cmap=self.napari_layer.colormap.name,
                 vmin=self.napari_layer.contrast_limits[0],
-                vmax=self.napari_layer.contrast_limits[1]
+                vmax=self.napari_layer.contrast_limits[1],
             )
         else:
-            if self.napari_layer._data_view.shape == self.image_graphic.data().shape:
+            if (
+                self.napari_layer._data_view.shape
+                == self.image_graphic.data().shape
+            ):
                 self.image_graphic.data = self.napari_layer._data_view
             else:
-                raise ValueError(f"Current data shape: {self.image_graphic.data().shape} does not equal"
-                                 f"new data shape: {self.napari_layer._data_view}. Please ")
+                raise ValueError(
+                    f"Current data shape: {self.image_graphic.data().shape} does not equal"
+                    f"new data shape: {self.napari_layer._data_view}. Please "
+                )
 
     def _on_colormap_change(self):
         self.image_graphic.cmap = self.napari_layer.colormap.name

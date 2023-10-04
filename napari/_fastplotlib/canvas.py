@@ -1,11 +1,7 @@
 import fastplotlib as fpl
-from napari.components import ViewerModel
-from PyQt5 import QtWidgets
-from wgpu.gui.qt import WgpuWidget, WgpuCanvas
-import wgpu.backends.rs
-
 import pygfx as gfx
-import numpy as np
+from PyQt5 import QtWidgets
+from wgpu.gui.qt import WgpuCanvas
 
 # TODO Figure out how to get fastplotlib canvas into Qt application and not just as a docked widget
 
@@ -16,7 +12,7 @@ class FastplotlibCanvas(QtWidgets.QWidget):
     """
 
     def __init__(
-            self,
+        self,
     ) -> None:
         super().__init__(None)
         self._canvas = WgpuCanvas(parent=self)
@@ -53,10 +49,7 @@ class FastplotlibCanvas(QtWidgets.QWidget):
 
         self._plot.add_graphic(fpl_layer.image_graphic)
 
-      #  napari_layer.events.visible.connect(self._reorder_layers)
-     #   self.viewer.camera.events.angles.connect(fpl_layer._on_camera_move)
+    #  napari_layer.events.visible.connect(self._reorder_layers)
+    #   self.viewer.camera.events.angles.connect(fpl_layer._on_camera_move)
 
     #    self._reorder_layers()
-
-
-
