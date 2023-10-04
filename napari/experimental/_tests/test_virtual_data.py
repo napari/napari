@@ -1,4 +1,5 @@
 import numpy as np
+import dask.array as da
 import pytest
 from numpy.testing import (
     assert_array_equal,
@@ -80,13 +81,21 @@ def test_virtualdata_hyperslice(mandelbrot_arrays, max_level):
     )
 
 
+def test_get_offset_default(mandelbrot_arrays, max_level):
+    scale = max_level - 1
+    vdata = _virtual_data.VirtualData(mandelbrot_arrays[scale], scale=scale)
+
+    # Interval not set - should return zeros
+    assert_array_equal(vdata[100, 100], np.zeros((1, 1)))
+
+
 def test_multiscalevirtualdata_init(mandelbrot_arrays):
-    mvdata = _progressive_loading.MultiScaleVirtualData(mandelbrot_arrays)
+    mvdata = _virtual_data.MultiScaleVirtualData(mandelbrot_arrays)
     assert isinstance(mvdata, _progressive_loading.MultiScaleVirtualData)
 
 
 def test_multiscalevirtualdata_set_interval(mandelbrot_arrays):
-    mvdata = _progressive_loading.MultiScaleVirtualData(mandelbrot_arrays)
+    mvdata = _virtual_data.MultiScaleVirtualData(mandelbrot_arrays)
     coords = (slice(513, 1024, None), slice(513, 1024, None))
     min_coord = [st.start for st in coords]
     max_coord = [st.stop for st in coords]
@@ -98,16 +107,8 @@ def test_multiscalevirtualdata_set_interval(mandelbrot_arrays):
     assert mvdata._data[0]._max_coord <= max_coord
 
 
-def test_get_offset_default(mandelbrot_arrays, max_level):
-    scale = max_level - 1
-    vdata = _virtual_data.VirtualData(mandelbrot_arrays[scale], scale=scale)
-
-    # Interval not set - should return zeros
-    assert_array_equal(vdata[100, 100], np.zeros((1, 1)))
-
-
 def test_multiscale_set_interval(mandelbrot_arrays):
-    mvdata = _progressive_loading.MultiScaleVirtualData(mandelbrot_arrays)
+    mvdata = _virtual_data.MultiScaleVirtualData(mandelbrot_arrays)
     mvdata.set_interval([0, 0], [1024, 1024])
 
     assert mvdata._data[0]._min_coord == [0, 0]
@@ -116,6 +117,40 @@ def test_multiscale_set_interval(mandelbrot_arrays):
     assert mvdata._data[0]._max_coord == [1024, 1024]
     assert mvdata._data[1]._max_coord == [512, 512]
 
+
+# def test_nd_array():
+
+#     shape = (10, 20, 30, 40)
+#     chunks = (1, 10, 15, 20)
+#     arr = da.random.random(shape, chunks=chunks)
+
+#     vdata = _virtual_data.VirtualData(arr, 0, ndisplay=3)
+
+#     coords = tuple(slice(None) for _ in shape)
+#     vdata.set_interval(coords)
+
+#     assert vdata.hyperslice.shape == shape[-2:]
+#     assert isinstance(vdata.hyperslice, da.Array)
+
+
+# def test_multiscale_nd_array():
+
+#     shape = (10, 20, 30, 40)
+#     chunks = (5, 10, 15, 20)
+#     num_scales = 5
+
+#     arr_list = [da.random.rand(shape, chunks=chunks) for _ in range(num_scales)]
+
+#     mvdata = _virtual_data.MultiScaleVirtualData(arr_list, ndisplay=2)
+
+#     min_coord = [0]*len(shape)
+#     max_coord = [s - 1 for s in shape]
+
+#     mvdata.set_interval(min_coord, max_coord)
+
+#     for vdata in mvdata._data:
+#         assert vdata.hyperslice.shape == shape[-2:]
+#         assert isinstance(vdata.hyperslice, da.Array)
 
 if __name__ == "__main__":
     max_level = 8
