@@ -1562,6 +1562,44 @@ class Window:
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
 
+    def play_dim(
+        self,
+        axis: int = 0,
+        fps: Optional[float] = None,
+        loop_mode: Optional[str] = None,
+        frame_range: Optional[Tuple[int, int]] = None,
+    ):
+        """
+        Playback one dimension.
+
+        Parameters
+        ----------
+        axis : int
+            Index of axis to play
+        fps : float
+            Frames per second for playback.  Negative values will play in
+            reverse.  fps == 0 will stop the animation. The view is not
+            guaranteed to keep up with the requested fps, and may drop frames
+            at higher fps.
+        loop_mode : str
+            Mode for animation playback.  Must be one of the following options:
+                "once": Animation will stop once movie reaches the
+                    max frame (if fps > 0) or the first frame (if fps < 0).
+                "loop":  Movie will return to the first frame
+                    after reaching the last frame, looping until stopped.
+                "back_and_forth":  Movie will loop back and forth until
+                    stopped
+        frame_range : tuple | list
+            If specified, will constrain animation to loop [first, last] frames
+        """
+        self._qt_viewer.dims.play(
+            axis=axis, fps=fps, loop_mode=loop_mode, frame_range=frame_range
+        )
+
+    def stop_dim(self):
+        """Stop playback of dimension."""
+        self._qt_viewer.dims.stop()
+
 
 def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
     # if the signature is looking a for a napari viewer, pass it.
