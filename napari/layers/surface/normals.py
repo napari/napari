@@ -12,6 +12,8 @@ class NormalMode(Enum):
 
 
 _DEFAULT_COLOR = ColorValue('black')
+_DEFAULT_FACE_COLOR = ColorValue('orange')
+_DEFAULT_VERTEX_COLOR = ColorValue('blue')
 
 
 class Normals(EventedModel):
@@ -46,8 +48,11 @@ class SurfaceNormals(EventedModel):
     """
 
     face: Normals = Field(
-        Normals(mode=NormalMode.FACE, color='orange'), allow_mutation=False
+        Normals(mode=NormalMode.FACE, color=_DEFAULT_FACE_COLOR),
+        allow_mutation=False,
     )
+    # TODO: should this be NormalMode.VERTEX?
     vertex: Normals = Field(
-        Normals(mode=NormalMode.FACE, color='blue'), allow_mutation=False
+        Normals(mode=NormalMode.FACE, color=_DEFAULT_VERTEX_COLOR),
+        allow_mutation=False,
     )
