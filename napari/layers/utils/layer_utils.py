@@ -334,7 +334,7 @@ def _get_blocks_grid_shape(
     data_shape: Sequence[int], chunk_size: Sequence[int]
 ) -> Tuple[int, ...]:
     """
-    Get the approximate shape of the grid of array chunks.
+    Get the block shape: the approximate layout of the grid of array chunks.
 
     Gets the shape of the array not on the pixel level but on the chunk level. For example if x is 100 and
     chunk size is 10, 10 chunks fit in 100 and will thus be returned. In case of x being 105, still 10 will be
