@@ -1,10 +1,9 @@
+import numpy as np
 import pytest
 from numpy.testing import (
     assert_array_equal,
     assert_raises,
 )
-
-import numpy as np
 
 from napari.experimental import _progressive_loading, _virtual_data
 from napari.experimental._progressive_loading_datasets import (
