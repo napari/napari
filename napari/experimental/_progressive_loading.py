@@ -492,22 +492,22 @@ def progressively_update_layer(invar, viewer, data=None, ndisplay=None):
             {layer.data.translate}"
         )
 
-        if visible_scales[scale]:
-            debug_layer = None
-            if "debug_layer" in layer.metadata:
-                debug_layer = layer.metadata["debug_layer"]
-                debug_layer.visible = True
-            debug_layer = draw_chunk_boundaries(
-                corner_pixels / data._scale_factors[scale],
-                layer.data,
-                layer=debug_layer,
-                viewer=viewer,
-                scale=data._scale_factors[scale],
-            )
-            layer.metadata["debug_layer"] = debug_layer
-        else:
-            if "debug_layer" in layer.metadata:
-                layer.metadata["debug_layer"].visible = False
+        # if visible_scales[scale]:
+        #     debug_layer = None
+        #     if "debug_layer" in layer.metadata:
+        #         debug_layer = layer.metadata["debug_layer"]
+        #         debug_layer.visible = True
+        #     debug_layer = draw_chunk_boundaries(
+        #         corner_pixels / data._scale_factors[scale],
+        #         layer.data,
+        #         layer=debug_layer,
+        #         viewer=viewer,
+        #         scale=data._scale_factors[scale],
+        #     )
+        #     layer.metadata["debug_layer"] = debug_layer
+        # else:
+        #     if "debug_layer" in layer.metadata:
+        #         layer.metadata["debug_layer"].visible = False
 
     # Update the MultiScaleVirtualData memory backing
     data.set_interval(top_left, bottom_right, visible_scales=visible_scales)

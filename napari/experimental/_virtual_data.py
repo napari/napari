@@ -546,4 +546,3 @@ class MultiScaleVirtualData:
                     slice(mn, mx) for mn, mx in zip(scaled_min, scaled_max)
                 )
                 self._data[scale].set_interval(coords)
-
