@@ -144,6 +144,7 @@ def get_widget_contribution(
     for contrib in pm.iter_widgets():
         if contrib.plugin_name == plugin_name:
             if not widget_name or contrib.display_name == widget_name:
+                print(f'xxxxx get widget cont {contrib}')
                 return contrib.get_callable(), contrib.display_name
             widgets_seen.add(contrib.display_name)
     if widget_name and widgets_seen:
@@ -516,6 +517,7 @@ def _get_widgets_submenu_actions(
 
     if TYPE_CHECKING:
         from napari._qt.qt_main_window import Window
+        from npe2.manifest.contributions import WidgetContribution
 
     # If no widgets, return
     if not mf.contributions.widgets:
@@ -532,101 +534,107 @@ def _get_widgets_submenu_actions(
 
     widget_actions: List[Action] = []
     for widget in widgets:
-        full_name = menu_item_template.format(
-            mf.display_name, widget.display_name
-        )
-        if widget_contribution := _npe2.get_widget_contribution(
-            mf.name,
-            widget.display_name,
-        ):
-            widget_callable, widget_name = widget_contribution
+        full_name = menu_item_template.format(mf.display_name, widget.display_name)
 
-            if inspect.isclass(widget_callable) and issubclass(
-                widget_callable,
-                (QWidget, Widget),
+        def _widget_callback(
+            napari_viewer: Viewer,
+            # mf: PluginManifest = mf,
+            widget: WidgetContribution = widget,
+            # widget: str = widget,
+            name: str = full_name,
+            # widget: Union[MagicFactory, Type, Callable] = widget_callable,
+        ) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
+            """Toggle if widget already built otherwise return widget.
+
+            Returned widget will be added to main window by a processor.
+            Note for magicgui type widget contributions, `Viewer` injection is done by
+            `magicgui.register_type`.
+            """
+            # Get widget param name (if any) and check type
+            if widget_contribution := _npe2.get_widget_contribution(
+                mf.name,
+                widget.display_name,
             ):
-                widget_param = ""
-                # Inspection can fail when adding to bundle as it thinks widget is
-                # a builtin
-                try:
-                    sig = inspect.signature(widget_callable.__init__)
-                except ValueError:
-                    pass
-                else:
-                    for param in sig.parameters.values():
-                        if param.name == 'napari_viewer':
-                            widget_param = param.name
-                            break
-                        if param.annotation in (
-                            'napari.viewer.Viewer',
-                            Viewer,
-                        ):
-                            widget_param = param.name
-                            break
-
-            elif isinstance(widget_callable, MagicFactory) or callable(
-                widget_callable
-            ):
-                widget_param = ""
-            else:
-                raise TypeError(
-                    trans._(
-                        "Widgets must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or callable, but {widget} is of type {type_}. Please raise an issue in napari GitHub with the plugin and widget you were trying to use.",
-                        deferred=True,
-                        widget=widget_name,
-                        type_=type(widget_callable),
-                    )
-                )
-
-            # Toggle if widget already built otherwise return widget so it can be
-            # added to main window by a processor
-            def _widget_callback(
-                napari_viewer: Viewer,
-                widget: Union[MagicFactory, Type, Callable] = widget_callable,
-                name: str = full_name,
-                param: str = widget_param,
-            ) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
-                window = napari_viewer.window
-                if name in window._dock_widgets:
-                    dock_widget = window._dock_widgets[name]
-                    if dock_widget.isVisible():
-                        dock_widget.hide()
+                widget_callable, widget_name = widget_contribution
+                if inspect.isclass(widget_callable) and issubclass(
+                    widget_callable,
+                    (QWidget, Widget),
+                ):
+                    widget_param = ""
+                    # Inspection can fail when adding to bundle as it thinks widget is
+                    # a builtin
+                    try:
+                        sig = inspect.signature(widget_callable.__init__)
+                    except ValueError:
+                        pass
                     else:
-                        dock_widget.show()
-                    return None
+                        for param in sig.parameters.values():
+                            if param.name == 'napari_viewer':
+                                widget_param = param.name
+                                break
+                            if param.annotation in (
+                                'napari.viewer.Viewer',
+                                Viewer,
+                            ):
+                                widget_param = param.name
+                                break
 
-                kwargs = {}
-                if param:
-                    kwargs[param] = napari_viewer
-                return widget(**kwargs), name
+                elif isinstance(widget_callable, MagicFactory) or callable(
+                    widget_callable
+                ):
+                    widget_param = ""
+                else:
+                    raise TypeError(
+                        trans._(
+                            "Widgets must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or callable, but {widget} is of type {type_}. Please raise an issue in napari GitHub with the plugin and widget you were trying to use.",
+                            deferred=True,
+                            widget=widget_name,
+                            type_=type(widget_callable),
+                        )
+                    )
 
-            def _get_current_dock_status(
-                window: Window,
-                name: str = full_name,
-            ):
-                if name in window._dock_widgets:
-                    return window._dock_widgets[name].isVisible()
-                return False
+            window = napari_viewer.window
+            if name in window._dock_widgets:
+                dock_widget = window._dock_widgets[name]
+                if dock_widget.isVisible():
+                    dock_widget.hide()
+                else:
+                    dock_widget.show()
+                return None
 
-            title = full_name
-            if multiprovider:
-                title = widget.display_name
-            # To display '&' instead of creating a shortcut
-            title = title.replace("&", "&&")
+            kwargs = {}
+            if widget_param:
+                kwargs[widget_param] = napari_viewer
+            print(f'return wid callable {widget_callable(**kwargs)}')
+            return widget_callable(**kwargs), name
 
-            widget_actions.append(
-                Action(
-                    id=f'{mf.name}:{widget_name}',
-                    title=title,
-                    callback=_widget_callback,
-                    menus=[
-                        {
-                            'id': submenu_id,
-                        }
-                    ],
-                    toggled=ToggleRule(get_current=_get_current_dock_status),
-                )
+        def _get_current_dock_status(
+            window: Window,
+            name: str = full_name,
+        ):
+            if name in window._dock_widgets:
+                return window._dock_widgets[name].isVisible()
+            return False
+
+        title = full_name
+        if multiprovider:
+            title = widget.display_name
+        # To display '&' instead of creating a shortcut
+        title = title.replace("&", "&&")
+
+        widget_actions.append(
+            Action(
+                id=f'{mf.name}:{widget.display_name}',
+                title=title,
+                callback=_widget_callback,
+                menus=[
+                    {
+                        'id': submenu_id,
+                    }
+                ],
+                toggled=ToggleRule(get_current=_get_current_dock_status),
             )
+        )
     return submenu, widget_actions
 
 
