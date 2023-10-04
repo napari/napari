@@ -55,6 +55,17 @@ def test_virtualdata_set_interval(mandelbrot_arrays, max_level):
     assert vdata._max_coord >= max_coord
 
 
+def test_virtualdata_getitem(mandelbrot_arrays, max_level):
+    scale = max_level - 1
+    vdata = _progressive_loading.VirtualData(mandelbrot_arrays[scale], scale=scale)
+    coords = (slice(0, 1024, None), slice(0, 1024, None))
+    vdata.set_interval(coords)
+    retrieved_data = vdata[(500, 500)]
+    # Ensure the retrieved data matches expected value
+    print(vdata[0:1024, 0:1024])
+    assert retrieved_data == 0
+    
+    
 def test_virtualdata_hyperslice_reuse(mandelbrot_arrays, max_level):
     scale = max_level - 1
     vdata = _progressive_loading.VirtualData(
@@ -101,4 +112,20 @@ def test_multiscalevirtualdata_set_interval(mandelbrot_arrays):
     # coordinates fall within the chunked slice
     assert mvdata._data[0]._min_coord <= min_coord
     assert mvdata._data[0]._max_coord <= max_coord
+
+
+if __name__ == "__main__":
+    max_level = 8
+
+    large_image = mandelbrot_dataset(max_levels=8)
+    multiscale_img = large_image["arrays"]
+
+
+    scale = max_level - 1
+    vdata = _progressive_loading.VirtualData(multiscale_img[-1], scale=scale)
+    coords = (slice(0, 1024, None), slice(0, 1024, None))
+    vdata.set_interval(coords)
+    retrieved_data = np.asarray(vdata[0:1024, 0:1024])
+    # Ensure the retrieved data matches expected value
+    print(retrieved_data)
 

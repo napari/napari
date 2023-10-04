@@ -69,7 +69,6 @@ class VirtualData:
         self.shape = array.shape
         self.ndim = len(self.shape)
 
-        # translate is in the same units as the highest resolution scale
         self.translate = tuple([0] * len(self.shape))
 
         self.hyperslice = da.zeros(1)
@@ -144,9 +143,7 @@ class VirtualData:
             # First value greater or equal to
             min_where = np.where(cumuchunks >= self._min_coord[dim])
             if min_where[0].size == 0:
-                import pdb
-
-                pdb.set_trace()
+                breakpoint()
             greaterthan_min_idx = (
                 min_where[0][0] if min_where[0] is not None else 0
             )
@@ -158,9 +155,7 @@ class VirtualData:
 
             max_where = np.where(cumuchunks >= self._max_coord[dim])
             if max_where[0].size == 0:
-                import pdb
-
-                pdb.set_trace()
+                breakpoint()
             lessthan_max_idx = (
                 max_where[0][0] if max_where[0] is not None else 0
             )
