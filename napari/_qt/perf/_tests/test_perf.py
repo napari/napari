@@ -60,6 +60,7 @@ def perfmon_script(tmp_path):
 
 @skip_on_win_ci
 @skip_local_popups
+@pytest.mark.usefixtures("qapp")
 def test_trace_on_start(tmp_path: Path, perf_config, perfmon_script):
     """Make sure napari can write a perfmon trace file."""
 
