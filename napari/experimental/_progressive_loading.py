@@ -962,4 +962,3 @@ def should_render_scale_3D(scale, viewer, min_scale, max_scale):
             render = True
 
     return render
-
