@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 
 from napari.components._viewer_constants import CursorStyle
-from napari.utils.events import EventedModel
+from napari.utils.events.psygnal_evented_model import EventedModel
 
 
 class Cursor(EventedModel):

@@ -1,7 +1,7 @@
 from pydantic import Field
 
 from napari.utils.color import ColorValue
-from napari.utils.events import EventedModel
+from napari.utils.events.psygnal_evented_model import EventedModel
 
 _DEFAULT_COLOR = ColorValue('black')
 

@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 
 from napari.settings._application import GridHeight, GridStride, GridWidth
-from napari.utils.events import EventedModel
+from napari.utils.events.psygnal_evented_model import EventedModel
 
 
 class GridCanvas(EventedModel):

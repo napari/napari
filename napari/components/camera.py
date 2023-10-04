@@ -5,7 +5,7 @@ import numpy as np
 from pydantic import validator
 from scipy.spatial.transform import Rotation as R
 
-from napari.utils.events import EventedModel
+from napari.utils.events.psygnal_evented_model import EventedModel
 from napari.utils.misc import ensure_n_tuple
 from napari.utils.translations import trans
 

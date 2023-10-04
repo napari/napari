@@ -13,7 +13,7 @@ from typing import (
 import numpy as np
 from pydantic import root_validator, validator
 
-from napari.utils.events import EventedModel
+from napari.utils.events.psygnal_evented_model import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 from napari.utils.translations import trans
 
