@@ -4,6 +4,7 @@ import functools
 import inspect
 import sys
 import warnings
+from itertools import product
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -24,7 +25,6 @@ import pandas as pd
 from napari.utils._dtype import normalize_dtype
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
-from napari.utils.notifications import show_info
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
@@ -251,7 +251,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
         return 0, 255
 
     shape = data.shape
-    chunk_size = _get_chunk_size(data) 
+    chunk_size = _get_chunk_size(data)
 
     if chunk_size and (
         not np.issubdtype(dtype, np.integer)
@@ -325,7 +325,12 @@ def _get_1d_slices(shape, chunk_size):
     allowed_chunks = int(PIXEL_THRESHOLD // chunk_size_product)
     multiplier = min(allowed_chunks, MAX_NUMBER_OF_CHUNKS) // 2
 
-    return [slice(center - chunk_size[0] * multiplier, center + chunk_size[0] * multiplier)]
+    return [
+        slice(
+            center - chunk_size[0] * multiplier,
+            center + chunk_size[0] * multiplier,
+        )
+    ]
 
 
 def _get_blocks_grid_shape(
@@ -350,7 +355,7 @@ def _get_blocks_grid_shape(
     tuple[int, ...]
         shape indicating the number of chunks per dimension.
     """
-    return tuple(shape//size for shape, size in zip(data_shape, chunk_size))
+    return tuple(shape // size for shape, size in zip(data_shape, chunk_size))
 
 
 def _get_plane_indices(
@@ -557,11 +562,8 @@ def _get_crop_slices(
         chunk_shape,
     )
 
-    start_indices = [
-        (y_start, x_start)
-        for y_start in y_start_indices
-        for x_start in x_start_indices
-    ]
+    start_indices = [product(y_start_indices, x_start_indices)]  # Nested loop
+
     num_start_indices = len(start_indices)
     chunk_multiplier = min(
         max(max_chunks_per_plane // num_start_indices - 1, 0),
