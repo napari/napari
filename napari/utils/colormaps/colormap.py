@@ -163,7 +163,6 @@ class LabelColormap(Colormap):
 
     def map(self, values):
         values = np.atleast_1d(values)
-        values[values == None] = self.background_value  # noqa: E711
 
         mapped = self.colors[np.mod(values, len(self.colors)).astype(np.int64)]
 
