@@ -28,8 +28,8 @@ from napari.layers.image._slice import _ImageSliceRequest, _ImageSliceResponse
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.layer_utils import (
+    _get_chunk_size,
     calc_data_range,
-    get_chunk_size,
 )
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
@@ -337,7 +337,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Set data
         self._data = data
-        self._chunk_size = get_chunk_size(data)
+        self._chunk_size = _get_chunk_size(data)
         if isinstance(data, MultiScaleData):
             self._data_level = len(data) - 1
             # Determine which level of the multiscale to use for the thumbnail.

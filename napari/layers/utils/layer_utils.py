@@ -251,7 +251,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
         return 0, 255
 
     shape = data.shape
-    chunk_size = get_chunk_size(data)
+    chunk_size = _get_chunk_size(data)
 
     if chunk_size and np.prod(chunk_size) > PIXEL_THRESHOLD:
         return None
@@ -1487,7 +1487,7 @@ def _unique_element(array: Array) -> Optional[Any]:
     return el
 
 
-def get_chunk_size(
+def _get_chunk_size(
     data: MultiScaleData
     | Iterable
     | npt.NDArray
@@ -1530,11 +1530,15 @@ def get_chunk_size(
             # TensorStore allow to specify different read and write chunk sizes
             # we use the read chunk size to have same chunk size for labels like
             # when load data from drive
-            return data.chunk_layout.read_chunk.shape
+            chunk_shape = data.chunk_layout.read_chunk.shape
+            # TensorStore can return tuple of Nones in case chunks haven't been specified.
+            if chunk_shape[0] is None:
+                return data.shape
+            return chunk_shape
 
     if "xarray" in sys.modules:
         from xarray import DataArray
 
         if isinstance(data, DataArray):
-            return get_chunk_size(data.data)
+            return _get_chunk_size(data.data)
     return None
