@@ -378,9 +378,9 @@ def _get_plane_indices(
     idxs: list[tuple[int, ...]]
         Bottom, middle and top plane (in pixels or chunks) for each non-visible dimension or single plane
     """
-    bottom_plane_idx = (0,) * (len(shape) - offset)
+    bottom_plane_idx = tuple(int(s * 0.25) for s in shape[:-offset])
     middle_plane_idx = tuple(s // 2 for s in shape[:-offset])
-    top_plane_idx = tuple(s - 1 for s in shape[:-offset])
+    top_plane_idx = tuple(int(s * 0.75) for s in shape[:-offset])
     idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
     return list(set(idxs))
 
