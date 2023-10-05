@@ -287,6 +287,7 @@ module = [
     'napari._qt.widgets.qt_dims_slider',
     'napari._qt.widgets.qt_dims_sorter',
     'napari._qt.widgets.qt_extension2reader',
+    'napari._qt.widgets.qt_font_size',
     'napari._qt.widgets.qt_highlight_preview',
     'napari._qt.widgets.qt_keyboard_settings',
     'napari._qt.widgets.qt_message_popup',
