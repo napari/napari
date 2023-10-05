@@ -49,6 +49,7 @@ class WidgetBuilder:
             "range": widgets.IntegerRangeSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
             "highlight": widgets.HighlightSizePreviewWidget,
+            "font_size": widgets.FontSizeSchemaWidget,
         },
         "array": {
             "array": widgets.ArraySchemaWidget,
