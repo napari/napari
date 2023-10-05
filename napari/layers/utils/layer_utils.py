@@ -562,7 +562,9 @@ def _get_crop_slices(
         chunk_shape,
     )
 
-    start_indices = [product(y_start_indices, x_start_indices)]  # Nested loop
+    start_indices = list(
+        product(y_start_indices, x_start_indices)
+    )  # Nested loop
 
     num_start_indices = len(start_indices)
     chunk_multiplier = min(
