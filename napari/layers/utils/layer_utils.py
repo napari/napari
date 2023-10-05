@@ -325,7 +325,7 @@ def _get_1d_slices(shape, chunk_size):
     allowed_chunks = int(PIXEL_THRESHOLD // chunk_size_product)
     multiplier = min(allowed_chunks, MAX_NUMBER_OF_CHUNKS) // 2
 
-    return [slice(center, center + chunk_size[0] * multiplier)]
+    return [slice(center - chunk_size[0] * multiplier, center + chunk_size[0] * multiplier)]
 
 
 def _get_blocks_grid_shape(
