@@ -240,7 +240,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     # Vispy only supports uint8 RGB for which we set these clims
     if rgb and dtype != np.uint8:
         # Vispy does not display rgb other than uint8, so it casts it to uint8
-        show_info(
+        warnings.warns(
             trans._(
                 "RGB dtype is not np.uint8. Vispy will cast to np.uint8",
                 deferred=True,
