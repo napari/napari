@@ -541,7 +541,7 @@ def _get_crop_slices(
 
     Returns
     -------
-    slices: Union[None, List[Tuple[Union[int, slice], ...]]]
+    slices: Union[List[None | Tuple[Union[int, slice], ...]]]
         A list of crop slices.
     """
     plane_shape = shape[-offset:]
