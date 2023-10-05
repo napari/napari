@@ -117,6 +117,7 @@ def test_calc_data_range():
     assert clim is None
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     'data',
     [data_dask_8b, data_dask, data_dask_1d, data_dask_1d_rgb, data_dask_plane],
