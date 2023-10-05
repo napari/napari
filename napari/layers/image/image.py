@@ -33,7 +33,7 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
-from napari.utils._dtype import get_dtype_limits, normalize_dtype
+from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
@@ -374,7 +374,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             contrast_limits_range = self._calc_data_range()
             if not contrast_limits_range:
                 # Required when chunk size product goes over the size threshold so we wait until data is in memory.
-                dtype = normalize_dtype(getattr(data, 'dtype', None))
+                normalize_dtype(getattr(data, 'dtype', None))
                 self.contrast_limits_range = (0, 1)
                 self._should_calc_clims = True
             else:
