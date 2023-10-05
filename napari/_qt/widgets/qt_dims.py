@@ -119,6 +119,8 @@ class QtDims(QWidget):
 
     def _update_nsliders(self):
         """Updates the number of sliders based on the number of dimensions."""
+        # TODO: could we just remove this stop given that _update_display
+        # will also stop?
         self.stop()
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
@@ -324,6 +326,8 @@ class QtDims(QWidget):
         if self._animation_worker is not None:
             # Thread will be stop by the worker
             self._animation_worker._stop()
+            # TODO: This fixes the test, but we likely want something more solid.
+            self._animation_worker = None
 
     @Slot()
     def cleaned_worker(self):
