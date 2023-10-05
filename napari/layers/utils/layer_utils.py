@@ -253,10 +253,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     shape = data.shape
     chunk_size = get_chunk_size(data)
 
-    if chunk_size and (
-        not np.issubdtype(dtype, np.integer)
-        or np.prod(chunk_size) > PIXEL_THRESHOLD
-    ):
+    if chunk_size and np.prod(chunk_size) > PIXEL_THRESHOLD:
         return None
 
     if chunk_size:
