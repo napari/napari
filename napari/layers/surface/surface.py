@@ -260,7 +260,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             self.contrast_limits_range = contrast_limits
         else:
             if contrast_limits_range := calc_data_range(self._vertex_values):
-                self._contrast_limits_range = contrast_limits_range
+                self.contrast_limits_range = contrast_limits_range
             # TODO: should there be a default here?
 
         self._contrast_limits = self._contrast_limits_range
