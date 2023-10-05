@@ -251,7 +251,7 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
         return 0, 255
 
     shape = data.shape
-    chunk_size = _get_chunk_size(data)
+    chunk_size = get_chunk_size(data)
 
     if chunk_size and (
         not np.issubdtype(dtype, np.integer)
@@ -1490,7 +1490,7 @@ def _unique_element(array: Array) -> Optional[Any]:
     return el
 
 
-def _get_chunk_size(
+def get_chunk_size(
     data: MultiScaleData
     | Iterable
     | npt.NDArray
@@ -1504,7 +1504,7 @@ def _get_chunk_size(
 
     Parameters
     ----------
-    layer : napari.layers.Image
+    data : napari.layers.Image
         Layer to determine chunk size for.
     Returns
     -------
@@ -1539,5 +1539,5 @@ def _get_chunk_size(
         from xarray import DataArray
 
         if isinstance(data, DataArray):
-            return _get_chunk_size(data.data)
+            return get_chunk_size(data.data)
     return None
