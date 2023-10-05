@@ -177,8 +177,3 @@ jobs:
             asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
         env:
           PR: 1
-
-  build_docs:
-    name: build docs
-    uses: ./.github/workflows/build_docs.yml
-    needs: test_initial
