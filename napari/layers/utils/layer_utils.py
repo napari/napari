@@ -323,7 +323,7 @@ def _get_1d_slices(shape, chunk_size):
 
     chunk_size_product = np.prod(chunk_size)
     allowed_chunks = int(PIXEL_THRESHOLD // chunk_size_product)
-    multiplier = min(allowed_chunks, MAX_NUMBER_OF_CHUNKS)
+    multiplier = min(allowed_chunks, MAX_NUMBER_OF_CHUNKS) // 2
 
     return [slice(center, center + chunk_size[0] * multiplier)]
 
