@@ -287,6 +287,7 @@ class Labels(_ImageBase):
         cache=True,
         plane=None,
         experimental_clipping_planes=None,
+        projection_mode='none',
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -328,6 +329,7 @@ class Labels(_ImageBase):
             cache=cache,
             plane=plane,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(
@@ -1523,9 +1525,13 @@ class Labels(_ImageBase):
             # array, or a NumPy-array-backed Xarray, is the slice a view and
             # therefore updated automatically.
             # For other types, we update it manually here.
-            dims = self._slice.dims
-            point = np.round(self.world_to_data(dims.point)).astype(int)
-            pt_not_disp = {dim: point[dim] for dim in dims.not_displayed}
+            slice_input = self._slice.slice_input
+            point = np.round(
+                self.world_to_data(slice_input.world_slice.point)
+            ).astype(int)
+            pt_not_disp = {
+                dim: point[dim] for dim in slice_input.not_displayed
+            }
             displayed_indices = index_in_slice(indices, pt_not_disp)
             self._slice.image.raw[displayed_indices] = value
 
