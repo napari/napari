@@ -253,7 +253,10 @@ def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
     shape = data.shape
     chunk_size = _get_chunk_size(data)
 
-    if chunk_size and np.prod(chunk_size) > PIXEL_THRESHOLD:
+    # Iterable check is for TensorStore as this is required for the calculation, but TensorStore is not.
+    if (
+        chunk_size and np.prod(chunk_size) > PIXEL_THRESHOLD
+    ) or not isinstance(data, Iterable):
         return None
 
     if chunk_size:
