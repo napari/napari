@@ -65,6 +65,8 @@ jobs:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
           cache-dependency-path: setup.cfg
+        env:
+          PIP_CONSTRAINT: ''
 
       - uses: tlambert03/setup-qt-libs@v1
 

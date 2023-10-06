@@ -186,9 +186,34 @@ def test_create_layer_controls(
             qcombobox.setCurrentIndex(qcombobox_initial_idx)
 
 
+# those 2 fail on 3.11 + pyqt5 and pyqt6 with a segfault that can't be caught by
+# pytest in qspinbox.setValue(value)
+# See: https://github.com/napari/napari/pull/5439
 skip_predicate = sys.version_info >= (3, 11) and (
     qtpy.API == 'pyqt5' or qtpy.API == 'pyqt6'
 )
+test_data = [
+    pytest.param(
+        _LABELS_WITH_COLOR,
+        marks=pytest.mark.skipif(
+            skip_predicate,
+            reason='segfault on Python 3.11+ and pyqt5 or Pyqt6',
+        ),
+    ),
+    pytest.param(
+        _LABELS,
+        marks=pytest.mark.skipif(
+            skip_predicate,
+            reason='segfault on Python 3.11+ and pyqt5 or Pyqt6',
+        ),
+    ),
+    _IMAGE,
+    _POINTS,
+    _SHAPES,
+    _SURFACE,
+    _TRACKS,
+    _VECTORS,
+]
 
 
 @pytest.mark.parametrize(

@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache-dependency-path: setup.cfg
           cache: 'pip'
       - name: Install Dependencies
@@ -69,7 +69,7 @@ jobs:
             platform: ubuntu-latest
             backend: pyqt5
             pydantic: "_pydantic_1"
-          - python: 3.11
+          - python: 3.12
             platform: ubuntu-latest
             backend: pyqt6
             pydantic: ""
@@ -98,11 +98,11 @@ jobs:
             platform: windows-latest
             backend: pyqt5,pyside2
             coverage: no_cov
-          - python: 3.11
+          - python: 3.12
             platform: windows-latest
             backend: pyqt6
             coverage: no_cov
-          - python: 3.11
+          - python: 3.12
             platform: macos-latest
             backend: pyqt5
             coverage: no_cov
@@ -122,7 +122,7 @@ jobs:
             platform: ubuntu-20.04
             backend: headless
             coverage: no_cov
-          - python: 3.11
+          - python: 3.12
             platform: ubuntu-latest
             backend: pyqt6,pyside6
             coverage: cov
@@ -171,7 +171,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: 3.12
           cache-dependency-path: napari-from-github/setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1

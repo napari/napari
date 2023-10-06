@@ -118,8 +118,8 @@ def test_get_widget_contribution(mock_pm: 'TestPluginManager'):
 def test_populate_qmenu(mock_pm: 'TestPluginManager'):
     menu = MagicMock()
     _npe2.populate_qmenu(menu, '/napari/layer_context')
-    assert menu.addMenu.called_once_with('My SubMenu')
-    assert menu.addAction.called_once_with('Hello World')
+    menu.addMenu.assert_called_once_with('My SubMenu')
+    menu.addAction.assert_called_once_with('Hello World')
 
 
 def test_file_extensions_string_for_layers(mock_pm: 'TestPluginManager'):
