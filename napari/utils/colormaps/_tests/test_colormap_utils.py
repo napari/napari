@@ -20,7 +20,7 @@ FIRST_COLORS = [
 @pytest.mark.parametrize("index, expected", enumerate(FIRST_COLORS, start=1))
 def test_label_colormap(index, expected):
     """Test the label colormap.
-    
+
     Make sure that the default label colormap colors are identical
     to past versions, for UX consistency.
     """
