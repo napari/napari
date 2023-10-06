@@ -154,6 +154,7 @@ def test_rgb_image():
     assert layer._data_view.shape == shape[-3:]
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_rgba_image():
     """Test instantiating Image layer with RGBA data."""
     shape = (10, 15, 4)
@@ -169,6 +170,7 @@ def test_rgba_image():
     assert layer._data_view.shape == shape[-3:]
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_negative_rgba_image():
     """Test instantiating Image layer with negative RGBA data."""
     shape = (10, 15, 4)

@@ -94,6 +94,7 @@ ids = [
 ]
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize('shape, kwargs', multi_channel_test_data, ids=ids)
 def test_multichannel(shape, kwargs):
     """Test adding multichannel image."""

@@ -121,6 +121,7 @@ def test_non_uniform_3D_multiscale():
     assert layer._data_view.ndim == 2
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_rgb_multiscale():
     """Test instantiating Image layer with RGB data."""
     shapes = [(40, 20, 3), (20, 10, 3), (10, 5, 3)]
@@ -136,6 +137,7 @@ def test_rgb_multiscale():
     assert layer._data_view.ndim == 3
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_3D_rgb_multiscale():
     """Test instantiating Image layer with 3D RGB data."""
     shapes = [(8, 40, 20, 3), (4, 20, 10, 3), (2, 10, 5, 3)]
