@@ -194,6 +194,9 @@ def _nanmin(array):
     """
     call np.min but fall back to avoid nan and inf if necessary
     """
+    if isinstance(array, tuple):
+        return min(_nanmin(sub_array) for sub_array in array)
+
     min_value = np.min(array)
     if not np.isfinite(min_value):
         masked = array[np.isfinite(array)]
@@ -207,6 +210,9 @@ def _nanmax(array):
     """
     call np.max but fall back to avoid nan and inf if necessary
     """
+    if isinstance(array, tuple):
+        return max(_nanmax(sub_array) for sub_array in array)
+
     max_value = np.max(array)
     if not np.isfinite(max_value):
         masked = array[np.isfinite(array)]
