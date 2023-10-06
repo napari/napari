@@ -1,5 +1,14 @@
 from string import Formatter
-from typing import Any, Literal, Protocol, Sequence, Union, runtime_checkable
+from typing import (
+    Any,
+    Literal,
+    Protocol,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+    runtime_checkable,
+)
 
 import numpy as np
 from pydantic import parse_obj_as
@@ -14,14 +23,14 @@ from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 """A scalar array that represents one string value."""
-StringValue = Array[str, ()]
+StringValue = Array[str, Tuple[()]]
 
 """An Nx1 array where each element represents one string value."""
-StringArray = Array[str, (-1,)]
+StringArray = Array[str, Literal[(-1,)]]
 
 
 """The default string value, which may also be used a safe fallback string."""
-DEFAULT_STRING = np.array('', dtype='<U1')
+DEFAULT_STRING = cast(Array[str, Tuple[()]], np.array('', dtype='<U1'))
 
 
 @runtime_checkable
@@ -63,7 +72,7 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
             return value
         if isinstance(value, dict):
             return parse_obj_as(
-                Union[
+                Union[  # type: ignore [arg-type]
                     ConstantStringEncoding,
                     ManualStringEncoding,
                     DirectStringEncoding,
@@ -141,7 +150,10 @@ class DirectStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     encoding_type: Literal['DirectStringEncoding'] = 'DirectStringEncoding'
 
     def __call__(self, features: Any) -> StringArray:
-        return np.array(features[self.feature], dtype=str)
+        return cast(
+            Array[str, Literal[-1]],
+            np.array(features[self.feature], dtype=str),
+        )
 
 
 class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
@@ -170,7 +182,7 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
             self.format.format(**dict(zip(feature_names, row)))
             for row in features.itertuples(index=False, name=None)
         ]
-        return np.array(values, dtype=str)
+        return cast(Array[str, Any], np.array(values, dtype=str))
 
 
 def _is_format_string(string: str) -> bool:

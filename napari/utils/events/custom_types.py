@@ -4,9 +4,11 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Generic,
     List,
     Optional,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -20,9 +22,12 @@ if TYPE_CHECKING:
 
     Number = Union[int, float, Decimal]
 
+T = TypeVar("T")
+D = TypeVar("D")
 
-class Array(np.ndarray):
-    def __class_getitem__(cls, t):
+
+class Array(np.ndarray, Generic[T, D]):
+    def __class_getitem__(cls, t: Type[T]):
         return type('Array', (Array,), {'__dtype__': t})
 
     @classmethod

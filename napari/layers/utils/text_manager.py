@@ -19,6 +19,7 @@ from napari.layers.utils.string_encoding import (
     ConstantStringEncoding,
     StringArray,
     StringEncoding,
+    StringValue,
 )
 from napari.layers.utils.style_encoding import _get_style_values
 from napari.utils.events import Event, EventedModel
@@ -87,7 +88,8 @@ class TextManager(EventedModel):
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     # Use a scalar default translation to broadcast to any dimensionality.
-    translation: Array[float] = 0
+    # Mypy want the RHS [0.0] to be SupportIndex but I don't know why
+    translation: Array[float, Any] = Array([0.0])  # type: ignore[list-item]
     rotation: float = 0
 
     def __init__(
@@ -178,10 +180,10 @@ class TextManager(EventedModel):
                 for name, value in properties.items()
             }
         )
-        values = self.string(features)
-        self.string._append(values)
+        values: Union[StringValue, StringArray] = self.string(features)
+        self.string._append(StringArray(values))
         self.events.values()
-        colors = self.color(features)
+        colors: ColorArray = ColorArray(self.color(features))
         self.color._append(colors)
 
     def remove(self, indices_to_remove: Union[range, set, list, np.ndarray]):
@@ -218,7 +220,7 @@ class TextManager(EventedModel):
             'color': _get_style_values(self.color, indices, value_ndim=1),
         }
 
-    def _paste(self, *, string: StringArray, color: ColorArray):
+    def _paste(self, *, string: StringArray, color: ColorArray):  # type: ignore [valid-type]
         """Pastes encoded values to the end of the existing values."""
         self.string._append(string)
         self.events.values()
@@ -263,10 +265,10 @@ class TextManager(EventedModel):
         translation = self.translation
         if translation.size > 1:
             if order is None:
-                translation = self.translation[-ndim_coords:]
+                translation = Array(self.translation[-ndim_coords:])
             else:
                 order_displayed = list(order[-ndim_coords:])
-                translation = self.translation[order_displayed]
+                translation = Array(self.translation[order_displayed])
         text_coords = anchor_coords + translation
         return text_coords, anchor_x, anchor_y
 
