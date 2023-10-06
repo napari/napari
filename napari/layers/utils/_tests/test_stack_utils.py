@@ -43,10 +43,9 @@ def test_stack_to_images_multiscale():
     assert images[2].data[-1].shape[-1] == 16
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_stack_to_images_rgb():
     """Test 3 channel RGB image (channel axis = -1) into single channels."""
-    data = np.random.randint(0, 100, (10, 128, 128, 3))
+    data = np.random.randint(0, 100, (10, 128, 128, 3), dtype=np.uint8)
     stack = Image(data)
     images = stack_to_images(stack, -1, colormap=None)
 
@@ -74,10 +73,9 @@ def test_stack_to_images_4_channels():
         assert i.data.shape == (128, 128)
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_stack_to_images_0_rgb():
     """Split RGB along the first axis (z or t) so the images remain rgb"""
-    data = np.random.randint(0, 100, (10, 128, 128, 3))
+    data = np.random.randint(0, 100, (10, 128, 128, 3), dtype=np.uint8)
     stack = Image(data)
     images = stack_to_images(stack, 0, colormap=None)
 

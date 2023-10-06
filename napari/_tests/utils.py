@@ -104,7 +104,7 @@ layer2addmethod = {
 # examples of valid tuples that might be passed to viewer._add_layer_from_data
 good_layer_data = [
     (np.random.random((10, 10)),),
-    (np.random.random((10, 10, 3)), {'rgb': True}),
+    (np.random.randint(0, 255, (10, 10, 3), dtype=np.uint8), {'rgb': True}),
     (np.random.randint(20, size=(10, 15)), {'seed': 0.3}, 'labels'),
     (np.random.random((10, 2)) * 20, {'face_color': 'blue'}, 'points'),
     (np.random.random((10, 2, 2)) * 20, {}, 'vectors'),

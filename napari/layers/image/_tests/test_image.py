@@ -138,12 +138,11 @@ def test_5D_image_shape_1():
     assert layer._data_view.shape == shape[-2:]
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_rgb_image():
     """Test instantiating Image layer with RGB data."""
     shape = (10, 15, 3)
     np.random.seed(0)
-    data = np.random.random(shape)
+    data = np.random.randint(0, 255, shape, np.uint8)
     layer = Image(data)
     assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape) - 1
@@ -154,12 +153,11 @@ def test_rgb_image():
     assert layer._data_view.shape == shape[-3:]
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_rgba_image():
     """Test instantiating Image layer with RGBA data."""
     shape = (10, 15, 4)
     np.random.seed(0)
-    data = np.random.random(shape)
+    data = np.random.randint(0, 255, shape, np.uint8)
     layer = Image(data)
     assert np.array_equal(layer.data, data)
     assert layer.ndim == len(shape) - 1

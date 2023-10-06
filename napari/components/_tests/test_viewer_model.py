@@ -483,7 +483,6 @@ def test_add_remove_layer_dims_change():
     assert viewer.dims.ndim == 2
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize('data', good_layer_data)
 def test_add_layer_from_data(data):
     # make sure adding valid layer data calls the proper corresponding add_*

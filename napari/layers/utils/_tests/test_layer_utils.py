@@ -36,7 +36,7 @@ data_dask_1d = da.random.randint(
 )
 
 data_dask_1d_rgb = da.random.randint(
-    1500, 15000, size=(5_000_000, 3), chunks=(50_000, 3)
+    0, 255, size=(5_000_000, 3), chunks=(50_000, 3), dtype=np.uint8
 )
 
 data_dask_plane = da.random.randint(
@@ -112,7 +112,6 @@ def test_calc_data_range():
     np.testing.assert_array_equal(clim, (0, 2))
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     'data',
     [data_dask_8b, data_dask, data_dask_1d, data_dask_1d_rgb, data_dask_plane],
