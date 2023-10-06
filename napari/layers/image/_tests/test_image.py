@@ -138,6 +138,7 @@ def test_5D_image_shape_1():
     assert layer._data_view.shape == shape[-2:]
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_rgb_image():
     """Test instantiating Image layer with RGB data."""
     shape = (10, 15, 3)
