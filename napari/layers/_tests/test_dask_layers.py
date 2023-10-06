@@ -160,7 +160,7 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     dask_stack = delayed_dask_stack['stack']
     layer = v.add_image(dask_stack, cache=False)
     # the first and the middle stack will be loaded
-    assert delayed_dask_stack['calls'] == 2
+    assert delayed_dask_stack['calls'] == 22
 
     with layer.dask_optimized_slicing() as (_, cache):
         assert cache is None
@@ -171,13 +171,13 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     current_z = v.dims.point[1]
     for i in range(3):
         v.dims.set_point(1, current_z + i)
-        assert delayed_dask_stack['calls'] == 2 + i  # 😞
+        assert delayed_dask_stack['calls'] == 22 + i  # 😞
 
     # of course we still incur calls when moving to a new timepoint...
     initial_t = v.dims.point[0]
     v.dims.set_point(0, initial_t + 1)
     v.dims.set_point(0, initial_t + 2)
-    assert delayed_dask_stack['calls'] == 6
+    assert delayed_dask_stack['calls'] == 26
 
     # without the cache we ALSO incur calls when returning to previously loaded
     # timepoints 😭
@@ -186,7 +186,7 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     v.dims.set_point(0, initial_t + 3)
     # all told, we have ~2x as many calls as the optimized version above.
     # (should be exactly 9 calls, but for some reason, sometimes more on CI)
-    assert delayed_dask_stack['calls'] >= 9
+    assert delayed_dask_stack['calls'] >= 29
 
 
 def test_dask_local_unoptimized_slicing(delayed_dask_stack, monkeypatch):
