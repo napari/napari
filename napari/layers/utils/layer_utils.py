@@ -269,21 +269,21 @@ def calc_data_range(data, rgb: bool = False) -> None | tuple[float, float]:
         shape = _get_blocks_grid_shape(data.shape, chunk_size)
 
     if data.size > PIXEL_THRESHOLD and (data.ndim == 1):
-        slices = _get_1d_slices(shape, chunk_size)
+        slices_1D = _get_1d_slices(shape, chunk_size)
         reduced_data = [
-            [_nanmax(data[sl]) for sl in slices],
-            [_nanmin(data[sl]) for sl in slices],
+            [_nanmax(data[sl]) for sl in slices_1D],
+            [_nanmin(data[sl]) for sl in slices_1D],
         ]
     elif data.size > PIXEL_THRESHOLD:
         # If data is very large take the top, bottom, and middle slices
         offset = 2 + int(rgb)
         # Indices are either numpy array or chunk indices dependent on data structure of data and are 0 < length <= 3
         idxs = _get_plane_indices(shape, offset)
-        slices = _get_crop_slices(shape, idxs, offset, chunk_size)
+        slices_2D = _get_crop_slices(shape, idxs, offset, chunk_size)
 
         reduced_data = [
-            [_nanmax(data[sl]) for sl in slices],
-            [_nanmin(data[sl]) for sl in slices],
+            [_nanmax(data[sl]) for sl in slices_2D],
+            [_nanmin(data[sl]) for sl in slices_2D],
         ]
     else:
         reduced_data = data
@@ -513,7 +513,7 @@ def _get_crop_slices(
     plane_indices: Sequence[Sequence[int]],
     offset: int,
     chunk_shape: None | Tuple[int, ...] = None,
-) -> List[Tuple[Union[int, slice], ...]]:
+) -> Union[list[tuple[slice, slice]], list[tuple[Union[int, slice], ...]]]:
     """
     Get the crop slices to be used for determining contrast limits when data is larger than the pixel threshold.
 
@@ -608,13 +608,11 @@ def _get_crop_slices(
     slices_x = _get_slices(
         start_indices, len(x_start_indices), chunk_size_x, 1, chunk_multiplier
     )
-    plane_slices: List[Tuple[Union[slice, int], ...]] = list(
-        zip(slices_y, slices_x)
-    )
+    plane_slices: list[tuple[slice, slice]] = list(zip(slices_y, slices_x))
     if len(plane_indices) == 0 or len(plane_indices[0]) == 0:
         return plane_slices
     return [
-        (tuple(plane) + (plane_slice[0], plane_slice[1]))
+        tuple(plane) + (plane_slice[0], plane_slice[1])
         for plane in plane_indices
         for plane_slice in plane_slices
     ]
