@@ -71,8 +71,8 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-    from napari.components.overlays.base import Overlay
     from napari.components.dims import Dims
+    from napari.components.overlays.base import Overlay
 
 
 logger = logging.getLogger("napari.layers.base.base")
