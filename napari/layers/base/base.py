@@ -1159,7 +1159,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _slice_dims(
         self,
-        dims: Dims = None,
+        dims: Dims,
         force: bool = False,
     ):
         """Slice data with values from a global dims model.
@@ -1187,9 +1187,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _make_slice_input(
         self,
-        dims: Dims = None,
+        dims: Dims,
     ) -> _SliceInput:
-        world_ndim = self.ndim if dims is None else dims.ndim
+        world_ndim: int = self.ndim if dims is None else dims.ndim
         if dims is None:
             # if no dims is given, "world" has same dimensionality of self
             # this happens for example if a layer is not in a viewer
@@ -1197,15 +1197,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             world_slice = _ThickNDSlice.make_full((np.nan,) * self.ndim)
         else:
             world_slice = _ThickNDSlice.from_dims(dims)
-
-        order = (
-            tuple(range(world_ndim))
+        order_1 = (
+            np.arange(world_ndim)
             if dims.order is None
-            else tuple(dims.order)
+            else np.asarray(dims.order)
         )
-        order = tuple(
+        order_2 = tuple(
             self._world_to_layer_dims(
-                world_dims=order,
+                world_dims=order_1,
                 ndim_world=world_ndim,
             )
         )
@@ -1213,7 +1212,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return _SliceInput(
             ndisplay=dims.ndisplay,
             world_slice=world_slice[-self.ndim :],
-            order=order[-self.ndim :],
+            order=order_2[-self.ndim :],
         )
 
     @abstractmethod
