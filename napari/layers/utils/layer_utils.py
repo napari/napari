@@ -253,7 +253,7 @@ def calc_data_range(data, rgb: bool = False) -> None | tuple[float, float]:
             )
         )
 
-    if dtype == np.uint8 or rgb:
+    if dtype == np.uint8 or (rgb and np.issubdtype(dtype, int)):
         return 0, 255
 
     shape = data.shape
