@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Tuple
 
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
@@ -225,7 +226,12 @@ class VispyBaseLayer(ABC):
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
-    def _on_camera_move(self, event=None):
+    def _on_camera_angles_changed(
+        self, angles: Tuple[float, float, float]
+    ) -> None:
+        return
+
+    def _update_light_direction(self):
         return
 
     def reset(self):
@@ -235,7 +241,7 @@ class VispyBaseLayer(ABC):
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
         self._on_overlays_change()
-        self._on_camera_move()
+        self._update_light_direction()
 
     def _on_poll(self, event=None):  # noqa: B027
         """Called when camera moves, before we are drawn.

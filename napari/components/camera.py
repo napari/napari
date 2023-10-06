@@ -10,6 +10,30 @@ from napari.utils.misc import ensure_n_tuple
 from napari.utils.translations import trans
 
 
+def view_direction(
+    angles: Tuple[float, float, float]
+) -> Tuple[float, float, float]:
+    ang = np.deg2rad(angles)
+    return (
+        np.sin(ang[2]) * np.cos(ang[1]),
+        np.cos(ang[2]) * np.cos(ang[1]),
+        -np.sin(ang[1]),
+    )
+
+
+def up_direction(
+    angles: Tuple[float, float, float]
+) -> Tuple[float, float, float]:
+    rotation_matrix = R.from_euler(
+        seq='yzx', angles=angles, degrees=True
+    ).as_matrix()
+    return (
+        rotation_matrix[2, 2],
+        rotation_matrix[1, 2],
+        rotation_matrix[0, 2],
+    )
+
+
 class Camera(EventedModel):
     """Camera object modeling position and view of the camera.
 
@@ -58,13 +82,7 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        ang = np.deg2rad(self.angles)
-        view_direction = (
-            np.sin(ang[2]) * np.cos(ang[1]),
-            np.cos(ang[2]) * np.cos(ang[1]),
-            -np.sin(ang[1]),
-        )
-        return view_direction
+        return view_direction(self.angles)
 
     @property
     def up_direction(self) -> Tuple[float, float, float]:
@@ -74,14 +92,7 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        rotation_matrix = R.from_euler(
-            seq='yzx', angles=self.angles, degrees=True
-        ).as_matrix()
-        return (
-            rotation_matrix[2, 2],
-            rotation_matrix[1, 2],
-            rotation_matrix[0, 2],
-        )
+        return up_direction(self.angles)
 
     def set_view_direction(
         self,

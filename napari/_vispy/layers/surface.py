@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.geometry import MeshData
@@ -5,6 +7,7 @@ from vispy.visuals.filters import TextureFilter
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.visuals.surface import SurfaceVisual
+from napari.components.camera import up_direction, view_direction
 
 
 class VispySurfaceLayer(VispyBaseLayer):
@@ -154,7 +157,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         shading = None if self.layer.shading == 'none' else self.layer.shading
         if not self.node.mesh_data.is_empty():
             self.node.shading = shading
-            self._on_camera_move()
+            self._update_light_direction()
         self.node.update()
 
     def _on_wireframe_visible_change(self):
@@ -191,21 +194,17 @@ class VispySurfaceLayer(VispyBaseLayer):
                 primitive='vertex',
             )
 
-    def _on_camera_move(self, event=None):
-        # TODO: I don't think we actually need camera here and can calculate
-        # the light direction from angles alone.
-        if (
-            event is not None
-            and event.type == 'angles'
-            and self.layer._slice_input.ndisplay == 3
-        ):
-            camera = event.source
+    def _on_camera_angles_changed(
+        self, angles: Tuple[float, float, float]
+    ) -> None:
+        if self.layer._slice_input.ndisplay == 3:
             # take displayed up and view directions and flip zyx for vispy
-            up = np.array(camera.up_direction)[::-1]
-            view = np.array(camera.view_direction)[::-1]
+            up = np.array(up_direction(angles))[::-1]
+            view = np.array(view_direction(angles))[::-1]
             # combine to get light behind the camera on the top right
             self._light_direction = view - up + np.cross(up, view)
 
+    def _update_light_direction(self):
         if self.node.shading_filter is not None:
             self.node.shading_filter.light_dir = self._light_direction
 
