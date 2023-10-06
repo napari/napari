@@ -210,3 +210,7 @@ class DirectLabelColormap(Colormap):
         if self.use_selection:
             mapped[~np.isclose(values, self.selection)] = 0
         return mapped
+
+    @property
+    def default_color(self):
+        return self.color_dict.get(None, (0, 0, 0, 0))

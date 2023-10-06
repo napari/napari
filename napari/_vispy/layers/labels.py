@@ -125,7 +125,7 @@ vec4 sample_label_color(float t) {
 
     // return vec4(pos_tex, 0, 1); // debug if final texel is calculated correctly
 
-    vec4 color = vec4(0);
+    vec4 color = vec4($default_color)
     if (abs(found - empty) > 1e-8) {
         color = texture2D(
             texture2D_values,
@@ -161,6 +161,7 @@ class DirectLabelVispyColormap(VispyColormap):
         use_selection=False,
         selection=0.0,
         collision=True,
+        default_color=(0, 0, 0, 0),
     ):
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
@@ -170,6 +171,7 @@ class DirectLabelVispyColormap(VispyColormap):
             )
             .replace("$selection", str(selection))
             .replace("$collision", str(collision).lower())
+            .replace("default_color", ", ".join(map(str, default_color)))
         )
 
 
@@ -472,6 +474,7 @@ class VispyLabelsLayer(VispyImageLayer):
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
                 collision=collision,
+                default_color=colormap.default_color,
             )
             # note that textures have to be transposed here!
             self.node.shared_program['texture2D_keys'] = Texture2D(
