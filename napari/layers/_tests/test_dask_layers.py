@@ -184,8 +184,7 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     v.dims.set_point(0, initial_t + 1)
     v.dims.set_point(0, initial_t + 0)
     v.dims.set_point(0, initial_t + 3)
-    # all told, we have ~2x as many calls as the optimized version above.
-    # (should be exactly 9 calls, but for some reason, sometimes more on CI)
+    # (should be exactly 29 calls, but for some reason, sometimes more on CI)
     assert delayed_dask_stack['calls'] >= 29
 
 
