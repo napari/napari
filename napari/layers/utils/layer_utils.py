@@ -22,7 +22,7 @@ import dask
 import numpy as np
 import pandas as pd
 
-from napari.utils._dtype import normalize_dtype
+from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
 from napari.utils.transforms import Affine
@@ -243,18 +243,9 @@ def calc_data_range(data, rgb: bool = False) -> None | tuple[float, float]:
     returned.
     """
     dtype = normalize_dtype(getattr(data, 'dtype', None))
-    # Vispy only supports uint8 RGB for which we set these clims
-    if rgb and dtype != np.uint8 and not np.issubdtype(dtype, float):
-        # Vispy does not display rgb other than uint8, so it casts it to uint8
-        warnings.warn(
-            trans._(
-                "RGB dtype is not np.uint8 or float. Vispy will cast to np.uint8",
-                deferred=True,
-            )
-        )
 
-    if dtype == np.uint8 or (rgb and np.issubdtype(dtype, int)):
-        return 0, 255
+    if rgb and np.issubdtype(dtype, int):
+        return get_dtype_limits(dtype)
 
     shape = data.shape
     chunk_size = _get_chunk_size(data)
