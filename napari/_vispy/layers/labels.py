@@ -42,7 +42,9 @@ MAX_TEXTURE_SIZE = None
 
 ColorTuple = Tuple[float, float, float, float]
 
-EMPTY_VAL = -1
+EMPTY_VAL = -1.0
+
+_UNSET = object()
 
 low_disc_lookup_shader = """
 uniform sampler2D texture2D_LUT;
@@ -164,6 +166,7 @@ class DirectLabelVispyColormap(VispyColormap):
         selection=0.0,
         collision=True,
         default_color=(0, 0, 0, 0),
+        empty_value=EMPTY_VAL,
     ):
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
@@ -174,7 +177,7 @@ class DirectLabelVispyColormap(VispyColormap):
             .replace("$selection", str(selection))
             .replace("$collision", str(collision).lower())
             .replace("$default_color", ", ".join(map(str, default_color)))
-            .replace("$EMPTY_VAL", str(EMPTY_VAL))
+            .replace("$EMPTY_VAL", str(empty_value))
         )
 
 
@@ -339,9 +342,16 @@ def get_shape_from_dict(color_dict):
     return shape
 
 
+def _get_empty_val_from_dict(color_dict):
+    empty_val = EMPTY_VAL
+    while empty_val in color_dict:
+        empty_val -= 1
+    return empty_val
+
+
 def build_textures_from_dict(
     color_dict: Dict[float, ColorTuple],
-    empty_val=EMPTY_VAL,
+    empty_val=_UNSET,
     shape=None,
     use_selection=False,
     selection=0.0,
@@ -387,6 +397,9 @@ def build_textures_from_dict(
         values[0, 0] = color_dict[selection]
         return keys, values, False
 
+    if empty_val is _UNSET:
+        empty_val = _get_empty_val_from_dict(color_dict)
+
     if len(color_dict) > 2**31 - 2:
         raise MemoryError(
             f'Too many labels ({len(color_dict)}). Maximum supported number of labels is 2^31-2'
@@ -411,7 +424,7 @@ def build_textures_from_dict(
             # if so, we ignore all but the first appearance.
             continue
         visited.add(key_)
-        collision |= hash2d_set(key_, value, keys, values)
+        collision |= hash2d_set(key_, value, keys, values, empty_val=empty_val)
 
     return keys, values, collision
 
@@ -478,6 +491,7 @@ class VispyLabelsLayer(VispyImageLayer):
                 selection=colormap.selection,
                 collision=collision,
                 default_color=colormap.default_color,
+                empty_value=_get_empty_val_from_dict(color_dict),
             )
             # note that textures have to be transposed here!
             self.node.shared_program['texture2D_keys'] = Texture2D(
