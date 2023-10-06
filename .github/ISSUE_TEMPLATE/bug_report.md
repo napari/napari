@@ -27,7 +27,7 @@ Steps to reproduce the behavior:
 
 ## Environment
 
- - Please copy and paste the information at napari info option in help menubar here:
+**Important**: Please copy and paste the output of `napari --info` or the information provided by the `napari info` option in Help menubar:
 
  - Any other relevant information:
 
