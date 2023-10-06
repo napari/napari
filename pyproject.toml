@@ -356,3 +356,8 @@ module = [
     'napari.utils.tree.group',
 ]
 ignore_errors = true
+
+
+[tool.pytest.ini_options]
+pystack_threshold=60
+
