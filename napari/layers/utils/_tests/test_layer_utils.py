@@ -582,3 +582,17 @@ def test_xarray_get_chunk_size():
 def test_dask_get_chunk_size():
     chunk_size = _get_chunk_size(data_dask_plane)
     assert np.array_equal(chunk_size, (1000, 1000))
+
+
+def test_rgb_dtypes():
+    data = np.random.randint(0, 4, (10, 10, 3), np.uint8)
+    clim = calc_data_range(data, rgb=True)
+    assert np.array_equal(clim, (0, 255))
+
+    data = data.astype(np.uint16)
+    clim = calc_data_range(data, rgb=True)
+    assert np.array_equal(clim, (0, 65535))
+
+    data = data.astype(float)
+    clim = calc_data_range(data, rgb=True)
+    assert np.array_equal(clim, (data.min(), data.max()))

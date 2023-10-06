@@ -244,7 +244,7 @@ def calc_data_range(data, rgb: bool = False) -> None | tuple[float, float]:
     """
     dtype = normalize_dtype(getattr(data, 'dtype', None))
 
-    if rgb and np.issubdtype(dtype, int):
+    if rgb and np.issubdtype(dtype, np.integer):
         return get_dtype_limits(dtype)
 
     shape = data.shape
