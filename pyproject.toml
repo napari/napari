@@ -127,7 +127,7 @@ fix = true
 "tools/**" = ["INP001", "T20"]
 "examples/**" = ["ICN001", "INP001", "T20"]
 "**/vendored/**" = ["TID"]
-"napari/benchmarks/**" = ["RUF012"]
+"napari/benchmarks/**" = ["RUF012", "TID252"]
 
 [tool.ruff.flake8-quotes]
 docstring-quotes = "double"
@@ -150,6 +150,7 @@ xarray = "xr"
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
 addopts = "--maxfail=5 --durations=10 -rXxs"
+console_output_style = "count"
 
 # NOTE: only put things that will never change in here.
 # napari deprecation and future warnings should NOT go in here.
@@ -234,7 +235,6 @@ check_untyped_defs = true
 # mypy napari | cut -f1 -d: | sort | uniq  | tr '/' '.'  | sed 's/\.py//' | awk '{ print "    \047" $0 "\047," }'
 [[tool.mypy.overrides]]
 module = [
-    'napari._app_model.context._layerlist_context',
     'napari._app_model.injection._processors',
     'napari._qt.code_syntax_highlight',
     'napari._qt.containers._base_item_model',
@@ -288,6 +288,7 @@ module = [
     'napari._qt.widgets.qt_dims_slider',
     'napari._qt.widgets.qt_dims_sorter',
     'napari._qt.widgets.qt_extension2reader',
+    'napari._qt.widgets.qt_font_size',
     'napari._qt.widgets.qt_highlight_preview',
     'napari._qt.widgets.qt_keyboard_settings',
     'napari._qt.widgets.qt_message_popup',

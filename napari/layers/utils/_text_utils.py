@@ -30,13 +30,34 @@ def _calculate_anchor_center(
 
 
 def _calculate_bbox_centers(view_data: Union[np.ndarray, list]) -> np.ndarray:
+    """
+    Calculate the bounding box of the given centers,
+
+    Parameters
+    ----------
+    view_data : np.ndarray | list of ndarray
+        if an ndarray, return the center across the 0-th axis.
+        if a list, return the bbox center for each items.
+
+    Returns
+    -------
+    An ndarray of the centers.
+
+    """
     if isinstance(view_data, np.ndarray):
         if view_data.ndim == 2:
+            # shape[1] is 2 for a 2D center, 3 for a 3D center.
+            # It should work is N > 3 Dimension, but this catches mistakes
+            # when the caller passed a transposed view_data
+            assert view_data.shape[1] in (2, 3), view_data.shape
             # if the data are a list of coordinates, just return the coord (e.g., points)
             bbox_centers = view_data
         else:
+            assert view_data.ndim == 3
             bbox_centers = np.mean(view_data, axis=0)
     elif isinstance(view_data, list):
+        for coord in view_data:
+            assert coord.shape[1] in (2, 3), coord.shape
         bbox_centers = np.array(
             [np.mean(coords, axis=0) for coords in view_data]
         )

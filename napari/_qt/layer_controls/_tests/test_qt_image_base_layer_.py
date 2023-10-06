@@ -13,6 +13,7 @@ from napari._qt.layer_controls.qt_image_controls_base import (
     QtLayerControls,
     range_to_decimals,
 )
+from napari.components.dims import Dims
 from napari.layers import Image, Surface
 
 _IMAGE = np.arange(100).astype(np.uint16).reshape((10, 10))
@@ -65,6 +66,8 @@ def test_changing_model_updates_view(qtbot, layer):
 )
 def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
     """The buttons in the clim_popup should adjust the contrast limits value"""
+    # this test relies implicitly on ndisplay=3 which is now a broken assumption?
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     original_clims = tuple(layer.contrast_limits)

@@ -204,6 +204,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         texture=None,
         texcoords=None,
         vertex_colors=None,
+        projection_mode='none',
     ) -> None:
         ndim = data[0].shape[1]
 
@@ -222,6 +223,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(
@@ -543,7 +545,10 @@ class Surface(IntensityVisualizationMixin, Layer):
         data_ndim = data.ndim - 1
         if data_ndim >= dims:
             # Get indices for axes corresponding to data dimensions
-            data_indices = self._slice_indices[:-vertex_ndim]
+            data_indices: Tuple[Union[int, slice], ...] = tuple(
+                slice(None) if np.isnan(idx) else int(np.round(idx))
+                for idx in self._data_slice.point[:-vertex_ndim]
+            )
             data = data[data_indices]
             if data.ndim > dims:
                 warnings.warn(
@@ -582,7 +587,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             return
 
         if values_ndim > 0:
-            indices = np.array(self._slice_indices[-vertex_ndim:])
+            indices = np.array(self._data_slice.point[-vertex_ndim:])
             disp = [
                 d
                 for d in np.subtract(self._slice_input.displayed, values_ndim)
@@ -596,7 +601,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                 if d >= 0
             ]
         else:
-            indices = np.array(self._slice_indices)
+            indices = np.array(self._data_slice.point)
             not_disp = list(self._slice_input.not_displayed)
             disp = list(self._slice_input.displayed)
 

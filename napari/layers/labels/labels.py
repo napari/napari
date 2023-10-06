@@ -45,9 +45,10 @@ from napari.layers.labels._labels_utils import (
 )
 from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
-from napari.utils._dtype import normalize_dtype
+from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
 from napari.utils.colormaps import (
     direct_colormap,
+    ensure_colormap,
     label_colormap,
 )
 from napari.utils.events import Event
@@ -286,6 +287,7 @@ class Labels(_ImageBase):
         cache=True,
         plane=None,
         experimental_clipping_planes=None,
+        projection_mode='none',
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -327,6 +329,7 @@ class Labels(_ImageBase):
             cache=cache,
             plane=plane,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(
@@ -756,12 +759,12 @@ class Labels(_ImageBase):
         self._cached_labels = None  # invalidates labels cache
         self._color_mode = color_mode
         if color_mode == LabelColorMode.AUTO:
-            super()._set_colormap(self._random_colormap)
+            self._colormap = ensure_colormap(self._random_colormap)
         else:
-            super()._set_colormap(self._direct_colormap)
+            self._colormap = ensure_colormap(self._direct_colormap)
         self._selected_color = self.get_color(self.selected_label)
         self.events.color_mode()
-        self.events.colormap()
+        self.events.colormap()  # If remove this emitting, connect shader update to color_mode
         self.events.selected_label()
         self.refresh()
 
@@ -774,6 +777,7 @@ class Labels(_ImageBase):
     def show_selected_label(self, show_selected):
         self._show_selected_label = show_selected
         self.colormap.use_selection = show_selected
+        self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
         self._cached_labels = None
         self.refresh()
@@ -863,7 +867,7 @@ class Labels(_ImageBase):
         float32 as it can represent all input values (though not losslessly,
         see https://github.com/napari/napari/issues/6084).
         """
-        return data.astype(np.float32)
+        return vispy_texture_dtype(data)
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
         """Override to convert raw slice data to displayed label colors."""
@@ -881,7 +885,7 @@ class Labels(_ImageBase):
 
         # Keep only the dimensions that correspond to the current view
         updated_slice = tuple(
-            [self._updated_slice[index] for index in dims_displayed]
+            self._updated_slice[index] for index in dims_displayed
         )
 
         offset = [axis_slice.start for axis_slice in updated_slice]
@@ -1521,9 +1525,13 @@ class Labels(_ImageBase):
             # array, or a NumPy-array-backed Xarray, is the slice a view and
             # therefore updated automatically.
             # For other types, we update it manually here.
-            dims = self._slice.dims
-            point = np.round(self.world_to_data(dims.point)).astype(int)
-            pt_not_disp = {dim: point[dim] for dim in dims.not_displayed}
+            slice_input = self._slice.slice_input
+            point = np.round(
+                self.world_to_data(slice_input.world_slice.point)
+            ).astype(int)
+            pt_not_disp = {
+                dim: point[dim] for dim in slice_input.not_displayed
+            }
             displayed_indices = index_in_slice(indices, pt_not_disp)
             self._slice.image.raw[displayed_indices] = value
 
