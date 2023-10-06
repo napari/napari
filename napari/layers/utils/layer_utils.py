@@ -222,7 +222,7 @@ def _nanmax(array):
     return max_value
 
 
-def calc_data_range(data, rgb: bool = False) -> None | Tuple[float, float]:
+def calc_data_range(data, rgb: bool = False) -> None | tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
