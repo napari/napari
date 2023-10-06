@@ -114,8 +114,8 @@ def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
     v = ViewerModel()
     dask_stack = delayed_dask_stack['stack']
     layer = v.add_image(dask_stack)
-    # the first and the middle stack will be loaded
-    assert delayed_dask_stack['calls'] == 2
+    # the first and the middle stack will be loaded and for clim calculation 9 chunks will be accessed per stack
+    assert delayed_dask_stack['calls'] == 22
 
     with layer.dask_optimized_slicing() as (_, cache):
         assert cache.cache.available_bytes > 0
@@ -130,22 +130,23 @@ def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
     current_z = v.dims.point[1]
     for i in range(3):
         v.dims.set_point(1, current_z + i)
-        assert delayed_dask_stack['calls'] == 2  # still just the first call
+        assert delayed_dask_stack['calls'] == 22  # still just the first call
 
     # changing the timepoint will, of course, incur some compute calls
     initial_t = v.dims.point[0]
     v.dims.set_point(0, initial_t + 1)
-    assert delayed_dask_stack['calls'] == 3
+    # clims are set so now we should have just 1 more call per time a new dims point is set.
+    assert delayed_dask_stack['calls'] == 23
     v.dims.set_point(0, initial_t + 2)
-    assert delayed_dask_stack['calls'] == 4
+    assert delayed_dask_stack['calls'] == 24
 
     # but going back to previous timepoints should not, since they are cached
     v.dims.set_point(0, initial_t + 1)
     v.dims.set_point(0, initial_t + 0)
-    assert delayed_dask_stack['calls'] == 4
+    assert delayed_dask_stack['calls'] == 24
     # again, visiting a new point will increment the counter
     v.dims.set_point(0, initial_t + 3)
-    assert delayed_dask_stack['calls'] == 5
+    assert delayed_dask_stack['calls'] == 25
 
 
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
