@@ -86,7 +86,7 @@ def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
     dask_stack = delayed_dask_stack['stack']
     layer = v.add_image(dask_stack)
     # the first and the middle stack will be loaded and for clim calculation 9 chunks will be accessed per stack
-    assert delayed_dask_stack['calls'] == 22
+    assert delayed_dask_stack['calls'] == MAX_NUMBER_OF_CHUNKS + 2
 
     with layer.dask_optimized_slicing() as (_, cache):
         assert cache.cache.available_bytes > 0
