@@ -692,7 +692,7 @@ def _get_start_indices(
     elif dim_size == 3:
         indices = [0, chunk_dim_size, chunk_dim_size * 2]
     else:
-        quarter_index = dim_size // 4 * chunk_dim_size 
+        quarter_index = dim_size // 4 * chunk_dim_size
         center_index = quarter_index * 2
         qthree_index = quarter_index * 3
         indices = [quarter_index, center_index, qthree_index]
