@@ -9,6 +9,8 @@ from napari import layers
 from napari.components import ViewerModel
 from napari.utils import _dask_utils, resize_dask_cache
 
+MAX_NUMBER_OF_CHUNKS = 20
+
 
 def test_dask_array_creates_cache():
     """Test that dask arrays create cache but turns off fusion."""
