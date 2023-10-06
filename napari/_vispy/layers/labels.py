@@ -42,6 +42,8 @@ MAX_TEXTURE_SIZE = None
 
 ColorTuple = Tuple[float, float, float, float]
 
+EMPTY_VAL = -1
+
 low_disc_lookup_shader = """
 uniform sampler2D texture2D_LUT;
 
@@ -80,7 +82,7 @@ vec4 sample_label_color(float t) {
         return vec4(0);
     }
 
-    float empty = 0.;
+    float empty = $EMPTY_VAL;
     // get position in the texture grid (same as hash2d_get)
     vec2 pos = vec2(
         mod(int(t / LUT_shape.y), LUT_shape.x),
@@ -125,7 +127,7 @@ vec4 sample_label_color(float t) {
 
     // return vec4(pos_tex, 0, 1); // debug if final texel is calculated correctly
 
-    vec4 color = vec4($default_color)
+    vec4 color = vec4($default_color);
     if (abs(found - empty) > 1e-8) {
         color = texture2D(
             texture2D_values,
@@ -171,7 +173,8 @@ class DirectLabelVispyColormap(VispyColormap):
             )
             .replace("$selection", str(selection))
             .replace("$collision", str(collision).lower())
-            .replace("default_color", ", ".join(map(str, default_color)))
+            .replace("$default_color", ", ".join(map(str, default_color)))
+            .replace("$EMPTY_VAL", str(EMPTY_VAL))
         )
 
 
@@ -184,7 +187,7 @@ def idx_to_2d(idx, shape):
     return int((idx // shape[1]) % shape[0]), int(idx % shape[1])
 
 
-def hash2d_get(key, keys, empty_val=0):
+def hash2d_get(key, keys, empty_val=EMPTY_VAL):
     """
     Given a key, retrieve its location in the keys table.
     """
@@ -203,7 +206,7 @@ def hash2d_set(
     value: ColorTuple,
     keys: np.ndarray,
     values: np.ndarray,
-    empty_val=0,
+    empty_val=EMPTY_VAL,
 ) -> bool:
     """
     Set a value in the 2d hashmap, wrapping around to avoid collision.
@@ -338,7 +341,7 @@ def get_shape_from_dict(color_dict):
 
 def build_textures_from_dict(
     color_dict: Dict[float, ColorTuple],
-    empty_val=0,
+    empty_val=EMPTY_VAL,
     shape=None,
     use_selection=False,
     selection=0.0,
