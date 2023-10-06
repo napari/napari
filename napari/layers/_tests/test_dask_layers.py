@@ -204,29 +204,27 @@ def test_dask_local_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     v = ViewerModel()
     dask_stack = delayed_dask_stack['stack']
     v.add_image(dask_stack, cache=False)
-    # the first and the middle stack will be loaded
-    assert delayed_dask_stack['calls'] == 2
+    # the first and the middle stack will be loaded and then 9 chunks per stack accessed for clim calculation
+    assert delayed_dask_stack['calls'] == 22
 
     # without optimized dask slicing, we get a new call to the get_array func
     # (which "re-reads" the full z stack) EVERY time we change the Z plane
     # even though we've already read this full timepoint.
     for i in range(3):
         v.dims.set_point(1, i)
-        assert delayed_dask_stack['calls'] == 2 + 1 + i  # 😞
+        assert delayed_dask_stack['calls'] == 22 + 1 + i  # 😞
 
     # of course we still incur calls when moving to a new timepoint...
     v.dims.set_point(0, 1)
     v.dims.set_point(0, 2)
-    assert delayed_dask_stack['calls'] == 7
+    assert delayed_dask_stack['calls'] == 27
 
     # without the cache we ALSO incur calls when returning to previously loaded
     # timepoints 😭
     v.dims.set_point(0, 1)
     v.dims.set_point(0, 0)
     v.dims.set_point(0, 3)
-    # all told, we have ~2x as many calls as the optimized version above.
-    # (should be exactly 8 calls, but for some reason, sometimes less on CI)
-    assert delayed_dask_stack['calls'] >= 10
+    assert delayed_dask_stack['calls'] >= 28
 
 
 def test_dask_cache_resizing(delayed_dask_stack):
