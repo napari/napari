@@ -539,6 +539,7 @@ class QtViewer(QSplitter):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
             try:
+                import numpy as np
                 from napari_console import QtConsole
 
                 import napari
@@ -547,7 +548,11 @@ class QtViewer(QSplitter):
                     warnings.filterwarnings("ignore")
                     self.console = QtConsole(self.viewer)
                     self.console.push(
-                        {'napari': napari, 'action_manager': action_manager}
+                        {
+                            'napari': napari,
+                            'action_manager': action_manager,
+                            "np": np,
+                        }
                     )
                     for i in self.console_backlog:
                         # recover weak refs
