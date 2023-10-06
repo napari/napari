@@ -1872,6 +1872,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self.corner_pixels = corners
                 self.refresh()
         else:
+            # set the data_level so that it is the lowest resolution in 3d view
+            self._data_level = len(self.level_shapes) - 1
+
             # The stored corner_pixels attribute must contain valid indices.
             corners = np.zeros((2, self.ndim), dtype=int)
             # Some empty layers (e.g. Points) may have a data extent that only
