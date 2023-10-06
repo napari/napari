@@ -685,18 +685,14 @@ def _get_start_indices(
     indices: list[int, ...]
         The chunk start indices converted to array indices along a given dimension.
     """
+    if not chunk_dim_size:
+        chunk_dim_size = 1
     if dim_size <= 2:
         indices = [0]
     elif dim_size == 3:
-        indices = (
-            [0, chunk_dim_size, chunk_dim_size * 2]
-            if chunk_dim_size
-            else [0, 1, 2]
-        )
+        indices = [0, chunk_dim_size, chunk_dim_size * 2]
     else:
-        quarter_index = (
-            dim_size // 4 * chunk_dim_size if chunk_dim_size else dim_size // 4
-        )
+        quarter_index = dim_size // 4 * chunk_dim_size 
         center_index = quarter_index * 2
         qthree_index = quarter_index * 3
         indices = [quarter_index, center_index, qthree_index]
