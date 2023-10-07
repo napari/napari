@@ -1873,7 +1873,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self.refresh()
         else:
             # set the data_level so that it is the lowest resolution in 3d view
-            if self.multiscale == True:    
+            if self.multiscale is True:
                 self._data_level = len(self.level_shapes) - 1
 
             # The stored corner_pixels attribute must contain valid indices.
