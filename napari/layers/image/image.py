@@ -892,7 +892,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         return position + 0.5
 
-    def _display_bounding_box_at_level(self, dims_displayed: List[int], data_level: int) -> npt.NDArray:
+    def _display_bounding_box_at_level(
+        self, dims_displayed: List[int], data_level: int
+    ) -> npt.NDArray:
         """An axis aligned (ndisplay, 2) bounding box around the data at a given level"""
         shape = self.level_shapes[data_level]
         extent_at_level = np.vstack([np.zeros(len(shape)), shape - 1])

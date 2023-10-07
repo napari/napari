@@ -1083,7 +1083,9 @@ class Labels(_ImageBase):
             )
             im_slice = self._slice.image.raw
             # ensure the bounding box is for the proper multiscale level
-            bounding_box = self._display_bounding_box_at_level(dims_displayed, self.data_level)
+            bounding_box = self._display_bounding_box_at_level(
+                dims_displayed, self.data_level
+            )
             # the display bounding box is returned as a closed interval
             # (i.e. the endpoint is included) by the method, but we need
             # open intervals in the code that follows, so we add 1.

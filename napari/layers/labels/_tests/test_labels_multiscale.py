@@ -1,8 +1,7 @@
 import numpy as np
 
-from napari.layers import Labels
-
 from napari.components.dims import Dims
+from napari.layers import Labels
 
 
 def test_random_multiscale():
@@ -48,13 +47,17 @@ def test_3D_multiscale_labels_in_2D():
     assert layer.editable is False
     assert layer.ndim == len(data_multiscale[0].shape)
     np.testing.assert_array_equal(
-        layer.extent.data[1], np.array(data_multiscale[0].shape)-1
+        layer.extent.data[1], np.array(data_multiscale[0].shape) - 1
     )
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
     # check corner pixels, should be tuple of highest resolution level
-    assert layer.get_value([0,0,0]) == (layer.data_level, data_multiscale[0][0,0,0])
+    assert layer.get_value([0, 0, 0]) == (
+        layer.data_level,
+        data_multiscale[0][0, 0, 0],
+    )
+
 
 def test_3D_multiscale_labels_in_3D():
     """Test instantiating Labels layer with 3D data, 3D dims."""
@@ -65,7 +68,12 @@ def test_3D_multiscale_labels_in_3D():
     assert layer._data_view.ndim == 3
 
     # check corner pixels, should be value of lowest resolution level
-    assert layer.get_value([0, 0, 0], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]) == 1
+    assert (
+        layer.get_value(
+            [0, 0, 0], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+        )
+        == 1
+    )
     # assert layer.get_value([0, 9, 9], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]) == 2
     # assert layer.get_value([9, 9, 9], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]) == 2
 
