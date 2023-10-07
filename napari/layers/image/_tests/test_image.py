@@ -1000,3 +1000,19 @@ def test_thick_slice_multiscale():
     np.testing.assert_array_equal(
         layer._slice.image.raw, np.mean(data[2:5], axis=0)
     )
+
+
+def test_chunk_pixel_threshold_reset_contrast_lims():
+    data = da.random.random((10000, 10000), chunks=(5_000, 5_000))
+    layer = Image(data)
+    layer.reset_contrast_limits()
+    assert layer.contrast_limits
+    layer.reset_contrast_limits_range()
+    assert layer.contrast_limits_range
+
+    with pytest.warns(UserWarning):
+        layer.reset_contrast_limits(mode='data')
+        assert layer.contrast_limits
+    with pytest.warns(UserWarning):
+        layer.reset_contrast_limits_range(mode='data')
+        assert layer.contrast_limits_range

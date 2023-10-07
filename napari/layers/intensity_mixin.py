@@ -1,3 +1,4 @@
+import warnings
 from typing import TYPE_CHECKING, Optional, Tuple
 
 import numpy as np
@@ -6,6 +7,7 @@ from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import Event
 from napari.utils.status_messages import format_float
+from napari.utils.translations import trans
 from napari.utils.validators import _validate_increasing, validate_n_seq
 
 validate_2_tuple = validate_n_seq(2)
@@ -52,7 +54,17 @@ class IntensityVisualizationMixin:
     def reset_contrast_limits(self: '_ImageBase', mode=None):
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
-        self.contrast_limits = self._calc_data_range(mode)
+        if contrast_limits := self._calc_data_range(mode):
+            self.contrast_limits = contrast_limits
+        else:
+            new_mode = self._auto_contrast_source
+            warnings.warn(
+                trans._(
+                    f"Cannot calculate contrast limits with mode {mode}. Calculating with {new_mode}",
+                    deferred=True,
+                )
+            )
+            self.contrast_limits = self._calc_data_range(new_mode)
 
     def reset_contrast_limits_range(self, mode=None):
         """Scale contrast limits range to data type if dtype is an integer,
@@ -64,7 +76,17 @@ class IntensityVisualizationMixin:
             self.contrast_limits_range = (info.min, info.max)
         else:
             mode = mode or self._auto_contrast_source
-            self.contrast_limits_range = self._calc_data_range(mode)
+            if contrast_limits_range := self._calc_data_range(mode):
+                self.contrast_limits_range = contrast_limits_range
+            else:
+                new_mode = self._auto_contrast_source
+                warnings.warn(
+                    trans._(
+                        f"Cannot calculate contrast limit range with mode {mode}. Calculating with {new_mode}",
+                        deferred=True,
+                    )
+                )
+                self.contrast_limits_range = self._calc_data_range(new_mode)
 
     @property
     def colormap(self):
