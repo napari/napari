@@ -68,18 +68,50 @@ def test_3D_multiscale_labels_in_3D():
     assert layer._data_view.ndim == 3
 
     # check corner pixels, should be value of lowest resolution level
+    # [0,0,0] has value 0, which is transparent, so the ray will hit the next point
+    # which is [1, 0, 0] and has value 4
+    # the position array is in original data coords (no downsampling)
     assert (
         layer.get_value(
             [0, 0, 0], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
         )
-        == 1
+        == 4
     )
-    # assert layer.get_value([0, 9, 9], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]) == 2
-    # assert layer.get_value([9, 9, 9], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]) == 2
+    assert (
+        layer.get_value(
+            [0, 0, 0], view_direction=[-1, 0, 0], dims_displayed=[0, 1, 2]
+        )
+        == 4
+    )
+    assert (
+        layer.get_value(
+            [0, 1, 1], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+        )
+        == 4
+    )
+    assert (
+        layer.get_value(
+            [0, 5, 5], view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+        )
+        == 3
+    )
+    assert (
+        layer.get_value(
+            [5, 0, 5], view_direction=[0, 0, -1], dims_displayed=[0, 1, 2]
+        )
+        == 5
+    )
 
 
 def instantiate_3D_multiscale_labels():
-    data = np.arange(1000).reshape((10, 10, 10))
-    data_multiscale = [data, data[::2, ::2, ::2]]
+    lowest_res_scale = np.arange(8).reshape(2, 2, 2)
+    middle_res_scale = (
+        lowest_res_scale.repeat(2, axis=0).repeat(2, axis=1).repeat(2, axis=2)
+    )
+    highest_res_scale = (
+        middle_res_scale.repeat(2, axis=0).repeat(2, axis=1).repeat(2, axis=2)
+    )
+
+    data_multiscale = [highest_res_scale, middle_res_scale, lowest_res_scale]
 
     return data_multiscale, Labels(data_multiscale, multiscale=True)
