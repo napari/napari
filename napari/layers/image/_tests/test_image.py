@@ -1002,8 +1002,9 @@ def test_thick_slice_multiscale():
     )
 
 
-def test_chunk_pixel_threshold_reset_contrast_lims():
-    data = da.random.random((10000, 10000), chunks=(5_000, 5_000))
+def test_chunk_pixel_threshold_reset_contrast_lims(monkeypatch):
+    monkeypatch.setattr("napari.layers.utils.layer_utils.PIXEL_THRESHOLD", 100)
+    data = da.random.random((200, 200), chunks=(100, 100))
     layer = Image(data)
     layer.reset_contrast_limits()
     assert layer.contrast_limits
