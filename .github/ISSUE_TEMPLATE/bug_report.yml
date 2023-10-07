@@ -48,9 +48,9 @@ body:
     attributes:
       label: "\U0001F30E Environment"
       description: |
-        Please provide the following information about your environment. You could just paste the output of `napari --info` here or copy  the information from the "napari infor" dialog in the napari Help menu.
+        Please provide detailed information regarding your environment. Please paste the output of `napari --info` here or copy  the information from the "napari info" dialog in the napari Help menu.
         
-        Otherwise, please provide information about your Operating system, Python version, napari version, Qt backend and version, Qt platform, and any other relevant information about your environment:
+        Otherwise, please provide information regarding your operating system (OS), Python version, napari version, Qt backend and version, Qt platform, method of installation, and any other relevant information related to your environment.
         
 
       placeholder: |
@@ -86,5 +86,5 @@ body:
     id: additional-context
     attributes:
         label: "\U0001F4A1 Additional Context"
-        description: "Please provide any additional context about the problem here."
+        description: "Please provide any additional information or context regarding the problem here."
         placeholder: "Add any other context about the problem here."
