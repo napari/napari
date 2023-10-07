@@ -102,6 +102,13 @@ jobs:
         constraints_suffix: _examples
         coverage: cov
 
+  coverage_report:
+    if: ${{ always() }}
+    needs:
+      - test
+      - test_examples
+    uses: ./.github/workflows/reusable_coverage_upload.yml
+
   synchronize_bot_repository:
     name: Synchronize bot repository
     runs-on: ubuntu-latest
