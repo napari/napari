@@ -515,7 +515,7 @@ def _get_crop_slices(
     in the number of chunks per plane and only when this still causes to go over the PIXEL_TRESHOLD do we sacrifice on
     also sampling planes. If we can support n fold 9 chunks we will extend the crops by n.
 
-    Regarding sampling strategy the 9 crops allows are in the following pattern at first, second and third quantile
+    Regarding sampling strategy the 9 crops allowed are in the following pattern at first, second and third quantile
     of both the y and x dimension:
     ---------------
     | |0| |1| |2| |
@@ -538,7 +538,7 @@ def _get_crop_slices(
 
     Returns
     -------
-    slices: Union[List[None | Tuple[Union[int, slice], ...]]]
+    slices: Union[list[tuple[slice, slice]], list[tuple[Union[int, slice], ...]]]
         A list of crop slices.
     """
     plane_shape = shape[-offset:]
