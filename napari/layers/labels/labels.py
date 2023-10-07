@@ -1091,7 +1091,9 @@ class Labels(_ImageBase):
             # open intervals in the code that follows, so we add 1.
             bounding_box[:, 1] += 1
             # account for downsampling in the case of multiscale
-            sample_points = sample_points / self.downsample_factors[-1]
+            sample_points = (
+                sample_points / self.downsample_factors[-1][dims_displayed]
+            )
 
             clamped = clamp_point_to_bounding_box(
                 sample_points,
