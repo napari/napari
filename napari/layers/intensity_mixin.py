@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import warnings
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Literal, Optional, Tuple
 
 import numpy as np
 
@@ -51,12 +53,15 @@ class IntensityVisualizationMixin:
         self._auto_contrast_source = 'slice'
         self._keep_auto_contrast = False
 
-    def reset_contrast_limits(self: '_ImageBase', mode=None):
+    def reset_contrast_limits(
+        self: _ImageBase, mode: None | Literal["slice", "data"] = None
+    ):
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
         if contrast_limits := self._calc_data_range(mode):
             self.contrast_limits = contrast_limits
         else:
+            # new_mode is always slice.
             new_mode = self._auto_contrast_source
             warnings.warn(
                 trans._(
@@ -66,7 +71,9 @@ class IntensityVisualizationMixin:
             )
             self.contrast_limits = self._calc_data_range(new_mode)
 
-    def reset_contrast_limits_range(self, mode=None):
+    def reset_contrast_limits_range(
+        self, mode: None | Literal["slice", "data"] = None
+    ):
         """Scale contrast limits range to data type if dtype is an integer,
         or use the current maximum data range otherwise.
         """
@@ -79,6 +86,7 @@ class IntensityVisualizationMixin:
             if contrast_limits_range := self._calc_data_range(mode):
                 self.contrast_limits_range = contrast_limits_range
             else:
+                # new_mode is always slice.
                 new_mode = self._auto_contrast_source
                 warnings.warn(
                     trans._(
