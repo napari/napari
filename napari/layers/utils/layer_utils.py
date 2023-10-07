@@ -223,23 +223,23 @@ def _nanmax(array):
 
 
 def calc_data_range(data, rgb: bool = False) -> None | tuple[float, float]:
-    """Calculate range of data values. If all values are equal return [0, 1].
+    """Calculate range of data values. If all values are equal return [0, 1]. It always returns (0, 255) for uint8 data.
 
     Parameters
     ----------
     data : array
         Data to calculate range of values over.
     rgb : bool
-        Flag if data is rgb. If so, return (0, 255).
+        Flag if data is rgb. If so and data is integer then it returns dtype limits.
 
     Returns
     -------
     values : None | tuple[float, float]
-        Minimum and maximum values in that order or None if dtype is float.
+        Minimum and maximum values in that order or None if data are chunked and chunk is bigger than napari.utils.layer_utils.PIXEL_THRESHOLD or the data are stored in tensorstore.
 
     Notes
     -----
-    If the data type is uint8 or rgb, no calculation is performed, and 0-255 is
+    If the data type is uint8 or rgb, no calculation is performed, and dtype range is
     returned.
     """
     dtype = normalize_dtype(getattr(data, 'dtype', None))
@@ -342,9 +342,9 @@ def _get_blocks_grid_shape(
 
     Parameters
     ----------
-    data_shape: tuple[int, ...]
+    data_shape: Sequence[int, ...]
         The shape of an array of chunked data.
-    chunk_size: tuple[int, ...]
+    chunk_size: Sequence[int, ...]
         The size per dimension of the chunks in the chunked data array.
 
     Returns
@@ -357,7 +357,7 @@ def _get_blocks_grid_shape(
 
 def _get_plane_indices(
     shape: Sequence[int], offset: int
-) -> List[Tuple[int, ...]]:
+) -> list[tuple[int, ...]]:
     """
     Get the indices that correspond to the lowest, middle and highest index of the non-visible dimensions in shape.
 
@@ -385,8 +385,8 @@ def _get_plane_indices(
 def _calculate_chunk_parameters(
     plane_indices: Sequence[Sequence[int]],
     offset: int,
-    chunk_shape: None | Tuple[int, ...] = None,
-) -> Tuple[int, int, int, int]:
+    chunk_shape: None | tuple[int, ...] = None,
+) -> tuple[int, int, int, int]:
     """
     Calculate the chunk parameters for the contrast limit calculation.
 
@@ -402,7 +402,7 @@ def _calculate_chunk_parameters(
         Bottom, middle and top plane or single plane index for each non-visible dimension.
     offset: int
         Number of visible dimensions.
-    chunk_shape: None | Tuple[int]
+    chunk_shape: None | tuple[int, ...]
         The size per dimension of the chunks.
 
     Returns
@@ -445,8 +445,8 @@ def _get_pixel_start_indices(
     offset: int,
     chunk_size_y: int,
     chunk_size_x: int,
-    chunk_shape: None | Tuple[int, ...] = None,
-) -> Tuple[Sequence[Sequence[int]], List[int], List[int]]:
+    chunk_shape: None | tuple[int, ...] = None,
+) -> Tuple[Sequence[Sequence[int]], list[int], list[int]]:
     """
     Get the start indices of the individual planes and the y and x dimension in pixel space.
 
@@ -461,7 +461,7 @@ def _get_pixel_start_indices(
     plane_shape
     offset: int
         Number of visible dimensions.
-    chunk_shape: None | Tuple[int]
+    chunk_shape: None | tuple[int]
         The size per dimension of the chunks.
     chunk_size_y: int
         Size of the slice of the y dimension if dealing with numpy array, otherwise the y dim size of the chunk when
@@ -503,7 +503,7 @@ def _get_crop_slices(
     shape: Sequence[int],
     plane_indices: Sequence[Sequence[int]],
     offset: int,
-    chunk_shape: None | Tuple[int, ...] = None,
+    chunk_shape: None | tuple[int, ...] = None,
 ) -> Union[list[tuple[slice, slice]], list[tuple[Union[int, slice], ...]]]:
     """
     Get the crop slices to be used for determining contrast limits when data is larger than the pixel threshold.
@@ -533,7 +533,7 @@ def _get_crop_slices(
         Bottom, middle and top plane or single plane index for each non-visible dimension.
     offset: int
         Number of visible dimensions.
-    chunk_shape: None | Tuple[int]
+    chunk_shape: None | tuple[int]
         The size per dimension of the chunks.
 
     Returns

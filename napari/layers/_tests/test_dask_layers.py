@@ -112,15 +112,15 @@ def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
     # clims are set so now we should have just 1 more call per time a new dims point is set.
     assert delayed_dask_stack['calls'] == 23
     v.dims.set_point(0, initial_t + 2)
-    assert delayed_dask_stack['calls'] == 24
+    assert delayed_dask_stack['calls'] == MAX_NUMBER_OF_CHUNKS + 4
 
     # but going back to previous timepoints should not, since they are cached
     v.dims.set_point(0, initial_t + 1)
     v.dims.set_point(0, initial_t + 0)
-    assert delayed_dask_stack['calls'] == 24
+    assert delayed_dask_stack['calls'] == MAX_NUMBER_OF_CHUNKS + 4
     # again, visiting a new point will increment the counter
     v.dims.set_point(0, initial_t + 3)
-    assert delayed_dask_stack['calls'] == 25
+    assert delayed_dask_stack['calls'] == MAX_NUMBER_OF_CHUNKS + 5
 
 
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
@@ -151,7 +151,7 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     initial_t = v.dims.point[0]
     v.dims.set_point(0, initial_t + 1)
     v.dims.set_point(0, initial_t + 2)
-    assert delayed_dask_stack['calls'] == 26
+    assert delayed_dask_stack['calls'] == MAX_NUMBER_OF_CHUNKS + 6
 
     # without the cache we ALSO incur calls when returning to previously loaded
     # timepoints 😭
@@ -159,7 +159,7 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     v.dims.set_point(0, initial_t + 0)
     v.dims.set_point(0, initial_t + 3)
     # (should be exactly 29 calls, but for some reason, sometimes more on CI)
-    assert delayed_dask_stack['calls'] >= 29
+    assert delayed_dask_stack['calls'] >= MAX_NUMBER_OF_CHUNKS + 9
 
 
 def test_dask_local_unoptimized_slicing(delayed_dask_stack, monkeypatch):
@@ -192,14 +192,14 @@ def test_dask_local_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     # of course we still incur calls when moving to a new timepoint...
     v.dims.set_point(0, 1)
     v.dims.set_point(0, 2)
-    assert delayed_dask_stack['calls'] == 27
+    assert delayed_dask_stack['calls'] == MAX_NUMBER_OF_CHUNKS + 7
 
     # without the cache we ALSO incur calls when returning to previously loaded
     # timepoints 😭
     v.dims.set_point(0, 1)
     v.dims.set_point(0, 0)
     v.dims.set_point(0, 3)
-    assert delayed_dask_stack['calls'] >= 28
+    assert delayed_dask_stack['calls'] >= MAX_NUMBER_OF_CHUNKS + 8
 
 
 def test_dask_cache_resizing(delayed_dask_stack):
