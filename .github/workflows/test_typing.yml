@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: typing-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   typing:
     runs-on: ubuntu-latest
