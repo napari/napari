@@ -43,11 +43,6 @@ jobs:
     name: ${{ matrix.platform }}
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
-    concurrency:
-      group: comprehensive-test-${{ matrix.platform }}
-      # this means that only single job from a given os will run at a time
-      # this increases time to completion, but reduces the number of job slots
-      # used by tests on main
     strategy:
       fail-fast: false
       matrix:
@@ -101,6 +96,13 @@ jobs:
         python_version: 3.9
         constraints_suffix: _examples
         coverage: cov
+
+  coverage_report:
+    if: ${{ always() }}
+    needs:
+      - test
+      - test_examples
+    uses: ./.github/workflows/reusable_coverage_upload.yml
 
   synchronize_bot_repository:
     name: Synchronize bot repository
