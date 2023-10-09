@@ -195,6 +195,13 @@ class VispyBaseLayer(ABC):
         translate = transform.translate[::-1]
         matrix = transform.linear_matrix[::-1, ::-1].T
 
+        if (
+            self._array_like
+            and self.layer._slice_input.ndisplay == 3
+            and self.layer.multiscale
+        ):
+            translate = translate + (self.layer.downsample_factors[-1] - 1) / 2
+
         # Embed in the top left corner of a 4x4 affine matrix
         affine_matrix = np.eye(4)
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
