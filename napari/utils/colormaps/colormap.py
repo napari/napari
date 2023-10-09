@@ -218,3 +218,5 @@ class DirectLabelColormap(Colormap):
         if self.use_selection:
             return (0, 0, 0, 0)
         return self.color_dict.get(None, (0, 0, 0, 0))
+        # we provided here default color for backward compatibility
+        # if someone is using DirectLabelColormap directly, not through Label layer
