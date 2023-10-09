@@ -5,7 +5,6 @@ from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     DefaultDict,
     Dict,
     Iterator,
@@ -15,7 +14,6 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Type,
     Union,
     cast,
 )
@@ -144,7 +142,6 @@ def get_widget_contribution(
     for contrib in pm.iter_widgets():
         if contrib.plugin_name == plugin_name:
             if not widget_name or contrib.display_name == widget_name:
-                print(f'xxxxx get widget cont {contrib}')
                 return contrib.get_callable(), contrib.display_name
             widgets_seen.add(contrib.display_name)
     if widget_name and widgets_seen:
@@ -517,7 +514,6 @@ def _get_widgets_submenu_actions(
 
     if TYPE_CHECKING:
         from napari._qt.qt_main_window import Window
-        from npe2.manifest.contributions import WidgetContribution
 
     # If no widgets, return
     if not mf.contributions.widgets:
@@ -534,15 +530,14 @@ def _get_widgets_submenu_actions(
 
     widget_actions: List[Action] = []
     for widget in widgets:
-        full_name = menu_item_template.format(mf.display_name, widget.display_name)
+        full_name = menu_item_template.format(
+            mf.display_name, widget.display_name
+        )
 
         def _widget_callback(
             napari_viewer: Viewer,
-            # mf: PluginManifest = mf,
-            widget: WidgetContribution = widget,
-            # widget: str = widget,
+            widget_name: str = widget.display_name,
             name: str = full_name,
-            # widget: Union[MagicFactory, Type, Callable] = widget_callable,
         ) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
             """Toggle if widget already built otherwise return widget.
 
@@ -553,9 +548,9 @@ def _get_widgets_submenu_actions(
             # Get widget param name (if any) and check type
             if widget_contribution := _npe2.get_widget_contribution(
                 mf.name,
-                widget.display_name,
+                widget_name,
             ):
-                widget_callable, widget_name = widget_contribution
+                widget_callable, _ = widget_contribution
                 if inspect.isclass(widget_callable) and issubclass(
                     widget_callable,
                     (QWidget, Widget),
@@ -605,7 +600,6 @@ def _get_widgets_submenu_actions(
             kwargs = {}
             if widget_param:
                 kwargs[widget_param] = napari_viewer
-            print(f'return wid callable {widget_callable(**kwargs)}')
             return widget_callable(**kwargs), name
 
         def _get_current_dock_status(
@@ -630,6 +624,7 @@ def _get_widgets_submenu_actions(
                 menus=[
                     {
                         'id': submenu_id,
+                        'group': MenuGroup.PLUGIN_CONTRIBUTIONS,
                     }
                 ],
                 toggled=ToggleRule(get_current=_get_current_dock_status),

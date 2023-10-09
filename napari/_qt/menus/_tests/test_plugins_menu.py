@@ -119,6 +119,8 @@ def test_plugin_menu_plugin_state_change(
     assert isinstance(plugin_submenu[0], MenuItem)
     assert plugin_submenu[0].command.title == 'Widget 1'
     assert 'tmp_plugin:Widget 1' in app.commands
+    # Ensure we are able to execute command without error
+    app.commands.execute_command('tmp_plugin:Widget 1')
 
     # Disable plugin
     pm.disable(tmp_plugin.name)
@@ -127,7 +129,12 @@ def test_plugin_menu_plugin_state_change(
     assert 'tmp_plugin:Widget 1' not in app.commands
 
     # Enable plugin
-    # pm.enable(tmp_plugin.name)
-    # samples_sub_menu = app.menus.get_menu(MenuId.MENUBAR_PLUGINS + '/tmp_plugin')
-    # assert len(samples_sub_menu) == 2
-    # assert 'tmp_plugin:Widget 1' in app.commands
+    pm.enable(tmp_plugin.name)
+    samples_sub_menu = app.menus.get_menu(
+        MenuId.MENUBAR_PLUGINS + '/tmp_plugin'
+    )
+    assert len(samples_sub_menu) == 2
+    assert 'tmp_plugin:Widget 1' in app.commands
+    # TODO: uncomment once https://github.com/napari/npe2/issues/314 fixed
+    # Ensure we are able to execute command without error
+    # app.commands.execute_command('tmp_plugin:Widget 1')
