@@ -14,6 +14,31 @@ class DummyWidget(QWidget):
     pass
 
 
+def test_plugin_widgets_menus(make_napari_viewer, tmp_plugin: DynamicPlugin):
+    """Test single plugin widgets get added to the window menu correctly."""
+
+    @tmp_plugin.contribute.widget(display_name='Widget 1')
+    def widget1():
+        return DummyWidget()
+
+    app = get_app()
+    viewer = make_napari_viewer()
+
+    assert tmp_plugin.display_name == 'Temp Plugin'
+    plugin_menu = app.menus.get_menu('napari/plugins')
+    assert plugin_menu[0].command.title == 'Widget 1 (Temp Plugin)'
+    # Now ensure that the actions are still correct
+    assert len(viewer.window._dock_widgets) == 0
+    assert 'tmp_plugin:Widget 1' in app.commands
+    # trigger the action, opening the widget: `Widget 1`
+    app.commands.execute_command('tmp_plugin:Widget 1')
+    assert len(viewer.window._dock_widgets) == 1
+    assert (
+        next(iter(viewer.window._dock_widgets.data))
+        == 'Widget 1 (Temp Plugin)'
+    )
+
+
 def test_plugin_display_name_use_for_multiple_widgets(
     make_napari_viewer,
     tmp_plugin: DynamicPlugin,
@@ -35,9 +60,9 @@ def test_plugin_display_name_use_for_multiple_widgets(
     plugin_menu = app.menus.get_menu('napari/plugins')
     assert plugin_menu[0].title == tmp_plugin.display_name
     # Now ensure that the actions are still correct
-    # trigger the action, opening the first widget: `Widget 1`
     assert len(viewer.window._dock_widgets) == 0
     assert 'tmp_plugin:Widget 1' in app.commands
+    # trigger the action, opening the first widget: `Widget 1`
     app.commands.execute_command('tmp_plugin:Widget 1')
     assert len(viewer.window._dock_widgets) == 1
     assert (
@@ -97,12 +122,10 @@ def test_plugin_menu_plugin_state_change(
     plugins_menu = app.menus.get_menu(MenuId.MENUBAR_PLUGINS)
     assert len(plugins_menu) == len(_plugins.Q_PLUGINS_ACTIONS)
 
-    # @tmp_plugin.contribute.command(id='tmp_plugin.widget1')
     @tmp_plugin.contribute.widget(display_name='Widget 1')
     def widget1():
         return DummyWidget()
 
-    # @tmp_plugin.contribute.command(id='tmp_plugin.widget2')
     @tmp_plugin.contribute.widget(display_name='Widget 2')
     def widget2():
         return DummyWidget()

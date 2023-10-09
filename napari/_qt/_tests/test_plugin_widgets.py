@@ -1,5 +1,5 @@
 from itertools import dropwhile
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 from napari_plugin_engine import napari_hook_implementation
@@ -7,7 +7,6 @@ from qtpy.QtWidgets import QWidget
 
 import napari
 from napari import Viewer
-from napari._qt.menus import PluginsMenu
 from napari._qt.qt_main_window import _instantiate_dock_widget
 from napari.utils._proxies import PublicOnlyProxy
 
@@ -89,25 +88,6 @@ def test_plugin_widgets(monkeypatch, napari_plugin_manager):
     yield
 
 
-def test_plugin_widgets_menus(test_plugin_widgets, qtbot):
-    """Test the plugin widgets get added to the window menu correctly."""
-    # only take the plugin actions
-    window = Mock()
-    qtwin = QWidget()
-    qtbot.addWidget(qtwin)
-    with patch.object(window, '_qt_window', qtwin):
-        actions = PluginsMenu(window=window).actions()
-    actions = list(dropwhile(lambda a: a.text() != '', actions))
-    texts = [a.text() for a in actions][1:]
-    for t in ['TestP1', 'Widg3 (TestP2)', 'magic (TestP3)']:
-        assert t in texts
-
-    # Expect a submenu ("Test plugin1") with particular entries.
-    tp1 = next(m for m in actions if m.text() == 'TestP1')
-    assert tp1.parent()
-    assert [a.text() for a in tp1.parent().actions()] == ['Widg1', 'Widg2']
-
-
 def test_making_plugin_dock_widgets(
     test_plugin_widgets, make_napari_viewer, qtbot
 ):
@@ -153,36 +133,6 @@ def test_making_plugin_dock_widgets(
     widg.deleteLater()
     widg.close()
     qtbot.wait(50)
-
-
-def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
-    """Test that we can create magicgui widgets, and they get the viewer."""
-    import magicgui
-
-    viewer = make_napari_viewer()
-    # only take the plugin actions
-    actions = viewer.window.plugins_menu.actions()
-    actions = dropwhile(lambda a: a.text() != '', actions)
-
-    # trigger the 'TestP3: magic' action
-    tp3 = next(m for m in actions if m.text().endswith('(TestP3)'))
-    tp3.trigger()
-    # make sure that a dock widget was created
-    assert 'magic (TestP3)' in viewer.window._dock_widgets
-    dw = viewer.window._dock_widgets['magic (TestP3)']
-    # make sure that it contains a magicgui widget
-    magic_widget = dw.widget()._magic_widget
-    FGui = getattr(magicgui.widgets, 'FunctionGui', None)
-    if FGui is None:
-        # pre magicgui 0.2.6
-        FGui = magicgui.FunctionGui
-    assert isinstance(magic_widget, FGui)
-    # This magicgui widget uses the parameter annotation to receive a viewer
-    assert isinstance(magic_widget.viewer.value, napari.Viewer)
-    # The function just returns the viewer... make sure we can call it
-    assert isinstance(magic_widget(), napari.Viewer)
-    # Add twice is ok, only does a show
-    tp3.trigger()
 
 
 def test_inject_viewer_proxy(make_napari_viewer):
