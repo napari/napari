@@ -504,6 +504,49 @@ def _get_samples_submenu_actions(
     return submenu, sample_actions
 
 
+def _get_widget_param(widget_callable, widget_name) -> str:
+    """Get widget parameter name (if any) and check type."""
+    from napari.viewer import Viewer
+
+    if inspect.isclass(widget_callable) and issubclass(
+        widget_callable,
+        (QWidget, Widget),
+    ):
+        widget_param = ""
+        # Inspection can fail when adding to bundle as it thinks widget is
+        # a builtin
+        try:
+            sig = inspect.signature(widget_callable.__init__)
+        except ValueError:
+            pass
+        else:
+            for param in sig.parameters.values():
+                if param.name == 'napari_viewer':
+                    widget_param = param.name
+                    break
+                if param.annotation in (
+                    'napari.viewer.Viewer',
+                    Viewer,
+                ):
+                    widget_param = param.name
+                    break
+
+    elif isinstance(widget_callable, MagicFactory) or callable(
+        widget_callable
+    ):
+        widget_param = ""
+    else:
+        raise TypeError(
+            trans._(
+                "Widgets must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or callable, but {widget} is of type {type_}. Please raise an issue in napari GitHub with the plugin and widget you were trying to use.",
+                deferred=True,
+                widget=widget_name,
+                type_=type(widget_callable),
+            )
+        )
+    return widget_param
+
+
 def _get_widgets_submenu_actions(
     mf: PluginManifest,
 ) -> Tuple[List[Any], List[Any]]:
@@ -545,49 +588,6 @@ def _get_widgets_submenu_actions(
             Note for magicgui type widget contributions, `Viewer` injection is done by
             `magicgui.register_type`.
             """
-            # Get widget param name (if any) and check type
-            if widget_contribution := _npe2.get_widget_contribution(
-                mf.name,
-                widget_name,
-            ):
-                widget_callable, _ = widget_contribution
-                if inspect.isclass(widget_callable) and issubclass(
-                    widget_callable,
-                    (QWidget, Widget),
-                ):
-                    widget_param = ""
-                    # Inspection can fail when adding to bundle as it thinks widget is
-                    # a builtin
-                    try:
-                        sig = inspect.signature(widget_callable.__init__)
-                    except ValueError:
-                        pass
-                    else:
-                        for param in sig.parameters.values():
-                            if param.name == 'napari_viewer':
-                                widget_param = param.name
-                                break
-                            if param.annotation in (
-                                'napari.viewer.Viewer',
-                                Viewer,
-                            ):
-                                widget_param = param.name
-                                break
-
-                elif isinstance(widget_callable, MagicFactory) or callable(
-                    widget_callable
-                ):
-                    widget_param = ""
-                else:
-                    raise TypeError(
-                        trans._(
-                            "Widgets must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or callable, but {widget} is of type {type_}. Please raise an issue in napari GitHub with the plugin and widget you were trying to use.",
-                            deferred=True,
-                            widget=widget_name,
-                            type_=type(widget_callable),
-                        )
-                    )
-
             window = napari_viewer.window
             if name in window._dock_widgets:
                 dock_widget = window._dock_widgets[name]
@@ -597,10 +597,19 @@ def _get_widgets_submenu_actions(
                     dock_widget.show()
                 return None
 
-            kwargs = {}
-            if widget_param:
-                kwargs[widget_param] = napari_viewer
-            return widget_callable(**kwargs), name
+            # Get widget param name (if any) and check type
+            if widget_contribution := _npe2.get_widget_contribution(
+                mf.name,
+                widget_name,
+            ):
+                widget_callable, _ = widget_contribution
+                widget_param = _get_widget_param(widget_callable, widget_name)
+
+                kwargs = {}
+                if widget_param:
+                    kwargs[widget_param] = napari_viewer
+                return widget_callable(**kwargs), name
+            return None
 
         def _get_current_dock_status(
             window: Window,
