@@ -89,11 +89,11 @@ jobs:
           # We build from the the tag name if triggered by tag, otherwise from the commit hash
           build-args: |
             NAPARI_COMMIT=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
-      
+
       - name: Test Docker image
         run: |
           docker run --rm --entrypoint=/bin/bash ${{ steps.docker_build.outputs.imageid }} -ec "python3 -m napari --version"
-    
+
 # ----
 
   build2:

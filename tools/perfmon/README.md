@@ -60,4 +60,3 @@ was an improvement:
 ```shell
 python tools/perfmon/compare_callable.py slicing Layer.refresh latest test
 ```
-
