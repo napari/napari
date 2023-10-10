@@ -32,6 +32,7 @@ jobs:
 
             It look like ${{ steps.check_v.outputs.vendored }} has a new version.
           token: ${{ secrets.GHA_TOKEN }}
+          author: napari-bot <napari-bot@users.noreply.github.com>
           # Token permissions required by the action:
           # * pull requests: write and read
           # * repository contents: read and write
