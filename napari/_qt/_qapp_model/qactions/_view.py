@@ -105,7 +105,7 @@ Q_VIEW_ACTIONS: List[Action] = [
     ),
 ]
 
-if sys.platform != 'darwin':
+if sys.platform == 'darwin':
     Q_VIEW_ACTIONS.append(
         Action(
             id=f'{CommandId.TOGGLE_FULLSCREEN}_mac',
