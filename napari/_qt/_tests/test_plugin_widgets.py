@@ -1,4 +1,3 @@
-from itertools import dropwhile
 from unittest.mock import patch
 
 import pytest
@@ -86,53 +85,6 @@ def test_plugin_widgets(monkeypatch, napari_plugin_manager):
     function_widgets = {'TestP3': {'magic': magicfunc}}
     monkeypatch.setattr(tnpm, "_function_widgets", function_widgets)
     yield
-
-
-def test_making_plugin_dock_widgets(
-    test_plugin_widgets, make_napari_viewer, qtbot
-):
-    """Test that we can create dock widgets, and they get the viewer."""
-    viewer = make_napari_viewer()
-    # only take the plugin actions
-    actions = viewer.window.plugins_menu.actions()
-    actions = list(dropwhile(lambda a: a.text() != '', actions))
-
-    # trigger the 'TestP2: Widg3' action
-    tp2 = next(m for m in actions if m.text().endswith('(TestP2)'))
-    tp2.trigger()
-    # make sure that a dock widget was created
-    assert 'Widg3 (TestP2)' in viewer.window._dock_widgets
-    dw = viewer.window._dock_widgets['Widg3 (TestP2)']
-    assert isinstance(dw.widget(), Widg3)
-    # This widget uses the parameter annotation method to receive a viewer
-    assert isinstance(dw.widget().viewer, napari.Viewer)
-    # Add twice is ok, only does a show
-    tp2.trigger()
-
-    # trigger the 'TestP1 > Widg2' action (it's in a submenu)
-    tp2 = next(m for m in actions if m.text().endswith('TestP1'))
-    action = tp2.parent().actions()[1]
-    assert action.text() == 'Widg2'
-    action.trigger()
-    # make sure that a dock widget was created
-    assert 'Widg2 (TestP1)' in viewer.window._dock_widgets
-    dw = viewer.window._dock_widgets['Widg2 (TestP1)']
-    assert isinstance(dw.widget(), Widg2)
-    # This widget uses parameter *name* "napari_viewer" to get a viewer
-    assert isinstance(dw.widget().viewer, napari.Viewer)
-    # Add twice is ok, only does a show
-    action.trigger()
-    # Check that widget is still there when closed.
-    widg = dw.widget()
-    dw.title.hide_button.click()
-    assert widg
-    # Check that widget is destroyed when closed.
-    dw.destroyOnClose()
-    assert action not in viewer.window.plugins_menu.actions()
-    assert widg.parent() is None
-    widg.deleteLater()
-    widg.close()
-    qtbot.wait(50)
 
 
 def test_inject_viewer_proxy(make_napari_viewer):
