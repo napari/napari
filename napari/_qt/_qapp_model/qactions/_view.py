@@ -54,6 +54,7 @@ Q_VIEW_ACTIONS: List[Action] = [
         ],
         callback=Window._toggle_fullscreen,
         keybindings=[StandardKeyBinding.FullScreen],
+        enablement=sys.platform != 'darwin',
         toggled=ToggleRule(get_current=_get_current_fullscreen_status),
     ),
     Action(
@@ -103,3 +104,13 @@ Q_VIEW_ACTIONS: List[Action] = [
         toggled=ToggleRule(get_current=_get_current_activity_dock_status),
     ),
 ]
+
+if sys.platform != 'darwin':
+    Q_VIEW_ACTIONS.append(
+        Action(
+            id=f'{CommandId.TOGGLE_FULLSCREEN}_mac',
+            title=f'{CommandId.TOGGLE_FULLSCREEN.command_title}_mac',
+            callback=Window._toggle_fullscreen,
+            keybindings=[StandardKeyBinding.FullScreen],
+        )
+    )
