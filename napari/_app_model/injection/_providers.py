@@ -1,10 +1,11 @@
 from typing import Optional
 
 from napari import components, layers, viewer
+from napari.utils._proxies import PublicOnlyProxy
 
 
 def _provide_viewer() -> Optional[viewer.Viewer]:
-    return viewer.current_viewer()
+    return PublicOnlyProxy(viewer.current_viewer())
 
 
 def _provide_active_layer() -> Optional[layers.Layer]:
