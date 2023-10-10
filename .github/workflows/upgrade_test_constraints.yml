@@ -85,10 +85,10 @@ jobs:
               -H "Accept: application/vnd.github.v3+json" \
               "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_number" \
           )
-          
+
           FULL_NAME=$(echo $PR_data  | jq -r .head.repo.full_name)
           echo "FULL_NAME=$FULL_NAME" >> $GITHUB_ENV
-          
+
           BRANCH=$(echo $PR_data  | jq -r .head.ref)
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
 
@@ -170,7 +170,7 @@ jobs:
         # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
         run: |
           flags=""
-          # Explanation of below commands 
+          # Explanation of below commands
           # python3.8 -m piptools compile - call pip-compile but ensure proper interpreter
           # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
           # -o resources/constraints/constraints_py3.8.txt - output file
@@ -234,4 +234,3 @@ jobs:
             GHA_TOKEN_MAIN_REPO: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
             PR_NUMBER: ${{ github.event.issue.number }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
