@@ -1073,8 +1073,15 @@ class Labels(_ImageBase):
             # we use dims_displayed because the image slice
             # has its dimensions  in th same order as the vispy
             # Volume
-            start_point = start_point[dims_displayed]
-            end_point = end_point[dims_displayed]
+            # Account for downsampling in the case of multiscale
+            start_point = (
+                start_point[dims_displayed]
+                / self.downsample_factors[-1][dims_displayed]
+            )
+            end_point = (
+                end_point[dims_displayed]
+                / self.downsample_factors[-1][dims_displayed]
+            )
             sample_ray = end_point - start_point
             length_sample_vector = np.linalg.norm(sample_ray)
             n_points = int(2 * length_sample_vector)
@@ -1090,10 +1097,6 @@ class Labels(_ImageBase):
             # (i.e. the endpoint is included) by the method, but we need
             # open intervals in the code that follows, so we add 1.
             bounding_box[:, 1] += 1
-            # account for downsampling in the case of multiscale
-            sample_points = (
-                sample_points / self.downsample_factors[-1][dims_displayed]
-            )
 
             clamped = clamp_point_to_bounding_box(
                 sample_points,
