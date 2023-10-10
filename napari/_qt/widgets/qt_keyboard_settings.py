@@ -406,7 +406,8 @@ class ShortcutEditor(QWidget):
             )
             for mod in {"Shift", "Ctrl", "Alt", "Cmd", "Super", 'Meta'}:
                 # we want to prevent multiple modifiers but still allow single modifiers.
-                if new_shortcut.endswith('-' + mod):
+                separator = '-' if sys.platform == 'darwin' else '+'
+                if new_shortcut.endswith(f'{separator}{mod}'):
                     self._show_bind_shortcut_error(
                         current_action,
                         current_shortcuts,

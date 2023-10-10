@@ -332,7 +332,8 @@ class Shortcut:
                 text = text.replace(v, k)
                 assert v not in text
             else:
-                text = text.replace(v, k + '-')
+                new_text = f'{k}-' if sys.platform == 'darwin' else k
+                text = text.replace(v, new_text)
 
         return text
 
