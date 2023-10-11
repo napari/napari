@@ -71,26 +71,28 @@ def test_restore_defaults(shortcut_editor_widget, qtbot):
 
 
 @pytest.mark.parametrize(
-    "modifier, key_symbols",
+    "key, modifier, key_symbols",
     [
         (
+            "U",
             Qt.KeyboardModifier.MetaModifier
             if sys.platform == "darwin"
             else Qt.KeyboardModifier.ControlModifier,
             [KEY_SYMBOLS["Ctrl"], "U"],
         ),
         (
+            "Y",
             Qt.KeyboardModifier.MetaModifier
             | Qt.KeyboardModifier.ShiftModifier
             if sys.platform == "darwin"
             else Qt.KeyboardModifier.ControlModifier
             | Qt.KeyboardModifier.ShiftModifier,
-            [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Shift"], "U"],
+            [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Shift"], "Y"],
         ),
     ],
 )
 def test_keybinding_with_modifiers(
-    shortcut_editor_widget, qtbot, modifier, key_symbols
+    shortcut_editor_widget, qtbot, key, modifier, key_symbols
 ):
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
@@ -105,8 +107,9 @@ def test_keybinding_with_modifiers(
     qtbot.mouseDClick(
         widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
     )
+    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
     with warnings.catch_warnings(record=True) as recorded_warnings:
-        qtbot.keyClicks(QApplication.focusWidget(), "U", modifier=modifier)
+        qtbot.keyClicks(QApplication.focusWidget(), key, modifier=modifier)
     assert len(recorded_warnings) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
