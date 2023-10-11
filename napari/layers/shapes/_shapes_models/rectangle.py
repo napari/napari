@@ -59,7 +59,6 @@ class Rectangle(Shape):
             data = find_corners(data)
 
         if len(data) != 4:
-            print(data)
             raise ValueError(
                 trans._(
                     "Data shape does not match a rectangle. Rectangle expects four corner vertices, {number} provided.",
@@ -78,7 +77,6 @@ class Rectangle(Shape):
         self._face_vertices = self.data_displayed
         self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
         self._box = rectangle_to_box(self.data_displayed)
-
         data_not_displayed = self.data[:, self.dims_not_displayed]
         self.slice_key = np.round(
             [

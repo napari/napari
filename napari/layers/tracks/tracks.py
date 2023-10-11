@@ -119,6 +119,7 @@ class Tracks(Layer):
         colormaps_dict=None,
         cache=True,
         experimental_clipping_planes=None,
+        projection_mode='none',
     ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
         # otherwise convert the data to an np.ndarray
@@ -142,6 +143,7 @@ class Tracks(Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(
@@ -345,7 +347,7 @@ class Tracks(Layer):
     def current_time(self):
         """current time according to the first dimension"""
         # TODO(arl): get the correct index here
-        time_step = self._slice_indices[0]
+        time_step = self._data_slice.point[0]
 
         if isinstance(time_step, slice):
             # if we are visualizing all time, then just set to the maximum

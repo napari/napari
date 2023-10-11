@@ -6,13 +6,19 @@ import os
 
 import numpy as np
 
+from napari.components.dims import Dims
 from napari.layers import Labels
+
+from .utils import Skiper
 
 
 class Labels2DSuite:
     """Benchmarks for the Labels layer with 2D data"""
 
     params = [2**i for i in range(4, 13)]
+
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(6, 13)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -56,8 +62,9 @@ class Labels2DSuite:
             self.layer.selected_label,
         )
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
+        # Disabled because of __sizeof__ bug on the main branch and outdated asizeof in pympler
         return self.layer
 
     def mem_data(self, n):
@@ -70,6 +77,9 @@ class LabelsDrawing2DSuite:
 
     param_names = ['n', 'brush_size', 'color_mode', 'contour']
     params = ([512, 3072], [8, 64, 256], ['auto', 'direct'], [0, 1])
+
+    if "PR" in os.environ:
+        skip_params = Skiper(lambda x: x[0] > 512 or x[1] > 64)
 
     def setup(self, n, brush_size, color_mode, contour):
         np.random.seed(0)
@@ -102,6 +112,8 @@ class LabelsDrawing2DSuite:
 
 class Labels2DColorDirectSuite(Labels2DSuite):
     def setup(self, n):
+        if "PR" in os.environ and n > 32:
+            raise NotImplementedError("Skip on PR (speedup)")
         np.random.seed(0)
         self.data = np.random.randint(low=-10000, high=10000, size=(n, n))
         random_label_ids = np.random.randint(low=-10000, high=10000, size=20)
@@ -116,6 +128,8 @@ class Labels3DSuite:
     """Benchmarks for the Labels layer with 3D data."""
 
     params = [2**i for i in range(4, 11)]
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(6, 11)]
 
     def setup(self, n):
         if "CI" in os.environ and n > 512:
@@ -124,7 +138,9 @@ class Labels3DSuite:
         np.random.seed(0)
         self.data = np.random.randint(20, size=(n, n, n))
         self.layer = Labels(self.data)
+        self.layer._slice_dims(Dims(ndim=3, ndisplay=3))
 
+    # @mark.skip_params_if([(2**i,) for i in range(6, 11)], condition="PR" in os.environ)
     def time_create_layer(self, n):
         """Time to create layer."""
         Labels(self.data)
@@ -162,8 +178,9 @@ class Labels3DSuite:
             self.layer.selected_label,
         )
 
-    def mem_layer(self, n):
+    def _mem_layer(self, n):
         """Memory used by layer."""
+        # Disabled because of __sizeof__ bug on main branch and outdated asizeof in pympler
         return self.layer
 
     def mem_data(self, n):
