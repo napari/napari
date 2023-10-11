@@ -228,6 +228,7 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
+@pytest.mark.filterwarnings("ignore:.*seed is deprecated.*")
 def test_seed():
     """Test setting seed."""
     np.random.seed(0)
@@ -242,9 +243,9 @@ def test_seed():
     assert layer.seed == 0.7
 
     # ensure setting seed updates the random colormap
-    mapped_07 = layer._random_colormap.map(layer.data)
+    mapped_07 = layer.colormap.map(layer.data)
     layer.seed = 0.4
-    mapped_04 = layer._random_colormap.map(layer.data)
+    mapped_04 = layer.colormap.map(layer.data)
     assert_raises(
         AssertionError, assert_array_almost_equal, mapped_07, mapped_04
     )
@@ -1540,5 +1541,5 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {"seed", "num_colors", "color"},
+            {"seed", "num_colors", "color", "seed_rng"},
         )

@@ -159,21 +159,31 @@ class LabelColormap(Colormap):
     use_selection: bool = False
     selection: float = 0.0
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
+    background_value: float = 0.0
 
     def map(self, values):
-        from napari.utils.colormaps.colormap_utils import low_discrepancy_image
+        values = np.atleast_1d(values)
 
-        # Convert to float32 to match the current GL shader implementation
-        values = np.atleast_1d(values).astype(np.float32)
+        mapped = self.colors[np.mod(values, len(self.colors)).astype(np.int64)]
 
-        values_low_discr = low_discrepancy_image(values, seed=self.seed)
-        mapped = super().map(values_low_discr)
+        mapped[values == self.background_value] = 0
 
         # If using selected, disable all others
         if self.use_selection:
             mapped[~np.isclose(values, self.selection)] = 0
 
         return mapped
+
+    def shuffle(self, seed: int):
+        """Shuffle the colormap colors.
+
+        Parameters
+        ----------
+        seed : int
+            Seed for the random number generator.
+        """
+        np.random.default_rng(seed).shuffle(self.colors[1:])
+        self.events.colors(value=self.colors)
 
 
 class DirectLabelColormap(Colormap):
