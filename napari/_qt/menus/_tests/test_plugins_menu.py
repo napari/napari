@@ -14,7 +14,7 @@ class DummyWidget(QWidget):
     pass
 
 
-def test_plugin_widgets_menus(make_napari_viewer, tmp_plugin: DynamicPlugin):
+def test_plugin_single_widget_menu(make_napari_viewer, tmp_plugin: DynamicPlugin):
     """Test single plugin widgets get added to the window menu correctly."""
 
     @tmp_plugin.contribute.widget(display_name='Widget 1')
@@ -33,17 +33,14 @@ def test_plugin_widgets_menus(make_napari_viewer, tmp_plugin: DynamicPlugin):
     # trigger the action, opening the widget: `Widget 1`
     app.commands.execute_command('tmp_plugin:Widget 1')
     assert len(viewer.window._dock_widgets) == 1
-    assert (
-        next(iter(viewer.window._dock_widgets.data))
-        == 'Widget 1 (Temp Plugin)'
-    )
+    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets.keys()
 
 
-def test_plugin_display_name_use_for_multiple_widgets(
+def test_plugin_multiple_widget_menu(
     make_napari_viewer,
     tmp_plugin: DynamicPlugin,
 ):
-    """Check plugin 'display_name' used for submenu when plugin has >1 widgets."""
+    """Check plugin with >1 widgets added with submenu and uses 'display_name'."""
 
     @tmp_plugin.contribute.widget(display_name='Widget 1')
     def widget1():
@@ -62,13 +59,79 @@ def test_plugin_display_name_use_for_multiple_widgets(
     # Now ensure that the actions are still correct
     assert len(viewer.window._dock_widgets) == 0
     assert 'tmp_plugin:Widget 1' in app.commands
-    # trigger the action, opening the first widget: `Widget 1`
+    # Trigger the action, opening the first widget: `Widget 1`
     app.commands.execute_command('tmp_plugin:Widget 1')
     assert len(viewer.window._dock_widgets) == 1
-    assert (
-        next(iter(viewer.window._dock_widgets.data))
-        == 'Widget 1 (Temp Plugin)'
+    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets.keys()
+
+
+def test_plugin_menu_plugin_state_change(
+    make_napari_viewer,
+    tmp_plugin: DynamicPlugin,
+):
+    """Check plugin menu items correct after a plugin changes state."""
+    app = get_app()
+    pm = tmp_plugin.plugin_manager
+
+    # Register plugin q actions
+    init_qactions()
+    # Check only `Q_PLUGINS_ACTIONS` in plugin menu before any plugins registered
+    plugins_menu = app.menus.get_menu(MenuId.MENUBAR_PLUGINS)
+    assert len(plugins_menu) == len(_plugins.Q_PLUGINS_ACTIONS)
+
+    @tmp_plugin.contribute.widget(display_name='Widget 1')
+    def widget1():
+        return DummyWidget()
+
+    @tmp_plugin.contribute.widget(display_name='Widget 2')
+    def widget2():
+        return DummyWidget()
+
+    # Configures `app`, registers actions and initializes plugins
+    make_napari_viewer()
+
+    plugins_menu = app.menus.get_menu(MenuId.MENUBAR_PLUGINS)
+    assert len(plugins_menu) == len(_plugins.Q_PLUGINS_ACTIONS) + 1
+    assert isinstance(plugins_menu[-1], SubmenuItem)
+    assert plugins_menu[-1].title == tmp_plugin.display_name
+    plugin_submenu = app.menus.get_menu(MenuId.MENUBAR_PLUGINS + '/tmp_plugin')
+    assert len(plugin_submenu) == 2
+    assert isinstance(plugin_submenu[0], MenuItem)
+    assert plugin_submenu[0].command.title == 'Widget 1'
+    assert 'tmp_plugin:Widget 1' in app.commands
+
+    # Disable plugin
+    pm.disable(tmp_plugin.name)
+    with pytest.raises(KeyError):
+        app.menus.get_menu(MenuId.MENUBAR_PLUGINS + '/tmp_plugin')
+    assert 'tmp_plugin:Widget 1' not in app.commands
+
+    # Enable plugin
+    pm.enable(tmp_plugin.name)
+    samples_sub_menu = app.menus.get_menu(
+        MenuId.MENUBAR_PLUGINS + '/tmp_plugin'
     )
+    assert len(samples_sub_menu) == 2
+    assert 'tmp_plugin:Widget 1' in app.commands
+
+
+def test_plugin_widget_checked(make_napari_viewer, tmp_plugin: DynamicPlugin):
+    """Check widget toggling updates check mark correctly."""
+
+    @tmp_plugin.contribute.widget(display_name='Widget 1')
+    def widget1():
+        return DummyWidget()
+
+    app = get_app()
+    viewer = make_napari_viewer()
+
+    assert 'tmp_plugin:Widget 1' in app.commands
+    widget_action = viewer.window.plugins_menu.findAction('tmp_plugin:Widget 1')
+    # Trigger the action, opening the widget
+    assert not widget_action.isChecked()
+    widget_action.trigger()
+    assert widget_action.isChecked()
+    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets.keys()
 
 
 def test_import_plugin_manager():
@@ -106,58 +169,3 @@ def test_no_plugin_manager(monkeypatch, make_napari_viewer):
         CommandId.DLG_PLUGIN_INSTALL
     )
     assert not plugin_install_action.isVisible()
-
-
-def test_plugin_menu_plugin_state_change(
-    make_napari_viewer,
-    tmp_plugin: DynamicPlugin,
-):
-    """Check plugin menu items correct after a plugin changes state."""
-    app = get_app()
-    pm = tmp_plugin.plugin_manager
-
-    # Register plugin q actions
-    init_qactions()
-    # Check only `Q_PLUGINS_ACTIONS` in plugin menu before any plugins registered
-    plugins_menu = app.menus.get_menu(MenuId.MENUBAR_PLUGINS)
-    assert len(plugins_menu) == len(_plugins.Q_PLUGINS_ACTIONS)
-
-    @tmp_plugin.contribute.widget(display_name='Widget 1')
-    def widget1():
-        return DummyWidget()
-
-    @tmp_plugin.contribute.widget(display_name='Widget 2')
-    def widget2():
-        return DummyWidget()
-
-    # Configures `app`, registers actions and initializes plugins
-    make_napari_viewer()
-
-    plugins_menu = app.menus.get_menu(MenuId.MENUBAR_PLUGINS)
-    assert len(plugins_menu) == len(_plugins.Q_PLUGINS_ACTIONS) + 1
-    assert isinstance(plugins_menu[-1], SubmenuItem)
-    assert plugins_menu[-1].title == tmp_plugin.display_name
-    plugin_submenu = app.menus.get_menu(MenuId.MENUBAR_PLUGINS + '/tmp_plugin')
-    assert len(plugin_submenu) == 2
-    assert isinstance(plugin_submenu[0], MenuItem)
-    assert plugin_submenu[0].command.title == 'Widget 1'
-    assert 'tmp_plugin:Widget 1' in app.commands
-    # Ensure we are able to execute command without error
-    app.commands.execute_command('tmp_plugin:Widget 1')
-
-    # Disable plugin
-    pm.disable(tmp_plugin.name)
-    with pytest.raises(KeyError):
-        app.menus.get_menu(MenuId.MENUBAR_PLUGINS + '/tmp_plugin')
-    assert 'tmp_plugin:Widget 1' not in app.commands
-
-    # Enable plugin
-    pm.enable(tmp_plugin.name)
-    samples_sub_menu = app.menus.get_menu(
-        MenuId.MENUBAR_PLUGINS + '/tmp_plugin'
-    )
-    assert len(samples_sub_menu) == 2
-    assert 'tmp_plugin:Widget 1' in app.commands
-    # TODO: uncomment once https://github.com/napari/npe2/issues/314 fixed
-    # Ensure we are able to execute command without error
-    # app.commands.execute_command('tmp_plugin:Widget 1')
