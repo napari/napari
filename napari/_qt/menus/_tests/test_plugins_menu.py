@@ -14,7 +14,9 @@ class DummyWidget(QWidget):
     pass
 
 
-def test_plugin_single_widget_menu(make_napari_viewer, tmp_plugin: DynamicPlugin):
+def test_plugin_single_widget_menu(
+    make_napari_viewer, tmp_plugin: DynamicPlugin
+):
     """Test single plugin widgets get added to the window menu correctly."""
 
     @tmp_plugin.contribute.widget(display_name='Widget 1')
@@ -33,7 +35,7 @@ def test_plugin_single_widget_menu(make_napari_viewer, tmp_plugin: DynamicPlugin
     # trigger the action, opening the widget: `Widget 1`
     app.commands.execute_command('tmp_plugin:Widget 1')
     assert len(viewer.window._dock_widgets) == 1
-    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets.keys()
+    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets
 
 
 def test_plugin_multiple_widget_menu(
@@ -62,7 +64,7 @@ def test_plugin_multiple_widget_menu(
     # Trigger the action, opening the first widget: `Widget 1`
     app.commands.execute_command('tmp_plugin:Widget 1')
     assert len(viewer.window._dock_widgets) == 1
-    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets.keys()
+    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets
 
 
 def test_plugin_menu_plugin_state_change(
@@ -126,12 +128,14 @@ def test_plugin_widget_checked(make_napari_viewer, tmp_plugin: DynamicPlugin):
     viewer = make_napari_viewer()
 
     assert 'tmp_plugin:Widget 1' in app.commands
-    widget_action = viewer.window.plugins_menu.findAction('tmp_plugin:Widget 1')
+    widget_action = viewer.window.plugins_menu.findAction(
+        'tmp_plugin:Widget 1'
+    )
     # Trigger the action, opening the widget
     assert not widget_action.isChecked()
     widget_action.trigger()
     assert widget_action.isChecked()
-    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets.keys()
+    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets
 
 
 def test_import_plugin_manager():
