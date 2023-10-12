@@ -210,7 +210,7 @@ def make_napari_viewer(
 
     viewers: WeakSet[Viewer] = WeakSet()
 
-    # may be overridden by using `make_napari_viewer(strict=True)`
+    # may be overridden by using `make_napari_viewer(strict_qt=True)`
     _strict = False
 
     initial = QApplication.topLevelWidgets()
@@ -283,7 +283,7 @@ def make_napari_viewer(
     assert _do_not_inline_below == 0
 
     # only check for leaked widgets if an exception was raised during the test,
-    # or "strict" mode was used.
+    # and "strict" mode was used.
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
