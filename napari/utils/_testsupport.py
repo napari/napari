@@ -304,7 +304,7 @@ def make_napari_viewer(
             # in particular with VisPyCanvas, it looks like if a traceback keeps
             # contains the type, then instances are still attached to the type.
             # I'm not too sure why this is the case though.
-            if _strict:
+            if _strict == 'raise':
                 raise AssertionError(msg)
             else:
                 warnings.warn(msg)
