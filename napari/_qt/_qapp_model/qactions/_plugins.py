@@ -1,4 +1,4 @@
-"""Defines plugins menu actions."""
+"""Defines plugins menu q actions."""
 
 from importlib.util import find_spec
 from logging import getLogger
