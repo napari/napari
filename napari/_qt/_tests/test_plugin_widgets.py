@@ -88,7 +88,7 @@ def test_dock_widget_registration(
         assert not widgets
     else:
         assert len(recwarn) == 0
-        assert widgets['Plugin']['QWidget_example'][0] == QWidget_example
+        assert widgets['Plugin']['Q Widget_example'][0] == QWidget_example
         if 'tuple_list' in request.node.name:
             assert widgets['Plugin']['Widg2'][0] == Widg2
 
