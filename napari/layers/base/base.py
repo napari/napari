@@ -1197,14 +1197,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             world_slice = _ThickNDSlice.make_full((np.nan,) * self.ndim)
         else:
             world_slice = _ThickNDSlice.from_dims(dims)
-        order_1 = (
+        order_array = (
             np.arange(world_ndim)
             if dims.order is None
             else np.asarray(dims.order)
         )
-        order_2 = tuple(
+        order = tuple(
             self._world_to_layer_dims(
-                world_dims=order_1,
+                world_dims=order_array,
                 ndim_world=world_ndim,
             )
         )
@@ -1212,7 +1212,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return _SliceInput(
             ndisplay=dims.ndisplay,
             world_slice=world_slice[-self.ndim :],
-            order=order_2[-self.ndim :],
+            order=order[-self.ndim :],
         )
 
     @abstractmethod
