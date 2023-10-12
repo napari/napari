@@ -120,22 +120,20 @@ def test_plugin_menu_plugin_state_change(
 def test_plugin_widget_checked(make_napari_viewer, tmp_plugin: DynamicPlugin):
     """Check widget toggling updates check mark correctly."""
 
-    @tmp_plugin.contribute.widget(display_name='Widget 1')
-    def widget1():
+    @tmp_plugin.contribute.widget(display_name='Widget')
+    def widget():
         return DummyWidget()
 
     app = get_app()
     viewer = make_napari_viewer()
 
-    assert 'tmp_plugin:Widget 1' in app.commands
-    widget_action = viewer.window.plugins_menu.findAction(
-        'tmp_plugin:Widget 1'
-    )
+    assert 'tmp_plugin:Widget' in app.commands
+    widget_action = viewer.window.plugins_menu.findAction('tmp_plugin:Widget')
     # Trigger the action, opening the widget
     assert not widget_action.isChecked()
     widget_action.trigger()
     assert widget_action.isChecked()
-    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets
+    assert 'Widget (Temp Plugin)' in viewer.window._dock_widgets
 
 
 def test_import_plugin_manager():

@@ -1,17 +1,38 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+from magicgui import magic_factory, magicgui
+from magicgui.widgets import Container
 from napari_plugin_engine import napari_hook_implementation
+from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
 
 import napari
 from napari import Viewer
+from napari._app_model import get_app
 from napari._qt.qt_main_window import _instantiate_dock_widget
 from napari.utils._proxies import PublicOnlyProxy
 
 
-class Widg1(QWidget):
+class QWidget_example(QWidget):
     pass
+
+
+class Container_example(Container):
+    pass
+
+
+@magic_factory
+def magic_widget_example():
+    pass
+
+
+def callable_example():
+    @magicgui
+    def magic_widget_example():
+        pass
+
+    return magic_widget_example
 
 
 class Widg2(QWidget):
@@ -35,13 +56,13 @@ def magicfunc(viewer: 'napari.Viewer'):
 
 
 dwidget_args = {
-    'single_class': Widg1,
-    'class_tuple': (Widg1, {'area': 'right'}),
-    'tuple_list': [(Widg1, {'area': 'right'}), (Widg2, {})],
-    'tuple_list2': [(Widg1, {'area': 'right'}), Widg2],
+    'single_class': QWidget_example,
+    'class_tuple': (QWidget_example, {'area': 'right'}),
+    'tuple_list': [(QWidget_example, {'area': 'right'}), (Widg2, {})],
+    'tuple_list2': [(QWidget_example, {'area': 'right'}), Widg2],
     'bad_class': 1,
-    'bad_tuple1': (Widg1, 1),
-    'bad_double_tuple': ((Widg1, {}), (Widg2, {})),
+    'bad_tuple1': (QWidget_example, 1),
+    'bad_double_tuple': ((QWidget_example, {}), (Widg2, {})),
 }
 
 
@@ -67,7 +88,7 @@ def test_dock_widget_registration(
         assert not widgets
     else:
         assert len(recwarn) == 0
-        assert widgets['Plugin']['Widg1'][0] == Widg1
+        assert widgets['Plugin']['QWidget_example'][0] == QWidget_example
         if 'tuple_list' in request.node.name:
             assert widgets['Plugin']['Widg2'][0] == Widg2
 
@@ -77,7 +98,10 @@ def test_plugin_widgets(monkeypatch, napari_plugin_manager):
     """A smattering of example registered dock widgets and function widgets."""
     tnpm = napari_plugin_manager
     dock_widgets = {
-        "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
+        "TestP1": {
+            "QWidget_example": (QWidget_example, {}),
+            "Widg2": (Widg2, {}),
+        },
         "TestP2": {"Widg3": (Widg3, {})},
     }
     monkeypatch.setattr(tnpm, "_dock_widgets", dock_widgets)
@@ -97,3 +121,44 @@ def test_inject_viewer_proxy(make_napari_viewer):
     with patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'):
         with pytest.warns(FutureWarning):
             wdg.fail()
+
+
+def test_widget_hide_destroy(make_napari_viewer):
+    """Test that widget hide and destroy works."""
+    viewer = make_napari_viewer()
+    viewer.window.add_dock_widget(QWidget_example(), name='test')
+    widget = viewer.window._dock_widgets['test']
+
+    # Check widget persists after hide
+    widget.title.hide_button.click()
+    assert widget
+    # Check that widget removed from `_dock_widgets` dict when closed
+    widget.destroyOnClose()
+    assert 'test' not in viewer.window._dock_widgets
+
+
+@pytest.mark.parametrize(
+    "Widget",
+    [
+        QWidget_example,
+        Container_example,
+        magic_widget_example,
+        callable_example,
+    ],
+)
+def test_widget_types_supported(
+    make_napari_viewer, tmp_plugin: DynamicPlugin, Widget
+):
+    """Test all supported widget types correctly instantiated and call processor."""
+
+    @tmp_plugin.contribute.widget(display_name='Widget')
+    def widget():
+        return Widget()
+
+    app = get_app()
+    # `strict_qt` prevents checking for leaked widgets resulting from parametrize
+    viewer = make_napari_viewer(strict_qt=False)
+
+    viewer.window.add_dock_widget = MagicMock()
+    app.commands.execute_command('tmp_plugin:Widget')
+    viewer.window.add_dock_widget.assert_called_once()
