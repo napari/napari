@@ -5,7 +5,9 @@ from napari.utils._proxies import PublicOnlyProxy
 
 
 def _provide_viewer() -> Optional[viewer.Viewer]:
-    return PublicOnlyProxy(viewer.current_viewer())
+    if current_viewer := viewer.current_viewer():
+        return PublicOnlyProxy(current_viewer)
+    return current_viewer
 
 
 def _provide_active_layer() -> Optional[layers.Layer]:

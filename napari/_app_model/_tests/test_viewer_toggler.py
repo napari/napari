@@ -15,6 +15,7 @@ def test_viewer_toggler():
     app = get_app()
     app.register_action(action)
 
+    # Injection required as there is no current viewer
     with app.injection_store.register(providers={Viewer: lambda: viewer}):
         assert viewer.axes.visible is False
         app.commands.execute_command('some.command.id')
