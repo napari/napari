@@ -657,6 +657,8 @@ class EditorWidget(QLineEdit):
             Qt.Key.Key_Enter,
         }:
             # Do not allow user to set these keys as shortcut.
+            # Use them as a save trigger for modifier only shortcuts.
+            self.clearFocus()
             return
 
         # Translate key value to key string.

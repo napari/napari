@@ -115,3 +115,47 @@ def test_keybinding_with_modifiers(
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     for key_symbol in key_symbols:
         assert key_symbol in shortcut
+
+
+@pytest.mark.parametrize(
+    "modifiers, key_symbols, valid",
+    [
+        (
+            Qt.KeyboardModifier.ShiftModifier,
+            [KEY_SYMBOLS["Shift"]],
+            True,
+        ),
+        (
+            Qt.KeyboardModifier.AltModifier
+            | Qt.KeyboardModifier.ShiftModifier,
+            [KEY_SYMBOLS["Ctrl"]],
+            False,
+        ),
+    ],
+)
+def test_keybinding_with_only_modifiers(
+    shortcut_editor_widget, qtbot, modifiers, key_symbols, valid
+):
+    widget = shortcut_editor_widget()
+    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    assert shortcut == KEY_SYMBOLS["Ctrl"]
+
+    x = widget._table.columnViewportPosition(widget._shortcut_col)
+    y = widget._table.rowViewportPosition(0)
+    item_pos = QPoint(x, y)
+    qtbot.mouseClick(
+        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    )
+    qtbot.mouseDClick(
+        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    )
+    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
+    with patch.object(WarnPopup, "exec_") as mock:
+        qtbot.keyClick(
+            QApplication.focusWidget(), Qt.Key_Enter, modifier=modifiers
+        )
+        assert mock.called is not valid
+
+    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    for key_symbol in key_symbols:
+        assert key_symbol in shortcut
