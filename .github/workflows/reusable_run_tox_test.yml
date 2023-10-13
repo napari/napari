@@ -40,6 +40,15 @@ on:
         required: false
         type: string
         default: ""
+      package_to_test_ref:
+        required: false
+        type: string
+        default: ""
+      napari_version:
+        required: false
+        type: string
+        default: ""
+
 
 
 
@@ -57,12 +66,22 @@ jobs:
       COVERAGE: ${{ inputs.coverage }}
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}
+      INSTALL_PKG: ${{ inputs.package_to_test != '' && '--installpkg dist/napari-0.0.1-py3-none-any.whl' || '' }}
     steps:
       - uses: actions/checkout@v3
         with:
           path: napari_repo
+          ref: ${{ inputs.napari_version }}
+
+      - uses: actions/checkout@v3
+        if: ${{ inputs.package_to_test != '' }}
+        with:
+          path: package_to_test
+          ref: ${{ inputs.package_to_test_ref }}
+          repository: ${{ inputs.package_to_test }}
 
       - uses: actions/download-artifact@v3
+        if: ${{ inputs.package_to_test == '' }}
         with:
           name: wheel
           path: dist
@@ -129,7 +148,7 @@ jobs:
           shell: bash
           run: |
             echo ${{ env.MAIN }}
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -c napari_repo/tox.ini
+            python -m tox run $INSTALL_PKG -c napari_repo/tox.ini
             rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
@@ -142,7 +161,7 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -c napari_repo/tox.ini
+            python -m tox run $INSTALL_PKG -c napari_repo/tox.ini
             rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
@@ -155,7 +174,7 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -c napari_repo/tox.ini
+            python -m tox run $INSTALL_PKG -c napari_repo/tox.ini
             rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
@@ -168,7 +187,7 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -c napari_repo/tox.ini
+            python -m tox run $INSTALL_PKG -c napari_repo/tox.ini
             rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}
