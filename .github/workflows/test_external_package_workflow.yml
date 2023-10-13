@@ -1,3 +1,5 @@
+name: Test external package compatibility against main and last release
+
 on:
   pull_request:
     paths:
