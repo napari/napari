@@ -53,7 +53,7 @@ jobs:
       PYVISTA_OFF_SCREEN: True
       MIN_REQ: ${{ inputs.min_req }}
       FORCE_COLOR: 1
-      PIP_CONSTRAINT: ${$GITHUB_WORKSPACE}/napari_repo/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      PIP_CONSTRAINT:  ${{ github.workspace }}/napari_repo/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       COVERAGE: ${{ inputs.coverage }}
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}
