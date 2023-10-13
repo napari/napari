@@ -210,7 +210,7 @@ def make_napari_viewer(
 
     viewers: WeakSet[Viewer] = WeakSet()
 
-    # may be overridden by using `make_napari_viewer(strict_qt=True)`
+    # may be overridden by using the parameter `strict_qt`
     _strict = False
 
     initial = QApplication.topLevelWidgets()
