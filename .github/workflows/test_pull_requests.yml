@@ -179,5 +179,5 @@ jobs:
           PR: 1
 
   test_external_test:
-    name: "tmp run test external package"
-    uses: ./github/workflows/test_external_package_workflow.yml
+    name: tmp run test external package
+    uses: ./.github/workflows/test_external_package_workflow.yml
