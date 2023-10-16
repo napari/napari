@@ -3,6 +3,8 @@ from functools import wraps
 
 from napari.utils.translations import trans
 
+_UNSET = object()
+
 
 def rename_argument(
     from_name: str, to_name: str, version: str, since_version: str = ""
@@ -61,3 +63,33 @@ def rename_argument(
         return _update_from_dict
 
     return _wrapper
+
+
+def deprecated_constructor_arg_by_attr(name):
+    """
+    Decorator to deprecate a constructor argument and remove it from the signature.
+
+    It works by popping the argument from kwargs, but thne setting it later via setattr.
+    The property setter should take care of issuing the deprecation warning.
+
+    Returns
+    -------
+    function
+        decorated function
+    """
+
+    def wrapper(func):
+        @wraps(func)
+        def _wrapper(*args, **kwargs):
+            value = _UNSET
+            if name in kwargs:
+                value = kwargs.pop(name)
+            res = func(*args, **kwargs)
+
+            if value is not _UNSET:
+                setattr(args[0], name, value)
+            return res
+
+        return _wrapper
+
+    return wrapper
