@@ -148,8 +148,8 @@ class QtViewerButtons(QFrame):
         gvb.customContextMenuRequested.connect(self._open_grid_popup)
 
         @self.viewer.grid.events.enabled.connect
-        def _set_grid_mode_checkstate(event):
-            gvb.setChecked(event.value)
+        def _set_grid_mode_checkstate(value):
+            gvb.setChecked(value)
 
         ndb = QtViewerPushButton(
             'ndisplay_button', action='napari:toggle_ndisplay'
@@ -161,8 +161,8 @@ class QtViewerButtons(QFrame):
         ndb.customContextMenuRequested.connect(self.open_perspective_popup)
 
         @self.viewer.dims.events.ndisplay.connect
-        def _set_ndisplay_mode_checkstate(event):
-            ndb.setChecked(event.value == 3)
+        def _set_ndisplay_mode_checkstate(value: int):
+            ndb.setChecked(value == 3)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)

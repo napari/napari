@@ -78,9 +78,7 @@ class QtDimsSorter(QWidget):
         root.events.reordered.connect(
             lambda event: set_dims_order(dims, event.value)
         )
-        dims.events.order.connect(
-            lambda event: move_indices(root, event.value)
-        )
+        dims.events.order.connect(lambda value: move_indices(root, value))
         view = QtListView(root)
         view.setSizeAdjustPolicy(QtListView.AdjustToContents)
 

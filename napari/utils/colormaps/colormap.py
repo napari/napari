@@ -7,8 +7,8 @@ from pydantic import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.compat import StrEnum
-from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
+from napari.utils.events.psygnal_evented_model import EventedModel
 from napari.utils.translations import trans
 
 
