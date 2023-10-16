@@ -18,7 +18,7 @@ markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-mypy==1.5.1
+mypy==1.6.0
     # via -r resources/requirements_mypy.in
 mypy-extensions==1.0.0
     # via

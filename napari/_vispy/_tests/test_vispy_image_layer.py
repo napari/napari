@@ -5,6 +5,7 @@ import pytest
 
 from napari._vispy._tests.utils import vispy_image_scene_size
 from napari._vispy.layers.image import VispyImageLayer
+from napari.components.dims import Dims
 from napari.layers import Image
 
 
@@ -18,7 +19,7 @@ def test_3d_slice_of_2d_image_with_order(order):
     image = Image(np.zeros((4, 2)), scale=(1, 2))
     vispy_image = VispyImageLayer(image)
 
-    image._slice_dims(point=(0, 0, 0), ndisplay=3, order=order)
+    image._slice_dims(Dims(ndim=3, ndisplay=3, order=order))
 
     scene_size = vispy_image_scene_size(vispy_image)
     np.testing.assert_array_equal((4, 4, 1), scene_size)
@@ -34,7 +35,7 @@ def test_2d_slice_of_3d_image_with_order(order):
     image = Image(np.zeros((8, 4, 2)), scale=(1, 2, 4))
     vispy_image = VispyImageLayer(image)
 
-    image._slice_dims(point=(0, 0, 0), ndisplay=2, order=order)
+    image._slice_dims(Dims(ndim=3, ndisplay=2, order=order))
 
     scene_size = vispy_image_scene_size(vispy_image)
     np.testing.assert_array_equal((8, 8, 0), scene_size)
@@ -50,7 +51,7 @@ def test_3d_slice_of_3d_image_with_order(order):
     image = Image(np.zeros((8, 4, 2)), scale=(1, 2, 4))
     vispy_image = VispyImageLayer(image)
 
-    image._slice_dims(point=(0, 0, 0), ndisplay=3, order=order)
+    image._slice_dims(Dims(ndim=3, ndisplay=3, order=order))
 
     scene_size = vispy_image_scene_size(vispy_image)
     np.testing.assert_array_equal((8, 8, 8), scene_size)
@@ -66,7 +67,7 @@ def test_3d_slice_of_4d_image_with_order(order):
     image = Image(np.zeros((16, 8, 4, 2)), scale=(1, 2, 4, 8))
     vispy_image = VispyImageLayer(image)
 
-    image._slice_dims(point=(0, 0, 0, 0), ndisplay=3, order=order)
+    image._slice_dims(Dims(ndim=4, ndisplay=3, order=order))
 
     scene_size = vispy_image_scene_size(vispy_image)
     np.testing.assert_array_equal((16, 16, 16), scene_size)
