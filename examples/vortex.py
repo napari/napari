@@ -3,19 +3,11 @@
 Adapted from the scikit-image gallery [1]_.
 
 In napari, we can show the flowing vortex as an additional dimension in the
-image, visible by moving the slider. We can also take advantage of the reverse
-Phi illusion [2]_ to simulate a vortex continuously flowing in one direction.
-To do this, we repeat the two vortex frames with inverted contrast at the end.
-When using the slider Play button, we perceive a continously flowing vortex
-aligned with the displayed vector field.
+image, visible by moving the slider.
 
 .. tags:: visualization-advanced, layers
 
 .. [1] https://scikit-image.org/docs/stable/auto_examples/registration/plot_opticalflow.html
-
-.. [2] Anstis, S. M. & Rogers, B. J. (1986) Illusory continuous motion from
-       oscillating positive-negative patterns: implications for motion
-       perception. Perception, 15, 627-640. :DOI:`10.1068/p150627`
 """
 import numpy as np
 from skimage.data import vortex
@@ -24,12 +16,9 @@ from skimage.registration import optical_flow_ilk
 import napari
 
 #######################################################################
-# First, we load the vortex image, and then we create an inverted
-# "negative" image. For the illusion, we concatenate them end-to-end.
+# First, we load the vortex image as a 3D array. (time, row, column)
 
 vortex_im = np.asarray(vortex())
-vortex_neg = np.max(vortex_im) - vortex_im
-vortex_phi = np.concatenate((vortex_im, vortex_neg), axis=0)
 
 #######################################################################
 # We compute the optical flow using scikit-image. (Note: as of
@@ -47,7 +36,7 @@ magnitude = np.sqrt(u ** 2 + v ** 2)
 # Create a viewer, add the vortex frames, and overlay the flow
 # magnitude.
 
-viewer, vortex_layer = napari.imshow(vortex_phi)
+viewer, vortex_layer = napari.imshow(vortex_im)
 mag_layer = viewer.add_image(magnitude, colormap='magma', opacity=0.3)
 
 #######################################################################
