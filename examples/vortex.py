@@ -58,6 +58,7 @@ vectors_field = np.transpose(  # transpose required — skimage bug?
 
 flow_layer = viewer.add_vectors(
         vectors_field,
+        name='optical flow',
         scale=[step, step],
         translate=[offset, offset],
         edge_width=0.3,
