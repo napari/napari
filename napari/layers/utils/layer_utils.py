@@ -19,7 +19,7 @@ def register_layer_action(
     keymapprovider,
     description: str,
     repeatable: bool = False,
-    shortcuts: str = None,
+    shortcuts: Optional[str] = None,
 ):
     """
     Convenient decorator to register an action with the current Layers

@@ -450,7 +450,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if mode == self._mode:
             return mode
 
-        if mode.value not in self._modeclass.keys():
+        if mode.value not in self._modeclass:
             raise ValueError(
                 trans._(
                     "Mode not recognized: {mode}", deferred=True, mode=mode
@@ -1837,7 +1837,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @classmethod
     def create(
-        cls, data, meta: dict = None, layer_type: Optional[str] = None
+        cls, data, meta: Optional[dict] = None, layer_type: Optional[str] = None
     ) -> Layer:
         """Create layer from `data` of type `layer_type`.
 

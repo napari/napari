@@ -2352,7 +2352,7 @@ class Shapes(Layer):
             if len(index) == 0:
                 box = None
             elif len(index) == 1:
-                box = copy(self._data_view.shapes[list(index)[0]]._box)
+                box = copy(self._data_view.shapes[next(iter(index))]._box)
             else:
                 indices = np.isin(self._data_view.displayed_index, list(index))
                 box = create_box(self._data_view.displayed_vertices[indices])

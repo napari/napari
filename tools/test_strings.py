@@ -141,7 +141,7 @@ show_trans_strings = FindTransStrings()
 
 
 def _find_func_definitions(
-    node: ast.AST, defs: List[ast.FunctionDef] = None
+    node: ast.AST, defs: Optional[List[ast.FunctionDef]] = None
 ) -> List[ast.FunctionDef]:
     """Find all functions definition recrusively.
 

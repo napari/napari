@@ -29,4 +29,4 @@ def test_plugin_display_name_use_for_multiple_widgets(
     assert len(viewer.window._dock_widgets) == 0
     plugin_action_menu.actions()[0].trigger()
     assert len(viewer.window._dock_widgets) == 1
-    assert list(viewer.window._dock_widgets.data)[0] == 'Widget 1 (tmp_plugin)'
+    assert next(iter(viewer.window._dock_widgets.data)) == 'Widget 1 (tmp_plugin)'

@@ -920,8 +920,8 @@ class QtViewer(QSplitter):
         filenames: List[str],
         stack: Union[bool, List[List[str]]],
         choose_plugin: bool = False,
-        plugin: str = None,
-        layer_type: str = None,
+        plugin: Optional[str] = None,
+        layer_type: Optional[str] = None,
         **kwargs,
     ):
         """Open files, potentially popping reader dialog for plugin selection.

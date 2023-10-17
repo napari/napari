@@ -269,7 +269,7 @@ class Shortcut:
         for shortcut_key in self._values:
             if (
                 len(shortcut_key) > 1
-                and shortcut_key not in KEY_SYMBOLS.keys()
+                and shortcut_key not in KEY_SYMBOLS
             ):
                 warnings.warn(
                     trans._(

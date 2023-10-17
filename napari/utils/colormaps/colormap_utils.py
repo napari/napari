@@ -737,9 +737,9 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     colormap[name] = cmap
                 AVAILABLE_COLORMAPS.update(colormap)
                 if len(colormap) == 1:
-                    name = list(colormap)[0]  # first key in dict
+                    name = next(iter(colormap))  # first key in dict
                 elif len(colormap) > 1:
-                    name = list(colormap.keys())[0]
+                    name = next(iter(colormap.keys()))
 
                     warnings.warn(
                         trans._(
@@ -799,5 +799,5 @@ def display_name_to_name(display_name):
         v._display_name: k for k, v in AVAILABLE_COLORMAPS.items()
     }
     return display_name_map.get(
-        display_name, list(AVAILABLE_COLORMAPS.keys())[0]
+        display_name, next(iter(AVAILABLE_COLORMAPS.keys()))
     )

@@ -2,8 +2,6 @@ import warnings
 from collections import deque
 from contextlib import contextmanager
 from typing import (
-    Callable,
-    ClassVar,
     Dict,
     Iterable,
     List,
@@ -44,14 +42,13 @@ from napari.utils.colormaps import (
     direct_colormap,
     ensure_colormap,
     label_colormap,
-    low_discrepancy_image,
 )
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.indexing import index_in_slice
 from napari.utils.migrations import deprecated_constructor_arg_by_attr
-from napari.utils.misc import StringEnum, _is_array_type
+from napari.utils.misc import _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.translations import trans
@@ -897,7 +894,7 @@ class Labels(_ImageBase):
         self.events.labels_update(data=colors_sliced, offset=offset)
         self._updated_slice = None
 
-    def _raw_to_displayed(self, raw, data_slice: Tuple[slice] = None):
+    def _raw_to_displayed(self, raw, data_slice: Optional[Tuple[slice]] = None):
         """Determine displayed image from a saved raw image and a saved seed.
 
         This function ensures that the 0 label gets mapped to the 0 displayed
@@ -1445,8 +1442,12 @@ class Labels(_ImageBase):
             # therefore updated automatically.
             # For other types, we update it manually here.
 
-            point = np.round(self.world_to_data(self._slice_input.point)).astype(int)
-            pt_not_disp = {dim: point[dim] for dim in self._slice_input.not_displayed}
+            point = np.round(
+                self.world_to_data(self._slice_input.point)
+            ).astype(int)
+            pt_not_disp = {
+                dim: point[dim] for dim in self._slice_input.not_displayed
+            }
             displayed_indices = index_in_slice(indices, pt_not_disp)
             self._slice.image.raw[displayed_indices] = value
 

@@ -323,7 +323,7 @@ class Installer(QObject):
 
     def cancel(
         self,
-        pkg_list: Sequence[str] = None,
+        pkg_list: Optional[Sequence[str]] = None,
     ):
         if pkg_list is None:
             for _, process in self._processes.items():
@@ -370,7 +370,7 @@ class PluginListItem(QFrame):
         author: str = '',
         license: str = "UNKNOWN",  # noqa: A002
         *,
-        plugin_name: str = None,
+        plugin_name: Optional[str] = None,
         parent: QWidget = None,
         enabled: bool = True,
         installed: bool = False,
