@@ -41,7 +41,7 @@ click==8.1.7
     # via
     #   dask
     #   typer
-cloudpickle==2.2.1
+cloudpickle==3.0.0
     # via dask
 comm==0.1.4
     # via ipykernel
@@ -85,7 +85,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.88.0
+hypothesis==6.88.1
     # via napari (napari_repo/setup.cfg)
 idna==3.4
     # via requests
@@ -299,13 +299,13 @@ pyqt6-sip==13.6.0
     # via pyqt6
 pyside2==5.13.2 ; python_version != "3.8"
     # via napari (napari_repo/setup.cfg)
-pyside6==6.5.3 ; python_version >= "3.10"
+pyside6==6.6.0 ; python_version >= "3.10"
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/setup.cfg)
-pyside6-addons==6.5.3
+pyside6-addons==6.6.0
     # via pyside6
-pyside6-essentials==6.5.3
+pyside6-essentials==6.6.0
     # via
     #   pyside6
     #   pyside6-addons
@@ -383,7 +383,7 @@ scipy==1.11.3 ; python_version >= "3.9"
     #   scikit-image
 shiboken2==5.13.2
     # via pyside2
-shiboken6==6.5.3
+shiboken6==6.6.0
     # via
     #   pyside6
     #   pyside6-addons
