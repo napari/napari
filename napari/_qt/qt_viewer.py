@@ -1144,8 +1144,7 @@ def _create_remote_manager(
 
 def _in_napari(n: int, frame: FrameType):
     """
-    Predicates that return Wether we are in napari by looking
-    at:
+    Determines whether we are in napari by looking at:
         1) the frames modules names:
         2) the min_depth
     """
