@@ -261,7 +261,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
+        self.dims.events.point.connect(self._update_layers)
+        # FIXME: the next line is a temporary workaround. With #5522 and #5751 Dims.point became
+        #        the source of truth, and is now defined in world space. This exposed an existing
+        #        bug where if a field in Dims is modified by the root_validator, events won't
+        #        be fired for it. This won't happen for properties because we have dependency
+        #        checks. To fix this, we need dep checks for fileds (psygnal!) and then we
+        #        can remove the following line. Note that because of this we fire double events,
+        #        but this should be ok because we have early returns when slices are unchanged.
         self.dims.events.current_step.connect(self._update_layers)
+        self.dims.events.margin_left.connect(self._update_layers)
+        self.dims.events.margin_right.connect(self._update_layers)
         self.cursor.events.position.connect(
             self._update_status_bar_from_cursor
         )
@@ -900,6 +910,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         plane=None,
         experimental_clipping_planes=None,
         custom_interpolation_kernel_2d=None,
+        projection_mode='none',
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -1077,6 +1088,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'plane': plane,
             'experimental_clipping_planes': experimental_clipping_planes,
             'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
+            'projection_mode': projection_mode,
         }
 
         # these arguments are *already* iterables in the single-channel case.

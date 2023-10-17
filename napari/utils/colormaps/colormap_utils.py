@@ -237,7 +237,7 @@ def _validate_rgb(colors, *, tolerance=0.0):
     return filtered_colors
 
 
-def low_discrepancy_image(image, seed=0.5, margin=1 / 256):
+def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
     """Generate a 1d low discrepancy sequence of coordinates.
 
     Parameters
@@ -405,7 +405,9 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
     return rgb[:n]
 
 
-def label_colormap(num_colors=256, seed=0.5):
+def label_colormap(
+    num_colors=256, seed=0.5, background_value=0
+) -> LabelColormap:
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
@@ -418,7 +420,7 @@ def label_colormap(num_colors=256, seed=0.5):
 
     Returns
     -------
-    colormap : napari.utils.Colormap
+    colormap : napari.utils.LabelColormap
         A colormap for use with labels remapped to [0, 1].
 
     Notes
@@ -428,8 +430,11 @@ def label_colormap(num_colors=256, seed=0.5):
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
     midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors + 1)
-    control_points = np.concatenate(([0], midpoints, [1.0]))
+    control_points = np.concatenate(
+        (np.array([0]), midpoints, np.array([1.0]))
+    )
     # make sure to add an alpha channel to the colors
+
     colors = np.concatenate(
         (
             _color_random(num_colors + 2, seed=seed),
@@ -437,15 +442,27 @@ def label_colormap(num_colors=256, seed=0.5):
         ),
         axis=1,
     )
-    # Insert alpha at layer 0
-    colors[0, :] = 0  # ensure alpha is 0 for label 0
+
+    # from here
+    values_ = np.arange(num_colors + 2)
+    randomized_values = low_discrepancy_image(values_, seed=seed)
+
+    indices = np.clip(
+        np.searchsorted(control_points, randomized_values, side="right") - 1,
+        0,
+        len(control_points) - 1,
+    )
+
+    colors = colors[indices][:-2]
+    # here is an ugly hack to restore classical napari color order.
+
     return LabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
         colors=colors,
-        controls=control_points,
+        controls=np.linspace(0, 1, len(colors) + 1),
         interpolation='zero',
-        seed=seed,
+        background_value=background_value,
     )
 
 
