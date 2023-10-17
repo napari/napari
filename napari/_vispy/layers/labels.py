@@ -1,6 +1,6 @@
 from itertools import product
 from math import ceil, isnan, log2, sqrt
-from typing import Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -42,27 +42,25 @@ MAX_TEXTURE_SIZE = None
 
 ColorTuple = Tuple[float, float, float, float]
 
-low_disc_lookup_shader = """
-uniform sampler2D texture2D_LUT;
+if TYPE_CHECKING:
+    from napari.layers import Labels
+
+
+auto_lookup_shader = """
+uniform sampler2D texture2D_values;
 
 vec4 sample_label_color(float t) {
-    float phi_mod = 0.6180339887498948482;  // phi - 1
-    float value = 0.0;
-    float margin = 1.0 / 256;
-
-    if (t == 0) {
+    if (t == $background_value) {
         return vec4(0);
     }
 
     if (($use_selection) && ($selection != t)) {
         return vec4(0);
     }
-
-    value = mod((t * phi_mod + $seed), 1.0) * (1 - 2*margin) + margin;
-
+    t = mod(t, $color_map_size);
     return texture2D(
-        texture2D_LUT,
-        vec2(0.0, clamp(value, 0.0, 1.0))
+        texture2D_values,
+        vec2(0.0, (t + 0.5) / $color_map_size)
     );
 }
 """
@@ -142,16 +140,18 @@ class LabelVispyColormap(VispyColormap):
     def __init__(
         self,
         colors,
-        controls=None,
-        seed=0.5,
         use_selection=False,
         selection=0.0,
+        background_value=0.0,
     ):
-        super().__init__(colors, controls, interpolation='zero')
+        super().__init__(
+            colors=["w", "w"], controls=None, interpolation='zero'
+        )
         self.glsl_map = (
-            low_disc_lookup_shader.replace('$seed', str(seed))
+            auto_lookup_shader.replace('$color_map_size', str(len(colors)))
             .replace('$use_selection', str(use_selection).lower())
             .replace('$selection', str(selection))
+            .replace('$background_value', str(background_value))
         )
 
 
@@ -412,6 +412,8 @@ def build_textures_from_dict(
 
 
 class VispyLabelsLayer(VispyImageLayer):
+    layer: 'Labels'
+
     def __init__(self, layer, node=None, texture_format='r32f') -> None:
         super().__init__(
             layer,
@@ -453,11 +455,18 @@ class VispyLabelsLayer(VispyImageLayer):
         if mode == 'auto':
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,
-                controls=colormap.controls,
-                seed=colormap.seed,
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
+                background_value=colormap.background_value,
             )
+            self.node.shared_program['texture2D_values'] = Texture2D(
+                colormap.colors.reshape(
+                    (colormap.colors.shape[0], 1, 4)
+                ).astype(np.float32),
+                internalformat='rgba32f',
+                interpolation='nearest',
+            )
+
         elif mode == 'direct':
             color_dict = (
                 self.layer.color
