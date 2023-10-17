@@ -218,6 +218,7 @@ def test_create_layer_controls_spin(
 ):
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
+    qtbot.addWidget(ctrl)
 
     # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
@@ -267,7 +268,7 @@ def test_create_layer_controls_spin(
                 assert any(
                     expected_error in captured.err
                     for expected_error in expected_errors
-                ), captured.err
+                ), f"value: {value}, range {value_range}\nerr: {captured.err}"
 
         assert qspinbox.value() in [qspinbox_max, qspinbox_max - 1]
         qspinbox.setValue(qspinbox_initial_value)

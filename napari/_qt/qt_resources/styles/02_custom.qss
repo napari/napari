@@ -25,7 +25,7 @@ QtLayerButtons, QtViewerButtons, QtLayerList {
 as long as they are docked (though they use the
 style of QDockWidget when undocked) */
 
-QStatusBar { 
+QStatusBar {
   background: {{ background }};
   color: {{ text }};
 }
@@ -979,7 +979,7 @@ QtLayerList::indicator {
 
 QtLayerList::indicator:unchecked {
   image: url("theme_{{ id }}:/visibility_off_50.svg");
-  
+
 }
 
 QtLayerList::indicator:checked {
