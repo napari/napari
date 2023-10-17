@@ -167,7 +167,7 @@ jobs:
       - name: install dependencies
         run: |
           pip install --upgrade pip
-          pip install asv[virtualenv] 
+          pip install asv[virtualenv]
 
       - name: Run benchmarks
         uses: aganders3/headless-gui@v1
