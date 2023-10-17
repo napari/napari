@@ -91,7 +91,11 @@ ignore = [
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
     "B028", # need to be fixed
     "PYI015", # it produces bad looking files (@jni opinion)
-
+    "RUF012",
+    "RUF013",
+    "RUF015",
+    "PYI041",
+    "PYI024",
 ]
 
 exclude = [

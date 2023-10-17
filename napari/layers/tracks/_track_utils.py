@@ -257,7 +257,7 @@ class TrackManager:
         # check that graph nodes are of correct format
         for node_idx, parents_idx in graph.items():
             # make sure parents are always a list
-            if type(parents_idx) != list:
+            if type(parents_idx) != list:  # noqa: E721
                 graph[node_idx] = [parents_idx]
 
         unique_track_ids = set(self.unique_track_ids)

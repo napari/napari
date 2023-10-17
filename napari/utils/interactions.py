@@ -267,10 +267,7 @@ class Shortcut:
         """
         self._values = re.split('-(?=.+)', shortcut)
         for shortcut_key in self._values:
-            if (
-                len(shortcut_key) > 1
-                and shortcut_key not in KEY_SYMBOLS.keys()
-            ):
+            if len(shortcut_key) > 1 and shortcut_key not in KEY_SYMBOLS:
                 warnings.warn(
                     trans._(
                         "{shortcut_key} does not seem to be a valid shortcut Key.",

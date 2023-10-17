@@ -46,7 +46,7 @@ def test_image_location():
     assert locations2_1[0] == locations2_1[1]
 
     # Nothing else should be the same
-    for i in range(0, 2):
+    for i in range(2):
         assert locations1_0[i] != locations1_1[i]
         assert locations1_0[i] != locations2_0[i]
         assert locations1_0[i] != locations2_1[i]

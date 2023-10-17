@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
+import numpy.typing as npt
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import Blending, Mode
@@ -450,7 +451,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if mode == self._mode:
             return mode
 
-        if mode.value not in self._modeclass.keys():
+        if mode.value not in self._modeclass.keys():  # noqa: SIM118
             raise ValueError(
                 trans._(
                     "Mode not recognized: {mode}", deferred=True, mode=mode
