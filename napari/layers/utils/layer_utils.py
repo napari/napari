@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import inspect
+import sys
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -25,9 +26,12 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from typing import Mapping
+    from typing import Iterable, Mapping
 
     import numpy.typing as npt
+    from xarray import DataArray
+
+    from napari.layers._multiscale_data import MultiScaleData
 
 
 class Extent(NamedTuple):
@@ -1072,3 +1076,59 @@ def _unique_element(array: Array) -> Optional[Any]:
     if np.any(array[1:] != el):
         return None
     return el
+
+
+def _get_chunk_size(
+    data: MultiScaleData
+    | Iterable
+    | npt.NDArray
+    | float
+    | list
+    | Iterable[npt.NDArray]
+    | DataArray
+    | None,
+) -> None | tuple[int, ...]:
+    """Get chunk size from a given layer.
+    Parameters
+    ----------
+    data : napari.layers.Image
+        Layer to determine chunk size for.
+    Returns
+    -------
+    chunk_size : tuple or None
+        Chunk size for the layer.
+    """
+    if isinstance(data, np.ndarray):
+        return None
+
+    if "zarr" in sys.modules:
+        from zarr.core import Array as ZarrArray
+
+        if isinstance(data, ZarrArray):
+            return data.chunks
+
+    if "dask" in sys.modules:
+        from dask.array import Array as DaskArray
+
+        if isinstance(data, DaskArray):
+            return data.chunksize
+
+    if "tensorstore" in sys.modules:
+        from tensorstore import TensorStore
+
+        if isinstance(data, TensorStore):
+            # TensorStore allow to specify different read and write chunk sizes
+            # we use the read chunk size to have same chunk size for labels like
+            # when load data from drive
+            chunk_shape = data.chunk_layout.read_chunk.shape
+            # TensorStore can return tuple of Nones in case chunks haven't been specified.
+            if chunk_shape[0] is None:
+                return data.shape
+            return chunk_shape
+
+    if "xarray" in sys.modules:
+        from xarray import DataArray
+
+        if isinstance(data, DataArray):
+            return _get_chunk_size(data.data)
+    return None

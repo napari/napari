@@ -7,6 +7,7 @@ from dask import array as da
 
 from napari.layers.utils.layer_utils import (
     _FeatureTable,
+    _get_chunk_size,
     calc_data_range,
     coerce_current_properties,
     dataframe_to_properties,
@@ -488,3 +489,55 @@ def test_register_label_attr_action(monkeypatch):
     monkeypatch.setattr(time, "time", lambda: 2)
     handler.release_key("K")
     assert foo.value == 0
+
+
+def test_zarr_get_chunk_size():
+    import zarr
+
+    data_shape = (100, 100)
+    chunk_shape = (10, 10)
+
+    data = zarr.zeros(data_shape, chunks=chunk_shape, dtype='u2')
+    chunk_size = _get_chunk_size(data)
+    assert np.array_equal(chunk_size, chunk_shape)
+
+
+def test_xarray_get_chunk_size():
+    import xarray as xr
+
+    data_shape = (100, 100)
+    chunk_shape = (10, 10)
+
+    coords = list(range(100))
+    data = xr.DataArray(
+        np.zeros(data_shape),
+        dims=['y', 'x'],
+        coords={'y': coords, 'x': coords},
+    )
+    data = data.chunk(chunk_shape)
+    chunk_size = _get_chunk_size(data)
+    assert np.array_equal(chunk_size, chunk_shape)
+
+
+def test_dask_get_chunk_size():
+    chunk_size = _get_chunk_size(data_dask_plane)
+    assert np.array_equal(chunk_size, (1000, 1000))
+
+
+def test_tensorstore_get_chunk_size():
+    ts = pytest.importorskip('tensorstore')
+
+    data_shape = (100, 100)
+    chunk_shape = (10, 10)
+
+    spec = {
+        'driver': 'zarr',
+        'kvstore': {'driver': 'memory'},
+        "metadata": {"chunks": chunk_shape},
+    }
+    labels = ts.open(
+        spec, create=True, dtype="uint32", shape=data_shape
+    ).result()
+
+    chunk_size = _get_chunk_size(labels)
+    assert np.array_equal(chunk_size, chunk_shape)

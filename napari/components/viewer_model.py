@@ -3,7 +3,6 @@ from __future__ import annotations
 import inspect
 import itertools
 import os
-import sys
 import warnings
 from collections import Counter
 from functools import lru_cache, partial
@@ -64,6 +63,7 @@ from napari.layers.points._points_key_bindings import points_fun_to_mode
 from napari.layers.shapes._shapes_key_bindings import shapes_fun_to_mode
 from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
 from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
+from napari.layers.utils.layer_utils import _get_chunk_size
 from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
@@ -492,54 +492,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             return zarr
         return cls._get_module_from_class(image_class)
 
-    @staticmethod
-    def _get_chunk_size(layer: Image):
-        """Get chunk size from a given layer.
-
-        Parameters
-        ----------
-        layer : napari.layers.Image
-            Layer to determine chunk size for.
-
-        Returns
-        -------
-        chunk_size : tuple or None
-            Chunk size for the layer.
-        """
-        data = layer.data
-
-        if isinstance(data, np.ndarray):
-            return None
-
-        if "zarr" in sys.modules:
-            from zarr.core import Array as ZarrArray
-
-            if isinstance(data, ZarrArray):
-                return data.chunks
-
-        if "dask" in sys.modules:
-            from dask.array import Array as DaskArray
-
-            if isinstance(data, DaskArray):
-                return data.chunksize
-
-        if "tensorstore" in sys.modules:
-            from tensorstore import TensorStore
-
-            if isinstance(data, TensorStore):
-                # TensorStore allow to specify different read and write chunk sizes
-                # we use the read chunk size to have same chuk size for labels like
-                # when load data from drive
-                return data.chunk_layout.read_chunk.shape
-
-        show_warning("Unknown data type for chunk size determination.")
-        return None
-
     def _get_chunk_size_from_layers(self):
         sizes = []
         for layer in self.layers:
             if isinstance(layer, Image):
-                chunk_size = self._get_chunk_size(layer)
+                chunk_size = _get_chunk_size(layer)
                 if (
                     chunk_size is not None
                     and len(chunk_size) == self.dims.ndim
