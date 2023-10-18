@@ -200,7 +200,7 @@ class VispyBaseLayer(ABC):
             and self.layer._slice_input.ndisplay == 3
             and self.layer.multiscale
         ):
-            translate = translate + (self.layer.downsample_factors[-1] - 1) / 2
+            translate = translate + (self.layer.downsample_factors[-1][::-1] - 1) / 2
 
         # Embed in the top left corner of a 4x4 affine matrix
         affine_matrix = np.eye(4)
