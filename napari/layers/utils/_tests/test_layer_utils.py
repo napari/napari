@@ -1,13 +1,18 @@
+import sys
 import time
+from functools import partial
 
 import numpy as np
 import pandas as pd
 import pytest
+import zarr
 from dask import array as da
 
 from napari.layers.utils.layer_utils import (
+    _determine_class_for_labels,
     _FeatureTable,
     _get_chunk_size,
+    _get_zeros_for_labels_based_on_module,
     calc_data_range,
     coerce_current_properties,
     dataframe_to_properties,
@@ -491,6 +496,10 @@ def test_register_label_attr_action(monkeypatch):
     assert foo.value == 0
 
 
+def test_numpy_chunk_size():
+    assert _get_chunk_size(np.zeros((100, 100))) is None
+
+
 def test_zarr_get_chunk_size():
     import zarr
 
@@ -541,3 +550,53 @@ def test_tensorstore_get_chunk_size():
 
     chunk_size = _get_chunk_size(labels)
     assert np.array_equal(chunk_size, chunk_shape)
+
+
+def test_determine_class_for_labels(monkeypatch):
+    monkeypatch.delitem(sys.modules, "tensorstore", raising=False)
+    assert _determine_class_for_labels(set()) == np.ndarray
+    assert _determine_class_for_labels({np.ndarray}) == np.ndarray
+    assert _determine_class_for_labels({np.ndarray, da.Array}) == zarr.Array
+    assert _determine_class_for_labels({da.Array}) == zarr.Array
+
+
+def test_determine_class_for_labels_tensorstore():
+    ts = pytest.importorskip('tensorstore')
+    assert (
+        _determine_class_for_labels({np.ndarray, da.Array}) == ts.TensorStore
+    )
+    assert _determine_class_for_labels({np.ndarray, zarr.Array}) == zarr.Array
+    assert (
+        _determine_class_for_labels({np.ndarray, zarr.Array, ts.TensorStore})
+        == ts.TensorStore
+    )
+
+
+def test_determine_class_for_labels_warning(monkeypatch):
+    monkeypatch.delitem(sys.modules, "tensorstore", raising=False)
+    monkeypatch.delitem(sys.modules, "zarr", raising=False)
+
+    with pytest.warns(RuntimeWarning, match="We cannot use dask.array"):
+        assert _determine_class_for_labels({da.Array}) == np.ndarray
+
+
+def test_get_zeros_for_labels_based_on_module(monkeypatch):
+    assert _get_zeros_for_labels_based_on_module(None, None) is np.zeros
+    assert _get_zeros_for_labels_based_on_module(np, None) is np.zeros
+    assert _get_zeros_for_labels_based_on_module(zarr, None) is zarr.zeros
+    res = _get_zeros_for_labels_based_on_module(zarr, (10, 10))
+    assert isinstance(res, partial)
+    assert res.keywords == {'chunks': (10, 10)}
+    assert res.func is zarr.zeros
+
+
+def test_get_zeros_for_labels_based_on_module_tensorstore():
+    ts = pytest.importorskip('tensorstore')
+
+    res = _get_zeros_for_labels_based_on_module(ts, (10, 10))
+
+    arr = res(shape=(100, 100), dtype='u2')
+
+    assert isinstance(arr, ts.TensorStore)
+    assert arr.shape == (100, 100)
+    assert arr.chunk_layout.read_chunk.shape == (10, 10)

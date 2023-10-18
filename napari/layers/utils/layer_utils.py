@@ -7,6 +7,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     NamedTuple,
@@ -1089,6 +1090,7 @@ def _get_chunk_size(
     | None,
 ) -> None | tuple[int, ...]:
     """Get chunk size from a given layer.
+
     Parameters
     ----------
     data : napari.layers.Image
@@ -1101,34 +1103,171 @@ def _get_chunk_size(
     if isinstance(data, np.ndarray):
         return None
 
-    if "zarr" in sys.modules:
-        from zarr.core import Array as ZarrArray
+    if "zarr" in sys.modules and isinstance(data, sys.modules["zarr"].Array):
+        return data.chunks
 
-        if isinstance(data, ZarrArray):
-            return data.chunks
+    if "dask.array" in sys.modules and isinstance(
+        data, sys.modules["dask.array"].Array
+    ):
+        return data.chunksize
 
-    if "dask" in sys.modules:
-        from dask.array import Array as DaskArray
+    if "tensorstore" in sys.modules and isinstance(
+        data, sys.modules["tensorstore"].TensorStore
+    ):
+        # TensorStore allow to specify different read and write chunk sizes
+        # we use the read chunk size to have same chunk size for labels like
+        # when load data from drive
+        chunk_shape = data.chunk_layout.read_chunk.shape
+        # TensorStore can return tuple of Nones in case chunks haven't been specified.
+        if chunk_shape[0] is None:
+            return data.shape
+        return chunk_shape
 
-        if isinstance(data, DaskArray):
-            return data.chunksize
-
-    if "tensorstore" in sys.modules:
-        from tensorstore import TensorStore
-
-        if isinstance(data, TensorStore):
-            # TensorStore allow to specify different read and write chunk sizes
-            # we use the read chunk size to have same chunk size for labels like
-            # when load data from drive
-            chunk_shape = data.chunk_layout.read_chunk.shape
-            # TensorStore can return tuple of Nones in case chunks haven't been specified.
-            if chunk_shape[0] is None:
-                return data.shape
-            return chunk_shape
-
-    if "xarray" in sys.modules:
-        from xarray import DataArray
-
-        if isinstance(data, DataArray):
-            return _get_chunk_size(data.data)
+    if "xarray" in sys.modules and isinstance(
+        data, sys.modules["xarray"].DataArray
+    ):
+        return _get_chunk_size(data.data)
     return None
+
+
+_DUMMY_CLASS = object()
+
+
+def _get_tensorstore_or_zarr():
+    try:
+        import tensorstore
+    except ModuleNotFoundError:
+        pass
+    else:
+        return tensorstore
+
+    try:
+        import zarr
+    except ModuleNotFoundError:
+        pass
+    else:
+        return zarr
+
+    return None
+
+
+def _get_zeros_for_labels_based_on_module(
+    module, chunk: None | tuple[int, ...]
+) -> Callable:
+    """
+    Get a function that returns an constructor for an array of zeros.
+    The returned constructor depends on the
+
+
+    """
+    if module is None or module is np:
+        return np.zeros
+
+    if module.__name__ == "dask.array":
+        # dask.array does not support fancy indexing
+        # so we need to use another backend
+
+        module = _get_tensorstore_or_zarr()
+
+        if module is None:
+            warnings.warn(
+                trans._(
+                    "We cannot use dask.array as backend for labels, as it"
+                    " does not support fancy indexing. Please install"
+                    " either tensorstore or zarr"
+                ),
+                category=RuntimeWarning,
+            )
+            return np.zeros
+
+    if module.__name__ == "zarr":
+        if chunk is None:
+            return module.zeros
+
+        return functools.partial(module.zeros, chunks=chunk)
+
+    if module.__name__ == "tensorstore":
+        spec = {
+            'driver': 'zarr',
+            'kvstore': {'driver': 'memory'},
+        }
+        if chunk is not None:
+            spec['metadata'] = {'chunks': chunk}
+
+        def _zeros(**kwargs):
+            return module.open(
+                spec=spec, create=True, fill_value=0, **kwargs
+            ).result()
+
+        return _zeros
+
+    warnings.warn(
+        trans._("Unknown data type for labels creation."),
+        category=RuntimeWarning,
+    )
+
+    return np.zeros
+
+
+def _determine_class_for_labels(class_set: set[type]) -> type:
+    """
+    Determine the class to use for labels based on the given class set
+    of currently loaded image layers.
+
+    Parameters
+    ----------
+    class_set : set
+        Set of data used by currently loaded image layers.
+
+    Returns
+    -------
+    class: type
+        Class to use for labels.
+        If size of class_set is 0 then `np.ndarray` is returned.
+        If size of class_set is 1 then the class in the set is returned.
+
+        * `tensorstore.TensorStore` if tensorstore is used
+        * `zarr.core.Array` if zarr is used
+    """
+    if not class_set:
+        return np.ndarray
+    class_set = set(class_set)
+    if (
+        getattr(
+            sys.modules.get("tensorstore", _DUMMY_CLASS),
+            "TensorStore",
+            _DUMMY_CLASS,
+        )
+        in class_set
+    ):
+        return sys.modules["tensorstore"].TensorStore
+
+    if (
+        getattr(sys.modules.get("zarr", _DUMMY_CLASS), "Array", _DUMMY_CLASS)
+        in class_set
+    ):
+        return sys.modules["zarr"].Array
+
+    if (
+        getattr(
+            sys.modules.get("dask.array", _DUMMY_CLASS), "Array", _DUMMY_CLASS
+        )
+        in class_set
+    ):
+        # dask do not support fancy indexing
+        if "tensorstore" in sys.modules:
+            return sys.modules["tensorstore"].TensorStore
+        if "zarr" in sys.modules:
+            return sys.modules["zarr"].Array
+        warnings.warn(
+            trans._(
+                "We cannot use dask.array as backend for labels, as it"
+                " does not support fancy indexing. Please install"
+                " either tensorstore or zarr"
+            ),
+            category=RuntimeWarning,
+        )
+        return np.ndarray
+
+    # here assume that set contains only one np.ndarray
+    return np.ndarray

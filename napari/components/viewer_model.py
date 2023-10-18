@@ -5,7 +5,7 @@ import itertools
 import os
 import warnings
 from collections import Counter
-from functools import lru_cache, partial
+from functools import lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -22,6 +22,7 @@ from typing import (
 
 import numpy as np
 import psutil
+import xarray as xr
 from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
@@ -63,7 +64,11 @@ from napari.layers.points._points_key_bindings import points_fun_to_mode
 from napari.layers.shapes._shapes_key_bindings import shapes_fun_to_mode
 from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
 from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
-from napari.layers.utils.layer_utils import _get_chunk_size
+from napari.layers.utils.layer_utils import (
+    _determine_class_for_labels,
+    _get_chunk_size,
+    _get_zeros_for_labels_based_on_module,
+)
 from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
@@ -83,7 +88,7 @@ from napari.utils.key_bindings import KeymapProvider
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
-from napari.utils.notifications import show_error, show_warning
+from napari.utils.notifications import show_error
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
@@ -413,9 +418,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Create new labels layer filling full world coordinates space."""
         layers_extent = self.layers.extent
         extent = layers_extent.world
-        scale = layers_extent.step
+        scale = tuple(layers_extent.step)
         scene_size = extent[1] - extent[0]
-        corner = extent[0]
+        corner = tuple(extent[0])
         shape = [
             np.round(s / sc).astype('int') + 1
             for s, sc in zip(scene_size, scale)
@@ -425,61 +430,34 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         dtype_str = get_settings().application.new_labels_dtype
         if label_policy == NewLabelsPolicy.follow_image_class:
             module = self._get_module_from_class(image_class)
+
         elif label_policy == NewLabelsPolicy.fit_in_ram:
             max_factor = get_settings().application.new_label_max_factor
             module = self._check_ram(np.ndarray, shape, dtype_str, max_factor)
+
         else:  # label_policy == NewLabelsPolicy.follow_class_with_fit:
             module = self._check_ram(image_class, shape, dtype_str)
+
         if module is None:
             show_error(
-                "Not enough RAM to allocate labels array. Please install zarr and try again."
+                "Not enough RAM to allocate labels array. Please install zarr or tensorstore and try again."
             )
             return
         chunk = self._get_chunk_size_from_layers()
-        empty_labels = self._get_zeros_from_module(module, chunk)(
-            shape=shape, dtype=dtype_str
+        empty_labels_func = _get_zeros_for_labels_based_on_module(
+            module, chunk
         )
-        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
-
-    @staticmethod
-    def _get_zeros_from_module(module, chunk):
-        if module is None:
-            return np.zeros
-
-        if module.__name__ == "numpy":
-            return np.zeros
-
-        if module.__name__ == "zarr":
-            if chunk is None:
-                return module.zeros
-
-            return partial(module.zeros, chunks=chunk)
-
-        if module.__name__ == "dask.array":
-            if chunk is not None:
-                return partial(module.zeros, chunks=chunk)
-            return module.zeros
-
-        if module.__name__ == "tensorstore":
-            spec = {
-                'driver': 'zarr',
-                'kvstore': {'driver': 'memory'},
-            }
-            if chunk is not None:
-                spec['metadata'] = {'chunks': chunk}
-
-            def _zeros(**kwargs):
-                return module.open(
-                    spec=spec, create=True, fill_value=0, **kwargs
-                ).result()
-
-            return _zeros
-
-        show_warning("Unknown data type for labels creation.")
-        return np.zeros
+        empty_labels = empty_labels_func(shape=shape, dtype=dtype_str)
+        self.add_labels(empty_labels, translate=corner, scale=scale)
 
     @classmethod
-    def _check_ram(cls, image_class, shape, dtype_str, max_factor=100):
+    def _check_ram(
+        cls,
+        image_class: type,
+        shape: Sequence[int],
+        dtype_str: str,
+        max_factor=100,
+    ):
         data_size = np.prod(shape) * np.dtype(dtype_str).itemsize
         free_mem = psutil.virtual_memory().available
         total_mem = psutil.virtual_memory().total
@@ -490,7 +468,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             except ImportError:
                 return None
             return zarr
-        return cls._get_module_from_class(image_class)
+        return image_class.__module__
 
     def _get_chunk_size_from_layers(self):
         sizes = []
@@ -514,40 +492,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _get_class_from_images(self):
         class_set = {
-            layer.data.__class__
+            layer.data.data
+            if isinstance(layer.data, xr.DataArray)
+            else layer.data.__class__
             for layer in self.layers
             if isinstance(layer, Image)
         }
-        if not class_set:
-            return np.ndarray
-        if len(class_set) == 1:
-            return class_set.pop()
-        if np.ndarray in class_set:
-            class_set.remove(np.ndarray)
-
-        if "zarr" in str(class_set):
-            import zarr
-
-            return zarr.core.Array
-
-        return class_set.pop()  # may be a little random
-
-    @staticmethod
-    def _get_module_from_class(class_):
-        if "zarr.core" in str(class_):
-            import zarr
-
-            return zarr
-        if "dask.array" in str(class_):
-            import dask.array as da
-
-            return da
-        if "tensorstore" in str(class_):
-            import tensorstore
-
-            return tensorstore
-
-        return np
+        return _determine_class_for_labels(class_set)
 
     def _on_layer_reload(self, event: Event) -> None:
         self._layer_slicer.submit(
