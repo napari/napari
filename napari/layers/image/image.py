@@ -917,7 +917,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
-        dtype = np.dtype(image.dtype)
+        try:
+            dtype = np.dtype(image.dtype)
+        except TypeError:
+            # tensorstore case
+            dtype = np.dtype(image.dtype.type)
+
         if dtype in [np.dtype(np.float16)]:
             image = image.astype(np.float32)
 

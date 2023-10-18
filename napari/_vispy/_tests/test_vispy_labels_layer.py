@@ -49,7 +49,7 @@ def test_labels_painting(make_napari_viewer, array_type):
 
 @skip_local_popups
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
-def test_labels_fill_slice(make_napari_viewer, array_type):
+def test_labels_fill_slice(make_napari_viewer, array_type, qtbot):
     """Check that painting labels paints only on current slice.
 
     This should work regardless of array type. See:
@@ -62,6 +62,7 @@ def test_labels_fill_slice(make_napari_viewer, array_type):
     labels[2, :, :] = 1
     layer = viewer.add_labels(labels)
     layer.n_edit_dimensions = 3
+    qtbot.wait(10)
     QCoreApplication.instance().processEvents()
     layer.fill((1, 10, 10), 13, refresh=True)
     visual = viewer.window._qt_viewer.layer_to_visual[layer]
