@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import itertools
 import os
+import sys
 import warnings
 from collections import Counter
 from functools import lru_cache
@@ -21,8 +22,6 @@ from typing import (
 )
 
 import numpy as np
-import psutil
-import xarray as xr
 from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
@@ -66,8 +65,10 @@ from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
 from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
 from napari.layers.utils.layer_utils import (
     _determine_class_for_labels,
+    _determine_labels_class_based_on_ram,
     _get_chunk_size,
     _get_zeros_for_labels_based_on_module,
+    _layers_to_class_set,
 )
 from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
@@ -429,14 +430,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         image_class = self._get_class_from_images()
         dtype_str = get_settings().application.new_labels_dtype
         if label_policy == NewLabelsPolicy.follow_image_class:
-            module = self._get_module_from_class(image_class)
+            module = sys.modules[image_class.__module__]
 
         elif label_policy == NewLabelsPolicy.fit_in_ram:
             max_factor = get_settings().application.new_label_max_factor
-            module = self._check_ram(np.ndarray, shape, dtype_str, max_factor)
+            module = _determine_labels_class_based_on_ram(
+                np.ndarray, shape, dtype_str, max_factor
+            )
 
         else:  # label_policy == NewLabelsPolicy.follow_class_with_fit:
-            module = self._check_ram(image_class, shape, dtype_str)
+            module = _determine_labels_class_based_on_ram(
+                image_class, shape, dtype_str
+            )
 
         if module is None:
             show_error(
@@ -449,26 +454,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         empty_labels = empty_labels_func(shape=shape, dtype=dtype_str)
         self.add_labels(empty_labels, translate=corner, scale=scale)
-
-    @classmethod
-    def _check_ram(
-        cls,
-        image_class: type,
-        shape: Sequence[int],
-        dtype_str: str,
-        max_factor=100,
-    ):
-        data_size = np.prod(shape) * np.dtype(dtype_str).itemsize
-        free_mem = psutil.virtual_memory().available
-        total_mem = psutil.virtual_memory().total
-
-        if data_size > free_mem or data_size > total_mem * max_factor / 100:
-            try:
-                import zarr
-            except ImportError:
-                return None
-            return zarr
-        return image_class.__module__
 
     def _get_chunk_size_from_layers(self):
         sizes = []
@@ -483,7 +468,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     sizes.append(tuple(chunk_size))
         if not sizes:
             return None
-        if len(sizes) == 1:
+        if len(set(sizes)) == 1:
             return sizes[0]
 
         count = Counter(sizes)
@@ -491,13 +476,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return sorted(count, key=count.get, reverse=True)[0]
 
     def _get_class_from_images(self):
-        class_set = {
-            layer.data.data
-            if isinstance(layer.data, xr.DataArray)
-            else layer.data.__class__
-            for layer in self.layers
-            if isinstance(layer, Image)
-        }
+        class_set = _layers_to_class_set(self.layers)
         return _determine_class_for_labels(class_set)
 
     def _on_layer_reload(self, event: Event) -> None:

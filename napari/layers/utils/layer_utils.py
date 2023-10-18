@@ -20,6 +20,7 @@ from typing import (
 import dask
 import numpy as np
 import pandas as pd
+import psutil
 
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
     from xarray import DataArray
 
+    from napari.layers import Layer
     from napari.layers._multiscale_data import MultiScaleData
 
 
@@ -1163,7 +1165,7 @@ def _get_zeros_for_labels_based_on_module(
     if module is None or module is np:
         return np.zeros
 
-    if module.__name__ == "dask.array":
+    if module.__name__ in {"dask.array", "dask.array.core"}:
         # dask.array does not support fancy indexing
         # so we need to use another backend
 
@@ -1180,11 +1182,11 @@ def _get_zeros_for_labels_based_on_module(
             )
             return np.zeros
 
-    if module.__name__ == "zarr":
+    if module.__name__ in {"zarr", "zarr.core"}:
         if chunk is None:
-            return module.zeros
+            return sys.modules["zarr"].zeros
 
-        return functools.partial(module.zeros, chunks=chunk)
+        return functools.partial(sys.modules["zarr"].zeros, chunks=chunk)
 
     if module.__name__ == "tensorstore":
         spec = {
@@ -1207,6 +1209,10 @@ def _get_zeros_for_labels_based_on_module(
     )
 
     return np.zeros
+
+
+def _get_mod_class(module: str, name: str):
+    return getattr(sys.modules.get(module, _DUMMY_CLASS), name, _DUMMY_CLASS)
 
 
 def _determine_class_for_labels(class_set: set[type]) -> type:
@@ -1232,28 +1238,13 @@ def _determine_class_for_labels(class_set: set[type]) -> type:
     if not class_set:
         return np.ndarray
     class_set = set(class_set)
-    if (
-        getattr(
-            sys.modules.get("tensorstore", _DUMMY_CLASS),
-            "TensorStore",
-            _DUMMY_CLASS,
-        )
-        in class_set
-    ):
+    if _get_mod_class("tensorstore", "TensorStore") in class_set:
         return sys.modules["tensorstore"].TensorStore
 
-    if (
-        getattr(sys.modules.get("zarr", _DUMMY_CLASS), "Array", _DUMMY_CLASS)
-        in class_set
-    ):
+    if _get_mod_class("zarr", "Array") in class_set:
         return sys.modules["zarr"].Array
 
-    if (
-        getattr(
-            sys.modules.get("dask.array", _DUMMY_CLASS), "Array", _DUMMY_CLASS
-        )
-        in class_set
-    ):
+    if _get_mod_class("dask.array", "Array") in class_set:
         # dask do not support fancy indexing
         if "tensorstore" in sys.modules:
             return sys.modules["tensorstore"].TensorStore
@@ -1271,3 +1262,31 @@ def _determine_class_for_labels(class_set: set[type]) -> type:
 
     # here assume that set contains only one np.ndarray
     return np.ndarray
+
+
+def _layers_to_class_set(layer_list: Sequence[Layer]):
+    try:
+        from xarray import DataArray
+    except ModuleNotFoundError:
+        DataArray = None
+
+    layer_data = (
+        d.data if isinstance(d, DataArray) else d
+        for d in (layer.data for layer in layer_list)
+    )
+    return {type(d) for d in layer_data}
+
+
+def _determine_labels_class_based_on_ram(
+    image_class: type,
+    shape: Sequence[int],
+    dtype_str: str,
+    max_factor=100,
+):
+    data_size = np.prod(shape) * np.dtype(dtype_str).itemsize
+    free_mem = psutil.virtual_memory().available
+    total_mem = psutil.virtual_memory().total
+
+    if data_size > free_mem or data_size > total_mem * max_factor / 100:
+        return _get_tensorstore_or_zarr()
+    return sys.modules[image_class.__module__]

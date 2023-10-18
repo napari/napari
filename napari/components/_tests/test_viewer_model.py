@@ -1,10 +1,8 @@
 import time
-from functools import partial
 from unittest.mock import patch
 
 import numpy as np
 import pytest
-import zarr
 from npe2 import DynamicPlugin
 from pretend import stub
 
@@ -13,10 +11,26 @@ from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
 from napari.layers import Image
+from napari.layers.utils.layer_utils import (
+    _get_zeros_for_labels_based_on_module,
+)
 from napari.settings import get_settings
 from napari.settings._constants import NewLabelsPolicy
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events.event import WarningEmitter
+
+
+@pytest.fixture()
+def array_cls():
+    try:
+        import tensorstore
+    except ModuleNotFoundError:
+        import zarr
+
+        return zarr.Array
+
+    else:
+        return tensorstore.TensorStore
 
 
 def test_viewer_model():
@@ -298,41 +312,7 @@ def test_new_labels_scaled_translated_image():
     np.testing.assert_almost_equal(viewer.layers[1].translate, (20, -5))
 
 
-def test_get_zeros_from_module_numpy():
-    assert ViewerModel._get_zeros_from_module(np, None) == np.zeros
-    assert ViewerModel._get_zeros_from_module(np, (10, 10)) == np.zeros
-
-
-@pytest.mark.parametrize("module_name", ["zarr", "dask.array"])
-def test_get_zeros_from_module_dask(module_name):
-    module = pytest.importorskip(module_name)
-    assert ViewerModel._get_zeros_from_module(module, None) == module.zeros
-    zeros_func = ViewerModel._get_zeros_from_module(module, (10, 10))
-    assert isinstance(zeros_func, partial)
-    assert zeros_func.keywords == {'chunks': (10, 10)}
-    assert zeros_func.func == module.zeros
-
-    assert isinstance(zeros_func((10, 10), dtype=np.uint8), module.Array)
-
-
-def test_get_zeros_from_module_tensorstore():
-    ts = pytest.importorskip("tensorstore")
-    zeros_arr = ViewerModel._get_zeros_from_module(ts, None)(
-        shape=(20, 20), dtype="uint8"
-    )
-    assert isinstance(zeros_arr, ts.TensorStore)
-    assert zeros_arr.shape == (20, 20)
-    zeros_arr2 = ViewerModel._get_zeros_from_module(ts, (10, 10))(
-        shape=(20, 20), dtype="uint8"
-    )
-    assert isinstance(zeros_arr2, ts.TensorStore)
-    assert zeros_arr2.shape == (20, 20)
-    assert zeros_arr2.chunk_layout.read_chunk.shape == (10, 10)
-
-
-@pytest.mark.parametrize(
-    "module_name", ["numpy", "zarr", "dask.array", "tensorstore"]
-)
+@pytest.mark.parametrize("module_name", ["numpy", "zarr", "tensorstore"])
 def test_new_labels_follow_class(module_name):
     module = pytest.importorskip(module_name)
     viewer = ViewerModel()
@@ -340,7 +320,7 @@ def test_new_labels_follow_class(module_name):
         NewLabelsPolicy.follow_image_class
     )
     viewer.add_image(
-        ViewerModel._get_zeros_from_module(module, None)(
+        _get_zeros_for_labels_based_on_module(module, None)(
             shape=(10, 15), dtype="uint8"
         )
     )
@@ -350,21 +330,19 @@ def test_new_labels_follow_class(module_name):
     assert isinstance(viewer.layers[1].data, viewer.layers[0].data.__class__)
 
 
-@pytest.mark.parametrize(
-    "module_name", ["numpy", "zarr", "dask.array", "tensorstore"]
-)
+@pytest.mark.parametrize("module_name", ["numpy", "zarr", "tensorstore"])
 @patch(
     "psutil.virtual_memory",
     return_value=stub(total=1000000000, available=1000000000),
 )
-def test_new_labels_fit_in_ram(virtual_memory, module_name):
+def test_new_labels_fit_in_ram(virtual_memory, module_name, array_cls):
     module = pytest.importorskip(module_name)
     viewer = ViewerModel()
     get_settings().application.new_labels_policy = NewLabelsPolicy.fit_in_ram
     get_settings().application.new_label_max_factor = 100
     get_settings().application.new_labels_dtype = "uint64"
     viewer.add_image(
-        ViewerModel._get_zeros_from_module(module, None)(
+        _get_zeros_for_labels_based_on_module(module, None)(
             shape=(10, 15), dtype="uint8"
         )
     )
@@ -374,7 +352,7 @@ def test_new_labels_fit_in_ram(virtual_memory, module_name):
     virtual_memory.return_value = stub(total=1000000000, available=10)
     viewer._new_labels()
     assert len(viewer.layers) == 3
-    assert isinstance(viewer.layers[2].data, zarr.Array)
+    assert isinstance(viewer.layers[2].data, array_cls)
     virtual_memory.return_value = stub(total=10000, available=10000)
     viewer._new_labels()
     assert len(viewer.layers) == 4
@@ -383,24 +361,24 @@ def test_new_labels_fit_in_ram(virtual_memory, module_name):
     get_settings().application.new_label_max_factor = 10
     viewer._new_labels()
     assert len(viewer.layers) == 5
-    assert isinstance(viewer.layers[4].data, zarr.Array)
+    assert isinstance(viewer.layers[4].data, array_cls)
 
 
-@pytest.mark.parametrize(
-    "module_name", ["numpy", "zarr", "dask.array", "tensorstore"]
-)
+@pytest.mark.parametrize("module_name", ["numpy", "zarr", "tensorstore"])
 @patch(
     "psutil.virtual_memory",
     return_value=stub(total=1000000000, available=1000000000),
 )
-def test_new_labels_follow_class_with_fit(virtual_memory, module_name):
+def test_new_labels_follow_class_with_fit(
+    virtual_memory, module_name, array_cls
+):
     module = pytest.importorskip(module_name)
     viewer = ViewerModel()
     get_settings().application.new_labels_policy = (
         NewLabelsPolicy.follow_class_with_fit
     )
     viewer.add_image(
-        ViewerModel._get_zeros_from_module(module, None)(
+        _get_zeros_for_labels_based_on_module(module, None)(
             shape=(10, 15), dtype="uint8"
         )
     )
@@ -412,7 +390,7 @@ def test_new_labels_follow_class_with_fit(virtual_memory, module_name):
     virtual_memory.return_value = stub(total=1000000000, available=10)
     viewer._new_labels()
     assert len(viewer.layers) == 3
-    assert isinstance(viewer.layers[2].data, zarr.Array)
+    assert isinstance(viewer.layers[2].data, array_cls)
 
 
 def test_new_points():

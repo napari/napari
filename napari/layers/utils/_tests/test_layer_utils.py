@@ -1,18 +1,25 @@
 import sys
 import time
 from functools import partial
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
+import xarray as xr
 import zarr
 from dask import array as da
+from pretend import stub
 
+from napari.layers import Image
 from napari.layers.utils.layer_utils import (
     _determine_class_for_labels,
+    _determine_labels_class_based_on_ram,
     _FeatureTable,
     _get_chunk_size,
+    _get_tensorstore_or_zarr,
     _get_zeros_for_labels_based_on_module,
+    _layers_to_class_set,
     calc_data_range,
     coerce_current_properties,
     dataframe_to_properties,
@@ -600,3 +607,59 @@ def test_get_zeros_for_labels_based_on_module_tensorstore():
     assert isinstance(arr, ts.TensorStore)
     assert arr.shape == (100, 100)
     assert arr.chunk_layout.read_chunk.shape == (10, 10)
+
+
+def test_layers_to_class_set():
+    d1 = Image(np.zeros((10, 10)))
+    d2 = Image(np.zeros((10, 10)))
+    d3 = Image(zarr.zeros((10, 10)))
+    d4 = Image(xr.DataArray(np.zeros((10, 10))))
+    d5 = Image(d4.data.chunk((5, 5)))
+    assert _layers_to_class_set([d1, d2]) == {np.ndarray}
+    assert _layers_to_class_set([d1, d2, d3]) == {np.ndarray, zarr.Array}
+    assert _layers_to_class_set([d4]) == {np.ndarray}
+    assert _layers_to_class_set([d5]) == {da.Array}
+
+
+@pytest.mark.parametrize("module_name", ["numpy", "zarr.core", "tensorstore"])
+@patch(
+    "psutil.virtual_memory",
+    return_value=stub(total=1000000000, available=1000000000),
+)
+def test_determine_labels_class_based_on_ram(virtual_memory, module_name):
+    module = pytest.importorskip(module_name)
+
+    zeros = _get_zeros_for_labels_based_on_module(module, (10, 10))(
+        shape=(100, 100), dtype='uint8'
+    )
+
+    assert (
+        _determine_labels_class_based_on_ram(
+            zeros.__class__, zeros.shape, "uint8"
+        )
+        == module
+    )
+
+    virtual_memory.return_value = stub(total=1000000000, available=10)
+
+    assert (
+        _determine_labels_class_based_on_ram(
+            zeros.__class__, zeros.shape, "uint8"
+        )
+        == _get_tensorstore_or_zarr()
+    )
+
+
+@patch(
+    "psutil.virtual_memory",
+    return_value=stub(total=1000000000, available=1000000000),
+)
+def test_determine_labels_class_based_on_ram_dask(virtual_memory):
+    zeros = da.zeros((100, 100), chunks=(10, 10), dtype='uint8')
+
+    assert (
+        _determine_labels_class_based_on_ram(
+            zeros.__class__, zeros.shape, "uint8"
+        )
+        == da.core
+    )
