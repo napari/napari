@@ -51,10 +51,11 @@ from napari.utils.colormaps import (
     ensure_colormap,
     label_colormap,
 )
-from napari.utils.events import Event
+from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.indexing import index_in_slice
+from napari.utils.migrations import deprecated_constructor_arg_by_attr
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
@@ -226,6 +227,8 @@ class Labels(_ImageBase):
         background label `0` is selected.
     """
 
+    events: EmitterGroup
+
     _modeclass = Mode
 
     _drag_modes: ClassVar[Dict[Mode, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
@@ -262,6 +265,7 @@ class Labels(_ImageBase):
 
     _history_limit = 100
 
+    @deprecated_constructor_arg_by_attr("seed")
     def __init__(
         self,
         data,
@@ -270,7 +274,7 @@ class Labels(_ImageBase):
         features=None,
         properties=None,
         color=None,
-        seed=0.5,
+        seed_rng=None,
         name=None,
         metadata=None,
         scale=None,
@@ -292,10 +296,13 @@ class Labels(_ImageBase):
         if name is None and data is not None:
             name = magic_name(data)
 
-        self._seed = seed
+        self._seed = 0.5
+        self._seed_rng: Optional[int] = seed_rng
         self._background_label = 0
         self._num_colors = num_colors
-        self._random_colormap = label_colormap(self.num_colors, seed)
+        self._random_colormap = label_colormap(
+            self.num_colors, self.seed, self._background_label
+        )
         self._direct_colormap = direct_colormap()
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
@@ -465,13 +472,44 @@ class Labels(_ImageBase):
 
     @seed.setter
     def seed(self, seed):
+        warnings.warn(
+            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, please use seed_rng instead",
+            FutureWarning,
+            stacklevel=2,
+        )
+
         self._seed = seed
-        self.colormap.seed = seed
+        self.colormap = label_colormap(
+            self.num_colors, self.seed, self._background_label
+        )
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.refresh()
         self.events.selected_label()
+
+    @property
+    def seed_rng(self) -> Optional[int]:
+        return self._seed_rng
+
+    @seed_rng.setter
+    def seed_rng(self, seed_rng: Optional[int]) -> None:
+        if seed_rng == self._seed_rng:
+            return
+        self._seed_rng = seed_rng
+
+        if self._seed_rng is None:
+            self.colormap = label_colormap(
+                self.num_colors, self.seed, self._background_label
+            )
+        else:
+            self.colormap.shuffle(self._seed_rng)
+        self._cached_labels = None  # invalidate the cached color mapping
+        self._selected_color = self.get_color(self.selected_label)
+        self.events.colormap()  # Will update the LabelVispyColormap shader
+        self.events.selected_label()
+
+        self.refresh()
 
     @_ImageBase.colormap.setter
     def colormap(self, colormap):
@@ -486,7 +524,9 @@ class Labels(_ImageBase):
     @num_colors.setter
     def num_colors(self, num_colors):
         self._num_colors = num_colors
-        self.colormap = label_colormap(num_colors)
+        self.colormap = label_colormap(
+            num_colors, self.seed, self._background_label
+        )
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
@@ -710,7 +750,7 @@ class Labels(_ImageBase):
                 'experimental_clipping_planes': [
                     plane.dict() for plane in self.experimental_clipping_planes
                 ],
-                'seed': self.seed,
+                'seed_rng': self.seed_rng,
                 'data': self.data,
                 'color': self.color,
                 'features': self.features,
@@ -1031,7 +1071,7 @@ class Labels(_ImageBase):
         self.thumbnail = colormapped
 
     def new_colormap(self):
-        self.seed = np.random.rand()
+        self.seed_rng = np.random.default_rng().integers(2**32 - 1)
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""
