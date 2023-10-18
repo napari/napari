@@ -171,7 +171,7 @@ def test_multichannel_multiscale():
     for i in range(data[0].shape[-1]):
         assert np.all(
             [
-                np.all(l_d == d)
+                np.array_equal(l_d, d)
                 for l_d, d in zip(
                     viewer.layers[i].data,
                     [data[j].take(i, axis=-1) for j in range(len(data))],
@@ -193,7 +193,7 @@ def test_multichannel_implicit_multiscale():
     for i in range(data[0].shape[-1]):
         assert np.all(
             [
-                np.all(l_d == d)
+                np.array_equal(l_d, d)
                 for l_d, d in zip(
                     viewer.layers[i].data,
                     [data[j].take(i, axis=-1) for j in range(len(data))],
