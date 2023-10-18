@@ -53,7 +53,7 @@ _UNSET = object()
 
 
 auto_lookup_shader = """
-uniform sampler2D texture2D_values
+uniform sampler2D texture2D_values;
 
 vec4 sample_label_color(float t) {
     if (t == $background_value) {
