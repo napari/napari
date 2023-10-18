@@ -7,7 +7,7 @@ import pandas as pd
 
 from napari.layers.base import Layer
 from napari.layers.utils._color_manager_constants import ColorMode
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.layer_utils import _FeatureTable
@@ -16,7 +16,10 @@ from napari.layers.vectors._slice import (
     _VectorSliceResponse,
 )
 from napari.layers.vectors._vector_utils import fix_data_vectors
-from napari.layers.vectors._vectors_constants import VectorStyle
+from napari.layers.vectors._vectors_constants import (
+    VectorsProjectionMode,
+    VectorStyle,
+)
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
@@ -163,6 +166,8 @@ class Vectors(Layer):
         subsampled.
     """
 
+    _projectionclass = VectorsProjectionMode
+
     # The max number of vectors that will ever be used to render the thumbnail
     # If more vectors are present then they are randomly subsampled
     _max_vectors_thumbnail = 1024
@@ -196,6 +201,7 @@ class Vectors(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
+        projection_mode='none',
     ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -217,6 +223,7 @@ class Vectors(Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         # events for non-napari calculations
@@ -661,16 +668,14 @@ class Vectors(Layer):
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request_internal(
-            self._slice_input, self._slice_indices
+            self._slice_input, self._data_slice
         )
         response = request()
         self._update_slice_response(response)
 
     def _make_slice_request(self, dims) -> _VectorSliceRequest:
         """Make a Vectors slice request based on the given dims and these data."""
-        slice_input = self._make_slice_input(
-            dims.point, dims.ndisplay, dims.order
-        )
+        slice_input = self._make_slice_input(dims)
         # TODO: [see Image]
         #   For the existing sync slicing, slice_indices is passed through
         # to avoid some performance issues related to the evaluation of the
@@ -678,25 +683,24 @@ class Vectors(Layer):
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_indices(
-            self._data_to_world.inverse, round_index=False
-        )
+        slice_indices = slice_input.data_slice(self._data_to_world.inverse)
         return self._make_slice_request_internal(slice_input, slice_indices)
 
     def _make_slice_request_internal(
-        self, slice_input: _SliceInput, dims_indices
+        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
     ):
         return _VectorSliceRequest(
-            dims=slice_input,
+            slice_input=slice_input,
             data=self.data,
-            dims_indices=dims_indices,
+            data_slice=data_slice,
+            projection_mode=self.projection_mode,
             out_of_slice_display=self.out_of_slice_display,
             length=self.length,
         )
 
     def _update_slice_response(self, response: _VectorSliceResponse):
         """Handle a slicing response."""
-        self._slice_input = response.dims
+        self._slice_input = response.slice_input
         indices = response.indices
         alphas = response.alphas
 

@@ -1,15 +1,13 @@
 name: Build PR Docs
 
 on:
-  pull_request:
-    branches:
-      - main
   push:
     branches:
       - docs
     tags:
       - 'v*'
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   build-and-upload:
