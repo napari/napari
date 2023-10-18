@@ -628,7 +628,7 @@ def test_contour_local_updates():
 
     layer.data_setitem(np.nonzero(painting_mask), 1, refresh=True)
 
-    assert np.alltrue(
+    assert np.all(
         (layer._slice.image.view > 0) == get_contours(painting_mask, 1, 0)
     )
 
@@ -802,13 +802,13 @@ def test_paint_polygon():
     layer = Labels(data)
 
     layer.paint_polygon([[0, 0], [0, 5], [5, 5], [5, 0]], 2)
-    assert np.alltrue(layer.data[:5, :5] == 2)
-    assert np.alltrue(layer.data[:10, 6:10] == 1)
-    assert np.alltrue(layer.data[6:10, :10] == 1)
+    assert np.all(layer.data[:5, :5] == 2)
+    assert np.all(layer.data[:10, 6:10] == 1)
+    assert np.all(layer.data[6:10, :10] == 1)
 
     layer.paint_polygon([[7, 7], [7, 7], [7, 7]], 3)
     assert layer.data[7, 7] == 3
-    assert np.alltrue(layer.data[[6, 7, 8, 7, 8, 6], [7, 6, 7, 8, 8, 6]] == 1)
+    assert np.all(layer.data[[6, 7, 8, 7, 8, 6], [7, 6, 7, 8, 8, 6]] == 1)
 
     data[:10, :10] = 0
     gt_pattern = np.array(
@@ -849,8 +849,8 @@ def test_paint_polygon_2d_in_3d():
 
     layer.paint_polygon([[1, 0, 0], [1, 0, 9], [1, 9, 9], [1, 9, 0]], 1)
 
-    assert np.alltrue(data[1, :] == 1)
-    assert np.alltrue(data[[0, 2], :] == 0)
+    assert np.all(data[1, :] == 1)
+    assert np.all(data[[0, 2], :] == 0)
 
 
 def test_fill():
