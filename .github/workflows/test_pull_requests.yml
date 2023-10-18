@@ -60,7 +60,7 @@ jobs:
             backend: pyside2
         include:
           # Windows py38
-          - python: 3.10
+          - python: '3.10'
             platform: windows-latest
             backend: pyqt5
           - python: 3.9
