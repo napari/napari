@@ -216,7 +216,17 @@ class DirectLabelColormap(Colormap):
                 if len(color) == 3:
                     color = np.append(color, 1)
                 mapped[idx] = color
+            else:
+                mapped[idx] = self.default_color
         # If using selected, disable all others
         if self.use_selection:
             mapped[~np.isclose(values, self.selection)] = 0
         return mapped
+
+    @property
+    def default_color(self):
+        if self.use_selection:
+            return (0, 0, 0, 0)
+        return self.color_dict.get(None, (0, 0, 0, 0))
+        # we provided here default color for backward compatibility
+        # if someone is using DirectLabelColormap directly, not through Label layer
