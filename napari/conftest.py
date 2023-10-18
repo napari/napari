@@ -37,7 +37,8 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from itertools import chain
 from multiprocessing.pool import ThreadPool
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 from unittest.mock import Mock, patch
 from weakref import WeakKeyDictionary
 
@@ -46,11 +47,16 @@ from npe2 import PackageMetadata
 with suppress(ModuleNotFoundError):
     __import__('dotenv').load_dotenv()
 
+from datetime import timedelta
+from time import perf_counter
+
 import dask.threaded
 import numpy as np
 import pytest
+from _pytest.pathlib import bestrelpath
 from IPython.core.history import HistoryManager
 from packaging.version import parse as parse_version
+from pytest_pretty import CustomTerminalReporter
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -331,6 +337,8 @@ def pytest_generate_tests(metafunc):
 
 
 def pytest_collection_modifyitems(session, config, items):
+    test_subset = os.environ.get("NAPARI_TEST_SUBSET")
+
     test_order_prefix = [
         os.path.join("napari", "utils"),
         os.path.join("napari", "layers"),
@@ -346,6 +354,17 @@ def pytest_collection_modifyitems(session, config, items):
     test_order = [[] for _ in test_order_prefix]
     test_order.append([])  # for not matching tests
     for item in items:
+        if test_subset:
+            if test_subset.lower() == "qt" and "qapp" not in item.fixturenames:
+                # Skip non Qt tests
+                continue
+            if (
+                test_subset.lower() == "headless"
+                and "qapp" in item.fixturenames
+            ):
+                # Skip Qt tests
+                continue
+
         index = -1
         for i, prefix in enumerate(test_order_prefix):
             if prefix in str(item.fspath):
@@ -759,3 +778,42 @@ def pytest_runtest_setup(item):
                 "mock_console",
             ]
         )
+
+
+class NapariTerminalReporter(CustomTerminalReporter):
+    """
+    This ia s custom terminal reporter to how long it takes to finish given part of tests.
+    It prints time each time when test from different file is started.
+
+    It is created to be able to see if timeout is caused by long time execution, or it is just hanging.
+    """
+
+    currentfspath: Optional[Path]
+
+    def write_fspath_result(self, nodeid: str, res, **markup: bool) -> None:
+        if getattr(self, "_start_time", None) is None:
+            self._start_time = perf_counter()
+        fspath = self.config.rootpath / nodeid.split("::")[0]
+        if self.currentfspath is None or fspath != self.currentfspath:
+            if self.currentfspath is not None and self._show_progress_info:
+                self._write_progress_information_filling_space()
+                if os.environ.get("CI", False):
+                    self.write(
+                        f" [{timedelta(seconds=int(perf_counter() - self._start_time))}]"
+                    )
+            self.currentfspath = fspath
+            relfspath = bestrelpath(self.startpath, fspath)
+            self._tw.line()
+            self.write(relfspath + " ")
+        self.write(res, flush=True, **markup)
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config):
+    # Get the standard terminal reporter plugin and replace it with our
+    standard_reporter = config.pluginmanager.getplugin('terminalreporter')
+    custom_reporter = NapariTerminalReporter(config, sys.stdout)
+    if standard_reporter._session is not None:
+        custom_reporter._session = standard_reporter._session
+    config.pluginmanager.unregister(standard_reporter)
+    config.pluginmanager.register(custom_reporter, 'terminalreporter')

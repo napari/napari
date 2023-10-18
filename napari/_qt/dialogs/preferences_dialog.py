@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
     QListWidget,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QStackedWidget,
     QVBoxLayout,
 )
@@ -30,6 +31,7 @@ class PreferencesDialog(QDialog):
         "shortcuts": {"ui:widget": "shortcuts"},
         "extension2reader": {"ui:widget": "extension2reader"},
         "dask": {"ui:widget": "horizontal_object"},
+        "font_size": {"ui:widget": "font_size"},
     }
 
     resized = Signal(QSize)
@@ -39,6 +41,7 @@ class PreferencesDialog(QDialog):
 
         super().__init__(parent)
         self.setWindowTitle(trans._("Preferences"))
+        self.setMinimumSize(QSize(1065, 470))
 
         self._settings = get_settings()
         self._stack = QStackedWidget(self)
@@ -65,7 +68,7 @@ class PreferencesDialog(QDialog):
 
         self.setLayout(QHBoxLayout())
         self.layout().addLayout(left_layout, 1)
-        self.layout().addWidget(self._stack, 3)
+        self.layout().addWidget(self._stack, 4)
 
         # Build dialog from settings
         self._rebuild_dialog()
@@ -126,9 +129,25 @@ class PreferencesDialog(QDialog):
         form.widget.on_changed.connect(
             lambda d: getattr(self._settings, name.lower()).update(d)
         )
+        # make widgets follow values of the settings
+        settings_category = getattr(self._settings, name.lower())
+        excluded = set(
+            getattr(
+                getattr(settings_category, 'NapariConfig', None),
+                "preferences_exclude",
+                {},
+            )
+        )
+        for name_, emitter in settings_category.events.emitters.items():
+            if name_ not in excluded:
+                emitter.connect(update_widget_state(name_, form.widget))
+
+        page_scrollarea = QScrollArea()
+        page_scrollarea.setWidgetResizable(True)
+        page_scrollarea.setWidget(form)
 
         self._list.addItem(field.field_info.title or field.name)
-        self._stack.addWidget(form)
+        self._stack.addWidget(page_scrollarea)
 
     def _get_page_dict(self, field: 'ModelField') -> Tuple[dict, dict]:
         """Provides the schema, set of values for each setting, and the
@@ -226,3 +245,10 @@ class PreferencesDialog(QDialog):
 
             plugin_manager.set_call_order(self._starting_pm_order)
         super().reject()
+
+
+def update_widget_state(name, widget):
+    def _update_widget_state(event):
+        widget.state = {name: event.value}
+
+    return _update_widget_state
