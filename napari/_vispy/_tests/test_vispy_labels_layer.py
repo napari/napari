@@ -7,7 +7,6 @@ from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.utils.interactions import mouse_press_callbacks
 
 
-@skip_on_win_ci
 def make_labels_layer(array_type, shape):
     """Make a labels layer, either NumPy, zarr, or tensorstore."""
     chunks = tuple(s // 2 for s in shape)
@@ -32,6 +31,7 @@ def make_labels_layer(array_type, shape):
 
 
 @skip_local_popups
+@skip_on_win_ci
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
 def test_labels_painting(make_napari_viewer, array_type):
     """Check that painting labels paints on the canvas.
