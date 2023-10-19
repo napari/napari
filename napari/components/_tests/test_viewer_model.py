@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
+import zarr
 from npe2 import DynamicPlugin
 from pretend import stub
 
@@ -25,8 +26,6 @@ def array_cls():
     try:
         import tensorstore
     except ModuleNotFoundError:
-        import zarr
-
         return zarr.Array
 
     else:
@@ -322,12 +321,39 @@ def test_new_labels_follow_class(module_name):
     viewer.add_image(
         _get_zeros_for_labels_based_on_module(module, None)(
             shape=(10, 15), dtype="uint8"
-        )
+        ),
+        scale=(5, 5),
     )
     viewer._new_labels()
     assert len(viewer.layers) == 2
     assert np.max(viewer.layers[1].data) == 0
     assert isinstance(viewer.layers[1].data, viewer.layers[0].data.__class__)
+    assert np.array_equal(viewer.layers[1].scale, (5, 5))
+    assert np.array_equal(viewer.layers[1].data.shape, (10, 15))
+
+
+def test_new_labels_follow_chunk():
+    viewer = ViewerModel()
+    get_settings().application.new_labels_policy = (
+        NewLabelsPolicy.follow_image_class
+    )
+    viewer.add_image(
+        zarr.zeros(shape=(100, 100), dtype="uint8", chunks=(10, 10)),
+        scale=(5, 5),
+    )
+    viewer._new_labels()
+    assert len(viewer.layers) == 2
+    assert viewer.layers[1].data.chunks == (10, 10)
+
+    viewer.add_image(
+        zarr.zeros(shape=(100, 100), dtype="uint8", chunks=(20, 20)),
+        scale=(5, 5),
+    )
+
+    # majority chunk vote
+    viewer._new_labels()
+    assert len(viewer.layers) == 4
+    assert viewer.layers[1].data.chunks == (10, 10)
 
 
 @pytest.mark.parametrize("module_name", ["numpy", "zarr", "tensorstore"])
