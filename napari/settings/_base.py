@@ -23,7 +23,10 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from typing import AbstractSet, Any, Union
 
-    from pydantic.v1.env_settings import EnvSettingsSource, SettingsSourceCallable
+    from pydantic.v1.env_settings import (
+        EnvSettingsSource,
+        SettingsSourceCallable,
+    )
 
     from napari.utils.events import Event
 
