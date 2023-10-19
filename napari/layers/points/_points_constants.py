@@ -107,3 +107,15 @@ SHADING_TRANSLATION = {
     trans._("none"): Shading.NONE,
     trans._("spherical"): Shading.SPHERICAL,
 }
+
+
+class PointsProjectionMode(StringEnum):
+    """
+    Projection mode for aggregating a thick nD slice onto displayed dimensions.
+
+        * NONE: ignore slice thickness, only using the dims point
+        * ALL: project all points in the slice onto displayed dimensions
+    """
+
+    NONE = auto()
+    ALL = auto()

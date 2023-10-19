@@ -1,0 +1,90 @@
+name: "\U0001F41B Bug Report"
+description: Report a bug encountered while using napari
+labels:
+  - "bug"
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this issue! 🙏🏼
+
+        Please fill out the sections below to help us reproduce the problem.
+
+        If you've found a problem with content on the napari documentation site (napari.org) or with the rendering of the content,
+        please let us know [here](https://github.com/napari/docs/issues)
+
+  - type: textarea
+    id: bug-report
+    attributes:
+      label: "\U0001F41B Bug Report"
+      description: "Please provide a clear and concise description of the bug."
+      placeholder: "What went wrong? What did you expect to happen?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: "\U0001F4A1 Steps to Reproduce"
+      description: "Please provide a minimal code snippet or list of steps to reproduce the bug."
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: "\U0001F4A1 Expected Behavior"
+      description: "Please provide a clear and concise description of what you expected to happen."
+      placeholder: "What did you expect to happen?"
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: "\U0001F30E Environment"
+      description: |
+        Please provide detailed information regarding your environment. Please paste the output of `napari --info` here or copy  the information from the "napari info" dialog in the napari Help menu.
+
+        Otherwise, please provide information regarding your operating system (OS), Python version, napari version, Qt backend and version, Qt platform, method of installation, and any other relevant information related to your environment.
+
+
+      placeholder: |
+        napari: 0.5.0
+        Platform: macOS-13.2.1-arm64-arm-64bit
+        System: MacOS 13.2.1
+        Python: 3.11.4 (main, Aug 7 2023, 20:34:01) [Clang 14.0.3 (clang-1403.0.22.14.1)]
+        Qt: 5.15.10
+        PyQt5: 5.15.10
+        NumPy: 1.25.1
+        SciPy: 1.11.1
+        Dask: 2023.7.1
+        VisPy: 0.13.0
+        magicgui: 0.7.2
+        superqt: 0.5.4
+        in-n-out: 0.1.8
+        app-model: 0.2.0
+        npe2: 0.7.2
+
+        OpenGL:
+        - GL version: 2.1 Metal - 83
+        - MAX_TEXTURE_SIZE: 16384
+
+        Screens:
+        - screen 1: resolution 1512x982, scale 2.0
+
+        Settings path:
+        - /Users/.../napari/napari_5c6993c40c104085444cfc0c77fa392cb5cb8f56/settings.yaml
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+        label: "\U0001F4A1 Additional Context"
+        description: "Please provide any additional information or context regarding the problem here."
+        placeholder: "Add any other context about the problem here."

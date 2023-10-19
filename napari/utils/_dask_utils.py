@@ -59,14 +59,14 @@ def resize_dask_cache(
     from psutil import virtual_memory
 
     if nbytes is None and mem_fraction is not None:
-        nbytes = virtual_memory().total * mem_fraction
+        nbytes = int(virtual_memory().total * mem_fraction)
 
     avail = _DASK_CACHE.cache.available_bytes
     # if we don't have a cache already, create one.
     if avail == 1:
         # If neither nbytes nor mem_fraction was provided, use default
         if nbytes is None:
-            nbytes = virtual_memory().total * _DEFAULT_MEM_FRACTION
+            nbytes = int(virtual_memory().total * _DEFAULT_MEM_FRACTION)
         _DASK_CACHE.cache.resize(nbytes)
     elif nbytes is not None and nbytes != _DASK_CACHE.cache.available_bytes:
         # if the cache has already been registered, then calling

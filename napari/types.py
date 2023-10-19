@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     import dask.array  # noqa: ICN001
     import zarr
     from magicgui.widgets import FunctionGui
-    from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
+    from qtpy.QtWidgets import QWidget
 
 
 __all__ = [

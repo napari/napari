@@ -246,7 +246,7 @@ def update_pr(branch_name: str):
                 "\n\n This PR contains changes to the workflow file. "
             )
             comment_content += "Please download the artifact and update the constraints files manually. "
-            comment_content += f"Artifact: https://github.com/PartSeg/napari/actions/runs/{os.environ.get('GITHUB_RUN_ID')}"
+            comment_content += f"Artifact: https://github.com/{os.environ.get('GITHUB_REPOSITORY', 'napari/napari')}/actions/runs/{os.environ.get('GITHUB_RUN_ID')}"
         else:
             raise
     else:
@@ -273,7 +273,7 @@ def update_external_pr_comment(
     comment += "You could also get the updated files from the "
     comment += f"https://github.com/napari-bot/napari/tree/{new_branch_name}/resources/constraints. "
     comment += "Or ask the maintainers to provide you the contents of the constraints artifact "
-    comment += f"from the run https://github.com/PartSeg/napari/actions/runs/{os.environ.get('GITHUB_RUN_ID')}"
+    comment += f"from the run https://github.com/{os.environ.get('GITHUB_REPOSITORY', 'napari/napari')}/actions/runs/{os.environ.get('GITHUB_RUN_ID')}"
     return comment
 
 

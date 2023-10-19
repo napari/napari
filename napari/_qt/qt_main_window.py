@@ -53,6 +53,7 @@ from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
+from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
@@ -621,7 +622,11 @@ class Window:
 
         self._add_menus()
         self._update_theme()
+        self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
+        get_settings().appearance.events.font_size.connect(
+            self._update_theme_font_size
+        )
 
         self._add_viewer_dock_widget(
             self._qt_viewer.dockConsole, tabify=False, menu=self.window_menu
@@ -738,7 +743,7 @@ class Window:
     def qt_viewer(self):
         warnings.warn(
             trans._(
-                'Public access to Window.qt_viewer is deprecated and will be removed in\nv0.5.0. It is considered an "implementation detail" of the napari\napplication, not part of the napari viewer model. If your use case\nrequires access to qt_viewer, please open an issue to discuss.',
+                'Public access to Window.qt_viewer is deprecated and will be removed in\nv0.6.0. It is considered an "implementation detail" of the napari\napplication, not part of the napari viewer model. If your use case\nrequires access to qt_viewer, please open an issue to discuss.',
                 deferred=True,
             ),
             category=FutureWarning,
@@ -1341,8 +1346,16 @@ class Window:
     def _update_theme_no_event(self):
         self._update_theme()
 
-    def _update_theme(self, event=None):
+    def _update_theme_font_size(self, event=None):
+        settings = get_settings()
+        font_size = event.value if event else settings.appearance.font_size
+        extra_variables = {"font_size": f"{font_size}pt"}
+        self._update_theme(extra_variables=extra_variables)
+
+    def _update_theme(self, event=None, extra_variables=None):
         """Update widget color theme."""
+        if extra_variables is None:
+            extra_variables = {}
         settings = get_settings()
         with contextlib.suppress(AttributeError, RuntimeError):
             value = event.value if event else settings.appearance.theme
@@ -1351,8 +1364,17 @@ class Window:
             if value == "system":
                 # system isn't a theme, so get the name
                 actual_theme_name = get_system_theme()
-            # set the style sheet with the theme name
-            self._qt_window.setStyleSheet(get_stylesheet(actual_theme_name))
+            # check `font_size` value is always passed when updating style
+            if "font_size" not in extra_variables:
+                extra_variables.update(
+                    {"font_size": f"{settings.appearance.font_size}pt"}
+                )
+            # set the style sheet with the theme name and extra_variables
+            self._qt_window.setStyleSheet(
+                get_stylesheet(
+                    actual_theme_name, extra_variables=extra_variables
+                )
+            )
 
     def _status_changed(self, event):
         """Update status bar.
@@ -1525,10 +1547,8 @@ class Window:
             self._qt_window.close()
             del self._qt_window
 
-    def _open_preferences_dialog(self):
+    def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""
-        from napari._qt.dialogs.preferences_dialog import PreferencesDialog
-
         if self._pref_dialog is None:
             win = PreferencesDialog(parent=self._qt_window)
             self._pref_dialog = win
@@ -1548,6 +1568,8 @@ class Window:
             win.show()
         else:
             self._pref_dialog.raise_()
+
+        return self._pref_dialog
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
