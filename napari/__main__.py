@@ -209,7 +209,7 @@ def parse_sys_argv():
     return args, kwargs
 
 
-def _run():
+def _run() -> None:
     from napari import Viewer, run
     from napari.settings import get_settings
 
@@ -287,12 +287,15 @@ def _run():
                             wnames = _wnames
                         break
 
-                for _name, (_pname, _wnames) in plugin_manager.iter_widgets():
-                    if _name == 'dock' and pname == _pname:
+                for _name2, (
+                    _pname,
+                    _wnames_dict,
+                ) in plugin_manager.iter_widgets():
+                    if _name2 == 'dock' and pname == _pname:
                         plugin_manager_plugins.append(plugin)
                         if '__all__' in wnames:
                             # Plugin_manager iter_widgets return wnames as dict keys
-                            wnames = list(_wnames.keys())
+                            wnames = list(_wnames_dict.keys())
                         print(
                             trans._(
                                 'Non-npe2 plugin {pname} detected. Disable tabify for this plugin.',
@@ -354,15 +357,15 @@ def _run():
             ):
                 pname, *wnames = plugin
                 if '__all__' in wnames:
-                    for name, (_pname, _wnames) in chain(
+                    for name, (_pname, _wnames_collection) in chain(
                         _npe2.widget_iterator(), plugin_manager.iter_widgets()
                     ):
                         if name == 'dock' and pname == _pname:
-                            if isinstance(_wnames, dict):
+                            if isinstance(_wnames_collection, dict):
                                 # Plugin_manager iter_widgets return wnames as dict keys
-                                wnames = list(_wnames.keys())
+                                wnames = list(_wnames_collection.keys())
                             else:
-                                wnames = _wnames
+                                wnames = _wnames_collection
                             break
 
                 if wnames:
