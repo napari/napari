@@ -1117,6 +1117,7 @@ class Labels(_ImageBase):
             # has its dimensions  in th same order as the vispy
             # Volume
             # Account for downsampling in the case of multiscale
+            # -1 means lowest resolution here.
             start_point = (
                 start_point[dims_displayed]
                 / self.downsample_factors[-1][dims_displayed]
