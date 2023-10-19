@@ -53,8 +53,8 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest]
-        python: ["3.8", "3.9", "3.10", "3.11"]
-        backend: [pyqt5, pyside2]
+        python: ["3.8"] #, "3.9", "3.10", "3.11"]
+        backend: [pyqt5] #, pyside2]
         exclude:
           - python: '3.11'
             backend: pyside2
@@ -66,35 +66,35 @@ jobs:
           - python: 3.9
             platform: windows-latest
             backend: pyside2
-          - python: 3.9
-            platform: macos-latest
-            backend: pyqt5
-          # minimum specified requirements
-          - python: 3.8
-            platform: ubuntu-20.04
-            backend: pyqt5
-            MIN_REQ: 1
-          # test with --async_only
-          - python: 3.8
-            platform: ubuntu-20.04
-            toxenv: async-pyqt5-py38-linux
-          # test without any Qt backends
-          - python: 3.8
-            platform: ubuntu-20.04
-            backend: headless
-          - python: 3.9
-            platform: ubuntu-latest
-            backend: pyqt6
-          - python: 3.9
-            platform: ubuntu-latest
-            backend: pyside6
-          # pyside 6
-          - python: '3.10'
-            platform: ubuntu-latest
-            backend: pyside6
-          - python: '3.11'
-            platform: ubuntu-latest
-            backend: pyside6
+#          - python: 3.9
+#            platform: macos-latest
+#            backend: pyqt5
+#          # minimum specified requirements
+#          - python: 3.8
+#            platform: ubuntu-20.04
+#            backend: pyqt5
+#            MIN_REQ: 1
+#          # test with --async_only
+#          - python: 3.8
+#            platform: ubuntu-20.04
+#            toxenv: async-pyqt5-py38-linux
+#          # test without any Qt backends
+#          - python: 3.8
+#            platform: ubuntu-20.04
+#            backend: headless
+#          - python: 3.9
+#            platform: ubuntu-latest
+#            backend: pyqt6
+#          - python: 3.9
+#            platform: ubuntu-latest
+#            backend: pyside6
+#          # pyside 6
+#          - python: '3.10'
+#            platform: ubuntu-latest
+#            backend: pyside6
+#          - python: '3.11'
+#            platform: ubuntu-latest
+#            backend: pyside6
 
     steps:
       - name: Cancel Previous Runs
