@@ -158,6 +158,10 @@ jobs:
           MIN_REQ: ${{ matrix.MIN_REQ }}
           FORCE_COLOR: 1
           PIP_CONSTRAINT: resources/constraints/constraints_py${{ matrix.python }}${{ matrix.MIN_REQ && '_min_req' }}.txt
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        
       - uses: actions/upload-artifact@v3
         with:
           name: upload pytest timing reports as json
