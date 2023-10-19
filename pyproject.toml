@@ -549,6 +549,25 @@ module = [
     "napari.utils.colormaps.vendored.colors"
 ]
 check_untyped_defs = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.utils.events.containers._typed",
+    "napari.layers.base.base",
+]
+check_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.__main__",
+    "napari.utils.colormaps.vendored.colors"
+]
+check_untyped_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = false
 
@@ -574,8 +593,18 @@ warn_unused_ignores = false
 module = [
     "napari._vispy.overlays.bounding_box",
     "napari._vispy.overlays.brush_circle",
+    "napari._vispy.utils.gl",
     "napari.layers.base._base_mouse_bindings",
+    "napari.layers.utils.plane",
     "napari.utils._test_utils",
+    "napari.utils.info",
+    "napari.utils.naming"
 ]
 check_untyped_defs = false
 disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari._qt._qapp_model._menus"
+]
+warn_unused_ignores = false
