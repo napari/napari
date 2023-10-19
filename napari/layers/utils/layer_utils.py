@@ -1204,7 +1204,10 @@ def _get_zeros_for_labels_based_on_module(
         return _zeros
 
     warnings.warn(
-        trans._("Unknown data type for labels creation."),
+        trans._(
+            "Unknown data library {lib} for labels creation.",
+            lib=str(module.__name__),
+        ),
         category=RuntimeWarning,
     )
 

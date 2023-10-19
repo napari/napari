@@ -505,6 +505,7 @@ def test_register_label_attr_action(monkeypatch):
 
 def test_numpy_chunk_size():
     assert _get_chunk_size(np.zeros((100, 100))) is None
+    assert _get_chunk_size(list(range(10))) is None
 
 
 def test_zarr_get_chunk_size():
@@ -595,6 +596,50 @@ def test_get_zeros_for_labels_based_on_module(monkeypatch):
     assert isinstance(res, partial)
     assert res.keywords == {'chunks': (10, 10)}
     assert res.func is zarr.zeros
+
+
+def test_get_zeros_for_labels_based_on_module_dask(monkeypatch):
+    def _get_zarr():
+        return zarr
+
+    monkeypatch.setattr(
+        "napari.layers.utils.layer_utils._get_tensorstore_or_zarr", _get_zarr
+    )
+    assert _get_zeros_for_labels_based_on_module(da, None) is zarr.zeros
+
+
+def test_get_zeros_for_labels_based_on_module_dask_warning(monkeypatch):
+    def _get_zarr():
+        return None
+
+    monkeypatch.setattr(
+        "napari.layers.utils.layer_utils._get_tensorstore_or_zarr", _get_zarr
+    )
+    with pytest.warns(RuntimeWarning, match="We cannot use dask.array"):
+        assert _get_zeros_for_labels_based_on_module(da, None) is np.zeros
+
+
+def test_get_zeros_for_labels_based_on_module_dask_tensorstore(monkeypatch):
+    ts = pytest.importorskip('tensorstore')
+
+    def _get_ts():
+        return ts
+
+    monkeypatch.setattr(
+        "napari.layers.utils.layer_utils._get_tensorstore_or_zarr", _get_ts
+    )
+    res = _get_zeros_for_labels_based_on_module(da, (10, 10))
+
+    arr = res(shape=(100, 100), dtype='u2')
+
+    assert isinstance(arr, ts.TensorStore)
+    assert arr.shape == (100, 100)
+    assert arr.chunk_layout.read_chunk.shape == (10, 10)
+
+
+def test_get_zeros_for_labels_based_on_module_unknown():
+    with pytest.warns(RuntimeWarning, match="Unknown data library"):
+        assert _get_zeros_for_labels_based_on_module(pytest, None) is np.zeros
 
 
 def test_get_zeros_for_labels_based_on_module_tensorstore():
