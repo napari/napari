@@ -1,7 +1,12 @@
+from typing import Dict, Tuple
+
 import numpy as np
+import numpy.typing as npt
 
 
-def index_in_slice(index, position_in_axes):
+def index_in_slice(
+    index: Tuple[npt.NDArray[np.int_], ...], position_in_axes: Dict[int, int]
+) -> Tuple[npt.NDArray[np.int_], ...]:
     """Convert a NumPy fancy indexing expression from data to sliced space.
 
     Parameters

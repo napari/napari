@@ -211,12 +211,6 @@ disable_error_code = [
 always_false=['PYSIDE6', 'PYSIDE2', 'PYQT5']
 always_true=['PYQT6']
 
-# maybe someday :)
-# disallow_any_generics = true
-# no_implicit_reexport = true
-# warn_unreachable = true
-# strict_equality = true
-
 
 # gloabl ignore error
 [[tool.mypy.overrides]]
@@ -377,8 +371,6 @@ module = [
     "napari.layers.utils.interactivity_utils",
     "napari.layers.vectors._vector_utils",
     "napari.resources._icons",
-    "napari.utils._dask_utils",
-    "napari.utils.color",
     "napari.utils.events.containers._dict",
     "napari.utils.events.event_utils",
     "napari.utils.migrations",
@@ -410,10 +402,6 @@ module = [
     "napari.layers.base._base_constants",
     "napari.layers.image._image_constants",
     "napari.utils.colormaps.categorical_colormap_utils",
-    "napari.utils.colormaps.colorbars",
-    "napari.utils.config",
-    "napari.utils.history",
-    "napari.utils.indexing",
     "napari.utils.perf._event",
     "napari.utils.perf._trace_file",
 ]
@@ -445,9 +433,6 @@ module = [
     "napari.layers.image._image_key_bindings",
     "napari.layers.labels._labels_key_bindings",
     "napari.layers.shapes._mesh",
-    'napari.layers.shapes._shape_list',
-    'napari.layers.shapes._shapes_key_bindings',
-    'napari.layers.shapes._shapes_utils',
     "napari.layers.surface._surface_key_bindings",
     "napari.layers.tracks._tracks_key_bindings",
     "napari.layers.utils._slice_input",
@@ -603,9 +588,3 @@ module = [
 ]
 check_untyped_defs = false
 disallow_untyped_defs = false
-
-[[tool.mypy.overrides]]
-module = [
-    "napari._qt._qapp_model._menus"
-]
-warn_unused_ignores = false
