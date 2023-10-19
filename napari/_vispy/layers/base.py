@@ -47,6 +47,8 @@ class VispyBaseLayer(ABC, Generic[_L]):
         Transform positioning the layer visual inside the scenecanvas.
     """
 
+    layer: _L
+
     def __init__(self, layer: _L, node) -> None:
         super().__init__()
         self.events = None  # Some derived classes have events.
