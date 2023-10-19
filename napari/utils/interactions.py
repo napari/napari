@@ -328,12 +328,17 @@ class Shortcut:
             text.replace('+', '')
             text.replace('Plus', '+')
         for k, v in KEY_SYMBOLS.items():
-            new_text = f'{k}-' if sys.platform == 'darwin' else k
-            # case where we are replacing the last symbol in the shortcut
-            # (no need to add `-` even when we are on macOS)
+            # new_text = f'{k}-' if sys.platform == 'darwin' else k
+            # # case where we are replacing the last symbol in the shortcut
+            # # (no need to add `-` even when we are on macOS)
+            # if text.endswith(v):
+            #     new_text = k
+            # text = text.replace(v, new_text)
             if text.endswith(v):
-                new_text = k
-            text = text.replace(v, new_text)
+                text = text.replace(v, k)
+                assert v not in text
+            else:
+                text = text.replace(v, k + '-')
 
         return text
 

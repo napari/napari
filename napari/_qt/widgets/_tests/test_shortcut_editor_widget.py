@@ -1,5 +1,4 @@
 import sys
-import warnings
 from unittest.mock import patch
 
 import pytest
@@ -7,12 +6,23 @@ from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication, QMessageBox
 
 from napari._qt.widgets.qt_keyboard_settings import ShortcutEditor, WarnPopup
+from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import KEY_SYMBOLS
 
 
 @pytest.fixture
 def shortcut_editor_widget(qtbot):
+    # Always reset shortcuts (settings and action manager)
+    get_settings().shortcuts.reset()
+    for (
+        action,
+        shortcuts,
+    ) in get_settings().shortcuts.shortcuts.items():
+        action_manager.unbind_shortcut(action)
+        for shortcut in shortcuts:
+            action_manager.bind_shortcut(action, shortcut)
+
     def _shortcut_editor_widget(**kwargs):
         widget = ShortcutEditor(**kwargs)
         widget._reset_shortcuts()
@@ -92,7 +102,7 @@ def test_restore_defaults(shortcut_editor_widget, qtbot):
     ],
 )
 def test_keybinding_with_modifiers(
-    shortcut_editor_widget, qtbot, key, modifier, key_symbols
+    shortcut_editor_widget, qtbot, recwarn, key, modifier, key_symbols
 ):
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
@@ -108,9 +118,8 @@ def test_keybinding_with_modifiers(
         widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
     )
     qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
-    with warnings.catch_warnings(record=True) as recorded_warnings:
-        qtbot.keyClicks(QApplication.focusWidget(), key, modifier=modifier)
-    assert len(recorded_warnings) == 0
+    qtbot.keyClicks(QApplication.focusWidget(), key, modifier=modifier)
+    assert len(recwarn) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     for key_symbol in key_symbols:
@@ -134,7 +143,7 @@ def test_keybinding_with_modifiers(
     ],
 )
 def test_keybinding_with_only_modifiers(
-    shortcut_editor_widget, qtbot, modifiers, key_symbols, valid
+    shortcut_editor_widget, qtbot, recwarn, modifiers, key_symbols, valid
 ):
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
@@ -154,7 +163,11 @@ def test_keybinding_with_only_modifiers(
         qtbot.keyClick(
             QApplication.focusWidget(), Qt.Key_Enter, modifier=modifiers
         )
-        assert mock.called is not valid
+        if valid:
+            assert not mock.called
+        else:
+            assert mock.called
+    assert len(recwarn) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     for key_symbol in key_symbols:
