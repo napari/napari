@@ -27,6 +27,5 @@ repos:
     - id: check-merge-conflict
     - id: end-of-file-fixer
     - id: trailing-whitespace
-      exclude: .*\.md
+      exclude: .*\.md|_vendor|vendored
     - id: mixed-line-ending
-    - id: no-commit-to-branch

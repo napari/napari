@@ -123,7 +123,7 @@ fix = true
 "napari/_vispy/__init__.py" = ["E402"]
 "**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
 "napari/utils/_testsupport.py" = ["B011"]
-"tools/test_strings.py" = ["F401"]
+"tools/validate_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20"]
 "examples/**" = ["ICN001", "INP001", "T20"]
 "**/vendored/**" = ["TID"]
@@ -199,6 +199,10 @@ disable_error_code = [
   # that in several places, so ignore the error
   'method-assign'
 ]
+# see `$ qtpy mypy-args` and qtpy readme. This will be used by `tox -e mypy`
+# to properly infer with PyQt6 installed
+always_false=['PYSIDE6', 'PYSIDE2', 'PYQT5']
+always_true=['PYQT6']
 
 
 # gloabl ignore error

@@ -706,7 +706,7 @@ if __name__ == '__main__':
                 print(f"{RED}e{NORMAL} : EDIT - using {edit_cmd!r}")
             else:
                 print(
-                    "- : Edit not available, call with python tools/test_strings.py  '$COMMAND {filename} {linenumber} '"
+                    "- : Edit not available, call with python tools/validate_strings.py  '$COMMAND {filename} {linenumber} '"
                 )
             print(f"{RED}s{NORMAL} : save and quit")
             print('> ', end='')
