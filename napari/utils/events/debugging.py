@@ -4,7 +4,7 @@ import site
 from textwrap import indent
 from typing import TYPE_CHECKING, ClassVar, Set
 
-from pydantic import BaseSettings, Field, PrivateAttr
+from pydantic.v1 import BaseSettings, Field, PrivateAttr
 
 from napari.utils.misc import ROOT_DIR
 from napari.utils.translations import trans

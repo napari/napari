@@ -2,7 +2,7 @@ from string import Formatter
 from typing import Any, Literal, Protocol, Sequence, Union, runtime_checkable
 
 import numpy as np
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from napari.layers.utils.style_encoding import (
     StyleEncoding,

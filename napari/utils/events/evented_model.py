@@ -5,7 +5,7 @@ from typing import Any, Callable, ClassVar, Dict, Set, Tuple, Union
 
 import numpy as np
 from app_model.types import KeyBinding
-from pydantic import BaseModel, PrivateAttr, main, utils
+from pydantic.v1 import BaseModel, PrivateAttr, main, utils
 
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.misc import pick_equality_operator

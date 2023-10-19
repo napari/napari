@@ -22,7 +22,7 @@ from napari_plugin_engine import (
     PluginManager as PluginManager,
 )
 from napari_plugin_engine.hooks import HookCaller
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from typing_extensions import TypedDict
 
 from napari.plugins import hook_specifications

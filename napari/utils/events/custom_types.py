@@ -11,12 +11,12 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import errors, types
+from pydantic.v1 import errors, types
 
 if TYPE_CHECKING:
     from decimal import Decimal
 
-    from pydantic.fields import ModelField
+    from pydantic.v1.fields import ModelField
 
     Number = Union[int, float, Decimal]
 

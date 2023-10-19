@@ -2,7 +2,7 @@ import warnings
 from typing import Optional, Tuple
 
 import numpy as np
-from pydantic import validator
+from pydantic.v1 import validator
 from scipy.spatial.transform import Rotation as R
 
 from napari.utils.events import EventedModel

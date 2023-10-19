@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 
 from napari.layers.utils.plane import ClippingPlaneList, Plane, SlicingPlane
 

@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic.v1 import Field
 
 from napari.utils.color import ColorValue
 from napari.utils.events import EventedModel

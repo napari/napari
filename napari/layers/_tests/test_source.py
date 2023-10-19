@@ -1,4 +1,4 @@
-import pydantic
+from pydantic.v1 import ValidationError
 import pytest
 
 from napari.layers import Points
@@ -46,7 +46,7 @@ def test_source_context():
 
 def test_source_assert_parent():
     assert current_source() == Source()
-    with pytest.raises(pydantic.error_wrappers.ValidationError):
+    with pytest.raises(ValidationError):
         with layer_source(parent=''):
             current_source()
     assert current_source() == Source()

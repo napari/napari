@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Optional, Tuple
 
 from psutil import virtual_memory
-from pydantic import Field, validator
+from pydantic.v1 import Field, validator
 
 from napari.settings._constants import BrushSizeOnMouseModifiers, LoopMode
 from napari.settings._fields import Language

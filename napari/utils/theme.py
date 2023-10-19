@@ -9,8 +9,8 @@ from contextlib import suppress
 from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 import npe2
-from pydantic import validator
-from pydantic.color import Color
+from pydantic.v1 import validator
+from pydantic.v1.color import Color
 
 from napari._vendor import darkdetect
 from napari.resources._icons import (

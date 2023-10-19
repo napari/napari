@@ -1,5 +1,5 @@
 """Text label model."""
-from pydantic import Field
+from pydantic.v1 import Field
 
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue

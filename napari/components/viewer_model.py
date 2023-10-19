@@ -20,7 +20,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Extra, Field, PrivateAttr, validator
+from pydantic.v1 import Extra, Field, PrivateAttr, validator
 
 from napari import layers
 from napari.components._layer_slicer import _LayerSlicer

@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
 from warnings import warn
 
-from pydantic import BaseModel, BaseSettings, ValidationError
-from pydantic.env_settings import SettingsError
-from pydantic.error_wrappers import display_errors
+from pydantic.v1 import BaseModel, BaseSettings, ValidationError
+from pydantic.v1.env_settings import SettingsError
+from pydantic.v1.error_wrappers import display_errors
 
 from napari.settings._yaml import PydanticYamlMixin
 from napari.utils.events import EmitterGroup, EventedModel
@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from typing import AbstractSet, Any, Union
 
-    from pydantic.env_settings import EnvSettingsSource, SettingsSourceCallable
+    from pydantic.v1.env_settings import EnvSettingsSource, SettingsSourceCallable
 
     from napari.utils.events import Event
 

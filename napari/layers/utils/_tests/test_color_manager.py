@@ -3,7 +3,7 @@ from itertools import cycle, islice
 
 import numpy as np
 import pytest
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 
 from napari.layers.utils.color_manager import ColorManager, ColorProperties
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap

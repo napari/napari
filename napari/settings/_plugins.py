@@ -1,6 +1,6 @@
 from typing import Dict, List, Set
 
-from pydantic import Field
+from pydantic.v1 import Field
 from typing_extensions import TypedDict
 
 from napari.settings._base import EventedSettings

@@ -5,7 +5,7 @@ from napari.utils.events.event import EmitterGroup
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from pydantic.fields import ModelField
+    from pydantic.v1.fields import ModelField
 
 _T = TypeVar("_T")
 _S = TypeVar("_S")
@@ -180,7 +180,7 @@ class Selection(EventedSet[_T]):
                 errors.append(error)
 
         if errors:
-            from pydantic import ValidationError
+            from pydantic.v1 import ValidationError
 
             raise ValidationError(errors, cls)  # type: ignore
         obj = cls(data=data)

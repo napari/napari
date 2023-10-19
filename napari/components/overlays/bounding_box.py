@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic.v1 import Field
 
 from napari.components.overlays.base import SceneOverlay
 from napari.utils.color import ColorValue

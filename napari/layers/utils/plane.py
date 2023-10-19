@@ -1,7 +1,7 @@
 from typing import Tuple, cast
 
 import numpy as np
-from pydantic import validator
+from pydantic.v1 import validator
 
 from napari.utils.events import EventedModel, SelectableEventedList
 from napari.utils.geometry import intersect_line_with_plane_3d
