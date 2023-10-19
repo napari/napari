@@ -3,10 +3,11 @@ import pytest
 import zarr
 from qtpy.QtCore import QCoreApplication
 
-from napari._tests.utils import skip_local_popups
+from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.utils.interactions import mouse_press_callbacks
 
 
+@skip_on_win_ci
 def make_labels_layer(array_type, shape):
     """Make a labels layer, either NumPy, zarr, or tensorstore."""
     chunks = tuple(s // 2 for s in shape)
