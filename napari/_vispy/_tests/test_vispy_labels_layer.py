@@ -31,9 +31,9 @@ def make_labels_layer(array_type, shape):
 
 
 @skip_local_popups
-@skip_on_win_ci
+# @skip_on_win_ci
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
-def test_labels_painting(make_napari_viewer, array_type):
+def test_labels_painting(make_napari_viewer, array_type, qtbot):
     """Check that painting labels paints on the canvas.
 
     This should work regardless of array type. See:
@@ -46,6 +46,7 @@ def test_labels_painting(make_napari_viewer, array_type):
     layer.paint((10, 10), 1, refresh=True)
     visual = viewer.window._qt_viewer.layer_to_visual[layer]
     assert np.any(visual.node._data)
+    qtbot.wait(10)
 
 
 @skip_local_popups
@@ -68,13 +69,14 @@ def test_labels_fill_slice(make_napari_viewer, array_type, qtbot):
     layer.fill((1, 10, 10), 13, refresh=True)
     visual = viewer.window._qt_viewer.layer_to_visual[layer]
     assert np.sum(visual.node._data) == 13
+    qtbot.wait(10)
 
 
 @skip_local_popups
 @skip_on_win_ci
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
 def test_labels_painting_with_mouse(
-    MouseEvent, make_napari_viewer, array_type
+    MouseEvent, make_napari_viewer, array_type, qtbot
 ):
     """Check that painting labels paints on the canvas when using mouse.
 
@@ -98,3 +100,4 @@ def test_labels_painting_with_mouse(
     assert not np.any(visual.node._data)
     mouse_press_callbacks(layer, event)
     assert np.any(visual.node._data)
+    qtbot.wait(10)
