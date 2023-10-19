@@ -71,6 +71,7 @@ def test_labels_fill_slice(make_napari_viewer, array_type, qtbot):
 
 
 @skip_local_popups
+@skip_on_win_ci
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
 def test_labels_painting_with_mouse(
     MouseEvent, make_napari_viewer, array_type
