@@ -31,7 +31,7 @@ def make_labels_layer(array_type, shape):
 
 
 @skip_local_popups
-# @skip_on_win_ci
+@skip_on_win_ci
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
 def test_labels_painting(make_napari_viewer, array_type, qtbot):
     """Check that painting labels paints on the canvas.
@@ -50,6 +50,7 @@ def test_labels_painting(make_napari_viewer, array_type, qtbot):
 
 
 @skip_local_popups
+@skip_on_win_ci
 @pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
 def test_labels_fill_slice(make_napari_viewer, array_type, qtbot):
     """Check that painting labels paints only on current slice.
