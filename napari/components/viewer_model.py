@@ -459,7 +459,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         sizes = []
         for layer in self.layers:
             if isinstance(layer, Image):
-                chunk_size = _get_chunk_size(layer)
+                chunk_size = _get_chunk_size(layer.data)
                 if (
                     chunk_size is not None
                     and len(chunk_size) == self.dims.ndim

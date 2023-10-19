@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import psutil
 
+from napari.layers._data_protocols import LayerDataProtocol
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
 from napari.utils.transforms import Affine
@@ -1082,11 +1083,10 @@ def _unique_element(array: Array) -> Optional[Any]:
 
 
 def _get_chunk_size(
-    data: MultiScaleData
+    data: LayerDataProtocol
+    | MultiScaleData
     | Iterable
     | npt.NDArray
-    | float
-    | list
     | Iterable[npt.NDArray]
     | DataArray
     | None,

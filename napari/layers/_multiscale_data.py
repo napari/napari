@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Sequence, Tuple, Union
+from typing import List, Protocol, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -9,7 +9,7 @@ from napari.utils.translations import trans
 
 
 # note: this also implements `LayerDataProtocol`, but we don't need to inherit.
-class MultiScaleData(Sequence[LayerDataProtocol]):
+class MultiScaleData(Sequence[LayerDataProtocol], Protocol):
     """Wrapper for multiscale data, to provide consistent API.
 
     :class:`LayerDataProtocol` is the subset of the python Array API that we
