@@ -375,7 +375,7 @@ def qt_might_be_rich_text(text) -> bool:
         return bool(RICH_TEXT_PATTERN.search(text))
 
 
-def in_qt_main_thread():
+def in_qt_main_thread() -> bool:
     """
     Check if we are in the thread in which QApplication object was created.
 

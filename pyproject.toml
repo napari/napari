@@ -371,6 +371,7 @@ module = [
     "napari.layers.utils.interactivity_utils",
     "napari.layers.vectors._vector_utils",
     "napari.resources._icons",
+    "napari.utils.color",
     "napari.utils.events.containers._dict",
     "napari.utils.events.event_utils",
     "napari.utils.migrations",
@@ -508,7 +509,6 @@ module = [
     "napari.layers.utils.layer_utils",
     "napari.layers.vectors.vectors",
     "napari.utils._dtype",
-    "napari.utils._proxies",
     "napari.utils.colormaps.colormap_utils",
     "napari.utils.misc",
     "napari.utils.perf._timers"
@@ -582,12 +582,8 @@ warn_unused_ignores = false
 module = [
     "napari._vispy.overlays.bounding_box",
     "napari._vispy.overlays.brush_circle",
-    "napari._vispy.utils.gl",
     "napari.layers.base._base_mouse_bindings",
-    "napari.layers.utils.plane",
     "napari.utils._test_utils",
-    "napari.utils.info",
-    "napari.utils.naming"
 ]
 check_untyped_defs = false
 disallow_untyped_defs = false
