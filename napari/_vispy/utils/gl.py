@@ -107,7 +107,7 @@ def fix_data_dtype(data: npt.NDArray) -> npt.NDArray:
             }[dtype.kind],
         )
         if dtype_ == np.uint16 and dtype.itemsize > 2:
-            dtype_ = np.float32
+            dtype_ = np.float32  # type: ignore [assignment]
     except KeyError as e:  # not an int or float
         raise TypeError(
             trans._(
