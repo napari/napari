@@ -111,7 +111,7 @@ jobs:
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
-          - python: 3.10
+          - python: "3.10"
             platform: ubuntu-22.04
             backend: pyqt5
             coverage: cov
