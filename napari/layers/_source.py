@@ -3,9 +3,11 @@ from __future__ import annotations
 import weakref
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Optional, Tuple
+from typing import Any, Generator, Optional, Tuple
+from weakref import ReferenceType
 
 from magicgui.widgets import FunctionGui
+from typing_extensions import Self
 
 from napari._pydantic_compat import BaseModel, validator
 from napari.layers.base.base import Layer
@@ -40,10 +42,10 @@ class Source(BaseModel):
         frozen = True
 
     @validator('parent', allow_reuse=True)
-    def make_weakref(cls, layer: Layer):
+    def make_weakref(cls, layer: Layer) -> ReferenceType[Layer]:
         return weakref.ref(layer)
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: Any) -> Self:
         """Custom deepcopy implementation.
 
         this prevents deep copy. `Source` doesn't really need to be copied
@@ -59,7 +61,7 @@ _LAYER_SOURCE: ContextVar[dict] = ContextVar('_LAYER_SOURCE', default={})
 
 
 @contextmanager
-def layer_source(**source_kwargs):
+def layer_source(**source_kwargs: Any) -> Generator[None, None, None]:
     """Creates context in which all layers will be given `source_kwargs`.
 
     The module-level variable `_LAYER_SOURCE` holds a set of key-value pairs
@@ -101,7 +103,7 @@ def layer_source(**source_kwargs):
         _LAYER_SOURCE.reset(token)
 
 
-def current_source():
+def current_source() -> Source:
     """Get the current layer :class:`Source` (inferred from context).
 
     The main place this function is used is in :meth:`Layer.__init__`.

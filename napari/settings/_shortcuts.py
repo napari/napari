@@ -21,7 +21,9 @@ class ShortcutsSettings(EventedModel):
         preferences_exclude = ('schema_version',)
 
     @validator('shortcuts', allow_reuse=True)
-    def shortcut_validate(cls, v):
+    def shortcut_validate(
+        cls, v: Dict[str, List[KeyBinding]]
+    ) -> Dict[str, List[KeyBinding]]:
         for name, value in default_shortcuts.items():
             if name not in v:
                 v[name] = value

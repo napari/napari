@@ -364,7 +364,6 @@ module = [
     "napari._vispy.visuals.markers",
     "napari._vispy.visuals.surface",
     "napari.layers._data_protocols",
-    "napari.layers._source",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
     "napari.layers.utils.interactivity_utils",
@@ -383,11 +382,6 @@ disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari.settings._utils",
-    "napari.settings._appearance",
-    "napari.settings._shortcuts",
-    "napari.settings._application",
-    "napari._app_model.actions._view_actions",
     "napari._event_loop",
     "napari._vispy.utils.quaternion",
     "napari._vispy.visuals.bounding_box",
@@ -399,7 +393,6 @@ module = [
     "napari.components._viewer_mouse_bindings",
     "napari.components.overlays.base",
     "napari.components.overlays.interaction_box",
-    "napari.layers.base._base_constants",
     "napari.utils.colormaps.categorical_colormap_utils",
     "napari.utils.perf._event",
     "napari.utils.perf._trace_file",
