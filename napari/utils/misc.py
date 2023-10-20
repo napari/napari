@@ -142,7 +142,9 @@ def ensure_iterable(arg, color=False):
     return itertools.repeat(arg)
 
 
-def is_iterable(arg, color=False, allow_none=False):
+def is_iterable(
+    arg: Any, color: bool = False, allow_none: bool = False
+) -> bool:
     """Determine if a single argument is an iterable. If a color is being
     provided and the argument is a 1-D array of length 3 or 4 then the input
     is taken to not be iterable. If allow_none is True, `None` is considered iterable.
@@ -159,7 +161,7 @@ def is_iterable(arg, color=False, allow_none=False):
     return True
 
 
-def is_sequence(arg):
+def is_sequence(arg: Any) -> bool:
     """Check if ``arg`` is a sequence like a list or tuple.
 
     return True:
@@ -455,7 +457,7 @@ def ensure_n_tuple(val, n, fill=0):
     return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
 
 
-def ensure_layer_data_tuple(val):
+def ensure_layer_data_tuple(val: Any):
     msg = trans._(
         'Not a valid layer data tuple: {value!r}',
         deferred=True,
