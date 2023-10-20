@@ -238,7 +238,7 @@ def update_pr(branch_name: str):
     comment_content = long_description(f"origin/{branch_name}")
 
     try:
-        push(new_branch_name, update=True)
+        push(new_branch_name, update=branch_name != DEFAULT_BRANCH_NAME)
     except subprocess.CalledProcessError as e:
         if "create or update workflow" in e.stderr.decode():
             logging.info("Workflow file changed. Skip PR create.")
