@@ -6,6 +6,8 @@
 #
 alabaster==0.7.13
     # via sphinx
+annotated-types==0.6.0
+    # via pydantic
 app-model==0.2.2
     # via napari (napari_repo/setup.cfg)
 appdirs==1.4.4
@@ -149,7 +151,7 @@ locket==1.0.0
     # via partd
 lxml==4.9.3
     # via napari (napari_repo/setup.cfg)
-magicgui==0.7.3
+magicgui==0.8.0
     # via napari (napari_repo/setup.cfg)
 markdown-it-py==3.0.0
     # via rich
@@ -163,14 +165,15 @@ matplotlib-inline==0.1.6
     #   ipython
 mdurl==0.1.2
     # via markdown-it-py
+ml-dtypes==0.3.1
+    # via tensorstore
 mypy-extensions==1.0.0
     # via psygnal
-napari-console==0.0.8
+napari-console==0.0.9
     # via napari (napari_repo/setup.cfg)
 napari-plugin-engine==0.2.0
     # via
     #   napari (napari_repo/setup.cfg)
-    #   napari-console
     #   napari-svg
 napari-plugin-manager==0.1.0a2
     # via napari (napari_repo/setup.cfg)
@@ -178,13 +181,13 @@ napari-svg==0.1.10
     # via napari (napari_repo/setup.cfg)
 nest-asyncio==1.5.8
     # via ipykernel
-networkx==3.1
+networkx==3.2
     # via scikit-image
-npe2==0.7.2
+npe2==0.7.3
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-plugin-manager
-numcodecs==0.12.0
+numcodecs==0.12.1
     # via zarr
 numpy==1.26.1
     # via
@@ -192,6 +195,7 @@ numpy==1.26.1
     #   dask
     #   imageio
     #   matplotlib
+    #   ml-dtypes
     #   napari (napari_repo/setup.cfg)
     #   napari-svg
     #   numcodecs
@@ -269,11 +273,15 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==1.10.13
+pyconify==0.1.5
+    # via superqt
+pydantic==2.4.2
     # via
     #   app-model
     #   napari (napari_repo/setup.cfg)
     #   npe2
+pydantic-core==2.10.1
+    # via pydantic
 pygments==2.16.1
     # via
     #   ipython
@@ -368,6 +376,7 @@ referencing==0.30.2
 requests==2.31.0
     # via
     #   pooch
+    #   pyconify
     #   sphinx
 rich==13.6.0
     # via
@@ -430,7 +439,7 @@ superqt==0.6.1
     #   napari-plugin-manager
 tabulate==0.9.0
     # via numpydoc
-tensorstore==0.1.45
+tensorstore==0.1.46
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/setup.cfg)
@@ -478,11 +487,12 @@ typing-extensions==4.8.0
     #   pint
     #   psygnal
     #   pydantic
+    #   pydantic-core
     #   superqt
     #   typer
 tzdata==2023.3
     # via pandas
-urllib3==2.0.6
+urllib3==2.0.7
     # via requests
 virtualenv==20.24.5
     # via napari (napari_repo/setup.cfg)
@@ -494,7 +504,7 @@ wcwidth==0.2.8
     # via prompt-toolkit
 wrapt==1.15.0
     # via napari (napari_repo/setup.cfg)
-xarray==2023.9.0
+xarray==2023.10.1
     # via napari (napari_repo/setup.cfg)
 zarr==2.16.1
     # via napari (napari_repo/setup.cfg)

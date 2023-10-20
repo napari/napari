@@ -6,6 +6,8 @@
 #
 alabaster==0.7.13
     # via sphinx
+annotated-types==0.6.0
+    # via pydantic
 app-model==0.2.2
     # via napari (napari_repo/setup.cfg)
 appdirs==1.4.4
@@ -157,7 +159,7 @@ locket==1.0.0
     # via partd
 lxml==4.9.3
     # via napari (napari_repo/setup.cfg)
-magicgui==0.7.3
+magicgui==0.8.0
     # via napari (napari_repo/setup.cfg)
 markdown-it-py==3.0.0
     # via rich
@@ -173,12 +175,11 @@ mdurl==0.1.2
     # via markdown-it-py
 mypy-extensions==1.0.0
     # via psygnal
-napari-console==0.0.8
+napari-console==0.0.9
     # via napari (napari_repo/setup.cfg)
 napari-plugin-engine==0.2.0
     # via
     #   napari (napari_repo/setup.cfg)
-    #   napari-console
     #   napari-svg
 napari-plugin-manager==0.1.0a2
     # via napari (napari_repo/setup.cfg)
@@ -188,11 +189,11 @@ nest-asyncio==1.5.8
     # via ipykernel
 networkx==3.1
     # via scikit-image
-npe2==0.7.2
+npe2==0.7.3
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-plugin-manager
-numcodecs==0.12.0
+numcodecs==0.12.1
     # via zarr
 numpy==1.24.4
     # via
@@ -280,11 +281,15 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==1.10.13
+pyconify==0.1.5
+    # via superqt
+pydantic==2.4.2
     # via
     #   app-model
     #   napari (napari_repo/setup.cfg)
     #   npe2
+pydantic-core==2.10.1
+    # via pydantic
 pygments==2.16.1
     # via
     #   ipython
@@ -383,6 +388,7 @@ referencing==0.30.2
 requests==2.31.0
     # via
     #   pooch
+    #   pyconify
     #   sphinx
 rich==13.6.0
     # via
@@ -481,18 +487,20 @@ typer==0.9.0
     # via npe2
 typing-extensions==4.8.0
     # via
+    #   annotated-types
     #   app-model
     #   ipython
     #   magicgui
     #   napari (napari_repo/setup.cfg)
     #   psygnal
     #   pydantic
+    #   pydantic-core
     #   rich
     #   superqt
     #   typer
 tzdata==2023.3
     # via pandas
-urllib3==2.0.6
+urllib3==2.0.7
     # via requests
 virtualenv==20.24.5
     # via napari (napari_repo/setup.cfg)
