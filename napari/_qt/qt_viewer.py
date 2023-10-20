@@ -6,6 +6,7 @@ import traceback
 import typing
 import warnings
 from pathlib import Path
+from types import FrameType
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 from weakref import WeakSet, ref
 
@@ -60,6 +61,7 @@ from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.theme import get_theme
+from napari.utils.naming import CallerFrame
 from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
 
@@ -576,6 +578,7 @@ class QtViewer(QSplitter):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
             try:
+                import numpy as np
                 from napari_console import QtConsole
 
                 import napari
@@ -586,6 +589,9 @@ class QtViewer(QSplitter):
                     self.console.push(
                         {'napari': napari, 'action_manager': action_manager}
                     )
+                    with CallerFrame(_in_napari) as c:
+                        if c.frame.f_globals.get("__name__", "") == "__main__":
+                            self.console.push({"np": np})
                     for i in self.console_backlog:
                         # recover weak refs
                         self.console.push(
@@ -1420,3 +1426,18 @@ def _create_remote_manager(
     qt_poll.events.poll.connect(monitor.on_poll)
 
     return manager
+
+
+def _in_napari(n: int, frame: FrameType):
+    """
+    Determines whether we are in napari by looking at:
+        1) the frames modules names:
+        2) the min_depth
+    """
+    if n < 2:
+        return True
+    # in-n-out is used in napari for dependency injection.
+    for pref in {"napari.", "in_n_out."}:
+        if frame.f_globals.get("__name__", "").startswith(pref):
+            return True
+    return False
