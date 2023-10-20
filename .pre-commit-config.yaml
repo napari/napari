@@ -29,4 +29,3 @@ repos:
     - id: trailing-whitespace
       exclude: .*\.md|_vendor|vendored
     - id: mixed-line-ending
-    - id: no-commit-to-branch
