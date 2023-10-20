@@ -814,7 +814,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     """
     points = np.array(path).astype(float)
 
-    if closed and not np.all(points[0] == points[-1]):
+    if closed and not np.array_equal(points[0], points[-1]):
         points = np.concatenate([points, [points[0]]], axis=0)
 
     tangents, normals, binormals = _frenet_frames(points, closed)
