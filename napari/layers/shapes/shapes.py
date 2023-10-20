@@ -335,6 +335,15 @@ class Shapes(Layer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
 
+    _face_color_property: str
+    _edge_color_property: str
+    _face_color_cycle: npt.NDArray
+    _edge_color_cycle: npt.NDArray
+    _face_color_cycle_values: npt.NDArray
+    _edge_color_cycle_values: npt.NDArray
+    _face_color_mode: str
+    _edge_color_mode: str
+
     # If more shapes are present then they are randomly subsampled
     # in the thumbnail
     _max_shapes_thumbnail = 100
@@ -522,15 +531,6 @@ class Shapes(Layer):
         self._selected_data_history = set()
         self._selected_box = None
         self._last_cursor_position = None
-
-        self._face_color_property: str
-        self._edge_color_property: str
-        self._edge_color_cycle: npt.NDArray
-        self._edge_color_cycle_values: npt.NDArray
-        self._face_color_cycle: npt.NDArray
-        self._face_color_cycle_values: npt.NDArray
-        self._edge_color_mode: str
-        self._face_color_mode: str
 
         self._drag_start = None
         self._fixed_vertex = None
