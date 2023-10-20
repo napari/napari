@@ -115,12 +115,12 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
     # Finish drawing
     complete_polygon(layer)
 
-    assert np.array_equiv(data[[0, 2], :] == 0)
-    assert np.array_equiv(data[1, 1:11, 1:11] == 1)
-    assert np.array_equiv(data[1, 0, :] == 0)
-    assert np.array_equiv(data[1, :, 0] == 0)
-    assert np.array_equiv(data[1, 11:, :] == 0)
-    assert np.array_equiv(data[1, :, 11:] == 0)
+    assert np.array_equiv(data[[0, 2], :], 0)
+    assert np.array_equiv(data[1, 1:11, 1:11], 1)
+    assert np.array_equiv(data[1, 0, :], 0)
+    assert np.array_equiv(data[1, :, 0], 0)
+    assert np.array_equiv(data[1, 11:, :], 0)
+    assert np.array_equiv(data[1, :, 11:], 0)
 
     # Try to finish with an incomplete polygon
     for position in [(0, 1, 1)]:
