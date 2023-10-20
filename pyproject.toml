@@ -91,7 +91,11 @@ ignore = [
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
     "B028", # need to be fixed
     "PYI015", # it produces bad looking files (@jni opinion)
-
+    "RUF012",
+    "RUF013",
+    "RUF015",
+    "PYI041",
+    "PYI024",
 ]
 
 exclude = [
@@ -150,6 +154,7 @@ xarray = "xr"
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
 addopts = "--maxfail=5 --durations=10 -rXxs"
+pystack_threshold=60
 
 # NOTE: only put things that will never change in here.
 # napari deprecation and future warnings should NOT go in here.

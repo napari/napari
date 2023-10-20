@@ -173,7 +173,7 @@ class TextureAtlas2D(Texture2D):
         self.num_slots_total = shape_in_tiles[0] * shape_in_tiles[1]
 
         # Every index is free initially.
-        self._free_indices = set(range(0, self.num_slots_total))
+        self._free_indices = set(range(self.num_slots_total))
 
         # Pre-compute the texture coords for every tile. Otherwise we'd be
         # calculating these over and over as tiles are added. These are for

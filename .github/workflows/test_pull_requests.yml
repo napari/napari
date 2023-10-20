@@ -121,6 +121,11 @@ jobs:
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
 
+      - name: Disable ptrace security restrictions
+        if: runner.os == 'Linux'
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+
       # tox and tox-gh-actions will take care of the "actual" installation
       # of python dependendencies into a virtualenv.  see tox.ini for more
       - name: Install dependencies
@@ -198,13 +203,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          path: napari-from-github
 
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9
-          cache-dependency-path: napari-from-github/setup.cfg
+          cache-dependency-path: setup.cfg
       - uses: tlambert03/setup-qt-libs@v1
       - name: Install this commit
         run: |

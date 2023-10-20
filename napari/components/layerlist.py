@@ -345,10 +345,7 @@ class LayerList(SelectableEventedList[Layer]):
         min_v, max_v = self._get_min_and_max(mins, maxs)
 
         # form range tuples, switching back to original dimension order
-        return [
-            (start, stop, step)
-            for start, stop, step in zip(min_v, max_v, min_steps)
-        ]
+        return list(zip(min_v, max_v, min_steps))
 
     @property
     def ndim(self) -> int:

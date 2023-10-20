@@ -343,12 +343,7 @@ class EventEmitter:
     @print_callback_errors.setter
     def print_callback_errors(
         self,
-        val: Union[
-            Literal['first'],
-            Literal['reminders'],
-            Literal['always'],
-            Literal['never'],
-        ],
+        val: Literal['first', 'reminders', 'always', 'never'],
     ):
         if val not in ('first', 'reminders', 'always', 'never'):
             raise ValueError(
@@ -414,7 +409,7 @@ class EventEmitter:
         self,
         callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
         ref: Union[bool, str] = False,
-        position: Union[Literal['first'], Literal['last']] = 'first',
+        position: Union[Literal['first', 'last']] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
         until: Optional['EventEmitter'] = None,
@@ -1110,7 +1105,7 @@ class EmitterGroup(EventEmitter):
         self,
         callback: Union[Callback, CallbackRef, 'EmitterGroup'],
         ref: Union[bool, str] = False,
-        position: Union[Literal['first'], Literal['last']] = 'first',
+        position: Union[Literal['first', 'last']] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
     ):

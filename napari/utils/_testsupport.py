@@ -4,7 +4,7 @@ import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Tuple, List
+from typing import TYPE_CHECKING, List, Tuple
 from unittest.mock import patch
 from weakref import WeakSet
 

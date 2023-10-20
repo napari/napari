@@ -8,6 +8,7 @@ try:
     from qtpy import API_NAME, QtCore
 except Exception as e:
     if 'No Qt bindings could be found' in str(e):
+        import sys
         from inspect import cleandoc
 
         installed_with_conda = list(
