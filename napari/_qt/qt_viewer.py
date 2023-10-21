@@ -690,11 +690,10 @@ class QtViewer(QSplitter):
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
-        # get the layer's name to use for a default name if one layer is selected
-        selected_layer_name = (
-            self.viewer.layers.selection.active.name if selected else ''
-        )
-
+        # get the layer's name to use for a default name if only one layer is selected
+        selected_layer_name =  ''
+        if self.viewer.layers.selection.active is not None:
+            selected_layer_name = self.viewer.layers.selection.active.name
         filename, selected_filter = dlg.getSaveFileName(
             self,  # parent
             trans._('Save {msg} layers', msg=msg),  # caption
