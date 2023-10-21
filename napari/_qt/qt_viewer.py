@@ -690,12 +690,14 @@ class QtViewer(QSplitter):
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
+        # get the layer's name to use for a default name if one layer is selected
+        selected_layer_name = self.viewer.layers.selection.active.name if selected else ''
 
         filename, selected_filter = dlg.getSaveFileName(
             self,  # parent
             trans._('Save {msg} layers', msg=msg),  # caption
-            # home dir by default
-            hist[0],  # directory in PyQt, dir in PySide
+            # home dir by default if selected all, home dir and file name if only 1 layer
+            str(Path(hist[0]) / selected_layer_name),  # directory in PyQt, dir in PySide
             filter=ext_str,
             options=(
                 QFileDialog.DontUseNativeDialog
