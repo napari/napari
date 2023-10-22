@@ -6,7 +6,7 @@ import sys
 import warnings
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, Dict, List, Literal, Optional, Union, overload
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union, overload
 
 import npe2
 from pydantic import validator
@@ -25,7 +25,7 @@ from napari.utils.translations import trans
 try:
     from qtpy import QT_VERSION
 
-    major, minor, *_ = QT_VERSION.split('.')
+    major, minor, *_ = QT_VERSION.split('.')  # type: ignore[attr-defined]
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
     del major, minor, QT_VERSION
 except (ImportError, RuntimeError):
@@ -87,7 +87,7 @@ class Theme(EventedModel):
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
     @validator("syntax_style", pre=True, allow_reuse=True)
-    def _ensure_syntax_style(value: str) -> str:
+    def _ensure_syntax_style(cls, value: str) -> str:
         from pygments.styles import STYLE_MAP
 
         assert value in STYLE_MAP, trans._(
@@ -99,7 +99,7 @@ class Theme(EventedModel):
         return value
 
     @validator("font_size", pre=True)
-    def _ensure_font_size(value: str) -> str:
+    def _ensure_font_size(cls, value: str) -> str:
         assert value.endswith('pt'), trans._(
             "Font size must be in points (pt).", deferred=True
         )
@@ -127,52 +127,48 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def decrease(font_size: str, pt: int):
+def decrease(font_size: str, pt: int) -> str:
     """Decrease fontsize."""
     return f"{int(font_size[:-2]) - int(pt)}pt"
 
 
-def increase(font_size: str, pt: int):
+def increase(font_size: str, pt: int) -> str:
     """Increase fontsize."""
     return f"{int(font_size[:-2]) + int(pt)}pt"
 
 
-def darken(color: Union[str, Color], percentage=10):
-    if isinstance(color, str) and color.startswith('rgb('):
-        color = literal_eval(color.lstrip('rgb(').rstrip(')'))
-    else:
-        color = color.as_rgb_tuple()
+def _parse_color_as_rgb(color: Union[str, Color]) -> Tuple[int, int, int]:
+    if isinstance(color, str):
+        if color.startswith('rgb('):
+            return literal_eval(color.lstrip('rgb(').rstrip(')'))
+        return Color(color).as_rgb_tuple()[:3]
+    return color.as_rgb_tuple()[:3]
+
+
+def darken(color: Union[str, Color], percentage: float = 10) -> str:
     ratio = 1 - float(percentage) / 100
-    red, green, blue = color
+    red, green, blue = _parse_color_as_rgb(color)
     red = min(max(int(red * ratio), 0), 255)
     green = min(max(int(green * ratio), 0), 255)
     blue = min(max(int(blue * ratio), 0), 255)
     return f'rgb({red}, {green}, {blue})'
 
 
-def lighten(color: Union[str, Color], percentage=10):
-    if isinstance(color, str) and color.startswith('rgb('):
-        color = literal_eval(color.lstrip('rgb(').rstrip(')'))
-    else:
-        color = color.as_rgb_tuple()
+def lighten(color: Union[str, Color], percentage: float = 10) -> str:
     ratio = float(percentage) / 100
-    red, green, blue = color
+    red, green, blue = _parse_color_as_rgb(color)
     red = min(max(int(red + (255 - red) * ratio), 0), 255)
     green = min(max(int(green + (255 - green) * ratio), 0), 255)
     blue = min(max(int(blue + (255 - blue) * ratio), 0), 255)
     return f'rgb({red}, {green}, {blue})'
 
 
-def opacity(color: Union[str, Color], value=255):
-    if isinstance(color, str) and color.startswith('rgb('):
-        color = literal_eval(color.lstrip('rgb(').rstrip(')'))
-    else:
-        color = color.as_rgb_tuple()
-    red, green, blue = color
+def opacity(color: Union[str, Color], value: int = 255) -> str:
+    red, green, blue = _parse_color_as_rgb(color)
     return f'rgba({red}, {green}, {blue}, {max(min(int(value), 255), 0)})'
 
 
-def gradient(stops, horizontal=True):
+def gradient(stops, horizontal: bool = True) -> str:
     if not use_gradients:
         return stops[-1]
 
