@@ -89,6 +89,9 @@ class ColorArray(np.ndarray):
     def __get_validators__(cls):
         yield cls.validate
 
+    def __sizeof__(self):
+        return super().__sizeof__() + self.nbytes
+
     @classmethod
     def validate(cls, value: ColorArrayParam) -> 'ColorArray':
         """Validates and coerces the given value into an array storing many colors.

@@ -4,6 +4,10 @@
 
 name: CircleCI artifact redirector
 
+concurrency:
+  group: docs-preview-${{ github.ref }}
+  cancel-in-progress: true
+
 on: [status]
 jobs:
   circleci_artifacts_redirector_job:

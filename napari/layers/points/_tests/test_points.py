@@ -14,11 +14,12 @@ from napari._tests.utils import (
     assert_layer_state_equal,
     check_layer_world_data_extent,
 )
+from napari.components.dims import Dims
 from napari.layers import Points
 from napari.layers.base._base_constants import ActionType
 from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
@@ -327,7 +328,7 @@ def test_selecting_points():
     assert layer.selected_data == data_to_select
 
     # test switching to 3D
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndisplay=3))
     assert layer.selected_data == data_to_select
 
     # select different points while in 3D mode
@@ -336,7 +337,7 @@ def test_selecting_points():
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when going back to 2D mode
-    layer._slice_dims(ndisplay=2)
+    layer._slice_dims(Dims(ndisplay=2))
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when switching between between select and pan_zoom
@@ -1639,7 +1640,7 @@ def test_value_3d(
     """Test get_value in 3D with and without scale"""
     data = np.array([[0, 10, 15, 15], [0, 10, 5, 5], [0, 5, 15, 15]])
     layer = Points(data, size=5, scale=scale)
-    layer._slice_dims([0, 0, 0, 0], ndisplay=3)
+    layer._slice_dims(Dims(ndim=4, ndisplay=3))
     value = layer.get_value(
         position,
         view_direction=view_direction,
@@ -1670,7 +1671,9 @@ def test_message_3d():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     layer._slice_input = _SliceInput(
-        ndisplay=3, point=(0, 0, 0), order=(0, 1, 2)
+        ndisplay=3,
+        world_slice=_ThickNDSlice.make_full(ndim=2),
+        order=(0, 1, 2),
     )
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
@@ -1736,7 +1739,7 @@ def test_thumbnail_with_n_points_greater_than_max():
     # #3D
     bigger_data_3d = np.random.randint(10, 100, (max_points, 3))
     bigger_layer_3d = Points(bigger_data_3d)
-    bigger_layer_3d._slice_dims(ndisplay=3)
+    bigger_layer_3d._slice_dims(Dims(ndim=3, ndisplay=3))
     bigger_layer_3d._update_thumbnail()
     assert bigger_layer_3d.thumbnail.shape == bigger_layer_3d._thumbnail_shape
 
@@ -1745,34 +1748,37 @@ def test_view_data():
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     layer = Points(coords)
 
-    layer._slice_dims([0, slice(None), slice(None)])
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
     assert np.array_equal(layer._view_data, coords[np.ix_([0, 1], [1, 2])])
 
-    layer._slice_dims([1, slice(None), slice(None)])
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     assert np.array_equal(layer._view_data, coords[np.ix_([2], [1, 2])])
 
-    layer._slice_dims([1, slice(None), slice(None)], ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0), ndisplay=3))
     assert np.array_equal(layer._view_data, coords)
 
 
 def test_view_size():
     """Test out of slice point rendering and slicing with no points."""
-    coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
+    coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [4, 3, 3]])
     sizes = np.array([5, 5, 3, 3])
     layer = Points(coords, size=sizes, out_of_slice_display=False)
 
-    layer._slice_dims([0, slice(None), slice(None)])
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
     assert np.array_equal(layer._view_size, sizes[[0, 1]])
 
-    layer._slice_dims([1, slice(None), slice(None)])
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     assert np.array_equal(layer._view_size, sizes[[2]])
 
     layer.out_of_slice_display = True
+    # NOTE: since a dims slice of thickness 0 defaults back to 1,
+    # out_of_slice_display actually compares the half-size with
+    # distance + 0.5, not just distance
     assert len(layer._view_size) == 3
 
     # test a slice with no points
     layer.out_of_slice_display = False
-    layer._slice_dims([2, slice(None), slice(None)])
+    layer._slice_dims(Dims(ndim=3, point=(2, 0, 0)))
     assert np.array_equal(layer._view_size, [])
 
 
@@ -1786,16 +1792,16 @@ def test_view_colors():
     )
 
     layer = Points(coords, face_color=face_color, edge_color=edge_color)
-    layer._slice_dims([0, slice(None), slice(None)])
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
     assert np.array_equal(layer._view_face_color, face_color[[0, 1]])
     assert np.array_equal(layer._view_edge_color, edge_color[[0, 1]])
 
-    layer._slice_dims([1, slice(None), slice(None)])
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     assert np.array_equal(layer._view_face_color, face_color[[2]])
     assert np.array_equal(layer._view_edge_color, edge_color[[2]])
 
     # view colors should return empty array if there are no points
-    layer._slice_dims([2, slice(None), slice(None)])
+    layer._slice_dims(Dims(ndim=3, point=(2, 0, 0)))
     assert len(layer._view_face_color) == 0
     assert len(layer._view_edge_color) == 0
 
@@ -2364,7 +2370,7 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
     layer = Points(data, out_of_slice_display=True, shown=[True, True], size=3)
     assert layer._view_size.shape[0] == layer._view_data.shape[0]
     assert layer._view_size.shape[0] == 2
-    assert np.array_equal(layer._view_size, [3, 1])
+    assert np.array_equiv(layer._view_size, [3, 2])
 
     # Out of slice display == True && shown == [True, False]
     layer = Points(
@@ -2380,7 +2386,7 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
     )
     assert layer._view_size.shape[0] == layer._view_data.shape[0]
     assert layer._view_size.shape[0] == 1
-    assert np.array_equal(layer._view_size, [1])
+    assert np.array_equal(layer._view_size, [2])
 
     # Out of slice display == True && shown == [False, False]
     layer = Points(
@@ -2451,10 +2457,10 @@ def test_set_drag_start():
 @pytest.mark.parametrize(
     "dims_indices,target_indices",
     [
-        ((8, slice(None), slice(None)), [2]),
-        ((10, slice(None), slice(None)), [0, 1, 3, 4]),
-        ((10 + 2 * 1e-12, slice(None), slice(None)), [0, 1, 3, 4]),
-        ((10.1, slice(None), slice(None)), [0, 1, 3, 4]),
+        ((8, np.nan, np.nan), [2]),
+        ((10, np.nan, np.nan), [0, 1, 3, 4]),
+        ((10 + 2 * 1e-12, np.nan, np.nan), [0, 1, 3, 4]),
+        ((10.1, np.nan, np.nan), [0, 1, 3, 4]),
     ],
 )
 def test_point_slice_request_response(dims_indices, target_indices):
@@ -2469,8 +2475,10 @@ def test_point_slice_request_response(dims_indices, target_indices):
 
     layer = Points(data)
 
+    data_slice = _ThickNDSlice.make_full(point=dims_indices)
+
     request = layer._make_slice_request_internal(
-        layer._slice_input, dims_indices
+        layer._slice_input, data_slice
     )
     response = request()
 
@@ -2580,3 +2588,20 @@ def test_data_setter_events():
         "data_indices": tuple(i for i in range(len(layer.data))),
         "vertex_indices": ((),),
     }
+
+
+def test_thick_slice():
+    data = np.array([[0, 0, 0], [10, 10, 10]])
+    layer = Points(data)
+
+    # only first point shown
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    np.testing.assert_array_equal(layer._view_data, data[:1, -2:])
+
+    layer.projection_mode = 'all'
+    np.testing.assert_array_equal(layer._view_data, data[:1, -2:])
+
+    # if margin is thick enough and projection is `all`,
+    # it will take in the other point
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0), margin_right=(10, 0, 0)))
+    np.testing.assert_array_equal(layer._view_data, data[:, -2:])
