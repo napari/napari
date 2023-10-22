@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from napari._tests.utils import layer_test_data
+from napari.components.dims import Dims
 from napari.layers import Image, Labels
 
 
@@ -102,7 +103,7 @@ def test_get_value_at_subpixel_offsets(ImageClass, ndim):
 
     # test using non-uniform scale per-axis
     layer = ImageClass(data, scale=(0.5, 1, 2)[:ndim])
-    layer._slice_dims([0] * ndim, ndisplay=ndim)
+    layer._slice_dims(Dims(ndim=ndim, ndisplay=ndim))
 
     # dictionary of expected values at each voxel center coordinate
     val_dict = {
@@ -122,7 +123,7 @@ def test_get_value_3d_view_of_2d_image(ImageClass):
     ndisplay = 3
     # test using non-uniform scale per-axis
     layer = ImageClass(data, scale=(0.5, 1))
-    layer._slice_dims([0] * ndisplay, ndisplay=ndisplay)
+    layer._slice_dims(Dims(ndim=ndisplay, ndisplay=ndisplay))
 
     # dictionary of expected values at each voxel center coordinate
     val_dict = {

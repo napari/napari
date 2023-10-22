@@ -1,6 +1,6 @@
 from itertools import product
 from math import ceil, isnan, log2, sqrt
-from typing import Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -14,6 +14,10 @@ from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.utils._dtype import vispy_texture_dtype
+
+if TYPE_CHECKING:
+    from napari.layers import Labels
+
 
 # We use table sizes that are prime numbers near powers of 2.
 # For each power of 2, we keep three candidate sizes. This allows us to
@@ -42,27 +46,27 @@ MAX_TEXTURE_SIZE = None
 
 ColorTuple = Tuple[float, float, float, float]
 
-low_disc_lookup_shader = """
-uniform sampler2D texture2D_LUT;
+
+EMPTY_VAL = -1.0
+
+_UNSET = object()
+
+
+auto_lookup_shader = """
+uniform sampler2D texture2D_values;
 
 vec4 sample_label_color(float t) {
-    float phi_mod = 0.6180339887498948482;  // phi - 1
-    float value = 0.0;
-    float margin = 1.0 / 256;
-
-    if (t == 0) {
+    if (t == $background_value) {
         return vec4(0);
     }
 
     if (($use_selection) && ($selection != t)) {
         return vec4(0);
     }
-
-    value = mod((t * phi_mod + $seed), 1.0) * (1 - 2*margin) + margin;
-
+    t = mod(t, $color_map_size);
     return texture2D(
-        texture2D_LUT,
-        vec2(0.0, clamp(value, 0.0, 1.0))
+        texture2D_values,
+        vec2(0.0, (t + 0.5) / $color_map_size)
     );
 }
 """
@@ -80,7 +84,7 @@ vec4 sample_label_color(float t) {
         return vec4(0);
     }
 
-    float empty = 0.;
+    float empty = $EMPTY_VAL;
     // get position in the texture grid (same as hash2d_get)
     vec2 pos = vec2(
         mod(int(t / LUT_shape.y), LUT_shape.x),
@@ -125,7 +129,7 @@ vec4 sample_label_color(float t) {
 
     // return vec4(pos_tex, 0, 1); // debug if final texel is calculated correctly
 
-    vec4 color = vec4(0);
+    vec4 color = vec4($default_color);
     if (abs(found - empty) > 1e-8) {
         color = texture2D(
             texture2D_values,
@@ -142,16 +146,18 @@ class LabelVispyColormap(VispyColormap):
     def __init__(
         self,
         colors,
-        controls=None,
-        seed=0.5,
         use_selection=False,
         selection=0.0,
+        background_value=0.0,
     ):
-        super().__init__(colors, controls, interpolation='zero')
+        super().__init__(
+            colors=["w", "w"], controls=None, interpolation='zero'
+        )
         self.glsl_map = (
-            low_disc_lookup_shader.replace('$seed', str(seed))
+            auto_lookup_shader.replace('$color_map_size', str(len(colors)))
             .replace('$use_selection', str(use_selection).lower())
             .replace('$selection', str(selection))
+            .replace('$background_value', str(background_value))
         )
 
 
@@ -161,6 +167,8 @@ class DirectLabelVispyColormap(VispyColormap):
         use_selection=False,
         selection=0.0,
         collision=True,
+        default_color=(0, 0, 0, 0),
+        empty_value=EMPTY_VAL,
     ):
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
@@ -170,6 +178,8 @@ class DirectLabelVispyColormap(VispyColormap):
             )
             .replace("$selection", str(selection))
             .replace("$collision", str(collision).lower())
+            .replace("$default_color", ", ".join(map(str, default_color)))
+            .replace("$EMPTY_VAL", str(empty_value))
         )
 
 
@@ -182,7 +192,7 @@ def idx_to_2d(idx, shape):
     return int((idx // shape[1]) % shape[0]), int(idx % shape[1])
 
 
-def hash2d_get(key, keys, empty_val=0):
+def hash2d_get(key, keys, empty_val=EMPTY_VAL):
     """
     Given a key, retrieve its location in the keys table.
     """
@@ -201,7 +211,7 @@ def hash2d_set(
     value: ColorTuple,
     keys: np.ndarray,
     values: np.ndarray,
-    empty_val=0,
+    empty_val=EMPTY_VAL,
 ) -> bool:
     """
     Set a value in the 2d hashmap, wrapping around to avoid collision.
@@ -334,9 +344,16 @@ def get_shape_from_dict(color_dict):
     return shape
 
 
+def _get_empty_val_from_dict(color_dict):
+    empty_val = EMPTY_VAL
+    while empty_val in color_dict:
+        empty_val -= 1
+    return empty_val
+
+
 def build_textures_from_dict(
     color_dict: Dict[float, ColorTuple],
-    empty_val=0,
+    empty_val=_UNSET,
     shape=None,
     use_selection=False,
     selection=0.0,
@@ -382,6 +399,9 @@ def build_textures_from_dict(
         values[0, 0] = color_dict[selection]
         return keys, values, False
 
+    if empty_val is _UNSET:
+        empty_val = _get_empty_val_from_dict(color_dict)
+
     if len(color_dict) > 2**31 - 2:
         raise MemoryError(
             f'Too many labels ({len(color_dict)}). Maximum supported number of labels is 2^31-2'
@@ -406,12 +426,14 @@ def build_textures_from_dict(
             # if so, we ignore all but the first appearance.
             continue
         visited.add(key_)
-        collision |= hash2d_set(key_, value, keys, values)
+        collision |= hash2d_set(key_, value, keys, values, empty_val=empty_val)
 
     return keys, values, collision
 
 
 class VispyLabelsLayer(VispyImageLayer):
+    layer: 'Labels'
+
     def __init__(self, layer, node=None, texture_format='r32f') -> None:
         super().__init__(
             layer,
@@ -453,11 +475,18 @@ class VispyLabelsLayer(VispyImageLayer):
         if mode == 'auto':
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,
-                controls=colormap.controls,
-                seed=colormap.seed,
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
+                background_value=colormap.background_value,
             )
+            self.node.shared_program['texture2D_values'] = Texture2D(
+                colormap.colors.reshape(
+                    (colormap.colors.shape[0], 1, 4)
+                ).astype(np.float32),
+                internalformat='rgba32f',
+                interpolation='nearest',
+            )
+
         elif mode == 'direct':
             color_dict = (
                 self.layer.color
@@ -472,6 +501,8 @@ class VispyLabelsLayer(VispyImageLayer):
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
                 collision=collision,
+                default_color=colormap.default_color,
+                empty_value=_get_empty_val_from_dict(color_dict),
             )
             # note that textures have to be transposed here!
             self.node.shared_program['texture2D_keys'] = Texture2D(

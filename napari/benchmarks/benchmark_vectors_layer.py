@@ -45,9 +45,8 @@ class Vectors2DSuite:
         """Time to update length."""
         self.layer.length = 2
 
-    def _mem_layer(self, n):
+    def mem_layer(self, n):
         """Memory used by layer."""
-        # Disabled because of __sizeof__ bug on the main branch and outdated asizeof in pympler
         return self.layer
 
     def mem_data(self, n):
@@ -93,9 +92,8 @@ class Vectors3DSuite:
         """Time to update length."""
         self.layer.length = 2
 
-    def _mem_layer(self, n):
+    def mem_layer(self, n):
         """Memory used by layer."""
-        # Disabled because of __sizeof__ bug on the main branch and outdated asizeof in pympler
         return self.layer
 
     def mem_data(self, n):
