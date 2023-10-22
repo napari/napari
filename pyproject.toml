@@ -550,7 +550,8 @@ disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari.utils.events.containers._typed"
+    "napari.utils.events.containers._typed",
+    "napari.layers.base.base",
 ]
 check_untyped_defs = false
 disallow_incomplete_defs = false
