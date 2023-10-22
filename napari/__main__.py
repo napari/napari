@@ -295,7 +295,7 @@ def _run() -> None:
                         plugin_manager_plugins.append(plugin)
                         if '__all__' in wnames:
                             # Plugin_manager iter_widgets return wnames as dict keys
-                            wnames = list(_wnames_dict.keys())
+                            wnames = list(_wnames_dict)
                         print(
                             trans._(
                                 'Non-npe2 plugin {pname} detected. Disable tabify for this plugin.',
