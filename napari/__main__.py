@@ -280,22 +280,22 @@ def _run() -> None:
             npe2_plugins = []
             for plugin in args.with_:
                 pname, *wnames = plugin
-                for _name, (_pname, _wnames) in _npe2.widget_iterator():
-                    if _name == 'dock' and pname == _pname:
+                for name, (w_pname, wnames) in _npe2.widget_iterator():
+                    if name == 'dock' and pname == w_pname:
                         npe2_plugins.append(plugin)
                         if '__all__' in wnames:
-                            wnames = _wnames
+                            wnames = wnames
                         break
 
-                for _name2, (
-                    _pname,
-                    _wnames_dict,
+                for name2, (
+                    w_pname,
+                    wnames_dict,
                 ) in plugin_manager.iter_widgets():
-                    if _name2 == 'dock' and pname == _pname:
+                    if name2 == 'dock' and pname == w_pname:
                         plugin_manager_plugins.append(plugin)
                         if '__all__' in wnames:
                             # Plugin_manager iter_widgets return wnames as dict keys
-                            wnames = list(_wnames_dict)
+                            wnames = list(wnames_dict)
                         print(
                             trans._(
                                 'Non-npe2 plugin {pname} detected. Disable tabify for this plugin.',
