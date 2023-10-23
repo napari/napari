@@ -52,6 +52,8 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
     ) -> None:
         Node.__init__(self, name=name)
         SelectableNestableEventedList.__init__(
+            # MyPy does not like direct superclass init.
+            # Argument 1 to "__init__" of "SelectableEventedList" has incompatible type "Group[NodeType]"; expected "SelectableEventedList[_T]"
             self,  # type: ignore [arg-type]
             data=children,
             basetype=basetype,
