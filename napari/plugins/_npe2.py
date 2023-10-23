@@ -667,7 +667,7 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     plugin's menus and submenus to the app model registry.
     """
     from napari._app_model import get_app
-    from napari._qt._qapp_model.qactions.__init__ import _provide_window
+    from napari._qt._qapp_model.qactions import _provide_window
 
     app = get_app()
     actions, submenus = _npe2_manifest_to_actions(mf)
