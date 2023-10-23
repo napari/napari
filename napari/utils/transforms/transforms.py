@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Iterable, Optional, Sequence
+from typing import Generic, Iterable, Optional, Sequence, TypeVar, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -110,7 +110,10 @@ class Transform:
         [self.__dict__.pop(p, None) for p in cached_properties]
 
 
-class TransformChain(EventedList[Transform], Transform):
+_T = TypeVar('_T', bound=Transform)
+
+
+class TransformChain(EventedList[_T], Transform, Generic[_T]):
     def __init__(
         self, transforms: Optional[Iterable[Transform]] = None
     ) -> None:
@@ -132,6 +135,21 @@ class TransformChain(EventedList[Transform], Transform):
     def __newlike__(self, iterable):
         return TransformChain(iterable)
 
+    @overload
+    def __getitem__(self, key: int) -> _T:
+        ...
+
+    @overload
+    def __getitem__(self, key: str) -> _T:
+        ...
+
+    @overload
+    def __getitem__(self, key: slice) -> 'TransformChain[_T]':
+        ...
+
+    def __getitem__(self, value):
+        return super().__getitem__(value)
+
     @property
     def inverse(self) -> 'TransformChain':
         """Return the inverse transform chain."""
@@ -144,7 +162,7 @@ class TransformChain(EventedList[Transform], Transform):
         return getattr(self.simplified, '_is_diagonal', False)
 
     @property
-    def simplified(self) -> Optional['Transform']:
+    def simplified(self) -> Optional[_T]:
         """Return the composite of the transforms inside the transform chain."""
         if len(self) == 0:
             return None
