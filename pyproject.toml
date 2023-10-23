@@ -476,7 +476,7 @@ module = [
     "napari.layers.vectors._slice",
     "napari.utils.colormaps.vendored._cm",
     "napari.utils.colormaps.vendored.cm",
-    "napari.utils.status_messages"
+    "napari.utils.status_messages",
 ]
 disallow_untyped_calls = false
 disallow_untyped_defs = false
@@ -484,7 +484,8 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari._app_model._app",
-    "napari.utils.events.containers._selection"
+    "napari.utils.events.containers._selection",
+    "napari.utils.theme",
 ]
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
