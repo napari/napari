@@ -4,8 +4,7 @@ import site
 from textwrap import indent
 from typing import TYPE_CHECKING, ClassVar, Set
 
-from pydantic import BaseSettings, Field, PrivateAttr
-
+from napari._pydantic_compat import BaseSettings, Field, PrivateAttr
 from napari.utils.misc import ROOT_DIR
 from napari.utils.translations import trans
 
@@ -39,8 +38,12 @@ class EventDebugSettings(BaseSettings):
     # to include/exclude when printing events.
     include_emitters: Set[str] = Field(default_factory=set)
     include_events: Set[str] = Field(default_factory=set)
-    exclude_emitters: Set[str] = {'TransformChain', 'Context'}
-    exclude_events: Set[str] = {'status', 'position'}
+    exclude_emitters: Set[str] = Field(
+        default_factory=lambda: {'TransformChain', 'Context'}
+    )
+    exclude_events: Set[str] = Field(
+        default_factory=lambda: {'status', 'position'}
+    )
     # stack depth to show
     stack_depth: int = 20
     # how many sub-emit nesting levels to show

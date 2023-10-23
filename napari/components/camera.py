@@ -2,9 +2,9 @@ import warnings
 from typing import Optional, Tuple
 
 import numpy as np
-from pydantic import validator
 from scipy.spatial.transform import Rotation as R
 
+from napari._pydantic_compat import validator
 from napari.utils.events import EventedModel
 from napari.utils.misc import ensure_n_tuple
 from napari.utils.translations import trans

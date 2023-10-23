@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from pydantic import ValidationError
 
+from napari._pydantic_compat import ValidationError
 from napari.layers.utils.plane import ClippingPlaneList, Plane, SlicingPlane
 
 

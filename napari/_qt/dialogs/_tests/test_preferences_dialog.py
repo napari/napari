@@ -1,7 +1,7 @@
 import pytest
-from pydantic import BaseModel
 from qtpy.QtCore import Qt
 
+from napari._pydantic_compat import BaseModel
 from napari._qt.dialogs.preferences_dialog import (
     PreferencesDialog,
     QMessageBox,

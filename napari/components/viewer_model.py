@@ -20,9 +20,9 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
+from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
 from napari.components._viewer_mouse_bindings import dims_scroll
 from napari.components.camera import Camera
 from napari.components.cursor import Cursor

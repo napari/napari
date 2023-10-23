@@ -9,10 +9,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
 from warnings import warn
 
-from pydantic import BaseModel, BaseSettings, ValidationError
-from pydantic.env_settings import SettingsError
-from pydantic.error_wrappers import display_errors
-
+from napari._pydantic_compat import (
+    BaseModel,
+    BaseSettings,
+    SettingsError,
+    ValidationError,
+    display_errors,
+)
 from napari.settings._yaml import PydanticYamlMixin
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import deep_update
@@ -23,8 +26,10 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from typing import AbstractSet, Any, Union
 
-    from pydantic.env_settings import EnvSettingsSource, SettingsSourceCallable
-
+    from napari._pydantic_compat import (
+        EnvSettingsSource,
+        SettingsSourceCallable,
+    )
     from napari.utils.events import Event
 
     IntStr = Union[int, str]
@@ -33,7 +38,7 @@ if TYPE_CHECKING:
     MappingIntStrAny = Mapping[IntStr, Any]
 
 
-class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
+class EventedSettings(BaseSettings, EventedModel):
     """A variant of EventedModel designed for settings.
 
     Pydantic's BaseSettings model will attempt to determine the values of any
@@ -116,7 +121,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """Return the path to/from which settings be saved/loaded."""
         return self._config_path
 
-    def dict(  # type: ignore [override]
+    def dict(
         self,
         *,
         include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
@@ -241,7 +246,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             the return list to change the priority of sources.
             """
             cls._env_settings = nested_env_settings(env_settings)
-            return (  # type: ignore [return-value]
+            return (
                 init_settings,
                 cls._env_settings,
                 cls._config_file_settings_source,

@@ -1,8 +1,8 @@
 from typing import Tuple
 
 import numpy as np
-from pydantic import validator
 
+from napari._pydantic_compat import validator
 from napari.utils.events import EventedModel, SelectableEventedList
 from napari.utils.geometry import intersect_line_with_plane_3d
 from napari.utils.translations import trans
