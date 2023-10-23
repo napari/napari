@@ -443,9 +443,7 @@ def _get_samples_submenu_actions(
         submenu = [
             (
                 MenuId.FILE_SAMPLES,
-                SubmenuItem(
-                    submenu=submenu_id, title=trans._(mf.display_name)
-                ),
+                SubmenuItem(submenu=submenu_id, title=mf.display_name),
             ),
         ]
     else:

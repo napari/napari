@@ -192,14 +192,15 @@
       "tracks",
       "ndim",
       "shape",
-      "LayerSel"
+      "LayerSel",
+      "Layer"
     ],
     "napari/_app_model/injection/_processors.py": [
       "name",
       "Data",
       "add_{layer_type}"
     ],
-    "napari/_event_loop.py": [],
+    "napari/_event_loop.py": ["run"],
     "napari/_qt/__init__.py": [
       "No Qt bindings could be found",
       "PySide2",
@@ -220,6 +221,13 @@
     "napari/_qt/_qapp_model/qactions/_help.py": [
         "group",
         "id"
+    ],
+    "napari/_qt/_qapp_model/qactions/_file.py": [
+        "group",
+        "id",
+        "primary",
+        "when",
+        ".napari_is_bundled"
     ],
     "napari/_qt/_qapp_model/qactions/_view.py": [
         "darwin",
