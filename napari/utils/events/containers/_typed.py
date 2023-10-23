@@ -203,17 +203,18 @@ class TypedMutableSequence(MutableSequence[_T]):
     def index(
         self, value: _L, start: int = 0, stop: Optional[int] = None
     ) -> int:
-        """Return first index of value.
+        """
+        Return first index of value.
 
         Parameters
         ----------
-        value : Any
+        value: Any
             A value to lookup.  If `type(value)` is in the lookups functions
             provided for this class, then values in the list will be searched
             using the corresponding lookup converter function.
-        start : int, optional
+        start: int, optional
             The starting index to search, by default 0
-        stop : int, optional
+        stop: int, optional
             The ending index to search, by default None
 
         Returns
@@ -246,7 +247,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             )
         )
 
-    def _iter_indices(self, start=0, stop=None):
+    def _iter_indices(self, start=0, stop=None) -> Iterable[int]:
         """Iter indices from start to stop.
 
         While this is trivial for this basic sequence type, this method lets
