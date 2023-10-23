@@ -203,8 +203,7 @@ class TypedMutableSequence(MutableSequence[_T]):
     def index(
         self, value: _L, start: int = 0, stop: Optional[int] = None
     ) -> int:
-        """
-        Return first index of value.
+        """Return first index of value.
 
         Parameters
         ----------
