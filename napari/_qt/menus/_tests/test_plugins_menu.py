@@ -29,7 +29,6 @@ def test_plugin_single_widget_menu(
     assert tmp_plugin.display_name == 'Temp Plugin'
     plugin_menu = app.menus.get_menu('napari/plugins')
     assert plugin_menu[0].command.title == 'Widget 1 (Temp Plugin)'
-    # Now ensure that the actions are still correct
     assert len(viewer.window._dock_widgets) == 0
     assert 'tmp_plugin:Widget 1' in app.commands
     # trigger the action, opening the widget: `Widget 1`
@@ -58,7 +57,6 @@ def test_plugin_multiple_widget_menu(
     assert tmp_plugin.display_name == 'Temp Plugin'
     plugin_menu = app.menus.get_menu('napari/plugins')
     assert plugin_menu[0].title == tmp_plugin.display_name
-    # Now ensure that the actions are still correct
     assert len(viewer.window._dock_widgets) == 0
     assert 'tmp_plugin:Widget 1' in app.commands
     # Trigger the action, opening the first widget: `Widget 1`
@@ -121,7 +119,7 @@ def test_plugin_widget_checked(make_napari_viewer, tmp_plugin: DynamicPlugin):
     """Check widget toggling updates check mark correctly."""
 
     @tmp_plugin.contribute.widget(display_name='Widget')
-    def widget():
+    def widget_contrib():
         return DummyWidget()
 
     app = get_app()
@@ -134,6 +132,18 @@ def test_plugin_widget_checked(make_napari_viewer, tmp_plugin: DynamicPlugin):
     widget_action.trigger()
     assert widget_action.isChecked()
     assert 'Widget (Temp Plugin)' in viewer.window._dock_widgets
+
+    # Open the widget again
+    # widget_action.trigger()
+    # assert widget_action.isChecked()
+    # Check hiding the widget un-checks
+    widget = viewer.window._dock_widgets['Widget (Temp Plugin)']
+    print(widget.title)
+    # widget.title.hide_button.click()
+    widget.destroyOnClose()
+    viewer.window._update_menu_state('plugins_menu')
+    print(widget_action.isChecked())
+    # assert not widget_action.isChecked()
 
 
 def test_import_plugin_manager():

@@ -1,10 +1,32 @@
+from __future__ import annotations
+
 from functools import lru_cache
 from itertools import chain
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from napari._qt.qt_main_window import Window
+    from napari._qt.qt_viewer import QtViewer
 
 # Submodules should be able to import from most modules, so to
 # avoid circular imports, don't import submodules at the top level here,
 # import them inside the init_qactions function.
+
+
+def _provide_qt_viewer() -> Optional[QtViewer]:
+    from napari._qt.qt_main_window import _QtMainWindow
+
+    if _qmainwin := _QtMainWindow.current():
+        return _qmainwin._qt_viewer
+    return None
+
+
+def _provide_window() -> Optional[Window]:
+    from napari._qt.qt_main_window import _QtMainWindow
+
+    if _qmainwin := _QtMainWindow.current():
+        return _qmainwin._window
+    return None
 
 
 @lru_cache  # only call once
@@ -26,7 +48,7 @@ def init_qactions() -> None:
     from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
     from napari._qt._qapp_model.qactions._plugins import Q_PLUGINS_ACTIONS
     from napari._qt._qapp_model.qactions._view import Q_VIEW_ACTIONS
-    from napari._qt.qt_main_window import Window, _QtMainWindow
+    from napari._qt.qt_main_window import Window
     from napari._qt.qt_viewer import QtViewer
 
     # update the namespace with the Qt-specific types/providers/processors
@@ -39,17 +61,12 @@ def init_qactions() -> None:
     }
 
     # Qt-specific providers/processors
-    @store.register_provider
-    def _provide_window() -> Optional[Window]:
-        if _qmainwin := _QtMainWindow.current():
-            return _qmainwin._window
-        return None
-
-    @store.register_provider
-    def _provide_qt_viewer() -> Optional[QtViewer]:
-        if _qmainwin := _QtMainWindow.current():
-            return _qmainwin._qt_viewer
-        return None
+    app.injection_store.register(
+        providers=[
+            (_provide_qt_viewer,),
+            (_provide_window,),
+        ],
+    )
 
     # register actions
     app.register_actions(

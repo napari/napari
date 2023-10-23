@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from napari._app_model.constants import MenuId
     from napari.layers import Layer
     from napari.types import SampleDict
+    from napari.viewer import Viewer
 
 
 class _FakeHookimpl:
@@ -419,13 +420,15 @@ def _rebuild_npe1_samples_menu() -> None:
         plugin_manager._unreg_sample_actions = unreg_sample_actions
 
 
-def _get_multiprovider_submenu(
+def _get_contrib_parent_menu(
     multiprovider: bool,
     parent_menu: MenuId,
     mf: PluginManifest,
     group: Optional[str] = None,
 ) -> Tuple[str, List[Any]]:
-    """Get sample/widget multiprovider plugin submenu id and `SubmenuItem`."""
+    """Get parent menu of plugin contribution (samples/widgets).
+
+    If plugin provides multiple contributions, create a new submenu item."""
     submenu: List[Tuple[str, SubmenuItem]] = []
     if multiprovider:
         submenu_id = f'{parent_menu}/{mf.name}'
@@ -460,7 +463,7 @@ def _get_samples_submenu_actions(
 
     sample_data = mf.contributions.sample_data
     multiprovider = len(sample_data) > 1
-    submenu_id, submenu = _get_multiprovider_submenu(
+    submenu_id, submenu = _get_contrib_parent_menu(
         multiprovider,
         MenuId.FILE_SAMPLES,
         mf,
@@ -504,7 +507,7 @@ def _get_samples_submenu_actions(
     return submenu, sample_actions
 
 
-def _get_widget_param(widget_callable, widget_name) -> str:
+def _get_widget_viewer_param(widget_callable, widget_name) -> str:
     """Get widget parameter name (if any) and check type."""
     from napari.viewer import Viewer
 
@@ -531,20 +534,57 @@ def _get_widget_param(widget_callable, widget_name) -> str:
                     widget_param = param.name
                     break
 
-    elif isinstance(widget_callable, MagicFactory) or callable(
+    elif isinstance(widget_callable, MagicFactory) or inspect.isfunction(
         widget_callable
     ):
         widget_param = ""
     else:
         raise TypeError(
             trans._(
-                "Widgets must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or callable, but {widget} is of type {type_}. Please raise an issue in napari GitHub with the plugin and widget you were trying to use.",
+                "'{widget}' must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or function. Please raise an issue in napari GitHub with the plugin and widget you were trying to use.",
                 deferred=True,
                 widget=widget_name,
-                type_=type(widget_callable),
             )
         )
     return widget_param
+
+
+def _widget_callback_implementation(
+    napari_viewer: Viewer,
+    mf: PluginManifest,
+    widget_name: str,
+    name: str,
+):
+    """Toggle if widget already built otherwise return widget.
+
+    Returned widget will be added to main window by a processor.
+    Note for magicgui type widget contributions, `Viewer` injection is done by
+    `magicgui.register_type`.
+    """
+    from napari.plugins import _npe2
+
+    window = napari_viewer.window
+    if name in window._dock_widgets:
+        dock_widget = window._dock_widgets[name]
+        if dock_widget.isVisible():
+            dock_widget.hide()
+        else:
+            dock_widget.show()
+        return None
+
+    # Get widget param name (if any) and check type
+    if widget_contribution := _npe2.get_widget_contribution(
+        mf.name,
+        widget_name,
+    ):
+        widget_callable, _ = widget_contribution
+        widget_param = _get_widget_viewer_param(widget_callable, widget_name)
+
+        kwargs = {}
+        if widget_param:
+            kwargs[widget_param] = napari_viewer
+        return widget_callable(**kwargs), name
+    return None
 
 
 def _get_widgets_submenu_actions(
@@ -552,8 +592,7 @@ def _get_widgets_submenu_actions(
 ) -> Tuple[List[Any], List[Any]]:
     """Get widget submenu and actions for a single npe2 plugin manifest."""
     from napari._app_model.constants import MenuGroup, MenuId
-    from napari.plugins import _npe2, menu_item_template
-    from napari.viewer import Viewer
+    from napari.plugins import menu_item_template
 
     if TYPE_CHECKING:
         from napari._qt.qt_main_window import Window
@@ -564,17 +603,18 @@ def _get_widgets_submenu_actions(
 
     widgets = mf.contributions.widgets
     multiprovider = len(widgets) > 1
-    submenu_id, submenu = _get_multiprovider_submenu(
+    submenu_id, submenu = _get_contrib_parent_menu(
         multiprovider,
         MenuId.MENUBAR_PLUGINS,
         mf,
-        MenuGroup.PLUGIN_CONTRIBUTIONS,
+        MenuGroup.PLUGIN_MULTI_SUBMENU,
     )
 
     widget_actions: List[Action] = []
     for widget in widgets:
         full_name = menu_item_template.format(
-            mf.display_name, widget.display_name
+            mf.display_name,
+            widget.display_name,
         )
 
         def _widget_callback(
@@ -582,34 +622,12 @@ def _get_widgets_submenu_actions(
             widget_name: str = widget.display_name,
             name: str = full_name,
         ) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
-            """Toggle if widget already built otherwise return widget.
-
-            Returned widget will be added to main window by a processor.
-            Note for magicgui type widget contributions, `Viewer` injection is done by
-            `magicgui.register_type`.
-            """
-            window = napari_viewer.window
-            if name in window._dock_widgets:
-                dock_widget = window._dock_widgets[name]
-                if dock_widget.isVisible():
-                    dock_widget.hide()
-                else:
-                    dock_widget.show()
-                return None
-
-            # Get widget param name (if any) and check type
-            if widget_contribution := _npe2.get_widget_contribution(
-                mf.name,
-                widget_name,
-            ):
-                widget_callable, _ = widget_contribution
-                widget_param = _get_widget_param(widget_callable, widget_name)
-
-                kwargs = {}
-                if widget_param:
-                    kwargs[widget_param] = napari_viewer
-                return widget_callable(**kwargs), name
-            return None
+            return _widget_callback_implementation(
+                napari_viewer=napari_viewer,
+                mf=mf,
+                widget_name=widget_name,
+                name=name,
+            )
 
         def _get_current_dock_status(
             window: Window,
@@ -633,7 +651,7 @@ def _get_widgets_submenu_actions(
                 menus=[
                     {
                         'id': submenu_id,
-                        'group': MenuGroup.PLUGIN_CONTRIBUTIONS,
+                        'group': MenuGroup.PLUGIN_SINGLE_CONTRIBUTIONS,
                     }
                 ],
                 toggled=ToggleRule(get_current=_get_current_dock_status),
@@ -649,7 +667,7 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     plugin's menus and submenus to the app model registry.
     """
     from napari._app_model import get_app
-    from napari._qt.qt_main_window import _QtMainWindow
+    from napari._qt._qapp_model.qactions.__init__ import _provide_window
 
     app = get_app()
     actions, submenus = _npe2_manifest_to_actions(mf)
@@ -667,9 +685,7 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
 
     # Register dispose functions that remove plugin widgets from widget dictionary
     # `window._dock_widgets`
-    _qmainwin = _QtMainWindow.current()
-    if _qmainwin:
-        window = _qmainwin._window
+    if window := _provide_window():
 
         class Event(NamedTuple):
             value: str

@@ -8,18 +8,30 @@ from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
 
 import napari
-from napari import Viewer
 from napari._app_model import get_app
 from napari._qt.qt_main_window import _instantiate_dock_widget
+from napari.plugins._npe2 import _get_widget_viewer_param
 from napari.utils._proxies import PublicOnlyProxy
+from napari.viewer import Viewer
+
+
+class ErrorWidget:
+    pass
 
 
 class QWidget_example(QWidget):
-    pass
+    def __init__(napari_viewer):
+        pass
+
+
+class QWidget_string_annnot(QWidget):
+    def __init__(test: "napari.viewer.Viewer"):
+        pass
 
 
 class Container_example(Container):
-    pass
+    def __init__(test: Viewer):
+        pass
 
 
 @magic_factory
@@ -121,6 +133,27 @@ def test_inject_viewer_proxy(make_napari_viewer):
     with patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'):
         with pytest.warns(FutureWarning):
             wdg.fail()
+
+
+@pytest.mark.parametrize(
+    "widget_callable, param",
+    [
+        (QWidget_example, 'napari_viewer'),
+        (QWidget_string_annnot, 'test'),
+        (Container_example, 'test'),
+    ],
+)
+def test_get_widget_viewer_param(widget_callable, param):
+    """Test `_get_widget_viewer_param` returns correct parameter name."""
+    out = _get_widget_viewer_param(widget_callable, 'widget_name')
+    assert out == param
+
+
+def test_get_widget_viewer_param_error():
+    """Test incorrect subclass raises error in `_get_widget_viewer_param`."""
+    with pytest.raises(TypeError) as e:
+        _get_widget_viewer_param(ErrorWidget, 'widget_name')
+    assert "'widget_name' must be `QtWidgets.QWidget`" in str(e)
 
 
 def test_widget_hide_destroy(make_napari_viewer):

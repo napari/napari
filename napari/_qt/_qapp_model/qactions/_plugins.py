@@ -26,7 +26,7 @@ def _plugin_manager_dialog_avail() -> bool:
 
 
 def _show_plugin_install_dialog(window: Window):
-    """Show dialog that allows users to sort the call order of plugins."""
+    """Show dialog that allows users to install and enable/disable plugins."""
 
     # TODO: Register via plugin, once plugin menu contributions supported
     # This callback is only used when this package is available, thus we do not check

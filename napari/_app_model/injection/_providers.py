@@ -5,6 +5,7 @@ from napari.utils._proxies import PublicOnlyProxy
 
 
 def _provide_viewer() -> Optional[viewer.Viewer]:
+    """Provide `PublicOnlyProxy` (allows internal napari access) of current viewer."""
     if current_viewer := viewer.current_viewer():
         return PublicOnlyProxy(current_viewer)
     return current_viewer

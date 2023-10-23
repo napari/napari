@@ -181,15 +181,17 @@ def _add_plugin_dock_widget(
     viewer.window.add_dock_widget(widget, name=display_name)
 
 
-# Add future and LayerData processors for each layer type.
 PROCESSORS: Dict[object, Callable] = {
+    # Layer type
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
     List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
     layers.Layer: _add_layer_to_viewer,
+    # Dock widgets
     Optional[
         Tuple[Union[FunctionGui, QWidget, Widget], str]
     ]: _add_plugin_dock_widget,
 }
+# Add future and LayerData processors for each layer type.
 for t in types._LayerData.__args__:  # type: ignore [attr-defined]
     PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
