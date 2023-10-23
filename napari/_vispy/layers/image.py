@@ -289,7 +289,7 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
 
             # tile2data is a ScaleTransform thus is has a .scale attribute, but
             # mypy cannot know this.
-            self.layer._transforms['tile2data'].scale = scale  # type: ignore [attr-defined]
+            self.layer._transforms['tile2data'].scale = scale  # type: ignore [call-overload]
 
             self._on_matrix_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)
