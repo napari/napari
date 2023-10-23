@@ -6,6 +6,8 @@
 #
 alabaster==0.7.13
     # via sphinx
+annotated-types==0.6.0
+    # via pydantic
 app-model==0.2.2
     # via napari (napari_repo/setup.cfg)
 appdirs==1.4.4
@@ -268,11 +270,13 @@ pure-eval==0.2.2
     # via stack-data
 pyconify==0.1.5
     # via superqt
-pydantic==1.10.13
+pydantic==2.4.2
     # via
     #   app-model
     #   napari (napari_repo/setup.cfg)
     #   npe2
+pydantic-core==2.10.1
+    # via pydantic
 pygments==2.16.1
     # via
     #   ipython
@@ -470,6 +474,7 @@ typing-extensions==4.8.0
     #   pint
     #   psygnal
     #   pydantic
+    #   pydantic-core
     #   superqt
     #   typer
 tzdata==2023.3
