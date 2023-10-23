@@ -114,6 +114,10 @@ class TypedMutableSequence(MutableSequence[_T]):
         return super().__contains__(key)
 
     @overload
+    def __getitem__(self, key: str) -> _T:
+        ...  # pragma: no cover
+
+    @overload
     def __getitem__(self, key: int) -> _T:
         ...  # pragma: no cover
 
