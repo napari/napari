@@ -208,13 +208,13 @@ class TypedMutableSequence(MutableSequence[_T]):
 
         Parameters
         ----------
-        value: Any
+        value : Any
             A value to lookup.  If `type(value)` is in the lookups functions
             provided for this class, then values in the list will be searched
             using the corresponding lookup converter function.
-        start: int, optional
+        start : int, optional
             The starting index to search, by default 0
-        stop: int, optional
+        stop : int, optional
             The ending index to search, by default None
 
         Returns
