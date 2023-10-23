@@ -55,6 +55,7 @@ jobs:
         platform: [ubuntu-latest]
         python: ["3.8", "3.9", "3.10", "3.11"]
         backend: [pyqt5, pyside2]
+        pydantic: ["_pydantic_1"]
         exclude:
           - python: '3.11'
             backend: pyside2
@@ -84,7 +85,12 @@ jobs:
             backend: headless
           - python: 3.9
             platform: ubuntu-latest
+            backend: pyqt5
+            pydantic: ""
+          - python: 3.11
+            platform: ubuntu-latest
             backend: pyqt6
+            pydantic: ""
           - python: 3.9
             platform: ubuntu-latest
             backend: pyside6
@@ -157,7 +163,7 @@ jobs:
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
           FORCE_COLOR: 1
-          PIP_CONSTRAINT: resources/constraints/constraints_py${{ matrix.python }}${{ matrix.MIN_REQ && '_min_req' }}.txt
+          PIP_CONSTRAINT: resources/constraints/constraints_py${{ matrix.python }}${{ matrix.MIN_REQ && '_min_req' }}${{ matrix.pydantic }}.txt
       - uses: actions/upload-artifact@v3
         with:
           name: upload pytest timing reports as json
