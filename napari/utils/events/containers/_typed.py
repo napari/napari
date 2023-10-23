@@ -246,7 +246,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             )
         )
 
-    def _iter_indices(self, start=0, stop=None):
+    def _iter_indices(self, start=0, stop=None) -> Iterable[int]:
         """Iter indices from start to stop.
 
         While this is trivial for this basic sequence type, this method lets
