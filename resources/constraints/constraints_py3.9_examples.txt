@@ -37,7 +37,7 @@ certifi==2023.7.22
     # via
     #   napari (napari_repo/setup.cfg)
     #   requests
-charset-normalizer==3.3.0
+charset-normalizer==3.3.1
     # via requests
 click==8.1.7
     # via
@@ -84,7 +84,7 @@ fonttools==4.43.1
     # via matplotlib
 freetype-py==2.4.0
     # via vispy
-fsspec==2023.9.2
+fsspec==2023.10.0
     # via
     #   dask
     #   napari (napari_repo/setup.cfg)
@@ -96,7 +96,7 @@ hypothesis==6.88.1
     # via napari (napari_repo/setup.cfg)
 idna==3.4
     # via requests
-imageio==2.31.5
+imageio==2.31.6
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-svg
@@ -260,7 +260,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==10.1.0
+pillow==10.0.1
     # via
     #   imageio
     #   matplotlib
@@ -546,5 +546,5 @@ zipp==3.17.0
     #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.3
+pip==23.3.1
     # via napari-plugin-manager
