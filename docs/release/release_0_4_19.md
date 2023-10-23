@@ -87,6 +87,7 @@ Lastly we have fixed performance problem with label layer by move part of calcul
 ## Documentation
 
 - Update README.md for conda install change ([napari/napari/#6123](https://github.com/napari/napari/pull/6123))
+- Add 0.4.19 release notes ([napari/napari/#6376](https://github.com/napari/napari/pull/6376))
 - Fix getting started in napari linking to the unittest getting started page ([napari/docs/#217](https://github.com/napari/docs/pull/217))
 - Update core developer list ([napari/docs/#219](https://github.com/napari/docs/pull/219))
 - Adds guide on CI setup for docs building and website deployment ([napari/docs/#220](https://github.com/napari/docs/pull/220))
