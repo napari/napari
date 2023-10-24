@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
-from pydantic import Field, root_validator, validator
 
+from napari._pydantic_compat import Field, root_validator, validator
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils.color_manager_utils import (
     _validate_colormap_mode,

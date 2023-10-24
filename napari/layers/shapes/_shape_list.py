@@ -213,7 +213,7 @@ class ShapeList:
             Should be 'edge' for edge_color or 'face' for face_color.
         """
         n_shapes = len(self.data)
-        if not np.all(colors.shape == (n_shapes, 4)):
+        if not np.array_equal(colors.shape, (n_shapes, 4)):
             raise ValueError(
                 trans._(
                     '{attribute}_color must have shape ({n_shapes}, 4)',
@@ -247,7 +247,7 @@ class ShapeList:
     @_batch_dec
     def slice_key(self, slice_key):
         slice_key = list(slice_key)
-        if not np.all(self._slice_key == slice_key):
+        if not np.array_equal(self._slice_key, slice_key):
             self._slice_key = slice_key
             self._update_displayed()
 

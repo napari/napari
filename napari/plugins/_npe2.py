@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
-    from qtpy.QtWidgets import QMenu  # type: ignore [attr-defined]
+    from qtpy.QtWidgets import QMenu
 
     from napari._app_model.constants import MenuId
     from napari.layers import Layer
@@ -171,10 +171,12 @@ def populate_qmenu(menu: QMenu, menu_key: str):
         if isinstance(item, contributions.Submenu):
             subm_contrib = pm.get_submenu(item.submenu)
             subm = menu.addMenu(subm_contrib.label)
+            assert subm is not None
             populate_qmenu(subm, subm_contrib.id)
         else:
             cmd = pm.get_command(item.command)
             action = menu.addAction(cmd.title)
+            assert action is not None
             action.triggered.connect(_wrap(cmd))
 
 
