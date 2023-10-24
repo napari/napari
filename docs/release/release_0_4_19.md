@@ -10,7 +10,6 @@ rendering), and the scientific Python stack (numpy, scipy).
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
-/Users/grzegorzbokota/Documents/Projekty/napari-release-tools/highlight/0.4.19.md
 ## Highlights
 
 In this release we would like to highlight three changes:
@@ -72,6 +71,7 @@ Lastly we have fixed performance problem with label layer by move part of calcul
 - FIX add `changing` event to `EventedDict` ([napari/napari/#6268](https://github.com/napari/napari/pull/6268))
 - Restore default color support for direct color mode in Labels layer ([napari/napari/#6311](https://github.com/napari/napari/pull/6311))
 - Update example scripts (magicgui with threads) ([napari/napari/#6353](https://github.com/napari/napari/pull/6353))
+- Exclude the loaded property when linking two layers ([napari/napari/#6377](https://github.com/napari/napari/pull/6377))
 
 ## API Changes
 
@@ -79,6 +79,7 @@ Lastly we have fixed performance problem with label layer by move part of calcul
 
 ## Deprecations
 
+- Postpone qt_viewer deprecation to 0.6.0 ([napari/napari/#6283](https://github.com/napari/napari/pull/6283))
 
 ## Build Tools
 
@@ -118,9 +119,10 @@ Lastly we have fixed performance problem with label layer by move part of calcul
 - Update pre-commit and constraints and minor fixes for 0.4.19 release ([napari/napari/#6340](https://github.com/napari/napari/pull/6340))
 
 
-## 15 authors added to this release (alphabetical)
+## 16 authors added to this release (alphabetical)
 
 - [akuten1298](https://github.com/napari/napari/commits?author=akuten1298) - @akuten1298
+- [Andrew Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
 - [Daniel Althviz Moré](https://github.com/napari/napari/commits?author=dalthviz) - @dalthviz
 - [David Stansby](https://github.com/napari/napari/commits?author=dstansby) - @dstansby
 - [Egor Zindy](https://github.com/napari/napari/commits?author=zindy) - @zindy
@@ -128,7 +130,7 @@ Lastly we have fixed performance problem with label layer by move part of calcul
 - [Eric Perlman](https://github.com/napari/napari/commits?author=perlman) - @perlman
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
-- [jaime rodriguez-guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
+- [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
@@ -139,15 +141,15 @@ Lastly we have fixed performance problem with label layer by move part of calcul
 
 ## 14 reviewers added to this release (alphabetical)
 
-- [alister burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
-- [andrew sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
+- [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
+- [Andrew Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
 - [Daniel Althviz Moré](https://github.com/napari/napari/commits?author=dalthviz) - @dalthviz
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Egor Zindy](https://github.com/napari/napari/commits?author=zindy) - @zindy
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
 - [Gonzalo Peña-Castellanos](https://github.com/napari/napari/commits?author=goanpeca) - @goanpeca
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
-- [jaime rodriguez-guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
+- [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
