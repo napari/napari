@@ -1,7 +1,6 @@
 from typing import Dict, List
 
-from pydantic import Field, validator
-
+from napari._pydantic_compat import Field, validator
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.shortcuts import default_shortcuts
 from napari.utils.translations import trans

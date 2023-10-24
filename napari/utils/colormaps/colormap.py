@@ -2,8 +2,8 @@ from collections import defaultdict
 from typing import Optional, cast
 
 import numpy as np
-from pydantic import Field, PrivateAttr, validator
 
+from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.compat import StrEnum

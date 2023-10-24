@@ -2,7 +2,6 @@ import json
 from enum import EnumMeta
 from typing import TYPE_CHECKING, Tuple, cast
 
-from pydantic.main import BaseModel, ModelMetaclass
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (
     QDialog,
@@ -14,10 +13,10 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
+from napari._pydantic_compat import BaseModel, ModelField, ModelMetaclass
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from pydantic.fields import ModelField
     from qtpy.QtGui import QCloseEvent, QKeyEvent
 
 

@@ -5,8 +5,14 @@ from contextlib import contextmanager
 from typing import Any, Callable, ClassVar, Dict, Set, Union
 
 import numpy as np
-from pydantic import BaseModel, PrivateAttr, main, utils
 
+from napari._pydantic_compat import (
+    BaseModel,
+    ModelMetaclass,
+    PrivateAttr,
+    main,
+    utils,
+)
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.misc import pick_equality_operator
 from napari.utils.translations import trans
@@ -63,7 +69,7 @@ def no_class_attributes():
         main.ClassAttribute = utils.ClassAttribute
 
 
-class EventedMetaclass(main.ModelMetaclass):
+class EventedMetaclass(ModelMetaclass):
     """pydantic ModelMetaclass that preps "equality checking" operations.
 
     A metaclass is the thing that "constructs" a class, and ``ModelMetaclass``

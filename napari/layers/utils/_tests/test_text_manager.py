@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-from pydantic import ValidationError
 
+from napari._pydantic_compat import ValidationError
 from napari._tests.utils import assert_colors_equal
 from napari.layers.utils.string_encoding import (
     ConstantStringEncoding,

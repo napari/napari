@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import List, Optional, Tuple
 
 from psutil import virtual_memory
-from pydantic import Field, validator
 
+from napari._pydantic_compat import Field, validator
 from napari.settings._constants import LoopMode
 from napari.settings._fields import Language
 from napari.utils._base import _DEFAULT_LOCALE

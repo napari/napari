@@ -1,5 +1,4 @@
-from pydantic import Field
-
+from napari._pydantic_compat import Field
 from napari.settings._fields import Theme
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.theme import available_themes

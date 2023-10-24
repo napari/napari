@@ -8,7 +8,7 @@ from napari.utils.translations import trans
 _T = TypeVar("_T")
 
 if TYPE_CHECKING:
-    from pydantic.fields import ModelField
+    from napari._pydantic_compat import ModelField
 
 
 class EventedSet(MutableSet[_T]):
@@ -165,7 +165,7 @@ class EventedSet(MutableSet[_T]):
     @classmethod
     def validate(cls, v, field: ModelField):
         """Pydantic validator."""
-        from pydantic.utils import sequence_like
+        from napari._pydantic_compat import sequence_like
 
         if not sequence_like(v):
             raise TypeError(
@@ -185,7 +185,7 @@ class EventedSet(MutableSet[_T]):
             if error:
                 errors.append(error)
         if errors:
-            from pydantic import ValidationError
+            from napari._pydantic_compat import ValidationError
 
             raise ValidationError(errors, cls)  # type: ignore
         return cls(v)
