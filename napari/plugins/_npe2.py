@@ -24,7 +24,7 @@ from magicgui.type_map._magicgui import MagicFactory
 from magicgui.widgets import FunctionGui, Widget
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
-from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
+from qtpy.QtWidgets import QWidget
 
 from napari.errors.reader_errors import MultipleReaderError
 from napari.utils.translations import trans
