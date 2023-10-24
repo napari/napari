@@ -55,7 +55,7 @@ jobs:
 
   build_wheel:
     name: Build wheel
-    uses: ./.github/workflows/resuable_build_wheel.yml
+    uses: ./.github/workflows/reusable_build_wheel.yml
 
   test_initial:
     name: Initial test
@@ -67,14 +67,17 @@ jobs:
           - python: 3.8
             platform: ubuntu-latest
             backend: pyqt5
+            pydantic: "_pydantic_1"
           - python: 3.11
             platform: ubuntu-latest
             backend: pyqt6
+            pydantic: ""
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
       coverage: no_cov
+      constraints_suffix: ${{ matrix.pydantic }}
 
   test:
     name: ${{ matrix.platform }}
@@ -87,6 +90,7 @@ jobs:
         python: [ "3.9", "3.10" ]
         backend: [ "pyqt5,pyside2" ]
         coverage: [ cov ]
+        pydantic: ["_pydantic_1"]
         include:
           # Windows py38
           - python: 3.8
@@ -107,6 +111,11 @@ jobs:
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
+          - python: "3.10"
+            platform: ubuntu-22.04
+            backend: pyqt5
+            coverage: cov
+            pydantic: ""
           # test without any Qt backends
           - python: 3.9
             platform: ubuntu-20.04
@@ -126,6 +135,8 @@ jobs:
       coverage: ${{ matrix.coverage }}
       toxenv: ${{ matrix.toxenv }}
       tox_extras: ${{ matrix.tox_extras }}
+      constraints_suffix: ${{ matrix.pydantic }}
+
 
   test_pip_install:
     needs: test_initial
