@@ -41,7 +41,7 @@ class ShortcutsSettings(EventedModel):
                 self.shortcuts.remove(add_rule)
             else:
                 self.shortcuts.append(negate_rule)
-            self.events.shortcuts()
+            self.events.shortcuts(value=self.shortcuts)
 
     def add_shortcut(self, key, command, when=None):
         add_rule = ShortcutRule(key=key, command=command, when=when)
@@ -58,13 +58,13 @@ class ShortcutsSettings(EventedModel):
             changed = True
 
         if changed:
-            self.events.shortcuts()
+            self.events.shortcuts(value=self.shortcuts)
 
     def overwrite_shortcut(self, old_key, new_key, command, when=None):
         with self.events.shortcuts.blocker():
             self.remove_shortcut(old_key, command, when)
             self.add_shortcut(new_key, command, when)
-        self.events.shortcuts()
+        self.events.shortcuts(value=self.shortcuts)
 
     @validator('shortcuts', allow_reuse=True, pre=True)
     def shortcut_validate(cls, shortcuts):

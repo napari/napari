@@ -572,9 +572,9 @@ class ShortcutEditor(QWidget):
         value: dict
             Dictionary of action names and shortcuts assigned to them.
         """
-        return get_settings().shortcuts.dict(exclude_defaults=True)[
-            'shortcuts'
-        ]
+        shortcuts_dict = get_settings().shortcuts.dict(exclude_defaults=True)
+
+        return shortcuts_dict.get('shortcuts', [])
 
 
 class ShortcutDelegate(QItemDelegate):
