@@ -171,7 +171,7 @@ def test_link_layers_with_images_then_loaded_not_linked():
     assert l2.loaded
 
     link_layers([l1, l2])
-    l1._set_loaded(False)
+    l1._slice.loaded = False
 
     assert not l1.loaded
     assert l2.loaded
