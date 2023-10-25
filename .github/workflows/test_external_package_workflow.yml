@@ -10,11 +10,11 @@ on:
       package_to_test:
         required: false
         type: string
-        default: "napari/npe2"
+        default: ""
       package_to_test_ref:
         required: false
         type: string
-        default: "main"
+        default: ""
       python_version:
         required: false
         type: string

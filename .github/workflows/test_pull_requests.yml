@@ -192,3 +192,9 @@ jobs:
   test_external_test:
     name: tmp run test external package
     uses: ./.github/workflows/test_external_package_workflow.yml
+    with:
+        package_to_test: "napari/npe2"
+        package_to_test_ref: "main"
+        python_version: "3.10"
+        platform: "ubuntu-latest"
+        backend: "headless"
