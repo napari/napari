@@ -32,7 +32,6 @@ jobs:
   test:
     name: Initial test
     uses: ./.github/workflows/reusable_run_tox_test.yml
-    needs: build_wheel
     strategy:
       matrix:
         include:
