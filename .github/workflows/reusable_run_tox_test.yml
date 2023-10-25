@@ -66,7 +66,7 @@ jobs:
       COVERAGE: ${{ inputs.coverage }}
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}
-      INSTALL_PKG: ${{ inputs.package_to_test != '' && '--installpkg dist/napari-0.0.1-py3-none-any.whl' || '' }}
+      INSTALL_PKG: ${{ inputs.package_to_test == '' && '--installpkg dist/napari-0.0.1-py3-none-any.whl' || '' }}
       COMMAND_PRE: ${{ inputs.package_to_test != '' && 'pip install package_to_test && pip list' || '' }}
     steps:
       - uses: actions/checkout@v3
