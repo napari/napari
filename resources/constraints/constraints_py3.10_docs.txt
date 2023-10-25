@@ -22,7 +22,7 @@ attrs==23.1.0
     #   jsonschema
     #   jupyter-cache
     #   referencing
-babel==2.13.0
+babel==2.13.1
     # via
     #   napari (napari_repo/setup.cfg)
     #   sphinx
@@ -135,7 +135,7 @@ in-n-out==0.1.9
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.25.2
+ipykernel==6.26.0
     # via
     #   myst-nb
     #   napari-console
@@ -169,7 +169,7 @@ jsonschema-specifications==2023.7.1
     # via jsonschema
 jupyter-cache==0.6.1
     # via myst-nb
-jupyter-client==8.4.0
+jupyter-client==8.5.0
     # via
     #   ipykernel
     #   nbclient
@@ -370,7 +370,7 @@ platformdirs==3.11.0
     #   virtualenv
 pluggy==1.3.0
     # via pytest
-pooch==1.7.0
+pooch==1.8.0
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
@@ -392,7 +392,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyconify==0.1.5
+pyconify==0.1.6
     # via superqt
 pydantic==1.10.13
     # via
@@ -441,7 +441,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   napari (napari_repo/setup.cfg)
     #   pytest-cov
@@ -487,7 +487,7 @@ qtconsole==5.4.4
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-console
-qtpy==2.4.0
+qtpy==2.4.1
     # via
     #   magicgui
     #   napari (napari_repo/setup.cfg)
@@ -549,7 +549,6 @@ sphinx==4.5.0
     #   -r docs/requirements.txt
     #   myst-nb
     #   myst-parser
-    #   napari (napari_repo/setup.cfg)
     #   napari-sphinx-theme
     #   numpydoc
     #   sphinx-autobuild
@@ -637,7 +636,7 @@ tornado==6.3.3
     #   livereload
 tqdm==4.66.1
     # via napari (napari_repo/setup.cfg)
-traitlets==5.11.2
+traitlets==5.12.0
     # via
     #   comm
     #   ipykernel
