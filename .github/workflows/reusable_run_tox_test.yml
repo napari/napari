@@ -67,6 +67,7 @@ jobs:
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}
       INSTALL_PKG: ${{ inputs.package_to_test != '' && '--installpkg dist/napari-0.0.1-py3-none-any.whl' || '' }}
+      COMMAND_PRE: ${{ inputs.package_to_test != '' && 'pip install package_to_test && pip list' || '' }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -141,6 +142,8 @@ jobs:
         # FOURTH=none
         shell: bash
         run: |
+          ls napari_repo
+          ls napari_repo/tools
           python napari_repo/tools/split_qt_backend.py 0 ${{ inputs.qt_backend }} >> $GITHUB_ENV
           python napari_repo/tools/split_qt_backend.py 1 ${{ inputs.qt_backend }} >> $GITHUB_ENV
           python napari_repo/tools/split_qt_backend.py 2 ${{ inputs.qt_backend }} >> $GITHUB_ENV
