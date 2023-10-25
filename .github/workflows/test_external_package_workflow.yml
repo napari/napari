@@ -49,6 +49,6 @@ jobs:
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
       coverage: no_cov
-      package_to_test: ${{ inputs.package_to_test == '' && github.repository || inputs.package_to_test }}
-      package_to_test_ref: ${{ inputs.package_to_test_ref }}
+      package_to_test: ${{ github.event_name == 'pull_request' && 'napari/npe2' || inputs.package_to_test == '' && github.repository || inputs.package_to_test }}
+      package_to_test_ref: ${{ github.event_name == 'pull_request' && 'main' ||  inputs.package_to_test_ref }}
       napari_version: ${{ matrix.napari_version }}
