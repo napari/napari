@@ -12,20 +12,29 @@ https://github.com/napari/napari
 
 ## Highlights
 
-In this release we would like to highlight three changes:
+This release is mostly a bug fix release and hopefully the latest before all the excited features that are coming with version 0.5.0.
 
-At first we have decided to postpone the `viewer.window.qt_viewer` to 0.6.0 release
+First of all we have an important announcement with this release.
+We have decided to postpone the `viewer.window.qt_viewer` to 0.6.0 release
 as not all the features are ready yet ([napari/napari/#6283](https://github.com/napari/napari/pull/6283)).
 
-Secondly we make napari pydantic 2 compatible.
-At this moment we are using `pydantic.v1` to achieve this.
-In this release the bundle will be shipped with pydantic 1, but
-we expect that in the next release we will ship bundle with pydantic 2.
-So if your plugin is using pydantic please make sure that it is compatible with pydantic 2.
-([napari/napari/#6358](https://github.com/napari/napari/pull/6358))
+Furthermore we would like to highlight the following changes:
 
-Lastly we have fixed performance problem with label layer by move part of calculation on GPU
-([napari/napari/#3308](https://github.com/napari/napari/pull/3308))
+ We have made napari pydantic 2 compatible.
+At this moment we are using `pydantic.v1` to achieve this.
+In this release the bundle will be shipped with pydantic v1, but
+we expect that in the next release we will ship the bundle with pydantic v2.
+Please, if you are a plugin developer and your plugin uses pydantic, ensure 
+that it is compatible with pydantic v2 ([napari/napari/#6358](https://github.com/napari/napari/pull/6358)).
+
+Also, we have fixed a performance problem of the label layer by moving part of calculations to the GPU
+([napari/napari/#3308](https://github.com/napari/napari/pull/3308)).
+
+If you have any questions or suggestions regarding napari core, for example how to adapt your plugin to be compatible with future napari versions, please get in touch! We have weekly community meetings, for which you can find the schedule [here](https://napari.org/stable/community/meeting_schedule.html). We would like to hear from you.
+
+- Use a shader for low discrepancy label conversion ([napari/napari/#3308](https://github.com/napari/napari/pull/3308))
+- Postpone qt_viewer deprecation to 0.6.0 ([napari/napari/#6283](https://github.com/napari/napari/pull/6283))
+- Pydantic 2 compatibility using `pydantic.v1`  ([napari/napari/#6358](https://github.com/napari/napari/pull/6358))
 
 ## New Features
 
@@ -66,6 +75,7 @@ Lastly we have fixed performance problem with label layer by move part of calcul
 - Update color texture build to reduce collisions, and fix collision handling ([napari/napari/#6182](https://github.com/napari/napari/pull/6182))
 - Prevent layer controls buttons changing layout while taking screenshots with flash effect on ([napari/napari/#6194](https://github.com/napari/napari/pull/6194))
 - Vispy 0.14 ([napari/napari/#6214](https://github.com/napari/napari/pull/6214))
+- Fix `ShapeList.outline` validations for `int`/list like argument and add a test ([napari/napari/#6215](https://github.com/napari/napari/pull/6215))
 - Ensure pandas Series is initialized with a list as data ([napari/napari/#6226](https://github.com/napari/napari/pull/6226))
 - Fix Python 3.11 StrEnum Compatibility ([napari/napari/#6242](https://github.com/napari/napari/pull/6242))
 - FIX add `changing` event to `EventedDict` ([napari/napari/#6268](https://github.com/napari/napari/pull/6268))
@@ -87,15 +97,26 @@ Lastly we have fixed performance problem with label layer by move part of calcul
 
 ## Documentation
 
+- Add HIP workshop to documentation/workshops ([napari/napari/#5117](https://github.com/napari/napari/pull/5117))
 - Update README.md for conda install change ([napari/napari/#6123](https://github.com/napari/napari/pull/6123))
 - Add 0.4.19 release notes ([napari/napari/#6376](https://github.com/napari/napari/pull/6376))
+- Update docs contribution guide for two-repo setup ([napari/docs/#5](https://github.com/napari/docs/pull/5))
+- add foundation grant onboarding workshop ([napari/docs/#55](https://github.com/napari/docs/pull/55))
+- Fixes formatting for the contributing documentation section ([napari/docs/#79](https://github.com/napari/docs/pull/79))
+- Move napari workshop template link to top of page ([napari/docs/#90](https://github.com/napari/docs/pull/90))
+- Add instructions to build napari docs on Windows ([napari/docs/#158](https://github.com/napari/docs/pull/158))
+- Use python version range instead of min version ([napari/docs/#194](https://github.com/napari/docs/pull/194))
+- Fix typo of points instead of shapes ([napari/docs/#195](https://github.com/napari/docs/pull/195))
+- Improve titles of fundamentals tutorials ([napari/docs/#196](https://github.com/napari/docs/pull/196))
+- NAP 7: Key Binding Dispatch ([napari/docs/#200](https://github.com/napari/docs/pull/200))
+- make Talley emeritus SC ([napari/docs/#204](https://github.com/napari/docs/pull/204))
+- Move contributing resources to top-level navbar ([napari/docs/#208](https://github.com/napari/docs/pull/208))
+- Add roadmap board link to Roadmaps page ([napari/docs/#212](https://github.com/napari/docs/pull/212))
 - Fix getting started in napari linking to the unittest getting started page ([napari/docs/#217](https://github.com/napari/docs/pull/217))
 - Update core developer list ([napari/docs/#219](https://github.com/napari/docs/pull/219))
-- Adds guide on CI setup for docs building and website deployment ([napari/docs/#220](https://github.com/napari/docs/pull/220))
 - Add note on milestones for PRs ([napari/docs/#221](https://github.com/napari/docs/pull/221))
 - Fix titles on Getting Started section of user guide ([napari/docs/#228](https://github.com/napari/docs/pull/228))
 - Update Kyle's tag on the core devs page ([napari/docs/#232](https://github.com/napari/docs/pull/232))
-- Remove items not relevant to documentation in PR template ([napari/docs/#234](https://github.com/napari/docs/pull/234))
 - Update ndisplay title ([napari/docs/#235](https://github.com/napari/docs/pull/235))
 - Remove sub-sub section heading from rendering guide ([napari/docs/#236](https://github.com/napari/docs/pull/236))
 - Update selection instructions in Points tutorial for Shift-A keybinding ([napari/docs/#238](https://github.com/napari/docs/pull/238))
@@ -117,9 +138,12 @@ Lastly we have fixed performance problem with label layer by move part of calcul
 - Use class name for object that does not have qt name ([napari/napari/#6222](https://github.com/napari/napari/pull/6222))
 - Fix labeler by adding permissions ([napari/napari/#6289](https://github.com/napari/napari/pull/6289))
 - Update pre-commit and constraints and minor fixes for 0.4.19 release ([napari/napari/#6340](https://github.com/napari/napari/pull/6340))
+- Ensure conda workflow runs with proper permissions ([napari/napari/#6378](https://github.com/napari/napari/pull/6378))
+- Fix `test_link_layers_with_images_then_loaded_not_linked` test ([napari/napari/#6385](https://github.com/napari/napari/pull/6385))
+- Update docs to suggest python 3.10 install ([napari/docs/#246](https://github.com/napari/docs/pull/246))
 
 
-## 16 authors added to this release (alphabetical)
+## 17 authors added to this release (alphabetical)
 
 - [akuten1298](https://github.com/napari/napari/commits?author=akuten1298) - @akuten1298
 - [Andrew Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
@@ -136,6 +160,7 @@ Lastly we have fixed performance problem with label layer by move part of calcul
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Lucy Liu](https://github.com/napari/napari/commits?author=lucyleeow) - @lucyleeow
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
+- [Robert Haase](https://github.com/napari/napari/commits?author=haesleinhuepf) - @haesleinhuepf
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
 
 
@@ -157,26 +182,34 @@ Lastly we have fixed performance problem with label layer by move part of calcul
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
 
 
-## 8 docs authors added to this release (alphabetical)
+## 10 docs authors added to this release (alphabetical)
 
+- [chili-chiu](https://github.com/napari/docs/commits?author=chili-chiu) - @chili-chiu
 - [David Stansby](https://github.com/napari/docs/commits?author=dstansby) - @dstansby
 - [dgmccart](https://github.com/napari/docs/commits?author=dgmccart) - @dgmccart
 - [Juan Nunez-Iglesias](https://github.com/napari/docs/commits?author=jni) - @jni
-- [Lucy Liu](https://github.com/napari/docs/commits?author=lucyleeow) - @lucyleeow
+- [Kira Evans](https://github.com/napari/docs/commits?author=kne42) - @kne42
 - [Melissa Weber Mendonça](https://github.com/napari/docs/commits?author=melissawm) - @melissawm
 - [Peter Sobolewski](https://github.com/napari/docs/commits?author=psobolewskiPhD) - @psobolewskiPhD
 - [Sean Martin](https://github.com/napari/docs/commits?author=seankmartin) - @seankmartin
+- [Talley Lambert](https://github.com/napari/docs/commits?author=tlambert03) - @tlambert03
 - [Wouter-Michiel Vierdag](https://github.com/napari/docs/commits?author=melonora) - @melonora
 
 
-## 7 docs reviewers added to this release (alphabetical)
+## 13 docs reviewers added to this release (alphabetical)
 
+- [Andrew Sweet](https://github.com/napari/docs/commits?author=andy-sweet) - @andy-sweet
 - [David Stansby](https://github.com/napari/docs/commits?author=dstansby) - @dstansby
+- [Draga Doncila Pop](https://github.com/napari/docs/commits?author=DragaDoncila) - @DragaDoncila
 - [Grzegorz Bokota](https://github.com/napari/docs/commits?author=Czaki) - @Czaki
+- [Juan Nunez-Iglesias](https://github.com/napari/docs/commits?author=jni) - @jni
+- [Kira Evans](https://github.com/napari/docs/commits?author=kne42) - @kne42
 - [Lorenzo Gaifas](https://github.com/napari/docs/commits?author=brisvag) - @brisvag
 - [Lucy Liu](https://github.com/napari/docs/commits?author=lucyleeow) - @lucyleeow
+- [Matthias Bussonnier](https://github.com/napari/docs/commits?author=Carreau) - @Carreau
 - [Melissa Weber Mendonça](https://github.com/napari/docs/commits?author=melissawm) - @melissawm
 - [Peter Sobolewski](https://github.com/napari/docs/commits?author=psobolewskiPhD) - @psobolewskiPhD
+- [Sean Martin](https://github.com/napari/docs/commits?author=seankmartin) - @seankmartin
 - [Wouter-Michiel Vierdag](https://github.com/napari/docs/commits?author=melonora) - @melonora
 
 ## New Contributors
