@@ -44,10 +44,16 @@ def test_nbscreenshot(make_napari_viewer):
         ("!@#$%^&*()`~", "!@#$%^&amp;*()`~"),  # ASCII punctuation 3
         # # Emojis
         ("😍", "😍"),  # emoji 1
-        ("👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️", "👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️"),  # emoji 2
+        (
+            "👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️",
+            "👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️",
+        ),  # emoji 2
         (r"¯\_(ツ)_/¯", "¯\\_(ツ)_/¯"),  # Japanese emoticon
         # # Special characters
-        ("田中さんにあげて下さい", "田中さんにあげて下さい"),  # two-byte characters
+        (
+            "田中さんにあげて下さい",
+            "田中さんにあげて下さい",
+        ),  # two-byte characters
         (
             "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀",  # noqa: RUF001
             "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀",  # noqa: RUF001

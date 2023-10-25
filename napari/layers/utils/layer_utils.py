@@ -496,7 +496,7 @@ def _coerce_current_properties_value(
 def coerce_current_properties(
     current_properties: Mapping[
         str, Union[float, str, int, bool, list, tuple, npt.NDArray]
-    ]
+    ],
 ) -> Dict[str, np.ndarray]:
     """Coerce a current_properties dictionary into the correct type.
 

@@ -243,7 +243,9 @@ class Labels(_ImageBase):
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes: ClassVar[Dict[StringEnum, Callable[["Labels", Event], None]]] = {  # type: ignore[assignment]
+    _move_modes: ClassVar[
+        Dict[StringEnum, Callable[["Labels", Event], None]]
+    ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,

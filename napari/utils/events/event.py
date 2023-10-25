@@ -1050,7 +1050,9 @@ class EmitterGroup(EventEmitter):
 
             if inspect.isclass(emitter) and issubclass(emitter, Event):  # type: ignore
                 emitter = EventEmitter(
-                    source=self.source, type_name=name, event_class=emitter  # type: ignore
+                    source=self.source,
+                    type_name=name,
+                    event_class=emitter,  # type: ignore
                 )
             elif not isinstance(emitter, EventEmitter):
                 raise RuntimeError(
