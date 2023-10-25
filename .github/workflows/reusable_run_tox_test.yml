@@ -80,6 +80,7 @@ jobs:
           path: package_to_test
           ref: ${{ inputs.package_to_test_ref }}
           repository: ${{ inputs.package_to_test }}
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v3
         if: ${{ inputs.package_to_test == '' }}
