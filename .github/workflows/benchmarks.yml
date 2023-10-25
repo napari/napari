@@ -37,6 +37,9 @@ jobs:
     if: ${{ github.event.label.name == 'run-benchmarks' && github.event_name == 'pull_request' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     name: ${{ matrix.benchmark-name }}
     runs-on: ${{ matrix.runs-on }}
+    permissions:
+      contents: read
+      issues: write
     strategy:
       fail-fast: false
       matrix:
