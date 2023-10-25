@@ -6,26 +6,27 @@ on:
       - ".github/workflows/reusable_tox_run.yml"
       - ".github/workflows/test_external_package_compatibility.yml"
   workflow_call:
-    package_to_test:
-      required: false
-      type: string
-      default: "napari/npe2"
-    package_to_test_ref:
-      required: false
-      type: string
-      default: "main"
-    python_version:
-      required: false
-      type: string
-      default: "3.10"
-    platform:
-      required: false
-      type: string
-      default: "ubuntu-latest"
-    backend:
-      required: false
-      type: string
-      default: "headless"
+    inputs:
+      package_to_test:
+        required: false
+        type: string
+        default: "napari/npe2"
+      package_to_test_ref:
+        required: false
+        type: string
+        default: "main"
+      python_version:
+        required: false
+        type: string
+        default: "3.10"
+      platform:
+        required: false
+        type: string
+        default: "ubuntu-latest"
+      backend:
+        required: false
+        type: string
+        default: "headless"
 
 jobs:
   test:
