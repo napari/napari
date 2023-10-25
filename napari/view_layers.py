@@ -22,15 +22,15 @@ from napari.layers import Image
 from napari.viewer import Viewer
 
 __all__ = [
-    'view_image',
-    'view_labels',
-    'view_path',
-    'view_points',
-    'view_shapes',
-    'view_surface',
-    'view_tracks',
-    'view_vectors',
-    'imshow',
+    "view_image",
+    "view_labels",
+    "view_path",
+    "view_points",
+    "view_shapes",
+    "view_surface",
+    "view_tracks",
+    "view_vectors",
+    "imshow",
 ]
 
 _doc_template = """Create a viewer and add a{n} {layer_string} layer.
@@ -44,7 +44,7 @@ viewer : :class:`napari.Viewer`
 """
 
 _VIEW_DOC = _NumpyDocString(Viewer.__doc__)
-_VIEW_PARAMS = "    " + "\n".join(_VIEW_DOC._str_param_list('Parameters')[2:])
+_VIEW_PARAMS = "    " + "\n".join(_VIEW_DOC._str_param_list("Parameters")[2:])
 
 
 def _merge_docstrings(add_method, layer_string):
@@ -55,10 +55,10 @@ def _merge_docstrings(add_method, layer_string):
 
     # this ugliness is because the indentation of the parsed numpydocstring
     # is different for the first parameter :(
-    lines = add_method_doc._str_param_list('Parameters')
+    lines = add_method_doc._str_param_list("Parameters")
     lines = lines[:3] + textwrap.dedent("\n".join(lines[3:])).splitlines()
     params = "\n".join(lines) + "\n" + textwrap.dedent(_VIEW_PARAMS)
-    n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
+    n = "n" if layer_string.startswith(tuple("aeiou")) else ""
     return _doc_template.format(n=n, layer_string=layer_string, params=params)
 
 
@@ -84,24 +84,24 @@ def _merge_layer_viewer_sigs_docs(func):
 
     # get the `Viewer.add_*` method
     layer_string = func.__name__.replace("view_", "")
-    if layer_string == 'path':
+    if layer_string == "path":
         add_method = Viewer.open
     else:
-        add_method = getattr(Viewer, f'add_{layer_string}')
+        add_method = getattr(Viewer, f"add_{layer_string}")
 
     # merge the docstrings of Viewer and viewer.add_*
     func.__doc__ = _merge_docstrings(add_method, layer_string)
 
     # merge the signatures of Viewer and viewer.add_*
     func.__signature__ = _combine_signatures(
-        add_method, Viewer, return_annotation=Viewer, exclude=('self',)
+        add_method, Viewer, return_annotation=Viewer, exclude=("self",)
     )
 
     # merge the __annotations__
     func.__annotations__ = {
         **add_method.__annotations__,
         **Viewer.__init__.__annotations__,
-        'return': Viewer,
+        "return": Viewer,
     }
 
     # _forwardrefns_ is used by stubgen.py to populate the globalns
@@ -176,42 +176,42 @@ def _make_viewer_then(
 
 @_merge_layer_viewer_sigs_docs
 def view_image(*args, **kwargs):
-    return _make_viewer_then('add_image', *args, **kwargs)[0]
+    return _make_viewer_then("add_image", *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_labels(*args, **kwargs):
-    return _make_viewer_then('add_labels', *args, **kwargs)[0]
+    return _make_viewer_then("add_labels", *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_points(*args, **kwargs):
-    return _make_viewer_then('add_points', *args, **kwargs)[0]
+    return _make_viewer_then("add_points", *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_shapes(*args, **kwargs):
-    return _make_viewer_then('add_shapes', *args, **kwargs)[0]
+    return _make_viewer_then("add_shapes", *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_surface(*args, **kwargs):
-    return _make_viewer_then('add_surface', *args, **kwargs)[0]
+    return _make_viewer_then("add_surface", *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_tracks(*args, **kwargs):
-    return _make_viewer_then('add_tracks', *args, **kwargs)[0]
+    return _make_viewer_then("add_tracks", *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_vectors(*args, **kwargs):
-    return _make_viewer_then('add_vectors', *args, **kwargs)[0]
+    return _make_viewer_then("add_vectors", *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_path(*args, **kwargs):
-    return _make_viewer_then('open', *args, **kwargs)[0]
+    return _make_viewer_then("open", *args, **kwargs)[0]
 
 
 def imshow(
@@ -222,10 +222,10 @@ def imshow(
     colormap=None,
     contrast_limits=None,
     gamma=1,
-    interpolation2d='nearest',
-    interpolation3d='linear',
-    rendering='mip',
-    depiction='volume',
+    interpolation2d="nearest",
+    interpolation3d="linear",
+    rendering="mip",
+    depiction="volume",
     iso_threshold=None,
     attenuation=0.05,
     name=None,
@@ -243,9 +243,9 @@ def imshow(
     plane=None,
     experimental_clipping_planes=None,
     custom_interpolation_kernel_2d=None,
-    projection_mode='none',
+    projection_mode="none",
     viewer=None,
-    title='napari',
+    title="napari",
     ndisplay=2,
     order=(),
     axis_labels=(),
@@ -407,7 +407,7 @@ def imshow(
     """
 
     return _make_viewer_then(
-        'add_image',
+        "add_image",
         data,
         viewer=viewer,
         channel_axis=channel_axis,

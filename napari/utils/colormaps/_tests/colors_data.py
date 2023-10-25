@@ -18,27 +18,27 @@ from vispy.color import Color, ColorArray
 # below.
 REDA = (1.0, 0.0, 0.0, 1.0)
 RED = (1.0, 0.0, 0.0)
-REDF = '#ff0000'
-GREENV = Color('green').rgb[1]
+REDF = "#ff0000"
+GREENV = Color("green").rgb[1]
 GREENA = (0.0, GREENV, 0.0, 1.0)
 GREEN = (0.0, GREENV, 0.0)
-GREENF = Color('green').hex
+GREENF = Color("green").hex
 REDARR = np.array([[1.0, 0.0, 0.0, 1.0]], dtype=np.float32)
 GREENARR = np.array([[0.0, GREENV, 0.0, 1.0]], dtype=np.float32)
 
 single_color_options = [
     RED,
     GREENA,
-    'transparent',
-    'red',
-    'g',
+    "transparent",
+    "red",
+    "g",
     GREENF,
-    '#ffccaa44',
+    "#ffccaa44",
     REDA,
     REDARR[0, :3],
     Color(RED).rgb,
     Color(GREENF).rgba,
-    ColorArray('red').rgb,
+    ColorArray("red").rgb,
     ColorArray(GREENA).rgba,
     ColorArray(GREEN).rgb,
     ColorArray([GREENA]).rgba,
@@ -54,9 +54,9 @@ single_colors_as_array = [
     ColorArray(GREEN).rgba,
     ColorArray((0.0, 0.0, 0.0, 0.0)).rgba,
     ColorArray(RED).rgba,
-    ColorArray('#00ff00').rgba,
+    ColorArray("#00ff00").rgba,
     ColorArray(GREEN).rgba,
-    ColorArray('#ffccaa44').rgba,
+    ColorArray("#ffccaa44").rgba,
     ColorArray(RED).rgba,
     ColorArray(RED).rgba,
     ColorArray(RED).rgba,
@@ -73,56 +73,56 @@ single_colors_as_array = [
 ]
 
 two_color_options = [
-    ['red', 'red'],
-    ('green', 'red'),
-    ['green', '#ff0000'],
-    ['green', 'g'],
-    ('r' for r in range(2)),
-    ['r', 'r'],
-    np.array(['r', 'r']),
+    ["red", "red"],
+    ("green", "red"),
+    ["green", "#ff0000"],
+    ["green", "g"],
+    ("r" for r in range(2)),
+    ["r", "r"],
+    np.array(["r", "r"]),
     np.array([[1, 1, 1, 1], [0, GREENV, 0, 1]]),
-    (None, 'green'),
+    (None, "green"),
     [GREENARR[0, :3], REDARR[0, :3]],
 ]
 # Some of the options below are commented out. When the bugs with
 # vispy described above are resolved, we can uncomment the lines
 # below as well.
 two_colors_simple = [
-    ['red', 'red'],
-    ['green', 'red'],
-    ['green', 'red'],
-    ['green', 'g'],
-    ['red', 'red'],
-    ['red', 'red'],
-    ['red', 'red'],
-    ['white', 'green'],
-    (None, 'green'),
-    ['green', 'red'],
+    ["red", "red"],
+    ["green", "red"],
+    ["green", "red"],
+    ["green", "g"],
+    ["red", "red"],
+    ["red", "red"],
+    ["red", "red"],
+    ["white", "green"],
+    (None, "green"),
+    ["green", "red"],
 ]
 
 two_colors_as_array = [ColorArray(color).rgba for color in two_colors_simple]
 
 invalid_colors = [
-    'rr',
-    'gf',
-    '#gf9gfg',
-    '#ff00000',
-    '#ff0000ii',
+    "rr",
+    "gf",
+    "#gf9gfg",
+    "#ff00000",
+    "#ff0000ii",
     (-1, 0.0, 0.0, 0.0),
-    ('a', 1, 1, 1),
+    ("a", 1, 1, 1),
     4,
     (3,),
     (34, 342, 2334, 4343, 32, 0.1, -1),
     np.array([[1, 1, 1, 1, 1]]),
     np.array([[[0, 1, 1, 1]]]),
-    ColorArray(['r', 'r']),
-    Color('red'),
+    ColorArray(["r", "r"]),
+    Color("red"),
     (REDARR, GREENARR),
 ]
 
 warning_colors = [
     np.array([]),
-    np.array(['g', 'g'], dtype=object),
+    np.array(["g", "g"], dtype=object),
     [],
     [[1, 2], [3, 4], [5, 6]],
     np.array([[10], [10], [10], [10]]),

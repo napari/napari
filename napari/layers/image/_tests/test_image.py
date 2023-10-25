@@ -261,13 +261,13 @@ def test_name():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.name == 'Image'
+    assert layer.name == "Image"
 
-    layer = Image(data, name='random')
-    assert layer.name == 'random'
+    layer = Image(data, name="random")
+    assert layer.name == "random"
 
-    layer.name = 'img'
-    assert layer.name == 'img'
+    layer.name = "img"
+    assert layer.name == "img"
 
 
 def test_visiblity():
@@ -309,19 +309,19 @@ def test_blending():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.blending == 'translucent'
+    assert layer.blending == "translucent"
 
-    layer.blending = 'additive'
-    assert layer.blending == 'additive'
+    layer.blending = "additive"
+    assert layer.blending == "additive"
 
-    layer = Image(data, blending='additive')
-    assert layer.blending == 'additive'
+    layer = Image(data, blending="additive")
+    assert layer.blending == "additive"
 
-    layer.blending = 'opaque'
-    assert layer.blending == 'opaque'
+    layer.blending = "opaque"
+    assert layer.blending == "opaque"
 
-    layer.blending = 'minimum'
-    assert layer.blending == 'minimum'
+    layer.blending = "minimum"
+    assert layer.blending == "minimum"
 
 
 def test_interpolation():
@@ -330,20 +330,20 @@ def test_interpolation():
     data = np.random.random((10, 15))
     layer = Image(data)
     with pytest.deprecated_call():
-        assert layer.interpolation == 'nearest'
-    assert layer.interpolation2d == 'nearest'
-    assert layer.interpolation3d == 'linear'
+        assert layer.interpolation == "nearest"
+    assert layer.interpolation2d == "nearest"
+    assert layer.interpolation3d == "linear"
 
     with pytest.deprecated_call():
-        layer = Image(data, interpolation2d='bicubic')
-    assert layer.interpolation2d == 'cubic'
+        layer = Image(data, interpolation2d="bicubic")
+    assert layer.interpolation2d == "cubic"
     with pytest.deprecated_call():
-        assert layer.interpolation == 'cubic'
+        assert layer.interpolation == "cubic"
 
-    layer.interpolation2d = 'linear'
-    assert layer.interpolation2d == 'linear'
+    layer.interpolation2d = "linear"
+    assert layer.interpolation2d == "linear"
     with pytest.deprecated_call():
-        assert layer.interpolation == 'linear'
+        assert layer.interpolation == "linear"
 
 
 def test_colormaps():
@@ -351,35 +351,35 @@ def test_colormaps():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.colormap.name == 'gray'
+    assert layer.colormap.name == "gray"
     assert isinstance(layer.colormap, Colormap)
 
-    layer.colormap = 'magma'
-    assert layer.colormap.name == 'magma'
-    assert isinstance(layer.colormap, Colormap)
-
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
-    layer.colormap = 'custom', cmap
-    assert layer.colormap.name == 'custom'
-    assert layer.colormap == cmap
-
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
-    layer.colormap = {'new': cmap}
-    assert layer.colormap.name == 'new'
-    assert layer.colormap == cmap
-
-    layer = Image(data, colormap='magma')
-    assert layer.colormap.name == 'magma'
+    layer.colormap = "magma"
+    assert layer.colormap.name == "magma"
     assert isinstance(layer.colormap, Colormap)
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
-    layer = Image(data, colormap=('custom', cmap))
-    assert layer.colormap.name == 'custom'
+    layer.colormap = "custom", cmap
+    assert layer.colormap.name == "custom"
     assert layer.colormap == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
-    layer = Image(data, colormap={'new': cmap})
-    assert layer.colormap.name == 'new'
+    layer.colormap = {"new": cmap}
+    assert layer.colormap.name == "new"
+    assert layer.colormap == cmap
+
+    layer = Image(data, colormap="magma")
+    assert layer.colormap.name == "magma"
+    assert isinstance(layer.colormap, Colormap)
+
+    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
+    layer = Image(data, colormap=("custom", cmap))
+    assert layer.colormap.name == "custom"
+    assert layer.colormap == cmap
+
+    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
+    layer = Image(data, colormap={"new": cmap})
+    assert layer.colormap.name == "new"
     assert layer.colormap == cmap
 
 
@@ -447,7 +447,7 @@ def test_set_contrast_limits_range():
 
 
 @pytest.mark.parametrize(
-    'contrast_limits_range',
+    "contrast_limits_range",
     (
         [-2, -1],  # range below lower boundary of [0, 1]
         [-1, 0],  # range on lower boundary of [0, 1]
@@ -486,23 +486,23 @@ def test_rendering():
     np.random.seed(0)
     data = np.random.random((20, 10, 15))
     layer = Image(data)
-    assert layer.rendering == 'mip'
+    assert layer.rendering == "mip"
 
     # Change rendering property
-    layer.rendering = 'translucent'
-    assert layer.rendering == 'translucent'
+    layer.rendering = "translucent"
+    assert layer.rendering == "translucent"
 
     # Change rendering property
-    layer.rendering = 'attenuated_mip'
-    assert layer.rendering == 'attenuated_mip'
+    layer.rendering = "attenuated_mip"
+    assert layer.rendering == "attenuated_mip"
 
     # Change rendering property
-    layer.rendering = 'iso'
-    assert layer.rendering == 'iso'
+    layer.rendering = "iso"
+    assert layer.rendering == "iso"
 
     # Change rendering property
-    layer.rendering = 'additive'
-    assert layer.rendering == 'additive'
+    layer.rendering = "additive"
+    assert layer.rendering == "additive"
 
 
 def test_iso_threshold():
@@ -546,8 +546,8 @@ def test_metadata():
     layer = Image(data)
     assert layer.metadata == {}
 
-    layer = Image(data, metadata={'unit': 'cm'})
-    assert layer.metadata == {'unit': 'cm'}
+    layer = Image(data, metadata={"unit": "cm"})
+    assert layer.metadata == {"unit": "cm"}
 
 
 def test_value():
@@ -560,7 +560,7 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world',
+    "position,view_direction,dims_displayed,world",
     [
         ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
         ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
@@ -628,14 +628,14 @@ def test_narrow_thumbnail():
     assert np.mean(thumbnail[middle_row - 1 : middle_row + 1]) > 0
 
 
-@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_out_of_range_image(dtype):
     data = -1.7 - 0.001 * np.random.random((10, 15)).astype(dtype)
     layer = Image(data)
     layer._update_thumbnail()
 
 
-@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_out_of_range_no_contrast(dtype):
     data = np.full((10, 15), -3.2, dtype=dtype)
     layer = Image(data)
@@ -651,7 +651,7 @@ def test_out_of_range_no_contrast(dtype):
         (da.from_array([1, 1], chunks=1)),
         (da.from_array([1, 1], chunks=2)),
         (xr.DataArray(np.array([1, 1]))),
-        (xr.DataArray(np.array([1, 1]), dims=('dimension_name'))),
+        (xr.DataArray(np.array([1, 1]), dims=("dimension_name"))),
     ],
 )
 def test_image_scale(scale):
@@ -669,7 +669,7 @@ def test_image_scale(scale):
         (da.from_array([1, 1], chunks=1)),
         (da.from_array([1, 1], chunks=2)),
         (xr.DataArray(np.array([1, 1]))),
-        (xr.DataArray(np.array([1, 1]), dims=('dimension_name'))),
+        (xr.DataArray(np.array([1, 1]), dims=("dimension_name"))),
     ],
 )
 def test_image_translate(translate):
@@ -728,8 +728,8 @@ def test_data_to_world_2d_scale_translate_affine_composed():
     )
 
 
-@pytest.mark.parametrize('scale', ((1, 1), (-1, 1), (1, -1), (-1, -1)))
-@pytest.mark.parametrize('angle_degrees', range(-180, 180, 30))
+@pytest.mark.parametrize("scale", ((1, 1), (-1, 1), (1, -1), (-1, -1)))
+@pytest.mark.parametrize("angle_degrees", range(-180, 180, 30))
 def test_rotate_with_reflections_in_scale(scale, angle_degrees):
     # See the GitHub issue for more details:
     # https://github.com/napari/napari/issues/2984
@@ -751,7 +751,7 @@ def test_2d_image_with_channels_and_2d_scale_translate_then_scale_translate_padd
     np.testing.assert_array_equal(image.translate, (0, 3, 4))
 
 
-@pytest.mark.parametrize('affine_size', range(3, 6))
+@pytest.mark.parametrize("affine_size", range(3, 6))
 def test_2d_image_with_channels_and_affine_broadcasts(affine_size):
     # For more details, see the GitHub issue:
     # https://github.com/napari/napari/issues/3045
@@ -759,7 +759,7 @@ def test_2d_image_with_channels_and_affine_broadcasts(affine_size):
     np.testing.assert_array_equal(image.affine, np.eye(6))
 
 
-@pytest.mark.parametrize('affine_size', range(3, 6))
+@pytest.mark.parametrize("affine_size", range(3, 6))
 def test_2d_image_with_channels_and_affine_assignment_broadcasts(affine_size):
     # For more details, see the GitHub issue:
     # https://github.com/napari/napari/issues/3045
@@ -783,13 +783,13 @@ def test_instantiate_with_plane_parameter_dict():
     in a dictionary.
     """
     plane_parameters = {
-        'position': (32, 32, 32),
-        'normal': (1, 1, 1),
-        'thickness': 22,
+        "position": (32, 32, 32),
+        "normal": (1, 1, 1),
+        "thickness": 22,
     }
     image = Image(np.ones((32, 32, 32)), plane=plane_parameters)
     for k, v in plane_parameters.items():
-        if k == 'normal':
+        if k == "normal":
             v = tuple(v / np.linalg.norm(v))
         assert v == getattr(image.plane, k, v)
 
@@ -812,23 +812,23 @@ def test_instantiate_with_clipping_planelist():
 
 def test_instantiate_with_experimental_clipping_planes_dict():
     planes = [
-        {'position': (0, 0, 0), 'normal': (0, 0, 1)},
-        {'position': (0, 1, 0), 'normal': (1, 0, 0)},
+        {"position": (0, 0, 0), "normal": (0, 0, 1)},
+        {"position": (0, 1, 0), "normal": (1, 0, 0)},
     ]
     image = Image(np.ones((32, 32, 32)), experimental_clipping_planes=planes)
     for i in range(len(planes)):
         assert (
             image.experimental_clipping_planes[i].position
-            == planes[i]['position']
+            == planes[i]["position"]
         )
         assert (
-            image.experimental_clipping_planes[i].normal == planes[i]['normal']
+            image.experimental_clipping_planes[i].normal == planes[i]["normal"]
         )
 
 
 def test_tensorstore_image():
     """Test an image coming from a tensorstore array."""
-    ts = pytest.importorskip('tensorstore')
+    ts = pytest.importorskip("tensorstore")
 
     data = ts.array(
         np.full(shape=(1024, 1024), fill_value=255, dtype=np.uint8)
@@ -872,7 +872,7 @@ def test_projected_distance_from_mouse_drag(
 def test_rendering_init():
     np.random.seed(0)
     data = np.random.rand(10, 10, 10)
-    layer = Image(data, rendering='iso')
+    layer = Image(data, rendering="iso")
 
     assert layer.rendering == ImageRendering.ISO.value
 
@@ -899,7 +899,7 @@ def test_thick_slice():
     )
     np.testing.assert_array_equal(layer._slice.image.raw, data[0])
 
-    layer.projection_mode = 'mean'
+    layer.projection_mode = "mean"
     np.testing.assert_array_equal(
         layer._slice.image.raw, np.mean(data[:2], axis=0)
     )
@@ -942,7 +942,7 @@ def test_thick_slice():
         layer._slice.image.raw, np.mean(data[2:4], axis=0)
     )
 
-    layer.projection_mode = 'max'
+    layer.projection_mode = "max"
     np.testing.assert_array_equal(
         layer._slice.image.raw, np.max(data[2:4], axis=0)
     )
@@ -961,7 +961,7 @@ def test_thick_slice_multiscale():
     layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
     np.testing.assert_array_equal(layer._slice.image.raw, data_zoom[0])
 
-    layer.projection_mode = 'mean'
+    layer.projection_mode = "mean"
     # NOTE that here we rescale slicing to twice the non-multiscale test
     # in order to get the same results, becase the actual full scale image
     # is doubled in size
@@ -985,7 +985,7 @@ def test_thick_slice_multiscale():
     layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
     np.testing.assert_array_equal(layer._slice.image.raw, data[0])
 
-    layer.projection_mode = 'mean'
+    layer.projection_mode = "mean"
     # here we slice in the same point as earlier, but to get the expected value
     # we need to slice `data` with halved indices
     layer._slice_dims(

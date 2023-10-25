@@ -14,7 +14,7 @@ except ModuleNotFoundError:
 
 from napari.utils.io import imsave_png
 
-__all__ = ['nbscreenshot']
+__all__ = ["nbscreenshot"]
 
 
 class NotebookScreenshot:
@@ -80,9 +80,9 @@ class NotebookScreenshot:
         if alt_text is not None:
             if lxml_unavailable:
                 warn(
-                    'The lxml library is not installed, and is required to '
-                    'sanitize alt text for napari screenshots. Alt-text '
-                    'will be stripped altogether without lxml.'
+                    "The lxml library is not installed, and is required to "
+                    "sanitize alt text for napari screenshots. Alt-text "
+                    "will be stripped altogether without lxml."
                 )
                 return None
             # cleaner won't recognize escaped script tags, so always unescape
@@ -94,7 +94,7 @@ class NotebookScreenshot:
                 alt_text = cleaner.clean_html(doc).text_content()
             except ParserError:
                 warn(
-                    'The provided alt text does not constitute valid html, so it was discarded.',
+                    "The provided alt text does not constitute valid html, so it was discarded.",
                     stacklevel=3,
                 )
                 alt_text = ""
@@ -123,8 +123,8 @@ class NotebookScreenshot:
 
     def _repr_html_(self):
         png = self._repr_png_()
-        url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
-        _alt = html.escape(self.alt_text) if self.alt_text is not None else ''
+        url = "data:image/png;base64," + base64.b64encode(png).decode("utf-8")
+        _alt = html.escape(self.alt_text) if self.alt_text is not None else ""
         return f'<img src="{url}" alt="{_alt}"></img>'
 
 

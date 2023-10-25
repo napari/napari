@@ -31,29 +31,29 @@ def reader_dialog(qtbot):
 
 def test_reader_dialog_buttons(reader_dialog):
     widg = reader_dialog(
-        readers={'display name': 'plugin-name', 'display 2': 'plugin2'}
+        readers={"display name": "plugin-name", "display 2": "plugin2"}
     )
     assert len(widg.findChildren(QRadioButton)) == 2
 
 
 def test_reader_defaults(reader_dialog, tmpdir):
-    file_pth = tmpdir.join('my_file.tif')
-    widg = reader_dialog(pth=file_pth, readers={'p1': 'p1', 'p2': 'p2'})
+    file_pth = tmpdir.join("my_file.tif")
+    widg = reader_dialog(pth=file_pth, readers={"p1": "p1", "p2": "p2"})
 
-    assert widg.findChild(QLabel).text().startswith('Choose reader')
-    assert widg._get_plugin_choice() == 'p1'
+    assert widg.findChild(QLabel).text().startswith("Choose reader")
+    assert widg._get_plugin_choice() == "p1"
     assert widg.persist_checkbox.isChecked()
 
 
 def test_reader_with_error_message(reader_dialog):
-    widg = reader_dialog(error_message='Test Error')
-    assert widg.findChild(QLabel).text().startswith('Test Error')
+    widg = reader_dialog(error_message="Test Error")
+    assert widg.findChild(QLabel).text().startswith("Test Error")
 
 
 def test_reader_dir_with_extension(tmpdir, reader_dialog):
-    dir_name = tmpdir.mkdir('my_dir.zarr')
-    widg = reader_dialog(pth=dir_name, readers={'p1': 'p1', 'p2': 'p2'})
-    assert hasattr(widg, 'persist_checkbox')
+    dir_name = tmpdir.mkdir("my_dir.zarr")
+    widg = reader_dialog(pth=dir_name, readers={"p1": "p1", "p2": "p2"})
+    assert hasattr(widg, "persist_checkbox")
     assert (
         widg.persist_checkbox.text()
         == "Remember this choice for files with a .zarr extension"
@@ -61,29 +61,29 @@ def test_reader_dir_with_extension(tmpdir, reader_dialog):
 
 
 def test_reader_dir(tmpdir, reader_dialog):
-    dir_name = tmpdir.mkdir('my_dir')
-    widg = reader_dialog(pth=dir_name, readers={'p1': 'p1', 'p2': 'p2'})
+    dir_name = tmpdir.mkdir("my_dir")
+    widg = reader_dialog(pth=dir_name, readers={"p1": "p1", "p2": "p2"})
     assert (
         widg._persist_text
-        == f'Remember this choice for folders labeled as {dir_name}{os.sep}.'
+        == f"Remember this choice for folders labeled as {dir_name}{os.sep}."
     )
 
 
 def test_get_plugin_choice(tmpdir, reader_dialog):
-    file_pth = tmpdir.join('my_file.tif')
-    widg = reader_dialog(pth=file_pth, readers={'p1': 'p1', 'p2': 'p2'})
+    file_pth = tmpdir.join("my_file.tif")
+    widg = reader_dialog(pth=file_pth, readers={"p1": "p1", "p2": "p2"})
     reader_btns = widg.reader_btn_group.buttons()
 
     reader_btns[1].toggle()
-    assert widg._get_plugin_choice() == 'p2'
+    assert widg._get_plugin_choice() == "p2"
 
     reader_btns[0].toggle()
-    assert widg._get_plugin_choice() == 'p1'
+    assert widg._get_plugin_choice() == "p1"
 
 
 def test_get_persist_choice(tmpdir, reader_dialog):
-    file_pth = tmpdir.join('my_file.tif')
-    widg = reader_dialog(pth=file_pth, readers={'p1': 'p1', 'p2': 'p2'})
+    file_pth = tmpdir.join("my_file.tif")
+    widg = reader_dialog(pth=file_pth, readers={"p1": "p1", "p2": "p2"})
     assert widg._get_persist_choice()
 
     widg.persist_checkbox.toggle()
@@ -93,18 +93,18 @@ def test_get_persist_choice(tmpdir, reader_dialog):
 def test_prepare_dialog_options_no_readers():
     with pytest.raises(ReaderPluginError) as e:
         prepare_remaining_readers(
-            ['my-file.fake'], 'fake-reader', RuntimeError('Reading failed')
+            ["my-file.fake"], "fake-reader", RuntimeError("Reading failed")
         )
-    assert 'Tried to read my-file.fake with plugin fake-reader' in str(e.value)
+    assert "Tried to read my-file.fake with plugin fake-reader" in str(e.value)
 
 
 def test_prepare_dialog_options_multiple_plugins(builtins):
-    pth = 'my-file.tif'
+    pth = "my-file.tif"
 
     readers = prepare_remaining_readers(
         [pth],
         None,
-        RuntimeError(f'Multiple plugins found capable of reading {pth}'),
+        RuntimeError(f"Multiple plugins found capable of reading {pth}"),
     )
     assert builtins.name in readers
 
@@ -112,18 +112,18 @@ def test_prepare_dialog_options_multiple_plugins(builtins):
 def test_prepare_dialog_options_removes_plugin(tmp_plugin: DynamicPlugin):
     tmp2 = tmp_plugin.spawn(register=True)
 
-    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    @tmp_plugin.contribute.reader(filename_patterns=["*.fake"])
     def _(path):
         ...
 
-    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    @tmp2.contribute.reader(filename_patterns=["*.fake"])
     def _(path):
         ...
 
     readers = prepare_remaining_readers(
-        ['my-file.fake'],
+        ["my-file.fake"],
         tmp_plugin.name,
-        RuntimeError('Reader failed'),
+        RuntimeError("Reader failed"),
     )
     assert tmp2.name in readers
     assert tmp_plugin.name not in readers
@@ -137,18 +137,18 @@ def test_open_sample_data_shows_all_readers(
     # Test for bug fixed in #6058
     tmp2 = tmp_plugin.spawn(register=True)
 
-    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    @tmp_plugin.contribute.reader(filename_patterns=["*.fake"])
     def _(path):
         ...
 
-    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    @tmp2.contribute.reader(filename_patterns=["*.fake"])
     def _(path):
         ...
 
     my_sample = SampleDataURI(
-        key='tmp-sample',
-        display_name='Temp Sample',
-        uri='some-path/some-file.fake',
+        key="tmp-sample",
+        display_name="Temp Sample",
+        uri="some-path/some-file.fake",
     )
     tmp_plugin.manifest.contributions.sample_data = [my_sample]
 
@@ -157,12 +157,12 @@ def test_open_sample_data_shows_all_readers(
     viewer = make_napari_viewer()
     # Ensure that `handle_gui_reading`` is not passed the sample plugin name
     with mock.patch(
-        'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
+        "napari._qt.dialogs.qt_reader_dialog.handle_gui_reading"
     ) as mock_read:
-        app.commands.execute_command('tmp_plugin:tmp-sample')
+        app.commands.execute_command("tmp_plugin:tmp-sample")
 
     mock_read.assert_called_once_with(
-        ['some-path/some-file.fake'],
+        ["some-path/some-file.fake"],
         viewer.window._qt_viewer,
         stack=False,
     )
@@ -171,14 +171,14 @@ def test_open_sample_data_shows_all_readers(
 def test_open_with_dialog_choices_persist(
     builtins, make_napari_viewer, tmp_path
 ):
-    pth = tmp_path / 'my-file.npy'
+    pth = tmp_path / "my-file.npy"
     np.save(pth, np.random.random((10, 10)))
 
     viewer = make_napari_viewer()
     open_with_dialog_choices(
         display_name=builtins.display_name,
         persist=True,
-        extension='.npy',
+        extension=".npy",
         readers={builtins.name: builtins.display_name},
         paths=[str(pth)],
         stack=False,
@@ -186,7 +186,7 @@ def test_open_with_dialog_choices_persist(
     )
     assert len(viewer.layers) == 1
     # make sure extension was saved with *
-    assert get_settings().plugins.extension2reader['*.npy'] == builtins.name
+    assert get_settings().plugins.extension2reader["*.npy"] == builtins.name
 
 
 def test_open_with_dialog_choices_raises(make_napari_viewer):
@@ -195,11 +195,11 @@ def test_open_with_dialog_choices_raises(make_napari_viewer):
     get_settings().plugins.extension2reader = {}
     with pytest.raises(ValueError):
         open_with_dialog_choices(
-            display_name='Fake Plugin',
+            display_name="Fake Plugin",
             persist=True,
-            extension='.fake',
-            readers={'fake-plugin': 'Fake Plugin'},
-            paths=['my-file.fake'],
+            extension=".fake",
+            readers={"fake-plugin": "Fake Plugin"},
+            paths=["my-file.fake"],
             stack=False,
             qt_viewer=viewer.window._qt_viewer,
         )

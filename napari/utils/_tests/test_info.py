@@ -6,7 +6,7 @@ from napari.utils import info
 
 def test_citation_text():
     assert isinstance(info.citation_text, str)
-    assert 'doi' in info.citation_text
+    assert "doi" in info.citation_text
 
 
 def test_linux_os_name_file(monkeypatch, tmp_path):
@@ -46,13 +46,13 @@ class _CompletedProcessMock(NamedTuple):
 
 def _lsb_mock(*_args, **_kwargs):
     return _CompletedProcessMock(
-        stdout=b'Description:	Ubuntu Test 20.04\nRelease:	20.04'
+        stdout=b"Description:	Ubuntu Test 20.04\nRelease:	20.04"
     )
 
 
 def _lsb_mock2(*_args, **_kwargs):
     return _CompletedProcessMock(
-        stdout=b'Description:	Ubuntu Test\nRelease:	20.05'
+        stdout=b"Description:	Ubuntu Test\nRelease:	20.05"
     )
 
 

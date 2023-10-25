@@ -92,10 +92,10 @@ class ActionManager:
         self._tooltip_include_action_name = val
 
     def _validate_action_name(self, name):
-        if len(name.split(':')) != 2:
+        if len(name.split(":")) != 2:
             raise ValueError(
                 trans._(
-                    'Action names need to be in the form `package:name`, got {name!r}',
+                    "Action names need to be in the form `package:name`, got {name!r}",
                     name=name,
                     deferred=True,
                 )
@@ -176,7 +176,7 @@ class ActionManager:
             return
         action = self._actions[name]
         km_provider: KeymapProvider = action.keymapprovider
-        if hasattr(km_provider, 'bind_key'):
+        if hasattr(km_provider, "bind_key"):
             for shortcut in self._shortcuts[name]:
                 # NOTE: it would be better if we could bind `self.trigger` here
                 # as it allow the action manager to be a convenient choke point
@@ -187,7 +187,7 @@ class ActionManager:
                 km_provider.bind_key(shortcut, action.injected, overwrite=True)
 
     def bind_button(
-        self, name: str, button: Button, extra_tooltip_text=''
+        self, name: str, button: Button, extra_tooltip_text=""
     ) -> None:
         """
         Bind `button` to trigger Action `name` on click.
@@ -221,7 +221,7 @@ class ActionManager:
         ):
             raise ValueError(
                 trans._(
-                    '`bind_button` cannot be used with generator functions',
+                    "`bind_button` cannot be used with generator functions",
                     deferred=True,
                 )
             )
@@ -232,15 +232,15 @@ class ActionManager:
         button.clicked.connect(_trigger)
         if name in self._actions:
             button.setToolTip(
-                f'{self._build_tooltip(name)} {extra_tooltip_text}'
+                f"{self._build_tooltip(name)} {extra_tooltip_text}"
             )
 
         def _update_tt(event: ShortcutEvent):
             if event.name == name:
-                button.setToolTip(f'{event.tooltip} {extra_tooltip_text}')
+                button.setToolTip(f"{event.tooltip} {extra_tooltip_text}")
 
         # if it's a QPushbutton, we'll remove it when it gets destroyed
-        until = getattr(button, 'destroyed', None)
+        until = getattr(button, "destroyed", None)
         self.events.shorcut_changed.connect(_update_tt, until=until)
 
     def bind_shortcut(self, name: str, shortcut: str) -> None:
@@ -303,7 +303,7 @@ class ActionManager:
 
         shortcuts = self._shortcuts.get(name)
         if shortcuts:
-            if action and hasattr(action.keymapprovider, 'bind_key'):
+            if action and hasattr(action.keymapprovider, "bind_key"):
                 for shortcut in shortcuts:
                     action.keymapprovider.bind_key(shortcut)(None)
             del self._shortcuts[name]
@@ -311,8 +311,8 @@ class ActionManager:
         self._emit_shortcut_change(name)
         return shortcuts
 
-    def _emit_shortcut_change(self, name: str, shortcut=''):
-        tt = self._build_tooltip(name) if name in self._actions else ''
+    def _emit_shortcut_change(self, name: str, shortcut=""):
+        tt = self._build_tooltip(name) if name in self._actions else ""
         self.events.shorcut_changed(name=name, shortcut=shortcut, tooltip=tt)
 
     def _build_tooltip(self, name: str) -> str:
@@ -320,11 +320,11 @@ class ActionManager:
         ttip = self._actions[name].description
 
         if name in self._shortcuts:
-            jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
+            jstr = " " + trans._p("<keysequence> or <keysequence>", "or") + " "
             shorts = jstr.join(f"{Shortcut(s)}" for s in self._shortcuts[name])
-            ttip += f' ({shorts})'
+            ttip += f" ({shorts})"
 
-        ttip += f'[{name}]' if self._tooltip_include_action_name else ''
+        ttip += f"[{name}]" if self._tooltip_include_action_name else ""
         return ttip
 
     def _get_layer_shortcuts(self, layers) -> dict:

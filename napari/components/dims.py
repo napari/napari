@@ -109,18 +109,18 @@ class Dims(EventedModel):
     # validators
     # check fields is false to allow private fields to work
     @validator(
-        'order',
-        'axis_labels',
-        'point',
-        'margin_left',
-        'margin_right',
+        "order",
+        "axis_labels",
+        "point",
+        "margin_left",
+        "margin_right",
         pre=True,
         allow_reuse=True,
     )
     def _as_tuple(v):
         return tuple(v)
 
-    @validator('range', pre=True)
+    @validator("range", pre=True)
     def _check_ranges(ranges):
         """
         Ensure the range values are sane.
@@ -132,7 +132,7 @@ class Dims(EventedModel):
             if start > stop:
                 raise ValueError(
                     trans._(
-                        'start and stop must be strictly increasing, but got ({start}, {stop}) for axis {axis}',
+                        "start and stop must be strictly increasing, but got ({start}, {stop}) for axis {axis}",
                         deferred=True,
                         start=start,
                         stop=stop,
@@ -142,7 +142,7 @@ class Dims(EventedModel):
             if step <= 0:
                 raise ValueError(
                     trans._(
-                        'step must be strictly positive, but got {step} for axis {axis}.',
+                        "step must be strictly positive, but got {step} for axis {axis}.",
                         deferred=True,
                         step=step,
                         axis=axis,
@@ -161,28 +161,28 @@ class Dims(EventedModel):
         """
         updated = {}
 
-        ndim = values['ndim']
+        ndim = values["ndim"]
 
-        range_ = ensure_len(values['range'], ndim, pad_width=(0.0, 2.0, 1.0))
-        updated['range'] = tuple(RangeTuple(*rng) for rng in range_)
+        range_ = ensure_len(values["range"], ndim, pad_width=(0.0, 2.0, 1.0))
+        updated["range"] = tuple(RangeTuple(*rng) for rng in range_)
 
-        point = ensure_len(values['point'], ndim, pad_width=0.0)
+        point = ensure_len(values["point"], ndim, pad_width=0.0)
         # ensure point is limited to range
-        updated['point'] = tuple(
+        updated["point"] = tuple(
             np.clip(pt, rng.start, rng.stop)
-            for pt, rng in zip(point, updated['range'])
+            for pt, rng in zip(point, updated["range"])
         )
 
-        updated['margin_left'] = ensure_len(
-            values['margin_left'], ndim, pad_width=0.0
+        updated["margin_left"] = ensure_len(
+            values["margin_left"], ndim, pad_width=0.0
         )
-        updated['margin_right'] = ensure_len(
-            values['margin_right'], ndim, pad_width=0.0
+        updated["margin_right"] = ensure_len(
+            values["margin_right"], ndim, pad_width=0.0
         )
 
         # order and label default computation is too different to include in ensure_len()
         # Check the order tuple has same number of elements as ndim
-        order = values['order']
+        order = values["order"]
         if len(order) < ndim:
             order_ndim = len(order)
             # new dims are always prepended
@@ -192,43 +192,43 @@ class Dims(EventedModel):
             order = prepended_dims + existing_order
         elif len(order) > ndim:
             order = reorder_after_dim_reduction(order[-ndim:])
-        updated['order'] = order
+        updated["order"] = order
 
         # Check the order is a permutation of 0, ..., ndim - 1
-        if set(updated['order']) != set(range(ndim)):
+        if set(updated["order"]) != set(range(ndim)):
             raise ValueError(
                 trans._(
                     "Invalid ordering {order} for {ndim} dimensions",
                     deferred=True,
-                    order=updated['order'],
+                    order=updated["order"],
                     ndim=ndim,
                 )
             )
 
         # Check the axis labels tuple has same number of elements as ndim
-        axis_labels = values['axis_labels']
+        axis_labels = values["axis_labels"]
         labels_ndim = len(axis_labels)
         if labels_ndim < ndim:
             # Append new "default" labels to existing ones
             if axis_labels == tuple(map(str, range(labels_ndim))):
-                updated['axis_labels'] = tuple(map(str, range(ndim)))
+                updated["axis_labels"] = tuple(map(str, range(ndim)))
             else:
-                updated['axis_labels'] = (
+                updated["axis_labels"] = (
                     tuple(map(str, range(ndim - labels_ndim))) + axis_labels
                 )
         elif labels_ndim > ndim:
-            updated['axis_labels'] = axis_labels[-ndim:]
+            updated["axis_labels"] = axis_labels[-ndim:]
 
         # If the last used slider is no longer visible, use the first.
-        last_used = values['last_used']
-        ndisplay = values['ndisplay']
-        dims_range = updated['range']
+        last_used = values["last_used"]
+        ndisplay = values["ndisplay"]
+        dims_range = updated["range"]
         nsteps = cls._nsteps_from_range(dims_range)
         not_displayed = [
             d for d in order[:-ndisplay] if len(nsteps) > d and nsteps[d] > 1
         ]
         if len(not_displayed) > 0 and last_used not in not_displayed:
-            updated['last_used'] = not_displayed[0]
+            updated["last_used"] = not_displayed[0]
 
         return {**values, **updated}
 
@@ -463,7 +463,7 @@ class Dims(EventedModel):
                 and not value_is_sequence
             ):
                 raise ValueError(
-                    trans._('cannot set multiple values to a single axis')
+                    trans._("cannot set multiple values to a single axis")
                 )
             axis = [axis]
             value = [value]
@@ -522,7 +522,7 @@ def ensure_axis_in_bounds(axis: int, ndim: int) -> int:
     """
     if axis not in range(-ndim, ndim):
         msg = trans._(
-            'Axis {axis} not defined for dimensionality {ndim}. Must be in [{ndim_lower}, {ndim}).',
+            "Axis {axis} not defined for dimensionality {ndim}. Must be in [{ndim_lower}, {ndim}).",
             deferred=True,
             axis=axis,
             ndim=ndim,

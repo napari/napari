@@ -9,7 +9,7 @@ class _PVisual(Protocol):
     Type for vispy visuals that implement the attach method
     """
 
-    _subvisuals: Optional[List['_PVisual']]
+    _subvisuals: Optional[List["_PVisual"]]
     _clip_filter: PlanesClipper
 
     def attach(self, filt: Filter, view=None):

@@ -17,15 +17,15 @@ def register_label_action(description: str, repeatable: bool = False):
 
 
 def register_label_mode_action(description):
-    return register_layer_attr_action(Labels, description, 'mode')
+    return register_layer_attr_action(Labels, description, "mode")
 
 
-@register_label_mode_action(trans._('Transform'))
+@register_label_mode_action(trans._("Transform"))
 def activate_labels_transform_mode(layer: Labels):
     layer.mode = Mode.TRANSFORM
 
 
-@register_label_mode_action(trans._('Pan/zoom'))
+@register_label_mode_action(trans._("Pan/zoom"))
 def activate_labels_pan_zoom_mode(layer: Labels):
     layer.mode = Mode.PAN_ZOOM
 
@@ -45,7 +45,7 @@ def activate_labels_fill_mode(layer: Labels):
     layer.mode = Mode.FILL
 
 
-@register_label_mode_action(trans._('Pick mode'))
+@register_label_mode_action(trans._("Pick mode"))
 def activate_labels_picker_mode(layer: Labels):
     """Activate the label picker."""
     layer.mode = Mode.PICK

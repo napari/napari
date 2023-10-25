@@ -21,7 +21,7 @@ def register_viewer_action(description):
 
     def _inner(func):
         action_manager.register_action(
-            name=f'napari:{func.__name__}',
+            name=f"napari:{func.__name__}",
             command=func,
             description=description,
             keymapprovider=ViewerModel,
@@ -63,12 +63,12 @@ def toggle_theme(viewer: ViewerModel):
     themes = available_themes()
     current_theme = viewer.theme
     # Check what the system theme is, to toggle properly
-    if current_theme == 'system':
+    if current_theme == "system":
         current_theme = get_system_theme()
     idx = themes.index(current_theme)
     idx = (idx + 1) % len(themes)
     # Don't toggle to system, just among actual themes
-    if themes[idx] == 'system':
+    if themes[idx] == "system":
         idx = (idx + 1) % len(themes)
 
     viewer.theme = themes[idx]

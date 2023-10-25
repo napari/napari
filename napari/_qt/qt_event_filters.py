@@ -20,7 +20,7 @@ class QtToolTipEventFilter(QObject):
         ):
             tooltip = qobject.toolTip()
             if tooltip and not qt_might_be_rich_text(tooltip):
-                qobject.setToolTip(f'<qt>{html.escape(tooltip)}</qt>')
+                qobject.setToolTip(f"<qt>{html.escape(tooltip)}</qt>")
                 return True
 
         return super().eventFilter(qobject, event)

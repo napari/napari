@@ -18,28 +18,28 @@ def test_default_categorical_colormap():
 
 def test_categorical_colormap_direct():
     """Test a categorical colormap with a provided mapping"""
-    colormap = {'hi': np.array([1, 1, 1, 1]), 'hello': np.array([0, 0, 0, 0])}
+    colormap = {"hi": np.array([1, 1, 1, 1]), "hello": np.array([0, 0, 0, 0])}
     cmap = CategoricalColormap(colormap=colormap)
 
-    color = cmap.map(['hi'])
+    color = cmap.map(["hi"])
     np.testing.assert_allclose(color, [[1, 1, 1, 1]])
-    color = cmap.map(['hello'])
+    color = cmap.map(["hello"])
     np.testing.assert_allclose(color, [[0, 0, 0, 0]])
 
     # test that the default fallback color (white) is applied
-    new_color_0 = cmap.map(['not a key'])
+    new_color_0 = cmap.map(["not a key"])
     np.testing.assert_almost_equal(new_color_0, [[1, 1, 1, 1]])
     new_cmap = cmap.colormap
-    np.testing.assert_almost_equal(new_cmap['not a key'], [1, 1, 1, 1])
+    np.testing.assert_almost_equal(new_cmap["not a key"], [1, 1, 1, 1])
 
     # set a cycle of fallback colors
     new_fallback_colors = [[1, 0, 0, 1], [0, 1, 0, 1]]
     cmap.fallback_color = new_fallback_colors
-    new_color_1 = cmap.map(['new_prop 1'])
+    new_color_1 = cmap.map(["new_prop 1"])
     np.testing.assert_almost_equal(
         np.squeeze(new_color_1), new_fallback_colors[0]
     )
-    new_color_2 = cmap.map(['new_prop 2'])
+    new_color_2 = cmap.map(["new_prop 2"])
     np.testing.assert_almost_equal(
         np.squeeze(new_color_2), new_fallback_colors[1]
     )
@@ -56,18 +56,18 @@ def test_categorical_colormap_cycle():
     np.testing.assert_almost_equal(cmap.fallback_color.values, color_cycle)
 
     # map 2 colors, verify their colors are returned in order
-    colors = cmap.map(['hi', 'hello'])
+    colors = cmap.map(["hi", "hello"])
     np.testing.assert_almost_equal(colors, color_cycle)
 
     # map a third color and verify the colors wrap around
-    third_color = cmap.map(['bonjour'])
+    third_color = cmap.map(["bonjour"])
     np.testing.assert_almost_equal(np.squeeze(third_color), color_cycle[0])
 
 
 def test_categorical_colormap_cycle_as_dict():
     color_values = np.array([[1, 1, 1, 1], [1, 0, 0, 1]])
     color_cycle = cycle(color_values)
-    fallback_color = {'values': color_values, 'cycle': color_cycle}
+    fallback_color = {"values": color_values, "cycle": color_cycle}
     cmap = CategoricalColormap(fallback_color=fallback_color)
 
     # verify that no mapping between prop value and color has been set
@@ -89,21 +89,21 @@ def test_categorical_colormap_from_array():
 
 
 color_mapping = {
-    'typeA': np.array([1, 1, 1, 1]),
-    'typeB': np.array([1, 0, 0, 1]),
+    "typeA": np.array([1, 1, 1, 1]),
+    "typeB": np.array([1, 0, 0, 1]),
 }
 default_fallback_color = np.array([[1, 1, 1, 1]])
 
 
 @pytest.mark.parametrize(
-    'params,expected',
+    "params,expected",
     [
-        ({'colormap': color_mapping}, (color_mapping, default_fallback_color)),
+        ({"colormap": color_mapping}, (color_mapping, default_fallback_color)),
         (
-            {'colormap': color_mapping, 'fallback_color': fallback_colors},
+            {"colormap": color_mapping, "fallback_color": fallback_colors},
             (color_mapping, fallback_colors),
         ),
-        ({'fallback_color': fallback_colors}, ({}, fallback_colors)),
+        ({"fallback_color": fallback_colors}, ({}, fallback_colors)),
         (color_mapping, (color_mapping, default_fallback_color)),
     ],
 )
@@ -130,11 +130,11 @@ def test_categorical_colormap_equality():
 
 
 @pytest.mark.parametrize(
-    'params',
+    "params",
     [
-        {'colormap': color_mapping},
-        {'colormap': color_mapping, 'fallback_color': fallback_colors},
-        {'fallback_color': fallback_colors},
+        {"colormap": color_mapping},
+        {"colormap": color_mapping, "fallback_color": fallback_colors},
+        {"fallback_color": fallback_colors},
     ],
 )
 def test_categorical_colormap_serialization(params):

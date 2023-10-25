@@ -77,7 +77,7 @@ def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot, rng):
     # Simulate panning to the left by changing the corner pixels in the last
     # dimension, which corresponds to x/columns, then triggering a reload.
     image.corner_pixels = np.array([[0, 0, 0], [0, 3, 2]])
-    image.events.reload(Event('reload', layer=image))
+    image.events.reload(Event("reload", layer=image))
 
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[1][0, 0:4, 0:3])
 
@@ -98,7 +98,7 @@ def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer, rng):
     # Simulate zooming into the middle of the higher resolution image.
     image._data_level = 0
     image.corner_pixels = np.array([[0, 2, 3], [0, 5, 6]])
-    image.events.reload(Event('reload', layer=image))
+    image.events.reload(Event("reload", layer=image))
 
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[0][1, 2:6, 3:7])
 
@@ -218,7 +218,7 @@ def wait_until_vispy_points_data_equal(
     qtbot, vispy_layer: VispyPointsLayer, expected_data: np.ndarray
 ) -> None:
     def assert_vispy_points_data_equal() -> None:
-        positions = vispy_layer.node._subvisuals[0]._data['a_position']
+        positions = vispy_layer.node._subvisuals[0]._data["a_position"]
         # Flip the coordinates because vispy uses xy instead of rc ordering.
         # Also only take the number of dimensions expected since vispy points
         # are always 3D even when displaying 2D slices.
@@ -234,7 +234,7 @@ def wait_until_vispy_vectors_data_equal(
     def assert_vispy_vectors_data_equal() -> None:
         displayed = expected_data[..., -2:]
         exp_vertices, exp_faces = generate_vector_meshes_2D(
-            displayed, 1, 1, 'triangle'
+            displayed, 1, 1, "triangle"
         )
         meshdata = vispy_layer.node._meshdata
         vertices = meshdata.get_vertices()

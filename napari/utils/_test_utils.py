@@ -32,5 +32,5 @@ class MouseEvent:
 
 def read_only_mouse_event(*args, **kwargs):
     return ReadOnlyWrapper(
-        MouseEvent(*args, **kwargs), exceptions=('handled',)
+        MouseEvent(*args, **kwargs), exceptions=("handled",)
     )

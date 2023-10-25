@@ -26,8 +26,8 @@ from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.theme import available_themes
 
-BUILTINS_DISP = 'napari'
-BUILTINS_NAME = 'builtins'
+BUILTINS_DISP = "napari"
+BUILTINS_NAME = "builtins"
 
 
 def test_qt_viewer(make_napari_viewer):
@@ -35,7 +35,7 @@ def test_qt_viewer(make_napari_viewer):
     viewer = make_napari_viewer()
     view = viewer.window._qt_viewer
 
-    assert viewer.title == 'napari'
+    assert viewer.title == "napari"
     assert view.viewer == viewer
 
     assert len(viewer.layers) == 0
@@ -83,7 +83,7 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
     qtbot.waitUntil(console_has_focus)
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize("layer_class, data, ndim", layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window._qt_viewer
@@ -194,29 +194,29 @@ def test_z_order_adding_removing_images(make_napari_viewer):
 
     viewer = make_napari_viewer()
     vis = viewer.window._qt_viewer.canvas.layer_to_visual
-    viewer.add_image(data, colormap='red', name='red')
-    viewer.add_image(data, colormap='green', name='green')
-    viewer.add_image(data, colormap='blue', name='blue')
+    viewer.add_image(data, colormap="red", name="red")
+    viewer.add_image(data, colormap="green", name="green")
+    viewer.add_image(data, colormap="blue", name="blue")
     order = [vis[x].order for x in viewer.layers]
     np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
 
     # Remove and re-add image
-    viewer.layers.remove('red')
+    viewer.layers.remove("red")
     order = [vis[x].order for x in viewer.layers]
     np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
-    viewer.add_image(data, colormap='red', name='red')
+    viewer.add_image(data, colormap="red", name="red")
     order = [vis[x].order for x in viewer.layers]
     np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
 
     # Remove two other images
-    viewer.layers.remove('green')
-    viewer.layers.remove('blue')
+    viewer.layers.remove("green")
+    viewer.layers.remove("blue")
     order = [vis[x].order for x in viewer.layers]
     np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
 
     # Add two other layers back
-    viewer.add_image(data, colormap='green', name='green')
-    viewer.add_image(data, colormap='blue', name='blue')
+    viewer.add_image(data, colormap="green", name="green")
+    viewer.add_image(data, colormap="blue", name="blue")
     order = [vis[x].order for x in viewer.layers]
     np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
 
@@ -281,16 +281,16 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
     viewer.add_shapes(data)
 
     # Save screenshot
-    input_filepath = os.path.join(tmpdir, 'test-save-screenshot')
-    mock_return = (input_filepath, '')
-    with mock.patch('napari._qt._qt_viewer.QFileDialog') as mocker, mock.patch(
-        'napari._qt._qt_viewer.QMessageBox'
+    input_filepath = os.path.join(tmpdir, "test-save-screenshot")
+    mock_return = (input_filepath, "")
+    with mock.patch("napari._qt._qt_viewer.QFileDialog") as mocker, mock.patch(
+        "napari._qt._qt_viewer.QMessageBox"
     ) as mocker2:
         mocker.getSaveFileName.return_value = mock_return
         mocker2.warning.return_value = QMessageBox.Yes
         viewer.window._qt_viewer._screenshot_dialog()
     # Assert behaviour is correct
-    expected_filepath = input_filepath + '.png'  # add default file extension
+    expected_filepath = input_filepath + ".png"  # add default file extension
     assert os.path.exists(expected_filepath)
     output_data = imread(expected_filepath)
     expected_data = viewer.window._qt_viewer.screenshot(flash=False)
@@ -301,7 +301,7 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     viewer = make_napari_viewer()
     data = np.zeros((60, 60, 60))
     viewer.add_image(data, scale=[0.29, 0.26, 0.26])
-    pts = viewer.add_points(name='test', size=1, ndim=3)
+    pts = viewer.add_points(name="test", size=1, ndim=3)
     pts.add((8.7, 0, 0))
     viewer.dims.set_point(0, 30 * 0.29)  # middle plane
 
@@ -541,7 +541,7 @@ def test_remove_labels(make_napari_viewer):
     viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
 
 
-@pytest.mark.parametrize('multiscale', [False, True])
+@pytest.mark.parametrize("multiscale", [False, True])
 def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     """Test bug in setting corner_pixels from qt_viewer.on_draw"""
     viewer = make_napari_viewer()
@@ -609,7 +609,7 @@ def test_qt_viewer_multscale_image_out_of_view(make_napari_viewer):
                 dtype=float,
             )
         ],
-        shape_type=['polygon'],
+        shape_type=["polygon"],
     )
     viewer.add_image([np.eye(1024), np.eye(512), np.eye(256)])
 
@@ -708,9 +708,9 @@ def test_axes_labels(make_napari_viewer):
 
     layer_visual = viewer._window._qt_viewer.layer_to_visual[layer]
     axes_visual = viewer._window._qt_viewer.canvas._overlay_to_visual[
-        viewer._overlays['axes']
+        viewer._overlays["axes"]
     ]
 
     layer_visual_size = vispy_image_scene_size(layer_visual)
     assert tuple(layer_visual_size) == (8, 4, 2)
-    assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
+    assert tuple(axes_visual.node.text.text) == ("2", "1", "0")

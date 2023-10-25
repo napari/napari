@@ -18,7 +18,7 @@ def move_plane_along_normal(layer: Image, event: Event):
     """Move a layers slicing plane along its normal vector on click and drag."""
     # early exit clauses
     if (
-        'Shift' not in event.modifiers
+        "Shift" not in event.modifiers
         or layer.visible is False
         or layer.mouse_pan is False
         or len(event.dims_displayed) < 3
@@ -56,7 +56,7 @@ def move_plane_along_normal(layer: Image, event: Event):
 
     yield
 
-    while event.type == 'mouse_move':
+    while event.type == "mouse_move":
         # Project mouse drag onto plane normal
         drag_distance = layer.projected_distance_from_mouse_drag(
             start_position=initial_position_world,

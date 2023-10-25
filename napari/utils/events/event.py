@@ -191,7 +191,7 @@ class Event:
                 return "<...>"
             attrs = []
             for name in dir(self):
-                if name.startswith('_'):
+                if name.startswith("_"):
                     continue
                 # select only properties
                 if not hasattr(type(self), name) or not isinstance(
@@ -218,9 +218,9 @@ _event_repr_depth = 0
 
 
 Callback = Union[Callable[[Event], None], Callable[[], None]]
-CallbackRef = Tuple['weakref.ReferenceType[Any]', str]  # dereferenced method
+CallbackRef = Tuple["weakref.ReferenceType[Any]", str]  # dereferenced method
 CallbackStr = Tuple[
-    Union['weakref.ReferenceType[Any]', object], str
+    Union["weakref.ReferenceType[Any]", object], str
 ]  # dereferenced method
 
 
@@ -313,13 +313,13 @@ class EventEmitter:
         self.source = source
         self.default_args = {}
         if type_name is not None:
-            self.default_args['type_name'] = type_name
+            self.default_args["type_name"] = type_name
 
         assert inspect.isclass(event_class)
         self.event_class = event_class
 
         self._ignore_callback_errors: bool = False  # True
-        self.print_callback_errors = 'reminders'  # 'reminders'
+        self.print_callback_errors = "reminders"  # 'reminders'
 
     @property
     def ignore_callback_errors(self) -> bool:
@@ -351,9 +351,9 @@ class EventEmitter:
     @print_callback_errors.setter
     def print_callback_errors(
         self,
-        val: Literal['first', 'reminders', 'always', 'never'],
+        val: Literal["first", "reminders", "always", "never"],
     ):
-        if val not in ('first', 'reminders', 'always', 'never'):
+        if val not in ("first", "reminders", "always", "never"):
             raise ValueError(
                 trans._(
                     'print_callback_errors must be "first", "reminders", "always", or "never"',
@@ -402,25 +402,25 @@ class EventEmitter:
             callback = callback.func
         if not isinstance(callback, tuple):
             try:
-                return callback.__module__.startswith(f'{core}.')
+                return callback.__module__.startswith(f"{core}.")
             except AttributeError:
                 return False
         obj = callback[0]()  # get object behind weakref
         if obj is None:  # object is dead
             return False
         try:
-            return obj.__module__.startswith(f'{core}.')
+            return obj.__module__.startswith(f"{core}.")
         except AttributeError:
             return False
 
     def connect(
         self,
-        callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
+        callback: Union[Callback, CallbackRef, CallbackStr, "EventEmitter"],
         ref: Union[bool, str] = False,
-        position: Literal['first', 'last'] = 'first',
+        position: Literal["first", "last"] = "first",
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
-        until: Optional['EventEmitter'] = None,
+        until: Optional["EventEmitter"] = None,
     ):
         """Connect this emitter to a new callback.
 
@@ -488,7 +488,7 @@ class EventEmitter:
             if ref:
                 if isinstance(callback, tuple):
                     _ref = callback[1]
-                elif hasattr(callback, '__name__'):  # function
+                elif hasattr(callback, "__name__"):  # function
                     _ref = callback.__name__
                 else:  # Method, or other
                     _ref = callback.__class__.__name__
@@ -499,7 +499,7 @@ class EventEmitter:
         else:
             raise TypeError(
                 trans._(
-                    'ref must be a bool or string',
+                    "ref must be a bool or string",
                     deferred=True,
                 )
             )
@@ -509,7 +509,7 @@ class EventEmitter:
             )
 
         # positions
-        if position not in ('first', 'last'):
+        if position not in ("first", "last"):
             raise ValueError(
                 trans._(
                     'position must be "first" or "last", not {position}',
@@ -520,12 +520,12 @@ class EventEmitter:
         core_callbacks_indexes = [
             i
             for i, c in enumerate(self._callbacks)
-            if self._is_core_callback(c, 'napari')
+            if self._is_core_callback(c, "napari")
         ]
         core_callbacks_count = (
             max(core_callbacks_indexes) + 1 if core_callbacks_indexes else 0
         )
-        if self._is_core_callback(callback, 'napari'):
+        if self._is_core_callback(callback, "napari"):
             callback_bounds = (0, core_callbacks_count)
         else:
             callback_bounds = (core_callbacks_count, len(callback_refs))
@@ -574,7 +574,7 @@ class EventEmitter:
                     callback_refs=callback_refs,
                 )
             )
-        idx = bounds[1] if position == 'first' else bounds[0]  # 'last'
+        idx = bounds[1] if position == "first" else bounds[0]  # 'last'
 
         # actually add the callback
         self._callbacks.insert(idx, callback)
@@ -801,8 +801,8 @@ class EventEmitter:
             # here... but this error is consistent across backends
             if (
                 isinstance(e, RuntimeError)
-                and 'C++' in str(e)
-                and str(e).endswith(('has been deleted', 'already deleted.'))
+                and "C++" in str(e)
+                and str(e).endswith(("has been deleted", "already deleted."))
             ):
                 self.disconnect(cb)
                 return
@@ -1055,7 +1055,7 @@ class EmitterGroup(EventEmitter):
             elif not isinstance(emitter, EventEmitter):
                 raise RuntimeError(
                     trans._(
-                        'Emitter must be specified as either an EventEmitter instance or Event subclass. (got {name}={emitter})',
+                        "Emitter must be specified as either an EventEmitter instance or Event subclass. (got {name}={emitter})",
                         deferred=True,
                         name=name,
                         emitter=emitter,
@@ -1111,9 +1111,9 @@ class EmitterGroup(EventEmitter):
 
     def connect(
         self,
-        callback: Union[Callback, CallbackRef, EventEmitter, 'EmitterGroup'],
+        callback: Union[Callback, CallbackRef, EventEmitter, "EmitterGroup"],
         ref: Union[bool, str] = False,
-        position: Literal['first', 'last'] = 'first',
+        position: Literal["first", "last"] = "first",
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
     ):
@@ -1166,7 +1166,7 @@ class EmitterGroup(EventEmitter):
             elif isinstance(emitter, EmitterGroup):
                 emitter.ignore_callback_errors_all(ignore)
 
-    def blocker_all(self) -> 'EventBlockerAll':
+    def blocker_all(self) -> "EventBlockerAll":
         """Return an EventBlockerAll to be used in 'with' statements
 
         Notes
@@ -1235,7 +1235,7 @@ def _is_pos_arg(param: inspect.Parameter):
 
 with contextlib.suppress(ModuleNotFoundError):
     # this could move somewhere higher up in napari imports ... but where?
-    __import__('dotenv').load_dotenv()
+    __import__("dotenv").load_dotenv()
 
 
 def _noop(*a, **k):
@@ -1258,5 +1258,5 @@ def set_event_tracing_enabled(enabled=True, cfg=None):
         _log_event_stack = _noop
 
 
-if os.getenv("NAPARI_DEBUG_EVENTS", '').lower() in ('1', 'true'):
+if os.getenv("NAPARI_DEBUG_EVENTS", "").lower() in ("1", "true"):
     set_event_tracing_enabled(True)

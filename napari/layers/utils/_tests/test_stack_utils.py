@@ -17,7 +17,7 @@ def test_stack_to_images_basic():
     images = stack_to_images(stack, 1, colormap=None)
 
     assert isinstance(images, list)
-    assert images[0].colormap.name == 'magenta'
+    assert images[0].colormap.name == "magenta"
     assert len(images) == 2
 
     for i in images:
@@ -63,11 +63,11 @@ def test_stack_to_images_4_channels():
     """Test 4x128x128 stack is split into 4 channels w/ colormap keyword"""
     data = np.random.randint(0, 100, (4, 128, 128))
     stack = Image(data)
-    images = stack_to_images(stack, 0, colormap=['red', 'blue'])
+    images = stack_to_images(stack, 0, colormap=["red", "blue"])
 
     assert isinstance(images, list)
     assert len(images) == 4
-    assert images[-2].colormap.name == 'red'
+    assert images[-2].colormap.name == "red"
     for i in images:
         assert type(stack) == type(i)
         assert i.data.shape == (128, 128)
@@ -91,7 +91,7 @@ def test_stack_to_images_1_channel():
     """Split when only one channel"""
     data = np.random.randint(0, 100, (10, 1, 128, 128))
     stack = Image(data)
-    images = stack_to_images(stack, 1, colormap=['magma'])
+    images = stack_to_images(stack, 1, colormap=["magma"])
 
     assert isinstance(images, list)
     assert len(images) == 1
@@ -108,12 +108,12 @@ def test_images_to_stack_with_scale():
     ]
 
     stack = images_to_stack(
-        images, 1, colormap='green', scale=(3, 1, 1, 1), translate=(1, 0, 2, 3)
+        images, 1, colormap="green", scale=(3, 1, 1, 1), translate=(1, 0, 2, 3)
     )
 
     assert isinstance(stack, Image)
     assert stack.data.shape == (10, 3, 128, 128)
-    assert stack.colormap.name == 'green'
+    assert stack.colormap.name == "green"
     assert list(stack.scale) == [3, 1, 1, 1]
     assert list(stack.translate) == [1, 0, 2, 3]
 
@@ -129,11 +129,11 @@ def test_images_to_stack_none_scale():
         for _ in range(3)
     ]
 
-    stack = images_to_stack(images, 1, colormap='green')
+    stack = images_to_stack(images, 1, colormap="green")
 
     assert isinstance(stack, Image)
     assert stack.data.shape == (10, 3, 128, 128)
-    assert stack.colormap.name == 'green'
+    assert stack.colormap.name == "green"
     assert list(stack.scale) == [4, 1, 1, 1]
     assert list(stack.translate) == [0, 0, -1, 2]
 
@@ -141,39 +141,39 @@ def test_images_to_stack_none_scale():
 @pytest.fixture(
     params=[
         {
-            'rgb': None,
-            'colormap': None,
-            'contrast_limits': None,
-            'gamma': 1,
-            'interpolation': 'nearest',
-            'rendering': 'mip',
-            'iso_threshold': 0.5,
-            'attenuation': 0.5,
-            'name': None,
-            'metadata': None,
-            'scale': None,
-            'translate': None,
-            'opacity': 1,
-            'blending': None,
-            'visible': True,
-            'multiscale': None,
-            'rotate': None,
-            'affine': None,
+            "rgb": None,
+            "colormap": None,
+            "contrast_limits": None,
+            "gamma": 1,
+            "interpolation": "nearest",
+            "rendering": "mip",
+            "iso_threshold": 0.5,
+            "attenuation": 0.5,
+            "name": None,
+            "metadata": None,
+            "scale": None,
+            "translate": None,
+            "opacity": 1,
+            "blending": None,
+            "visible": True,
+            "multiscale": None,
+            "rotate": None,
+            "affine": None,
         },
         {
-            'rgb': None,
-            'colormap': None,
-            'rendering': 'mip',
-            'attenuation': 0.5,
-            'metadata': None,
-            'scale': None,
-            'opacity': 1,
-            'visible': True,
-            'multiscale': None,
+            "rgb": None,
+            "colormap": None,
+            "rendering": "mip",
+            "attenuation": 0.5,
+            "metadata": None,
+            "scale": None,
+            "opacity": 1,
+            "visible": True,
+            "multiscale": None,
         },
         {},
     ],
-    ids=['full-kwargs', 'partial-kwargs', 'empty-kwargs'],
+    ids=["full-kwargs", "partial-kwargs", "empty-kwargs"],
 )
 def kwargs(request):
     return request.param
@@ -200,7 +200,7 @@ def test_split_channels_multiscale(kwargs):
 
     assert len(result_list) == 3
     for ds, m, _ in result_list:
-        assert m['multiscale'] is True
+        assert m["multiscale"] is True
         assert ds[0].shape == (128, 128)
         assert ds[1].shape == (64, 64)
         assert ds[2].shape == (32, 32)
@@ -209,14 +209,14 @@ def test_split_channels_multiscale(kwargs):
 
 def test_split_channels_blending(kwargs):
     """Test split_channels with shape (3,128,128) expecting 3 (128,128)"""
-    kwargs['blending'] = 'translucent'
+    kwargs["blending"] = "translucent"
     data = np.random.randint(0, 200, (3, 128, 128))
     result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
     for d, meta, _ in result_list:
         assert d.shape == (128, 128)
-        assert meta['blending'] == 'translucent'
+        assert meta["blending"] == "translucent"
 
 
 def test_split_channels_missing_keywords():
@@ -227,36 +227,36 @@ def test_split_channels_missing_keywords():
     for chan, layer in enumerate(result_list):
         assert layer[0].shape == (128, 128)
         assert (
-            layer[1]['blending'] == 'translucent_no_depth'
+            layer[1]["blending"] == "translucent_no_depth"
             if chan == 0
-            else 'additive'
+            else "additive"
         )
 
 
 def test_split_channels_affine_nparray(kwargs):
-    kwargs['affine'] = np.eye(3)
+    kwargs["affine"] = np.eye(3)
     data = np.random.randint(0, 200, (3, 128, 128))
     result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
     for d, meta, _ in result_list:
         assert d.shape == (128, 128)
-        assert np.array_equal(meta['affine'], np.eye(3))
+        assert np.array_equal(meta["affine"], np.eye(3))
 
 
 def test_split_channels_affine_napari(kwargs):
-    kwargs['affine'] = Affine(affine_matrix=np.eye(3))
+    kwargs["affine"] = Affine(affine_matrix=np.eye(3))
     data = np.random.randint(0, 200, (3, 128, 128))
     result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
     for d, meta, _ in result_list:
         assert d.shape == (128, 128)
-        assert np.array_equal(meta['affine'].affine_matrix, np.eye(3))
+        assert np.array_equal(meta["affine"].affine_matrix, np.eye(3))
 
 
 def test_split_channels_multi_affine_napari(kwargs):
-    kwargs['affine'] = [
+    kwargs["affine"] = [
         Affine(scale=[1, 1]),
         Affine(scale=[2, 2]),
         Affine(scale=[3, 3]),
@@ -270,6 +270,6 @@ def test_split_channels_multi_affine_napari(kwargs):
         d, meta, _ = result_data
         assert d.shape == (128, 128)
         assert np.array_equal(
-            meta['affine'].affine_matrix,
+            meta["affine"].affine_matrix,
             Affine(scale=[idx + 1, idx + 1]).affine_matrix,
         )

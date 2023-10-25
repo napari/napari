@@ -24,13 +24,13 @@ NAMES = {
 }
 
 __all__ = [
-    'Image',
-    'Labels',
-    'Layer',
-    'Points',
-    'Shapes',
-    'Surface',
-    'Tracks',
-    'Vectors',
-    'NAMES',
+    "Image",
+    "Labels",
+    "Layer",
+    "Points",
+    "Shapes",
+    "Surface",
+    "Tracks",
+    "Vectors",
+    "NAMES",
 ]

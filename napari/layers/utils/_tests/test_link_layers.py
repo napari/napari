@@ -10,23 +10,23 @@ from napari.layers.utils._link_layers import (
 
 BASE_ATTRS = {}
 BASE_ATTRS = {
-    'opacity': 0.75,
-    'blending': 'additive',
-    'visible': False,
-    'editable': False,
-    'shear': [30],
+    "opacity": 0.75,
+    "blending": "additive",
+    "visible": False,
+    "editable": False,
+    "shear": [30],
 }
 
 IM_ATTRS = {
-    'rendering': 'translucent',
-    'iso_threshold': 0.34,
-    'interpolation2d': 'linear',
-    'contrast_limits': [0.25, 0.75],
-    'gamma': 0.5,
+    "rendering": "translucent",
+    "iso_threshold": 0.34,
+    "interpolation2d": "linear",
+    "contrast_limits": [0.25, 0.75],
+    "gamma": 0.5,
 }
 
 
-@pytest.mark.parametrize('key, value', {**BASE_ATTRS, **IM_ATTRS}.items())
+@pytest.mark.parametrize("key, value", {**BASE_ATTRS, **IM_ATTRS}.items())
 def test_link_image_layers_all_attributes(key, value):
     """Test linking common attributes across layers of similar types."""
     l1 = layers.Image(np.random.rand(10, 10), contrast_limits=(0, 0.8))
@@ -41,7 +41,7 @@ def test_link_image_layers_all_attributes(key, value):
     assert getattr(l1, key) == getattr(l2, key) == value
 
 
-@pytest.mark.parametrize('key, value', BASE_ATTRS.items())
+@pytest.mark.parametrize("key, value", BASE_ATTRS.items())
 def test_link_different_type_layers_all_attributes(key, value):
     """Test linking common attributes across layers of different types."""
     l1 = layers.Image(np.random.rand(10, 10))
@@ -59,7 +59,7 @@ def test_link_invalid_param():
     l1 = layers.Image(np.random.rand(10, 10))
     l2 = layers.Points(None)
     with pytest.raises(ValueError) as e:
-        link_layers([l1, l2], ('rendering',))
+        link_layers([l1, l2], ("rendering",))
     assert "Cannot link attributes that are not shared by all layers" in str(e)
 
 
@@ -102,7 +102,7 @@ def test_context_manager():
     l2 = layers.Points(None)
     l3 = layers.Points(None)
     assert len(l1.events.opacity.callbacks) == 0
-    with layers_linked([l1, l2, l3], ('opacity',)):
+    with layers_linked([l1, l2, l3], ("opacity",)):
         assert len(l1.events.opacity.callbacks) == 2
         assert len(l1.events.blending.callbacks) == 0  # it's just opacity
         del l2  # if we lose a layer in the meantime it should be ok
@@ -117,7 +117,7 @@ def test_unlink_layers():
 
     link_layers([l1, l2, l3])
     assert len(l1.events.opacity.callbacks) == 2
-    unlink_layers([l1, l2], ('opacity',))  # just unlink opacity on l1/l2
+    unlink_layers([l1, l2], ("opacity",))  # just unlink opacity on l1/l2
 
     assert len(l1.events.opacity.callbacks) == 1
     assert len(l2.events.opacity.callbacks) == 1
@@ -142,7 +142,7 @@ def test_unlink_single_layer():
 
     link_layers([l1, l2, l3])
     assert len(l1.events.opacity.callbacks) == 2
-    unlink_layers([l1], ('opacity',))  # just unlink L1 opacity from others
+    unlink_layers([l1], ("opacity",))  # just unlink L1 opacity from others
     assert len(l1.events.opacity.callbacks) == 0
     assert len(l2.events.opacity.callbacks) == 1
     assert len(l3.events.opacity.callbacks) == 1
@@ -157,10 +157,10 @@ def test_unlink_single_layer():
 
 
 def test_mode_recursion():
-    l1 = layers.Points(None, name='l1')
-    l2 = layers.Points(None, name='l2')
+    l1 = layers.Points(None, name="l1")
+    l2 = layers.Points(None, name="l2")
     link_layers([l1, l2])
-    l1.mode = 'add'
+    l1.mode = "add"
 
 
 def test_link_layers_with_images_then_loaded_not_linked():

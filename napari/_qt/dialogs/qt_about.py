@@ -78,7 +78,7 @@ class QtAbout(QDialog):
             int(min(self.infoTextBox.document().size().height() + 10, 500)),
         )
 
-        self.layout.addWidget(QLabel(trans._('<b>citation information:</b>')))
+        self.layout.addWidget(QLabel(trans._("<b>citation information:</b>")))
         self.citationTextBox = QTextEdit(citation_text)
         self.citationTextBox.setFixedHeight(64)
         self.citationCopyButton = QtCopyToClipboardButton(self.citationTextBox)
@@ -102,8 +102,8 @@ class QtAbout(QDialog):
             Default is None.
         """
         d = QtAbout(parent)
-        d.setObjectName('QtAbout')
-        d.setWindowTitle(trans._('About'))
+        d.setObjectName("QtAbout")
+        d.setWindowTitle(trans._("About"))
         d.setWindowModality(Qt.WindowModality.ApplicationModal)
         d.exec_()
 

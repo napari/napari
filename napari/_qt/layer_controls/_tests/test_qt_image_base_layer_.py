@@ -24,7 +24,7 @@ _SURF = (
 )
 
 
-@pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
+@pytest.mark.parametrize("layer", [Image(_IMAGE), Surface(_SURF)])
 def test_base_controls_creation(qtbot, layer):
     """Check basic creation of QtBaseImageControls works"""
     qtctrl = QtBaseImageControls(layer)
@@ -36,21 +36,21 @@ def test_base_controls_creation(qtbot, layer):
     assert tuple(slider_clims) == original_clims
 
 
-@patch.object(QRangeSliderPopup, 'show')
-@pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
+@patch.object(QRangeSliderPopup, "show")
+@pytest.mark.parametrize("layer", [Image(_IMAGE), Surface(_SURF)])
 def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     """Right clicking on the contrast limits slider should show a popup."""
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
-    assert hasattr(qtctrl, 'clim_popup')
+    assert hasattr(qtctrl, "clim_popup")
     # this mock doesn't seem to be working on cirrus windows
     # but it works on local windows tests...
-    if not (os.name == 'nt' and os.getenv("CI")):
+    if not (os.name == "nt" and os.getenv("CI")):
         mock_show.assert_called_once()
 
 
-@pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
+@pytest.mark.parametrize("layer", [Image(_IMAGE), Surface(_SURF)])
 def test_changing_model_updates_view(qtbot, layer):
     """Changing the model attribute should update the view"""
     qtctrl = QtBaseImageControls(layer)
@@ -60,9 +60,9 @@ def test_changing_model_updates_view(qtbot, layer):
     assert tuple(qtctrl.contrastLimitsSlider.value()) == new_clims
 
 
-@patch.object(QRangeSliderPopup, 'show')
+@patch.object(QRangeSliderPopup, "show")
 @pytest.mark.parametrize(
-    'layer', [Image(_IMAGE), Image(_IMAGE.astype(np.int32)), Surface(_SURF)]
+    "layer", [Image(_IMAGE), Image(_IMAGE.astype(np.int32)), Surface(_SURF)]
 )
 def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
     """The buttons in the clim_popup should adjust the contrast limits value"""
@@ -99,7 +99,7 @@ def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
         assert rangebtn is None
 
 
-@pytest.mark.parametrize('mag', list(range(-16, 16, 4)))
+@pytest.mark.parametrize("mag", list(range(-16, 16, 4)))
 def test_clim_slider_step_size_and_precision(qtbot, mag):
     """Make sure the slider has a reasonable step size and precision.
 
@@ -133,7 +133,7 @@ def test_qt_image_controls_change_contrast(qtbot):
 
 def test_tensorstore_clim_popup():
     """Regression to test, makes sure it works with tensorstore dtype"""
-    ts = pytest.importorskip('tensorstore')
+    ts = pytest.importorskip("tensorstore")
     layer = Image(ts.array(np.random.rand(20, 20)))
     QContrastLimitsPopup(layer)
 
@@ -143,21 +143,21 @@ def test_blending_opacity_slider(qtbot):
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtLayerControls(layer)
     qtbot.addWidget(qtctrl)
-    assert layer.blending == 'translucent'
+    assert layer.blending == "translucent"
     # check that the opacity slider is present by default
     assert qtctrl.opacitySlider.isEnabled()
     # set minimum blending, the opacity slider should be disabled
-    layer.blending = 'minimum'
+    layer.blending = "minimum"
     assert not qtctrl.opacitySlider.isEnabled()
     # set the blending to 'additive' confirm the slider is enabled
-    layer.blending = 'additive'
-    assert layer.blending == 'additive'
+    layer.blending = "additive"
+    assert layer.blending == "additive"
     assert qtctrl.opacitySlider.isEnabled()
     # set opaque blending, the opacity slider should be disabled
-    layer.blending = 'opaque'
-    assert layer.blending == 'opaque'
+    layer.blending = "opaque"
+    assert layer.blending == "opaque"
     assert not qtctrl.opacitySlider.isEnabled()
     # set the blending back to 'translucent' confirm the slider is enabled
-    layer.blending = 'translucent'
-    assert layer.blending == 'translucent'
+    layer.blending = "translucent"
+    assert layer.blending == "translucent"
     assert qtctrl.opacitySlider.isEnabled()

@@ -28,10 +28,10 @@ _np_complex = {
 }
 
 _np_kinds = {
-    'uint': _np_uints,
-    'int': _np_ints,
-    'float': _np_floats,
-    'complex': _np_complex,
+    "uint": _np_uints,
+    "int": _np_ints,
+    "float": _np_floats,
+    "complex": _np_complex,
 }
 
 
@@ -39,15 +39,15 @@ def _normalize_str_by_bit_depth(dtype_str, kind):
     if not any(str.isdigit(c) for c in dtype_str):  # Python 'int' or 'float'
         return np.dtype(kind).type
     bit_dict = _np_kinds[kind]
-    if '128' in dtype_str:
+    if "128" in dtype_str:
         return bit_dict[128]
-    if '8' in dtype_str:
+    if "8" in dtype_str:
         return bit_dict[8]
-    if '16' in dtype_str:
+    if "16" in dtype_str:
         return bit_dict[16]
-    if '32' in dtype_str:
+    if "32" in dtype_str:
         return bit_dict[32]
-    if '64' in dtype_str:
+    if "64" in dtype_str:
         return bit_dict[64]
     return None
 
@@ -71,15 +71,15 @@ def normalize_dtype(dtype_spec):
     half-precision floats are not supported.
     """
     dtype_str = str(dtype_spec)
-    if 'uint' in dtype_str:
-        return _normalize_str_by_bit_depth(dtype_str, 'uint')
-    if 'int' in dtype_str:
-        return _normalize_str_by_bit_depth(dtype_str, 'int')
-    if 'float' in dtype_str:
-        return _normalize_str_by_bit_depth(dtype_str, 'float')
-    if 'complex' in dtype_str:
-        return _normalize_str_by_bit_depth(dtype_str, 'complex')
-    if 'bool' in dtype_str:
+    if "uint" in dtype_str:
+        return _normalize_str_by_bit_depth(dtype_str, "uint")
+    if "int" in dtype_str:
+        return _normalize_str_by_bit_depth(dtype_str, "int")
+    if "float" in dtype_str:
+        return _normalize_str_by_bit_depth(dtype_str, "float")
+    if "complex" in dtype_str:
+        return _normalize_str_by_bit_depth(dtype_str, "complex")
+    if "bool" in dtype_str:
         return np.bool_
     # If we don't find one of the named dtypes, return the dtype_spec
     # unchanged. This allows NumPy big endian types to work. See
@@ -109,7 +109,7 @@ def get_dtype_limits(dtype_spec) -> Tuple[float, float]:
     elif dtype and np.issubdtype(dtype, np.floating):
         info = np.finfo(dtype)
     else:
-        raise TypeError(f'Unrecognized or non-numeric dtype: {dtype_spec}')
+        raise TypeError(f"Unrecognized or non-numeric dtype: {dtype_spec}")
     return info.min, info.max
 
 

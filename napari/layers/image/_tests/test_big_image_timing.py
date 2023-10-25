@@ -13,16 +13,16 @@ data_zarr = zarr.zeros((100_000, 1000, 1000))
 
 
 @pytest.mark.parametrize(
-    'kwargs',
+    "kwargs",
     [
         {"multiscale": False, "contrast_limits": [0, 1]},
         {"multiscale": False},
         {"contrast_limits": [0, 1]},
         {},
     ],
-    ids=('all', 'multiscale', 'clims', 'nothing'),
+    ids=("all", "multiscale", "clims", "nothing"),
 )
-@pytest.mark.parametrize('data', [data_dask, data_zarr], ids=('dask', 'zarrs'))
+@pytest.mark.parametrize("data", [data_dask, data_zarr], ids=("dask", "zarrs"))
 def test_timing_fast_big_dask(data, kwargs):
     now = time.monotonic()
     assert Image(data, **kwargs).data.shape == data.shape

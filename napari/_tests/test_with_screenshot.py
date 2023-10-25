@@ -17,9 +17,9 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
-    viewer.add_image(data, colormap='red', name='red')
-    viewer.add_image(data, colormap='green', name='green')
-    viewer.add_image(data, colormap='blue', name='blue')
+    viewer.add_image(data, colormap="red", name="red")
+    viewer.add_image(data, colormap="green", name="green")
+    viewer.add_image(data, colormap="blue", name="blue")
 
     # Check that blue is visible
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -27,28 +27,28 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
     # Remove and re-add image
-    viewer.layers.remove('red')
-    viewer.add_image(data, colormap='red', name='red')
+    viewer.layers.remove("red")
+    viewer.add_image(data, colormap="red", name="red")
     # Check that red is visible
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
     # Remove two other images
-    viewer.layers.remove('green')
-    viewer.layers.remove('blue')
+    viewer.layers.remove("green")
+    viewer.layers.remove("blue")
     # Check that red is still visible
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
     # Add two other layers back
-    viewer.add_image(data, colormap='green', name='green')
-    viewer.add_image(data, colormap='blue', name='blue')
+    viewer.add_image(data, colormap="green", name="green")
+    viewer.add_image(data, colormap="blue", name="blue")
     # Check that blue is visible
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
     # Hide blue
-    viewer.layers['blue'].visible = False
+    viewer.layers["blue"].visible = False
     # Check that green is visible. Note this assert was failing before #1463
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 0, 255])
@@ -61,8 +61,8 @@ def test_z_order_images(make_napari_viewer):
     data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
-    viewer.add_image(data, colormap='red')
-    viewer.add_image(data, colormap='blue')
+    viewer.add_image(data, colormap="red")
+    viewer.add_image(data, colormap="blue")
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that blue is visible
@@ -82,8 +82,8 @@ def test_z_order_image_points(make_napari_viewer):
     data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
-    viewer.add_image(data, colormap='red')
-    viewer.add_points([5, 5], face_color='blue', size=10)
+    viewer.add_image(data, colormap="red")
+    viewer.add_points([5, 5], face_color="blue", size=10)
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that blue is visible
@@ -103,8 +103,8 @@ def test_z_order_images_after_ndisplay(make_napari_viewer):
     data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
-    viewer.add_image(data, colormap='red')
-    viewer.add_image(data, colormap='blue')
+    viewer.add_image(data, colormap="red")
+    viewer.add_image(data, colormap="blue")
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that blue is visible
@@ -125,7 +125,7 @@ def test_z_order_images_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@pytest.mark.skip('Image is 1 pixel thick in 3D, so point is swallowed')
+@pytest.mark.skip("Image is 1 pixel thick in 3D, so point is swallowed")
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_napari_viewer):
@@ -133,8 +133,8 @@ def test_z_order_image_points_after_ndisplay(make_napari_viewer):
     data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
-    viewer.add_image(data, colormap='red')
-    viewer.add_points([5, 5], face_color='blue', size=5)
+    viewer.add_image(data, colormap="red")
+    viewer.add_points([5, 5], face_color="blue", size=5)
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that blue is visible
@@ -168,7 +168,7 @@ def test_changing_image_colormap(make_napari_viewer):
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     np.testing.assert_almost_equal(screenshot[center], [255, 255, 255, 255])
 
-    layer.colormap = 'red'
+    layer.colormap = "red"
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
@@ -176,7 +176,7 @@ def test_changing_image_colormap(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
-    layer.colormap = 'blue'
+    layer.colormap = "blue"
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
@@ -223,7 +223,7 @@ def test_grid_mode(make_napari_viewer):
 
     # Add images
     data = np.ones((6, 15, 15))
-    viewer.add_image(data, channel_axis=0, blending='translucent')
+    viewer.add_image(data, channel_axis=0, blending="translucent")
 
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
@@ -327,13 +327,13 @@ def test_changing_image_attenuation(make_napari_viewer):
     viewer.add_image(data, contrast_limits=[0, 1])
 
     # normal mip
-    viewer.layers[0].rendering = 'mip'
+    viewer.layers[0].rendering = "mip"
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     mip_value = screenshot[center][0]
 
     # zero attenuation (still attenuated!)
-    viewer.layers[0].rendering = 'attenuated_mip'
+    viewer.layers[0].rendering = "attenuated_mip"
     viewer.layers[0].attenuation = 0.0
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     zero_att_value = screenshot[center][0]
@@ -364,12 +364,12 @@ def test_labels_painting(make_napari_viewer):
 
     # Enter paint mode
     viewer.cursor.position = (0, 0)
-    layer.mode = 'paint'
+    layer.mode = "paint"
     layer.selected_label = 3
 
     # Simulate click
     event = read_only_mouse_event(
-        type='mouse_press',
+        type="mouse_press",
         is_dragging=False,
         position=viewer.cursor.position,
     )
@@ -379,7 +379,7 @@ def test_labels_painting(make_napari_viewer):
 
     # Simulate drag
     event = read_only_mouse_event(
-        type='mouse_move',
+        type="mouse_move",
         is_dragging=True,
         position=viewer.cursor.position,
     )
@@ -387,7 +387,7 @@ def test_labels_painting(make_napari_viewer):
 
     # Simulate release
     event = read_only_mouse_event(
-        type='mouse_release',
+        type="mouse_release",
         is_dragging=False,
         position=viewer.cursor.position,
     )
@@ -395,7 +395,7 @@ def test_labels_painting(make_napari_viewer):
     mouse_release_callbacks(layer, event)
 
     event = read_only_mouse_event(
-        type='mouse_press',
+        type="mouse_press",
         is_dragging=False,
         position=viewer.cursor.position,
     )
@@ -486,7 +486,7 @@ def test_screenshot_has_no_border(make_napari_viewer):
     """See https://github.com/napari/napari/issues/3357"""
     viewer = make_napari_viewer(show=True)
     image_data = np.ones((60, 80))
-    viewer.add_image(image_data, colormap='red')
+    viewer.add_image(image_data, colormap="red")
     # Zoom in dramatically to make the screenshot all red.
     viewer.camera.zoom = 1000
 
@@ -512,14 +512,14 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     viewer.camera.zoom = 1
 
     # check that additive behaves correctly with black canvas
-    img1_layer.blending = 'additive'
-    img2_layer.blending = 'additive'
+    img1_layer.blending = "additive"
+    img2_layer.blending = "additive"
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_array_equal(screenshot[:, :, 0], img1 + img2)
 
     # minimum should not result in black background if canvas is black
-    img1_layer.blending = 'minimum'
-    img2_layer.blending = 'minimum'
+    img1_layer.blending = "minimum"
+    img2_layer.blending = "minimum"
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_array_equal(screenshot[:, :, 0], np.minimum(img1, img2))
     # toggle visibility of bottom layer
@@ -527,12 +527,12 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_array_equal(screenshot[:, :, 0], img2)
     # and canvas should not affect the above results
-    viewer.window._qt_viewer.canvas.bgcolor = 'white'
+    viewer.window._qt_viewer.canvas.bgcolor = "white"
 
     # check that additive behaves correctly, despite white canvas
     img1_layer.visible = True
-    img1_layer.blending = 'additive'
-    img2_layer.blending = 'additive'
+    img1_layer.blending = "additive"
+    img2_layer.blending = "additive"
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_array_equal(screenshot[:, :, 0], img1 + img2)
     # toggle visibility of bottom layer
@@ -541,7 +541,7 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     np.testing.assert_array_equal(screenshot[:, :, 0], img2)
     # minimum should always work with white canvas bgcolor
     img1_layer.visible = True
-    img1_layer.blending = 'minimum'
-    img2_layer.blending = 'minimum'
+    img1_layer.blending = "minimum"
+    img2_layer.blending = "minimum"
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_array_equal(screenshot[:, :, 0], np.minimum(img1, img2))

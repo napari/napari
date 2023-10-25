@@ -40,7 +40,7 @@ def test_screenshot_save(qtbot, tmp_path, filename):
     dialog.show()
 
     # check dialog and set filename
-    assert dialog.windowTitle() == 'Save screenshot'
+    assert dialog.windowTitle() == "Save screenshot"
     line_edit = dialog.findChild(QLineEdit)
     line_edit.setText(filename)
 
@@ -51,7 +51,7 @@ def test_screenshot_save(qtbot, tmp_path, filename):
     assert not qt_overwrite_shown, "Qt non-native overwrite message was shown!"
 
     # check the file was created
-    save_filename = filename if '.' in filename else f'{filename}.png'
+    save_filename = filename if "." in filename else f"{filename}.png"
     qtbot.waitUntil((tmp_path / save_filename).exists)
 
 
@@ -85,7 +85,7 @@ def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
     dialog.show()
 
     # check dialog, set filename and trigger accept logic
-    assert dialog.windowTitle() == 'Save screenshot'
+    assert dialog.windowTitle() == "Save screenshot"
     line_edit = dialog.findChild(QLineEdit)
     line_edit.setText("test")
     dialog.accept()

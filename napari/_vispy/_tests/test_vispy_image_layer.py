@@ -9,7 +9,7 @@ from napari.components.dims import Dims
 from napari.layers import Image
 
 
-@pytest.mark.parametrize('order', permutations((0, 1, 2)))
+@pytest.mark.parametrize("order", permutations((0, 1, 2)))
 def test_3d_slice_of_2d_image_with_order(order):
     """See https://github.com/napari/napari/issues/4926
 
@@ -25,7 +25,7 @@ def test_3d_slice_of_2d_image_with_order(order):
     np.testing.assert_array_equal((4, 4, 1), scene_size)
 
 
-@pytest.mark.parametrize('order', permutations((0, 1, 2)))
+@pytest.mark.parametrize("order", permutations((0, 1, 2)))
 def test_2d_slice_of_3d_image_with_order(order):
     """See https://github.com/napari/napari/issues/4926
 
@@ -41,7 +41,7 @@ def test_2d_slice_of_3d_image_with_order(order):
     np.testing.assert_array_equal((8, 8, 0), scene_size)
 
 
-@pytest.mark.parametrize('order', permutations((0, 1, 2)))
+@pytest.mark.parametrize("order", permutations((0, 1, 2)))
 def test_3d_slice_of_3d_image_with_order(order):
     """See https://github.com/napari/napari/issues/4926
 
@@ -57,7 +57,7 @@ def test_3d_slice_of_3d_image_with_order(order):
     np.testing.assert_array_equal((8, 8, 8), scene_size)
 
 
-@pytest.mark.parametrize('order', permutations((0, 1, 2, 3)))
+@pytest.mark.parametrize("order", permutations((0, 1, 2, 3)))
 def test_3d_slice_of_4d_image_with_order(order):
     """See https://github.com/napari/napari/issues/4926
 

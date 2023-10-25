@@ -65,14 +65,14 @@ class progress(tqdm):
     # this evented *class* attribute, accessed through `progress._all_instances`
     # this allows the ActivityDialog to find out about new progress objects and
     # hook up GUI progress bars to its update events
-    _all_instances: EventedSet['progress'] = EventedSet()
+    _all_instances: EventedSet["progress"] = EventedSet()
 
     def __init__(
         self,
         iterable: Optional[Iterable] = None,
         desc: Optional[str] = None,
         total: Optional[int] = None,
-        nest_under: Optional['progress'] = None,
+        nest_under: Optional["progress"] = None,
         *args,
         **kwargs,
     ) -> None:
@@ -117,7 +117,7 @@ class progress(tqdm):
             super().display(msg, pos)
             return
         # TODO: This could break if user is formatting their own terminal tqdm
-        etas = str(self).split('|')[-1] if self.total != 0 else ""
+        etas = str(self).split("|")[-1] if self.total != 0 else ""
         self.events.eta(value=etas)
 
     def update(self, n=1):
@@ -191,7 +191,7 @@ class cancelable_progress(progress):
         iterable: Optional[Iterable] = None,
         desc: Optional[str] = None,
         total: Optional[int] = None,
-        nest_under: Optional['progress'] = None,
+        nest_under: Optional["progress"] = None,
         cancel_callback: Optional[Callable] = None,
         *args,
         **kwargs,

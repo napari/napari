@@ -23,12 +23,12 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
 
     def __setattr__(self, name, val):
         if (
-            name not in ('__wrapped__', '_self_exceptions')
+            name not in ("__wrapped__", "_self_exceptions")
             and name not in self._self_exceptions
         ):
             raise TypeError(
                 trans._(
-                    'cannot set attribute {name}',
+                    "cannot set attribute {name}",
                     deferred=True,
                     name=name,
                 )
@@ -39,12 +39,12 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     def __setitem__(self, name, val):
         if name not in self._self_exceptions:
             raise TypeError(
-                trans._('cannot set item {name}', deferred=True, name=name)
+                trans._("cannot set item {name}", deferred=True, name=name)
             )
         super().__setitem__(name, val)
 
 
-_SUNDER = re.compile('^_[^_]')
+_SUNDER = re.compile("^_[^_]")
 
 
 class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
@@ -55,7 +55,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     @staticmethod
     def _is_private_attr(name: str) -> bool:
         return name.startswith("_") and not (
-            name.startswith('__') and name.endswith('__')
+            name.startswith("__") and name.endswith("__")
         )
 
     @staticmethod
@@ -150,18 +150,18 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         return [x for x in dir(self.__wrapped__) if not _SUNDER.match(x)]
 
     @classmethod
-    def create(cls, obj: Any) -> Union['PublicOnlyProxy', Any]:
+    def create(cls, obj: Any) -> Union["PublicOnlyProxy", Any]:
         # restrict the scope of this proxy to napari objects
-        if type(obj).__name__ == 'method':
+        if type(obj).__name__ == "method":
             # If the given object is a method, we check the module *of the
             # object to which that method is bound*. Otherwise, the module of a
             # method is just builtins!
-            mod = getattr(type(obj.__self__), '__module__', None) or ''
+            mod = getattr(type(obj.__self__), "__module__", None) or ""
         else:
             # Otherwise, the module is of an object just given by the
             # __module__ attribute.
-            mod = getattr(type(obj), '__module__', None) or ''
-        if not mod.startswith('napari'):
+            mod = getattr(type(obj), "__module__", None) or ""
+        if not mod.startswith("napari"):
             return obj
         if isinstance(obj, PublicOnlyProxy):
             return obj  # don't double-wrap

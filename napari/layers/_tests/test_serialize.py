@@ -6,7 +6,7 @@ import pytest
 from napari._tests.utils import are_objects_equal, layer_test_data
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize("Layer, data, ndim", layer_test_data)
 def test_attrs_arrays(Layer, data, ndim):
     """Test layer attributes and arrays."""
     np.random.seed(0)
@@ -37,7 +37,7 @@ def test_attrs_arrays(Layer, data, ndim):
         )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize("Layer, data, ndim", layer_test_data)
 def test_no_callbacks(Layer, data, ndim):
     """Test no internal callbacks for layer emitters."""
     layer = Layer(data)

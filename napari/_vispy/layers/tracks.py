@@ -113,7 +113,7 @@ class VispyTracksLayer(VispyBaseLayer):
             pos=self.layer._view_graph,
             connect=self.layer.graph_connex,
             width=self.layer.tail_width,
-            color='white',
+            color="white",
         )
 
         # Call to update order of translation values with new dims:

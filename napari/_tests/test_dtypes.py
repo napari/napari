@@ -19,7 +19,7 @@ dtypes = [
 ]
 
 
-@pytest.mark.parametrize('dtype', dtypes)
+@pytest.mark.parametrize("dtype", dtypes)
 def test_image_dytpes(dtype):
     """Test different dtype images."""
     np.random.seed(0)

@@ -54,7 +54,7 @@ def create_qt_layer_controls(layer):
     if not candidates:
         raise TypeError(
             trans._(
-                'Could not find QtControls for layer of type {type_}',
+                "Could not find QtControls for layer of type {type_}",
                 deferred=True,
                 type_=type(layer),
             )

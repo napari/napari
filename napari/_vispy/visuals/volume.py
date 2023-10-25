@@ -192,12 +192,12 @@ TRANSLUCENT_CATEGORICAL_SNIPPETS = {
 }
 
 shaders = BaseVolume._shaders.copy()
-before, after = shaders['fragment'].split('void main()')
-shaders['fragment'] = before + FUNCTION_DEFINITIONS + 'void main()' + after
+before, after = shaders["fragment"].split("void main()")
+shaders["fragment"] = before + FUNCTION_DEFINITIONS + "void main()" + after
 
 rendering_methods = BaseVolume._rendering_methods.copy()
-rendering_methods['iso_categorical'] = ISO_CATEGORICAL_SNIPPETS
-rendering_methods['translucent_categorical'] = TRANSLUCENT_CATEGORICAL_SNIPPETS
+rendering_methods["iso_categorical"] = ISO_CATEGORICAL_SNIPPETS
+rendering_methods["translucent_categorical"] = TRANSLUCENT_CATEGORICAL_SNIPPETS
 
 
 class Volume(BaseVolume):

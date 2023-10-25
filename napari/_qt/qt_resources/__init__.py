@@ -4,11 +4,11 @@ from typing import Dict, List, Optional
 from napari._qt.qt_resources._svg import QColoredSVGIcon
 from napari.settings import get_settings
 
-__all__ = ['get_stylesheet', 'QColoredSVGIcon']
+__all__ = ["get_stylesheet", "QColoredSVGIcon"]
 
 
-STYLE_PATH = (Path(__file__).parent / 'styles').resolve()
-STYLES = {x.stem: str(x) for x in STYLE_PATH.iterdir() if x.suffix == '.qss'}
+STYLE_PATH = (Path(__file__).parent / "styles").resolve()
+STYLES = {x.stem: str(x) for x in STYLE_PATH.iterdir() if x.suffix == ".qss"}
 
 
 def get_stylesheet(
@@ -36,7 +36,7 @@ def get_stylesheet(
     css : str
         The combined stylesheet.
     """
-    stylesheet = ''
+    stylesheet = ""
     for key in sorted(STYLES.keys()):
         file = STYLES[key]
         with open(file) as f:

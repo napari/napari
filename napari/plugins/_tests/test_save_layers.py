@@ -31,7 +31,7 @@ def test_save_layer_no_results():
     """Test no layers is not an error, and warns on no results."""
 
     with pytest.warns(UserWarning):
-        result = save_layers('no_layers', [])
+        result = save_layers("no_layers", [])
         assert result == []
 
 
@@ -64,7 +64,7 @@ def test_save_layer_multiple_named_plugin(
     """Test saving multiple layers with a named plugin."""
     layers, _, _, filenames = layer_data_and_types
 
-    path = os.path.join(tmpdir, 'layers_folder')
+    path = os.path.join(tmpdir, "layers_folder")
 
     # Check file does not exist
     assert not os.path.isdir(path)
@@ -81,7 +81,7 @@ def test_save_layer_multiple_named_plugin(
 
     # Check no additional files exist
     assert set(os.listdir(path)) == set(filenames)
-    assert set(os.listdir(tmpdir)) == {'layers_folder'}
+    assert set(os.listdir(tmpdir)) == {"layers_folder"}
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
@@ -91,7 +91,7 @@ def test_save_layer_multiple_no_named_plugin(
     """Test saving multiple layers without naming a plugin."""
     layers, _, _, filenames = layer_data_and_types
 
-    path = os.path.join(tmpdir, 'layers_folder')
+    path = os.path.join(tmpdir, "layers_folder")
 
     # Check file does not exist
     assert not os.path.isdir(path)
@@ -108,4 +108,4 @@ def test_save_layer_multiple_no_named_plugin(
 
     # Check no additional files exist
     assert set(os.listdir(path)) == set(filenames)
-    assert set(os.listdir(tmpdir)) == {'layers_folder'}
+    assert set(os.listdir(tmpdir)) == {"layers_folder"}

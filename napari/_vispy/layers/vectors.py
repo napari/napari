@@ -35,7 +35,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             vertices = vertices[:, ::-1]
 
         if ndisplay == 3 and ndim == 2:
-            vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
+            vertices = np.pad(vertices, ((0, 0), (0, 1)), mode="constant")
 
         self.node.set_data(
             vertices=vertices,
@@ -115,17 +115,17 @@ def generate_vector_meshes_2D(
         Vertex indices that form the mesh triangles
     """
 
-    if vector_style == 'line':
+    if vector_style == "line":
         vertices, triangles = generate_meshes_line_2D(
             vectors, width, length, p
         )
 
-    elif vector_style == 'triangle':
+    elif vector_style == "triangle":
         vertices, triangles = generate_meshes_triangle_2D(
             vectors, width, length, p
         )
 
-    elif vector_style == 'arrow':
+    elif vector_style == "arrow":
         vertices, triangles = generate_meshes_arrow_2D(
             vectors, width, length, p
         )

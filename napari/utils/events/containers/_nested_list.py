@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 NestedIndex = Tuple[Index, ...]
 MaybeNestedIndex = Union[Index, NestedIndex]
-ParentIndex = NewType('ParentIndex', Tuple[int, ...])
+ParentIndex = NewType("ParentIndex", Tuple[int, ...])
 _T = TypeVar("_T")
 
 
@@ -97,7 +97,7 @@ def split_nested_index(index: MaybeNestedIndex) -> tuple[ParentIndex, Index]:
         if any(not isinstance(p, int) for p in first):
             raise ValueError(
                 trans._(
-                    'The parent index must be a tuple of int',
+                    "The parent index must be a tuple of int",
                     deferred=True,
                 )
             )
@@ -187,7 +187,7 @@ class NestableEventedList(EventedList[_T]):
             item: NestableEventedList[_T] = self
             for idx in key:
                 if not isinstance(item, MutableSequence):
-                    raise IndexError(f'index out of range: {key}')
+                    raise IndexError(f"index out of range: {key}")
                 item = item[idx]
             return item
         return super().__getitem__(key)
@@ -239,11 +239,11 @@ class NestableEventedList(EventedList[_T]):
 
     def _reemit_child_event(self, event: Event):
         """An item in the list emitted an event.  Re-emit with index"""
-        if hasattr(event, 'index'):
+        if hasattr(event, "index"):
             # This event is coming from a nested List...
             # update the index as a nested index.
             ei = (self.index(event.source), *ensure_tuple_index(event.index))
-            for attr in ('index', 'new_index'):
+            for attr in ("index", "new_index"):
                 if hasattr(event, attr):
                     setattr(event, attr, ei)
 
@@ -256,7 +256,7 @@ class NestableEventedList(EventedList[_T]):
 
         # same as normal evented_list, but now we need to account for the
         # potentially different emitter
-        if not hasattr(event, 'index'):
+        if not hasattr(event, "index"):
             with contextlib.suppress(ValueError):
                 event.index = self.index(event.source)
 
@@ -465,7 +465,7 @@ class NestableEventedList(EventedList[_T]):
             if not isinstance(e, _types):
                 raise TypeError(
                     trans._(
-                        'Cannot add object with type {dtype!r} to TypedList expecting type {types_!r}',
+                        "Cannot add object with type {dtype!r} to TypedList expecting type {types_!r}",
                         deferred=True,
                         dtype=type(e),
                         types_=_types,

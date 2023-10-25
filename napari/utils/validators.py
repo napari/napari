@@ -52,7 +52,7 @@ def validate_n_seq(n: int, dtype=None):
 
         if isinstance(obj, Generator):
             return
-        if not (isinstance(obj, Collection) and hasattr(obj, '__getitem__')):
+        if not (isinstance(obj, Collection) and hasattr(obj, "__getitem__")):
             raise TypeError(
                 trans._(
                     "object '{obj}' is not an indexable collection (list, tuple, or np.array), of length {number}",

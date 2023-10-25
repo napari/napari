@@ -164,12 +164,12 @@ def list_pr_for_branch(branch_name: str, access_token: str, repo=""):
     """
     check if PR for branch exists
     """
-    org_name = repo.split('/')[0]
+    org_name = repo.split("/")[0]
     url = f"{BASE_URL}/repos/{repo}/pulls?state=open&head={org_name}:{branch_name}"
     response = requests.get(url)
     response.raise_for_status()
     if response.json():
-        return response.json()[0]['number']
+        return response.json()[0]["number"]
     return None
 
 
@@ -236,7 +236,7 @@ def update_pr(branch_name: str):
     """
     pr_number = get_pr_number()
 
-    target_repo = os.environ.get('FULL_NAME')
+    target_repo = os.environ.get("FULL_NAME")
 
     new_branch_name = f"auto-update-dependencies/{target_repo}/{branch_name}"
 

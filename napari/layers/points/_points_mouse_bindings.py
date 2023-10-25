@@ -24,7 +24,7 @@ def select(layer, event):
     """
     # on press
     modify_selection = (
-        'Shift' in event.modifiers or 'Control' in event.modifiers
+        "Shift" in event.modifiers or "Control" in event.modifiers
     )
 
     # Get value under the cursor, for points, this is the index of the highlighted
@@ -60,12 +60,12 @@ def select(layer, event):
     yield
 
     # Undo the toggle selected in case of a mouse move with modifiers
-    if modify_selection and value is not None and event.type == 'mouse_move':
+    if modify_selection and value is not None and event.type == "mouse_move":
         layer.selected_data = _toggle_selected(layer.selected_data, value)
 
     is_moving = False
     # on move
-    while event.type == 'mouse_move':
+    while event.type == "mouse_move":
         coordinates = layer.world_to_data(event.position)
         # If not holding modifying selection and points selected then drag them
         if not modify_selection and len(layer.selected_data) > 0:
@@ -126,7 +126,7 @@ def add(layer, event):
     dist = 0
     yield
 
-    while event.type == 'mouse_move':
+    while event.type == "mouse_move":
         dist = np.linalg.norm(start_pos - event.pos)
         if dist < DRAG_DIST_THRESHOLD:
             # prevent vispy from moving the canvas if we're below threshold

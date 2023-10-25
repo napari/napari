@@ -16,7 +16,7 @@ def assert_progress_added_to_all(prog):
 def test_progress_with_iterable():
     """Test typical iterable is correctly built"""
     r = range(100)
-    pbr = progress(r, desc='iterable')
+    pbr = progress(r, desc="iterable")
     assert pbr.iterable is r
     assert pbr.n == 0
 
@@ -27,7 +27,7 @@ def test_progress_with_iterable():
 def test_progress_with_ndarray():
     """Test 2D ndarray is correctly built"""
     iter_ = np.random.random((100, 100))
-    pbr = progress(iter_, desc='ndarray')
+    pbr = progress(iter_, desc="ndarray")
 
     assert pbr.iterable is iter_
     assert pbr.n == 0
@@ -38,7 +38,7 @@ def test_progress_with_ndarray():
 
 def test_progress_with_total():
     """Test progress with total not iterable, and manual updates"""
-    pbr = progress(total=5, desc='total')
+    pbr = progress(total=5, desc="total")
 
     assert pbr.n == 0
     pbr.update(1)
@@ -50,7 +50,7 @@ def test_progress_with_total():
 
 def test_progress_with_context():
     """Test context manager works as expected"""
-    with progress(range(100), desc='context') as pbr:
+    with progress(range(100), desc="context") as pbr:
         assert pbr in progress._all_instances
         assert pbr.n == 0
     assert pbr not in progress._all_instances
@@ -58,7 +58,7 @@ def test_progress_with_context():
 
 def test_progress_update():
     """Test update with different values"""
-    pbr = progress(total=10, desc='update')
+    pbr = progress(total=10, desc="update")
     assert pbr.n == 0
 
     pbr.update(1)

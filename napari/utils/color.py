@@ -26,7 +26,7 @@ class ColorValue(np.ndarray):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: ColorValueParam) -> 'ColorValue':
+    def validate(cls, value: ColorValueParam) -> "ColorValue":
         """Validates and coerces the given value into an array storing one color.
 
         Parameters
@@ -93,7 +93,7 @@ class ColorArray(np.ndarray):
         return super().__sizeof__() + self.nbytes
 
     @classmethod
-    def validate(cls, value: ColorArrayParam) -> 'ColorArray':
+    def validate(cls, value: ColorArrayParam) -> "ColorArray":
         """Validates and coerces the given value into an array storing many colors.
 
         Parameters

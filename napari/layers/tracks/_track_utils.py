@@ -179,8 +179,8 @@ class TrackManager:
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         self._feature_table.reorder(self._order)
-        if 'track_id' not in self._feature_table.values:
-            self._feature_table.values['track_id'] = self.track_ids
+        if "track_id" not in self._feature_table.values:
+            self._feature_table.values["track_id"] = self.track_ids
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -225,13 +225,13 @@ class TrackManager:
 
         if data.ndim != 2:
             raise ValueError(
-                trans._('track vertices should be a NxD array', deferred=True)
+                trans._("track vertices should be a NxD array", deferred=True)
             )
 
         if data.shape[1] < 4 or data.shape[1] > 5:
             raise ValueError(
                 trans._(
-                    'track vertices should be 4 or 5-dimensional',
+                    "track vertices should be 4 or 5-dimensional",
                     deferred=True,
                 )
             )
@@ -240,13 +240,13 @@ class TrackManager:
         ids = data[:, 0]
         if not np.array_equal(np.floor(ids), ids):
             raise ValueError(
-                trans._('track id must be an integer', deferred=True)
+                trans._("track id must be an integer", deferred=True)
             )
 
         if not all(t >= 0 for t in data[:, 1]):
             raise ValueError(
                 trans._(
-                    'track timestamps must be greater than zero', deferred=True
+                    "track timestamps must be greater than zero", deferred=True
                 )
             )
 
@@ -275,7 +275,7 @@ class TrackManager:
                 if node not in unique_track_ids:
                     raise ValueError(
                         trans._(
-                            'graph node {node_idx} not found',
+                            "graph node {node_idx} not found",
                             deferred=True,
                             node_idx=node_idx,
                         )
@@ -340,7 +340,7 @@ class TrackManager:
         if color_by not in self.properties:
             raise ValueError(
                 trans._(
-                    'Property {color_by} not found',
+                    "Property {color_by} not found",
                     deferred=True,
                     color_by=color_by,
                 )
@@ -424,6 +424,6 @@ class TrackManager:
         else:
             lookup = self._points_lookup[current_time]
             pos = self._points[lookup, ...]
-            lbl = [f'ID:{i}' for i in self._points_id[lookup]]
+            lbl = [f"ID:{i}" for i in self._points_id[lookup]]
 
         return lbl, pos

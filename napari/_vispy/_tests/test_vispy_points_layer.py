@@ -16,38 +16,38 @@ def test_VispyPointsLayer(opacity):
 def test_remove_selected_with_derived_text():
     """See https://github.com/napari/napari/issues/3504"""
     points = np.random.rand(3, 2)
-    properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = Points(points, text='class', properties=properties)
+    properties = {"class": np.array(["A", "B", "C"])}
+    layer = Points(points, text="class", properties=properties)
     vispy_layer = VispyPointsLayer(layer)
     text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
+    np.testing.assert_array_equal(text_node.text, ["A", "B", "C"])
 
     layer.selected_data = {1}
     layer.remove_selected()
 
-    np.testing.assert_array_equal(text_node.text, ['A', 'C'])
+    np.testing.assert_array_equal(text_node.text, ["A", "C"])
 
 
 def test_change_text_updates_node_string():
     points = np.random.rand(3, 2)
     properties = {
-        'class': np.array(['A', 'B', 'C']),
-        'name': np.array(['D', 'E', 'F']),
+        "class": np.array(["A", "B", "C"]),
+        "name": np.array(["D", "E", "F"]),
     }
-    layer = Points(points, text='class', properties=properties)
+    layer = Points(points, text="class", properties=properties)
     vispy_layer = VispyPointsLayer(layer)
     text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(text_node.text, properties['class'])
+    np.testing.assert_array_equal(text_node.text, properties["class"])
 
-    layer.text = 'name'
+    layer.text = "name"
 
-    np.testing.assert_array_equal(text_node.text, properties['name'])
+    np.testing.assert_array_equal(text_node.text, properties["name"])
 
 
 def test_change_text_color_updates_node_color():
     points = np.random.rand(3, 2)
-    properties = {'class': np.array(['A', 'B', 'C'])}
-    text = {'string': 'class', 'color': [1, 0, 0]}
+    properties = {"class": np.array(["A", "B", "C"])}
+    text = {"string": "class", "color": [1, 0, 0]}
     layer = Points(points, text=text, properties=properties)
     vispy_layer = VispyPointsLayer(layer)
     text_node = vispy_layer._get_text_node()
@@ -60,29 +60,29 @@ def test_change_text_color_updates_node_color():
 
 def test_change_properties_updates_node_strings():
     points = np.random.rand(3, 2)
-    properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = Points(points, properties=properties, text='class')
+    properties = {"class": np.array(["A", "B", "C"])}
+    layer = Points(points, properties=properties, text="class")
     vispy_layer = VispyPointsLayer(layer)
     text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
+    np.testing.assert_array_equal(text_node.text, ["A", "B", "C"])
 
-    layer.properties = {'class': np.array(['D', 'E', 'F'])}
+    layer.properties = {"class": np.array(["D", "E", "F"])}
 
-    np.testing.assert_array_equal(text_node.text, ['D', 'E', 'F'])
+    np.testing.assert_array_equal(text_node.text, ["D", "E", "F"])
 
 
 def test_update_property_value_then_refresh_text_updates_node_strings():
     points = np.random.rand(3, 2)
-    properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = Points(points, properties=properties, text='class')
+    properties = {"class": np.array(["A", "B", "C"])}
+    layer = Points(points, properties=properties, text="class")
     vispy_layer = VispyPointsLayer(layer)
     text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
+    np.testing.assert_array_equal(text_node.text, ["A", "B", "C"])
 
-    layer.properties['class'][1] = 'D'
+    layer.properties["class"][1] = "D"
     layer.refresh_text()
 
-    np.testing.assert_array_equal(text_node.text, ['A', 'D', 'C'])
+    np.testing.assert_array_equal(text_node.text, ["A", "D", "C"])
 
 
 def test_change_canvas_size_limits():
@@ -98,7 +98,7 @@ def test_change_canvas_size_limits():
 
 def test_text_with_non_empty_constant_string():
     points = np.random.rand(3, 2)
-    layer = Points(points, text={'string': {'constant': 'a'}})
+    layer = Points(points, text={"string": {"constant": "a"}})
 
     vispy_layer = VispyPointsLayer(layer)
 
@@ -106,7 +106,7 @@ def test_text_with_non_empty_constant_string():
     # Vispy cannot broadcast a constant string and assert_array_equal
     # automatically broadcasts, so explicitly check length.
     assert len(text_node.text) == 3
-    np.testing.assert_array_equal(text_node.text, ['a', 'a', 'a'])
+    np.testing.assert_array_equal(text_node.text, ["a", "a", "a"])
 
     # Ensure we do position calculation for constants.
     # See https://github.com/napari/napari/issues/5378

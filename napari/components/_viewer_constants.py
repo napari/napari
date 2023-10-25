@@ -13,12 +13,12 @@ class CanvasPosition(StrEnum):
             * bottom_center: Bottom center of the canvas
     """
 
-    TOP_LEFT = 'top_left'
+    TOP_LEFT = "top_left"
     TOP_CENTER = "top_center"
-    TOP_RIGHT = 'top_right'
-    BOTTOM_RIGHT = 'bottom_right'
+    TOP_RIGHT = "top_right"
+    BOTTOM_RIGHT = "bottom_right"
     BOTTOM_CENTER = "bottom_center"
-    BOTTOM_LEFT = 'bottom_left'
+    BOTTOM_LEFT = "bottom_left"
 
 
 class CursorStyle(StrEnum):
@@ -37,11 +37,11 @@ class CursorStyle(StrEnum):
             # crosshair: A crosshair
     """
 
-    SQUARE = 'square'
-    CIRCLE = 'circle'
-    CIRCLE_FROZEN = 'circle_frozen'
-    CROSS = 'cross'
-    FORBIDDEN = 'forbidden'
-    POINTING = 'pointing'
-    STANDARD = 'standard'
-    CROSSHAIR = 'crosshair'
+    SQUARE = "square"
+    CIRCLE = "circle"
+    CIRCLE_FROZEN = "circle_frozen"
+    CROSS = "cross"
+    FORBIDDEN = "forbidden"
+    POINTING = "pointing"
+    STANDARD = "standard"
+    CROSSHAIR = "crosshair"

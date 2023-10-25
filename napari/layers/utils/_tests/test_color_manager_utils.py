@@ -18,21 +18,21 @@ def test_guess_continuous():
 
 
 def test_is_colormapped_string():
-    color = 'hello'
+    color = "hello"
     properties = {
-        'hello': np.array([1, 1, 1, 1]),
-        'hi': np.array([1, 0, 0, 1]),
+        "hello": np.array([1, 1, 1, 1]),
+        "hi": np.array([1, 0, 0, 1]),
     }
     assert is_color_mapped(color, properties)
-    assert not is_color_mapped('red', properties)
+    assert not is_color_mapped("red", properties)
 
 
 def test_is_colormapped_dict():
     """Colors passed as dicts are treated as colormapped"""
     color = {0: np.array([1, 1, 1, 1]), 1: np.array([1, 1, 0, 1])}
     properties = {
-        'hello': np.array([1, 1, 1, 1]),
-        'hi': np.array([1, 0, 0, 1]),
+        "hello": np.array([1, 1, 1, 1]),
+        "hi": np.array([1, 0, 0, 1]),
     }
     assert is_color_mapped(color, properties)
 
@@ -41,8 +41,8 @@ def test_is_colormapped_array():
     """Colors passed as list/array are treated as not colormapped"""
     color_list = [[1, 1, 1, 1], [1, 1, 0, 1]]
     properties = {
-        'hello': np.array([1, 1, 1, 1]),
-        'hi': np.array([1, 0, 0, 1]),
+        "hello": np.array([1, 1, 1, 1]),
+        "hi": np.array([1, 0, 0, 1]),
     }
     assert not is_color_mapped(color_list, properties)
 

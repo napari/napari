@@ -31,7 +31,7 @@ def test_adding_layer():
 
     # LayerList should err if you add anything other than a layer
     with pytest.raises(TypeError):
-        layers.append('something')
+        layers.append("something")
 
     assert len(layers) == 1
 
@@ -60,11 +60,11 @@ def test_indexing():
     Test indexing into a LayerList
     """
     layers = LayerList()
-    layer = Image(np.random.random((10, 10)), name='image')
+    layer = Image(np.random.random((10, 10)), name="image")
     layers.append(layer)
 
     assert layers[0] == layer
-    assert layers['image'] == layer
+    assert layers["image"] == layer
 
 
 def test_insert():
@@ -72,8 +72,8 @@ def test_insert():
     Test inserting into a LayerList
     """
     layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)), name='image_a')
-    layer_b = Image(np.random.random((15, 15)), name='image_b')
+    layer_a = Image(np.random.random((10, 10)), name="image_a")
+    layer_b = Image(np.random.random((15, 15)), name="image_b")
     layers.append(layer_a)
     layers.insert(0, layer_b)
 
@@ -85,15 +85,15 @@ def test_get_index():
     Test getting indexing from LayerList
     """
     layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)), name='image_a')
-    layer_b = Image(np.random.random((15, 15)), name='image_b')
+    layer_a = Image(np.random.random((10, 10)), name="image_a")
+    layer_b = Image(np.random.random((15, 15)), name="image_b")
     layers.append(layer_a)
     layers.append(layer_b)
 
     assert layers.index(layer_a) == 0
-    assert layers.index('image_a') == 0
+    assert layers.index("image_a") == 0
     assert layers.index(layer_b) == 1
-    assert layers.index('image_b') == 1
+    assert layers.index("image_b") == 1
 
 
 def test_reordering():
@@ -101,9 +101,9 @@ def test_reordering():
     Test indexing into a LayerList by name
     """
     layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)), name='image_a')
-    layer_b = Image(np.random.random((15, 15)), name='image_b')
-    layer_c = Image(np.random.random((15, 15)), name='image_c')
+    layer_a = Image(np.random.random((10, 10)), name="image_a")
+    layer_b = Image(np.random.random((15, 15)), name="image_b")
+    layer_c = Image(np.random.random((15, 15)), name="image_c")
     layers.append(layer_a)
     layers.append(layer_b)
     layers.append(layer_c)
@@ -152,7 +152,7 @@ def test_remove_selected():
     assert len(layers) == 0
 
 
-@pytest.mark.filterwarnings('ignore::FutureWarning')
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_move_selected():
     """
     Test removing selected layers
@@ -324,13 +324,13 @@ def test_toggle_visibility():
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
-@pytest.mark.filterwarnings('ignore:distutils Version classes are deprecated')
+@pytest.mark.filterwarnings("ignore:distutils Version classes are deprecated")
 def test_layers_save(builtins, tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
 
-    path = os.path.join(tmpdir, 'layers_folder')
+    path = os.path.join(tmpdir, "layers_folder")
 
     # Check folder does not exist
     assert not os.path.isdir(path)
@@ -347,7 +347,7 @@ def test_layers_save(builtins, tmpdir, layer_data_and_types):
 
     # Check no additional files exist
     assert set(os.listdir(path)) == set(filenames)
-    assert set(os.listdir(tmpdir)) == {'layers_folder'}
+    assert set(os.listdir(tmpdir)) == {"layers_folder"}
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
@@ -357,7 +357,7 @@ def test_layers_save_none_selected(builtins, tmpdir, layer_data_and_types):
     layers = LayerList(list_of_layers)
     layers.selection.clear()
 
-    path = os.path.join(tmpdir, 'layers_folder')
+    path = os.path.join(tmpdir, "layers_folder")
 
     # Check folder does not exist
     assert not os.path.isdir(path)
@@ -374,7 +374,7 @@ def test_layers_save_none_selected(builtins, tmpdir, layer_data_and_types):
         assert not os.path.isfile(os.path.join(path, f))
 
     # Check no additional files exist
-    assert set(os.listdir(tmpdir)) == set('')
+    assert set(os.listdir(tmpdir)) == set("")
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
@@ -385,7 +385,7 @@ def test_layers_save_selected(builtins, tmpdir, layer_data_and_types):
     layers.selection.clear()
     layers.selection.update({layers[0], layers[2]})
 
-    path = os.path.join(tmpdir, 'layers_folder')
+    path = os.path.join(tmpdir, "layers_folder")
 
     # Check folder does not exist
     assert not os.path.isdir(path)
@@ -404,17 +404,17 @@ def test_layers_save_selected(builtins, tmpdir, layer_data_and_types):
 
     # Check no additional files exist
     assert set(os.listdir(path)) == {filenames[0], filenames[2]}
-    assert set(os.listdir(tmpdir)) == {'layers_folder'}
+    assert set(os.listdir(tmpdir)) == {"layers_folder"}
 
 
 # the layers fixture is defined in napari/conftest.py
-@pytest.mark.filterwarnings('ignore:`np.int` is a deprecated alias for')
+@pytest.mark.filterwarnings("ignore:`np.int` is a deprecated alias for")
 def test_layers_save_svg(tmpdir, layers, napari_svg_name):
     """Test saving all layer data to an svg."""
     pm = npe2.PluginManager.instance()
-    pm.register(npe2.PluginManifest.from_distribution('napari-svg'))
+    pm.register(npe2.PluginManifest.from_distribution("napari-svg"))
 
-    path = os.path.join(tmpdir, 'layers_file.svg')
+    path = os.path.join(tmpdir, "layers_file.svg")
 
     # Check file does not exist
     assert not os.path.isfile(path)
@@ -521,7 +521,7 @@ def test_name_uniqueness():
     layers.append(Image(np.random.random((10, 15)), name="Image [1]"))
     layers.append(Image(np.random.random((10, 15)), name="Image"))
     layers.append(Image(np.random.random((10, 15)), name="Image"))
-    assert [x.name for x in layers] == ['Image [1]', 'Image', 'Image [2]']
+    assert [x.name for x in layers] == ["Image [1]", "Image", "Image [2]"]
 
 
 def test_readd_layers():

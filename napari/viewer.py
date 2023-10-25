@@ -33,16 +33,16 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: 'Window' = None  # type: ignore
+    _window: "Window" = None  # type: ignore
     if sys.version_info < (3, 9):
         _instances: typing.ClassVar[WeakSet] = WeakSet()
     else:
-        _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
+        _instances: typing.ClassVar[WeakSet["Viewer"]] = WeakSet()
 
     def __init__(
         self,
         *,
-        title='napari',
+        title="napari",
         ndisplay=2,
         order=(),
         axis_labels=(),
@@ -71,7 +71,7 @@ class Viewer(ViewerModel):
 
     # Expose private window publically. This is needed to keep window off pydantic model
     @property
-    def window(self) -> 'Window':
+    def window(self) -> "Window":
         return self._window
 
     def update_console(self, variables):

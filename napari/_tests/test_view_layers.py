@@ -29,33 +29,33 @@ for name in dir(module):
         layers.append(obj)
 
 
-@pytest.mark.parametrize('layer', layers, ids=lambda layer: layer.__name__)
+@pytest.mark.parametrize("layer", layers, ids=lambda layer: layer.__name__)
 def test_docstring(layer):
     name = layer.__name__
 
-    method_name = f'add_{camel_to_snake(name)}'
+    method_name = f"add_{camel_to_snake(name)}"
     method = getattr(Viewer, method_name)
 
     method_doc = FunctionDoc(method)
     layer_doc = ClassDoc(layer)
 
     # check summary section
-    method_summary = ' '.join(method_doc['Summary'])  # join multi-line summary
+    method_summary = " ".join(method_doc["Summary"])  # join multi-line summary
 
-    summary_format = 'Add an? .+? layer to the layer list.'
+    summary_format = "Add an? .+? layer to the layer list."
 
     assert re.match(
         summary_format, method_summary
     ), f"improper 'Summary' section of '{method_name}'"
 
     # check parameters section
-    method_params = method_doc['Parameters']
-    layer_params = layer_doc['Parameters']
+    method_params = method_doc["Parameters"]
+    layer_params = layer_doc["Parameters"]
 
     # Remove path parameter from viewer method if it exists
-    method_params = [m for m in method_params if m.name != 'path']
+    method_params = [m for m in method_params if m.name != "path"]
 
-    if name == 'Image':
+    if name == "Image":
         # For Image just test arguments that are in layer are in method
         named_method_params = [m.name for m in method_params]
         for layer_param in layer_params:
@@ -70,10 +70,10 @@ def test_docstring(layer):
 
                 # descriptions are treated as lists where each line is an
                 # element
-                m_description = ' '.join(m_description)
-                l_description = ' '.join(l_description)
+                m_description = " ".join(m_description)
+                l_description = " ".join(l_description)
 
-                assert m_name == l_name, 'different parameter names or order'
+                assert m_name == l_name, "different parameter names or order"
                 assert (
                     m_type == l_type
                 ), f"type mismatch of parameter '{m_name}'"
@@ -87,36 +87,36 @@ def test_docstring(layer):
 
     # check returns section
     (method_returns,) = method_doc[
-        'Returns'
+        "Returns"
     ]  # only one thing should be returned
-    description = ' '.join(method_returns[-1])  # join multi-line description
+    description = " ".join(method_returns[-1])  # join multi-line description
     method_returns = *method_returns[:-1], description
 
-    if name == 'Image':
+    if name == "Image":
         assert method_returns == (
-            'layer',
-            f':class:`napari.layers.{name}` or list',
-            f'The newly-created {name.lower()} layer or list of {name.lower()} layers.',
+            "layer",
+            f":class:`napari.layers.{name}` or list",
+            f"The newly-created {name.lower()} layer or list of {name.lower()} layers.",
         ), f"improper 'Returns' section of '{method_name}'"
     else:
         assert method_returns == (
-            'layer',
-            f':class:`napari.layers.{name}`',
-            f'The newly-created {name.lower()} layer.',
+            "layer",
+            f":class:`napari.layers.{name}`",
+            f"The newly-created {name.lower()} layer.",
         ), f"improper 'Returns' section of '{method_name}'"
 
 
-@pytest.mark.parametrize('layer', layers, ids=lambda layer: layer.__name__)
+@pytest.mark.parametrize("layer", layers, ids=lambda layer: layer.__name__)
 def test_signature(layer):
     name = layer.__name__
 
-    method = getattr(Viewer, f'add_{camel_to_snake(name)}')
+    method = getattr(Viewer, f"add_{camel_to_snake(name)}")
 
     class_parameters = dict(inspect.signature(layer.__init__).parameters)
     method_parameters = dict(inspect.signature(method).parameters)
 
     fail_msg = f"signatures don't match for class {name}"
-    if name == 'Image':
+    if name == "Image":
         # If Image just test that class params appear in method
         for class_param in class_parameters:
             assert class_param in method_parameters, fail_msg
@@ -125,10 +125,10 @@ def test_signature(layer):
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins
-@pytest.mark.parametrize('layer_type, data, ndim', layer_test_data)
+@pytest.mark.parametrize("layer_type, data, ndim", layer_test_data)
 def test_view(qtbot, napari_plugin_manager, layer_type, data, ndim):
     np.random.seed(0)
-    viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
+    viewer = getattr(napari, f"view_{layer_type.__name__.lower()}")(
         data, show=False
     )
     view = viewer.window._qt_viewer
@@ -154,17 +154,17 @@ def test_kwargs_passed(monkeypatch):
     import napari.view_layers
 
     viewer_mock = MagicMock(napari.Viewer)
-    monkeypatch.setattr(napari.view_layers, 'Viewer', viewer_mock)
+    monkeypatch.setattr(napari.view_layers, "Viewer", viewer_mock)
     napari.view_path(
-        path='some/path',
-        title='my viewer',
+        path="some/path",
+        title="my viewer",
         ndisplay=3,
-        name='img name',
+        name="img name",
         scale=(1, 2, 3),
     )
     assert viewer_mock.mock_calls == [
-        call(title='my viewer'),
-        call().open(path='some/path', name='img name', scale=(1, 2, 3)),
+        call(title="my viewer"),
+        call().open(path="some/path", name="img name", scale=(1, 2, 3)),
     ]
 
 

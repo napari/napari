@@ -79,11 +79,11 @@ def test_relative_node_indexing(tree):
     assert root.index_from_root() == ()
     assert root.index_in_parent() is None
     g1 = root[1]
-    assert g1.name == 'g1'
+    assert g1.name == "g1"
     assert g1.index_in_parent() == 1
     assert g1.index_from_root() == (1,)
     g1_1 = g1[1]
-    assert g1_1.name == 'g2'
+    assert g1_1.name == "g2"
     assert g1_1.parent is g1
     assert g1_1.parent.parent is root
     assert g1_1 is tree[1, 1]  # nested index variant
@@ -93,7 +93,7 @@ def test_relative_node_indexing(tree):
     g1_1_0 = g1_1[0]
     assert g1_1_0.index_from_root() == (1, 1, 0)
     assert g1_1_0.index_in_parent() == 0
-    assert g1_1_0.name == '3'
+    assert g1_1_0.name == "3"
     assert g1_1_0 is tree[1, 1, 0]  # nested index variant
 
     g1_1_0.unparent()
@@ -108,45 +108,45 @@ def test_relative_node_indexing(tree):
 def test_traverse(tree):
     """Test depth first traversal."""
     # iterating a group just returns its children
-    assert [x.name for x in tree] == ['1', 'g1', '8', '9']
+    assert [x.name for x in tree] == ["1", "g1", "8", "9"]
     # traversing a group does a depth first traversal, including both groups
     # and nodes
     names = [x.name for x in tree.traverse()]
-    e = ['root', '1', 'g1', '2', 'g2', '3', '4', '5', '6', '7', '8', '9']
+    e = ["root", "1", "g1", "2", "g2", "3", "4", "5", "6", "7", "8", "9"]
     assert names == e
 
     # traversing leaves_only=True returns only the Nodes, not the Groups
     names = [x.name for x in tree.traverse(leaves_only=True)]
-    e = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+    e = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
     assert names == e
 
     assert tree.is_group()
     g1 = tree[1]
     assert g1.parent is tree
-    assert g1.name == 'g1' and g1.is_group()
+    assert g1.name == "g1" and g1.is_group()
     g2 = g1[1]
     assert g2.parent is g1
-    assert g2.name == 'g2' and g2.is_group()
+    assert g2.name == "g2" and g2.is_group()
 
 
 def test_slicing(tree):
     """Indexing into a group returns a group instance."""
     assert tree.is_group()
     slc = tree[::-2]  # take every other item, starting from the end
-    assert [x.name for x in slc] == ['9', 'g1']
+    assert [x.name for x in slc] == ["9", "g1"]
     assert slc.is_group()
-    expected = ['Group', '9', 'g1', '2', 'g2', '3', '4', '5', '6', '7']
+    expected = ["Group", "9", "g1", "2", "g2", "3", "4", "5", "6", "7"]
     assert [x.name for x in slc.traverse()] == expected
 
 
 def test_contains(tree):
     """Test that the ``in`` operator works for nested nodes."""
     g1 = tree[1]
-    assert g1.name == 'g1'
+    assert g1.name == "g1"
     assert g1 in tree
 
     g1_0 = g1[0]
-    assert g1_0.name == '2'
+    assert g1_0.name == "2"
     assert g1_0 in g1
     assert g1_0 in tree
 
@@ -155,12 +155,12 @@ def test_contains(tree):
     assert g1_0.parent is g1
 
     g2 = g1[1]
-    assert g2.name == 'g2'
+    assert g2.name == "g2"
     assert g2.is_group()
     assert g2 in tree
 
     g2_0 = g2[0]
-    assert g2_0.name == '3'
+    assert g2_0.name == "3"
 
 
 def test_deletion(tree):
@@ -174,25 +174,25 @@ def test_deletion(tree):
     assert g1.parent is not tree
     assert g1 not in tree
     # the tree no longer has g1 or any of its children
-    assert [x.name for x in tree.traverse()] == ['root', '1', '8', '9']
+    assert [x.name for x in tree.traverse()] == ["root", "1", "8", "9"]
 
     # g1 remains intact
-    expected = ['g1', '2', 'g2', '3', '4', '5', '6', '7']
+    expected = ["g1", "2", "g2", "3", "4", "5", "6", "7"]
     assert [x.name for x in g1.traverse()] == expected
-    expected = ['2', '3', '4', '5', '6', '7']
+    expected = ["2", "3", "4", "5", "6", "7"]
     assert [x.name for x in g1.traverse(leaves_only=True)] == expected
 
     # we can also delete slices, including extended slices
     del g1[1::2]
     assert n1.parent is g1  # the g1 tree is still intact
-    assert [x.name for x in g1.traverse()] == ['g1', '2', '5', '7']
+    assert [x.name for x in g1.traverse()] == ["g1", "2", "5", "7"]
 
 
 def test_nested_deletion(tree):
     """Test that we can delete nested indices from the root."""
     # a tree is a NestedEventedList, so we can use nested_indices
     node5 = tree[1, 2]
-    assert node5.name == '5'
+    assert node5.name == "5"
     del tree[1, 2]
     assert node5 not in tree
 
@@ -225,12 +225,12 @@ def test_nested_custom_lookup(tree: Group):
 
     # first level
     g1 = tree[1]
-    assert g1.name == 'g1'  # index with integer as usual
+    assert g1.name == "g1"  # index with integer as usual
     assert tree.index("g1") == 1
-    assert tree['g1'] == g1  # index with string also works
+    assert tree["g1"] == g1  # index with string also works
 
     # second level
     g1_2 = g1[2]
-    assert tree[1, 2].name == '5'
-    assert tree.index('5') == (1, 2)
-    assert tree['5'] == g1_2
+    assert tree[1, 2].name == "5"
+    assert tree.index("5") == (1, 2)
+    assert tree["5"] == g1_2

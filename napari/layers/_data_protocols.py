@@ -14,7 +14,7 @@ from typing import (
 from napari.utils.translations import trans
 
 _OBJ_NAMES = set(dir(Protocol))
-_OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})
+_OBJ_NAMES.update({"__annotations__", "__dict__", "__weakref__"})
 
 if TYPE_CHECKING:
     from enum import Enum
@@ -32,7 +32,7 @@ else:
 
 def _raise_protocol_error(obj: Any, protocol: type):
     """Raise a more helpful error when required protocol members are missing."""
-    annotations = getattr(protocol, '__annotations__', {})
+    annotations = getattr(protocol, "__annotations__", {})
     needed = set(dir(protocol)).union(annotations) - _OBJ_NAMES
     missing = needed - set(dir(obj))
     message = trans._(

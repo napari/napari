@@ -252,7 +252,7 @@ def _make_shear_mat(shear):
     if np.isscalar(shear):
         raise ValueError(
             trans._(
-                'Scalars are not valid values for shear. Shear must be an upper triangular vector or square matrix with ones along the main diagonal.',
+                "Scalars are not valid values for shear. Shear must be an upper triangular vector or square matrix with ones along the main diagonal.",
                 deferred=True,
             )
         )
@@ -262,7 +262,7 @@ def _make_shear_mat(shear):
     if not is_matrix_triangular(shear):
         raise ValueError(
             trans._(
-                'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.',
+                "Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.",
                 deferred=True,
                 shear=shear,
             )
@@ -292,7 +292,7 @@ def expand_upper_triangular(vector):
     if np.floor(N) != N:
         raise ValueError(
             trans._(
-                '{number} is a strange number of shear elements',
+                "{number} is a strange number of shear elements",
                 deferred=True,
                 number=n,
             )
@@ -323,7 +323,7 @@ def embed_in_identity_matrix(matrix, ndim):
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
         raise ValueError(
             trans._(
-                'Improper transform matrix {matrix}',
+                "Improper transform matrix {matrix}",
                 deferred=True,
                 matrix=matrix,
             )

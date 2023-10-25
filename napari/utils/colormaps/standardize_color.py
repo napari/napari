@@ -130,7 +130,7 @@ def _handle_list_like(colors: Sequence) -> Optional[np.ndarray]:
         # dtype to avoid the deprecated behavior described in:
         # https://github.com/napari/napari/issues/2791
         num_str = len([c for c in colors if isinstance(c, str)])
-        dtype = 'O' if 0 < num_str < len(colors) else None
+        dtype = "O" if 0 < num_str < len(colors) else None
         color_array = np.atleast_2d(np.asarray(colors, dtype=dtype))
     except ValueError:
         warnings.warn(
@@ -142,11 +142,11 @@ def _handle_list_like(colors: Sequence) -> Optional[np.ndarray]:
         return np.ones((max(len(colors), 1), 4), dtype=np.float32)
 
     # Happy path - converted to a float\integer array
-    if color_array.dtype.kind in ['f', 'i']:
+    if color_array.dtype.kind in ["f", "i"]:
         return _handle_array(color_array)
 
     # User input was an iterable with strings
-    if color_array.dtype.kind in ['U', 'O']:
+    if color_array.dtype.kind in ["U", "O"]:
         return _handle_str_list_like(color_array.ravel())
     return None
 
@@ -171,7 +171,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     kind = colors.dtype.kind
 
     # Object arrays aren't handled by napari
-    if kind == 'O':
+    if kind == "O":
         warnings.warn(
             trans._(
                 "An object array was passed as the color input. Please convert its datatype before sending it to napari. Converting input to a white color array.",
@@ -181,7 +181,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
         return np.ones((max(len(colors), 1), 4), dtype=np.float32)
 
     # An array of strings will be treated as a list if compatible
-    if kind == 'U':
+    if kind == "U":
         if colors.ndim == 1:
             return _handle_str_list_like(colors)
 
@@ -250,7 +250,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
         return np.ones((len(colors), 4), dtype=np.float32)
 
     # Arrays with floats and ints can be safely converted to the proper format
-    if kind in ['f', 'i', 'u']:
+    if kind in ["f", "i", "u"]:
         return _convert_array_to_correct_format(colors)
 
     raise ValueError(
@@ -435,10 +435,10 @@ def _check_color_dim(val):
     if val.shape[1] not in (3, 4):
         strval = str(val)
         if len(strval) > 100:
-            strval = strval[:97] + '...'
+            strval = strval[:97] + "..."
         raise RuntimeError(
             trans._(
-                'Value must have second dimension of size 3 or 4. Got `{val}`, shape={shape}',
+                "Value must have second dimension of size 3 or 4. Got `{val}`, shape={shape}",
                 deferred=True,
                 shape=val.shape,
                 val=strval,
@@ -473,5 +473,5 @@ def rgb_to_hex(rgbs: Sequence) -> np.ndarray:
             f'#{"%02x" * 4}' % tuple((255 * rgb).astype(np.uint8))
             for rgb in rgbs
         ],
-        '|U9',
+        "|U9",
     )

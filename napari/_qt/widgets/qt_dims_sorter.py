@@ -69,7 +69,7 @@ class QtDimsSorter(QWidget):
     https://github.com/jni/zarpaint/blob/main/zarpaint/_dims_chooser.py
     """
 
-    def __init__(self, viewer: 'Viewer', parent=None) -> None:
+    def __init__(self, viewer: "Viewer", parent=None) -> None:
         super().__init__(parent=parent)
         dims = viewer.dims
         root = SelectableEventedList(
@@ -90,10 +90,10 @@ class QtDimsSorter(QWidget):
         self.setLayout(layout)
 
         widget_tooltip = QtToolTipLabel(self)
-        widget_tooltip.setObjectName('help_label')
-        widget_tooltip.setToolTip(trans._('Drag dimensions to reorder.'))
+        widget_tooltip.setObjectName("help_label")
+        widget_tooltip.setToolTip(trans._("Drag dimensions to reorder."))
 
-        widget_title = QLabel(trans._('Dims. Ordering'), self)
+        widget_title = QLabel(trans._("Dims. Ordering"), self)
 
         self.layout().addWidget(widget_title, 0, 0)
         self.layout().addWidget(widget_tooltip, 0, 1)

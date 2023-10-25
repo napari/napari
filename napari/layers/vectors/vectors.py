@@ -182,10 +182,10 @@ class Vectors(Layer):
         properties=None,
         property_choices=None,
         edge_width=1,
-        vector_style='triangle',
-        edge_color='red',
+        vector_style="triangle",
+        edge_color="red",
         edge_color_cycle=None,
-        edge_colormap='viridis',
+        edge_colormap="viridis",
         edge_contrast_limits=None,
         out_of_slice_display=False,
         length=1,
@@ -197,11 +197,11 @@ class Vectors(Layer):
         shear=None,
         affine=None,
         opacity=0.7,
-        blending='translucent',
+        blending="translucent",
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
-        projection_mode='none',
+        projection_mode="none",
     ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -342,7 +342,7 @@ class Vectors(Layer):
                 self._edge.color_properties = None
                 warnings.warn(
                     trans._(
-                        'property used for edge_color dropped',
+                        "property used for edge_color dropped",
                         deferred=True,
                     ),
                     RuntimeWarning,
@@ -351,9 +351,9 @@ class Vectors(Layer):
                 edge_color_name = self._edge.color_properties.name
                 property_values = self.features[edge_color_name].to_numpy()
                 self._edge.color_properties = {
-                    'name': edge_color_name,
-                    'values': property_values,
-                    'current_value': self.feature_defaults[edge_color_name][0],
+                    "name": edge_color_name,
+                    "values": property_values,
+                    "current_value": self.feature_defaults[edge_color_name][0],
                 }
         self.events.properties()
         self.events.features()
@@ -397,22 +397,22 @@ class Vectors(Layer):
         state = self._get_base_state()
         state.update(
             {
-                'length': self.length,
-                'edge_width': self.edge_width,
-                'vector_style': self.vector_style,
-                'edge_color': self.edge_color
+                "length": self.length,
+                "edge_width": self.edge_width,
+                "vector_style": self.vector_style,
+                "edge_color": self.edge_color
                 if self.data.size
                 else [self._edge.current_color],
-                'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap.dict(),
-                'edge_contrast_limits': self.edge_contrast_limits,
-                'data': self.data,
-                'properties': self.properties,
-                'property_choices': self.property_choices,
-                'ndim': self.ndim,
-                'features': self.features,
-                'feature_defaults': self.feature_defaults,
-                'out_of_slice_display': self.out_of_slice_display,
+                "edge_color_cycle": self.edge_color_cycle,
+                "edge_colormap": self.edge_colormap.dict(),
+                "edge_contrast_limits": self.edge_contrast_limits,
+                "data": self.data,
+                "properties": self.properties,
+                "property_choices": self.property_choices,
+                "ndim": self.ndim,
+                "features": self.features,
+                "feature_defaults": self.feature_defaults,
+                "out_of_slice_display": self.out_of_slice_display,
             }
         )
         return state
@@ -549,20 +549,20 @@ class Vectors(Layer):
             if self._edge.color_properties is not None:
                 color_property = self._edge.color_properties.name
             else:
-                color_property = ''
-            if color_property == '':
+                color_property = ""
+            if color_property == "":
                 if self.properties:
                     color_property = next(iter(self.properties))
                     self._edge.color_properties = {
-                        'name': color_property,
-                        'values': self.features[color_property].to_numpy(),
-                        'current_value': self.feature_defaults[color_property][
+                        "name": color_property,
+                        "values": self.features[color_property].to_numpy(),
+                        "current_value": self.feature_defaults[color_property][
                             0
                         ],
                     }
                     warnings.warn(
                         trans._(
-                            'edge_color property was not set, setting to: {color_property}',
+                            "edge_color property was not set, setting to: {color_property}",
                             deferred=True,
                             color_property=color_property,
                         ),
@@ -571,7 +571,7 @@ class Vectors(Layer):
                 else:
                     raise ValueError(
                         trans._(
-                            'There must be a valid Points.properties to use {edge_color_mode}',
+                            "There must be a valid Points.properties to use {edge_color_mode}",
                             deferred=True,
                             edge_color_mode=edge_color_mode,
                         )
@@ -584,7 +584,7 @@ class Vectors(Layer):
             ):
                 raise TypeError(
                     trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
+                        "selected property must be numeric to use ColorMode.COLORMAP",
                         deferred=True,
                     )
                 )
@@ -644,15 +644,15 @@ class Vectors(Layer):
 
         # Generally, several triangles are drawn for each vector,
         # so we need to duplicate the colors accordingly
-        if self.vector_style == 'line':
+        if self.vector_style == "line":
             # Line vectors are drawn with 2 triangles
             face_color = np.repeat(face_color, 2, axis=0)
 
-        elif self.vector_style == 'triangle':
+        elif self.vector_style == "triangle":
             # Triangle vectors are drawn with 1 triangle
             pass  # No need to duplicate colors
 
-        elif self.vector_style == 'arrow':
+        elif self.vector_style == "arrow":
             # Arrow vectors are drawn with 3 triangles
             face_color = np.repeat(face_color, 3, axis=0)
 

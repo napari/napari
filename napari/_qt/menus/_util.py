@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     MenuItem = Union[MenuDict, ActionDict, dict]
 
 
-def populate_menu(menu: QMenu, actions: List['MenuItem']):
+def populate_menu(menu: QMenu, actions: List["MenuItem"]):
     """Populate a QMenu from a declarative list of QAction dicts.
 
     Parameters
@@ -77,8 +77,8 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
             continue
         if not ax.get("when", True):
             continue
-        if 'menu' in ax:
-            sub = ax['menu']
+        if "menu" in ax:
+            sub = ax["menu"]
             if isinstance(sub, QMenu):
                 menu.addMenu(sub)
                 sub.setParent(menu)
@@ -86,25 +86,25 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
                 sub = menu.addMenu(sub)
             populate_menu(sub, ax.get("items", []))
             continue
-        action: QAction = menu.addAction(ax['text'])
-        if 'slot' in ax:
+        action: QAction = menu.addAction(ax["text"])
+        if "slot" in ax:
             if ax.get("checkable"):
-                action.toggled.connect(ax['slot'])
+                action.toggled.connect(ax["slot"])
             else:
-                action.triggered.connect(ax['slot'])
-        action.setShortcut(ax.get('shortcut', ''))
-        action.setStatusTip(ax.get('statusTip', ''))
-        if 'menuRole' in ax:
-            action.setMenuRole(ax['menuRole'])
+                action.triggered.connect(ax["slot"])
+        action.setShortcut(ax.get("shortcut", ""))
+        action.setStatusTip(ax.get("statusTip", ""))
+        if "menuRole" in ax:
+            action.setMenuRole(ax["menuRole"])
         if ax.get("checkable"):
             action.setCheckable(True)
             action.setChecked(ax.get("checked", False))
-            if 'check_on' in ax:
-                emitter = ax['check_on']
+            if "check_on" in ax:
+                emitter = ax["check_on"]
 
                 @emitter.connect
                 def _setchecked(e, action=action):
-                    action.setChecked(e.value if hasattr(e, 'value') else e)
+                    action.setChecked(e.value if hasattr(e, "value") else e)
 
         action.setData(ax)
 
@@ -115,7 +115,7 @@ class NapariMenu(QMenu):
     close.
     """
 
-    _INSTANCES: ClassVar[List['NapariMenu']] = []
+    _INSTANCES: ClassVar[List["NapariMenu"]] = []
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -135,5 +135,5 @@ class NapariMenu(QMenu):
         """Update action enabled/disabled state based on action data."""
         for ax in self.actions():
             if data := ax.data():
-                enabled_func = data.get('enabled', lambda event: True)
+                enabled_func = data.get("enabled", lambda event: True)
                 ax.setEnabled(bool(enabled_func(event)))

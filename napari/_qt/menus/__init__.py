@@ -3,7 +3,7 @@ from napari._qt.menus.plugins_menu import PluginsMenu
 from napari._qt.menus.window_menu import WindowMenu
 
 __all__ = [
-    'DebugMenu',
-    'PluginsMenu',
-    'WindowMenu',
+    "DebugMenu",
+    "PluginsMenu",
+    "WindowMenu",
 ]

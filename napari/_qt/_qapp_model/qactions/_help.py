@@ -28,8 +28,8 @@ Q_HELP_ACTIONS: List[Action] = [
         id=CommandId.NAPARI_INFO,
         title=CommandId.NAPARI_INFO.command_title,
         callback=_show_about,
-        menus=[{"id": MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
-        status_tip=trans._('About napari'),
+        menus=[{"id": MenuId.MENUBAR_HELP, "group": MenuGroup.RENDER}],
+        status_tip=trans._("About napari"),
         keybindings=[KeyBindingRule(primary=KeyMod.CtrlCmd | KeyCode.Slash)],
     )
 ]

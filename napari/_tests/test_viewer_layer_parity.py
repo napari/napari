@@ -18,9 +18,9 @@ def test_imshow_signature_consistency():
     imshow_parameters = dict(inspect.signature(imshow).parameters)
 
     # Remove unique parameters
-    del imshow_parameters['viewer']
-    del viewer_parameters['self']
-    del viewer_parameters['kwargs']
+    del imshow_parameters["viewer"]
+    del viewer_parameters["self"]
+    del viewer_parameters["kwargs"]
 
     # Ensure both have the same parameter names
     assert imshow_parameters.keys() == viewer_parameters.keys()
@@ -28,7 +28,7 @@ def test_imshow_signature_consistency():
     # Ensure the parameters have the same defaults
     for name, parameter in viewer_parameters.items():
         # data is a required for imshow, but optional for add_image
-        if name == 'data':
+        if name == "data":
             continue
-        fail_msg = f'Signature mismatch on {parameter}'
+        fail_msg = f"Signature mismatch on {parameter}"
         assert imshow_parameters[name].default == parameter.default, fail_msg

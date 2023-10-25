@@ -29,10 +29,10 @@ def write_csv(
     column_names : list, optional
         List of column names for table data.
     """
-    with open(filename, mode='w', newline='') as csvfile:
+    with open(filename, mode="w", newline="") as csvfile:
         writer = csv.writer(
             csvfile,
-            delimiter=',',
+            delimiter=",",
             quotechar='"',
             quoting=csv.QUOTE_MINIMAL,
         )
@@ -58,40 +58,40 @@ def imsave_extensions() -> Tuple[str, ...]:
     # arrays (skimage.data.camera, grass, and some random numpy arrays/shapes).
     # TODO: maybe write a proper imageio plugin.
     return (
-        '.bmp',
-        '.bsdf',
-        '.bw',
-        '.eps',
-        '.gif',
-        '.icns',
-        '.ico',
-        '.im',
-        '.j2c',
-        '.j2k',
-        '.jfif',
-        '.jp2',
-        '.jpc',
-        '.jpe',
-        '.jpeg',
-        '.jpf',
-        '.jpg',
-        '.jpx',
-        '.lsm',
-        '.mpo',
-        '.npz',
-        '.pbm',
-        '.pcx',
-        '.pgm',
-        '.png',
-        '.ppm',
-        '.ps',
-        '.rgb',
-        '.rgba',
-        '.sgi',
-        '.stk',
-        '.tga',
-        '.tif',
-        '.tiff',
+        ".bmp",
+        ".bsdf",
+        ".bw",
+        ".eps",
+        ".gif",
+        ".icns",
+        ".ico",
+        ".im",
+        ".j2c",
+        ".j2k",
+        ".jfif",
+        ".jp2",
+        ".jpc",
+        ".jpe",
+        ".jpeg",
+        ".jpf",
+        ".jpg",
+        ".jpx",
+        ".lsm",
+        ".mpo",
+        ".npz",
+        ".pbm",
+        ".pcx",
+        ".pgm",
+        ".png",
+        ".ppm",
+        ".ps",
+        ".rgb",
+        ".rgba",
+        ".sgi",
+        ".stk",
+        ".tga",
+        ".tif",
+        ".tiff",
     )
 
 
@@ -117,8 +117,8 @@ def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
     """
     ext = os.path.splitext(path)[1]
     if not ext:
-        path += '.tif'
-        ext = '.tif'
+        path += ".tif"
+        ext = ".tif"
 
     if ext in imsave_extensions():
         imsave(path, data)
@@ -172,16 +172,16 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
         Otherwise, if nothing was done, return ``None``.
     """
     ext = os.path.splitext(path)[1]
-    if ext == '':
-        path += '.csv'
-    elif ext != '.csv':
+    if ext == "":
+        path += ".csv"
+    elif ext != ".csv":
         # If an extension is provided then it must be `.csv`
         return None
 
-    properties = meta.get('properties', {})
+    properties = meta.get("properties", {})
     # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
-    column_names = [f'axis-{n!s}' for n in range(data.shape[1])]
+    column_names = [f"axis-{n!s}" for n in range(data.shape[1])]
     if properties:
         column_names += properties.keys()
         prop_table = [
@@ -222,13 +222,13 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
         Otherwise, if nothing was done, return ``None``.
     """
     ext = os.path.splitext(path)[1]
-    if ext == '':
-        path += '.csv'
-    elif ext != '.csv':
+    if ext == "":
+        path += ".csv"
+    elif ext != ".csv":
         # If an extension is provided then it must be `.csv`
         return None
 
-    shape_type = meta.get('shape_type', ['rectangle'] * len(data))
+    shape_type = meta.get("shape_type", ["rectangle"] * len(data))
     # No data passed so nothing written
     if len(data) == 0:
         return None
@@ -236,7 +236,7 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
     # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
     n_dimensions = max(s.shape[1] for s in data)
-    column_names = [f'axis-{n!s}' for n in range(n_dimensions)]
+    column_names = [f"axis-{n!s}" for n in range(n_dimensions)]
 
     # add shape id and vertex id of each vertex
     column_names = ["index", "shape-type", "vertex-index", *column_names]
@@ -310,9 +310,9 @@ def write_layer_data_with_plugins(
                 # Write out data using first plugin found for this hook spec
                 # or named plugin if provided
                 npe2.write(
-                    path=abspath_or_url(os.path.join(tmp, meta['name'])),
+                    path=abspath_or_url(os.path.join(tmp, meta["name"])),
                     layer_data=[layer_data_tuple],
-                    plugin_name='napari',
+                    plugin_name="napari",
                 )
             for fname in os.listdir(tmp):
                 written.append(os.path.join(path, fname))

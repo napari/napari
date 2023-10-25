@@ -42,7 +42,7 @@ def test_not_playing_after_ndim_changes(qtbot):
     view = QtDims(dims)
     qtbot.addWidget(view)
     # Loop to prevent finishing before the assertions in this test.
-    view.play(loop_mode='loop')
+    view.play(loop_mode="loop")
     qtbot.waitUntil(lambda: view.is_playing)
 
     dims.ndim = 2
@@ -57,7 +57,7 @@ def test_not_playing_after_ndisplay_changes(qtbot):
     view = QtDims(dims)
     qtbot.addWidget(view)
     # Loop to prevent finishing before the assertions in this test.
-    view.play(loop_mode='loop')
+    view.play(loop_mode="loop")
     qtbot.waitUntil(lambda: view.is_playing)
 
     dims.ndisplay = 3
@@ -73,8 +73,8 @@ def test_set_axis_labels_after_ndim_changes(qtbot):
     qtbot.addWidget(view)
 
     dims.ndim = 2
-    dims.axis_labels = ['y', 'x']
+    dims.axis_labels = ["y", "x"]
 
     assert len(view.slider_widgets) == 2
-    assert view.slider_widgets[0].axis_label.text() == 'y'
-    assert view.slider_widgets[1].axis_label.text() == 'x'
+    assert view.slider_widgets[0].axis_label.text() == "y"
+    assert view.slider_widgets[1].axis_label.text() == "x"

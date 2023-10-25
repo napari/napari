@@ -58,8 +58,8 @@ def imsave_png(filename, data):
     iio.imwrite(
         filename,
         data,
-        extension='.png',
-        plugin='pillow',
+        extension=".png",
+        plugin="pillow",
         pnginfo=pnginfo,
     )
 
@@ -79,7 +79,7 @@ def imsave_tiff(filename, data):
     compression_instead_of_compress = False
     try:
         current_version = tuple(
-            int(x) for x in tifffile.__version__.split('.')[:3]
+            int(x) for x in tifffile.__version__.split(".")[:3]
         )
         compression_instead_of_compress = current_version >= (2021, 6, 6)
     except Exception:  # noqa: BLE001
@@ -88,7 +88,7 @@ def imsave_tiff(filename, data):
         # using compress
         warnings.warn(
             trans._(
-                'Error parsing tiffile version number {version_number}',
+                "Error parsing tiffile version number {version_number}",
                 deferred=True,
                 version_number=f"{tifffile.__version__:!r}",
             )
@@ -97,22 +97,22 @@ def imsave_tiff(filename, data):
     if compression_instead_of_compress:
         # 'compression' scheme is more complex. See:
         # https://forum.image.sc/t/problem-saving-generated-labels-in-cellpose-napari/54892/8
-        tifffile.imwrite(filename, data, compression=('zlib', 1))
+        tifffile.imwrite(filename, data, compression=("zlib", 1))
     else:  # older version of tifffile since 2021.6.6  this is deprecated
         tifffile.imwrite(filename, data, compress=1)
 
 
 def __getattr__(name: str):
     if name in {
-        'imsave_extensions',
-        'write_csv',
-        'read_csv',
-        'csv_to_layer_data',
-        'read_zarr_dataset',
+        "imsave_extensions",
+        "write_csv",
+        "read_csv",
+        "csv_to_layer_data",
+        "read_zarr_dataset",
     }:
         warnings.warn(
             trans._(
-                '{name} was moved from napari.utils.io in v0.4.17. Import it from napari_builtins.io instead.',
+                "{name} was moved from napari.utils.io in v0.4.17. Import it from napari_builtins.io instead.",
                 deferred=True,
                 name=name,
             ),

@@ -39,17 +39,17 @@ def rst2html(text):
         _text = match.groups()[0].split()[0]
         if _text.startswith("~"):
             _text = _text.split(".")[-1]
-        return f'``{_text}``'
+        return f"``{_text}``"
 
     def link(match):
-        _text, _link = match.groups()[0].split('<')
+        _text, _link = match.groups()[0].split("<")
         return f'<a href="{_link.rstrip(">")}">{_text.strip()}</a>'
 
-    text = re.sub(r'\*\*([^*]+)\*\*', '<strong>\\1</strong>', text)
-    text = re.sub(r'\*([^*]+)\*', '<em>\\1</em>', text)
-    text = re.sub(r':[a-z]+:`([^`]+)`', ref, text, flags=re.DOTALL)
-    text = re.sub(r'`([^`]+)`_', link, text, flags=re.DOTALL)
-    text = re.sub(r'``([^`]+)``', '<code>\\1</code>', text)
+    text = re.sub(r"\*\*([^*]+)\*\*", "<strong>\\1</strong>", text)
+    text = re.sub(r"\*([^*]+)\*", "<em>\\1</em>", text)
+    text = re.sub(r":[a-z]+:`([^`]+)`", ref, text, flags=re.DOTALL)
+    text = re.sub(r"`([^`]+)`_", link, text, flags=re.DOTALL)
+    text = re.sub(r"``([^`]+)``", "<code>\\1</code>", text)
     return text.replace("\n", "<br>")
 
 
@@ -91,7 +91,7 @@ class ImplementationListItem(QFrame):
 
         self.setToolTip(trans._("Click and drag to change call order"))
         self.plugin_name_label = QElidingLabel()
-        self.plugin_name_label.setObjectName('small_text')
+        self.plugin_name_label.setObjectName("small_text")
         self.plugin_name_label.setText(item.hook_implementation.plugin_name)
         plugin_name_size_policy = QSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
@@ -109,7 +109,7 @@ class ImplementationListItem(QFrame):
         )
         self.enabled_checkbox.stateChanged.connect(self._set_enabled)
         self.enabled_checkbox.setChecked(
-            getattr(item.hook_implementation, 'enabled', True)
+            getattr(item.hook_implementation, "enabled", True)
         )
         layout.addWidget(self.position_label)
         layout.addWidget(self.enabled_checkbox)
@@ -284,7 +284,7 @@ class QtPluginSorter(QWidget):
         implementations for the currently selected hook.
     """
 
-    NULL_OPTION = trans._('select hook... ')
+    NULL_OPTION = trans._("select hook... ")
 
     def __init__(
         self,
@@ -311,7 +311,7 @@ class QtPluginSorter(QWidget):
             # we only want to include hook_specifications that declare the
             # "firstresult" option as True.
             if firstresult_only and not hook_caller.spec.opts.get(
-                'firstresult', False
+                "firstresult", False
             ):
                 continue
             self.hook_combo_box.addItem(
@@ -331,7 +331,7 @@ class QtPluginSorter(QWidget):
 
         instructions = QLabel(
             trans._(
-                'Select a hook to rearrange, then drag and drop plugins into the desired call order.\n\nDisable plugins for a specific hook by unchecking their checkbox.'
+                "Select a hook to rearrange, then drag and drop plugins into the desired call order.\n\nDisable plugins for a specific hook by unchecking their checkbox."
             )
         )
         instructions.setWordWrap(True)
@@ -345,7 +345,7 @@ class QtPluginSorter(QWidget):
         doc_lay.addWidget(self.info)
 
         self.docstring.setWordWrap(True)
-        self.docstring.setObjectName('small_text')
+        self.docstring.setObjectName("small_text")
         self.info.hide()
         self.docstring.hide()
 
@@ -371,7 +371,7 @@ class QtPluginSorter(QWidget):
         hook : str
             Name of the new hook specification to show.
         """
-        self.hook_combo_box.setCurrentText(hook.replace("napari_", ''))
+        self.hook_combo_box.setCurrentText(hook.replace("napari_", ""))
 
     def _on_hook_change(self, index):
         hook_caller = self.hook_combo_box.currentData()
@@ -380,8 +380,8 @@ class QtPluginSorter(QWidget):
         if hook_caller:
             doc = hook_caller.spec.function.__doc__
             html = rst2html(doc.split("Parameters")[0].strip())
-            summary, fulldoc = html.split('<br>', 1)
-            while fulldoc.startswith('<br>'):
+            summary, fulldoc = html.split("<br>", 1)
+            while fulldoc.startswith("<br>"):
                 fulldoc = fulldoc[4:]
             self.docstring.setText(summary.strip())
             self.docstring.show()
@@ -390,7 +390,7 @@ class QtPluginSorter(QWidget):
         else:
             self.docstring.hide()
             self.info.hide()
-            self.docstring.setToolTip('')
+            self.docstring.setToolTip("")
 
     def refresh(self):
         self._on_hook_change(self.hook_combo_box.currentIndex())

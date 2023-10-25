@@ -15,17 +15,17 @@ from napari.layers import Image
 from .utils import Skiper
 
 SAMPLE_PARAMS = {
-    'skin_data': {
+    "skin_data": {
         # napari-bio-sample-data
-        'shape': (1280, 960, 3),
-        'chunk_shape': (512, 512, 3),
-        'dtype': 'uint8',
+        "shape": (1280, 960, 3),
+        "chunk_shape": (512, 512, 3),
+        "dtype": "uint8",
     },
-    'jrc_hela-2 (scale 3)': {
+    "jrc_hela-2 (scale 3)": {
         # s3://janelia-cosem-datasets/jrc_hela-2/jrc_hela-2.n5
-        'shape': (796, 200, 1500),
-        'dtype': 'uint16',
-        'chunk_shape': (64, 64, 64),
+        "shape": (796, 200, 1500),
+        "dtype": "uint16",
+        "chunk_shape": (64, 64, 64),
     },
 }
 
@@ -58,9 +58,9 @@ class AsyncImage2DSuite:
     timeout = 300
 
     def setup(self, latency, dataname):
-        shape = SAMPLE_PARAMS[dataname]['shape']
-        chunk_shape = SAMPLE_PARAMS[dataname]['chunk_shape']
-        dtype = SAMPLE_PARAMS[dataname]['dtype']
+        shape = SAMPLE_PARAMS[dataname]["shape"]
+        chunk_shape = SAMPLE_PARAMS[dataname]["chunk_shape"]
+        dtype = SAMPLE_PARAMS[dataname]["dtype"]
 
         store = SlowMemoryStore(load_delay=latency)
         self.data = zarr.zeros(
@@ -95,9 +95,9 @@ class QtViewerAsyncImage2DSuite:
     timeout = 300
 
     def setup(self, latency, dataname):
-        shape = SAMPLE_PARAMS[dataname]['shape']
-        chunk_shape = SAMPLE_PARAMS[dataname]['chunk_shape']
-        dtype = SAMPLE_PARAMS[dataname]['dtype']
+        shape = SAMPLE_PARAMS[dataname]["shape"]
+        chunk_shape = SAMPLE_PARAMS[dataname]["chunk_shape"]
+        dtype = SAMPLE_PARAMS[dataname]["dtype"]
 
         if len(shape) == 3 and shape[2] == 3:
             # Skip 2D RGB tests -- scrolling does not apply
@@ -181,7 +181,7 @@ class QtViewerAsyncPointsAndImage2DSuite:
         self.image_data = zarr.zeros(
             (64, 2048, 2048),
             chunks=(1, chunksize, chunksize),
-            dtype='uint8',
+            dtype="uint8",
             store=store,
         )
 

@@ -74,35 +74,35 @@ def split_channels(
     """
 
     # Determine if data is a multiscale
-    multiscale = kwargs.get('multiscale')
+    multiscale = kwargs.get("multiscale")
     if not multiscale:
         multiscale, data = guess_multiscale(data)
-        kwargs['multiscale'] = multiscale
+        kwargs["multiscale"] = multiscale
 
     n_channels = (data[0] if multiscale else data).shape[channel_axis]
     # Use original blending mode or for multichannel use translucent for first channel then additive
-    kwargs['blending'] = kwargs.get('blending') or ['translucent_no_depth'] + [
-        'additive'
+    kwargs["blending"] = kwargs.get("blending") or ["translucent_no_depth"] + [
+        "additive"
     ] * (n_channels - 1)
-    kwargs.setdefault('colormap', None)
+    kwargs.setdefault("colormap", None)
     # these arguments are *already* iterables in the single-channel case.
     iterable_kwargs = {
-        'scale',
-        'translate',
-        'affine',
-        'contrast_limits',
-        'metadata',
-        'plane',
-        'experimental_clipping_planes',
-        'custom_interpolation_kernel_2d',
+        "scale",
+        "translate",
+        "affine",
+        "contrast_limits",
+        "metadata",
+        "plane",
+        "experimental_clipping_planes",
+        "custom_interpolation_kernel_2d",
     }
 
     # turn the kwargs dict into a mapping of {key: iterator}
     # so that we can use {k: next(v) for k, v in kwargs.items()} below
     for key, val in kwargs.items():
-        if key == 'colormap' and val is None:
+        if key == "colormap" and val is None:
             if n_channels == 1:
-                kwargs[key] = iter(['gray'])
+                kwargs[key] = iter(["gray"])
             elif n_channels == 2:
                 kwargs[key] = iter(MAGENTA_GREEN)
             else:
@@ -112,7 +112,7 @@ def split_channels(
         # for the multichannel case.  For example: if scale == (1, 2) &
         # n_channels = 3, then scale should == [(1, 2), (1, 2), (1, 2)]
         elif key in iterable_kwargs or (
-            key == 'colormap' and isinstance(val, Colormap)
+            key == "colormap" and isinstance(val, Colormap)
         ):
             kwargs[key] = iter(
                 ensure_sequence_of_iterables(
@@ -151,7 +151,7 @@ def split_channels(
                     )
                 ) from e
 
-        layerdata: FullLayerData = (image, i_kwargs, 'image')
+        layerdata: FullLayerData = (image, i_kwargs, "image")
         layerdata_list.append(layerdata)
 
     return layerdata_list
@@ -210,31 +210,31 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> List[Image]:
         )
 
     if kwargs.get("colormap"):
-        kwargs['colormap'] = itertools.cycle(kwargs['colormap'])
+        kwargs["colormap"] = itertools.cycle(kwargs["colormap"])
 
-    if meta['rgb']:
+    if meta["rgb"]:
         if axis in [num_dim - 1, -1]:
-            kwargs['rgb'] = False  # split channels as grayscale
+            kwargs["rgb"] = False  # split channels as grayscale
         else:
-            kwargs['rgb'] = True  # split some other axis, remain rgb
-            meta['scale'].pop(axis)
-            meta['translate'].pop(axis)
+            kwargs["rgb"] = True  # split some other axis, remain rgb
+            meta["scale"].pop(axis)
+            meta["translate"].pop(axis)
     else:
-        kwargs['rgb'] = False
-        meta['scale'].pop(axis)
-        meta['translate'].pop(axis)
+        kwargs["rgb"] = False
+        meta["scale"].pop(axis)
+        meta["translate"].pop(axis)
 
-    meta['rotate'] = None
-    meta['shear'] = None
-    meta['affine'] = None
+    meta["rotate"] = None
+    meta["shear"] = None
+    meta["affine"] = None
 
     meta.update(kwargs)
     imagelist = []
     layerdata_list = split_channels(data, axis, **meta)
     for i, tup in enumerate(layerdata_list):
         idata, imeta, _ = tup
-        layer_name = f'{name} layer {i}'
-        imeta['name'] = layer_name
+        layer_name = f"{name} layer {i}"
+        imeta["name"] = layer_name
 
         imagelist.append(Image(idata, **imeta))
 
@@ -245,10 +245,10 @@ def split_rgb(stack: Image, with_alpha=False) -> List[Image]:
     """Variant of stack_to_images that splits an RGB with predefined cmap."""
     if not stack.rgb:
         raise ValueError(
-            trans._('Image must be RGB to use split_rgb', deferred=True)
+            trans._("Image must be RGB to use split_rgb", deferred=True)
         )
 
-    images = stack_to_images(stack, -1, colormap=('red', 'green', 'blue'))
+    images = stack_to_images(stack, -1, colormap=("red", "green", "blue"))
     return images if with_alpha else images[:3]
 
 
@@ -279,8 +279,8 @@ def images_to_stack(images: List[Image], axis: int = 0, **kwargs) -> Image:
 
     data, meta, _ = images[0].as_layer_data_tuple()
 
-    kwargs.setdefault("scale", np.insert(meta['scale'], axis, 1))
-    kwargs.setdefault("translate", np.insert(meta['translate'], axis, 0))
+    kwargs.setdefault("scale", np.insert(meta["scale"], axis, 1))
+    kwargs.setdefault("translate", np.insert(meta["translate"], axis, 0))
 
     meta.update(kwargs)
     new_data = np.stack([image.data for image in images], axis=axis)

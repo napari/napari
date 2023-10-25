@@ -41,7 +41,7 @@ class ActivityToggleItem(QWidget):
         )
         self._activityBtn.setArrowType(Qt.ArrowType.UpArrow)
         self._activityBtn.setIconSize(QSize(11, 11))
-        self._activityBtn.setText(trans._('activity'))
+        self._activityBtn.setText(trans._("activity"))
         self._activityBtn.setCheckable(True)
 
         self._inProgressIndicator = QLabel(trans._("in progress..."), self)
@@ -68,7 +68,7 @@ class QtActivityDialog(QDialog):
         super().__init__(parent)
         self._toggleButton = toggle_button
 
-        self.setObjectName('Activity')
+        self.setObjectName("Activity")
         self.setMinimumWidth(self.MIN_WIDTH)
         self.setMinimumHeight(self.MIN_HEIGHT)
         self.setMaximumHeight(self.MIN_HEIGHT)
@@ -95,8 +95,8 @@ class QtActivityDialog(QDialog):
 
         self._titleBar = QLabel()
 
-        title = QLabel('activity', self)
-        title.setObjectName('QtCustomTitleLabel')
+        title = QLabel("activity", self)
+        title.setObjectName("QtCustomTitleLabel")
         title.setSizePolicy(
             QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         )

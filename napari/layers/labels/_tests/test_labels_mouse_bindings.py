@@ -18,13 +18,13 @@ def test_paint(MouseEvent):
     layer.brush_size = 10
     assert layer.cursor_size == 10
 
-    layer.mode = 'paint'
+    layer.mode = "paint"
     layer.selected_label = 3
 
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0, 0),
             view_direction=None,
@@ -37,7 +37,7 @@ def test_paint(MouseEvent):
     # Simulate drag
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_move',
+            type="mouse_move",
             is_dragging=True,
             position=(19, 19),
             view_direction=None,
@@ -50,7 +50,7 @@ def test_paint(MouseEvent):
     # Simulate release
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_release',
+            type="mouse_release",
             is_dragging=False,
             position=(19, 19),
             view_direction=None,
@@ -75,13 +75,13 @@ def test_paint_scale(MouseEvent):
     layer = Labels(data, scale=(2, 2))
     layer.brush_size = 10
 
-    layer.mode = 'paint'
+    layer.mode = "paint"
     layer.selected_label = 3
 
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0, 0),
             view_direction=None,
@@ -94,7 +94,7 @@ def test_paint_scale(MouseEvent):
     # Simulate drag
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_move',
+            type="mouse_move",
             is_dragging=True,
             position=(39, 39),
             view_direction=None,
@@ -107,7 +107,7 @@ def test_paint_scale(MouseEvent):
     # Simulate release
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_release',
+            type="mouse_release",
             is_dragging=False,
             position=(39, 39),
             view_direction=None,
@@ -131,14 +131,14 @@ def test_erase(MouseEvent):
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data)
     layer.brush_size = 10
-    layer.mode = 'erase'
+    layer.mode = "erase"
 
     layer.selected_label = 3
 
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0, 0),
             view_direction=None,
@@ -151,7 +151,7 @@ def test_erase(MouseEvent):
     # Simulate drag
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_move',
+            type="mouse_move",
             is_dragging=True,
             position=(19, 19),
             view_direction=None,
@@ -164,7 +164,7 @@ def test_erase(MouseEvent):
     # Simulate release
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_release',
+            type="mouse_release",
             is_dragging=False,
             position=(19, 19),
             view_direction=None,
@@ -191,12 +191,12 @@ def test_pick(MouseEvent):
     layer = Labels(data)
     assert layer.selected_label == 1
 
-    layer.mode = 'pick'
+    layer.mode = "pick"
 
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0, 0),
             view_direction=None,
@@ -210,7 +210,7 @@ def test_pick(MouseEvent):
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(19, 19),
             view_direction=None,
@@ -233,13 +233,13 @@ def test_fill(MouseEvent):
     assert np.unique(layer.data[:5, -5:]) == 1
     assert np.unique(layer.data[-5:, :5]) == 1
 
-    layer.mode = 'fill'
+    layer.mode = "fill"
     layer.selected_label = 4
 
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0, 0),
             view_direction=None,
@@ -258,7 +258,7 @@ def test_fill(MouseEvent):
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(19, 19),
             view_direction=None,
@@ -286,13 +286,13 @@ def test_fill_nD_plane(MouseEvent):
     assert np.unique(layer.data[-5:, :5, -5:]) == 1
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
-    layer.mode = 'fill'
+    layer.mode = "fill"
     layer.selected_label = 4
 
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0, 0, 0),
             view_direction=(1, 0, 0),
@@ -313,7 +313,7 @@ def test_fill_nD_plane(MouseEvent):
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0, 19, 19),
             view_direction=(1, 0, 0),
@@ -346,13 +346,13 @@ def test_fill_nD_all(MouseEvent):
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
     layer.n_edit_dimensions = 3
-    layer.mode = 'fill'
+    layer.mode = "fill"
     layer.selected_label = 4
 
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0, 0, 0),
             view_direction=(1, 0, 0),
@@ -372,7 +372,7 @@ def test_fill_nD_all(MouseEvent):
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0, 19, 19),
             view_direction=(1, 0, 0),
@@ -396,14 +396,14 @@ def test_paint_3d(MouseEvent):
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
 
     layer.n_edit_dimensions = 3
-    layer.mode = 'paint'
+    layer.mode = "paint"
     layer.selected_label = 4
     layer.brush_size = 3
 
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0.1, 0, 0),
             view_direction=np.full(3, np.sqrt(3)),
@@ -416,12 +416,12 @@ def test_paint_3d(MouseEvent):
     num_filled = np.bincount(layer.data.ravel())[4]
     assert num_filled > 1
 
-    layer.mode = 'erase'
+    layer.mode = "erase"
 
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0, 10, 10),
             view_direction=(1, 0, 0),
@@ -445,14 +445,14 @@ def test_erase_3d_undo(MouseEvent):
     data[10, :, :] = 1
     layer = Labels(data)
     layer.brush_size = 5
-    layer.mode = 'erase'
+    layer.mode = "erase"
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
     layer.n_edit_dimensions = 3
 
     # Simulate click
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(-1, -1, -1),
             view_direction=(1, 0, 0),
@@ -466,7 +466,7 @@ def test_erase_3d_undo(MouseEvent):
     # drag or there are no coordinates to interpolate
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_move',
+            type="mouse_move",
             is_dragging=True,
             position=(-1, 0.1, 0.1),
             view_direction=(1, 0, 0),
@@ -477,7 +477,7 @@ def test_erase_3d_undo(MouseEvent):
     mouse_move_callbacks(layer, event)
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_move',
+            type="mouse_move",
             is_dragging=True,
             position=(-1, 18.9, 18.9),
             view_direction=(1, 0, 0),
@@ -490,7 +490,7 @@ def test_erase_3d_undo(MouseEvent):
     # Simulate release
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_release',
+            type="mouse_release",
             is_dragging=False,
             position=(-1, 21, 21),
             view_direction=(1, 0, 0),
@@ -514,14 +514,14 @@ def test_erase_3d_undo_empty(MouseEvent):
     data[10, :, :] = 1
     layer = Labels(data)
     layer.brush_size = 5
-    layer.mode = 'erase'
+    layer.mode = "erase"
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
     layer.n_edit_dimensions = 3
 
     # Simulate click, outside data
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(-1, -1, -1),
             view_direction=(1, 0, 0),
@@ -534,7 +534,7 @@ def test_erase_3d_undo_empty(MouseEvent):
     # Simulate release
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_release',
+            type="mouse_release",
             is_dragging=False,
             position=(-1, -1, -1),
             view_direction=(1, 0, 0),

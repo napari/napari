@@ -24,26 +24,26 @@ class ConfirmCloseDialog(QDialog):
         self.do_not_ask = QCheckBox(trans._("Do not ask in future"))
 
         if close_app:
-            self.setWindowTitle(trans._('Close Application?'))
+            self.setWindowTitle(trans._("Close Application?"))
             text = trans._(
                 "Do you want to close the application? ('{shortcut}' to confirm). This will close all Qt Windows in this process",
-                shortcut=QKeySequence('Ctrl+Q').toString(
+                shortcut=QKeySequence("Ctrl+Q").toString(
                     QKeySequence.NativeText
                 ),
             )
             close_btn.setObjectName("error_icon_btn")
-            close_btn.setShortcut(QKeySequence('Ctrl+Q'))
+            close_btn.setShortcut(QKeySequence("Ctrl+Q"))
             icon_label.setObjectName("error_icon_element")
         else:
-            self.setWindowTitle(trans._('Close Window?'))
+            self.setWindowTitle(trans._("Close Window?"))
             text = trans._(
                 "Confirm to close window (or press '{shortcut}')",
-                shortcut=QKeySequence('Ctrl+W').toString(
+                shortcut=QKeySequence("Ctrl+W").toString(
                     QKeySequence.NativeText
                 ),
             )
             close_btn.setObjectName("warning_icon_btn")
-            close_btn.setShortcut(QKeySequence('Ctrl+W'))
+            close_btn.setShortcut(QKeySequence("Ctrl+W"))
             icon_label.setObjectName("warning_icon_element")
 
         cancel_btn.clicked.connect(self.reject)

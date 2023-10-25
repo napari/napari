@@ -27,8 +27,8 @@ from napari.utils.events.custom_types import Array
 def features() -> pd.DataFrame:
     return pd.DataFrame(
         {
-            'scalar': [1, 2, 3],
-            'vector': [[1, 1], [2, 2], [3, 3]],
+            "scalar": [1, 2, 3],
+            "vector": [[1, 1], [2, 2], [3, 3]],
         }
     )
 
@@ -115,16 +115,16 @@ class ScalarDirectEncoding(_DerivedStyleEncoding[Scalar, ScalarArray]):
 
 
 def test_scalar_derived_encoding_apply(features):
-    encoding = ScalarDirectEncoding(feature='scalar')
+    encoding = ScalarDirectEncoding(feature="scalar")
 
     encoding._apply(features)
 
-    expected_values = features['scalar']
+    expected_values = features["scalar"]
     np.testing.assert_array_equal(encoding._values, expected_values)
 
 
 def test_scalar_derived_encoding_apply_with_failure(features):
-    encoding = ScalarDirectEncoding(feature='not_a_column', fallback=-1)
+    encoding = ScalarDirectEncoding(feature="not_a_column", fallback=-1)
 
     with pytest.warns(RuntimeWarning):
         encoding._apply(features)
@@ -133,7 +133,7 @@ def test_scalar_derived_encoding_apply_with_failure(features):
 
 
 def test_scalar_derived_encoding_append():
-    encoding = ScalarDirectEncoding(feature='scalar')
+    encoding = ScalarDirectEncoding(feature="scalar")
     encoding._cached = ScalarArray.validate_type([1, 2, 3])
 
     encoding._append(ScalarArray.validate_type([4, 5]))
@@ -142,7 +142,7 @@ def test_scalar_derived_encoding_append():
 
 
 def test_scalar_derived_encoding_delete():
-    encoding = ScalarDirectEncoding(feature='scalar')
+    encoding = ScalarDirectEncoding(feature="scalar")
     encoding._cached = ScalarArray.validate_type([1, 2, 3])
 
     encoding._delete([0, 2])
@@ -151,7 +151,7 @@ def test_scalar_derived_encoding_delete():
 
 
 def test_scalar_derived_encoding_clear():
-    encoding = ScalarDirectEncoding(feature='scalar')
+    encoding = ScalarDirectEncoding(feature="scalar")
     encoding._cached = ScalarArray.validate_type([1, 2, 3])
 
     encoding._clear()
@@ -243,16 +243,16 @@ class VectorDirectEncoding(_DerivedStyleEncoding[Vector, VectorArray]):
 
 
 def test_vector_derived_encoding_apply(features):
-    encoding = VectorDirectEncoding(feature='vector')
+    encoding = VectorDirectEncoding(feature="vector")
 
     encoding._apply(features)
 
-    expected_values = list(features['vector'])
+    expected_values = list(features["vector"])
     np.testing.assert_array_equal(encoding._values, expected_values)
 
 
 def test_vector_derived_encoding_apply_with_failure(features):
-    encoding = VectorDirectEncoding(feature='not_a_column', fallback=[-1, -1])
+    encoding = VectorDirectEncoding(feature="not_a_column", fallback=[-1, -1])
 
     with pytest.warns(RuntimeWarning):
         encoding._apply(features)
@@ -261,7 +261,7 @@ def test_vector_derived_encoding_apply_with_failure(features):
 
 
 def test_vector_derived_encoding_append():
-    encoding = VectorDirectEncoding(feature='vector')
+    encoding = VectorDirectEncoding(feature="vector")
     encoding._cached = VectorArray.validate_type([[1, 1], [2, 2], [3, 3]])
 
     encoding._append(VectorArray.validate_type([[4, 4], [5, 5]]))
@@ -272,7 +272,7 @@ def test_vector_derived_encoding_append():
 
 
 def test_vector_derived_encoding_delete():
-    encoding = VectorDirectEncoding(feature='vector')
+    encoding = VectorDirectEncoding(feature="vector")
     encoding._cached = VectorArray.validate_type([[1, 1], [2, 2], [3, 3]])
 
     encoding._delete([0, 2])
@@ -281,7 +281,7 @@ def test_vector_derived_encoding_delete():
 
 
 def test_vector_derived_encoding_clear():
-    encoding = VectorDirectEncoding(feature='vector')
+    encoding = VectorDirectEncoding(feature="vector")
     encoding._cached = VectorArray.validate_type([[1, 1], [2, 2], [3, 3]])
 
     encoding._clear()

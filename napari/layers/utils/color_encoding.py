@@ -25,7 +25,7 @@ from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 from napari.utils.translations import trans
 
 """The default color to use, which may also be used a safe fallback color."""
-DEFAULT_COLOR = ColorValue.validate('cyan')
+DEFAULT_COLOR = ColorValue.validate("cyan")
 
 
 @runtime_checkable
@@ -38,8 +38,8 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
 
     @classmethod
     def validate(
-        cls, value: Union['ColorEncoding', dict, str, ColorType]
-    ) -> 'ColorEncoding':
+        cls, value: Union["ColorEncoding", dict, str, ColorType]
+    ) -> "ColorEncoding":
         """Validates and coerces a value to a ColorEncoding.
 
         Parameters
@@ -81,7 +81,7 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
         except (ValueError, AttributeError, KeyError) as e:
             raise TypeError(
                 trans._(
-                    'value should be a ColorEncoding, a dict, a color, or a sequence of colors',
+                    "value should be a ColorEncoding, a dict, a color, or a sequence of colors",
                     deferred=True,
                 )
             ) from e
@@ -99,7 +99,7 @@ class ConstantColorEncoding(_ConstantStyleEncoding[ColorValue, ColorArray]):
         The constant color RGBA value.
     """
 
-    encoding_type: Literal['ConstantColorEncoding'] = 'ConstantColorEncoding'
+    encoding_type: Literal["ConstantColorEncoding"] = "ConstantColorEncoding"
     constant: ColorValue
 
 
@@ -115,7 +115,7 @@ class ManualColorEncoding(_ManualStyleEncoding[ColorValue, ColorArray]):
         The default color value.
     """
 
-    encoding_type: Literal['ManualColorEncoding'] = 'ManualColorEncoding'
+    encoding_type: Literal["ManualColorEncoding"] = "ManualColorEncoding"
     array: ColorArray
     default: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
 
@@ -132,7 +132,7 @@ class DirectColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         does not contain valid color values.
     """
 
-    encoding_type: Literal['DirectColorEncoding'] = 'DirectColorEncoding'
+    encoding_type: Literal["DirectColorEncoding"] = "DirectColorEncoding"
     feature: str
     fallback: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
 
@@ -156,7 +156,7 @@ class NominalColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         colors fails.
     """
 
-    encoding_type: Literal['NominalColorEncoding'] = 'NominalColorEncoding'
+    encoding_type: Literal["NominalColorEncoding"] = "NominalColorEncoding"
     feature: str
     colormap: CategoricalColormap
     fallback: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
@@ -188,8 +188,8 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     """
 
     encoding_type: Literal[
-        'QuantitativeColorEncoding'
-    ] = 'QuantitativeColorEncoding'
+        "QuantitativeColorEncoding"
+    ] = "QuantitativeColorEncoding"
     feature: str
     colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
@@ -204,11 +204,11 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
             values = np.interp(values, contrast_limits, (0, 1))
         return self.colormap.map(values)
 
-    @validator('colormap', pre=True, always=True, allow_reuse=True)
+    @validator("colormap", pre=True, always=True, allow_reuse=True)
     def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
         return ensure_colormap(colormap)
 
-    @validator('contrast_limits', pre=True, always=True, allow_reuse=True)
+    @validator("contrast_limits", pre=True, always=True, allow_reuse=True)
     def _check_contrast_limits(
         cls, contrast_limits
     ) -> Optional[Tuple[float, float]]:
@@ -217,7 +217,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         ):
             raise ValueError(
                 trans._(
-                    'contrast_limits must be a strictly increasing pair of values',
+                    "contrast_limits must be a strictly increasing pair of values",
                     deferred=True,
                 )
             )

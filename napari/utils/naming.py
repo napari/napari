@@ -8,12 +8,12 @@ from typing import Any, Callable, Dict, Optional
 
 from napari.utils.misc import ROOT_DIR, formatdoc
 
-sep = ' '
+sep = " "
 start = 1
 
 # Match integer between square brackets at end of string if after space
 # or at beginning of string or just match end of string
-numbered_patt = re.compile(r'((?<=\A\[)|(?<=\s\[))(?:\d+|)(?=\]$)|$')
+numbered_patt = re.compile(r"((?<=\A\[)|(?<=\s\[))(?:\d+|)(?=\]$)|$")
 
 
 def _inc_name_count_sub(match):
@@ -22,9 +22,9 @@ def _inc_name_count_sub(match):
     try:
         count = int(count)
     except ValueError:  # not an int
-        count = f'{sep}[{start}]'
+        count = f"{sep}[{start}]"
     else:
-        count = f'{count + 1}'
+        count = f"{count + 1}"
 
     return count
 

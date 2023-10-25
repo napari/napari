@@ -58,34 +58,34 @@ class Symbol(StringEnum):
 
 # Mapping of symbol alias names to the deduplicated name
 SYMBOL_ALIAS = {
-    'o': Symbol.DISC,
-    '*': Symbol.STAR,
-    '+': Symbol.CROSS,
-    '-': Symbol.HBAR,
-    '->': Symbol.TAILED_ARROW,
-    '>': Symbol.ARROW,
-    '^': Symbol.TRIANGLE_UP,
-    'v': Symbol.TRIANGLE_DOWN,
-    's': Symbol.SQUARE,
-    '|': Symbol.VBAR,
+    "o": Symbol.DISC,
+    "*": Symbol.STAR,
+    "+": Symbol.CROSS,
+    "-": Symbol.HBAR,
+    "->": Symbol.TAILED_ARROW,
+    ">": Symbol.ARROW,
+    "^": Symbol.TRIANGLE_UP,
+    "v": Symbol.TRIANGLE_DOWN,
+    "s": Symbol.SQUARE,
+    "|": Symbol.VBAR,
 }
 
 SYMBOL_TRANSLATION = OrderedDict(
     [
-        (Symbol.ARROW, trans._('arrow')),
-        (Symbol.CLOBBER, trans._('clobber')),
-        (Symbol.CROSS, trans._('cross')),
-        (Symbol.DIAMOND, trans._('diamond')),
-        (Symbol.DISC, trans._('disc')),
-        (Symbol.HBAR, trans._('hbar')),
-        (Symbol.RING, trans._('ring')),
-        (Symbol.SQUARE, trans._('square')),
-        (Symbol.STAR, trans._('star')),
-        (Symbol.TAILED_ARROW, trans._('tailed arrow')),
-        (Symbol.TRIANGLE_DOWN, trans._('triangle down')),
-        (Symbol.TRIANGLE_UP, trans._('triangle up')),
-        (Symbol.VBAR, trans._('vbar')),
-        (Symbol.X, trans._('x')),
+        (Symbol.ARROW, trans._("arrow")),
+        (Symbol.CLOBBER, trans._("clobber")),
+        (Symbol.CROSS, trans._("cross")),
+        (Symbol.DIAMOND, trans._("diamond")),
+        (Symbol.DISC, trans._("disc")),
+        (Symbol.HBAR, trans._("hbar")),
+        (Symbol.RING, trans._("ring")),
+        (Symbol.SQUARE, trans._("square")),
+        (Symbol.STAR, trans._("star")),
+        (Symbol.TAILED_ARROW, trans._("tailed arrow")),
+        (Symbol.TRIANGLE_DOWN, trans._("triangle down")),
+        (Symbol.TRIANGLE_UP, trans._("triangle up")),
+        (Symbol.VBAR, trans._("vbar")),
+        (Symbol.X, trans._("x")),
     ]
 )
 

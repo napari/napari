@@ -117,7 +117,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         else:
             raise ValueError(
                 trans._(
-                    'Position {position} not recognized.',
+                    "Position {position} not recognized.",
                     deferred=True,
                     position=position,
                 )

@@ -61,6 +61,6 @@ class RemoteMessages:
         delta_ms = delta * 1000
 
         monitor.send_message(
-            {'frame_time': {'time': now, 'delta_ms': delta_ms}}
+            {"frame_time": {"time": now, "delta_ms": delta_ms}}
         )
         self._last_time = now

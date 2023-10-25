@@ -12,15 +12,15 @@ def register_tracks_action(description: str, repeatable: bool = False):
 
 
 def register_tracks_mode_action(description):
-    return register_layer_attr_action(Tracks, description, 'mode')
+    return register_layer_attr_action(Tracks, description, "mode")
 
 
-@register_tracks_mode_action(trans._('Transform'))
+@register_tracks_mode_action(trans._("Transform"))
 def activate_tracks_transform_mode(layer):
     layer.mode = Mode.TRANSFORM
 
 
-@register_tracks_mode_action(trans._('Pan/zoom'))
+@register_tracks_mode_action(trans._("Pan/zoom"))
 def activate_tracks_pan_zoom_mode(layer: Tracks):
     layer.mode = str(Mode.PAN_ZOOM)
 

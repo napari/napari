@@ -124,7 +124,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         # Update scalebar and text
         self.node.transform.scale = [scale, 1, 1, 1]
-        self.node.text.text = f'{new_dim:~}'
+        self.node.text.text = f"{new_dim:~}"
         self.x_size = scale  # needed to offset properly
         self._on_position_change()
 

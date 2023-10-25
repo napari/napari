@@ -92,7 +92,7 @@ def test_mouse_event_to_labels_coordinate_2d(MouseEvent):
 
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(10, 10),
             view_direction=None,
@@ -114,7 +114,7 @@ def test_mouse_event_to_labels_coordinate_3d(MouseEvent):
     # (note the scale on the layer!)
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0, 10, 10),
             view_direction=(1, 0, 0),
@@ -128,7 +128,7 @@ def test_mouse_event_to_labels_coordinate_3d(MouseEvent):
     # click diagonally from the top left corner
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=False,
             position=(0.1, 0, 0),
             view_direction=np.full(3, 1 / np.sqrt(3)),
@@ -142,7 +142,7 @@ def test_mouse_event_to_labels_coordinate_3d(MouseEvent):
     # drag starts inside volume but ends up outside volume
     event = ReadOnlyWrapper(
         MouseEvent(
-            type='mouse_press',
+            type="mouse_press",
             is_dragging=True,
             position=(-100, -100, -100),
             view_direction=(1, 0, 0),

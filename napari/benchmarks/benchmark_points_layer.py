@@ -121,7 +121,7 @@ class PointsSlicingSuite:
 class PointsToMaskSuite:
     """Benchmarks for creating a binary image mask from points."""
 
-    param_names = ['num_points', 'mask_shape', 'point_size']
+    param_names = ["num_points", "mask_shape", "point_size"]
     params = [
         [64, 256, 1024, 4096, 16384],
         [

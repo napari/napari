@@ -89,7 +89,7 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
 
     raise TypeError(
         trans._(
-            'Could not find VispyLayer for layer of type {dtype}',
+            "Could not find VispyLayer for layer of type {dtype}",
             deferred=True,
             dtype=type(layer),
         )
@@ -116,7 +116,7 @@ def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
 
     raise TypeError(
         trans._(
-            'Could not find VispyOverlay for overlay of type {dtype}',
+            "Could not find VispyOverlay for overlay of type {dtype}",
             deferred=True,
             dtype=type(overlay),
         )

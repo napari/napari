@@ -6,10 +6,10 @@ import pytest
 
 
 @pytest.mark.skipif(
-    bool(os.environ.get('MIN_REQ')), reason='skip import time test on MIN_REQ'
+    bool(os.environ.get("MIN_REQ")), reason="skip import time test on MIN_REQ"
 )
 def test_import_time(tmp_path):
-    cmd = [sys.executable, '-X', 'importtime', '-c', 'import napari']
+    cmd = [sys.executable, "-X", "importtime", "-c", "import napari"]
     proc = subprocess.run(cmd, capture_output=True, check=True)
     log = proc.stderr.decode()
     last_line = log.splitlines()[-1]
@@ -22,4 +22,4 @@ def test_import_time(tmp_path):
     print(f"\nnapari took {int(time)/1e6:0.3f} seconds to import")
 
     # common culprit of slow imports
-    assert 'pkg_resources' not in log
+    assert "pkg_resources" not in log

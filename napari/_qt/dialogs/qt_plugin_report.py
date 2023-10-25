@@ -54,7 +54,7 @@ class QtPluginErrReporter(QDialog):
         A label that will show available plugin metadata (such as home page).
     """
 
-    NULL_OPTION = trans._('select plugin... ')
+    NULL_OPTION = trans._("select plugin... ")
 
     def __init__(
         self,
@@ -67,7 +67,7 @@ class QtPluginErrReporter(QDialog):
 
         self.plugin_manager = plugin_manager
 
-        self.setWindowTitle(trans._('Recorded Plugin Exceptions'))
+        self.setWindowTitle(trans._("Recorded Plugin Exceptions"))
         self.setWindowModality(Qt.WindowModality.NonModal)
         self.layout = QVBoxLayout()
         self.layout.setSpacing(0)
@@ -93,7 +93,7 @@ class QtPluginErrReporter(QDialog):
         self.plugin_combo.setCurrentText(self.NULL_OPTION)
 
         # create github button (gets connected in self.set_plugin)
-        self.github_button = QPushButton(trans._('Open issue on GitHub'), self)
+        self.github_button = QPushButton(trans._("Open issue on GitHub"), self)
         self.github_button.setToolTip(
             trans._(
                 "Open a web browser to submit this error log\nto the developer's GitHub issue tracker",
@@ -111,7 +111,7 @@ class QtPluginErrReporter(QDialog):
         self.clipboard_button.clicked.connect(self.copyToClipboard)
 
         # plugin_meta contains a URL to the home page, (and/or other details)
-        self.plugin_meta = QLabel('', parent=self)
+        self.plugin_meta = QLabel("", parent=self)
         self.plugin_meta.setObjectName("pluginInfo")
         self.plugin_meta.setTextFormat(Qt.TextFormat.RichText)
         self.plugin_meta.setTextInteractionFlags(
@@ -157,8 +157,8 @@ class QtPluginErrReporter(QDialog):
             # PySide2 raises runtimeError, PyQt5 raises TypeError
 
         if not plugin or (plugin == self.NULL_OPTION):
-            self.plugin_meta.setText('')
-            self.text_area.setText('')
+            self.plugin_meta.setText("")
+            self.text_area.setText("")
             return
 
         if not self.plugin_manager.get_errors(plugin):
@@ -177,18 +177,18 @@ class QtPluginErrReporter(QDialog):
         # set metadata and outbound links/buttons
         err0 = self.plugin_manager.get_errors(plugin)[0]
         meta = standard_metadata(err0.plugin) if err0.plugin else {}
-        meta_text = ''
+        meta_text = ""
         if not meta:
             self.plugin_meta.setText(meta_text)
             return
 
-        url = meta.get('url')
+        url = meta.get("url")
         if url:
             meta_text += (
                 '<span style="color:#999;">plugin home page:&nbsp;&nbsp;'
                 f'</span><a href="{url}" style="color:#999">{url}</a>'
             )
-            if 'github.com' in url:
+            if "github.com" in url:
 
                 def onclick():
                     import webbrowser

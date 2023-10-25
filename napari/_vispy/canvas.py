@@ -48,7 +48,7 @@ class NapariSceneCanvas(SceneCanvas_):
 
     def _process_mouse_event(self, event: MouseEvent):
         """Ignore mouse wheel events which have modifiers."""
-        if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
+        if event.type == "mouse_wheel" and len(event.modifiers) > 0:
             return
         if event.handled:
             return
@@ -134,7 +134,7 @@ class VispyCanvas:
             self._add_overlay_to_visual(overlay)
 
         self._scene_canvas.events.ignore_callback_errors = False
-        self._scene_canvas.context.set_depth_func('lequal')
+        self._scene_canvas.context.set_depth_func("lequal")
 
         # Connecting events from SceneCanvas
         self._scene_canvas.events.key_press.connect(
@@ -269,7 +269,7 @@ class VispyCanvas:
         brush_overlay = self.viewer._brush_circle_overlay
         brush_overlay.visible = False
 
-        if cursor in {'square', 'circle', 'circle_frozen'}:
+        if cursor in {"square", "circle", "circle_frozen"}:
             # Scale size by zoom if needed
             size = self.viewer.cursor.size
             if self.viewer.cursor.scaled:
@@ -280,12 +280,12 @@ class VispyCanvas:
             # make sure the square fits within the current canvas
             if (
                 size < 8 or size > (min(*self.size) - 4)
-            ) and cursor != 'circle_frozen':
-                self.cursor = QtCursorVisual['cross'].value
-            elif cursor.startswith('circle'):
+            ) and cursor != "circle_frozen":
+                self.cursor = QtCursorVisual["cross"].value
+            elif cursor.startswith("circle"):
                 brush_overlay.size = size
-                if cursor == 'circle_frozen':
-                    self.cursor = QtCursorVisual['standard'].value
+                if cursor == "circle_frozen":
+                    self.cursor = QtCursorVisual["standard"].value
                     brush_overlay.position_is_frozen = True
                 else:
                     self.cursor = QtCursorVisual.blank()
@@ -293,7 +293,7 @@ class VispyCanvas:
                 brush_overlay.visible = True
             else:
                 self.cursor = QtCursorVisual.square(size)
-        elif cursor == 'crosshair':
+        elif cursor == "crosshair":
             self.cursor = QtCursorVisual.crosshair()
         else:
             self.cursor = QtCursorVisual[cursor].value
@@ -400,7 +400,7 @@ class VispyCanvas:
         event.dims_point = list(self.viewer.dims.point)
 
         # Put a read only wrapper on the event
-        event = ReadOnlyWrapper(event, exceptions=('handled',))
+        event = ReadOnlyWrapper(event, exceptions=("handled",))
         mouse_callbacks(self.viewer, event)
 
         layer = self.viewer.layers.selection.active

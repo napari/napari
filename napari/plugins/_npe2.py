@@ -48,7 +48,7 @@ def read(
     if plugin:
         # user might have passed 'plugin.reader_contrib' as the command
         # so ensure we check vs. just the actual plugin name
-        plugin_name = plugin.partition('.')[0]
+        plugin_name = plugin.partition(".")[0]
         if plugin_name not in get_readers():
             return None
 
@@ -67,7 +67,7 @@ def read(
         )
     except ValueError as e:
         # plugin wasn't passed and no reader was found
-        if 'No readers returned data' not in str(e):
+        if "No readers returned data" not in str(e):
             raise
     else:
         return layer_data, _FakeHookimpl(reader.plugin_name)
@@ -114,7 +114,7 @@ def write_layers(
                 path=path, layer_data=layer_data, plugin_name=plugin_name
             )
         except ValueError:
-            return [], ''
+            return [], ""
         else:
             return paths, writer.plugin_name
 
@@ -139,7 +139,7 @@ def get_widget_contribution(
             widgets_seen.add(contrib.display_name)
     if widget_name and widgets_seen:
         msg = trans._(
-            'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {seen}',
+            "Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {seen}",
             plugin_name=plugin_name,
             widget_name=widget_name,
             seen=widgets_seen,
@@ -258,7 +258,7 @@ def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     wdgs: DefaultDict[str, List[str]] = defaultdict(list)
     for wdg_contrib in pm.iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
-    return (('dock', x) for x in wdgs.items())
+    return (("dock", x) for x in wdgs.items())
 
 
 def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
@@ -267,7 +267,7 @@ def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
             # use display_name for user facing display
             plugin_name,
             {
-                c.key: {'data': c.open, 'display_name': c.display_name}
+                c.key: {"data": c.open, "display_name": c.display_name}
                 for c in contribs
             },
         )
@@ -369,7 +369,7 @@ def _rebuild_npe1_samples_menu() -> None:
     for plugin_name, samples in plugin_manager._sample_data.items():
         multiprovider = len(samples) > 1
         if multiprovider:
-            submenu_id = f'napari/file/samples/{plugin_name}'
+            submenu_id = f"napari/file/samples/{plugin_name}"
             submenu = [
                 (
                     MenuId.FILE_SAMPLES,
@@ -402,7 +402,7 @@ def _rebuild_npe1_samples_menu() -> None:
                         stack=False,
                     )
 
-            display_name = sample_dict['display_name'].replace("&", "&&")
+            display_name = sample_dict["display_name"].replace("&", "&&")
             if multiprovider:
                 title = display_name
             else:
@@ -411,7 +411,7 @@ def _rebuild_npe1_samples_menu() -> None:
             action: Action = Action(
                 id=f"{plugin_name}:{display_name}",
                 title=title,
-                menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
+                menus=[{"id": submenu_id, "group": MenuGroup.NAVIGATION}],
                 callback=_add_sample,
             )
             sample_actions.append(action)
@@ -439,7 +439,7 @@ def _get_samples_submenu_actions(
     sample_data = mf.contributions.sample_data
     multiprovider = len(sample_data) > 1
     if multiprovider:
-        submenu_id = f'napari/file/samples/{mf.name}'
+        submenu_id = f"napari/file/samples/{mf.name}"
         submenu = [
             (
                 MenuId.FILE_SAMPLES,
@@ -481,9 +481,9 @@ def _get_samples_submenu_actions(
         title = title.replace("&", "&&")
 
         action: Action = Action(
-            id=f'{mf.name}:{sample.key}',
+            id=f"{mf.name}:{sample.key}",
             title=title,
-            menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
+            menus=[{"id": submenu_id, "group": MenuGroup.NAVIGATION}],
             callback=_add_sample,
         )
         sample_actions.append(action)
@@ -501,7 +501,7 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     app = get_app()
     actions, submenus = _npe2_manifest_to_actions(mf)
     samples_submenu, sample_actions = _get_samples_submenu_actions(mf)
-    context = pm.get_context(cast('PluginName', mf.name))
+    context = pm.get_context(cast("PluginName", mf.name))
     # Connect 'unregister' callback to plugin deactivate ('unregistered') event
     if actions:
         context.register_disposable(app.register_actions(actions))
@@ -540,7 +540,7 @@ def _npe2_manifest_to_actions(
     sample_data_commands = {
         contrib.command
         for contrib in mf.contributions.sample_data or ()
-        if hasattr(contrib, 'command')
+        if hasattr(contrib, "command")
     }
 
     actions: List[Action] = []
@@ -554,7 +554,7 @@ def _npe2_manifest_to_actions(
                     tooltip=cmd.short_title or cmd.title,
                     icon=cmd.icon,
                     enablement=cmd.enablement,
-                    callback=cmd.python_name or '',
+                    callback=cmd.python_name or "",
                     menus=cmds.get(cmd.id),
                     keybindings=[],
                 )
@@ -567,12 +567,12 @@ def _when_group_order(
     menu_item: contributions.MenuItem,
 ) -> dict:
     """Extract when/group/order from an npe2 Submenu or MenuCommand."""
-    group, _, _order = (menu_item.group or '').partition("@")
+    group, _, _order = (menu_item.group or "").partition("@")
     try:
         order: Optional[float] = float(_order)
     except ValueError:
         order = None
-    return {'when': menu_item.when, 'group': group or None, 'order': order}
+    return {"when": menu_item.when, "group": group or None, "order": order}
 
 
 def _npe2_submenu_to_app_model(subm: contributions.Submenu) -> SubmenuItem:

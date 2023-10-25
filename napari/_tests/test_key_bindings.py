@@ -15,7 +15,7 @@ def test_viewer_key_bindings(make_napari_viewer):
     mock_shift_press = Mock()
     mock_shift_release = Mock()
 
-    @viewer.bind_key('F')
+    @viewer.bind_key("F")
     def key_callback(v):
         assert viewer == v
 
@@ -27,7 +27,7 @@ def test_viewer_key_bindings(make_napari_viewer):
         # on release
         mock_release.method()
 
-    @viewer.bind_key('Shift-F')
+    @viewer.bind_key("Shift-F")
     def key_shift_callback(v):
         assert viewer == v
 
@@ -40,7 +40,7 @@ def test_viewer_key_bindings(make_napari_viewer):
         mock_shift_release.method()
 
     # Simulate press only
-    canvas._scene_canvas.events.key_press(key=keys.Key('F'))
+    canvas._scene_canvas.events.key_press(key=keys.Key("F"))
     mock_press.method.assert_called_once()
     mock_press.reset_mock()
     mock_release.method.assert_not_called()
@@ -48,7 +48,7 @@ def test_viewer_key_bindings(make_napari_viewer):
     mock_shift_release.method.assert_not_called()
 
     # Simulate release only
-    canvas._scene_canvas.events.key_release(key=keys.Key('F'))
+    canvas._scene_canvas.events.key_release(key=keys.Key("F"))
     mock_press.method.assert_not_called()
     mock_release.method.assert_called_once()
     mock_release.reset_mock()
@@ -57,7 +57,7 @@ def test_viewer_key_bindings(make_napari_viewer):
 
     # Simulate press only
     canvas._scene_canvas.events.key_press(
-        key=keys.Key('F'), modifiers=[keys.SHIFT]
+        key=keys.Key("F"), modifiers=[keys.SHIFT]
     )
     mock_press.method.assert_not_called()
     mock_release.method.assert_not_called()
@@ -67,7 +67,7 @@ def test_viewer_key_bindings(make_napari_viewer):
 
     # Simulate release only
     canvas._scene_canvas.events.key_release(
-        key=keys.Key('F'), modifiers=[keys.SHIFT]
+        key=keys.Key("F"), modifiers=[keys.SHIFT]
     )
     mock_press.method.assert_not_called()
     mock_release.method.assert_not_called()
@@ -90,7 +90,7 @@ def test_layer_key_bindings(make_napari_viewer):
     mock_shift_press = Mock()
     mock_shift_release = Mock()
 
-    @layer.bind_key('F')
+    @layer.bind_key("F")
     def key_callback(_layer):
         assert layer == _layer
         # on press
@@ -99,7 +99,7 @@ def test_layer_key_bindings(make_napari_viewer):
         # on release
         mock_release.method()
 
-    @layer.bind_key('Shift-F')
+    @layer.bind_key("Shift-F")
     def key_shift_callback(_layer):
         assert layer == _layer
 
@@ -112,7 +112,7 @@ def test_layer_key_bindings(make_napari_viewer):
         mock_shift_release.method()
 
     # Simulate press only
-    canvas._scene_canvas.events.key_press(key=keys.Key('F'))
+    canvas._scene_canvas.events.key_press(key=keys.Key("F"))
     mock_press.method.assert_called_once()
     mock_press.reset_mock()
     mock_release.method.assert_not_called()
@@ -120,7 +120,7 @@ def test_layer_key_bindings(make_napari_viewer):
     mock_shift_release.method.assert_not_called()
 
     # Simulate release only
-    canvas._scene_canvas.events.key_release(key=keys.Key('F'))
+    canvas._scene_canvas.events.key_release(key=keys.Key("F"))
     mock_press.method.assert_not_called()
     mock_release.method.assert_called_once()
     mock_release.reset_mock()
@@ -129,7 +129,7 @@ def test_layer_key_bindings(make_napari_viewer):
 
     # Simulate press only
     canvas._scene_canvas.events.key_press(
-        key=keys.Key('F'), modifiers=[keys.SHIFT]
+        key=keys.Key("F"), modifiers=[keys.SHIFT]
     )
     mock_press.method.assert_not_called()
     mock_release.method.assert_not_called()
@@ -139,7 +139,7 @@ def test_layer_key_bindings(make_napari_viewer):
 
     # Simulate release only
     canvas._scene_canvas.events.key_release(
-        key=keys.Key('F'), modifiers=[keys.SHIFT]
+        key=keys.Key("F"), modifiers=[keys.SHIFT]
     )
     mock_press.method.assert_not_called()
     mock_release.method.assert_not_called()
@@ -154,9 +154,9 @@ def test_reset_scroll_progress(make_napari_viewer):
     canvas = viewer.window._qt_viewer.canvas
     assert viewer.dims._scroll_progress == 0
 
-    canvas._scene_canvas.events.key_press(key=keys.Key('Control'))
+    canvas._scene_canvas.events.key_press(key=keys.Key("Control"))
     viewer.dims._scroll_progress = 10
     assert viewer.dims._scroll_progress == 10
 
-    canvas._scene_canvas.events.key_release(key=keys.Key('Control'))
+    canvas._scene_canvas.events.key_release(key=keys.Key("Control"))
     assert viewer.dims._scroll_progress == 0

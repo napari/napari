@@ -60,8 +60,8 @@ Keymap = Mapping[
 USER_KEYMAP: Mapping[str, Callable] = {}
 
 KEY_SUBS = {
-    'Control': 'Ctrl',
-    'Option': 'Alt',
+    "Control": "Ctrl",
+    "Option": "Alt",
 }
 
 _UNDEFINED = object()
@@ -211,7 +211,7 @@ def bind_key(
     if func is not None and key_bind in keymap and not overwrite:
         raise ValueError(
             trans._(
-                'keybinding {key} already used! specify \'overwrite=True\' to bypass this check',
+                "keybinding {key} already used! specify 'overwrite=True' to bypass this check",
                 deferred=True,
                 key=str(key_bind),
             )
@@ -267,7 +267,7 @@ def _vispy2appmodel(event) -> KeyBinding:
         # bug found on OSX: Command will cause Shift to not
         # transform the key so do not consume it
         # note: 'Control' is OSX Command key
-        cond = lambda m: m != 'Shift' or 'Control' in modifiers  # noqa: E731
+        cond = lambda m: m != "Shift" or "Control" in modifiers  # noqa: E731
 
     kb = KeyCode.from_string(KEY_SUBS.get(key, key))
 
@@ -314,7 +314,7 @@ class KeymapProvider:
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        if 'class_keymap' not in cls.__dict__:
+        if "class_keymap" not in cls.__dict__:
             # if in __dict__, was defined in class and not inherited
             cls.class_keymap = {}
         else:
@@ -370,7 +370,7 @@ class KeymapHandler:
             maps.append(_bind_keymap(parent.keymap, parent))
             # For parent and superclasses add inherited keybindings
             for cls in parent.__class__.__mro__:
-                if hasattr(cls, 'class_keymap'):
+                if hasattr(cls, "class_keymap"):
                     maps.append(_bind_keymap(cls.class_keymap, parent))
 
         return ChainMap(*maps)

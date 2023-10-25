@@ -19,8 +19,8 @@ class ImageLayerNode:
         self, custom_node: Node = None, texture_format: Optional[str] = None
     ) -> None:
         if (
-            texture_format == 'auto'
-            and 'texture_float' not in get_gl_extensions()
+            texture_format == "auto"
+            and "texture_float" not in get_gl_extensions()
         ):
             # if the GPU doesn't support float textures, texture_format auto
             # WILL fail on float dtypes
@@ -30,9 +30,9 @@ class ImageLayerNode:
         self._custom_node = custom_node
         self._image_node = ImageNode(
             None
-            if (texture_format is None or texture_format == 'auto')
+            if (texture_format is None or texture_format == "auto")
             else np.array([[0.0]], dtype=np.float32),
-            method='auto',
+            method="auto",
             texture_format=texture_format,
         )
         self._volume_node = VolumeNode(
@@ -57,7 +57,7 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
         self,
         layer: _ImageBase,
         node=None,
-        texture_format='auto',
+        texture_format="auto",
         layer_node_class=ImageLayerNode,
     ) -> None:
         # Use custom node from caller, or our standard image/volume nodes.
@@ -289,7 +289,7 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
 
             # tile2data is a ScaleTransform thus is has a .scale attribute, but
             # mypy cannot know this.
-            self.layer._transforms['tile2data'].scale = scale  # type: ignore [attr-defined]
+            self.layer._transforms["tile2data"].scale = scale  # type: ignore [attr-defined]
 
             self._on_matrix_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)

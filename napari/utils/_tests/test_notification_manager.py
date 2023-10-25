@@ -49,18 +49,18 @@ def test_notification_manager_no_gui(monkeypatch):
         store: List[Notification] = []
         notification_manager.notification_ready.connect(store.append)
 
-        show_info('this is one way of showing an information message')
+        show_info("this is one way of showing an information message")
         assert (
             len(notification_manager.records) == 1
         ), notification_manager.records
-        assert store[-1].type == 'info'
+        assert store[-1].type == "info"
 
         notification_manager.receive_info(
-            'This is another information message'
+            "This is another information message"
         )
         assert len(notification_manager.records) == 2
         assert len(store) == 2
-        assert store[-1].type == 'info'
+        assert store[-1].type == "info"
 
         # test that exceptions that go through sys.excepthook are catalogued
 
@@ -75,26 +75,26 @@ def test_notification_manager_no_gui(monkeypatch):
             sys.excepthook(*sys.exc_info())
         assert len(notification_manager.records) == 3
         assert len(store) == 3
-        assert store[-1].type == 'error'
+        assert store[-1].type == "error"
 
         # test that warnings that go through showwarning are catalogued
         # again, pytest intercepts this, so just manually trigger:
         assert warnings.showwarning == notification_manager.receive_warning
-        warnings.showwarning('this is a warning', UserWarning, '', 0)
+        warnings.showwarning("this is a warning", UserWarning, "", 0)
         assert len(notification_manager.records) == 4
-        assert store[-1].type == 'warning'
+        assert store[-1].type == "warning"
 
-        show_error('This is an error')
+        show_error("This is an error")
         assert len(notification_manager.records) == 5
-        assert store[-1].type == 'error'
+        assert store[-1].type == "error"
 
-        show_warning('This is a warning')
+        show_warning("This is a warning")
         assert len(notification_manager.records) == 6
-        assert store[-1].type == 'warning'
+        assert store[-1].type == "warning"
 
-        show_debug('This is a debug')
+        show_debug("This is a debug")
         assert len(notification_manager.records) == 7
-        assert store[-1].type == 'debug'
+        assert store[-1].type == "debug"
 
     # make sure we've restored the except hook
     assert sys.excepthook == previous_exhook
@@ -111,7 +111,7 @@ def test_notification_manager_no_gui_with_threading():
     """
 
     def _warn():
-        warnings.showwarning('this is a warning', UserWarning, '', 0)
+        warnings.showwarning("this is a warning", UserWarning, "", 0)
 
     def _raise():
         with pytest.raises(PurposefulException):
@@ -140,7 +140,7 @@ def test_notification_manager_no_gui_with_threading():
             threading.excepthook(sys.exc_info())
 
         assert len(notification_manager.records) == 1
-        assert store[-1].type == 'error'
+        assert store[-1].type == "error"
 
         # Test warning inside threads
         assert warnings.showwarning == notification_manager.receive_warning
@@ -149,7 +149,7 @@ def test_notification_manager_no_gui_with_threading():
         warning_thread.join(timeout=DEFAULT_TIMEOUT_SECS)
 
         assert len(notification_manager.records) == 2
-        assert store[-1].type == 'warning'
+        assert store[-1].type == "warning"
 
     # make sure we've restored the threading except hook
     assert threading.excepthook == previous_threading_exhook

@@ -19,8 +19,8 @@ class PointsVisual(ClippingPlanesMixin, Compound):
     def __init__(self) -> None:
         super().__init__(
             [
-                Markers(scaling='visual'),
-                Markers(scaling='visual'),
+                Markers(scaling="visual"),
+                Markers(scaling="visual"),
                 Line(),
                 Text(),
             ]
@@ -33,12 +33,12 @@ class PointsVisual(ClippingPlanesMixin, Compound):
         Scaling property for both the markers visuals. If set to true,
         the points rescale based on zoom (i.e: constant world-space size)
         """
-        return self._subvisuals[0].scaling == 'visual'
+        return self._subvisuals[0].scaling == "visual"
 
     @scaling.setter
     def scaling(self, value):
         for marker in self._subvisuals[:2]:
-            marker.scaling = 'visual' if value else 'fixed'
+            marker.scaling = "visual" if value else "fixed"
 
     @property
     def antialias(self):

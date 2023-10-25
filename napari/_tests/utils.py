@@ -24,14 +24,14 @@ from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.utils.color import ColorArray
 
 skip_on_win_ci = pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
-    reason='Screenshot tests are not supported on windows CI.',
+    sys.platform.startswith("win") and os.getenv("CI", "0") != "0",
+    reason="Screenshot tests are not supported on windows CI.",
 )
 
 skip_local_popups = pytest.mark.skipif(
-    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
-    reason='Tests requiring GUI windows are skipped locally by default.'
-    ' Set NAPARI_POPUP_TESTS=1 environment variable to enable.',
+    not os.getenv("CI") and os.getenv("NAPARI_POPUP_TESTS", "0") == "0",
+    reason="Tests requiring GUI windows are skipped locally by default."
+    " Set NAPARI_POPUP_TESTS=1 environment variable to enable.",
 )
 
 """
@@ -97,26 +97,26 @@ with suppress(ModuleNotFoundError):
 classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
 names = [cls.__name__.lower() for cls in classes]
 layer2addmethod = {
-    cls: getattr(Viewer, 'add_' + name) for cls, name in zip(classes, names)
+    cls: getattr(Viewer, "add_" + name) for cls, name in zip(classes, names)
 }
 
 
 # examples of valid tuples that might be passed to viewer._add_layer_from_data
 good_layer_data = [
     (np.random.random((10, 10)),),
-    (np.random.random((10, 10, 3)), {'rgb': True}),
-    (np.random.randint(20, size=(10, 15)), {'seed_rng': 5}, 'labels'),
-    (np.random.random((10, 2)) * 20, {'face_color': 'blue'}, 'points'),
-    (np.random.random((10, 2, 2)) * 20, {}, 'vectors'),
-    (np.random.random((10, 4, 2)) * 20, {'opacity': 1}, 'shapes'),
+    (np.random.random((10, 10, 3)), {"rgb": True}),
+    (np.random.randint(20, size=(10, 15)), {"seed_rng": 5}, "labels"),
+    (np.random.random((10, 2)) * 20, {"face_color": "blue"}, "points"),
+    (np.random.random((10, 2, 2)) * 20, {}, "vectors"),
+    (np.random.random((10, 4, 2)) * 20, {"opacity": 1}, "shapes"),
     (
         (
             np.random.random((10, 3)),
             np.random.randint(10, size=(6, 3)),
             np.random.random(10),
         ),
-        {'name': 'some surface'},
-        'surface',
+        {"name": "some surface"},
+        "surface",
     ),
 ]
 

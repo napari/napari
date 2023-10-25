@@ -17,19 +17,19 @@ from napari.utils.compat import StrEnum
 class MenuId(StrEnum):
     """Id representing a menu somewhere in napari."""
 
-    MENUBAR_FILE = 'napari/file'
-    FILE_OPEN_WITH_PLUGIN = 'napari/file/open_with_plugin'
-    FILE_SAMPLES = 'napari/file/samples'
+    MENUBAR_FILE = "napari/file"
+    FILE_OPEN_WITH_PLUGIN = "napari/file/open_with_plugin"
+    FILE_SAMPLES = "napari/file/samples"
 
-    MENUBAR_VIEW = 'napari/view'
-    VIEW_AXES = 'napari/view/axes'
-    VIEW_SCALEBAR = 'napari/view/scalebar'
+    MENUBAR_VIEW = "napari/view"
+    VIEW_AXES = "napari/view/axes"
+    VIEW_SCALEBAR = "napari/view/scalebar"
 
-    MENUBAR_HELP = 'napari/help'
+    MENUBAR_HELP = "napari/help"
 
-    LAYERLIST_CONTEXT = 'napari/layers/context'
-    LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
-    LAYERS_PROJECT = 'napari/layers/project'
+    LAYERLIST_CONTEXT = "napari/layers/context"
+    LAYERS_CONVERT_DTYPE = "napari/layers/convert_dtype"
+    LAYERS_PROJECT = "napari/layers/project"
 
     def __str__(self) -> str:
         return self.value
@@ -37,16 +37,16 @@ class MenuId(StrEnum):
 
 # XXX: the structure/usage pattern of this class may change in the future
 class MenuGroup:
-    NAVIGATION = 'navigation'  # always the first group in any menu
-    RENDER = '1_render'
-    PREFERENCES = '2_preferences'
-    SAVE = '3_save'
-    CLOSE = '4_close'
+    NAVIGATION = "navigation"  # always the first group in any menu
+    RENDER = "1_render"
+    PREFERENCES = "2_preferences"
+    SAVE = "3_save"
+    CLOSE = "4_close"
 
     class LAYERLIST_CONTEXT:
-        CONVERSION = '1_conversion'
-        SPLIT_MERGE = '5_split_merge'
-        LINK = '9_link'
+        CONVERSION = "1_conversion"
+        SPLIT_MERGE = "5_split_merge"
+        LINK = "9_link"
 
 
 # TODO: add these to docs, with a lookup for what each menu is/does.

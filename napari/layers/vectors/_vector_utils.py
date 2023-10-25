@@ -93,7 +93,7 @@ def fix_data_vectors(
                     "could not reshape Vector data from {vectors_shape} to (N, 2, {dimensions})",
                     deferred=True,
                     vectors_shape=vectors.shape,
-                    dimensions=ndim or 'D',
+                    dimensions=ndim or "D",
                 )
             )
 

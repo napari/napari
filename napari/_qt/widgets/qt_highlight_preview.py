@@ -273,7 +273,7 @@ class QtTriangle(QFrame):
         value : int
             Value of highlight thickness.
         """
-        col = QColor('white')
+        col = QColor("white")
         qp.setPen(QPen(col, 2))
         qp.setBrush(col)
         path = QPainterPath()
@@ -354,7 +354,7 @@ class QtHighlightSizePreviewWidget(QWidget):
         self._preview_label.setText(trans._("Preview"))
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignBottom)
-        self._preview.setStyleSheet('border: 1px solid white;')
+        self._preview.setStyleSheet("border: 1px solid white;")
 
         # Signals
         self._slider.valueChanged.connect(self._update_value)

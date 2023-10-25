@@ -36,7 +36,7 @@ def test_weakref_event_emitter():
     so we can keep only weak refs.
 
     """
-    e = EventEmitter(type_name='test_weak')
+    e = EventEmitter(type_name="test_weak")
 
     class Obj:
         def cb(self):
@@ -55,7 +55,7 @@ def test_weakref_event_emitter():
     assert ref_o() is None
 
 
-@pytest.mark.parametrize('disconnect_and_should_be_none', [True, False])
+@pytest.mark.parametrize("disconnect_and_should_be_none", [True, False])
 def test_weakref_event_emitter_cb(disconnect_and_should_be_none):
     """
 
@@ -66,7 +66,7 @@ def test_weakref_event_emitter_cb(disconnect_and_should_be_none):
     We thus expect the wekref to be None only if explicitely disconnected
 
     """
-    e = EventEmitter(type_name='test_weak')
+    e = EventEmitter(type_name="test_weak")
 
     def cb(self):
         pass

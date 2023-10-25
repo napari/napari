@@ -7,9 +7,9 @@ from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
 from napari.utils._appdirs import user_cache_dir
 from napari.utils.translations import trans
 
-LOADING_GIF_PATH = str((Path(__file__).parent / 'loading.gif').resolve())
-ICON_PATH = (Path(__file__).parent / 'icons').resolve()
-ICONS = {x.stem: str(x) for x in ICON_PATH.iterdir() if x.suffix == '.svg'}
+LOADING_GIF_PATH = str((Path(__file__).parent / "loading.gif").resolve())
+ICON_PATH = (Path(__file__).parent / "icons").resolve()
+ICONS = {x.stem: str(x) for x in ICON_PATH.iterdir() if x.suffix == ".svg"}
 PLUGIN_FILE_NAME = "plugin.txt"
 
 
@@ -27,7 +27,7 @@ def get_icon_path(name: str) -> str:
     return ICONS[name]
 
 
-svg_elem = re.compile(r'(<svg[^>]*>)')
+svg_elem = re.compile(r"(<svg[^>]*>)")
 svg_style = """<style type="text/css">
 path {{fill: {0}; opacity: {1};}}
 polygon {{fill: {0}; opacity: {1};}}
@@ -54,7 +54,7 @@ def get_colorized_svg(
         If the path exists but does not contain valid SVG data.
     """
     path_or_xml = str(path_or_xml)
-    xml = path_or_xml if '</svg>' in path_or_xml else get_raw_svg(path_or_xml)
+    xml = path_or_xml if "</svg>" in path_or_xml else get_raw_svg(path_or_xml)
     if not color:
         return xml
 
@@ -68,7 +68,7 @@ def get_colorized_svg(
         )
     # use regex to find the svg tag and insert css right after
     # (the '\\1' syntax includes the matched tag in the output)
-    return svg_elem.sub(f'\\1{svg_style.format(color, opacity)}', xml)
+    return svg_elem.sub(f"\\1{svg_style.format(color, opacity)}", xml)
 
 
 def generate_colorized_svgs(
@@ -117,7 +117,7 @@ def generate_colorized_svgs(
     # mapping of svg_stem to theme_key
     theme_override = theme_override or {}
 
-    ALIAS_T = '{color}/{svg_stem}{opacity}.svg'
+    ALIAS_T = "{color}/{svg_stem}{opacity}.svg"
 
     for color, path, op in product(colors, svg_paths, opacities):
         clrkey = color
@@ -156,7 +156,7 @@ def write_colorized_svgs(
 
 
 def _theme_path(theme_name: str) -> Path:
-    return Path(user_cache_dir()) / '_themes' / theme_name
+    return Path(user_cache_dir()) / "_themes" / theme_name
 
 
 def build_theme_svgs(theme_name: str, source) -> str:
@@ -164,14 +164,14 @@ def build_theme_svgs(theme_name: str, source) -> str:
     write_colorized_svgs(
         out,
         svg_paths=ICONS.values(),
-        colors=[(theme_name, 'icon')],
+        colors=[(theme_name, "icon")],
         opacities=(0.5, 1),
         theme_override={
-            'warning': 'warning',
-            'error': 'error',
-            'logo_silhouette': 'background',
+            "warning": "warning",
+            "error": "error",
+            "logo_silhouette": "background",
         },
     )
-    with (out / PLUGIN_FILE_NAME).open('w') as f:
+    with (out / PLUGIN_FILE_NAME).open("w") as f:
         f.write(source)
     return str(out)

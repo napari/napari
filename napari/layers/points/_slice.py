@@ -100,7 +100,7 @@ class _PointSliceRequest:
 
         point, m_left, m_right = self.data_slice[not_disp].as_array()
 
-        if self.projection_mode == 'none':
+        if self.projection_mode == "none":
             low = point.copy()
             high = point.copy()
         else:

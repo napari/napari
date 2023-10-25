@@ -8,8 +8,8 @@ from napari._tests.utils import skip_local_popups
 
 @skip_local_popups
 @pytest.mark.skipif(
-    sys.platform.startswith('win') or sys.platform.startswith('linux'),
-    reason='Currently fails on certain CI due to error on canvas draw.',
+    sys.platform.startswith("win") or sys.platform.startswith("linux"),
+    reason="Currently fails on certain CI due to error on canvas draw.",
 )
 def test_canvas_drawing(make_napari_viewer):
     """Test drawing before and after adding and then deleting a layer."""

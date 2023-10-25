@@ -11,9 +11,9 @@ def test_radio_button(qtbot):
     layer = Points()
     assert layer.mode != Mode.ADD
 
-    btn = QtModeRadioButton(layer, 'test_button', Mode.ADD, tooltip='tooltip')
-    assert btn.property('mode') == 'test_button'
-    assert btn.toolTip() == 'tooltip'
+    btn = QtModeRadioButton(layer, "test_button", Mode.ADD, tooltip="tooltip")
+    assert btn.property("mode") == "test_button"
+    assert btn.toolTip() == "tooltip"
 
     btn.click()
     qtbot.waitUntil(lambda: layer.mode == Mode.ADD, timeout=500)
@@ -28,10 +28,10 @@ def test_push_button(qtbot):
         layer.test_prop = True
 
     btn = QtModePushButton(
-        layer, 'test_button', slot=set_test_prop, tooltip='tooltip'
+        layer, "test_button", slot=set_test_prop, tooltip="tooltip"
     )
-    assert btn.property('mode') == 'test_button'
-    assert btn.toolTip() == 'tooltip'
+    assert btn.property("mode") == "test_button"
+    assert btn.toolTip() == "tooltip"
 
     btn.click()
     qtbot.waitUntil(lambda: layer.test_prop, timeout=500)

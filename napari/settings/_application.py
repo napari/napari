@@ -41,16 +41,16 @@ class ApplicationSettings(EventedModel):
 
     first_time: bool = Field(
         True,
-        title=trans._('First time'),
+        title=trans._("First time"),
         description=trans._(
-            'Indicate if napari is running for the first time. This setting is managed by the application.'
+            "Indicate if napari is running for the first time. This setting is managed by the application."
         ),
     )
     ipy_interactive: bool = Field(
         True,
-        title=trans._('IPython interactive'),
+        title=trans._("IPython interactive"),
         description=trans._(
-            r'Toggle the use of interactive `%gui qt` event loop when creating napari Viewers in IPython.'
+            r"Toggle the use of interactive `%gui qt` event loop when creating napari Viewers in IPython."
         ),
     )
     language: Language = Field(
@@ -208,9 +208,9 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    @validator('window_state', allow_reuse=True)
+    @validator("window_state", allow_reuse=True)
     def _validate_qbtye(cls, v):
-        if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
+        if v and (not isinstance(v, str) or not v.startswith("!QBYTE_")):
             raise ValueError(
                 trans._("QByte strings must start with '!QBYTE_'")
             )

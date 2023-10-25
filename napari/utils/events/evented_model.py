@@ -96,7 +96,7 @@ class EventedMetaclass(ModelMetaclass):
             # encoders for this model.
             # NOTE: a _json_encode field must return an object that can be
             # passed to json.dumps ... but it needn't return a string.
-            if hasattr(f.type_, '_json_encode'):
+            if hasattr(f.type_, "_json_encode"):
                 encoder = f.type_._json_encode
                 cls.__config__.json_encoders[f.type_] = encoder
                 # also add it to the base config
@@ -145,7 +145,7 @@ def _update_dependents_from_property_code(
             )
 
 
-def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
+def _get_field_dependents(cls: "EventedModel") -> Dict[str, Set[str]]:
     """Return mapping of field name -> dependent set of property names.
 
     Dependencies will be guessed by inspecting the code of each property
@@ -190,13 +190,13 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
 
     deps: Dict[str, Set[str]] = {}
 
-    _deps = getattr(cls.__config__, 'dependencies', None)
+    _deps = getattr(cls.__config__, "dependencies", None)
     if _deps:
         for prop_name, fields in _deps.items():
             if prop_name not in cls.__properties__:
                 raise ValueError(
-                    'Fields with dependencies must be properties. '
-                    f'{prop_name!r} is not.'
+                    "Fields with dependencies must be properties. "
+                    f"{prop_name!r} is not."
                 )
             for field in fields:
                 if field not in cls.__fields__:
@@ -298,7 +298,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         return not are_equal(new_value, old_value), new_value
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name not in getattr(self, 'events', {}):
+        if name not in getattr(self, "events", {}):
             # This is a workaround needed because `EventedConfigFileSettings` uses
             # `_config_path` before calling the superclass constructor
             super().__setattr__(name, value)
@@ -344,7 +344,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 getattr(self.events, name)(value=new_value)
 
     def _setattr_impl(self, name: str, value: Any) -> None:
-        if name not in getattr(self, 'events', {}):
+        if name not in getattr(self, "events", {}):
             # fallback to default behavior
             self._super_setattr_(name, value)
             return
@@ -416,7 +416,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 setattr(self, name, value)
 
     def update(
-        self, values: Union['EventedModel', dict], recurse: bool = True
+        self, values: Union["EventedModel", dict], recurse: bool = True
     ) -> None:
         """Update a model in place.
 
@@ -485,7 +485,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             by default `True`
         """
         null = object()
-        before = getattr(self.Config, 'use_enum_values', null)
+        before = getattr(self.Config, "use_enum_values", null)
         self.Config.use_enum_values = as_values
         try:
             yield
@@ -493,7 +493,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             if before is not null:
                 self.Config.use_enum_values = before
             else:
-                delattr(self.Config, 'use_enum_values')
+                delattr(self.Config, "use_enum_values")
 
 
 def get_defaults(obj: BaseModel):

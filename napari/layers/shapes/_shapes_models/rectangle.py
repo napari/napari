@@ -41,7 +41,7 @@ class Rectangle(Shape):
 
         self._closed = True
         self.data = data
-        self.name = 'rectangle'
+        self.name = "rectangle"
 
     @property
     def data(self):
@@ -83,4 +83,4 @@ class Rectangle(Shape):
                 np.min(data_not_displayed, axis=0),
                 np.max(data_not_displayed, axis=0),
             ]
-        ).astype('int')
+        ).astype("int")

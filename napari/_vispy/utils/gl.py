@@ -105,7 +105,7 @@ def fix_data_dtype(data):
     except KeyError as e:  # not an int or float
         raise TypeError(
             trans._(
-                'type {dtype} not allowed for texture; must be one of {textures}',
+                "type {dtype} not allowed for texture; must be one of {textures}",
                 deferred=True,
                 dtype=dtype,
                 textures=set(texture_dtypes),
@@ -122,36 +122,36 @@ def fix_data_dtype(data):
 # they do not apply to min/max blending equation
 
 BLENDING_MODES = {
-    'opaque': {
+    "opaque": {
         "depth_test": True,
         "cull_face": False,
         "blend": False,
     },
-    'translucent': {
+    "translucent": {
         "depth_test": True,
         "cull_face": False,
         "blend": True,
-        "blend_func": ('src_alpha', 'one_minus_src_alpha', 'one', 'one'),
-        "blend_equation": 'func_add',
+        "blend_func": ("src_alpha", "one_minus_src_alpha", "one", "one"),
+        "blend_equation": "func_add",
     },
-    'translucent_no_depth': {
+    "translucent_no_depth": {
         "depth_test": False,
         "cull_face": False,
         "blend": True,
-        "blend_func": ('src_alpha', 'one_minus_src_alpha', 'one', 'one'),
-        "blend_equation": 'func_add',  # see vispy/vispy#2324
+        "blend_func": ("src_alpha", "one_minus_src_alpha", "one", "one"),
+        "blend_equation": "func_add",  # see vispy/vispy#2324
     },
-    'additive': {
+    "additive": {
         "depth_test": False,
         "cull_face": False,
         "blend": True,
-        "blend_func": ('src_alpha', 'dst_alpha', 'one', 'one'),
-        "blend_equation": 'func_add',
+        "blend_func": ("src_alpha", "dst_alpha", "one", "one"),
+        "blend_equation": "func_add",
     },
-    'minimum': {
+    "minimum": {
         "depth_test": False,
         "cull_face": False,
         "blend": True,
-        "blend_equation": 'min',
+        "blend_equation": "min",
     },
 }

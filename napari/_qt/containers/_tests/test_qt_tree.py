@@ -38,7 +38,7 @@ def _recursive_make_group(lst, level=0):
             out.append(_recursive_make_group(item, level=level + 1))
         else:
             out.append(Node(name=str(item)))
-    return Group(out, name=f'g{level}')
+    return Group(out, name=f"g{level}")
 
 
 def _assert_models_synced(model: Group, qt_model: QtNodeTreeModel):
@@ -59,7 +59,7 @@ def test_move_single_tree_item(tree_model):
     _assert_models_synced(root, tree_model)
 
 
-@pytest.mark.parametrize('sources, dest, expectation', NESTED_POS_INDICES)
+@pytest.mark.parametrize("sources, dest, expectation", NESTED_POS_INDICES)
 def test_nested_move_multiple(qapp, sources, dest, expectation):
     """Test that models stay in sync with complicated moves.
 
@@ -96,11 +96,11 @@ def test_qt_tree_model_insertion(qapp):
     root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
     qt_tree = QtNodeTreeModel(root)
     _assert_models_synced(root, qt_tree)
-    root[2, 1].append(Node(name='212'))
+    root[2, 1].append(Node(name="212"))
     e = _recursive_make_group([0, 1, [20, [210, 211, 212], 22], 3, 4])
     _assert_models_synced(e, qt_tree)
 
-    root.insert(-2, Node(name='9'))
+    root.insert(-2, Node(name="9"))
     e = _recursive_make_group([0, 1, [20, [210, 211, 212], 22], 9, 3, 4])
     _assert_models_synced(e, qt_tree)
 
@@ -110,10 +110,10 @@ def test_find_nodes(qapp):
 
     qt_tree = QtNodeTreeModel(root)
     _assert_models_synced(root, qt_tree)
-    node = Node(name='212')
+    node = Node(name="212")
     root[2, 1].append(node)
     assert index_of(qt_tree, node).row() == 2
-    assert not index_of(qt_tree, Node(name='new node')).isValid()
+    assert not index_of(qt_tree, Node(name="new node")).isValid()
 
 
 def test_node_tree_view(qtbot):

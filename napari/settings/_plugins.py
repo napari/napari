@@ -43,16 +43,16 @@ class PluginsSettings(EventedSettings):
     )
     extension2reader: Dict[str, str] = Field(
         default_factory=dict,
-        title=trans._('File extension readers'),
+        title=trans._("File extension readers"),
         description=trans._(
-            'Assign file extensions to specific reader plugins'
+            "Assign file extensions to specific reader plugins"
         ),
     )
     extension2writer: Dict[str, str] = Field(
         default_factory=dict,
-        title=trans._('Writer plugin extension association.'),
+        title=trans._("Writer plugin extension association."),
         description=trans._(
-            'Assign file extensions to specific writer plugins'
+            "Assign file extensions to specific writer plugins"
         ),
     )
 
@@ -62,7 +62,7 @@ class PluginsSettings(EventedSettings):
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = (
-            'schema_version',
-            'disabled_plugins',
-            'extension2writer',
+            "schema_version",
+            "disabled_plugins",
+            "extension2writer",
         )

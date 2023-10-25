@@ -103,7 +103,7 @@ class QtDictTable(QTableWidget):
         self.setColumnCount(len(_headers))
         for row, elem in enumerate(data):
             for key, value in elem.items():
-                value = value or ''
+                value = value or ""
                 try:
                     col = _headers.index(key)
                 except ValueError:
@@ -127,7 +127,7 @@ class QtDictTable(QTableWidget):
         item = self.item(row, col)
         text = item.text().strip()
         if email_pattern.match(text):
-            webbrowser.open(f'mailto:{text}', new=1)
+            webbrowser.open(f"mailto:{text}", new=1)
             return
         if url_pattern.match(text):
             webbrowser.open(text, new=1)

@@ -4,46 +4,46 @@ from functools import partial
 def _load_skimage_data(name, **kwargs):
     import skimage.data
 
-    if name == 'cells3d':
+    if name == "cells3d":
         return [
             (
                 skimage.data.cells3d(),
                 {
-                    'channel_axis': 1,
-                    'name': ['membrane', 'nuclei'],
-                    'contrast_limits': [(1110, 23855), (1600, 50000)],
+                    "channel_axis": 1,
+                    "name": ["membrane", "nuclei"],
+                    "contrast_limits": [(1110, 23855), (1600, 50000)],
                 },
             )
         ]
-    if name == 'kidney':
+    if name == "kidney":
         return [
             (
                 skimage.data.kidney(),
                 {
-                    'channel_axis': -1,
-                    'name': ['nuclei', 'WGA', 'actin'],
-                    'colormap': ['blue', 'green', 'red'],
+                    "channel_axis": -1,
+                    "name": ["nuclei", "WGA", "actin"],
+                    "colormap": ["blue", "green", "red"],
                 },
             )
         ]
-    if name == 'lily':
+    if name == "lily":
         return [
             (
                 skimage.data.lily(),
                 {
-                    'channel_axis': -1,
-                    'name': ['lily-R', 'lily-G', 'lily-W', 'lily-B'],
-                    'colormap': ['red', 'green', 'gray', 'blue'],
+                    "channel_axis": -1,
+                    "name": ["lily-R", "lily-G", "lily-W", "lily-B"],
+                    "colormap": ["red", "green", "gray", "blue"],
                 },
             )
         ]
-    if name == 'binary_blobs_3D':
-        kwargs['n_dim'] = 3
-        kwargs.setdefault('length', 128)
-        kwargs.setdefault('volume_fraction', 0.25)
-        name = 'binary_blobs'
+    if name == "binary_blobs_3D":
+        kwargs["n_dim"] = 3
+        kwargs.setdefault("length", 128)
+        kwargs.setdefault("volume_fraction", 0.25)
+        name = "binary_blobs"
 
-    return [(getattr(skimage.data, name)(**kwargs), {'name': name})]
+    return [(getattr(skimage.data, name)(**kwargs), {"name": name})]
 
 
 # fmt: off

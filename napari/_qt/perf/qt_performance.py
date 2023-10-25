@@ -134,7 +134,7 @@ class QtPerformance(QWidget):
         layout.addWidget(self.log)
 
         # Uptime label. To indicate if the widget is getting updated.
-        label = QLabel('')
+        label = QLabel("")
         layout.addWidget(label)
         self.timer_label = label
 

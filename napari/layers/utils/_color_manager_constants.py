@@ -9,6 +9,6 @@ class ColorMode(StrEnum):
     COLORMAP allows color to be set via a color map over an attribute
     """
 
-    DIRECT = 'direct'
-    CYCLE = 'cycle'
-    COLORMAP = 'colormap'
+    DIRECT = "direct"
+    CYCLE = "cycle"
+    COLORMAP = "colormap"

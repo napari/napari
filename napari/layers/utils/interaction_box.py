@@ -107,7 +107,7 @@ def calculate_bounds_from_contained_points(
 
     points = np.atleast_2d(points)
     if points.ndim != 2:
-        raise ValueError('only 2D coordinates are accepted')
+        raise ValueError("only 2D coordinates are accepted")
 
     x0 = points[:, 0].min()
     x1 = points[:, 0].max()

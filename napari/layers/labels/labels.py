@@ -254,13 +254,13 @@ class Labels(_ImageBase):
     }
 
     _cursor_modes: ClassVar[Dict[Mode, str]] = {  # type: ignore[assignment]
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-        Mode.PICK: 'cross',
-        Mode.PAINT: 'circle',
-        Mode.FILL: 'cross',
-        Mode.ERASE: 'circle',
-        Mode.POLYGON: 'cross',
+        Mode.PAN_ZOOM: "standard",
+        Mode.TRANSFORM: "standard",
+        Mode.PICK: "cross",
+        Mode.PAINT: "circle",
+        Mode.FILL: "cross",
+        Mode.ERASE: "circle",
+        Mode.POLYGON: "cross",
     }
 
     _history_limit = 100
@@ -283,15 +283,15 @@ class Labels(_ImageBase):
         shear=None,
         affine=None,
         opacity=0.7,
-        blending='translucent',
-        rendering='iso_categorical',
-        depiction='volume',
+        blending="translucent",
+        rendering="iso_categorical",
+        depiction="volume",
         visible=True,
         multiscale=None,
         cache=True,
         plane=None,
         experimental_clipping_planes=None,
-        projection_mode='none',
+        projection_mode="none",
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -317,8 +317,8 @@ class Labels(_ImageBase):
             rgb=False,
             colormap=self._random_colormap,
             contrast_limits=[0.0, 2**23 - 1.0],
-            interpolation2d='nearest',
-            interpolation3d='nearest',
+            interpolation2d="nearest",
+            interpolation3d="nearest",
             rendering=rendering,
             depiction=depiction,
             iso_threshold=0,
@@ -584,8 +584,8 @@ class Labels(_ImageBase):
     def _make_label_index(self) -> Dict[int, int]:
         features = self._feature_table.values
         label_index = {}
-        if 'index' in features:
-            label_index = {i: k for k, i in enumerate(features['index'])}
+        if "index" in features:
+            label_index = {i: k for k, i in enumerate(features["index"])}
         elif features.shape[1] > 0:
             label_index = {i: i for i in range(features.shape[0])}
         return label_index
@@ -601,9 +601,9 @@ class Labels(_ImageBase):
             color = {}
 
         if self._background_label not in color:
-            color[self._background_label] = 'transparent'
+            color[self._background_label] = "transparent"
 
-        default_color = color.pop(None, 'black')
+        default_color = color.pop(None, "black")
         # this is default color for label that is not in the color dict
         # is provided as None key
         # we pop it as `None` cannot be cast to float
@@ -658,7 +658,7 @@ class Labels(_ImageBase):
 
         alias_string = "\n".join(
             trans._(
-                'Labels {col_li} will display as the same color as {col_la};',
+                "Labels {col_li} will display as the same color as {col_la};",
                 col_li=",".join(str(i) for i in lst[:-1]),
                 col_la=str(lst[-1]),
             )
@@ -692,7 +692,7 @@ class Labels(_ImageBase):
         if len(color) != 2:
             return False
 
-        if not hasattr(self, '_color'):
+        if not hasattr(self, "_color"):
             return False
 
         default_keys = [None, self._background_label]
@@ -741,19 +741,19 @@ class Labels(_ImageBase):
         state = self._get_base_state()
         state.update(
             {
-                'multiscale': self.multiscale,
-                'num_colors': self.num_colors,
-                'properties': self.properties,
-                'rendering': self.rendering,
-                'depiction': self.depiction,
-                'plane': self.plane.dict(),
-                'experimental_clipping_planes': [
+                "multiscale": self.multiscale,
+                "num_colors": self.num_colors,
+                "properties": self.properties,
+                "rendering": self.rendering,
+                "depiction": self.depiction,
+                "plane": self.plane.dict(),
+                "experimental_clipping_planes": [
                     plane.dict() for plane in self.experimental_clipping_planes
                 ],
-                'seed_rng': self.seed_rng,
-                'data': self.data,
-                'color': self.color,
-                'features': self.features,
+                "seed_rng": self.seed_rng,
+                "data": self.data,
+                "color": self.color,
+                "features": self.features,
             }
         )
         return state
@@ -1561,7 +1561,7 @@ class Labels(_ImageBase):
 
         if not (  # if not a numpy array or numpy-backed xarray
             isinstance(self.data, np.ndarray)
-            or isinstance(getattr(self.data, 'data', None), np.ndarray)
+            or isinstance(getattr(self.data, "data", None), np.ndarray)
         ):
             # In the absence of slicing, the current slice becomes
             # invalidated by data_setitem; only in the special case of a NumPy
@@ -1653,7 +1653,7 @@ class Labels(_ImageBase):
         pos = position
         if pos is not None:
             pos = np.asarray(pos)[-self.ndim :]
-        source_info['coordinates'] = generate_layer_coords_status(pos, value)
+        source_info["coordinates"] = generate_layer_coords_status(pos, value)
 
         # if this labels layer has properties
         properties = self._get_properties(
@@ -1663,7 +1663,7 @@ class Labels(_ImageBase):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += "; " + ", ".join(properties)
+            source_info["coordinates"] += "; " + ", ".join(properties)
 
         return source_info
 
@@ -1729,13 +1729,13 @@ class Labels(_ImageBase):
 
         label_value = value[1] if self.multiscale else value
         if label_value not in self._label_index:
-            return [trans._('[No Properties]')]
+            return [trans._("[No Properties]")]
 
         idx = self._label_index[label_value]
         return [
-            f'{k}: {v[idx]}'
+            f"{k}: {v[idx]}"
             for k, v in self.features.items()
-            if k != 'index'
+            if k != "index"
             and len(v) > idx
             and v[idx] is not None
             and not (isinstance(v[idx], float) and np.isnan(v[idx]))
@@ -1744,7 +1744,7 @@ class Labels(_ImageBase):
 
 def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
     """Coerces indices so that they can be used for vectorized indexing in the given data array."""
-    if _is_array_type(array, 'xarray.DataArray'):
+    if _is_array_type(array, "xarray.DataArray"):
         # Fix indexing for xarray if necessary
         # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
         # for difference from indexing numpy

@@ -9,6 +9,6 @@ def test_str_enum():
 
     assert Cake.CHOC == "chocolate"
     assert Cake.CHOC == Cake.CHOC
-    assert f'{Cake.CHOC}' == "chocolate"
+    assert f"{Cake.CHOC}" == "chocolate"
     assert Cake.CHOC != "vanilla"
     assert Cake.CHOC != Cake.VANILLA

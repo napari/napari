@@ -23,7 +23,7 @@ def test_warns_but_parses():
     """Test collection of colors that raise a warning but do not return
     a default white color array.
     """
-    colors = ['', (43, 3, 3, 3), np.array([[3, 3, 3, 3], [0, 0, 0, 1]])]
+    colors = ["", (43, 3, 3, 3), np.array([[3, 3, 3, 3], [0, 0, 0, 1]])]
 
     true_colors = [
         np.zeros((1, 4), dtype=np.float32),

@@ -58,7 +58,7 @@ class QtLayerList(QtListView[Layer]):
 
         layer_delegate.loading_frame_changed.connect(viewport.update)
 
-        self.setToolTip(trans._('Layer list'))
+        self.setToolTip(trans._("Layer list"))
 
         # This reverses the order of the items in the view,
         # so items at the end of the list are at the top.

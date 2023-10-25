@@ -19,26 +19,26 @@ if TYPE_CHECKING:
 
 
 class DebugMenu(NapariMenu):
-    def __init__(self, window: 'Window') -> None:
+    def __init__(self, window: "Window") -> None:
         self._win = window
-        super().__init__(trans._('&Debug'), window._qt_window)
+        super().__init__(trans._("&Debug"), window._qt_window)
         self._perf_menu = NapariMenu(trans._("Performance Trace"), self)
 
         ACTIONS = [
             {
-                'menu': self._perf_menu,
-                'items': [
+                "menu": self._perf_menu,
+                "items": [
                     {
-                        'text': trans._('Start Recording...'),
-                        'slot': self._start_trace_dialog,
-                        'shortcut': 'Alt+T',
-                        'statusTip': trans._('Start recording a trace file'),
+                        "text": trans._("Start Recording..."),
+                        "slot": self._start_trace_dialog,
+                        "shortcut": "Alt+T",
+                        "statusTip": trans._("Start recording a trace file"),
                     },
                     {
-                        'text': trans._('Stop Recording...'),
-                        'slot': self._stop_trace,
-                        'shortcut': 'Shift+Alt+T',
-                        'statusTip': trans._('Stop recording a trace file'),
+                        "text": trans._("Stop Recording..."),
+                        "slot": self._stop_trace,
+                        "shortcut": "Shift+Alt+T",
+                        "statusTip": trans._("Stop recording a trace file"),
                     },
                 ],
             }
@@ -63,7 +63,7 @@ class DebugMenu(NapariMenu):
         dlg.setHistory(hist)
         filename, _ = dlg.getSaveFileName(
             viewer,  # parent
-            trans._('Record performance trace file'),  # caption
+            trans._("Record performance trace file"),  # caption
             hist[0],  # directory in PyQt, dir in PySide
             filter=trans._("Trace Files (*.json)"),
         )
@@ -95,7 +95,7 @@ class DebugMenu(NapariMenu):
             Are we currently recording a trace file.
         """
         for action in self._perf_menu.actions():
-            if trans._('Start Recording') in action.text():
+            if trans._("Start Recording") in action.text():
                 action.setEnabled(not recording)
-            elif trans._('Stop Recording') in action.text():
+            elif trans._("Stop Recording") in action.text():
                 action.setEnabled(recording)

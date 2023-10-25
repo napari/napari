@@ -25,7 +25,7 @@ def test_unbind_non_existing_action(action_manager):
     We emit a warning but should not fail.
     """
     with pytest.warns(UserWarning):
-        assert action_manager.unbind_shortcut('napari:foo_bar') is None
+        assert action_manager.unbind_shortcut("napari:foo_bar") is None
 
 
 def test_bind_multiple_action(action_manager):
@@ -34,27 +34,27 @@ def test_bind_multiple_action(action_manager):
     """
 
     action_manager.register_action(
-        'napari:test_action_2', lambda: None, 'this is a test action', None
+        "napari:test_action_2", lambda: None, "this is a test action", None
     )
 
-    action_manager.bind_shortcut('napari:test_action_2', 'X')
-    action_manager.bind_shortcut('napari:test_action_2', 'Y')
-    assert action_manager._shortcuts['napari:test_action_2'] == ['X', 'Y']
+    action_manager.bind_shortcut("napari:test_action_2", "X")
+    action_manager.bind_shortcut("napari:test_action_2", "Y")
+    assert action_manager._shortcuts["napari:test_action_2"] == ["X", "Y"]
 
 
 def test_bind_unbind_existing_action(action_manager):
     action_manager.register_action(
-        'napari:test_action_1', lambda: None, 'this is a test action', None
+        "napari:test_action_1", lambda: None, "this is a test action", None
     )
 
-    assert action_manager.bind_shortcut('napari:test_action_1', 'X') is None
-    assert action_manager.unbind_shortcut('napari:test_action_1') == ['X']
-    assert action_manager._shortcuts['napari:test_action_1'] == []
+    assert action_manager.bind_shortcut("napari:test_action_1", "X") is None
+    assert action_manager.unbind_shortcut("napari:test_action_1") == ["X"]
+    assert action_manager._shortcuts["napari:test_action_1"] == []
 
 
 def test_bind_key_generator(action_manager):
     def _sample_generator():
-        yield 'X'
+        yield "X"
 
     action_manager.register_action(
         "napari:test_action_1",
@@ -64,4 +64,4 @@ def test_bind_key_generator(action_manager):
     )
 
     with pytest.raises(ValueError, match="generator functions"):
-        action_manager.bind_button('napari:test_action_1', Mock())
+        action_manager.bind_button("napari:test_action_1", Mock())

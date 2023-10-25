@@ -8,20 +8,20 @@ from napari.utils.transforms import Affine, CompositeAffine, ScaleTranslate
 transform_types = [Affine, CompositeAffine, ScaleTranslate]
 
 
-@pytest.mark.parametrize('Transform', transform_types)
+@pytest.mark.parametrize("Transform", transform_types)
 def test_scale_translate(Transform):
     coord = [10, 13]
-    transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    transform = Transform(scale=[2, 3], translate=[8, -5], name="st")
     assert transform._is_diagonal
     new_coord = transform(coord)
     target_coord = [2 * 10 + 8, 3 * 13 - 5]
-    assert transform.name == 'st'
+    assert transform.name == "st"
     npt.assert_allclose(new_coord, target_coord)
 
 
-@pytest.mark.parametrize('Transform', [Affine, CompositeAffine])
+@pytest.mark.parametrize("Transform", [Affine, CompositeAffine])
 def test_affine_is_diagonal(Transform):
-    transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    transform = Transform(scale=[2, 3], translate=[8, -5], name="st")
     assert transform._is_diagonal
     transform.rotate = 5.0
     assert not transform._is_diagonal
@@ -32,37 +32,37 @@ def test_affine_is_diagonal(Transform):
 
 
 def test_diagonal_scale_setter():
-    diag_transform = Affine(scale=[2, 3], name='st')
+    diag_transform = Affine(scale=[2, 3], name="st")
     assert diag_transform._is_diagonal
     diag_transform.scale = [1]
     npt.assert_allclose(diag_transform.scale, [1.0, 1.0])
 
 
-@pytest.mark.parametrize('Transform', transform_types)
+@pytest.mark.parametrize("Transform", transform_types)
 def test_scale_translate_broadcast_scale(Transform):
     coord = [1, 10, 13]
-    transform = Transform(scale=[4, 2, 3], translate=[8, -5], name='st')
+    transform = Transform(scale=[4, 2, 3], translate=[8, -5], name="st")
     new_coord = transform(coord)
     target_coord = [4, 2 * 10 + 8, 3 * 13 - 5]
-    assert transform.name == 'st'
+    assert transform.name == "st"
     npt.assert_allclose(transform.scale, [4, 2, 3])
     npt.assert_allclose(transform.translate, [0, 8, -5])
     npt.assert_allclose(new_coord, target_coord)
 
 
-@pytest.mark.parametrize('Transform', transform_types)
+@pytest.mark.parametrize("Transform", transform_types)
 def test_scale_translate_broadcast_translate(Transform):
     coord = [1, 10, 13]
-    transform = Transform(scale=[2, 3], translate=[5, 8, -5], name='st')
+    transform = Transform(scale=[2, 3], translate=[5, 8, -5], name="st")
     new_coord = transform(coord)
     target_coord = [6, 2 * 10 + 8, 3 * 13 - 5]
-    assert transform.name == 'st'
+    assert transform.name == "st"
     npt.assert_allclose(transform.scale, [1, 2, 3])
     npt.assert_allclose(transform.translate, [5, 8, -5])
     npt.assert_allclose(new_coord, target_coord)
 
 
-@pytest.mark.parametrize('Transform', transform_types)
+@pytest.mark.parametrize("Transform", transform_types)
 def test_scale_translate_inverse(Transform):
     coord = [10, 13]
     transform = Transform(scale=[2, 3], translate=[8, -5])
@@ -74,7 +74,7 @@ def test_scale_translate_inverse(Transform):
     npt.assert_allclose(inverted_new_coord, coord)
 
 
-@pytest.mark.parametrize('Transform', transform_types)
+@pytest.mark.parametrize("Transform", transform_types)
 def test_scale_translate_compose(Transform):
     coord = [10, 13]
     transform_a = Transform(scale=[2, 3], translate=[8, -5])
@@ -86,29 +86,29 @@ def test_scale_translate_compose(Transform):
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-@pytest.mark.parametrize('Transform', transform_types)
+@pytest.mark.parametrize("Transform", transform_types)
 def test_scale_translate_slice(Transform):
     transform_a = Transform(scale=[2, 3], translate=[8, -5])
-    transform_b = Transform(scale=[2, 1, 3], translate=[8, 3, -5], name='st')
+    transform_b = Transform(scale=[2, 1, 3], translate=[8, 3, -5], name="st")
     npt.assert_allclose(transform_b.set_slice([0, 2]).scale, transform_a.scale)
     npt.assert_allclose(
         transform_b.set_slice([0, 2]).translate, transform_a.translate
     )
-    assert transform_b.set_slice([0, 2]).name == 'st'
+    assert transform_b.set_slice([0, 2]).name == "st"
 
 
-@pytest.mark.parametrize('Transform', transform_types)
+@pytest.mark.parametrize("Transform", transform_types)
 def test_scale_translate_expand_dims(Transform):
-    transform_a = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    transform_a = Transform(scale=[2, 3], translate=[8, -5], name="st")
     transform_b = Transform(scale=[2, 1, 3], translate=[8, 0, -5])
     npt.assert_allclose(transform_a.expand_dims([1]).scale, transform_b.scale)
     npt.assert_allclose(
         transform_a.expand_dims([1]).translate, transform_b.translate
     )
-    assert transform_a.expand_dims([1]).name == 'st'
+    assert transform_a.expand_dims([1]).name == "st"
 
 
-@pytest.mark.parametrize('Transform', transform_types)
+@pytest.mark.parametrize("Transform", transform_types)
 def test_scale_translate_identity_default(Transform):
     coord = [10, 13]
     transform = Transform()
@@ -197,7 +197,7 @@ def test_scale_translate_rotate_shear_compose():
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-@pytest.mark.parametrize('dimensionality', [2, 3])
+@pytest.mark.parametrize("dimensionality", [2, 3])
 def test_affine_matrix(dimensionality):
     np.random.seed(0)
     N = dimensionality
@@ -222,7 +222,7 @@ def test_affine_matrix(dimensionality):
     np.testing.assert_almost_equal(result_transform, result_mat_multiply)
 
 
-@pytest.mark.parametrize('dimensionality', [2, 3])
+@pytest.mark.parametrize("dimensionality", [2, 3])
 def test_affine_matrix_compose(dimensionality):
     np.random.seed(0)
     N = dimensionality
@@ -248,7 +248,7 @@ def test_affine_matrix_compose(dimensionality):
     np.testing.assert_almost_equal(transform_C.affine_matrix, C)
 
 
-@pytest.mark.parametrize('dimensionality', [2, 3])
+@pytest.mark.parametrize("dimensionality", [2, 3])
 def test_numpy_array_protocol(dimensionality):
     N = dimensionality
     A = np.eye(N + 1)
@@ -264,7 +264,7 @@ def test_numpy_array_protocol(dimensionality):
     )
 
 
-@pytest.mark.parametrize('dimensionality', [2, 3])
+@pytest.mark.parametrize("dimensionality", [2, 3])
 def test_affine_matrix_inverse(dimensionality):
     np.random.seed(0)
     N = dimensionality
@@ -305,7 +305,7 @@ def test_repeat_shear_setting():
     np.testing.assert_almost_equal(mat, transform.shear)
 
 
-@pytest.mark.parametrize('dimensionality', [2, 3])
+@pytest.mark.parametrize("dimensionality", [2, 3])
 def test_composite_affine_equiv_to_affine(dimensionality):
     np.random.seed(0)
     translate = np.random.randn(dimensionality)

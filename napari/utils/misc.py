@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
 
 
-def parse_version(v) -> 'packaging.version._BaseVersion':
+def parse_version(v) -> "packaging.version._BaseVersion":
     """Parse a version string and return a packaging.version.Version obj."""
     import packaging.version
 
@@ -73,7 +73,7 @@ def running_as_bundled_app(*, check_conda=True) -> bool:
 
     # TODO: Remove from here on?
     try:
-        app_module = sys.modules['__main__'].__package__
+        app_module = sys.modules["__main__"].__package__
     except AttributeError:
         return False
 
@@ -85,7 +85,7 @@ def running_as_bundled_app(*, check_conda=True) -> bool:
     except importlib.metadata.PackageNotFoundError:
         return False
 
-    return 'Briefcase-Version' in metadata
+    return "Briefcase-Version" in metadata
 
 
 def running_as_constructor_app() -> bool:
@@ -100,7 +100,7 @@ def in_jupyter() -> bool:
     with contextlib.suppress(ImportError):
         from IPython import get_ipython
 
-        return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
+        return get_ipython().__class__.__name__ == "ZMQInteractiveShell"
     return False
 
 
@@ -109,7 +109,7 @@ def in_ipython() -> bool:
     with contextlib.suppress(ImportError):
         from IPython import get_ipython
 
-        return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
+        return get_ipython().__class__.__name__ == "TerminalInteractiveShell"
     return False
 
 
@@ -118,8 +118,8 @@ def in_python_repl() -> bool:
     with contextlib.suppress(ImportError):
         from IPython import get_ipython
 
-        return get_ipython().__class__.__name__ == 'NoneType' and hasattr(
-            sys, 'ps1'
+        return get_ipython().__class__.__name__ == "NoneType" and hasattr(
+            sys, "ps1"
         )
     return False
 
@@ -127,7 +127,7 @@ def in_python_repl() -> bool:
 def str_to_rgb(arg):
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
     return list(
-        map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups())
+        map(int, re.match(r"rgb\((\d+),\s*(\d+),\s*(\d+)\)", arg).groups())
     )
 
 
@@ -290,7 +290,7 @@ class StringEnumMeta(EnumMeta):
 
             raise ValueError(
                 trans._(
-                    '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
+                    "{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}",
                     deferred=True,
                     class_name=cls,
                     dtype=builtins.type(value),
@@ -333,7 +333,7 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
         return hash(str(self))
 
 
-camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
+camel_to_snake_pattern = re.compile(r"(.)([A-Z][a-z]+)")
 camel_to_spaces_pattern = re.compile(
     r"((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))"
 )
@@ -341,14 +341,14 @@ camel_to_spaces_pattern = re.compile(
 
 def camel_to_snake(name):
     # https://gist.github.com/jaytaylor/3660565
-    return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
+    return camel_to_snake_pattern.sub(r"\1_\2", name).lower()
 
 
 def camel_to_spaces(val):
     return camel_to_spaces_pattern.sub(r" \1", val)
 
 
-T = TypeVar('T', str, Path)
+T = TypeVar("T", str, Path)
 
 
 def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
@@ -406,12 +406,12 @@ class CallDefault(inspect.Parameter):
             self._default is not inspect._empty
             or kind == inspect._KEYWORD_ONLY
         ):
-            formatted = f'{formatted}={formatted}'
+            formatted = f"{formatted}={formatted}"
 
         if kind == inspect._VAR_POSITIONAL:
-            formatted = '*' + formatted
+            formatted = "*" + formatted
         elif kind == inspect._VAR_KEYWORD:
-            formatted = '**' + formatted
+            formatted = "**" + formatted
 
         return formatted
 
@@ -449,14 +449,14 @@ def ensure_n_tuple(val, n, fill=0):
     tuple
         Coerced tuple.
     """
-    assert n > 0, 'n must be greater than 0'
+    assert n > 0, "n must be greater than 0"
     tuple_value = tuple(val)
     return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
 
 
 def ensure_layer_data_tuple(val):
     msg = trans._(
-        'Not a valid layer data tuple: {value!r}',
+        "Not a valid layer data tuple: {value!r}",
         deferred=True,
         value=val,
     )
@@ -476,7 +476,7 @@ def ensure_list_of_layer_data_tuple(val) -> List[tuple]:
         with contextlib.suppress(TypeError):
             return [ensure_layer_data_tuple(v) for v in val]
     raise TypeError(
-        trans._('Not a valid list of layer data tuples!', deferred=True)
+        trans._("Not a valid list of layer data tuples!", deferred=True)
     )
 
 
@@ -519,11 +519,11 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     # yes, it's a little riskier, but we are checking namespaces instead of
     # actual `issubclass` here to avoid slow import times
     _known_arrays: Dict[str, Callable[[Any, Any], bool]] = {
-        'numpy.ndarray': _quiet_array_equal,  # numpy.ndarray
-        'dask.Array': operator.is_,  # dask.array.core.Array
-        'dask.Delayed': operator.is_,  # dask.delayed.Delayed
-        'zarr.Array': operator.is_,  # zarr.core.Array
-        'xarray.DataArray': _quiet_array_equal,  # xarray.core.dataarray.DataArray
+        "numpy.ndarray": _quiet_array_equal,  # numpy.ndarray
+        "dask.Array": operator.is_,  # dask.array.core.Array
+        "dask.Delayed": operator.is_,  # dask.delayed.Delayed
+        "zarr.Array": operator.is_,  # zarr.core.Array
+        "xarray.DataArray": _quiet_array_equal,  # xarray.core.dataarray.DataArray
     }
 
     for name in _arraylike_short_names(obj):
@@ -648,7 +648,7 @@ def _file_hash(_hash, file: Path, path: Path, include_paths: bool = True):
     if include_paths:
         # update the hash with the filename
         fparts = file.relative_to(path).parts
-        _hash.update(''.join(fparts).encode())
+        _hash.update("".join(fparts).encode())
 
 
 def _combine_signatures(

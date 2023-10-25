@@ -17,7 +17,7 @@ angles_param = [(x, True) for x in angles]
 angles_param.extend([(x, False) for x in np.radians(angles)])
 
 
-@pytest.mark.parametrize('angles,degrees', angles_param)
+@pytest.mark.parametrize("angles,degrees", angles_param)
 def test_quaternion2euler(angles, degrees):
     """Test quaternion to euler angle conversion."""
 
@@ -86,7 +86,7 @@ def test_set_cursor(make_napari_viewer):
     viewer.cursor.size = 5
     assert (
         viewer.window._qt_viewer.canvas.cursor.shape()
-        == QtCursorVisual['cross'].value
+        == QtCursorVisual["cross"].value
     )
 
     viewer.cursor.style = CursorStyle.CIRCLE.value

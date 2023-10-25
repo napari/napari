@@ -188,7 +188,7 @@ class ShapeList:
 
     @edge_color.setter
     def edge_color(self, edge_color):
-        self._set_color(edge_color, 'edge')
+        self._set_color(edge_color, "edge")
 
     @property
     def face_color(self):
@@ -197,7 +197,7 @@ class ShapeList:
 
     @face_color.setter
     def face_color(self, face_color):
-        self._set_color(face_color, 'face')
+        self._set_color(face_color, "face")
 
     @_batch_dec
     def _set_color(self, colors, attribute):
@@ -216,14 +216,14 @@ class ShapeList:
         if not np.array_equal(colors.shape, (n_shapes, 4)):
             raise ValueError(
                 trans._(
-                    '{attribute}_color must have shape ({n_shapes}, 4)',
+                    "{attribute}_color must have shape ({n_shapes}, 4)",
                     deferred=True,
                     attribute=attribute,
                     n_shapes=n_shapes,
                 )
             )
 
-        update_method = getattr(self, f'update_{attribute}_colors')
+        update_method = getattr(self, f"update_{attribute}_colors")
         indices = np.arange(len(colors))
         update_method(indices, colors, update=False)
         self._update_displayed()
@@ -339,7 +339,7 @@ class ShapeList:
             if shape_index is not None:
                 raise ValueError(
                     trans._(
-                        'shape_index must be None when adding multiple shapes',
+                        "shape_index must be None when adding multiple shapes",
                         deferred=True,
                     )
                 )
@@ -352,7 +352,7 @@ class ShapeList:
         else:
             raise TypeError(
                 trans._(
-                    'Cannot add single nor multiple shape',
+                    "Cannot add single nor multiple shape",
                     deferred=True,
                 )
             )
@@ -386,7 +386,7 @@ class ShapeList:
         if not issubclass(type(shape), Shape):
             raise TypeError(
                 trans._(
-                    'shape must be subclass of Shape',
+                    "shape must be subclass of Shape",
                     deferred=True,
                 )
             )
@@ -549,7 +549,7 @@ class ShapeList:
         if not len(face_colors) == len(edge_colors) == len(shapes):
             raise ValueError(
                 trans._(
-                    'shapes, face_colors, and edge_colors must be the same length',
+                    "shapes, face_colors, and edge_colors must be the same length",
                     deferred=True,
                 )
             )
@@ -557,7 +557,7 @@ class ShapeList:
         if not all(issubclass(type(shape), Shape) for shape in shapes):
             raise ValueError(
                 trans._(
-                    'all shapes must be subclass of Shape',
+                    "all shapes must be subclass of Shape",
                     deferred=True,
                 )
             )
@@ -790,7 +790,7 @@ class ShapeList:
                 else:
                     raise ValueError(
                         trans._(
-                            '{shape_type} must be one of {shape_classes}',
+                            "{shape_type} must be one of {shape_classes}",
                             deferred=True,
                             shape_type=shape_type,
                             shape_classes=set(shape_classes),
@@ -1232,7 +1232,7 @@ class ShapeList:
             N shapes
         """
         if mask_shape is None:
-            mask_shape = self.displayed_vertices.max(axis=0).astype('int')
+            mask_shape = self.displayed_vertices.max(axis=0).astype("int")
 
         masks = np.array(
             [

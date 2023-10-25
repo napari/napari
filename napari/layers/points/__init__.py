@@ -7,4 +7,4 @@ from napari.layers.points.points import Points
 del _points_key_bindings
 
 
-__all__ = ['Points']
+__all__ = ["Points"]

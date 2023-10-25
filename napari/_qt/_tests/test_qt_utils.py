@@ -108,16 +108,16 @@ def test_thread_proxy_guard(monkeypatch, qapp, single_threaded_executor):
     class X:
         a = 1
 
-    monkeypatch.setenv('NAPARI_ENSURE_PLUGIN_MAIN_THREAD', 'True')
+    monkeypatch.setenv("NAPARI_ENSURE_PLUGIN_MAIN_THREAD", "True")
 
     x = X()
     x_proxy = PublicOnlyProxy(x)
 
-    f = single_threaded_executor.submit(x.__setattr__, 'a', 2)
+    f = single_threaded_executor.submit(x.__setattr__, "a", 2)
     f.result()
     assert x.a == 2
 
-    f = single_threaded_executor.submit(x_proxy.__setattr__, 'a', 3)
+    f = single_threaded_executor.submit(x_proxy.__setattr__, "a", 3)
     with pytest.raises(RuntimeError):
         f.result()
     assert x.a == 2

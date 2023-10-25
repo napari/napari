@@ -109,11 +109,11 @@ class LayerDelegate(QStyledItemDelegate):
         layer = index.data(ItemRole)
         if layer is None:
             return
-        if hasattr(layer, 'is_group') and layer.is_group():  # for layer trees
+        if hasattr(layer, "is_group") and layer.is_group():  # for layer trees
             expanded = option.widget.isExpanded(index)
-            icon_name = 'folder-open' if expanded else 'folder'
+            icon_name = "folder-open" if expanded else "folder"
         else:
-            icon_name = f'new_{layer._type_string}'
+            icon_name = f"new_{layer._type_string}"
 
         try:
             icon = QColoredSVGIcon.from_resources(icon_name)
@@ -121,7 +121,7 @@ class LayerDelegate(QStyledItemDelegate):
             return
         # guessing theme rather than passing it through.
         bg = option.palette.color(option.palette.ColorRole.Window).red()
-        option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
+        option.icon = icon.colored(theme="dark" if bg < 128 else "light")
         option.decorationSize = QSize(18, 18)
         option.decorationPosition = (
             option.Position.Right
@@ -307,7 +307,7 @@ class LayerDelegate(QStyledItemDelegate):
         """Show the layerlist context menu.
         To add a new item to the menu, update the _LAYER_ACTIONS dict.
         """
-        if not hasattr(self, '_context_menu'):
+        if not hasattr(self, "_context_menu"):
             self._context_menu = build_qmodel_menu(
                 MenuId.LAYERLIST_CONTEXT, parent=parent
             )

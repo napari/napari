@@ -25,16 +25,16 @@ if TYPE_CHECKING:
 # The following dicts define groups to which menu items in the layer list context menu can belong
 # see https://app-model.readthedocs.io/en/latest/types/#app_model.types.MenuRule for details
 LAYERCTX_SPLITMERGE: MenuRuleDict = {
-    'id': MenuId.LAYERLIST_CONTEXT,
-    'group': MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
+    "id": MenuId.LAYERLIST_CONTEXT,
+    "group": MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
 }
 LAYERCTX_CONVERSION: MenuRuleDict = {
-    'id': MenuId.LAYERLIST_CONTEXT,
-    'group': MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
+    "id": MenuId.LAYERLIST_CONTEXT,
+    "group": MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
 }
 LAYERCTX_LINK: MenuRuleDict = {
-    'id': MenuId.LAYERLIST_CONTEXT,
-    'group': MenuGroup.LAYERLIST_CONTEXT.LINK,
+    "id": MenuId.LAYERLIST_CONTEXT,
+    "group": MenuGroup.LAYERLIST_CONTEXT.LINK,
 }
 
 # Statically defined Layer actions.
@@ -50,14 +50,14 @@ LAYER_ACTIONS: List[Action] = [
         id=CommandId.LAYER_SPLIT_STACK,
         title=CommandId.LAYER_SPLIT_STACK.command_title,
         callback=_layer_actions._split_stack,
-        menus=[{**LAYERCTX_SPLITMERGE, 'when': ~LLSCK.active_layer_is_rgb}],
+        menus=[{**LAYERCTX_SPLITMERGE, "when": ~LLSCK.active_layer_is_rgb}],
         enablement=LLSCK.active_layer_is_image_3d,
     ),
     Action(
         id=CommandId.LAYER_SPLIT_RGB,
         title=CommandId.LAYER_SPLIT_RGB.command_title,
         callback=_layer_actions._split_rgb,
-        menus=[{**LAYERCTX_SPLITMERGE, 'when': LLSCK.active_layer_is_rgb}],
+        menus=[{**LAYERCTX_SPLITMERGE, "when": LLSCK.active_layer_is_rgb}],
         enablement=LLSCK.active_layer_is_rgb,
     ),
     Action(
@@ -101,8 +101,8 @@ LAYER_ACTIONS: List[Action] = [
         callback=_layer_actions._toggle_visibility,
         menus=[
             {
-                'id': MenuId.LAYERLIST_CONTEXT,
-                'group': MenuGroup.NAVIGATION,
+                "id": MenuId.LAYERLIST_CONTEXT,
+                "group": MenuGroup.NAVIGATION,
             }
         ],
     ),
@@ -113,14 +113,14 @@ LAYER_ACTIONS: List[Action] = [
         enablement=(
             (LLSCK.num_selected_layers > 1) & ~LLSCK.num_selected_layers_linked
         ),
-        menus=[{**LAYERCTX_LINK, 'when': ~LLSCK.num_selected_layers_linked}],
+        menus=[{**LAYERCTX_LINK, "when": ~LLSCK.num_selected_layers_linked}],
     ),
     Action(
         id=CommandId.LAYER_UNLINK_SELECTED,
         title=CommandId.LAYER_UNLINK_SELECTED.command_title,
         callback=_layer_actions._unlink_selected_layers,
         enablement=LLSCK.num_selected_layers_linked,
-        menus=[{**LAYERCTX_LINK, 'when': LLSCK.num_selected_layers_linked}],
+        menus=[{**LAYERCTX_LINK, "when": LLSCK.num_selected_layers_linked}],
     ),
     Action(
         id=CommandId.LAYER_SELECT_LINKED,
@@ -133,16 +133,16 @@ LAYER_ACTIONS: List[Action] = [
 
 
 for _dtype in (
-    'int8',
-    'int16',
-    'int32',
-    'int64',
-    'uint8',
-    'uint16',
-    'uint32',
-    'uint64',
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
 ):
-    cmd = getattr(CommandId, f'LAYER_CONVERT_TO_{_dtype.upper()}')
+    cmd = getattr(CommandId, f"LAYER_CONVERT_TO_{_dtype.upper()}")
     LAYER_ACTIONS.append(
         Action(
             id=cmd,
@@ -152,18 +152,18 @@ for _dtype in (
                 LLSCK.all_selected_layers_labels
                 & (LLSCK.active_layer_dtype != _dtype)
             ),
-            menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
+            menus=[{"id": MenuId.LAYERS_CONVERT_DTYPE}],
         )
     )
 
-for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
-    cmd = getattr(CommandId, f'LAYER_PROJECT_{mode.upper()}')
+for mode in ("max", "min", "std", "sum", "mean", "median"):
+    cmd = getattr(CommandId, f"LAYER_PROJECT_{mode.upper()}")
     LAYER_ACTIONS.append(
         Action(
             id=cmd,
             title=cmd.command_title,
             callback=partial(_layer_actions._project, mode=mode),
             enablement=LLSCK.active_layer_is_image_3d,
-            menus=[{'id': MenuId.LAYERS_PROJECT}],
+            menus=[{"id": MenuId.LAYERS_PROJECT}],
         )
     )

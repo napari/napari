@@ -32,7 +32,7 @@ from napari.utils.notifications import Notification, NotificationSeverity
 from napari.utils.theme import get_theme
 from napari.utils.translations import trans
 
-ActionSequence = Sequence[Tuple[str, Callable[['NapariQtNotification'], None]]]
+ActionSequence = Sequence[Tuple[str, Callable[["NapariQtNotification"], None]]]
 
 
 class NapariQtNotification(QDialog):
@@ -76,14 +76,14 @@ class NapariQtNotification(QDialog):
     def __init__(
         self,
         message: str,
-        severity: Union[str, NotificationSeverity] = 'WARNING',
+        severity: Union[str, NotificationSeverity] = "WARNING",
         source: Optional[str] = None,
         actions: ActionSequence = (),
         parent=None,
     ) -> None:
         super().__init__(parent=parent)
 
-        if parent and hasattr(parent, 'resized'):
+        if parent and hasattr(parent, "resized"):
             parent.resized.connect(self.move_to_bottom_right)
 
         self.setupUi()
@@ -95,7 +95,7 @@ class NapariQtNotification(QDialog):
         self.message.setText(message)
         if source:
             self.source_label.setText(
-                trans._('Source: {source}', source=source)
+                trans._("Source: {source}", source=source)
             )
 
         self.close_button.clicked.connect(self.close)
@@ -120,11 +120,11 @@ class NapariQtNotification(QDialog):
         # FIXME: Should these be defined at the theme level?
         # Currently there is a warning one
         colors = {
-            'error': "#D85E38",
-            'warning': "#E3B617",
-            'info': default_color,
-            'debug': default_color,
-            'none': default_color,
+            "error": "#D85E38",
+            "warning": "#E3B617",
+            "info": default_color,
+            "debug": default_color,
+            "none": default_color,
         }
         color = colors.get(severity, default_color)
         icon = QColoredSVGIcon.from_resources(severity)
@@ -196,7 +196,7 @@ class NapariQtNotification(QDialog):
 
     def toggle_expansion(self):
         """Toggle the expanded state of the notification frame."""
-        self.contract() if self.property('expanded') else self.expand()
+        self.contract() if self.property("expanded") else self.expand()
         self.timer.stop()
 
     def expand(self):
@@ -214,7 +214,7 @@ class NapariQtNotification(QDialog):
         )
         self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
         self.geom_anim.start()
-        self.setProperty('expanded', True)
+        self.setProperty("expanded", True)
         self.style().unpolish(self.expand_button)
         self.style().polish(self.expand_button)
 
@@ -229,7 +229,7 @@ class NapariQtNotification(QDialog):
         )
         self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
         self.geom_anim.start()
-        self.setProperty('expanded', False)
+        self.setProperty("expanded", False)
         self.style().unpolish(self.expand_button)
         self.style().polish(self.expand_button)
 
@@ -295,13 +295,13 @@ class NapariQtNotification(QDialog):
         self.row2.setContentsMargins(12, 2, 16, 12)
         self.row2_widget.setMaximumHeight(34)
         self.row2_widget.setStyleSheet(
-            'QPushButton{'
-            'padding: 4px 12px 4px 12px; '
-            'font-size: 11px;'
-            'min-height: 18px; border-radius: 0;}'
+            "QPushButton{"
+            "padding: 4px 12px 4px 12px; "
+            "font-size: 11px;"
+            "min-height: 18px; border-radius: 0;}"
         )
         self.verticalLayout.addWidget(self.row2_widget, 0)
-        self.setProperty('expanded', False)
+        self.setProperty("expanded", False)
         self.resize(self.MIN_WIDTH, 40)
 
     def setup_buttons(self, actions: ActionSequence = ()):
@@ -364,7 +364,7 @@ class NapariQtNotification(QDialog):
 
             actions = (
                 *tuple(notification.actions),
-                (trans._('View Traceback'), show_tb),
+                (trans._("View Traceback"), show_tb),
             )
         else:
             actions = notification.actions
@@ -421,7 +421,7 @@ class TracebackDialog(QDialog):
         _highlight = Pylighter(text.document(), "python", theme.syntax_style)
         text.setText(exception.as_text())
         text.setReadOnly(True)
-        self.btn = QPushButton(trans._('Enter Debugger'))
+        self.btn = QPushButton(trans._("Enter Debugger"))
         self.btn.clicked.connect(self._enter_debug_mode)
         self.layout().addWidget(text)
         self.layout().addWidget(self.btn, 0, Qt.AlignmentFlag.AlignRight)
@@ -429,8 +429,8 @@ class TracebackDialog(QDialog):
     def _enter_debug_mode(self):
         self.btn.setText(
             trans._(
-                'Now Debugging. Please quit debugger in console to continue'
+                "Now Debugging. Please quit debugger in console to continue"
             )
         )
         _debug_tb(self.exception.__traceback__)
-        self.btn.setText(trans._('Enter Debugger'))
+        self.btn.setText(trans._("Enter Debugger"))

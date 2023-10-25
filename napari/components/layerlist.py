@@ -105,10 +105,10 @@ class LayerList(SelectableEventedList[Layer]):
 
     def _clean_cache(self):
         cached_properties = (
-            'extent',
-            '_extent_world',
-            '_extent_world_augmented',
-            '_step_size',
+            "extent",
+            "_extent_world",
+            "_extent_world_augmented",
+            "_step_size",
         )
         [self.__dict__.pop(p, None) for p in cached_properties]
 
@@ -220,9 +220,9 @@ class LayerList(SelectableEventedList[Layer]):
             # behaviour is acceptable and we can filter the
             # warning
             warnings.filterwarnings(
-                'ignore',
+                "ignore",
                 message=str(
-                    trans._('All-NaN axis encountered', deferred=True)
+                    trans._("All-NaN axis encountered", deferred=True)
                 ),
             )
             min_v = np.nanmin(
@@ -372,14 +372,14 @@ class LayerList(SelectableEventedList[Layer]):
         layers: Optional[Iterable[Union[str, Layer]]] = None,
         attributes: Iterable[str] = (),
     ):
-        return self._link_layers('link_layers', layers, attributes)
+        return self._link_layers("link_layers", layers, attributes)
 
     def unlink_layers(
         self,
         layers: Optional[Iterable[Union[str, Layer]]] = None,
         attributes: Iterable[str] = (),
     ):
-        return self._link_layers('unlink_layers', layers, attributes)
+        return self._link_layers("unlink_layers", layers, attributes)
 
     def save(
         self,
@@ -387,7 +387,7 @@ class LayerList(SelectableEventedList[Layer]):
         *,
         selected: bool = False,
         plugin: Optional[str] = None,
-        _writer: Optional['WriterContribution'] = None,
+        _writer: Optional["WriterContribution"] = None,
     ) -> List[str]:
         """Save all or only selected layers to a path using writer plugins.
 

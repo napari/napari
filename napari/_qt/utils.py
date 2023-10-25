@@ -105,7 +105,7 @@ def QImg2array(img) -> np.ndarray:
     # As vispy doesn't use qtpy we need to reconcile the differences
     # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
     # a QImage to a numpy array.
-    if qtpy.API_NAME.startswith('PySide'):
+    if qtpy.API_NAME.startswith("PySide"):
         arr = np.array(b).reshape(h, w, c)
     else:
         b.setsize(h * w * c)
@@ -132,12 +132,12 @@ def event_hook_removed():
     """Context manager to temporarily remove the PyQt5 input hook"""
     from qtpy import QtCore
 
-    if hasattr(QtCore, 'pyqtRemoveInputHook'):
+    if hasattr(QtCore, "pyqtRemoveInputHook"):
         QtCore.pyqtRemoveInputHook()
     try:
         yield
     finally:
-        if hasattr(QtCore, 'pyqtRestoreInputHook'):
+        if hasattr(QtCore, "pyqtRestoreInputHook"):
             QtCore.pyqtRestoreInputHook()
 
 
@@ -223,7 +223,7 @@ def combine_widgets(
     TypeError
         If ``widgets`` is neither a ``QWidget`` or a sequence of ``QWidgets``.
     """
-    if isinstance(getattr(widgets, 'native', None), QWidget):
+    if isinstance(getattr(widgets, "native", None), QWidget):
         # compatibility with magicgui v0.2.0 which no longer uses QWidgets
         # directly. Like vispy, the backend widget is at widget.native
         return widgets.native  # type: ignore
@@ -232,7 +232,7 @@ def combine_widgets(
     if is_sequence(widgets):
         # the same as above, compatibility with magicgui v0.2.0
         widgets = [
-            i.native if isinstance(getattr(i, 'native', None), QWidget) else i
+            i.native if isinstance(getattr(i, "native", None), QWidget) else i
             for i in widgets
         ]
         if all(isinstance(i, QWidget) for i in widgets):

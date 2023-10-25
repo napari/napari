@@ -25,5 +25,5 @@ class TracksVisual(ClippingPlanesMixin, Compound):
         self._subvisuals[2].attach(self.graph_filter)
 
         # text label properties
-        self._subvisuals[1].color = 'white'
+        self._subvisuals[1].color = "white"
         self._subvisuals[1].font_size = 8

@@ -14,7 +14,7 @@ from napari.utils.theme import _install_npe2_themes
 
 #: Template to use for namespacing a plugin item in the menu bar
 # widget_name (plugin_name)
-menu_item_template = '{1} ({0})'
+menu_item_template = "{1} ({0})"
 """Template to use for namespacing a plugin item in the menu bar"""
 #: The main plugin manager instance for the `napari` plugin namespace.
 plugin_manager = NapariPluginManager()
@@ -26,7 +26,7 @@ def _initialize_plugins():
     _npe2pm = _PluginManager.instance()
 
     settings = get_settings()
-    if settings.schema_version >= '0.4.0':
+    if settings.schema_version >= "0.4.0":
         for p in settings.plugins.disabled_plugins:
             _npe2pm.disable(p)
 
@@ -42,8 +42,8 @@ def _initialize_plugins():
 
     # Disable plugins listed as disabled in settings, or detected in npe2
     _from_npe2 = {m.name for m in _npe2pm.iter_manifests()}
-    if 'napari' in _from_npe2:
-        _from_npe2.update({'napari', 'builtins'})
+    if "napari" in _from_npe2:
+        _from_npe2.update({"napari", "builtins"})
     plugin_manager._skip_packages = _from_npe2
     plugin_manager._blocked.update(settings.plugins.disabled_plugins)
 

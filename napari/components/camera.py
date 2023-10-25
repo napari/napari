@@ -46,7 +46,7 @@ class Camera(EventedModel):
     mouse_zoom: bool = True
 
     # validators
-    @validator('center', 'angles', pre=True, allow_reuse=True)
+    @validator("center", "angles", pre=True, allow_reuse=True)
     def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
 
@@ -75,7 +75,7 @@ class Camera(EventedModel):
         system for three currently displayed dimensions.
         """
         rotation_matrix = R.from_euler(
-            seq='yzx', angles=self.angles, degrees=True
+            seq="yzx", angles=self.angles, degrees=True
         ).as_matrix()
         return (
             rotation_matrix[2, 2],
@@ -144,7 +144,7 @@ class Camera(EventedModel):
         # construct rotation matrix, convert to euler angles
         rotation_matrix = np.column_stack((up_vector, view_vector, x_vector))
         euler_angles = R.from_matrix(rotation_matrix).as_euler(
-            seq='yzx', degrees=True
+            seq="yzx", degrees=True
         )
         self.angles = euler_angles
 
@@ -197,7 +197,7 @@ class Camera(EventedModel):
     @property
     def interactive(self) -> bool:
         warnings.warn(
-            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
+            "`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.",
             category=DeprecationWarning,
         )
         return self.mouse_pan or self.mouse_zoom
@@ -205,7 +205,7 @@ class Camera(EventedModel):
     @interactive.setter
     def interactive(self, interactive: bool):
         warnings.warn(
-            '`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.',
+            "`Camera.interactive` is deprecated since 0.5.0 and will be removed in 0.6.0.",
             category=DeprecationWarning,
         )
         self.mouse_pan = interactive

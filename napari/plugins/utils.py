@@ -55,17 +55,17 @@ def score_specificity(pattern: str) -> Tuple[bool, int, List[MatchFlag]]:
     # so we don't need to handle them :)
     for segment in segments:
         # collapse foo/*/*/*.bar or foo*/*.bar but not foo*bar/*.baz
-        if segment and not (ends_with_star and segment.startswith('*')):
+        if segment and not (ends_with_star and segment.startswith("*")):
             score.append(MatchFlag.NONE)
 
-        if '*' in segment:
+        if "*" in segment:
             add(MatchFlag.STAR)
-        if '?' in segment:
+        if "?" in segment:
             add(MatchFlag.ANY)
-        if '[' in segment and ']' in segment[segment.index('[') :]:
+        if "[" in segment and "]" in segment[segment.index("[") :]:
             add(MatchFlag.SET)
 
-        ends_with_star = segment.endswith('*')
+        ends_with_star = segment.endswith("*")
 
     return not osp.isabs(pattern), 1 - len(score), score
 
@@ -151,7 +151,7 @@ def get_all_readers() -> Tuple[Dict[str, str], Dict[str, str]]:
 
     npe1_readers = {}
     for spec, hook_caller in plugin_manager.hooks.items():
-        if spec == 'napari_get_reader':
+        if spec == "napari_get_reader":
             potential_readers = hook_caller.get_hookimpls()
             for get_reader in potential_readers:
                 npe1_readers[get_reader.plugin_name] = get_reader.plugin_name
@@ -198,6 +198,6 @@ def get_filename_patterns_for_reader(plugin_name: str):
     else:
         _, npe1_readers = get_all_readers()
         if plugin_name in npe1_readers:
-            all_fn_patterns = {'*'}
+            all_fn_patterns = {"*"}
 
     return all_fn_patterns

@@ -12,10 +12,10 @@ def test_interpolation_combobox(qtbot):
     qtbot.addWidget(qtctrl)
     combo = qtctrl.interpComboBox
     opts = {combo.itemText(i) for i in range(combo.count())}
-    assert opts == {'cubic', 'linear', 'kaiser', 'nearest', 'spline36'}
+    assert opts == {"cubic", "linear", "kaiser", "nearest", "spline36"}
     # programmatically adding approved interpolation works
-    layer.interpolation2d = 'lanczos'
-    assert combo.findText('lanczos') == 5
+    layer.interpolation2d = "lanczos"
+    assert combo.findText("lanczos") == 5
 
 
 def test_rendering_combobox(qtbot):
@@ -26,18 +26,18 @@ def test_rendering_combobox(qtbot):
     combo = qtctrl.renderComboBox
     opts = {combo.itemText(i) for i in range(combo.count())}
     rendering_options = {
-        'translucent',
-        'additive',
-        'iso',
-        'mip',
-        'minip',
-        'attenuated_mip',
-        'average',
+        "translucent",
+        "additive",
+        "iso",
+        "mip",
+        "minip",
+        "attenuated_mip",
+        "average",
     }
     assert opts == rendering_options
     # programmatically updating rendering mode updates the combobox
-    layer.rendering = 'iso'
-    assert combo.findText('iso') == combo.currentIndex()
+    layer.rendering = "iso"
+    assert combo.findText("iso") == combo.currentIndex()
 
 
 def test_depiction_combobox_changes(qtbot):
@@ -49,14 +49,14 @@ def test_depiction_combobox_changes(qtbot):
     combo_box = qtctrl.depictionComboBox
     opts = {combo_box.itemText(i) for i in range(combo_box.count())}
     depiction_options = {
-        'volume',
-        'plane',
+        "volume",
+        "plane",
     }
     assert opts == depiction_options
-    layer.depiction = 'plane'
-    assert combo_box.findText('plane') == combo_box.currentIndex()
-    layer.depiction = 'volume'
-    assert combo_box.findText('volume') == combo_box.currentIndex()
+    layer.depiction = "plane"
+    assert combo_box.findText("plane") == combo_box.currentIndex()
+    layer.depiction = "volume"
+    assert combo_box.findText("volume") == combo_box.currentIndex()
 
 
 def test_plane_controls_show_hide_on_depiction_change(qtbot):
@@ -66,13 +66,13 @@ def test_plane_controls_show_hide_on_depiction_change(qtbot):
     qtbot.addWidget(qtctrl)
     qtctrl.ndisplay = 3
 
-    layer.depiction = 'volume'
+    layer.depiction = "volume"
     assert qtctrl.planeThicknessSlider.isHidden()
     assert qtctrl.planeThicknessLabel.isHidden()
     assert qtctrl.planeNormalButtons.isHidden()
     assert qtctrl.planeNormalLabel.isHidden()
 
-    layer.depiction = 'plane'
+    layer.depiction = "plane"
     assert not qtctrl.planeThicknessSlider.isHidden()
     assert not qtctrl.planeThicknessLabel.isHidden()
     assert not qtctrl.planeNormalButtons.isHidden()
@@ -82,7 +82,7 @@ def test_plane_controls_show_hide_on_depiction_change(qtbot):
 def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
     """Changing ndisplay should show/hide plane controls if depicting a plane."""
     layer = Image(np.random.rand(10, 15, 20))
-    layer.depiction = 'plane'
+    layer.depiction = "plane"
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
 

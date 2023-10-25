@@ -180,7 +180,7 @@ class QtSizeSliderPreviewWidget(QWidget):
         """Update width ofg line text edit."""
         txt = "m" * (1 + len(str(self._max_value)))
         fm = self._lineedit.fontMetrics()
-        if hasattr(fm, 'horizontalAdvance'):
+        if hasattr(fm, "horizontalAdvance"):
             # Qt >= 5.11
             size = fm.horizontalAdvance(txt)
         else:

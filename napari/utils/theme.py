@@ -24,7 +24,7 @@ from napari.utils.translations import trans
 try:
     from qtpy import QT_VERSION
 
-    major, minor, *_ = QT_VERSION.split('.')  # type: ignore[attr-defined]
+    major, minor, *_ = QT_VERSION.split(".")  # type: ignore[attr-defined]
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
     del major, minor, QT_VERSION
 except (ImportError, RuntimeError):
@@ -83,7 +83,7 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
-    font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
+    font_size: str = "12pt" if sys.platform == "darwin" else "9pt"
 
     @validator("syntax_style", pre=True, allow_reuse=True)
     def _ensure_syntax_style(cls, value: str) -> str:
@@ -99,7 +99,7 @@ class Theme(EventedModel):
 
     @validator("font_size", pre=True)
     def _ensure_font_size(cls, value: str) -> str:
-        assert value.endswith('pt'), trans._(
+        assert value.endswith("pt"), trans._(
             "Font size must be in points (pt).", deferred=True
         )
         assert int(value[:-2]) > 0, trans._(
@@ -120,10 +120,10 @@ class Theme(EventedModel):
 
 increase_pattern = re.compile(r"{{\s?increase\((\w+),?\s?([-\d]+)?\)\s?}}")
 decrease_pattern = re.compile(r"{{\s?decrease\((\w+),?\s?([-\d]+)?\)\s?}}")
-gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
-darken_pattern = re.compile(r'{{\s?darken\((\w+),?\s?([-\d]+)?\)\s?}}')
-lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
-opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
+gradient_pattern = re.compile(r"([vh])gradient\((.+)\)")
+darken_pattern = re.compile(r"{{\s?darken\((\w+),?\s?([-\d]+)?\)\s?}}")
+lighten_pattern = re.compile(r"{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}")
+opacity_pattern = re.compile(r"{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}")
 
 
 def decrease(font_size: str, pt: int) -> str:
@@ -138,8 +138,8 @@ def increase(font_size: str, pt: int) -> str:
 
 def _parse_color_as_rgb(color: Union[str, Color]) -> Tuple[int, int, int]:
     if isinstance(color, str):
-        if color.startswith('rgb('):
-            return literal_eval(color.lstrip('rgb(').rstrip(')'))
+        if color.startswith("rgb("):
+            return literal_eval(color.lstrip("rgb(").rstrip(")"))
         return Color(color).as_rgb_tuple()[:3]
     return color.as_rgb_tuple()[:3]
 
@@ -150,7 +150,7 @@ def darken(color: Union[str, Color], percentage: float = 10) -> str:
     red = min(max(int(red * ratio), 0), 255)
     green = min(max(int(green * ratio), 0), 255)
     blue = min(max(int(blue * ratio), 0), 255)
-    return f'rgb({red}, {green}, {blue})'
+    return f"rgb({red}, {green}, {blue})"
 
 
 def lighten(color: Union[str, Color], percentage: float = 10) -> str:
@@ -159,12 +159,12 @@ def lighten(color: Union[str, Color], percentage: float = 10) -> str:
     red = min(max(int(red + (255 - red) * ratio), 0), 255)
     green = min(max(int(green + (255 - green) * ratio), 0), 255)
     blue = min(max(int(blue + (255 - blue) * ratio), 0), 255)
-    return f'rgb({red}, {green}, {blue})'
+    return f"rgb({red}, {green}, {blue})"
 
 
 def opacity(color: Union[str, Color], value: int = 255) -> str:
     red, green, blue = _parse_color_as_rgb(color)
-    return f'rgba({red}, {green}, {blue}, {max(min(int(value), 255), 0)})'
+    return f"rgba({red}, {green}, {blue}, {max(min(int(value), 255), 0)})"
 
 
 def gradient(stops, horizontal: bool = True) -> str:
@@ -172,11 +172,11 @@ def gradient(stops, horizontal: bool = True) -> str:
         return stops[-1]
 
     if horizontal:
-        grad = 'qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, '
+        grad = "qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, "
     else:
-        grad = 'qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, '
+        grad = "qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, "
 
-    _stops = [f'stop: {n} {stop}' for n, stop in enumerate(stops)]
+    _stops = [f"stop: {n} {stop}" for n, stop in enumerate(stops)]
     grad += ", ".join(_stops) + ")"
 
     return grad
@@ -204,8 +204,8 @@ def template(css: str, **theme):
         return opacity(theme[color], percentage)
 
     def gradient_match(matchobj):
-        horizontal = matchobj.groups()[1] == 'h'
-        stops = [i.strip() for i in matchobj.groups()[1].split('-')]
+        horizontal = matchobj.groups()[1] == "h"
+        stops = [i.strip() for i in matchobj.groups()[1].split("-")]
         return gradient(stops, horizontal)
 
     for k, v in theme.items():
@@ -217,7 +217,7 @@ def template(css: str, **theme):
         css = opacity_pattern.sub(opacity_match, css)
         if isinstance(v, Color):
             v = v.as_rgb()
-        css = css.replace('{{ %s }}' % k, v)
+        css = css.replace("{{ %s }}" % k, v)
     return css
 
 
@@ -342,7 +342,7 @@ def available_themes() -> List[str]:
     list of str
         ids of available themes.
     """
-    return [*_themes, 'system']
+    return [*_themes, "system"]
 
 
 def is_theme_available(theme_id):
@@ -385,44 +385,44 @@ def rebuild_theme_settings():
 
 
 DARK = Theme(
-    id='dark',
-    label='Default Dark',
-    background='rgb(38, 41, 48)',
-    foreground='rgb(65, 72, 81)',
-    primary='rgb(90, 98, 108)',
-    secondary='rgb(134, 142, 147)',
-    highlight='rgb(106, 115, 128)',
-    text='rgb(240, 241, 242)',
-    icon='rgb(209, 210, 212)',
-    warning='rgb(227, 182, 23)',
-    error='rgb(153, 18, 31)',
-    current='rgb(0, 122, 204)',
-    syntax_style='native',
-    console='rgb(18, 18, 18)',
-    canvas='black',
-    font_size='12pt' if sys.platform == 'darwin' else '9pt',
+    id="dark",
+    label="Default Dark",
+    background="rgb(38, 41, 48)",
+    foreground="rgb(65, 72, 81)",
+    primary="rgb(90, 98, 108)",
+    secondary="rgb(134, 142, 147)",
+    highlight="rgb(106, 115, 128)",
+    text="rgb(240, 241, 242)",
+    icon="rgb(209, 210, 212)",
+    warning="rgb(227, 182, 23)",
+    error="rgb(153, 18, 31)",
+    current="rgb(0, 122, 204)",
+    syntax_style="native",
+    console="rgb(18, 18, 18)",
+    canvas="black",
+    font_size="12pt" if sys.platform == "darwin" else "9pt",
 )
 LIGHT = Theme(
-    id='light',
-    label='Default Light',
-    background='rgb(239, 235, 233)',
-    foreground='rgb(214, 208, 206)',
-    primary='rgb(188, 184, 181)',
-    secondary='rgb(150, 146, 144)',
-    highlight='rgb(163, 158, 156)',
-    text='rgb(59, 58, 57)',
-    icon='rgb(107, 105, 103)',
-    warning='rgb(227, 182, 23)',
-    error='rgb(255, 18, 31)',
-    current='rgb(253, 240, 148)',
-    syntax_style='default',
-    console='rgb(255, 255, 255)',
-    canvas='white',
-    font_size='12pt' if sys.platform == 'darwin' else '9pt',
+    id="light",
+    label="Default Light",
+    background="rgb(239, 235, 233)",
+    foreground="rgb(214, 208, 206)",
+    primary="rgb(188, 184, 181)",
+    secondary="rgb(150, 146, 144)",
+    highlight="rgb(163, 158, 156)",
+    text="rgb(59, 58, 57)",
+    icon="rgb(107, 105, 103)",
+    warning="rgb(227, 182, 23)",
+    error="rgb(255, 18, 31)",
+    current="rgb(253, 240, 148)",
+    syntax_style="default",
+    console="rgb(255, 255, 255)",
+    canvas="white",
+    font_size="12pt" if sys.platform == "darwin" else "9pt",
 )
 
-register_theme('dark', DARK, "builtin")
-register_theme('light', LIGHT, "builtin")
+register_theme("dark", DARK, "builtin")
+register_theme("light", LIGHT, "builtin")
 
 
 # this function here instead of plugins._npe2 to avoid circular import
@@ -438,7 +438,7 @@ def _install_npe2_themes(themes=None):
             # get fallback values
             theme_dict = themes[theme.type].dict()
             # update available values
-            theme_info = theme.dict(exclude={'colors'}, exclude_unset=True)
+            theme_info = theme.dict(exclude={"colors"}, exclude_unset=True)
             theme_colors = theme.colors.dict(exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)

@@ -100,18 +100,18 @@ class EventedList(TypedMutableSequence[_T]):
         if lookup is None:
             lookup = {}
         _events = {
-            'inserting': None,  # int
-            'inserted': None,  # Tuple[int, Any] - (idx, value)
-            'removing': None,  # int
-            'removed': None,  # Tuple[int, Any] - (idx, value)
-            'moving': None,  # Tuple[int, int]
-            'moved': None,  # Tuple[Tuple[int, int], Any]
-            'changed': None,  # Tuple[int, Any, Any] - (idx, old, new)
-            'reordered': None,  # None
+            "inserting": None,  # int
+            "inserted": None,  # Tuple[int, Any] - (idx, value)
+            "removing": None,  # int
+            "removed": None,  # Tuple[int, Any] - (idx, value)
+            "moving": None,  # Tuple[int, int]
+            "moved": None,  # Tuple[Tuple[int, int], Any]
+            "changed": None,  # Tuple[int, Any, Any] - (idx, old, new)
+            "reordered": None,  # None
         }
 
         # For inheritance: If the mro already provides an EmitterGroup, add...
-        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
+        if hasattr(self, "events") and isinstance(self.events, EmitterGroup):
             self.events.add(**_events)
         else:
             # otherwise create a new one
@@ -133,7 +133,7 @@ class EventedList(TypedMutableSequence[_T]):
             if not isinstance(value, Iterable):
                 raise TypeError(
                     trans._(
-                        'Can only assign an iterable to slice',
+                        "Can only assign an iterable to slice",
                         deferred=True,
                     )
                 )
@@ -169,7 +169,7 @@ class EventedList(TypedMutableSequence[_T]):
 
     def _delitem_indices(
         self, key: Index
-    ) -> Iterable[Tuple['EventedList[_T]', int]]:
+    ) -> Iterable[Tuple["EventedList[_T]", int]]:
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
@@ -209,7 +209,7 @@ class EventedList(TypedMutableSequence[_T]):
 
     def _reemit_child_event(self, event: Event):
         """An item in the list emitted an event.  Re-emit with index"""
-        if not hasattr(event, 'index'):
+        if not hasattr(event, "index"):
             with contextlib.suppress(ValueError):
                 event.index = self.index(event.source)
 

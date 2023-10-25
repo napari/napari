@@ -19,13 +19,13 @@ def test_nbscreenshot(make_napari_viewer):
     viewer.add_image(data)
 
     rich_display_object = nbscreenshot(viewer)
-    assert hasattr(rich_display_object, '_repr_png_')
+    assert hasattr(rich_display_object, "_repr_png_")
     # Trigger method that would run in jupyter notebook cell automatically
     png_bytes = rich_display_object._repr_png_()
     assert rich_display_object.image is not None
     # Test digital watermark is included in bytes of .png file
-    version_byte_string = __version__.encode('utf-8')
-    assert b'napari version' in png_bytes
+    version_byte_string = __version__.encode("utf-8")
+    assert b"napari version" in png_bytes
     assert version_byte_string in png_bytes
 
 
@@ -37,15 +37,15 @@ def test_nbscreenshot(make_napari_viewer):
         ("Good alt text", "Good alt text"),
         # Naughty strings https://github.com/minimaxir/big-list-of-naughty-strings
         # ASCII punctuation
-        (r",./;'[]\-=", ',./;&#x27;[]\\-='),
+        (r",./;'[]\-=", ",./;&#x27;[]\\-="),
         # ASCII punctuation 2, skipping < because that is interpreted as the start
         # of an HTML element.
-        ('>?:"{}|_+', '&gt;?:&quot;{}|_+'),
-        ("!@#$%^&*()`~", '!@#$%^&amp;*()`~'),  # ASCII punctuation 3
+        ('>?:"{}|_+', "&gt;?:&quot;{}|_+"),
+        ("!@#$%^&*()`~", "!@#$%^&amp;*()`~"),  # ASCII punctuation 3
         # # Emojis
         ("😍", "😍"),  # emoji 1
         ("👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️", "👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️"),  # emoji 2
-        (r"¯\_(ツ)_/¯", '¯\\_(ツ)_/¯'),  # Japanese emoticon
+        (r"¯\_(ツ)_/¯", "¯\\_(ツ)_/¯"),  # Japanese emoticon
         # # Special characters
         ("田中さんにあげて下さい", "田中さんにあげて下さい"),  # two-byte characters
         (

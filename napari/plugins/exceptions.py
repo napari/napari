@@ -24,7 +24,7 @@ def format_exceptions(
     """
     _plugin_errors = PluginError.get(plugin_name=plugin_name)
     if not _plugin_errors:
-        return ''
+        return ""
 
     from napari import __version__
     from napari.utils._tracebacks import get_tb_formatter
@@ -37,10 +37,10 @@ def format_exceptions(
         trans._(
             "{pad} Errors for plugin '{plugin_name}' {pad}",
             deferred=True,
-            pad='=' * _pad,
+            pad="=" * _pad,
             plugin_name=plugin_name,
         ),
-        '',
+        "",
         f'{"napari version": >16}: {__version__}',
     ]
 
@@ -55,13 +55,13 @@ def format_exceptions(
                     f'{"module": >16}: {err0.plugin}',
                 ]
             )
-    msg.append('')
+    msg.append("")
 
     for n, err in enumerate(_plugin_errors):
         _pad = _linewidth - len(str(err)) - 10
-        msg += ['', f'ERROR #{n + 1}:  {err!s} {"-" * _pad}', '']
+        msg += ["", f'ERROR #{n + 1}:  {err!s} {"-" * _pad}', ""]
         msg.append(format_exc_info(err.info(), as_html, color))
 
-    msg.append('=' * _linewidth)
+    msg.append("=" * _linewidth)
 
     return ("<br>" if as_html else "\n").join(msg)

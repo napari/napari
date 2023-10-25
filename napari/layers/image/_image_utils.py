@@ -60,7 +60,7 @@ def guess_multiscale(
     if isinstance(data, MultiScaleData):
         return True, data
 
-    if hasattr(data, 'ndim') and data.ndim > 1:
+    if hasattr(data, "ndim") and data.ndim > 1:
         return False, data
 
     if isinstance(data, (list, tuple)) and len(data) == 1:
@@ -77,7 +77,7 @@ def guess_multiscale(
         # code line in this function, hasattr(ndim) and ndim > 1.
         raise ValueError(
             trans._(
-                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single size: {size}',
+                "Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single size: {size}",
                 deferred=True,
                 size=sizes[0],
             )
@@ -85,7 +85,7 @@ def guess_multiscale(
     if not consistent:
         raise ValueError(
             trans._(
-                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, sizes: {sizes}',
+                "Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, sizes: {sizes}",
                 deferred=True,
                 sizes=sizes,
             )
@@ -97,15 +97,15 @@ def guess_multiscale(
 def guess_labels(data):
     """Guess if array contains labels data."""
 
-    if hasattr(data, 'dtype') and data.dtype in (
+    if hasattr(data, "dtype") and data.dtype in (
         np.int32,
         np.uint32,
         np.int64,
         np.uint64,
     ):
-        return 'labels'
+        return "labels"
 
-    return 'image'
+    return "image"
 
 
 def project_slice(data, axis, mode):
@@ -119,5 +119,5 @@ def project_slice(data, axis, mode):
     elif mode == ImageProjectionMode.MIN:
         func = np.min
     else:
-        raise NotImplementedError(f'unimplemented projection: {mode}')
+        raise NotImplementedError(f"unimplemented projection: {mode}")
     return func(data, tuple(axis))

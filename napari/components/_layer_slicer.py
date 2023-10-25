@@ -156,7 +156,7 @@ class _LayerSlicer:
 
         if len(not_done_futures) > 0:
             raise TimeoutError(
-                f'Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).'
+                f"Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s)."
             )
 
     def submit(
@@ -196,13 +196,13 @@ class _LayerSlicer:
             slice response. Or none if no async slicing tasks were submitted.
         """
         logger.debug(
-            '_LayerSlicer.submit: layers=%s, dims=%s, force=%s',
+            "_LayerSlicer.submit: layers=%s, dims=%s, force=%s",
             layers,
             dims,
             force,
         )
         if existing_task := self._find_existing_task(layers):
-            logger.debug('Cancelling task %s', id(existing_task))
+            logger.debug("Cancelling task %s", id(existing_task))
             existing_task.cancel()
 
         # Not all layer types will initially be asynchronously sliceable.
@@ -214,19 +214,19 @@ class _LayerSlicer:
         visible_layers = (layer for layer in layers if layer.visible)
         for layer in visible_layers:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
-                logger.debug('Making async slice request for %s', layer)
+                logger.debug("Making async slice request for %s", layer)
                 request = layer._make_slice_request(dims)
                 weak_layer = weakref.ref(layer)
                 requests[weak_layer] = request
                 layer._set_unloaded_slice_id(request.id)
             else:
-                logger.debug('Sync slicing for %s', layer)
+                logger.debug("Sync slicing for %s", layer)
                 sync_layers.append(layer)
 
         # First maybe submit an async slicing task to start it ASAP.
         task = None
         if len(requests) > 0:
-            logger.debug('Submitting task %s', id(task))
+            logger.debug("Submitting task %s", id(task))
             task = self._executor.submit(self._slice_layers, requests)
             # Store task before adding done callback to ensure there is always
             # a task to remove in the done callback.
@@ -250,7 +250,7 @@ class _LayerSlicer:
         and disconnects any observers from this LayerSlicer's events.
         This should only be called from the main thread.
         """
-        logger.debug('_LayerSlicer.shutdown')
+        logger.debug("_LayerSlicer.shutdown")
         # Replace with cancel_futures=True in shutdown when we drop support
         # for Python 3.8
         with self._lock_layers_to_task:
@@ -275,7 +275,7 @@ class _LayerSlicer:
         -------
         dict[Layer, SliceResponse]: which contains the results of the slice
         """
-        logger.debug('_LayerSlicer._slice_layers: %s', requests)
+        logger.debug("_LayerSlicer._slice_layers: %s", requests)
         result = {layer: request() for layer, request in requests.items()}
         self.events.ready(value=result)
         return result
@@ -285,12 +285,12 @@ class _LayerSlicer:
         This is the "done_callback" which is added to each task.
         Can be called from the main or slicing thread.
         """
-        logger.debug('_LayerSlicer._on_slice_done: %s', id(task))
+        logger.debug("_LayerSlicer._on_slice_done: %s", id(task))
         if not self._try_to_remove_task(task):
-            logger.debug('Task not found: %s', id(task))
+            logger.debug("Task not found: %s", id(task))
 
         if task.cancelled():
-            logger.debug('Cancelled task: %s', id(task))
+            logger.debug("Cancelled task: %s", id(task))
             return
 
     def _try_to_remove_task(self, task: Future[Dict]) -> bool:
@@ -323,6 +323,6 @@ class _LayerSlicer:
             for weak_task_layers, task in self._layers_to_task.items():
                 task_layers = {w() for w in weak_task_layers} - {None}
                 if task_layers.issubset(layer_set):
-                    logger.debug('Found existing task for %s', task_layers)
+                    logger.debug("Found existing task for %s", task_layers)
                     return task
         return None

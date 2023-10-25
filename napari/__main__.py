@@ -80,10 +80,10 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
     for i, raw_arg in enumerate(unknown):
         if not raw_arg.startswith("--"):
             continue
-        arg = raw_arg.lstrip('-')
+        arg = raw_arg.lstrip("-")
 
         key, *values = arg.split("=", maxsplit=1)
-        key = key.replace('-', '_')
+        key = key.replace("-", "_")
         if key not in valid:
             sys.exit(f"error: unrecognized argument: {raw_arg}")
 
@@ -109,7 +109,7 @@ def parse_sys_argv():
     kwarg_options = []
     for layer_type, keys in valid_add_kwargs().items():
         kwarg_options.append(f"  {layer_type.title()}:")
-        keys = {k.replace('_', '-') for k in keys}
+        keys = {k.replace("_", "-") for k in keys}
         lines = wrap(", ".join(sorted(keys)), break_on_hyphens=False)
         kwarg_options.extend([f"    {line}" for line in lines])
 
@@ -119,22 +119,22 @@ def parse_sys_argv():
         epilog="optional layer-type-specific arguments (precede with '--'):\n"
         + "\n".join(kwarg_options),
     )
-    parser.add_argument('paths', nargs='*', help='path(s) to view.')
+    parser.add_argument("paths", nargs="*", help="path(s) to view.")
     parser.add_argument(
-        '-v',
-        '--verbose',
-        action='count',
+        "-v",
+        "--verbose",
+        action="count",
         default=0,
         help="increase output verbosity",
     )
     parser.add_argument(
-        '-w',
-        '--with',
-        dest='with_',
-        nargs='+',
-        action='append',
+        "-w",
+        "--with",
+        dest="with_",
+        nargs="+",
+        action="append",
         default=[],
-        metavar=('PLUGIN_NAME', 'WIDGET_NAME'),
+        metavar=("PLUGIN_NAME", "WIDGET_NAME"),
         help=(
             "open napari with dock widget from specified plugin name."
             "(If plugin provides multiple dock widgets, widget name must also "
@@ -143,59 +143,59 @@ def parse_sys_argv():
         ),
     )
     parser.add_argument(
-        '--version',
-        action='version',
-        version=f'napari version {__version__}',
+        "--version",
+        action="version",
+        version=f"napari version {__version__}",
     )
     parser.add_argument(
-        '--info',
+        "--info",
         action=InfoAction,
         nargs=0,
-        help='show system information and exit',
+        help="show system information and exit",
     )
     parser.add_argument(
-        '--plugin-info',
+        "--plugin-info",
         action=PluginInfoAction,
         nargs=0,
-        help='show information about plugins and exit',
+        help="show information about plugins and exit",
     )
     parser.add_argument(
-        '--citation',
+        "--citation",
         action=CitationAction,
         nargs=0,
-        help='show citation information and exit',
+        help="show citation information and exit",
     )
     # Allow multiple --stack options to be provided.
     # Each stack option will result in its own stack
     parser.add_argument(
-        '--stack',
-        action='append',
-        nargs='*',
+        "--stack",
+        action="append",
+        nargs="*",
         default=[],
-        help='concatenate multiple input files into a single stack. Can be provided multiple times for multiple stacks.',
+        help="concatenate multiple input files into a single stack. Can be provided multiple times for multiple stacks.",
     )
     parser.add_argument(
-        '--plugin',
-        help='specify plugin name when opening a file',
+        "--plugin",
+        help="specify plugin name when opening a file",
     )
     parser.add_argument(
-        '--layer-type',
+        "--layer-type",
         metavar="TYPE",
         choices=set(layers.NAMES),
         help=(
-            'force file to be interpreted as a specific layer type. '
-            f'one of {set(layers.NAMES)}'
+            "force file to be interpreted as a specific layer type. "
+            f"one of {set(layers.NAMES)}"
         ),
     )
     parser.add_argument(
-        '--reset',
-        action='store_true',
-        help='reset settings to default values.',
+        "--reset",
+        action="store_true",
+        help="reset settings to default values.",
     )
     parser.add_argument(
-        '--settings-path',
+        "--settings-path",
         type=Path,
-        help='use specific path to store and load settings.',
+        help="use specific path to store and load settings.",
     )
 
     args, unknown = parser.parse_known_args()
@@ -222,7 +222,7 @@ def _run():
     logging.basicConfig(
         level=level,
         format="%(asctime)s : %(levelname)s : %(threadName)s : %(message)s",
-        datefmt='%H:%M:%S',
+        datefmt="%H:%M:%S",
     )
 
     if args.reset:
@@ -244,14 +244,14 @@ def _run():
         # I *think* that Qt is looking in sys.argv for a flag `--plugins`,
         # which emits "WARNING: No such plugin for spec 'builtins'"
         # so remove --plugin from sys.argv to prevent that warningz
-        sys.argv.remove('--plugin')
+        sys.argv.remove("--plugin")
 
-    if any(p.endswith('.py') for p in args.paths):
+    if any(p.endswith(".py") for p in args.paths):
         # we're running a script
         if len(args.paths) > 1:
             sys.exit(
-                'When providing a python script, only a '
-                'single positional argument may be provided'
+                "When providing a python script, only a "
+                "single positional argument may be provided"
             )
 
         # run the file
@@ -281,21 +281,21 @@ def _run():
             for plugin in args.with_:
                 pname, *wnames = plugin
                 for _name, (_pname, _wnames) in _npe2.widget_iterator():
-                    if _name == 'dock' and pname == _pname:
+                    if _name == "dock" and pname == _pname:
                         npe2_plugins.append(plugin)
-                        if '__all__' in wnames:
+                        if "__all__" in wnames:
                             wnames = _wnames
                         break
 
                 for _name, (_pname, _wnames) in plugin_manager.iter_widgets():
-                    if _name == 'dock' and pname == _pname:
+                    if _name == "dock" and pname == _pname:
                         plugin_manager_plugins.append(plugin)
-                        if '__all__' in wnames:
+                        if "__all__" in wnames:
                             # Plugin_manager iter_widgets return wnames as dict keys
                             wnames = list(_wnames.keys())
                         print(
                             trans._(
-                                'Non-npe2 plugin {pname} detected. Disable tabify for this plugin.',
+                                "Non-npe2 plugin {pname} detected. Disable tabify for this plugin.",
                                 deferred=True,
                                 pname=pname,
                             )
@@ -353,11 +353,11 @@ def _run():
                 zip(plugin_manager_plugins, repeat(False)),
             ):
                 pname, *wnames = plugin
-                if '__all__' in wnames:
+                if "__all__" in wnames:
                     for name, (_pname, _wnames) in chain(
                         _npe2.widget_iterator(), plugin_manager.iter_widgets()
                     ):
-                        if name == 'dock' and pname == _pname:
+                        if name == "dock" and pname == _pname:
                             if isinstance(_wnames, dict):
                                 # Plugin_manager iter_widgets return wnames as dict keys
                                 wnames = list(_wnames.keys())
@@ -458,15 +458,15 @@ def _maybe_rerun_with_macos_fixes():
     executable = sys.executable
     cwd = Path.cwd()
 
-    _MACOS_AT_LEAST_CATALINA = int(platform.release().split('.')[0]) >= 19
-    _MACOS_AT_LEAST_BIG_SUR = int(platform.release().split('.')[0]) >= 20
+    _MACOS_AT_LEAST_CATALINA = int(platform.release().split(".")[0]) >= 19
+    _MACOS_AT_LEAST_BIG_SUR = int(platform.release().split(".")[0]) >= 20
     _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
     _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
 
     # 1) quick fix for Big Sur py3.9 and qt 5
     # https://github.com/napari/napari/pull/1894
-    if _MACOS_AT_LEAST_BIG_SUR and '6' not in API_NAME:
-        os.environ['QT_MAC_WANTS_LAYER'] = '1'
+    if _MACOS_AT_LEAST_BIG_SUR and "6" not in API_NAME:
+        os.environ["QT_MAC_WANTS_LAYER"] = "1"
 
     # Create the env copy now because the following changes
     # should not persist in the current process in case
@@ -485,19 +485,19 @@ def _maybe_rerun_with_macos_fixes():
         and _RUNNING_CONDA
         and not _RUNNING_PYTHONW
     ):
-        pythonw_path = Path(sys.exec_prefix) / 'bin' / 'pythonw'
+        pythonw_path = Path(sys.exec_prefix) / "bin" / "pythonw"
         if pythonw_path.exists():
             # Use this one instead of sys.executable to relaunch
             # the subprocess
             executable = pythonw_path
         else:
             msg = (
-                'pythonw executable not found.\n'
-                'To unfreeze the menubar on macOS, '
-                'click away from napari to another app, '
-                'then reactivate napari. To avoid this problem, '
-                'please install python.app in conda using:\n'
-                'conda install -c conda-forge python.app'
+                "pythonw executable not found.\n"
+                "To unfreeze the menubar on macOS, "
+                "click away from napari to another app, "
+                "then reactivate napari. To avoid this problem, "
+                "please install python.app in conda using:\n"
+                "conda install -c conda-forge python.app"
             )
             warnings.warn(msg, stacklevel=2)
 
@@ -561,10 +561,10 @@ def main():
     if sys.platform == "darwin":
         import multiprocessing
 
-        multiprocessing.set_start_method('fork')
+        multiprocessing.set_start_method("fork")
 
     _run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

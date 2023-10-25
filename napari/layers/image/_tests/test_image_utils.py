@@ -56,10 +56,10 @@ def test_guess_multiscale():
     data = tuple(data)
     assert guess_multiscale(data)[0]
 
-    if skimage.__version__ > '0.19':
-        pyramid_kwargs = {'channel_axis': None}
+    if skimage.__version__ > "0.19":
+        pyramid_kwargs = {"channel_axis": None}
     else:
-        pyramid_kwargs = {'multichannel': False}
+        pyramid_kwargs = {"multichannel": False}
 
     data = tuple(
         pyramid_gaussian(np.random.random((10, 15)), **pyramid_kwargs)

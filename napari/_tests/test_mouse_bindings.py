@@ -31,7 +31,7 @@ def test_viewer_mouse_bindings(qtbot, make_napari_viewer):
         yield
 
         # on move
-        while event.type == 'mouse_move':
+        while event.type == "mouse_move":
             mock_drag.method()
             yield
 
@@ -114,7 +114,7 @@ def test_layer_mouse_bindings(qtbot, make_napari_viewer):
         yield
 
         # on move
-        while event.type == 'mouse_move':
+        while event.type == "mouse_move":
             mock_drag.method()
             yield
 
@@ -197,7 +197,7 @@ def test_unselected_layer_mouse_bindings(qtbot, make_napari_viewer):
         yield
 
         # on move
-        while event.type == 'mouse_move':
+        while event.type == "mouse_move":
             mock_drag.method()
             yield
 

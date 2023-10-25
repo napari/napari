@@ -45,7 +45,7 @@ from weakref import WeakKeyDictionary
 from npe2 import PackageMetadata
 
 with suppress(ModuleNotFoundError):
-    __import__('dotenv').load_dotenv()
+    __import__("dotenv").load_dotenv()
 
 from datetime import timedelta
 from time import perf_counter
@@ -82,14 +82,14 @@ def layer_data_and_types():
         - filenames: the expected filenames with extensions for the layers.
     """
     layers = [
-        Image(np.random.rand(20, 20), name='ex_img'),
+        Image(np.random.rand(20, 20), name="ex_img"),
         Image(np.random.rand(20, 20)),
-        Points(np.random.rand(20, 2), name='ex_pts'),
+        Points(np.random.rand(20, 2), name="ex_pts"),
         Points(
-            np.random.rand(20, 2), properties={'values': np.random.rand(20)}
+            np.random.rand(20, 2), properties={"values": np.random.rand(20)}
         ),
     ]
-    extensions = ['.tif', '.tif', '.csv', '.csv']
+    extensions = [".tif", ".tif", ".csv", ".csv"]
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [layer._type_string for layer in layers]
     filenames = [layer.name + e for layer, e in zip(layers, extensions)]
@@ -98,12 +98,12 @@ def layer_data_and_types():
 
 @pytest.fixture(
     params=[
-        'image',
-        'labels',
-        'points',
-        'shapes',
-        'shapes-rectangles',
-        'vectors',
+        "image",
+        "labels",
+        "points",
+        "shapes",
+        "shapes-rectangles",
+        "vectors",
     ]
 )
 def layer(request):
@@ -120,16 +120,16 @@ def layer(request):
         The desired napari Layer.
     """
     np.random.seed(0)
-    if request.param == 'image':
+    if request.param == "image":
         data = np.random.rand(20, 20)
         return Image(data)
-    if request.param == 'labels':
+    if request.param == "labels":
         data = np.random.randint(10, size=(20, 20))
         return Labels(data)
-    if request.param == 'points':
+    if request.param == "points":
         data = np.random.rand(20, 2)
         return Points(data)
-    if request.param == 'shapes':
+    if request.param == "shapes":
         data = [
             np.random.rand(2, 2),
             np.random.rand(2, 2),
@@ -137,12 +137,12 @@ def layer(request):
             np.random.rand(6, 2),
             np.random.rand(2, 2),
         ]
-        shape_type = ['ellipse', 'line', 'path', 'polygon', 'rectangle']
+        shape_type = ["ellipse", "line", "path", "polygon", "rectangle"]
         return Shapes(data, shape_type=shape_type)
-    if request.param == 'shapes-rectangles':
+    if request.param == "shapes-rectangles":
         data = np.random.rand(7, 4, 2)
         return Shapes(data)
-    if request.param == 'vectors':
+    if request.param == "vectors":
         data = np.random.rand(20, 2, 2)
         return Vectors(data)
 
@@ -173,7 +173,7 @@ def layers():
 def skip_examples(request):
     """Skip examples test if ."""
     if request.node.get_closest_marker(
-        'examples'
+        "examples"
     ) and request.config.getoption("--skip_examples"):
         pytest.skip("running with --skip_examples")
 
@@ -181,7 +181,7 @@ def skip_examples(request):
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
 # Use with a debugger that's set to break on "unhandled exceptions".
 # https://github.com/pytest-dev/pytest/issues/7409
-if os.getenv('_PYTEST_RAISE', "0") != "0":
+if os.getenv("_PYTEST_RAISE", "0") != "0":
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_exception_interact(call):
@@ -203,8 +203,8 @@ def fresh_settings(monkeypatch):
     from napari.settings import NapariSettings
 
     # prevent the developer's config file from being used if it exists
-    cp = NapariSettings.__private_attributes__['_config_path']
-    monkeypatch.setattr(cp, 'default', None)
+    cp = NapariSettings.__private_attributes__["_config_path"]
+    monkeypatch.setattr(cp, "default", None)
 
     # calling save() with no config path is normally an error
     # here we just have save() return if called without a valid path
@@ -215,7 +215,7 @@ def fresh_settings(monkeypatch):
             return
         NapariSettings.__original_save__(self, path, **dict_kwargs)
 
-    monkeypatch.setattr(NapariSettings, 'save', _mock_save)
+    monkeypatch.setattr(NapariSettings, "save", _mock_save)
 
     # this makes sure that we start with fresh settings for every test.
     settings._SETTINGS = None
@@ -255,18 +255,18 @@ def napari_svg_name():
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
     from importlib.metadata import version
 
-    if parse_version(version('napari-svg')) < parse_version('0.1.6'):
-        return 'svg'
+    if parse_version(version("napari-svg")) < parse_version("0.1.6"):
+        return "svg"
 
-    return 'napari-svg'
+    return "napari-svg"
 
 
-@pytest.fixture(autouse=True, scope='session')
+@pytest.fixture(autouse=True, scope="session")
 def _no_error_reports():
     """Turn off napari_error_reporter if it's installed."""
     try:
-        p1 = patch('napari_error_reporter.capture_exception')
-        p2 = patch('napari_error_reporter.install_error_reporter')
+        p1 = patch("napari_error_reporter.capture_exception")
+        p2 = patch("napari_error_reporter.install_error_reporter")
         with p1, p2:
             yield
     except (ModuleNotFoundError, AttributeError):
@@ -278,13 +278,13 @@ def _npe2pm(npe2pm, monkeypatch):
     """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
     from napari.plugins import NapariPluginManager
 
-    monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
+    monkeypatch.setattr(NapariPluginManager, "discover", lambda *_, **__: None)
     return npe2pm
 
 
 @pytest.fixture
 def builtins(_npe2pm: TestPluginManager):
-    with _npe2pm.tmp_plugin(package='napari') as plugin:
+    with _npe2pm.tmp_plugin(package="napari") as plugin:
         yield plugin
 
 
@@ -292,9 +292,9 @@ def builtins(_npe2pm: TestPluginManager):
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
         plugin.manifest.package_metadata = PackageMetadata(
-            version='0.1.0', name='test'
+            version="0.1.0", name="test"
         )
-        plugin.manifest.display_name = 'Temp Plugin'
+        plugin.manifest.display_name = "Temp Plugin"
         yield plugin
 
 
@@ -318,13 +318,13 @@ def _event_check(instance):
         instance = instance[0]
 
     for name, value in instance.__class__.__dict__.items():
-        if isinstance(value, property) and name[0] != '_':
+        if isinstance(value, property) and name[0] != "_":
             yield _prepare_check(name, no_event_set), instance, name
 
 
 def pytest_generate_tests(metafunc):
     """Generate separate test for each test toc check if all events are defined."""
-    if 'event_define_check' in metafunc.fixturenames:
+    if "event_define_check" in metafunc.fixturenames:
         res = []
         ids = []
 
@@ -333,7 +333,7 @@ def pytest_generate_tests(metafunc):
                 res.append((check, instance))
                 ids.append(f"{name}-{instance}")
 
-        metafunc.parametrize('event_define_check,obj', res, ids=ids)
+        metafunc.parametrize("event_define_check,obj", res, ids=ids)
 
 
 def pytest_collection_modifyitems(session, config, items):
@@ -458,13 +458,13 @@ def _mock_app():
 
     from napari._app_model._app import NapariApplication, _napari_names
 
-    app = NapariApplication('test_app')
+    app = NapariApplication("test_app")
     app.injection_store.namespace = _napari_names
-    with patch.object(NapariApplication, 'get_app', return_value=app):
+    with patch.object(NapariApplication, "get_app", return_value=app):
         try:
             yield app
         finally:
-            Application.destroy('test_app')
+            Application.destroy("test_app")
 
 
 def _get_calling_place(depth=1):
@@ -502,7 +502,7 @@ def dangling_qthreads(monkeypatch, qtbot, request):
             thread_dict[self] = _get_calling_place()
             base_start(self, priority)
 
-    monkeypatch.setattr(QThread, 'start', my_start)
+    monkeypatch.setattr(QThread, "start", my_start)
     yield
 
     dangling_threads_li = []
@@ -564,7 +564,7 @@ def dangling_qthread_pool(monkeypatch, request):
             threadpool_dict[self].append(_get_calling_place())
             base_start(self, runnable, priority)
 
-    monkeypatch.setattr(QThreadPool, 'start', my_start)
+    monkeypatch.setattr(QThreadPool, "start", my_start)
     yield
 
     dangling_threads_pools = []
@@ -650,8 +650,8 @@ def dangling_qtimers(monkeypatch, request):
             else:
                 single_shot(self, *args)
 
-    monkeypatch.setattr(QTimer, 'start', my_start)
-    monkeypatch.setattr(QTimer, 'singleShot', _single_shot)
+    monkeypatch.setattr(QTimer, "start", my_start)
+    monkeypatch.setattr(QTimer, "singleShot", _single_shot)
 
     yield
 
@@ -734,7 +734,7 @@ def dangling_qanimations(monkeypatch, request):
             animation_dkt[self] = _get_calling_place()
             base_start(self)
 
-    monkeypatch.setattr(QPropertyAnimation, 'start', my_start)
+    monkeypatch.setattr(QPropertyAnimation, "start", my_start)
     yield
 
     dangling_animations = []
@@ -811,9 +811,9 @@ class NapariTerminalReporter(CustomTerminalReporter):
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
     # Get the standard terminal reporter plugin and replace it with our
-    standard_reporter = config.pluginmanager.getplugin('terminalreporter')
+    standard_reporter = config.pluginmanager.getplugin("terminalreporter")
     custom_reporter = NapariTerminalReporter(config, sys.stdout)
     if standard_reporter._session is not None:
         custom_reporter._session = standard_reporter._session
     config.pluginmanager.unregister(standard_reporter)
-    config.pluginmanager.register(custom_reporter, 'terminalreporter')
+    config.pluginmanager.register(custom_reporter, "terminalreporter")

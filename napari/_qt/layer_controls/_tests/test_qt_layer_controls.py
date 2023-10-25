@@ -64,7 +64,7 @@ _IMAGE = LayerTypeWithData(
 _LABELS_WITH_COLOR = LayerTypeWithData(
     type=Labels,
     data=np.random.randint(5, size=(10, 15)),
-    color={1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'},
+    color={1: "white", 2: "blue", 3: "green", 4: "red", 5: "yellow"},
     properties=None,
     expected_isinstance=QtLabelsControls,
 )
@@ -105,9 +105,9 @@ _TRACKS = LayerTypeWithData(
     data=np.zeros((2, 4)),
     color=None,
     properties={
-        'track_id': [0, 0],
-        'time': [0, 0],
-        'speed': [50, 30],
+        "track_id": [0, 0],
+        "time": [0, 0],
+        "speed": [50, 30],
     },
     expected_isinstance=QtTracksControls,
 )
@@ -145,7 +145,7 @@ def create_layer_controls(qtbot):
 
 
 @pytest.mark.parametrize(
-    'layer_type_with_data',
+    "layer_type_with_data",
     [
         _LABELS_WITH_COLOR,
         _LABELS,
@@ -187,7 +187,7 @@ def test_create_layer_controls(
 
 
 if sys.version_info[:2] == (3, 11) and (
-    qtpy.API == 'pyqt5' or qtpy.API == 'pyqt6'
+    qtpy.API == "pyqt5" or qtpy.API == "pyqt6"
 ):
     test_data = []
 else:
@@ -208,7 +208,7 @@ test_data += [
 
 
 @pytest.mark.parametrize(
-    'layer_type_with_data',
+    "layer_type_with_data",
     test_data,
 )
 @pytest.mark.qt_no_exception_capture
@@ -275,7 +275,7 @@ def test_create_layer_controls_spin(
 
 
 @pytest.mark.parametrize(
-    'layer_type_with_data',
+    "layer_type_with_data",
     [
         _LABELS_WITH_COLOR,
         _LABELS,
@@ -357,7 +357,7 @@ def test_create_layer_controls_qslider(
 
 
 @pytest.mark.parametrize(
-    'layer_type_with_data',
+    "layer_type_with_data",
     [
         _LABELS_WITH_COLOR,
         _LABELS,
@@ -448,11 +448,11 @@ def test_inheritance(qtbot):
     assert isinstance(ctrl, QtLinesControls)
 
 
-@pytest.mark.parametrize('layer_type_with_data', [_POINTS, _SHAPES])
+@pytest.mark.parametrize("layer_type_with_data", [_POINTS, _SHAPES])
 def test_text_set_visible_updates_checkbox(qtbot, layer_type_with_data):
     text = {
-        'string': {'constant': 'test'},
-        'visible': True,
+        "string": {"constant": "test"},
+        "visible": True,
     }
     layer = layer_type_with_data.type(layer_type_with_data.data, text=text)
     ctrl = create_qt_layer_controls(layer)
@@ -464,7 +464,7 @@ def test_text_set_visible_updates_checkbox(qtbot, layer_type_with_data):
     assert not ctrl.textDispCheckBox.isChecked()
 
 
-@pytest.mark.parametrize('layer_type_with_data', [_POINTS, _SHAPES])
+@pytest.mark.parametrize("layer_type_with_data", [_POINTS, _SHAPES])
 def test_set_text_then_set_visible_updates_checkbox(
     qtbot, layer_type_with_data
 ):
@@ -472,8 +472,8 @@ def test_set_text_then_set_visible_updates_checkbox(
     ctrl = create_qt_layer_controls(layer)
     qtbot.addWidget(ctrl)
     layer.text = {
-        'string': {'constant': 'another_test'},
-        'visible': False,
+        "string": {"constant": "another_test"},
+        "visible": False,
     }
     assert not ctrl.textDispCheckBox.isChecked()
 
@@ -482,7 +482,7 @@ def test_set_text_then_set_visible_updates_checkbox(
     assert ctrl.textDispCheckBox.isChecked()
 
 
-@pytest.mark.parametrize(('ndim', 'editable_after'), ((2, False), (3, True)))
+@pytest.mark.parametrize(("ndim", "editable_after"), ((2, False), (3, True)))
 def test_set_3d_display_with_points(qtbot, ndim, editable_after):
     """Interactivity only works for 2D points layers rendered in 2D and not
     in 3D. Verify that layer.editable is set appropriately upon switching to

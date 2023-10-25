@@ -36,7 +36,7 @@ class QtModeRadioButton(QRadioButton):
         self.layer_ref = weakref.ref(layer)
         self.setToolTip(tooltip or button_name)
         self.setChecked(checked)
-        self.setProperty('mode', button_name)
+        self.setProperty("mode", button_name)
         self.setFixedWidth(28)
         self.mode = mode
         if mode is not None:
@@ -84,7 +84,7 @@ class QtModePushButton(QPushButton):
         super().__init__()
 
         self.layer = layer
-        self.setProperty('mode', button_name)
+        self.setProperty("mode", button_name)
         self.setToolTip(tooltip or button_name)
         self.setFixedWidth(28)
         self.setFixedHeight(28)

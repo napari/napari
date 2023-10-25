@@ -13,15 +13,15 @@ def test_plugin_display_name_use_for_multiple_widgets(
 ):
     """For plugin with more than two widgets, should use plugin_display for building the menu"""
 
-    @tmp_plugin.contribute.widget(display_name='Widget 1')
+    @tmp_plugin.contribute.widget(display_name="Widget 1")
     def widget1():
         return DummyWidget()
 
-    @tmp_plugin.contribute.widget(display_name='Widget 2')
+    @tmp_plugin.contribute.widget(display_name="Widget 2")
     def widget2():
         return DummyWidget()
 
-    assert tmp_plugin.display_name == 'Temp Plugin'
+    assert tmp_plugin.display_name == "Temp Plugin"
     viewer = make_napari_viewer()
     # the submenu should use the `display_name` from manifest
     plugin_action_menu = viewer.window.plugins_menu.actions()[3].menu()
@@ -32,7 +32,7 @@ def test_plugin_display_name_use_for_multiple_widgets(
     plugin_action_menu.actions()[0].trigger()
     assert len(viewer.window._dock_widgets) == 1
     assert (
-        next(iter(viewer.window._dock_widgets.data)) == 'Widget 1 (tmp_plugin)'
+        next(iter(viewer.window._dock_widgets.data)) == "Widget 1 (tmp_plugin)"
     )
 
 
@@ -62,9 +62,9 @@ def test_plugin_manager(make_napari_viewer, monkeypatch, qtbot):
 
 def test_no_plugin_manager(make_napari_viewer, monkeypatch):
     """Test that the plugin manager is not accessible from the viewer when not installed"""
-    monkeypatch.setitem(sys.modules, 'napari_plugin_manager', None)
+    monkeypatch.setitem(sys.modules, "napari_plugin_manager", None)
     monkeypatch.setitem(
-        sys.modules, 'napari_plugin_manager.qt_plugin_dialog', None
+        sys.modules, "napari_plugin_manager.qt_plugin_dialog", None
     )
     viewer = make_napari_viewer()
 

@@ -254,8 +254,8 @@ def test_update_dims_labels(qtbot):
     view.setFixedWidth(100)
     view.show()
 
-    view.dims.axis_labels = list('TZYX')
-    assert [w.axis_label.text() for w in view.slider_widgets] == list('TZYX')
+    view.dims.axis_labels = list("TZYX")
+    assert [w.axis_label.text() for w in view.slider_widgets] == list("TZYX")
 
     observed_axis_labels_event = False
 
@@ -269,7 +269,7 @@ def test_update_dims_labels(qtbot):
 
     # check that the label text corresponds with the dims model
     # while being elided on the GUI
-    first_label.setText('napari')
+    first_label.setText("napari")
     assert first_label.text() == view.dims.axis_labels[0]
     assert "…" in first_label._elidedText()
     assert observed_axis_labels_event
@@ -301,8 +301,8 @@ def test_slider_press_updates_last_used(qtbot):
 
 
 @pytest.mark.skipif(
-    os.environ.get('CI') and platform == 'win32',
-    reason='not working in windows VM',
+    os.environ.get("CI") and platform == "win32",
+    reason="not working in windows VM",
 )
 def test_play_button(qtbot):
     """test that the play button and its popup dialog work"""
@@ -313,7 +313,7 @@ def test_play_button(qtbot):
     button = slider.play_button
 
     # Need looping playback so that it does not stop before we can assert that.
-    assert slider.loop_mode == 'loop'
+    assert slider.loop_mode == "loop"
     assert not view.is_playing
 
     qtbot.mouseClick(button, Qt.LeftButton)
@@ -323,7 +323,7 @@ def test_play_button(qtbot):
     qtbot.waitUntil(lambda: not view.is_playing)
     qtbot.waitUntil(lambda: view._animation_worker is None)
 
-    with patch.object(button.popup, 'show_above_mouse') as mock_popup:
+    with patch.object(button.popup, "show_above_mouse") as mock_popup:
         qtbot.mouseClick(button, Qt.RightButton)
         mock_popup.assert_called_once()
 
@@ -334,5 +334,5 @@ def test_play_button(qtbot):
     assert slider.fps == button.fpsspin.value() == 11
     button.reverse_check.setChecked(True)
     assert slider.fps == -button.fpsspin.value() == -11
-    button.mode_combo.setCurrentText('once')
-    assert slider.loop_mode == button.mode_combo.currentText() == 'once'
+    button.mode_combo.setCurrentText("once")
+    assert slider.loop_mode == button.mode_combo.currentText() == "once"

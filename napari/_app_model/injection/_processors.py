@@ -83,7 +83,7 @@ def _add_layer_data_to_viewer(
             return_type = return_type.__args__[0]
         layer_type = return_type.__name__.replace("Data", "").lower()
         with layer_source(**source) if source else nullcontext():
-            getattr(viewer, f'add_{layer_type}')(data=data, name=layer_name)
+            getattr(viewer, f"add_{layer_type}")(data=data, name=layer_name)
 
 
 def _add_layer_to_viewer(

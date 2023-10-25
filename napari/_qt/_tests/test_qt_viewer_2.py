@@ -3,8 +3,8 @@ import pytest
 
 from napari._vispy.utils.gl import fix_data_dtype
 
-BUILTINS_DISP = 'napari'
-BUILTINS_NAME = 'builtins'
+BUILTINS_DISP = "napari"
+BUILTINS_NAME = "builtins"
 
 
 # Previously tests often segfaulted on CI at the 26th test of test_qt_viewer
@@ -13,20 +13,20 @@ BUILTINS_NAME = 'builtins'
 @pytest.mark.parametrize(
     "dtype",
     [
-        'int8',
-        'uint8',
-        'int16',
-        'uint16',
-        'int32',
-        'float16',
-        'float32',
-        'float64',
+        "int8",
+        "uint8",
+        "int16",
+        "uint16",
+        "int32",
+        "float16",
+        "float32",
+        "float64",
     ],
 )
 def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     """Test that the viewer doesn't change the underlying array."""
     image = np.random.rand(10, 32, 32)
-    image *= 200 if dtype.endswith('8') else 2**14
+    image *= 200 if dtype.endswith("8") else 2**14
     image = image.astype(dtype)
     imean = image.mean()
 

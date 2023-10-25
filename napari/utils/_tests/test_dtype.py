@@ -7,20 +7,20 @@ from dask import array as da
 
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 
-ts = pytest.importorskip('tensorstore')
-torch = pytest.importorskip('torch')
+ts = pytest.importorskip("tensorstore")
+torch = pytest.importorskip("torch")
 
 bit_depths = [str(2**i) for i in range(3, 7)]
-uints = ['uint' + b for b in bit_depths]
-ints = ['int' + b for b in bit_depths]
-floats = ['float32', 'float64']
-complex_types = ['complex64', 'complex128']
-bools = ['bool']
-pure_py = ['int', 'float']
+uints = ["uint" + b for b in bit_depths]
+ints = ["int" + b for b in bit_depths]
+floats = ["float32", "float64"]
+complex_types = ["complex64", "complex128"]
+bools = ["bool"]
+pure_py = ["int", "float"]
 
 
 @pytest.mark.parametrize(
-    'dtype_str', ['uint8', *ints, *floats, *complex_types, *bools]
+    "dtype_str", ["uint8", *ints, *floats, *complex_types, *bools]
 )
 def test_normalize_dtype_torch(dtype_str):
     """torch doesn't have uint for >8bit, so it gets its own test."""
@@ -32,7 +32,7 @@ def test_normalize_dtype_torch(dtype_str):
 
 
 @pytest.mark.parametrize(
-    'dtype_str', uints + ints + floats + complex_types + bools
+    "dtype_str", uints + ints + floats + complex_types + bools
 )
 def test_normalize_dtype_tensorstore(dtype_str):
     np_arr = np.zeros(5, dtype=dtype_str)
@@ -41,7 +41,7 @@ def test_normalize_dtype_tensorstore(dtype_str):
 
 
 @pytest.mark.parametrize(
-    'module, dtype_str',
+    "module, dtype_str",
     itertools.product(
         (np, da, zarr), uints + ints + floats + complex_types + bools
     ),
@@ -53,7 +53,7 @@ def test_normalize_dtype_np_noop(module, dtype_str):
     assert normalize_dtype(module_arr.dtype) is normalize_dtype(np_arr.dtype)
 
 
-@pytest.mark.parametrize('dtype_str', ['int', 'float'])
+@pytest.mark.parametrize("dtype_str", ["int", "float"])
 def test_pure_python_types(dtype_str):
     pure_arr = np.zeros(5, dtype=dtype_str)
     norm_arr = np.zeros(5, dtype=normalize_dtype(dtype_str))
@@ -68,20 +68,20 @@ def test_pure_python_types(dtype_str):
     "dtype",
     [
         int,
-        'uint8',
+        "uint8",
         np.uint8,
-        'int8',
-        'uint16',
-        'int16',
-        'uint32',
-        'int32',
+        "int8",
+        "uint16",
+        "int16",
+        "uint32",
+        "int32",
         float,
-        'float32',
-        'float64',
-        '>f4',
-        '>f8',
+        "float32",
+        "float64",
+        ">f4",
+        ">f8",
     ]
-    + [''.join(t) for t in itertools.product('<>', 'iu', '1248')],
+    + ["".join(t) for t in itertools.product("<>", "iu", "1248")],
 )
 def test_dtype_lims(dtype):
     lims = get_dtype_limits(dtype)

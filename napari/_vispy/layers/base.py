@@ -137,28 +137,28 @@ class VispyBaseLayer(ABC, Generic[_L]):
             # if the first layer, then we should blend differently
             # the goal is to prevent pathological blending with canvas
             # for minimum, use the src color, ignore alpha & canvas
-            if blending == 'minimum':
-                src_color_blending = 'one'
-                dst_color_blending = 'zero'
+            if blending == "minimum":
+                src_color_blending = "one"
+                dst_color_blending = "zero"
             # for additive, use the src alpha and blend to black
-            elif blending == 'additive':
-                src_color_blending = 'src_alpha'
-                dst_color_blending = 'zero'
+            elif blending == "additive":
+                src_color_blending = "src_alpha"
+                dst_color_blending = "zero"
             # for all others, use translucent blending
             else:
-                src_color_blending = 'src_alpha'
-                dst_color_blending = 'one_minus_src_alpha'
+                src_color_blending = "src_alpha"
+                dst_color_blending = "one_minus_src_alpha"
             blending_kwargs = {
-                "depth_test": blending_kwargs['depth_test'],
+                "depth_test": blending_kwargs["depth_test"],
                 "cull_face": False,
                 "blend": True,
                 "blend_func": (
                     src_color_blending,
                     dst_color_blending,
-                    'one',
-                    'one',
+                    "one",
+                    "one",
                 ),
-                "blend_equation": 'func_add',
+                "blend_equation": "func_add",
             }
 
         self.node.set_gl_state(**blending_kwargs)
@@ -224,8 +224,8 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self._master_transform.matrix = affine_matrix
 
     def _on_experimental_clipping_planes_change(self):
-        if hasattr(self.node, 'clipping_planes') and hasattr(
-            self.layer, 'experimental_clipping_planes'
+        if hasattr(self.node, "clipping_planes") and hasattr(
+            self.layer, "experimental_clipping_planes"
         ):
             # invert axes because vispy uses xyz but napari zyx
             self.node.clipping_planes = (

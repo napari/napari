@@ -42,74 +42,74 @@ def register_shapes_action(description: str, repeatable: bool = False):
 
 
 def register_shapes_mode_action(description):
-    return register_layer_attr_action(Shapes, description, 'mode')
+    return register_layer_attr_action(Shapes, description, "mode")
 
 
-@register_shapes_mode_action(trans._('Transform'))
+@register_shapes_mode_action(trans._("Transform"))
 def activate_shapes_transform_mode(layer):
     layer.mode = Mode.TRANSFORM
 
 
-@register_shapes_mode_action(trans._('Pan/zoom'))
+@register_shapes_mode_action(trans._("Pan/zoom"))
 def activate_shapes_pan_zoom_mode(layer: Shapes):
     layer.mode = Mode.PAN_ZOOM
 
 
-@register_shapes_mode_action(trans._('Add rectangles'))
+@register_shapes_mode_action(trans._("Add rectangles"))
 def activate_add_rectangle_mode(layer: Shapes):
     """Activate add rectangle tool."""
     layer.mode = Mode.ADD_RECTANGLE
 
 
-@register_shapes_mode_action(trans._('Add ellipses'))
+@register_shapes_mode_action(trans._("Add ellipses"))
 def activate_add_ellipse_mode(layer: Shapes):
     """Activate add ellipse tool."""
     layer.mode = Mode.ADD_ELLIPSE
 
 
-@register_shapes_mode_action(trans._('Add lines'))
+@register_shapes_mode_action(trans._("Add lines"))
 def activate_add_line_mode(layer: Shapes):
     """Activate add line tool."""
     layer.mode = Mode.ADD_LINE
 
 
-@register_shapes_mode_action(trans._('Add path'))
+@register_shapes_mode_action(trans._("Add path"))
 def activate_add_path_mode(layer: Shapes):
     """Activate add path tool."""
     layer.mode = Mode.ADD_PATH
 
 
-@register_shapes_mode_action(trans._('Add polygons'))
+@register_shapes_mode_action(trans._("Add polygons"))
 def activate_add_polygon_mode(layer: Shapes):
     """Activate add polygon tool."""
     layer.mode = Mode.ADD_POLYGON
 
 
-@register_shapes_mode_action(trans._('Add polygons lasso'))
+@register_shapes_mode_action(trans._("Add polygons lasso"))
 def activate_add_polygon_lasso_mode(layer: Shapes):
     """Activate add polygon tool."""
     layer.mode = Mode.ADD_POLYGON_LASSO
 
 
-@register_shapes_mode_action(trans._('Select vertices'))
+@register_shapes_mode_action(trans._("Select vertices"))
 def activate_direct_mode(layer: Shapes):
     """Activate vertex selection tool."""
     layer.mode = Mode.DIRECT
 
 
-@register_shapes_mode_action(trans._('Select shapes'))
+@register_shapes_mode_action(trans._("Select shapes"))
 def activate_select_mode(layer: Shapes):
     """Activate shape selection tool."""
     layer.mode = Mode.SELECT
 
 
-@register_shapes_mode_action(trans._('Insert vertex'))
+@register_shapes_mode_action(trans._("Insert vertex"))
 def activate_vertex_insert_mode(layer: Shapes):
     """Activate vertex insertion tool."""
     layer.mode = Mode.VERTEX_INSERT
 
 
-@register_shapes_mode_action(trans._('Remove vertex'))
+@register_shapes_mode_action(trans._("Remove vertex"))
 def activate_vertex_remove_mode(layer: Shapes):
     """Activate vertex deletion tool."""
     layer.mode = Mode.VERTEX_REMOVE
@@ -131,21 +131,21 @@ shapes_fun_to_mode = [
 ]
 
 
-@register_shapes_action(trans._('Copy any selected shapes'))
+@register_shapes_action(trans._("Copy any selected shapes"))
 def copy_selected_shapes(layer: Shapes):
     """Copy any selected shapes."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
         layer._copy_data()
 
 
-@register_shapes_action(trans._('Paste any copied shapes'))
+@register_shapes_action(trans._("Paste any copied shapes"))
 def paste_shape(layer: Shapes):
     """Paste any copied shapes."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
         layer._paste_data()
 
 
-@register_shapes_action(trans._('Select all shapes in the current view slice'))
+@register_shapes_action(trans._("Select all shapes in the current view slice"))
 def select_all_shapes(layer: Shapes):
     """Select all shapes in the current view slice."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
@@ -153,7 +153,7 @@ def select_all_shapes(layer: Shapes):
         layer._set_highlight()
 
 
-@register_shapes_action(trans._('Delete any selected shapes'))
+@register_shapes_action(trans._("Delete any selected shapes"))
 def delete_selected_shapes(layer: Shapes):
     """."""
 
@@ -161,19 +161,19 @@ def delete_selected_shapes(layer: Shapes):
         layer.remove_selected()
 
 
-@register_shapes_action(trans._('Move to front'))
+@register_shapes_action(trans._("Move to front"))
 def move_shapes_selection_to_front(layer: Shapes):
     layer.move_to_front()
 
 
-@register_shapes_action(trans._('Move to back'))
+@register_shapes_action(trans._("Move to back"))
 def move_shapes_selection_to_back(layer: Shapes):
     layer.move_to_back()
 
 
 @register_shapes_action(
     trans._(
-        'Finish any drawing, for example when using the path or polygon tool.'
+        "Finish any drawing, for example when using the path or polygon tool."
     ),
 )
 def finish_drawing_shape(layer: Shapes):

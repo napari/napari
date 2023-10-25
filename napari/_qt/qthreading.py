@@ -164,8 +164,8 @@ def create_worker(
         if isinstance(_progress, bool):
             _progress = {}
 
-        desc = _progress.get('desc', None)
-        total = int(_progress.get('total', 0))
+        desc = _progress.get("desc", None)
+        total = int(_progress.get("total", 0))
         if isinstance(worker, FunctionWorker) and total != 0:
             warnings.warn(
                 trans._(
@@ -306,12 +306,12 @@ def thread_worker(
         def worker_function(*args, **kwargs):
             # decorator kwargs can be overridden at call time by using the
             # underscore-prefixed version of the kwarg.
-            kwargs['_start_thread'] = kwargs.get('_start_thread', start_thread)
-            kwargs['_connect'] = kwargs.get('_connect', connect)
-            kwargs['_progress'] = kwargs.get('_progress', progress)
-            kwargs['_worker_class'] = kwargs.get('_worker_class', worker_class)
-            kwargs['_ignore_errors'] = kwargs.get(
-                '_ignore_errors', ignore_errors
+            kwargs["_start_thread"] = kwargs.get("_start_thread", start_thread)
+            kwargs["_connect"] = kwargs.get("_connect", connect)
+            kwargs["_progress"] = kwargs.get("_progress", progress)
+            kwargs["_worker_class"] = kwargs.get("_worker_class", worker_class)
+            kwargs["_ignore_errors"] = kwargs.get(
+                "_ignore_errors", ignore_errors
             )
             return create_worker(
                 func,
@@ -366,7 +366,7 @@ def register_threadworker_processors():
             processors={t: _add_worker_data_from_tuple}
         )
     for layer_name in layers.NAMES:
-        _type = getattr(types, f'{layer_name.title()}Data')
+        _type = getattr(types, f"{layer_name.title()}Data")
         t = FunctionWorker[_type]
         magicgui.register_type(
             t,

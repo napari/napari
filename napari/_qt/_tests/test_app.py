@@ -41,7 +41,7 @@ def test_run_outside_ipython(qapp, monkeypatch):
 
     with monkeypatch.context() as m:
         mock_exec = Mock()
-        m.setattr(qapp, 'exec_', mock_exec)
+        m.setattr(qapp, "exec_", mock_exec)
         run()
         mock_exec.assert_called_once()
 

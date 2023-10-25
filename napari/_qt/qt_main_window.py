@@ -103,13 +103,13 @@ class _QtMainWindow(QMainWindow):
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
-    _instances: ClassVar[List['_QtMainWindow']] = []
+    _instances: ClassVar[List["_QtMainWindow"]] = []
 
     # `window` is passed through on construction so it's available to a window
     # provider for dependency injection
     # See https://github.com/napari/napari/pull/4826
     def __init__(
-        self, viewer: 'Viewer', window: 'Window', parent=None
+        self, viewer: "Viewer", window: "Window", parent=None
     ) -> None:
         super().__init__(parent)
         self._ev = None
@@ -178,7 +178,7 @@ class _QtMainWindow(QMainWindow):
         self.status_throttler.setTimeout(50)
         self._throttle_cursor_to_status_connection(viewer)
 
-    def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
+    def _throttle_cursor_to_status_connection(self, viewer: "Viewer"):
         # In the GUI we expect lots of changes to the cursor position, so
         # replace the direct connection with a throttled one.
         with contextlib.suppress(IndexError):
@@ -190,11 +190,11 @@ class _QtMainWindow(QMainWindow):
             viewer._update_status_bar_from_cursor
         )
 
-    def statusBar(self) -> 'ViewerStatusBar':
+    def statusBar(self) -> "ViewerStatusBar":
         return super().statusBar()
 
     @classmethod
-    def current(cls) -> Optional['_QtMainWindow']:
+    def current(cls) -> Optional["_QtMainWindow"]:
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
@@ -243,7 +243,7 @@ class _QtMainWindow(QMainWindow):
         # See https://bugreports.qt.io/browse/QTBUG-41309
         # Based on https://github.com/spyder-ide/spyder/pull/7720
         self._fullscreen_flag = False
-        if os.name == 'nt':
+        if os.name == "nt":
             self.setWindowFlags(
                 self.windowFlags()
                 ^ (Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -263,7 +263,7 @@ class _QtMainWindow(QMainWindow):
         # See https://bugreports.qt.io/browse/QTBUG-41309
         # Based on https://github.com/spyder-ide/spyder/pull/7720
         self._fullscreen_flag = True
-        if os.name == 'nt':
+        if os.name == "nt":
             self.setWindowFlags(
                 self.windowFlags()
                 | Qt.FramelessWindowHint
@@ -595,7 +595,7 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
+    def __init__(self, viewer: "Viewer", *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
         qapp = get_app()
 
@@ -788,26 +788,26 @@ class Window:
         # shortcut, we disable it, and only enable it when the menubar is
         # hidden. See this stackoverflow link for details:
         # https://stackoverflow.com/questions/50537642/how-to-keep-the-shortcuts-of-a-hidden-widget-in-pyqt5
-        self._main_menu_shortcut = QShortcut('Ctrl+M', self._qt_window)
+        self._main_menu_shortcut = QShortcut("Ctrl+M", self._qt_window)
         self._main_menu_shortcut.setEnabled(False)
         self._main_menu_shortcut.activated.connect(
             self._toggle_menubar_visible
         )
         # file menu
         self.file_menu = build_qmodel_menu(
-            MenuId.MENUBAR_FILE, title=trans._('&File'), parent=self._qt_window
+            MenuId.MENUBAR_FILE, title=trans._("&File"), parent=self._qt_window
         )
         self._setup_npe1_samples_menu()
         self.file_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('file_menu')
+            lambda: self._update_menu_state("file_menu")
         )
         self.main_menu.addMenu(self.file_menu)
         # view menu
         self.view_menu = build_qmodel_menu(
-            MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
+            MenuId.MENUBAR_VIEW, title=trans._("&View"), parent=self._qt_window
         )
         self.view_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('view_menu')
+            lambda: self._update_menu_state("view_menu")
         )
         self.main_menu.addMenu(self.view_menu)
         # plugin menu
@@ -818,10 +818,10 @@ class Window:
         self.main_menu.addMenu(self.window_menu)
         # help menu
         self.help_menu = build_qmodel_menu(
-            MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
+            MenuId.MENUBAR_HELP, title=trans._("&Help"), parent=self._qt_window
         )
         self.help_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('help_menu')
+            lambda: self._update_menu_state("help_menu")
         )
         self.main_menu.addMenu(self.help_menu)
 
@@ -899,16 +899,16 @@ class Window:
         if full_name in self._dock_widgets:
             dock_widget = self._dock_widgets[full_name]
             wdg = dock_widget.widget()
-            if hasattr(wdg, '_magic_widget'):
+            if hasattr(wdg, "_magic_widget"):
                 wdg = wdg._magic_widget
             return dock_widget, wdg
 
         wdg = _instantiate_dock_widget(
-            Widget, cast('Viewer', self._qt_viewer.viewer)
+            Widget, cast("Viewer", self._qt_viewer.viewer)
         )
 
         # Add dock widget
-        dock_kwargs.pop('name', None)
+        dock_kwargs.pop("name", None)
         dock_widget = self.add_dock_widget(
             wdg, name=full_name, tabify=tabify, **dock_kwargs
         )
@@ -939,10 +939,10 @@ class Window:
 
     def add_dock_widget(
         self,
-        widget: Union[QWidget, 'Widget'],
+        widget: Union[QWidget, "Widget"],
         *,
-        name: str = '',
-        area: str = 'right',
+        name: str = "",
+        area: str = "right",
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
@@ -1026,7 +1026,7 @@ class Window:
 
         self._add_viewer_dock_widget(dock_widget, tabify=tabify, menu=menu)
 
-        if hasattr(widget, 'reset_choices'):
+        if hasattr(widget, "reset_choices"):
             # Keep the dropdown menus in the widget in sync with the layer model
             # if widget has a `reset_choices`, which is true for all magicgui
             # `CategoricalWidget`s
@@ -1075,7 +1075,7 @@ class Window:
                 )
                 dock_widget.show()
                 dock_widget.raise_()
-            elif dock_widget.area in ('right', 'left'):
+            elif dock_widget.area in ("right", "left"):
                 _wdg = [*current_dws_in_area, dock_widget]
                 # add sizes to push lower widgets up
                 sizes = list(range(1, len(_wdg) * 4, 4))
@@ -1121,7 +1121,7 @@ class Window:
         widget : QWidget | str
             If widget == 'all', all docked widgets will be removed.
         """
-        if widget == 'all':
+        if widget == "all":
             for dw in list(self._dock_widgets.values()):
                 self.remove_dock_widget(dw)
             return
@@ -1163,7 +1163,7 @@ class Window:
         function,
         *,
         magic_kwargs=None,
-        name: str = '',
+        name: str = "",
         area=None,
         allowed_areas=None,
         shortcut=_sentinel,
@@ -1200,21 +1200,21 @@ class Window:
 
         if magic_kwargs is None:
             magic_kwargs = {
-                'auto_call': False,
-                'call_button': "run",
-                'layout': 'vertical',
+                "auto_call": False,
+                "call_button": "run",
+                "layout": "vertical",
             }
 
         widget = magicgui(function, **magic_kwargs or {})
 
         if area is None:
-            area = 'right' if str(widget.layout) == 'vertical' else 'bottom'
+            area = "right" if str(widget.layout) == "vertical" else "bottom"
         if allowed_areas is None:
             allowed_areas = [area]
         if shortcut is not _sentinel:
             return self.add_dock_widget(
                 widget,
-                name=name or function.__name__.replace('_', ' '),
+                name=name or function.__name__.replace("_", " "),
                 area=area,
                 allowed_areas=allowed_areas,
                 shortcut=shortcut,
@@ -1222,7 +1222,7 @@ class Window:
 
         return self.add_dock_widget(
             widget,
-            name=name or function.__name__.replace('_', ' '),
+            name=name or function.__name__.replace("_", " "),
             area=area,
             allowed_areas=allowed_areas,
         )
@@ -1334,7 +1334,7 @@ class Window:
         # See #721, #732, #735, #795, #1594
         app_name = QApplication.instance().applicationName()
         if (
-            app_name == 'napari' or in_jupyter()
+            app_name == "napari" or in_jupyter()
         ) and self._qt_window.isActiveWindow():
             self.activate()
 
@@ -1389,10 +1389,10 @@ class Window:
         else:
             status_info = event.value
             self._status_bar.setStatusText(
-                layer_base=status_info['layer_base'],
-                source_type=status_info['source_type'],
-                plugin=status_info['plugin'],
-                coordinates=status_info['coordinates'],
+                layer_base=status_info["layer_base"],
+                source_type=status_info["source_type"],
+                plugin=status_info["plugin"],
+                coordinates=status_info["coordinates"],
             )
 
     def _title_changed(self, event):
@@ -1421,7 +1421,7 @@ class Window:
 
     def _screenshot(
         self, size=None, scale=None, flash=True, canvas_only=False
-    ) -> 'QImage':
+    ) -> "QImage":
         """Capture screenshot of the currently displayed viewer.
 
         Parameters
@@ -1453,7 +1453,7 @@ class Window:
                 if len(size) != 2:
                     raise ValueError(
                         trans._(
-                            'screenshot size must be 2 values, got {len_size}',
+                            "screenshot size must be 2 values, got {len_size}",
                             len_size=len(size),
                         )
                     )
@@ -1541,7 +1541,7 @@ class Window:
         """Close the viewer window and cleanup sub-widgets."""
         # Someone is closing us twice? Only try to delete self._qt_window
         # if we still have one.
-        if hasattr(self, '_qt_window'):
+        if hasattr(self, "_qt_window"):
             self._teardown()
             self._qt_viewer.close()
             self._qt_window.close()
@@ -1584,7 +1584,7 @@ class Window:
             update_save_history(dial.selectedFiles()[0])
 
 
-def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
+def _instantiate_dock_widget(wdg_cls, viewer: "Viewer"):
     # if the signature is looking a for a napari viewer, pass it.
     from napari.viewer import Viewer
 
@@ -1596,10 +1596,10 @@ def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
         pass
     else:
         for param in sig.parameters.values():
-            if param.name == 'napari_viewer':
-                kwargs['napari_viewer'] = PublicOnlyProxy(viewer)
+            if param.name == "napari_viewer":
+                kwargs["napari_viewer"] = PublicOnlyProxy(viewer)
                 break
-            if param.annotation in ('napari.viewer.Viewer', Viewer):
+            if param.annotation in ("napari.viewer.Viewer", Viewer):
                 kwargs[param.name] = PublicOnlyProxy(viewer)
                 break
             # cannot look for param.kind == param.VAR_KEYWORD because

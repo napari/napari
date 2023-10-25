@@ -26,7 +26,7 @@ PREFERRED_VALUES = [
 
 
 @lru_cache(maxsize=1)
-def get_unit_registry() -> 'pint.UnitRegistry':
+def get_unit_registry() -> "pint.UnitRegistry":
     """Get pint's UnitRegistry.
 
     Pint greedily imports many libraries, (including dask, xarray, pandas, and

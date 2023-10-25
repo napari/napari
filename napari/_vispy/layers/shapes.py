@@ -20,7 +20,7 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.text.events.connect(self._on_text_change)
 
         # TODO: move to overlays
-        self.node._subvisuals[3].symbol = 'square'
+        self.node._subvisuals[3].symbol = "square"
         self.node._subvisuals[3].scaling = False
 
         self.reset()
@@ -46,7 +46,7 @@ class VispyShapesLayer(VispyBaseLayer):
             and self.layer._slice_input.ndisplay == 3
             and self.layer.ndim == 2
         ):
-            vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
+            vertices = np.pad(vertices, ((0, 0), (0, 1)), mode="constant")
 
         self.node._subvisuals[0].set_data(
             vertices=vertices, faces=faces, face_colors=colors
@@ -128,10 +128,10 @@ class VispyShapesLayer(VispyBaseLayer):
 
     def _on_text_change(self, event=None):
         if event is not None:
-            if event.type == 'blending':
+            if event.type == "blending":
                 self._on_blending_change(event)
                 return
-            if event.type == 'values':
+            if event.type == "values":
                 return
         self._update_text()
 

@@ -19,12 +19,12 @@ if TYPE_CHECKING:
     from napari.components import LayerList
 
 
-def _duplicate_layer(ll: LayerList, *, name: str = ''):
+def _duplicate_layer(ll: LayerList, *, name: str = ""):
     from copy import deepcopy
 
     for lay in list(ll.selection):
         data, state, type_str = lay.as_layer_data_tuple()
-        state["name"] = trans._('{name} copy', name=lay.name)
+        state["name"] = trans._("{name} copy", name=lay.name)
         with layer_source(parent=lay):
             new = Layer.create(deepcopy(data), state, type_str)
         ll.insert(ll.index(lay) + 1, new)
@@ -53,10 +53,10 @@ def _convert(ll: LayerList, type_: str):
     for lay in list(ll.selection):
         idx = ll.index(lay)
         ll.pop(idx)
-        if isinstance(lay, Shapes) and type_ == 'labels':
+        if isinstance(lay, Shapes) and type_ == "labels":
             data = lay.to_labels()
         else:
-            data = lay.data.astype(int) if type_ == 'labels' else lay.data
+            data = lay.data.astype(int) if type_ == "labels" else lay.data
         new_layer = Layer.create(data, lay._get_base_state(), type_)
         ll.insert(idx, new_layer)
 
@@ -67,11 +67,11 @@ def _convert(ll: LayerList, type_: str):
 # however, we could conceivably add an `args` option to register_action
 # that would allow us to pass additional arguments, like a partial.
 def _convert_to_labels(ll: LayerList):
-    return _convert(ll, 'labels')
+    return _convert(ll, "labels")
 
 
 def _convert_to_image(ll: LayerList):
-    return _convert(ll, 'image')
+    return _convert(ll, "image")
 
 
 def _merge_stack(ll: LayerList, rgb=False):
@@ -110,7 +110,7 @@ def _select_linked_layers(ll: LayerList):
     ll.selection.update(get_linked_layers(*ll.selection))
 
 
-def _convert_dtype(ll: LayerList, mode='int64'):
+def _convert_dtype(ll: LayerList, mode="int64"):
     if not (layer := ll.selection.active):
         return
 
@@ -137,7 +137,7 @@ def _convert_dtype(ll: LayerList, mode='int64'):
     layer.data = layer.data.astype(np.dtype(mode))
 
 
-def _project(ll: LayerList, axis: int = 0, mode='max'):
+def _project(ll: LayerList, axis: int = 0, mode="max"):
     layer = ll.selection.active
     if not layer:
         return
@@ -157,13 +157,13 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     meta = {
         key: layer._get_base_state()[key]
         for key in layer._get_base_state()
-        if key not in ('scale', 'translate', 'rotate', 'shear', 'affine')
+        if key not in ("scale", "translate", "rotate", "shear", "affine")
     }
     meta.update(  # sourcery skip
         {
-            'name': f'{layer} {mode}-proj',
-            'colormap': layer.colormap.name,
-            'rendering': layer.rendering,
+            "name": f"{layer} {mode}-proj",
+            "colormap": layer.colormap.name,
+            "rendering": layer.rendering,
         }
     )
     new = Layer.create(data, meta, layer._type_string)

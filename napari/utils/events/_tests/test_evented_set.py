@@ -18,29 +18,29 @@ def test_set(request, regular_set):
 
 
 @pytest.mark.parametrize(
-    'meth',
+    "meth",
     [
         # METHOD, ARGS, EXPECTED EVENTS
         # primary interface
-        ('add', 2, []),
-        ('add', 10, [call.changed(added={10}, removed={})]),
-        ('discard', 2, [call.changed(added={}, removed={2})]),
-        ('remove', 2, [call.changed(added={}, removed={2})]),
-        ('discard', 10, []),
+        ("add", 2, []),
+        ("add", 10, [call.changed(added={10}, removed={})]),
+        ("discard", 2, [call.changed(added={}, removed={2})]),
+        ("remove", 2, [call.changed(added={}, removed={2})]),
+        ("discard", 10, []),
         # parity with set
-        ('update', {3, 4, 5, 6}, [call.changed(added={5, 6}, removed={})]),
+        ("update", {3, 4, 5, 6}, [call.changed(added={5, 6}, removed={})]),
         (
-            'difference_update',
+            "difference_update",
             {3, 4, 5, 6},
             [call.changed(added={}, removed={3, 4})],
         ),
         (
-            'intersection_update',
+            "intersection_update",
             {3, 4, 5, 6},
             [call.changed(added={}, removed={0, 1, 2})],
         ),
         (
-            'symmetric_difference_update',
+            "symmetric_difference_update",
             {3, 4, 5, 6},
             [call.changed(added={5, 6}, removed={3, 4})],
         ),
@@ -83,18 +83,18 @@ def test_set_clear(test_set):
 
 
 @pytest.mark.parametrize(
-    'meth',
+    "meth",
     [
-        ('difference', {3, 4, 5, 6}),
-        ('intersection', {3, 4, 5, 6}),
-        ('issubset', {3, 4}),
-        ('issubset', {3, 4, 5, 6}),
-        ('issubset', {1, 2, 3, 4, 5, 6}),
-        ('issuperset', {3, 4}),
-        ('issuperset', {3, 4, 5, 6}),
-        ('issuperset', {1, 2, 3, 4, 5, 6}),
-        ('symmetric_difference', {3, 4, 5, 6}),
-        ('union', {3, 4, 5, 6}),
+        ("difference", {3, 4, 5, 6}),
+        ("intersection", {3, 4, 5, 6}),
+        ("issubset", {3, 4}),
+        ("issubset", {3, 4, 5, 6}),
+        ("issubset", {1, 2, 3, 4, 5, 6}),
+        ("issuperset", {3, 4}),
+        ("issuperset", {3, 4, 5, 6}),
+        ("issuperset", {1, 2, 3, 4, 5, 6}),
+        ("symmetric_difference", {3, 4, 5, 6}),
+        ("union", {3, 4, 5, 6}),
     ],
 )
 def test_set_new_objects(test_set, regular_set, meth):

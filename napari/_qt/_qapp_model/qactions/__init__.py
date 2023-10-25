@@ -34,8 +34,8 @@ def init_qactions() -> None:
     store = app.injection_store
     store.namespace = {
         **store.namespace,
-        'Window': Window,
-        'QtViewer': QtViewer,
+        "Window": Window,
+        "QtViewer": QtViewer,
     }
 
     # Qt-specific providers/processors

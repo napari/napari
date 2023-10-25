@@ -23,15 +23,15 @@ def get_text_char_format(style):
         text_char_format.setFontFamily(
             "monospace"
         )  # backward compatibility for pyqt5 5.12.3
-    if style.get('color'):
+    if style.get("color"):
         text_char_format.setForeground(QtGui.QColor(f"#{style['color']}"))
 
-    if style.get('bgcolor'):
-        text_char_format.setBackground(QtGui.QColor(style['bgcolor']))
+    if style.get("bgcolor"):
+        text_char_format.setBackground(QtGui.QColor(style["bgcolor"]))
 
-    if style.get('bold'):
+    if style.get("bold"):
         text_char_format.setFontWeight(QtGui.QFont.Bold)
-    if style.get('italic'):
+    if style.get("italic"):
         text_char_format.setFontItalic(True)
     if style.get("underline"):
         text_char_format.setFontUnderline(True)
@@ -75,7 +75,7 @@ class Pylighter(QtGui.QSyntaxHighlighter):
     def highlightBlock(self, text):
         cb = self.currentBlock()
         p = cb.position()
-        text = self.document().toPlainText() + '\n'
+        text = self.document().toPlainText() + "\n"
         highlight(text, self.lexer, self.formatter)
 
         # dirty, dirty hack

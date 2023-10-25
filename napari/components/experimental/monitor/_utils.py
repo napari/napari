@@ -40,6 +40,6 @@ def base64_encoded_json(data: dict) -> str:
         The base64 encoded JSON string.
     """
     json_str = numpy_dumps(data)
-    json_bytes = json_str.encode('ascii')
+    json_bytes = json_str.encode("ascii")
     message_bytes = base64.b64encode(json_bytes)
-    return message_bytes.decode('ascii')
+    return message_bytes.decode("ascii")

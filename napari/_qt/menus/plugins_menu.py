@@ -17,9 +17,9 @@ logger = getLogger(__name__)
 
 
 class PluginsMenu(NapariMenu):
-    def __init__(self, window: 'Window') -> None:
+    def __init__(self, window: "Window") -> None:
         self._win = window
-        super().__init__(trans._('&Plugins'), window._qt_window)
+        super().__init__(trans._("&Plugins"), window._qt_window)
 
         from napari.plugins import plugin_manager
 
@@ -43,7 +43,7 @@ class PluginsMenu(NapariMenu):
         action = self.addAction(trans._("Plugin Errors..."))
         action.setStatusTip(
             trans._(
-                'Review stack traces for plugin exceptions and notify developers'
+                "Review stack traces for plugin exceptions and notify developers"
             )
         )
         action.triggered.connect(self._show_plugin_err_reporter)
@@ -105,7 +105,7 @@ class PluginsMenu(NapariMenu):
                         dock_widget.show()
                     return
 
-                if hook_type == 'dock':
+                if hook_type == "dock":
                     self._win.add_plugin_dock_widget(*key)
                 else:
                     self._win._add_plugin_function_widget(*key)

@@ -55,7 +55,7 @@ class QtDimSliderWidget(QWidget):
         self.play_button = None
         self.curslice_label = QLineEdit(self)
         self.curslice_label.setToolTip(
-            trans._('Current slice for axis {axis}', axis=axis)
+            trans._("Current slice for axis {axis}", axis=axis)
         )
         # if we set the QIntValidator to actually reflect the range of the data
         # then an invalid (i.e. too large) index doesn't actually trigger the
@@ -68,13 +68,13 @@ class QtDimSliderWidget(QWidget):
         self.curslice_label.editingFinished.connect(self._set_slice_from_label)
         self.totslice_label = QLabel(self)
         self.totslice_label.setToolTip(
-            trans._('Total slices for axis {axis}', axis=axis)
+            trans._("Total slices for axis {axis}", axis=axis)
         )
-        self.curslice_label.setObjectName('slice_label')
-        self.totslice_label.setObjectName('slice_label')
+        self.curslice_label.setObjectName("slice_label")
+        self.totslice_label.setObjectName("slice_label")
         sep = QFrame(self)
         sep.setFixedSize(1, 14)
-        sep.setObjectName('slice_label_sep')
+        sep.setObjectName("slice_label_sep")
 
         settings = get_settings()
         self._fps = settings.application.playback_fps
@@ -126,12 +126,12 @@ class QtDimSliderWidget(QWidget):
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider."""
         label = QElidingLineEdit(self)
-        label.setObjectName('axis_label')  # needed for _update_label
+        label.setObjectName("axis_label")  # needed for _update_label
         fm = label.fontMetrics()
         label.setEllipsesWidth(int(fm.averageCharWidth() * 3))
         label.setText(self.dims.axis_labels[self.axis])
         label.home(False)
-        label.setToolTip(trans._('Edit to change axis label'))
+        label.setToolTip(trans._("Edit to change axis label"))
         label.setAcceptDrops(False)
         label.setEnabled(True)
         label.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -176,11 +176,11 @@ class QtDimSliderWidget(QWidget):
             self.qt_dims, self.axis, fps=self._fps, mode=self._loop_mode
         )
         self.play_button.setToolTip(
-            trans._('Right click on button for playback setting options.')
+            trans._("Right click on button for playback setting options.")
         )
         self.play_button.mode_combo.currentTextChanged.connect(
             lambda x: self.__class__.loop_mode.fset(
-                self, LoopMode(x.replace(' ', '_'))
+                self, LoopMode(x.replace(" ", "_"))
             )
         )
 
@@ -305,7 +305,7 @@ class QtDimSliderWidget(QWidget):
         value = LoopMode(value)
         self._loop_mode = value
         self.play_button.mode_combo.setCurrentText(
-            str(value).replace('_', ' ')
+            str(value).replace("_", " ")
         )
         self.mode_changed.emit(str(value))
 
@@ -327,11 +327,11 @@ class QtDimSliderWidget(QWidget):
         """
         if not isinstance(value, (tuple, list, type(None))):
             raise TypeError(
-                trans._('frame_range value must be a list or tuple')
+                trans._("frame_range value must be a list or tuple")
             )
 
         if value and len(value) != 2:
-            raise ValueError(trans._('frame_range must have a length of 2'))
+            raise ValueError(trans._("frame_range must have a length of 2"))
 
         if value is None:
             value = (None, None)
@@ -414,7 +414,7 @@ class QtDimSliderWidget(QWidget):
             AnimationWorker,
             self,
             _start_thread=True,
-            _connect={'frame_requested': self.qt_dims._set_frame},
+            _connect={"frame_requested": self.qt_dims._set_frame},
         )
         thread.finished.connect(self.qt_dims.cleaned_worker)
         thread.finished.connect(self.play_stopped)
@@ -504,8 +504,8 @@ class QtPlayButton(QPushButton):
         self.reverse = reverse
         self.fps = fps
         self.mode = mode
-        self.setProperty('reverse', str(reverse))  # for styling
-        self.setProperty('playing', 'False')  # for styling
+        self.setProperty("reverse", str(reverse))  # for styling
+        self.setProperty("playing", "False")  # for styling
 
         # build popup modal form
 
@@ -517,14 +517,14 @@ class QtPlayButton(QPushButton):
         fpsspin.setObjectName("fpsSpinBox")
         fpsspin.setAlignment(Qt.AlignmentFlag.AlignCenter)
         fpsspin.setValue(self.fps)
-        if hasattr(fpsspin, 'setStepType'):
+        if hasattr(fpsspin, "setStepType"):
             # this was introduced in Qt 5.12.  Totally optional, just nice.
             fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
         fpsspin.setMaximum(500)
         fpsspin.setMinimum(0)
         form_layout.insertRow(
             0,
-            QLabel(trans._('frames per second:'), parent=self.popup),
+            QLabel(trans._("frames per second:"), parent=self.popup),
             fpsspin,
         )
         self.fpsspin = fpsspin
@@ -532,16 +532,16 @@ class QtPlayButton(QPushButton):
         revcheck = QCheckBox(self.popup)
         revcheck.setObjectName("playDirectionCheckBox")
         form_layout.insertRow(
-            1, QLabel(trans._('play direction:'), parent=self.popup), revcheck
+            1, QLabel(trans._("play direction:"), parent=self.popup), revcheck
         )
         self.reverse_check = revcheck
 
         mode_combo = QComboBox(self.popup)
-        mode_combo.addItems([str(i).replace('_', ' ') for i in LoopMode])
+        mode_combo.addItems([str(i).replace("_", " ") for i in LoopMode])
         form_layout.insertRow(
-            2, QLabel(trans._('play mode:'), parent=self.popup), mode_combo
+            2, QLabel(trans._("play mode:"), parent=self.popup), mode_combo
         )
-        mode_combo.setCurrentText(str(self.mode).replace('_', ' '))
+        mode_combo.setCurrentText(str(self.mode).replace("_", " "))
         self.mode_combo = mode_combo
 
     def mouseReleaseEvent(self, event):
@@ -565,20 +565,20 @@ class QtPlayButton(QPushButton):
         qt_dims = self.qt_dims_ref()
         if not qt_dims:  # pragma: no cover
             return None
-        if self.property('playing') == "True":
+        if self.property("playing") == "True":
             return qt_dims.stop()
         self.play_requested.emit(self.axis)
         return None
 
     def _handle_start(self):
         """On animation start, set playing property to True & update style."""
-        self.setProperty('playing', 'True')
+        self.setProperty("playing", "True")
         self.style().unpolish(self)
         self.style().polish(self)
 
     def _handle_stop(self):
         """On animation stop, set playing property to False & update style."""
-        self.setProperty('playing', 'False')
+        self.setProperty("playing", "False")
         self.style().unpolish(self)
         self.style().polish(self)
 

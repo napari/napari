@@ -17,7 +17,7 @@ from napari.settings._shortcuts import ShortcutsSettings
 from napari.utils._base import _DEFAULT_CONFIG_PATH
 from napari.utils.translations import trans
 
-_CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
+_CFG_PATH = os.getenv("NAPARI_CONFIG", _DEFAULT_CONFIG_PATH)
 
 CURRENT_SCHEMA_VERSION = Version(0, 5, 0)
 
@@ -70,7 +70,7 @@ class NapariSettings(EventedConfigFileSettings):
     _config_path: Optional[Path] = Path(_CFG_PATH) if _CFG_PATH else None
 
     class Config(EventedConfigFileSettings.Config):
-        env_prefix = 'napari_'
+        env_prefix = "napari_"
         use_enum_values = False
         # all of these fields are evented models, so we don't want to break
         # connections by setting the top-level field itself
@@ -81,7 +81,7 @@ class NapariSettings(EventedConfigFileSettings):
             # before '0.4.0' we didn't write the schema_version in the file
             # written to disk. so if it's missing, add schema_version of 0.3.0
             d = super()._config_file_settings_source(settings)
-            d.setdefault('schema_version', '0.3.0')
+            d.setdefault("schema_version", "0.3.0")
             return d
 
     def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
@@ -92,12 +92,12 @@ class NapariSettings(EventedConfigFileSettings):
         # we always want schema_version written to the settings.yaml
         # TODO: is there a better way to always include schema version?
         return {
-            'schema_version': self.schema_version,
+            "schema_version": self.schema_version,
             **super()._save_dict(**kwargs),
         }
 
     def __str__(self):
-        out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
+        out = "NapariSettings (defaults excluded)\n" + 34 * "-" + "\n"
         data = self.dict(exclude_defaults=True)
         out += self._yaml_dump(_remove_empty_dicts(data))
         return out
@@ -112,11 +112,11 @@ class NapariSettings(EventedConfigFileSettings):
             do_migrations(self)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 2:
         dest = Path(sys.argv[2]).expanduser().absolute()
     else:
-        dest = Path(__file__).parent / 'napari.schema.json'
+        dest = Path(__file__).parent / "napari.schema.json"
     dest.write_text(NapariSettings.schema_json())

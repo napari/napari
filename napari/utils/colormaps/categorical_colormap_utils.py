@@ -42,7 +42,7 @@ class ColorCycle:
         return _coerce_colorcycle_from_colors(val)
 
     def _json_encode(self):
-        return {'values': self.values.tolist()}
+        return {"values": self.values.tolist()}
 
     def __eq__(self, other):
         if isinstance(other, ColorCycle):
@@ -56,20 +56,20 @@ def _coerce_colorcycle_from_dict(
     val: Dict[str, Union[str, list, np.ndarray, cycle]]
 ) -> ColorCycle:
     # validate values
-    color_values = val.get('values')
+    color_values = val.get("values")
     if color_values is None:
         raise ValueError(
-            trans._('ColorCycle requires a values argument', deferred=True)
+            trans._("ColorCycle requires a values argument", deferred=True)
         )
 
     transformed_color_values = transform_color(color_values)
 
     # validate cycle
-    color_cycle = val.get('cycle')
+    color_cycle = val.get("cycle")
     if color_cycle is None:
         transformed_color_cycle = transform_color_cycle(
             color_cycle=color_values,
-            elem_name='color_cycle',
+            elem_name="color_cycle",
             default="white",
         )[0]
     elif isinstance(color_cycle, cycle):
@@ -92,7 +92,7 @@ def _coerce_colorcycle_from_colors(
         transformed_color_values,
     ) = transform_color_cycle(
         color_cycle=val,
-        elem_name='color_cycle',
+        elem_name="color_cycle",
         default="white",
     )
     return ColorCycle(

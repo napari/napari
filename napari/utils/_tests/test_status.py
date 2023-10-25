@@ -27,7 +27,7 @@ COMBINED_FORMATTED = f"[1e+06, {MISSING_FORMATTED}, {STRING_FORMATTED}]"
 
 
 @pytest.mark.parametrize(
-    'input_data, expected',
+    "input_data, expected",
     [
         [NUMERIC, NUMERIC_FORMATTED],
         [STRING, STRING_FORMATTED],

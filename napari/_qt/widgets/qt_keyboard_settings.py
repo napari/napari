@@ -45,7 +45,7 @@ class ShortcutEditor(QWidget):
     """Widget to edit keybindings for napari."""
 
     valueChanged = Signal(dict)
-    VIEWER_KEYBINDINGS = trans._('Viewer key bindings')
+    VIEWER_KEYBINDINGS = trans._("Viewer key bindings")
 
     def __init__(
         self,
@@ -158,7 +158,7 @@ class ShortcutEditor(QWidget):
 
         self._set_table(layer_str=self.layer_combo_box.currentText())
 
-    def _set_table(self, layer_str: str = ''):
+    def _set_table(self, layer_str: str = ""):
         """Builds and populates keybindings table.
 
         Parameters
@@ -176,10 +176,10 @@ class ShortcutEditor(QWidget):
         self._action_col = 4
 
         # Set header strings for table.
-        header_strs = ['', '', '', '', '']
-        header_strs[self._action_name_col] = trans._('Action')
-        header_strs[self._shortcut_col] = trans._('Keybinding')
-        header_strs[self._shortcut_col2] = trans._('Alternative Keybinding')
+        header_strs = ["", "", "", "", ""]
+        header_strs[self._action_name_col] = trans._("Action")
+        header_strs[self._shortcut_col] = trans._("Keybinding")
+        header_strs[self._shortcut_col2] = trans._("Alternative Keybinding")
 
         # If no layer_str, then set the page to the viewer keybindings page.
         if not layer_str:
@@ -194,7 +194,7 @@ class ShortcutEditor(QWidget):
         # Table styling set up.
         self._table.horizontalHeader().setStretchLastSection(True)
         self._table.horizontalHeader().setStyleSheet(
-            'border-bottom: 2px solid white;'
+            "border-bottom: 2px solid white;"
         )
 
         # Get all actions for the layer.
@@ -275,7 +275,7 @@ class ShortcutEditor(QWidget):
             self._table.verticalHeader().setVisible(False)
 
             self._table.setColumnHidden(self._action_col, True)
-            item = QTableWidgetItem(trans._('No key bindings'))
+            item = QTableWidgetItem(trans._("No key bindings"))
             item.setFlags(Qt.ItemFlag.NoItemFlags)
             self._table.setItem(0, 0, item)
 
@@ -404,9 +404,9 @@ class ShortcutEditor(QWidget):
             current_shortcuts = list(
                 action_manager._shortcuts.get(current_action, [])
             )
-            for mod in {"Shift", "Ctrl", "Alt", "Cmd", "Super", 'Meta'}:
+            for mod in {"Shift", "Ctrl", "Alt", "Cmd", "Super", "Meta"}:
                 # we want to prevent multiple modifiers but still allow single modifiers.
-                if new_shortcut.endswith('-' + mod):
+                if new_shortcut.endswith("-" + mod):
                     self._show_bind_shortcut_error(
                         current_action,
                         current_shortcuts,
@@ -593,24 +593,24 @@ class EditorWidget(QLineEdit):
             Qt.Key.Key_Meta,
         ):
             return
-        if sys.platform == 'darwin':
+        if sys.platform == "darwin":
             # On macOS, the modifiers are not the same as on other platforms.
             # we also use pairs instead of a dict to keep the order.
             modmap = (
-                (Qt.ControlModifier, 'Meta+'),
-                (Qt.AltModifier, 'Alt+'),
-                (Qt.ShiftModifier, 'Shift+'),
-                (Qt.MetaModifier, 'Ctrl+'),
+                (Qt.ControlModifier, "Meta+"),
+                (Qt.AltModifier, "Alt+"),
+                (Qt.ShiftModifier, "Shift+"),
+                (Qt.MetaModifier, "Ctrl+"),
             )
         else:
             modmap = (
-                (Qt.ControlModifier, 'Ctrl+'),
-                (Qt.AltModifier, 'Alt+'),
-                (Qt.ShiftModifier, 'Shift+'),
-                (Qt.MetaModifier, 'Meta+'),
+                (Qt.ControlModifier, "Ctrl+"),
+                (Qt.AltModifier, "Alt+"),
+                (Qt.ShiftModifier, "Shift+"),
+                (Qt.MetaModifier, "Meta+"),
             )
         modifiers = event.modifiers()
-        seq = ''
+        seq = ""
         for mod, s in modmap:
             if modifiers & mod:
                 seq += s
@@ -632,10 +632,10 @@ class EditorWidget(QLineEdit):
 
         if (
             event_key in {Qt.Key.Key_Delete, Qt.Key.Key_Backspace}
-            and self.text() != ''
+            and self.text() != ""
         ):
             # Allow user to delete shortcut.
-            self.setText('')
+            self.setText("")
             return
 
         if event_key in (

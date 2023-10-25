@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 class WindowMenu(NapariMenu):
-    def __init__(self, window: 'Window') -> None:
-        super().__init__(trans._('&Window'), window._qt_window)
+    def __init__(self, window: "Window") -> None:
+        super().__init__(trans._("&Window"), window._qt_window)
         ACTIONS: List[MenuItem] = []
         populate_menu(self, ACTIONS)

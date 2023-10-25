@@ -7,4 +7,4 @@ from napari.layers.labels.labels import Labels
 del _labels_key_bindings
 
 
-__all__ = ['Labels']
+__all__ = ["Labels"]

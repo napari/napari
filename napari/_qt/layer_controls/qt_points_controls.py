@@ -69,7 +69,7 @@ class QtPointsControls(QtLayerControls):
         Points mode must be one of: ADD, PAN_ZOOM, or SELECT.
     """
 
-    layer: 'napari.layers.Points'
+    layer: "napari.layers.Points"
 
     def __init__(self, layer) -> None:
         super().__init__(layer)
@@ -120,11 +120,11 @@ class QtPointsControls(QtLayerControls):
 
         self.faceColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_face_color,
-            tooltip=trans._('click to set current face color'),
+            tooltip=trans._("click to set current face color"),
         )
         self.edgeColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_edge_color,
-            tooltip=trans._('click to set current edge color'),
+            tooltip=trans._("click to set current edge color"),
         )
         self.faceColorEdit.color_changed.connect(self.changeCurrentFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeCurrentEdgeColor)
@@ -150,41 +150,41 @@ class QtPointsControls(QtLayerControls):
         self.symbolComboBox = sym_cb
 
         self.outOfSliceCheckBox = QCheckBox()
-        self.outOfSliceCheckBox.setToolTip(trans._('Out of slice display'))
+        self.outOfSliceCheckBox.setToolTip(trans._("Out of slice display"))
         self.outOfSliceCheckBox.setChecked(self.layer.out_of_slice_display)
         self.outOfSliceCheckBox.stateChanged.connect(self.change_out_of_slice)
 
         self.select_button = QtModeRadioButton(
             layer,
-            'select_points',
+            "select_points",
             Mode.SELECT,
         )
         action_manager.bind_button(
-            'napari:activate_points_select_mode', self.select_button
+            "napari:activate_points_select_mode", self.select_button
         )
-        self.addition_button = QtModeRadioButton(layer, 'add_points', Mode.ADD)
+        self.addition_button = QtModeRadioButton(layer, "add_points", Mode.ADD)
         action_manager.bind_button(
-            'napari:activate_points_add_mode', self.addition_button
+            "napari:activate_points_add_mode", self.addition_button
         )
         self.panzoom_button = QtModeRadioButton(
             layer,
-            'pan',
+            "pan",
             Mode.PAN_ZOOM,
             checked=True,
         )
         action_manager.bind_button(
-            'napari:activate_points_pan_zoom_mode', self.panzoom_button
+            "napari:activate_points_pan_zoom_mode", self.panzoom_button
         )
         self.delete_button = QtModePushButton(
             layer,
-            'delete_shape',
+            "delete_shape",
         )
         action_manager.bind_button(
-            'napari:delete_selected_points', self.delete_button
+            "napari:delete_selected_points", self.delete_button
         )
 
         self.textDispCheckBox = QCheckBox()
-        self.textDispCheckBox.setToolTip(trans._('toggle text visibility'))
+        self.textDispCheckBox.setToolTip(trans._("toggle text visibility"))
         self.textDispCheckBox.setChecked(self.layer.text.visible)
         self.textDispCheckBox.stateChanged.connect(self.change_text_visibility)
 
@@ -211,13 +211,13 @@ class QtPointsControls(QtLayerControls):
 
         self.layout().addRow(button_row)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('point size:'), self.sizeSlider)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(trans._('symbol:'), self.symbolComboBox)
-        self.layout().addRow(trans._('face color:'), self.faceColorEdit)
-        self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
-        self.layout().addRow(trans._('display text:'), self.textDispCheckBox)
-        self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
+        self.layout().addRow(trans._("point size:"), self.sizeSlider)
+        self.layout().addRow(trans._("blending:"), self.blendComboBox)
+        self.layout().addRow(trans._("symbol:"), self.symbolComboBox)
+        self.layout().addRow(trans._("face color:"), self.faceColorEdit)
+        self.layout().addRow(trans._("edge color:"), self.edgeColorEdit)
+        self.layout().addRow(trans._("display text:"), self.textDispCheckBox)
+        self.layout().addRow(trans._("out of slice:"), self.outOfSliceCheckBox)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when points layer mode is changed.

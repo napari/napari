@@ -19,7 +19,7 @@ class WarnPopup(QDialog):
 
         # Widgets
         self._message = QLabel()
-        self._xbutton = QPushButton('x', self)
+        self._xbutton = QPushButton("x", self)
         self._xbutton.setFixedSize(20, 20)
 
         # Widget set up

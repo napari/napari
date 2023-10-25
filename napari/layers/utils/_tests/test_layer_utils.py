@@ -73,7 +73,7 @@ def test_calc_data_range():
 
 
 @pytest.mark.parametrize(
-    'data',
+    "data",
     [data_dask_8b, data_dask, data_dask_1d, data_dask_1d_rgb, data_dask_plane],
 )
 def test_calc_data_range_fast(data):
@@ -102,7 +102,7 @@ def test_segment_normal_3d():
 
 
 def test_dataframe_to_properties():
-    properties = {'point_type': np.array(['A', 'B'] * 5)}
+    properties = {"point_type": np.array(["A", "B"] * 5)}
     properties_df = pd.DataFrame(properties)
     converted_properties = dataframe_to_properties(properties_df)
     np.testing.assert_equal(converted_properties, properties)
@@ -145,16 +145,16 @@ def test_get_current_properties_with_property_choices_then_first_values():
 
 def test_coerce_current_properties_valid_values():
     current_properties = {
-        'annotation': ['leg'],
-        'confidence': 1,
-        'annotator': 'ash',
-        'model': np.array(['best']),
+        "annotation": ["leg"],
+        "confidence": 1,
+        "annotator": "ash",
+        "model": np.array(["best"]),
     }
     expected_current_properties = {
-        'annotation': np.array(['leg']),
-        'confidence': np.array([1]),
-        'annotator': np.array(['ash']),
-        'model': np.array(['best']),
+        "annotation": np.array(["leg"]),
+        "confidence": np.array([1]),
+        "annotator": np.array(["ash"]),
+        "model": np.array(["best"]),
     }
     coerced_current_properties = coerce_current_properties(current_properties)
 
@@ -166,10 +166,10 @@ def test_coerce_current_properties_valid_values():
 
 def test_coerce_current_properties_invalid_values():
     current_properties = {
-        'annotation': ['leg'],
-        'confidence': 1,
-        'annotator': 'ash',
-        'model': np.array(['best', 'best_v2_final']),
+        "annotation": ["leg"],
+        "confidence": 1,
+        "annotator": "ash",
+        "model": np.array(["best", "best_v2_final"]),
     }
 
     with pytest.raises(ValueError):
@@ -211,19 +211,19 @@ def test_feature_table_from_layer_with_num_data_only():
 
 def test_feature_table_from_layer_with_empty_int_features():
     feature_table = _FeatureTable.from_layer(
-        features={'a': np.empty(0, dtype=np.int64)}
+        features={"a": np.empty(0, dtype=np.int64)}
     )
-    assert feature_table.values['a'].dtype == np.int64
-    assert len(feature_table.values['a']) == 0
-    assert feature_table.defaults['a'].dtype == np.int64
-    assert feature_table.defaults['a'][0] == 0
+    assert feature_table.values["a"].dtype == np.int64
+    assert len(feature_table.values["a"]) == 0
+    assert feature_table.defaults["a"].dtype == np.int64
+    assert feature_table.defaults["a"][0] == 0
 
 
 def test_feature_table_from_layer_with_properties_and_num_data():
     properties = {
-        'class': np.array(['sky', 'person', 'building', 'person']),
-        'confidence': np.array([0.2, 0.5, 1, 0.8]),
-        'varying_length_prop': np.array(
+        "class": np.array(["sky", "person", "building", "person"]),
+        "confidence": np.array([0.2, 0.5, 1, 0.8]),
+        "varying_length_prop": np.array(
             [[0], [0, 0, 0], [0, 0], [0]], dtype=object
         ),
     }
@@ -232,30 +232,30 @@ def test_feature_table_from_layer_with_properties_and_num_data():
 
     features = feature_table.values
     assert features.shape == (4, 3)
-    np.testing.assert_array_equal(features['class'], properties['class'])
+    np.testing.assert_array_equal(features["class"], properties["class"])
     np.testing.assert_array_equal(
-        features['confidence'], properties['confidence']
+        features["confidence"], properties["confidence"]
     )
     np.testing.assert_array_equal(
-        features['varying_length_prop'], properties['varying_length_prop']
+        features["varying_length_prop"], properties["varying_length_prop"]
     )
 
     defaults = feature_table.defaults
     assert defaults.shape == (1, 3)
-    assert defaults['class'][0] == properties['class'][-1]
-    assert defaults['confidence'][0] == properties['confidence'][-1]
+    assert defaults["class"][0] == properties["class"][-1]
+    assert defaults["confidence"][0] == properties["confidence"][-1]
     assert (
-        defaults['varying_length_prop'][0]
-        == properties['varying_length_prop'][-1]
+        defaults["varying_length_prop"][0]
+        == properties["varying_length_prop"][-1]
     )
 
 
 def test_feature_table_from_layer_with_properties_and_choices():
     properties = {
-        'class': np.array(['sky', 'person', 'building', 'person']),
+        "class": np.array(["sky", "person", "building", "person"]),
     }
     property_choices = {
-        'class': np.array(['building', 'person', 'sky']),
+        "class": np.array(["building", "person", "sky"]),
     }
 
     feature_table = _FeatureTable.from_layer(
@@ -264,20 +264,20 @@ def test_feature_table_from_layer_with_properties_and_choices():
 
     features = feature_table.values
     assert features.shape == (4, 1)
-    class_column = features['class']
-    np.testing.assert_array_equal(class_column, properties['class'])
+    class_column = features["class"]
+    np.testing.assert_array_equal(class_column, properties["class"])
     assert isinstance(class_column.dtype, pd.CategoricalDtype)
     np.testing.assert_array_equal(
-        class_column.dtype.categories, property_choices['class']
+        class_column.dtype.categories, property_choices["class"]
     )
     defaults = feature_table.defaults
     assert defaults.shape == (1, 1)
-    assert defaults['class'][0] == properties['class'][-1]
+    assert defaults["class"][0] == properties["class"][-1]
 
 
 def test_feature_table_from_layer_with_choices_only():
     property_choices = {
-        'class': np.array(['building', 'person', 'sky']),
+        "class": np.array(["building", "person", "sky"]),
     }
 
     feature_table = _FeatureTable.from_layer(
@@ -286,22 +286,22 @@ def test_feature_table_from_layer_with_choices_only():
 
     features = feature_table.values
     assert features.shape == (0, 1)
-    class_column = features['class']
+    class_column = features["class"]
     assert isinstance(class_column.dtype, pd.CategoricalDtype)
     np.testing.assert_array_equal(
-        class_column.dtype.categories, property_choices['class']
+        class_column.dtype.categories, property_choices["class"]
     )
     defaults = feature_table.defaults
     assert defaults.shape == (1, 1)
-    assert defaults['class'][0] == property_choices['class'][0]
+    assert defaults["class"][0] == property_choices["class"][0]
 
 
 def test_feature_table_from_layer_with_empty_properties_and_choices():
     properties = {
-        'class': np.array([]),
+        "class": np.array([]),
     }
     property_choices = {
-        'class': np.array(['building', 'person', 'sky']),
+        "class": np.array(["building", "person", "sky"]),
     }
 
     feature_table = _FeatureTable.from_layer(
@@ -310,25 +310,25 @@ def test_feature_table_from_layer_with_empty_properties_and_choices():
 
     features = feature_table.values
     assert features.shape == (0, 1)
-    class_column = features['class']
+    class_column = features["class"]
     assert isinstance(class_column.dtype, pd.CategoricalDtype)
     np.testing.assert_array_equal(
-        class_column.dtype.categories, property_choices['class']
+        class_column.dtype.categories, property_choices["class"]
     )
     defaults = feature_table.defaults
     assert defaults.shape == (1, 1)
-    assert defaults['class'][0] == property_choices['class'][0]
+    assert defaults["class"][0] == property_choices["class"][0]
 
 
 TEST_FEATURES = pd.DataFrame(
     {
-        'class': pd.Series(
-            ['sky', 'person', 'building', 'person'],
+        "class": pd.Series(
+            ["sky", "person", "building", "person"],
             dtype=pd.CategoricalDtype(
-                categories=('building', 'person', 'sky')
+                categories=("building", "person", "sky")
             ),
         ),
-        'confidence': pd.Series([0.2, 0.5, 1, 0.8]),
+        "confidence": pd.Series([0.2, 0.5, 1, 0.8]),
     }
 )
 
@@ -348,8 +348,8 @@ def test_feature_table_resize_smaller(feature_table: _FeatureTable):
 
     features = feature_table.values
     assert features.shape == (2, 2)
-    np.testing.assert_array_equal(features['class'], ['sky', 'person'])
-    np.testing.assert_array_equal(features['confidence'], [0.2, 0.5])
+    np.testing.assert_array_equal(features["class"], ["sky", "person"])
+    np.testing.assert_array_equal(features["confidence"], [0.2, 0.5])
 
 
 def test_feature_table_resize_larger(feature_table: _FeatureTable):
@@ -360,11 +360,11 @@ def test_feature_table_resize_larger(feature_table: _FeatureTable):
     features = feature_table.values
     assert features.shape == (6, 2)
     np.testing.assert_array_equal(
-        features['class'],
-        ['sky', 'person', 'building', 'person', 'person', 'person'],
+        features["class"],
+        ["sky", "person", "building", "person", "person", "person"],
     )
     np.testing.assert_array_equal(
-        features['confidence'],
+        features["confidence"],
         [0.2, 0.5, 1, 0.8, 0.8, 0.8],
     )
     np.testing.assert_array_equal(features.dtypes, expected_dtypes)
@@ -373,8 +373,8 @@ def test_feature_table_resize_larger(feature_table: _FeatureTable):
 def test_feature_table_append(feature_table: _FeatureTable):
     to_append = pd.DataFrame(
         {
-            'class': ['sky', 'building'],
-            'confidence': [0.6, 0.1],
+            "class": ["sky", "building"],
+            "confidence": [0.6, 0.1],
         }
     )
 
@@ -383,11 +383,11 @@ def test_feature_table_append(feature_table: _FeatureTable):
     features = feature_table.values
     assert features.shape == (6, 2)
     np.testing.assert_array_equal(
-        features['class'],
-        ['sky', 'person', 'building', 'person', 'sky', 'building'],
+        features["class"],
+        ["sky", "person", "building", "person", "sky", "building"],
     )
     np.testing.assert_array_equal(
-        features['confidence'],
+        features["confidence"],
         [0.2, 0.5, 1, 0.8, 0.6, 0.1],
     )
 
@@ -397,19 +397,19 @@ def test_feature_table_remove(feature_table: _FeatureTable):
 
     features = feature_table.values
     assert features.shape == (2, 2)
-    np.testing.assert_array_equal(features['class'], ['sky', 'building'])
-    np.testing.assert_array_equal(features['confidence'], [0.2, 1])
+    np.testing.assert_array_equal(features["class"], ["sky", "building"])
+    np.testing.assert_array_equal(features["confidence"], [0.2, 1])
 
 
 def test_feature_table_from_layer_with_custom_index():
-    features = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
+    features = pd.DataFrame({"a": [1, 3], "b": [7.5, -2.1]}, index=[1, 2])
     feature_table = _FeatureTable.from_layer(features=features)
     expected = features.reset_index(drop=True)
     pd.testing.assert_frame_equal(feature_table.values, expected)
 
 
 def test_feature_table_from_layer_with_custom_index_and_num_data():
-    features = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
+    features = pd.DataFrame({"a": [1, 3], "b": [7.5, -2.1]}, index=[1, 2])
     feature_table = _FeatureTable.from_layer(features=features, num_data=2)
     expected = features.reset_index(drop=True)
     pd.testing.assert_frame_equal(feature_table.values, expected)
@@ -417,44 +417,44 @@ def test_feature_table_from_layer_with_custom_index_and_num_data():
 
 def test_feature_table_from_layer_with_unordered_pd_series_properties():
     properties = {
-        'a': pd.Series([1, 3], index=[3, 4]),
-        'b': pd.Series([7.5, -2.1], index=[1, 2]),
+        "a": pd.Series([1, 3], index=[3, 4]),
+        "b": pd.Series([7.5, -2.1], index=[1, 2]),
     }
     feature_table = _FeatureTable.from_layer(properties=properties, num_data=2)
-    expected = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[0, 1])
+    expected = pd.DataFrame({"a": [1, 3], "b": [7.5, -2.1]}, index=[0, 1])
     pd.testing.assert_frame_equal(feature_table.values, expected)
 
 
 def test_feature_table_from_layer_with_unordered_pd_series_features():
     features = {
-        'a': pd.Series([1, 3], index=[3, 4]),
-        'b': pd.Series([7.5, -2.1], index=[1, 2]),
+        "a": pd.Series([1, 3], index=[3, 4]),
+        "b": pd.Series([7.5, -2.1], index=[1, 2]),
     }
     feature_table = _FeatureTable.from_layer(features=features, num_data=2)
-    expected = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[0, 1])
+    expected = pd.DataFrame({"a": [1, 3], "b": [7.5, -2.1]}, index=[0, 1])
     pd.testing.assert_frame_equal(feature_table.values, expected)
 
 
 def test_feature_table_set_defaults_with_same_columns(feature_table):
-    defaults = {'class': 'building', 'confidence': 1}
-    assert feature_table.defaults['class'][0] != defaults['class']
-    assert feature_table.defaults['confidence'][0] != defaults['confidence']
+    defaults = {"class": "building", "confidence": 1}
+    assert feature_table.defaults["class"][0] != defaults["class"]
+    assert feature_table.defaults["confidence"][0] != defaults["confidence"]
 
     feature_table.set_defaults(defaults)
 
-    assert feature_table.defaults['class'][0] == defaults['class']
-    assert feature_table.defaults['confidence'][0] == defaults['confidence']
+    assert feature_table.defaults["class"][0] == defaults["class"]
+    assert feature_table.defaults["confidence"][0] == defaults["confidence"]
 
 
 def test_feature_table_set_defaults_with_extra_column(feature_table):
-    defaults = {'class': 'building', 'confidence': 0, 'cat': 'kermit'}
-    assert 'cat' not in feature_table.values.columns
+    defaults = {"class": "building", "confidence": 0, "cat": "kermit"}
+    assert "cat" not in feature_table.values.columns
     with pytest.raises(ValueError):
         feature_table.set_defaults(defaults)
 
 
 def test_feature_table_set_defaults_with_missing_column(feature_table):
-    defaults = {'class': 'building'}
+    defaults = {"class": "building"}
     assert len(feature_table.values.columns) > 1
     with pytest.raises(ValueError):
         feature_table.set_defaults(defaults)

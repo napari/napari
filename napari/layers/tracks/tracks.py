@@ -112,14 +112,14 @@ class Tracks(Layer):
         shear=None,
         affine=None,
         opacity=1,
-        blending='additive',
+        blending="additive",
         visible=True,
-        colormap='turbo',
-        color_by='track_id',
+        colormap="turbo",
+        color_by="track_id",
         colormaps_dict=None,
         cache=True,
         experimental_clipping_planes=None,
-        projection_mode='none',
+        projection_mode="none",
     ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
         # otherwise convert the data to an np.ndarray
@@ -230,16 +230,16 @@ class Tracks(Layer):
         state = self._get_base_state()
         state.update(
             {
-                'data': self.data,
-                'properties': self.properties,
-                'graph': self.graph,
-                'color_by': self.color_by,
-                'colormap': self.colormap,
-                'colormaps_dict': self.colormaps_dict,
-                'tail_width': self.tail_width,
-                'tail_length': self.tail_length,
-                'head_length': self.head_length,
-                'features': self.features,
+                "data": self.data,
+                "properties": self.properties,
+                "graph": self.graph,
+                "color_by": self.color_by,
+                "colormap": self.colormap,
+                "colormaps_dict": self.colormaps_dict,
+                "tail_width": self.tail_width,
+                "tail_length": self.tail_length,
+                "head_length": self.head_length,
+                "features": self.features,
             }
         )
         return state
@@ -338,7 +338,7 @@ class Tracks(Layer):
         # if we're only displaying two dimensions, then pad the display dim
         # with zeros
         if self._slice_input.ndisplay == 2:
-            data = np.pad(data, ((0, 0), (0, 1)), 'constant')
+            data = np.pad(data, ((0, 0), (0, 1)), "constant")
             return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
 
         return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
@@ -519,7 +519,7 @@ class Tracks(Layer):
         if color_by not in self.properties_to_color_by:
             raise ValueError(
                 trans._(
-                    '{color_by} is not a valid property key',
+                    "{color_by} is not a valid property key",
                     deferred=True,
                     color_by=color_by,
                 )
@@ -538,7 +538,7 @@ class Tracks(Layer):
         if colormap not in AVAILABLE_COLORMAPS:
             raise ValueError(
                 trans._(
-                    'Colormap {colormap} not available',
+                    "Colormap {colormap} not available",
                     deferred=True,
                     colormap=colormap,
                 )
@@ -565,7 +565,7 @@ class Tracks(Layer):
         # updated before the properties are. properties should always contain
         # a track_id key
         if self.color_by not in self.properties_to_color_by:
-            self._color_by = 'track_id'
+            self._color_by = "track_id"
             self.events.color_by()
 
         # if we change the coloring, rebuild the vertex colors array
@@ -634,5 +634,5 @@ class Tracks(Layer):
                 ),
                 UserWarning,
             )
-            self._color_by = 'track_id'
+            self._color_by = "track_id"
             self.events.color_by()

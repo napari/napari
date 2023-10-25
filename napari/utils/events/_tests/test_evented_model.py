@@ -38,24 +38,24 @@ def test_evented_model():
         """
 
         id: int
-        name: str = 'Alex'
+        name: str = "Alex"
         age: ClassVar[int] = 100
 
     user = User(id=0)
     # test basic functionality
     assert user.id == 0
-    assert user.name == 'Alex'
+    assert user.name == "Alex"
 
     user.id = 2
     assert user.id == 2
 
     # test event system
     assert isinstance(user.events, EmitterGroup)
-    assert 'id' in user.events
-    assert 'name' in user.events
+    assert "id" in user.events
+    assert "name" in user.events
 
     # ClassVars are excluded from events
-    assert 'age' not in user.events
+    assert "age" not in user.events
     # mocking EventEmitters to spy on events
     user.events.id = Mock(user.events.id)
     user.events.name = Mock(user.events.name)
@@ -129,7 +129,7 @@ def test_evented_model_array_updates():
     model.values = [1, 2, 4]
     assert model.events.values.call_count == 1
     np.testing.assert_almost_equal(
-        model.events.values.call_args[1]['value'], np.array([1, 2, 4])
+        model.events.values.call_args[1]["value"], np.array([1, 2, 4])
     )
     model.events.values.reset_mock()
 
@@ -203,11 +203,11 @@ def test_values_updated():
         """
 
         id: int
-        name: str = 'A'
+        name: str = "A"
         age: ClassVar[int] = 100
 
     user1 = User(id=0)
-    user2 = User(id=1, name='K')
+    user2 = User(id=1, name="K")
 
     # Add mocks
     user1_events = Mock(user1.events)
@@ -216,12 +216,12 @@ def test_values_updated():
     user2.events.id = Mock(user2.events.id)
 
     # Check user1 and user2 dicts
-    assert user1.dict() == {'id': 0, 'name': 'A'}
-    assert user2.dict() == {'id': 1, 'name': 'K'}
+    assert user1.dict() == {"id": 0, "name": "A"}
+    assert user2.dict() == {"id": 1, "name": "K"}
 
     # Update user1 from user2
     user1.update(user2)
-    assert user1.dict() == {'id': 1, 'name': 'K'}
+    assert user1.dict() == {"id": 1, "name": "K"}
 
     user1.events.id.assert_called_with(value=1)
     user2.events.id.assert_not_called()
@@ -232,7 +232,7 @@ def test_values_updated():
 
     # Update user1 from user2 again, no event emission expected
     user1.update(user2)
-    assert user1.dict() == {'id': 1, 'name': 'K'}
+    assert user1.dict() == {"id": 1, "name": "K"}
 
     user1.events.id.assert_not_called()
     user2.events.id.assert_not_called()
@@ -250,8 +250,8 @@ def test_update_with_inner_model_union():
         y: int
         z: Union[Inner, AltInner]
 
-    original = Outer(y=1, z=Inner(w='a'))
-    updated = Outer(y=2, z=AltInner(x='b'))
+    original = Outer(y=1, z=Inner(w="a"))
+    updated = Outer(y=2, z=AltInner(x="b"))
 
     original.update(updated, recurse=False)
 
@@ -289,8 +289,8 @@ def test_update_with_inner_model_protocol():
         y: int
         z: InnerProtocol
 
-    original = Outer(y=1, z=Inner(w='a'))
-    updated = Outer(y=2, z=AltInner(x='b'))
+    original = Outer(y=1, z=Inner(w="a"))
+    updated = Outer(y=2, z=AltInner(x="b"))
 
     original.update(updated, recurse=False)
 
@@ -300,8 +300,8 @@ def test_update_with_inner_model_protocol():
 def test_evented_model_signature():
     class T(EventedModel):
         x: int
-        y: str = 'yyy'
-        z = b'zzz'
+        y: str = "yyy"
+        z = b"zzz"
 
     assert isinstance(T.__signature__, inspect.Signature)
     sig = inspect.signature(T)
@@ -321,8 +321,8 @@ class MyObj:
     def validate_type(cls, val):
         # turn a generic dict into object
         if isinstance(val, dict):
-            a = val.get('a')
-            b = val.get('b')
+            a = val.get("a")
+            b = val.get("b")
         elif isinstance(val, MyObj):
             return val
         # perform additional validation here
@@ -342,7 +342,7 @@ def test_evented_model_serialization():
         obj: MyObj
         shaped: Array[float, (-1,)]
 
-    m = Model(obj=MyObj(1, 'hi'), shaped=[1, 2, 3])
+    m = Model(obj=MyObj(1, "hi"), shaped=[1, 2, 3])
     raw = m.json()
     assert raw == '{"obj": {"a": 1, "b": "hi"}, "shaped": [1.0, 2.0, 3.0]}'
     deserialized = Model.parse_raw(raw)
@@ -358,7 +358,7 @@ def test_nested_evented_model_serialization():
     class Model(EventedModel):
         nest: NestedModel
 
-    m = Model(nest={'obj': {"a": 1, "b": "hi"}})
+    m = Model(nest={"obj": {"a": 1, "b": "hi"}})
     raw = m.json()
     assert raw == r'{"nest": {"obj": {"a": 1, "b": "hi"}}}'
     deserialized = Model.parse_raw(raw)
@@ -406,7 +406,7 @@ def test_evented_model_with_string_enum_parameter():
 
 
 def test_evented_model_with_string_enum_parameter_as_str():
-    model = ModelWithStringEnum(enum_field='some_value')
+    model = ModelWithStringEnum(enum_field="some_value")
     assert model.enum_field == SomeStringEnum.SOME_VALUE
 
 
@@ -418,7 +418,7 @@ def test_evented_model_with_string_enum_setter():
 
 def test_evented_model_with_string_enum_setter_as_str():
     model = ModelWithStringEnum()
-    model.enum_field = 'some_value'
+    model.enum_field = "some_value"
     assert model.enum_field == SomeStringEnum.SOME_VALUE
 
 
@@ -464,9 +464,9 @@ class T(EventedModel):
 def test_evented_model_with_property_setters():
     t = T()
 
-    assert list(T.__properties__) == ['c', 'd', 'e']
+    assert list(T.__properties__) == ["c", "d", "e"]
     # the metaclass should have figured out that both a and b affect c
-    assert T.__field_dependents__ == {'a': {'c', 'd', 'e'}, 'b': {'c', 'd'}}
+    assert T.__field_dependents__ == {"a": {"c", "d", "e"}, "b": {"c", "d"}}
 
     # all the fields and properties behave as expected
     assert t.c == [1, 1]
@@ -496,12 +496,12 @@ def mocked_object():
 
 
 @pytest.mark.parametrize(
-    'attribute,value,expected_event_values',
+    "attribute,value,expected_event_values",
     [
-        ('a', 5, {'a': 5, 'b': None, 'c': [5, 1], 'd': 6, 'e': 50}),
-        ('b', 5, {'a': None, 'b': 5, 'c': [1, 5], 'd': 6, 'e': None}),
-        ('c', [10, 20], {'a': 10, 'b': 20, 'c': [10, 20], 'd': 30, 'e': 100}),
-        ('d', 8, {'a': 4, 'b': 4, 'c': [4, 4], 'd': 8, 'e': 40}),
+        ("a", 5, {"a": 5, "b": None, "c": [5, 1], "d": 6, "e": 50}),
+        ("b", 5, {"a": None, "b": 5, "c": [1, 5], "d": 6, "e": None}),
+        ("c", [10, 20], {"a": 10, "b": 20, "c": [10, 20], "d": 30, "e": 100}),
+        ("d", 8, {"a": 4, "b": 4, "c": [4, 4], "d": 8, "e": 40}),
     ],
 )
 def test_evented_model_with_property_setter_events(
@@ -539,7 +539,7 @@ def test_evented_model_with_provided_dependencies():
             return self.a * 2
 
         class Config:
-            dependencies = {'b': ['a']}
+            dependencies = {"b": ["a"]}
 
     t = T()
     t.events.a = Mock(t.events.a)
@@ -560,7 +560,7 @@ def test_evented_model_with_provided_dependencies():
                 return self.a * 2
 
             class Config:
-                dependencies = {'x': ['a']}
+                dependencies = {"x": ["a"]}
 
     # should warn if field does not exist
     with pytest.warns(match="Unrecognized field dependency"):
@@ -573,7 +573,7 @@ def test_evented_model_with_provided_dependencies():
                 return self.a * 2
 
             class Config:
-                dependencies = {'b': ['x']}
+                dependencies = {"b": ["x"]}
 
 
 def test_property_get_eq_operator():
@@ -590,7 +590,7 @@ def test_property_get_eq_operator():
         def c(self):  # pragma: no cover
             return self.a * 3
 
-    assert Tt.__eq_operators__ == {'a': operator.eq, 'b': operator.eq}
+    assert Tt.__eq_operators__ == {"a": operator.eq, "b": operator.eq}
 
 
 def test_property_str_annotation():
@@ -607,7 +607,7 @@ def test_property_str_annotation():
         def c(self):  # pragma: no cover
             return self.a * 3
 
-    assert Tt.__eq_operators__ == {'a': operator.eq}
+    assert Tt.__eq_operators__ == {"a": operator.eq}
 
 
 def test_events_are_fired_only_if_necessary(monkeypatch):

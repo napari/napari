@@ -23,33 +23,33 @@ class QtReaderDialog(QDialog):
 
     def __init__(
         self,
-        pth: str = '',
+        pth: str = "",
         parent: QWidget = None,
         readers: Optional[Dict[str, str]] = None,
-        error_message: str = '',
+        error_message: str = "",
         persist_checked: bool = True,
     ) -> None:
         if readers is None:
             readers = {}
         super().__init__(parent)
-        self.setObjectName('Choose reader')
-        self.setWindowTitle(trans._('Choose reader'))
+        self.setObjectName("Choose reader")
+        self.setWindowTitle(trans._("Choose reader"))
         self._current_file = pth
 
         self._extension = os.path.splitext(pth)[1]
         self._persist_text = trans._(
-            'Remember this choice for files with a {extension} extension',
+            "Remember this choice for files with a {extension} extension",
             extension=self._extension,
         )
 
         if os.path.isdir(pth):
             self._extension = os.path.realpath(pth)
             if not self._extension.endswith(
-                '.zarr'
+                ".zarr"
             ) and not self._extension.endswith(os.sep):
                 self._extension = self._extension + os.sep
                 self._persist_text = trans._(
-                    'Remember this choice for folders labeled as {extension}.',
+                    "Remember this choice for folders labeled as {extension}.",
                     extension=self._extension,
                 )
 
@@ -88,21 +88,21 @@ class QtReaderDialog(QDialog):
             isdir = True
         else:
             existing_pref = get_settings().plugins.extension2reader.get(
-                '*' + self._extension
+                "*" + self._extension
             )
             isdir = False
 
         if existing_pref:
             if isdir:
                 self._persist_text = trans._(
-                    'Override existing preference for folders labeled as {extension}: {pref}',
+                    "Override existing preference for folders labeled as {extension}: {pref}",
                     extension=self._extension,
                     pref=existing_pref,
                 )
 
             else:
                 self._persist_text = trans._(
-                    'Override existing preference for files with a {extension} extension: {pref}',
+                    "Override existing preference for files with a {extension} extension: {pref}",
                     extension=self._extension,
                     pref=existing_pref,
                 )
@@ -132,13 +132,13 @@ class QtReaderDialog(QDialog):
     def _get_persist_choice(self):
         """Get persistence checkbox choice"""
         return (
-            hasattr(self, 'persist_checkbox')
+            hasattr(self, "persist_checkbox")
             and self.persist_checkbox.isChecked()
         )
 
     def get_user_choices(self) -> Tuple[str, bool]:
         """Execute dialog and get user choices"""
-        display_name = ''
+        display_name = ""
         persist_choice = False
 
         dialog_result = self.exec_()
@@ -188,7 +188,7 @@ def handle_gui_reading(
     """
     _path = paths[0]
     readers = prepare_remaining_readers(paths, plugin_name, error)
-    error_message = str(error) if error else ''
+    error_message = str(error) if error else ""
     readerDialog = QtReaderDialog(
         parent=qt_viewer,
         pth=_path,
@@ -295,7 +295,7 @@ def open_with_dialog_choices(
 
     if persist:
         if not extension.endswith(os.sep):
-            extension = '*' + extension
+            extension = "*" + extension
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
             extension: plugin_name,

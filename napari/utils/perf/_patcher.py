@@ -42,7 +42,7 @@ def _patch_attribute(
     """
     # We expect attribute_str is <function> or <class>.<method>. We could
     # allow nested classes and functions if we wanted to extend this some.
-    if attribute_str.count('.') > 1:
+    if attribute_str.count(".") > 1:
         raise PatchError(
             trans._(
                 "Nested attribute not found: {attribute_str}",
@@ -51,9 +51,9 @@ def _patch_attribute(
             )
         )
 
-    if '.' in attribute_str:
+    if "." in attribute_str:
         # Assume attribute_str is <class>.<method>
-        class_str, callable_str = attribute_str.split('.')
+        class_str, callable_str = attribute_str.split(".")
         try:
             parent = getattr(module, class_str)
         except AttributeError as e:
@@ -122,12 +122,12 @@ def _import_module(
         Where the module is the inner most imported module, and the string
         is the rest of target_str that was not modules.
     """
-    parts = target_str.split('.')
+    parts = target_str.split(".")
     module = None  # Inner-most module imported so far.
 
     # Progressively try to import longer and longer segments of the path.
     for i in range(1, len(target_str)):
-        module_path = '.'.join(parts[:i])
+        module_path = ".".join(parts[:i])
         try:
             module = import_module(module_path)
         except ModuleNotFoundError as e:
@@ -146,7 +146,7 @@ def _import_module(
             # importing a class or function. Return the inner-most
             # module we did successfuly import. And return the rest of
             # the module_path we didn't use.
-            attribute_str = '.'.join(parts[i - 1 :])
+            attribute_str = ".".join(parts[i - 1 :])
             return module, attribute_str
     return None, None
 

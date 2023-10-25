@@ -58,12 +58,12 @@ class ColorProperties:
             else:
                 try:
                     # ensure the values are a numpy array
-                    val['values'] = np.asarray(val['values'])
+                    val["values"] = np.asarray(val["values"])
                     color_properties = cls(**val)
                 except ValueError as e:
                     raise ValueError(
                         trans._(
-                            'color_properties dictionary should have keys: name, values, and optionally current_value',
+                            "color_properties dictionary should have keys: name, values, and optionally current_value",
                             deferred=True,
                         )
                     ) from e
@@ -73,7 +73,7 @@ class ColorProperties:
         else:
             raise TypeError(
                 trans._(
-                    'color_properties should be None, a dict, or ColorProperties object',
+                    "color_properties should be None, a dict, or ColorProperties object",
                     deferred=True,
                 )
             )
@@ -82,9 +82,9 @@ class ColorProperties:
 
     def _json_encode(self):
         return {
-            'name': self.name,
-            'values': self.values.tolist(),
-            'current_value': self.current_value,
+            "name": self.name,
+            "values": self.values.tolist(),
+            "current_value": self.current_value,
         }
 
     def __eq__(self, other):
@@ -146,7 +146,7 @@ class ColorManager(EventedModel):
     current_color: Optional[Array[float, (4,)]] = None
     color_mode: ColorMode = ColorMode.DIRECT
     color_properties: Optional[ColorProperties] = None
-    continuous_colormap: Colormap = ensure_colormap('viridis')
+    continuous_colormap: Colormap = ensure_colormap("viridis")
     contrast_limits: Optional[Tuple[float, float]] = None
     categorical_colormap: CategoricalColormap = CategoricalColormap.from_array(
         [0, 0, 0, 1]
@@ -156,18 +156,18 @@ class ColorManager(EventedModel):
     )
 
     # validators
-    @validator('continuous_colormap', pre=True, allow_reuse=True)
+    @validator("continuous_colormap", pre=True, allow_reuse=True)
     def _ensure_continuous_colormap(cls, v):
         return ensure_colormap(v)
 
-    @validator('colors', pre=True, allow_reuse=True)
+    @validator("colors", pre=True, allow_reuse=True)
     def _ensure_color_array(cls, v):
         if len(v) > 0:
             return transform_color(v)
 
         return np.empty((0, 4))
 
-    @validator('current_color', pre=True, allow_reuse=True)
+    @validator("current_color", pre=True, allow_reuse=True)
     def _coerce_current_color(cls, v):
         if v is None:
             return v
@@ -178,24 +178,24 @@ class ColorManager(EventedModel):
 
     @root_validator(allow_reuse=True)
     def _validate_colors(cls, values):
-        color_mode = values['color_mode']
+        color_mode = values["color_mode"]
         if color_mode == ColorMode.CYCLE:
             colors, values = _validate_cycle_mode(values)
         elif color_mode == ColorMode.COLORMAP:
             colors, values = _validate_colormap_mode(values)
         else:  # color_mode == ColorMode.DIRECT:
-            colors = values['colors']
+            colors = values["colors"]
 
         # set the current color to the last color/property value
         # if it wasn't already set
         if values.get("current_color") is None and len(colors) > 0:
-            values['current_color'] = colors[-1]
+            values["current_color"] = colors[-1]
             if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
-                property_values = values['color_properties']
+                property_values = values["color_properties"]
                 property_values.current_value = property_values.values[-1]
-                values['color_properties'] = property_values
+                values["color_properties"] = property_values
 
-        values['colors'] = colors
+        values["colors"] = colors
         return values
 
     def _set_color(
@@ -472,16 +472,16 @@ class ColorManager(EventedModel):
         properties = {k: np.asarray(v) for k, v in properties.items()}
         if isinstance(colors, dict):
             # if the kwargs are passed as a dictionary, unpack them
-            color_values = colors.get('colors', None)
-            current_color = colors.get('current_color', current_color)
-            color_mode = colors.get('color_mode', color_mode)
-            color_properties = colors.get('color_properties', None)
+            color_values = colors.get("colors", None)
+            current_color = colors.get("current_color", current_color)
+            color_mode = colors.get("color_mode", color_mode)
+            color_properties = colors.get("color_properties", None)
             continuous_colormap = colors.get(
-                'continuous_colormap', continuous_colormap
+                "continuous_colormap", continuous_colormap
             )
-            contrast_limits = colors.get('contrast_limits', contrast_limits)
+            contrast_limits = colors.get("contrast_limits", contrast_limits)
             categorical_colormap = colors.get(
-                'categorical_colormap', categorical_colormap
+                "categorical_colormap", categorical_colormap
             )
 
             if isinstance(color_properties, str):
@@ -496,7 +496,7 @@ class ColorManager(EventedModel):
                 except KeyError as e:
                     raise KeyError(
                         trans._(
-                            'if color_properties is a string, it should be a property name',
+                            "if color_properties is a string, it should be a property name",
                             deferred=True,
                         )
                     ) from e
@@ -508,11 +508,11 @@ class ColorManager(EventedModel):
             categorical_colormap = deepcopy(default_color_cycle)
 
         color_kwargs = {
-            'categorical_colormap': categorical_colormap,
-            'continuous_colormap': continuous_colormap,
-            'contrast_limits': contrast_limits,
-            'current_color': current_color,
-            'n_colors': n_colors,
+            "categorical_colormap": categorical_colormap,
+            "continuous_colormap": continuous_colormap,
+            "contrast_limits": contrast_limits,
+            "current_color": current_color,
+            "n_colors": n_colors,
         }
 
         if color_properties is None:
@@ -537,8 +537,8 @@ class ColorManager(EventedModel):
 
                 color_kwargs.update(
                     {
-                        'color_mode': color_mode,
-                        'color_properties': color_properties,
+                        "color_mode": color_mode,
+                        "color_properties": color_properties,
                     }
                 )
 
@@ -549,8 +549,8 @@ class ColorManager(EventedModel):
                         current_color = transform_color(color_values)[0]
                     color_kwargs.update(
                         {
-                            'color_mode': ColorMode.DIRECT,
-                            'current_color': current_color,
+                            "color_mode": ColorMode.DIRECT,
+                            "current_color": current_color,
                         }
                     )
                 else:
@@ -564,13 +564,13 @@ class ColorManager(EventedModel):
                         n_colors, transformed_color
                     )
                     color_kwargs.update(
-                        {'color_mode': ColorMode.DIRECT, 'colors': colors}
+                        {"color_mode": ColorMode.DIRECT, "colors": colors}
                     )
         else:
             color_kwargs.update(
                 {
-                    'color_mode': color_mode,
-                    'color_properties': color_properties,
+                    "color_mode": color_mode,
+                    "color_properties": color_properties,
                 }
             )
 

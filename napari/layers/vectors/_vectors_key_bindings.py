@@ -12,15 +12,15 @@ def register_vectors_action(description: str, repeatable: bool = False):
 
 
 def register_vectors_mode_action(description):
-    return register_layer_attr_action(Vectors, description, 'mode')
+    return register_layer_attr_action(Vectors, description, "mode")
 
 
-@register_vectors_mode_action(trans._('Transform'))
+@register_vectors_mode_action(trans._("Transform"))
 def activate_vectors_transform_mode(layer):
     layer.mode = Mode.TRANSFORM
 
 
-@register_vectors_mode_action(trans._('Pan/zoom'))
+@register_vectors_mode_action(trans._("Pan/zoom"))
 def activate_vectors_pan_zoom_mode(layer: Vectors):
     layer.mode = str(Mode.PAN_ZOOM)
 

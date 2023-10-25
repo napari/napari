@@ -47,18 +47,18 @@ class QtLayerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel') -> None:
+    def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
 
         self.viewer = viewer
 
         self.deleteButton = QtViewerPushButton(
-            'delete_button', action='napari:delete_selected_layers'
+            "delete_button", action="napari:delete_selected_layers"
         )
 
         self.newPointsButton = QtViewerPushButton(
-            'new_points',
-            trans._('New points layer'),
+            "new_points",
+            trans._("New points layer"),
             lambda: self.viewer.add_points(
                 ndim=max(self.viewer.dims.ndim, 2),
                 scale=self.viewer.layers.extent.step,
@@ -66,16 +66,16 @@ class QtLayerButtons(QFrame):
         )
 
         self.newShapesButton = QtViewerPushButton(
-            'new_shapes',
-            trans._('New shapes layer'),
+            "new_shapes",
+            trans._("New shapes layer"),
             lambda: self.viewer.add_shapes(
                 ndim=max(self.viewer.dims.ndim, 2),
                 scale=self.viewer.layers.extent.step,
             ),
         )
         self.newLabelsButton = QtViewerPushButton(
-            'new_labels',
-            trans._('New labels layer'),
+            "new_labels",
+            trans._("New labels layer"),
             lambda: self.viewer._new_labels(),
         )
 
@@ -115,31 +115,31 @@ class QtViewerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel') -> None:
+    def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
 
         self.viewer = viewer
 
         self.consoleButton = QtViewerPushButton(
-            'console', action='napari:toggle_console_visibility'
+            "console", action="napari:toggle_console_visibility"
         )
-        self.consoleButton.setProperty('expanded', False)
+        self.consoleButton.setProperty("expanded", False)
         if in_ipython() or in_jupyter() or in_python_repl():
             self.consoleButton.setEnabled(False)
 
-        rdb = QtViewerPushButton('roll', action='napari:roll_axes')
+        rdb = QtViewerPushButton("roll", action="napari:roll_axes")
         self.rollDimsButton = rdb
         rdb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         rdb.customContextMenuRequested.connect(self._open_roll_popup)
 
         self.transposeDimsButton = QtViewerPushButton(
-            'transpose', action='napari:transpose_axes'
+            "transpose", action="napari:transpose_axes"
         )
         self.resetViewButton = QtViewerPushButton(
-            'home', action='napari:reset_view'
+            "home", action="napari:reset_view"
         )
         gvb = QtViewerPushButton(
-            'grid_view_button', action='napari:toggle_grid'
+            "grid_view_button", action="napari:toggle_grid"
         )
         self.gridViewButton = gvb
         gvb.setCheckable(True)
@@ -152,7 +152,7 @@ class QtViewerButtons(QFrame):
             gvb.setChecked(event.value)
 
         ndb = QtViewerPushButton(
-            'ndisplay_button', action='napari:toggle_ndisplay'
+            "ndisplay_button", action="napari:toggle_ndisplay"
         )
         self.ndisplayButton = ndb
         ndb.setCheckable(True)
@@ -185,13 +185,13 @@ class QtViewerButtons(QFrame):
         sld.setRange(0, max(90, int(self.viewer.camera.perspective)))
         sld.setValue(int(self.viewer.camera.perspective))
         sld.valueChanged.connect(
-            lambda v: setattr(self.viewer.camera, 'perspective', v)
+            lambda v: setattr(self.viewer.camera, "perspective", v)
         )
         self.perspective_slider = sld
 
         # make layout
         layout = QHBoxLayout()
-        layout.addWidget(QLabel(trans._('Perspective'), self))
+        layout.addWidget(QLabel(trans._("Perspective"), self))
         layout.addWidget(sld)
 
         # popup and show
@@ -205,7 +205,7 @@ class QtViewerButtons(QFrame):
             return
 
         dim_sorter = QtDimsSorter(self.viewer, self)
-        dim_sorter.setObjectName('dim_sorter')
+        dim_sorter.setObjectName("dim_sorter")
 
         # make layout
         layout = QHBoxLayout()
@@ -229,17 +229,17 @@ class QtViewerButtons(QFrame):
         blank = QLabel(self)  # helps with placing help symbols.
 
         shape_help_msg = trans._(
-            'Number of rows and columns in the grid. A value of -1 for either or both of width and height will trigger an auto calculation of the necessary grid shape to appropriately fill all the layers at the appropriate stride. 0 is not a valid entry.'
+            "Number of rows and columns in the grid. A value of -1 for either or both of width and height will trigger an auto calculation of the necessary grid shape to appropriately fill all the layers at the appropriate stride. 0 is not a valid entry."
         )
 
         stride_help_msg = trans._(
-            'Number of layers to place in each grid square before moving on to the next square. The default ordering is to place the most visible layer in the top left corner of the grid. A negative stride will cause the order in which the layers are placed in the grid to be reversed. 0 is not a valid entry.'
+            "Number of layers to place in each grid square before moving on to the next square. The default ordering is to place the most visible layer in the top left corner of the grid. A negative stride will cause the order in which the layers are placed in the grid to be reversed. 0 is not a valid entry."
         )
 
         # set up
-        stride_min = self.viewer.grid.__fields__['stride'].type_.ge
-        stride_max = self.viewer.grid.__fields__['stride'].type_.le
-        stride_not = self.viewer.grid.__fields__['stride'].type_.ne
+        stride_min = self.viewer.grid.__fields__["stride"].type_.ge
+        stride_max = self.viewer.grid.__fields__["stride"].type_.le
+        stride_not = self.viewer.grid.__fields__["stride"].type_.ne
         grid_stride.setObjectName("gridStrideBox")
         grid_stride.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_stride.setRange(stride_min, stride_max)
@@ -248,8 +248,8 @@ class QtViewerButtons(QFrame):
         grid_stride.valueChanged.connect(self._update_grid_stride)
         self.grid_stride_box = grid_stride
 
-        width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
-        width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
+        width_min = self.viewer.grid.__fields__["shape"].sub_fields[1].type_.ge
+        width_not = self.viewer.grid.__fields__["shape"].sub_fields[1].type_.ne
         grid_width.setObjectName("gridWidthBox")
         grid_width.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_width.setMinimum(width_min)
@@ -259,10 +259,10 @@ class QtViewerButtons(QFrame):
         self.grid_width_box = grid_width
 
         height_min = (
-            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ge
+            self.viewer.grid.__fields__["shape"].sub_fields[0].type_.ge
         )
         height_not = (
-            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
+            self.viewer.grid.__fields__["shape"].sub_fields[0].type_.ne
         )
         grid_height.setObjectName("gridStrideBox")
         grid_height.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -280,9 +280,9 @@ class QtViewerButtons(QFrame):
 
         # layout
         form_layout = QFormLayout()
-        form_layout.insertRow(0, QLabel(trans._('Grid stride:')), grid_stride)
-        form_layout.insertRow(1, QLabel(trans._('Grid width:')), grid_width)
-        form_layout.insertRow(2, QLabel(trans._('Grid height:')), grid_height)
+        form_layout.insertRow(0, QLabel(trans._("Grid stride:")), grid_stride)
+        form_layout.insertRow(1, QLabel(trans._("Grid width:")), grid_width)
+        form_layout.insertRow(2, QLabel(trans._("Grid height:")), grid_height)
 
         help_layout = QVBoxLayout()
         help_layout.addWidget(stride_help_symbol)
@@ -384,12 +384,12 @@ class QtViewerPushButton(QPushButton):
 
     @_omit_viewer_args
     def __init__(
-        self, button_name: str, tooltip: str = '', slot=None, action: str = ''
+        self, button_name: str, tooltip: str = "", slot=None, action: str = ""
     ) -> None:
         super().__init__()
 
         self.setToolTip(tooltip or button_name)
-        self.setProperty('mode', button_name)
+        self.setProperty("mode", button_name)
         if slot is not None:
             self.clicked.connect(slot)
         if action:

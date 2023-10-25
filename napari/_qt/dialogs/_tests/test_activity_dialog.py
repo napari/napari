@@ -10,7 +10,7 @@ from napari._qt.widgets.qt_progress_bar import (
 )
 from napari.utils import progress
 
-SHOW = bool(sys.platform == 'linux' or os.getenv("CI"))
+SHOW = bool(sys.platform == "linux" or os.getenv("CI"))
 
 
 def qt_viewer_has_pbar(qt_viewer):
@@ -101,7 +101,7 @@ def test_progress_nested(make_napari_viewer):
 
 @pytest.mark.skipif(
     not SHOW,
-    reason='viewer needs to be shown to test indicator',
+    reason="viewer needs to be shown to test indicator",
 )
 def test_progress_indicator(make_napari_viewer):
     viewer = make_napari_viewer(show=SHOW)
@@ -116,8 +116,8 @@ def test_progress_indicator(make_napari_viewer):
 
 
 @pytest.mark.skipif(
-    bool(sys.platform == 'linux'),
-    reason='need to debug sefaults with set_description',
+    bool(sys.platform == "linux"),
+    reason="need to debug sefaults with set_description",
 )
 def test_progress_set_description(make_napari_viewer):
     viewer = make_napari_viewer(show=SHOW)

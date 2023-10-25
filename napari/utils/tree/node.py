@@ -70,14 +70,14 @@ class Node:
             yield obj
             obj = obj.parent
 
-    def root(self) -> 'Node':
+    def root(self) -> "Node":
         """Get the root parent."""
         parents = list(self.iter_parents())
         return parents[-1] if parents else self
 
     def traverse(
         self, leaves_only=False, with_ancestors=False
-    ) -> Generator['Node', None, None]:
+    ) -> Generator["Node", None, None]:
         """Recursive all nodes and leaves of the Node.
 
         This is mostly used by :class:`~napari.utils.tree.Group`, which can

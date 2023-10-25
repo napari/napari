@@ -46,7 +46,7 @@ class VispyPointsLayer(VispyBaseLayer):
             edge_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
             face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
             edge_width = np.zeros(1)
-            symbol = ['o']
+            symbol = ["o"]
         else:
             data = self.layer._view_data
             size = self.layer._view_size
@@ -62,13 +62,13 @@ class VispyPointsLayer(VispyBaseLayer):
 
         if self.layer.edge_width_is_relative:
             edge_kw = {
-                'edge_width': None,
-                'edge_width_rel': edge_width,
+                "edge_width": None,
+                "edge_width_rel": edge_width,
             }
         else:
             edge_kw = {
-                'edge_width': edge_width * scale,
-                'edge_width_rel': None,
+                "edge_width": edge_width * scale,
+                "edge_width_rel": None,
             }
 
         set_data(
@@ -102,7 +102,7 @@ class VispyPointsLayer(VispyBaseLayer):
         else:
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = 0
-            symbol = ['o']
+            symbol = ["o"]
             edge_width = np.array([0])
 
         scale = self.layer.scale[-1]
@@ -116,7 +116,7 @@ class VispyPointsLayer(VispyBaseLayer):
             symbol=symbol,
             edge_width=scaled_highlight * 2,
             edge_color=self._highlight_color,
-            face_color=transform_color('transparent'),
+            face_color=transform_color("transparent"),
         )
 
         if (
@@ -156,10 +156,10 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _on_text_change(self, event=None):
         if event is not None:
-            if event.type == 'blending':
+            if event.type == "blending":
                 self._on_blending_change(event)
                 return
-            if event.type == 'values':
+            if event.type == "values":
                 return
         self._update_text()
 
@@ -173,7 +173,7 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node.set_gl_state(**text_blending_kwargs)
 
         # selection box is always without depth
-        box_blending_kwargs = BLENDING_MODES['translucent_no_depth']
+        box_blending_kwargs = BLENDING_MODES["translucent_no_depth"]
         self.node._subvisuals[2].set_gl_state(**box_blending_kwargs)
 
         self.node.update()
@@ -183,7 +183,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _on_shading_change(self):
         shading = self.layer.shading
-        if shading == 'spherical':
+        if shading == "spherical":
             self.node.spherical = True
         else:
             self.node.spherical = False

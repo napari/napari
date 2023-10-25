@@ -55,7 +55,7 @@ class QtWelcomeWidget(QWidget):
 
         # TODO: Use action manager for shortcut query and handling
         shortcut_layout = QFormLayout()
-        sc = QKeySequence('Ctrl+O', QKeySequence.PortableText).toString(
+        sc = QKeySequence("Ctrl+O", QKeySequence.PortableText).toString(
             QKeySequence.NativeText
         )
         shortcut_layout.addRow(

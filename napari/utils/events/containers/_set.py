@@ -31,7 +31,7 @@ class EventedSet(MutableSet[_T]):
     def __init__(self, data: Iterable[_T] = ()) -> None:
         changed = None
         # For inheritance: If the mro already provides an EmitterGroup, add...
-        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
+        if hasattr(self, "events") and isinstance(self.events, EmitterGroup):
             self.events.add(changed=changed)
         else:
             # otherwise create a new one
@@ -170,7 +170,7 @@ class EventedSet(MutableSet[_T]):
         if not sequence_like(v):
             raise TypeError(
                 trans._(
-                    'Value is not a valid sequence: {value}',
+                    "Value is not a valid sequence: {value}",
                     deferred=True,
                     value=v,
                 )
@@ -181,7 +181,7 @@ class EventedSet(MutableSet[_T]):
         type_field = field.sub_fields[0]
         errors = []
         for i, v_ in enumerate(v):
-            _valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
+            _valid_value, error = type_field.validate(v_, {}, loc=f"[{i}]")
             if error:
                 errors.append(error)
         if errors:

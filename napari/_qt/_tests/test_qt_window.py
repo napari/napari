@@ -24,11 +24,11 @@ def test_current_viewer(make_napari_viewer):
     assert _QtMainWindow.current() is None
 
     # when we create a new viewer it becomes accessible at Viewer.current()
-    v1 = make_napari_viewer(title='v1')
+    v1 = make_napari_viewer(title="v1")
     assert _QtMainWindow._instances == [v1.window._qt_window]
     assert _QtMainWindow.current() == v1.window._qt_window
 
-    v2 = make_napari_viewer(title='v2')
+    v2 = make_napari_viewer(title="v2")
     assert _QtMainWindow._instances == [
         v1.window._qt_window,
         v2.window._qt_window,

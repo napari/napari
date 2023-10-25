@@ -16,7 +16,7 @@ def test_shape_controls_face_color(qtbot):
     np.testing.assert_almost_equal(qtctrl.faceColorEdit.color, target_color)
 
     # Update current face color
-    layer.current_face_color = 'red'
+    layer.current_face_color = "red"
     target_color = transform_color(layer.current_face_color)[0]
     np.testing.assert_almost_equal(qtctrl.faceColorEdit.color, target_color)
 
@@ -30,7 +30,7 @@ def test_shape_controls_edge_color(qtbot):
     np.testing.assert_almost_equal(qtctrl.edgeColorEdit.color, target_color)
 
     # Update current edge color
-    layer.current_edge_color = 'red'
+    layer.current_edge_color = "red"
     target_color = transform_color(layer.current_edge_color)[0]
     np.testing.assert_almost_equal(qtctrl.edgeColorEdit.color, target_color)
 

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     AbstractSetIntStr = AbstractSet[IntStr]
     DictStrAny = Dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
-    Model = TypeVar('Model', bound=BaseModel)
+    Model = TypeVar("Model", bound=BaseModel)
 
 
 class YamlDumper(SafeDumper):
@@ -89,6 +89,6 @@ class PydanticYamlMixin(BaseModel):
     def _yaml_dump(
         self, data, dumper: Optional[Type[SafeDumper]] = None, **kw
     ) -> str:
-        kw.setdefault('sort_keys', False)
-        dumper = dumper or getattr(self.__config__, 'yaml_dumper', YamlDumper)
+        kw.setdefault("sort_keys", False)
+        dumper = dumper or getattr(self.__config__, "yaml_dumper", YamlDumper)
         return dump_all([data], Dumper=dumper, **kw)

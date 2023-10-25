@@ -60,7 +60,7 @@ class QtPopup(QDialog):
         self.move(pos)
         self.show()
 
-    def move_to(self, position='top', *, win_ratio=0.9, min_length=0):
+    def move_to(self, position="top", *, win_ratio=0.9, min_length=0):
         """Move popup to a position relative to the QMainWindow.
 
         Parameters
@@ -95,24 +95,24 @@ class QtPopup(QDialog):
                 )
             left = window.pos().x()
             top = window.pos().y()
-            if position in ('top', 'bottom'):
+            if position in ("top", "bottom"):
                 width = int(window.width() * win_ratio)
                 width = max(width, min_length)
                 left += (window.width() - width) // 2
                 height = self.sizeHint().height()
                 top += (
                     24
-                    if position == 'top'
+                    if position == "top"
                     else (window.height() - height - 12)
                 )
-            elif position in ('left', 'right'):
+            elif position in ("left", "right"):
                 height = int(window.height() * win_ratio)
                 height = max(height, min_length)
                 # 22 is for the title bar
                 top += 22 + (window.height() - height) // 2
                 width = self.sizeHint().width()
                 left += (
-                    12 if position == 'left' else (window.width() - width - 12)
+                    12 if position == "left" else (window.width() - width - 12)
                 )
             else:
                 raise ValueError(
@@ -122,7 +122,7 @@ class QtPopup(QDialog):
                     )
                 )
         elif isinstance(position, (tuple, list)):
-            assert len(position) == 4, '`position` argument must have length 4'
+            assert len(position) == 4, "`position` argument must have length 4"
             left, top, width, height = position
         else:
             raise TypeError(

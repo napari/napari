@@ -39,7 +39,7 @@ class Source(BaseModel):
         arbitrary_types_allowed = True
         frozen = True
 
-    @validator('parent', allow_reuse=True)
+    @validator("parent", allow_reuse=True)
     def make_weakref(cls, layer: Layer):
         return weakref.ref(layer)
 
@@ -55,7 +55,7 @@ class Source(BaseModel):
 
 # layer source context management
 
-_LAYER_SOURCE: ContextVar[dict] = ContextVar('_LAYER_SOURCE', default={})
+_LAYER_SOURCE: ContextVar[dict] = ContextVar("_LAYER_SOURCE", default={})
 
 
 @contextmanager

@@ -7,7 +7,7 @@ from napari.utils.colormaps import colormap_utils
 
 np.random.seed(0)
 _LABELS = np.random.randint(5, size=(10, 15))
-_COLOR = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'}
+_COLOR = {1: "white", 2: "blue", 3: "green", 4: "red", 5: "yellow"}
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def test_changing_layer_color_mode_updates_combo_box(make_labels_controls):
     original_color_mode = layer.color_mode
     assert original_color_mode == qtctrl.colorModeComboBox.currentText()
 
-    layer.color_mode = 'auto'
+    layer.color_mode = "auto"
     assert layer.color_mode == qtctrl.colorModeComboBox.currentText()
 
 
@@ -50,10 +50,10 @@ def test_rendering_combobox(make_labels_controls):
     layer, qtctrl = make_labels_controls()
     combo = qtctrl.renderComboBox
     opts = {combo.itemText(i) for i in range(combo.count())}
-    rendering_options = {'translucent', 'iso_categorical'}
+    rendering_options = {"translucent", "iso_categorical"}
     assert opts == rendering_options
     # programmatically updating rendering mode updates the combobox
-    new_mode = 'iso_categorical'
+    new_mode = "iso_categorical"
     layer.rendering = new_mode
     assert combo.findText(new_mode) == combo.currentIndex()
 

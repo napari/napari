@@ -74,8 +74,8 @@ class Labels2DSuite:
 class LabelsDrawing2DSuite:
     """Benchmark for brush drawing in the Labels layer with 2D data."""
 
-    param_names = ['n', 'brush_size', 'color_mode', 'contour']
-    params = ([512, 3072], [8, 64, 256], ['auto', 'direct'], [0, 1])
+    param_names = ["n", "brush_size", "color_mode", "contour"]
+    params = ([512, 3072], [8, 64, 256], ["auto", "direct"], [0, 1])
 
     if "PR" in os.environ:
         skip_params = Skiper(lambda x: x[0] > 512 or x[1] > 64)
@@ -85,7 +85,7 @@ class LabelsDrawing2DSuite:
         self.data = np.random.randint(64, size=(n, n), dtype=np.int32)
 
         colors = None
-        if color_mode == 'direct':
+        if color_mode == "direct":
             random_label_ids = np.random.randint(64, size=50)
             colors = {i + 1: np.random.random(4) for i in random_label_ids}
 
@@ -93,7 +93,7 @@ class LabelsDrawing2DSuite:
 
         self.layer.brush_size = brush_size
         self.layer.contour = contour
-        self.layer.mode = 'paint'
+        self.layer.mode = "paint"
 
     def time_draw(self, n, brush_size, color_mode, contour):
         new_label = self.layer._slice.image.raw[0, 0] + 1

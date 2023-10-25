@@ -30,11 +30,11 @@ class QtViewerSingleLabelsSuite:
         self.viewer = napari.view_labels(self.data)
         self.layer = self.viewer.layers[0]
         self.layer.brush_size = 10
-        self.layer.mode = 'paint'
+        self.layer.mode = "paint"
         self.layer.selected_label = 3
         self.layer._last_cursor_coord = (511, 511)
         self.event = MouseEvent(
-            type='mouse_move',
+            type="mouse_move",
             is_dragging=True,
             pos=(500, 500),
             view_direction=None,

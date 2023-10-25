@@ -7,4 +7,4 @@ from napari.layers.shapes.shapes import Shapes
 del _shapes_key_bindings
 
 
-__all__ = ['Shapes']
+__all__ = ["Shapes"]

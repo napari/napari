@@ -77,7 +77,7 @@ def test_xarray_2D():
 
     np.random.seed(0)
     data = np.random.random((10, 15))
-    xdata = xr.DataArray(data, dims=['y', 'x'])
+    xdata = xr.DataArray(data, dims=["y", "x"])
     viewer.add_image(data)
     assert_array_equal(viewer.layers[0].data, xdata)
 
@@ -88,6 +88,6 @@ def test_xarray_nD():
 
     np.random.seed(0)
     data = np.random.random((10, 15, 6, 16))
-    xdata = xr.DataArray(data, dims=['t', 'z', 'y', 'x'])
+    xdata = xr.DataArray(data, dims=["t", "z", "y", "x"])
     viewer.add_image(xdata)
     assert_array_equal(viewer.layers[0].data, xdata)

@@ -83,7 +83,7 @@ def test_nD_shapes():
     assert shape_list._mesh.vertices.shape[1] == 3
 
 
-@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize("attribute", ["edge", "face"])
 def test_bad_color_array(attribute):
     """Test adding shapes to ShapeList."""
     np.random.seed(0)
@@ -96,4 +96,4 @@ def test_bad_color_array(attribute):
     # test setting color with a color array of the wrong shape
     bad_color_array = np.array([[0, 0, 0, 1], [1, 1, 1, 1]])
     with pytest.raises(ValueError):
-        setattr(shape_list, f'{attribute}_color', bad_color_array)
+        setattr(shape_list, f"{attribute}_color", bad_color_array)

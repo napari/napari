@@ -10,7 +10,7 @@ from os import environ
 
 import requests
 
-REPO = 'napari/napari'
+REPO = "napari/napari"
 
 
 def remove_html_comments(text):
@@ -58,7 +58,7 @@ def edit_pull_request_description(repo, pull_request_number, access_token):
 
 
 if __name__ == "__main__":
-    print('Will inspect PR description to remove html comments.')
+    print("Will inspect PR description to remove html comments.")
 
     # note that the env between pull_request and pull_request_target are different
     # and the github documentation is incorrect (or at least misleading)
@@ -69,18 +69,18 @@ if __name__ == "__main__":
     # - github.event.repository.org is empty if the repo is a normal user.
 
     repository_url = environ.get("GH_REPO_URL")
-    print(f'Current repository is {repository_url}')
-    repository_parts = repository_url.split('/')[-2:]
+    print(f"Current repository is {repository_url}")
+    repository_parts = repository_url.split("/")[-2:]
 
-    slug = '/'.join(repository_parts)
-    print(f'Current slug is {slug}')
+    slug = "/".join(repository_parts)
+    print(f"Current slug is {slug}")
     if slug != REPO:
-        print('Not on main repo, aborting with success')
+        print("Not on main repo, aborting with success")
         sys.exit(0)
 
     # get current PR number from github actions
     number = environ.get("GH_PR_NUMBER")
-    print(f'Current PR number is {number}')
+    print(f"Current PR number is {number}")
 
     access_token = environ.get("GH_TOKEN")
     if access_token is None:

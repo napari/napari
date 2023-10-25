@@ -17,25 +17,25 @@ def register_points_action(description: str, repeatable: bool = False):
 
 
 def register_points_mode_action(description):
-    return register_layer_attr_action(Points, description, 'mode')
+    return register_layer_attr_action(Points, description, "mode")
 
 
-@register_points_mode_action(trans._('Transform'))
+@register_points_mode_action(trans._("Transform"))
 def activate_points_transform_mode(layer):
     layer.mode = Mode.TRANSFORM
 
 
-@register_points_mode_action(trans._('Pan/zoom'))
+@register_points_mode_action(trans._("Pan/zoom"))
 def activate_points_pan_zoom_mode(layer: Points):
     layer.mode = Mode.PAN_ZOOM
 
 
-@register_points_mode_action(trans._('Add points'))
+@register_points_mode_action(trans._("Add points"))
 def activate_points_add_mode(layer: Points):
     layer.mode = Mode.ADD
 
 
-@register_points_mode_action(trans._('Select points'))
+@register_points_mode_action(trans._("Select points"))
 def activate_points_select_mode(layer: Points):
     layer.mode = Mode.SELECT
 
@@ -118,7 +118,7 @@ def select_all_data(layer: Points):
     layer._set_highlight(force=True)
 
 
-@register_points_action(trans._('Delete selected points'))
+@register_points_action(trans._("Delete selected points"))
 def delete_selected_points(layer: Points):
     """Delete all selected points."""
     layer.remove_selected()

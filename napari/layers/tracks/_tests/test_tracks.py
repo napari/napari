@@ -14,7 +14,7 @@ from napari.layers.tracks._track_utils import TrackManager
 data_array_2dt = np.zeros((1, 4))
 data_list_2dt = list(data_array_2dt)
 dataframe_2dt = pd.DataFrame(
-    data=data_array_2dt, columns=['track_id', 't', 'y', 'x']
+    data=data_array_2dt, columns=["track_id", "t", "y", "x"]
 )
 
 
@@ -30,7 +30,7 @@ def test_tracks_layer_2dt_ndim(data):
 data_array_3dt = np.zeros((1, 5))
 data_list_3dt = list(data_array_3dt)
 dataframe_3dt = pd.DataFrame(
-    data=data_array_3dt, columns=['track_id', 't', 'z', 'y', 'x']
+    data=data_array_3dt, columns=["track_id", "t", "z", "y", "x"]
 )
 
 
@@ -46,8 +46,8 @@ def test_tracks_layer_3dt_ndim(data):
 def test_track_layer_name():
     """Test track name."""
     data = np.zeros((1, 4))
-    layer = Tracks(data, name='test_tracks')
-    assert layer.name == 'test_tracks'
+    layer = Tracks(data, name="test_tracks")
+    assert layer.name == "test_tracks"
 
 
 def test_track_layer_data():
@@ -79,7 +79,7 @@ def test_track_layer_data_flipped():
     np.testing.assert_array_equal(layer.data, np.flip(data, axis=0))
 
 
-properties_dict = {'time': np.arange(100)}
+properties_dict = {"time": np.arange(100)}
 properties_df = pd.DataFrame(properties_dict)
 
 
@@ -110,7 +110,7 @@ def test_track_layer_colorby_nonexistent():
     """Test error handling for non-existent properties with color_by"""
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
-    non_existant_property = 'not_a_valid_key'
+    non_existant_property = "not_a_valid_key"
     assert non_existant_property not in properties_dict
     with pytest.raises(ValueError):
         Tracks(
@@ -121,16 +121,16 @@ def test_track_layer_colorby_nonexistent():
 @pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")
 def test_track_layer_properties_changed_colorby():
     """Test behaviour when changes to properties invalidate current color_by"""
-    properties_dict_1 = {'time': np.arange(100), 'prop1': np.arange(100)}
-    properties_dict_2 = {'time': np.arange(100), 'prop2': np.arange(100)}
+    properties_dict_1 = {"time": np.arange(100), "prop1": np.arange(100)}
+    properties_dict_2 = {"time": np.arange(100), "prop2": np.arange(100)}
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
-    layer = Tracks(data, properties=properties_dict_1, color_by='prop1')
+    layer = Tracks(data, properties=properties_dict_1, color_by="prop1")
     # test warning is raised
     with pytest.warns(UserWarning):
         layer.properties = properties_dict_2
     # test default fallback
-    assert layer.color_by == 'track_id'
+    assert layer.color_by == "track_id"
 
 
 def test_track_layer_graph():
@@ -148,7 +148,7 @@ def test_track_layer_reset_data():
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
     data[50:, 0] = 1
-    properties = {'time': data[:, 1]}
+    properties = {"time": data[:, 1]}
     graph = {1: [0]}
     layer = Tracks(data, graph=graph, properties=properties)
     cropped_data = data[:10, :]

@@ -33,29 +33,29 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    'ArrayLike',
-    'LayerTypeName',
-    'FullLayerData',
-    'LayerData',
-    'PathLike',
-    'PathOrPaths',
-    'ReaderFunction',
-    'WriterFunction',
-    'ExcInfo',
-    'WidgetCallable',
-    'AugmentedWidget',
-    'SampleData',
-    'SampleDict',
-    'ArrayBase',
-    'ImageData',
-    'LabelsData',
-    'PointsData',
-    'ShapesData',
-    'SurfaceData',
-    'TracksData',
-    'VectorsData',
-    'LayerDataTuple',
-    'image_reader_to_layerdata_reader',
+    "ArrayLike",
+    "LayerTypeName",
+    "FullLayerData",
+    "LayerData",
+    "PathLike",
+    "PathOrPaths",
+    "ReaderFunction",
+    "WriterFunction",
+    "ExcInfo",
+    "WidgetCallable",
+    "AugmentedWidget",
+    "SampleData",
+    "SampleDict",
+    "ArrayBase",
+    "ImageData",
+    "LabelsData",
+    "PointsData",
+    "ShapesData",
+    "SurfaceData",
+    "TracksData",
+    "VectorsData",
+    "LayerDataTuple",
+    "image_reader_to_layerdata_reader",
 ]
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
@@ -64,7 +64,7 @@ __all__ = [
 # and should probably be replaced by a typing.Protocol
 # note, numpy.typing.ArrayLike (in v1.20) is not quite what we want either,
 # since it includes all valid arguments for np.array() ( int, float, str...)
-ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
+ArrayLike = Union[np.ndarray, "dask.array.Array", "zarr.Array"]
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
@@ -82,7 +82,7 @@ ExcInfo = Union[
 ]
 
 # Types for GUI HookSpecs
-WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
+WidgetCallable = Callable[..., Union["FunctionGui", "QWidget"]]
 AugmentedWidget = Union[WidgetCallable, Tuple[WidgetCallable, dict]]
 
 

@@ -72,7 +72,7 @@ def color_lines(colors):
 
     return ValueError(
         trans._(
-            'Either 2 or 3 colors must be provided, got {number}.',
+            "Either 2 or 3 colors must be provided, got {number}.",
             deferred=True,
             number=len(colors),
         )
@@ -93,7 +93,7 @@ def color_dashed_lines(colors):
 
     return ValueError(
         trans._(
-            'Either 2 or 3 colors must be provided, got {number}.',
+            "Either 2 or 3 colors must be provided, got {number}.",
             deferred=True,
             number=len(colors),
         )
@@ -118,7 +118,7 @@ def color_arrowheads(colors, num_segments):
 
     return ValueError(
         trans._(
-            'Either 2 or 3 colors must be provided, got {number}.',
+            "Either 2 or 3 colors must be provided, got {number}.",
             deferred=True,
             number=len(colors),
         )
@@ -183,13 +183,13 @@ class Axes(Compound):
 
         super().__init__(
             [
-                Line(connect='segments', method='gl', width=3),
+                Line(connect="segments", method="gl", width=3),
                 Mesh(),
                 Text(
-                    text='1',
+                    text="1",
                     font_size=10,
-                    anchor_x='center',
-                    anchor_y='center',
+                    anchor_x="center",
+                    anchor_y="center",
                 ),
             ]
         )
@@ -244,7 +244,7 @@ class Axes(Compound):
         else:
             raise ValueError(
                 trans._(
-                    'Axes dash status and ndisplay combination not supported',
+                    "Axes dash status and ndisplay combination not supported",
                     deferred=True,
                 )
             )

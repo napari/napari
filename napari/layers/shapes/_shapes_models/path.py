@@ -35,6 +35,6 @@ class Path(PolygonBase):
             ndisplay=ndisplay,
             filled=False,
             closed=False,
-            name='path',
+            name="path",
             interpolation_order=interpolation_order,
         )

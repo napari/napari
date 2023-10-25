@@ -558,7 +558,7 @@ def triangulate_face(data):
         edges[-1, 1] = 0
 
         res = triangulate({"vertices": data, "segments": edges}, "p")
-        vertices, triangles = res['vertices'], res['triangles']
+        vertices, triangles = res["vertices"], res["triangles"]
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()
 
@@ -698,7 +698,7 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
 
     # scale miters such that their dot product with normals is 1
     _mf_dot = np.expand_dims(
-        np.einsum('ij,ij->i', miters, full_normals[:-1]), -1
+        np.einsum("ij,ij->i", miters, full_normals[:-1]), -1
     )
 
     miters = np.divide(

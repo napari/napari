@@ -75,7 +75,7 @@ def _setup_logging(config: dict) -> None:
         Monitor configuration
     """
     try:
-        log_path = config['log_path']
+        log_path = config["log_path"]
     except KeyError:
         return  # No log file.
 

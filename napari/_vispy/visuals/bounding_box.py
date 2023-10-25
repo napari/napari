@@ -54,7 +54,7 @@ class BoundingBox(Compound):
         vertices = np.array(list(product(*bounds)))
 
         self.lines.set_data(
-            pos=vertices, connect=self._edges.copy(), color='red', width=2
+            pos=vertices, connect=self._edges.copy(), color="red", width=2
         )
         self.lines.visible = True
 

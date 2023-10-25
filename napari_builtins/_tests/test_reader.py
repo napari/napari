@@ -21,7 +21,7 @@ def save_image(tmp_path: Path):
             data_ = (data_ * 255).astype(np.uint8)
         if dest.suffix in {".tif", ".tiff"}:
             tifffile.imwrite(str(dest), data_)
-        elif dest.suffix in {'.npy'}:
+        elif dest.suffix in {".npy"}:
             np.save(str(dest), data_)
         else:
             imageio.imsave(str(dest), data_)
@@ -30,12 +30,12 @@ def save_image(tmp_path: Path):
     return _save
 
 
-@pytest.mark.parametrize('ext', ['.tif', '.npy', '.png', '.jpg'])
-@pytest.mark.parametrize('stack', [False, True])
+@pytest.mark.parametrize("ext", [".tif", ".npy", ".png", ".jpg"])
+@pytest.mark.parametrize("stack", [False, True])
 def test_reader_plugin_tif(save_image: Callable[..., Path], ext, stack):
     """Test the builtin reader plugin reads a temporary file."""
     files = [
-        str(save_image(f'test_{i}{ext}')) for i in range(5 if stack else 1)
+        str(save_image(f"test_{i}{ext}")) for i in range(5 if stack else 1)
     ]
     layer_data = npe2.read(files, stack=stack)
     assert isinstance(layer_data, list)
@@ -45,7 +45,7 @@ def test_reader_plugin_tif(save_image: Callable[..., Path], ext, stack):
 
 def test_reader_plugin_url():
     layer_data = npe2.read(
-        ['https://samples.fiji.sc/FakeTracks.tif'], stack=False
+        ["https://samples.fiji.sc/FakeTracks.tif"], stack=False
     )
     assert isinstance(layer_data, list)
     assert len(layer_data) == 1
@@ -54,9 +54,9 @@ def test_reader_plugin_url():
 
 def test_reader_plugin_csv(tmp_path):
     """Test the builtin reader plugin reads a temporary file."""
-    dest = str(tmp_path / 'test.csv')
+    dest = str(tmp_path / "test.csv")
     table = np.random.random((5, 3))
-    write_csv(dest, table, column_names=['index', 'axis-0', 'axis-1'])
+    write_csv(dest, table, column_names=["index", "axis-0", "axis-1"])
 
     layer_data = npe2.read([dest], stack=False)
 
@@ -64,5 +64,5 @@ def test_reader_plugin_csv(tmp_path):
     assert isinstance(layer_data, list)
     assert len(layer_data) == 1
     assert isinstance(layer_data[0], tuple)
-    assert layer_data[0][2] == 'points'
+    assert layer_data[0][2] == "points"
     assert np.allclose(table[:, 1:], layer_data[0][0])

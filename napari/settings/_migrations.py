@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from napari.settings._napari_settings import NapariSettings
 
 _MIGRATORS: List[Migrator] = []
-MigratorF = Callable[['NapariSettings'], None]
+MigratorF = Callable[["NapariSettings"], None]
 
 
 class Migrator(NamedTuple):
@@ -38,9 +38,9 @@ def do_migrations(model: NapariSettings):
                     )
                     try:
                         model.update(backup)
-                        msg += 'You may need to reset your settings with `napari --reset`. '
+                        msg += "You may need to reset your settings with `napari --reset`. "
                     except Exception:  # noqa BLE001
-                        msg += 'Settings rollback also failed. Please run `napari --reset`.'
+                        msg += "Settings rollback also failed. Please run `napari --reset`."
                     warnings.warn(msg)
                     return
     model._maybe_save()
@@ -80,14 +80,14 @@ def migrator(from_: str, to_: str) -> Callable[[MigratorF], MigratorF]:
 
     def decorator(migrate_func: MigratorF) -> MigratorF:
         _from, _to = Version.parse(from_), Version.parse(to_)
-        assert _to >= _from, 'Migrator must increase the version.'
+        assert _to >= _from, "Migrator must increase the version."
         _MIGRATORS.append(Migrator(_from, _to, migrate_func))
         return migrate_func
 
     return decorator
 
 
-@migrator('0.3.0', '0.4.0')
+@migrator("0.3.0", "0.4.0")
 def v030_v040(model: NapariSettings):
     """Migrate from v0.3.0 to v0.4.0.
 
@@ -98,10 +98,10 @@ def v030_v040(model: NapariSettings):
     for dist in distributions():
         for ep in dist.entry_points:
             if ep.group == "napari.manifest":
-                model.plugins.disabled_plugins.discard(dist.metadata['Name'])
+                model.plugins.disabled_plugins.discard(dist.metadata["Name"])
 
 
-@migrator('0.4.0', '0.5.0')
+@migrator("0.4.0", "0.5.0")
 def v040_050(model: NapariSettings):
     """Migrate from v0.4.0 to v0.5.0
 

@@ -40,31 +40,31 @@ def test_activate_modes():
     layer = Shapes(20 * np.random.random((1, 4, 2)))
     # need to go through the generator
     key_bindings.activate_add_rectangle_mode(layer)
-    assert layer.mode == 'add_rectangle'
+    assert layer.mode == "add_rectangle"
     key_bindings.activate_add_ellipse_mode(layer)
-    assert layer.mode == 'add_ellipse'
+    assert layer.mode == "add_ellipse"
     key_bindings.activate_add_line_mode(layer)
-    assert layer.mode == 'add_line'
+    assert layer.mode == "add_line"
     key_bindings.activate_add_path_mode(layer)
-    assert layer.mode == 'add_path'
+    assert layer.mode == "add_path"
     key_bindings.activate_add_polygon_mode(layer)
-    assert layer.mode == 'add_polygon'
+    assert layer.mode == "add_polygon"
     key_bindings.activate_direct_mode(layer)
-    assert layer.mode == 'direct'
+    assert layer.mode == "direct"
     key_bindings.activate_select_mode(layer)
-    assert layer.mode == 'select'
+    assert layer.mode == "select"
     key_bindings.activate_shapes_pan_zoom_mode(layer)
-    assert layer.mode == 'pan_zoom'
+    assert layer.mode == "pan_zoom"
     key_bindings.activate_vertex_insert_mode(layer)
-    assert layer.mode == 'vertex_insert'
+    assert layer.mode == "vertex_insert"
     key_bindings.activate_vertex_remove_mode(layer)
-    assert layer.mode == 'vertex_remove'
+    assert layer.mode == "vertex_remove"
 
 
 def test_copy_paste():
     # Test on three four corner rectangle
     layer = Shapes(20 * np.random.random((3, 4, 2)))
-    layer.mode = 'direct'
+    layer.mode = "direct"
 
     assert len(layer.data) == 3
     assert layer._clipboard == {}
@@ -82,7 +82,7 @@ def test_copy_paste():
 def test_select_all():
     # Test on three four corner rectangle
     layer = Shapes(20 * np.random.random((3, 4, 2)))
-    layer.mode = 'direct'
+    layer.mode = "direct"
 
     assert len(layer.data) == 3
     assert len(layer.selected_data) == 0
@@ -94,7 +94,7 @@ def test_select_all():
 def test_delete():
     # Test on three four corner rectangle
     layer = Shapes(20 * np.random.random((3, 4, 2)))
-    layer.mode = 'direct'
+    layer.mode = "direct"
 
     assert len(layer.data) == 3
     layer.selected_data = {0, 1}

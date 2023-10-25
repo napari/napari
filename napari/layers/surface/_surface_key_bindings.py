@@ -12,15 +12,15 @@ def register_surface_action(description: str, repeatable: bool = False):
 
 
 def register_surface_mode_action(description):
-    return register_layer_attr_action(Surface, description, 'mode')
+    return register_layer_attr_action(Surface, description, "mode")
 
 
-@register_surface_mode_action(trans._('Transform'))
+@register_surface_mode_action(trans._("Transform"))
 def activate_surface_transform_mode(layer):
     layer.mode = Mode.TRANSFORM
 
 
-@register_surface_mode_action(trans._('Pan/zoom'))
+@register_surface_mode_action(trans._("Pan/zoom"))
 def activate_surface_pan_zoom_mode(layer: Surface):
     layer.mode = str(Mode.PAN_ZOOM)
 

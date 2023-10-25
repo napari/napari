@@ -22,9 +22,9 @@ from napari.utils.theme import (
 
 def test_default_themes():
     themes = available_themes()
-    assert 'dark' in themes
-    assert 'light' in themes
-    assert 'system' in themes
+    assert "dark" in themes
+    assert "light" in themes
+    assert "system" in themes
 
 
 def test_get_theme():
@@ -38,40 +38,40 @@ def test_get_theme():
 
 
 def test_get_system_theme(monkeypatch):
-    monkeypatch.setattr('napari.utils.theme.get_system_theme', lambda: 'light')
-    theme = get_theme('system')
+    monkeypatch.setattr("napari.utils.theme.get_system_theme", lambda: "light")
+    theme = get_theme("system")
     # should return the theme specified by get_system_theme
-    assert theme.id == 'light'
+    assert theme.id == "light"
 
 
 def test_register_theme():
     # Check that blue theme is not listed in available themes
     themes = available_themes()
-    assert 'test_blue' not in themes
+    assert "test_blue" not in themes
 
     # Create new blue theme based on dark theme
-    blue_theme = get_theme('dark').to_rgb_dict()
+    blue_theme = get_theme("dark").to_rgb_dict()
     blue_theme.update(
-        background='rgb(28, 31, 48)',
-        foreground='rgb(45, 52, 71)',
-        primary='rgb(80, 88, 108)',
-        current='rgb(184, 112, 0)',
+        background="rgb(28, 31, 48)",
+        foreground="rgb(45, 52, 71)",
+        primary="rgb(80, 88, 108)",
+        current="rgb(184, 112, 0)",
     )
 
     # Register blue theme
-    register_theme('test_blue', blue_theme, "test")
+    register_theme("test_blue", blue_theme, "test")
 
     # Check that blue theme is listed in available themes
     themes = available_themes()
-    assert 'test_blue' in themes
+    assert "test_blue" in themes
 
     # Check that the dark theme has not been overwritten
-    dark_theme = get_theme('dark').to_rgb_dict()
-    assert dark_theme['background'] != blue_theme['background']
+    dark_theme = get_theme("dark").to_rgb_dict()
+    assert dark_theme["background"] != blue_theme["background"]
 
     # Check that blue theme can be gotten from available themes
-    theme = get_theme('test_blue').to_rgb_dict()
-    assert theme['background'] == blue_theme['background']
+    theme = get_theme("test_blue").to_rgb_dict()
+    assert theme["background"] == blue_theme["background"]
 
     theme = get_theme("test_blue")
     assert theme.background.as_rgb() == blue_theme["background"]
@@ -79,25 +79,25 @@ def test_register_theme():
 
 def test_unregister_theme():
     # Create new blue theme based on dark theme
-    blue_theme = get_theme('dark').to_rgb_dict()
+    blue_theme = get_theme("dark").to_rgb_dict()
     blue_theme.update(
-        background='rgb(28, 31, 48)',
-        foreground='rgb(45, 52, 71)',
-        primary='rgb(80, 88, 108)',
-        current='rgb(184, 112, 0)',
+        background="rgb(28, 31, 48)",
+        foreground="rgb(45, 52, 71)",
+        primary="rgb(80, 88, 108)",
+        current="rgb(184, 112, 0)",
     )
 
     # Register blue theme
-    register_theme('test_blue', blue_theme, "test")
+    register_theme("test_blue", blue_theme, "test")
 
     # Check that blue theme is listed in available themes
     themes = available_themes()
-    assert 'test_blue' in themes
+    assert "test_blue" in themes
 
     # Remove theme from available themes
     unregister_theme("test_blue")
     themes = available_themes()
-    assert 'test_blue' not in themes
+    assert "test_blue" not in themes
 
 
 def test_rebuild_theme_settings():
@@ -112,7 +112,7 @@ def test_rebuild_theme_settings():
 
 
 @pytest.mark.skipif(
-    os.getenv('CI') and sys.version_info < (3, 9),
+    os.getenv("CI") and sys.version_info < (3, 9),
     reason="Testing theme on CI is extremely slow ~ 15s per test."
     "Skip for now until we find the reason",
 )
@@ -133,7 +133,7 @@ def test_theme(color):
 
 
 @pytest.mark.skipif(
-    os.getenv('CI') and sys.version_info < (3, 9),
+    os.getenv("CI") and sys.version_info < (3, 9),
     reason="Testing theme on CI is extremely slow ~ 15s per test."
     "Skip for now until we find the reason",
 )

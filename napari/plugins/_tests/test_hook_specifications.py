@@ -23,14 +23,14 @@ from napari.plugins import hook_specifications
 HOOK_SPECIFICATIONS = [
     (name, func)
     for name, func in vars(hook_specifications).items()
-    if hasattr(func, 'napari_spec')
+    if hasattr(func, "napari_spec")
 ]
 
 
 @pytest.mark.parametrize("name, func", HOOK_SPECIFICATIONS)
 def test_hook_specification_naming(name, func):
     """All hook specifications should begin with napari_."""
-    assert name.startswith('napari_'), (
+    assert name.startswith("napari_"), (
         "hook specification '%s' does not start with 'napari_'" % name
     )
 
@@ -53,7 +53,7 @@ def test_annotation_on_hook_specification(name, func):
     sig = inspect.signature(func)
     if sig.parameters:
         for param in sig.parameters.values():
-            for forbidden in ('_plugin', '_skip_impls', '_return_result_obj'):
+            for forbidden in ("_plugin", "_skip_impls", "_return_result_obj"):
                 assert (
                     param.name != forbidden
                 ), f'Must not name hook_specification argument "{forbidden}".'
@@ -73,7 +73,7 @@ def test_docs_match_signature(name, func):
     sig = inspect.signature(func)
     docs = FunctionDoc(func)
     sig_params = set(sig.parameters)
-    doc_params = {p.name for p in docs.get('Parameters')}
+    doc_params = {p.name for p in docs.get("Parameters")}
     assert sig_params == doc_params, (
         f"Signature parameters for hook specification '{name}' do "
         "not match the parameters listed in the docstring:\n"

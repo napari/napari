@@ -76,7 +76,7 @@ class Box:
     LEN = 8
 
 
-BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
+BACKSPACE = "delete" if sys.platform == "darwin" else "backspace"
 
 
 class ShapeType(StringEnum):

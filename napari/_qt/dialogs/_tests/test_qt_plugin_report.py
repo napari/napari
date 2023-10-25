@@ -16,15 +16,15 @@ def test_error_reporter(qtbot, monkeypatch):
 
     monkeypatch.setattr(
         qt_plugin_report,
-        'standard_metadata',
-        lambda x: {'url': 'https://github.com/example/example'},
+        "standard_metadata",
+        lambda x: {"url": "https://github.com/example/example"},
     )
 
-    error_message = 'my special error'
+    error_message = "my special error"
     try:
         # we need to raise to make sure a __traceback__ is attached to the error.
         raise PluginError(
-            error_message, plugin_name='test_plugin', plugin="mock"
+            error_message, plugin_name="test_plugin", plugin="mock"
         )
     except PluginError:
         pass
@@ -35,7 +35,7 @@ def test_error_reporter(qtbot, monkeypatch):
     assert report_widget.plugin_combo.count() >= 2
 
     # the message should appear somewhere in the text area
-    report_widget.set_plugin('test_plugin')
+    report_widget.set_plugin("test_plugin")
     assert error_message in report_widget.text_area.toPlainText()
 
     # mock_webbrowser_open
@@ -44,7 +44,7 @@ def test_error_reporter(qtbot, monkeypatch):
         assert "Errors for plugin 'test_plugin'" in url
         assert "Traceback from napari" in url
 
-    monkeypatch.setattr(webbrowser, 'open', mock_webbrowser_open)
+    monkeypatch.setattr(webbrowser, "open", mock_webbrowser_open)
 
     qtbot.mouseClick(report_widget.github_button, Qt.LeftButton)
 
@@ -55,7 +55,7 @@ def test_error_reporter(qtbot, monkeypatch):
 
     # plugins without errors raise an error
     with pytest.raises(ValueError):
-        report_widget.set_plugin('non_existent')
+        report_widget.set_plugin("non_existent")
 
     report_widget.set_plugin(None)
     assert not report_widget.text_area.toPlainText()

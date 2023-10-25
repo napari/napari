@@ -33,21 +33,21 @@ def _user_agent() -> str:
     from napari.utils import misc
 
     if misc.running_as_constructor_app():
-        env = 'constructor'
+        env = "constructor"
     elif misc.in_jupyter():
-        env = 'jupyter'
+        env = "jupyter"
     elif misc.in_ipython():
-        env = 'ipython'
+        env = "ipython"
     else:
-        env = 'python'
+        env = "python"
 
     parts = [
-        ('napari', __version__),
-        ('runtime', env),
+        ("napari", __version__),
+        ("runtime", env),
         (platform.python_implementation(), platform.python_version()),
         (platform.system(), platform.release()),
     ]
-    return ' '.join(f'{k}/{v}' for k, v in parts)
+    return " ".join(f"{k}/{v}" for k, v in parts)
 
 
 class _ShortSummaryDict(TypedDict):
@@ -71,7 +71,7 @@ class SummaryDict(_ShortSummaryDict):
 def plugin_summaries() -> List[SummaryDict]:
     """Return PackageMetadata object for all known napari plugins."""
     url = "https://npe2api.vercel.app/api/extended_summary"
-    with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
+    with urlopen(Request(url, headers={"User-Agent": _user_agent()})) as resp:
         return json.load(resp)
 
 
@@ -79,7 +79,7 @@ def plugin_summaries() -> List[SummaryDict]:
 def conda_map() -> Dict[PyPIname, Optional[str]]:
     """Return map of PyPI package name to conda_channel/package_name ()."""
     url = "https://npe2api.vercel.app/api/conda"
-    with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
+    with urlopen(Request(url, headers={"User-Agent": _user_agent()})) as resp:
         return json.load(resp)
 
 
@@ -104,9 +104,9 @@ def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
         # TODO: once the new version of npe2 is out, this can be refactored
         # to all the metadata includes the conda and pypi versions.
         extra_info = {
-            'home_page': info_.get("home_page", ""),
-            'pypi_versions': pypi_versions,
-            'conda_versions': conda_versions,
+            "home_page": info_.get("home_page", ""),
+            "pypi_versions": pypi_versions,
+            "conda_versions": conda_versions,
         }
         info_["name"] = normalized_name(info_["name"])
         meta = PackageMetadata(**info_)

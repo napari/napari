@@ -29,7 +29,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         """
         return [ListIndexMIMEType, "text/plain"]
 
-    def mimeData(self, indices: List[QModelIndex]) -> Optional['QMimeData']:
+    def mimeData(self, indices: List[QModelIndex]) -> Optional["QMimeData"]:
         """Return an object containing serialized data from `indices`.
 
         If the list of indexes is empty, or there are no supported MIME types,

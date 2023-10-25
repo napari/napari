@@ -92,7 +92,7 @@ def register_layer_action(
 
     def _inner(func):
         nonlocal shortcuts
-        name = 'napari:' + func.__name__
+        name = "napari:" + func.__name__
 
         action_manager.register_action(
             name=name,
@@ -482,7 +482,7 @@ def _coerce_current_properties_value(
         if len(value) != 1:
             raise ValueError(
                 trans._(
-                    'current_properties values should have length 1.',
+                    "current_properties values should have length 1.",
                     deferred=True,
                 )
             )
@@ -623,7 +623,7 @@ def coerce_affine(affine, *, ndim, name=None):
     elif not isinstance(affine, Affine):
         raise TypeError(
             trans._(
-                'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
+                "affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}",
                 deferred=True,
                 dtype=type(affine),
             )
@@ -695,8 +695,8 @@ def get_extent_world(data_extent, data_to_world, centered=None):
     if centered is not None:
         warnings.warn(
             trans._(
-                'The `centered` argument is deprecated. '
-                'Extents are now always centered on data points.',
+                "The `centered` argument is deprecated. "
+                "Extents are now always centered on data points.",
                 deferred=True,
             ),
             stacklevel=2,
@@ -996,7 +996,7 @@ def _validate_feature_defaults(
         if len(extra_defaults) > 0:
             raise ValueError(
                 trans._(
-                    'Feature defaults contain some extra columns not in feature values: {extra_defaults}',
+                    "Feature defaults contain some extra columns not in feature values: {extra_defaults}",
                     deferred=True,
                     extra_defaults=extra_defaults,
                 )
@@ -1005,7 +1005,7 @@ def _validate_feature_defaults(
         if len(missing_defaults) > 0:
             raise ValueError(
                 trans._(
-                    'Feature defaults is missing some columns in feature values: {missing_defaults}',
+                    "Feature defaults is missing some columns in feature values: {missing_defaults}",
                     deferred=True,
                     missing_defaults=missing_defaults,
                 )

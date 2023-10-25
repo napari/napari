@@ -58,9 +58,9 @@ def test_compare_colormap_dicts():
 
     # same number of keys, but different keys
     cmap_dict_5 = {
-        'hi': np.array([1, 1, 1, 1]),
-        'hello': np.array([1, 1, 1, 1]),
-        'hallo': np.array([1, 0, 0, 1]),
+        "hi": np.array([1, 1, 1, 1]),
+        "hello": np.array([1, 1, 1, 1]),
+        "hallo": np.array([1, 0, 0, 1]),
     }
     assert not compare_colormap_dicts(cmap_dict_1, cmap_dict_5)
     assert not compare_colormap_dicts(cmap_dict_3, cmap_dict_5)

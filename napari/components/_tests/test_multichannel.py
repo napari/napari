@@ -15,11 +15,11 @@ from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 base_colormaps = CYMRGB
 two_colormaps = MAGENTA_GREEN
-green_cmap = SIMPLE_COLORMAPS['green']
-red_cmap = SIMPLE_COLORMAPS['red']
-blue_cmap = AVAILABLE_COLORMAPS['blue']
-cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
-cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
+green_cmap = SIMPLE_COLORMAPS["green"]
+red_cmap = SIMPLE_COLORMAPS["red"]
+blue_cmap = AVAILABLE_COLORMAPS["blue"]
+cmap_tuple = ("my_colormap", Colormap(["g", "m", "y"]))
+cmap_dict = {"your_colormap": Colormap(["g", "r", "y"])}
 
 MULTI_TUPLES = [[0.3, 0.7], [0.1, 0.9], [0.3, 0.9], [0.4, 0.9], [0.2, 0.9]]
 
@@ -33,74 +33,74 @@ multi_channel_test_data = [
     # two channels
     ((15, 10, 2), {}),
     # Test adding multichannel image with color channel set.
-    ((5, 10, 15), {'channel_axis': 0}),
+    ((5, 10, 15), {"channel_axis": 0}),
     # split single RGB image
-    ((15, 10, 3), {'colormap': ['red', 'green', 'blue']}),
+    ((15, 10, 3), {"colormap": ["red", "green", "blue"]}),
     # multiple RGB images
-    ((15, 10, 5, 3), {'channel_axis': 2, 'rgb': True}),
+    ((15, 10, 5, 3), {"channel_axis": 2, "rgb": True}),
     # Test adding multichannel image with custom names.
-    ((), {'name': ['multi ' + str(i + 3) for i in range(5)]}),
+    ((), {"name": ["multi " + str(i + 3) for i in range(5)]}),
     # Test adding multichannel image with custom contrast limits.
-    ((), {'contrast_limits': [0.3, 0.7]}),
-    ((), {'contrast_limits': MULTI_TUPLES}),
-    ((), {'gamma': 0.5}),
-    ((), {'gamma': [0.3, 0.4, 0.5, 0.6, 0.7]}),
-    ((), {'visible': [True, False, False, True, True]}),
+    ((), {"contrast_limits": [0.3, 0.7]}),
+    ((), {"contrast_limits": MULTI_TUPLES}),
+    ((), {"gamma": 0.5}),
+    ((), {"gamma": [0.3, 0.4, 0.5, 0.6, 0.7]}),
+    ((), {"visible": [True, False, False, True, True]}),
     # Test adding multichannel image with custom colormaps.
-    ((), {'colormap': 'gray'}),
-    ((), {'colormap': green_cmap}),
-    ((), {'colormap': cmap_tuple}),
-    ((), {'colormap': cmap_dict}),
-    ((), {'colormap': ['gray', 'blue', 'red', 'green', 'yellow']}),
+    ((), {"colormap": "gray"}),
+    ((), {"colormap": green_cmap}),
+    ((), {"colormap": cmap_tuple}),
+    ((), {"colormap": cmap_dict}),
+    ((), {"colormap": ["gray", "blue", "red", "green", "yellow"]}),
     (
         (),
-        {'colormap': [green_cmap, red_cmap, blue_cmap, blue_cmap, green_cmap]},
+        {"colormap": [green_cmap, red_cmap, blue_cmap, blue_cmap, green_cmap]},
     ),
-    ((), {'colormap': [green_cmap, 'gray', cmap_tuple, blue_cmap, cmap_dict]}),
-    ((), {'scale': MULTI_TUPLES}),
-    ((), {'translate': MULTI_TUPLES}),
-    ((), {'blending': 'translucent'}),
-    ((), {'metadata': {'hi': 'there'}}),
-    ((), {'metadata': dict(MULTI_TUPLES)}),
-    ((), {'experimental_clipping_planes': []}),
+    ((), {"colormap": [green_cmap, "gray", cmap_tuple, blue_cmap, cmap_dict]}),
+    ((), {"scale": MULTI_TUPLES}),
+    ((), {"translate": MULTI_TUPLES}),
+    ((), {"blending": "translucent"}),
+    ((), {"metadata": {"hi": "there"}}),
+    ((), {"metadata": dict(MULTI_TUPLES)}),
+    ((), {"experimental_clipping_planes": []}),
 ]
 
 ids = [
-    'basic_multichannel',
-    'one_channel',
-    'two_channel',
-    'specified_multichannel',
-    'split_RGB',
-    'list_RGB',
-    'names',
-    'contrast_limits_broadcast',
-    'contrast_limits_list',
-    'gamma_broadcast',
-    'gamma_list',
-    'visibility',
-    'colormap_string_broadcast',
-    'colormap_cmap_broadcast',
-    'colormap_tuple_broadcast',
-    'colormap_dict_broadcast',
-    'colormap_string_list',
-    'colormap_cmap_list',
-    'colormap_variable_list',
-    'scale',
-    'translate',
-    'blending',
-    'metadata_broadcast',
-    'metadata_multi',
-    'empty_clipping_planes',
+    "basic_multichannel",
+    "one_channel",
+    "two_channel",
+    "specified_multichannel",
+    "split_RGB",
+    "list_RGB",
+    "names",
+    "contrast_limits_broadcast",
+    "contrast_limits_list",
+    "gamma_broadcast",
+    "gamma_list",
+    "visibility",
+    "colormap_string_broadcast",
+    "colormap_cmap_broadcast",
+    "colormap_tuple_broadcast",
+    "colormap_dict_broadcast",
+    "colormap_string_list",
+    "colormap_cmap_list",
+    "colormap_variable_list",
+    "scale",
+    "translate",
+    "blending",
+    "metadata_broadcast",
+    "metadata_multi",
+    "empty_clipping_planes",
 ]
 
 
-@pytest.mark.parametrize('shape, kwargs', multi_channel_test_data, ids=ids)
+@pytest.mark.parametrize("shape, kwargs", multi_channel_test_data, ids=ids)
 def test_multichannel(shape, kwargs):
     """Test adding multichannel image."""
     viewer = ViewerModel()
     np.random.seed(0)
     data = np.random.random(shape or (15, 10, 5))
-    channel_axis = kwargs.pop('channel_axis', -1)
+    channel_axis = kwargs.pop("channel_axis", -1)
     viewer.add_image(data, channel_axis=channel_axis, **kwargs)
 
     # make sure the right number of layers got added
@@ -113,34 +113,34 @@ def test_multichannel(shape, kwargs):
             viewer.layers[i].data, data.take(i, axis=channel_axis)
         )
         # make sure colors have been assigned properly
-        if 'colormap' not in kwargs:
+        if "colormap" not in kwargs:
             if n_channels == 1:
-                assert viewer.layers[i].colormap.name == 'gray'
+                assert viewer.layers[i].colormap.name == "gray"
             elif n_channels == 2:
                 assert viewer.layers[i].colormap.name == two_colormaps[i]
             else:
                 assert viewer.layers[i].colormap.name == base_colormaps[i]
-        if 'blending' not in kwargs:
+        if "blending" not in kwargs:
             assert (
-                viewer.layers[i].blending == 'translucent_no_depth'
+                viewer.layers[i].blending == "translucent_no_depth"
                 if i == 0
-                else 'additive'
+                else "additive"
             )
         for key, expectation in kwargs.items():
             # broadcast exceptions
             if key in {
-                'scale',
-                'translate',
-                'rotate',
-                'shear',
-                'contrast_limits',
-                'metadata',
-                'experimental_clipping_planes',
+                "scale",
+                "translate",
+                "rotate",
+                "shear",
+                "contrast_limits",
+                "metadata",
+                "experimental_clipping_planes",
             }:
                 expectation = ensure_sequence_of_iterables(
                     expectation, repeat_empty=True
                 )
-            elif key == 'colormap' and expectation is not None:
+            elif key == "colormap" and expectation is not None:
                 if isinstance(expectation, list):
                     exp = [ensure_colormap(c).name for c in expectation]
                 else:
@@ -151,7 +151,7 @@ def test_multichannel(shape, kwargs):
             expectation = [v for i, v in zip(range(i + 1), expectation)]
 
             result = getattr(viewer.layers[i], key)
-            if key == 'colormap':  # colormaps are tuples of (name, cmap)
+            if key == "colormap":  # colormaps are tuples of (name, cmap)
                 result = result.name
             if isinstance(result, np.ndarray):
                 np.testing.assert_almost_equal(result, expectation[i])
@@ -221,7 +221,7 @@ def test_forgot_multichannel_error_hint():
     np.random.seed(0)
     data = da.random.random((15, 10, 5))
     with pytest.raises(TypeError) as e:
-        viewer.add_image(data, name=['a', 'b', 'c'])
+        viewer.add_image(data, name=["a", "b", "c"])
     assert "did you mean to specify a 'channel_axis'" in str(e)
 
 
@@ -231,7 +231,7 @@ def test_multichannel_index_error_hint():
     np.random.seed(0)
     data = da.random.random((5, 10, 5))
     with pytest.raises(IndexError) as e:
-        viewer.add_image(data, channel_axis=0, name=['a', 'b'])
+        viewer.add_image(data, channel_axis=0, name=["a", "b"])
     assert (
         "Requested channel_axis (0) had length 5, but the "
         "'name' argument only provided 2 values." in str(e)

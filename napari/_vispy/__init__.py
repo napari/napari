@@ -8,7 +8,7 @@ app.use_app(API_NAME)
 del app
 
 # set vispy logger to show warning and errors only
-vispy_logger = logging.getLogger('vispy')
+vispy_logger = logging.getLogger("vispy")
 vispy_logger.setLevel(logging.WARNING)
 
 

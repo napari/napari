@@ -37,7 +37,7 @@ class AppearanceSettings(EventedModel):
     )
 
     def update(
-        self, values: Union['EventedModel', dict], recurse: bool = True
+        self, values: Union["EventedModel", dict], recurse: bool = True
     ) -> None:
         if isinstance(values, self.__class__):
             values = values.dict()
@@ -79,7 +79,7 @@ class AppearanceSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ('schema_version',)
+        preferences_exclude = ("schema_version",)
 
     def refresh_themes(self):
         """Updates theme data.

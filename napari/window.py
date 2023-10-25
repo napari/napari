@@ -6,7 +6,7 @@ could serve to define a window Protocol that a backend would need to implement
 to server as a graphical user interface for napari.
 """
 
-__all__ = ['Window']
+__all__ = ["Window"]
 
 from napari.utils.translations import trans
 

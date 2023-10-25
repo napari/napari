@@ -47,9 +47,9 @@ Q_VIEW_ACTIONS: List[Action] = [
         title=CommandId.TOGGLE_FULLSCREEN.command_title,
         menus=[
             {
-                'id': MenuId.MENUBAR_VIEW,
-                'group': MenuGroup.NAVIGATION,
-                'order': 1,
+                "id": MenuId.MENUBAR_VIEW,
+                "group": MenuGroup.NAVIGATION,
+                "order": 1,
             }
         ],
         callback=Window._toggle_fullscreen,
@@ -61,22 +61,22 @@ Q_VIEW_ACTIONS: List[Action] = [
         title=CommandId.TOGGLE_MENUBAR.command_title,
         menus=[
             {
-                'id': MenuId.MENUBAR_VIEW,
-                'group': MenuGroup.NAVIGATION,
-                'order': 2,
-                'when': sys.platform != 'darwin',
+                "id": MenuId.MENUBAR_VIEW,
+                "group": MenuGroup.NAVIGATION,
+                "order": 2,
+                "when": sys.platform != "darwin",
             }
         ],
         callback=Window._toggle_menubar_visible,
         keybindings=[
             {
-                'win': KeyMod.CtrlCmd | KeyCode.KeyM,
-                'linux': KeyMod.CtrlCmd | KeyCode.KeyM,
+                "win": KeyMod.CtrlCmd | KeyCode.KeyM,
+                "linux": KeyMod.CtrlCmd | KeyCode.KeyM,
             }
         ],
         # TODO: add is_mac global context keys (rather than boolean here)
-        enablement=sys.platform != 'darwin',
-        status_tip=trans._('Show/Hide Menubar'),
+        enablement=sys.platform != "darwin",
+        status_tip=trans._("Show/Hide Menubar"),
         toggled=ToggleRule(get_current=_get_current_menubar_status),
     ),
     Action(
@@ -84,20 +84,20 @@ Q_VIEW_ACTIONS: List[Action] = [
         title=CommandId.TOGGLE_PLAY.command_title,
         menus=[
             {
-                'id': MenuId.MENUBAR_VIEW,
-                'group': MenuGroup.NAVIGATION,
-                'order': 3,
+                "id": MenuId.MENUBAR_VIEW,
+                "group": MenuGroup.NAVIGATION,
+                "order": 3,
             }
         ],
         callback=Window._toggle_play,
-        keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyP}],
+        keybindings=[{"primary": KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyP}],
         toggled=ToggleRule(get_current=_get_current_play_status),
     ),
     Action(
         id=CommandId.TOGGLE_ACTIVITY_DOCK,
         title=CommandId.TOGGLE_ACTIVITY_DOCK.command_title,
         menus=[
-            {'id': MenuId.MENUBAR_VIEW, 'group': MenuGroup.RENDER, 'order': 11}
+            {"id": MenuId.MENUBAR_VIEW, "group": MenuGroup.RENDER, "order": 11}
         ],
         callback=_toggle_activity_dock,
         toggled=ToggleRule(get_current=_get_current_activity_dock_status),

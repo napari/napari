@@ -4,7 +4,7 @@ from napari._qt.widgets.qt_plugin_sorter import QtPluginSorter, rst2html
 
 
 @pytest.mark.parametrize(
-    'text,expected_text',
+    "text,expected_text",
     [
         ("", ""),
         (
@@ -46,32 +46,32 @@ from napari._qt.widgets.qt_plugin_sorter import QtPluginSorter, rst2html
        that should be stacked along a third axis). Implementations should do
        their own checking for ``list`` or ``str``, and handle each case as
        desired.""",
-            'Return a function capable of loading <code>path</code> into napari, or <code>None</code>.<br><br>    '
+            "Return a function capable of loading <code>path</code> into napari, or <code>None</code>.<br><br>    "
             'This is the primary "<strong>reader plugin</strong>" function.  It accepts a path or<br>    '
-            'list of paths, and returns a list of data to be added to the <code>Viewer</code>.<br>    '
-            'The function may return <code>[(None, )]</code> to indicate that the file was read<br>    '
-            'successfully, but did not contain any data.<br><br>    '
-            'The main place this hook is used is in <code>Viewer.open()</code>, via the<br>    '
-            '<code>read_data_with_plugins</code> function.<br><br>    '
-            'It will also be called on <code>File -> Open...</code> or when a user drops a file<br>    '
-            'or folder onto the viewer. This function must execute <strong>quickly</strong>, and<br>    '
-            'should return <code>None</code> if the filepath is of an unrecognized format for<br>    '
-            'this reader plugin.  If <code>path</code> is determined to be recognized format,<br>    '
-            'this function should return a <em>new</em> function that accepts the same filepath<br>    '
-            '(or list of paths), and returns a list of <code>LayerData</code> tuples, where each<br>    '
-            'tuple is a 1-, 2-, or 3-tuple of <code>(data,)</code>, <code>(data, meta)</code>, or <code>(data,<br>    '
-            'meta, layer_type)</code>.<br><br>    <code>napari</code> will then use each tuple in the returned list to generate a new<br>    '
-            'layer in the viewer using the <code>Viewer._add_layer_from_data()</code><br>    '
-            'method.  The first, (optional) second, and (optional) third items in each<br>    '
-            'tuple in the returned layer_data list, therefore correspond to the<br>    '
-            '<code>data</code>, <code>meta</code>, and <code>layer_type</code> arguments of the<br>    '
-            '<code>Viewer._add_layer_from_data()</code><br>    method, respectively.<br><br>    .. important::<br><br>'
-            '       <code>path</code> may be either a <code>str</code> or a <code>list</code> of <code>str</code>.  If a<br>'
-            '       <code>list</code>, then each path in the list can be assumed to be one part of a<br>       '
-            'larger multi-dimensional stack (for instance: a list of 2D image files<br>       '
-            'that should be stacked along a third axis). Implementations should do<br>       '
-            'their own checking for <code>list</code> or <code>str</code>, and handle each case as<br>       '
-            'desired.',
+            "list of paths, and returns a list of data to be added to the <code>Viewer</code>.<br>    "
+            "The function may return <code>[(None, )]</code> to indicate that the file was read<br>    "
+            "successfully, but did not contain any data.<br><br>    "
+            "The main place this hook is used is in <code>Viewer.open()</code>, via the<br>    "
+            "<code>read_data_with_plugins</code> function.<br><br>    "
+            "It will also be called on <code>File -> Open...</code> or when a user drops a file<br>    "
+            "or folder onto the viewer. This function must execute <strong>quickly</strong>, and<br>    "
+            "should return <code>None</code> if the filepath is of an unrecognized format for<br>    "
+            "this reader plugin.  If <code>path</code> is determined to be recognized format,<br>    "
+            "this function should return a <em>new</em> function that accepts the same filepath<br>    "
+            "(or list of paths), and returns a list of <code>LayerData</code> tuples, where each<br>    "
+            "tuple is a 1-, 2-, or 3-tuple of <code>(data,)</code>, <code>(data, meta)</code>, or <code>(data,<br>    "
+            "meta, layer_type)</code>.<br><br>    <code>napari</code> will then use each tuple in the returned list to generate a new<br>    "
+            "layer in the viewer using the <code>Viewer._add_layer_from_data()</code><br>    "
+            "method.  The first, (optional) second, and (optional) third items in each<br>    "
+            "tuple in the returned layer_data list, therefore correspond to the<br>    "
+            "<code>data</code>, <code>meta</code>, and <code>layer_type</code> arguments of the<br>    "
+            "<code>Viewer._add_layer_from_data()</code><br>    method, respectively.<br><br>    .. important::<br><br>"
+            "       <code>path</code> may be either a <code>str</code> or a <code>list</code> of <code>str</code>.  If a<br>"
+            "       <code>list</code>, then each path in the list can be assumed to be one part of a<br>       "
+            "larger multi-dimensional stack (for instance: a list of 2D image files<br>       "
+            "that should be stacked along a third axis). Implementations should do<br>       "
+            "their own checking for <code>list</code> or <code>str</code>, and handle each case as<br>       "
+            "desired.",
         ),
     ],
 )
@@ -89,49 +89,49 @@ def test_create_qt_plugin_sorter(qtbot):
         hook_combo_box.itemText(idx) for idx in range(hook_combo_box.count())
     ]
     assert combobox_items == [
-        'select hook... ',
-        'get_reader',
-        'get_writer',
-        'write_image',
-        'write_labels',
-        'write_points',
-        'write_shapes',
-        'write_surface',
-        'write_vectors',
+        "select hook... ",
+        "get_reader",
+        "get_writer",
+        "write_image",
+        "write_labels",
+        "write_points",
+        "write_shapes",
+        "write_surface",
+        "write_vectors",
     ]
 
 
 @pytest.mark.parametrize(
     "hook_name,help_info",
     [
-        ('select hook... ', ''),
+        ("select hook... ", ""),
         (
-            'get_reader',
+            "get_reader",
             'This is the primary "<strong>reader plugin</strong>" function.  It accepts a path or<br>    list of paths, and returns a list of data to be added to the <code>Viewer</code>.<br>',
         ),
         (
-            'get_writer',
-            'This function will be called whenever the user attempts to save multiple<br>    layers (e.g. via <code>File -> Save Layers</code>, or<br>    <code>save_layers</code>).<br>',
+            "get_writer",
+            "This function will be called whenever the user attempts to save multiple<br>    layers (e.g. via <code>File -> Save Layers</code>, or<br>    <code>save_layers</code>).<br>",
         ),
         (
-            'write_labels',
-            'It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.',
+            "write_labels",
+            "It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.",
         ),
         (
-            'write_points',
-            'It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.',
+            "write_points",
+            "It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.",
         ),
         (
-            'write_shapes',
-            'It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.',
+            "write_shapes",
+            "It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.",
         ),
         (
-            'write_surface',
-            'It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.',
+            "write_surface",
+            "It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.",
         ),
         (
-            'write_vectors',
-            'It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.',
+            "write_vectors",
+            "It is the responsibility of the implementation to check any extension on<br>    <code>path</code> and return <code>None</code> if it is an unsupported extension.",
         ),
     ],
 )

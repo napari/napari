@@ -72,7 +72,7 @@ class PreferencesDialog(QDialog):
         # Build dialog from settings
         self._rebuild_dialog()
 
-    def keyPressEvent(self, e: 'QKeyEvent'):
+    def keyPressEvent(self, e: "QKeyEvent"):
         if e.key() == Qt.Key.Key_Escape:
             # escape key should just close the window
             # which implies "accept"
@@ -92,7 +92,7 @@ class PreferencesDialog(QDialog):
         from napari.plugins import plugin_manager
 
         self._starting_pm_order = plugin_manager.call_order()
-        self._starting_values = self._settings.dict(exclude={'schema_version'})
+        self._starting_values = self._settings.dict(exclude={"schema_version"})
 
         self._list.clear()
         while self._stack.count():
@@ -106,7 +106,7 @@ class PreferencesDialog(QDialog):
 
         self._list.setCurrentRow(0)
 
-    def _add_page(self, field: 'ModelField'):
+    def _add_page(self, field: "ModelField"):
         """Builds the preferences widget using the json schema builder.
 
         Parameters
@@ -132,7 +132,7 @@ class PreferencesDialog(QDialog):
         settings_category = getattr(self._settings, name.lower())
         excluded = set(
             getattr(
-                getattr(settings_category, 'NapariConfig', None),
+                getattr(settings_category, "NapariConfig", None),
                 "preferences_exclude",
                 {},
             )
@@ -148,15 +148,15 @@ class PreferencesDialog(QDialog):
         self._list.addItem(field.field_info.title or field.name)
         self._stack.addWidget(page_scrollarea)
 
-    def _get_page_dict(self, field: 'ModelField') -> Tuple[dict, dict]:
+    def _get_page_dict(self, field: "ModelField") -> Tuple[dict, dict]:
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
-        ftype = cast('BaseModel', field.type_)
+        ftype = cast("BaseModel", field.type_)
 
         # TODO make custom shortcuts dialog to properly capture new
         #      functionality once we switch to app-model's keybinding system
         #      then we can remove the below code used for autogeneration
-        if field.name == 'shortcuts':
+        if field.name == "shortcuts":
             # hardcode workaround because pydantic's schema generation
             # does not allow you to specify custom JSON serialization
             schema = {
@@ -200,9 +200,9 @@ class PreferencesDialog(QDialog):
         with setting.enums_as_values():
             values = setting.dict()
         napari_config = getattr(setting, "NapariConfig", None)
-        if hasattr(napari_config, 'preferences_exclude'):
+        if hasattr(napari_config, "preferences_exclude"):
             for val in napari_config.preferences_exclude:
-                schema['properties'].pop(val, None)
+                schema["properties"].pop(val, None)
                 values.pop(val, None)
 
         return schema, values
@@ -230,7 +230,7 @@ class PreferencesDialog(QDialog):
             ),
         )
 
-    def closeEvent(self, event: 'QCloseEvent') -> None:
+    def closeEvent(self, event: "QCloseEvent") -> None:
         event.accept()
         self.accept()
 

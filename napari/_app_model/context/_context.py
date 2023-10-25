@@ -22,7 +22,7 @@ class SettingsAwareContext(Context):
     This takes no parents, and will always be a root context.
     """
 
-    _PREFIX: Final[str] = 'settings.'
+    _PREFIX: Final[str] = "settings."
 
     def __init__(self) -> None:
         super().__init__()
@@ -32,7 +32,7 @@ class SettingsAwareContext(Context):
         self._settings.events.changed.connect(self._update_key)
 
     def _update_key(self, event: Event):
-        self.changed.emit({f'{self._PREFIX}{event.key}'})
+        self.changed.emit({f"{self._PREFIX}{event.key}"})
 
     def __del__(self):
         self._settings.events.changed.disconnect(self._update_key)
@@ -44,7 +44,7 @@ class SettingsAwareContext(Context):
             if splits:
                 while splits:
                     val = getattr(val, splits.pop(0))
-                if hasattr(val, 'dict'):
+                if hasattr(val, "dict"):
                     val = val.dict()
                 return val
         return super().__missing__(key)

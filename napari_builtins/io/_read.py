@@ -25,15 +25,15 @@ except ModuleNotFoundError:
     import imageio  # type: ignore
 
 IMAGEIO_EXTENSIONS = {x for f in imageio.formats for x in f.extensions}
-READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({'.zarr', '.lsm', '.npy'})
+READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({".zarr", ".lsm", ".npy"})
 
 
 def _alphanumeric_key(s: str) -> List[Union[str, int]]:
     """Convert string to list of strings and ints that gives intuitive sorting."""
-    return [int(c) if c.isdigit() else c for c in re.split('([0-9]+)', s)]
+    return [int(c) if c.isdigit() else c for c in re.split("([0-9]+)", s)]
 
 
-URL_REGEX = re.compile(r'https?://|ftps?://|file://|file:\\')
+URL_REGEX = re.compile(r"https?://|ftps?://|file://|file:\\")
 
 
 def _is_url(filename):
@@ -88,7 +88,7 @@ def imread(filename: str) -> np.ndarray:
     filename = abspath_or_url(filename)
     ext = os.path.splitext(filename)[1]
 
-    if ext.lower() in ('.npy',):
+    if ext.lower() in (".npy",):
         return np.load(filename)
     if ext.lower() not in [".tif", ".tiff", ".lsm"]:
         return imageio.imread(filename)
@@ -120,18 +120,18 @@ def read_zarr_dataset(path):
     shape : tuple
         Shape of array or first array in list
     """
-    if os.path.exists(os.path.join(path, '.zarray')):
+    if os.path.exists(os.path.join(path, ".zarray")):
         # load zarr array
         image = da.from_zarr(path)
         shape = image.shape
-    elif os.path.exists(os.path.join(path, '.zgroup')):
+    elif os.path.exists(os.path.join(path, ".zgroup")):
         # else load zarr all arrays inside file, useful for multiscale data
         image = [
             read_zarr_dataset(os.path.join(path, subpath))[0]
             for subpath in sorted(os.listdir(path))
-            if not subpath.startswith('.')
+            if not subpath.startswith(".")
         ]
-        assert image, 'No arrays found in zarr group'
+        assert image, "No arrays found in zarr group"
         shape = image[0].shape
     else:  # pragma: no cover
         raise ValueError(
@@ -189,7 +189,7 @@ def magic_imread(
             and not _is_url(filename)
         ):
             dir_contents = sorted(
-                glob(os.path.join(filename, '*.*')), key=_alphanumeric_key
+                glob(os.path.join(filename, "*.*")), key=_alphanumeric_key
             )
             # remove subdirectories
             dir_contents_files = filter(
@@ -247,9 +247,9 @@ def magic_imread(
             try:
                 image = np.stack(images)
             except ValueError as e:
-                if 'input arrays must have the same shape' in str(e):
+                if "input arrays must have the same shape" in str(e):
                     msg = trans._(
-                        'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.',
+                        "To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.",
                         deferred=True,
                     )
                     raise ValueError(msg) from e
@@ -277,26 +277,26 @@ def _points_csv_to_layerdata(
         3-tuple ``(array, dict, str)`` (points data, metadata, 'points')
     """
 
-    data_axes = [cn.startswith('axis-') for cn in column_names]
-    data = np.array(table[:, data_axes]).astype('float')
+    data_axes = [cn.startswith("axis-") for cn in column_names]
+    data = np.array(table[:, data_axes]).astype("float")
 
     # Add properties to metadata if provided
     prop_axes = np.logical_not(data_axes)
-    if column_names[0] == 'index':
+    if column_names[0] == "index":
         prop_axes[0] = False
     meta: dict = {}
     if np.any(prop_axes):
-        meta['properties'] = {}
+        meta["properties"] = {}
         for ind in np.nonzero(prop_axes)[0]:
             values = table[:, ind]
             try:
-                values = np.array(values).astype('int')
+                values = np.array(values).astype("int")
             except ValueError:
                 with suppress(ValueError):
-                    values = np.array(values).astype('float')
-            meta['properties'][column_names[ind]] = values
+                    values = np.array(values).astype("float")
+            meta["properties"][column_names[ind]] = values
 
-    return data, meta, 'points'
+    return data, meta, "points"
 
 
 def _shapes_csv_to_layerdata(
@@ -317,17 +317,17 @@ def _shapes_csv_to_layerdata(
         3-tuple ``(array, dict, str)`` (points data, metadata, 'shapes')
     """
 
-    data_axes = [cn.startswith('axis-') for cn in column_names]
-    raw_data = np.array(table[:, data_axes]).astype('float')
+    data_axes = [cn.startswith("axis-") for cn in column_names]
+    raw_data = np.array(table[:, data_axes]).astype("float")
 
-    inds = np.array(table[:, 0]).astype('int')
+    inds = np.array(table[:, 0]).astype("int")
     n_shapes = max(inds) + 1
     # Determine when shape id changes
     transitions = list((np.diff(inds)).nonzero()[0] + 1)
     shape_boundaries = [0, *transitions] + [len(table)]
     if n_shapes != len(shape_boundaries) - 1:
         raise ValueError(
-            trans._('Expected number of shapes not found', deferred=True)
+            trans._("Expected number of shapes not found", deferred=True)
         )
 
     data = []
@@ -336,7 +336,7 @@ def _shapes_csv_to_layerdata(
         data.append(raw_data[ind_a:ind_b])
         shape_type.append(table[ind_a, 1])
 
-    return data, {'shape_type': shape_type}, 'shapes'
+    return data, {"shape_type": shape_type}, "shapes"
 
 
 def _guess_layer_type_from_column_names(
@@ -355,12 +355,12 @@ def _guess_layer_type_from_column_names(
         Layer type if recognized, otherwise None.
     """
 
-    if {'index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1'}.issubset(
+    if {"index", "shape-type", "vertex-index", "axis-0", "axis-1"}.issubset(
         column_names
     ):
-        return 'shapes'
-    if {'axis-0', 'axis-1'}.issubset(column_names):
-        return 'points'
+        return "shapes"
+    if {"axis-0", "axis-1"}.issubset(column_names):
+        return "points"
     return None
 
 
@@ -399,8 +399,8 @@ def read_csv(
         If the column names do not match the format requested by
         ``require_type``.
     """
-    with open(filename, newline='') as csvfile:
-        reader = csv.reader(csvfile, delimiter=',')
+    with open(filename, newline="") as csvfile:
+        reader = csv.reader(csvfile, delimiter=",")
         column_names = next(reader)
 
         layer_type = _guess_layer_type_from_column_names(column_names)
@@ -428,8 +428,8 @@ def read_csv(
 
 
 csv_reader_functions = {
-    'points': _points_csv_to_layerdata,
-    'shapes': _shapes_csv_to_layerdata,
+    "points": _points_csv_to_layerdata,
+    "shapes": _shapes_csv_to_layerdata,
 }
 
 
@@ -465,7 +465,7 @@ def csv_to_layer_data(
     try:
         # pass at least require "any" here so that we don't bother reading the
         # full dataset if it's not going to yield valid layer_data.
-        _require = require_type or 'any'
+        _require = require_type or "any"
         table, column_names, _type = read_csv(path, require_type=_require)
     except ValueError:
         if not require_type:
@@ -510,7 +510,7 @@ def napari_get_reader(
         function that returns layer_data to be handed to viewer._add_layer_data
     """
     if isinstance(path, str):
-        if path.endswith('.csv'):
+        if path.endswith(".csv"):
             return _csv_reader
         if os.path.isdir(path):
             return _magic_imreader

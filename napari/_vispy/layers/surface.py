@@ -78,7 +78,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             vertices = np.pad(
                 vertices,
                 ((0, 0), (0, 1)),
-                mode='constant',
+                mode="constant",
                 constant_values=0,
             )
         assert vertices is None or vertices.shape[-1] == 3
@@ -139,8 +139,8 @@ class VispySurfaceLayer(VispyBaseLayer):
         else:
             cmap = VispyColormap(*self.layer.colormap)
         if self.layer._slice_input.ndisplay == 3:
-            self.node.view_program['texture2D_LUT'] = (
-                cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
+            self.node.view_program["texture2D_LUT"] = (
+                cmap.texture_lut() if (hasattr(cmap, "texture_lut")) else None
             )
         self.node.cmap = cmap
 
@@ -151,7 +151,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_colormap_change()
 
     def _on_shading_change(self):
-        shading = None if self.layer.shading == 'none' else self.layer.shading
+        shading = None if self.layer.shading == "none" else self.layer.shading
         if not self.node.mesh_data.is_empty():
             self.node.shading = shading
             self._on_camera_move()
@@ -177,7 +177,7 @@ class VispySurfaceLayer(VispyBaseLayer):
                 length=self.layer.normals.face.length,
                 color=self.layer.normals.face.color,
                 width=self.layer.normals.face.width,
-                primitive='face',
+                primitive="face",
             )
 
     def _on_vertex_normals_change(self):
@@ -188,13 +188,13 @@ class VispySurfaceLayer(VispyBaseLayer):
                 length=self.layer.normals.vertex.length,
                 color=self.layer.normals.vertex.color,
                 width=self.layer.normals.vertex.width,
-                primitive='vertex',
+                primitive="vertex",
             )
 
     def _on_camera_move(self, event=None):
         if (
             event is not None
-            and event.type == 'angles'
+            and event.type == "angles"
             and self.layer._slice_input.ndisplay == 3
         ):
             camera = event.source

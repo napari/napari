@@ -4,7 +4,7 @@ from napari._qt import qthreading
 from napari._qt.widgets.qt_progress_bar import QtLabeledProgressBar
 
 pytest.importorskip(
-    'qtpy', reason='Cannot test threading progress without qtpy.'
+    "qtpy", reason="Cannot test threading progress without qtpy."
 )
 
 
@@ -20,8 +20,8 @@ def test_worker_with_progress(qtbot):
 
     thread_func = qthreading.thread_worker(
         func,
-        connect={'yielded': test_yield},
-        progress={'total': 2},
+        connect={"yielded": test_yield},
+        progress={"total": 2},
         start_thread=False,
     )
     worker = thread_func()
@@ -38,7 +38,7 @@ def test_function_worker_nonzero_total_warns():
     with pytest.warns(RuntimeWarning):
         thread_func = qthreading.thread_worker(
             not_a_generator,
-            progress={'total': 2},
+            progress={"total": 2},
             start_thread=False,
         )
         thread_func()
@@ -60,7 +60,7 @@ def test_worker_may_exceed_total(qtbot):
 
     thread_func = qthreading.thread_worker(
         func,
-        progress={'total': 1},
+        progress={"total": 1},
         start_thread=False,
     )
     worker = thread_func()
@@ -76,11 +76,11 @@ def test_generator_worker_with_description():
 
     thread_func = qthreading.thread_worker(
         func,
-        progress={'total': 1, 'desc': 'custom'},
+        progress={"total": 1, "desc": "custom"},
         start_thread=False,
     )
     worker = thread_func()
-    assert worker.pbar.desc == 'custom'
+    assert worker.pbar.desc == "custom"
 
 
 def test_function_worker_with_description():
@@ -90,11 +90,11 @@ def test_function_worker_with_description():
 
     thread_func = qthreading.thread_worker(
         func,
-        progress={'total': 0, 'desc': 'custom'},
+        progress={"total": 0, "desc": "custom"},
         start_thread=False,
     )
     worker = thread_func()
-    assert worker.pbar.desc == 'custom'
+    assert worker.pbar.desc == "custom"
 
 
 def test_generator_worker_with_no_total():
@@ -131,7 +131,7 @@ def test_function_worker_0_total():
 
     thread_func = qthreading.thread_worker(
         func,
-        progress={'total': 0},
+        progress={"total": 0},
         start_thread=False,
     )
     worker = thread_func()
@@ -147,7 +147,7 @@ def test_unstarted_worker_no_widget(make_napari_viewer):
 
     thread_func = qthreading.thread_worker(
         func,
-        progress={'total': 5},
+        progress={"total": 5},
         start_thread=False,
     )
 

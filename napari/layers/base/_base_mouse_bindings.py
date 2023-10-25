@@ -32,7 +32,7 @@ def highlight_box_handles(layer, event):
     nearby_handle = get_nearby_handle(pos, handle_coords)
 
     # set the selected vertex of the box to the nearby_handle (can also be INSIDE or None)
-    layer._overlays['transform_box'].selected_handle = nearby_handle
+    layer._overlays["transform_box"].selected_handle = nearby_handle
 
 
 def _translate_with_box(
@@ -84,13 +84,13 @@ def _scale_with_box(
     event,
 ):
     locked_aspect_ratio = False
-    if 'Shift' in event.modifiers:
+    if "Shift" in event.modifiers:
         if nearby_handle in InteractionBoxHandle.corners():
             locked_aspect_ratio = True
         else:
             warnings.warn(
                 trans._(
-                    'Aspect ratio can only be blocked when resizing from a corner',
+                    "Aspect ratio can only be blocked when resizing from a corner",
                     deferred=True,
                 ),
                 RuntimeWarning,
@@ -101,7 +101,7 @@ def _scale_with_box(
 
     # if Control is held, instead of locking into place the opposite handle,
     # lock into place the center of the layer and resize around it.
-    if 'Control' in event.modifiers:
+    if "Control" in event.modifiers:
         scaling_center = initial_world_to_data(initial_center)
     else:
         # opposite handle
@@ -180,7 +180,7 @@ def transform_with_box(layer, event):
     initial_affine = layer.affine.set_slice(event.dims_displayed)
 
     # needed for rescaling
-    initial_data2physical = layer._transforms['data2physical'].set_slice(
+    initial_data2physical = layer._transforms["data2physical"].set_slice(
         event.dims_displayed
     )
 
@@ -197,7 +197,7 @@ def transform_with_box(layer, event):
 
     yield
 
-    while event.type == 'mouse_move':
+    while event.type == "mouse_move":
         mouse_pos = np.array(event.position)[event.dims_displayed]
 
         if nearby_handle == InteractionBoxHandle.INSIDE:

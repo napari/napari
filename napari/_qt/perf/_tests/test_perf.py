@@ -26,7 +26,7 @@ napari.run()
 
 CONFIG = {
     "trace_qt_events": True,
-    "trace_file_on_start": '',
+    "trace_file_on_start": "",
     "trace_callables": ["chunk_loader"],
     "callable_lists": {
         "chunk_loader": [
@@ -41,7 +41,7 @@ CONFIG = {
 def perf_config(tmp_path: Path):
     trace_path = tmp_path / "trace.json"
     config_path = tmp_path / "perfmon.json"
-    CONFIG['trace_file_on_start'] = str(trace_path)
+    CONFIG["trace_file_on_start"] = str(trace_path)
     config_path.write_text(json.dumps(CONFIG))
 
     return stub(path=config_path, trace_path=trace_path)
@@ -65,7 +65,7 @@ def test_trace_on_start(tmp_path: Path, perf_config, perfmon_script):
     """Make sure napari can write a perfmon trace file."""
 
     env = os.environ.copy()
-    env.update({'NAPARI_PERFMON': str(perf_config.path), 'NAPARI_CONFIG': ''})
+    env.update({"NAPARI_PERFMON": str(perf_config.path), "NAPARI_CONFIG": ""})
 
     subprocess.run([sys.executable, *perfmon_script], env=env, check=True)
 
@@ -78,7 +78,7 @@ def test_trace_on_start(tmp_path: Path, perf_config, perfmon_script):
         data = json.load(infile)
         assert len(data) > 0
         for event in data:
-            for field in ['pid', 'tid', 'name', 'ph', 'ts', 'args']:
+            for field in ["pid", "tid", "name", "ph", "ts", "args"]:
                 assert field in event
 
 
@@ -94,14 +94,14 @@ def test_qt_performance(qtbot, monkeypatch):
         ("test2", MockTimer(50, 220)),
     ]
     mock.timers.items = MagicMock(return_value=data)
-    monkeypatch.setattr(qt_performance.perf, 'timers', mock)
+    monkeypatch.setattr(qt_performance.perf, "timers", mock)
     assert widget.log.toPlainText() == ""
     widget.update()
-    assert widget.log.toPlainText() == '  120ms test2\n  220ms test2\n'
+    assert widget.log.toPlainText() == "  120ms test2\n  220ms test2\n"
     widget._change_thresh("150")
     assert widget.log.toPlainText() == ""
     widget.update()
-    assert widget.log.toPlainText() == '  220ms test2\n'
+    assert widget.log.toPlainText() == "  220ms test2\n"
 
 
 @dataclasses.dataclass

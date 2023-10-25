@@ -30,7 +30,7 @@ class CategoricalColormap(EventedModel):
 
     colormap: Dict[Any, ColorValue] = Field(default_factory=dict)
     fallback_color: ColorCycle = Field(
-        default_factory=lambda: ColorCycle.validate_type('white')
+        default_factory=lambda: ColorCycle.validate_type("white")
     )
 
     def map(self, color_properties: Union[list, np.ndarray]) -> np.ndarray:
@@ -71,18 +71,18 @@ class CategoricalColormap(EventedModel):
 
     @classmethod
     def from_dict(cls, params: dict):
-        if ('colormap' in params) or ('fallback_color' in params):
-            if 'colormap' in params:
+        if ("colormap" in params) or ("fallback_color" in params):
+            if "colormap" in params:
                 colormap = {
                     k: transform_color(v)[0]
-                    for k, v in params['colormap'].items()
+                    for k, v in params["colormap"].items()
                 }
             else:
                 colormap = {}
             fallback_color = params.get("fallback_color", "white")
         else:
             colormap = {k: transform_color(v)[0] for k, v in params.items()}
-            fallback_color = 'white'
+            fallback_color = "white"
 
         return cls(colormap=colormap, fallback_color=fallback_color)
 
@@ -101,7 +101,7 @@ class CategoricalColormap(EventedModel):
 
         raise TypeError(
             trans._(
-                'colormap should be an array or dict',
+                "colormap should be an array or dict",
                 deferred=True,
             )
         )

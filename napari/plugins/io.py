@@ -60,14 +60,14 @@ def read_data_with_plugins(
     PluginCallError
         If ``plugin`` is specified but raises an Exception while reading.
     """
-    if plugin == 'builtins':
+    if plugin == "builtins":
         warnings.warn(
             trans._(
                 'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
                 deferred=True,
             ),
         )
-        plugin = 'napari'
+        plugin = "napari"
 
     assert isinstance(paths, list)
     if not stack:
@@ -90,10 +90,10 @@ def read_data_with_plugins(
     npe1_path = paths if stack else paths[0]
     hookimpl = None
     if plugin:
-        if plugin == 'napari':
+        if plugin == "napari":
             # napari is npe2 only
             message = trans._(
-                'No plugin found capable of reading {repr_path!r}.',
+                "No plugin found capable of reading {repr_path!r}.",
                 deferred=True,
                 repr_path=npe1_path,
             )
@@ -127,7 +127,7 @@ def read_data_with_plugins(
         if not callable(reader):
             raise ValueError(
                 trans._(
-                    'Plugin {plugin!r} does not support file(s) {paths}',
+                    "Plugin {plugin!r} does not support file(s) {paths}",
                     deferred=True,
                     plugin=plugin,
                     paths=paths,
@@ -158,13 +158,13 @@ def read_data_with_plugins(
         # whether or not paths were passed to plugins as a list.
         if stack:
             message = trans._(
-                'No plugin found capable of reading [{repr_path!r}, ...] as stack.',
+                "No plugin found capable of reading [{repr_path!r}, ...] as stack.",
                 deferred=True,
                 repr_path=paths[0],
             )
         else:
             message = trans._(
-                'No plugin found capable of reading {repr_path!r}.',
+                "No plugin found capable of reading {repr_path!r}.",
                 deferred=True,
                 repr_path=paths,
             )
@@ -234,7 +234,7 @@ def save_layers(
         File paths of any files that were written.
     """
 
-    writer_name = ''
+    writer_name = ""
     if len(layers) > 1:
         written, writer_name = _write_multiple_layers_with_plugins(
             path, layers, plugin_name=plugin, _writer=_writer
@@ -254,7 +254,7 @@ def save_layers(
         if writer_name:
             warnings.warn(
                 trans._(
-                    "Plugin \'{name}\' was selected but did not return any written paths.",
+                    "Plugin '{name}' was selected but did not return any written paths.",
                     deferred=True,
                     name=writer_name,
                 )
@@ -262,7 +262,7 @@ def save_layers(
         else:
             warnings.warn(
                 trans._(
-                    'No data written! A plugin could not be found to write these {length} layers to {path}.',
+                    "No data written! A plugin could not be found to write these {length} layers to {path}.",
                     deferred=True,
                     length=len(layers),
                     path=path,
@@ -393,7 +393,7 @@ def _write_multiple_layers_with_plugins(
             )
         else:
             msg = trans._(
-                'Unable to find plugin capable of writing this combination of layer types: {layer_types}',
+                "Unable to find plugin capable of writing this combination of layer types: {layer_types}",
                 deferred=True,
                 layer_types=layer_types,
             )
@@ -461,7 +461,7 @@ def _write_single_layer_with_plugins(
     logger.debug("Falling back to original plugin engine.")
 
     hook_caller = getattr(
-        plugin_manager.hook, f'napari_write_{layer._type_string}'
+        plugin_manager.hook, f"napari_write_{layer._type_string}"
     )
 
     if not plugin_name and isinstance(path, (str, pathlib.Path)):
@@ -487,4 +487,4 @@ def _write_single_layer_with_plugins(
         data=layer.data,
         meta=layer._get_state(),
     )  # type: Optional[str]
-    return (written_path, plugin_name or '')
+    return (written_path, plugin_name or "")

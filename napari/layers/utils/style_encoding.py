@@ -18,10 +18,10 @@ from napari.utils.translations import trans
 IndicesType = Union[range, List[int], np.ndarray]
 
 """The variable type of a single style value."""
-StyleValue = TypeVar('StyleValue', bound=np.ndarray)
+StyleValue = TypeVar("StyleValue", bound=np.ndarray)
 
 """The variable type of multiple style values in an array."""
-StyleArray = TypeVar('StyleArray', bound=np.ndarray)
+StyleArray = TypeVar("StyleArray", bound=np.ndarray)
 
 
 @runtime_checkable
@@ -114,7 +114,7 @@ class _StyleEncodingModel(EventedModel):
         # from dicts, as different types of encodings may have the same
         # field names.
         # https://pydantic-docs.helpmanual.io/usage/model_config/#options
-        extra = 'forbid'
+        extra = "forbid"
 
 
 # The following classes provide generic implementations of common ways
@@ -257,7 +257,7 @@ class _DerivedStyleEncoding(
         except (KeyError, ValueError):
             warnings.warn(
                 trans._(
-                    'Applying the encoding failed. Using the safe fallback value instead.',
+                    "Applying the encoding failed. Using the safe fallback value instead.",
                     deferred=True,
                 ),
                 category=RuntimeWarning,

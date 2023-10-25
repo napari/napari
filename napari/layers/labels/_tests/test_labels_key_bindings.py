@@ -36,25 +36,25 @@ def test_swap_background_label(labels_data_4d):
 
 
 def test_max_label_tensorstore(labels_data_4d):
-    ts = pytest.importorskip('tensorstore')
+    ts = pytest.importorskip("tensorstore")
 
-    with TemporaryDirectory(suffix='.zarr') as fout:
+    with TemporaryDirectory(suffix=".zarr") as fout:
         labels_temp = zarr.open(
             fout,
-            mode='w',
+            mode="w",
             shape=labels_data_4d.shape,
             dtype=np.uint32,
             chunks=(1, 1, 8, 9),
         )
         labels_temp[:] = labels_data_4d
         labels_ts_spec = {
-            'driver': 'zarr',
-            'kvstore': {'driver': 'file', 'path': fout},
-            'path': '',
-            'metadata': {
-                'dtype': labels_temp.dtype.str,
-                'order': labels_temp.order,
-                'shape': labels_data_4d.shape,
+            "driver": "zarr",
+            "kvstore": {"driver": "file", "path": fout},
+            "path": "",
+            "metadata": {
+                "dtype": labels_temp.dtype.str,
+                "order": labels_temp.order,
+                "shape": labels_data_4d.shape,
             },
         }
         data = ts.open(labels_ts_spec, create=False, open=True).result()

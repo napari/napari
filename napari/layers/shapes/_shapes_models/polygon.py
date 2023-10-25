@@ -35,6 +35,6 @@ class Polygon(PolygonBase):
             ndisplay=ndisplay,
             closed=True,
             filled=True,
-            name='polygon',
+            name="polygon",
             interpolation_order=interpolation_order,
         )

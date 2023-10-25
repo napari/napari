@@ -28,7 +28,7 @@ def test_selection():
     assert not t.sel
 
     with pytest.raises(ValidationError):
-        T(sel=['asdf'])
+        T(sel=["asdf"])
 
     with pytest.raises(ValidationError):
-        T(sel={"selection": [1], "_current": 'asdf'})
+        T(sel={"selection": [1], "_current": "asdf"})

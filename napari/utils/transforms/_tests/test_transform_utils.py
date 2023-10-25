@@ -12,7 +12,7 @@ from napari.utils.transforms.transform_utils import (
 )
 
 
-@pytest.mark.parametrize('upper_triangular', [True, False])
+@pytest.mark.parametrize("upper_triangular", [True, False])
 def test_decompose_linear_matrix(upper_triangular):
     """Test composing and decomposing a linear matrix."""
     np.random.seed(0)

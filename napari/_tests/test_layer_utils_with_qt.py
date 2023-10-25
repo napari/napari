@@ -8,7 +8,7 @@ from napari.layers.utils.interactivity_utils import (
 
 
 @pytest.mark.parametrize(
-    'layer',
+    "layer",
     [
         Image(np.zeros(shape=(28, 28, 28))),
         Image(np.zeros(shape=(2, 28, 28, 28))),
@@ -21,7 +21,7 @@ def test_orient_plane_normal_around_cursor(make_napari_viewer, layer):
     viewer.cursor.position = [14] * layer._ndim
 
     viewer.add_layer(layer)
-    layer.depiction = 'plane'
+    layer.depiction = "plane"
     layer.plane.normal = (1, 0, 0)
     layer.plane.position = (14, 14, 14)
 

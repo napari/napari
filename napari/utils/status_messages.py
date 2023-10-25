@@ -7,7 +7,7 @@ import numpy.typing as npt
 
 def format_float(value):
     """Nice float formatting into strings."""
-    return f'{value:0.3g}'
+    return f"{value:0.3g}"
 
 
 def status_format(value):
@@ -34,9 +34,9 @@ def status_format(value):
         return value
     if isinstance(value, Iterable):
         # FIMXE: use an f-string?
-        return '[' + str.join(', ', [status_format(v) for v in value]) + ']'
+        return "[" + str.join(", ", [status_format(v) for v in value]) + "]"
     if value is None:
-        return ''
+        return ""
     if isinstance(value, float) or np.issubdtype(type(value), np.floating):
         return format_float(value)
 
@@ -55,12 +55,12 @@ def generate_layer_coords_status(
     if value is not None:
         if isinstance(value, tuple) and value != (None, None):
             # it's a multiscale -> value = (data_level, value)
-            msg += f': {status_format(value[0])}'
+            msg += f": {status_format(value[0])}"
             if value[1] is not None:
-                msg += f', {status_format(value[1])}'
+                msg += f", {status_format(value[1])}"
         else:
             # it's either a grayscale or rgb image (scalar or list)
-            msg += f': {status_format(value)}'
+            msg += f": {status_format(value)}"
     return msg
 
 
@@ -90,10 +90,10 @@ def generate_layer_status(name, position, value):
     if value is not None:
         if isinstance(value, tuple) and value != (None, None):
             # it's a multiscale -> value = (data_level, value)
-            msg += f': {status_format(value[0])}'
+            msg += f": {status_format(value[0])}"
             if value[1] is not None:
-                msg += f', {status_format(value[1])}'
+                msg += f", {status_format(value[1])}"
         else:
             # it's either a grayscale or rgb image (scalar or list)
-            msg += f': {status_format(value)}'
+            msg += f": {status_format(value)}"
     return msg

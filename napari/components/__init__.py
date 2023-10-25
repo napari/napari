@@ -26,4 +26,4 @@ from napari.components.viewer_model import ViewerModel  # isort:skip
 
 del _viewer_key_bindings
 
-__all__ = ['Camera', 'Dims', 'LayerList', 'ViewerModel']
+__all__ = ["Camera", "Dims", "LayerList", "ViewerModel"]

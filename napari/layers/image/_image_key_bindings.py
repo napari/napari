@@ -17,25 +17,25 @@ def register_image_action(description: str, repeatable: bool = False):
 
 
 @Image.bind_key(KeyCode.KeyZ, overwrite=True)
-@register_image_action(trans._('Orient plane normal along z-axis'))
+@register_image_action(trans._("Orient plane normal along z-axis"))
 def orient_plane_normal_along_z(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
 
 
 @Image.bind_key(KeyCode.KeyY, overwrite=True)
-@register_image_action(trans._('orient plane normal along y-axis'))
+@register_image_action(trans._("orient plane normal along y-axis"))
 def orient_plane_normal_along_y(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
 
 
 @Image.bind_key(KeyCode.KeyX, overwrite=True)
-@register_image_action(trans._('orient plane normal along x-axis'))
+@register_image_action(trans._("orient plane normal along x-axis"))
 def orient_plane_normal_along_x(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
 
 
 @Image.bind_key(KeyCode.KeyO, overwrite=True)
-@register_image_action(trans._('orient plane normal along view direction'))
+@register_image_action(trans._("orient plane normal along view direction"))
 def orient_plane_normal_along_view_direction(layer: Image):
     viewer = napari.viewer.current_viewer()
     if viewer is None or viewer.dims.ndisplay != 3:
@@ -57,7 +57,7 @@ def orient_plane_normal_along_view_direction(layer: Image):
     )
 
 
-@register_image_action(trans._('orient plane normal along view direction'))
+@register_image_action(trans._("orient plane normal along view direction"))
 def orient_plane_normal_along_view_direction_no_gen(layer: Image):
     viewer = napari.viewer.current_viewer()
     if viewer is None or viewer.dims.ndisplay != 3:
@@ -67,12 +67,12 @@ def orient_plane_normal_along_view_direction_no_gen(layer: Image):
     )
 
 
-@register_image_action(trans._('Transform'))
+@register_image_action(trans._("Transform"))
 def activate_image_transform_mode(layer):
     layer.mode = Mode.TRANSFORM
 
 
-@register_image_action(trans._('Pan/zoom'))
+@register_image_action(trans._("Pan/zoom"))
 def activate_image_pan_zoom_mode(layer: Image):
     layer.mode = str(Mode.PAN_ZOOM)
 

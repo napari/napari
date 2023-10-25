@@ -61,7 +61,7 @@ def select(layer: Shapes, event: MouseEvent) -> None:
     event: MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
-    shift = 'Shift' in event.modifiers
+    shift = "Shift" in event.modifiers
     # on press
     value = layer.get_value(event.position, world=True)
     layer._moving_value = copy(value)
@@ -93,7 +93,7 @@ def select(layer: Shapes, event: MouseEvent) -> None:
     yield
 
     # on move
-    while event.type == 'mouse_move':
+    while event.type == "mouse_move":
         coordinates = layer.world_to_data(event.position)
         # ToDo: Need to pass moving_coordinates to allow fixed aspect ratio
         # keybinding to work, this should be dropped
@@ -126,7 +126,7 @@ def select(layer: Shapes, event: MouseEvent) -> None:
         )
 
     # on release
-    shift = 'Shift' in event.modifiers
+    shift = "Shift" in event.modifiers
     if not layer._is_moving and not layer._is_selecting and not shift:
         if shape_under_cursor is not None:
             layer.selected_data = {shape_under_cursor}
@@ -177,7 +177,7 @@ def add_line(layer: Shapes, event: MouseEvent) -> None:
 
     # adds data to layer.data and handles mouse move (cursor tracking) and release event (setting second point)
     yield from _add_line_rectangle_ellipse(
-        layer, event, data=data, shape_type='line'
+        layer, event, data=data, shape_type="line"
     )
 
 
@@ -204,7 +204,7 @@ def add_ellipse(layer: Shapes, event: MouseEvent):
         [corner, corner + size_v, corner + size_h + size_v, corner + size_h]
     )
     yield from _add_line_rectangle_ellipse(
-        layer, event, data=data, shape_type='ellipse'
+        layer, event, data=data, shape_type="ellipse"
     )
 
 
@@ -231,7 +231,7 @@ def add_rectangle(layer: Shapes, event: MouseEvent) -> None:
     )
 
     yield from _add_line_rectangle_ellipse(
-        layer, event, data=data, shape_type='rectangle'
+        layer, event, data=data, shape_type="rectangle"
     )
 
 
@@ -261,7 +261,7 @@ def _add_line_rectangle_ellipse(
     yield
 
     # on move
-    while event.type == 'mouse_move':
+    while event.type == "mouse_move":
         # Drag any selected shapes
         coordinates = layer.world_to_data(event.position)
         layer._moving_coordinates = coordinates
@@ -305,7 +305,7 @@ def initiate_polygon_draw(
         A tuple with the coordinates of the initial vertex in image data space.
     """
     data = np.array([coordinates, coordinates])
-    layer.add(data, shape_type='path', gui=True)
+    layer.add(data, shape_type="path", gui=True)
     layer.selected_data = {layer.nshapes - 1}
     layer._value = (layer.nshapes - 1, 1)
     layer._moving_value = copy(layer._value)
@@ -336,7 +336,7 @@ def add_path_polygon_lasso(layer: Shapes, event: MouseEvent) -> None:
         initiate_polygon_draw(layer, coordinates)
         yield
 
-        while event.type == 'mouse_move':
+        while event.type == "mouse_move":
             polygon_creating(layer, event)
             yield
         index = layer._moving_value[0]

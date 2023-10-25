@@ -39,10 +39,10 @@ class EventDebugSettings(BaseSettings):
     include_emitters: Set[str] = Field(default_factory=set)
     include_events: Set[str] = Field(default_factory=set)
     exclude_emitters: Set[str] = Field(
-        default_factory=lambda: {'TransformChain', 'Context'}
+        default_factory=lambda: {"TransformChain", "Context"}
     )
     exclude_events: Set[str] = Field(
-        default_factory=lambda: {'status', 'position'}
+        default_factory=lambda: {"status", "position"}
     )
     # stack depth to show
     stack_depth: int = 20
@@ -53,8 +53,8 @@ class EventDebugSettings(BaseSettings):
     _cur_depth: ClassVar[int] = PrivateAttr(0)
 
     class Config:
-        env_prefix = 'event_debug_'
-        env_file = '.env' if dotenv is not None else ''
+        env_prefix = "event_debug_"
+        env_file = ".env" if dotenv is not None else ""
 
 
 _SETTINGS = EventDebugSettings()
@@ -64,12 +64,12 @@ _STD_LIB = site.__file__.rsplit(os.path.sep, 1)[0]
 
 def _shorten_fname(fname: str) -> str:
     """Reduce extraneous stuff from filenames"""
-    fname = fname.replace(_SP, '.../site-packages')
-    fname = fname.replace(_STD_LIB, '.../python')
+    fname = fname.replace(_SP, ".../site-packages")
+    fname = fname.replace(_STD_LIB, ".../python")
     return fname.replace(ROOT_DIR, "napari")
 
 
-def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
+def log_event_stack(event: "Event", cfg: EventDebugSettings = _SETTINGS):
     """Print info about what caused this event to be emitted.s"""
 
     if cfg.include_events:
@@ -88,7 +88,7 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
     # get values being emitted
     vals = ",".join(f"{k}={v}" for k, v in event._kwargs.items())
     # show event type and source
-    lines = [f'{source}.events.{event.type}({vals})']
+    lines = [f"{source}.events.{event.type}({vals})"]
     # climb stack and show what caused it.
     # note, we start 2 frames back in the stack, one frame for *this* function
     # and the second frame for the EventEmitter.__call__ function (where this
@@ -96,21 +96,21 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
     call_stack = inspect.stack(0)
     for frame in call_stack[2 : 2 + cfg.stack_depth]:
         fname = _shorten_fname(frame.filename)
-        obj = ''
-        if 'self' in frame.frame.f_locals:
-            obj = type(frame.frame.f_locals['self']).__name__ + '.'
+        obj = ""
+        if "self" in frame.frame.f_locals:
+            obj = type(frame.frame.f_locals["self"]).__name__ + "."
         ln = f'  "{fname}", line {frame.lineno}, in {obj}{frame.function}'
         lines.append(ln)
     lines.append("")
 
     # find the first caller in the call stack
     for f in reversed(call_stack):
-        if 'self' in f.frame.f_locals:
-            obj_type = type(f.frame.f_locals['self'])
-            module = obj_type.__module__ or ''
+        if "self" in f.frame.f_locals:
+            obj_type = type(f.frame.f_locals["self"])
+            module = obj_type.__module__ or ""
             if module.startswith("napari"):
-                trigger = f'{obj_type.__name__}.{f.function}()'
-                lines.insert(1, f'  was triggered by {trigger}, via:')
+                trigger = f"{obj_type.__name__}.{f.function}()"
+                lines.insert(1, f"  was triggered by {trigger}, via:")
                 break
 
     # seperate groups of events
@@ -120,7 +120,7 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
         return
 
     # log it
-    print(indent("\n".join(lines), '  ' * cfg._cur_depth))
+    print(indent("\n".join(lines), "  " * cfg._cur_depth))
 
     # spy on nested events...
     # (i.e. events that were emitted while another was being emitted)

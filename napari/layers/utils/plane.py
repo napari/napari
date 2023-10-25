@@ -27,11 +27,11 @@ class Plane(EventedModel):
     normal: Tuple[float, float, float] = (1, 0, 0)
     position: Tuple[float, float, float] = (0, 0, 0)
 
-    @validator('normal', allow_reuse=True)
+    @validator("normal", allow_reuse=True)
     def _normalise_vector(cls, v):
         return tuple(v / np.linalg.norm(v))
 
-    @validator('normal', 'position', pre=True, allow_reuse=True)
+    @validator("normal", "position", pre=True, allow_reuse=True)
     def _ensure_tuple(cls, v):
         return tuple(v)
 
@@ -171,7 +171,7 @@ class ClippingPlaneList(SelectableEventedList):
         if array.ndim != 3 or array.shape[1:] != (2, 3):
             raise ValueError(
                 trans._(
-                    'Planes can only be constructed from arrays of shape (N, 2, 3), not {shape}',
+                    "Planes can only be constructed from arrays of shape (N, 2, 3), not {shape}",
                     deferred=True,
                     shape=array.shape,
                 )

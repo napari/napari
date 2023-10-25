@@ -36,8 +36,8 @@ def test_shift_along_normal_vector():
 
 def test_update_slicing_plane_from_dict():
     properties = {
-        'position': (0, 0, 0),
-        'normal': (1, 0, 0),
+        "position": (0, 0, 0),
+        "normal": (1, 0, 0),
     }
     plane = SlicingPlane()
     plane.update(properties)

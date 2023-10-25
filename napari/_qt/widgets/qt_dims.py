@@ -78,7 +78,7 @@ class QtDims(QWidget):
         """Sets the style of the last used slider."""
         for i, widget in enumerate(self.slider_widgets):
             sld = widget.slider
-            sld.setProperty('last_used', i == self.dims.last_used)
+            sld.setProperty("last_used", i == self.dims.last_used)
             sld.style().unpolish(sld)
             sld.style().polish(sld)
 
@@ -176,7 +176,7 @@ class QtDims(QWidget):
         # gui width of a string of length `width`
         fm = QFontMetrics(QFont("", 0))
         width = fm.boundingRect("8" * width).width()
-        for labl in self.findChildren(QWidget, 'slice_label'):
+        for labl in self.findChildren(QWidget, "slice_label"):
             labl.setFixedWidth(width + 6)
 
     def _create_sliders(self, number_of_sliders: int):
@@ -283,7 +283,7 @@ class QtDims(QWidget):
             if loop_mode not in _modes:
                 raise ValueError(
                     trans._(
-                        'loop_mode must be one of {_modes}. Got: {loop_mode}',
+                        "loop_mode must be one of {_modes}. Got: {loop_mode}",
                         _modes=_modes,
                         loop_mode=loop_mode,
                     )
@@ -291,7 +291,7 @@ class QtDims(QWidget):
             loop_mode = LoopMode(loop_mode)
 
         if axis >= self.dims.ndim:
-            raise IndexError(trans._('axis argument out of range'))
+            raise IndexError(trans._("axis argument out of range"))
 
         if self.is_playing:
             if self._animation_worker.axis == axis:
@@ -313,7 +313,7 @@ class QtDims(QWidget):
         else:
             warnings.warn(
                 trans._(
-                    'Refusing to play a hidden axis',
+                    "Refusing to play a hidden axis",
                     deferred=True,
                 )
             )

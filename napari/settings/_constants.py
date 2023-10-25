@@ -24,8 +24,8 @@ class LoopMode(StringEnum):
 
 
 class BrushSizeOnMouseModifiers(StrEnum):
-    ALT = 'Alt'
-    CTRL = 'Control'
-    CTRL_ALT = 'Control+Alt'
-    CTRL_SHIFT = 'Control+Shift'
-    DISABLED = 'Disabled'  # a non-existent modifier that is never activated
+    ALT = "Alt"
+    CTRL = "Control"
+    CTRL_ALT = "Control+Alt"
+    CTRL_SHIFT = "Control+Shift"
+    DISABLED = "Disabled"  # a non-existent modifier that is never activated

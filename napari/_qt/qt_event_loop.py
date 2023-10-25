@@ -34,25 +34,25 @@ if TYPE_CHECKING:
     from IPython import InteractiveShell
 
 NAPARI_ICON_PATH = os.path.join(
-    os.path.dirname(__file__), '..', 'resources', 'logo.png'
+    os.path.dirname(__file__), "..", "resources", "logo.png"
 )
-NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
+NAPARI_APP_ID = f"napari.napari.viewer.{__version__}"
 
 
 def set_app_id(app_id):
-    if os.name == "nt" and app_id and not getattr(sys, 'frozen', False):
+    if os.name == "nt" and app_id and not getattr(sys, "frozen", False):
         import ctypes
 
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
 
 
 _defaults = {
-    'app_name': 'napari',
-    'app_version': __version__,
-    'icon': NAPARI_ICON_PATH,
-    'org_name': 'napari',
-    'org_domain': 'napari.org',
-    'app_id': NAPARI_APP_ID,
+    "app_name": "napari",
+    "app_version": __version__,
+    "icon": NAPARI_ICON_PATH,
+    "org_name": "napari",
+    "org_domain": "napari.org",
+    "app_id": NAPARI_APP_ID,
 }
 
 
@@ -170,23 +170,23 @@ def get_app(
 
         # if this is the first time the Qt app is being instantiated, we set
         # the name and metadata
-        app.setApplicationName(kwargs.get('app_name'))
-        app.setApplicationVersion(kwargs.get('app_version'))
-        app.setOrganizationName(kwargs.get('org_name'))
-        app.setOrganizationDomain(kwargs.get('org_domain'))
-        set_app_id(kwargs.get('app_id'))
+        app.setApplicationName(kwargs.get("app_name"))
+        app.setApplicationVersion(kwargs.get("app_version"))
+        app.setOrganizationName(kwargs.get("org_name"))
+        app.setOrganizationDomain(kwargs.get("org_domain"))
+        set_app_id(kwargs.get("app_id"))
 
         # Intercept tooltip events in order to convert all text to rich text
         # to allow for text wrapping of tooltips
         app.installEventFilter(QtToolTipEventFilter())
 
     if app.windowIcon().isNull():
-        app.setWindowIcon(QIcon(kwargs.get('icon')))
+        app.setWindowIcon(QIcon(kwargs.get("icon")))
 
     if ipy_interactive is None:
         ipy_interactive = get_settings().application.ipy_interactive
     if _IPYTHON_WAS_HERE_FIRST:
-        _try_enable_ipython_gui('qt' if ipy_interactive else None)
+        _try_enable_ipython_gui("qt" if ipy_interactive else None)
 
     if not _ipython_has_eventloop():
         notification_manager.notification_ready.connect(
@@ -207,14 +207,14 @@ def get_app(
 
         # Setup search paths for currently installed themes.
         for name in _themes:
-            QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
+            QDir.addSearchPath(f"theme_{name}", str(_theme_path(name)))
 
         # When a new theme is added, at it to the search path.
         @_themes.events.changed.connect
         @_themes.events.added.connect
         def _(event):
             name = event.key
-            QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
+            QDir.addSearchPath(f"theme_{name}", str(_theme_path(name)))
 
         register_threadworker_processors()
 
@@ -233,7 +233,7 @@ def quit_app():
     QApplication.closeAllWindows()
     # if we started the application then the app will be named 'napari'.
     if (
-        QApplication.applicationName() == 'napari'
+        QApplication.applicationName() == "napari"
         and not _ipython_has_eventloop()
     ):
         QApplication.quit()
@@ -293,7 +293,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
 
     app = get_app()
     splash = None
-    if startup_logo and app.applicationName() == 'napari':
+    if startup_logo and app.applicationName() == "napari":
         from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
         splash = NapariSplashScreen()
@@ -302,7 +302,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
         yield app
     except Exception:  # noqa: BLE001
         notification_manager.receive_error(*sys.exc_info())
-    run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
+    run(force=force, gui_exceptions=gui_exceptions, _func_name="gui_qt")
 
 
 def _ipython_has_eventloop() -> bool:
@@ -321,7 +321,7 @@ def _ipython_has_eventloop() -> bool:
     if not shell:
         return False
 
-    return shell.active_eventloop == 'qt'
+    return shell.active_eventloop == "qt"
 
 
 def _pycharm_has_eventloop(app: QApplication) -> bool:
@@ -331,12 +331,12 @@ def _pycharm_has_eventloop(app: QApplication) -> bool:
     shell which overrides `InteractiveShell.enable_gui()`, breaking some
     superclass behaviour.
     """
-    in_pycharm = 'PYCHARM_HOSTED' in os.environ
-    in_event_loop = getattr(app, '_in_event_loop', False)
+    in_pycharm = "PYCHARM_HOSTED" in os.environ
+    in_event_loop = getattr(app, "_in_event_loop", False)
     return in_pycharm and in_event_loop
 
 
-def _try_enable_ipython_gui(gui='qt'):
+def _try_enable_ipython_gui(gui="qt"):
     """Start %gui qt the eventloop."""
     ipy_module = sys.modules.get("IPython")
     if not ipy_module:
@@ -350,7 +350,7 @@ def _try_enable_ipython_gui(gui='qt'):
 
 
 def run(
-    *, force=False, gui_exceptions=False, max_loop_level=1, _func_name='run'
+    *, force=False, gui_exceptions=False, max_loop_level=1, _func_name="run"
 ):
     """Start the Qt Event Loop
 
@@ -392,7 +392,7 @@ def run(
     if not app:
         raise RuntimeError(
             trans._(
-                'No Qt app has been created. One can be created by calling `get_app()` or `qtpy.QtWidgets.QApplication([])`',
+                "No Qt app has been created. One can be created by calling `get_app()` or `qtpy.QtWidgets.QApplication([])`",
                 deferred=True,
             )
         )

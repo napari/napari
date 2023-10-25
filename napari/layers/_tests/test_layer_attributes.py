@@ -7,7 +7,7 @@ from napari.layers import Image, Labels
 
 
 @pytest.mark.parametrize(
-    'image_shape, dims_displayed, expected',
+    "image_shape, dims_displayed, expected",
     [
         ((10, 20, 30), (0, 1, 2), [[0, 9.0], [0, 19.0], [0, 29.0]]),
         ((10, 20, 30), (0, 2, 1), [[0, 9.0], [0, 29.0], [0, 19.0]]),
@@ -22,7 +22,7 @@ def test_layer_bounding_box_order(image_shape, dims_displayed, expected):
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize("Layer, data, ndim", layer_test_data)
 def test_update_scale_updates_layer_extent_cache(Layer, data, ndim):
     np.random.seed(0)
     layer = Layer(data)
@@ -39,7 +39,7 @@ def test_update_scale_updates_layer_extent_cache(Layer, data, ndim):
     np.testing.assert_almost_equal(layer.extent.step, (2,) * layer.ndim)
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize("Layer, data, ndim", layer_test_data)
 def test_update_data_updates_layer_extent_cache(Layer, data, ndim):
     np.random.seed(0)
     layer = Layer(data)
@@ -92,8 +92,8 @@ def _check_subpixel_values(layer, val_dict):
                 assert val == expected_value
 
 
-@pytest.mark.parametrize('ImageClass', [Image, Labels])
-@pytest.mark.parametrize('ndim', [2, 3])
+@pytest.mark.parametrize("ImageClass", [Image, Labels])
+@pytest.mark.parametrize("ndim", [2, 3])
 def test_get_value_at_subpixel_offsets(ImageClass, ndim):
     """check value at various shifts within a pixel/voxel's extent"""
     if ndim == 3:
@@ -115,7 +115,7 @@ def test_get_value_at_subpixel_offsets(ImageClass, ndim):
     _check_subpixel_values(layer, val_dict)
 
 
-@pytest.mark.parametrize('ImageClass', [Image, Labels])
+@pytest.mark.parametrize("ImageClass", [Image, Labels])
 def test_get_value_3d_view_of_2d_image(ImageClass):
     """check value at various shifts within a pixel/voxel's extent"""
     data = np.arange(1, 5).reshape(2, 2)
@@ -136,5 +136,5 @@ def test_get_value_3d_view_of_2d_image(ImageClass):
 
 
 def test_zero_scale_layer():
-    with pytest.raises(ValueError, match='scale values of 0'):
+    with pytest.raises(ValueError, match="scale values of 0"):
         Image(np.zeros((64, 64)), scale=(0, 1))

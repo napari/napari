@@ -233,7 +233,7 @@ class TranslationString(str):
         self._kwargs = kwargs
 
         # Add `n` to `kwargs` to use with `format`
-        self._kwargs['n'] = n
+        self._kwargs["n"] = n
 
     def __repr__(self):
         return repr(self.__str__())
@@ -420,7 +420,7 @@ class TranslationBundle:
         else:
             translation = gettext.dgettext(self._domain, msgid)
 
-        kwargs['n'] = n
+        kwargs["n"] = n
         return translation.format(**kwargs)
 
     def _(

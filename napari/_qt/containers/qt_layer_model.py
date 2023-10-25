@@ -38,7 +38,7 @@ class QtLayerListModel(QtListModel[Layer]):
             layer_source_info = layer.get_source_str()
             if layer_loaded:
                 return layer_source_info
-            return trans._('{source} (loading)', source=layer_source_info)
+            return trans._("{source} (loading)", source=layer_source_info)
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
@@ -99,13 +99,13 @@ class QtLayerListModel(QtListModel[Layer]):
         # The model needs to emit `dataChanged` whenever data has changed
         # for a given index, so that views can update themselves.
         # Here we convert native events to the dataChanged signal.
-        if not hasattr(event, 'index'):
+        if not hasattr(event, "index"):
             return
         role = {
-            'thumbnail': ThumbnailRole,
-            'visible': Qt.ItemDataRole.CheckStateRole,
-            'name': Qt.ItemDataRole.DisplayRole,
-            'loaded': LoadedRole,
+            "thumbnail": ThumbnailRole,
+            "visible": Qt.ItemDataRole.CheckStateRole,
+            "name": Qt.ItemDataRole.DisplayRole,
+            "loaded": LoadedRole,
         }.get(event.type)
         roles = [role] if role is not None else []
         row = self.index(event.index)

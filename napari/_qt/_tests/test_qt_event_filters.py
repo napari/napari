@@ -2,7 +2,7 @@ import pytest
 
 from napari._qt.qt_event_filters import QtToolTipEventFilter
 
-pytest.importorskip('qtpy', reason='Cannot test event filters without qtpy.')
+pytest.importorskip("qtpy", reason="Cannot test event filters without qtpy.")
 
 
 @pytest.mark.parametrize(

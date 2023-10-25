@@ -52,7 +52,7 @@ def test_toggle_visibility_with_linked_layers():
     assert layer_list[3].visible is True
 
 
-@pytest.mark.parametrize('layer_type', [Points, Shapes])
+@pytest.mark.parametrize("layer_type", [Points, Shapes])
 def test_duplicate_layers(layer_type):
     def _dummy():
         pass
@@ -75,7 +75,7 @@ def test_duplicate_layers(layer_type):
 
 
 @pytest.mark.parametrize(
-    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+    "mode", ["max", "min", "std", "sum", "mean", "median"]
 )
 def test_projections(mode):
     ll = LayerList()
@@ -89,8 +89,8 @@ def test_projections(mode):
 
 
 @pytest.mark.parametrize(
-    'mode',
-    ['int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64'],
+    "mode",
+    ["int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"],
 )
 def test_convert_dtype(mode):
     ll = LayerList()
@@ -100,7 +100,7 @@ def test_convert_dtype(mode):
 
     data[5, 5] = 1000
     assert data[5, 5] == 1000
-    if mode == 'int8' or mode == 'uint8':
+    if mode == "int8" or mode == "uint8":
         # label value 1000 is outside of the target data type range.
         with pytest.raises(AssertionError):
             _convert_dtype(ll, mode=mode)
@@ -114,11 +114,11 @@ def test_convert_dtype(mode):
 
 
 @pytest.mark.parametrize(
-    'layer, type_',
+    "layer, type_",
     [
-        (Image(np.random.rand(10, 10)), 'labels'),
-        (Labels(np.ones((10, 10), dtype=int)), 'image'),
-        (Shapes([np.array([[0, 0], [0, 10], [10, 0], [10, 10]])]), 'labels'),
+        (Image(np.random.rand(10, 10)), "labels"),
+        (Labels(np.ones((10, 10), dtype=int)), "image"),
+        (Shapes([np.array([[0, 0], [0, 10], [10, 0], [10, 10]])]), "labels"),
     ],
 )
 def test_convert_layer(layer, type_):

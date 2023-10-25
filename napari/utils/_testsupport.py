@@ -60,7 +60,7 @@ def fail_obj_graph(Klass):
         objgraph.show_backrefs(
             list(Klass._instances),
             max_depth=20,
-            filename=f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf',
+            filename=f"{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf",
         )
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
@@ -86,13 +86,13 @@ def napari_plugin_manager(monkeypatch):
 
     # make it so that internal requests for the plugin_manager
     # get this test version for the duration of the test.
-    monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
-    monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
+    monkeypatch.setattr(napari.plugins, "plugin_manager", pm)
+    monkeypatch.setattr(napari.plugins.io, "plugin_manager", pm)
     with suppress(AttributeError):
-        monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
+        monkeypatch.setattr(napari._qt.qt_main_window, "plugin_manager", pm)
     # prevent discovery of plugins in the environment
     # you can still use `pm.register` to explicitly register something.
-    pm.discovery_blocker = patch.object(pm, 'discover')
+    pm.discovery_blocker = patch.object(pm, "discover")
     pm.discovery_blocker.start()
     pm._initialize()  # register our builtins
     yield pm
@@ -129,7 +129,7 @@ def pytest_runtest_makereport(item, call):
 @pytest.fixture
 def make_napari_viewer(
     qtbot,
-    request: 'FixtureRequest',
+    request: "FixtureRequest",
     napari_plugin_manager,
     monkeypatch,
     clean_themes,
@@ -214,7 +214,7 @@ def make_napari_viewer(
     _strict = False
 
     initial = QApplication.topLevelWidgets()
-    prior_exception = getattr(sys, 'last_value', None)
+    prior_exception = getattr(sys, "last_value", None)
     is_internal_test = request.module.__name__.startswith("napari.")
 
     # disable throttling cursor event in tests
@@ -239,7 +239,7 @@ def make_napari_viewer(
             napari_plugin_manager.discovery_blocker.stop()
 
         should_show = request.config.getoption("--show-napari-viewer")
-        model_kwargs['show'] = model_kwargs.pop('show', should_show)
+        model_kwargs["show"] = model_kwargs.pop("show", should_show)
         viewer = ViewerClass(*model_args, **model_kwargs)
         viewers.add(viewer)
 
@@ -254,9 +254,9 @@ def make_napari_viewer(
 
     # close viewers, but don't saving window settings while closing
     for viewer in viewers:
-        if hasattr(viewer.window, '_qt_window'):
+        if hasattr(viewer.window, "_qt_window"):
             with patch.object(
-                viewer.window._qt_window, '_save_current_window_settings'
+                viewer.window._qt_window, "_save_current_window_settings"
             ):
                 viewer.close()
         else:
@@ -284,12 +284,12 @@ def make_napari_viewer(
 
     # only check for leaked widgets if an exception was raised during the test,
     # and "strict" mode was used.
-    if _strict and getattr(sys, 'last_value', None) is prior_exception:
+    if _strict and getattr(sys, "last_value", None) is prior_exception:
         QApplication.processEvents()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
-        if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):
+        if any(n.__class__.__name__ != "CanvasBackendDesktop" for n in leak):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
             msg = f"""The following Widgets leaked!: {leak}.
@@ -304,7 +304,7 @@ def make_napari_viewer(
             # in particular with VisPyCanvas, it looks like if a traceback keeps
             # contains the type, then instances are still attached to the type.
             # I'm not too sure why this is the case though.
-            if _strict == 'raise':
+            if _strict == "raise":
                 raise AssertionError(msg)
             else:
                 warnings.warn(msg)

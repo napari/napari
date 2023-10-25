@@ -38,7 +38,7 @@ class Line(Shape):
         )
         self._filled = False
         self.data = data
-        self.name = 'line'
+        self.name = "line"
 
     @property
     def data(self):
@@ -76,4 +76,4 @@ class Line(Shape):
                 np.min(data_not_displayed, axis=0),
                 np.max(data_not_displayed, axis=0),
             ]
-        ).astype('int')
+        ).astype("int")

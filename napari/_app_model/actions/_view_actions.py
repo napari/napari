@@ -13,17 +13,17 @@ from napari._app_model.constants import CommandId, MenuGroup, MenuId
 from napari.settings import get_settings
 
 VIEW_ACTIONS: List[Action] = []
-MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
+MENUID_DICT = {"axes": MenuId.VIEW_AXES, "scale_bar": MenuId.VIEW_SCALEBAR}
 
 for cmd, viewer_attr, sub_attr in (
-    (CommandId.TOGGLE_VIEWER_AXES, 'axes', 'visible'),
-    (CommandId.TOGGLE_VIEWER_AXES_COLORED, 'axes', 'colored'),
-    (CommandId.TOGGLE_VIEWER_AXES_LABELS, 'axes', 'labels'),
-    (CommandId.TOGGLE_VIEWER_AXES_DASHED, 'axes', 'dashed'),
-    (CommandId.TOGGLE_VIEWER_AXES_ARROWS, 'axes', 'arrows'),
-    (CommandId.TOGGLE_VIEWER_SCALE_BAR, 'scale_bar', 'visible'),
-    (CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED, 'scale_bar', 'colored'),
-    (CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS, 'scale_bar', 'ticks'),
+    (CommandId.TOGGLE_VIEWER_AXES, "axes", "visible"),
+    (CommandId.TOGGLE_VIEWER_AXES_COLORED, "axes", "colored"),
+    (CommandId.TOGGLE_VIEWER_AXES_LABELS, "axes", "labels"),
+    (CommandId.TOGGLE_VIEWER_AXES_DASHED, "axes", "dashed"),
+    (CommandId.TOGGLE_VIEWER_AXES_ARROWS, "axes", "arrows"),
+    (CommandId.TOGGLE_VIEWER_SCALE_BAR, "scale_bar", "visible"),
+    (CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED, "scale_bar", "colored"),
+    (CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS, "scale_bar", "ticks"),
 ):
     VIEW_ACTIONS.append(
         ViewerToggleAction(
@@ -31,7 +31,7 @@ for cmd, viewer_attr, sub_attr in (
             title=cmd.command_title,
             viewer_attribute=viewer_attr,
             sub_attribute=sub_attr,
-            menus=[{'id': MENUID_DICT[viewer_attr]}],
+            menus=[{"id": MENUID_DICT[viewer_attr]}],
         )
     )
 
@@ -54,9 +54,9 @@ VIEW_ACTIONS.extend(
             title=CommandId.TOGGLE_LAYER_TOOLTIPS.command_title,
             menus=[
                 {
-                    'id': MenuId.MENUBAR_VIEW,
-                    'group': MenuGroup.RENDER,
-                    'order': 10,
+                    "id": MenuId.MENUBAR_VIEW,
+                    "group": MenuGroup.RENDER,
+                    "order": 10,
                 }
             ],
             callback=_tooltip_visibility_toggle,

@@ -19,18 +19,18 @@ def test_dict(request, regular_dict):
 
 
 @pytest.mark.parametrize(
-    'meth',
+    "meth",
     [
         # METHOD, ARGS, EXPECTED EVENTS
         # primary interface
-        ('__getitem__', ("A",), ()),  # read
-        ('__setitem__', ("A", 3), ('changed',)),  # update
-        ('__setitem__', ("D", 3), ('adding', 'added')),  # add new entry
-        ('__delitem__', ("A",), ('removing', 'removed')),  # delete
+        ("__getitem__", ("A",), ()),  # read
+        ("__setitem__", ("A", 3), ("changed",)),  # update
+        ("__setitem__", ("D", 3), ("adding", "added")),  # add new entry
+        ("__delitem__", ("A",), ("removing", "removed")),  # delete
         # inherited interface
-        ('key', (3,), ()),
-        ('clear', (), ('removing', 'removed') * 3),
-        ('pop', ("B",), ('removing', 'removed')),
+        ("key", (3,), ()),
+        ("clear", (), ("removing", "removed") * 3),
+        ("pop", ("B",), ("removing", "removed")),
     ],
     ids=lambda x: x[0],
 )
@@ -78,11 +78,11 @@ def test_child_events():
     root.events.connect(lambda e: observed.append(e))
     root["A"] = e_obj
     e_obj.events.test(value="hi")
-    obs = [(e.type, e.key, getattr(e, 'value', None)) for e in observed]
+    obs = [(e.type, e.key, getattr(e, "value", None)) for e in observed]
     expected = [
-        ('adding', "A", None),  # before we adding b into root
-        ('added', "A", e_obj),  # after b was added into root
-        ('test', "A", 'hi'),  # when e_obj emitted an event called "test"
+        ("adding", "A", None),  # before we adding b into root
+        ("added", "A", e_obj),  # after b was added into root
+        ("test", "A", "hi"),  # when e_obj emitted an event called "test"
     ]
     for o, e in zip(obs, expected):
         assert o == e
@@ -98,6 +98,6 @@ def test_evented_dict_subclass():
         pass
 
     dct = B({"A": 1, "B": 2})
-    assert hasattr(dct, 'events')
-    assert 'boom' in dct.events.emitters
+    assert hasattr(dct, "events")
+    assert "boom" in dct.events.emitters
     assert dct == {"A": 1, "B": 2}

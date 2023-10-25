@@ -169,10 +169,10 @@ def test_plane_drag_callback():
     """Plane drag callback should only be active when depicting as plane."""
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
-    layer = Image(data, depiction='volume')
+    layer = Image(data, depiction="volume")
 
     assert move_plane_along_normal not in layer.mouse_drag_callbacks
-    layer.depiction = 'plane'
+    layer.depiction = "plane"
     assert move_plane_along_normal in layer.mouse_drag_callbacks
-    layer.depiction = 'volume'
+    layer.depiction = "volume"
     assert move_plane_along_normal not in layer.mouse_drag_callbacks

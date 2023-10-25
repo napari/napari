@@ -7,14 +7,14 @@ from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.qt.threading import create_worker, thread_worker
 
 __all__ = (
-    'create_worker',
-    'QtToolTipLabel',
-    'QtViewer',
-    'QtViewerButtons',
-    'thread_worker',
-    'Window',
-    'get_app',
-    'get_stylesheet',
-    'get_current_stylesheet',
-    'run',
+    "create_worker",
+    "QtToolTipLabel",
+    "QtViewer",
+    "QtViewerButtons",
+    "thread_worker",
+    "Window",
+    "get_app",
+    "get_stylesheet",
+    "get_current_stylesheet",
+    "run",
 )

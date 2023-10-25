@@ -23,7 +23,7 @@ def _len(layers: Union[LayerSel, LayerList]) -> int:
     return len(layers)
 
 
-class LayerListContextKeys(ContextNamespace['Layer']):
+class LayerListContextKeys(ContextNamespace["Layer"]):
     """These are the available context keys relating to a LayerList.
 
     Consists of a default value, a description, and a function to retrieve the
@@ -150,7 +150,7 @@ def _empty_shapes_layer_selected(s: LayerSel) -> bool:
     return any(x._type_string == "shapes" and not len(x.data) for x in s)
 
 
-class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
+class LayerListSelectionContextKeys(ContextNamespace["LayerSel"]):
     """Available context keys relating to the selection in a LayerList.
 
     Consists of a default value, a description, and a function to retrieve the
@@ -177,7 +177,7 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._("True when the active layer is RGB."),
         _is_rgb,
     )
-    active_layer_type = ContextKey['LayerSel', Optional[str]](
+    active_layer_type = ContextKey["LayerSel", Optional[str]](
         None,
         trans._(
             "Lowercase name of active layer type, or None of none active."
@@ -222,14 +222,14 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._("Number of selected tracks layers."),
         _n_selected_tracks,
     )
-    active_layer_ndim = ContextKey['LayerSel', Optional[int]](
+    active_layer_ndim = ContextKey["LayerSel", Optional[int]](
         None,
         trans._(
             "Number of dimensions in the active layer, or `None` if nothing is active."
         ),
         _active_ndim,
     )
-    active_layer_shape = ContextKey['LayerSel', Optional[Tuple[int, ...]]](
+    active_layer_shape = ContextKey["LayerSel", Optional[Tuple[int, ...]]](
         (),
         trans._("Shape of the active layer, or `None` if nothing is active."),
         _active_shape,

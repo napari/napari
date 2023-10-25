@@ -183,7 +183,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self,
         data,
         *,
-        colormap='gray',
+        colormap="gray",
         contrast_limits=None,
         gamma=1,
         name=None,
@@ -194,8 +194,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         shear=None,
         affine=None,
         opacity=1,
-        blending='translucent',
-        shading='flat',
+        blending="translucent",
+        shading="flat",
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
@@ -204,7 +204,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         texture=None,
         texcoords=None,
         vertex_colors=None,
-        projection_mode='none',
+        projection_mode="none",
     ) -> None:
         ndim = data[0].shape[1]
 
@@ -240,7 +240,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if len(data) not in (2, 3):
             raise ValueError(
                 trans._(
-                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {length}.',
+                    "Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {length}.",
                     deferred=True,
                     length=len(data),
                 )
@@ -284,13 +284,13 @@ class Surface(IntensityVisualizationMixin, Layer):
         # initialize normals and wireframe
         self._wireframe = SurfaceWireframe()
         self._normals = SurfaceNormals()
-        connect_no_arg(self.wireframe.events, self.events, 'wireframe')
-        connect_no_arg(self.normals.events, self.events, 'normals')
+        connect_no_arg(self.wireframe.events, self.events, "wireframe")
+        connect_no_arg(self.normals.events, self.events, "normals")
 
         self.wireframe = wireframe
         self.normals = normals
 
-    def _calc_data_range(self, mode='data'):
+    def _calc_data_range(self, mode="data"):
         return calc_data_range(self.vertex_values)
 
     @property
@@ -306,7 +306,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if len(data) not in (2, 3):
             raise ValueError(
                 trans._(
-                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {data_length}.',
+                    "Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {data_length}.",
                     deferred=True,
                     data_length=len(data),
                 )
@@ -447,7 +447,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             self._wireframe.update(wireframe)
         else:
             raise ValueError(
-                f'wireframe should be None, a dict, or SurfaceWireframe; got {type(wireframe)}'
+                f"wireframe should be None, a dict, or SurfaceWireframe; got {type(wireframe)}"
             )
         self.events.wireframe(value=self._wireframe)
 
@@ -461,14 +461,14 @@ class Surface(IntensityVisualizationMixin, Layer):
             self._normals.reset()
         elif not isinstance(normals, (SurfaceNormals, dict)):
             raise ValueError(
-                f'normals should be None, a dict, or SurfaceNormals; got {type(normals)}'
+                f"normals should be None, a dict, or SurfaceNormals; got {type(normals)}"
             )
         else:
             if isinstance(normals, SurfaceNormals):
                 normals = {k: dict(v) for k, v in normals.dict().items()}
             # ignore modes, they are unmutable cause errors
-            for norm_type in ('face', 'vertex'):
-                normals.get(norm_type, {}).pop('mode', None)
+            for norm_type in ("face", "vertex"):
+                normals.get(norm_type, {}).pop("mode", None)
             self._normals.update(normals)
         self.events.normals(value=self._normals)
 
@@ -516,16 +516,16 @@ class Surface(IntensityVisualizationMixin, Layer):
         state = self._get_base_state()
         state.update(
             {
-                'colormap': self.colormap.dict(),
-                'contrast_limits': self.contrast_limits,
-                'gamma': self.gamma,
-                'shading': self.shading,
-                'data': self.data,
-                'wireframe': self.wireframe.dict(),
-                'normals': self.normals.dict(),
-                'texture': self.texture,
-                'texcoords': self.texcoords,
-                'vertex_colors': self.vertex_colors,
+                "colormap": self.colormap.dict(),
+                "contrast_limits": self.contrast_limits,
+                "gamma": self.gamma,
+                "shading": self.shading,
+                "data": self.data,
+                "wireframe": self.wireframe.dict(),
+                "normals": self.normals.dict(),
+                "texture": self.texture,
+                "texcoords": self.texcoords,
+                "vertex_colors": self.vertex_colors,
             }
         )
         return state
@@ -609,7 +609,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if len(self.vertices) == 0:
             self._view_faces = np.zeros((0, 3))
         elif vertex_ndim > self._slice_input.ndisplay:
-            vertices = self.vertices[:, not_disp].astype('int')
+            vertices = self.vertices[:, not_disp].astype("int")
             triangles = vertices[self.faces]
             matches = np.all(triangles == indices[not_disp], axis=(1, 2))
             matches = np.where(matches)[0]

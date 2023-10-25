@@ -70,7 +70,7 @@ def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: Type):
             return_type=return_type,
             viewer=viewer,
             layer_name=gui.result_name,
-            source={'widget': gui},
+            source={"widget": gui},
         )
 
 
@@ -112,7 +112,7 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
 
     if viewer := find_viewer_ancestor(gui):
         _add_layer_data_tuples_to_viewer(
-            result, viewer=viewer, source={'widget': gui}
+            result, viewer=viewer, source={"widget": gui}
         )
 
 
@@ -200,7 +200,7 @@ def add_future_data(gui, future: Future, return_type, _from_tuple=True):
             return_type=get_args(return_type)[0],
             _from_tuple=_from_tuple,
             viewer=viewer,
-            source={'widget': gui},
+            source={"widget": gui},
         )
 
 
@@ -225,14 +225,14 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
 
     # magicgui v0.2.0 widgets are no longer QWidget subclasses, but the native
     # widget is available at widget.native
-    if hasattr(widget, 'native') and hasattr(widget.native, 'parent'):
+    if hasattr(widget, "native") and hasattr(widget.native, "parent"):
         parent = widget.native.parent()
     else:
         parent = widget.parent()
     from napari.viewer import current_viewer
 
     while parent:
-        if hasattr(parent, '_qt_viewer'):  # QMainWindow
+        if hasattr(parent, "_qt_viewer"):  # QMainWindow
             return parent._qt_viewer.viewer
         if isinstance(parent, QtViewerDockWidget):  # DockWidget
             qt_viewer = parent._ref_qt_viewer()
@@ -315,7 +315,7 @@ def get_layers_data(gui: CategoricalWidget) -> List[Tuple[str, Any]]:
     layer_type = getattr(layers, layer_type_name)
     choices = []
     for layer in [x for x in viewer.layers if isinstance(x, layer_type)]:
-        choice_key = f'{layer.name} (data)'
+        choice_key = f"{layer.name} (data)"
         choices.append((choice_key, layer.data))
         layer.events.data.connect(_make_choice_data_setter(gui, choice_key))
 
@@ -399,4 +399,4 @@ def add_layers_to_viewer(
 
     for item in result:
         if item is not None:
-            _add_layer_to_viewer(item, viewer=viewer, source={'widget': gui})
+            _add_layer_to_viewer(item, viewer=viewer, source={"widget": gui})

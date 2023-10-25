@@ -8,7 +8,7 @@ from .utils import Skiper
 
 
 class TracksSuite:
-    param_names = ['size', 'n_tracks']
+    param_names = ["size", "n_tracks"]
     params = [(5 * np.power(10, np.arange(7))).tolist(), [1, 10, 100, 1000]]
 
     if "PR" in os.environ:

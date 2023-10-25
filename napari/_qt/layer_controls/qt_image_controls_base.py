@@ -102,7 +102,7 @@ class QtBaseImageControls(QtLayerControls):
         self.contrastLimitsSlider.setSingleStep(10**-decimals)
         self.contrastLimitsSlider.setValue(self.layer.contrast_limits)
         self.contrastLimitsSlider.setToolTip(
-            trans._('Right click for detailed slider popup.')
+            trans._("Right click for detailed slider popup.")
         )
 
         self.clim_popup = None
@@ -115,7 +115,7 @@ class QtBaseImageControls(QtLayerControls):
         connect_setattr(
             self.contrastLimitsSlider.rangeChanged,
             self.layer,
-            'contrast_limits_range',
+            "contrast_limits_range",
         )
         self.autoScaleBar = AutoScaleButtons(layer, self)
 
@@ -125,12 +125,12 @@ class QtBaseImageControls(QtLayerControls):
         sld.setMaximum(2)
         sld.setSingleStep(0.02)
         sld.setValue(self.layer.gamma)
-        connect_setattr(sld.valueChanged, self.layer, 'gamma')
+        connect_setattr(sld.valueChanged, self.layer, "gamma")
         self.gammaSlider = sld
 
         self.colorbarLabel = QLabel(parent=self)
-        self.colorbarLabel.setObjectName('colorbar')
-        self.colorbarLabel.setToolTip(trans._('Colorbar'))
+        self.colorbarLabel.setObjectName("colorbar")
+        self.colorbarLabel.setToolTip(trans._("Colorbar"))
 
         self._on_colormap_change()
 
@@ -206,7 +206,7 @@ class QtBaseImageControls(QtLayerControls):
     def show_clim_popupup(self):
         self.clim_popup = QContrastLimitsPopup(self.layer, self)
         self.clim_popup.setParent(self)
-        self.clim_popup.move_to('top', min_length=650)
+        self.clim_popup.move_to("top", min_length=650)
         self.clim_popup.show()
 
 
@@ -217,10 +217,10 @@ class AutoScaleButtons(QWidget):
         self.setLayout(QHBoxLayout())
         self.layout().setSpacing(2)
         self.layout().setContentsMargins(0, 0, 0, 0)
-        once_btn = QPushButton(trans._('once'))
+        once_btn = QPushButton(trans._("once"))
         once_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        auto_btn = QPushButton(trans._('continuous'))
+        auto_btn = QPushButton(trans._("continuous"))
         auto_btn.setCheckable(True)
         auto_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
@@ -297,7 +297,7 @@ def range_to_decimals(range_, dtype):
         Decimals of precision.
     """
 
-    if hasattr(dtype, 'numpy_dtype'):
+    if hasattr(dtype, "numpy_dtype"):
         # retrieve the corresponding numpy.dtype from a tensorstore.dtype
         dtype = dtype.numpy_dtype
 

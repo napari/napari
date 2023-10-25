@@ -90,7 +90,7 @@ class Shape(ABC):
     def __init__(
         self,
         *,
-        shape_type='rectangle',
+        shape_type="rectangle",
         edge_width=1,
         z_index=0,
         dims_order=None,
@@ -112,7 +112,7 @@ class Shape(ABC):
         self._use_face_vertices = False
         self.edge_width = edge_width
         self.z_index = z_index
-        self.name = ''
+        self.name = ""
 
     @property
     @abstractmethod
@@ -378,7 +378,7 @@ class Shape(ABC):
         """
         if mask_shape is None:
             mask_shape = np.round(self.data_displayed.max(axis=0)).astype(
-                'int'
+                "int"
             )
 
         if len(mask_shape) == 2:

@@ -29,7 +29,7 @@ def _threading_warn():
 
 
 def _warn():
-    warnings.warn('warning!', stacklevel=3)
+    warnings.warn("warning!", stacklevel=3)
 
 
 def _threading_raise():
@@ -83,14 +83,14 @@ def raise_on_show(monkeypatch, qtbot):
         return _raise_on_call
 
     monkeypatch.setattr(
-        NapariQtNotification, 'show', raise_prepare("notification show")
+        NapariQtNotification, "show", raise_prepare("notification show")
     )
     monkeypatch.setattr(
-        TracebackDialog, 'show', raise_prepare("traceback show")
+        TracebackDialog, "show", raise_prepare("traceback show")
     )
     monkeypatch.setattr(
         NapariQtNotification,
-        'close_with_fade',
+        "close_with_fade",
         raise_prepare("close_with_fade"),
     )
 
@@ -157,8 +157,8 @@ def test_notification_manager_via_gui(
     )
     with notification_manager:
         for btt, expected_message in [
-            (errButton, 'error!'),
-            (warnButton, 'warning!'),
+            (errButton, "error!"),
+            (warnButton, "warning!"),
         ]:
             notification_manager.records = []
             qtbot.mouseClick(btt, Qt.MouseButton.LeftButton)
@@ -176,16 +176,16 @@ def test_show_notification_from_thread(
 
     monkeypatch.setattr(
         settings.application,
-        'gui_notification_level',
+        "gui_notification_level",
         NotificationSeverity.INFO,
     )
 
     class CustomThread(QThread):
         def run(self):
             notif = Notification(
-                'hi',
+                "hi",
                 NotificationSeverity.INFO,
-                actions=[('click', lambda x: None)],
+                actions=[("click", lambda x: None)],
             )
             res = NapariQtNotification.show_notification(notif)
             assert isinstance(res, Future)
@@ -197,7 +197,7 @@ def test_show_notification_from_thread(
         thread.start()
 
 
-@pytest.mark.parametrize('severity', NotificationSeverity.__members__)
+@pytest.mark.parametrize("severity", NotificationSeverity.__members__)
 def test_notification_display(
     count_show, severity, monkeypatch, clean_current
 ):
@@ -217,13 +217,13 @@ def test_notification_display(
 
     settings = get_settings()
 
-    monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)
+    monkeypatch.delenv("NAPARI_CATCH_ERRORS", raising=False)
     monkeypatch.setattr(
         settings.application,
-        'gui_notification_level',
+        "gui_notification_level",
         NotificationSeverity.INFO,
     )
-    notif = Notification('hi', severity, actions=[('click', lambda x: None)])
+    notif = Notification("hi", severity, actions=[("click", lambda x: None)])
     NapariQtNotification.show_notification(notif)
     if NotificationSeverity(severity) >= NotificationSeverity.INFO:
         assert count_show.show_notification_count == 1
@@ -231,11 +231,11 @@ def test_notification_display(
         assert count_show.show_notification_count == 0
 
     dialog = NapariQtNotification.from_notification(notif)
-    assert not dialog.property('expanded')
+    assert not dialog.property("expanded")
     dialog.toggle_expansion()
-    assert dialog.property('expanded')
+    assert dialog.property("expanded")
     dialog.toggle_expansion()
-    assert not dialog.property('expanded')
+    assert not dialog.property("expanded")
 
 
 def test_notification_error(count_show, monkeypatch):
@@ -243,24 +243,24 @@ def test_notification_error(count_show, monkeypatch):
 
     settings = get_settings()
 
-    monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)
+    monkeypatch.delenv("NAPARI_CATCH_ERRORS", raising=False)
     monkeypatch.setattr(
         NapariQtNotification, "close_with_fade", lambda x, y: None
     )
     monkeypatch.setattr(
         settings.application,
-        'gui_notification_level',
+        "gui_notification_level",
         NotificationSeverity.INFO,
     )
     try:
-        raise ValueError('error!')
+        raise ValueError("error!")
     except ValueError as e:
         notif = ErrorNotification(e)
 
     dialog = NapariQtNotification.from_notification(notif)
 
     bttn = dialog.row2_widget.findChild(QPushButton)
-    assert bttn.text() == 'View Traceback'
+    assert bttn.text() == "View Traceback"
     assert count_show.show_traceback_count == 0
     bttn.click()
     assert count_show.show_traceback_count == 1

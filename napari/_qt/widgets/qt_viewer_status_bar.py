@@ -14,35 +14,35 @@ if TYPE_CHECKING:
 
 
 class ViewerStatusBar(QStatusBar):
-    def __init__(self, parent: '_QtMainWindow') -> None:
+    def __init__(self, parent: "_QtMainWindow") -> None:
         super().__init__(parent=parent)
 
-        self._status = QLabel(trans._('Ready'))
+        self._status = QLabel(trans._("Ready"))
         self._status.setContentsMargins(0, 0, 0, 0)
 
-        self._layer_base = QElidingLabel(trans._(''))
-        self._layer_base.setObjectName('layer_base status')
+        self._layer_base = QElidingLabel(trans._(""))
+        self._layer_base.setObjectName("layer_base status")
         self._layer_base.setElideMode(Qt.TextElideMode.ElideMiddle)
         self._layer_base.setMinimumSize(100, 16)
         self._layer_base.setContentsMargins(0, 0, 0, 0)
 
-        self._plugin_reader = QElidingLabel(trans._(''))
-        self._plugin_reader.setObjectName('plugin-reader status')
+        self._plugin_reader = QElidingLabel(trans._(""))
+        self._plugin_reader.setObjectName("plugin-reader status")
         self._plugin_reader.setMinimumSize(80, 16)
         self._plugin_reader.setContentsMargins(0, 0, 0, 0)
         self._plugin_reader.setElideMode(Qt.TextElideMode.ElideMiddle)
 
-        self._source_type = QLabel('')
-        self._source_type.setObjectName('source-type status')
+        self._source_type = QLabel("")
+        self._source_type.setObjectName("source-type status")
         self._source_type.setContentsMargins(0, 0, 0, 0)
 
-        self._coordinates = QElidingLabel('')
-        self._coordinates.setObjectName('coordinates status')
+        self._coordinates = QElidingLabel("")
+        self._coordinates.setObjectName("coordinates status")
         self._coordinates.setMinimumSize(100, 16)
         self._coordinates.setContentsMargins(0, 0, 0, 0)
 
-        self._help = QElidingLabel('')
-        self._help.setObjectName('help status')
+        self._help = QElidingLabel("")
+        self._help.setObjectName("help status")
         self._help.setAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
@@ -85,7 +85,7 @@ class ViewerStatusBar(QStatusBar):
 
         self._source_type.setVisible(bool(source_type))
         if source_type:
-            self._source_type.setText(f'{source_type}: ')
+            self._source_type.setText(f"{source_type}: ")
 
         self._plugin_reader.setVisible(bool(plugin))
 
@@ -95,7 +95,7 @@ class ViewerStatusBar(QStatusBar):
         self._coordinates.setText(coordinates)
 
     def _toggle_activity_dock(self, visible: Optional[bool] = None):
-        par = cast('_QtMainWindow', self.parent())
+        par = cast("_QtMainWindow", self.parent())
         if visible is None:
             visible = not par._activity_dialog.isVisible()
         if visible:

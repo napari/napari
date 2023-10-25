@@ -13,7 +13,7 @@ from napari._app_model.actions._view_actions import VIEW_ACTIONS
 from napari._app_model.injection._processors import PROCESSORS
 from napari._app_model.injection._providers import PROVIDERS
 
-APP_NAME = 'napari'
+APP_NAME = "napari"
 
 
 class NapariApplication(Application):
@@ -52,13 +52,13 @@ def _napari_names() -> Dict[str, object]:
         return {
             name: val
             for name, val in vars(module).items()
-            if not name.startswith('_')
+            if not name.startswith("_")
             and isinstance(val, type)
-            and getattr(val, '__module__', '_').startswith('napari')
+            and getattr(val, "__module__", "_").startswith("napari")
         }
 
     return {
-        'napari': napari,
+        "napari": napari,
         **_public_types(components),
         **_public_types(layers),
         **_public_types(viewer),

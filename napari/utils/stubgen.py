@@ -76,7 +76,7 @@ def _iter_imports(hint) -> Iterator[str]:
     if isinstance(hint, list):
         for i in hint:
             yield from _iter_imports(i)
-    elif getattr(hint, '__module__', None) != 'builtins':
+    elif getattr(hint, "__module__", None) != "builtins":
         yield hint.__module__
 
 
@@ -87,9 +87,9 @@ def generate_function_stub(func) -> Tuple[Set[str], str]:
     if hasattr(func, "__wrapped__"):
         # unwrap @wraps decorated functions
         func = func.__wrapped__
-    globalns = {**getattr(func, '__globals__', {})}
+    globalns = {**getattr(func, "__globals__", {})}
     globalns.update(vars(typing))
-    globalns.update(getattr(func, '_forwardrefns_', {}))
+    globalns.update(getattr(func, "_forwardrefns_", {}))
 
     hints = get_type_hints(func, globalns)
     sig = sig.replace(
@@ -97,15 +97,15 @@ def generate_function_stub(func) -> Tuple[Set[str], str]:
             p.replace(annotation=hints.get(p.name, p.empty))
             for p in sig.parameters.values()
         ],
-        return_annotation=hints.get('return', inspect.Parameter.empty),
+        return_annotation=hints.get("return", inspect.Parameter.empty),
     )
     imports = set()
     for hint in hints.values():
         imports.update(set(_iter_imports(hint)))
-    imports -= {'typing'}
+    imports -= {"typing"}
 
-    doc = f'"""{func.__doc__}"""' if func.__doc__ else '...'
-    return imports, f'def {func.__name__}{sig}:\n    {doc}\n'
+    doc = f'"""{func.__doc__}"""' if func.__doc__ else "..."
+    return imports, f"def {func.__name__}{sig}:\n    {doc}\n"
 
 
 def _get_subclass_methods(cls: Type[Any]) -> Set[str]:
@@ -117,7 +117,7 @@ def _get_subclass_methods(cls: Type[Any]) -> Set[str]:
 
 def generate_class_stubs(cls: Type) -> Tuple[Set[str], str]:
     """Generate a stub and imports for a class."""
-    bases = ", ".join(f'{b.__module__}.{b.__name__}' for b in cls.__bases__)
+    bases = ", ".join(f"{b.__module__}.{b.__name__}" for b in cls.__bases__)
 
     methods = []
     attrs = []
@@ -138,17 +138,17 @@ def generate_class_stubs(cls: Type) -> Tuple[Set[str], str]:
     for name, type_ in hints.items():
         if name not in local_names:
             continue
-        if hasattr(type_, '__name__'):
-            hint = f'{type_.__module__}.{type_.__name__}'
+        if hasattr(type_, "__name__"):
+            hint = f"{type_.__module__}.{type_.__name__}"
         else:
-            hint = repr(type_).replace('typing.', '')
+            hint = repr(type_).replace("typing.", "")
         attrs.append(f'{name}: {hint.replace("builtins.", "")}')
         imports.update(set(_iter_imports(type_)))
 
-    doc = f'"""{cls.__doc__.lstrip()}"""' if cls.__doc__ else '...'
-    stub = f'class {cls.__name__}({bases}):\n    {doc}\n'
-    stub += textwrap.indent("\n".join(attrs), '    ')
-    stub += "\n" + textwrap.indent("\n".join(methods), '    ')
+    doc = f'"""{cls.__doc__.lstrip()}"""' if cls.__doc__ else "..."
+    stub = f"class {cls.__name__}({bases}):\n    {doc}\n"
+    stub += textwrap.indent("\n".join(attrs), "    ")
+    stub += "\n" + textwrap.indent("\n".join(methods), "    ")
 
     return imports, stub
 
@@ -162,12 +162,12 @@ def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
         module = importlib.import_module(module)
 
     # try to use __all__, or guess exports
-    names = getattr(module, '__all__', None)
+    names = getattr(module, "__all__", None)
     if not names:
         names = _guess_exports(module)
         warnings.warn(
-            f'Module {module.__name__} does not provide `__all__`. '
-            'Guessing exports.'
+            f"Module {module.__name__} does not provide `__all__`. "
+            "Guessing exports."
         )
 
     # For each object, create a stub and gather imports for the top of the file
@@ -183,8 +183,8 @@ def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
         stubs.append(stub)
 
     # build the final file string
-    importstr = "\n".join(f'import {n}' for n in imports)
-    body = '\n'.join(stubs)
+    importstr = "\n".join(f"import {n}" for n in imports)
+    body = "\n".join(stubs)
     pyi = PYI_TEMPLATE.format(imports=importstr, body=body)
     # format with black and isort
     # pyi = _format_module_str(pyi)
@@ -193,7 +193,7 @@ def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
     if save:
         print("Writing stub:", module.__file__.replace(".py", ".pyi"))
         file_path = module.__file__.replace(".py", ".pyi")
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             f.write(pyi)
         subprocess.run(["ruff", file_path])
         subprocess.run(["black", file_path])
@@ -201,10 +201,10 @@ def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
     return pyi
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
 
-    default_modules = ['napari.view_layers', 'napari.components.viewer_model']
+    default_modules = ["napari.view_layers", "napari.components.viewer_model"]
 
     for mod in sys.argv[1:] or default_modules:
         generate_module_stub(mod)

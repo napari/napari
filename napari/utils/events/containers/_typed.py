@@ -92,7 +92,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             if not isinstance(value, Iterable):
                 raise TypeError(
                     trans._(
-                        'Can only assign an iterable to slice',
+                        "Can only assign an iterable to slice",
                         deferred=True,
                     )
                 )
@@ -122,7 +122,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: slice) -> 'TypedMutableSequence[_T]':
+    def __getitem__(self, key: slice) -> "TypedMutableSequence[_T]":
         ...  # pragma: no cover
 
     def __getitem__(self, key):
@@ -165,7 +165,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         ):
             raise TypeError(
                 trans._(
-                    'Cannot add object with type {dtype!r} to TypedList expecting type {basetypes!r}',
+                    "Cannot add object with type {dtype!r} to TypedList expecting type {basetypes!r}",
                     deferred=True,
                     dtype=type(e),
                     basetypes=self._basetypes,

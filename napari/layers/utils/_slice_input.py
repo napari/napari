@@ -13,7 +13,7 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from napari.components.dims import Dims
 
-_T = TypeVar('_T')
+_T = TypeVar("_T")
 
 
 @dataclass(frozen=True)
@@ -49,7 +49,7 @@ class _ThickNDSlice(Generic[_T]):
         else:
             if ndim is None:
                 raise ValueError(
-                    'ndim must be provided if no other value is given'
+                    "ndim must be provided if no other value is given"
                 )
             val_ndim = ndim
 
@@ -186,8 +186,8 @@ class _SliceInput:
         if not self.is_orthogonal(world_to_data):
             warnings.warn(
                 trans._(
-                    'Non-orthogonal slicing is being requested, but is not fully supported. '
-                    'Data is displayed without applying an out-of-slice rotation or shear component.',
+                    "Non-orthogonal slicing is being requested, but is not fully supported. "
+                    "Data is displayed without applying an out-of-slice rotation or shear component.",
                     deferred=True,
                 ),
                 category=UserWarning,

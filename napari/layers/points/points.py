@@ -324,10 +324,10 @@ class Points(Layer):
         Mode.SELECT: highlight,
     }
     _cursor_modes: ClassVar[Dict[Mode, str]] = {
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-        Mode.ADD: 'crosshair',
-        Mode.SELECT: 'standard',
+        Mode.PAN_ZOOM: "standard",
+        Mode.TRANSFORM: "standard",
+        Mode.ADD: "crosshair",
+        Mode.SELECT: "standard",
     }
 
     # TODO  write better documentation for edge_color and face_color
@@ -345,17 +345,17 @@ class Points(Layer):
         feature_defaults=None,
         properties=None,
         text=None,
-        symbol='o',
+        symbol="o",
         size=10,
         edge_width=0.05,
         edge_width_is_relative=True,
-        edge_color='dimgray',
+        edge_color="dimgray",
         edge_color_cycle=None,
-        edge_colormap='viridis',
+        edge_colormap="viridis",
         edge_contrast_limits=None,
-        face_color='white',
+        face_color="white",
         face_color_cycle=None,
-        face_colormap='viridis',
+        face_colormap="viridis",
         face_contrast_limits=None,
         out_of_slice_display=False,
         n_dimensional=None,
@@ -367,16 +367,16 @@ class Points(Layer):
         shear=None,
         affine=None,
         opacity=1,
-        blending='translucent',
+        blending="translucent",
         visible=True,
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
-        shading='none',
+        shading="none",
         canvas_size_limits=(2, 10000),
         antialiasing=1,
         shown=True,
-        projection_mode='none',
+        projection_mode="none",
     ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -484,7 +484,7 @@ class Points(Layer):
             np.asarray(edge_width) if np.isscalar(edge_width) else 0.1
         )
         self.current_symbol = (
-            np.asarray(symbol) if np.isscalar(symbol) else 'o'
+            np.asarray(symbol) if np.isscalar(symbol) else "o"
         )
 
         # Index of hovered point
@@ -719,7 +719,7 @@ class Points(Layer):
                 color_manager.color_properties = None
                 warnings.warn(
                     trans._(
-                        'property used for {name} dropped',
+                        "property used for {name} dropped",
                         deferred=True,
                         name=name,
                     ),
@@ -727,9 +727,9 @@ class Points(Layer):
                 )
             else:
                 color_manager.color_properties = {
-                    'name': color_name,
-                    'values': feature_table.values[color_name].to_numpy(),
-                    'current_value': feature_table.defaults[color_name][0],
+                    "name": color_name,
+                    "values": feature_table.values[color_name].to_numpy(),
+                    "current_value": feature_table.defaults[color_name][0],
                 }
 
     @properties.setter
@@ -918,14 +918,14 @@ class Points(Layer):
         if not isinstance(size, numbers.Number):
             raise TypeError(
                 trans._(
-                    'currrent size must be a number',
+                    "currrent size must be a number",
                     deferred=True,
                 )
             )
         if size < 0:
             raise ValueError(
                 trans._(
-                    'current_size value must be positive.',
+                    "current_size value must be positive.",
                     deferred=True,
                 ),
             )
@@ -953,7 +953,7 @@ class Points(Layer):
         if value < 0:
             warnings.warn(
                 message=trans._(
-                    'antialiasing value must be positive, value will be set to 0.',
+                    "antialiasing value must be positive, value will be set to 0.",
                     deferred=True,
                 ),
                 category=RuntimeWarning,
@@ -1007,7 +1007,7 @@ class Points(Layer):
         if np.any(edge_width < 0):
             raise ValueError(
                 trans._(
-                    'All edge_width must be > 0',
+                    "All edge_width must be > 0",
                     deferred=True,
                 )
             )
@@ -1015,7 +1015,7 @@ class Points(Layer):
         if self.edge_width_is_relative and np.any(edge_width > 1):
             raise ValueError(
                 trans._(
-                    'All edge_width must be between 0 and 1 if edge_width_is_relative is enabled',
+                    "All edge_width must be between 0 and 1 if edge_width_is_relative is enabled",
                     deferred=True,
                 )
             )
@@ -1035,7 +1035,7 @@ class Points(Layer):
         ):
             raise ValueError(
                 trans._(
-                    'edge_width_is_relative can only be enabled if edge_width is between 0 and 1',
+                    "edge_width_is_relative can only be enabled if edge_width is between 0 and 1",
                     deferred=True,
                 )
             )
@@ -1142,7 +1142,7 @@ class Points(Layer):
 
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
-        self._set_color_mode(edge_color_mode, 'edge')
+        self._set_color_mode(edge_color_mode, "edge")
 
     @property
     def face_color(self) -> np.ndarray:
@@ -1229,7 +1229,7 @@ class Points(Layer):
 
     @face_color_mode.setter
     def face_color_mode(self, face_color_mode):
-        self._set_color_mode(face_color_mode, 'face')
+        self._set_color_mode(face_color_mode, "face")
 
     def _set_color_mode(
         self, color_mode: Union[ColorMode, str], attribute: str
@@ -1246,7 +1246,7 @@ class Points(Layer):
             Should be 'edge' for edge_color_mode or 'face' for face_color_mode.
         """
         color_mode = ColorMode(color_mode)
-        color_manager = getattr(self, f'_{attribute}')
+        color_manager = getattr(self, f"_{attribute}")
 
         if color_mode == ColorMode.DIRECT:
             color_manager.color_mode = color_mode
@@ -1254,20 +1254,20 @@ class Points(Layer):
             if color_manager.color_properties is not None:
                 color_property = color_manager.color_properties.name
             else:
-                color_property = ''
-            if color_property == '':
+                color_property = ""
+            if color_property == "":
                 if self.features.shape[1] > 0:
                     new_color_property = next(iter(self.features))
                     color_manager.color_properties = {
-                        'name': new_color_property,
-                        'values': self.features[new_color_property].to_numpy(),
-                        'current_value': np.squeeze(
+                        "name": new_color_property,
+                        "values": self.features[new_color_property].to_numpy(),
+                        "current_value": np.squeeze(
                             self.current_properties[new_color_property]
                         ),
                     }
                     warnings.warn(
                         trans._(
-                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
+                            "_{attribute}_color_property was not set, setting to: {new_color_property}",
                             deferred=True,
                             attribute=attribute,
                             new_color_property=new_color_property,
@@ -1276,7 +1276,7 @@ class Points(Layer):
                 else:
                     raise ValueError(
                         trans._(
-                            'There must be a valid Points.properties to use {color_mode}',
+                            "There must be a valid Points.properties to use {color_mode}",
                             deferred=True,
                             color_mode=color_mode,
                         )
@@ -1289,7 +1289,7 @@ class Points(Layer):
             ):
                 raise TypeError(
                     trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
+                        "selected property must be numeric to use ColorMode.COLORMAP",
                         deferred=True,
                     )
                 )
@@ -1323,37 +1323,37 @@ class Points(Layer):
         state = self._get_base_state()
         state.update(
             {
-                'symbol': self.symbol
+                "symbol": self.symbol
                 if self.data.size
                 else [self.current_symbol],
-                'edge_width': self.edge_width,
-                'edge_width_is_relative': self.edge_width_is_relative,
-                'face_color': self.face_color
+                "edge_width": self.edge_width,
+                "edge_width_is_relative": self.edge_width_is_relative,
+                "face_color": self.face_color
                 if self.data.size
                 else [self.current_face_color],
-                'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap.dict(),
-                'face_contrast_limits': self.face_contrast_limits,
-                'edge_color': self.edge_color
+                "face_color_cycle": self.face_color_cycle,
+                "face_colormap": self.face_colormap.dict(),
+                "face_contrast_limits": self.face_contrast_limits,
+                "edge_color": self.edge_color
                 if self.data.size
                 else [self.current_edge_color],
-                'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap.dict(),
-                'edge_contrast_limits': self.edge_contrast_limits,
-                'properties': self.properties,
-                'property_choices': self.property_choices,
-                'text': self.text.dict(),
-                'out_of_slice_display': self.out_of_slice_display,
-                'n_dimensional': self.out_of_slice_display,
-                'size': self.size,
-                'ndim': self.ndim,
-                'data': self.data,
-                'features': self.features,
-                'feature_defaults': self.feature_defaults,
-                'shading': self.shading,
-                'antialiasing': self.antialiasing,
-                'canvas_size_limits': self.canvas_size_limits,
-                'shown': self.shown,
+                "edge_color_cycle": self.edge_color_cycle,
+                "edge_colormap": self.edge_colormap.dict(),
+                "edge_contrast_limits": self.edge_contrast_limits,
+                "properties": self.properties,
+                "property_choices": self.property_choices,
+                "text": self.text.dict(),
+                "out_of_slice_display": self.out_of_slice_display,
+                "n_dimensional": self.out_of_slice_display,
+                "size": self.size,
+                "ndim": self.ndim,
+                "data": self.data,
+                "features": self.features,
+                "feature_defaults": self.feature_defaults,
+                "shading": self.shading,
+                "antialiasing": self.antialiasing,
+                "canvas_size_limits": self.canvas_size_limits,
+                "shown": self.shown,
             }
         )
         return state
@@ -2087,50 +2087,50 @@ class Points(Layer):
 
         if len(self._clipboard.keys()) > 0:
             not_disp = self._slice_input.not_displayed
-            data = deepcopy(self._clipboard['data'])
+            data = deepcopy(self._clipboard["data"])
             offset = [
-                self._data_slice[i] - self._clipboard['indices'][i]
+                self._data_slice[i] - self._clipboard["indices"][i]
                 for i in not_disp
             ]
             data[:, not_disp] = data[:, not_disp] + np.array(offset)
             self._data = np.append(self.data, data, axis=0)
             self._shown = np.append(
-                self.shown, deepcopy(self._clipboard['shown']), axis=0
+                self.shown, deepcopy(self._clipboard["shown"]), axis=0
             )
             self._size = np.append(
-                self.size, deepcopy(self._clipboard['size']), axis=0
+                self.size, deepcopy(self._clipboard["size"]), axis=0
             )
             self._symbol = np.append(
-                self.symbol, deepcopy(self._clipboard['symbol']), axis=0
+                self.symbol, deepcopy(self._clipboard["symbol"]), axis=0
             )
 
-            self._feature_table.append(self._clipboard['features'])
+            self._feature_table.append(self._clipboard["features"])
 
-            self.text._paste(**self._clipboard['text'])
+            self.text._paste(**self._clipboard["text"])
 
             self._edge_width = np.append(
                 self.edge_width,
-                deepcopy(self._clipboard['edge_width']),
+                deepcopy(self._clipboard["edge_width"]),
                 axis=0,
             )
             self._edge._paste(
-                colors=self._clipboard['edge_color'],
+                colors=self._clipboard["edge_color"],
                 properties=_features_to_properties(
-                    self._clipboard['features']
+                    self._clipboard["features"]
                 ),
             )
             self._face._paste(
-                colors=self._clipboard['face_color'],
+                colors=self._clipboard["face_color"],
                 properties=_features_to_properties(
-                    self._clipboard['features']
+                    self._clipboard["features"]
                 ),
             )
 
             self._selected_view = list(
-                range(npoints, npoints + len(self._clipboard['data']))
+                range(npoints, npoints + len(self._clipboard["data"]))
             )
             self._selected_data.update(
-                set(range(totpoints, totpoints + len(self._clipboard['data'])))
+                set(range(totpoints, totpoints + len(self._clipboard["data"])))
             )
             self.refresh()
 
@@ -2139,16 +2139,16 @@ class Points(Layer):
         if len(self.selected_data) > 0:
             index = list(self.selected_data)
             self._clipboard = {
-                'data': deepcopy(self.data[index]),
-                'edge_color': deepcopy(self.edge_color[index]),
-                'face_color': deepcopy(self.face_color[index]),
-                'shown': deepcopy(self.shown[index]),
-                'size': deepcopy(self.size[index]),
-                'symbol': deepcopy(self.symbol[index]),
-                'edge_width': deepcopy(self.edge_width[index]),
-                'features': deepcopy(self.features.iloc[index]),
-                'indices': self._data_slice,
-                'text': self.text._copy(index),
+                "data": deepcopy(self.data[index]),
+                "edge_color": deepcopy(self.edge_color[index]),
+                "face_color": deepcopy(self.face_color[index]),
+                "shown": deepcopy(self.shown[index]),
+                "size": deepcopy(self.size[index]),
+                "symbol": deepcopy(self.symbol[index]),
+                "edge_width": deepcopy(self.edge_width[index]),
+                "features": deepcopy(self.features.iloc[index]),
+                "indices": self._data_slice,
+                "text": self.text._copy(index),
             }
         else:
             self._clipboard = {}
@@ -2225,7 +2225,7 @@ class Points(Layer):
                 for i in range(self.ndim)
             ]
             submask_grids = np.stack(
-                np.meshgrid(*submask_coords, copy=False, indexing='ij'),
+                np.meshgrid(*submask_coords, copy=False, indexing="ij"),
                 axis=-1,
             )
             # Update the mask coordinates based on the normalized square distance
@@ -2276,7 +2276,7 @@ class Points(Layer):
             value = None
 
         source_info = self._get_source_info()
-        source_info['coordinates'] = generate_layer_coords_status(
+        source_info["coordinates"] = generate_layer_coords_status(
             position[-self.ndim :], value
         )
 
@@ -2288,7 +2288,7 @@ class Points(Layer):
             world=world,
         )
         if properties:
-            source_info['coordinates'] += "; " + ", ".join(properties)
+            source_info["coordinates"] += "; " + ", ".join(properties)
 
         return source_info
 
@@ -2353,9 +2353,9 @@ class Points(Layer):
             return []
 
         return [
-            f'{k}: {v[value]}'
+            f"{k}: {v[value]}"
             for k, v in self.features.items()
-            if k != 'index'
+            if k != "index"
             and len(v) > value
             and v[value] is not None
             and not (isinstance(v[value], float) and np.isnan(v[value]))

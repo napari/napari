@@ -124,7 +124,7 @@ def _create_client_env(server_port: int) -> dict:
     # Every client gets the same config. Copy template and then stuff
     # in the correct values.
     client_config = copy.deepcopy(client_config_template)
-    client_config['server_port'] = server_port
+    client_config["server_port"] = server_port
 
     # Start with our environment and just add in the one variable.
     env = os.environ.copy()
@@ -160,13 +160,13 @@ class MonitorService:
         server_port = self._manager.address[1]
         LOGGER.info("Listening on port %s", server_port)
 
-        num_clients = len(self._config['clients'])
+        num_clients = len(self._config["clients"])
         LOGGER.info("Starting %d clients...", num_clients)
 
         env = _create_client_env(server_port)
 
         # Start every client.
-        for args in self._config['clients']:
+        for args in self._config["clients"]:
             LOGGER.info("Starting client %s", args)
 
             # Use Popen to run and not wait for the process to finish.

@@ -28,13 +28,13 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
         import IPython.core.ultratb
 
         def format_exc_info(
-            info: ExcInfo, as_html: bool, color='Neutral'
+            info: ExcInfo, as_html: bool, color="Neutral"
         ) -> str:
             # avoids printing the array data
             # some discussion related to obtaining the current string function
             # can be found here, https://github.com/numpy/numpy/issues/11266
             np.set_string_function(
-                lambda arr: f'{type(arr)} {arr.shape} {arr.dtype}'
+                lambda arr: f"{type(arr)} {arr.shape} {arr.dtype}"
             )
             vbtb = IPython.core.ultratb.VerboseTB(color_scheme=color)
             if as_html:
@@ -68,13 +68,13 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
                     yield from cgitb_chain(exc.__cause__)
                     yield (
                         '<br><br><font color="#51B432">The above exception was '
-                        'the direct cause of the following exception:</font><br>'
+                        "the direct cause of the following exception:</font><br>"
                     )
                 elif exc.__context__:
                     yield from cgitb_chain(exc.__context__)
                     yield (
                         '<br><br><font color="#51B432">During handling of the '
-                        'above exception, another exception occurred:</font><br>'
+                        "above exception, another exception occurred:</font><br>"
                     )
                 yield cgitb_html(exc)
 
@@ -88,18 +88,18 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
             ) -> str:
                 # avoids printing the array data
                 np.set_string_function(
-                    lambda arr: f'{type(arr)} {arr.shape} {arr.dtype}'
+                    lambda arr: f"{type(arr)} {arr.shape} {arr.dtype}"
                 )
                 if as_html:
                     html = "\n".join(cgitb_chain(info[1]))
                     # cgitb has a lot of hardcoded colors that don't work for us
                     # remove bgcolor, and let theme handle it
-                    html = re.sub('bgcolor="#.*"', '', html)
+                    html = re.sub('bgcolor="#.*"', "", html)
                     # remove superfluous whitespace
-                    html = html.replace('<br>\n', '\n')
+                    html = html.replace("<br>\n", "\n")
                     # but retain it around the <small> bits
                     html = re.sub(
-                        r'(<tr><td><small.*</tr>)', '<br>\\1<br>', html
+                        r"(<tr><td><small.*</tr>)", "<br>\\1<br>", html
                     )
                     # weird 2-part syntax is a workaround for hard-to-grep text.
                     html = html.replace(
@@ -122,7 +122,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
                     tb_text = html
                 else:
                     # if we don't need HTML, just use traceback
-                    tb_text = ''.join(traceback.format_exception(*info))
+                    tb_text = "".join(traceback.format_exception(*info))
                 # resets to default behavior
                 np.set_string_function(None)
                 return tb_text
@@ -134,11 +134,11 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
             ) -> str:
                 # avoids printing the array data
                 np.set_string_function(
-                    lambda arr: f'{type(arr)} {arr.shape} {arr.dtype}'
+                    lambda arr: f"{type(arr)} {arr.shape} {arr.dtype}"
                 )
-                tb_text = ''.join(traceback.format_exception(*info))
+                tb_text = "".join(traceback.format_exception(*info))
                 if as_html:
-                    tb_text = '<pre>' + tb_text + '</pre>'
+                    tb_text = "<pre>" + tb_text + "</pre>"
                 np.set_string_function(None)
                 return tb_text
 

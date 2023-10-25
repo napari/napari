@@ -24,15 +24,15 @@ class T:
 
 
 def test_list_model():
-    root: SelectableEventedList[str] = SelectableEventedList('abcdef')
+    root: SelectableEventedList[str] = SelectableEventedList("abcdef")
     model = QtListModel(root)
     assert all(
         model.data(model.index(i), Qt.UserRole) == letter
-        for i, letter in enumerate('abcdef')
+        for i, letter in enumerate("abcdef")
     )
     assert all(
         model.data(model.index(i), Qt.DisplayRole) == letter
-        for i, letter in enumerate('abcdef')
+        for i, letter in enumerate("abcdef")
     )
     # unknown data role
     assert not any(model.data(model.index(i), Qt.FontRole) for i in range(5))
@@ -40,10 +40,10 @@ def test_list_model():
     assert not (model.flags(model.index(1)) & Qt.ItemIsDropEnabled)
 
     with pytest.raises(TypeError):
-        model.setRoot('asdf')
+        model.setRoot("asdf")
 
     # smoke test that we can change the root model.
-    model.setRoot(SelectableEventedList('zysv'))
+    model.setRoot(SelectableEventedList("zysv"))
 
 
 def test_list_view(qtbot):
@@ -95,7 +95,7 @@ def test_list_view_keypress(qtbot):
     assert first not in root
 
 
-@pytest.mark.parametrize('sources, dest, expectation', BASIC_INDICES)
+@pytest.mark.parametrize("sources, dest, expectation", BASIC_INDICES)
 def test_move_multiple(sources, dest, expectation):
     """Test that models stay in sync with complicated moves.
 

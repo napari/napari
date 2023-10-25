@@ -15,14 +15,14 @@ from .utils import Skiper
 class TextManagerSuite:
     """Benchmarks for creating and modifying a text manager."""
 
-    param_names = ['n', 'string']
+    param_names = ["n", "string"]
     params = [
         [2**i for i in range(4, 18, 2)],
         [
-            {'constant': 'test'},
-            'string_property',
-            'float_property',
-            '{string_property}: {float_property:.2f}',
+            {"constant": "test"},
+            "string_property",
+            "float_property",
+            "{string_property}: {float_property:.2f}",
         ],
     ]
 
@@ -31,17 +31,17 @@ class TextManagerSuite:
 
     def setup(self, n, string):
         np.random.seed(0)
-        categories = ('cat', 'car')
+        categories = ("cat", "car")
         self.features = pd.DataFrame(
             {
-                'string_property': pd.Series(
+                "string_property": pd.Series(
                     np.random.choice(categories, n),
                     dtype=pd.CategoricalDtype(categories),
                 ),
-                'float_property': np.random.rand(n),
+                "float_property": np.random.rand(n),
             }
         )
-        self.current_properties = self.features.iloc[[-1]].to_dict('list')
+        self.current_properties = self.features.iloc[[-1]].to_dict("list")
         self.manager = TextManager(string=string, features=self.features)
         self.indices_to_remove = list(range(0, n, 2))
 

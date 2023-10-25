@@ -1,6 +1,6 @@
 def dims_scroll(viewer, event):
     """Scroll the dimensions slider."""
-    if 'Control' not in event.modifiers:
+    if "Control" not in event.modifiers:
         return
     if event.native.inverted():
         viewer.dims._scroll_progress += event.delta[1]

@@ -53,10 +53,10 @@ class EventedSettings(BaseSettings, EventedModel):
         # re-emit subfield
         for name, field in self.__fields__.items():
             attr = getattr(self, name)
-            if isinstance(getattr(attr, 'events', None), EmitterGroup):
+            if isinstance(getattr(attr, "events", None), EmitterGroup):
                 attr.events.connect(partial(self._on_sub_event, field=name))
 
-            if field.field_info.extra.get('requires_restart'):
+            if field.field_info.extra.get("requires_restart"):
                 emitter = getattr(self.events, name)
 
                 @emitter.connect
@@ -72,8 +72,8 @@ class EventedSettings(BaseSettings, EventedModel):
         """emit the field.attr name and new value"""
         if field:
             field += "."
-        value = getattr(event, 'value', None)
-        self.events.changed(key=f'{field}{event._type}', value=value)
+        value = getattr(event, "value", None)
+        self.events.changed(key=f"{field}{event._type}", value=value)
 
 
 _NOT_SET = object()
@@ -99,7 +99,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         _cfg = (
             config_path
             if config_path is not _NOT_SET
-            else self.__private_attributes__['_config_path'].get_default()
+            else self.__private_attributes__["_config_path"].get_default()
         )
         # this line is here for usage in the `customise_sources` hook.  It
         # will be overwritten in __init__ by BaseModel._init_private_attributes
@@ -155,8 +155,8 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         value, and will exclude values that were provided by environment
         variables.  Empty dicts will also be removed.
         """
-        dict_kwargs.setdefault('exclude_defaults', True)
-        dict_kwargs.setdefault('exclude_env', True)
+        dict_kwargs.setdefault("exclude_defaults", True)
+        dict_kwargs.setdefault("exclude_env", True)
         data = self.dict(**dict_kwargs)
         _remove_empty_dicts(data)
         return data
@@ -183,7 +183,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
 
     def _dump(self, path: str, data: Dict) -> None:
         """Encode and dump `data` to `path` using a path-appropriate encoder."""
-        if str(path).endswith(('.yaml', '.yml')):
+        if str(path).endswith((".yaml", ".yml")):
             _data = self._yaml_dump(data)
         elif str(path).endswith(".json"):
             json_dumps = self.__config__.json_dumps
@@ -196,12 +196,12 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
                     path=path,
                 )
             )
-        with open(path, 'w') as target:
+        with open(path, "w") as target:
             target.write(_data)
 
     def env_settings(self) -> Dict[str, Any]:
         """Get a dict of fields that were provided as environment vars."""
-        env_settings = getattr(self.__config__, '_env_settings', {})
+        env_settings = getattr(self.__config__, "_env_settings", {})
         if callable(env_settings):
             env_settings = env_settings(self)
         return env_settings
@@ -216,7 +216,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         env_data = self.env_settings()
         if env_data:
             _restore_config_data(
-                data, env_data, getattr(self, '_config_file_settings', {})
+                data, env_data, getattr(self, "_config_file_settings", {})
             )
 
     class Config:
@@ -300,17 +300,17 @@ def nested_env_settings(
             if not isinstance(field.type_, type(BaseModel)):
                 continue  # pragma: no cover
             field_type = cast(BaseModel, field.type_)
-            for env_name in field.field_info.extra['env_names']:
+            for env_name in field.field_info.extra["env_names"]:
                 for subf in field_type.__fields__.values():
                     # first check if subfield directly declares an "env"
                     # (for example: ExperimentalSettings.async_)
-                    for e in subf.field_info.extra.get('env_names', []):
+                    for e in subf.field_info.extra.get("env_names", []):
                         env_val = env_vars.get(e.lower())
                         if env_val is not None:
                             break
                     # otherwise, look for the standard nested env var
                     else:
-                        env_val = env_vars.get(f'{env_name}_{subf.name}')
+                        env_val = env_vars.get(f"{env_name}_{subf.name}")
                         if env_val is not None:
                             break
 
@@ -363,13 +363,13 @@ def config_file_settings_source(
         *validated* values for the model.
     """
     # _config_path is the primary config file on the model (the one to save to)
-    config_path = getattr(settings, '_config_path', None)
+    config_path = getattr(settings, "_config_path", None)
 
-    default_cfg = type(settings).__private_attributes__.get('_config_path')
-    default_cfg = getattr(default_cfg, 'default', None)
+    default_cfg = type(settings).__private_attributes__.get("_config_path")
+    default_cfg = getattr(default_cfg, "default", None)
 
     # if the config has a `sources` list, read those too and merge.
-    sources: List[str] = list(getattr(settings.__config__, 'sources', []))
+    sources: List[str] = list(getattr(settings.__config__, "sources", []))
     if config_path:
         sources.append(config_path)
     if not sources:
@@ -395,10 +395,10 @@ def config_file_settings_source(
             continue
 
         # get loader for yaml/json
-        if str(path).endswith(('.yaml', '.yml')):
-            load = __import__('yaml').safe_load
+        if str(path).endswith((".yaml", ".yml")):
+            load = __import__("yaml").safe_load
         elif str(path).endswith(".json"):
-            load = __import__('json').load
+            load = __import__("json").load
         else:
             warn(
                 trans._(
@@ -428,7 +428,7 @@ def config_file_settings_source(
         # back to this point again.
         type(settings)(config_path=None, **data)
     except ValidationError as err:
-        if getattr(settings.__config__, 'strict_config_check', False):
+        if getattr(settings.__config__, "strict_config_check", False):
             raise
 
         # if errors occur, we still want to boot, so we just remove bad keys
@@ -440,16 +440,16 @@ def config_file_settings_source(
         )
         with contextlib.suppress(Exception):
             # we're about to nuke some settings, so just in case... try backup
-            backup_path = path_.parent / f'{path_.stem}.BAK{path_.suffix}'
+            backup_path = path_.parent / f"{path_.stem}.BAK{path_.suffix}"
             backup_path.write_text(path_.read_text())
 
         _logger.warning(msg)
         try:
-            _remove_bad_keys(data, [e.get('loc', ()) for e in errors])
+            _remove_bad_keys(data, [e.get("loc", ()) for e in errors])
         except KeyError:  # pragma: no cover
             _logger.warning(
                 trans._(
-                    'Failed to remove validation errors from config file. Using defaults.'
+                    "Failed to remove validation errors from config file. Using defaults."
                 )
             )
             data = {}

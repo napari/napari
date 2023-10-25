@@ -10,15 +10,15 @@ from napari.utils.interactions import mouse_press_callbacks
 def make_labels_layer(array_type, shape):
     """Make a labels layer, either NumPy, zarr, or tensorstore."""
     chunks = tuple(s // 2 for s in shape)
-    if array_type == 'numpy':
+    if array_type == "numpy":
         labels = np.zeros(shape, dtype=np.uint32)
-    elif array_type == 'zarr':
+    elif array_type == "zarr":
         labels = zarr.zeros(shape=shape, dtype=np.uint32, chunks=chunks)
-    elif array_type == 'tensorstore':
-        ts = pytest.importorskip('tensorstore')
+    elif array_type == "tensorstore":
+        ts = pytest.importorskip("tensorstore")
         spec = {
-            'driver': 'zarr',
-            'kvstore': {'driver': 'memory'},
+            "driver": "zarr",
+            "kvstore": {"driver": "memory"},
             "metadata": {"chunks": chunks},
         }
         labels = ts.open(
@@ -31,7 +31,7 @@ def make_labels_layer(array_type, shape):
 
 
 @skip_local_popups
-@pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
+@pytest.mark.parametrize("array_type", ["numpy", "zarr", "tensorstore"])
 def test_labels_painting(make_napari_viewer, array_type):
     """Check that painting labels paints on the canvas.
 
@@ -48,7 +48,7 @@ def test_labels_painting(make_napari_viewer, array_type):
 
 
 @skip_local_popups
-@pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
+@pytest.mark.parametrize("array_type", ["numpy", "zarr", "tensorstore"])
 def test_labels_fill_slice(make_napari_viewer, array_type):
     """Check that painting labels paints only on current slice.
 
@@ -69,7 +69,7 @@ def test_labels_fill_slice(make_napari_viewer, array_type):
 
 
 @skip_local_popups
-@pytest.mark.parametrize('array_type', ['numpy', 'zarr', 'tensorstore'])
+@pytest.mark.parametrize("array_type", ["numpy", "zarr", "tensorstore"])
 def test_labels_painting_with_mouse(
     MouseEvent, make_napari_viewer, array_type
 ):
@@ -84,9 +84,9 @@ def test_labels_painting_with_mouse(
     layer = viewer.add_labels(labels)
     QCoreApplication.instance().processEvents()
 
-    layer.mode = 'paint'
+    layer.mode = "paint"
     event = MouseEvent(
-        type='mouse_press',
+        type="mouse_press",
         button=1,
         position=(0, 10, 10),
         dims_displayed=(0, 1),

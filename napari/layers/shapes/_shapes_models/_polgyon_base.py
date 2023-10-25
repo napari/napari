@@ -40,7 +40,7 @@ class PolygonBase(Shape):
         ndisplay=2,
         filled=True,
         closed=True,
-        name='polygon',
+        name="polygon",
         interpolation_order=1,
         interpolation_sampling=50,
     ) -> None:
@@ -123,4 +123,4 @@ class PolygonBase(Shape):
                 np.min(data_not_displayed, axis=0),
                 np.max(data_not_displayed, axis=0),
             ]
-        ).astype('int')
+        ).astype("int")

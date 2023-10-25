@@ -56,8 +56,8 @@ class QColoredSVGIcon(QIcon):
         color: Optional[str] = None,
         opacity: float = 1.0,
         theme: Optional[str] = None,
-        theme_key: str = 'icon',
-    ) -> 'QColoredSVGIcon':
+        theme_key: str = "icon",
+    ) -> "QColoredSVGIcon":
         """Return a new colorized QIcon instance.
 
         Parameters
@@ -88,7 +88,7 @@ class QColoredSVGIcon(QIcon):
     @staticmethod
     def from_resources(
         icon_name: str,
-    ) -> 'QColoredSVGIcon':
+    ) -> "QColoredSVGIcon":
         """Get an icon from napari SVG resources.
 
         Parameters
@@ -124,7 +124,7 @@ class SVGBufferIconEngine(QIconEngine):
 
     def __init__(self, xml: Union[str, bytes]) -> None:
         if isinstance(xml, str):
-            xml = xml.encode('utf-8')
+            xml = xml.encode("utf-8")
         self.data = QByteArray(xml)
         super().__init__()
 

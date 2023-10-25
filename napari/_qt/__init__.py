@@ -8,7 +8,7 @@ from napari.utils.translations import trans
 try:
     from qtpy import API_NAME, QT_VERSION, QtCore
 except Exception as e:
-    if 'No Qt bindings could be found' in str(e):
+    if "No Qt bindings could be found" in str(e):
         from inspect import cleandoc
 
         installed_with_conda = list(
@@ -42,16 +42,16 @@ except Exception as e:
     raise
 
 
-if API_NAME == 'PySide2':
+if API_NAME == "PySide2":
     # Set plugin path appropriately if using PySide2. This is a bug fix
     # for when both PyQt5 and Pyside2 are installed
     import PySide2
 
-    os.environ['QT_PLUGIN_PATH'] = str(
-        Path(PySide2.__file__).parent / 'Qt' / 'plugins'
+    os.environ["QT_PLUGIN_PATH"] = str(
+        Path(PySide2.__file__).parent / "Qt" / "plugins"
     )
 
-if API_NAME == 'PySide6' and sys.version_info[:2] < (3, 10):
+if API_NAME == "PySide6" and sys.version_info[:2] < (3, 10):
     from packaging import version
 
     assert isinstance(QT_VERSION, str)
@@ -66,7 +66,7 @@ if API_NAME == 'PySide6' and sys.version_info[:2] < (3, 10):
 
 
 # When QT is not the specific version, we raise a warning:
-if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
+if tuple(int(x) for x in QtCore.__version__.split(".")[:3]) < (5, 12, 3):
     import importlib.metadata
 
     try:

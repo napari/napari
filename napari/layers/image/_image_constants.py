@@ -89,8 +89,8 @@ class VolumeDepiction(StringEnum):
 
 VOLUME_DEPICTION_TRANSLATION = OrderedDict(
     [
-        (VolumeDepiction.VOLUME, trans._('volume')),
-        (VolumeDepiction.PLANE, trans._('plane')),
+        (VolumeDepiction.VOLUME, trans._("volume")),
+        (VolumeDepiction.PLANE, trans._("plane")),
     ]
 )
 

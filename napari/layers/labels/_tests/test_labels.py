@@ -62,7 +62,7 @@ def test_3D_labels():
 
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
     assert layer.editable is True
-    assert layer.mode == 'pan_zoom'
+    assert layer.mode == "pan_zoom"
 
 
 def test_float_labels():
@@ -141,33 +141,33 @@ def test_changing_modes():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert layer.mode == 'pan_zoom'
+    assert layer.mode == "pan_zoom"
     assert layer.mouse_pan is True
 
-    layer.mode = 'fill'
-    assert layer.mode == 'fill'
+    layer.mode = "fill"
+    assert layer.mode == "fill"
     assert layer.mouse_pan is False
 
-    layer.mode = 'paint'
-    assert layer.mode == 'paint'
+    layer.mode = "paint"
+    assert layer.mode == "paint"
     assert layer.mouse_pan is False
 
-    layer.mode = 'pick'
-    assert layer.mode == 'pick'
+    layer.mode = "pick"
+    assert layer.mode == "pick"
     assert layer.mouse_pan is False
 
-    layer.mode = 'polygon'
-    assert layer.mode == 'polygon'
+    layer.mode = "polygon"
+    assert layer.mode == "polygon"
     assert layer.mouse_pan is False
 
-    layer.mode = 'pan_zoom'
-    assert layer.mode == 'pan_zoom'
+    layer.mode = "pan_zoom"
+    assert layer.mode == "pan_zoom"
     assert layer.mouse_pan is True
 
-    layer.mode = 'paint'
-    assert layer.mode == 'paint'
+    layer.mode = "paint"
+    assert layer.mode == "paint"
     layer.editable = False
-    assert layer.mode == 'pan_zoom'
+    assert layer.mode == "pan_zoom"
     assert layer.editable is False
 
 
@@ -176,13 +176,13 @@ def test_name():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert layer.name == 'Labels'
+    assert layer.name == "Labels"
 
-    layer = Labels(data, name='random')
-    assert layer.name == 'random'
+    layer = Labels(data, name="random")
+    assert layer.name == "random"
 
-    layer.name = 'lbls'
-    assert layer.name == 'lbls'
+    layer.name = "lbls"
+    assert layer.name == "lbls"
 
 
 def test_visiblity():
@@ -224,16 +224,16 @@ def test_blending():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert layer.blending == 'translucent'
+    assert layer.blending == "translucent"
 
-    layer.blending = 'additive'
-    assert layer.blending == 'additive'
+    layer.blending = "additive"
+    assert layer.blending == "additive"
 
-    layer = Labels(data, blending='additive')
-    assert layer.blending == 'additive'
+    layer = Labels(data, blending="additive")
+    assert layer.blending == "additive"
 
-    layer.blending = 'opaque'
-    assert layer.blending == 'opaque'
+    layer.blending = "opaque"
+    assert layer.blending == "opaque"
 
 
 @pytest.mark.filterwarnings("ignore:.*seed is deprecated.*")
@@ -283,9 +283,9 @@ def test_properties():
     assert len(layer.properties) == 0
 
     properties = {
-        'class': np.array(['Background'] + [f'Class {i}' for i in range(20)])
+        "class": np.array(["Background"] + [f"Class {i}" for i in range(20)])
     }
-    label_index = {i: i for i in range(len(properties['class']))}
+    label_index = {i: i for i in range(len(properties["class"]))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
     np.testing.assert_equal(layer.properties, properties)
@@ -298,31 +298,31 @@ def test_properties():
 
     current_label = layer.get_value((0, 0))
     layer_message = layer.get_status((0, 0))
-    assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
+    assert layer_message["coordinates"].endswith(f"Class {current_label - 1}")
 
-    properties = {'class': ['Background']}
+    properties = {"class": ["Background"]}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message['coordinates'].endswith("[No Properties]")
+    assert layer_message["coordinates"].endswith("[No Properties]")
 
-    properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
+    properties = {"class": ["Background", "Class 12"], "index": [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message['coordinates'].endswith('Class 12')
+    assert layer_message["coordinates"].endswith("Class 12")
 
     layer = Labels(data)
     layer.properties = properties
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message['coordinates'].endswith('Class 12')
+    assert layer_message["coordinates"].endswith("Class 12")
 
     layer = Labels(data)
     layer.properties = pd.DataFrame(properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message['coordinates'].endswith('Class 12')
+    assert layer_message["coordinates"].endswith("Class 12")
 
 
 def test_default_properties_assignment():
@@ -349,9 +349,9 @@ def test_multiscale_properties():
     assert len(layer.properties) == 0
 
     properties = {
-        'class': np.array(['Background'] + [f'Class {i}' for i in range(20)])
+        "class": np.array(["Background"] + [f"Class {i}" for i in range(20)])
     }
-    label_index = {i: i for i in range(len(properties['class']))}
+    label_index = {i: i for i in range(len(properties["class"]))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
     np.testing.assert_equal(layer.properties, properties)
@@ -359,19 +359,19 @@ def test_multiscale_properties():
 
     current_label = layer.get_value((0, 0))[1]
     layer_message = layer.get_status((0, 0))
-    assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
+    assert layer_message["coordinates"].endswith(f"Class {current_label - 1}")
 
-    properties = {'class': ['Background']}
+    properties = {"class": ["Background"]}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message['coordinates'].endswith("[No Properties]")
+    assert layer_message["coordinates"].endswith("[No Properties]")
 
-    properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
+    properties = {"class": ["Background", "Class 12"], "index": [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message['coordinates'].endswith('Class 12')
+    assert layer_message["coordinates"].endswith("Class 12")
 
 
 def test_colormap():
@@ -380,11 +380,11 @@ def test_colormap():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert isinstance(layer.colormap, Colormap)
-    assert layer.colormap.name == 'label_colormap'
+    assert layer.colormap.name == "label_colormap"
 
     layer.new_colormap()
     assert isinstance(layer.colormap, Colormap)
-    assert layer.colormap.name == 'label_colormap'
+    assert layer.colormap.name == "label_colormap"
 
 
 def test_label_colormap():
@@ -410,7 +410,7 @@ def test_custom_color_dict():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(
-        data, color={2: 'white', 4: 'red', 8: 'blue', 16: 'red', 32: 'blue'}
+        data, color={2: "white", 4: "red", 8: "blue", 16: "red", 32: "blue"}
     )
 
     # test with custom color dict
@@ -422,7 +422,7 @@ def test_custom_color_dict():
 
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
-    layer.color_mode = 'auto'
+    layer.color_mode = "auto"
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
 
@@ -433,8 +433,8 @@ def test_metadata():
     layer = Labels(data)
     assert layer.metadata == {}
 
-    layer = Labels(data, metadata={'unit': 'cm'})
-    assert layer.metadata == {'unit': 'cm'}
+    layer = Labels(data, metadata={"unit": "cm"})
+    assert layer.metadata == {"unit": "cm"}
 
 
 def test_brush_size():
@@ -579,7 +579,7 @@ def test_contour(input_data, expected_data_view):
         layer._raw_to_displayed(input_data), layer._data_view
     )
 
-    with pytest.raises(ValueError, match='contour value must be >= 0'):
+    with pytest.raises(ValueError, match="contour value must be >= 0"):
         layer.contour = -1
 
 
@@ -734,7 +734,7 @@ def test_paint_2d():
     data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.mode = 'paint'
+    layer.mode = "paint"
     layer.paint((0, 0), 3)
 
     layer.brush_size = 12
@@ -763,7 +763,7 @@ def test_paint_2d_xarray():
 
     layer = Labels(data)
     layer.brush_size = 12
-    layer.mode = 'paint'
+    layer.mode = "paint"
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
     assert layer.data.sum() == 411
@@ -776,7 +776,7 @@ def test_paint_3d():
     data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.mode = 'paint'
+    layer.mode = "paint"
 
     # Paint in 2D
     layer.paint((10, 10, 10), 3)
@@ -880,7 +880,7 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world',
+    "position,view_direction,dims_displayed,world",
     [
         ([10, 5, 5], [1, 0, 0], [0, 1, 2], False),
         ([10, 5, 5], [1, 0, 0], [0, 1, 2], True),
@@ -931,11 +931,11 @@ def test_world_data_extent():
 
 
 @pytest.mark.parametrize(
-    'brush_size, mode, selected_label, preserve_labels, n_dimensional',
+    "brush_size, mode, selected_label, preserve_labels, n_dimensional",
     list(
         itertools.product(
             list(range(1, 22, 5)),
-            ['fill', 'erase', 'paint'],
+            ["fill", "erase", "paint"],
             [1, 20, 100],
             [True, False],
             [True, False],
@@ -960,11 +960,11 @@ def test_undo_redo(
     coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
     while layer.data[tuple(coord.astype(int))] == 0 and np.any(layer.data):
         coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
-    if layer.mode == 'fill':
+    if layer.mode == "fill":
         layer.fill(coord, layer.selected_label)
-    if layer.mode == 'erase':
+    if layer.mode == "erase":
         layer.paint(coord, 0)
-    if layer.mode == 'paint':
+    if layer.mode == "paint":
         layer.paint(coord, layer.selected_label)
     data_history.append(np.copy(layer.data))
     layer.undo()
@@ -1024,7 +1024,7 @@ def test_ndim_paint():
 
 def test_cursor_size_with_negative_scale():
     layer = Labels(np.zeros((5, 5), dtype=int), scale=[-1, -1])
-    layer.mode = 'paint'
+    layer.mode = "paint"
     assert layer.cursor_size > 0
 
 
@@ -1040,29 +1040,29 @@ def test_large_label_values():
 
 
 def test_fill_tensorstore():
-    ts = pytest.importorskip('tensorstore')
+    ts = pytest.importorskip("tensorstore")
 
     labels = np.zeros((5, 7, 8, 9), dtype=int)
     labels[1, 2:4, 4:6, 4:6] = 1
     labels[1, 3:5, 5:7, 6:8] = 2
     labels[2, 3:5, 5:7, 6:8] = 3
-    with TemporaryDirectory(suffix='.zarr') as fout:
+    with TemporaryDirectory(suffix=".zarr") as fout:
         labels_temp = zarr.open(
             fout,
-            mode='w',
+            mode="w",
             shape=labels.shape,
             dtype=np.uint32,
             chunks=(1, 1, 8, 9),
         )
         labels_temp[:] = labels
         labels_ts_spec = {
-            'driver': 'zarr',
-            'kvstore': {'driver': 'file', 'path': fout},
-            'path': '',
-            'metadata': {
-                'dtype': labels_temp.dtype.str,
-                'order': labels_temp.order,
-                'shape': labels.shape,
+            "driver": "zarr",
+            "kvstore": {"driver": "file", "path": fout},
+            "path": "",
+            "metadata": {
+                "dtype": labels_temp.dtype.str,
+                "order": labels_temp.order,
+                "shape": labels.shape,
             },
         }
         data = ts.open(labels_ts_spec, create=False, open=True).result()
@@ -1090,7 +1090,7 @@ def test_fill_with_xarray():
 
 
 @pytest.mark.parametrize(
-    'scale', list(itertools.product([-2, 2], [-0.5, 0.5], [-0.5, 0.5]))
+    "scale", list(itertools.product([-2, 2], [-0.5, 0.5], [-0.5, 0.5]))
 )
 def test_paint_3d_negative_scale(scale):
     labels = np.zeros((3, 5, 11, 11), dtype=int)
@@ -1109,7 +1109,7 @@ def test_rendering_init():
     shape = (6, 10, 15)
     np.random.seed(0)
     data = np.random.randint(20, size=shape)
-    layer = Labels(data, rendering='iso_categorical')
+    layer = Labels(data, rendering="iso_categorical")
 
     assert layer.rendering == LabelsRendering.ISO_CATEGORICAL.value
 
@@ -1415,24 +1415,24 @@ def test_is_default_color():
 
     # setting color to default colors doesn't update color mode
     layer.color = current_color
-    assert layer.color_mode == 'auto'
+    assert layer.color_mode == "auto"
 
     # new colors are not default
-    new_color = {0: 'white', 1: 'red', 3: 'green'}
+    new_color = {0: "white", 1: "red", 3: "green"}
     assert not layer._is_default_colors(new_color)
     # setting the color with non-default colors updates color mode
     layer.color = new_color
-    assert layer.color_mode == 'direct'
+    assert layer.color_mode == "direct"
 
 
 def test_large_labels_direct_color():
     """Make sure direct color works with large label ranges"""
     data = np.array([[0, 1], [2**16, 2**20]], dtype=np.uint32)
-    colors = {1: 'white', 2**16: 'green', 2**20: 'magenta'}
+    colors = {1: "white", 2**16: "green", 2**20: "magenta"}
     layer = Labels(data)
     layer.color = colors
 
-    assert layer.color_mode == 'direct'
+    assert layer.color_mode == "direct"
     np.testing.assert_allclose(layer.get_color(2**20), [1.0, 0.0, 1.0, 1.0])
 
 
@@ -1446,11 +1446,11 @@ def test_invalidate_cache_when_change_color_mode():
     gt_auto = layer._raw_to_displayed(layer._slice.image.raw)
     assert gt_auto.dtype == np.float32
 
-    layer.color_mode = 'direct'
+    layer.color_mode = "direct"
     layer._cached_labels = None
     assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
 
-    layer.color_mode = 'auto'
+    layer.color_mode = "auto"
     # If the cache is not invalidated, it returns colors for
     # the direct color mode instead of the color for the auto mode
     assert np.allclose(
@@ -1463,12 +1463,12 @@ def test_color_mapping_when_color_is_changed():
 
     data = np.zeros((4, 5), dtype=np.int32)
     data[1, :] = np.arange(0, 5)
-    layer = Labels(data, color={1: 'green', 2: 'red', 3: 'white'})
+    layer = Labels(data, color={1: "green", 2: "red", 3: "white"})
     gt_direct_3colors = layer._raw_to_displayed(layer._slice.image.raw)
 
-    layer = Labels(data, color={1: 'green', 2: 'red'})
+    layer = Labels(data, color={1: "green", 2: "red"})
     assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
-    layer.color = {1: 'green', 2: 'red', 3: 'white'}
+    layer.color = {1: "green", 2: "red", 3: "white"}
 
     assert np.allclose(
         layer._raw_to_displayed(layer._slice.image.raw), gt_direct_3colors
@@ -1563,19 +1563,19 @@ def test_get_status_with_custom_index():
     data[5:-2, 2:-2] = 2
     layer = Labels(data)
     df = pd.DataFrame(
-        {'text1': [1, 3], 'text2': [7, -2], 'index': [1, 2]}, index=[1, 2]
+        {"text1": [1, 3], "text2": [7, -2], "index": [1, 2]}, index=[1, 2]
     )
     layer.properties = df
     assert (
-        layer.get_status((0, 0))['coordinates'] == ' [0 0]: 0; [No Properties]'
+        layer.get_status((0, 0))["coordinates"] == " [0 0]: 0; [No Properties]"
     )
     assert (
-        layer.get_status((3, 3))['coordinates']
-        == ' [3 3]: 1; text1: 1, text2: 7'
+        layer.get_status((3, 3))["coordinates"]
+        == " [3 3]: 1; text1: 1, text2: 7"
     )
     assert (
-        layer.get_status((6, 6))['coordinates']
-        == ' [6 6]: 2; text1: 3, text2: -2'
+        layer.get_status((6, 6))["coordinates"]
+        == " [6 6]: 2; text1: 3, text2: -2"
     )
 
 
@@ -1584,10 +1584,10 @@ def test_collision_warning():
     with pytest.warns(
         RuntimeWarning, match="Because integer labels are cast to less-precise"
     ):
-        label.color = {2**25 + 1: 'red', 2**25 + 2: 'blue'}
+        label.color = {2**25 + 1: "red", 2**25 + 2: "blue"}
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        label.color = {1: 'red', 2: 'blue'}
+        label.color = {1: "red", 2: "blue"}
 
 
 def test_labels_features_event():
@@ -1600,7 +1600,7 @@ def test_labels_features_event():
     layer = Labels(np.zeros((4, 5), dtype=np.uint8))
     layer.events.features.connect(on_event)
 
-    layer.features = {'some_feature': []}
+    layer.features = {"some_feature": []}
 
     assert event_emitted
 

@@ -85,7 +85,7 @@ class QtLabelsControls(QtLayerControls):
         FILL.
     """
 
-    layer: 'napari.layers.Labels'
+    layer: "napari.layers.Labels"
 
     def __init__(self, layer) -> None:
         super().__init__(layer)
@@ -130,14 +130,14 @@ class QtLabelsControls(QtLayerControls):
         self._on_brush_size_change()
 
         contig_cb = QCheckBox()
-        contig_cb.setToolTip(trans._('contiguous editing'))
+        contig_cb.setToolTip(trans._("contiguous editing"))
         contig_cb.stateChanged.connect(self.change_contig)
         self.contigCheckBox = contig_cb
         self._on_contiguous_change()
 
         ndim_sb = QSpinBox()
         self.ndimSpinBox = ndim_sb
-        ndim_sb.setToolTip(trans._('number of dimensions for label editing'))
+        ndim_sb.setToolTip(trans._("number of dimensions for label editing"))
         ndim_sb.valueChanged.connect(self.change_n_edit_dim)
         ndim_sb.setMinimum(2)
         ndim_sb.setMaximum(self.layer.ndim)
@@ -147,7 +147,7 @@ class QtLabelsControls(QtLayerControls):
 
         self.contourSpinBox = QLargeIntSpinBox()
         self.contourSpinBox.setRange(0, dtype_lims[1])
-        self.contourSpinBox.setToolTip(trans._('display contours of labels'))
+        self.contourSpinBox.setToolTip(trans._("display contours of labels"))
         self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)
         self.contourSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -155,7 +155,7 @@ class QtLabelsControls(QtLayerControls):
 
         preserve_labels_cb = QCheckBox()
         preserve_labels_cb.setToolTip(
-            trans._('preserve existing labels while painting')
+            trans._("preserve existing labels while painting")
         )
         preserve_labels_cb.stateChanged.connect(self.change_preserve_labels)
         self.preserveLabelsCheckBox = preserve_labels_cb
@@ -172,56 +172,56 @@ class QtLabelsControls(QtLayerControls):
         # shuffle colormap button
         self.colormapUpdate = QtModePushButton(
             layer,
-            'shuffle',
+            "shuffle",
             slot=self.changeColor,
-            tooltip=trans._('shuffle colors'),
+            tooltip=trans._("shuffle colors"),
         )
 
         self.panzoom_button = QtModeRadioButton(
             layer,
-            'pan',
+            "pan",
             Mode.PAN_ZOOM,
             checked=True,
         )
         action_manager.bind_button(
-            'napari:activate_labels_pan_zoom_mode', self.panzoom_button
+            "napari:activate_labels_pan_zoom_mode", self.panzoom_button
         )
 
-        self.pick_button = QtModeRadioButton(layer, 'picker', Mode.PICK)
+        self.pick_button = QtModeRadioButton(layer, "picker", Mode.PICK)
         action_manager.bind_button(
-            'napari:activate_labels_picker_mode', self.pick_button
+            "napari:activate_labels_picker_mode", self.pick_button
         )
 
-        self.paint_button = QtModeRadioButton(layer, 'paint', Mode.PAINT)
+        self.paint_button = QtModeRadioButton(layer, "paint", Mode.PAINT)
         action_manager.bind_button(
-            'napari:activate_labels_paint_mode', self.paint_button
+            "napari:activate_labels_paint_mode", self.paint_button
         )
 
         self.polygon_button = QtModeRadioButton(
-            layer, 'labels_polygon', Mode.POLYGON
+            layer, "labels_polygon", Mode.POLYGON
         )
         action_manager.bind_button(
-            'napari:activate_labels_polygon_mode',
+            "napari:activate_labels_polygon_mode",
             self.polygon_button,
         )
 
         self.fill_button = QtModeRadioButton(
             layer,
-            'fill',
+            "fill",
             Mode.FILL,
         )
         action_manager.bind_button(
-            'napari:activate_labels_fill_mode',
+            "napari:activate_labels_fill_mode",
             self.fill_button,
         )
 
         self.erase_button = QtModeRadioButton(
             layer,
-            'erase',
+            "erase",
             Mode.ERASE,
         )
         action_manager.bind_button(
-            'napari:activate_labels_erase_mode',
+            "napari:activate_labels_erase_mode",
             self.erase_button,
         )
 
@@ -265,7 +265,7 @@ class QtLabelsControls(QtLayerControls):
         renderComboBox.setCurrentIndex(index)
         renderComboBox.currentTextChanged.connect(self.changeRendering)
         self.renderComboBox = renderComboBox
-        self.renderLabel = QLabel(trans._('rendering:'))
+        self.renderLabel = QLabel(trans._("rendering:"))
 
         self._on_ndisplay_changed()
 
@@ -289,20 +289,20 @@ class QtLabelsControls(QtLayerControls):
         color_layout.addWidget(self.selectionSpinBox)
 
         self.layout().addRow(button_row)
-        self.layout().addRow(trans._('label:'), color_layout)
+        self.layout().addRow(trans._("label:"), color_layout)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(trans._("brush size:"), self.brushSizeSlider)
+        self.layout().addRow(trans._("blending:"), self.blendComboBox)
         self.layout().addRow(self.renderLabel, self.renderComboBox)
-        self.layout().addRow(trans._('color mode:'), self.colorModeComboBox)
-        self.layout().addRow(trans._('contour:'), self.contourSpinBox)
-        self.layout().addRow(trans._('n edit dim:'), self.ndimSpinBox)
-        self.layout().addRow(trans._('contiguous:'), self.contigCheckBox)
+        self.layout().addRow(trans._("color mode:"), self.colorModeComboBox)
+        self.layout().addRow(trans._("contour:"), self.contourSpinBox)
+        self.layout().addRow(trans._("n edit dim:"), self.ndimSpinBox)
+        self.layout().addRow(trans._("contiguous:"), self.contigCheckBox)
         self.layout().addRow(
-            trans._('preserve\nlabels:'), self.preserveLabelsCheckBox
+            trans._("preserve\nlabels:"), self.preserveLabelsCheckBox
         )
         self.layout().addRow(
-            trans._('show\nselected:'), self.selectedColorCheckbox
+            trans._("show\nselected:"), self.selectedColorCheckbox
         )
 
     def _on_mode_change(self, event):
@@ -467,7 +467,7 @@ class QtLabelsControls(QtLayerControls):
         with self.layer.events.n_edit_dimensions.blocker():
             value = self.layer.n_edit_dimensions
             self.ndimSpinBox.setValue(int(value))
-            if hasattr(self, 'polygon_button'):
+            if hasattr(self, "polygon_button"):
                 self.polygon_button.setEnabled(self._is_polygon_tool_enabled())
 
     def _on_contiguous_change(self):
@@ -554,7 +554,7 @@ class QtColorBox(QWidget):
         self._height = 24
         self.setFixedWidth(self._height)
         self.setFixedHeight(self._height)
-        self.setToolTip(trans._('Selected label color'))
+        self.setToolTip(trans._("Selected label color"))
 
         self.color = None
 

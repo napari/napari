@@ -151,13 +151,13 @@ class LabelVispyColormap(VispyColormap):
         background_value=0.0,
     ):
         super().__init__(
-            colors=["w", "w"], controls=None, interpolation='zero'
+            colors=["w", "w"], controls=None, interpolation="zero"
         )
         self.glsl_map = (
-            auto_lookup_shader.replace('$color_map_size', str(len(colors)))
-            .replace('$use_selection', str(use_selection).lower())
-            .replace('$selection', str(selection))
-            .replace('$background_value', str(background_value))
+            auto_lookup_shader.replace("$color_map_size", str(len(colors)))
+            .replace("$use_selection", str(use_selection).lower())
+            .replace("$selection", str(selection))
+            .replace("$background_value", str(background_value))
         )
 
 
@@ -170,8 +170,8 @@ class DirectLabelVispyColormap(VispyColormap):
         default_color=(0, 0, 0, 0),
         empty_value=EMPTY_VAL,
     ):
-        colors = ['w', 'w']  # dummy values, since we use our own machinery
-        super().__init__(colors, controls=None, interpolation='zero')
+        colors = ["w", "w"]  # dummy values, since we use our own machinery
+        super().__init__(colors, controls=None, interpolation="zero")
         self.glsl_map = (
             direct_lookup_shader.replace(
                 "$use_selection", str(use_selection).lower()
@@ -200,7 +200,7 @@ def hash2d_get(key, keys, empty_val=EMPTY_VAL):
     initial_key = key
     while keys[pos] != initial_key and keys[pos] != empty_val:
         if key - initial_key > keys.size:
-            raise KeyError('label does not exist')
+            raise KeyError("label does not exist")
         key += 1
         pos = idx_to_2d(key, keys.shape)
     return pos if keys[pos] == initial_key else None
@@ -224,7 +224,7 @@ def hash2d_set(
     while keys[pos] != empty_val:
         collision = True
         if key - initial_key > keys.size:
-            raise OverflowError('too many labels')
+            raise OverflowError("too many labels")
         key += 1
         pos = idx_to_2d(key, keys.shape)
     keys[pos] = initial_key
@@ -307,8 +307,8 @@ def _get_shape_from_dict(
 
     if len(keys) > max_size:
         raise MemoryError(
-            f'Too many labels: napari supports at most {max_size} labels, '
-            f'got {len(keys)}.'
+            f"Too many labels: napari supports at most {max_size} labels, "
+            f"got {len(keys)}."
         )
 
     shp = _get_shape_from_keys(keys, fst_dim, snd_dim)
@@ -337,9 +337,9 @@ def get_shape_from_dict(color_dict):
         shape[0] > MAX_TEXTURE_SIZE or shape[1] > MAX_TEXTURE_SIZE
     ):
         raise MemoryError(
-            f'Too many labels. GPU does not support textures of this size.'
-            f' Requested size is {shape[0]}x{shape[1]}, but maximum supported'
-            f' size is {MAX_TEXTURE_SIZE}x{MAX_TEXTURE_SIZE}'
+            f"Too many labels. GPU does not support textures of this size."
+            f" Requested size is {shape[0]}x{shape[1]}, but maximum supported"
+            f" size is {MAX_TEXTURE_SIZE}x{MAX_TEXTURE_SIZE}"
         )
     return shape
 
@@ -404,7 +404,7 @@ def build_textures_from_dict(
 
     if len(color_dict) > 2**31 - 2:
         raise MemoryError(
-            f'Too many labels ({len(color_dict)}). Maximum supported number of labels is 2^31-2'
+            f"Too many labels ({len(color_dict)}). Maximum supported number of labels is 2^31-2"
         )
 
     if shape is None:
@@ -412,7 +412,7 @@ def build_textures_from_dict(
 
     if len(color_dict) > shape[0] * shape[1]:
         raise MemoryError(
-            f'Too many labels ({len(color_dict)}). Maximum supported number of labels for the given shape is {shape[0] * shape[1]}'
+            f"Too many labels ({len(color_dict)}). Maximum supported number of labels for the given shape is {shape[0] * shape[1]}"
         )
 
     keys = np.full(shape, empty_val, dtype=vispy_texture_dtype)
@@ -432,9 +432,9 @@ def build_textures_from_dict(
 
 
 class VispyLabelsLayer(VispyImageLayer):
-    layer: 'Labels'
+    layer: "Labels"
 
-    def __init__(self, layer, node=None, texture_format='r32f') -> None:
+    def __init__(self, layer, node=None, texture_format="r32f") -> None:
         super().__init__(
             layer,
             node=node,
@@ -453,8 +453,8 @@ class VispyLabelsLayer(VispyImageLayer):
             rendering = self.layer.rendering
             self.node.method = (
                 rendering
-                if rendering != 'translucent'
-                else 'translucent_categorical'
+                if rendering != "translucent"
+                else "translucent_categorical"
             )
             self._on_attenuation_change()
             self._on_iso_threshold_change()
@@ -465,29 +465,29 @@ class VispyLabelsLayer(VispyImageLayer):
         # in our constructor, we have access to the texture data we need
         if (
             event is not None
-            and event.type == 'selected_label'
+            and event.type == "selected_label"
             and not self.layer.show_selected_label
         ):
             return
         colormap = self.layer.colormap
         mode = self.layer.color_mode
 
-        if mode == 'auto':
+        if mode == "auto":
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
                 background_value=colormap.background_value,
             )
-            self.node.shared_program['texture2D_values'] = Texture2D(
+            self.node.shared_program["texture2D_values"] = Texture2D(
                 colormap.colors.reshape(
                     (colormap.colors.shape[0], 1, 4)
                 ).astype(np.float32),
-                internalformat='rgba32f',
-                interpolation='nearest',
+                internalformat="rgba32f",
+                interpolation="nearest",
             )
 
-        elif mode == 'direct':
+        elif mode == "direct":
             color_dict = (
                 self.layer.color
             )  # TODO: should probably account for non-given labels
@@ -505,15 +505,15 @@ class VispyLabelsLayer(VispyImageLayer):
                 empty_value=_get_empty_val_from_dict(color_dict),
             )
             # note that textures have to be transposed here!
-            self.node.shared_program['texture2D_keys'] = Texture2D(
-                key_texture.T, internalformat='r32f', interpolation='nearest'
+            self.node.shared_program["texture2D_keys"] = Texture2D(
+                key_texture.T, internalformat="r32f", interpolation="nearest"
             )
-            self.node.shared_program['texture2D_values'] = Texture2D(
+            self.node.shared_program["texture2D_values"] = Texture2D(
                 val_texture.swapaxes(0, 1),
-                internalformat='rgba32f',
-                interpolation='nearest',
+                internalformat="rgba32f",
+                interpolation="nearest",
             )
-            self.node.shared_program['LUT_shape'] = key_texture.shape
+            self.node.shared_program["LUT_shape"] = key_texture.shape
         else:
             self.node.cmap = VispyColormap(*colormap)
 
@@ -542,7 +542,7 @@ class LabelVisual(ImageVisual):
         fun = FunctionChain(
             None,
             [
-                Function(self._func_templates['red_to_luminance']),
+                Function(self._func_templates["red_to_luminance"]),
                 Function(self.cmap.glsl_map),
             ],
         )
@@ -554,9 +554,9 @@ class LabelLayerNode(ImageLayerNode):
         self._custom_node = custom_node
         self._image_node = LabelNode(
             None
-            if (texture_format is None or texture_format == 'auto')
+            if (texture_format is None or texture_format == "auto")
             else np.array([[0.0]], dtype=np.float32),
-            method='auto',
+            method="auto",
             texture_format=texture_format,
         )
 

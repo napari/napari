@@ -41,14 +41,14 @@ class _ImageView:
     view: np.ndarray
 
     @classmethod
-    def from_view(cls, view: np.ndarray) -> '_ImageView':
+    def from_view(cls, view: np.ndarray) -> "_ImageView":
         """Makes an image view from the view where no conversion is needed."""
         return cls(raw=view, view=view)
 
     @classmethod
     def from_raw(
         cls, *, raw: np.ndarray, converter: Callable[[np.ndarray], np.ndarray]
-    ) -> '_ImageView':
+    ) -> "_ImageView":
         """Makes an image view from the raw image and a conversion function."""
         view = converter(raw)
         return cls(raw=raw, view=view)
@@ -84,7 +84,7 @@ class _ImageSliceResponse:
     @classmethod
     def make_empty(
         cls, *, slice_input: _SliceInput, rgb: bool
-    ) -> '_ImageSliceResponse':
+    ) -> "_ImageSliceResponse":
         """Returns an empty image slice response.
 
         An empty slice indicates that there is no valid slice data for an
@@ -107,7 +107,7 @@ class _ImageSliceResponse:
         image = _ImageView.from_view(data)
         ndim = slice_input.ndim
         tile_to_data = Affine(
-            name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
+            name="tile2data", linear_matrix=np.eye(ndim), ndim=ndim
         )
         return _ImageSliceResponse(
             image=image,
@@ -120,7 +120,7 @@ class _ImageSliceResponse:
 
     def to_displayed(
         self, converter: Callable[[np.ndarray], np.ndarray]
-    ) -> '_ImageSliceResponse':
+    ) -> "_ImageSliceResponse":
         """Returns a raw slice converted for display, which is needed for Labels."""
         image = _ImageView.from_raw(raw=self.image.raw, converter=converter)
         thumbnail = image
@@ -197,7 +197,7 @@ class _ImageSliceRequest:
         # transform to ensure `tile2data` is properly set on the layer.
         ndim = self.slice_input.ndim
         tile_to_data = Affine(
-            name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
+            name="tile2data", linear_matrix=np.eye(ndim), ndim=ndim
         )
         return _ImageSliceResponse(
             image=image,
@@ -234,7 +234,7 @@ class _ImageSliceRequest:
         # This only needs to be a ScaleTranslate but different types
         # of transforms in a chain don't play nicely together right now.
         tile_to_data = Affine(
-            name='tile2data',
+            name="tile2data",
             scale=scale,
             translate=translate,
             ndim=self.slice_input.ndim,
@@ -282,7 +282,7 @@ class _ImageSliceRequest:
         Slice the given data with the given data slice and project the extra dims.
         """
 
-        if self.projection_mode == 'none':
+        if self.projection_mode == "none":
             # early return with only the dims point being used
             slices = self._point_to_slices(data_slice.point)
             return np.asarray(data[slices])
@@ -313,7 +313,7 @@ class _ImageSliceRequest:
         for d in self.slice_input.not_displayed:
             pt = self.data_slice.point[d]
             max_idx = data.shape[d] - 1
-            if self.projection_mode == 'none':
+            if self.projection_mode == "none":
                 if np.round(pt) < 0 or np.round(pt) > max_idx:
                     return True
             else:

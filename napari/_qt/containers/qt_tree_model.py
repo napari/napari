@@ -118,7 +118,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         """
         return [NodeMIMEType, "text/plain"]
 
-    def mimeData(self, indices: List[QModelIndex]) -> Optional['NodeMimeData']:
+    def mimeData(self, indices: List[QModelIndex]) -> Optional["NodeMimeData"]:
         """Return an object containing serialized data from `indices`.
 
         The format used to describe the encoded data is obtained from the

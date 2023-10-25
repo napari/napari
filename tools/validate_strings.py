@@ -301,7 +301,7 @@ def compress_str(gen):
     for toktype, tokstr, (lineno, _), _, _ in gen:
         if toktype not in (tokenize.STRING, tokenize.NL):
             if acc:
-                nt = repr(''.join(acc))
+                nt = repr("".join(acc))
                 yield tokenize.STRING, nt, acc_line
                 acc, acc_line = [], None
             yield toktype, tokstr, lineno
@@ -318,15 +318,15 @@ def compress_str(gen):
                 suffix = tokstr[start_quote_index:]
                 assert suffix[0] == suffix[-1]
                 assert suffix[0] in ('"', "'")
-                if 'b' in prefix:
+                if "b" in prefix:
                     print(
-                        'not translating bytestring', tokstr, file=sys.stderr
+                        "not translating bytestring", tokstr, file=sys.stderr
                     )
                     continue
                 # we remove the f as we do not want to evaluate the string
                 # if it contains variable. IT will crash as it evaluate in
                 # the context of this function.
-                safe_tokstr = prefix.replace('f', '') + suffix
+                safe_tokstr = prefix.replace("f", "") + suffix
 
                 acc.append(eval(safe_tokstr))
             if not acc_line:
@@ -335,7 +335,7 @@ def compress_str(gen):
             yield toktype, tokstr, lineno
 
     if acc:
-        nt = repr(''.join(acc))
+        nt = repr("".join(acc))
         yield tokenize.STRING, nt, acc_line
 
 
@@ -613,9 +613,9 @@ NORMAL = "\x1b[1;0m"
 def print_colored_diff(old, new):
     lines = list(difflib.unified_diff(old.splitlines(), new.splitlines()))
     for line in lines[2:]:
-        if line.startswith('-'):
+        if line.startswith("-"):
             print(f"{RED}{line}{NORMAL}")
-        elif line.startswith('+'):
+        elif line.startswith("+"):
             print(f"{GREEN}{line}{NORMAL}")
         else:
             print(line)
@@ -635,13 +635,13 @@ def _compute_autosugg(raw_code, text):
     stop = start + len(text) + 2
     rawt = raw_code[start:stop]
 
-    sugg = raw_code[:start] + 'trans._(' + rawt + ')' + raw_code[stop:]
-    if sugg[start - 1] == 'f':
+    sugg = raw_code[:start] + "trans._(" + rawt + ")" + raw_code[stop:]
+    if sugg[start - 1] == "f":
         return None, False
     return sugg, True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     issues, outdated_strings, trans_errors = _checks()
     import difflib
     import json
@@ -649,13 +649,13 @@ if __name__ == '__main__':
 
     edit_cmd = sys.argv[1] if len(sys.argv) > 1 else None
 
-    pth = pathlib.Path(__file__).parent / 'string_list.json'
+    pth = pathlib.Path(__file__).parent / "string_list.json"
     data = json.loads(pth.read_text())
     for file, items in outdated_strings.items():
         for to_remove in set(items):
             # we don't use set logic to keep the order the same as in the target
             # files.
-            data['SKIP_WORDS'][file].remove(to_remove)
+            data["SKIP_WORDS"][file].remove(to_remove)
 
     break_ = False
 
@@ -670,7 +670,7 @@ if __name__ == '__main__':
             # skip current item if it has been added to current list
             # this happens when a new strings is often added many time
             # in the same file.
-            if text in data['SKIP_WORDS'].get(file, []):
+            if text in data["SKIP_WORDS"].get(file, []):
                 continue
 
             sugg, autosugg = _compute_autosugg(raw_code, text)
@@ -687,10 +687,10 @@ if __name__ == '__main__':
             else:
                 print(f"{RED}f-string nedds manual intervention{NORMAL}")
                 for lt in code[line - 3 : line - 1]:
-                    print(' ', lt)
-                print('>', code[line - 1].replace(text, GREEN + text + NORMAL))
+                    print(" ", lt)
+                print(">", code[line - 1].replace(text, GREEN + text + NORMAL))
                 for lt in code[line : line + 3]:
-                    print(' ', lt)
+                    print(" ", lt)
             print()
 
             print()
@@ -709,27 +709,27 @@ if __name__ == '__main__':
                     "- : Edit not available, call with python tools/validate_strings.py  '$COMMAND {filename} {linenumber} '"
                 )
             print(f"{RED}s{NORMAL} : save and quit")
-            print('> ', end='')
+            print("> ", end="")
             sys.stdout.flush()
             val = getch()
-            if val == 'a' and autosugg:
+            if val == "a" and autosugg:
                 content = Path(file).read_text()
                 new_content, _ = _compute_autosugg(content, text)
                 Path(file).write_text(new_content)
 
-            if val == 'e' and edit_cmd:
+            if val == "e" and edit_cmd:
                 subprocess.run(
-                    edit_cmd.format(filename=file, linenumber=line).split(' ')
+                    edit_cmd.format(filename=file, linenumber=line).split(" ")
                 )
-            if val == 'c':
+            if val == "c":
                 continue
-            if val == 'i':
-                data['SKIP_WORDS'].setdefault(file, []).append(text)
-            elif val == 'q':
+            if val == "i":
+                data["SKIP_WORDS"].setdefault(file, []).append(text)
+            elif val == "q":
                 import sys
 
                 sys.exit(0)
-            elif val == 's':
+            elif val == "s":
                 break_ = True
                 break
 

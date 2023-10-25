@@ -238,10 +238,10 @@ def test_submit_exception_main_thread(layer_slicer):
 
     class FakeAsyncLayerError(FakeAsyncLayer):
         def _make_slice_request(self, dims) -> FakeSliceRequest:
-            raise RuntimeError('_make_slice_request')
+            raise RuntimeError("_make_slice_request")
 
     layer = FakeAsyncLayerError()
-    with pytest.raises(RuntimeError, match='_make_slice_request'):
+    with pytest.raises(RuntimeError, match="_make_slice_request"):
         layer_slicer.submit(layers=[layer], dims=Dims())
 
 
@@ -253,7 +253,7 @@ def test_submit_exception_subthread_on_result(layer_slicer):
     class FakeSliceRequestError(FakeSliceRequest):
         def __call__(self) -> FakeSliceResponse:
             assert current_thread() != main_thread()
-            raise RuntimeError('FakeSliceRequestError')
+            raise RuntimeError("FakeSliceRequestError")
 
     class FakeAsyncLayerError(FakeAsyncLayer):
         def _make_slice_request(self, dims: Dims) -> FakeSliceRequestError:
@@ -266,8 +266,8 @@ def test_submit_exception_subthread_on_result(layer_slicer):
     future = layer_slicer.submit(layers=[layer], dims=Dims())
 
     done, _ = wait([future], timeout=DEFAULT_TIMEOUT_SECS)
-    assert done, 'Test future did not complete within timeout.'
-    with pytest.raises(RuntimeError, match='FakeSliceRequestError'):
+    assert done, "Test future did not complete within timeout."
+    with pytest.raises(RuntimeError, match="FakeSliceRequestError"):
         _wait_for_response(future)
 
 
@@ -397,19 +397,19 @@ def _wait_until_running(future: Future):
         total_sleep_secs += sleep_secs
         if total_sleep_secs > DEFAULT_TIMEOUT_SECS:
             raise TimeoutError(
-                f'Future did not start running after a timeout of {DEFAULT_TIMEOUT_SECS} seconds.'
+                f"Future did not start running after a timeout of {DEFAULT_TIMEOUT_SECS} seconds."
             )
 
 
 # if remove quotes once we are Python 3.9+
-def _wait_for_result(future: 'Future[Any]') -> Any:
+def _wait_for_result(future: "Future[Any]") -> Any:
     """Waits until the given future is finished returns its result."""
     return future.result(timeout=DEFAULT_TIMEOUT_SECS)
 
 
 # remove quotes in types once we are python 3.9+ only.
 def _wait_for_response(
-    task: 'Future[Dict[weakref.ReferenceType[Any], Any]]',
+    task: "Future[Dict[weakref.ReferenceType[Any], Any]]",
 ) -> Dict:
     """Waits until the given slice task is finished and returns its result."""
     weak_result = _wait_for_result(task)

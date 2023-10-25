@@ -95,7 +95,7 @@ def test_warning_affine_slicing():
             translate=[10, 15, 20],
             shear=[[1, 0, 0], [0, 1, 0], [4, 0, 1]],
         )
-    assert 'Non-orthogonal slicing is being requested' in str(wrn[0].message)
+    assert "Non-orthogonal slicing is being requested" in str(wrn[0].message)
     with pytest.warns(UserWarning) as recorded_warnings:
         viewer.layers[0].refresh()
     assert len(recorded_warnings) == 1

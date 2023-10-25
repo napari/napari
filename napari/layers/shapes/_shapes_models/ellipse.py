@@ -50,7 +50,7 @@ class Ellipse(Shape):
         self._closed = True
         self._use_face_vertices = True
         self.data = data
-        self.name = 'ellipse'
+        self.name = "ellipse"
 
     @property
     def data(self):
@@ -94,7 +94,7 @@ class Ellipse(Shape):
                 np.min(data_not_displayed, axis=0),
                 np.max(data_not_displayed, axis=0),
             ]
-        ).astype('int')
+        ).astype("int")
 
     def transform(self, transform):
         """Performs a linear transform on the shape

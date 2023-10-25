@@ -138,7 +138,7 @@ class Selection(EventedSet[_T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v, field: 'ModelField'):
+    def validate(cls, v, field: "ModelField"):
         """Pydantic validator."""
         from napari._pydantic_compat import sequence_like
 
@@ -155,7 +155,7 @@ class Selection(EventedSet[_T]):
         if not sequence_like(data):
             raise TypeError(
                 trans._(
-                    'Value is not a valid sequence: {data}',
+                    "Value is not a valid sequence: {data}",
                     deferred=True,
                     data=data,
                 )
@@ -171,11 +171,11 @@ class Selection(EventedSet[_T]):
         type_field = field.sub_fields[0]
         errors = []
         for i, v_ in enumerate(data):
-            _, error = type_field.validate(v_, {}, loc=f'[{i}]')
+            _, error = type_field.validate(v_, {}, loc=f"[{i}]")
             if error:
                 errors.append(error)
         if current is not None:
-            _, error = type_field.validate(current, {}, loc='current')
+            _, error = type_field.validate(current, {}, loc="current")
             if error:
                 errors.append(error)
 
@@ -190,7 +190,7 @@ class Selection(EventedSet[_T]):
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""
         # we don't serialize active, as it's gleaned from the selection.
-        return {'selection': super()._json_encode(), '_current': self._current}
+        return {"selection": super()._json_encode(), "_current": self._current}
 
 
 class Selectable(Generic[_S]):

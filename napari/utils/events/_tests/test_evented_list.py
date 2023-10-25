@@ -20,44 +20,44 @@ def test_list(request, regular_list):
 
 
 @pytest.mark.parametrize(
-    'meth',
+    "meth",
     [
         # METHOD, ARGS, EXPECTED EVENTS
         # primary interface
-        ('insert', (2, 10), ('inserting', 'inserted')),  # create
-        ('__getitem__', (2,), ()),  # read
-        ('__setitem__', (2, 3), ('changed',)),  # update
-        ('__setitem__', (slice(2), [1, 2]), ('changed',)),  # update slice
-        ('__setitem__', (slice(2, 2), [1, 2]), ('changed',)),  # update slice
-        ('__delitem__', (2,), ('removing', 'removed')),  # delete
+        ("insert", (2, 10), ("inserting", "inserted")),  # create
+        ("__getitem__", (2,), ()),  # read
+        ("__setitem__", (2, 3), ("changed",)),  # update
+        ("__setitem__", (slice(2), [1, 2]), ("changed",)),  # update slice
+        ("__setitem__", (slice(2, 2), [1, 2]), ("changed",)),  # update slice
+        ("__delitem__", (2,), ("removing", "removed")),  # delete
         (
-            '__delitem__',
+            "__delitem__",
             (slice(2),),
-            ('removing', 'removed') * 2,
+            ("removing", "removed") * 2,
         ),
-        ('__delitem__', (slice(0, 0),), ('removing', 'removed')),
+        ("__delitem__", (slice(0, 0),), ("removing", "removed")),
         (
-            '__delitem__',
+            "__delitem__",
             (slice(-3),),
-            ('removing', 'removed') * 2,
+            ("removing", "removed") * 2,
         ),
         (
-            '__delitem__',
+            "__delitem__",
             (slice(-2, None),),
-            ('removing', 'removed') * 2,
+            ("removing", "removed") * 2,
         ),
         # inherited interface
-        ('append', (3,), ('inserting', 'inserted')),
-        ('clear', (), ('removing', 'removed') * 5),
-        ('count', (3,), ()),
-        ('extend', ([7, 8, 9],), ('inserting', 'inserted') * 3),
-        ('index', (3,), ()),
-        ('pop', (-2,), ('removing', 'removed')),
-        ('remove', (3,), ('removing', 'removed')),
-        ('reverse', (), ('reordered',)),
-        ('__add__', ([7, 8, 9],), ()),
-        ('__iadd__', ([7, 9],), ('inserting', 'inserted') * 2),
-        ('__radd__', ([7, 9],), ('inserting', 'inserted') * 2),
+        ("append", (3,), ("inserting", "inserted")),
+        ("clear", (), ("removing", "removed") * 5),
+        ("count", (3,), ()),
+        ("extend", ([7, 8, 9],), ("inserting", "inserted") * 3),
+        ("index", (3,), ()),
+        ("pop", (-2,), ("removing", "removed")),
+        ("remove", (3,), ("removing", "removed")),
+        ("reverse", (), ("reordered",)),
+        ("__add__", ([7, 8, 9],), ()),
+        ("__iadd__", ([7, 9],), ("inserting", "inserted") * 2),
+        ("__radd__", ([7, 9],), ("inserting", "inserted") * 2),
         # sort?
     ],
     ids=lambda x: x[0],
@@ -83,7 +83,7 @@ def test_hash(test_list):
 
 
 def test_list_interface_exceptions(test_list):
-    bad_index = {'a': 'dict'}
+    bad_index = {"a": "dict"}
     with pytest.raises(TypeError):
         test_list[bad_index]
 
@@ -162,7 +162,7 @@ OTHER_INDICES = [
 MOVING_INDICES = BASIC_INDICES + OTHER_INDICES
 
 
-@pytest.mark.parametrize('sources,dest,expectation', MOVING_INDICES)
+@pytest.mark.parametrize("sources,dest,expectation", MOVING_INDICES)
 def test_move_multiple(sources, dest, expectation):
     """Test the that we can move objects with the move method"""
     el = EventedList(range(8))
@@ -269,43 +269,43 @@ def test_nested_indexing():
 
 # indices in NEST that are themselves lists
 @pytest.mark.parametrize(
-    'group_index', [(), (1,), (1, 1), (1, 1, 1)], ids=lambda x: str(x)
+    "group_index", [(), (1,), (1, 1), (1, 1, 1)], ids=lambda x: str(x)
 )
 @pytest.mark.parametrize(
-    'meth',
+    "meth",
     [
         # METHOD, ARGS, EXPECTED EVENTS
         # primary interface
-        ('insert', (0, 10), ('inserting', 'inserted')),
-        ('__getitem__', (2,), ()),  # read
-        ('__setitem__', (2, 3), ('changed',)),  # update
-        ('__delitem__', ((),), ('removing', 'removed')),  # delete
-        ('__delitem__', ((1,),), ('removing', 'removed')),  # delete
-        ('__delitem__', (2,), ('removing', 'removed')),  # delete
+        ("insert", (0, 10), ("inserting", "inserted")),
+        ("__getitem__", (2,), ()),  # read
+        ("__setitem__", (2, 3), ("changed",)),  # update
+        ("__delitem__", ((),), ("removing", "removed")),  # delete
+        ("__delitem__", ((1,),), ("removing", "removed")),  # delete
+        ("__delitem__", (2,), ("removing", "removed")),  # delete
         (
-            '__delitem__',
+            "__delitem__",
             (slice(2),),
-            ('removing', 'removed') * 2,
+            ("removing", "removed") * 2,
         ),
         (
-            '__delitem__',
+            "__delitem__",
             (slice(-1),),
-            ('removing', 'removed') * 2,
+            ("removing", "removed") * 2,
         ),
         (
-            '__delitem__',
+            "__delitem__",
             (slice(-2, None),),
-            ('removing', 'removed') * 2,
+            ("removing", "removed") * 2,
         ),
         # inherited interface
-        ('append', (3,), ('inserting', 'inserted')),
-        ('clear', (), ('removing', 'removed') * 3),
-        ('count', (110,), ()),
-        ('extend', ([7, 8, 9],), ('inserting', 'inserted') * 3),
-        ('index', (110,), ()),
-        ('pop', (-1,), ('removing', 'removed')),
-        ('__add__', ([7, 8, 9],), ()),
-        ('__iadd__', ([7, 9],), ('inserting', 'inserted') * 2),
+        ("append", (3,), ("inserting", "inserted")),
+        ("clear", (), ("removing", "removed") * 3),
+        ("count", (110,), ()),
+        ("extend", ([7, 8, 9],), ("inserting", "inserted") * 3),
+        ("index", (110,), ()),
+        ("pop", (-1,), ("removing", "removed")),
+        ("__add__", ([7, 8, 9],), ()),
+        ("__iadd__", ([7, 9],), ("inserting", "inserted") * 2),
     ],
     ids=lambda x: x[0],
 )
@@ -315,7 +315,7 @@ def test_nested_events(meth, group_index):
 
     method_name, args, expected_events = meth
     method = getattr(ne_list[group_index], method_name)
-    if method_name == 'index' and group_index == (1, 1, 1):
+    if method_name == "index" and group_index == (1, 1, 1):
         # the expected value of '110' (in the pytest parameters)
         # is not present in any child of ne_list[1, 1, 1]
         with pytest.raises(ValueError):
@@ -367,7 +367,7 @@ NESTED_NEG_INDICES = [
 NESTED_INDICES = NESTED_POS_INDICES + NESTED_NEG_INDICES  # type: ignore
 
 
-@pytest.mark.parametrize('sources, dest, expectation', NESTED_INDICES)
+@pytest.mark.parametrize("sources, dest, expectation", NESTED_INDICES)
 def test_nested_move_multiple(sources, dest, expectation):
     """Test that moving multiple indices works and emits right events."""
     ne_list = NestableEventedList([0, 1, [20, [210, 211], 22], 3, 4])
@@ -391,11 +391,11 @@ def test_child_events():
     root.events.connect(lambda e: observed.append(e))
     root.append(e_obj)
     e_obj.events.test(value="hi")
-    obs = [(e.type, e.index, getattr(e, 'value', None)) for e in observed]
+    obs = [(e.type, e.index, getattr(e, "value", None)) for e in observed]
     expected = [
-        ('inserting', 0, None),  # before we inserted b into root
-        ('inserted', 0, e_obj),  # after b was inserted into root
-        ('test', 0, 'hi'),  # when e_obj emitted an event called "test"
+        ("inserting", 0, None),  # before we inserted b into root
+        ("inserted", 0, e_obj),  # after b was inserted into root
+        ("test", 0, "hi"),  # when e_obj emitted an event called "test"
     ]
     for o, e in zip(obs, expected):
         assert o == e
@@ -432,13 +432,13 @@ def test_nested_child_events():
 
     # look at the (type, index, and value) of all of the events emitted by root
     # and make sure they match expectations
-    obs = [(e.type, e.index, getattr(e, 'value', None)) for e in observed]
+    obs = [(e.type, e.index, getattr(e, "value", None)) for e in observed]
     expected = [
-        ('inserting', 0, None),  # before we inserted b into root
-        ('inserted', 0, b),  # after b was inserted into root
-        ('inserting', (0, 0), None),  # before we inserted e_obj into b
-        ('inserted', (0, 0), e_obj),  # after e_obj was inserted into b
-        ('test', (0, 0), 'hi'),  # when e_obj emitted an event called "test"
+        ("inserting", 0, None),  # before we inserted b into root
+        ("inserted", 0, b),  # after b was inserted into root
+        ("inserting", (0, 0), None),  # before we inserted e_obj into b
+        ("inserted", (0, 0), e_obj),  # after e_obj was inserted into b
+        ("test", (0, 0), "hi"),  # when e_obj emitted an event called "test"
     ]
     for o, e in zip(obs, expected):
         assert o == e
@@ -454,8 +454,8 @@ def test_evented_list_subclass():
         pass
 
     lst = B([1, 2])
-    assert hasattr(lst, 'events')
-    assert 'boom' in lst.events.emitters
+    assert hasattr(lst, "events")
+    assert "boom" in lst.events.emitters
     assert lst == [1, 2]
 
 

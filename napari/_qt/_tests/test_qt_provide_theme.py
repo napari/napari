@@ -24,8 +24,8 @@ def test_provide_theme_hook_registered_correctly(
     viewer = make_napari_viewer_with_plugin_theme(
         make_napari_viewer,
         napari_plugin_manager,
-        theme_type='dark',
-        name='dark-test-2',
+        theme_type="dark",
+        name="dark-test-2",
     )
 
     # set the viewer theme to the plugin theme
@@ -55,8 +55,8 @@ def test_plugin_provide_theme_hook_set_settings_correctly(
     make_napari_viewer_with_plugin_theme(
         make_napari_viewer,
         napari_plugin_manager,
-        theme_type='dark',
-        name='dark-test-2',
+        theme_type="dark",
+        name="dark-test-2",
     )
     # set the plugin theme as a setting
     get_settings().appearance.theme = "dark-test-2"

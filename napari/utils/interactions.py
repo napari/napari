@@ -221,30 +221,30 @@ def mouse_release_callbacks(obj, event):
 
 
 KEY_SYMBOLS = {
-    'Ctrl': 'Ctrl',
-    'Shift': '⇧',
-    'Alt': 'Alt',
-    'Meta': '⊞',
-    'Left': '←',
-    'Right': '→',
-    'Up': '↑',
-    'Down': '↓',
-    'Backspace': '⌫',
-    'Delete': '⌦',
-    'Tab': '↹',
-    'Escape': 'Esc',
-    'Return': '⏎',
-    'Enter': '↵',
-    'Space': '␣',
+    "Ctrl": "Ctrl",
+    "Shift": "⇧",
+    "Alt": "Alt",
+    "Meta": "⊞",
+    "Left": "←",
+    "Right": "→",
+    "Up": "↑",
+    "Down": "↓",
+    "Backspace": "⌫",
+    "Delete": "⌦",
+    "Tab": "↹",
+    "Escape": "Esc",
+    "Return": "⏎",
+    "Enter": "↵",
+    "Space": "␣",
 }
 
 
-joinchar = '+'
-if sys.platform.startswith('darwin'):
-    KEY_SYMBOLS.update({'Ctrl': '⌃', 'Alt': '⌥', 'Meta': '⌘'})
-    joinchar = ''
-elif sys.platform.startswith('linux'):
-    KEY_SYMBOLS.update({'Meta': 'Super'})
+joinchar = "+"
+if sys.platform.startswith("darwin"):
+    KEY_SYMBOLS.update({"Ctrl": "⌃", "Alt": "⌥", "Meta": "⌘"})
+    joinchar = ""
+elif sys.platform.startswith("linux"):
+    KEY_SYMBOLS.update({"Meta": "Super"})
 
 
 def _kb2mods(key_bind: KeyBinding) -> List[str]:
@@ -262,13 +262,13 @@ def _kb2mods(key_bind: KeyBinding) -> List[str]:
     """
     mods = []
     if key_bind.ctrl:
-        mods.append('Ctrl')
+        mods.append("Ctrl")
     if key_bind.shift:
-        mods.append('Shift')
+        mods.append("Shift")
     if key_bind.alt:
-        mods.append('Alt')
+        mods.append("Alt")
     if key_bind.meta:
-        mods.append('Meta')
+        mods.append("Meta")
     return mods
 
 
@@ -321,18 +321,18 @@ class Shortcut:
         # this should be rare as on english keyboard + is Shift-Minus.
         # but not unheard of. In those case `+` is always at the end with `++`
         # as you can't get two non-modifier keys,  or alone.
-        if text == '+':
+        if text == "+":
             return text
         if joinchar == "+":
-            text.replace('++', '+Plus')
-            text.replace('+', '')
-            text.replace('Plus', '+')
+            text.replace("++", "+Plus")
+            text.replace("+", "")
+            text.replace("Plus", "+")
         for k, v in KEY_SYMBOLS.items():
             if text.endswith(v):
                 text = text.replace(v, k)
                 assert v not in text
             else:
-                text = text.replace(v, k + '-')
+                text = text.replace(v, k + "-")
 
         return text
 
@@ -359,7 +359,7 @@ class Shortcut:
         string
             Shortcut formatted to be displayed on current paltform.
         """
-        return ' '.join(
+        return " ".join(
             joinchar.join(
                 KEY_SYMBOLS.get(x, x)
                 for x in ([*_kb2mods(part), str(part.key)])
@@ -371,7 +371,7 @@ class Shortcut:
         return self.platform
 
 
-def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
+def get_key_bindings_summary(keymap, col="rgb(134, 142, 147)"):
     """Get summary of key bindings in keymap.
 
     Parameters
@@ -389,7 +389,7 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
     """
     key_bindings_strs = ['<table border="0" width="100%">']
     for key in keymap:
-        keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
+        keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split("-")]
         keycodes = "+".join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
@@ -399,14 +399,14 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
             f"{keymap[key]}</td></tr>"
         )
-    key_bindings_strs.append('</table>')
-    return ''.join(key_bindings_strs)
+    key_bindings_strs.append("</table>")
+    return "".join(key_bindings_strs)
 
 
 def get_function_summary(func):
     """Get summary of doc string of function."""
     doc = FunctionDoc(func)
-    summary = ''
-    for s in doc['Summary']:
+    summary = ""
+    for s in doc["Summary"]:
         summary += s
-    return summary.rstrip('.')
+    return summary.rstrip(".")

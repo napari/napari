@@ -112,18 +112,18 @@ def _extension_string_for_layers(
     if len(layers) == 1:
         selected_layer = layers[0]
         # single selected layer.
-        if selected_layer._type_string == 'image':
+        if selected_layer._type_string == "image":
             ext = imsave_extensions()
 
             ext_list = [f"*{val}" for val in ext]
-            ext_str = ';;'.join(ext_list)
+            ext_str = ";;".join(ext_list)
 
             ext_str = trans._(
                 "All Files (*);; Image file types:;;{ext_str}",
                 ext_str=ext_str,
             )
 
-        elif selected_layer._type_string == 'points':
+        elif selected_layer._type_string == "points":
             ext_str = trans._("All Files (*);; *.csv;;")
 
         else:
@@ -300,9 +300,9 @@ class QtViewer(QSplitter):
     def chunk_receiver(self) -> None:
         warnings.warn(
             trans._(
-                'QtViewer.chunk_receiver is deprecated in version 0.5 and will be removed in a later version. '
-                'More generally the old approach to async loading was removed in version 0.5 so this value is always None. '
-                'If you need to specifically use the old approach, continue to use the latest 0.4 release.'
+                "QtViewer.chunk_receiver is deprecated in version 0.5 and will be removed in a later version. "
+                "More generally the old approach to async loading was removed in version 0.5 so this value is always None. "
+                "If you need to specifically use the old approach, continue to use the latest 0.4 release."
             ),
             DeprecationWarning,
         )
@@ -357,7 +357,7 @@ class QtViewer(QSplitter):
         """QWidget wrapped in a QDockWidget with forwarded viewer events."""
         if self._dockLayerList is None:
             layerList = QWidget()
-            layerList.setObjectName('layerList')
+            layerList.setObjectName("layerList")
             layerListLayout = QVBoxLayout()
             layerListLayout.addWidget(self.layerButtons)
             layerListLayout.addWidget(self.layers)
@@ -367,10 +367,10 @@ class QtViewer(QSplitter):
             self._dockLayerList = QtViewerDockWidget(
                 self,
                 layerList,
-                name=trans._('layer list'),
-                area='left',
-                allowed_areas=['left', 'right'],
-                object_name='layer list',
+                name=trans._("layer list"),
+                area="left",
+                allowed_areas=["left", "right"],
+                object_name="layer list",
                 close_btn=False,
             )
         return self._dockLayerList
@@ -382,10 +382,10 @@ class QtViewer(QSplitter):
             self._dockLayerControls = QtViewerDockWidget(
                 self,
                 self.controls,
-                name=trans._('layer controls'),
-                area='left',
-                allowed_areas=['left', 'right'],
-                object_name='layer controls',
+                name=trans._("layer controls"),
+                area="left",
+                allowed_areas=["left", "right"],
+                object_name="layer controls",
                 close_btn=False,
             )
         return self._dockLayerControls
@@ -397,10 +397,10 @@ class QtViewer(QSplitter):
             self._dockConsole = QtViewerDockWidget(
                 self,
                 QWidget(),
-                name=trans._('console'),
-                area='bottom',
-                allowed_areas=['top', 'bottom'],
-                object_name='console',
+                name=trans._("console"),
+                area="bottom",
+                allowed_areas=["top", "bottom"],
+                object_name="console",
                 close_btn=False,
             )
             self._dockConsole.setVisible(False)
@@ -445,8 +445,8 @@ class QtViewer(QSplitter):
             return QtViewerDockWidget(
                 self,
                 QtPerformance(),
-                name=trans._('performance'),
-                area='bottom',
+                name=trans._("performance"),
+                area="bottom",
             )
         return None
 
@@ -520,13 +520,13 @@ class QtViewer(QSplitter):
                     vdict[name] = eval(name, cf.f_globals, cf.f_locals)
                 except:  # noqa: E722
                     print(
-                        f'Could not get variable {name} from '
-                        f'{cf.f_code.co_name}'
+                        f"Could not get variable {name} from "
+                        f"{cf.f_code.co_name}"
                     )
         elif isinstance(variables, dict):
             vdict = variables
         else:
-            raise TypeError('variables must be a dict/str/list/tuple')
+            raise TypeError("variables must be a dict/str/list/tuple")
         # weakly reference values if possible
         new_dict = {k: self._weakref_if_possible(v) for k, v in vdict.items()}
         self.console_backlog.append(new_dict)
@@ -550,7 +550,7 @@ class QtViewer(QSplitter):
                     warnings.filterwarnings("ignore")
                     self.console = QtConsole(self.viewer)
                     self.console.push(
-                        {'napari': napari, 'action_manager': action_manager}
+                        {"napari": napari, "action_manager": action_manager}
                     )
                     with CallerFrame(_in_napari) as c:
                         if c.frame.f_globals.get("__name__", "") == "__main__":
@@ -568,7 +568,7 @@ class QtViewer(QSplitter):
             except ModuleNotFoundError:
                 warnings.warn(
                     trans._(
-                        'napari-console not found. It can be installed with'
+                        "napari-console not found. It can be installed with"
                         ' "pip install napari_console"'
                     ),
                     stacklevel=1,
@@ -578,7 +578,7 @@ class QtViewer(QSplitter):
                 traceback.print_exc()
                 warnings.warn(
                     trans._(
-                        'error importing napari-console. See console for full error.'
+                        "error importing napari-console. See console for full error."
                     ),
                     stacklevel=1,
                 )
@@ -600,7 +600,7 @@ class QtViewer(QSplitter):
         This only gets triggered on the async slicing path.
         """
         responses: Dict[weakref.ReferenceType[Layer], Any] = event.value
-        logging.debug('QtViewer._on_slice_ready: %s', responses)
+        logging.debug("QtViewer._on_slice_ready: %s", responses)
         for weak_layer, response in responses.items():
             if layer := weak_layer():
                 # Update the layer slice state to temporarily support behavior
@@ -668,12 +668,12 @@ class QtViewer(QSplitter):
             If True, only layers that are selected in the viewer will be saved.
             By default, all layers are saved.
         """
-        msg = ''
+        msg = ""
         if not len(self.viewer.layers):
             msg = trans._("There are no layers in the viewer to save")
         elif selected and not len(self.viewer.layers.selection):
             msg = trans._(
-                'Please select one or more layers to save,'
+                "Please select one or more layers to save,"
                 '\nor use "Save all layers..."'
             )
         if msg:
@@ -693,7 +693,7 @@ class QtViewer(QSplitter):
 
         filename, selected_filter = dlg.getSaveFileName(
             self,  # parent
-            trans._('Save {msg} layers', msg=msg),  # caption
+            trans._("Save {msg} layers", msg=msg),  # caption
             # home dir by default
             hist[0],  # directory in PyQt, dir in PySide
             filter=ext_str,
@@ -705,8 +705,8 @@ class QtViewer(QSplitter):
         )
         logging.debug(
             trans._(
-                'QFileDialog - filename: {filename} '
-                'selected_filter: {selected_filter}',
+                "QFileDialog - filename: {filename} "
+                "selected_filter: {selected_filter}",
                 filename=filename or None,
                 selected_filter=selected_filter or None,
             )
@@ -720,7 +720,7 @@ class QtViewer(QSplitter):
                 saved = self.viewer.layers.save(
                     filename, selected=selected, _writer=writer
                 )
-                logging.debug('Saved %s', saved)
+                logging.debug("Saved %s", saved)
                 error_messages = "\n".join(str(x.message.args[0]) for x in wa)
 
             if not saved:
@@ -829,7 +829,7 @@ class QtViewer(QSplitter):
 
     def _open_files_dialog(self, choose_plugin=False, stack=False):
         """Add files from the menubar."""
-        filenames = self._open_file_dialog_uni(trans._('Select file(s)...'))
+        filenames = self._open_file_dialog_uni(trans._("Select file(s)..."))
 
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
@@ -852,7 +852,7 @@ class QtViewer(QSplitter):
 
         folder = dlg.getExistingDirectory(
             self,
-            trans._('Select folder...'),
+            trans._("Select folder..."),
             hist[0],  # home dir by default
             (
                 QFileDialog.DontUseNativeDialog
@@ -861,7 +861,7 @@ class QtViewer(QSplitter):
             ),
         )
 
-        if folder not in {'', None}:
+        if folder not in {"", None}:
             self._qt_open([folder], stack=False, choose_plugin=choose_plugin)
             update_open_history(folder)
 
@@ -942,7 +942,7 @@ class QtViewer(QSplitter):
             self.dockConsole.setFocus()
 
         self.viewerButtons.consoleButton.setProperty(
-            'expanded', self.dockConsole.isVisible()
+            "expanded", self.dockConsole.isVisible()
         )
         self.viewerButtons.consoleButton.style().unpolish(
             self.viewerButtons.consoleButton
@@ -1003,7 +1003,7 @@ class QtViewer(QSplitter):
     def _set_drag_status(self):
         """Set dedicated status message when dragging files into viewer"""
         self.viewer.status = trans._(
-            'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
+            "Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack."
         )
 
     def dropEvent(self, event):

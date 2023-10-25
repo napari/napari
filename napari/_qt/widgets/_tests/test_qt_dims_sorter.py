@@ -8,11 +8,11 @@ def test_dims_sorter(qtbot):
     qtbot.addWidget(dim_sorter)
     assert tuple(dim_sorter.axes_list) == (0, 1)
 
-    viewer.dims.axis_labels = ('y', 'x')
-    assert tuple(dim_sorter.axes_list) == ('y', 'x')
+    viewer.dims.axis_labels = ("y", "x")
+    assert tuple(dim_sorter.axes_list) == ("y", "x")
 
     dim_sorter.axes_list.move(1, 0)
-    assert tuple(dim_sorter.axes_list) == ('x', 'y')
+    assert tuple(dim_sorter.axes_list) == ("x", "y")
     assert tuple(viewer.dims.order) == (1, 0)
 
 

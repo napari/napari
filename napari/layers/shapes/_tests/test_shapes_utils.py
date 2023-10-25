@@ -348,7 +348,7 @@ def create_complex_shape():
 
 
 @pytest.mark.parametrize(
-    'path, closed, limit, bevel, expected',
+    "path, closed, limit, bevel, expected",
     cases,
 )
 def test_generate_2D_edge_meshes(
@@ -383,23 +383,23 @@ def test_many_shapes():
 
 def test_get_default_shape_type():
     """Test getting default shape type"""
-    shape_type = ['polygon', 'polygon']
-    assert get_default_shape_type(shape_type) == 'polygon'
+    shape_type = ["polygon", "polygon"]
+    assert get_default_shape_type(shape_type) == "polygon"
 
     shape_type = []
-    assert get_default_shape_type(shape_type) == 'polygon'
+    assert get_default_shape_type(shape_type) == "polygon"
 
-    shape_type = ['ellipse', 'rectangle']
-    assert get_default_shape_type(shape_type) == 'polygon'
+    shape_type = ["ellipse", "rectangle"]
+    assert get_default_shape_type(shape_type) == "polygon"
 
-    shape_type = ['rectangle', 'rectangle']
-    assert get_default_shape_type(shape_type) == 'rectangle'
+    shape_type = ["rectangle", "rectangle"]
+    assert get_default_shape_type(shape_type) == "rectangle"
 
-    shape_type = ['ellipse', 'ellipse']
-    assert get_default_shape_type(shape_type) == 'ellipse'
+    shape_type = ["ellipse", "ellipse"]
+    assert get_default_shape_type(shape_type) == "ellipse"
 
-    shape_type = ['polygon']
-    assert get_default_shape_type(shape_type) == 'polygon'
+    shape_type = ["polygon"]
+    assert get_default_shape_type(shape_type) == "polygon"
 
 
 def test_rdp(create_complex_shape):
@@ -416,7 +416,7 @@ def test_rdp(create_complex_shape):
     assert len(rdp_shape_lt) < len(rdp_shape)
 
 
-@pytest.mark.parametrize('start, end, point', line_points)
+@pytest.mark.parametrize("start, end, point", line_points)
 def test_perpendicular_distance(start, end, point):
     # check whether math is correct and works higher than 2D / 3d
     distance = perpendicular_distance(point, start, end)

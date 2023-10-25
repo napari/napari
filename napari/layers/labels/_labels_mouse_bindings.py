@@ -24,7 +24,7 @@ def draw(layer, event):
     """
 
     # Do not allow drawing while adjusting the brush size with the mouse
-    if layer.cursor == 'circle_frozen':
+    if layer.cursor == "circle_frozen":
         return
 
     coordinates = mouse_event_to_labels_coordinate(layer, event)
@@ -40,7 +40,7 @@ def draw(layer, event):
 
         last_cursor_coord = coordinates
         # on move
-        while event.type == 'mouse_move':
+        while event.type == "mouse_move":
             coordinates = mouse_event_to_labels_coordinate(layer, event)
             if coordinates is not None or last_cursor_coord is not None:
                 layer._draw(new_label, last_cursor_coord, coordinates)
@@ -94,7 +94,7 @@ class BrushSizeOnMouseMove:
             if self.init_pos is None:
                 self.init_pos = pos
                 self.init_brush_size = layer.brush_size
-                layer.cursor = 'circle_frozen'
+                layer.cursor = "circle_frozen"
             else:
                 brush_size_delta = round(
                     (pos[0] - self.init_pos[0]) / event.camera_zoom
@@ -105,11 +105,11 @@ class BrushSizeOnMouseMove:
                 layer.brush_size = bounded_brush_size
         else:
             self.init_pos = None
-            if layer.cursor == 'circle_frozen':
-                layer.cursor = 'circle'
+            if layer.cursor == "circle_frozen":
+                layer.cursor = "circle"
 
     def _on_modifiers_change(self):
         modifiers_setting = (
             get_settings().application.brush_size_on_mouse_move_modifiers
         )
-        self.modifiers = modifiers_setting.value.split('+')
+        self.modifiers = modifiers_setting.value.split("+")

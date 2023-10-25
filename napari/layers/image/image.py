@@ -233,12 +233,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         data,
         *,
         rgb=None,
-        colormap='gray',
+        colormap="gray",
         contrast_limits=None,
         gamma=1,
-        interpolation2d='nearest',
-        interpolation3d='linear',
-        rendering='mip',
+        interpolation2d="nearest",
+        interpolation3d="linear",
+        rendering="mip",
         iso_threshold=None,
         attenuation=0.05,
         name=None,
@@ -249,15 +249,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         shear=None,
         affine=None,
         opacity=1,
-        blending='translucent',
+        blending="translucent",
         visible=True,
         multiscale=None,
         cache=True,
-        depiction='volume',
+        depiction="volume",
         plane=None,
         experimental_clipping_planes=None,
         custom_interpolation_kernel_2d=None,
-        projection_mode='none',
+        projection_mode="none",
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -265,9 +265,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if isinstance(data, types.GeneratorType):
             data = list(data)
 
-        if getattr(data, 'ndim', 2) < 2:
+        if getattr(data, "ndim", 2) < 2:
             raise ValueError(
-                trans._('Image data must have at least 2 dimensions.')
+                trans._("Image data must have at least 2 dimensions.")
             )
 
         # Determine if data is a multiscale
@@ -319,7 +319,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
                     deferred=True,
                 ),
-                type_name='select',
+                type_name="select",
             ),
             interpolation2d=Event,
             interpolation3d=Event,
@@ -368,7 +368,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._should_calc_clims = False
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
-                dtype = normalize_dtype(getattr(data, 'dtype', None))
+                dtype = normalize_dtype(getattr(data, "dtype", None))
                 if np.issubdtype(dtype, np.integer):
                     self.contrast_limits_range = get_dtype_limits(dtype)
                 else:
@@ -399,7 +399,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.depiction = depiction
         if plane is not None:
             self.plane = plane
-        connect_no_arg(self.plane.events, self.events, 'plane')
+        connect_no_arg(self.plane.events, self.events, "plane")
         self.custom_interpolation_kernel_2d = custom_interpolation_kernel_2d
 
         # Trigger generation of view slice and thumbnail
@@ -410,14 +410,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
 
-    def _calc_data_range(self, mode='data') -> Tuple[float, float]:
+    def _calc_data_range(self, mode="data") -> Tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
         or full data array
         """
-        if mode == 'data':
+        if mode == "data":
             input_data = self.data[-1] if self.multiscale else self.data
-        elif mode == 'slice':
+        elif mode == "slice":
             data = self._slice.image.view  # ugh
             input_data = data[-1] if self.multiscale else data
         else:
@@ -571,8 +571,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if self._slice_input.ndisplay == 3:
             self.interpolation3d = interpolation
         else:
-            if interpolation == 'bilinear':
-                interpolation = 'linear'
+            if interpolation == "bilinear":
+                interpolation = "linear"
                 warnings.warn(
                     trans._(
                         "'bilinear' is invalid for interpolation2d (introduced in napari 0.4.17). "
@@ -589,14 +589,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation2d.setter
     def interpolation2d(self, value):
-        if value == 'bilinear':
+        if value == "bilinear":
             raise ValueError(
                 trans._(
                     "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
                 ),
             )
-        if value == 'bicubic':
-            value = 'cubic'
+        if value == "bicubic":
+            value = "cubic"
             warnings.warn(
                 trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
                 category=DeprecationWarning,
@@ -612,12 +612,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation3d.setter
     def interpolation3d(self, value):
-        if value == 'custom':
+        if value == "custom":
             raise NotImplementedError(
-                'custom interpolation is not implemented yet for 3D rendering'
+                "custom interpolation is not implemented yet for 3D rendering"
             )
-        if value == 'bicubic':
-            value = 'cubic'
+        if value == "bicubic":
+            value = "cubic"
             warnings.warn(
                 trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
                 category=DeprecationWarning,
@@ -856,7 +856,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if self.multiscale:
             # for multiscale data map the coordinate from the data back to
             # the tile
-            coord = self._transforms['tile2data'].inverse(position)
+            coord = self._transforms["tile2data"].inverse(position)
         else:
             coord = position
 
@@ -944,20 +944,20 @@ class Image(_ImageBase):
         state = self._get_base_state()
         state.update(
             {
-                'rgb': self.rgb,
-                'multiscale': self.multiscale,
-                'colormap': self.colormap.dict(),
-                'contrast_limits': self.contrast_limits,
-                'interpolation2d': self.interpolation2d,
-                'interpolation3d': self.interpolation3d,
-                'rendering': self.rendering,
-                'depiction': self.depiction,
-                'plane': self.plane.dict(),
-                'iso_threshold': self.iso_threshold,
-                'attenuation': self.attenuation,
-                'gamma': self.gamma,
-                'data': self.data,
-                'custom_interpolation_kernel_2d': self.custom_interpolation_kernel_2d,
+                "rgb": self.rgb,
+                "multiscale": self.multiscale,
+                "colormap": self.colormap.dict(),
+                "contrast_limits": self.contrast_limits,
+                "interpolation2d": self.interpolation2d,
+                "interpolation3d": self.interpolation3d,
+                "rendering": self.rendering,
+                "depiction": self.depiction,
+                "plane": self.plane.dict(),
+                "iso_threshold": self.iso_threshold,
+                "attenuation": self.attenuation,
+                "gamma": self.gamma,
+                "data": self.data,
+                "custom_interpolation_kernel_2d": self.custom_interpolation_kernel_2d,
             }
         )
         return state

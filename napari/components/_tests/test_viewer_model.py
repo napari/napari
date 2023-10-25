@@ -17,13 +17,13 @@ from napari.utils.events.event import WarningEmitter
 def test_viewer_model():
     """Test instantiating viewer model."""
     viewer = ViewerModel()
-    assert viewer.title == 'napari'
+    assert viewer.title == "napari"
     assert len(viewer.layers) == 0
     assert viewer.dims.ndim == 2
 
     # Create viewer model with custom title
-    viewer = ViewerModel(title='testing')
-    assert viewer.title == 'testing'
+    viewer = ViewerModel(title="testing")
+    assert viewer.title == "testing"
 
 
 def test_add_image():
@@ -51,32 +51,32 @@ def test_add_image_colormap_variants():
     np.random.seed(0)
     data = np.random.random((10, 15))
     # as string
-    assert viewer.add_image(data, colormap='green')
+    assert viewer.add_image(data, colormap="green")
 
     # as string that is valid, but not a default colormap
-    assert viewer.add_image(data, colormap='fire')
+    assert viewer.add_image(data, colormap="fire")
 
     # as tuple
-    cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
+    cmap_tuple = ("my_colormap", Colormap(["g", "m", "y"]))
     assert viewer.add_image(data, colormap=cmap_tuple)
 
     # as dict
-    cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
+    cmap_dict = {"your_colormap": Colormap(["g", "r", "y"])}
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance
-    blue_cmap = AVAILABLE_COLORMAPS['blue']
+    blue_cmap = AVAILABLE_COLORMAPS["blue"]
     assert viewer.add_image(data, colormap=blue_cmap)
 
     # string values must be known colormap types
     with pytest.raises(KeyError) as err:
-        viewer.add_image(data, colormap='nonsense')
+        viewer.add_image(data, colormap="nonsense")
 
     assert 'Colormap "nonsense" not found' in str(err.value)
 
     # lists are only valid with channel_axis
     with pytest.raises(TypeError) as err:
-        viewer.add_image(data, colormap=['green', 'red'])
+        viewer.add_image(data, colormap=["green", "red"])
 
     assert "did you mean to specify a 'channel_axis'" in str(err.value)
 
@@ -156,7 +156,7 @@ def test_single_point_dims():
 
 def test_add_empty_points_to_empty_viewer():
     viewer = ViewerModel()
-    layer = viewer.add_points(name='empty points')
+    layer = viewer.add_points(name="empty points")
     assert layer.ndim == 2
     layer.add([1000.0, 27.0])
     assert layer.data.shape == (1, 2)
@@ -483,7 +483,7 @@ def test_add_remove_layer_dims_change():
     assert viewer.dims.ndim == 2
 
 
-@pytest.mark.parametrize('data', good_layer_data)
+@pytest.mark.parametrize("data", good_layer_data)
 def test_add_layer_from_data(data):
     # make sure adding valid layer data calls the proper corresponding add_*
     # method for all layer types
@@ -492,7 +492,7 @@ def test_add_layer_from_data(data):
 
     # make sure a layer of the correct type got added
     assert len(viewer.layers) == 1
-    expected_layer_type = data[2] if len(data) > 2 else 'image'
+    expected_layer_type = data[2] if len(data) > 2 else "image"
     assert viewer.layers[0]._type_string == expected_layer_type
 
 
@@ -504,14 +504,14 @@ def test_add_layer_from_data_raises():
         # 'layer' is not a valid type
         # (even though there is an add_layer method)
         viewer._add_layer_from_data(
-            np.random.random((10, 10)), layer_type='layer'
+            np.random.random((10, 10)), layer_type="layer"
         )
 
     # even with the correct meta kwargs, the underlying add_* method may raise
     with pytest.raises(ValueError):
         # improper dims for rgb data
         viewer._add_layer_from_data(
-            np.random.random((10, 10, 6)), {'rgb': True}
+            np.random.random((10, 10, 6)), {"rgb": True}
         )
 
     # using a kwarg in the meta dict that is invalid for the corresponding
@@ -519,24 +519,24 @@ def test_add_layer_from_data_raises():
     with pytest.raises(TypeError):
         viewer._add_layer_from_data(
             np.random.random((10, 2, 2)) * 20,
-            {'rgb': True},  # vectors do not have an 'rgb' kwarg
-            layer_type='vectors',
+            {"rgb": True},  # vectors do not have an 'rgb' kwarg
+            layer_type="vectors",
         )
 
 
 def test_naming():
     """Test unique naming in LayerList."""
     viewer = ViewerModel()
-    viewer.add_image(np.random.random((10, 10)), name='img')
-    viewer.add_image(np.random.random((10, 10)), name='img')
+    viewer.add_image(np.random.random((10, 10)), name="img")
+    viewer.add_image(np.random.random((10, 10)), name="img")
 
-    assert [lay.name for lay in viewer.layers] == ['img', 'img [1]']
+    assert [lay.name for lay in viewer.layers] == ["img", "img [1]"]
 
-    viewer.layers[1].name = 'chg'
-    assert [lay.name for lay in viewer.layers] == ['img', 'chg']
+    viewer.layers[1].name = "chg"
+    assert [lay.name for lay in viewer.layers] == ["img", "chg"]
 
-    viewer.layers[0].name = 'chg'
-    assert [lay.name for lay in viewer.layers] == ['chg [1]', 'chg']
+    viewer.layers[0].name = "chg"
+    assert [lay.name for lay in viewer.layers] == ["chg [1]", "chg"]
 
 
 def test_selection():
@@ -631,7 +631,7 @@ def test_active_layer_cursor_size():
     assert len(viewer.layers) == 2
     assert viewer.layers.selection.active == viewer.layers[1]
 
-    viewer.layers[1].mode = 'paint'
+    viewer.layers[1].mode = "paint"
     # Labels layer has a default cursor size of 10
     # due to paintbrush
     assert viewer.cursor.size == 10
@@ -733,7 +733,7 @@ def test_update_scale():
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize("Layer, data, ndim", layer_test_data)
 def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     """Test all callbacks for layer emmitters removed."""
     viewer = ViewerModel()
@@ -764,7 +764,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
         assert len(em.callbacks) == 0
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize("Layer, data, ndim", layer_test_data)
 def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     """Test external callbacks for layer emmitters preserved."""
     viewer = ViewerModel()
@@ -804,7 +804,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
 
 
 @pytest.mark.parametrize(
-    'field', ['camera', 'cursor', 'dims', 'grid', 'layers']
+    "field", ["camera", "cursor", "dims", "grid", "layers"]
 )
 def test_not_mutable_fields(field):
     """Test appropriate fields are not mutable."""
@@ -817,14 +817,14 @@ def test_not_mutable_fields(field):
 
     # Check attribute is not settable
     with pytest.raises((TypeError, ValueError)) as err:
-        setattr(viewer, field, 'test')
+        setattr(viewer, field, "test")
 
-    assert 'has allow_mutation set to False and cannot be assigned' in str(
+    assert "has allow_mutation set to False and cannot be assigned" in str(
         err.value
     )
 
 
-@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+@pytest.mark.parametrize("Layer, data, ndim", layer_test_data)
 def test_status_tooltip(Layer, data, ndim):
     viewer = ViewerModel()
     viewer.tooltip.visible = True
@@ -844,18 +844,18 @@ def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
     viewer = ViewerModel()
     tmp2 = tmp_plugin.spawn(register=True)
 
-    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    @tmp_plugin.contribute.reader(filename_patterns=["*.fake"])
     def _(path):
         ...
 
-    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    @tmp2.contribute.reader(filename_patterns=["*.fake"])
     def _(path):
         ...
 
     with pytest.raises(
-        MultipleReaderError, match='Multiple plugins found capable'
+        MultipleReaderError, match="Multiple plugins found capable"
     ):
-        viewer._open_or_raise_error(['my_file.fake'])
+        viewer._open_or_raise_error(["my_file.fake"])
 
 
 def test_open_or_get_error_no_plugin():
@@ -863,16 +863,16 @@ def test_open_or_get_error_no_plugin():
     viewer = ViewerModel()
 
     with pytest.raises(
-        NoAvailableReaderError, match='No plugin found capable of reading'
+        NoAvailableReaderError, match="No plugin found capable of reading"
     ):
-        viewer._open_or_raise_error(['my_file.fake'])
+        viewer._open_or_raise_error(["my_file.fake"])
 
 
 def test_open_or_get_error_builtins(builtins: DynamicPlugin, tmp_path):
     """Test builtins is available to read npy files."""
     viewer = ViewerModel()
 
-    f_pth = tmp_path / 'my-file.npy'
+    f_pth = tmp_path / "my-file.npy"
     data = np.random.random((10, 10))
     np.save(f_pth, data)
 
@@ -889,14 +889,14 @@ def test_open_or_get_error_prefered_plugin(
 ):
     """Test plugin preference is respected."""
     viewer = ViewerModel()
-    pth = tmp_path / 'my-file.npy'
+    pth = tmp_path / "my-file.npy"
     np.save(pth, np.random.random((10, 10)))
 
-    @tmp_plugin.contribute.reader(filename_patterns=['*.npy'])
+    @tmp_plugin.contribute.reader(filename_patterns=["*.npy"])
     def _(path):
         ...
 
-    get_settings().plugins.extension2reader = {'*.npy': builtins.name}
+    get_settings().plugins.extension2reader = {"*.npy": builtins.name}
 
     added = viewer._open_or_raise_error([str(pth)])
     assert len(added) == 1
@@ -906,10 +906,10 @@ def test_open_or_get_error_prefered_plugin(
 def test_open_or_get_error_cant_find_plugin(tmp_path, builtins: DynamicPlugin):
     """Test user is warned and only plugin used if preferred plugin missing."""
     viewer = ViewerModel()
-    pth = tmp_path / 'my-file.npy'
+    pth = tmp_path / "my-file.npy"
     np.save(pth, np.random.random((10, 10)))
 
-    get_settings().plugins.extension2reader = {'*.npy': 'fake-reader'}
+    get_settings().plugins.extension2reader = {"*.npy": "fake-reader"}
 
     with pytest.warns(RuntimeWarning, match="Can't find fake-reader plugin"):
         added = viewer._open_or_raise_error([str(pth)])
@@ -924,31 +924,31 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
     viewer = ViewerModel()
     tmp2 = tmp_plugin.spawn(register=True)
 
-    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    @tmp_plugin.contribute.reader(filename_patterns=["*.fake"])
     def _(path):
         ...
 
-    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    @tmp2.contribute.reader(filename_patterns=["*.fake"])
     def _(path):
         ...
 
-    get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
+    get_settings().plugins.extension2reader = {"*.fake": "not-a-plugin"}
 
     with pytest.warns(RuntimeWarning, match="Can't find not-a-plugin plugin"):
         with pytest.raises(
-            MultipleReaderError, match='Multiple plugins found capable'
+            MultipleReaderError, match="Multiple plugins found capable"
         ):
-            viewer._open_or_raise_error(['my_file.fake'])
+            viewer._open_or_raise_error(["my_file.fake"])
 
 
 def test_open_or_get_error_preferred_fails(builtins, tmp_path):
     viewer = ViewerModel()
-    pth = tmp_path / 'my-file.npy'
+    pth = tmp_path / "my-file.npy"
 
-    get_settings().plugins.extension2reader = {'*.npy': builtins.name}
+    get_settings().plugins.extension2reader = {"*.npy": builtins.name}
 
     with pytest.raises(
-        ReaderPluginError, match='Tried opening with napari, but failed.'
+        ReaderPluginError, match="Tried opening with napari, but failed."
     ):
         viewer._open_or_raise_error([str(pth)])
 

@@ -76,10 +76,10 @@ def test_multiscale_tuple():
     np.random.seed(0)
     img = np.random.random(shape)
 
-    if skimage.__version__ > '0.19':
-        pyramid_kwargs = {'channel_axis': None}
+    if skimage.__version__ > "0.19":
+        pyramid_kwargs = {"channel_axis": None}
     else:
-        pyramid_kwargs = {'multichannel': False}
+        pyramid_kwargs = {"multichannel": False}
 
     data = list(pyramid_gaussian(img, **pyramid_kwargs))
     layer = Image(data)
@@ -171,13 +171,13 @@ def test_name():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    assert layer.name == 'Image'
+    assert layer.name == "Image"
 
-    layer = Image(data, multiscale=True, name='random')
-    assert layer.name == 'random'
+    layer = Image(data, multiscale=True, name="random")
+    assert layer.name == "random"
 
-    layer.name = 'img'
-    assert layer.name == 'img'
+    layer.name = "img"
+    assert layer.name == "img"
 
 
 def test_visiblity():
@@ -222,16 +222,16 @@ def test_blending():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    assert layer.blending == 'translucent'
+    assert layer.blending == "translucent"
 
-    layer.blending = 'additive'
-    assert layer.blending == 'additive'
+    layer.blending = "additive"
+    assert layer.blending == "additive"
 
-    layer = Image(data, multiscale=True, blending='additive')
-    assert layer.blending == 'additive'
+    layer = Image(data, multiscale=True, blending="additive")
+    assert layer.blending == "additive"
 
-    layer.blending = 'opaque'
-    assert layer.blending == 'opaque'
+    layer.blending = "opaque"
+    assert layer.blending == "opaque"
 
 
 def test_interpolation():
@@ -241,20 +241,20 @@ def test_interpolation():
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
     with pytest.deprecated_call():
-        assert layer.interpolation == 'nearest'
-    assert layer.interpolation2d == 'nearest'
-    assert layer.interpolation3d == 'linear'
+        assert layer.interpolation == "nearest"
+    assert layer.interpolation2d == "nearest"
+    assert layer.interpolation3d == "linear"
 
     with pytest.deprecated_call():
-        layer = Image(data, multiscale=True, interpolation2d='bicubic')
-    assert layer.interpolation2d == 'cubic'
+        layer = Image(data, multiscale=True, interpolation2d="bicubic")
+    assert layer.interpolation2d == "cubic"
     with pytest.deprecated_call():
-        assert layer.interpolation == 'cubic'
+        assert layer.interpolation == "cubic"
 
-    layer.interpolation2d = 'linear'
+    layer.interpolation2d = "linear"
     with pytest.deprecated_call():
-        assert layer.interpolation == 'linear'
-    assert layer.interpolation2d == 'linear'
+        assert layer.interpolation == "linear"
+    assert layer.interpolation2d == "linear"
 
 
 def test_colormaps():
@@ -263,35 +263,35 @@ def test_colormaps():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    assert layer.colormap.name == 'gray'
+    assert layer.colormap.name == "gray"
     assert isinstance(layer.colormap, Colormap)
 
-    layer.colormap = 'magma'
-    assert layer.colormap.name == 'magma'
-    assert isinstance(layer.colormap, Colormap)
-
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
-    layer.colormap = 'custom', cmap
-    assert layer.colormap.name == 'custom'
-    assert layer.colormap == cmap
-
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
-    layer.colormap = {'new': cmap}
-    assert layer.colormap.name == 'new'
-    assert layer.colormap == cmap
-
-    layer = Image(data, multiscale=True, colormap='magma')
-    assert layer.colormap.name == 'magma'
+    layer.colormap = "magma"
+    assert layer.colormap.name == "magma"
     assert isinstance(layer.colormap, Colormap)
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
-    layer = Image(data, multiscale=True, colormap=('custom', cmap))
-    assert layer.colormap.name == 'custom'
+    layer.colormap = "custom", cmap
+    assert layer.colormap.name == "custom"
     assert layer.colormap == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
-    layer = Image(data, multiscale=True, colormap={'new': cmap})
-    assert layer.colormap.name == 'new'
+    layer.colormap = {"new": cmap}
+    assert layer.colormap.name == "new"
+    assert layer.colormap == cmap
+
+    layer = Image(data, multiscale=True, colormap="magma")
+    assert layer.colormap.name == "magma"
+    assert isinstance(layer.colormap, Colormap)
+
+    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
+    layer = Image(data, multiscale=True, colormap=("custom", cmap))
+    assert layer.colormap.name == "custom"
+    assert layer.colormap == cmap
+
+    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
+    layer = Image(data, multiscale=True, colormap={"new": cmap})
+    assert layer.colormap.name == "new"
     assert layer.colormap == cmap
 
 
@@ -344,8 +344,8 @@ def test_metadata():
     layer = Image(data, multiscale=True)
     assert layer.metadata == {}
 
-    layer = Image(data, multiscale=True, metadata={'unit': 'cm'})
-    assert layer.metadata == {'unit': 'cm'}
+    layer = Image(data, multiscale=True, metadata={"unit": "cm"})
+    assert layer.metadata == {"unit": "cm"}
 
 
 def test_value():
@@ -442,7 +442,7 @@ def test_multiscale_data_protocol():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    assert '3 levels' in repr(layer.data)
+    assert "3 levels" in repr(layer.data)
     assert layer.data == data
     assert layer.data_raw is data
     assert layer.data is not data
@@ -454,7 +454,7 @@ def test_multiscale_data_protocol():
 
 
 @pytest.mark.parametrize(
-    ('corner_pixels_world', 'exp_level', 'exp_corner_pixels_data'),
+    ("corner_pixels_world", "exp_level", "exp_corner_pixels_data"),
     (
         ([[5, 5], [15, 15]], 0, [[5, 5], [15, 15]]),
         # Multiscale level selection uses > rather than >= so use -1 and 21
@@ -482,7 +482,7 @@ def test_update_draw_variable_fov_fixed_canvas_size(
 
 
 @pytest.mark.parametrize(
-    ('canvas_size_pixels', 'exp_level', 'exp_corner_pixels_data'),
+    ("canvas_size_pixels", "exp_level", "exp_corner_pixels_data"),
     (
         ([16, 16], 0, [[0, 0], [19, 19]]),
         ([8, 8], 1, [[0, 0], [9, 9]]),

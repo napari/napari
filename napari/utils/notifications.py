@@ -24,24 +24,24 @@ except ImportError:
 
 
 name2num = {
-    'error': 40,
-    'warning': 30,
-    'info': 20,
-    'debug': 10,
-    'none': 0,
+    "error": 40,
+    "warning": 30,
+    "info": 20,
+    "debug": 10,
+    "none": 0,
 }
 
 __all__ = [
-    'NotificationSeverity',
-    'Notification',
-    'ErrorNotification',
-    'WarningNotification',
-    'NotificationManager',
-    'show_debug',
-    'show_info',
-    'show_warning',
-    'show_error',
-    'show_console_notification',
+    "NotificationSeverity",
+    "Notification",
+    "ErrorNotification",
+    "WarningNotification",
+    "NotificationManager",
+    "show_debug",
+    "show_info",
+    "show_warning",
+    "show_error",
+    "show_console_notification",
 ]
 
 
@@ -136,7 +136,7 @@ class Notification(Event):
         return WarningNotification(warning, **kwargs)
 
     def __str__(self):
-        return f'{str(self.severity).upper()}: {self.message}'
+        return f"{str(self.severity).upper()}: {self.message}"
 
 
 class ErrorNotification(Notification):
@@ -147,8 +147,8 @@ class ErrorNotification(Notification):
     exception: BaseException
 
     def __init__(self, exception: BaseException, *args, **kwargs) -> None:
-        msg = getattr(exception, 'message', str(exception))
-        actions = getattr(exception, 'actions', ())
+        msg = getattr(exception, "message", str(exception))
+        actions = getattr(exception, "actions", ())
         super().__init__(msg, NotificationSeverity.ERROR, actions)
         self.exception = exception
 
@@ -196,8 +196,8 @@ class WarningNotification(Notification):
     def __init__(
         self, warning: Warning, filename=None, lineno=None, *args, **kwargs
     ) -> None:
-        msg = getattr(warning, 'message', str(warning))
-        actions = getattr(warning, 'actions', ())
+        msg = getattr(warning, "message", str(warning))
+        actions = getattr(warning, "actions", ())
         super().__init__(msg, NotificationSeverity.WARNING, actions)
         self.warning = warning
         self.filename = filename
@@ -205,7 +205,7 @@ class WarningNotification(Notification):
 
     def __str__(self):
         category = type(self.warning).__name__
-        return f'{self.filename}:{self.lineno}: {category}: {self.warning}!'
+        return f"{self.filename}:{self.lineno}: {category}: {self.warning}!"
 
 
 class NotificationManager:
@@ -234,10 +234,10 @@ class NotificationManager:
 
     def __init__(self) -> None:
         self.records: List[Notification] = []
-        self.exit_on_error = os.getenv('NAPARI_EXIT_ON_ERROR') in ('1', 'True')
+        self.exit_on_error = os.getenv("NAPARI_EXIT_ON_ERROR") in ("1", "True")
         self.catch_error = os.getenv("NAPARI_CATCH_ERRORS") not in (
-            '0',
-            'False',
+            "0",
+            "False",
         )
         self.notification_ready = self.changed = EventEmitter(
             source=self, event_class=Notification
@@ -259,7 +259,7 @@ class NotificationManager:
         threading.excepthook to display any message in the UI,
         storing the previous hooks to be restored if necessary.
         """
-        if getattr(threading, 'excepthook', None):
+        if getattr(threading, "excepthook", None):
             # TODO: we might want to display the additional thread information
             self._originals_thread_except_hooks.append(threading.excepthook)
             threading.excepthook = self.receive_thread_error
@@ -278,7 +278,7 @@ class NotificationManager:
         """
         Remove hooks installed by `install_hooks` and restore previous hooks.
         """
-        if getattr(threading, 'excepthook', None):
+        if getattr(threading, "excepthook", None):
             # `threading.excepthook` available only for Python >= 3.8
             threading.excepthook = self._originals_thread_except_hooks.pop()
 
@@ -336,7 +336,7 @@ class NotificationManager:
         )
 
     def receive_info(self, message: str):
-        self.dispatch(Notification(message, 'INFO'))
+        self.dispatch(Notification(message, "INFO"))
 
 
 notification_manager = NotificationManager()

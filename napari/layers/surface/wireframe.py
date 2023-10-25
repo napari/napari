@@ -2,7 +2,7 @@ from napari._pydantic_compat import Field
 from napari.utils.color import ColorValue
 from napari.utils.events import EventedModel
 
-_DEFAULT_COLOR = ColorValue('black')
+_DEFAULT_COLOR = ColorValue("black")
 
 
 class SurfaceWireframe(EventedModel):

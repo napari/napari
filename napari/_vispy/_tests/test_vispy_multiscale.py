@@ -73,8 +73,8 @@ def test_multiscale_screenshot(make_napari_viewer):
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
-    target_center = np.array([255, 255, 255, 255], dtype='uint8')
-    target_edge = np.array([0, 0, 0, 255], dtype='uint8')
+    target_center = np.array([255, 255, 255, 255], dtype="uint8")
+    target_edge = np.array([0, 0, 0, 255], dtype="uint8")
     screen_offset = 3  # Offset is needed as our screenshots have black borders
 
     np.testing.assert_allclose(screenshot[tuple(center_coord)], target_center)
@@ -109,7 +109,7 @@ def test_multiscale_screenshot_zoomed(make_napari_viewer):
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
-    target_center = np.array([255, 255, 255, 255], dtype='uint8')
+    target_center = np.array([255, 255, 255, 255], dtype="uint8")
     screen_offset = 3  # Offset is needed as our screenshots have black borders
 
     # for whatever reason this is the only test where the border is 6px on hi DPI.
@@ -144,7 +144,7 @@ def test_image_screenshot_zoomed(make_napari_viewer):
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
-    target_center = np.array([255, 255, 255, 255], dtype='uint8')
+    target_center = np.array([255, 255, 255, 255], dtype="uint8")
     screen_offset = 3  # Offset is needed as our screenshots have black borders
 
     np.testing.assert_allclose(screenshot[tuple(center_coord)], target_center)

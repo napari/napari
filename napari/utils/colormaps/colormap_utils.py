@@ -44,61 +44,61 @@ ValidColormapArg = Union[
 
 
 matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
-    viridis=trans._p('colormap', 'viridis'),
-    magma=trans._p('colormap', 'magma'),
-    inferno=trans._p('colormap', 'inferno'),
-    plasma=trans._p('colormap', 'plasma'),
-    gray=trans._p('colormap', 'gray'),
-    gray_r=trans._p('colormap', 'gray r'),
-    hsv=trans._p('colormap', 'hsv'),
-    turbo=trans._p('colormap', 'turbo'),
-    twilight=trans._p('colormap', 'twilight'),
-    twilight_shifted=trans._p('colormap', 'twilight shifted'),
-    gist_earth=trans._p('colormap', 'gist earth'),
-    PiYG=trans._p('colormap', 'PiYG'),
+    viridis=trans._p("colormap", "viridis"),
+    magma=trans._p("colormap", "magma"),
+    inferno=trans._p("colormap", "inferno"),
+    plasma=trans._p("colormap", "plasma"),
+    gray=trans._p("colormap", "gray"),
+    gray_r=trans._p("colormap", "gray r"),
+    hsv=trans._p("colormap", "hsv"),
+    turbo=trans._p("colormap", "turbo"),
+    twilight=trans._p("colormap", "twilight"),
+    twilight_shifted=trans._p("colormap", "twilight shifted"),
+    gist_earth=trans._p("colormap", "gist earth"),
+    PiYG=trans._p("colormap", "PiYG"),
 )
 _MATPLOTLIB_COLORMAP_NAMES_REVERSE = {
     v: k for k, v in matplotlib_colormaps.items()
 }
 _VISPY_COLORMAPS_ORIGINAL = _VCO = get_colormaps()
 _VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
-    autumn=(trans._p('colormap', 'autumn'), _VCO['autumn']),
-    blues=(trans._p('colormap', 'blues'), _VCO['blues']),
-    cool=(trans._p('colormap', 'cool'), _VCO['cool']),
-    greens=(trans._p('colormap', 'greens'), _VCO['greens']),
-    reds=(trans._p('colormap', 'reds'), _VCO['reds']),
-    spring=(trans._p('colormap', 'spring'), _VCO['spring']),
-    summer=(trans._p('colormap', 'summer'), _VCO['summer']),
-    fire=(trans._p('colormap', 'fire'), _VCO['fire']),
-    grays=(trans._p('colormap', 'grays'), _VCO['grays']),
-    hot=(trans._p('colormap', 'hot'), _VCO['hot']),
-    ice=(trans._p('colormap', 'ice'), _VCO['ice']),
-    winter=(trans._p('colormap', 'winter'), _VCO['winter']),
-    light_blues=(trans._p('colormap', 'light blues'), _VCO['light_blues']),
-    orange=(trans._p('colormap', 'orange'), _VCO['orange']),
-    viridis=(trans._p('colormap', 'viridis'), _VCO['viridis']),
-    coolwarm=(trans._p('colormap', 'coolwarm'), _VCO['coolwarm']),
-    PuGr=(trans._p('colormap', 'PuGr'), _VCO['PuGr']),
-    GrBu=(trans._p('colormap', 'GrBu'), _VCO['GrBu']),
-    GrBu_d=(trans._p('colormap', 'GrBu_d'), _VCO['GrBu_d']),
-    RdBu=(trans._p('colormap', 'RdBu'), _VCO['RdBu']),
-    cubehelix=(trans._p('colormap', 'cubehelix'), _VCO['cubehelix']),
-    single_hue=(trans._p('colormap', 'single hue'), _VCO['single_hue']),
-    hsl=(trans._p('colormap', 'hsl'), _VCO['hsl']),
-    husl=(trans._p('colormap', 'husl'), _VCO['husl']),
-    diverging=(trans._p('colormap', 'diverging'), _VCO['diverging']),
-    RdYeBuCy=(trans._p('colormap', 'RdYeBuCy'), _VCO['RdYeBuCy']),
+    autumn=(trans._p("colormap", "autumn"), _VCO["autumn"]),
+    blues=(trans._p("colormap", "blues"), _VCO["blues"]),
+    cool=(trans._p("colormap", "cool"), _VCO["cool"]),
+    greens=(trans._p("colormap", "greens"), _VCO["greens"]),
+    reds=(trans._p("colormap", "reds"), _VCO["reds"]),
+    spring=(trans._p("colormap", "spring"), _VCO["spring"]),
+    summer=(trans._p("colormap", "summer"), _VCO["summer"]),
+    fire=(trans._p("colormap", "fire"), _VCO["fire"]),
+    grays=(trans._p("colormap", "grays"), _VCO["grays"]),
+    hot=(trans._p("colormap", "hot"), _VCO["hot"]),
+    ice=(trans._p("colormap", "ice"), _VCO["ice"]),
+    winter=(trans._p("colormap", "winter"), _VCO["winter"]),
+    light_blues=(trans._p("colormap", "light blues"), _VCO["light_blues"]),
+    orange=(trans._p("colormap", "orange"), _VCO["orange"]),
+    viridis=(trans._p("colormap", "viridis"), _VCO["viridis"]),
+    coolwarm=(trans._p("colormap", "coolwarm"), _VCO["coolwarm"]),
+    PuGr=(trans._p("colormap", "PuGr"), _VCO["PuGr"]),
+    GrBu=(trans._p("colormap", "GrBu"), _VCO["GrBu"]),
+    GrBu_d=(trans._p("colormap", "GrBu_d"), _VCO["GrBu_d"]),
+    RdBu=(trans._p("colormap", "RdBu"), _VCO["RdBu"]),
+    cubehelix=(trans._p("colormap", "cubehelix"), _VCO["cubehelix"]),
+    single_hue=(trans._p("colormap", "single hue"), _VCO["single_hue"]),
+    hsl=(trans._p("colormap", "hsl"), _VCO["hsl"]),
+    husl=(trans._p("colormap", "husl"), _VCO["husl"]),
+    diverging=(trans._p("colormap", "diverging"), _VCO["diverging"]),
+    RdYeBuCy=(trans._p("colormap", "RdYeBuCy"), _VCO["RdYeBuCy"]),
 )
 _VISPY_COLORMAPS_TRANSLATIONS_REVERSE = {
     v[0]: k for k, v in _VISPY_COLORMAPS_TRANSLATIONS.items()
 }
 _PRIMARY_COLORS = OrderedDict(
-    red=(trans._p('colormap', 'red'), [1.0, 0.0, 0.0]),
-    green=(trans._p('colormap', 'green'), [0.0, 1.0, 0.0]),
-    blue=(trans._p('colormap', 'blue'), [0.0, 0.0, 1.0]),
-    cyan=(trans._p('colormap', 'cyan'), [0.0, 1.0, 1.0]),
-    magenta=(trans._p('colormap', 'magenta'), [1.0, 0.0, 1.0]),
-    yellow=(trans._p('colormap', 'yellow'), [1.0, 1.0, 0.0]),
+    red=(trans._p("colormap", "red"), [1.0, 0.0, 0.0]),
+    green=(trans._p("colormap", "green"), [0.0, 1.0, 0.0]),
+    blue=(trans._p("colormap", "blue"), [0.0, 0.0, 1.0]),
+    cyan=(trans._p("colormap", "cyan"), [0.0, 1.0, 1.0]),
+    magenta=(trans._p("colormap", "magenta"), [1.0, 0.0, 1.0]),
+    yellow=(trans._p("colormap", "yellow"), [1.0, 1.0, 0.0]),
 )
 
 SIMPLE_COLORMAPS = {
@@ -124,7 +124,7 @@ INVERSE_COLORMAPS = {
 def _all_rgb():
     """Return all 256**3 valid rgb tuples."""
     base = np.arange(256, dtype=np.uint8)
-    r, g, b = np.meshgrid(base, base, base, indexing='ij')
+    r, g, b = np.meshgrid(base, base, base, indexing="ij")
     return np.stack((r, g, b), axis=-1).reshape((-1, 3))
 
 
@@ -149,7 +149,7 @@ LABMAX = np.array([100.0, 98.23305386, 94.47812228])
 LABRNG = LABMAX - LABMIN
 
 
-def convert_vispy_colormap(colormap, name='vispy'):
+def convert_vispy_colormap(colormap, name="vispy"):
     """Convert a vispy colormap object to a napari colormap.
 
     Parameters
@@ -166,24 +166,24 @@ def convert_vispy_colormap(colormap, name='vispy'):
     if not isinstance(colormap, VispyColormap):
         raise TypeError(
             trans._(
-                'Colormap must be a vispy colormap if passed to from_vispy',
+                "Colormap must be a vispy colormap if passed to from_vispy",
                 deferred=True,
             )
         )
 
     # Not all vispy colormaps have an `_controls`
     # but if they do, we want to use it
-    if hasattr(colormap, '_controls'):
+    if hasattr(colormap, "_controls"):
         controls = colormap._controls
     else:
         controls = np.zeros((0,))
 
     # Not all vispy colormaps have an `interpolation`
     # but if they do, we want to use it
-    if hasattr(colormap, 'interpolation'):
+    if hasattr(colormap, "interpolation"):
         interpolation = colormap.interpolation
     else:
-        interpolation = 'linear'
+        interpolation = "linear"
 
     if name in _VISPY_COLORMAPS_TRANSLATIONS:
         display_name, _cmap = _VISPY_COLORMAPS_TRANSLATIONS[name]
@@ -294,7 +294,7 @@ def color_dict_to_colormap(colors):
     if len(control_colors) >= MAX_DISTINCT_COLORS:
         warnings.warn(
             trans._(
-                'Label layers with more than {max_distinct_colors} distinct colors will not render correctly. This layer has {distinct_colors}.',
+                "Label layers with more than {max_distinct_colors} distinct colors will not render correctly. This layer has {distinct_colors}.",
                 deferred=True,
                 distinct_colors=str(len(control_colors)),
                 max_distinct_colors=str(MAX_DISTINCT_COLORS),
@@ -352,7 +352,7 @@ def _low_discrepancy(dim, n, seed=0.5):
     return pts
 
 
-def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
+def _color_random(n, *, colorspace="lab", tolerance=0.0, seed=0.5):
     """Generate n random RGB colors uniformly from LAB or LUV space.
 
     Parameters
@@ -377,9 +377,9 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
     rgb = np.zeros((0, 3))
     while len(rgb) < n:
         random = _low_discrepancy(3, n * factor, seed=seed)
-        if colorspace == 'luv':
+        if colorspace == "luv":
             raw_rgb = colorconv.luv2rgb(random * LUVRNG + LUVMIN)
-        elif colorspace == 'rgb':
+        elif colorspace == "rgb":
             raw_rgb = random
         else:  # 'lab' by default
             # The values in random are in [0, 1], but since the LAB colorspace
@@ -389,14 +389,14 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
             with warnings.catch_warnings():
                 # skimage 0.20.0rc
                 warnings.filterwarnings(
-                    action='ignore',
-                    message='Conversion from CIE-LAB, via XYZ to sRGB color space resulted in',
+                    action="ignore",
+                    message="Conversion from CIE-LAB, via XYZ to sRGB color space resulted in",
                     category=UserWarning,
                 )
                 # skimage <0.20
                 warnings.filterwarnings(
-                    action='ignore',
-                    message='Color data out of range',
+                    action="ignore",
+                    message="Color data out of range",
                     category=UserWarning,
                 )
                 raw_rgb = colorconv.lab2rgb(random * LABRNG + LABMIN)
@@ -457,11 +457,11 @@ def label_colormap(
     # here is an ugly hack to restore classical napari color order.
 
     return LabelColormap(
-        name='label_colormap',
-        display_name=trans._p('colormap', 'low discrepancy colors'),
+        name="label_colormap",
+        display_name=trans._p("colormap", "low discrepancy colors"),
         colors=colors,
         controls=np.linspace(0, 1, len(colors) + 1),
-        interpolation='zero',
+        interpolation="zero",
         background_value=background_value,
     )
 
@@ -563,13 +563,13 @@ AVAILABLE_COLORMAPS_LOCK = Lock()
 # curated colormap sets
 # these are selected to look good or at least reasonable when using additive
 # blending of multiple channels.
-MAGENTA_GREEN = ['magenta', 'green']
-RGB = ['red', 'green', 'blue']
-CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
+MAGENTA_GREEN = ["magenta", "green"]
+RGB = ["red", "green", "blue"]
+CYMRGB = ["cyan", "yellow", "magenta", "red", "green", "blue"]
 
 
 def _increment_unnamed_colormap(
-    existing: Iterable[str], name: str = '[unnamed colormap]'
+    existing: Iterable[str], name: str = "[unnamed colormap]"
 ) -> Tuple[str, str]:
     """Increment name for unnamed colormap.
 
@@ -590,10 +590,10 @@ def _increment_unnamed_colormap(
     display_name : str
         Display name of colormap after incrementing.
     """
-    display_name = trans._('[unnamed colormap]')
-    if name == '[unnamed colormap]':
-        past_names = [n for n in existing if n.startswith('[unnamed colormap')]
-        name = f'[unnamed colormap {len(past_names)}]'
+    display_name = trans._("[unnamed colormap]")
+    if name == "[unnamed colormap]":
+        past_names = [n for n in existing if n.startswith("[unnamed colormap")]
+        name = f"[unnamed colormap {len(past_names)}]"
         display_name = trans._(
             "[unnamed colormap {number}]",
             number=len(past_names),
@@ -639,7 +639,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             custom_cmap = AVAILABLE_COLORMAPS.get(colormap, None)
             if custom_cmap is None:
                 name = (
-                    colormap.lower() if colormap.startswith('#') else colormap
+                    colormap.lower() if colormap.startswith("#") else colormap
                 )
                 custom_cmap = _colormap_from_colors(colormap, name)
 
@@ -707,12 +707,12 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 name, _display_name = _increment_unnamed_colormap(
                     AVAILABLE_COLORMAPS
                 )
-                colormap.update({'name': name, '_display_name': _display_name})
+                colormap.update({"name": name, "_display_name": _display_name})
                 AVAILABLE_COLORMAPS[name] = colormap
 
         elif isinstance(colormap, dict):
-            if 'colors' in colormap and not (
-                isinstance(colormap['colors'], (VispyColormap, Colormap))
+            if "colors" in colormap and not (
+                isinstance(colormap["colors"], (VispyColormap, Colormap))
             ):
                 cmap = Colormap(**colormap)
                 name = cmap.name
@@ -762,25 +762,25 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 name, _display_name = _increment_unnamed_colormap(
                     AVAILABLE_COLORMAPS
                 )
-                colormap.update({'name': name, '_display_name': _display_name})
+                colormap.update({"name": name, "_display_name": _display_name})
                 AVAILABLE_COLORMAPS[name] = colormap
             else:
                 warnings.warn(
                     trans._(
-                        'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
+                        "invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default",
                         deferred=True,
                         cm_type=type(colormap),
                     )
                 )
                 # Use default colormap
-                name = 'gray'
+                name = "gray"
 
     return AVAILABLE_COLORMAPS[name]
 
 
 def _colormap_from_colors(
     colors: ColorType,
-    name: Optional[str] = 'custom',
+    name: Optional[str] = "custom",
     display_name: Optional[str] = None,
 ) -> Optional[Colormap]:
     try:

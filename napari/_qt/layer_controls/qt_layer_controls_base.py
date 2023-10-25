@@ -52,7 +52,7 @@ class QtLayerControls(QFrame):
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
 
-        self.setObjectName('layer')
+        self.setObjectName("layer")
         self.setMouseTracking(True)
 
         self.setLayout(LayerFormLayout(self))
@@ -64,7 +64,7 @@ class QtLayerControls(QFrame):
         sld.setSingleStep(0.01)
         sld.valueChanged.connect(self.changeOpacity)
         self.opacitySlider = sld
-        self.opacityLabel = QLabel(trans._('opacity:'))
+        self.opacityLabel = QLabel(trans._("opacity:"))
 
         self._on_opacity_change()
 
@@ -114,10 +114,10 @@ class QtLayerControls(QFrame):
             self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
 
-        blending_tooltip = ''
+        blending_tooltip = ""
         if self.layer.blending == str(Blending.MINIMUM):
             blending_tooltip = trans._(
-                '`minimum` blending mode works best with inverted colormaps with a white background.',
+                "`minimum` blending mode works best with inverted colormaps with a white background.",
             )
         self.blendComboBox.setToolTip(blending_tooltip)
         self.layer.help = blending_tooltip
@@ -159,7 +159,7 @@ class QtLayerControls(QFrame):
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
         for child in self.children():
-            close_method = getattr(child, 'close', None)
+            close_method = getattr(child, "close", None)
             if close_method is not None:
                 close_method()
         return super().close()

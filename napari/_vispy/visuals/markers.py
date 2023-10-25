@@ -10,14 +10,14 @@ v_edgewidth = v_edgewidth * clamped_ratio;
 gl_PointSize = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);
 """
 
-old_vshader = BaseMarkers._shaders['vertex']
-new_vshader = old_vshader[:-2] + clamp_shader + '\n}'  # very ugly...
+old_vshader = BaseMarkers._shaders["vertex"]
+new_vshader = old_vshader[:-2] + clamp_shader + "\n}"  # very ugly...
 
 
 class Markers(BaseMarkers):
     _shaders: ClassVar[Dict[str, str]] = {
-        'vertex': new_vshader,
-        'fragment': BaseMarkers._shaders['fragment'],
+        "vertex": new_vshader,
+        "fragment": BaseMarkers._shaders["fragment"],
     }
 
     def __init__(self, *args, **kwargs) -> None:
@@ -30,7 +30,7 @@ class Markers(BaseMarkers):
         # layer is invisible and the self._data property is None
         if self._data is None:
             return None
-        pos = self._data['a_position']
+        pos = self._data["a_position"]
         if pos is None:
             return None
         if pos.shape[1] > axis:
@@ -45,5 +45,5 @@ class Markers(BaseMarkers):
     @canvas_size_limits.setter
     def canvas_size_limits(self, value):
         self._canvas_size_limits = value
-        self.shared_program.vert['canvas_size_min'] = value[0]
-        self.shared_program.vert['canvas_size_max'] = value[1]
+        self.shared_program.vert["canvas_size_min"] = value[0]
+        self.shared_program.vert["canvas_size_max"] = value[1]
