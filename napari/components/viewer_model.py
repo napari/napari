@@ -21,6 +21,10 @@ from typing import (
 )
 
 import numpy as np
+
+# This cannot be condition to TYPE_CHEKCKING or the stubgen fails
+# with underfined Context.
+from app_model.expressions import Context
 from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
@@ -93,7 +97,6 @@ from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from app_model.expressions import Context
     from npe2.types import SampleDataCreator
 
 

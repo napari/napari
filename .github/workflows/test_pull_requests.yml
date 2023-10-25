@@ -31,9 +31,11 @@ jobs:
         run: pip install --upgrade pip
       - name: Install Napari dev
         run: pip install -e .[build]
-      - name: Check Manifest
+      - name: Make Typestubs
         run: |
           make typestubs
+      - name: Check Manifest
+        run: |
           make check-manifest
 
   localization_syntax:
