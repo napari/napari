@@ -27,6 +27,10 @@ on:
         required: false
         type: string
         default: "headless"
+      pytest_path:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   test:
@@ -52,3 +56,4 @@ jobs:
       package_to_test: ${{ github.event_name == 'pull_request' && 'napari/npe2' || inputs.package_to_test == '' && github.repository || inputs.package_to_test }}
       package_to_test_ref: ${{ github.event_name == 'pull_request' && 'main' ||  inputs.package_to_test_ref }}
       napari_version: ${{ matrix.napari_version }}
+      pytest_path: ${{ inputs.pytest_path }}
