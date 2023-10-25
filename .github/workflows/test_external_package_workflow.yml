@@ -33,6 +33,7 @@ jobs:
     name: Initial test
     uses: ./.github/workflows/reusable_run_tox_test.yml
     strategy:
+      fail-fast: false
       matrix:
         include:
           - python: ${{ inputs.python_version }}
@@ -48,6 +49,6 @@ jobs:
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
       coverage: no_cov
-      package_to_test: ${{ inputs.package_to_test }}
+      package_to_test: ${{ inputs.package_to_test == '' && github.repository || inputs.package_to_test }}
       package_to_test_ref: ${{ inputs.package_to_test_ref }}
       napari_version: ${{ matrix.napari_version }}

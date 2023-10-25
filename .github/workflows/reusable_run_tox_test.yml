@@ -69,12 +69,13 @@ jobs:
       INSTALL_PKG: ${{ inputs.package_to_test == '' && '--installpkg dist/napari-0.0.1-py3-none-any.whl' || '' }}
       COMMAND_PRE: ${{ inputs.package_to_test != '' && 'pip install --isolated ../package_to_test' || '' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: napari_repo
           ref: ${{ inputs.napari_version }}
+          repository: ${{ inputs.package_to_test != '' && 'napari/napari' || '' }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         if: ${{ inputs.package_to_test != '' }}
         with:
           path: package_to_test
