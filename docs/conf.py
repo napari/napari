@@ -197,8 +197,9 @@ napoleon_custom_sections = [('Events', 'params_style')]
 
 
 def reset_napari(gallery_conf, fname):
-    from napari.settings import get_settings
     from qtpy.QtWidgets import QApplication
+
+    from napari.settings import get_settings
 
     settings = get_settings()
     settings.appearance.theme = 'dark'
@@ -236,6 +237,7 @@ def napari_scraper(block, block_vars, gallery_conf):
 
     return scrapers.figure_rst(img_paths, gallery_conf['src_dir'])
 
+
 sphinx_gallery_conf = {
     'examples_dirs': '../examples',  # path to your example scripts
     'gallery_dirs': 'gallery',  # path to where to save gallery generated output
@@ -249,7 +251,10 @@ sphinx_gallery_conf = {
     'download_all_examples': False,
     'min_reported_time': 10,
     'only_warn_on_example_error': True,
-    'image_scrapers': ("matplotlib", napari_scraper,),
+    'image_scrapers': (
+        "matplotlib",
+        napari_scraper,
+    ),
     'reset_modules': (reset_napari,),
     'reference_url': {'napari': None},
     'within_subsection_order': ExampleTitleSortKey,
