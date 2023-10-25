@@ -357,7 +357,10 @@ class ShortcutEditor(QWidget):
         actions_all = self._get_layer_actions()
         current_item = self._table.currentItem()
         for row1, (action_name, _action) in enumerate(actions_all.items()):
-            shortcuts = self._find_shortcuts(action_name)
+            shortcuts = [
+                kb2str(shortcut.keybinding)
+                for shortcut in self._find_shortcuts(action_name)
+            ]
 
             if new_shortcut not in shortcuts:
                 continue
@@ -376,7 +379,7 @@ class ShortcutEditor(QWidget):
                 )
                 self._show_warning(row, message)
 
-                # self._restore_shortcuts(row)
+                self._restore_shortcuts(row)
 
                 self._cleanup_warning_icons([row, row1])
 
@@ -434,13 +437,11 @@ class ShortcutEditor(QWidget):
             current_shortcuts = self._find_shortcuts(current_action)
 
             # FIXME change conflict detection method to match new system
-            # replace = self._mark_conflicts(new_shortcut, row)
-            replace = True
+            shortcut_str = kb2str(coerce_keybinding(new_shortcut))
+            replace = self._mark_conflicts(shortcut_str, row)
 
             if replace is True:
                 # This shortcut is not taken.
-
-                shortcut_str = kb2str(coerce_keybinding(new_shortcut))
                 shorts = get_settings().shortcuts
                 ind = col - self._shortcut_col
                 try:
