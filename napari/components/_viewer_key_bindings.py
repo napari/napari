@@ -98,7 +98,7 @@ def hold_for_pan_zoom(viewer: Viewer):
 def show_shortcuts(viewer: Viewer):
     pref_list = viewer.window._open_preferences_dialog()._list
     for i in range(pref_list.count()):
-        if pref_list.item(i).text() == "Shortcuts":
+        if (item := pref_list.item(i)) and item.text() == "Shortcuts":
             pref_list.setCurrentRow(i)
 
 

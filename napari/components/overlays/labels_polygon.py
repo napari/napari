@@ -1,5 +1,4 @@
-from pydantic import Field
-
+from napari._pydantic_compat import Field
 from napari.components.overlays.base import SceneOverlay
 from napari.layers import Labels
 

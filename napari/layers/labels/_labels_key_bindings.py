@@ -104,4 +104,7 @@ def reset_polygon(layer: Labels):
 
 def complete_polygon(layer: Labels):
     """Complete the drawing of the current polygon."""
-    layer._overlays["polygon"].add_polygon_to_labels(layer)
+    # Because layer._overlays has type Overlay, mypy doesn't know that
+    # ._overlays["polygon"] has type LabelsPolygonOverlay, so type ignore for now
+    # TODO: Improve typing of layer._overlays to fix this
+    layer._overlays["polygon"].add_polygon_to_labels(layer)  # type: ignore[attr-defined]

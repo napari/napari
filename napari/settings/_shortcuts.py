@@ -1,8 +1,8 @@
 from typing import List, Optional
 
 from app_model.types import KeyBinding
-from pydantic import BaseModel, Field, validator
 
+from napari._pydantic_compat import BaseModel, Field, validator
 from napari.utils.action_manager import new_name_to_old
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.key_bindings.legacy import coerce_keybinding
