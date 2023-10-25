@@ -196,6 +196,18 @@ def create_pr(
     response = requests.post(pull_request_url, headers=headers, json=payload)
     response.raise_for_status()
     logging.info("PR created: %s", response.json()["html_url"])
+    add_label(repo, response.json()["number"], "maintenance", access_token)
+
+
+def add_label(repo, pr_num, label, access_token):
+    pull_request_url = f"{BASE_URL}/repos/{repo}/issues/{pr_num}/labels"
+    headers = {"Authorization": f"token {access_token}"}
+    payload = {"labels": [label]}
+
+    logging.info("Add labels: %s in %s", str(payload), pull_request_url)
+    response = requests.post(pull_request_url, headers=headers, json=payload)
+    response.raise_for_status()
+    logging.info("Labels added: %s", response.json())
 
 
 def add_comment_to_pr(
@@ -238,7 +250,7 @@ def update_pr(branch_name: str):
     comment_content = long_description(f"origin/{branch_name}")
 
     try:
-        push(new_branch_name, update=True)
+        push(new_branch_name, update=branch_name != DEFAULT_BRANCH_NAME)
     except subprocess.CalledProcessError as e:
         if "create or update workflow" in e.stderr.decode():
             logging.info("Workflow file changed. Skip PR create.")
