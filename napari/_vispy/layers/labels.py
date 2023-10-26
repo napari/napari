@@ -15,6 +15,10 @@ from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.utils._dtype import vispy_texture_dtype
 
+if TYPE_CHECKING:
+    from napari.layers import Labels
+
+
 # We use table sizes that are prime numbers near powers of 2.
 # For each power of 2, we keep three candidate sizes. This allows us to
 # maximize the chances of finding a collision-free table for a given set of
@@ -42,8 +46,10 @@ MAX_TEXTURE_SIZE = None
 
 ColorTuple = Tuple[float, float, float, float]
 
-if TYPE_CHECKING:
-    from napari.layers import Labels
+
+EMPTY_VAL = -1.0
+
+_UNSET = object()
 
 
 auto_lookup_shader = """
@@ -78,7 +84,7 @@ vec4 sample_label_color(float t) {
         return vec4(0);
     }
 
-    float empty = 0.;
+    float empty = $EMPTY_VAL;
     // get position in the texture grid (same as hash2d_get)
     vec2 pos = vec2(
         mod(int(t / LUT_shape.y), LUT_shape.x),
@@ -123,7 +129,7 @@ vec4 sample_label_color(float t) {
 
     // return vec4(pos_tex, 0, 1); // debug if final texel is calculated correctly
 
-    vec4 color = vec4(0);
+    vec4 color = vec4($default_color);
     if (abs(found - empty) > 1e-8) {
         color = texture2D(
             texture2D_values,
@@ -161,6 +167,8 @@ class DirectLabelVispyColormap(VispyColormap):
         use_selection=False,
         selection=0.0,
         collision=True,
+        default_color=(0, 0, 0, 0),
+        empty_value=EMPTY_VAL,
     ):
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
@@ -170,6 +178,8 @@ class DirectLabelVispyColormap(VispyColormap):
             )
             .replace("$selection", str(selection))
             .replace("$collision", str(collision).lower())
+            .replace("$default_color", ", ".join(map(str, default_color)))
+            .replace("$EMPTY_VAL", str(empty_value))
         )
 
 
@@ -182,7 +192,7 @@ def idx_to_2d(idx, shape):
     return int((idx // shape[1]) % shape[0]), int(idx % shape[1])
 
 
-def hash2d_get(key, keys, empty_val=0):
+def hash2d_get(key, keys, empty_val=EMPTY_VAL):
     """
     Given a key, retrieve its location in the keys table.
     """
@@ -201,7 +211,7 @@ def hash2d_set(
     value: ColorTuple,
     keys: np.ndarray,
     values: np.ndarray,
-    empty_val=0,
+    empty_val=EMPTY_VAL,
 ) -> bool:
     """
     Set a value in the 2d hashmap, wrapping around to avoid collision.
@@ -245,12 +255,12 @@ def _get_shape_from_keys(
 
     Parameters
     ----------
-    keys: np.ndarray
+    keys : np.ndarray
         array of keys to be inserted into the hashmap,
         used for collision detection
-    first_dim_index: int
+    first_dim_index : int
         index for first dimension of PRIME_NUM_TABLE
-    second_dim_index: int
+    second_dim_index : int
         index for second dimension of PRIME_NUM_TABLE
 
     Returns
@@ -334,9 +344,16 @@ def get_shape_from_dict(color_dict):
     return shape
 
 
+def _get_empty_val_from_dict(color_dict):
+    empty_val = EMPTY_VAL
+    while empty_val in color_dict:
+        empty_val -= 1
+    return empty_val
+
+
 def build_textures_from_dict(
     color_dict: Dict[float, ColorTuple],
-    empty_val=0,
+    empty_val=_UNSET,
     shape=None,
     use_selection=False,
     selection=0.0,
@@ -352,18 +369,18 @@ def build_textures_from_dict(
 
     Parameters
     ----------
-    color_dict: Dict[float, Tuple[float, float, float, float]]
+    color_dict : Dict[float, Tuple[float, float, float, float]]
         Dictionary from labels to colors
-    empty_val: float
+    empty_val : float
         Value to use for empty cells in the hash table
-    shape: Optional[Tuple[int, int]]
+    shape : Optional[Tuple[int, int]]
         Shape of the hash table.
         If None, it is calculated from the number of
         labels using _get_shape_from_dict
-    use_selection: bool
+    use_selection : bool
         If True, only the selected label is shown.
         The generated colormap is single-color of size (1, 1)
-    selection: float
+    selection : float
         used only if use_selection is True.
         Determines the selected label.
 
@@ -381,6 +398,9 @@ def build_textures_from_dict(
         values = np.zeros((1, 1, 4), dtype=vispy_texture_dtype)
         values[0, 0] = color_dict[selection]
         return keys, values, False
+
+    if empty_val is _UNSET:
+        empty_val = _get_empty_val_from_dict(color_dict)
 
     if len(color_dict) > 2**31 - 2:
         raise MemoryError(
@@ -406,7 +426,7 @@ def build_textures_from_dict(
             # if so, we ignore all but the first appearance.
             continue
         visited.add(key_)
-        collision |= hash2d_set(key_, value, keys, values)
+        collision |= hash2d_set(key_, value, keys, values, empty_val=empty_val)
 
     return keys, values, collision
 
@@ -481,6 +501,8 @@ class VispyLabelsLayer(VispyImageLayer):
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
                 collision=collision,
+                default_color=colormap.default_color,
+                empty_value=_get_empty_val_from_dict(color_dict),
             )
             # note that textures have to be transposed here!
             self.node.shared_program['texture2D_keys'] = Texture2D(

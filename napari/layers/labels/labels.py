@@ -603,10 +603,13 @@ class Labels(_ImageBase):
         if self._background_label not in color:
             color[self._background_label] = 'transparent'
 
-        none_color = color.pop(None, 'black')
+        default_color = color.pop(None, 'black')
+        # this is default color for label that is not in the color dict
+        # is provided as None key
+        # we pop it as `None` cannot be cast to float
         self._validate_colors(color)
 
-        color[None] = none_color
+        color[None] = default_color
 
         colors = {
             label: transform_color(color_str)[0]
@@ -1085,8 +1088,8 @@ class Labels(_ImageBase):
 
     def _get_value_ray(
         self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
         dims_displayed: List[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.
@@ -1142,8 +1145,8 @@ class Labels(_ImageBase):
 
     def _get_value_3d(
         self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
         dims_displayed: List[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.
@@ -1470,7 +1473,7 @@ class Labels(_ImageBase):
             Value of the new label to be filled in.
         shape : list
             The label data shape upon which painting is performed.
-        dims_to_paint: list
+        dims_to_paint : list
             List of dimensions of the label data that are used for painting.
         refresh : bool
             Whether to refresh view slice or not. Set to False to batch paint

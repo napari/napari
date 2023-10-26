@@ -228,7 +228,7 @@ def add_mouse_pan_zoom_toggles(
 
     Returns
     -------
-        A decorated VisPy camera class.
+    A decorated VisPy camera class.
     """
 
     class _vispy_camera_cls(vispy_camera_cls):

@@ -2,8 +2,8 @@ from collections import defaultdict
 from typing import Optional, cast
 
 import numpy as np
-from pydantic import Field, PrivateAttr, validator
 
+from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.compat import StrEnum
@@ -216,7 +216,17 @@ class DirectLabelColormap(Colormap):
                 if len(color) == 3:
                     color = np.append(color, 1)
                 mapped[idx] = color
+            else:
+                mapped[idx] = self.default_color
         # If using selected, disable all others
         if self.use_selection:
             mapped[~np.isclose(values, self.selection)] = 0
         return mapped
+
+    @property
+    def default_color(self):
+        if self.use_selection:
+            return (0, 0, 0, 0)
+        return self.color_dict.get(None, (0, 0, 0, 0))
+        # we provided here default color for backward compatibility
+        # if someone is using DirectLabelColormap directly, not through Label layer

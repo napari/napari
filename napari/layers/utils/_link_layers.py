@@ -130,7 +130,7 @@ def link_layers(
             setter.__qualname__ = f"set_{attr}_on_layer_{id(l2)}"
             return setter
 
-        # acually make the connection
+        # actually make the connection
         callback = _make_l2_setter()
         emitter_group = getattr(lay1.events, attribute)
         emitter_group.connect(callback)
@@ -191,7 +191,7 @@ def layers_linked(layers: Iterable[Layer], attributes: Iterable[str] = ()):
 def _get_common_evented_attributes(
     layers: Iterable[Layer],
     exclude: abc.Set[str] = frozenset(
-        ('thumbnail', 'status', 'name', 'data', 'extent')
+        ('thumbnail', 'status', 'name', 'data', 'extent', 'loaded')
     ),
     with_private=False,
 ) -> set[str]:
