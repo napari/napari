@@ -33,3 +33,4 @@ repos:
     # trailing whitespace has meaning in markdown https://www.markdownguide.org/hacks/#indent-tab
     exclude: .*\.py|.*\.md
   - id: mixed-line-ending
+    exclude: .*\.py
