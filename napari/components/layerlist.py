@@ -332,7 +332,7 @@ class LayerList(SelectableEventedList[Layer]):
         Returns
         -------
         extent : Extent
-             extent for selected layers
+            extent for selected layers
         """
         extent_list = [layer.extent for layer in layers]
         return Extent(

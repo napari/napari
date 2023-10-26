@@ -1473,7 +1473,7 @@ class Labels(_ImageBase):
             Value of the new label to be filled in.
         shape : list
             The label data shape upon which painting is performed.
-        dims_to_paint: list
+        dims_to_paint : list
             List of dimensions of the label data that are used for painting.
         refresh : bool
             Whether to refresh view slice or not. Set to False to batch paint

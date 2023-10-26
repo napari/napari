@@ -1168,9 +1168,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Parameters
         ----------
-        dims: Dims
+        dims : Dims
             The dims model to use to slice this layer.
-        force: bool
+        force : bool
             True if slicing should be forced to occur, even when some cache thinks
             it already has a valid slice ready. False otherwise.
         """

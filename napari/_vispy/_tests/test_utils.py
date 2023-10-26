@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
-from pydantic import ValidationError
 from qtpy.QtCore import Qt
 from vispy.util.quaternion import Quaternion
 
+from napari._pydantic_compat import ValidationError
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.quaternion import quaternion2euler
 from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
