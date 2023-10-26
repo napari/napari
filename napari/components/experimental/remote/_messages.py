@@ -4,7 +4,7 @@ Sends messages to remote clients.
 """
 import logging
 import time
-from typing import Dict
+from typing import Dict, Optional
 
 from napari.components.experimental.monitor import monitor
 from napari.components.layerlist import LayerList
@@ -24,7 +24,7 @@ class RemoteMessages:
     def __init__(self, layers: LayerList) -> None:
         self.layers = layers
         self._frame_number = 0
-        self._last_time = None
+        self._last_time: Optional[float] = None
 
     def on_poll(self) -> None:
         """Send messages to clients.

@@ -204,6 +204,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         texture=None,
         texcoords=None,
         vertex_colors=None,
+        projection_mode='none',
     ) -> None:
         ndim = data[0].shape[1]
 
@@ -222,6 +223,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(
@@ -256,19 +258,20 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
-        if contrast_limits is None:
-            self._contrast_limits_range = calc_data_range(self._vertex_values)
-        else:
+        if contrast_limits is not None:
             self._contrast_limits_range = contrast_limits
-        self._contrast_limits = tuple(self._contrast_limits_range)
+        else:
+            self._contrast_limits_range = calc_data_range(self._vertex_values)
+
+        self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
 
         # Data containing vectors in the currently viewed slice
         self._data_view = np.zeros((0, self._slice_input.ndisplay))
         self._view_faces = np.zeros((0, 3))
-        self._view_vertex_values = []
-        self._view_vertex_colors = []
+        self._view_vertex_values: Union[List[Any], np.ndarray] = []
+        self._view_vertex_colors: Union[List[Any], np.ndarray] = []
 
         # Trigger generation of view slice and thumbnail.
         # Use _update_dims instead of refresh here because _get_ndim is
@@ -513,7 +516,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         state = self._get_base_state()
         state.update(
             {
-                'colormap': self.colormap.name,
+                'colormap': self.colormap.dict(),
                 'contrast_limits': self.contrast_limits,
                 'gamma': self.gamma,
                 'shading': self.shading,
@@ -542,7 +545,10 @@ class Surface(IntensityVisualizationMixin, Layer):
         data_ndim = data.ndim - 1
         if data_ndim >= dims:
             # Get indices for axes corresponding to data dimensions
-            data_indices = self._slice_indices[:-vertex_ndim]
+            data_indices: Tuple[Union[int, slice], ...] = tuple(
+                slice(None) if np.isnan(idx) else int(np.round(idx))
+                for idx in self._data_slice.point[:-vertex_ndim]
+            )
             data = data[data_indices]
             if data.ndim > dims:
                 warnings.warn(
@@ -581,7 +587,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             return
 
         if values_ndim > 0:
-            indices = np.array(self._slice_indices[-vertex_ndim:])
+            indices = np.array(self._data_slice.point[-vertex_ndim:])
             disp = [
                 d
                 for d in np.subtract(self._slice_input.displayed, values_ndim)
@@ -595,7 +601,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                 if d >= 0
             ]
         else:
-            indices = np.array(self._slice_indices)
+            indices = np.array(self._data_slice.point)
             not_disp = list(self._slice_input.not_displayed)
             disp = list(self._slice_input.displayed)
 
@@ -637,8 +643,8 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     def _get_value_3d(
         self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
         dims_displayed: List[int],
     ) -> Tuple[Union[None, float, int], Optional[int]]:
         """Get the layer data value along a ray
@@ -682,7 +688,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             triangles=mesh_triangles,
         )
 
-        if intersection_index is None:
+        if intersection_index is None or intersection is None:
             return None, None
 
         # add the full nD coords to intersection

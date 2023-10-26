@@ -1,11 +1,12 @@
 """guess_rgb, guess_multiscale, guess_labels.
 """
-from typing import Tuple
+from typing import Sequence, Tuple, Union
 
 import numpy as np
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
+from napari.layers.image._image_constants import ImageProjectionMode
 from napari.utils.translations import trans
 
 
@@ -30,7 +31,9 @@ def guess_rgb(shape):
     return ndim > 2 and last_dim in (3, 4)
 
 
-def guess_multiscale(data) -> Tuple[bool, LayerDataProtocol]:
+def guess_multiscale(
+    data,
+) -> Tuple[bool, Union[LayerDataProtocol, Sequence[LayerDataProtocol]]]:
     """Guess whether the passed data is multiscale, process it accordingly.
 
     If shape of arrays along first axis is strictly decreasing, the data is
@@ -103,3 +106,18 @@ def guess_labels(data):
         return 'labels'
 
     return 'image'
+
+
+def project_slice(data, axis, mode):
+    """Project a thick slice along axis based on mode."""
+    if mode == ImageProjectionMode.SUM:
+        func = np.sum
+    elif mode == ImageProjectionMode.MEAN:
+        func = np.mean
+    elif mode == ImageProjectionMode.MAX:
+        func = np.max
+    elif mode == ImageProjectionMode.MIN:
+        func = np.min
+    else:
+        raise NotImplementedError(f'unimplemented projection: {mode}')
+    return func(data, tuple(axis))

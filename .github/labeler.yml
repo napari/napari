@@ -20,3 +20,6 @@ tests:
 
 vispy:
   - 'napari/_vispy'
+
+maintenance:
+  - '.pre-commit-config.yaml'

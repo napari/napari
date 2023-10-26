@@ -2,6 +2,7 @@ from typing import Set, TypeVar
 
 import numpy as np
 
+from napari.layers.base import ActionType
 from napari.layers.points._points_utils import _points_in_box_3d, points_in_box
 
 
@@ -68,6 +69,16 @@ def select(layer, event):
         coordinates = layer.world_to_data(event.position)
         # If not holding modifying selection and points selected then drag them
         if not modify_selection and len(layer.selected_data) > 0:
+            # only emit just before moving
+            if not is_moving:
+                layer.events.data(
+                    value=layer.data,
+                    action=ActionType.CHANGING,
+                    data_indices=tuple(
+                        layer.selected_data,
+                    ),
+                    vertex_indices=((),),
+                )
             is_moving = True
             with layer.events.data.blocker():
                 layer._move(layer.selected_data, coordinates)
@@ -145,7 +156,7 @@ def _toggle_selected(selection: Set[_T], value: _T) -> Set[_T]:
 
     Parameters
     ----------
-    selection: set
+    selection : set
         Set of selected data points to be modified.
     value : int
         Index of point to add or remove from selected data set.

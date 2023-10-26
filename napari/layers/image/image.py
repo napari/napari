@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 import warnings
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -14,6 +14,7 @@ from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers.base import Layer
 from napari.layers.image._image_constants import (
+    ImageProjectionMode,
     ImageRendering,
     Interpolation,
     VolumeDepiction,
@@ -25,7 +26,7 @@ from napari.layers.image._image_mouse_bindings import (
 from napari.layers.image._image_utils import guess_multiscale, guess_rgb
 from napari.layers.image._slice import _ImageSliceRequest, _ImageSliceResponse
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
@@ -39,6 +40,8 @@ from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
+
     from napari.components import Dims
 
 
@@ -254,6 +257,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         plane=None,
         experimental_clipping_planes=None,
         custom_interpolation_kernel_2d=None,
+        projection_mode='none',
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -306,6 +310,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             multiscale=multiscale,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(
@@ -330,8 +335,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Set data
         self._data = data
-        if self.multiscale:
-            self._data_level = len(self.data) - 1
+        if isinstance(data, MultiScaleData):
+            self._data_level = len(data) - 1
             # Determine which level of the multiscale to use for the thumbnail.
             # Pick the smallest level with at least one axis >= 64. This is
             # done to prevent the thumbnail from being from one of the very
@@ -352,7 +357,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
 
         self._slice = _ImageSliceResponse.make_empty(
-            dims=self._slice_input, rgb=self.rgb
+            slice_input=self._slice_input, rgb=self.rgb
         )
 
         # Set contrast limits, colormaps and plane parameters
@@ -373,7 +378,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
-        self._contrast_limits = tuple(self.contrast_limits_range)
+        self._contrast_limits: Tuple[float, float] = self.contrast_limits_range
         if iso_threshold is None:
             cmin, cmax = self.contrast_limits_range
             self._iso_threshold = cmin + (cmax - cmin) / 2
@@ -405,7 +410,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
 
-    def _calc_data_range(self, mode='data'):
+    def _calc_data_range(self, mode='data') -> Tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
         or full data array
@@ -440,9 +445,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._data
 
     @data.setter
-    def data(
-        self, data: Union[LayerDataProtocol, Sequence[LayerDataProtocol]]
-    ):
+    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
         self._data_raw = data
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
@@ -487,7 +490,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @property
     def level_shapes(self) -> np.ndarray:
         """array: Shapes of each level of the multiscale or just of image."""
-        shapes = self.data.shapes if self.multiscale else [self.data.shape]
+        data = self.data
+        if isinstance(data, MultiScaleData):
+            shapes = data.shapes
+        else:
+            shapes = [self.data.shape]
         if self.rgb:
             shapes = [s[:-1] for s in shapes]
         return np.array(shapes)
@@ -707,22 +714,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _set_view_slice(self) -> None:
         """Set the slice output based on this layer's current state."""
-        # Skip if any non-displayed data indices are out of bounds.
-        # This can happen when slicing layers with different extents.
-        indices = self._slice_indices
-        for d in self._slice_input.not_displayed:
-            if (indices[d] < 0) or (indices[d] > self._extent_data[1][d]):
-                self._slice = _ImageSliceResponse.make_empty(
-                    dims=self._slice_input, rgb=self.rgb
-                )
-                return
-
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request_internal(
             slice_input=self._slice_input,
-            indices=indices,
+            data_slice=self._data_slice,
             dask_indexer=nullcontext,
         )
         response = request()
@@ -730,19 +727,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
         """Make an image slice request based on the given dims and this image."""
-        slice_input = self._make_slice_input(
-            dims.point, dims.ndisplay, dims.order
-        )
+        slice_input = self._make_slice_input(dims)
         # For the existing sync slicing, indices is passed through
         # to avoid some performance issues related to the evaluation of the
         # data-to-world transform and its inverse. Async slicing currently
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        indices = slice_input.data_indices(self._data_to_world.inverse)
+        indices = slice_input.data_slice(self._data_to_world.inverse)
         return self._make_slice_request_internal(
             slice_input=slice_input,
-            indices=indices,
+            data_slice=indices,
             dask_indexer=self.dask_optimized_slicing,
         )
 
@@ -750,7 +745,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self,
         *,
         slice_input: _SliceInput,
-        indices: Tuple[Union[int, slice], ...],
+        data_slice: _ThickNDSlice,
         dask_indexer: DaskIndexer,
     ) -> _ImageSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and
@@ -760,10 +755,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         the async slicing project: https://github.com/napari/napari/issues/4795
         """
         return _ImageSliceRequest(
-            dims=slice_input,
+            slice_input=slice_input,
             data=self.data,
             dask_indexer=dask_indexer,
-            indices=indices,
+            data_slice=data_slice,
+            projection_mode=self.projection_mode,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,
             rgb=self.rgb,
@@ -777,7 +773,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Update the slice output state currently on the layer. Currently used
         for both sync and async slicing.
         """
-        self._slice_input = response.dims
+        self._slice_input = response.slice_input
         self._transforms[0] = response.tile_to_data
         self._slice = response
 
@@ -886,7 +882,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         return value
 
-    def _get_offset_data_position(self, position: List[float]) -> List[float]:
+    def _get_offset_data_position(self, position: npt.NDArray) -> npt.NDArray:
         """Adjust position for offset between viewer and data coordinates.
 
         VisPy considers the coordinate system origin to be the canvas corner,
@@ -894,10 +890,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         pixel. To get the correct value under the mouse cursor, we need to
         shift the position by 0.5 pixels on each axis.
         """
-        return [p + 0.5 for p in position]
+        return position + 0.5
 
 
 class Image(_ImageBase):
+    _projectionclass = ImageProjectionMode
+
     @property
     def rendering(self):
         """Return current rendering mode.
@@ -948,7 +946,7 @@ class Image(_ImageBase):
             {
                 'rgb': self.rgb,
                 'multiscale': self.multiscale,
-                'colormap': self.colormap.name,
+                'colormap': self.colormap.dict(),
                 'contrast_limits': self.contrast_limits,
                 'interpolation2d': self.interpolation2d,
                 'interpolation3d': self.interpolation3d,

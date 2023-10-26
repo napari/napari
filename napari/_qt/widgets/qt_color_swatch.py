@@ -198,7 +198,7 @@ class QColorSwatch(QFrame):
                 return self.color_changed.emit(self._color)
         emit = np.any(self._color != _color)
         self._color = _color
-        if emit or np.all(_color == TRANSPARENT):
+        if emit or np.array_equiv(_color, TRANSPARENT):
             self.color_changed.emit(_color)
             return None
         return None

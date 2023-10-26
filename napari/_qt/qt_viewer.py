@@ -5,8 +5,20 @@ import sys
 import traceback
 import typing
 import warnings
+import weakref
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, Union
+from types import FrameType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 from weakref import WeakSet, ref
 
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -44,6 +56,7 @@ from napari.utils.history import (
 from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
+from napari.utils.naming import CallerFrame
 from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
 
@@ -528,6 +541,7 @@ class QtViewer(QSplitter):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
             try:
+                import numpy as np
                 from napari_console import QtConsole
 
                 import napari
@@ -538,6 +552,9 @@ class QtViewer(QSplitter):
                     self.console.push(
                         {'napari': napari, 'action_manager': action_manager}
                     )
+                    with CallerFrame(_in_napari) as c:
+                        if c.frame.f_globals.get("__name__", "") == "__main__":
+                            self.console.push({"np": np})
                     for i in self.console_backlog:
                         # recover weak refs
                         self.console.push(
@@ -582,21 +599,22 @@ class QtViewer(QSplitter):
         Provides updates after slicing using the slice response data.
         This only gets triggered on the async slicing path.
         """
-        responses = event.value
+        responses: Dict[weakref.ReferenceType[Layer], Any] = event.value
         logging.debug('QtViewer._on_slice_ready: %s', responses)
-        for layer, response in responses.items():
-            # Update the layer slice state to temporarily support behavior
-            # that depends on it.
-            layer._update_slice_response(response)
-            # The rest of `Layer.refresh` after `set_view_slice`, where
-            # `set_data` notifies the corresponding vispy layer of the new
-            # slice.
-            layer.events.set_data()
-            layer._update_thumbnail()
-            layer._set_highlight(force=True)
-            # Update the layer's loaded state after everything else, so
-            # that a user can rely on the rendered state being updated.
-            layer._update_loaded_slice_id(response.request_id)
+        for weak_layer, response in responses.items():
+            if layer := weak_layer():
+                # Update the layer slice state to temporarily support behavior
+                # that depends on it.
+                layer._update_slice_response(response)
+                # Update the layer's loaded state before everything else,
+                # because they may rely on its updated value.
+                layer._update_loaded_slice_id(response.request_id)
+                # The rest of `Layer.refresh` after `set_view_slice`, where
+                # `set_data` notifies the corresponding vispy layer of the new
+                # slice.
+                layer.events.set_data()
+                layer._update_thumbnail()
+                layer._set_highlight(force=True)
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""
@@ -809,25 +827,22 @@ class QtViewer(QSplitter):
 
         return dlg.getOpenFileNames(**open_kwargs)[0]
 
-    def _open_files_dialog(self, choose_plugin=False):
+    def _open_files_dialog(self, choose_plugin=False, stack=False):
         """Add files from the menubar."""
         filenames = self._open_file_dialog_uni(trans._('Select file(s)...'))
 
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
                 self._qt_open(
-                    [filename], stack=False, choose_plugin=choose_plugin
+                    [filename],
+                    choose_plugin=choose_plugin,
+                    stack=stack,
                 )
             update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self, choose_plugin=False):
         """Add files as a stack, from the menubar."""
-
-        filenames = self._open_file_dialog_uni(trans._('Select files...'))
-
-        if (filenames != []) and (filenames is not None):
-            self._qt_open(filenames, stack=True, choose_plugin=choose_plugin)
-            update_open_history(filenames[0])
+        return self._open_files_dialog(choose_plugin=choose_plugin, stack=True)
 
     def _open_folder_dialog(self, choose_plugin=False):
         """Add a folder of files from the menubar."""
@@ -855,8 +870,8 @@ class QtViewer(QSplitter):
         filenames: List[str],
         stack: Union[bool, List[List[str]]],
         choose_plugin: bool = False,
-        plugin: str = None,
-        layer_type: str = None,
+        plugin: Optional[str] = None,
+        layer_type: Optional[str] = None,
         **kwargs,
     ):
         """Open files, potentially popping reader dialog for plugin selection.
@@ -1122,3 +1137,18 @@ def _create_remote_manager(
     qt_poll.events.poll.connect(monitor.on_poll)
 
     return manager
+
+
+def _in_napari(n: int, frame: FrameType):
+    """
+    Determines whether we are in napari by looking at:
+        1) the frames modules names:
+        2) the min_depth
+    """
+    if n < 2:
+        return True
+    # in-n-out is used in napari for dependency injection.
+    for pref in {"napari.", "in_n_out."}:
+        if frame.f_globals.get("__name__", "").startswith(pref):
+            return True
+    return False

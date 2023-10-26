@@ -1,5 +1,5 @@
 import contextlib
-from typing import TYPE_CHECKING, Callable, List, Union
+from typing import TYPE_CHECKING, Callable, ClassVar, List, Union
 
 from qtpy.QtWidgets import QAction, QMenu
 
@@ -115,7 +115,7 @@ class NapariMenu(QMenu):
     close.
     """
 
-    _INSTANCES: List['NapariMenu'] = []
+    _INSTANCES: ClassVar[List['NapariMenu']] = []
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

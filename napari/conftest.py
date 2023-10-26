@@ -2,7 +2,7 @@
 
 Notes for using the plugin-related fixtures here:
 
-1. The `_mock_npe2_pm` fixture is always used, and it mocks the global npe2 plugin
+1. The `_npe2pm` fixture is always used, and it mocks the global npe2 plugin
    manager instance with a discovery-deficient plugin manager.  No plugins should be
    discovered in tests without explicit registration.
 2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
@@ -37,22 +37,31 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from itertools import chain
 from multiprocessing.pool import ThreadPool
-from typing import TYPE_CHECKING
-from unittest.mock import patch
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
+from unittest.mock import Mock, patch
 from weakref import WeakKeyDictionary
+
+from npe2 import PackageMetadata
 
 with suppress(ModuleNotFoundError):
     __import__('dotenv').load_dotenv()
 
+from datetime import timedelta
+from time import perf_counter
+
 import dask.threaded
 import numpy as np
 import pytest
+from _pytest.pathlib import bestrelpath
 from IPython.core.history import HistoryManager
 from packaging.version import parse as parse_version
+from pytest_pretty import CustomTerminalReporter
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.misc import ROOT_DIR
+from napari.viewer import Viewer
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
@@ -266,7 +275,7 @@ def _no_error_reports():
 
 @pytest.fixture(autouse=True)
 def _npe2pm(npe2pm, monkeypatch):
-    """Autouse the npe2 mock plugin manager with no registered plugins."""
+    """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
     from napari.plugins import NapariPluginManager
 
     monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
@@ -282,7 +291,9 @@ def builtins(_npe2pm: TestPluginManager):
 @pytest.fixture
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
+        plugin.manifest.package_metadata = PackageMetadata(
+            version='0.1.0', name='test'
+        )
         plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
 
@@ -326,6 +337,8 @@ def pytest_generate_tests(metafunc):
 
 
 def pytest_collection_modifyitems(session, config, items):
+    test_subset = os.environ.get("NAPARI_TEST_SUBSET")
+
     test_order_prefix = [
         os.path.join("napari", "utils"),
         os.path.join("napari", "layers"),
@@ -341,6 +354,17 @@ def pytest_collection_modifyitems(session, config, items):
     test_order = [[] for _ in test_order_prefix]
     test_order.append([])  # for not matching tests
     for item in items:
+        if test_subset:
+            if test_subset.lower() == "qt" and "qapp" not in item.fixturenames:
+                # Skip non Qt tests
+                continue
+            if (
+                test_subset.lower() == "headless"
+                and "qapp" in item.fixturenames
+            ):
+                # Skip Qt tests
+                continue
+
         index = -1
         for i, prefix in enumerate(test_order_prefix):
             if prefix in str(item.fspath):
@@ -380,6 +404,38 @@ def single_threaded_executor():
     executor.shutdown()
 
 
+@pytest.fixture()
+def mock_console(request):
+    """Mock the qtconsole to avoid starting an interactive IPython session.
+    In-process IPython kernels can interfere with other tests and are difficult
+    (impossible?) to shutdown.
+
+    This fixture is configured to be applied automatically to tests unless they
+    use the `enable_console` marker. It's not autouse to avoid use on headless
+    tests (without Qt); instead it's enabled in `pytest_runtest_setup`.
+    """
+    if "enable_console" in request.keywords:
+        yield
+        return
+
+    from napari_console import QtConsole
+    from qtconsole.rich_jupyter_widget import RichJupyterWidget
+
+    class FakeQtConsole(RichJupyterWidget):
+        def __init__(self, viewer: Viewer):
+            super().__init__()
+            self.viewer = viewer
+            self.kernel_client = None
+            self.kernel_manager = None
+
+        _update_theme = Mock()
+        push = Mock()
+        closeEvent = QtConsole.closeEvent
+
+    with patch("napari_console.QtConsole", FakeQtConsole):
+        yield
+
+
 @pytest.fixture(autouse=True)
 def _mock_app():
     """Mock clean 'test_app' `NapariApplication` instance.
@@ -391,9 +447,12 @@ def _mock_app():
     Note that `NapariApplication` registers app-model actions, providers and
     processors. If this is not desired, please create a clean
     `app_model.Application` in the test. It does not however, register Qt
-    related actions or providers. If this is required for a unit test,
-    `napari._qt._qapp_model.qactions.init_qactions()` can be used within
-    the test.
+    related actions or providers or register plugins.
+    If these are required, the `make_napari_viewer` fixture can be used, which
+    will run both these function and automatically clear the lru cache.
+    Alternatively, you can specifically run `init_qactions()` or
+    `_initialize_plugins` within the test, ensuring that you `cache_clear()`
+    first.
     """
     from app_model import Application
 
@@ -716,5 +775,45 @@ def pytest_runtest_setup(item):
                 "dangling_qanimations",
                 "dangling_qthreads",
                 "dangling_qtimers",
+                "mock_console",
             ]
         )
+
+
+class NapariTerminalReporter(CustomTerminalReporter):
+    """
+    This ia s custom terminal reporter to how long it takes to finish given part of tests.
+    It prints time each time when test from different file is started.
+
+    It is created to be able to see if timeout is caused by long time execution, or it is just hanging.
+    """
+
+    currentfspath: Optional[Path]
+
+    def write_fspath_result(self, nodeid: str, res, **markup: bool) -> None:
+        if getattr(self, "_start_time", None) is None:
+            self._start_time = perf_counter()
+        fspath = self.config.rootpath / nodeid.split("::")[0]
+        if self.currentfspath is None or fspath != self.currentfspath:
+            if self.currentfspath is not None and self._show_progress_info:
+                self._write_progress_information_filling_space()
+                if os.environ.get("CI", False):
+                    self.write(
+                        f" [{timedelta(seconds=int(perf_counter() - self._start_time))}]"
+                    )
+            self.currentfspath = fspath
+            relfspath = bestrelpath(self.startpath, fspath)
+            self._tw.line()
+            self.write(relfspath + " ")
+        self.write(res, flush=True, **markup)
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config):
+    # Get the standard terminal reporter plugin and replace it with our
+    standard_reporter = config.pluginmanager.getplugin('terminalreporter')
+    custom_reporter = NapariTerminalReporter(config, sys.stdout)
+    if standard_reporter._session is not None:
+        custom_reporter._session = standard_reporter._session
+    config.pluginmanager.unregister(standard_reporter)
+    config.pluginmanager.register(custom_reporter, 'terminalreporter')

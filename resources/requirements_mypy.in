@@ -4,6 +4,7 @@ numpy
 npe2
 pydantic
 qtpy
+pyqt6
 types-PyYAML
 types-setuptools
 types-requests

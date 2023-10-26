@@ -18,7 +18,7 @@ group = zarr.open(zarr.N5FSStore('s3://janelia-cosem-datasets/jrc_hela-2/jrc_hel
 
 # s0 (highest resolution) through s5 (lowest resolution) are available
 data = []
-for i in range(0, 5):
+for i in range(5):
     zarr_array = group[f'em/fibsem-uint16/s{i}']
     data.append(da.from_zarr(zarr_array, chunks=zarr_array.chunks))
 
@@ -28,4 +28,3 @@ viewer = napari.view_image(data, contrast_limits=(18000, 40000), multiscale=True
 
 if __name__ == '__main__':
     napari.run()
-
