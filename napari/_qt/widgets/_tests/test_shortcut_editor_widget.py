@@ -63,7 +63,7 @@ def test_mark_conflicts(shortcut_editor_widget, qtbot):
     qtbot.add_widget(widget._warn_dialog)
 
 
-def test_restore_defaults(shortcut_editor_widget, qtbot):
+def test_restore_defaults(shortcut_editor_widget):
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     assert shortcut == KEY_SYMBOLS["Ctrl"]
@@ -120,7 +120,7 @@ def test_keybinding_with_modifiers(
     qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
     qtbot.keyClicks(QApplication.focusWidget(), key, modifier=modifier)
     assert (
-        len([warn for warn in recwarn if warn.category in (UserWarning,)]) == 0
+        len([warn for warn in recwarn if warn.category is UserWarning]) == 0
     )
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
@@ -170,7 +170,7 @@ def test_keybinding_with_only_modifiers(
         else:
             assert mock.called
     assert (
-        len([warn for warn in recwarn if warn.category in (UserWarning,)]) == 0
+        len([warn for warn in recwarn if warn.category is UserWarning]) == 0
     )
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
