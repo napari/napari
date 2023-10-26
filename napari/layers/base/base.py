@@ -272,6 +272,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
+    events: EmitterGroup
 
     def __init__(
         self,
