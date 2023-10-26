@@ -1088,8 +1088,8 @@ class Labels(_ImageBase):
 
     def _get_value_ray(
         self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
         dims_displayed: List[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.
@@ -1156,8 +1156,8 @@ class Labels(_ImageBase):
 
     def _get_value_3d(
         self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
         dims_displayed: List[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.

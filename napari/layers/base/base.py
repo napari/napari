@@ -18,6 +18,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 import magicgui as mgui
@@ -71,6 +72,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
     from napari.components.dims import Dims
+    from napari.components.overlays.base import Overlay
 
 
 logger = logging.getLogger("napari.layers.base.base")
@@ -359,7 +361,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             scale = [1] * ndim
         if translate is None:
             translate = [0] * ndim
-        self._transforms = TransformChain(
+        self._transforms: TransformChain[Affine] = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
                 CompositeAffine(
@@ -392,7 +394,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             TransformBoxOverlay,
         )
 
-        self._overlays = EventedDict()
+        self._overlays: EventedDict[str, Overlay] = EventedDict()
 
         self.events = EmitterGroup(
             source=self,
@@ -453,7 +455,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         cls = type(self)
         return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
 
-    def _mode_setter_helper(self, mode: Union[Mode, str]) -> Mode:
+    def _mode_setter_helper(self, mode_in: Union[Mode, str]) -> StringEnum:
         """
         Helper to manage callbacks in multiple layers
 
@@ -474,10 +476,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             New mode for the current layer.
 
         """
-        mode = self._modeclass(mode)
+        mode = self._modeclass(mode_in)
+        # Sub-classes can have their own Mode enum, so need to get members
+        # from the specific mode class set on this layer.
+        PAN_ZOOM = self._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
+        TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
         assert mode is not None
+
         if not self.editable:
-            mode = self._modeclass.PAN_ZOOM
+            mode = PAN_ZOOM
         if mode == self._mode:
             return mode
 
@@ -503,16 +510,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        self.mouse_pan = mode == self._modeclass.PAN_ZOOM
-        self._overlays['transform_box'].visible = (
-            mode == self._modeclass.TRANSFORM
-        )
+        self.mouse_pan = mode == PAN_ZOOM
+        self._overlays['transform_box'].visible = mode == TRANSFORM
 
-        if mode == self._modeclass.TRANSFORM:
+        if mode == TRANSFORM:
             self.help = trans._(
                 'hold <space> to pan/zoom, hold <shift> to preserve aspect ratio and rotate in 45° increments'
             )
-        elif mode == self._modeclass.PAN_ZOOM:
+        elif mode == PAN_ZOOM:
             self.help = ''
 
         return mode
@@ -1154,7 +1159,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _slice_dims(
         self,
-        dims: Dims = None,
+        dims: Dims,
         force: bool = False,
     ):
         """Slice data with values from a global dims model.
@@ -1182,9 +1187,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _make_slice_input(
         self,
-        dims: Dims = None,
+        dims: Dims,
     ) -> _SliceInput:
-        world_ndim = self.ndim if dims is None else dims.ndim
+        world_ndim: int = self.ndim if dims is None else dims.ndim
         if dims is None:
             # if no dims is given, "world" has same dimensionality of self
             # this happens for example if a layer is not in a viewer
@@ -1192,15 +1197,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             world_slice = _ThickNDSlice.make_full((np.nan,) * self.ndim)
         else:
             world_slice = _ThickNDSlice.from_dims(dims)
-
-        order = (
-            tuple(range(world_ndim))
+        order_array = (
+            np.arange(world_ndim)
             if dims.order is None
-            else tuple(dims.order)
+            else np.asarray(dims.order)
         )
         order = tuple(
             self._world_to_layer_dims(
-                world_dims=order,
+                world_dims=order_array,
                 ndim_world=world_ndim,
             )
         )
@@ -1307,8 +1311,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _get_value_3d(
         self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
         dims_displayed: List[int],
     ) -> Union[
         float, int, None, Tuple[Union[float, int, None], Optional[int]]
@@ -1435,7 +1439,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         else:
             coords = [0] * (self.ndim - len(position)) + list(position)
 
-        return self._transforms[1:].simplified.inverse(coords)
+        simplified = cast(Affine, self._transforms[1:].simplified)
+        return simplified.inverse(coords)
 
     def data_to_world(self, position):
         """Convert from data coordinates to world coordinates.
@@ -1491,7 +1496,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         affine * (rotate * shear * scale + translate)
         """
-        return self._transforms[1:3].simplified
+        t = self._transforms[1:3].simplified
+        return cast(Affine, t)
 
     def _world_to_data_ray(self, vector: npt.ArrayLike) -> npt.NDArray:
         """Convert a vector defining an orientation from world coordinates to data coordinates.
@@ -1664,7 +1670,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         view_direction: npt.ArrayLike,
         dims_displayed: List[int],
         world: bool = True,
-    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Get the start and end point for the ray extending
         from a point through the data bounding box.
 
@@ -1727,7 +1733,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         dims_displayed: List[int],
         bounding_box: npt.NDArray,
         world: bool = True,
-    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Get the start and end point for the ray extending
         from a point through the data bounding box.
 

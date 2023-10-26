@@ -1,14 +1,19 @@
 from abc import ABC, abstractmethod
+from typing import Dict, Generic, TypeVar
 
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
+from napari._vispy.overlays.base import VispyBaseOverlay
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
 from napari.components.overlays.base import CanvasOverlay, SceneOverlay
+from napari.layers import Layer
 from napari.utils.events import disconnect_events
 
+_L = TypeVar("_L", bound=Layer)
 
-class VispyBaseLayer(ABC):
+
+class VispyBaseLayer(ABC, Generic[_L]):
     """Base object for individual layer views
 
     Meant to be subclassed.
@@ -42,7 +47,9 @@ class VispyBaseLayer(ABC):
         Transform positioning the layer visual inside the scenecanvas.
     """
 
-    def __init__(self, layer, node) -> None:
+    layer: _L
+
+    def __init__(self, layer: _L, node) -> None:
         super().__init__()
         self.events = None  # Some derived classes have events.
 
@@ -50,7 +57,7 @@ class VispyBaseLayer(ABC):
         self._array_like = False
         self.node = node
         self.first_visible = False
-        self.overlays = {}
+        self.overlays: Dict[str, VispyBaseOverlay] = {}
 
         (
             self.MAX_TEXTURE_SIZE_2D,
@@ -237,7 +244,7 @@ class VispyBaseLayer(ABC):
         self._on_overlays_change()
         self._on_camera_move()
 
-    def _on_poll(self, event=None):  # noqa: B027
+    def _on_poll(self, event=None):
         """Called when camera moves, before we are drawn.
 
         Optionally called for some period once the camera stops, so the
