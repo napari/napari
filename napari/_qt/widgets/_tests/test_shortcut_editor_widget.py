@@ -119,9 +119,7 @@ def test_keybinding_with_modifiers(
     )
     qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
     qtbot.keyClicks(QApplication.focusWidget(), key, modifier=modifier)
-    assert (
-        len([warn for warn in recwarn if warn.category is UserWarning]) == 0
-    )
+    assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     for key_symbol in key_symbols:
@@ -169,9 +167,7 @@ def test_keybinding_with_only_modifiers(
             assert not mock.called
         else:
             assert mock.called
-    assert (
-        len([warn for warn in recwarn if warn.category is UserWarning]) == 0
-    )
+    assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     for key_symbol in key_symbols:
