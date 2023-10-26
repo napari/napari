@@ -131,7 +131,7 @@ LAYER_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.SHOW_SELECTED_LAYERS,
-        title=CommandId.SHOW_SELECTED_LAYERS.title,
+        title=CommandId.SHOW_SELECTED_LAYERS.command_title,
         callback=_layer_actions._show_selected,
         menus=[
             {
@@ -142,7 +142,7 @@ LAYER_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.HIDE_SELECTED_LAYERS,
-        title=CommandId.HIDE_SELECTED_LAYERS.title,
+        title=CommandId.HIDE_SELECTED_LAYERS.command_title,
         callback=_layer_actions._hide_selected,
         menus=[
             {
@@ -153,7 +153,7 @@ LAYER_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.SHOW_UNSELECTED_LAYERS,
-        title=CommandId.SHOW_UNSELECTED_LAYERS.title,
+        title=CommandId.SHOW_UNSELECTED_LAYERS.command_title,
         callback=_layer_actions._show_unselected,
         menus=[
             {
@@ -164,7 +164,7 @@ LAYER_ACTIONS: List[Action] = [
     ),
     Action(
         id=CommandId.HIDE_UNSELECTED_LAYERS,
-        title=CommandId.HIDE_UNSELECTED_LAYERS.title,
+        title=CommandId.HIDE_UNSELECTED_LAYERS.command_title,
         callback=_layer_actions._hide_unselected,
         menus=[
             {
