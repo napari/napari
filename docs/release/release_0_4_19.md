@@ -12,25 +12,20 @@ https://github.com/napari/napari
 
 ## Highlights
 
-This release is mostly a bug fix release and hopefully the latest before all the excited features that are coming with version 0.5.0.
+This release is mostly a bug fix release. We aim for the next release to be 0.5.0, with many new exciting features!
 
-First of all we have an important announcement with this release.
-We have decided to postpone the `viewer.window.qt_viewer` to 0.6.0 release
-as not all the features are ready yet ([napari/napari/#6283](https://github.com/napari/napari/pull/6283)).
+Highlights in `v0.4.19`:
 
-Furthermore we would like to highlight the following changes:
+The removal of public access to `viewer.window.qt_viewer` was postponed to `v0.6.0` ([napari/napari/#6283](https://github.com/napari/napari/pull/6283)). If you're interested in some feature that's now hidden behind private or deprecated API, please make an issue on the napari repo requesting the feature to be exposed!
 
- We have made napari pydantic 2 compatible.
-At this moment we are using `pydantic.v1` to achieve this.
-In this release the bundle will be shipped with pydantic v1, but
+Napari is now pydantic 2 compatible. At this moment we are using `pydantic.v1` to achieve this. In this release the bundle will be shipped with pydantic v1, but
 we expect that in the next release we will ship the bundle with pydantic v2.
 Please, if you are a plugin developer and your plugin uses pydantic, ensure 
 that it is compatible with pydantic v2 ([napari/napari/#6358](https://github.com/napari/napari/pull/6358)).
 
-Also, we have fixed a performance problem of the label layer by moving part of calculations to the GPU
-([napari/napari/#3308](https://github.com/napari/napari/pull/3308)).
+Performance of the `Labels` layer is drastically improved for many labels by moving part of calculations to the GPU ([napari/napari/#3308](https://github.com/napari/napari/pull/3308)).
 
-If you have any questions or suggestions regarding napari core, for example how to adapt your plugin to be compatible with future napari versions, please get in touch! We have weekly community meetings, for which you can find the schedule [here](https://napari.org/stable/community/meeting_schedule.html). We would like to hear from you.
+If you have any questions or suggestions regarding napari core, for example on how to adapt your plugin to be compatible with future napari versions, please get in touch! We have weekly community meetings, for which you can find the schedule [here](https://napari.org/stable/community/meeting_schedule.html). We would like to hear from you.
 
 - Use a shader for low discrepancy label conversion ([napari/napari/#3308](https://github.com/napari/napari/pull/3308))
 - Postpone qt_viewer deprecation to 0.6.0 ([napari/napari/#6283](https://github.com/napari/napari/pull/6283))
@@ -105,11 +100,11 @@ If you have any questions or suggestions regarding napari core, for example how 
 - Fixes formatting for the contributing documentation section ([napari/docs/#79](https://github.com/napari/docs/pull/79))
 - Move napari workshop template link to top of page ([napari/docs/#90](https://github.com/napari/docs/pull/90))
 - Add instructions to build napari docs on Windows ([napari/docs/#158](https://github.com/napari/docs/pull/158))
-- Use python version range instead of min version ([napari/docs/#194](https://github.com/napari/docs/pull/194))
 - Fix typo of points instead of shapes ([napari/docs/#195](https://github.com/napari/docs/pull/195))
 - Improve titles of fundamentals tutorials ([napari/docs/#196](https://github.com/napari/docs/pull/196))
 - NAP 7: Key Binding Dispatch ([napari/docs/#200](https://github.com/napari/docs/pull/200))
 - make Talley emeritus SC ([napari/docs/#204](https://github.com/napari/docs/pull/204))
+- Use napari_scraper instead of qtgallery ([napari/docs/#207](https://github.com/napari/docs/pull/207))
 - Move contributing resources to top-level navbar ([napari/docs/#208](https://github.com/napari/docs/pull/208))
 - Add roadmap board link to Roadmaps page ([napari/docs/#212](https://github.com/napari/docs/pull/212))
 - Fix getting started in napari linking to the unittest getting started page ([napari/docs/#217](https://github.com/napari/docs/pull/217))
@@ -139,6 +134,7 @@ If you have any questions or suggestions regarding napari core, for example how 
 - Fix labeler by adding permissions ([napari/napari/#6289](https://github.com/napari/napari/pull/6289))
 - Update pre-commit and constraints and minor fixes for 0.4.19 release ([napari/napari/#6340](https://github.com/napari/napari/pull/6340))
 - Ensure conda workflow runs with proper permissions ([napari/napari/#6378](https://github.com/napari/napari/pull/6378))
+-  Remove sphinx dependency from defaults dependecies ([napari/napari/#6380](https://github.com/napari/napari/pull/6380))
 - Fix `test_link_layers_with_images_then_loaded_not_linked` test ([napari/napari/#6385](https://github.com/napari/napari/pull/6385))
 - Update docs to suggest python 3.10 install ([napari/docs/#246](https://github.com/napari/docs/pull/246))
 
@@ -182,8 +178,9 @@ If you have any questions or suggestions regarding napari core, for example how 
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
 
 
-## 10 docs authors added to this release (alphabetical)
+## 11 docs authors added to this release (alphabetical)
 
+- [Ashley Anderson](https://github.com/napari/docs/commits?author=aganders3) - @aganders3
 - [chili-chiu](https://github.com/napari/docs/commits?author=chili-chiu) - @chili-chiu
 - [David Stansby](https://github.com/napari/docs/commits?author=dstansby) - @dstansby
 - [dgmccart](https://github.com/napari/docs/commits?author=dgmccart) - @dgmccart
