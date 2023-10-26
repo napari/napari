@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 import warnings
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, List, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -476,6 +476,22 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return extent + [[-0.5], [+0.5]]
 
     @property
+    def _extent_level_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        shape = self.level_shapes[self.data_level]
+        return np.vstack([np.zeros(len(shape)), shape - 1])
+
+    @property
+    def _extent_level_data_augmented(self) -> np.ndarray:
+        extent = self._extent_level_data
+        return extent + [[-0.5], [+0.5]]
+
+    @property
     def data_level(self):
         """int: Current level of multiscale, or 0 if image."""
         return self._data_level
@@ -891,6 +907,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         shift the position by 0.5 pixels on each axis.
         """
         return position + 0.5
+
+    def _display_bounding_box_augmented(
+        self, dims_displayed: List[int]
+    ) -> npt.NDArray:
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
+
+        This bounding box for includes the "full" size of the layer, including
+        for example the size of points or pixels.
+        """
+        return self._extent_level_data_augmented[:, dims_displayed].T
 
 
 class Image(_ImageBase):
