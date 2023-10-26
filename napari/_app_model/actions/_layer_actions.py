@@ -130,17 +130,6 @@ LAYER_ACTIONS: List[Action] = [
         menus=[LAYERCTX_LINK],
     ),
     Action(
-        id=CommandId.LAYER_TOGGLE_VISIBILITY,
-        title=CommandId.LAYER_TOGGLE_VISIBILITY.title,
-        callback=_layer_actions._toggle_visibility,
-        menus=[
-            {
-                'id': MenuId.LAYERLIST_CONTEXT,
-                'group': MenuGroup.NAVIGATION,
-            }
-        ],
-    ),
-    Action(
         id=CommandId.SHOW_SELECTED_LAYERS,
         title=CommandId.SHOW_SELECTED_LAYERS.title,
         callback=_layer_actions._show_selected,
