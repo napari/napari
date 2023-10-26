@@ -105,10 +105,10 @@ def add_deprecated_property(
             trans._("{new_name} property must exist.", new_name=new_name)
         )
 
-    previous_name = "{obj.__name__}.{previous_name}"
+    name = f"{obj.__name__}.{previous_name}"
     msg = trans._(
-        "{previous_name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}",
-        previous_name=previous_name,
+        "{name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}",
+        name=name,
         since_version=since_version,
         version=version,
         new_name=new_name,
