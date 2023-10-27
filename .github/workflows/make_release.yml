@@ -56,4 +56,4 @@ jobs:
           files: |
             dist/*
       - name: Publish PyPI Package
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
