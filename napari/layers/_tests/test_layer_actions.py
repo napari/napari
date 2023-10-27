@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-import tensorstore as ts
 import zarr
 
 from napari.components.layerlist import LayerList
@@ -120,7 +119,10 @@ def test_convert_dtype(mode):
     [
         (Image(np.random.rand(10, 10)), 'labels'),
         (Image(np.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
-        (Image(zarr.array([[1, 2], [3, 4]], dtype=(int), chunks=(1, 2))), 'labels'),
+        (
+            Image(zarr.array([[1, 2], [3, 4]], dtype=(int), chunks=(1, 2))),
+            'labels',
+        ),
         (Labels(np.ones((10, 10), dtype=int)), 'image'),
         (Shapes([np.array([[0, 0], [0, 10], [10, 0], [10, 10]])]), 'labels'),
     ],
@@ -139,4 +141,6 @@ def test_convert_layer(layer, type_):
         and isinstance(input, Image)
         and np.issubdtype(input.data.dtype, np.integer)
     ):
-        assert input.data is ll[0].data  # check array data not copied unnecessarily
+        assert (
+            input.data is ll[0].data
+        )  # check array data not copied unnecessarily

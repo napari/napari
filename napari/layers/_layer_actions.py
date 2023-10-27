@@ -56,7 +56,9 @@ def _convert(ll: LayerList, type_: str):
 
         if isinstance(lay, Shapes) and type_ == 'labels':
             data = lay.to_labels()
-        elif not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels':
+        elif (
+            not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'
+        ):
             data = lay.data.astype(int)
         else:
             data = lay.data
