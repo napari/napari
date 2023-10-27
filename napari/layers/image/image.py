@@ -39,6 +39,7 @@ from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import napari.types as npt
     from napari.components.experimental.chunk import ChunkRequest
 
 
@@ -1027,9 +1028,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """An axis aligned (ndisplay, 2) bounding box around the data at a given level"""
         shape = self.level_shapes[data_level]
         extent_at_level = np.vstack([np.zeros(len(shape)), shape - 1])
-        return extent_at_level[:, dims_displayed].T    
-    
-# For async we add an on_chunk_loaded() method.
+        return extent_at_level[:, dims_displayed].T
+
+    # For async we add an on_chunk_loaded() method.
     if config.async_loading:
 
         def on_chunk_loaded(self, request: ChunkRequest) -> None:

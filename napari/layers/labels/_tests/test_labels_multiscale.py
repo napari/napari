@@ -1,6 +1,5 @@
 import numpy as np
 
-from napari.components.dims import Dims
 from napari.layers import Labels
 
 
@@ -14,9 +13,7 @@ def test_random_multiscale():
     assert layer.multiscale is True
     assert layer.editable is False
     assert layer.ndim == len(shapes[0])
-    np.testing.assert_array_equal(
-        layer.extent.data[1], [s for s in shapes[0]]
-    )
+    np.testing.assert_array_equal(layer.extent.data[1], list(shapes[0]))
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -31,9 +28,7 @@ def test_infer_multiscale():
     assert layer.multiscale is True
     assert layer.editable is False
     assert layer.ndim == len(shapes[0])
-    np.testing.assert_array_equal(
-        layer.extent.data[1], [s for s in shapes[0]]
-    )
+    np.testing.assert_array_equal(layer.extent.data[1], list(shapes[0]))
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
