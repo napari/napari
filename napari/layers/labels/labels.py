@@ -10,6 +10,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -1116,8 +1117,18 @@ class Labels(_ImageBase):
             # we use dims_displayed because the image slice
             # has its dimensions  in th same order as the vispy
             # Volume
-            start_point = start_point[dims_displayed]
-            end_point = end_point[dims_displayed]
+            # Account for downsampling in the case of multiscale
+            # -1 means lowest resolution here.
+            start_point = (
+                start_point[dims_displayed]
+                / self.downsample_factors[-1][dims_displayed]
+            )
+            end_point = (
+                end_point[dims_displayed]
+                / self.downsample_factors[-1][dims_displayed]
+            )
+            start_point = cast(np.ndarray, start_point)
+            end_point = cast(np.ndarray, end_point)
             sample_ray = end_point - start_point
             length_sample_vector = np.linalg.norm(sample_ray)
             n_points = int(2 * length_sample_vector)
@@ -1125,7 +1136,10 @@ class Labels(_ImageBase):
                 start_point, end_point, n_points, endpoint=True
             )
             im_slice = self._slice.image.raw
-            bounding_box = self._display_bounding_box(dims_displayed)
+            # ensure the bounding box is for the proper multiscale level
+            bounding_box = self._display_bounding_box_at_level(
+                dims_displayed, self.data_level
+            )
             # the display bounding box is returned as a closed interval
             # (i.e. the endpoint is included) by the method, but we need
             # open intervals in the code that follows, so we add 1.
