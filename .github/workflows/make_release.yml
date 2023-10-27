@@ -10,6 +10,7 @@ jobs:
   build:
     permissions:
       contents: write
+      id-token: write
     name: Create Release
     runs-on: ubuntu-latest
     if: github.repository == 'napari/napari'
@@ -19,7 +20,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: 3.11
           cache-dependency-path: setup.cfg
       - name: Install Dependencies
         run: |
@@ -56,6 +57,3 @@ jobs:
             dist/*
       - name: Publish PyPI Package
         uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
