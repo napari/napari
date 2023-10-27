@@ -1,3 +1,7 @@
+"""Non-Qt providers.
+
+Qt providers can be found in `napari/_qt/_qapp_model/qactions/_qproviders.py`."""
+
 from typing import Optional
 
 from napari import components, layers, viewer

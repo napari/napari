@@ -127,23 +127,11 @@ def test_plugin_widget_checked(make_napari_viewer, tmp_plugin: DynamicPlugin):
 
     assert 'tmp_plugin:Widget' in app.commands
     widget_action = viewer.window.plugins_menu.findAction('tmp_plugin:Widget')
-    # Trigger the action, opening the widget
     assert not widget_action.isChecked()
+    # Trigger the action, opening the widget
     widget_action.trigger()
     assert widget_action.isChecked()
     assert 'Widget (Temp Plugin)' in viewer.window._dock_widgets
-
-    # Open the widget again
-    # widget_action.trigger()
-    # assert widget_action.isChecked()
-    # Check hiding the widget un-checks
-    widget = viewer.window._dock_widgets['Widget (Temp Plugin)']
-    print(widget.title)
-    # widget.title.hide_button.click()
-    widget.destroyOnClose()
-    viewer.window._update_menu_state('plugins_menu')
-    print(widget_action.isChecked())
-    # assert not widget_action.isChecked()
 
 
 def test_import_plugin_manager():

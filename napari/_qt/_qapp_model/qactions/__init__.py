@@ -2,31 +2,15 @@ from __future__ import annotations
 
 from functools import lru_cache
 from itertools import chain
-from typing import TYPE_CHECKING, Optional
 
-if TYPE_CHECKING:
-    from napari._qt.qt_main_window import Window
-    from napari._qt.qt_viewer import QtViewer
+from napari._qt._qapp_model.qactions._qproviders import (
+    _provide_qt_viewer,
+    _provide_window,
+)
 
 # Submodules should be able to import from most modules, so to
 # avoid circular imports, don't import submodules at the top level here,
 # import them inside the init_qactions function.
-
-
-def _provide_qt_viewer() -> Optional[QtViewer]:
-    from napari._qt.qt_main_window import _QtMainWindow
-
-    if _qmainwin := _QtMainWindow.current():
-        return _qmainwin._qt_viewer
-    return None
-
-
-def _provide_window() -> Optional[Window]:
-    from napari._qt.qt_main_window import _QtMainWindow
-
-    if _qmainwin := _QtMainWindow.current():
-        return _qmainwin._window
-    return None
 
 
 @lru_cache  # only call once

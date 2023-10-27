@@ -551,12 +551,12 @@ def _get_widget_viewer_param(widget_callable, widget_name) -> str:
     return widget_param
 
 
-def _widget_callback_implementation(
+def _get_widget_callback(
     napari_viewer: Viewer,
     mf: PluginManifest,
     widget_name: str,
     name: str,
-):
+) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
     """Toggle if widget already built otherwise return widget.
 
     Returned widget will be added to main window by a processor.
@@ -624,7 +624,7 @@ def _get_widgets_submenu_actions(
             widget_name: str = widget.display_name,
             name: str = full_name,
         ) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
-            return _widget_callback_implementation(
+            return _get_widget_callback(
                 napari_viewer=napari_viewer,
                 mf=mf,
                 widget_name=widget_name,

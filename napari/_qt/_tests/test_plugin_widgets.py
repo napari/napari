@@ -190,7 +190,7 @@ def test_widget_types_supported(
 
     app = get_app()
     # `strict_qt` prevents checking for leaked widgets resulting from parametrize
-    viewer = make_napari_viewer(strict_qt=False)
+    viewer = make_napari_viewer()
 
     viewer.window.add_dock_widget = MagicMock()
     app.commands.execute_command('tmp_plugin:Widget')
