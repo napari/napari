@@ -245,7 +245,7 @@ class NotificationManager:
         self._originals_except_hooks: List[Callable] = []
         self._original_showwarnings_hooks: List[Callable] = []
         self._originals_thread_except_hooks: List[Callable] = []
-        self._seen_warnings: Set[Tuple[str, Type]] = set()
+        self._seen_warnings: Set[Tuple[str, Type, str, int]] = set()
 
     def __enter__(self):
         self.install_hooks()
@@ -330,9 +330,10 @@ class NotificationManager:
         file=None,
         line=None,
     ):
-        if (message.args[0], category) in self._seen_warnings:
+        msg = message if isinstance(message, str) else message.args[0]
+        if (msg, category, filename, lineno) in self._seen_warnings:
             return
-        self._seen_warnings.add((message.args[0], category))
+        self._seen_warnings.add((msg, category, filename, lineno))
         self.dispatch(
             Notification.from_warning(
                 message, filename=filename, lineno=lineno

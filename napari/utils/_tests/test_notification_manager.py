@@ -125,7 +125,6 @@ def test_notification_manager_no_gui_with_threading():
 
     with notification_manager:
         notification_manager.records.clear()
-        notification_manager._seen_warnings.clear()
         # save all of the events that get emitted
         store: List[Notification] = []
         notification_manager.notification_ready.connect(store.append)
@@ -160,3 +159,26 @@ def test_notification_manager_no_gui_with_threading():
     assert threading.excepthook == previous_threading_exhook
 
     assert all(isinstance(x, Notification) for x in store)
+
+
+def test_notification_manager_no_warning_duplication():
+    def fun():
+        warnings.showwarning(
+            UserWarning('This is a warning'),
+            category=UserWarning,
+            filename='',
+            lineno=0,
+        )
+
+    with notification_manager:
+        notification_manager.records.clear()
+        # save all of the events that get emitted
+        store: List[Notification] = []
+        notification_manager.notification_ready.connect(store.append)
+
+        fun()
+        assert len(notification_manager.records) == 1
+        assert store[-1].type == 'warning'
+
+        fun()
+        assert len(notification_manager.records) == 1
