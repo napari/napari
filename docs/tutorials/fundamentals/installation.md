@@ -168,6 +168,13 @@ the current release {{ napari_version }}, using command: `napari --version` .
 ````
 ![macOS desktop with a napari viewer window without any image opened in the foreground, and a terminal in the background with the appropriate conda environment activated (if applicable) and the command to open napari entered.](../assets/tutorials/launch_cli_empty.png)
 
+````{note}
+On some platforms, particularly macOS and Windows, there may be a ~30 second 
+delay before the viewer appears on first launch. This is expected and subsequent
+launches should be quick. However, anti-malware and other security software 
+measures may further delay launches—even after the first launch.
+````
+
 ## Choosing a different Qt backend
 
 napari needs a library called [Qt](https://www.qt.io/) to run its user interface
