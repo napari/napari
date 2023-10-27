@@ -1631,10 +1631,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     ) -> npt.NDArray:
         """An augmented, axis-aligned (ndisplay, 2) bounding box.
 
-        This bounding box for includes the "full" size of the layer, including
-        for example the size of points or pixels.
+        This bounding box includes the size of the layer in best resolution, including required padding
         """
         return self._extent_data_augmented[:, dims_displayed].T
+
+    def _display_bounding_box_augmented_data_level(
+        self, dims_displayed: List[int]
+    ) -> npt.NDArray:
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
+
+        If the layer is multiscale layer, then returns the
+        bounding box of the data at the current level
+        """
+        return self._display_bounding_box_augmented(dims_displayed)
 
     def click_plane_from_click_data(
         self,
