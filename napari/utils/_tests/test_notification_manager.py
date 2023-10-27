@@ -80,7 +80,9 @@ def test_notification_manager_no_gui(monkeypatch):
         # test that warnings that go through showwarning are catalogued
         # again, pytest intercepts this, so just manually trigger:
         assert warnings.showwarning == notification_manager.receive_warning
-        warnings.showwarning('this is a warning', UserWarning, '', 0)
+        warnings.showwarning(
+            UserWarning('this is a warning'), UserWarning, '', 0
+        )
         assert len(notification_manager.records) == 4
         assert store[-1].type == 'warning'
 
@@ -111,7 +113,9 @@ def test_notification_manager_no_gui_with_threading():
     """
 
     def _warn():
-        warnings.showwarning('this is a warning', UserWarning, '', 0)
+        warnings.showwarning(
+            UserWarning('this is a warning'), UserWarning, '', 0
+        )
 
     def _raise():
         with pytest.raises(PurposefulException):
@@ -121,6 +125,7 @@ def test_notification_manager_no_gui_with_threading():
 
     with notification_manager:
         notification_manager.records.clear()
+        notification_manager._seen_warnings.clear()
         # save all of the events that get emitted
         store: List[Notification] = []
         notification_manager.notification_ready.connect(store.append)
