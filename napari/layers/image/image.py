@@ -1021,7 +1021,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         return [p + 0.5 for p in position]
 
-    # For async we add an on_chunk_loaded() method.
+    def _display_bounding_box_at_level(
+        self, dims_displayed: List[int], data_level: int
+    ) -> npt.NDArray:
+        """An axis aligned (ndisplay, 2) bounding box around the data at a given level"""
+        shape = self.level_shapes[data_level]
+        extent_at_level = np.vstack([np.zeros(len(shape)), shape - 1])
+        return extent_at_level[:, dims_displayed].T    
+    
+# For async we add an on_chunk_loaded() method.
     if config.async_loading:
 
         def on_chunk_loaded(self, request: ChunkRequest) -> None:
