@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
-    from qtpy.QtWidgets import QMenu  # type: ignore [attr-defined]
+    from qtpy.QtWidgets import QMenu
 
     from napari.layers import Layer
     from napari.types import SampleDict
@@ -163,10 +163,12 @@ def populate_qmenu(menu: QMenu, menu_key: str):
         if isinstance(item, contributions.Submenu):
             subm_contrib = pm.get_submenu(item.submenu)
             subm = menu.addMenu(subm_contrib.label)
+            assert subm is not None
             populate_qmenu(subm, subm_contrib.id)
         else:
             cmd = pm.get_command(item.command)
             action = menu.addAction(cmd.title)
+            assert action is not None
             action.triggered.connect(_wrap(cmd))
 
 
@@ -407,7 +409,7 @@ def _rebuild_npe1_samples_menu() -> None:
                 title = menu_item_template.format(plugin_name, display_name)
 
             action: Action = Action(
-                id=f"{plugin_name}.{display_name}",
+                id=f"{plugin_name}:{display_name}",
                 title=title,
                 menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
                 callback=_add_sample,
@@ -450,7 +452,7 @@ def _get_samples_submenu_actions(
         submenu_id = MenuId.FILE_SAMPLES
         submenu = []
 
-    sample_actions = []
+    sample_actions: List[Action] = []
     for sample in sample_data:
 
         def _add_sample(
@@ -469,14 +471,17 @@ def _get_samples_submenu_actions(
                     stack=False,
                 )
 
-        display_name = sample.display_name.replace("&", "&&")
         if multiprovider:
-            title = display_name
+            title = sample.display_name
         else:
-            title = menu_item_template.format(mf.display_name, display_name)
+            title = menu_item_template.format(
+                mf.display_name, sample.display_name
+            )
+        # To display '&' instead of creating a shortcut
+        title = title.replace("&", "&&")
 
         action: Action = Action(
-            id=f'{mf.name}.{sample.key}',
+            id=f'{mf.name}:{sample.key}',
             title=title,
             menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
             callback=_add_sample,

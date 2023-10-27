@@ -2,6 +2,8 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
+import os
+
 import numpy as np
 from qtpy.QtWidgets import QApplication
 
@@ -12,6 +14,9 @@ class QtViewerViewImageSuite:
     """Benchmarks for viewing images in the viewer."""
 
     params = [2**i for i in range(4, 13)]
+
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(6, 13)]
 
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
@@ -32,6 +37,9 @@ class QtViewerAddImageSuite:
 
     params = [2**i for i in range(4, 13)]
 
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(6, 13)]
+
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
@@ -50,6 +58,9 @@ class QtViewerImageSuite:
     """Benchmarks for images in the viewer."""
 
     params = [2**i for i in range(4, 13)]
+
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(6, 13)]
 
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
@@ -185,6 +196,9 @@ class QtImageRenderingSuite:
 
     params = [2**i for i in range(4, 13)]
 
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(6, 13)]
+
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
@@ -211,6 +225,9 @@ class QtVolumeRenderingSuite:
     """Benchmarks for a single image layer in the viewer."""
 
     params = [2**i for i in range(4, 10)]
+
+    if "PR" in os.environ:
+        skip_params = [(2**i,) for i in range(6, 10)]
 
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])

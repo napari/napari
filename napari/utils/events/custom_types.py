@@ -11,12 +11,13 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import errors, types
+
+from napari._pydantic_compat import errors, types
 
 if TYPE_CHECKING:
     from decimal import Decimal
 
-    from pydantic.fields import ModelField
+    from napari._pydantic_compat import ModelField
 
     Number = Union[int, float, Decimal]
 

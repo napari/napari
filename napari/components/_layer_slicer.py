@@ -11,6 +11,7 @@ from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from threading import RLock
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Iterable,
@@ -20,10 +21,12 @@ from typing import (
     runtime_checkable,
 )
 
-from napari.components import Dims
 from napari.layers import Layer
 from napari.settings import get_settings
 from napari.utils.events.event import EmitterGroup, Event
+
+if TYPE_CHECKING:
+    from napari.components import Dims
 
 logger = logging.getLogger("napari.components._layer_slicer")
 
@@ -178,11 +181,11 @@ class _LayerSlicer:
 
         Parameters
         ----------
-        layers: iterable of layers
+        layers : iterable of layers
             The layers to slice.
-        dims: Dims
+        dims : Dims
             The dimensions values associated with the view to be sliced.
-        force: bool
+        force : bool
             True if slicing should be forced to occur, even when some cache thinks
             it already has a valid slice ready. False otherwise.
 
@@ -234,7 +237,8 @@ class _LayerSlicer:
         # Then execute sync slicing tasks to run concurrent with async ones.
         for layer in sync_layers:
             layer._slice_dims(
-                dims.point, dims.ndisplay, dims.order, force=force
+                dims=dims,
+                force=force,
             )
 
         return task

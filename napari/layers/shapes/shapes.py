@@ -427,6 +427,7 @@ class Shapes(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
+        projection_mode='none',
     ) -> None:
         if data is None or len(data) == 0:
             if ndim is None:
@@ -459,6 +460,7 @@ class Shapes(Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(
@@ -497,7 +499,7 @@ class Shapes(Layer):
             self._current_edge_width = 1
 
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
-        self._data_view.slice_key = np.array(self._slice_indices)[
+        self._data_view.slice_key = np.array(self._data_slice.point)[
             self._slice_input.not_displayed
         ]
 
@@ -688,7 +690,7 @@ class Shapes(Layer):
 
         self.events.data(**kwargs)
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
-        self._data_view.slice_key = np.array(self._slice_indices)[
+        self._data_view.slice_key = np.array(self._data_slice.point)[
             self._slice_input.not_displayed
         ]
         self._add_shapes(
@@ -2005,7 +2007,7 @@ class Shapes(Layer):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        gui: bool
+        gui : bool
             Whether the shape is drawn by drawing in the gui.
         """
         data, shape_type = extract_shape_type(data, shape_type)
@@ -2181,7 +2183,7 @@ class Shapes(Layer):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        n_new_shapes: int
+        n_new_shapes : int
             The number of new shapes to be added to the Shapes layer.
         """
         if n_new_shapes > 0:
@@ -2319,26 +2321,27 @@ class Shapes(Layer):
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        ndisplay = self._slice_input.ndisplay
-        if ndisplay != self._ndisplay_stored:
-            self.selected_data = set()
-            self._data_view.ndisplay = min(self.ndim, ndisplay)
-            self._ndisplay_stored = ndisplay
-            self._clipboard = {}
+        with self._data_view.batched_updates():
+            ndisplay = self._slice_input.ndisplay
+            if ndisplay != self._ndisplay_stored:
+                self.selected_data = set()
+                self._data_view.ndisplay = min(self.ndim, ndisplay)
+                self._ndisplay_stored = ndisplay
+                self._clipboard = {}
 
-        if self._slice_input.order != self._display_order_stored:
-            self.selected_data = set()
-            self._data_view.update_dims_order(self._slice_input.order)
-            self._display_order_stored = copy(self._slice_input.order)
-            # Clear clipboard if dimensions swap
-            self._clipboard = {}
+            if self._slice_input.order != self._display_order_stored:
+                self.selected_data = set()
+                self._data_view.update_dims_order(self._slice_input.order)
+                self._display_order_stored = copy(self._slice_input.order)
+                # Clear clipboard if dimensions swap
+                self._clipboard = {}
 
-        slice_key = np.array(self._slice_indices)[
-            self._slice_input.not_displayed
-        ]
-        if not np.array_equal(slice_key, self._data_view.slice_key):
-            self.selected_data = set()
-        self._data_view.slice_key = slice_key
+            slice_key = np.array(self._data_slice.point)[
+                self._slice_input.not_displayed
+            ]
+            if not np.array_equal(slice_key, self._data_view.slice_key):
+                self.selected_data = set()
+            self._data_view.slice_key = slice_key
 
     def interaction_box(self, index):
         """Create the interaction box around a shape or list of shapes.
@@ -2969,7 +2972,7 @@ class Shapes(Layer):
                 'edge_color': deepcopy(self._data_view._edge_color[index]),
                 'face_color': deepcopy(self._data_view._face_color[index]),
                 'features': deepcopy(self.features.iloc[index]),
-                'indices': self._slice_indices,
+                'indices': self._data_slice.point,
                 'text': self.text._copy(index),
             }
         else:
@@ -2981,7 +2984,7 @@ class Shapes(Layer):
         if len(self._clipboard.keys()) > 0:
             # Calculate offset based on dimension shifts
             offset = [
-                self._slice_indices[i] - self._clipboard['indices'][i]
+                self._data_slice.point[i] - self._clipboard['indices'][i]
                 for i in self._slice_input.not_displayed
             ]
 
