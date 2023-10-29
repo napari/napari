@@ -47,7 +47,7 @@ jobs:
           - python: ${{ inputs.python_version }}
             platform: ${{ inputs.platform }}
             backend: ${{ inputs.backend }}
-            napari_version: "v0.4.19x_test"
+            napari_version: "v0.4.19x"
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
