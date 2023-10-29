@@ -52,13 +52,19 @@ on:
         required: false
         type: string
         default: ""
-
-
+      pytest_extra_args:
+        required: false
+        type: string
+        default: ""
+      workflow_name:
+        required: false
+        type: string
+        default: ""
 
 
 jobs:
   test:
-    name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.MIN_REQ && 'min_req' }} ${{ inputs.coverage }}
+    name: ${{ inputs.workflow_name }} ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.MIN_REQ && 'min_req' }} ${{ inputs.coverage }}
     runs-on: ${{ inputs.platform }}
     env:
       TOXENV: ${{ inputs.toxenv }}
@@ -73,6 +79,7 @@ jobs:
       INSTALL_PKG: ${{ inputs.package_to_test == '' && '--installpkg dist/napari-0.0.1-py3-none-any.whl' || '' }}
       COMMAND_PRE: ${{ inputs.package_to_test != '' && 'pip install --isolated ../package_to_test' || '' }}
       PYTEST_PATH: ${{ inputs.pytest_path }}
+      PYTEST_EXTRA_ARGS: ${{ inputs.pytest_extra_args }}
     steps:
       - uses: actions/checkout@v4
         with:

@@ -31,6 +31,10 @@ on:
         required: false
         type: string
         default: ""
+      pytest_extra_args:
+        required: false
+        type: string
+        default: "-W ignore"
 
 jobs:
   test:
@@ -57,3 +61,5 @@ jobs:
       package_to_test_ref: ${{  github.repository == 'napari/napari' && github.event_name == 'pull_request' && 'main' ||  inputs.package_to_test_ref }}
       napari_version: ${{ matrix.napari_version }}
       pytest_path: ${{ inputs.pytest_path }}
+      workflow_name: ${{ inputs.napari_version }}
+      pytest_extra_args: ${{ inputs.pytest_extra_args }}
