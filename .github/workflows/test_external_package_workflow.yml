@@ -38,7 +38,7 @@ on:
 
 jobs:
   test:
-    name: Initial test
+    name: External
     uses: ./.github/workflows/reusable_run_tox_test.yml
     strategy:
       fail-fast: false
