@@ -105,7 +105,7 @@ layer2addmethod = {
 good_layer_data = [
     (np.random.random((10, 10)),),
     (np.random.random((10, 10, 3)), {'rgb': True}),
-    (np.random.randint(20, size=(10, 15)), {'seed': 0.3}, 'labels'),
+    (np.random.randint(20, size=(10, 15)), {'seed_rng': 5}, 'labels'),
     (np.random.random((10, 2)) * 20, {'face_color': 'blue'}, 'points'),
     (np.random.random((10, 2, 2)) * 20, {}, 'vectors'),
     (np.random.random((10, 4, 2)) * 20, {'opacity': 1}, 'shapes'),
@@ -139,6 +139,11 @@ class LockableData:
     @property
     def shape(self) -> Tuple[int, ...]:
         return self.data.shape
+
+    @property
+    def ndim(self) -> int:
+        # LayerDataProtocol does not have ndim, but this should be equivalent.
+        return len(self.data.shape)
 
     def __getitem__(
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]

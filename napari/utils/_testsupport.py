@@ -176,7 +176,9 @@ def make_napari_viewer(
     from qtpy.QtWidgets import QApplication
 
     from napari import Viewer
+    from napari._qt._qapp_model.qactions import init_qactions
     from napari._qt.qt_viewer import QtViewer
+    from napari.plugins import _initialize_plugins
     from napari.settings import get_settings
 
     global GCPASS
@@ -203,9 +205,12 @@ def make_napari_viewer(
     settings = get_settings()
     settings.reset()
 
+    _initialize_plugins.cache_clear()
+    init_qactions.cache_clear()
+
     viewers: WeakSet[Viewer] = WeakSet()
 
-    # may be overridden by using `make_napari_viewer(strict=True)`
+    # may be overridden by using the parameter `strict_qt`
     _strict = False
 
     initial = QApplication.topLevelWidgets()
@@ -278,7 +283,7 @@ def make_napari_viewer(
     assert _do_not_inline_below == 0
 
     # only check for leaked widgets if an exception was raised during the test,
-    # or "strict" mode was used.
+    # and "strict" mode was used.
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
@@ -299,7 +304,7 @@ def make_napari_viewer(
             # in particular with VisPyCanvas, it looks like if a traceback keeps
             # contains the type, then instances are still attached to the type.
             # I'm not too sure why this is the case though.
-            if _strict:
+            if _strict == 'raise':
                 raise AssertionError(msg)
             else:
                 warnings.warn(msg)

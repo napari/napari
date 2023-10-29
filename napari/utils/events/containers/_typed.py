@@ -6,12 +6,17 @@ from typing import (
     Iterable,
     List,
     MutableSequence,
+    Optional,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
     overload,
 )
+
+# change on import from typing when drop python 3.10 support
+from typing_extensions import Self
 
 from napari.utils.translations import trans
 
@@ -49,13 +54,13 @@ class TypedMutableSequence(MutableSequence[_T]):
         data: Iterable[_T] = (),
         *,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-        lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = None,
+        lookup: Optional[Dict[Type[_L], Callable[[_T], Union[_T, _L]]]] = None,
     ) -> None:
         if lookup is None:
             lookup = {}
         self._list: List[_T] = []
-        self._basetypes = (
-            basetype if isinstance(basetype, Sequence) else (basetype,)
+        self._basetypes: Tuple[Type[_T], ...] = (
+            tuple(basetype) if isinstance(basetype, Sequence) else (basetype,)
         )
         self._lookup = lookup.copy()
         self.extend(data)
@@ -66,7 +71,7 @@ class TypedMutableSequence(MutableSequence[_T]):
     def __repr__(self) -> str:
         return repr(self._list)
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         return self._list == other
 
     def __hash__(self) -> int:
@@ -107,6 +112,10 @@ class TypedMutableSequence(MutableSequence[_T]):
             else:
                 return True
         return super().__contains__(key)
+
+    @overload
+    def __getitem__(self, key: str) -> _T:
+        ...  # pragma: no cover
 
     @overload
     def __getitem__(self, key: int) -> _T:
@@ -172,17 +181,17 @@ class TypedMutableSequence(MutableSequence[_T]):
         new.extend(iterable)
         return new
 
-    def copy(self) -> 'TypedMutableSequence[_T]':
+    def copy(self) -> Self:
         """Return a shallow copy of the list."""
         return self.__newlike__(self)
 
-    def __add__(self, other: Iterable[_T]) -> 'TypedMutableSequence[_T]':
+    def __add__(self, other: Iterable[_T]) -> Self:
         """Add other to self, return new object."""
         copy = self.copy()
         copy.extend(other)
         return copy
 
-    def __iadd__(self, other: Iterable[_T]) -> 'TypedMutableSequence[_T]':
+    def __iadd__(self, other: Iterable[_T]) -> Self:
         """Add other to self in place (self += other)."""
         self.extend(other)
         return self
@@ -191,7 +200,9 @@ class TypedMutableSequence(MutableSequence[_T]):
         """Add other to self in place (self += other)."""
         return other + list(self)
 
-    def index(self, value: _L, start: int = 0, stop: int = None) -> int:
+    def index(
+        self, value: _L, start: int = 0, stop: Optional[int] = None
+    ) -> int:
         """Return first index of value.
 
         Parameters
@@ -235,7 +246,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             )
         )
 
-    def _iter_indices(self, start=0, stop=None):
+    def _iter_indices(self, start=0, stop=None) -> Iterable[int]:
         """Iter indices from start to stop.
 
         While this is trivial for this basic sequence type, this method lets

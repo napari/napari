@@ -6,8 +6,8 @@ from contextvars import ContextVar
 from typing import Optional, Tuple
 
 from magicgui.widgets import FunctionGui
-from pydantic import BaseModel, validator
 
+from napari._pydantic_compat import BaseModel, validator
 from napari.layers.base.base import Layer
 
 

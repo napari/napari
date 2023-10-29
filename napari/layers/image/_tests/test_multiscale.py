@@ -62,7 +62,7 @@ def test_blocking_multiscale():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data, multiscale=False)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.multiscale is False
     assert layer.ndim == len(shape)
     np.testing.assert_array_equal(layer.extent.data[1], [s - 1 for s in shape])
@@ -392,7 +392,7 @@ def test_message():
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == dict
+    assert isinstance(msg, dict)
 
 
 def test_thumbnail():
@@ -411,7 +411,7 @@ def test_not_create_random_multiscale():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
     assert layer.multiscale is False
 
 

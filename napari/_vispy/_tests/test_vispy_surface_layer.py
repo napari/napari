@@ -3,6 +3,7 @@ import pytest
 from vispy.geometry import create_cube
 
 from napari._vispy.layers.surface import VispySurfaceLayer
+from napari.components.dims import Dims
 from napari.layers import Surface
 
 
@@ -20,7 +21,7 @@ def test_VispySurfaceLayer(cube_layer, opacity):
 
 
 def test_shading(cube_layer):
-    cube_layer._slice_dims(ndisplay=3)
+    cube_layer._slice_dims(Dims(ndim=3, ndisplay=3))
     cube_layer.shading = "flat"
     visual = VispySurfaceLayer(cube_layer)
     assert visual.node.shading_filter.attached
@@ -89,7 +90,7 @@ def test_change_texture(cube_layer):
 
 def test_vertex_colors(cube_layer):
     np.random.seed(0)
-    cube_layer._slice_dims(ndisplay=3)
+    cube_layer._slice_dims(Dims(ndim=3, ndisplay=3))
     visual = VispySurfaceLayer(cube_layer)
     n = len(cube_layer.vertices)
 

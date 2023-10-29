@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from pydantic import ValidationError
 
+from napari._pydantic_compat import ValidationError
 from napari.layers.utils.plane import ClippingPlaneList, Plane, SlicingPlane
 
 
@@ -26,6 +26,12 @@ def test_plane_from_points():
     assert isinstance(plane, Plane)
     assert plane.normal == (0, 0, 1)
     assert np.allclose(plane.position, np.mean(points, axis=0))
+
+
+def test_shift_along_normal_vector():
+    plane = Plane(position=(0, 0, 0), normal=(1, 0, 0))
+    plane.shift_along_normal_vector(0.5)
+    assert plane.position == (0.5, 0, 0)
 
 
 def test_update_slicing_plane_from_dict():

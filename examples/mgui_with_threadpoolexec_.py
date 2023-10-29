@@ -55,6 +55,7 @@ def make_widget(
             "size": blobs[:, -1],
             "edge_color": "red",
             "edge_width": 2,
+            "edge_width_is_relative": False,
             "face_color": "transparent",
         }
         return (data, kwargs, 'points')

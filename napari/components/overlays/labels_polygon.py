@@ -1,3 +1,4 @@
+from napari._pydantic_compat import Field
 from napari.components.overlays.base import SceneOverlay
 from napari.layers import Labels
 
@@ -32,7 +33,7 @@ class LabelsPolygonOverlay(SceneOverlay):
     """
 
     enabled: bool = False
-    points: list = []
+    points: list = Field(default_factory=list)
     double_click_completion: bool = True
     completion_radius: int = 20
 

@@ -1,17 +1,18 @@
-from enum import Enum
-from typing import Optional
+from collections import defaultdict
+from typing import Optional, cast
 
 import numpy as np
-from pydantic import PrivateAttr, validator
 
+from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
 from napari.utils.colormaps.colorbars import make_colorbar
+from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 
-class ColormapInterpolationMode(str, Enum):
+class ColormapInterpolationMode(StrEnum):
     """INTERPOLATION: Interpolation mode for colormaps.
 
     Selects an interpolation mode for the colormap.
@@ -50,7 +51,7 @@ class Colormap(EventedModel):
     name: str = 'custom'
     _display_name: Optional[str] = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array[np.float32, (-1,)] = None
+    controls: Array = Field(default_factory=lambda: cast(Array, []))
 
     def __init__(
         self, colors, display_name: Optional[str] = None, **data
@@ -142,3 +143,90 @@ class Colormap(EventedModel):
     @property
     def colorbar(self):
         return make_colorbar(self)
+
+
+class LabelColormap(Colormap):
+    """Colormap that shuffles values before mapping to colors.
+
+    Attributes
+    ----------
+    seed : float
+    use_selection : bool
+    selection : float
+    """
+
+    seed: float = 0.5
+    use_selection: bool = False
+    selection: float = 0.0
+    interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
+    background_value: float = 0.0
+
+    def map(self, values):
+        values = np.atleast_1d(values)
+
+        mapped = self.colors[np.mod(values, len(self.colors)).astype(np.int64)]
+
+        mapped[values == self.background_value] = 0
+
+        # If using selected, disable all others
+        if self.use_selection:
+            mapped[~np.isclose(values, self.selection)] = 0
+
+        return mapped
+
+    def shuffle(self, seed: int):
+        """Shuffle the colormap colors.
+
+        Parameters
+        ----------
+        seed : int
+            Seed for the random number generator.
+        """
+        np.random.default_rng(seed).shuffle(self.colors[1:])
+        self.events.colors(value=self.colors)
+
+
+class DirectLabelColormap(Colormap):
+    """Colormap using a direct mapping from labels to color using a dict.
+
+    Attributes
+    ----------
+    color_dict: defaultdict
+        The dictionary mapping labels to colors.
+    use_selection: bool
+        Whether to color using the selected label.
+    selection: float
+        The selected label.
+    """
+
+    color_dict: defaultdict = Field(
+        default_factory=lambda: defaultdict(lambda: np.zeros(4))
+    )
+    use_selection: bool = False
+    selection: float = 0.0
+
+    def map(self, values):
+        # Convert to float32 to match the current GL shader implementation
+        values = np.atleast_1d(values).astype(np.float32)
+        mapped = np.zeros(values.shape + (4,), dtype=np.float32)
+        for idx in np.ndindex(values.shape):
+            value = values[idx]
+            if value in self.color_dict:
+                color = self.color_dict[value]
+                if len(color) == 3:
+                    color = np.append(color, 1)
+                mapped[idx] = color
+            else:
+                mapped[idx] = self.default_color
+        # If using selected, disable all others
+        if self.use_selection:
+            mapped[~np.isclose(values, self.selection)] = 0
+        return mapped
+
+    @property
+    def default_color(self):
+        if self.use_selection:
+            return (0, 0, 0, 0)
+        return self.color_dict.get(None, (0, 0, 0, 0))
+        # we provided here default color for backward compatibility
+        # if someone is using DirectLabelColormap directly, not through Label layer

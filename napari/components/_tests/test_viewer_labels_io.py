@@ -18,5 +18,5 @@ def test_open_labels(builtins, suffix, tmp_path):
     imwrite(fout, labeled, format=suffix)
     viewer.open(fout, layer_type='labels')
     assert len(viewer.layers) == 1
-    assert np.all(labeled == viewer.layers[0].data)
+    np.testing.assert_array_equal(labeled, viewer.layers[0].data)
     assert isinstance(viewer.layers[0], Labels)

@@ -148,7 +148,7 @@ def test_unwrap_on_call():
     text = "aaa"
     wrapped_text = PublicOnlyProxy(text)
     public_only_evset.add(wrapped_text)
-    retrieved_text = list(evset)[0]
+    retrieved_text = next(iter(evset))
 
     # check that the text in the set is not the version wrapped with
     # PublicOnlyProxy

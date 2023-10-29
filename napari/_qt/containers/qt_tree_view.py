@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from typing import Optional
 
     from qtpy.QtCore import QModelIndex
-    from qtpy.QtWidgets import QWidget
+    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
 
 NodeType = TypeVar("NodeType", bound=Node)

@@ -1,7 +1,6 @@
 from typing import Dict, List
 
-from pydantic import Field, validator
-
+from napari._pydantic_compat import Field, validator
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.key_bindings import KeyBinding, coerce_keybinding
 from napari.utils.shortcuts import default_shortcuts
@@ -19,7 +18,7 @@ class ShortcutsSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version']
+        preferences_exclude = ('schema_version',)
 
     @validator('shortcuts', allow_reuse=True)
     def shortcut_validate(cls, v):
