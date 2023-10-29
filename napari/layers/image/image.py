@@ -477,7 +477,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @property
     def _extent_level_data(self) -> np.ndarray:
-        """Extent of layer in data coordinates.
+        """Extent of layer, accounting for current multiscale level, in data coordinates.
 
         Returns
         -------
