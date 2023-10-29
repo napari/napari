@@ -181,11 +181,11 @@ class _LayerSlicer:
 
         Parameters
         ----------
-        layers: iterable of layers
+        layers : iterable of layers
             The layers to slice.
-        dims: Dims
+        dims : Dims
             The dimensions values associated with the view to be sliced.
-        force: bool
+        force : bool
             True if slicing should be forced to occur, even when some cache thinks
             it already has a valid slice ready. False otherwise.
 

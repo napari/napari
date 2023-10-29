@@ -34,9 +34,9 @@ def highlight(layer: Shapes, event: MouseEvent) -> None:
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event. Though not used here it is passed as argument by the
         shapes layer mouse move callbacks.
 
@@ -56,9 +56,9 @@ def select(layer: Shapes, event: MouseEvent) -> None:
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
     shift = 'Shift' in event.modifiers
@@ -157,9 +157,9 @@ def add_line(layer: Shapes, event: MouseEvent) -> None:
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
     # full size is the initial offset of the second point compared to the first point of the line.
@@ -187,9 +187,9 @@ def add_ellipse(layer: Shapes, event: MouseEvent):
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
     size = layer._normalized_vertex_radius / 2
@@ -213,9 +213,9 @@ def add_rectangle(layer: Shapes, event: MouseEvent) -> None:
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
     size = layer._normalized_vertex_radius / 2
@@ -242,13 +242,13 @@ def _add_line_rectangle_ellipse(
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
-    data: np.NDarray
+    data : np.NDarray
         Array containing the initial datapoints of the shape in image data space.
-    shape_type: str
+    shape_type : str
         String indicating the type of shape to be added.
     """
     # on press
@@ -280,9 +280,9 @@ def finish_drawing_shape(layer: Shapes, event: MouseEvent) -> None:
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event. Not used here, but passed as argument due to being a
         double click callback of the shapes layer.
     """
@@ -299,9 +299,9 @@ def initiate_polygon_draw(
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    coordinates: Tuple[float, ...]
+    coordinates : Tuple[float, ...]
         A tuple with the coordinates of the initial vertex in image data space.
     """
     data = np.array([coordinates, coordinates])
@@ -321,9 +321,9 @@ def add_path_polygon_lasso(layer: Shapes, event: MouseEvent) -> None:
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
     # on press
@@ -360,15 +360,15 @@ def add_vertex_to_path(
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
-    index: int
+    index : int
         The index of the shape being added, e.g. first shape in the layer has index 0.
-    coordinates: Tuple[float, ...]
+    coordinates : Tuple[float, ...]
         The coordinates of the vertex being added to the shape being drawn in image data space
-    new_type: Optional[str]
+    new_type : Optional[str]
         Type of the shape being added.
     """
     vertices = layer._data_view.shapes[index].data
@@ -392,9 +392,9 @@ def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
     if layer._is_creating:
@@ -422,9 +422,9 @@ def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
     # on press
@@ -446,9 +446,9 @@ def move_active_vertex_under_cursor(
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    coordinates: Tuple[float, ...]
+    coordinates : Tuple[float, ...]
         The coordinates in data space of the vertex to be potentially added, e.g. vertex tracks the mouse cursor
         position.
     """
@@ -465,9 +465,9 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
     # Determine all the edges in currently selected shapes
@@ -555,9 +555,9 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         Napari shapes layer
-    event: MouseEvent
+    event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
     value = layer.get_value(event.position, world=True)
@@ -644,9 +644,9 @@ def _set_drag_start(
 
     Parameters
     ----------
-    layer: Shapes
+    layer : Shapes
         The napari layer shape
-    coordinates: Tuple[float, ...]
+    coordinates : Tuple[float, ...]
         The position in image data space where dragging started.
 
     Returns
