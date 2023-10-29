@@ -86,6 +86,7 @@ jobs:
           path: napari_repo
           ref: ${{ inputs.napari_version }}
           repository: ${{ inputs.package_to_test != '' && 'napari/napari' || '' }}
+          fetch-tags: true
 
       - uses: actions/checkout@v4
         if: ${{ inputs.package_to_test != '' }}
