@@ -2,10 +2,13 @@
 
 Non-Qt providers can be found in `napari/_app_model/injection/_providers.py`.
 """
-from typing import Optional
+from __future__ import annotations
 
-from napari._qt.qt_main_window import Window
-from napari._qt.qt_viewer import QtViewer
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from napari._qt.qt_main_window import Window
+    from napari._qt.qt_viewer import QtViewer
 
 
 def _provide_qt_viewer() -> Optional[QtViewer]:
