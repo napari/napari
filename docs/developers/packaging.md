@@ -144,14 +144,14 @@ signing_certificate: certificate.pfx  # path to signing certificate
 
 The main OS-agnostic keys are:
 
-* `channels`: where the packages will be downloaded from. 
-  We mainly rely on `conda-forge` for this, where `napari` is published. 
-  However, we also have `napari/label/bundle_tools_2`, where we store our `constructor` stack forks (more on this later). 
-  In nightly installers, we locally build our own development packages for `conda`, without resorting to `conda-forge`. 
-  To make use of those (which are eventually published to `napari/label/nightly`), 
+* `channels`: where the packages will be downloaded from.
+  We mainly rely on `conda-forge` for this, where `napari` is published.
+  However, we also have `napari/label/bundle_tools_2`, where we store our `constructor` stack forks (more on this later).
+  In nightly installers, we locally build our own development packages for `conda`, without resorting to `conda-forge`.
+  To make use of those (which are eventually published to `napari/label/nightly`),
   we unpack the GitHub Actions artifact in a specific location that `constructor` recognizes as a _local_ channel once indexed.
 * {{ '`extra_envs> napari-NAPARI_VER`'.replace('NAPARI_VER', napari_version) }}: the environment that will actually contain the napari installation.
-  In this key, you will find `specs`, which lists the conda packages to be installed in that environment. 
+  In this key, you will find `specs`, which lists the conda packages to be installed in that environment.
   Constructor will perform a conda solve here to retrieve the needed dependencies.
 * `menu_packages`: restrict which packages can create shortcuts. 
   We only want the shortcuts provided by `napari-menu`, and not any that could come from the (many) dependencies of napari.
