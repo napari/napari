@@ -139,7 +139,7 @@ The **canvas** is in the center of the viewer and contains the visual display of
 
 Layers are one of the basic napari objects. There are different layer types for `Image`, `Points`, `Shapes`, and other data types. They can be added to the viewer either programmatically or through the GUI. Once added, they populate the layer list located on the bottom left side of the canvas.
 
-The layer list contains one widget for each of the layers that have been added to the viewer and includes a `thumbnail` that shows a miniaturized version of the currently viewed data, a `name` that is an editable text box, a `visibility` button (eye icon) that can be toggled on or off to show or hide the layer, and an `icon` for the layer type. Note that you can Option/Alt-click on the `visibility` button to show *just* that one layer, hiding all others. If you then Option/Alt-click on the `visibility` button of a layer a second time, the visibility state of all layers will be restored.
+The layer list contains one widget for each of the layers that have been added to the viewer and includes a `thumbnail` that shows a miniaturized version of the currently viewed data, a `name` that is an editable text box, a `visibility` button (eye icon) that can be toggled on or off to show or hide the layer, and an `icon` for the layer type.
 
 Adding the following three image layers using the code below adds three-layer widgets to the layer list as follows:
 
