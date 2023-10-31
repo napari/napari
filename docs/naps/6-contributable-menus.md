@@ -69,10 +69,10 @@ not within scope for this NAP, but will be made available to users via a command
 
 ### What is a Menu Contribution?
 
-A `MenuItem` contribution in the [`npe2` manifest](https://github.com/napari/npe2/blob/main/npe2/manifest/contributions/_menus.py) 
-adds a new item to one of the `napari` menus (defined by an ID). When this item is clicked, 
-the associated `command` is executed. Additionally, `enablement` clauses can be defined 
-that control when this menu item is available for clicking and when it is disabled. Similarly, 
+A `MenuItem` contribution in the [`npe2` manifest](https://github.com/napari/npe2/blob/main/npe2/manifest/contributions/_menus.py)
+adds a new item to one of the `napari` menus (defined by an ID). When this item is clicked,
+the associated `command` is executed. Additionally, `enablement` clauses can be defined
+that control when this menu item is available for clicking and when it is disabled. Similarly,
 a `when` clause can be used to control whether the menu item is visible in the menu at all.
 
 In addition to the menu items themselves, `Submenu` contributions can also be defined,
@@ -118,7 +118,7 @@ This NAP proposes new menu IDs and new top level menus to open for contribution.
 `MenuItem` contributions can be thought of as auxiliary contributions that
 provide a dispatch mechanism for other existing contributions. Currently
 these would strictly be `widget` contributions, but this mechanism
-can easily be extended to other commands, which can take as input 
+can easily be extended to other commands, which can take as input
 `napari` objects like specific layers, or the `Viewer`, and produce
 output the `Viewer` uses - currently this would be new layers.
 
@@ -240,7 +240,7 @@ Layers
 Acquisition
 ```
 
-As a case study, we take four plugins offering between 9 and 14 widget contributions and arrange their widgets in these menus: 
+As a case study, we take four plugins offering between 9 and 14 widget contributions and arrange their widgets in these menus:
 `empanada-napari`, `napari-stracking`, `napari-mm3` and `napari-clemreg`. Where a plugin's widgets don't
 naturally fit into one of the proposed menus, they are left in the plugin's own submenu.
 Note that we have arranged these widgets purely based on title and cursory inspection of the documentation, 
