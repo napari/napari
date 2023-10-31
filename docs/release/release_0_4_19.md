@@ -16,9 +16,9 @@ This release is mostly a bug fix release. We aim for the next release to be 0.5.
 
 Highlights in `v0.4.19`:
 
-The removal of public access to `viewer.window.qt_viewer` was postponed to `v0.6.0` ([napari/napari/#6283](https://github.com/napari/napari/pull/6283)). If you're interested in some feature that's now hidden behind private or deprecated API, please make an issue on the napari repo requesting the feature to be exposed!
+The removal of public access to `viewer.window.qt_viewer` has been postponed to `v0.6.0` ([napari/napari/#6283](https://github.com/napari/napari/pull/6283)). If you're interested in some feature that's currently behind private or deprecated API, please make an issue on the napari repo requesting the feature to be exposed!
 
-Napari is now pydantic 2 compatible. At this moment we are using `pydantic.v1` to achieve this. In this release the bundle will be shipped with pydantic v1, but
+napari is now pydantic 2 compatible. At this moment we are using `pydantic.v1` to achieve this. Additionally, for this release, the napari conda bundle will be shipped with pydantic v1, but
 we expect that in the next release we will ship the bundle with pydantic v2.
 Please, if you are a plugin developer and your plugin uses pydantic, ensure 
 that it is compatible with pydantic v2 ([napari/napari/#6358](https://github.com/napari/napari/pull/6358)).
@@ -75,6 +75,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Fix Python 3.11 StrEnum Compatibility ([napari/napari/#6242](https://github.com/napari/napari/pull/6242))
 - FIX add `changing` event to `EventedDict` ([napari/napari/#6268](https://github.com/napari/napari/pull/6268))
 - Restore default color support for direct color mode in Labels layer ([napari/napari/#6311](https://github.com/napari/napari/pull/6311))
+- Bugfix: Account for multiscale for labels in 3d ([napari/napari/#6317](https://github.com/napari/napari/pull/6317))
 - Update example scripts (magicgui with threads) ([napari/napari/#6353](https://github.com/napari/napari/pull/6353))
 - Exclude the loaded property when linking two layers ([napari/napari/#6377](https://github.com/napari/napari/pull/6377))
 
@@ -96,13 +97,19 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Update README.md for conda install change ([napari/napari/#6123](https://github.com/napari/napari/pull/6123))
 - Add 0.4.19 release notes ([napari/napari/#6376](https://github.com/napari/napari/pull/6376))
 - Update docs contribution guide for two-repo setup ([napari/docs/#5](https://github.com/napari/docs/pull/5))
+- Improve makefile ([napari/docs/#41](https://github.com/napari/docs/pull/41))
 - add foundation grant onboarding workshop ([napari/docs/#55](https://github.com/napari/docs/pull/55))
+- Add 'html-live' make action to support live reload workflows ([napari/docs/#75](https://github.com/napari/docs/pull/75))
 - Fixes formatting for the contributing documentation section ([napari/docs/#79](https://github.com/napari/docs/pull/79))
 - Move napari workshop template link to top of page ([napari/docs/#90](https://github.com/napari/docs/pull/90))
+- Explain how to add new examples to the gallery ([napari/docs/#137](https://github.com/napari/docs/pull/137))
+- Add instructions on how to use docs-xvfb ([napari/docs/#138](https://github.com/napari/docs/pull/138))
+- Add more information to the documentation contribution guide ([napari/docs/#157](https://github.com/napari/docs/pull/157))
 - Add instructions to build napari docs on Windows ([napari/docs/#158](https://github.com/napari/docs/pull/158))
 - Fix typo of points instead of shapes ([napari/docs/#195](https://github.com/napari/docs/pull/195))
 - Improve titles of fundamentals tutorials ([napari/docs/#196](https://github.com/napari/docs/pull/196))
 - NAP 7: Key Binding Dispatch ([napari/docs/#200](https://github.com/napari/docs/pull/200))
+- Update installation instructions for the new conda-forge packages and other changes in our packaging infra ([napari/docs/#202](https://github.com/napari/docs/pull/202))
 - make Talley emeritus SC ([napari/docs/#204](https://github.com/napari/docs/pull/204))
 - Use napari_scraper instead of qtgallery ([napari/docs/#207](https://github.com/napari/docs/pull/207))
 - Move contributing resources to top-level navbar ([napari/docs/#208](https://github.com/napari/docs/pull/208))
@@ -110,13 +117,17 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Fix getting started in napari linking to the unittest getting started page ([napari/docs/#217](https://github.com/napari/docs/pull/217))
 - Update core developer list ([napari/docs/#219](https://github.com/napari/docs/pull/219))
 - Add note on milestones for PRs ([napari/docs/#221](https://github.com/napari/docs/pull/221))
+- Add nap for telemetry ([napari/docs/#226](https://github.com/napari/docs/pull/226))
 - Fix titles on Getting Started section of user guide ([napari/docs/#228](https://github.com/napari/docs/pull/228))
 - Update Kyle's tag on the core devs page ([napari/docs/#232](https://github.com/napari/docs/pull/232))
+- DOC Minor fixes to nap 6 doc ([napari/docs/#233](https://github.com/napari/docs/pull/233))
 - Update ndisplay title ([napari/docs/#235](https://github.com/napari/docs/pull/235))
 - Remove sub-sub section heading from rendering guide ([napari/docs/#236](https://github.com/napari/docs/pull/236))
 - Update selection instructions in Points tutorial for Shift-A keybinding ([napari/docs/#238](https://github.com/napari/docs/pull/238))
 - fix outdated dimension sliders documentation ([napari/docs/#241](https://github.com/napari/docs/pull/241))
 - Update napari-workshops.md ([napari/docs/#243](https://github.com/napari/docs/pull/243))
+- [Fix error] Image layers can't have converted data type using contextual menu, only Labels ([napari/docs/#252](https://github.com/napari/docs/pull/252))
+- Installation guide: Mention slow first launch time ([napari/docs/#253](https://github.com/napari/docs/pull/253))
 
 ## Other Pull Requests
 
@@ -178,14 +189,17 @@ If you have any questions or suggestions regarding napari core, for example on h
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
 
 
-## 11 docs authors added to this release (alphabetical)
+## 14 docs authors added to this release (alphabetical)
 
 - [Ashley Anderson](https://github.com/napari/docs/commits?author=aganders3) - @aganders3
 - [chili-chiu](https://github.com/napari/docs/commits?author=chili-chiu) - @chili-chiu
 - [David Stansby](https://github.com/napari/docs/commits?author=dstansby) - @dstansby
 - [dgmccart](https://github.com/napari/docs/commits?author=dgmccart) - @dgmccart
+- [Grzegorz Bokota](https://github.com/napari/docs/commits?author=Czaki) - @Czaki
+- [Jaime Rodríguez-Guerra](https://github.com/napari/docs/commits?author=jaimergp) - @jaimergp
 - [Juan Nunez-Iglesias](https://github.com/napari/docs/commits?author=jni) - @jni
 - [Kira Evans](https://github.com/napari/docs/commits?author=kne42) - @kne42
+- [Lucy Liu](https://github.com/napari/docs/commits?author=lucyleeow) - @lucyleeow
 - [Melissa Weber Mendonça](https://github.com/napari/docs/commits?author=melissawm) - @melissawm
 - [Peter Sobolewski](https://github.com/napari/docs/commits?author=psobolewskiPhD) - @psobolewskiPhD
 - [Sean Martin](https://github.com/napari/docs/commits?author=seankmartin) - @seankmartin
@@ -193,12 +207,14 @@ If you have any questions or suggestions regarding napari core, for example on h
 - [Wouter-Michiel Vierdag](https://github.com/napari/docs/commits?author=melonora) - @melonora
 
 
-## 13 docs reviewers added to this release (alphabetical)
+## 15 docs reviewers added to this release (alphabetical)
 
 - [Andrew Sweet](https://github.com/napari/docs/commits?author=andy-sweet) - @andy-sweet
 - [David Stansby](https://github.com/napari/docs/commits?author=dstansby) - @dstansby
 - [Draga Doncila Pop](https://github.com/napari/docs/commits?author=DragaDoncila) - @DragaDoncila
+- [Egor Panfilov](https://github.com/napari/docs/commits?author=soupault) - @soupault
 - [Grzegorz Bokota](https://github.com/napari/docs/commits?author=Czaki) - @Czaki
+- [Jaime Rodríguez-Guerra](https://github.com/napari/docs/commits?author=jaimergp) - @jaimergp
 - [Juan Nunez-Iglesias](https://github.com/napari/docs/commits?author=jni) - @jni
 - [Kira Evans](https://github.com/napari/docs/commits?author=kne42) - @kne42
 - [Lorenzo Gaifas](https://github.com/napari/docs/commits?author=brisvag) - @brisvag
