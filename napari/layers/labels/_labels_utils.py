@@ -220,7 +220,7 @@ def get_contours(labels, thickness: int, background_label: int):
 
     Returns
     -------
-        A new label image in which only the boundaries of the input image are kept.
+    A new label image in which only the boundaries of the input image are kept.
     """
     struct_elem = ndi.generate_binary_structure(labels.ndim, 1)
 
