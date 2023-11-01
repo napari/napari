@@ -31,7 +31,7 @@ def rename_argument(
         warnings.warn(
             trans._(
                 "The since_version argument was added in napari 0.4.18 and will be mandatory since 0.6.0 release.",
-                deferred=True
+                deferred=True,
             ),
             stacklevel=2,
             category=FutureWarning,
@@ -104,7 +104,11 @@ def add_deprecated_property(
 
     if not hasattr(obj, new_name):
         raise RuntimeError(
-            trans._("{new_name} property must exist.", deferred=True, new_name=new_name)
+            trans._(
+                "{new_name} property must exist.",
+                deferred=True,
+                new_name=new_name,
+            )
         )
 
     name = f"{obj.__name__}.{previous_name}"
