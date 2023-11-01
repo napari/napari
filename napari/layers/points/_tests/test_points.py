@@ -1009,7 +1009,9 @@ def test_border_width_types(border_width):
     shape = (5, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Points(data, border_width=border_width, border_width_is_relative=False)
+    layer = Points(
+        data, border_width=border_width, border_width_is_relative=False
+    )
     np.testing.assert_array_equal(layer.border_width, border_width)
 
 

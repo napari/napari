@@ -57,8 +57,7 @@ from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import project_points_onto_plane, rotate_points
-from napari.utils.events.migrations import deprecation_warning_event
-from napari.utils.migrations import add_deprecated_property, rename_argument
+from napari.utils.migrations import rename_argument
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
@@ -337,6 +336,7 @@ class Points(Layer):
     # The max number of points that will ever be used to render the thumbnail
     # If more points are present then they are randomly subsampled
     _max_points_thumbnail = 1024
+
     @rename_argument(
         "edge_width", "border_width", since_version="0.5.0", version="0.6.0"
     )
@@ -1030,7 +1030,9 @@ class Points(Layer):
         return self._border_width
 
     @border_width.setter
-    def border_width(self, border_width: Union[float, np.ndarray, list]) -> None:
+    def border_width(
+        self, border_width: Union[float, np.ndarray, list]
+    ) -> None:
         # broadcast to np.array
         border_width = np.broadcast_to(border_width, self.data.shape[0]).copy()
 
@@ -1413,7 +1415,9 @@ class Points(Layer):
         index = list(self._selected_data)
         with self.block_update_properties():
             if (
-                unique_border_color := _unique_element(self.border_color[index])
+                unique_border_color := _unique_element(
+                    self.border_color[index]
+                )
             ) is not None:
                 self.current_border_color = unique_border_color
 
@@ -1426,7 +1430,9 @@ class Points(Layer):
                 self.current_size = unique_size
 
             if (
-                unique_border_width := _unique_element(self.border_width[index])
+                unique_border_width := _unique_element(
+                    self.border_width[index]
+                )
             ) is not None:
                 self.current_border_width = unique_border_width
             if (

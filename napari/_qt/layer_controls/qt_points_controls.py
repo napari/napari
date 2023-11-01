@@ -127,7 +127,9 @@ class QtPointsControls(QtLayerControls):
             tooltip=trans._('click to set current border color'),
         )
         self.faceColorEdit.color_changed.connect(self.changeCurrentFaceColor)
-        self.borderColorEdit.color_changed.connect(self.changeCurrentBorderColor)
+        self.borderColorEdit.color_changed.connect(
+            self.changeCurrentBorderColor
+        )
 
         sym_cb = QComboBox()
         sym_cb.setToolTip(

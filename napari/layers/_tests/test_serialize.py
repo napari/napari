@@ -3,7 +3,11 @@ import inspect
 import numpy as np
 import pytest
 
-from napari._tests.utils import are_objects_equal, count_warning_events, layer_test_data
+from napari._tests.utils import (
+    are_objects_equal,
+    count_warning_events,
+    layer_test_data,
+)
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)

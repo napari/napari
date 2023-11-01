@@ -18,10 +18,14 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.layer.events.symbol.connect(self._on_data_change)
         self.layer.events.border_width.connect(self._on_data_change)
-        self.layer.events.border_width_is_relative.connect(self._on_data_change)
+        self.layer.events.border_width_is_relative.connect(
+            self._on_data_change
+        )
         self.layer.events.border_color.connect(self._on_data_change)
         self.layer._border.events.colors.connect(self._on_data_change)
-        self.layer._border.events.color_properties.connect(self._on_data_change)
+        self.layer._border.events.color_properties.connect(
+            self._on_data_change
+        )
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer._face.events.colors.connect(self._on_data_change)
         self.layer._face.events.color_properties.connect(self._on_data_change)
@@ -43,9 +47,9 @@ class VispyPointsLayer(VispyBaseLayer):
             # always pass one invisible point to avoid issues
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = np.zeros(1)
-            edge_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
+            np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
             face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
-            edge_width = np.zeros(1)
+            np.zeros(1)
             symbol = ['o']
         else:
             data = self.layer._view_data
