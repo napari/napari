@@ -17,11 +17,11 @@ class VispyPointsLayer(VispyBaseLayer):
         super().__init__(layer, node)
 
         self.layer.events.symbol.connect(self._on_data_change)
-        self.layer.events.edge_width.connect(self._on_data_change)
-        self.layer.events.edge_width_is_relative.connect(self._on_data_change)
-        self.layer.events.edge_color.connect(self._on_data_change)
-        self.layer._edge.events.colors.connect(self._on_data_change)
-        self.layer._edge.events.color_properties.connect(self._on_data_change)
+        self.layer.events.border_width.connect(self._on_data_change)
+        self.layer.events.border_width_is_relative.connect(self._on_data_change)
+        self.layer.events.border_color.connect(self._on_data_change)
+        self.layer._border.events.colors.connect(self._on_data_change)
+        self.layer._border.events.color_properties.connect(self._on_data_change)
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer._face.events.colors.connect(self._on_data_change)
         self.layer._face.events.color_properties.connect(self._on_data_change)
@@ -50,9 +50,9 @@ class VispyPointsLayer(VispyBaseLayer):
         else:
             data = self.layer._view_data
             size = self.layer._view_size
-            edge_color = self.layer._view_edge_color
+            border_color = self.layer._view_border_color
             face_color = self.layer._view_face_color
-            edge_width = self.layer._view_edge_width
+            border_width = self.layer._view_border_width
             symbol = [str(x) for x in self.layer._view_symbol]
 
         set_data = self.node._subvisuals[0].set_data
@@ -61,23 +61,23 @@ class VispyPointsLayer(VispyBaseLayer):
         scale = self.layer.scale[-1]
 
         if self.layer.edge_width_is_relative:
-            edge_kw = {
-                'edge_width': None,
-                'edge_width_rel': edge_width,
+            border_kw = {
+                'border_width': None,
+                'border_width_rel': border_width,
             }
         else:
-            edge_kw = {
-                'edge_width': edge_width * scale,
-                'edge_width_rel': None,
+            border_kw = {
+                'border_width': border_width * scale,
+                'border_width_rel': None,
             }
 
         set_data(
             data[:, ::-1],
             size=size * scale,
             symbol=symbol,
-            edge_color=edge_color,
+            edge_color=border_color,
             face_color=face_color,
-            **edge_kw,
+            **border_kw,
         )
 
         self.reset()
@@ -90,12 +90,12 @@ class VispyPointsLayer(VispyBaseLayer):
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             size = self.layer._view_size[self.layer._highlight_index]
-            edge_width = self.layer._view_edge_width[
+            border_width = self.layer._view_border_width[
                 self.layer._highlight_index
             ]
-            if self.layer.edge_width_is_relative:
-                edge_width = (
-                    edge_width
+            if self.layer.border_width_is_relative:
+                border_width = (
+                    border_width
                     * self.layer._view_size[self.layer._highlight_index][-1]
                 )
             symbol = self.layer._view_symbol[self.layer._highlight_index]
@@ -103,7 +103,7 @@ class VispyPointsLayer(VispyBaseLayer):
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = 0
             symbol = ['o']
-            edge_width = np.array([0])
+            border_width = np.array([0])
 
         scale = self.layer.scale[-1]
         scaled_highlight = (
@@ -112,7 +112,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node._subvisuals[1].set_data(
             data[:, ::-1],
-            size=(size + edge_width) * scale,
+            size=(size + border_width) * scale,
             symbol=symbol,
             edge_width=scaled_highlight * 2,
             edge_color=self._highlight_color,

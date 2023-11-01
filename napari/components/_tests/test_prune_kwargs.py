@@ -7,6 +7,7 @@ TEST_KWARGS = {
     'blending': 'translucent',
     'num_colors': 10,
     'edge_color': 'red',
+    'border_color': 'blue',
     'z_index': 20,
     'edge_width': 2,
     'face_color': 'white',
@@ -40,8 +41,7 @@ EXPECTATIONS = [
         {
             'scale': (0.75, 1),
             'blending': 'translucent',
-            'edge_color': 'red',
-            'edge_width': 2,
+            'border_color': 'blue',
             'face_color': 'white',
             'name': 'name',
         },
