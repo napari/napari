@@ -64,7 +64,7 @@ class VispyPointsLayer(VispyBaseLayer):
         # use only last dimension to scale point sizes, see #5582
         scale = self.layer.scale[-1]
 
-        if self.layer.edge_width_is_relative:
+        if self.layer.border_width_is_relative:
             border_kw = {
                 'border_width': None,
                 'border_width_rel': border_width,
