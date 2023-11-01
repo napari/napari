@@ -405,7 +405,6 @@ class ShortcutEditor(QWidget):
                 action_manager._shortcuts.get(current_action, [])
             )
             for mod in {"Shift", "Ctrl", "Alt", "Cmd", "Super", 'Meta'}:
-                # we want to prevent multiple modifiers but still allow single modifiers.
                 if new_shortcut.endswith('-' + mod):
                     self._show_bind_shortcut_error(
                         current_action,
@@ -656,6 +655,8 @@ class EditorWidget(QLineEdit):
             Qt.Key.Key_Enter,
         }:
             # Do not allow user to set these keys as shortcut.
+            # Use them as a save trigger for modifier only shortcuts.
+            self.clearFocus()
             return
 
         # Translate key value to key string.
