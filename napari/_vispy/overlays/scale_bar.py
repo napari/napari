@@ -28,7 +28,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # need to change from defaults because the anchor is in the center
         self.y_offset = 20
         self.y_size = 5
-
+        self.node.events.parent_change.connect(self._connect_resize)
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_data_change)
         self.overlay.events.color.connect(self._on_data_change)
@@ -36,11 +36,16 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.font_size.connect(self._on_text_change)
         self.overlay.events.ticks.connect(self._on_data_change)
         self.overlay.events.unit.connect(self._on_unit_change)
-
         self.viewer.events.theme.connect(self._on_data_change)
         self.viewer.camera.events.zoom.connect(self._on_zoom_change)
 
         self.reset()
+
+    def _connect_resize(self, event):
+        if event.new and self.node.canvas:
+            event.new.canvas.events.resize.connect(
+                self._scale_target_length_to_canvas
+            )
 
     def _on_unit_change(self):
         self._unit = get_unit_registry()(self.overlay.unit)
@@ -101,7 +106,6 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_zoom_change(self, *, force: bool = False):
         """Update axes length based on zoom scale."""
-
         # If scale has not changed, do not redraw
         scale = 1 / self.viewer.camera.zoom
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4 and not force:
@@ -162,6 +166,10 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_text_change(self):
         """Update text information"""
         self.node.text.font_size = self.overlay.font_size
+
+    def _scale_target_length_to_canvas(self, event):
+        self._target_length = int(event.source.size[0] / 5)
+        self._on_zoom_change(force=True)
 
     def reset(self):
         super().reset()

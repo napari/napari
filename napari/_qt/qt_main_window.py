@@ -80,7 +80,7 @@ from napari.utils.misc import (
     in_python_repl,
     running_as_constructor_app,
 )
-from napari.utils.notifications import Notification
+from napari.utils.notifications import Notification, show_info
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
@@ -1420,7 +1420,12 @@ class Window:
         self._qt_window.restart()
 
     def _screenshot(
-        self, size=None, scale=None, flash=True, canvas_only=False
+        self,
+        size=None,
+        scale=None,
+        flash=True,
+        canvas_only=True,
+        fit_to_data=False,
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
@@ -1439,6 +1444,9 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
             By default, True.
+        fit_to_data: bool
+            Flag to indicate whether the screenshot should be tightly bound around the data visualized
+            in the viewer.
 
         Returns
         -------
@@ -1446,9 +1454,29 @@ class Window:
         """
         from napari._qt.utils import add_flash_animation
 
+        canvas = self._qt_viewer.canvas
+        prev_size = canvas.size
+        if fit_to_data:
+            ndisplay = self._qt_viewer.viewer.dims.ndisplay
+            camera = self._qt_viewer.viewer.camera
+
+            old_center = camera.center
+            old_zoom = camera.zoom
+
+            if ndisplay == 3:
+                show_info(
+                    "fit_to_data currently not implemented for the case of ndisplay == 3"
+                )
+
+            else:
+                self._qt_viewer.viewer.reset_view()
+
+                # Size the canvas to the shape of the data
+                canvas.size = self._qt_viewer.viewer.layers.extent.world[1][
+                    -ndisplay:
+                ].astype(int)
+                self._qt_viewer.viewer.reset_view(screenshot=True)
         if canvas_only:
-            canvas = self._qt_viewer.canvas
-            prev_size = canvas.size
             if size is not None:
                 if len(size) != 2:
                     raise ValueError(
@@ -1472,16 +1500,29 @@ class Window:
                     add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
                 # make sure we always go back to the right canvas size
-                if size is not None or scale is not None:
+                if size is not None or scale is not None or fit_to_data:
                     canvas.size = prev_size
+                if fit_to_data:
+                    camera.zoom = old_zoom
+                    camera.center = old_center
         else:
             img = self._qt_window.grab().toImage()
             if flash:
                 add_flash_animation(self._qt_window)
+            if fit_to_data:
+                canvas.size = prev_size
+                camera.zoom = old_zoom
+                camera.center = old_center
         return img
 
     def screenshot(
-        self, path=None, size=None, scale=None, flash=True, canvas_only=False
+        self,
+        path=None,
+        size=None,
+        scale=None,
+        flash=True,
+        canvas_only=True,
+        fit_to_data=False,
     ):
         """Take currently displayed viewer and convert to an image array.
 
@@ -1502,6 +1543,9 @@ class Window:
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
             By default, True.
+        fit_to_data: bool
+            Flag to indicate whether the screenshot should be tightly bound around the data visualized
+            in the viewer.
 
         Returns
         -------
@@ -1510,7 +1554,9 @@ class Window:
             upper-left corner of the rendered region.
         """
 
-        img = QImg2array(self._screenshot(size, scale, flash, canvas_only))
+        img = QImg2array(
+            self._screenshot(size, scale, flash, canvas_only, fit_to_data)
+        )
         if path is not None:
             imsave(path, img)
         return img
