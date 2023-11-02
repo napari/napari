@@ -4,7 +4,6 @@ from collections import OrderedDict
 from typing import Optional
 
 from app_model.backends.qt import (
-    qkey2modelkey,
     qkeysequence2modelkeybinding,
 )
 from qtpy.QtCore import QEvent, QPoint, Qt, Signal
@@ -400,11 +399,12 @@ class ShortcutEditor(QWidget):
             # get the current action name
             current_action = self._table.item(row, self._action_col).text()
 
-            # get the original shortcutS
+            # get the original shortcuts
             current_shortcuts = list(
                 action_manager._shortcuts.get(current_action, [])
             )
             for mod in {"Shift", "Ctrl", "Alt", "Cmd", "Super", 'Meta'}:
+                # we want to prevent multiple modifiers but still allow single modifiers.
                 if new_shortcut.endswith('-' + mod):
                     self._show_bind_shortcut_error(
                         current_action,
@@ -632,6 +632,7 @@ class EditorWidget(QLineEdit):
         if (
             event_key in {Qt.Key.Key_Delete, Qt.Key.Key_Backspace}
             and self.text() != ''
+            and self.hasSelectedText()
         ):
             # Allow user to delete shortcut.
             self.setText('')
@@ -645,8 +646,6 @@ class EditorWidget(QLineEdit):
         ):
             self._handleEditModifiersOnly(event)
             return
-        if event_key == Qt.Key.Key_Delete:
-            self.setText(Shortcut(qkey2modelkey(event_key)).platform)
 
         if event_key in {
             Qt.Key.Key_Return,
