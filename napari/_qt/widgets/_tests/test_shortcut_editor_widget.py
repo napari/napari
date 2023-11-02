@@ -84,20 +84,49 @@ def test_restore_defaults(shortcut_editor_widget):
     "key, modifier, key_symbols",
     [
         (
-            "U",
+            Qt.Key.Key_U,
             Qt.KeyboardModifier.MetaModifier
             if sys.platform == "darwin"
             else Qt.KeyboardModifier.ControlModifier,
             [KEY_SYMBOLS["Ctrl"], "U"],
         ),
         (
-            "Y",
+            Qt.Key.Key_Y,
             Qt.KeyboardModifier.MetaModifier
             | Qt.KeyboardModifier.ShiftModifier
             if sys.platform == "darwin"
             else Qt.KeyboardModifier.ControlModifier
             | Qt.KeyboardModifier.ShiftModifier,
             [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Shift"], "Y"],
+        ),
+        (
+            Qt.Key.Key_Backspace,
+            Qt.KeyboardModifier.MetaModifier
+            if sys.platform == "darwin"
+            else Qt.KeyboardModifier.ControlModifier,
+            [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Backspace"]],
+        ),
+        (
+            Qt.Key.Key_Delete,
+            Qt.KeyboardModifier.MetaModifier
+            | Qt.KeyboardModifier.ShiftModifier
+            if sys.platform == "darwin"
+            else Qt.KeyboardModifier.ControlModifier
+            | Qt.KeyboardModifier.ShiftModifier,
+            [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Shift"], KEY_SYMBOLS["Delete"]],
+        ),
+        (
+            Qt.Key.Key_Backspace,
+            Qt.KeyboardModifier.MetaModifier
+            | Qt.KeyboardModifier.ShiftModifier
+            if sys.platform == "darwin"
+            else Qt.KeyboardModifier.ControlModifier
+            | Qt.KeyboardModifier.ShiftModifier,
+            [
+                KEY_SYMBOLS["Ctrl"],
+                KEY_SYMBOLS["Shift"],
+                KEY_SYMBOLS["Backspace"],
+            ],
         ),
     ],
 )
@@ -118,7 +147,7 @@ def test_keybinding_with_modifiers(
         widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
     )
     qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
-    qtbot.keyClicks(QApplication.focusWidget(), key, modifier=modifier)
+    qtbot.keyClick(QApplication.focusWidget(), key, modifier=modifier)
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
