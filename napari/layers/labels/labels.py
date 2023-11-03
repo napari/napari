@@ -941,6 +941,50 @@ class Labels(_ImageBase):
         self.events.labels_update(data=colors_sliced, offset=offset)
         self._updated_slice = None
 
+    def _calculate_contour(
+        self, labels: np.ndarray, data_slice: Tuple[slice, ...]
+    ) -> Optional[np.ndarray]:
+        """Calculate the contour of a given label array within the specified data slice.
+
+        Parameters
+        ----------
+        labels : np.ndarray
+            The label array.
+        data_slice : Tuple[slice, ...]
+            The slice of the label array on which to calculate the contour.
+
+        Returns
+        -------
+        Optional[np.ndarray]
+            The calculated contour as a boolean mask array.
+            Returns None if the contour parameter is less than 1,
+            or if the label array has more than 2 dimensions.
+        """
+        if self.contour < 1:
+            return None
+        if labels.ndim > 2:
+            warnings.warn(
+                trans._(
+                    "Contours are not displayed during 3D rendering",
+                    deferred=True,
+                )
+            )
+            return None
+
+        expanded_slice = expand_slice(data_slice, labels.shape, 1)
+        sliced_labels = get_contours(
+            labels[expanded_slice],
+            self.contour,
+            self._background_label,
+        )
+
+        # Remove the latest one-pixel border from the result
+        delta_slice = tuple(
+            slice(s1.start - s2.start, s1.stop - s2.start)
+            for s1, s2 in zip(data_slice, expanded_slice)
+        )
+        return sliced_labels[delta_slice]
+
     def _raw_to_displayed(
         self, raw, data_slice: Optional[Tuple[slice, ...]] = None
     ):
@@ -967,34 +1011,10 @@ class Labels(_ImageBase):
             data_slice = tuple(slice(0, size) for size in raw.shape)
 
         labels = raw  # for readability
-        sliced_labels = None
+
+        sliced_labels = self._calculate_contour(labels, data_slice)
 
         # lookup function -> self._as_type
-        if self.contour > 0:
-            if labels.ndim == 2:
-                # Add one more pixel for the correct borders computation
-                expanded_slice = expand_slice(data_slice, labels.shape, 1)
-                sliced_labels = get_contours(
-                    labels[expanded_slice],
-                    self.contour,
-                    self._background_label,
-                )
-
-                # Remove the latest one-pixel border from the result
-                delta_slice = tuple(
-                    [
-                        slice(s1.start - s2.start, s1.stop - s2.start)
-                        for s1, s2 in zip(data_slice, expanded_slice)
-                    ]
-                )
-                sliced_labels = sliced_labels[delta_slice]
-            elif labels.ndim > 2:
-                warnings.warn(
-                    trans._(
-                        "Contours are not displayed during 3D rendering",
-                        deferred=True,
-                    )
-                )
 
         if sliced_labels is None:
             sliced_labels = labels[data_slice]
