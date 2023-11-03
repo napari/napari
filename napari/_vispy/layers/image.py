@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from typing import Optional
 
@@ -110,7 +112,11 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
         self.node = self._layer_node.get_node(ndisplay)
 
         if data is None:
-            data = np.zeros((1,) * ndisplay, dtype=np.float32)
+            texture_format = self.node._texture.internalformat
+            data = np.zeros(
+                (1,) * ndisplay,
+                dtype=get_dtype_from_vispy_texture_format(texture_format),
+            )
 
         self.node.visible = not self.layer._slice.empty and self.layer.visible
 
@@ -295,3 +301,26 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]
         return data
+
+
+_FORMAT_DICT = {
+    "r8": np.uint8,
+    "r16": np.uint16,
+    "r32f": np.float32,
+}
+
+
+def get_dtype_from_vispy_texture_format(format_str: str) -> np.dtype:
+    """Get the numpy dtype from a vispy texture format string.
+
+    Parameters
+    ----------
+    format_str : str
+        The vispy texture format string.
+
+    Returns
+    -------
+    dtype : numpy.dtype
+        The numpy dtype corresponding to the vispy texture format string.
+    """
+    return _FORMAT_DICT.get(format_str, np.float32)
