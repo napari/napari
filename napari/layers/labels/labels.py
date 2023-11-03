@@ -985,6 +985,16 @@ class Labels(_ImageBase):
         )
         return sliced_labels[delta_slice]
 
+    def _setup_cache(self, labels):
+        if self._cached_labels is not None:
+            return
+
+        self._cached_labels = np.zeros_like(labels)
+        self._cached_mapped_labels = np.zeros_like(
+            labels,
+            dtype=np.float32,  # minimum_dtype_for_labels(self.num_colors)
+        )
+
     def _raw_to_displayed(
         self, raw, data_slice: Optional[Tuple[slice, ...]] = None
     ):
@@ -1009,6 +1019,8 @@ class Labels(_ImageBase):
         """
         if data_slice is None:
             data_slice = tuple(slice(0, size) for size in raw.shape)
+        else:
+            self._setup_cache(raw)
 
         labels = raw  # for readability
 
@@ -1032,12 +1044,6 @@ class Labels(_ImageBase):
             # Update the cache
             self._cached_labels[data_slice][update_mask] = labels_to_map
         else:
-            _cached_labels = np.zeros_like(labels)
-            _cached_labels[data_slice] = sliced_labels.copy()
-            self._cached_labels = _cached_labels
-            self._cached_mapped_labels = np.zeros_like(
-                labels, dtype=np.float32
-            )
             labels_to_map = sliced_labels
 
         # If there are no changes, just return the cached image
@@ -1045,13 +1051,20 @@ class Labels(_ImageBase):
             return self._cached_mapped_labels[data_slice]
 
         mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
+        # cast_labels_to_minimum_type_auto(
+        #     labels_to_map, self.num_colors
+        # )
 
-        if update_mask is not None:
-            self._cached_mapped_labels[data_slice][update_mask] = mapped_labels
-        else:
-            self._cached_mapped_labels[data_slice] = mapped_labels
+        if self._cached_labels is not None:
+            if update_mask is not None:
+                self._cached_mapped_labels[data_slice][
+                    update_mask
+                ] = mapped_labels
+            else:
+                self._cached_mapped_labels[data_slice] = mapped_labels
+            return self._cached_mapped_labels[data_slice]
 
-        return self._cached_mapped_labels[data_slice]
+        return mapped_labels
 
     def _update_thumbnail(self):
         """Update the thumbnail with current data and colormap.
