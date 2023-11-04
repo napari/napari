@@ -38,10 +38,12 @@ from napari.layers.labels._labels_mouse_bindings import (
     pick,
 )
 from napari.layers.labels._labels_utils import (
+    cast_labels_to_minimum_type_auto,
     expand_slice,
     get_contours,
     indices_in_shape,
     interpolate_coordinates,
+    minimum_dtype_for_labels,
     sphere_indices,
 )
 from napari.layers.utils.color_transformations import transform_color
@@ -528,6 +530,8 @@ class Labels(_ImageBase):
         self.colormap = label_colormap(
             num_colors, self.seed, self._background_label
         )
+        self._cached_labels = None  # invalidate the cached color mapping
+        self._cached_mapped_labels = None
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
@@ -985,14 +989,26 @@ class Labels(_ImageBase):
         )
         return sliced_labels[delta_slice]
 
+    def _get_cache_dtype(self) -> np.dtype:
+        if self.color_mode == LabelColorMode.DIRECT:
+            return np.float32
+        return minimum_dtype_for_labels(self.num_colors)
+
     def _setup_cache(self, labels):
+        """
+        Initializes the cache for the Labels layer
+
+        Parameters
+        ----------
+        labels : numpy array
+            The labels data to be cached
+        """
         if self._cached_labels is not None:
             return
 
         self._cached_labels = np.zeros_like(labels)
         self._cached_mapped_labels = np.zeros_like(
-            labels,
-            dtype=np.float32,  # minimum_dtype_for_labels(self.num_colors)
+            labels, dtype=self._get_cache_dtype()
         )
 
     def _raw_to_displayed(
@@ -1050,10 +1066,12 @@ class Labels(_ImageBase):
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
-        mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
-        # cast_labels_to_minimum_type_auto(
-        #     labels_to_map, self.num_colors
-        # )
+        if self.color_mode == LabelColorMode.AUTO:
+            mapped_labels = cast_labels_to_minimum_type_auto(
+                labels_to_map, self.num_colors
+            )
+        else:  # direct
+            mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
 
         if self._cached_labels is not None:
             if update_mask is not None:

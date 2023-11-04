@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import Tuple
 
+import numba
 import numpy as np
 from scipy import ndimage as ndi
 
@@ -205,7 +206,7 @@ def mouse_event_to_labels_coordinate(layer, event):
     return coordinates
 
 
-def get_contours(labels, thickness: int, background_label: int):
+def get_contours(labels: np.ndarray, thickness: int, background_label: int):
     """Computes the contours of a 2D label image.
 
     Parameters
@@ -243,12 +244,75 @@ def expand_slice(
 ) -> Tuple[slice, ...]:
     """Expands or shrinks a provided multi-axis slice by a given offset"""
     return tuple(
-        [
-            slice(
-                max(0, min(max_size, s.start - offset)),
-                max(0, min(max_size, s.stop + offset)),
-                s.step,
-            )
-            for s, max_size in zip(axes_slice, shape)
-        ]
+        slice(
+            max(0, min(max_size, s.start - offset)),
+            max(0, min(max_size, s.stop + offset)),
+            s.step,
+        )
+        for s, max_size in zip(axes_slice, shape)
     )
+
+
+# def cast_
+
+
+def cast_labels_to_minimum_type_auto(
+    data: np.ndarray, num_colors: int
+) -> np.ndarray:
+    """Perform modulo operation based on number of colors
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Labels data to be casted.
+    num_colors : int
+        Number of unique colors in the data.
+
+    Returns
+    -------
+    np.ndarray
+        Casted labels data.
+    """
+    dtype = minimum_dtype_for_labels(num_colors)
+
+    return _cast_labels_to_minimum_type_auto(data, num_colors, dtype)
+
+
+@numba.njit(parallel=True)
+def _cast_labels_to_minimum_type_auto(
+    data: np.ndarray, num_colors: int, dtype
+) -> np.ndarray:
+    result_array = np.zeros_like(data, dtype=dtype)
+
+    # iterate over data and calculate modulo num_colors assigning to result_array
+
+    for i in numba.prange(data.size):
+        if data.flat[i] == 0:
+            result_array.flat[i] = 0
+        else:
+            result_array.flat[i] = data.flat[i] % (num_colors - 1) + 1
+
+    return result_array
+
+
+def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
+    """Return the minimum dtype that can hold the number of colors.
+
+    Parameters
+    ----------
+    num_colors : int
+        Number of unique colors in the data.
+
+    Returns
+    -------
+    np.dtype
+        Minimum dtype that can hold the number of colors.
+    """
+    if num_colors <= np.iinfo(np.uint8).max:
+        dtype = np.uint8
+    elif num_colors <= np.iinfo(np.uint16).max:
+        dtype = np.uint16
+    else:
+        dtype = np.float32
+
+    return dtype

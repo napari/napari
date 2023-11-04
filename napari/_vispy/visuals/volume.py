@@ -1,5 +1,7 @@
 from vispy.scene.visuals import Volume as BaseVolume
 
+from napari._vispy.visuals.util import TextureMinix
+
 FUNCTION_DEFINITIONS = """
 // the tolerance for testing equality of floats with floatEqual and floatNotEqual
 const float equality_tolerance = 1e-8;
@@ -200,18 +202,7 @@ rendering_methods['iso_categorical'] = ISO_CATEGORICAL_SNIPPETS
 rendering_methods['translucent_categorical'] = TRANSLUCENT_CATEGORICAL_SNIPPETS
 
 
-class Volume(BaseVolume):
+class Volume(TextureMinix, BaseVolume):
     # add the new rendering method to the snippets dict
     _shaders = shaders
     _rendering_methods = rendering_methods
-
-    def __init__(self, *args, texture_format, **kwargs):
-        super().__init__(*args, texture_format=texture_format, **kwargs)
-        # save texture format to not depend on vispy's private api
-        self.unfreeze()
-        self._texture_format = texture_format
-        self.freeze()
-
-    @property
-    def texture_format(self):
-        return self._texture_format
