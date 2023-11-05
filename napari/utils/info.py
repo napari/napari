@@ -84,9 +84,9 @@ def sys_info(as_html=False):
         f"<b>Platform</b>: {platform.platform()}<br>"
     )
 
-    __sys_name = _sys_name()
-    if __sys_name:
-        text += f"<b>System</b>: {__sys_name}<br>"
+    sys_name_ = _sys_name()
+    if sys_name_:
+        text += f"<b>System</b>: {sys_name_}<br>"
 
     text += f"<b>Python</b>: {sys_version}<br>"
 
