@@ -115,10 +115,6 @@ def test_progress_indicator(make_napari_viewer):
         assert activity_button_shows_indicator(activity_dialog)
 
 
-@pytest.mark.skipif(
-    bool(sys.platform == 'linux'),
-    reason='need to debug sefaults with set_description',
-)
 def test_progress_set_description(make_napari_viewer):
     viewer = make_napari_viewer(show=SHOW)
 
