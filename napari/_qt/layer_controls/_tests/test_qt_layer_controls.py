@@ -190,8 +190,8 @@ def test_create_layer_controls(
 ):
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
-    if sys.platform != 'linux' and os.environ.get("CI") == "1":
-        ctrl.show()
+    # if sys.platform != 'linux' and os.environ.get("CI") == "1":
+    ctrl.show()
 
     # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
