@@ -60,6 +60,7 @@ from pytest_pretty import CustomTerminalReporter
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
+from napari.utils import action_manager
 from napari.utils.misc import ROOT_DIR
 from napari.viewer import Viewer
 
@@ -465,6 +466,11 @@ def _mock_app():
             yield app
         finally:
             Application.destroy('test_app')
+
+            for action in action_manager.action_manager._actions.values():
+                # clear cached property
+                if hasattr(action, "injected"):
+                    del action.injected
 
 
 def _get_calling_place(depth=1):

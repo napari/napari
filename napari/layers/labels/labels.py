@@ -500,11 +500,13 @@ class Labels(_ImageBase):
         self._seed_rng = seed_rng
 
         if self._seed_rng is None:
-            self.colormap = label_colormap(
+            self._random_colormap = label_colormap(
                 self.num_colors, self.seed, self._background_label
             )
+            if self.color_mode == str(LabelColorMode.AUTO):
+                self.colormap = self._random_colormap
         else:
-            self.colormap.shuffle(self._seed_rng)
+            self._random_colormap.shuffle(self._seed_rng)
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader

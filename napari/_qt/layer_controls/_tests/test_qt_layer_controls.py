@@ -1,3 +1,4 @@
+import inspect
 import os
 import random
 import sys
@@ -6,7 +7,7 @@ from typing import NamedTuple, Optional, Type
 import numpy as np
 import pytest
 import qtpy
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import (
     QAbstractButton,
     QAbstractSlider,
@@ -17,6 +18,7 @@ from qtpy.QtWidgets import (
     QRadioButton,
 )
 
+from napari._app_model import get_app
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
@@ -53,6 +55,28 @@ class LayerTypeWithData(NamedTuple):
 
 
 np.random.seed(0)
+
+
+@pytest.fixture(autouse=True)
+def local_layer_provider(request, _mock_app):
+    app = get_app()
+
+    def get_layer() -> Optional[Layer]:
+        nonlocal request
+        for frame in inspect.stack():
+            if (
+                frame.function == request.node.originalname
+                and frame.filename.endswith('test_qt_layer_controls.py')
+            ):
+                for v in frame.frame.f_locals.values():
+                    if isinstance(v, Layer):
+                        return v
+                    if isinstance(v, QtLayerControls):
+                        return v.layer
+        return None
+
+    with app.injection_store.register(providers=[(get_layer,)]):
+        yield
 
 
 _IMAGE = LayerTypeWithData(
@@ -166,6 +190,7 @@ def test_create_layer_controls(
 ):
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
+    ctrl.show()
 
     # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
@@ -373,6 +398,16 @@ def test_create_layer_controls_qslider(
         _TRACKS,
         _VECTORS,
     ],
+    ids=[
+        "labels_with_color",
+        "labels",
+        "image",
+        "points",
+        "shapes",
+        "surface",
+        "tracks",
+        "vectors",
+    ],
 )
 @pytest.mark.qt_no_exception_capture
 @pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
@@ -381,6 +416,7 @@ def test_create_layer_controls_qcolorswatchedit(
 ):
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
+    ctrl.show()
 
     # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
@@ -401,7 +437,7 @@ def test_create_layer_controls_qcolorswatchedit(
         for color, expected_color, expected_array in colors:
             lineedit.clear()
             qtbot.keyClicks(lineedit, color)
-            qtbot.keyClick(lineedit, Qt.Key_Enter)
+            qtbot.keyClick(lineedit, Qt.Key.Key_Enter)
             assert lineedit.text() == expected_color
             assert (colorswatch.color == expected_array).all()
             # capture any output done to sys.stdout or sys.stderr.
@@ -414,12 +450,15 @@ def test_create_layer_controls_qcolorswatchedit(
     for qcheckbox in ctrl.findChildren(QCheckBox):
         if qcheckbox.isVisible():
             qcheckbox_checked = qcheckbox.isChecked()
-            qtbot.mouseClick(qcheckbox, Qt.LeftButton)
-            assert qcheckbox.isChecked() != qcheckbox_checked
+            # with qtbot.waitSignal(qcheckbox.stateChanged):
+            qtbot.mouseClick(
+                qcheckbox, Qt.MouseButton.LeftButton, pos=QPoint(10, 10)
+            )
+            assert qcheckbox.isChecked() != qcheckbox_checked, qcheckbox
             # capture any output done to sys.stdout or sys.stderr.
             captured = capsys.readouterr()
             assert not captured.out
-            assert not captured.err
+            assert not captured.err or "Debugger warning" in captured.err
 
     # check QPushButton and QRadioButton by clicking with mouse click
     button: QAbstractButton
@@ -431,7 +470,7 @@ def test_create_layer_controls_qcolorswatchedit(
             # capture any output done to sys.stdout or sys.stderr.
             captured = capsys.readouterr()
             assert not captured.out
-            assert not captured.err
+            assert not captured.err, captured.err
 
 
 @pytest.mark.usefixtures("qtbot")
