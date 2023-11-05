@@ -273,9 +273,9 @@ def cast_labels_to_minimum_type_auto(
     np.ndarray
         Casted labels data.
     """
-    dtype = minimum_dtype_for_labels(num_colors)
+    dtype = minimum_dtype_for_labels(num_colors + 1)
 
-    return _cast_labels_to_minimum_type_auto(data, num_colors, dtype)
+    return _cast_labels_to_minimum_type_auto(data, num_colors + 1, dtype)
 
 
 @numba.njit(parallel=True)
@@ -287,7 +287,7 @@ def _cast_labels_to_minimum_type_auto(
     # iterate over data and calculate modulo num_colors assigning to result_array
 
     for i in numba.prange(data.size):
-        if data.flat[i] < num_colors:
+        if num_colors > data.flat[i] >= 0:
             result_array.flat[i] = data.flat[i]
         else:
             result_array.flat[i] = data.flat[i] % (num_colors - 1) + 1
@@ -309,10 +309,7 @@ def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
         Minimum dtype that can hold the number of colors.
     """
     if num_colors <= np.iinfo(np.uint8).max:
-        dtype = np.uint8
-    elif num_colors <= np.iinfo(np.uint16).max:
-        dtype = np.uint16
-    else:
-        dtype = np.float32
-
-    return dtype
+        return np.dtype(np.uint8)
+    if num_colors <= np.iinfo(np.uint16).max:
+        return np.dtype(np.uint16)
+    return np.dtype(np.float32)

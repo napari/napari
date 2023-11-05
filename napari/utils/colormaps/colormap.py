@@ -164,7 +164,15 @@ class LabelColormap(Colormap):
     def map(self, values):
         values = np.atleast_1d(values)
 
-        mapped = self.colors[np.mod(values, len(self.colors)).astype(np.int64)]
+        from napari.layers.labels._labels_utils import (
+            cast_labels_to_minimum_type_auto,
+        )
+
+        mapped = self.colors[
+            cast_labels_to_minimum_type_auto(
+                values, len(self.colors) - 1
+            ).astype(np.int64)
+        ]
 
         mapped[values == self.background_value] = 0
 

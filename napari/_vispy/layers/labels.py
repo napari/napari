@@ -486,7 +486,7 @@ class VispyLabelsLayer(VispyImageLayer):
 
         if mode == 'auto':
             dtype = minimum_dtype_for_labels(self.layer.num_colors)
-            if issubclass(dtype, np.integer):
+            if issubclass(dtype.type, np.integer):
                 scale = np.iinfo(dtype).max
             else:
                 scale = 1.0

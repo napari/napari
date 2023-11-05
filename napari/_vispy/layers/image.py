@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Optional
+from typing import Dict, Optional
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -314,15 +314,13 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
         return data
 
 
-_VISPY_FORMAT_TO_DTYPE = {
-    "r8": np.uint8,
-    "r16": np.uint16,
-    "r32f": np.float32,
+_VISPY_FORMAT_TO_DTYPE: Dict[str, np.dtype] = {
+    "r8": np.dtype(np.uint8),
+    "r16": np.dtype(np.uint16),
+    "r32f": np.dtype(np.float32),
 }
 
-_DTYPE_TO_VISPY_FORMAT = {
-    np.dtype(v): k for k, v in _VISPY_FORMAT_TO_DTYPE.items()
-}
+_DTYPE_TO_VISPY_FORMAT = {v: k for k, v in _VISPY_FORMAT_TO_DTYPE.items()}
 
 
 def get_dtype_from_vispy_texture_format(format_str: str) -> np.dtype:
@@ -338,4 +336,4 @@ def get_dtype_from_vispy_texture_format(format_str: str) -> np.dtype:
     dtype : numpy.dtype
         The numpy dtype corresponding to the vispy texture format string.
     """
-    return _VISPY_FORMAT_TO_DTYPE.get(format_str, np.float32)
+    return _VISPY_FORMAT_TO_DTYPE.get(format_str, np.dtype(np.float32))

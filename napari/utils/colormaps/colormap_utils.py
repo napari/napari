@@ -453,7 +453,7 @@ def label_colormap(
         len(control_points) - 1,
     )
 
-    colors = colors[indices][:-2]
+    colors = colors[indices][:-1]
     # here is an ugly hack to restore classical napari color order.
 
     return LabelColormap(

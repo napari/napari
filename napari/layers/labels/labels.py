@@ -310,8 +310,8 @@ class Labels(_ImageBase):
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
-        self._cached_labels: Optional[np.ndarray] = None
-        self._cached_mapped_labels: Optional[np.ndarray] = None
+        self._cached_labels = None
+        self._cached_mapped_labels = np.zeros((0, 4), dtype=np.uint8)
 
         data = self._ensure_int_labels(data)
 
@@ -992,7 +992,7 @@ class Labels(_ImageBase):
 
     def _get_cache_dtype(self) -> np.dtype:
         if self.color_mode == LabelColorMode.DIRECT:
-            return np.float32
+            return np.dtype(np.float32)
         return minimum_dtype_for_labels(self.num_colors)
 
     def _setup_cache(self, labels):
