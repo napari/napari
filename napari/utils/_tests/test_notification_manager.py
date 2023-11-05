@@ -81,7 +81,7 @@ def test_notification_manager_no_gui(monkeypatch):
         # again, pytest intercepts this, so just manually trigger:
         assert warnings.showwarning == notification_manager.receive_warning
         warnings.showwarning(
-            UserWarning('this is a warning'), UserWarning, __file__, 84
+            UserWarning('this is a warning'), UserWarning, __file__, 83
         )
         assert len(notification_manager.records) == 4
         assert store[-1].type == 'warning'
@@ -114,7 +114,7 @@ def test_notification_manager_no_gui_with_threading():
 
     def _warn():
         warnings.showwarning(
-            UserWarning('this is a warning'), UserWarning, __file__, 117
+            UserWarning('this is a warning'), UserWarning, __file__, 116
         )
 
     def _raise():
@@ -167,7 +167,7 @@ def test_notification_manager_no_warning_duplication():
             UserWarning('This is a warning'),
             category=UserWarning,
             filename=__file__,
-            lineno=170,
+            lineno=166,
         )
 
     with notification_manager:
