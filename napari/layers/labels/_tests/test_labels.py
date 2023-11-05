@@ -536,6 +536,7 @@ def test_n_edit_dimensions():
             np.zeros((9, 10), dtype=np.uint32),
         ),
     ],
+    ids=['touching objects', 'touching border', 'full array'],
 )
 def test_contour(input_data, expected_data_view):
     """Test changing contour."""
@@ -1444,7 +1445,7 @@ def test_invalidate_cache_when_change_color_mode():
     layer = Labels(data)
     layer.selected_label = 0
     gt_auto = layer._raw_to_displayed(layer._slice.image.raw)
-    assert gt_auto.dtype == np.float32
+    assert gt_auto.dtype == np.uint8
 
     layer.color_mode = 'direct'
     layer._cached_labels = None

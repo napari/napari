@@ -287,8 +287,8 @@ def _cast_labels_to_minimum_type_auto(
     # iterate over data and calculate modulo num_colors assigning to result_array
 
     for i in numba.prange(data.size):
-        if data.flat[i] == 0:
-            result_array.flat[i] = 0
+        if data.flat[i] < num_colors:
+            result_array.flat[i] = data.flat[i]
         else:
             result_array.flat[i] = data.flat[i] % (num_colors - 1) + 1
 

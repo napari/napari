@@ -941,6 +941,7 @@ class Labels(_ImageBase):
         colors_sliced = self._raw_to_displayed(
             raw_displayed, data_slice=updated_slice
         )
+        self._slice.image.view[updated_slice] = colors_sliced
 
         self.events.labels_update(data=colors_sliced, offset=offset)
         self._updated_slice = None
