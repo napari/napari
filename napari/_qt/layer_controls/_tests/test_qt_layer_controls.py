@@ -435,10 +435,14 @@ def test_create_layer_controls_qcolorswatchedit(
             ("invalid_value", "black", np.array([0.0, 0.0, 0.0, 1.0])),
         ]
         for color, expected_color, expected_array in colors:
+            prev_text = lineedit.text()
             lineedit.clear()
             qtbot.keyClicks(lineedit, color)
+            # space and backspace is workaround for a name hint
+            qtbot.keyClick(lineedit, Qt.Key.Key_Space)
+            qtbot.keyClick(lineedit, Qt.Key.Key_Backspace)
             qtbot.keyClick(lineedit, Qt.Key.Key_Enter)
-            assert lineedit.text() == expected_color
+            assert lineedit.text() == expected_color, prev_text
             assert (colorswatch.color == expected_array).all()
             # capture any output done to sys.stdout or sys.stderr.
             captured = capsys.readouterr()
