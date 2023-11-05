@@ -52,7 +52,7 @@ from napari.utils.colormaps import (
     ensure_colormap,
     label_colormap,
 )
-from napari.utils.colormaps.colormap_utils import (
+from napari.utils.colormaps.colormap import (
     cast_labels_to_minimum_type_auto,
     minimum_dtype_for_labels,
 )
