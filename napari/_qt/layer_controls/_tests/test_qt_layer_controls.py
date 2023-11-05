@@ -190,9 +190,7 @@ def test_create_layer_controls(
 ):
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
-    if not (
-        sys.platform == 'linux' and os.environ.get("CI") == "1" and qtpy.PYQT6
-    ):
+    if not (sys.platform == 'linux' and qtpy.PYQT6):
         ctrl.show()
 
     # check create widget corresponds to the expected class for each type of layer
