@@ -120,7 +120,7 @@ jobs:
           - python: 3.9
             platform: ubuntu-20.04
             backend: headless
-            coverage: no_cov
+            coverage: cov
           - python: 3.11
             platform: ubuntu-latest
             backend: pyqt6,pyside6
