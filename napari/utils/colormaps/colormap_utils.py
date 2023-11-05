@@ -3,6 +3,7 @@ from collections import OrderedDict
 from threading import Lock
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
+import numba
 import numpy as np
 import skimage.color as colorconv
 from vispy.color import (
@@ -803,3 +804,62 @@ def display_name_to_name(display_name):
     return display_name_map.get(
         display_name, next(iter(AVAILABLE_COLORMAPS.keys()))
     )
+
+
+def cast_labels_to_minimum_type_auto(
+    data: np.ndarray, num_colors: int
+) -> np.ndarray:
+    """Perform modulo operation based on number of colors
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Labels data to be casted.
+    num_colors : int
+        Number of unique colors in the data.
+
+    Returns
+    -------
+    np.ndarray
+        Casted labels data.
+    """
+    dtype = minimum_dtype_for_labels(num_colors + 1)
+
+    return _cast_labels_to_minimum_type_auto(data, num_colors + 1, dtype)
+
+
+@numba.njit(parallel=True)
+def _cast_labels_to_minimum_type_auto(
+    data: np.ndarray, num_colors: int, dtype
+) -> np.ndarray:
+    result_array = np.zeros_like(data, dtype=dtype)
+
+    # iterate over data and calculate modulo num_colors assigning to result_array
+
+    for i in numba.prange(data.size):
+        if num_colors > data.flat[i] >= 0:
+            result_array.flat[i] = data.flat[i]
+        else:
+            result_array.flat[i] = data.flat[i] % (num_colors - 1) + 1
+
+    return result_array
+
+
+def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
+    """Return the minimum dtype that can hold the number of colors.
+
+    Parameters
+    ----------
+    num_colors : int
+        Number of unique colors in the data.
+
+    Returns
+    -------
+    np.dtype
+        Minimum dtype that can hold the number of colors.
+    """
+    if num_colors <= np.iinfo(np.uint8).max:
+        return np.dtype(np.uint8)
+    if num_colors <= np.iinfo(np.uint16).max:
+        return np.dtype(np.uint16)
+    return np.dtype(np.float32)

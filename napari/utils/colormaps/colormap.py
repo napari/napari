@@ -6,6 +6,9 @@ import numpy as np
 from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
 from napari.utils.colormaps.colorbars import make_colorbar
+from napari.utils.colormaps.colormap_utils import (
+    cast_labels_to_minimum_type_auto,
+)
 from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
@@ -163,10 +166,6 @@ class LabelColormap(Colormap):
 
     def map(self, values):
         values = np.atleast_1d(values)
-
-        from napari.layers.labels._labels_utils import (
-            cast_labels_to_minimum_type_auto,
-        )
 
         mapped = self.colors[
             cast_labels_to_minimum_type_auto(

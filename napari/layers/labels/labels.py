@@ -38,12 +38,10 @@ from napari.layers.labels._labels_mouse_bindings import (
     pick,
 )
 from napari.layers.labels._labels_utils import (
-    cast_labels_to_minimum_type_auto,
     expand_slice,
     get_contours,
     indices_in_shape,
     interpolate_coordinates,
-    minimum_dtype_for_labels,
     sphere_indices,
 )
 from napari.layers.utils.color_transformations import transform_color
@@ -53,6 +51,10 @@ from napari.utils.colormaps import (
     direct_colormap,
     ensure_colormap,
     label_colormap,
+)
+from napari.utils.colormaps.colormap_utils import (
+    cast_labels_to_minimum_type_auto,
+    minimum_dtype_for_labels,
 )
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array

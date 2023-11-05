@@ -17,8 +17,8 @@ from napari._vispy.layers.image import (
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
-from napari.layers.labels._labels_utils import minimum_dtype_for_labels
 from napari.utils._dtype import vispy_texture_dtype
+from napari.utils.colormaps.colormap_utils import minimum_dtype_for_labels
 
 if TYPE_CHECKING:
     from napari.layers import Labels
