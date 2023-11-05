@@ -256,7 +256,7 @@ def cast_labels_to_minimum_type_auto(
     """
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
-    return _cast_labels_to_minimum_type_auto(data, num_colors + 1, dtype)
+    return _cast_labels_to_minimum_type_auto(data, num_colors, dtype)
 
 
 @numba.njit(parallel=True)
@@ -271,7 +271,7 @@ def _cast_labels_to_minimum_type_auto(
         if num_colors > data.flat[i] >= 0:
             result_array.flat[i] = data.flat[i]
         else:
-            result_array.flat[i] = data.flat[i] % (num_colors - 1) + 1
+            result_array.flat[i] = data.flat[i] % num_colors + 1
 
     return result_array
 
