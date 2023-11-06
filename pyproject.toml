@@ -356,6 +356,7 @@ module = [
     'napari.utils.transforms.transforms',
     'napari.utils.tree.group',
     'napari.view_layers',
+    'napari._app_model.injection._processors',
 ]
 ignore_errors = true
 
@@ -417,7 +418,7 @@ module = [
     "napari.utils.history",
     "napari.utils.indexing",
     "napari.utils.perf._event",
-    "napari.utils.perf._trace_file"
+    "napari.utils.perf._trace_file",
 ]
 disallow_untyped_defs = false
 
