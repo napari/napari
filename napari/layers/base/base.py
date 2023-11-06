@@ -1168,9 +1168,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Parameters
         ----------
-        dims: Dims
+        dims : Dims
             The dims model to use to slice this layer.
-        force: bool
+        force : bool
             True if slicing should be forced to occur, even when some cache thinks
             it already has a valid slice ready. False otherwise.
         """
@@ -1878,6 +1878,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self.corner_pixels = corners
                 self.refresh()
         else:
+            # set the data_level so that it is the lowest resolution in 3d view
+            if self.multiscale is True:
+                self._data_level = len(self.level_shapes) - 1
+
             # The stored corner_pixels attribute must contain valid indices.
             corners = np.zeros((2, self.ndim), dtype=int)
             # Some empty layers (e.g. Points) may have a data extent that only

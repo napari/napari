@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 import warnings
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, List, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -891,6 +891,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         shift the position by 0.5 pixels on each axis.
         """
         return position + 0.5
+
+    def _display_bounding_box_at_level(
+        self, dims_displayed: List[int], data_level: int
+    ) -> npt.NDArray:
+        """An axis aligned (ndisplay, 2) bounding box around the data at a given level"""
+        shape = self.level_shapes[data_level]
+        extent_at_level = np.vstack([np.zeros(len(shape)), shape - 1])
+        return extent_at_level[:, dims_displayed].T
 
 
 class Image(_ImageBase):

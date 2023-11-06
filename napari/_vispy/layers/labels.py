@@ -255,12 +255,12 @@ def _get_shape_from_keys(
 
     Parameters
     ----------
-    keys: np.ndarray
+    keys : np.ndarray
         array of keys to be inserted into the hashmap,
         used for collision detection
-    first_dim_index: int
+    first_dim_index : int
         index for first dimension of PRIME_NUM_TABLE
-    second_dim_index: int
+    second_dim_index : int
         index for second dimension of PRIME_NUM_TABLE
 
     Returns
@@ -369,18 +369,18 @@ def build_textures_from_dict(
 
     Parameters
     ----------
-    color_dict: Dict[float, Tuple[float, float, float, float]]
+    color_dict : Dict[float, Tuple[float, float, float, float]]
         Dictionary from labels to colors
-    empty_val: float
+    empty_val : float
         Value to use for empty cells in the hash table
-    shape: Optional[Tuple[int, int]]
+    shape : Optional[Tuple[int, int]]
         Shape of the hash table.
         If None, it is calculated from the number of
         labels using _get_shape_from_dict
-    use_selection: bool
+    use_selection : bool
         If True, only the selected label is shown.
         The generated colormap is single-color of size (1, 1)
-    selection: float
+    selection : float
         used only if use_selection is True.
         Determines the selected label.
 
