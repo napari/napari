@@ -65,7 +65,6 @@ vec4 sample_label_color(float t) {
         return vec4(0);
     }
     t = t * $scale;
-    // return vec4(t,t,t,1);
 
     if (($use_selection) && ($selection != t)) {
         return vec4(0);
@@ -147,9 +146,6 @@ vec4 sample_label_color(float t) {
 }
 
 """
-
-SCALE_R8 = 'float cmap(float v) { return v*255; }'
-SCALE_R16 = 'float cmap(float v) { return v*65535; }'
 
 
 class LabelVispyColormap(VispyColormap):
