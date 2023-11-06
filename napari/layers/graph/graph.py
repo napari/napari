@@ -5,6 +5,8 @@ from napari_graph import BaseGraph, UndirectedGraph, to_napari_graph
 from numpy.typing import ArrayLike
 from psygnal.containers import Selection
 
+from napari.layers.base._base_constants import ActionType
+
 from napari.layers.graph._slice import _GraphSliceRequest, _GraphSliceResponse
 from napari.layers.points.points import _BasePoints
 from napari.layers.utils._slice_input import _SliceInput
@@ -399,10 +401,29 @@ class Graph(_BasePoints):
         coords : sequence of indices to add point at
         indices : optional indices of the newly inserted nodes.
         """
+        # Adding/Added?
+        self.events.data(
+        value=self.data,
+        action=ActionType.ADDING,
+        data_indices=tuple(
+                self.selected_data,
+            ),
+            vertex_indices=((),),
+        )
+
         prev_size = self.data.n_allocated_nodes
         self.data.add_nodes(indices=indices, coords=coords)
         self._data_changed(prev_size)
 
+        self.events.data(
+            value=self.data,
+            action=ActionType.ADDED,
+            data_indices=tuple(
+                    self.selected_data,
+                ),
+        )
+        
+        
     def remove_selected(self) -> None:
         """Removes selected points if any."""
         if len(self.selected_data):
@@ -426,6 +447,16 @@ class Graph(_BasePoints):
         is_buffer_domain : bool
             Indicates if node indices are on world or buffer domain.
         """
+        # Removing/removed events
+        self.events.data(
+            value=self.data,
+            action=ActionType.REMOVING,
+            data_indices=tuple(
+                    self.selected_data,
+                ),
+                vertex_indices=((),),
+        )
+
         indices = np.atleast_1d(indices)
         if indices.ndim > 1:
             raise ValueError(
@@ -442,6 +473,15 @@ class Graph(_BasePoints):
             self.data.remove_node(idx, is_buffer_domain)
 
         self._data_changed(prev_size)
+
+        self.events.data(
+            value=self.data,
+            action=ActionType.REMOVED,
+            data_indices=tuple(
+                    self.selected_data,
+                ),
+                vertex_indices=((),),
+        )
 
     def _move_points(
         self, ixgrid: Tuple[np.ndarray, np.ndarray], shift: np.ndarray
