@@ -258,6 +258,8 @@ class QtDimSliderWidget(QWidget):
         value : float
             Frames per second for animation.
         """
+        if self._fps == value:
+            return
         self._fps = value
         self.play_button.fpsspin.setValue(abs(value))
         self.play_button.reverse_check.setChecked(value < 0)
