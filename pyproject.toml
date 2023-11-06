@@ -355,6 +355,7 @@ module = [
     'napari.utils.stubgen',
     'napari.utils.transforms.transforms',
     'napari.utils.tree.group',
+    'napari.view_layers',
 ]
 ignore_errors = true
 
@@ -469,6 +470,7 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari.plugins",
+    "napari._vispy.layers.base",
     "napari._vispy.visuals.axes",
     "napari.layers.image._slice",
     "napari.layers.labels._labels_mouse_bindings",
@@ -543,7 +545,6 @@ module = [
     "napari.utils.colormaps.colormap",
     "napari.utils.events.containers._selectable_list",
     "napari.utils.notifications",
-    "napari.view_layers"
 ]
 check_untyped_defs = false
 disallow_incomplete_defs = false
