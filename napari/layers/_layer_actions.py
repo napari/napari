@@ -103,6 +103,28 @@ def _toggle_visibility(ll: LayerList):
             layer.visible = not visibility
 
 
+def _show_selected(ll: LayerList):
+    for lay in ll.selection:
+        lay.visible = True
+
+
+def _hide_selected(ll: LayerList):
+    for lay in ll.selection:
+        lay.visible = False
+
+
+def _show_unselected(ll: LayerList):
+    for lay in ll:
+        if lay not in ll.selection:
+            lay.visible = True
+
+
+def _hide_unselected(ll: LayerList):
+    for lay in ll:
+        if lay not in ll.selection:
+            lay.visible = False
+
+
 def _link_selected_layers(ll: LayerList):
     ll.link_layers(ll.selection)
 
