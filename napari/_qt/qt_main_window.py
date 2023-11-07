@@ -491,6 +491,32 @@ class _QtMainWindow(QMainWindow):
 
         super().changeEvent(event)
 
+    def keyPressEvent(self, event):
+        """Called whenever a key is pressed.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        self._qt_viewer.canvas._backend._keyEvent(
+            self._qt_viewer.canvas.events.key_press, event
+        )
+        event.accept()
+
+    def keyReleaseEvent(self, event):
+        """Called whenever a key is released.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        self._qt_viewer.canvas._backend._keyEvent(
+            self._qt_viewer.canvas.events.key_release, event
+        )
+        event.accept()
+
     def resizeEvent(self, event):
         """Override to handle original size before maximizing."""
         # the first resize event will have nonsense positions that we dont
