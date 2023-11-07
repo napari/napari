@@ -401,7 +401,6 @@ class Graph(_BasePoints):
         coords : sequence of indices to add point at
         indices : optional indices of the newly inserted nodes.
         """
-        # Adding/Added?
         self.events.data(
         value=self.data,
         action=ActionType.ADDING,
@@ -422,7 +421,6 @@ class Graph(_BasePoints):
                     self.selected_data,
                 ),
         )
-        
         
     def remove_selected(self) -> None:
         """Removes selected points if any."""
@@ -447,7 +445,6 @@ class Graph(_BasePoints):
         is_buffer_domain : bool
             Indicates if node indices are on world or buffer domain.
         """
-        # Removing/removed events
         self.events.data(
             value=self.data,
             action=ActionType.REMOVING,
