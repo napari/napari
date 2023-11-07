@@ -33,7 +33,7 @@ jobs:
           command: |
             . venv/bin/activate
             cd docs
-            xvfb-run --auto-servernum make docs GALLERY_PATH=../napari/examples/
+            xvfb-run --auto-servernum make docs GALLERY_PATH=../../napari/examples/
           environment:
             PIP_CONSTRAINT: ../napari/resources/constraints/constraints_py3.10_docs.txt
       - store_artifacts:
