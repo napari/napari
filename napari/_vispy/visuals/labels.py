@@ -2,13 +2,13 @@ from vispy.scene.visuals import create_visual_node
 from vispy.visuals.image import ImageVisual
 from vispy.visuals.shaders import Function, FunctionChain
 
-from napari._vispy.visuals.util import TextureMinix
+from napari._vispy.visuals.util import TextureMixin
 
 SCALE_R8 = 'float cmap(float v) { return v*255; }'
 SCALE_R16 = 'float cmap(float v) { return v*65535; }'
 
 
-class LabelVisual(TextureMinix, ImageVisual):
+class LabelVisual(TextureMixin, ImageVisual):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

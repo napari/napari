@@ -1,4 +1,4 @@
-class TextureMinix:
+class TextureMixin:
     def __init__(self, *args, texture_format, **kwargs):
         super().__init__(*args, texture_format=texture_format, **kwargs)
         # save texture format to not depend on vispy's private api
