@@ -184,9 +184,8 @@ def create_layer_controls(qtbot):
 )
 @pytest.mark.qt_no_exception_capture
 @pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
-@pytest.mark.usefixtures("qtbot")
 def test_create_layer_controls(
-    create_layer_controls, layer_type_with_data, capsys
+    qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
@@ -206,6 +205,7 @@ def test_create_layer_controls(
                 qcombobox.setCurrentIndex(0)
             for idx in range(qcombobox_count):
                 previous_qcombobox_text = qcombobox.currentText()
+                qtbot.wait(10)
                 qcombobox.setCurrentIndex(idx)
                 # If a value for the QComboBox is an invalid selection check if
                 # it fallbacks to the previous value
