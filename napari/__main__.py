@@ -357,15 +357,15 @@ def _run() -> None:
             ):
                 pname, *wnames = plugin
                 if '__all__' in wnames:
-                    for name, (_pname, _wnames_collection) in chain(
+                    for name, (_pname, wnames_collection) in chain(
                         _npe2.widget_iterator(), plugin_manager.iter_widgets()
                     ):
                         if name == 'dock' and pname == _pname:
-                            if isinstance(_wnames_collection, dict):
+                            if isinstance(wnames_collection, dict):
                                 # Plugin_manager iter_widgets return wnames as dict keys
-                                wnames = list(_wnames_collection.keys())
+                                wnames = list(wnames_collection.keys())
                             else:
-                                wnames = _wnames_collection
+                                wnames = wnames_collection
                             break
 
                 if wnames:
