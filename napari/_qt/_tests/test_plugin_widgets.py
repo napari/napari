@@ -20,18 +20,18 @@ class ErrorWidget:
 
 
 class QWidget_example(QWidget):
-    def __init__(napari_viewer):
-        pass
+    def __init__(self, napari_viewer):
+        super.__init__()
 
 
 class QWidget_string_annnot(QWidget):
-    def __init__(test: "napari.viewer.Viewer"):
-        pass
+    def __init__(self, test: "napari.viewer.Viewer"):
+        super.__init__()
 
 
 class Container_example(Container):
-    def __init__(test: Viewer):
-        pass
+    def __init__(self, test: Viewer):
+        super.__init__()
 
 
 @magic_factory
@@ -186,7 +186,7 @@ def test_widget_types_supported(
 
     @tmp_plugin.contribute.widget(display_name='Widget')
     def widget():
-        return Widget()
+        return Widget
 
     app = get_app()
     # `strict_qt` prevents checking for leaked widgets resulting from parametrize

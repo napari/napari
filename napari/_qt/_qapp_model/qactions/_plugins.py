@@ -28,7 +28,8 @@ def _plugin_manager_dialog_avail() -> bool:
 def _show_plugin_install_dialog(window: Window):
     """Show dialog that allows users to install and enable/disable plugins."""
 
-    # TODO: Register via plugin, once plugin menu contributions supported
+    # TODO: Once menu contributions supported, `napari_plugin_manager` should be
+    # amended to be a napari plugin and simply add this menu item itself.
     # This callback is only used when this package is available, thus we do not check
     from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
 
