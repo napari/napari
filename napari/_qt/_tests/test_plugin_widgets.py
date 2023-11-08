@@ -180,16 +180,19 @@ def test_widget_hide_destroy(make_napari_viewer):
     ],
 )
 def test_widget_types_supported(
-    make_napari_viewer, tmp_plugin: DynamicPlugin, Widget
+    make_napari_viewer,
+    tmp_plugin: DynamicPlugin,
+    Widget,
 ):
     """Test all supported widget types correctly instantiated and call processor."""
+    # The 4 `Widget`s should represent varing widget constructors and signatures that
+    # we want to support.
 
     @tmp_plugin.contribute.widget(display_name='Widget')
     def widget():
         return Widget
 
     app = get_app()
-    # `strict_qt` prevents checking for leaked widgets resulting from parametrize
     viewer = make_napari_viewer()
 
     viewer.window.add_dock_widget = MagicMock()
