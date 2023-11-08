@@ -16,7 +16,7 @@ on:
 
 jobs:
   check_labels_and_milestone:
-    if: contains(github.event.pull_request.labels.*.name, 'ready to merge')
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ready to merge')
     name: Check labels and milestone
     runs-on: ubuntu-latest
     steps:
@@ -31,3 +31,12 @@ jobs:
         run: |
           echo "Please add a milestone to this PR"
           exit 1
+
+  check_event_parameters:
+    name: Check event parameters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check event parameters
+        run: |
+          echo "github.event_name: ${{ github.event_name }}"
+          echo "github.event.pull_request.labels: ${{ toJSON(github.event.pull_request.labels) }}"
