@@ -55,6 +55,9 @@ class ImageLayerNode:
             and dtype is not None
             and _VISPY_FORMAT_TO_DTYPE[res.texture_format] != dtype
         ):
+            # it is a bug to hit this error — it is here to catch bugs
+            # early when we are creating the wrong nodes or
+            # textures for our data
             raise ValueError("dtype does not match texture_format")
         return res
 
