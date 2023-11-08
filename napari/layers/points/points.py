@@ -295,9 +295,6 @@ class Points(Layer):
         Edge width of the point markers in the currently viewed slice.
     _indices_view : array (M, )
         Integer indices of the points in the currently viewed slice and are shown.
-    _scale_factor_stored : None | float
-        Previous scale factor. Used to prevent rerendering highlights when
-        view has not changed.
     _selected_view :
         Integer indices of selected points in the currently viewed slice within
         the `_view_data` array.
@@ -386,8 +383,6 @@ class Points(Layer):
 
         data, ndim = fix_data_points(data, ndim)
 
-        # scale factor also influences highlight, may trigger re-draw
-        self._scale_factor_stored = None
         # Indices of selected points
         self._selected_data_stored = set()
         self._selected_data_history = set()
@@ -1612,10 +1607,11 @@ class Points(Layer):
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
+        prev_scale = self.scale_factor
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
         )
-        self._set_highlight()
+        self._set_highlight(force=(prev_scale != self.scale_factor))
 
     def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.
@@ -1859,13 +1855,11 @@ class Points(Layer):
         # Check if any point ids have changed since last call
         if (
             self.selected_data == self._selected_data_stored
-            and self.scale_factor == self._scale_factor_stored
             and self._value == self._value_stored
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
         self._selected_data_stored = copy(self.selected_data)
-        self._scale_factor_stored = self.scale_factor
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
 

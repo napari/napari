@@ -251,9 +251,6 @@ class Shapes(Layer):
         Dictionary containing all the shape data indexed by slice tuple
     _data_view : ShapeList
         Object containing the currently viewed shape data.
-    _scale_factor_stored : None | float
-        Previous scale factor. Used to prevent rerendering highlights when
-        view has not changed.
     _selected_data_history : set
         Set of currently selected captured on press of <space>.
     _selected_data_stored : set
@@ -509,7 +506,6 @@ class Shapes(Layer):
         self._value = (None, None)
         self._value_stored = (None, None)
         self._moving_value = (None, None)
-        self._scale_factor_stored = None
         self._selected_data = set()
         self._selected_data_stored = set()
         self._selected_data_history = set()
@@ -2538,13 +2534,11 @@ class Shapes(Layer):
         # Check if any shape or vertex ids have changed since last call
         if (
             self.selected_data == self._selected_data_stored
-            and self.scale_factor == self._scale_factor_stored
             and np.array_equal(self._value, self._value_stored)
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
         self._selected_data_stored = copy(self.selected_data)
-        self._scale_factor_stored = self.scale_factor
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
         self.events.highlight()
@@ -2736,10 +2730,11 @@ class Shapes(Layer):
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
+        prev_scale = self.scale_factor
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
         )
-        self._set_highlight()
+        self._set_highlight(force=(prev_scale != self.scale_factor))
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.
