@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QSortFilterProxyModel, Qt  # type: ignore[attr-defined]
+from qtpy.QtCore import QSortFilterProxyModel, Qt
 
 from napari._qt.containers._base_item_model import (
     SortRole,
@@ -16,8 +16,10 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from typing import Optional
 
-    from qtpy.QtGui import QKeyEvent  # type: ignore[attr-defined]
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.Qt import DropAction
+    from qtpy.QtCore import QMimeData, QModelIndex
+    from qtpy.QtGui import QKeyEvent
+    from qtpy.QtWidgets import QWidget
 
     from napari.components.layerlist import LayerList
 
@@ -31,10 +33,19 @@ class ReverseProxyModel(QSortFilterProxyModel):
         self.setSortRole(SortRole)
         self.sort(0, Qt.SortOrder.DescendingOrder)
 
-    def dropMimeData(self, data, action, destRow, col, parent):
+    def dropMimeData(
+        self,
+        data: Optional[QMimeData],
+        action: DropAction,
+        destRow: int,
+        col: int,
+        parent: QModelIndex,
+    ) -> bool:
         """Handle destination row for dropping with reversed indices."""
-        row = 0 if destRow == -1 else self.sourceModel().rowCount() - destRow
-        return self.sourceModel().dropMimeData(data, action, row, col, parent)
+        sourcemodel = self.sourceModel()
+        assert sourcemodel is not None
+        row = 0 if destRow == -1 else sourcemodel.rowCount() - destRow
+        return sourcemodel.dropMimeData(data, action, row, col, parent)
 
 
 class QtLayerList(QtListView[Layer]):

@@ -1,5 +1,6 @@
 """Miscellaneous utility functions.
 """
+from __future__ import annotations
 
 import builtins
 import collections.abc
@@ -41,7 +42,7 @@ if TYPE_CHECKING:
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
 
 
-def parse_version(v) -> 'packaging.version._BaseVersion':
+def parse_version(v: str) -> packaging.version._BaseVersion:
     """Parse a version string and return a packaging.version.Version obj."""
     import packaging.version
 
@@ -51,7 +52,7 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
         return packaging.version.LegacyVersion(v)  # type: ignore[attr-defined]
 
 
-def running_as_bundled_app(*, check_conda=True) -> bool:
+def running_as_bundled_app(*, check_conda: bool = True) -> bool:
     """Infer whether we are running as a bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
@@ -124,14 +125,14 @@ def in_python_repl() -> bool:
     return False
 
 
-def str_to_rgb(arg):
+def str_to_rgb(arg: str) -> List[int]:
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
-    return list(
-        map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups())
-    )
+    match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
+    assert match is not None
+    return list(map(int, match.groups()))
 
 
-def ensure_iterable(arg, color=False):
+def ensure_iterable(arg: Any, color: bool = False) -> Iterable[Any]:
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list. If a color is passed then it
     will be treated specially to determine if it is iterable.
@@ -179,11 +180,11 @@ def is_sequence(arg: Any) -> bool:
 
 
 def ensure_sequence_of_iterables(
-    obj,
+    obj: Any,
     length: Optional[int] = None,
     repeat_empty: bool = False,
     allow_none: bool = False,
-):
+) -> itertools.repeat[Any]:
     """Ensure that ``obj`` behaves like a (nested) sequence of iterables.
 
     If length is provided and the object is already a sequence of iterables,
@@ -252,10 +253,17 @@ def ensure_sequence_of_iterables(
     return itertools.repeat(obj)
 
 
-def formatdoc(obj):
+U = TypeVar('U')
+
+
+def formatdoc(obj: U) -> U:
     """Substitute globals and locals into an object's docstring."""
-    frame = inspect.currentframe().f_back
+    frame = inspect.currentframe()
+    assert frame is not None
+    frame = frame.f_back
+    assert frame is not None
     try:
+        assert obj.__doc__ is not None
         obj.__doc__ = obj.__doc__.format(
             **{**frame.f_globals, **frame.f_locals}
         )
@@ -697,7 +705,7 @@ def deep_update(dct: dict, merge_dct: dict, copy=True) -> dict:
     return _dct
 
 
-def install_certifi_opener():
+def install_certifi_opener() -> None:
     """Install urlopener that uses certifi context.
 
     This is useful in the bundle, where otherwise users might get SSL errors

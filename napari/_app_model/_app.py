@@ -17,7 +17,7 @@ APP_NAME = 'napari'
 
 
 class NapariApplication(Application):
-    def __init__(self, app_name=APP_NAME) -> None:
+    def __init__(self, app_name: str = APP_NAME) -> None:
         # raise_synchronous_exceptions means that commands triggered via
         # ``execute_command`` will immediately raise exceptions. Normally,
         # `execute_command` returns a Future object (which by definition does not

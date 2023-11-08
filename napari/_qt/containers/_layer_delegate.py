@@ -35,7 +35,7 @@ General rendering flow:
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from weakref import WeakKeyDictionary, ref
 
 from qtpy.QtCore import QPoint, QSize, Qt, Signal
@@ -77,7 +77,7 @@ class LayerDelegate(QStyledItemDelegate):
 
     loading_frame_changed = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QtCore.QObject] = None):
         super().__init__(parent)
         self._load_movie = QMovie(LOADING_GIF_PATH)
         self._load_movie.setScaledSize(QSize(18, 18))

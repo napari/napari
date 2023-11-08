@@ -527,6 +527,7 @@ module = [
     "napari.utils.colormaps.colormap",
     "napari.utils.events.containers._selectable_list",
     "napari.utils.notifications",
+    "napari.layers.base._base_mouse_bindings",
 ]
 check_untyped_defs = false
 disallow_incomplete_defs = false
@@ -579,15 +580,6 @@ module = [
     "napari.utils.colormaps.vendored._cm_listed"
 ]
 disallow_untyped_calls = false
-
-[[tool.mypy.overrides]]
-module = [
-    "napari._qt.containers.qt_layer_list"
-]
-check_untyped_defs = false
-disallow_untyped_calls = false
-disallow_untyped_defs = false
-warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
 module = [

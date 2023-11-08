@@ -125,7 +125,7 @@ class progress(tqdm):
         super().update(n)
         self.events.value(value=self.n)
 
-    def increment_with_overflow(self):
+    def increment_with_overflow(self) -> None:
         """Update if not exceeding total, else set indeterminate range."""
         if self.n == self.total:
             self.total = 0
@@ -138,7 +138,7 @@ class progress(tqdm):
         super().set_description(desc, refresh=True)
         self.events.description(value=desc)
 
-    def close(self):
+    def close(self) -> None:
         """Close progress object and emit event."""
         if self.disable:
             return
@@ -218,7 +218,7 @@ class cancelable_progress(progress):
 
         return takewhile(is_canceled, itr)
 
-    def cancel(self):
+    def cancel(self) -> None:
         """Cancels the execution of the underlying computation.
         Note that the current iteration will be allowed to complete, however
         future iterations will not be run.

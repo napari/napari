@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import warnings
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -10,8 +13,12 @@ from napari.layers.utils.interaction_box import (
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from napari.layer.base import Layer
+    from napari.utils.events import Event
 
-def highlight_box_handles(layer, event):
+
+def highlight_box_handles(layer: Layer, event: Event) -> None:
     """
     Highlight the hovered handle of a TransformBox.
     """
@@ -36,7 +43,7 @@ def highlight_box_handles(layer, event):
 
 
 def _translate_with_box(
-    layer, initial_affine, initial_mouse_pos, mouse_pos, event
+    layer: Layer, initial_affine: Affine, initial_mouse_pos, mouse_pos, event
 ):
     offset = mouse_pos - initial_mouse_pos
     new_affine = Affine(translate=offset).compose(initial_affine)
@@ -44,8 +51,8 @@ def _translate_with_box(
 
 
 def _rotate_with_box(
-    layer,
-    initial_affine,
+    layer: Layer,
+    initial_affine: Affine,
     initial_mouse_pos,
     initial_handle_coords,
     initial_center,
@@ -73,8 +80,8 @@ def _rotate_with_box(
 
 
 def _scale_with_box(
-    layer,
-    initial_affine,
+    layer: Layer,
+    initial_affine: Affine,
     initial_world_to_data,
     initial_data2physical,
     nearby_handle,
