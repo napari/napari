@@ -755,12 +755,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             all other parameters MAY be provided as lists, and the Nth value
             will be applied to the Nth channel in the data.  If a single value
             is provided, it will be broadcast to all Layers.
-        rgb : bool or list
-            Whether the image is rgb RGB or RGBA. If not specified by user and
-            the last dimension of the data has length 3 or 4 it will be set as
-            `True`. If `False` the image is interpreted as a luminance image.
-            If a list then must be same length as the axis that is being
-            expanded as channels.
+        rgb : bool
+            Whether the image is rgb RGB or RGBA if rgb. If not
+            specified by user and the last dimension of the data has length 3 or 4
+            it will be set as `True`. If `False` the image is interpreted as a
+            luminance image.
         colormap : str, napari.utils.Colormap, tuple, dict, list
             Colormaps to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
