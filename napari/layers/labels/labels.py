@@ -958,6 +958,7 @@ class Labels(_ImageBase):
             Slice that specifies the portion of the input image that
             should be computed and displayed.
             If None, the whole input image will be processed.
+
         Returns
         -------
         mapped_labels : array
