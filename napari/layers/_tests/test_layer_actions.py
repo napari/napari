@@ -221,11 +221,11 @@ def test_convert_layer(layer, type_):
 
     if (
         type_ == "labels"
-        and isinstance(input, Image)
-        and np.issubdtype(input.data.dtype, np.integer)
+        and isinstance(layer, Image)
+        and np.issubdtype(layer.data.dtype, np.integer)
     ):
         assert (
-            input.data is ll[0].data
+            layer.data is ll[0].data
         )  # check array data not copied unnecessarily
 
 
