@@ -162,7 +162,7 @@ class QtPerformance(QWidget):
         for name, timer in perf.timers.timers.items():
             # The Qt Event "UpdateRequest" is the main "draw" event, so
             # that's what we use for our progress bar.
-            if name == "UpdateRequest":
+            if name.startswith("UpdateRequest"):
                 average = timer.average
 
             # Log any "long" events to the text window.
