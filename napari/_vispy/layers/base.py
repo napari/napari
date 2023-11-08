@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, TypeVar
+from typing import Dict, Generic, TypeVar, cast
 
 import numpy as np
 from vispy.scene import VisualNode
