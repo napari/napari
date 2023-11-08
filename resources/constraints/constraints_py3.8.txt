@@ -16,14 +16,14 @@ appdirs==1.4.4
     #   npe2
 asciitree==0.3.3
     # via zarr
-asttokens==2.4.0
+asttokens==2.4.1
     # via stack-data
 attrs==23.1.0
     # via
     #   hypothesis
     #   jsonschema
     #   referencing
-babel==2.13.0
+babel==2.13.1
     # via
     #   napari (napari_repo/setup.cfg)
     #   sphinx
@@ -73,11 +73,11 @@ exceptiongroup==1.1.3
     # via
     #   hypothesis
     #   pytest
-executing==2.0.0
+executing==2.0.1
     # via stack-data
 fasteners==0.19
     # via zarr
-filelock==3.12.4
+filelock==3.13.0
     # via virtualenv
 fonttools==4.43.1
     # via matplotlib
@@ -117,7 +117,7 @@ in-n-out==0.1.9
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.25.2
+ipykernel==6.26.0
     # via
     #   napari-console
     #   qtconsole
@@ -138,7 +138,7 @@ jsonschema==4.19.1
     # via napari (napari_repo/setup.cfg)
 jsonschema-specifications==2023.7.1
     # via jsonschema
-jupyter-client==8.4.0
+jupyter-client==8.5.0
     # via
     #   ipykernel
     #   qtconsole
@@ -259,7 +259,7 @@ platformdirs==3.11.0
     #   virtualenv
 pluggy==1.3.0
     # via pytest
-pooch==1.7.0
+pooch==1.8.0
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
@@ -281,7 +281,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyconify==0.1.5
+pyconify==0.1.6
     # via superqt
 pydantic==2.4.2
     # via
@@ -330,7 +330,7 @@ pyside6-essentials==6.3.1
     # via
     #   pyside6
     #   pyside6-addons
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   napari (napari_repo/setup.cfg)
     #   pytest-cov
@@ -373,7 +373,7 @@ qtconsole==5.4.4
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-console
-qtpy==2.4.0
+qtpy==2.4.1
     # via
     #   magicgui
     #   napari (napari_repo/setup.cfg)
@@ -474,7 +474,7 @@ tornado==6.3.3
     #   jupyter-client
 tqdm==4.66.1
     # via napari (napari_repo/setup.cfg)
-traitlets==5.11.2
+traitlets==5.12.0
     # via
     #   comm
     #   ipykernel
@@ -502,7 +502,7 @@ tzdata==2023.3
     # via pandas
 urllib3==2.0.7
     # via requests
-virtualenv==20.24.5
+virtualenv==20.24.6
     # via napari (napari_repo/setup.cfg)
 vispy==0.14.1
     # via
