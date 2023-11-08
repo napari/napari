@@ -1611,6 +1611,7 @@ class Points(Layer):
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
         )
+        # update highlight only if scale has changed, otherwise causes a cycle
         self._set_highlight(force=(prev_scale != self.scale_factor))
 
     def _get_value(self, position) -> Optional[int]:
