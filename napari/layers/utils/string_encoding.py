@@ -2,8 +2,8 @@ from string import Formatter
 from typing import Any, Literal, Protocol, Sequence, Union, runtime_checkable
 
 import numpy as np
-from pydantic import parse_obj_as
 
+from napari._pydantic_compat import parse_obj_as
 from napari.layers.utils.style_encoding import (
     StyleEncoding,
     _ConstantStyleEncoding,

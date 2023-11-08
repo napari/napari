@@ -1,8 +1,8 @@
 from unittest.mock import Mock
 
 import pytest
-from pydantic import ValidationError
 
+from napari._pydantic_compat import ValidationError
 from napari.utils.events import EventedModel, Selection
 
 

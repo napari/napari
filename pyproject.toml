@@ -241,7 +241,6 @@ check_untyped_defs = true
 # mypy napari | cut -f1 -d: | sort | uniq  | tr '/' '.'  | sed 's/\.py//' | awk '{ print "    \047" $0 "\047," }'
 [[tool.mypy.overrides]]
 module = [
-    'napari._app_model.injection._processors',
     'napari._qt.code_syntax_highlight',
     'napari._qt.containers._base_item_model',
     'napari._qt.containers._base_item_view',
@@ -317,13 +316,11 @@ module = [
     'napari._vispy.experimental.tile_set',
     'napari._vispy.experimental.tiled_image_visual',
     'napari._vispy.experimental.vispy_tiled_image_layer',
-    'napari._vispy.layers.base',
     'napari._vispy.overlays.base',
     'napari._vispy.utils.cursor',
     'napari.components.layerlist',
     'napari.layers._layer_actions',
     'napari.layers._multiscale_data',
-    'napari.layers.base.base',
     'napari.layers.intensity_mixin',
     'napari.layers.points._points_key_bindings',
     'napari.layers.points._points_utils',
@@ -358,7 +355,6 @@ module = [
     'napari.utils.progress',
     'napari.utils.shortcuts',
     'napari.utils.stubgen',
-    'napari.utils.theme',
     'napari.utils.transforms.transforms',
     'napari.utils.tree.group',
 ]

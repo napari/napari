@@ -37,7 +37,7 @@ jobs:
 
   build_wheel:
     name: Build wheel
-    uses: ./.github/workflows/resuable_build_wheel.yml
+    uses: ./.github/workflows/reusable_build_wheel.yml
 
   test:
     name: ${{ matrix.platform }}
@@ -108,6 +108,9 @@ jobs:
     name: Synchronize bot repository
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.repository == 'napari/napari'
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v4
         with:

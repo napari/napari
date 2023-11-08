@@ -1,5 +1,4 @@
-from pydantic import Field
-
+from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
 from napari.utils.translations import trans
 

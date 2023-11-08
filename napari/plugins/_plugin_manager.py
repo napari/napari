@@ -22,9 +22,9 @@ from napari_plugin_engine import (
     PluginManager as PluginManager,
 )
 from napari_plugin_engine.hooks import HookCaller
-from pydantic import ValidationError
 from typing_extensions import TypedDict
 
+from napari._pydantic_compat import ValidationError
 from napari.plugins import hook_specifications
 from napari.settings import get_settings
 from napari.types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
