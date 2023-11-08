@@ -1,11 +1,10 @@
+import importlib
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 
-from napari.utils.colormaps import Colormap
-from napari.utils.colormaps.colormap import (
-    cast_labels_to_minimum_type_auto,
-    minimum_dtype_for_labels,
-)
+from napari.utils.colormaps import Colormap, colormap
 
 
 def test_linear_colormap():
@@ -120,18 +119,26 @@ def test_mapped_shape(ndim):
     "num,dtype", [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
 def test_minimum_dtype_for_labels(num, dtype):
-    assert minimum_dtype_for_labels(num) == dtype
+    assert colormap.minimum_dtype_for_labels(num) == dtype
+
+
+@pytest.fixture()
+def disable_jit(monkeypatch):
+    with patch("numba.core.config.DISABLE_JIT", True):
+        importlib.reload(colormap)
+        yield
+    importlib.reload(colormap)  # rever to original state
 
 
 @pytest.mark.parametrize(
     "num,dtype", [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
+@pytest.mark.usefixtures("disable_jit")
 def test_cast_labels_to_minimum_type_auto(num, dtype, monkeypatch):
-    # monkeypatch.setenv("NUMBA_DISABLE_JIT", "1")
     data = np.zeros(10, dtype=np.uint32)
     data[1] = 10
     data[2] = 10**6 + 5
-    cast_arr = cast_labels_to_minimum_type_auto(data, num)
+    cast_arr = colormap.cast_labels_to_minimum_type_auto(data, num)
     assert cast_arr.dtype == dtype
     assert cast_arr[0] == 0
     assert cast_arr[1] == 10
