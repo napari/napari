@@ -21,17 +21,17 @@ class ErrorWidget:
 
 class QWidget_example(QWidget):
     def __init__(self, napari_viewer):
-        super.__init__()
+        super().__init__()
 
 
 class QWidget_string_annnot(QWidget):
     def __init__(self, test: "napari.viewer.Viewer"):
-        super.__init__()
+        super().__init__()
 
 
 class Container_example(Container):
     def __init__(self, test: Viewer):
-        super.__init__()
+        super().__init__()
 
 
 @magic_factory
@@ -159,7 +159,7 @@ def test_get_widget_viewer_param_error():
 def test_widget_hide_destroy(make_napari_viewer):
     """Test that widget hide and destroy works."""
     viewer = make_napari_viewer()
-    viewer.window.add_dock_widget(QWidget_example(), name='test')
+    viewer.window.add_dock_widget(QWidget_example(viewer), name='test')
     widget = viewer.window._dock_widgets['test']
 
     # Check widget persists after hide
