@@ -215,8 +215,7 @@ def setup_viewer_for_async_slicing(
         # Add the layer and get the corresponding vispy layer.
         layer = viewer.add_layer(layer)
         vispy_layer = viewer.window._qt_viewer.layer_to_visual[layer]
-    # Then allow asynchronous slicing for testing.
-    # viewer._layer_slicer._force_sync = False
+
     return vispy_layer
 
 
