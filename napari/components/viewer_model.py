@@ -738,7 +738,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         custom_interpolation_kernel_2d=None,
         projection_mode='none',
     ) -> Union[Image, List[Image]]:
-        """Add an image layer to the layer list.
+        """Add an one or more Image layer to the layer list.
 
         Parameters
         ----------
@@ -750,16 +750,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             supported in 2D. In 3D, only the lowest resolution scale is
             displayed.
         channel_axis : int, optional
-            Axis to expand image along.  If provided, each channel in the data
-            will be added as an individual image layer.  In channel_axis mode,
+            Axis to expand image along. If provided, each channel in the data
+            will be added as an individual image layer. In channel_axis mode,
             all other parameters MAY be provided as lists, and the Nth value
-            will be applied to the Nth channel in the data.  If a single value
+            will be applied to the Nth channel in the data. If a single value
             is provided, it will be broadcast to all Layers.
-        rgb : bool
+        rgb : bool or list of bool, optional
             Whether the image is rgb RGB or RGBA if rgb. If not
             specified by user and the last dimension of the data has length 3 or 4
             it will be set as `True`. If `False` the image is interpreted as a
             luminance image.
+            If a list then must be same length as the axis that is being
+            expanded as Images.
         colormap : str, napari.utils.Colormap, tuple, dict, list
             Colormaps to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
