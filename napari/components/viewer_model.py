@@ -25,7 +25,6 @@ import numpy as np
 # This cannot be condition to TYPE_CHEKCKING or the stubgen fails
 # with underfined Context.
 from app_model.expressions import Context
-from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
 from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
