@@ -4,15 +4,12 @@ from vispy.visuals.shaders import Function, FunctionChain
 
 from napari._vispy.visuals.util import TextureMixin
 
-SCALE_R8 = 'float cmap(float v) { return v*255; }'
-SCALE_R16 = 'float cmap(float v) { return v*65535; }'
-
 
 class LabelVisual(TextureMixin, ImageVisual):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    """Visual subclass displaying a 2D array of labels."""
 
     def _build_color_transform(self):
+        """Build the color transform function chain."""
         funcs = [
             Function(self._func_templates['red_to_luminance']),
             Function(self.cmap.glsl_map),
