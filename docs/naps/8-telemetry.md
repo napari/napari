@@ -1,6 +1,4 @@
-:orphan: 
-  
- (nap-8)= 
+(nap-8)= 
   
  # NAP-8 — Telemetry
   
