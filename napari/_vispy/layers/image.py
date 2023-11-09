@@ -43,7 +43,7 @@ class ImageLayerNode:
             texture_format=texture_format,
         )
 
-    def get_node(self, ndisplay: int, dtype=None) -> Node:
+    def get_node(self, ndisplay: int, dtype:Optional[np.dtype]=None) -> Node:
         # Return custom node if we have one.
         if self._custom_node is not None:
             return self._custom_node
