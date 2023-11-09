@@ -7,6 +7,8 @@ on:
       - reopened
       - labeled
       - unlabeled
+      - milestoned
+      - demilestoned
   issues:
     types:
       - milestoned
@@ -28,7 +30,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check milestone
-        if: github.event.pull_request.milestone == null
+        if: github.event.pull_request.milestone == null && github.event.issue.milestone == null
         run: |
           echo "Please add a milestone to this PR"
           exit 1
