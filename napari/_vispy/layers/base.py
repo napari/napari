@@ -224,7 +224,8 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self._master_transform.matrix = affine_matrix
         child_matrix = np.eye(4)
         child_matrix[-1, : len(translate)] = (
-            self.layer.translate[::-1] - translate
+            self.layer.translate[self.layer._slice_input.displayed][::-1]
+            - translate
         )
         for child in self.node.children:
             child.transform.matrix = child_matrix
