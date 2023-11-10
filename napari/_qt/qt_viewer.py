@@ -604,7 +604,7 @@ class QtViewer(QSplitter):
     def console(self):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
-            self._console = self._get_console()
+            self.console = self._get_console()
             self._console_backlog = []
         return self._console
 
