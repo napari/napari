@@ -353,8 +353,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Simple string representation"""
         return f'napari.Viewer: {self.title}'
 
-    @property
-    def _sliced_extent_world_augmented(self) -> np.ndarray:
+    def _sliced_extent_world_augmented(self, layers=None) -> np.ndarray:
         """Extent of layers in world coordinates after slicing.
 
         D is either 2 or 3 depending on if the displayed data is 2D or 3D.
@@ -363,17 +362,27 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         -------
         sliced_extent_world : array, shape (2, D)
         """
-        # if not layers are present, assume image-like with dimensions of size 512
+        layers = LayerList(layers) if layers is not None else self.layers
         if len(self.layers) == 0:
+            # if no layers are present, assume image-like
+            # with dimensions of size 512
             return np.vstack(
                 [np.full(self.dims.ndim, -0.5), np.full(self.dims.ndim, 511.5)]
             )
-        return self.layers._extent_world_augmented[:, self.dims.displayed]
+        return layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self):
-        """Reset the camera view."""
+    def reset_view(self, *, layers=None):
+        """Reset the camera view.
 
-        extent = self._sliced_extent_world_augmented
+        Parameters
+        ----------
+        layers : optional list of layers
+            If given, only consider the extent of the given layers when
+            resetting the view. Otherwise, all layers in viewer.layers are
+            used.
+        """
+
+        extent = self._sliced_extent_world_augmented(layers)
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         grid_size = list(self.grid.actual_shape(len(self.layers)))
@@ -538,7 +547,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
-        extent = self._sliced_extent_world_augmented
+        extent = self._sliced_extent_world_augmented()
         n_layers = len(self.layers)
         for i, layer in enumerate(self.layers):
             i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)

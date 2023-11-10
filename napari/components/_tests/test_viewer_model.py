@@ -661,10 +661,10 @@ def test_sliced_world_extent():
 
     # Empty data is taken to be 512 x 512
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[0], (-0.5, -0.5)
+        viewer._sliced_extent_world_augmented()[0], (-0.5, -0.5)
     )
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[1], (511.5, 511.5)
+        viewer._sliced_extent_world_augmented()[1], (511.5, 511.5)
     )
 
     # Add one layer
@@ -678,20 +678,34 @@ def test_sliced_world_extent():
         viewer.layers._extent_world_augmented[1], (26.5, 29.5, 19.5)
     )
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[0], (19.5, 4.5)
+        viewer._sliced_extent_world_augmented()[0], (19.5, 4.5)
     )
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[1], (29.5, 19.5)
+        viewer._sliced_extent_world_augmented()[1], (29.5, 19.5)
     )
 
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[0], (4.5, 8.5)
+        viewer._sliced_extent_world_augmented()[0], (4.5, 8.5)
     )
     np.testing.assert_allclose(
-        viewer._sliced_extent_world_augmented[1], (19.5, 26.5)
+        viewer._sliced_extent_world_augmented()[1], (19.5, 26.5)
     )
+
+
+def test_reset_view_with_input_layers():
+    viewer = ViewerModel()
+    layer0 = viewer.add_image(np.random.random((5, 5)))
+    viewer.reset_view()
+    camera_settings0 = viewer.camera.copy()
+    viewer.add_image(np.random.random((10, 10)))
+    viewer.reset_view()
+    camera_settings1 = viewer.camera.copy()
+    assert camera_settings0 != camera_settings1
+    viewer.reset_view(layers=[layer0])
+    camera_settings2 = viewer.camera.copy()
+    assert camera_settings2 == camera_settings0
 
 
 def test_camera():
