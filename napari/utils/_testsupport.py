@@ -223,6 +223,11 @@ def make_napari_viewer(
         _empty,
     )
 
+    if "enable_console" not in request.keywords:
+        monkeypatch.setattr(
+            "napari._qt.qt_viewer.QtViewer._get_console", _empty
+        )
+
     def actual_factory(
         *model_args,
         ViewerClass=Viewer,
