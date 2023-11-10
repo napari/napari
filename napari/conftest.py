@@ -418,8 +418,12 @@ def mock_console(request):
         yield
         return
 
+    old_breakpoint = sys.breakpointhook
+
     from napari_console import QtConsole
     from qtconsole.rich_jupyter_widget import RichJupyterWidget
+
+    sys.breakpointhook = old_breakpoint
 
     class FakeQtConsole(RichJupyterWidget):
         def __init__(self, viewer: Viewer):
