@@ -222,6 +222,12 @@ class VispyBaseLayer(ABC, Generic[_L]):
             affine_offset[-1, : len(offset)] = offset[::-1]
             affine_matrix = affine_matrix @ affine_offset
         self._master_transform.matrix = affine_matrix
+        child_matrix = np.eye(4)
+        child_matrix[-1, : len(translate)] = (
+            self.layer.translate[::-1] - translate
+        )
+        for child in self.node.children:
+            child.transform.matrix = child_matrix
 
     def _on_experimental_clipping_planes_change(self):
         if hasattr(self.node, 'clipping_planes') and hasattr(
