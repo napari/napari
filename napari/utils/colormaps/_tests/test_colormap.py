@@ -127,7 +127,7 @@ def disable_jit(monkeypatch):
     with patch("numba.core.config.DISABLE_JIT", True):
         importlib.reload(colormap)
         yield
-    importlib.reload(colormap)  # rever to original state
+    importlib.reload(colormap)  # revert to original state
 
 
 @pytest.mark.parametrize(

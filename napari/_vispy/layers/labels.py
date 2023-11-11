@@ -64,6 +64,8 @@ vec4 sample_label_color(float t) {
     if (t == $background_value) {
         return vec4(0);
     }
+    // VisPy automatically scales uint8 and uint16 to [0, 1].
+    // this line fixes returns values to their original range.
     t = t * $scale;
 
     if (($use_selection) && ($selection != t)) {
@@ -484,7 +486,7 @@ class VispyLabelsLayer(VispyImageLayer):
             dtype = minimum_dtype_for_labels(self.layer.num_colors)
             if issubclass(dtype.type, np.integer):
                 scale = np.iinfo(dtype).max
-            else:
+            else:  # float32 texture
                 scale = 1.0
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,

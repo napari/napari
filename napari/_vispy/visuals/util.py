@@ -1,13 +1,16 @@
 class TextureMixin:
-    """
-    This mixin is created to avoid using vispy's private api.
-    vispy stores texture format `node._texture.internalformat`
-    And we should not relay on it if it is not needed.
+    """Store texture format passed to VisPy classes.
+    
+    We need to refer back to the texture format, but VisPy
+    stores it in a private attribute — ``node._texture.internalformat``.
+    This mixin is added to our Node subclasses to avoid having to
+    access private VisPy attributes.
     """
 
     def __init__(self, *args, texture_format, **kwargs):
         super().__init__(*args, texture_format=texture_format, **kwargs)
-        # save texture format to not depend on vispy's private api
+        # classes using this mixin may be frozen dataclasses.
+        # we save the texture format between unfreeze/freeze.
         self.unfreeze()
         self._texture_format = texture_format
         self.freeze()
