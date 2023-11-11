@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Optional, cast
+from typing import DefaultDict, Dict, List, Optional, Tuple, cast
 
 import numba
 import numpy as np
@@ -196,7 +196,7 @@ class DirectLabelColormap(Colormap):
 
     Attributes
     ----------
-    color_dict: defaultdict
+    color_dict: dict from int to (3,) or (4,) array
         The dictionary mapping labels to colors.
     use_selection: bool
         Whether to color using the selected label.
@@ -204,7 +204,7 @@ class DirectLabelColormap(Colormap):
         The selected label.
     """
 
-    color_dict: defaultdict = Field(
+    color_dict: DefaultDict[Optional[int], np.ndarray] = Field(
         default_factory=lambda: defaultdict(lambda: np.zeros(4))
     )
     use_selection: bool = False
@@ -228,11 +228,58 @@ class DirectLabelColormap(Colormap):
             mapped[~np.isclose(values, self.selection)] = 0
         return mapped
 
-    @property
-    def default_color(self):
+    def unique_colors_num(self) -> int:
+        """Count the number of unique colors in the colormap."""
+        return len({tuple(x) for x in self.color_dict.values()})
+
+    def values_mapping_to_minimum_values_set(
+        self,
+    ) -> Tuple[Dict[Optional[int], int], Dict[int, np.ndarray]]:
+        """Create mapping from original values to minimum values set.
+        To use minimum possible dtype for labels.
+
+        Returns
+        -------
+        Dict[Optional[int], int]
+            Mapping from original values to minimum values set.
+        Dict[int, np.ndarray]
+            Mapping from new values to colors.
+
+        """
         if self.use_selection:
-            return 0, 0, 0, 0
-        return self.color_dict.get(None, (0, 0, 0, 0))
+            return {0: 0, self.selection: 1, None: 0}, {
+                0: self.color_dict[0],
+                1: self.color_dict.get(self.selection, self.default_color),
+            }
+
+        color_to_labels: Dict[Tuple[int, ...], List[Optional[int]]] = {}
+        labels_to_new_labels: Dict[Optional[int], int] = {0: 0, None: 1}
+        new_color_dict: Dict[int, np.ndarray] = {
+            0: self.color_dict[0],
+            1: self.default_color,
+        }
+
+        for label, color in self.color_dict.items():
+            if label in {0, None}:
+                continue
+            color_tup = tuple(color)
+            if color_tup not in color_to_labels:
+                color_to_labels[color_tup] = [label]
+                labels_to_new_labels[label] = len(labels_to_new_labels)
+                new_color_dict[labels_to_new_labels[label]] = color
+            else:
+                color_to_labels[color_tup].append(label)
+                labels_to_new_labels[label] = labels_to_new_labels[
+                    color_to_labels[color_tup][0]
+                ]
+
+        return labels_to_new_labels, new_color_dict
+
+    @property
+    def default_color(self) -> np.ndarray:
+        if self.use_selection:
+            return np.array((0, 0, 0, 0))
+        return self.color_dict.get(None, np.array((0, 0, 0, 0)))
         # we provided here default color for backward compatibility
         # if someone is using DirectLabelColormap directly, not through Label layer
 

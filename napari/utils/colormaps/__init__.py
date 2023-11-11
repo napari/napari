@@ -1,5 +1,5 @@
 from napari.utils.colormaps.colorbars import make_colorbar
-from napari.utils.colormaps.colormap import Colormap
+from napari.utils.colormaps.colormap import Colormap, DirectLabelColormap
 from napari.utils.colormaps.colormap_utils import (
     ALL_COLORMAPS,
     AVAILABLE_COLORMAPS,
@@ -21,6 +21,7 @@ from napari.utils.colormaps.colormap_utils import (
 __all__ = [
     "make_colorbar",
     "Colormap",
+    "DirectLabelColormap",
     "ALL_COLORMAPS",
     "AVAILABLE_COLORMAPS",
     "CYMRGB",

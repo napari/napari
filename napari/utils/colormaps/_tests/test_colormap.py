@@ -4,7 +4,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from napari.utils.colormaps import Colormap, colormap
+from napari.utils.colormaps import Colormap, DirectLabelColormap, colormap
 
 
 def test_linear_colormap():
@@ -143,3 +143,61 @@ def test_cast_labels_to_minimum_type_auto(num, dtype, monkeypatch):
     assert cast_arr[0] == 0
     assert cast_arr[1] == 11
     assert cast_arr[2] == 10**6 % num + 6
+
+
+@pytest.fixture
+def direct_label_colormap():
+    return DirectLabelColormap(
+        np.zeros(3),
+        color_dict={
+            0: np.array([0, 0, 0, 0]),
+            1: np.array([255, 0, 0, 255]),
+            2: np.array([0, 255, 0, 255]),
+            3: np.array([0, 0, 255, 255]),
+            12: np.array([0, 0, 255, 255]),
+            None: np.array([255, 255, 255, 255]),
+        },
+    )
+
+
+def test_direct_label_colormap_simple(direct_label_colormap):
+    np.testing.assert_array_equal(
+        direct_label_colormap.map([0, 2, 7]),
+        np.array([[0, 0, 0, 0], [0, 255, 0, 255], [255, 255, 255, 255]]),
+    )
+    assert direct_label_colormap.unique_colors_num() == 5
+
+    (
+        label_mapping,
+        color_dict,
+    ) = direct_label_colormap.values_mapping_to_minimum_values_set()
+
+    assert len(label_mapping) == 6
+    assert len(color_dict) == 5
+    assert label_mapping[0] == 0
+    assert label_mapping[None] == 1
+    assert label_mapping[12] == label_mapping[3]
+    np.testing.assert_array_equal(
+        color_dict[0], direct_label_colormap.color_dict[0]
+    )
+    np.testing.assert_array_equal(
+        color_dict[1], direct_label_colormap.color_dict[None]
+    )
+
+
+def test_direct_label_colormap_selection(direct_label_colormap):
+    direct_label_colormap.selection = 2
+    direct_label_colormap.use_selection = True
+
+    np.testing.assert_array_equal(
+        direct_label_colormap.map([0, 2, 7]),
+        np.array([[0, 0, 0, 0], [0, 255, 0, 255], [0, 0, 0, 0]]),
+    )
+
+    (
+        label_mapping,
+        color_dict,
+    ) = direct_label_colormap.values_mapping_to_minimum_values_set()
+
+    assert len(label_mapping) == 3
+    assert len(color_dict) == 2
