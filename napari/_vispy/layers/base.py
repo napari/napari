@@ -222,6 +222,12 @@ class VispyBaseLayer(ABC, Generic[_L]):
             affine_offset[-1, : len(offset)] = offset[::-1]
             affine_matrix = affine_matrix @ affine_offset
         self._master_transform.matrix = affine_matrix
+
+        # Because of performance reason, for multiscale images
+        # we load only visible part of data to GPU.
+        # To place this part of data correctly we update transform,
+        # but this leads to incorrect placement of child layers.
+        # To fix this we need to update child layers transform.
         child_matrix = np.eye(4)
         child_matrix[-1, : len(translate)] = (
             self.layer.translate[self.layer._slice_input.displayed][::-1]
