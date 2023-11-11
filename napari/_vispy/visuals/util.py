@@ -1,6 +1,6 @@
 class TextureMixin:
     """Store texture format passed to VisPy classes.
-    
+
     We need to refer back to the texture format, but VisPy
     stores it in a private attribute — ``node._texture.internalformat``.
     This mixin is added to our Node subclasses to avoid having to
