@@ -5,6 +5,10 @@ import numpy as np
 import pytest
 
 from napari.utils.colormaps import Colormap, DirectLabelColormap, colormap
+from napari.utils.colormaps.colormap import (
+    DEFAULT_VALUE,
+    cast_direct_labels_to_minimum_type_auto,
+)
 
 
 def test_linear_colormap():
@@ -174,14 +178,13 @@ def test_direct_label_colormap_simple(direct_label_colormap):
 
     assert len(label_mapping) == 6
     assert len(color_dict) == 5
-    assert label_mapping[0] == 0
-    assert label_mapping[None] == 1
+    assert label_mapping[None] == DEFAULT_VALUE
     assert label_mapping[12] == label_mapping[3]
     np.testing.assert_array_equal(
-        color_dict[0], direct_label_colormap.color_dict[0]
+        color_dict[label_mapping[0]], direct_label_colormap.color_dict[0]
     )
     np.testing.assert_array_equal(
-        color_dict[1], direct_label_colormap.color_dict[None]
+        color_dict[0], direct_label_colormap.color_dict[None]
     )
 
 
@@ -199,5 +202,38 @@ def test_direct_label_colormap_selection(direct_label_colormap):
         color_dict,
     ) = direct_label_colormap.values_mapping_to_minimum_values_set()
 
-    assert len(label_mapping) == 3
+    assert len(label_mapping) == 2
     assert len(color_dict) == 2
+
+
+def test_cast_direct_labels_to_minimum_type_auto(direct_label_colormap):
+    data = np.arange(15, dtype=np.uint32)
+    casted = cast_direct_labels_to_minimum_type_auto(
+        data, direct_label_colormap
+    )
+    label_mapping = (
+        direct_label_colormap.values_mapping_to_minimum_values_set()[0]
+    )
+    assert casted.dtype == np.uint8
+    np.testing.assert_array_equal(
+        casted,
+        np.array(
+            [
+                label_mapping[0],
+                label_mapping[1],
+                label_mapping[2],
+                label_mapping[3],
+                DEFAULT_VALUE,
+                DEFAULT_VALUE,
+                DEFAULT_VALUE,
+                DEFAULT_VALUE,
+                DEFAULT_VALUE,
+                DEFAULT_VALUE,
+                DEFAULT_VALUE,
+                DEFAULT_VALUE,
+                label_mapping[3],
+                DEFAULT_VALUE,
+                DEFAULT_VALUE,
+            ]
+        ),
+    )

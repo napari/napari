@@ -53,6 +53,7 @@ from napari.utils.colormaps import (
     label_colormap,
 )
 from napari.utils.colormaps.colormap import (
+    cast_direct_labels_to_minimum_type_auto,
     cast_labels_to_minimum_type_auto,
     minimum_dtype_for_labels,
 )
@@ -1000,7 +1001,9 @@ class Labels(_ImageBase):
 
     def _get_cache_dtype(self) -> np.dtype:
         if self.color_mode == LabelColorMode.DIRECT:
-            return np.dtype(np.float32)
+            return minimum_dtype_for_labels(
+                self._direct_colormap.unique_colors_num() + 2
+            )
         return minimum_dtype_for_labels(self.num_colors)
 
     def _setup_cache(self, labels):
@@ -1081,7 +1084,9 @@ class Labels(_ImageBase):
                 labels_to_map, self.num_colors, self._background_label
             )
         else:  # direct
-            mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
+            mapped_labels = cast_direct_labels_to_minimum_type_auto(
+                labels_to_map, self._direct_colormap
+            )
 
         if self._cached_labels is not None:
             if update_mask is not None:

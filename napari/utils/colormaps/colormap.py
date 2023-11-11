@@ -1,3 +1,5 @@
+import bisect
+import math
 from collections import defaultdict
 from typing import DefaultDict, Dict, List, Optional, Tuple, cast
 
@@ -11,6 +13,8 @@ from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
+
+DEFAULT_VALUE = 0
 
 
 class ColormapInterpolationMode(StrEnum):
@@ -36,7 +40,7 @@ class Colormap(EventedModel):
         Data used in the colormap.
     name : str
         Name of the colormap.
-    display_name : str
+    _display_name : str
         Display name of the colormap.
     controls : array, shape (N,) or (N+1,)
         Control points of the colormap.
@@ -77,7 +81,8 @@ class Colormap(EventedModel):
         if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
             raise ValueError(
                 trans._(
-                    'Control points must start with 0.0 and end with 1.0. Got {start_control_point} and {end_control_point}',
+                    'Control points must start with 0.0 and end with 1.0. '
+                    'Got {start_control_point} and {end_control_point}',
                     deferred=True,
                     start_control_point=v[0],
                     end_control_point=v[-1],
@@ -247,20 +252,21 @@ class DirectLabelColormap(Colormap):
 
         """
         if self.use_selection:
-            return {0: 0, self.selection: 1, None: 0}, {
-                0: self.color_dict[0],
-                1: self.color_dict.get(self.selection, self.default_color),
+            return {self.selection: 1, None: 0}, {
+                0: np.array((0, 0, 0, 0)),
+                1: self.color_dict.get(
+                    int(self.selection), self.default_color
+                ),
             }
 
         color_to_labels: Dict[Tuple[int, ...], List[Optional[int]]] = {}
-        labels_to_new_labels: Dict[Optional[int], int] = {0: 0, None: 1}
+        labels_to_new_labels: Dict[Optional[int], int] = {None: 0}
         new_color_dict: Dict[int, np.ndarray] = {
-            0: self.color_dict[0],
-            1: self.default_color,
+            DEFAULT_VALUE: self.default_color,
         }
 
         for label, color in self.color_dict.items():
-            if label in {0, None}:
+            if label is None:
                 continue
             color_tup = tuple(color)
             if color_tup not in color_to_labels:
@@ -346,6 +352,63 @@ def _modulo_plus_one(
     return result
 
 
+def cast_direct_labels_to_minimum_type_auto(
+    data: np.ndarray, direct_colormap: DirectLabelColormap
+) -> np.ndarray:
+    dtype = minimum_dtype_for_labels(direct_colormap.unique_colors_num() + 2)
+
+    label_mapping = direct_colormap.values_mapping_to_minimum_values_set()[0]
+    pos = bisect.bisect_left(PRIME_NUM_TABLE, len(label_mapping) * 2)
+    if pos < len(PRIME_NUM_TABLE):
+        hash_size = PRIME_NUM_TABLE[pos]
+    else:
+        hash_size = math.ceil(math.log2(len(label_mapping))) * 2
+
+    hash_table_key = np.zeros(hash_size, dtype=data.dtype)
+    hash_table_val = np.zeros(hash_size, dtype=dtype)
+
+    for key, val in label_mapping.items():
+        if key is None:
+            continue
+        new_key = key % hash_size
+        while hash_table_key[new_key] != 0:
+            new_key = (new_key + 1) % hash_size
+
+        hash_table_key[new_key] = key
+        hash_table_val[new_key] = val
+
+    return _cast_direct_labels_to_minimum_type_auto(
+        data, hash_table_key, hash_table_val, dtype
+    )
+
+
+@numba.njit(parallel=True)
+def _cast_direct_labels_to_minimum_type_auto(
+    data: np.ndarray,
+    hash_table_key: np.ndarray,
+    hash_table_val: np.ndarray,
+    dtype: np.dtype,
+) -> np.ndarray:
+    result_array = np.zeros_like(data, dtype=dtype)
+
+    # iterate over data and calculate modulo num_colors assigning to result_array
+
+    hash_size = hash_table_key.size
+
+    for i in numba.prange(data.size):
+        key = data.flat[i]
+        new_key = key % hash_size
+        while hash_table_key[new_key] != key:
+            if hash_table_key[new_key] == 0:
+                result_array.flat[i] = DEFAULT_VALUE
+                break
+            # This will stop because half of the hash table is empty
+            new_key = (new_key + 1) % hash_size
+        result_array.flat[i] = hash_table_val[new_key]
+
+    return result_array
+
+
 def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
     """Return the minimum dtype that can hold the number of colors.
 
@@ -364,3 +427,19 @@ def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
     if num_colors <= np.iinfo(np.uint16).max:
         return np.dtype(np.uint16)
     return np.dtype(np.float32)
+
+
+PRIME_NUM_TABLE = [
+    37,
+    61,
+    127,
+    251,
+    509,
+    1021,
+    2039,
+    4093,
+    8191,
+    16381,
+    32749,
+    65521,
+]
