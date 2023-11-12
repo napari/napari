@@ -265,6 +265,21 @@ def _modulo_plus_one(values: np.ndarray, n: int, dtype) -> np.ndarray:
 
     This ensures (1) an output value in [0, n] (inclusive), and (2) that
     no nonzero values in the input are zero in the output.
+
+    Parameters
+    ----------
+    values : np.ndarray
+        The dividend of the modulo operator.
+    n : int
+        The divisor.
+    dtype : np.dtype
+        The desired dtype for the output array.
+
+    Returns
+    -------
+    np.ndarray
+        The result: ``values`` for values in [0, n), ``values % n + 1``
+        everywhere else.
     """
     result_array = np.empty_like(values, dtype=dtype)
 
