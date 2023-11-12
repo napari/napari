@@ -213,7 +213,7 @@ class DirectLabelColormap(Colormap):
         default_factory=lambda: defaultdict(lambda: np.zeros(4))
     )
     use_selection: bool = False
-    selection: float = 0.0
+    selection: int = 0
 
     def map(self, values):
         # Convert to float32 to match the current GL shader implementation
