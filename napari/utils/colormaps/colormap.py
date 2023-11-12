@@ -256,13 +256,16 @@ def cast_labels_to_minimum_type_auto(
     """
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
-    return _cast_labels_to_minimum_type_auto(data, num_colors, dtype)
+    return _modulo_plus_one(data, num_colors, dtype)
 
 
 @numba.njit(parallel=True)
-def _cast_labels_to_minimum_type_auto(
-    data: np.ndarray, num_colors: int, dtype
-) -> np.ndarray:
+def _modulo_plus_one(data: np.ndarray, num_colors: int, dtype) -> np.ndarray:
+    """Like ``array % n`` but with 1 added to result for values >n.
+
+    This ensures (1) an output value in [0, n] (inclusive), and (2) that
+    no nonzero values in the input are zero in the output.
+    """
     result_array = np.zeros_like(data, dtype=dtype)
 
     # iterate over data and calculate modulo num_colors assigning to result_array
