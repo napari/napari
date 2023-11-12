@@ -943,6 +943,12 @@ class Labels(_ImageBase):
         colors_sliced = self._raw_to_displayed(
             raw_displayed, data_slice=updated_slice
         )
+        # The next line is needed to make the following tests pass in
+        # napari/_vispy/_tests/:
+        # - test_vispy_labels_layer.py::test_labels_painting
+        # - test_vispy_labels_layer.py::test_labels_fill_slice
+        # See https://github.com/napari/napari/pull/6112/files#r1291613760
+        # and https://github.com/napari/napari/issues/6185
         self._slice.image.view[updated_slice] = colors_sliced
 
         self.events.labels_update(data=colors_sliced, offset=offset)
