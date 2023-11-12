@@ -260,21 +260,19 @@ def cast_labels_to_minimum_type_auto(
 
 
 @numba.njit(parallel=True)
-def _modulo_plus_one(data: np.ndarray, num_colors: int, dtype) -> np.ndarray:
+def _modulo_plus_one(values: np.ndarray, n: int, dtype) -> np.ndarray:
     """Like ``array % n`` but with 1 added to result for values >n.
 
     This ensures (1) an output value in [0, n] (inclusive), and (2) that
     no nonzero values in the input are zero in the output.
     """
-    result_array = np.zeros_like(data, dtype=dtype)
+    result_array = np.zeros_like(values, dtype=dtype)
 
-    # iterate over data and calculate modulo num_colors assigning to result_array
-
-    for i in numba.prange(data.size):
-        if 0 <= data.flat[i] < num_colors:
-            result_array.flat[i] = data.flat[i]
+    for i in numba.prange(values.size):
+        if 0 <= values.flat[i] < n:
+            result_array.flat[i] = values.flat[i]
         else:
-            result_array.flat[i] = data.flat[i] % num_colors + 1
+            result_array.flat[i] = values.flat[i] % n + 1
 
     return result_array
 
