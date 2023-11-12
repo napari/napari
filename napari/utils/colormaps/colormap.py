@@ -266,7 +266,7 @@ def _modulo_plus_one(values: np.ndarray, n: int, dtype) -> np.ndarray:
     This ensures (1) an output value in [0, n] (inclusive), and (2) that
     no nonzero values in the input are zero in the output.
     """
-    result_array = np.zeros_like(values, dtype=dtype)
+    result_array = np.empty_like(values, dtype=dtype)
 
     for i in numba.prange(values.size):
         if 0 <= values.flat[i] < n:
