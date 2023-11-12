@@ -256,7 +256,7 @@ class DirectLabelColormap(Colormap):
                 0: np.array((0, 0, 0, 0)),
                 1: self.color_dict.get(
                     self.selection,
-                    self.color_dict.get(None, np.array((0, 0, 0, 0))),
+                    self.default_color,
                 ),
             }
 
@@ -284,8 +284,6 @@ class DirectLabelColormap(Colormap):
 
     @property
     def default_color(self) -> np.ndarray:
-        if self.use_selection:
-            return np.array((0, 0, 0, 0))
         return self.color_dict.get(None, np.array((0, 0, 0, 0)))
         # we provided here default color for backward compatibility
         # if someone is using DirectLabelColormap directly, not through Label layer
