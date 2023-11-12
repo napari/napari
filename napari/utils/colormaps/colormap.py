@@ -160,14 +160,14 @@ class LabelColormap(Colormap):
     use_selection: bool = False
     selection: float = 0.0
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
-    background_value: float = 0.0
+    background_value: int = 0
 
     def map(self, values):
         values = np.atleast_1d(values)
 
         mapped = self.colors[
             cast_labels_to_minimum_type_auto(
-                values, len(self.colors) - 1
+                values, len(self.colors) - 1, self.background_value
             ).astype(np.int64)
         ]
 
@@ -231,14 +231,14 @@ class DirectLabelColormap(Colormap):
     @property
     def default_color(self):
         if self.use_selection:
-            return (0, 0, 0, 0)
+            return 0, 0, 0, 0
         return self.color_dict.get(None, (0, 0, 0, 0))
         # we provided here default color for backward compatibility
         # if someone is using DirectLabelColormap directly, not through Label layer
 
 
 def cast_labels_to_minimum_type_auto(
-    data: np.ndarray, num_colors: int
+    data: np.ndarray, num_colors: int, background_value: int
 ) -> np.ndarray:
     """Perform modulo operation based on number of colors
 
@@ -248,6 +248,8 @@ def cast_labels_to_minimum_type_auto(
         Labels data to be casted.
     num_colors : int
         Number of unique colors in the data.
+    background_value : int
+        The value in ``values`` to be treated as the background.
 
     Returns
     -------
@@ -256,11 +258,13 @@ def cast_labels_to_minimum_type_auto(
     """
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
-    return _modulo_plus_one(data, num_colors, dtype)
+    return _modulo_plus_one(data, num_colors, dtype, background_value)
 
 
 @numba.njit(parallel=True)
-def _modulo_plus_one(values: np.ndarray, n: int, dtype) -> np.ndarray:
+def _modulo_plus_one(
+    values: np.ndarray, n: int, dtype: np.dtype, background_value: int
+) -> np.ndarray:
     """Like ``array % n`` but with 1 added to result for values >=n.
 
     This ensures (1) an output value in [0, n] (inclusive), and (2) that
@@ -274,18 +278,20 @@ def _modulo_plus_one(values: np.ndarray, n: int, dtype) -> np.ndarray:
         The divisor.
     dtype : np.dtype
         The desired dtype for the output array.
+    background_value : int
+        The value in ``values`` to be treated as the background.
 
     Returns
     -------
     np.ndarray
-        The result: ``values`` for values in [0, n), ``values % n + 1``
+        The result: 0 for the background ``values % n + 1``
         everywhere else.
     """
     result = np.empty_like(values, dtype=dtype)
 
     for i in numba.prange(values.size):
-        if 0 <= values.flat[i] < n:
-            result.flat[i] = values.flat[i]
+        if values.flat[i] == background_value:
+            result.flat[i] = 0
         else:
             result.flat[i] = values.flat[i] % n + 1
 

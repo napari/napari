@@ -1077,7 +1077,7 @@ class Labels(_ImageBase):
 
         if self.color_mode == LabelColorMode.AUTO:
             mapped_labels = cast_labels_to_minimum_type_auto(
-                labels_to_map, self.num_colors
+                labels_to_map, self.num_colors, self._background_label
             )
         else:  # direct
             mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
