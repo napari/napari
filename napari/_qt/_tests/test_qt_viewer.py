@@ -703,6 +703,49 @@ def test_label_colors_matching_widget(qtbot, make_napari_viewer):
         # there is a difference of rounding between the QtColorBox and the screenshot
 
 
+@skip_local_popups
+@skip_on_win_ci
+def test_label_colors_matching_widget_direct(qtbot, make_napari_viewer):
+    """Make sure the rendered label colors match the QtColorBox widget."""
+    viewer = make_napari_viewer(show=True)
+    # XXX TODO: this unstable! Seed = 0 fails, for example. This is due to numerical
+    #           imprecision in random colormap on gpu vs cpu
+    np.random.seed(1)
+    data = np.ones((2, 2), dtype=np.uint64)
+    layer = viewer.add_labels(data)
+    layer.opacity = 1.0  # QtColorBox & single layer are blending differently
+    layer.color = {
+        0: "transparent",
+        1: "yellow",
+        3: "blue",
+        8: "red",
+        1000: "green",
+        None: "white",
+    }
+
+    test_colors = (0, 1, 2, 3, 8, 1000, 50)
+
+    for label in test_colors:
+        # Change color & selected color to the same label
+        layer.data = np.full((2, 2), label, dtype=np.uint64)
+        layer.selected_label = label
+
+        qtbot.wait(
+            100
+        )  # wait for .update() to be called on QtColorBox from Qt
+
+        color_box_color = viewer.window._qt_viewer.controls.widgets[
+            layer
+        ].colorBox.color
+        screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
+        shape = np.array(screenshot.shape[:2])
+        middle_pixel = screenshot[tuple(shape // 2)]
+        if label == 0:
+            assert np.allclose([0, 0, 0, 255], middle_pixel), label
+        else:
+            assert np.allclose(color_box_color, middle_pixel, atol=1), label
+
+
 def test_axes_labels(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))

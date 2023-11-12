@@ -1,6 +1,4 @@
-from itertools import product
-from math import ceil, isnan, log2, sqrt
-from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Tuple
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -14,10 +12,8 @@ from napari._vispy.layers.image import (
     VispyImageLayer,
     get_dtype_from_vispy_texture_format,
 )
-from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
-from napari.utils._dtype import vispy_texture_dtype
 from napari.utils.colormaps.colormap import minimum_dtype_for_labels
 
 if TYPE_CHECKING:
@@ -78,70 +74,18 @@ vec4 sample_label_color(float t) {
 
 
 direct_lookup_shader = """
-uniform sampler2D texture2D_keys;
 uniform sampler2D texture2D_values;
-uniform vec2 LUT_shape;
-uniform int color_count;
 
 
 vec4 sample_label_color(float t) {
+    t = t * $scale;
     if (($use_selection) && ($selection != t)) {
         return vec4(0);
     }
-
-    float empty = $EMPTY_VAL;
-    // get position in the texture grid (same as hash2d_get)
-    vec2 pos = vec2(
-        mod(int(t / LUT_shape.y), LUT_shape.x),
-        mod(t, LUT_shape.y)
+    return texture2D(
+        texture2D_values,
+        vec2(0.0, (t + 0.5) / $color_map_size)
     );
-
-    // add .5 to move to the center of each texel and convert to texture coords
-    vec2 pos_tex = (pos + vec2(.5)) / LUT_shape;
-
-    // sample key texture
-    float found = texture2D(
-        texture2D_keys,
-        pos_tex
-    ).r;
-
-    // return vec4(pos_tex, 0, 1); // debug if texel is calculated correctly (correct)
-    // return vec4(found / 15, 0, 0, 1); // debug if key is calculated correctly (correct, should be a black-to-red gradient)
-
-    // we get a different value:
-    // - if it's the empty key, exit;
-    // - otherwise, it's a hash collision: continue searching
-    float initial_t = t;
-    int count = 0;
-    while ((abs(found - initial_t) > 1e-8) && (abs(found - empty) > 1e-8)) {
-        count = count + 1;
-        t = initial_t + float(count);
-        if (count >= color_count) {
-            return vec4(0);
-        }
-        // same as above
-        vec2 pos = vec2(
-            mod(int(t / LUT_shape.y), LUT_shape.x),
-            mod(t, LUT_shape.y)
-        );
-        pos_tex = (pos + vec2(.5)) / LUT_shape;
-
-        found = texture2D(
-            texture2D_keys,
-            pos_tex
-        ).r;
-    }
-
-    // return vec4(pos_tex, 0, 1); // debug if final texel is calculated correctly
-
-    vec4 color = vec4($default_color);
-    if (abs(found - empty) > 1e-8) {
-        color = texture2D(
-            texture2D_values,
-            pos_tex
-        );
-    }
-    return color;
 }
 
 """
@@ -168,12 +112,7 @@ class LabelVispyColormap(VispyColormap):
 
 class DirectLabelVispyColormap(VispyColormap):
     def __init__(
-        self,
-        use_selection=False,
-        selection=0.0,
-        collision=True,
-        default_color=(0, 0, 0, 0),
-        empty_value=EMPTY_VAL,
+        self, use_selection=False, selection=0.0, scale=1.0, color_map_size=255
     ):
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
@@ -182,258 +121,18 @@ class DirectLabelVispyColormap(VispyColormap):
                 "$use_selection", str(use_selection).lower()
             )
             .replace("$selection", str(selection))
-            .replace("$collision", str(collision).lower())
-            .replace("$default_color", ", ".join(map(str, default_color)))
-            .replace("$EMPTY_VAL", str(empty_value))
+            .replace("$scale", str(scale))
+            .replace("$color_map_size", str(color_map_size))
         )
-
-
-def idx_to_2d(idx, shape):
-    """
-    From a 1D index generate a 2D index that fits the given shape.
-
-    The 2D index will wrap around line by line and back to the beginning.
-    """
-    return int((idx // shape[1]) % shape[0]), int(idx % shape[1])
-
-
-def hash2d_get(key, keys, empty_val=EMPTY_VAL):
-    """
-    Given a key, retrieve its location in the keys table.
-    """
-    pos = idx_to_2d(key, keys.shape)
-    initial_key = key
-    while keys[pos] != initial_key and keys[pos] != empty_val:
-        if key - initial_key > keys.size:
-            raise KeyError('label does not exist')
-        key += 1
-        pos = idx_to_2d(key, keys.shape)
-    return pos if keys[pos] == initial_key else None
-
-
-def hash2d_set(
-    key: Union[float, np.floating],
-    value: ColorTuple,
-    keys: np.ndarray,
-    values: np.ndarray,
-    empty_val=EMPTY_VAL,
-) -> bool:
-    """
-    Set a value in the 2d hashmap, wrapping around to avoid collision.
-    """
-    if key is None or isnan(key):
-        return False
-    pos = idx_to_2d(key, keys.shape)
-    initial_key = key
-    collision = False
-    while keys[pos] != empty_val:
-        collision = True
-        if key - initial_key > keys.size:
-            raise OverflowError('too many labels')
-        key += 1
-        pos = idx_to_2d(key, keys.shape)
-    keys[pos] = initial_key
-    values[pos] = value
-
-    return collision
-
-
-def _get_shape_from_keys(
-    keys: np.ndarray, first_dim_index: int, second_dim_index: int
-) -> Optional[Tuple[int, int]]:
-    """Get the smallest hashmap size without collisions, if any.
-
-    This function uses precomputed prime numbers from PRIME_NUM_TABLE.
-
-    For each index, it gets a list of prime numbers close to
-    ``2**(index + START_TWO_POWER)`` (where ``START_TWO_POWER=5``), that is,
-    the smallest table is close to ``32 * 32``.
-
-    The function then iterates over all combinations of prime numbers from the
-    lists and checks for a combination that has no collisions for the
-    given keys, returning that combination.
-
-    If no combination can be found, returns None.
-
-    Although keys that collide for all table combinations are rare, they are
-    possible: see ``test_collide_keys`` and ``test_collide_keys2``.
-
-    Parameters
-    ----------
-    keys : np.ndarray
-        array of keys to be inserted into the hashmap,
-        used for collision detection
-    first_dim_index : int
-        index for first dimension of PRIME_NUM_TABLE
-    second_dim_index : int
-        index for second dimension of PRIME_NUM_TABLE
-
-    Returns
-    shp : 2-tuple of int, optional
-        If a table shape can be found that has no collisions for the given
-        keys, return that shape. Otherwise, return None.
-    """
-    for fst_size, snd_size in product(
-        PRIME_NUM_TABLE[first_dim_index],
-        PRIME_NUM_TABLE[second_dim_index],
-    ):
-        fst_crd = (keys // snd_size) % fst_size
-        snd_crd = keys % snd_size
-
-        collision_set = set(zip(fst_crd, snd_crd))
-        if len(collision_set) == len(set(keys)):
-            return fst_size, snd_size
-    return None
-
-
-def _get_shape_from_dict(
-    color_dict: Dict[float, Tuple[float, float, float, float]]
-) -> Tuple[int, int]:
-    """Compute the shape of a 2D hashmap based on the keys in `color_dict`.
-
-    This function finds indices for the first and second dimensions of a
-    table in PRIME_NUM_TABLE based on a target load factor of 0.125-0.25,
-    then calls `_get_shape_from_keys` based on those indices.
-
-    This is quite a low load-factor, but, ultimately, the hash table
-    textures are tiny compared to most datasets, so we choose these
-    factors to minimize the chance of collisions and trade a bit of GPU
-    memory for speed.
-    """
-    keys = np.array([x for x in color_dict if x is not None], dtype=np.int64)
-
-    size = len(keys) / MAX_LOAD_FACTOR
-    size_sqrt = sqrt(size)
-    size_log2 = log2(size_sqrt)
-    max_idx = len(PRIME_NUM_TABLE) - 1
-    max_size = PRIME_NUM_TABLE[max_idx][0] ** 2
-    fst_dim = min(max(int(ceil(size_log2)) - START_TWO_POWER, 0), max_idx)
-    snd_dim = min(max(int(round(size_log2, 0)) - START_TWO_POWER, 0), max_idx)
-
-    if len(keys) > max_size:
-        raise MemoryError(
-            f'Too many labels: napari supports at most {max_size} labels, '
-            f'got {len(keys)}.'
-        )
-
-    shp = _get_shape_from_keys(keys, fst_dim, snd_dim)
-    if shp is None and snd_dim < max_idx:
-        # if we still have room to grow, try the next size up to get a
-        # collision-free table
-        shp = _get_shape_from_keys(keys, fst_dim, snd_dim + 1)
-    if shp is None:
-        # at this point, if there's still collisions, we give up and return
-        # the largest possible table given these indices and the target load
-        # factor.
-        # (To see a set of keys that cause collision,
-        # and land on this branch, see test_collide_keys2.)
-        shp = PRIME_NUM_TABLE[fst_dim][0], PRIME_NUM_TABLE[snd_dim][0]
-    return shp
-
-
-def get_shape_from_dict(color_dict):
-    global MAX_TEXTURE_SIZE
-    if MAX_TEXTURE_SIZE is None:
-        MAX_TEXTURE_SIZE = get_max_texture_sizes()[0]
-
-    shape = _get_shape_from_dict(color_dict)
-
-    if MAX_TEXTURE_SIZE is not None and (
-        shape[0] > MAX_TEXTURE_SIZE or shape[1] > MAX_TEXTURE_SIZE
-    ):
-        raise MemoryError(
-            f'Too many labels. GPU does not support textures of this size.'
-            f' Requested size is {shape[0]}x{shape[1]}, but maximum supported'
-            f' size is {MAX_TEXTURE_SIZE}x{MAX_TEXTURE_SIZE}'
-        )
-    return shape
-
-
-def _get_empty_val_from_dict(color_dict):
-    empty_val = EMPTY_VAL
-    while empty_val in color_dict:
-        empty_val -= 1
-    return empty_val
 
 
 def build_textures_from_dict(
-    color_dict: Dict[float, ColorTuple],
-    empty_val=_UNSET,
-    shape=None,
-    use_selection=False,
-    selection=0.0,
-) -> Tuple[np.ndarray, np.ndarray, bool]:
-    """
-    This function construct hash table for fast lookup of colors.
-    It uses pair of textures.
-    First texture is a table of keys, used to determine position,
-    second is a table of values.
-
-    The procedure of selection table and collision table is
-    implemented in hash2d_get function.
-
-    Parameters
-    ----------
-    color_dict : Dict[float, Tuple[float, float, float, float]]
-        Dictionary from labels to colors
-    empty_val : float
-        Value to use for empty cells in the hash table
-    shape : Optional[Tuple[int, int]]
-        Shape of the hash table.
-        If None, it is calculated from the number of
-        labels using _get_shape_from_dict
-    use_selection : bool
-        If True, only the selected label is shown.
-        The generated colormap is single-color of size (1, 1)
-    selection : float
-        used only if use_selection is True.
-        Determines the selected label.
-
-    Returns
-    -------
-    keys: np.ndarray
-        Texture of keys for the hash table
-    values: np.ndarray
-        Texture of values for the hash table
-    collision: bool
-        True if there are collisions in the hash table
-    """
-    if use_selection:
-        keys = np.full((1, 1), selection, dtype=vispy_texture_dtype)
-        values = np.zeros((1, 1, 4), dtype=vispy_texture_dtype)
-        values[0, 0] = color_dict[selection]
-        return keys, values, False
-
-    if empty_val is _UNSET:
-        empty_val = _get_empty_val_from_dict(color_dict)
-
-    if len(color_dict) > 2**31 - 2:
-        raise MemoryError(
-            f'Too many labels ({len(color_dict)}). Maximum supported number of labels is 2^31-2'
-        )
-
-    if shape is None:
-        shape = get_shape_from_dict(color_dict)
-
-    if len(color_dict) > shape[0] * shape[1]:
-        raise MemoryError(
-            f'Too many labels ({len(color_dict)}). Maximum supported number of labels for the given shape is {shape[0] * shape[1]}'
-        )
-
-    keys = np.full(shape, empty_val, dtype=vispy_texture_dtype)
-    values = np.zeros(shape + (4,), dtype=vispy_texture_dtype)
-    visited = set()
-    collision = False
+    color_dict: Dict[int, ColorTuple],
+) -> np.ndarray:
+    data = np.zeros((len(color_dict), 4), dtype=np.float32)
     for key, value in color_dict.items():
-        key_ = vispy_texture_dtype(key)
-        if key_ in visited:
-            # input int keys are unique but can map to the same float.
-            # if so, we ignore all but the first appearance.
-            continue
-        visited.add(key_)
-        collision |= hash2d_set(key_, value, keys, values, empty_val=empty_val)
-
-    return keys, values, collision
+        data[key] = value
+    return data
 
 
 class VispyLabelsLayer(VispyImageLayer):
@@ -498,32 +197,31 @@ class VispyLabelsLayer(VispyImageLayer):
             )
 
         elif mode == 'direct':
-            color_dict = (
-                self.layer.color
-            )  # TODO: should probably account for non-given labels
-            key_texture, val_texture, collision = build_textures_from_dict(
-                color_dict,
-                use_selection=colormap.use_selection,
-                selection=colormap.selection,
+            color_dict = self.layer._direct_colormap.values_mapping_to_minimum_values_set()[
+                1
+            ]  # TODO: should probably account for non-given labels
+            val_texture = build_textures_from_dict(color_dict)
+
+            dtype = minimum_dtype_for_labels(
+                self.layer._direct_colormap.unique_colors_num() + 2
             )
+            if issubclass(dtype.type, np.integer):
+                scale = np.iinfo(dtype).max
+            else:  # float32 texture
+                scale = 1.0
 
             self.node.cmap = DirectLabelVispyColormap(
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
-                collision=collision,
-                default_color=colormap.default_color,
-                empty_value=_get_empty_val_from_dict(color_dict),
+                scale=scale,
+                color_map_size=val_texture.shape[0],
             )
             # note that textures have to be transposed here!
-            self.node.shared_program['texture2D_keys'] = Texture2D(
-                key_texture.T, internalformat='r32f', interpolation='nearest'
-            )
             self.node.shared_program['texture2D_values'] = Texture2D(
-                val_texture.swapaxes(0, 1),
+                val_texture.reshape((val_texture.shape[0], 1, 4)),
                 internalformat='rgba32f',
                 interpolation='nearest',
             )
-            self.node.shared_program['LUT_shape'] = key_texture.shape
         else:
             self.node.cmap = VispyColormap(*colormap)
 
