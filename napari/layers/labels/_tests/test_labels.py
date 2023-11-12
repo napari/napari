@@ -584,6 +584,23 @@ def test_contour(input_data, expected_data_view):
         layer.contour = -1
 
 
+@pytest.mark.parametrize("background_num", [0, 1, 2])
+def test_background_label(background_num):
+    data = np.zeros((10, 10), dtype=np.uint32)
+    data[1:-1, 1:-1] = 1
+    data[2:-2, 2:-2] = 2
+
+    layer = Labels(data)
+    layer._background_label = background_num
+    layer.refresh()
+    np.testing.assert_array_equal(
+        layer._data_view == 0, data == background_num
+    )
+    np.testing.assert_array_equal(
+        layer._data_view != 0, data != background_num
+    )
+
+
 def test_contour_large_new_labels():
     """Check that new labels larger than the lookup table work in contour mode.
 
