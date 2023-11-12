@@ -454,7 +454,7 @@ def label_colormap(
     )
 
     colors = np.concatenate(
-        (np.zeros((1, 4), dtype=colors.dtype), colors[indices][:-1])
+        (np.zeros((1, 4), dtype=colors.dtype), colors[indices][:-2])
     )
     # here is an ugly hack to restore classical napari color order.
 
