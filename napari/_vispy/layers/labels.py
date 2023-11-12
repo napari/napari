@@ -20,37 +20,7 @@ if TYPE_CHECKING:
     from napari.layers import Labels
 
 
-# We use table sizes that are prime numbers near powers of 2.
-# For each power of 2, we keep three candidate sizes. This allows us to
-# maximize the chances of finding a collision-free table for a given set of
-# keys (which we typically know at build time).
-PRIME_NUM_TABLE = [
-    [37, 31, 29],
-    [61, 59, 53],
-    [127, 113, 109],
-    [251, 241, 239],
-    [509, 503, 499],
-    [1021, 1019, 1013],
-    [2039, 2029, 2027],
-    [4093, 4091, 4079],
-    [8191, 8179, 8171],
-    [16381, 16369, 16363],
-    [32749, 32719, 32717],
-    [65521, 65519, 65497],
-]
-
-START_TWO_POWER = 5
-
-MAX_LOAD_FACTOR = 0.25
-
-MAX_TEXTURE_SIZE = None
-
 ColorTuple = Tuple[float, float, float, float]
-
-
-EMPTY_VAL = -1.0
-
-_UNSET = object()
 
 
 auto_lookup_shader = """
