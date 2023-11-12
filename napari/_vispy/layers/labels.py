@@ -478,7 +478,7 @@ class VispyLabelsLayer(VispyImageLayer):
         mode = self.layer.color_mode
 
         if mode == 'auto':
-            dtype = minimum_dtype_for_labels(self.layer.num_colors)
+            dtype = minimum_dtype_for_labels(self.layer.num_colors + 1)
             if issubclass(dtype.type, np.integer):
                 scale = np.iinfo(dtype).max
             else:  # float32 texture
