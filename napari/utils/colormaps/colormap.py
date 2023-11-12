@@ -261,7 +261,7 @@ def cast_labels_to_minimum_type_auto(
 
 @numba.njit(parallel=True)
 def _modulo_plus_one(values: np.ndarray, n: int, dtype) -> np.ndarray:
-    """Like ``array % n`` but with 1 added to result for values >n.
+    """Like ``array % n`` but with 1 added to result for values >=n.
 
     This ensures (1) an output value in [0, n] (inclusive), and (2) that
     no nonzero values in the input are zero in the output.
