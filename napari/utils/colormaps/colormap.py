@@ -281,15 +281,15 @@ def _modulo_plus_one(values: np.ndarray, n: int, dtype) -> np.ndarray:
         The result: ``values`` for values in [0, n), ``values % n + 1``
         everywhere else.
     """
-    result_array = np.empty_like(values, dtype=dtype)
+    result = np.empty_like(values, dtype=dtype)
 
     for i in numba.prange(values.size):
         if 0 <= values.flat[i] < n:
-            result_array.flat[i] = values.flat[i]
+            result.flat[i] = values.flat[i]
         else:
-            result_array.flat[i] = values.flat[i] % n + 1
+            result.flat[i] = values.flat[i] % n + 1
 
-    return result_array
+    return result
 
 
 def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
