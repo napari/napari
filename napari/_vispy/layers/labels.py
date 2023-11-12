@@ -49,9 +49,6 @@ uniform sampler2D texture2D_values;
 
 vec4 sample_label_color(float t) {
     t = t * $scale;
-    if (($use_selection) && ($selection != t)) {
-        return vec4(0);
-    }
     return texture2D(
         texture2D_values,
         vec2(0.0, (t + 0.5) / $color_map_size)

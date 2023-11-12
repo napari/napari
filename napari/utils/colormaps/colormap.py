@@ -255,7 +255,8 @@ class DirectLabelColormap(Colormap):
             return {self.selection: 1, None: 0}, {
                 0: np.array((0, 0, 0, 0)),
                 1: self.color_dict.get(
-                    int(self.selection), self.default_color
+                    self.selection,
+                    self.color_dict.get(None, np.array((0, 0, 0, 0))),
                 ),
             }
 
