@@ -61,9 +61,6 @@ auto_lookup_shader = """
 uniform sampler2D texture2D_values;
 
 vec4 sample_label_color(float t) {
-    if (t == $background_value) {
-        return vec4(0);
-    }
     // VisPy automatically scales uint8 and uint16 to [0, 1].
     // this line fixes returns values to their original range.
     t = t * $scale;
@@ -156,7 +153,6 @@ class LabelVispyColormap(VispyColormap):
         colors,
         use_selection=False,
         selection=0.0,
-        background_value=0.0,
         scale=1.0,
     ):
         super().__init__(
@@ -166,7 +162,6 @@ class LabelVispyColormap(VispyColormap):
             auto_lookup_shader.replace('$color_map_size', str(len(colors)))
             .replace('$use_selection', str(use_selection).lower())
             .replace('$selection', str(selection))
-            .replace('$background_value', str(background_value))
             .replace('$scale', str(scale))
         )
 
@@ -492,7 +487,6 @@ class VispyLabelsLayer(VispyImageLayer):
                 colors=colormap.colors,
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
-                background_value=colormap.background_value,
                 scale=scale,
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
