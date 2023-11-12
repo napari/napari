@@ -1131,6 +1131,8 @@ class Labels(_ImageBase):
         if self.color_mode == LabelColorMode.AUTO:
             color_array = self.colormap.map(downsampled.ravel())
         else:  # direct
+            if self._direct_colormap.use_selection:
+                downsampled *= self._direct_colormap.selection
             color_array = self._direct_colormap.map(downsampled.ravel())
         colormapped = color_array.reshape(downsampled.shape + (4,))
         colormapped[..., 3] *= self.opacity
@@ -1149,7 +1151,7 @@ class Labels(_ImageBase):
         ):
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
-            val = self._to_vispy_texture_dtype(np.array([label]))
+            val = np.array([label])
             col = self.colormap.map(val)[0]
         return col
 

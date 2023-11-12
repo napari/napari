@@ -217,20 +217,13 @@ class DirectLabelColormap(Colormap):
 
     def map(self, values):
         # Convert to float32 to match the current GL shader implementation
-        values = np.atleast_1d(values).astype(np.float32)
+        values = np.atleast_1d(values)
+        casted = cast_direct_labels_to_minimum_type_auto(values, self)
         mapped = np.zeros(values.shape + (4,), dtype=np.float32)
-        for idx in np.ndindex(values.shape):
-            value = values[idx]
-            if value in self.color_dict:
-                color = self.color_dict[value]
-                if len(color) == 3:
-                    color = np.append(color, 1)
-                mapped[idx] = color
-            else:
-                mapped[idx] = self.default_color
-        # If using selected, disable all others
-        if self.use_selection:
-            mapped[~np.isclose(values, self.selection)] = 0
+        colors = self.values_mapping_to_minimum_values_set()[1]
+        for idx in np.ndindex(casted.shape):
+            value = casted[idx]
+            mapped[idx] = colors[value]
         return mapped
 
     def unique_colors_num(self) -> int:
