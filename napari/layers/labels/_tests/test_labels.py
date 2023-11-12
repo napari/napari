@@ -12,7 +12,7 @@ import xarray as xr
 import zarr
 from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
-from skimage import data
+from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.components import ViewerModel
@@ -967,7 +967,7 @@ def test_undo_redo(
     preserve_labels,
     n_dimensional,
 ):
-    blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
+    blobs = sk_data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
     data_history = [blobs.copy()]
     layer.brush_size = brush_size
