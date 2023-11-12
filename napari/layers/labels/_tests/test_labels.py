@@ -1466,7 +1466,7 @@ def test_invalidate_cache_when_change_color_mode():
 
     layer.color_mode = 'direct'
     layer._cached_labels = None
-    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.uint8
 
     layer.color_mode = 'auto'
     # If the cache is not invalidated, it returns colors for
@@ -1485,7 +1485,7 @@ def test_color_mapping_when_color_is_changed():
     gt_direct_3colors = layer._raw_to_displayed(layer._slice.image.raw)
 
     layer = Labels(data, color={1: 'green', 2: 'red'})
-    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.uint8
     layer.color = {1: 'green', 2: 'red', 3: 'white'}
 
     assert np.allclose(
