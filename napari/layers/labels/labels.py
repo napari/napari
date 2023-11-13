@@ -1132,6 +1132,7 @@ class Labels(_ImageBase):
             color_array = self.colormap.map(downsampled.ravel())
         else:  # direct
             if self._direct_colormap.use_selection:
+                downsampled = downsampled.astype(np.uint64)
                 downsampled *= self._direct_colormap.selection
             color_array = self._direct_colormap.map(downsampled.ravel())
         colormapped = color_array.reshape(downsampled.shape + (4,))

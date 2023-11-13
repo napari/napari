@@ -356,7 +356,7 @@ def cast_direct_labels_to_minimum_type_auto(
     else:
         hash_size = math.ceil(math.log2(len(label_mapping))) * 2
 
-    hash_table_key = np.zeros(hash_size, dtype=data.dtype)
+    hash_table_key = np.zeros(hash_size, dtype=np.uint64)
     hash_table_val = np.zeros(hash_size, dtype=dtype)
 
     for key, val in label_mapping.items():
