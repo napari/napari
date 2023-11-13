@@ -173,7 +173,7 @@ def _add_future_data(
 
 def _add_plugin_dock_widget(
     widget_name_tuple: Tuple[Union[FunctionGui, QWidget, Widget], str],
-    viewer: viewer.Viewer = None,
+    viewer: Optional[viewer.Viewer] = None,
 ):
     if viewer is None:
         viewer = _provide_viewer()
