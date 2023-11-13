@@ -420,6 +420,7 @@ class Graph(_BasePoints):
             data_indices=tuple(
                     self.selected_data,
                 ),
+            vertex_indices=((),),
         )
         
     def remove_selected(self) -> None:
