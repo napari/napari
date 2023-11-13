@@ -263,12 +263,13 @@ def cast_labels_to_minimum_type_auto(
 
 @numba.njit(parallel=True)
 def _modulo_plus_one(
-    values: np.ndarray, n: int, dtype: np.dtype, background_value: int
+    values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
-    """Like ``array % n`` but with 1 added to result for values >=n.
+    """Like ``values % n + 1``, but with one specific value mapped to 0.
 
     This ensures (1) an output value in [0, n] (inclusive), and (2) that
-    no nonzero values in the input are zero in the output.
+    no nonzero values in the input are zero in the output, other than the
+    ``to_zero`` value.
 
     Parameters
     ----------
@@ -278,19 +279,19 @@ def _modulo_plus_one(
         The divisor.
     dtype : np.dtype
         The desired dtype for the output array.
-    background_value : int
-        The value in ``values`` to be treated as the background.
+    to_zero : int, optional
+        A specific value to map to 0. (By default, 0 itself.)
 
     Returns
     -------
     np.ndarray
-        The result: 0 for the background ``values % n + 1``
+        The result: 0 for the ``to_zero`` value, ``values % n + 1``
         everywhere else.
     """
     result = np.empty_like(values, dtype=dtype)
 
     for i in numba.prange(values.size):
-        if values.flat[i] == background_value:
+        if values.flat[i] == to_zero:
             result.flat[i] = 0
         else:
             result.flat[i] = values.flat[i] % n + 1
