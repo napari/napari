@@ -187,10 +187,7 @@ def test_widget_types_supported(
     """Test all supported widget types correctly instantiated and call processor."""
     # The 4 `Widget`s should represent varing widget constructors and signatures that
     # we want to support.
-
-    @tmp_plugin.contribute.widget(display_name='Widget')
-    def widget():
-        return Widget
+    tmp_plugin.contribute.widget(display_name='Widget')(Widget)
 
     app = get_app()
     viewer = make_napari_viewer()
