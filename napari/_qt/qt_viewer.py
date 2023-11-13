@@ -579,7 +579,14 @@ class QtViewer(QSplitter):
         if self._console is None:
             try:
                 import numpy as np
+
+                # QtConsole imports debugpy that overwrites default breakpoint.
+                # It makes problems with debugging if you do not know this.
+                # So we do not want to overwrite it if it is already set.
+                breakpoint_handler = sys.breakpointhook
                 from napari_console import QtConsole
+
+                sys.breakpointhook = breakpoint_handler
 
                 import napari
 
