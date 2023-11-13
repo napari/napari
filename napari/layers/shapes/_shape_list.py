@@ -273,7 +273,7 @@ class ShapeList:
         if len(self.shapes) > 0:
             self._displayed = np.all(self.slice_keys == slice_key, axis=(1, 2))
         else:
-            self._displayed = []
+            self._displayed = np.array([])
         disp_indices = np.where(self._displayed)[0]
 
         z_order = self._mesh.triangles_z_order

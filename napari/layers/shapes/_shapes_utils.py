@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 from skimage.draw import line, polygon2mask
@@ -1007,11 +1007,11 @@ def extract_shape_type(data, shape_type=None):
         type of each shape in data, or None if none was passed
     """
     # Tuple for one shape or list of shapes with shape_type
-    if isinstance(data, Tuple):
+    if isinstance(data, tuple):
         shape_type = data[1]
         data = data[0]
     # List of (vertices, shape_type) tuples
-    elif len(data) != 0 and all(isinstance(datum, Tuple) for datum in data):
+    elif len(data) != 0 and all(isinstance(datum, tuple) for datum in data):
         shape_type = [datum[1] for datum in data]
         data = [datum[0] for datum in data]
     return data, shape_type
