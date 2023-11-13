@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import zarr
 
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels, Points, Shapes
@@ -199,6 +200,11 @@ def test_convert_dtype(mode):
     'layer, type_',
     [
         (Image(np.random.rand(10, 10)), 'labels'),
+        (Image(np.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
+        (
+            Image(zarr.array([[1, 2], [3, 4]], dtype=(int), chunks=(1, 2))),
+            'labels',
+        ),
         (Labels(np.ones((10, 10), dtype=int)), 'image'),
         (Shapes([np.array([[0, 0], [0, 10], [10, 0], [10, 10]])]), 'labels'),
     ],
@@ -212,6 +218,15 @@ def test_convert_layer(layer, type_):
     _convert(ll, type_)
     assert ll[0]._type_string == type_
     assert np.array_equal(ll[0].scale, original_scale)
+
+    if (
+        type_ == "labels"
+        and isinstance(layer, Image)
+        and np.issubdtype(layer.data.dtype, np.integer)
+    ):
+        assert (
+            layer.data is ll[0].data
+        )  # check array data not copied unnecessarily
 
 
 def make_three_layer_layerlist():
