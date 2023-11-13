@@ -1,4 +1,5 @@
 import importlib
+from itertools import product
 from unittest.mock import patch
 
 import numpy as np
@@ -7,7 +8,7 @@ import pytest
 from napari.utils.colormaps import Colormap, DirectLabelColormap, colormap
 from napari.utils.colormaps.colormap import (
     DEFAULT_VALUE,
-    cast_direct_labels_to_minimum_type_auto,
+    cast_direct_labels_to_minimum_type,
 )
 
 
@@ -206,11 +207,9 @@ def test_direct_label_colormap_selection(direct_label_colormap):
     assert len(color_dict) == 2
 
 
-def test_cast_direct_labels_to_minimum_type_auto(direct_label_colormap):
+def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
     data = np.arange(15, dtype=np.uint32)
-    casted = cast_direct_labels_to_minimum_type_auto(
-        data, direct_label_colormap
-    )
+    casted = cast_direct_labels_to_minimum_type(data, direct_label_colormap)
     label_mapping = (
         direct_label_colormap.values_mapping_to_minimum_values_set()[0]
     )
@@ -237,3 +236,22 @@ def test_cast_direct_labels_to_minimum_type_auto(direct_label_colormap):
             ]
         ),
     )
+
+
+@pytest.mark.parametrize(
+    "num,dtype", [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
+)
+@pytest.mark.usefixtures("disable_jit")
+def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
+    cmap = DirectLabelColormap(
+        np.zeros(3),
+        color_dict={
+            k: np.array([*v, 255])
+            for k, v in zip(range(num), product(range(256), repeat=3))
+        },
+    )
+    cmap.color_dict[None] = np.array([255, 255, 255, 255])
+    data = np.arange(10, dtype=np.uint32)
+    data[2] = 80005
+    casted = cast_direct_labels_to_minimum_type(data, cmap)
+    assert casted.dtype == dtype

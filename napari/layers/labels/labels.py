@@ -53,7 +53,7 @@ from napari.utils.colormaps import (
     label_colormap,
 )
 from napari.utils.colormaps.colormap import (
-    cast_direct_labels_to_minimum_type_auto,
+    cast_direct_labels_to_minimum_type,
     cast_labels_to_minimum_type_auto,
     minimum_dtype_for_labels,
 )
@@ -1084,7 +1084,7 @@ class Labels(_ImageBase):
                 labels_to_map, self.num_colors, self._background_label
             )
         else:  # direct
-            mapped_labels = cast_direct_labels_to_minimum_type_auto(
+            mapped_labels = cast_direct_labels_to_minimum_type(
                 labels_to_map, self._direct_colormap
             )
 

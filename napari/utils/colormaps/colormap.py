@@ -218,7 +218,7 @@ class DirectLabelColormap(Colormap):
     def map(self, values):
         # Convert to float32 to match the current GL shader implementation
         values = np.atleast_1d(values)
-        casted = cast_direct_labels_to_minimum_type_auto(values, self)
+        casted = cast_direct_labels_to_minimum_type(values, self)
         mapped = np.zeros(values.shape + (4,), dtype=np.float32)
         colors = self.values_mapping_to_minimum_values_set()[1]
         for idx in np.ndindex(casted.shape):
@@ -344,9 +344,25 @@ def _modulo_plus_one(
     return result
 
 
-def cast_direct_labels_to_minimum_type_auto(
+def cast_direct_labels_to_minimum_type(
     data: np.ndarray, direct_colormap: DirectLabelColormap
 ) -> np.ndarray:
+    """
+    Cast direct labels to the minimum type.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The input data array.
+    direct_colormap : DirectLabelColormap
+        The direct colormap.
+
+    Returns
+    -------
+    np.ndarray
+        The casted data array.
+    """
+
     dtype = minimum_dtype_for_labels(direct_colormap.unique_colors_num() + 2)
 
     label_mapping = direct_colormap.values_mapping_to_minimum_values_set()[0]
@@ -354,7 +370,7 @@ def cast_direct_labels_to_minimum_type_auto(
     if pos < len(PRIME_NUM_TABLE):
         hash_size = PRIME_NUM_TABLE[pos]
     else:
-        hash_size = math.ceil(math.log2(len(label_mapping))) * 2
+        hash_size = 2 ** (math.ceil(math.log2(len(label_mapping))) + 1)
 
     hash_table_key = np.zeros(hash_size, dtype=np.uint64)
     hash_table_val = np.zeros(hash_size, dtype=dtype)
