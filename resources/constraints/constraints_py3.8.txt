@@ -45,7 +45,7 @@ click==8.1.7
     #   typer
 cloudpickle==3.0.0
     # via dask
-comm==0.1.4
+comm==0.2.0
     # via ipykernel
 contourpy==1.1.1
     # via matplotlib
@@ -91,7 +91,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.88.3
+hypothesis==6.88.4
     # via napari (napari_repo/setup.cfg)
 idna==3.4
     # via requests
@@ -108,7 +108,7 @@ importlib-metadata==6.8.0
     #   dask
     #   jupyter-client
     #   sphinx
-importlib-resources==6.1.0
+importlib-resources==6.1.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -136,7 +136,7 @@ jsonschema==4.19.2
     # via napari (napari_repo/setup.cfg)
 jsonschema-specifications==2023.7.1
     # via jsonschema
-jupyter-client==8.5.0
+jupyter-client==8.6.0
     # via
     #   ipykernel
     #   qtconsole
@@ -263,7 +263,7 @@ pooch==1.8.0
     #   scikit-image
 pretend==1.0.9
     # via napari (napari_repo/setup.cfg)
-prompt-toolkit==3.0.39
+prompt-toolkit==3.0.40
     # via ipython
 psutil==5.9.6
     # via
@@ -508,7 +508,7 @@ vispy==0.14.1
     #   napari-svg
 wcwidth==0.2.9
     # via prompt-toolkit
-wrapt==1.15.0
+wrapt==1.16.0
     # via napari (napari_repo/setup.cfg)
 xarray==2023.1.0
     # via napari (napari_repo/setup.cfg)
