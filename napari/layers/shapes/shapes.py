@@ -2007,7 +2007,7 @@ class Shapes(Layer):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        gui: bool
+        gui : bool
             Whether the shape is drawn by drawing in the gui.
         """
         data, shape_type = extract_shape_type(data, shape_type)
@@ -2183,7 +2183,7 @@ class Shapes(Layer):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        n_new_shapes: int
+        n_new_shapes : int
             The number of new shapes to be added to the Shapes layer.
         """
         if n_new_shapes > 0:
@@ -2730,10 +2730,12 @@ class Shapes(Layer):
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
+        prev_scale = self.scale_factor
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
         )
-        self._set_highlight(force=True)
+        # update highlight only if scale has changed, otherwise causes a cycle
+        self._set_highlight(force=(prev_scale != self.scale_factor))
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.

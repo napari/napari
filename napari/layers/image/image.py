@@ -908,15 +908,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         return position + 0.5
 
-    def _display_bounding_box_augmented_data_level(
-        self, dims_displayed: List[int]
+    def _display_bounding_box_at_level(
+        self, dims_displayed: List[int], data_level: int
     ) -> npt.NDArray:
-        """An augmented, axis-aligned (ndisplay, 2) bounding box.
-
-        If the layer is multiscale layer, then returns the
-        bounding box of the data at the current level
-        """
-        return self._extent_level_data_augmented[:, dims_displayed].T
+        """An axis aligned (ndisplay, 2) bounding box around the data at a given level"""
+        shape = self.level_shapes[data_level]
+        extent_at_level = np.vstack([np.zeros(len(shape)), shape - 1])
+        return extent_at_level[:, dims_displayed].T
 
 
 class Image(_ImageBase):

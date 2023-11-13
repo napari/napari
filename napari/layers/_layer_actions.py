@@ -53,10 +53,15 @@ def _convert(ll: LayerList, type_: str):
     for lay in list(ll.selection):
         idx = ll.index(lay)
         ll.pop(idx)
+
         if isinstance(lay, Shapes) and type_ == 'labels':
             data = lay.to_labels()
+        elif (
+            not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'
+        ):
+            data = lay.data.astype(int)
         else:
-            data = lay.data.astype(int) if type_ == 'labels' else lay.data
+            data = lay.data
         new_layer = Layer.create(data, lay._get_base_state(), type_)
         ll.insert(idx, new_layer)
 
@@ -96,6 +101,28 @@ def _toggle_visibility(ll: LayerList):
     for visibility, layer in zip(current_visibility_state, ll.selection):
         if layer.visible == visibility:
             layer.visible = not visibility
+
+
+def _show_selected(ll: LayerList):
+    for lay in ll.selection:
+        lay.visible = True
+
+
+def _hide_selected(ll: LayerList):
+    for lay in ll.selection:
+        lay.visible = False
+
+
+def _show_unselected(ll: LayerList):
+    for lay in ll:
+        if lay not in ll.selection:
+            lay.visible = True
+
+
+def _hide_unselected(ll: LayerList):
+    for lay in ll:
+        if lay not in ll.selection:
+            lay.visible = False
 
 
 def _link_selected_layers(ll: LayerList):
