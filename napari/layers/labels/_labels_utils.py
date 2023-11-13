@@ -47,7 +47,7 @@ def sphere_indices(radius, scale):
     """Generate centered indices within circle or n-dim ellipsoid.
 
     Parameters
-    -------
+    ----------
     radius : float
         Radius of circle/sphere
     scale : tuple of float
