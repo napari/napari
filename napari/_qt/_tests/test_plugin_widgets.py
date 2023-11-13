@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from magicgui import magic_factory, magicgui
@@ -192,6 +192,8 @@ def test_widget_types_supported(
     app = get_app()
     viewer = make_napari_viewer()
 
-    viewer.window.add_dock_widget = MagicMock()
+    viewer.window.add_dock_widget = Mock(
+        side_effect=viewer.window.add_dock_widget
+    )
     app.commands.execute_command('tmp_plugin:Widget')
     viewer.window.add_dock_widget.assert_called_once()
