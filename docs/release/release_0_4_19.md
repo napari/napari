@@ -20,7 +20,7 @@ The removal of public access to `viewer.window.qt_viewer` has been postponed to 
 
 napari is now pydantic 2 compatible. At this moment we are using `pydantic.v1` to achieve this. Additionally, for this release, the napari conda bundle will be shipped with pydantic v1, but
 we expect that in the next release we will ship the bundle with pydantic v2.
-Please, if you are a plugin developer and your plugin uses pydantic, ensure 
+Please, if you are a plugin developer and your plugin uses pydantic, ensure
 that it is compatible with pydantic v2 ([napari/napari/#6358](https://github.com/napari/napari/pull/6358)).
 
 Performance of the `Labels` layer is drastically improved for many labels by moving part of calculations to the GPU ([napari/napari/#3308](https://github.com/napari/napari/pull/3308)).
@@ -33,6 +33,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 
 ## New Features
 
+- Add show_debug notification ([napari/napari/#5101](https://github.com/napari/napari/pull/5101))
 - Automatic recognition of hex colour strings in layer data ([napari/napari/#6102](https://github.com/napari/napari/pull/6102))
 
 ## Improvements
@@ -48,11 +49,15 @@ If you have any questions or suggestions regarding napari core, for example on h
 ## Performance
 
 - Use a shader for low discrepancy label conversion ([napari/napari/#3308](https://github.com/napari/napari/pull/3308))
+- Fix lagging 3d view for big data in auto color mode ([napari/napari/#6411](https://github.com/napari/napari/pull/6411))
+- Fix cycle in _update_draw/_set_highlight for Points and Shapes (high CPU background usage) ([napari/napari/#6425](https://github.com/napari/napari/pull/6425))
 
 ## Bug Fixes
 
 - Use a shader for low discrepancy label conversion ([napari/napari/#3308](https://github.com/napari/napari/pull/3308))
 - Workaround Qt bug on Windows with fullscreen mode in some screen resolutions/scaling configurations ([napari/napari/#5401](https://github.com/napari/napari/pull/5401))
+- Fix point selection highlight ([napari/napari/#5737](https://github.com/napari/napari/pull/5737))
+- Fix shapes interactivity with scale != 1 (selection, rotate/resize) ([napari/napari/#5802](https://github.com/napari/napari/pull/5802))
 - Fix taskbar icon grouping in Windows bundle (add `app_user_model_id` to bundle shortcut) ([napari/napari/#6056](https://github.com/napari/napari/pull/6056))
 - Add basic tests for the `ScreenshotDialog` widget and fixes ([napari/napari/#6057](https://github.com/napari/napari/pull/6057))
 - Install napari from repository in docker image ([napari/napari/#6097](https://github.com/napari/napari/pull/6097))
@@ -78,6 +83,11 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Bugfix: Account for multiscale for labels in 3d ([napari/napari/#6317](https://github.com/napari/napari/pull/6317))
 - Update example scripts (magicgui with threads) ([napari/napari/#6353](https://github.com/napari/napari/pull/6353))
 - Exclude the loaded property when linking two layers ([napari/napari/#6377](https://github.com/napari/napari/pull/6377))
+- Fix cycle in _update_draw/_set_highlight for Points and Shapes (high CPU background usage) ([napari/napari/#6425](https://github.com/napari/napari/pull/6425))
+- Do not run macos process renaming if debugger is loaded ([napari/napari/#6437](https://github.com/napari/napari/pull/6437))
+- Fix bounding box transforms when multiscale layer corner goes below zero ([napari/napari/#6438](https://github.com/napari/napari/pull/6438))
+- Fix `breakpoint()` function after console import ([napari/napari/#6443](https://github.com/napari/napari/pull/6443))
+- fix problem with alligned overlay ([napari/napari/#6445](https://github.com/napari/napari/pull/6445))
 
 ## API Changes
 
@@ -128,6 +138,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Update napari-workshops.md ([napari/docs/#243](https://github.com/napari/docs/pull/243))
 - [Fix error] Image layers can't have converted data type using contextual menu, only Labels ([napari/docs/#252](https://github.com/napari/docs/pull/252))
 - Installation guide: Mention slow first launch time ([napari/docs/#253](https://github.com/napari/docs/pull/253))
+- [NAP-8] delete :orphan: ([napari/docs/#269](https://github.com/napari/docs/pull/269))
 
 ## Other Pull Requests
 
@@ -147,13 +158,18 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Ensure conda workflow runs with proper permissions ([napari/napari/#6378](https://github.com/napari/napari/pull/6378))
 -  Remove sphinx dependency from defaults dependecies ([napari/napari/#6380](https://github.com/napari/napari/pull/6380))
 - Fix `test_link_layers_with_images_then_loaded_not_linked` test ([napari/napari/#6385](https://github.com/napari/napari/pull/6385))
+- Do not repeat warnings in GUI ([napari/napari/#6396](https://github.com/napari/napari/pull/6396))
+- Fix drawing timer ([napari/napari/#6400](https://github.com/napari/napari/pull/6400))
+- Reraise warnings in proxy ([napari/napari/#6408](https://github.com/napari/napari/pull/6408))
+- Bump napari console to ensure users get latest bug fixes ([napari/napari/#6442](https://github.com/napari/napari/pull/6442))
 - Update docs to suggest python 3.10 install ([napari/docs/#246](https://github.com/napari/docs/pull/246))
 
 
-## 17 authors added to this release (alphabetical)
+## 19 authors added to this release (alphabetical)
 
 - [akuten1298](https://github.com/napari/napari/commits?author=akuten1298) - @akuten1298
 - [Andrew Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
+- [Ashley Anderson](https://github.com/napari/napari/commits?author=aganders3) - @aganders3
 - [Daniel Althviz Moré](https://github.com/napari/napari/commits?author=dalthviz) - @dalthviz
 - [David Stansby](https://github.com/napari/napari/commits?author=dstansby) - @dstansby
 - [Egor Zindy](https://github.com/napari/napari/commits?author=zindy) - @zindy
@@ -168,13 +184,15 @@ If you have any questions or suggestions regarding napari core, for example on h
 - [Lucy Liu](https://github.com/napari/napari/commits?author=lucyleeow) - @lucyleeow
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
 - [Robert Haase](https://github.com/napari/napari/commits?author=haesleinhuepf) - @haesleinhuepf
+- [Sean Martin](https://github.com/napari/napari/commits?author=seankmartin) - @seankmartin
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
 
 
-## 14 reviewers added to this release (alphabetical)
+## 16 reviewers added to this release (alphabetical)
 
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andrew Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
+- [Ashley Anderson](https://github.com/napari/napari/commits?author=aganders3) - @aganders3
 - [Daniel Althviz Moré](https://github.com/napari/napari/commits?author=dalthviz) - @dalthviz
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Egor Zindy](https://github.com/napari/napari/commits?author=zindy) - @zindy
@@ -183,6 +201,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
+- [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
