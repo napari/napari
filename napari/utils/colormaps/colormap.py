@@ -265,7 +265,7 @@ class DirectLabelColormap(Colormap):
             color_tup = tuple(color)
             if color_tup not in color_to_labels:
                 color_to_labels[color_tup] = [label]
-                labels_to_new_labels[label] = len(labels_to_new_labels)
+                labels_to_new_labels[label] = len(new_color_dict)
                 new_color_dict[labels_to_new_labels[label]] = color
             else:
                 color_to_labels[color_tup].append(label)
