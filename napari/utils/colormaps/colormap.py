@@ -405,7 +405,7 @@ def _cast_direct_labels_to_minimum_type_auto(
 
     for i in numba.prange(data.size):
         key = data.flat[i]
-        new_key = key % hash_size
+        new_key = int(key % hash_size)
         while hash_table_key[new_key] != key:
             if hash_table_key[new_key] == 0:
                 result_array.flat[i] = DEFAULT_VALUE

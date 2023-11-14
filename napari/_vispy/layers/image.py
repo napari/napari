@@ -286,7 +286,9 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
             if self.layer.multiscale:
                 raise ValueError(
                     trans._(
-                        "Shape of in dividual tiles in multiscale {shape} cannot exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is currently in {ndisplay}D mode.",
+                        "Shape of individual tiles in multiscale {shape} cannot "
+                        "exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is "
+                        "currently in {ndisplay}D mode.",
                         deferred=True,
                         shape=data.shape,
                         texture_size=MAX_TEXTURE_SIZE,
@@ -295,7 +297,9 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
                 )
             warnings.warn(
                 trans._(
-                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size} in at least one axis and will be downsampled. Rendering is currently in {ndisplay}D mode.",
+                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size}"
+                    " in at least one axis and will be downsampled."
+                    " Rendering is currently in {ndisplay}D mode.",
                     deferred=True,
                     shape=data.shape,
                     texture_size=MAX_TEXTURE_SIZE,
@@ -323,10 +327,11 @@ _VISPY_FORMAT_TO_DTYPE: Dict[Optional[str], np.dtype] = {
     "r8": np.dtype(np.uint8),
     "r16": np.dtype(np.uint16),
     "r32f": np.dtype(np.float32),
-    None: np.dtype(np.float32),
 }
 
 _DTYPE_TO_VISPY_FORMAT = {v: k for k, v in _VISPY_FORMAT_TO_DTYPE.items()}
+
+_VISPY_FORMAT_TO_DTYPE[None] = _VISPY_FORMAT_TO_DTYPE["r32f"]
 
 
 def get_dtype_from_vispy_texture_format(format_str: str) -> np.dtype:

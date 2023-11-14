@@ -96,12 +96,14 @@ def fix_data_dtype(data):
         return data
 
     try:
-        dtype = {
+        dtype_ = {
             "i": np.float32,
             "f": np.float32,
             "u": np.uint16,
             "b": np.uint8,
         }[dtype.kind]
+        if dtype_ == np.uint16 and dtype.itemsize > 2:
+            dtype_ = np.float32
     except KeyError as e:  # not an int or float
         raise TypeError(
             trans._(
@@ -111,7 +113,7 @@ def fix_data_dtype(data):
                 textures=set(texture_dtypes),
             )
         ) from e
-    return data.astype(dtype)
+    return data.astype(dtype_)
 
 
 # blend_func parameters are multiplying:

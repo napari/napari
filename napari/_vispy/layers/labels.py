@@ -1,3 +1,4 @@
+import math
 from typing import TYPE_CHECKING, Dict, Tuple
 
 import numpy as np
@@ -12,6 +13,7 @@ from napari._vispy.layers.image import (
     VispyImageLayer,
     get_dtype_from_vispy_texture_format,
 )
+from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.utils.colormaps.colormap import minimum_dtype_for_labels
@@ -45,7 +47,7 @@ vec4 sample_label_color(float t) {
 
 direct_lookup_shader = """
 uniform sampler2D texture2D_values;
-
+uniform vec2 LUT_shape;
 
 vec4 sample_label_color(float t) {
     t = t * $scale;
@@ -55,6 +57,21 @@ vec4 sample_label_color(float t) {
     );
 }
 
+"""
+
+direct_lookup_shader_many = """
+uniform sampler2D texture2D_values;
+uniform vec2 LUT_shape;
+
+vec4 sample_label_color(float t) {
+    t = t * $scale;
+    float row = mod(t, LUT_shape.x);
+    float col = int(t / LUT_shape.x);
+    return texture2D(
+        texture2D_values,
+        vec2((col + 0.5) / LUT_shape.y, (row + 0.5) / LUT_shape.x)
+    );
+}
 """
 
 
@@ -79,14 +96,18 @@ class LabelVispyColormap(VispyColormap):
 
 class DirectLabelVispyColormap(VispyColormap):
     def __init__(
-        self, use_selection=False, selection=0.0, scale=1.0, color_map_size=255
+        self,
+        use_selection=False,
+        selection=0.0,
+        scale=1.0,
+        color_map_size=255,
+        multi=False,
     ):
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
+        shader = direct_lookup_shader_many if multi else direct_lookup_shader
         self.glsl_map = (
-            direct_lookup_shader.replace(
-                "$use_selection", str(use_selection).lower()
-            )
+            shader.replace("$use_selection", str(use_selection).lower())
             .replace("$selection", str(selection))
             .replace("$scale", str(scale))
             .replace("$color_map_size", str(color_map_size))
@@ -94,11 +115,18 @@ class DirectLabelVispyColormap(VispyColormap):
 
 
 def build_textures_from_dict(
-    color_dict: Dict[int, ColorTuple],
+    color_dict: Dict[int, ColorTuple], max_size: int
 ) -> np.ndarray:
-    data = np.zeros((len(color_dict), 4), dtype=np.float32)
+    data = np.zeros(
+        (
+            min(len(color_dict), max_size),
+            math.ceil(len(color_dict) / max_size),
+            4,
+        ),
+        dtype=np.float32,
+    )
     for key, value in color_dict.items():
-        data[key] = value
+        data[key % data.shape[0], key // data.shape[0]] = value
     return data
 
 
@@ -167,7 +195,11 @@ class VispyLabelsLayer(VispyImageLayer):
             color_dict = self.layer._direct_colormap.values_mapping_to_minimum_values_set()[
                 1
             ]  # TODO: should probably account for non-given labels
-            val_texture = build_textures_from_dict(color_dict)
+            if isinstance(self.node, VolumeNode):
+                max_size = get_max_texture_sizes()[1]
+            else:
+                max_size = get_max_texture_sizes()[0]
+            val_texture = build_textures_from_dict(color_dict, max_size)
 
             dtype = minimum_dtype_for_labels(
                 self.layer._direct_colormap.unique_colors_num() + 2
@@ -182,13 +214,15 @@ class VispyLabelsLayer(VispyImageLayer):
                 selection=colormap.selection,
                 scale=scale,
                 color_map_size=val_texture.shape[0],
+                multi=val_texture.shape[1] > 1,
             )
             # note that textures have to be transposed here!
             self.node.shared_program['texture2D_values'] = Texture2D(
-                val_texture.reshape((val_texture.shape[0], 1, 4)),
+                val_texture,  # .swapaxes(0, 1),
                 internalformat='rgba32f',
                 interpolation='nearest',
             )
+            self.node.shared_program['LUT_shape'] = val_texture.shape[:2]
         else:
             self.node.cmap = VispyColormap(*colormap)
 
