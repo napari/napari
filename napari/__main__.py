@@ -442,7 +442,11 @@ def _maybe_rerun_with_macos_fixes():
 
     # This import mus be here to raise exception about PySide6 problem
 
-    if sys.platform != "darwin":
+    if (
+        sys.platform != "darwin"
+        or "pdb" in sys.modules
+        or "pydevd" in sys.modules
+    ):
         return
 
     if "_NAPARI_RERUN_WITH_FIXES" in os.environ:
