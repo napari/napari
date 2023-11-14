@@ -511,7 +511,7 @@ class QtColorBox(QWidget):
 
     Parameters
     ----------
-    layer : napari.layers.Layer
+    layer : napari.layers.Labels
         An instance of a napari layer.
     """
 

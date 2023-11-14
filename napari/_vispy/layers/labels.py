@@ -6,14 +6,19 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.gloo import Texture2D
 from vispy.scene.node import Node
-from vispy.scene.visuals import create_visual_node
-from vispy.visuals.image import ImageVisual
-from vispy.visuals.shaders import Function, FunctionChain
 
-from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
+from napari._vispy.layers.image import (
+    _DTYPE_TO_VISPY_FORMAT,
+    _VISPY_FORMAT_TO_DTYPE,
+    ImageLayerNode,
+    VispyImageLayer,
+    get_dtype_from_vispy_texture_format,
+)
 from napari._vispy.utils.gl import get_max_texture_sizes
+from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.utils._dtype import vispy_texture_dtype
+from napari.utils.colormaps.colormap import minimum_dtype_for_labels
 
 if TYPE_CHECKING:
     from napari.layers import Labels
@@ -56,9 +61,9 @@ auto_lookup_shader = """
 uniform sampler2D texture2D_values;
 
 vec4 sample_label_color(float t) {
-    if (t == $background_value) {
-        return vec4(0);
-    }
+    // VisPy automatically scales uint8 and uint16 to [0, 1].
+    // this line fixes returns values to their original range.
+    t = t * $scale;
 
     if (($use_selection) && ($selection != t)) {
         return vec4(0);
@@ -148,7 +153,7 @@ class LabelVispyColormap(VispyColormap):
         colors,
         use_selection=False,
         selection=0.0,
-        background_value=0.0,
+        scale=1.0,
     ):
         super().__init__(
             colors=["w", "w"], controls=None, interpolation='zero'
@@ -157,7 +162,7 @@ class LabelVispyColormap(VispyColormap):
             auto_lookup_shader.replace('$color_map_size', str(len(colors)))
             .replace('$use_selection', str(use_selection).lower())
             .replace('$selection', str(selection))
-            .replace('$background_value', str(background_value))
+            .replace('$scale', str(scale))
         )
 
 
@@ -434,7 +439,7 @@ def build_textures_from_dict(
 class VispyLabelsLayer(VispyImageLayer):
     layer: 'Labels'
 
-    def __init__(self, layer, node=None, texture_format='r32f') -> None:
+    def __init__(self, layer, node=None, texture_format='r8') -> None:
         super().__init__(
             layer,
             node=node,
@@ -473,11 +478,16 @@ class VispyLabelsLayer(VispyImageLayer):
         mode = self.layer.color_mode
 
         if mode == 'auto':
+            dtype = minimum_dtype_for_labels(self.layer.num_colors + 1)
+            if issubclass(dtype.type, np.integer):
+                scale = np.iinfo(dtype).max
+            else:  # float32 texture
+                scale = 1.0
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
-                background_value=colormap.background_value,
+                scale=scale,
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
                 colormap.colors.reshape(
@@ -534,47 +544,40 @@ class VispyLabelsLayer(VispyImageLayer):
         self.node.update()
 
 
-class LabelVisual(ImageVisual):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def _build_color_transform(self):
-        fun = FunctionChain(
-            None,
-            [
-                Function(self._func_templates['red_to_luminance']),
-                Function(self.cmap.glsl_map),
-            ],
-        )
-        return fun
-
-
 class LabelLayerNode(ImageLayerNode):
     def __init__(self, custom_node: Node = None, texture_format=None):
         self._custom_node = custom_node
+        self._setup_nodes(texture_format)
+
+    def _setup_nodes(self, texture_format):
         self._image_node = LabelNode(
             None
             if (texture_format is None or texture_format == 'auto')
-            else np.array([[0.0]], dtype=np.float32),
+            else np.array(
+                [[0.0]],
+                dtype=get_dtype_from_vispy_texture_format(texture_format),
+            ),
             method='auto',
             texture_format=texture_format,
         )
 
         self._volume_node = VolumeNode(
-            np.zeros((1, 1, 1), dtype=np.float32),
+            np.zeros(
+                (1, 1, 1),
+                dtype=get_dtype_from_vispy_texture_format(texture_format),
+            ),
             clim=[0, 2**23 - 1],
             texture_format=texture_format,
         )
 
+    def get_node(self, ndisplay: int, dtype=None) -> Node:
+        res = self._image_node if ndisplay == 2 else self._volume_node
 
-BaseLabel = create_visual_node(LabelVisual)
-
-
-class LabelNode(BaseLabel):  # type: ignore [valid-type,misc]
-    def _compute_bounds(self, axis, view):
-        if self._data is None:
-            return None
-        elif axis > 1:  # noqa: RET505
-            return 0, 0
-        else:
-            return 0, self.size[axis]
+        if (
+            res.texture_format != "auto"
+            and dtype is not None
+            and _VISPY_FORMAT_TO_DTYPE[res.texture_format] != dtype
+        ):
+            self._setup_nodes(_DTYPE_TO_VISPY_FORMAT[dtype])
+            return self.get_node(ndisplay, dtype)
+        return res
