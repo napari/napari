@@ -161,14 +161,15 @@ class LabelColormap(Colormap):
     selection: float = 0.0
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
+    shift_sequence: np.ndarray = Field(
+        default_factory=lambda: np.zeros(500, dtype=np.uint8)
+    )
 
     def map(self, values):
         values = np.atleast_1d(values)
 
         mapped = self.colors[
-            cast_labels_to_minimum_type_auto(
-                values, len(self.colors) - 1, self.background_value
-            ).astype(np.int64)
+            cast_labels_to_minimum_type_auto(values, self).astype(np.int64)
         ]
 
         mapped[values == self.background_value] = 0
@@ -188,6 +189,10 @@ class LabelColormap(Colormap):
             Seed for the random number generator.
         """
         np.random.default_rng(seed).shuffle(self.colors[1:])
+        self.shift_sequence = np.random.default_rng(seed).integers(
+            0, self.colors.shape[0], size=500, dtype=np.uint16
+        )
+        self.shift_sequence[0] = 0
         self.events.colors(value=self.colors)
 
 
@@ -238,7 +243,7 @@ class DirectLabelColormap(Colormap):
 
 
 def cast_labels_to_minimum_type_auto(
-    data: np.ndarray, num_colors: int, background_value: int
+    data: np.ndarray, colormap: LabelColormap
 ) -> np.ndarray:
     """Perform modulo operation based on number of colors
 
@@ -246,24 +251,32 @@ def cast_labels_to_minimum_type_auto(
     ----------
     data : np.ndarray
         Labels data to be casted.
-    num_colors : int
-        Number of unique colors in the data.
-    background_value : int
-        The value in ``values`` to be treated as the background.
+    colormap : LabelColormap
+        Colormap used for casting.
 
     Returns
     -------
     np.ndarray
         Casted labels data.
     """
-    dtype = minimum_dtype_for_labels(num_colors + 1)
+    dtype = minimum_dtype_for_labels(colormap.colors.shape[0])
 
-    return _modulo_plus_one(data, num_colors, dtype, background_value)
+    return _modulo_plus_one(
+        data,
+        colormap.colors.shape[0] - 1,
+        dtype,
+        colormap.shift_sequence,
+        colormap.background_value,
+    )
 
 
-@numba.njit(parallel=True)
+# @numba.njit(parallel=True)
 def _modulo_plus_one(
-    values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
+    values: np.ndarray,
+    n: int,
+    dtype: np.dtype,
+    shift_sequence: np.ndarray,
+    to_zero: int = 0,
 ) -> np.ndarray:
     """Like ``values % n + 1``, but with one specific value mapped to 0.
 
@@ -279,6 +292,8 @@ def _modulo_plus_one(
         The divisor.
     dtype : np.dtype
         The desired dtype for the output array.
+    shift_sequence : np.ndarray
+        A sequence of random shifts to apply to the colormap.
     to_zero : int, optional
         A specific value to map to 0. (By default, 0 itself.)
 
@@ -294,7 +309,8 @@ def _modulo_plus_one(
         if values.flat[i] == to_zero:
             result.flat[i] = 0
         else:
-            result.flat[i] = values.flat[i] % n + 1
+            val = values.flat[i]
+            result.flat[i] = (val + shift_sequence[val // n]) % n + 1
 
     return result
 

@@ -504,11 +504,11 @@ class Labels(_ImageBase):
         self._seed_rng = seed_rng
 
         if self._seed_rng is None:
-            self.colormap = label_colormap(
+            self._random_colormap = label_colormap(
                 self.num_colors, self.seed, self._background_label
             )
         else:
-            self.colormap.shuffle(self._seed_rng)
+            self._random_colormap.shuffle(self._seed_rng)
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
@@ -1078,7 +1078,7 @@ class Labels(_ImageBase):
 
         if self.color_mode == LabelColorMode.AUTO:
             mapped_labels = cast_labels_to_minimum_type_auto(
-                labels_to_map, self.num_colors, self._background_label
+                labels_to_map, self._random_colormap
             )
         else:  # direct
             mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
@@ -1144,7 +1144,7 @@ class Labels(_ImageBase):
         ):
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
-            val = self._to_vispy_texture_dtype(np.array([label]))
+            val = np.array([label])
             col = self.colormap.map(val)[0]
         return col
 
