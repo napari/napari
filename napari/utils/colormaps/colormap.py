@@ -270,7 +270,7 @@ def cast_labels_to_minimum_type_auto(
     )
 
 
-# @numba.njit(parallel=True)
+@numba.njit(parallel=True)
 def _modulo_plus_one(
     values: np.ndarray,
     n: int,
