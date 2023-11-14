@@ -1131,10 +1131,7 @@ class Labels(_ImageBase):
         if self.color_mode == LabelColorMode.AUTO:
             color_array = self.colormap.map(downsampled.ravel())
         else:  # direct
-            if self._direct_colormap.use_selection:
-                downsampled = downsampled.astype(np.uint64)
-                downsampled *= self._direct_colormap.selection
-            color_array = self._direct_colormap.map(downsampled.ravel())
+            color_array = self._direct_colormap.map_casted(downsampled.ravel())
         colormapped = color_array.reshape(downsampled.shape + (4,))
         colormapped[..., 3] *= self.opacity
 

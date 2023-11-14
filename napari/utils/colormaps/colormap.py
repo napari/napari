@@ -219,10 +219,13 @@ class DirectLabelColormap(Colormap):
         # Convert to float32 to match the current GL shader implementation
         values = np.atleast_1d(values)
         casted = cast_direct_labels_to_minimum_type(values, self)
+        return self.map_casted(casted)
+
+    def map_casted(self, values):
         mapped = np.zeros(values.shape + (4,), dtype=np.float32)
         colors = self.values_mapping_to_minimum_values_set()[1]
-        for idx in np.ndindex(casted.shape):
-            value = casted[idx]
+        for idx in np.ndindex(values.shape):
+            value = values[idx]
             mapped[idx] = colors[value]
         return mapped
 
