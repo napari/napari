@@ -43,7 +43,7 @@ click==8.1.7
     #   typer
 cloudpickle==3.0.0
     # via dask
-comm==0.1.4
+comm==0.2.0
     # via ipykernel
 contourpy==1.2.0
     # via matplotlib
@@ -53,7 +53,7 @@ coverage==7.3.2
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2023.10.1
+dask==2023.11.0
     # via
     #   dask
     #   napari (napari_repo/setup.cfg)
@@ -90,7 +90,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.88.3
+hypothesis==6.88.4
     # via napari (napari_repo/setup.cfg)
 idna==3.4
     # via requests
@@ -107,7 +107,7 @@ importlib-metadata==6.8.0
     #   dask
     #   jupyter-client
     #   sphinx
-importlib-resources==6.1.0
+importlib-resources==6.1.1
     # via matplotlib
 in-n-out==0.1.9
     # via app-model
@@ -136,7 +136,7 @@ jsonschema==4.19.2
     # via napari (napari_repo/setup.cfg)
 jsonschema-specifications==2023.7.1
     # via jsonschema
-jupyter-client==8.5.0
+jupyter-client==8.6.0
     # via
     #   ipykernel
     #   qtconsole
@@ -243,7 +243,7 @@ packaging==23.2
     #   superqt
     #   vispy
     #   xarray
-pandas==2.1.2 ; python_version >= "3.9"
+pandas==2.1.3 ; python_version >= "3.9"
     # via
     #   napari (napari_repo/setup.cfg)
     #   nilearn
@@ -275,7 +275,7 @@ pooch==1.8.0
     #   scikit-image
 pretend==1.0.9
     # via napari (napari_repo/setup.cfg)
-prompt-toolkit==3.0.39
+prompt-toolkit==3.0.40
     # via ipython
 psutil==5.9.6
     # via
@@ -462,7 +462,7 @@ superqt==0.6.1
     #   napari-plugin-manager
 tabulate==0.9.0
     # via numpydoc
-tensorstore==0.1.47
+tensorstore==0.1.49
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/setup.cfg)
@@ -528,7 +528,7 @@ vispy==0.14.1
     #   napari-svg
 wcwidth==0.2.9
     # via prompt-toolkit
-wrapt==1.15.0
+wrapt==1.16.0
     # via napari (napari_repo/setup.cfg)
 xarray==2023.10.1
     # via napari (napari_repo/setup.cfg)

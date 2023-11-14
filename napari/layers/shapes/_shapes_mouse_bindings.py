@@ -18,7 +18,7 @@ from napari.layers.shapes._shapes_utils import point_to_lines
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
-    from typing import List, Optional, Tuple
+    from typing import Generator, List, Optional, Tuple
 
     import numpy.typing as npt
     from vispy.app.canvas import MouseEvent
@@ -47,7 +47,7 @@ def highlight(layer: Shapes, event: MouseEvent) -> None:
     layer._set_highlight()
 
 
-def select(layer: Shapes, event: MouseEvent) -> None:
+def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     """Select shapes or vertices either in select or direct select mode.
 
     Once selected shapes can be moved or resized, and vertices can be moved
@@ -148,7 +148,7 @@ def select(layer: Shapes, event: MouseEvent) -> None:
         layer._update_thumbnail()
 
 
-def add_line(layer: Shapes, event: MouseEvent) -> None:
+def add_line(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     """Add a line.
 
     Adds a line by connecting 2 ndim points. On press one point is set under the mouse cursor and a second point is
@@ -181,7 +181,9 @@ def add_line(layer: Shapes, event: MouseEvent) -> None:
     )
 
 
-def add_ellipse(layer: Shapes, event: MouseEvent):
+def add_ellipse(
+    layer: Shapes, event: MouseEvent
+) -> Generator[None, None, None]:
     """
     Add an ellipse to the shapes layer.
 
@@ -208,7 +210,9 @@ def add_ellipse(layer: Shapes, event: MouseEvent):
     )
 
 
-def add_rectangle(layer: Shapes, event: MouseEvent) -> None:
+def add_rectangle(
+    layer: Shapes, event: MouseEvent
+) -> Generator[None, None, None]:
     """Add a rectangle to the shapes layer.
 
     Parameters
@@ -237,7 +241,7 @@ def add_rectangle(layer: Shapes, event: MouseEvent) -> None:
 
 def _add_line_rectangle_ellipse(
     layer: Shapes, event: MouseEvent, data: npt.NDArray, shape_type: str
-) -> None:
+) -> Generator[None, None, None]:
     """Helper function for adding a line, rectangle or ellipse.
 
     Parameters
@@ -313,7 +317,9 @@ def initiate_polygon_draw(
     layer._set_highlight()
 
 
-def add_path_polygon_lasso(layer: Shapes, event: MouseEvent) -> None:
+def add_path_polygon_lasso(
+    layer: Shapes, event: MouseEvent
+) -> Generator[None, None, None]:
     """Add, draw and finish drawing of polygon.
 
     Initiates, draws and finishes the lasso polygon in drag mode (tablet) or
@@ -636,7 +642,7 @@ def _drag_selection_box(layer: Shapes, coordinates: Tuple[float, ...]) -> None:
 
 def _set_drag_start(
     layer: Shapes, coordinates: Tuple[float, ...]
-) -> List[float, ...]:
+) -> List[float]:
     """Indicate where in data space a drag event started.
 
     Sets the coordinates relative to the center of the bounding box of a shape and returns the position

@@ -52,6 +52,10 @@ from napari.utils.colormaps import (
     ensure_colormap,
     label_colormap,
 )
+from napari.utils.colormaps.colormap import (
+    cast_labels_to_minimum_type_auto,
+    minimum_dtype_for_labels,
+)
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
@@ -308,8 +312,8 @@ class Labels(_ImageBase):
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
-        self._cached_labels: Optional[np.ndarray] = None
-        self._cached_mapped_labels: Optional[np.ndarray] = None
+        self._cached_labels = None
+        self._cached_mapped_labels = np.zeros((0, 4), dtype=np.uint8)
 
         data = self._ensure_int_labels(data)
 
@@ -528,6 +532,8 @@ class Labels(_ImageBase):
         self.colormap = label_colormap(
             num_colors, self.seed, self._background_label
         )
+        self._cached_labels = None  # invalidate the cached color mapping
+        self._cached_mapped_labels = None
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
@@ -937,9 +943,82 @@ class Labels(_ImageBase):
         colors_sliced = self._raw_to_displayed(
             raw_displayed, data_slice=updated_slice
         )
+        # The next line is needed to make the following tests pass in
+        # napari/_vispy/_tests/:
+        # - test_vispy_labels_layer.py::test_labels_painting
+        # - test_vispy_labels_layer.py::test_labels_fill_slice
+        # See https://github.com/napari/napari/pull/6112/files#r1291613760
+        # and https://github.com/napari/napari/issues/6185
+        self._slice.image.view[updated_slice] = colors_sliced
 
         self.events.labels_update(data=colors_sliced, offset=offset)
         self._updated_slice = None
+
+    def _calculate_contour(
+        self, labels: np.ndarray, data_slice: Tuple[slice, ...]
+    ) -> Optional[np.ndarray]:
+        """Calculate the contour of a given label array within the specified data slice.
+
+        Parameters
+        ----------
+        labels : np.ndarray
+            The label array.
+        data_slice : Tuple[slice, ...]
+            The slice of the label array on which to calculate the contour.
+
+        Returns
+        -------
+        Optional[np.ndarray]
+            The calculated contour as a boolean mask array.
+            Returns None if the contour parameter is less than 1,
+            or if the label array has more than 2 dimensions.
+        """
+        if self.contour < 1:
+            return None
+        if labels.ndim > 2:
+            warnings.warn(
+                trans._(
+                    "Contours are not displayed during 3D rendering",
+                    deferred=True,
+                )
+            )
+            return None
+
+        expanded_slice = expand_slice(data_slice, labels.shape, 1)
+        sliced_labels = get_contours(
+            labels[expanded_slice],
+            self.contour,
+            self._background_label,
+        )
+
+        # Remove the latest one-pixel border from the result
+        delta_slice = tuple(
+            slice(s1.start - s2.start, s1.stop - s2.start)
+            for s1, s2 in zip(data_slice, expanded_slice)
+        )
+        return sliced_labels[delta_slice]
+
+    def _get_cache_dtype(self) -> np.dtype:
+        if self.color_mode == LabelColorMode.DIRECT:
+            return np.dtype(np.float32)
+        return minimum_dtype_for_labels(self.num_colors)
+
+    def _setup_cache(self, labels):
+        """
+        Initializes the cache for the Labels layer
+
+        Parameters
+        ----------
+        labels : numpy array
+            The labels data to be cached
+        """
+        if self._cached_labels is not None:
+            return
+
+        self._cached_labels = np.zeros_like(labels)
+        self._cached_mapped_labels = np.zeros_like(
+            labels, dtype=self._get_cache_dtype()
+        )
 
     def _raw_to_displayed(
         self, raw, data_slice: Optional[Tuple[slice, ...]] = None
@@ -966,36 +1045,14 @@ class Labels(_ImageBase):
         """
         if data_slice is None:
             data_slice = tuple(slice(0, size) for size in raw.shape)
+        else:
+            self._setup_cache(raw)
 
         labels = raw  # for readability
-        sliced_labels = None
+
+        sliced_labels = self._calculate_contour(labels, data_slice)
 
         # lookup function -> self._as_type
-        if self.contour > 0:
-            if labels.ndim == 2:
-                # Add one more pixel for the correct borders computation
-                expanded_slice = expand_slice(data_slice, labels.shape, 1)
-                sliced_labels = get_contours(
-                    labels[expanded_slice],
-                    self.contour,
-                    self._background_label,
-                )
-
-                # Remove the latest one-pixel border from the result
-                delta_slice = tuple(
-                    [
-                        slice(s1.start - s2.start, s1.stop - s2.start)
-                        for s1, s2 in zip(data_slice, expanded_slice)
-                    ]
-                )
-                sliced_labels = sliced_labels[delta_slice]
-            elif labels.ndim > 2:
-                warnings.warn(
-                    trans._(
-                        "Contours are not displayed during 3D rendering",
-                        deferred=True,
-                    )
-                )
 
         if sliced_labels is None:
             sliced_labels = labels[data_slice]
@@ -1013,26 +1070,29 @@ class Labels(_ImageBase):
             # Update the cache
             self._cached_labels[data_slice][update_mask] = labels_to_map
         else:
-            _cached_labels = np.zeros_like(labels)
-            _cached_labels[data_slice] = sliced_labels.copy()
-            self._cached_labels = _cached_labels
-            self._cached_mapped_labels = np.zeros_like(
-                labels, dtype=np.float32
-            )
             labels_to_map = sliced_labels
 
         # If there are no changes, just return the cached image
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
-        mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
+        if self.color_mode == LabelColorMode.AUTO:
+            mapped_labels = cast_labels_to_minimum_type_auto(
+                labels_to_map, self.num_colors, self._background_label
+            )
+        else:  # direct
+            mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
 
-        if update_mask is not None:
-            self._cached_mapped_labels[data_slice][update_mask] = mapped_labels
-        else:
-            self._cached_mapped_labels[data_slice] = mapped_labels
+        if self._cached_labels is not None:
+            if update_mask is not None:
+                self._cached_mapped_labels[data_slice][
+                    update_mask
+                ] = mapped_labels
+            else:
+                self._cached_mapped_labels[data_slice] = mapped_labels
+            return self._cached_mapped_labels[data_slice]
 
-        return self._cached_mapped_labels[data_slice]
+        return mapped_labels
 
     def _update_thumbnail(self):
         """Update the thumbnail with current data and colormap.

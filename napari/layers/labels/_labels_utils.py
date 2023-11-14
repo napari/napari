@@ -205,7 +205,7 @@ def mouse_event_to_labels_coordinate(layer, event):
     return coordinates
 
 
-def get_contours(labels, thickness: int, background_label: int):
+def get_contours(labels: np.ndarray, thickness: int, background_label: int):
     """Computes the contours of a 2D label image.
 
     Parameters
@@ -243,12 +243,10 @@ def expand_slice(
 ) -> Tuple[slice, ...]:
     """Expands or shrinks a provided multi-axis slice by a given offset"""
     return tuple(
-        [
-            slice(
-                max(0, min(max_size, s.start - offset)),
-                max(0, min(max_size, s.stop + offset)),
-                s.step,
-            )
-            for s, max_size in zip(axes_slice, shape)
-        ]
+        slice(
+            max(0, min(max_size, s.start - offset)),
+            max(0, min(max_size, s.stop + offset)),
+            s.step,
+        )
+        for s, max_size in zip(axes_slice, shape)
     )
