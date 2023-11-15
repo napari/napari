@@ -327,6 +327,8 @@ _VISPY_FORMAT_TO_DTYPE: Dict[Optional[str], np.dtype] = {
 
 _DTYPE_TO_VISPY_FORMAT = {v: k for k, v in _VISPY_FORMAT_TO_DTYPE.items()}
 
+# this is moved after reverse mapping is defined
+# to always have non None values in _DTYPE_TO_VISPY_FORMAT
 _VISPY_FORMAT_TO_DTYPE[None] = np.dtype(np.float32)
 
 
