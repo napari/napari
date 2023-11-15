@@ -8,7 +8,7 @@ rendering), and the scientific Python stack (numpy, scipy).
 
 
 For more information, examples, and documentation, please visit our website:
-https://github.com/napari/napari
+https://napari.org/stable/
 
 ## Highlights
 
