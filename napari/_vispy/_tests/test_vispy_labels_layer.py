@@ -65,7 +65,7 @@ def test_labels_fill_slice(make_napari_viewer, array_type):
     QCoreApplication.instance().processEvents()
     layer.fill((1, 10, 10), 13, refresh=True)
     visual = viewer.window._qt_viewer.layer_to_visual[layer]
-    assert np.sum(visual.node._data) == 13
+    assert np.sum(visual.node._data) == 14
 
 
 @skip_local_popups

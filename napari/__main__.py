@@ -209,7 +209,7 @@ def parse_sys_argv():
     return args, kwargs
 
 
-def _run():
+def _run() -> None:
     from napari import Viewer, run
     from napari.settings import get_settings
 
@@ -280,19 +280,22 @@ def _run():
             npe2_plugins = []
             for plugin in args.with_:
                 pname, *wnames = plugin
-                for _name, (_pname, _wnames) in _npe2.widget_iterator():
-                    if _name == 'dock' and pname == _pname:
+                for name, (w_pname, wnames) in _npe2.widget_iterator():
+                    if name == 'dock' and pname == w_pname:
                         npe2_plugins.append(plugin)
                         if '__all__' in wnames:
-                            wnames = _wnames
+                            wnames = wnames
                         break
 
-                for _name, (_pname, _wnames) in plugin_manager.iter_widgets():
-                    if _name == 'dock' and pname == _pname:
+                for name2, (
+                    w_pname,
+                    wnames_dict,
+                ) in plugin_manager.iter_widgets():
+                    if name2 == 'dock' and pname == w_pname:
                         plugin_manager_plugins.append(plugin)
                         if '__all__' in wnames:
                             # Plugin_manager iter_widgets return wnames as dict keys
-                            wnames = list(_wnames.keys())
+                            wnames = list(wnames_dict)
                         print(
                             trans._(
                                 'Non-npe2 plugin {pname} detected. Disable tabify for this plugin.',
@@ -354,15 +357,15 @@ def _run():
             ):
                 pname, *wnames = plugin
                 if '__all__' in wnames:
-                    for name, (_pname, _wnames) in chain(
+                    for name, (_pname, wnames_collection) in chain(
                         _npe2.widget_iterator(), plugin_manager.iter_widgets()
                     ):
                         if name == 'dock' and pname == _pname:
-                            if isinstance(_wnames, dict):
+                            if isinstance(wnames_collection, dict):
                                 # Plugin_manager iter_widgets return wnames as dict keys
-                                wnames = list(_wnames.keys())
+                                wnames = list(wnames_collection.keys())
                             else:
-                                wnames = _wnames
+                                wnames = wnames_collection
                             break
 
                 if wnames:
@@ -439,7 +442,11 @@ def _maybe_rerun_with_macos_fixes():
 
     # This import mus be here to raise exception about PySide6 problem
 
-    if sys.platform != "darwin":
+    if (
+        sys.platform != "darwin"
+        or "pdb" in sys.modules
+        or "pydevd" in sys.modules
+    ):
         return
 
     if "_NAPARI_RERUN_WITH_FIXES" in os.environ:
