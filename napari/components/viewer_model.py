@@ -18,6 +18,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -31,7 +32,7 @@ from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import dims_scroll
 from napari.components.camera import Camera
-from napari.components.cursor import Cursor
+from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.grid import GridCanvas
 from napari.components.layerlist import LayerList
@@ -382,7 +383,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-    def reset_view(self):
+    def reset_view(self) -> None:
         """Reset the camera view."""
 
         extent = self._sliced_extent_world_augmented
@@ -392,8 +393,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
-        center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
-        center = [0] * (self.dims.ndisplay - len(center)) + list(center)
+        center_array = np.add(corner, np.divide(size, 2))[
+            -self.dims.ndisplay :
+        ]
+        center = cast(
+            Tuple[float, float, float],
+            tuple(
+                [0.0] * (self.dims.ndisplay - len(center_array))
+                + list(center_array)
+            ),
+        )
+        assert len(center) == 3
         self.camera.center = center
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
@@ -451,14 +461,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         position = list(self.cursor.position)
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]
-        self.cursor.position = position
+        self.cursor.position = tuple(position)
 
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""
         active_layer = event.value
         if active_layer is None:
             self.help = ''
-            self.cursor.style = 'standard'
+            self.cursor.style = CursorStyle.STANDARD
         else:
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
