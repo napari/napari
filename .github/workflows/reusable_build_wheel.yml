@@ -1,0 +1,37 @@
+on:
+  workflow_call:
+
+jobs:
+  build_wheel:
+    name: Build wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: "pip"
+          cache-dependency-path: setup.cfg
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install build wheel
+
+      - name: Build wheel
+        run: |
+          python -m build --wheel --outdir dist/
+
+      - name: Rename wheel
+        run: |
+          mv dist/*.whl dist/napari-0.0.1-py3-none-any.whl
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheel
+          path: dist/*.whl

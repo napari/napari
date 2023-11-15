@@ -11,7 +11,7 @@ jobs:
     name: Vendored
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
@@ -37,6 +37,7 @@ jobs:
 
             It look like ${{ steps.check_v.outputs.vendored }} has a new version.
           token: ${{ secrets.GHA_TOKEN }}
+          author: napari-bot <napari-bot@users.noreply.github.com>
           # Token permissions required by the action:
           # * pull requests: write and read
           # * repository contents: read and write

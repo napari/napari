@@ -25,7 +25,7 @@ env:
   OPENBLAS_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
   OMP_NUM_THREADS: "1"
-  ASV_OPTIONS: "--split --show-stderr --factor 1.5 --attribute timeout=300"
+  ASV_OPTIONS: "--split --show-stderr --factor 1.5 --attribute timeout=900"
   # --split -> split final reports in tables
   # --show-stderr -> print tracebacks if errors occur
   # --factor 1.5 -> report anomaly if tested timings are beyond 1.5x base timings
@@ -37,6 +37,9 @@ jobs:
     if: ${{ github.event.label.name == 'run-benchmarks' && github.event_name == 'pull_request' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     name: ${{ matrix.benchmark-name }}
     runs-on: ${{ matrix.runs-on }}
+    permissions:
+      contents: read
+      issues: write
     strategy:
       fail-fast: false
       matrix:
@@ -56,20 +59,20 @@ jobs:
     steps:
       # We need the full repo to avoid this issue
       # https://github.com/actions/checkout/issues/23
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - uses: actions/setup-python@v4
         name: Install Python
         with:
-          python-version: "3.9"
+          python-version: "3.11"
           cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
       - name: Setup asv
-        run: python -m pip install asv virtualenv
+        run: python -m pip install "asv[virtualenv]"
 
       - uses: octokit/request-action@v2.x
         id: latest_release

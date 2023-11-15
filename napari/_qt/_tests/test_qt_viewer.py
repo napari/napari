@@ -699,7 +699,8 @@ def test_label_colors_matching_widget(qtbot, make_napari_viewer):
         shape = np.array(screenshot.shape[:2])
         middle_pixel = screenshot[tuple(shape // 2)]
 
-        np.testing.assert_equal(color_box_color, middle_pixel)
+        assert np.allclose(color_box_color, middle_pixel, atol=1), label
+        # there is a difference of rounding between the QtColorBox and the screenshot
 
 
 def test_axes_labels(make_napari_viewer):

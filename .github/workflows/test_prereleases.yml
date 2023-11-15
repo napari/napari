@@ -17,6 +17,9 @@ jobs:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
     timeout-minutes: 40
     runs-on: ${{ matrix.platform }}
+    permissions:
+      contents: read
+      issues: write
     if: github.repository == 'napari/napari'
     strategy:
       fail-fast: false
@@ -26,7 +29,7 @@ jobs:
         backend: [pyqt5, pyside2]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4

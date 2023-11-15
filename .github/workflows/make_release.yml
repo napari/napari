@@ -8,16 +8,19 @@ name: Create Release
 
 jobs:
   build:
+    permissions:
+      contents: write
+      id-token: write
     name: Create Release
     runs-on: ubuntu-latest
     if: github.repository == 'napari/napari'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: 3.11
           cache-dependency-path: setup.cfg
       - name: Install Dependencies
         run: |
@@ -41,29 +44,16 @@ jobs:
           fi
           echo "tag=${TAG}" >> $GITHUB_ENV
           # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
-          echo "::set-output name=contents::$RELEASE_NOTES"
+          echo "name=contents=${RELEASE_NOTES}" >> $GITHUB_ENV
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        uses: "softprops/action-gh-release@v1"
         with:
           tag_name: ${{ github.ref }}
-          release_name: ${{ env.tag }}
+          name: ${{ env.tag }}
           body: ${{ steps.release_notes.outputs.contents }}
           draft: false
           prerelease: ${{ contains(github.ref, 'rc') }}
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/napari-${{ env.tag }}.tar.gz
-          asset_name: napari-${{ env.tag }}.tar.gz
-          asset_content_type: application/gzip
+          files: |
+            dist/*
       - name: Publish PyPI Package
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
+        uses: pypa/gh-action-pypi-publish@release/v1

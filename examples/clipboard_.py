@@ -34,8 +34,8 @@ def create_grabber_widget():
     widget = Grabber()
 
     # connect buttons
-    widget.copy_canvas_btn.clicked.connect(lambda: viewer.window.qt_viewer.clipboard())
-    widget.copy_viewer_btn.clicked.connect(lambda: viewer.window.clipboard())
+    widget.copy_canvas_btn.clicked.connect(lambda: viewer.window.clipboard(canvas_only=True))
+    widget.copy_viewer_btn.clicked.connect(lambda: viewer.window.clipboard(canvas_only=False))
     return widget
 
 

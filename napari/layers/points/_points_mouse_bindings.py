@@ -156,7 +156,7 @@ def _toggle_selected(selection: Set[_T], value: _T) -> Set[_T]:
 
     Parameters
     ----------
-    selection: set
+    selection : set
         Set of selected data points to be modified.
     value : int
         Index of point to add or remove from selected data set.

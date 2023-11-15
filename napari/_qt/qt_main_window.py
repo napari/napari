@@ -13,8 +13,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    Dict,
     List,
+    MutableMapping,
     Optional,
     Sequence,
     Tuple,
@@ -53,9 +53,14 @@ from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
+from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
-from napari._qt.qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
+from napari._qt.qt_event_loop import (
+    NAPARI_ICON_PATH,
+    get_app,
+    quit_app as quit_app_,
+)
 from napari._qt.qt_resources import get_stylesheet
 from napari._qt.qt_viewer import QtViewer
 from napari._qt.utils import QImg2array, qbytearray_to_str, str_to_qbytearray
@@ -104,7 +109,7 @@ class _QtMainWindow(QMainWindow):
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[List['_QtMainWindow']] = []
 
-    # `window` is passed through on construction so it's available to a window
+    # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
     # See https://github.com/napari/napari/pull/4826
     def __init__(
@@ -163,7 +168,7 @@ class _QtMainWindow(QMainWindow):
 
         _QtMainWindow._instances.append(self)
 
-        # since we initialize canvas before window,
+        # since we initialize canvas before the window,
         # we need to manually connect them again.
         handle = self.windowHandle()
         if handle is not None:
@@ -215,7 +220,7 @@ class _QtMainWindow(QMainWindow):
             )
             QToolTip.showText(pnt, self._qt_viewer.viewer.tooltip.text, self)
         if e.type() == QEvent.Type.Close:
-            # when we close the MainWindow, remove it from the instances list
+            # when we close the MainWindow, remove it from the instance list
             with contextlib.suppress(ValueError):
                 _QtMainWindow._instances.remove(self)
         if e.type() in {QEvent.Type.WindowActivate, QEvent.Type.ZOrderChange}:
@@ -245,7 +250,10 @@ class _QtMainWindow(QMainWindow):
         if os.name == 'nt':
             self.setWindowFlags(
                 self.windowFlags()
-                ^ (Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+                ^ (
+                    Qt.WindowType.FramelessWindowHint
+                    | Qt.WindowType.WindowStaysOnTopHint
+                )
             )
             self.setGeometry(self._normal_geometry)
         super().showNormal()
@@ -265,8 +273,8 @@ class _QtMainWindow(QMainWindow):
         if os.name == 'nt':
             self.setWindowFlags(
                 self.windowFlags()
-                | Qt.FramelessWindowHint
-                | Qt.WindowStaysOnTopHint
+                | Qt.WindowType.FramelessWindowHint
+                | Qt.WindowType.WindowStaysOnTopHint
             )
             super().showNormal()
             self._normal_geometry = self.normalGeometry()
@@ -288,7 +296,7 @@ class _QtMainWindow(QMainWindow):
             QApplication.activePopupWidget() is None
             and self._toggle_menubar_visibility
         ):
-            if event.type() == QEvent.MouseMove:
+            if event.type() == QEvent.Type.MouseMove:
                 if self.menuBar().isHidden():
                     rect = self.geometry()
                     # set mouse-sensitive zone to trigger showing the menubar
@@ -302,7 +310,7 @@ class _QtMainWindow(QMainWindow):
                     )
                     if not rect.contains(event.globalPos()):
                         self.menuBar().hide()
-            elif event.type() == QEvent.Leave and source is self:
+            elif event.type() == QEvent.Type.Leave and source is self:
                 self.menuBar().hide()
         return QMainWindow.eventFilter(self, source, event)
 
@@ -492,7 +500,7 @@ class _QtMainWindow(QMainWindow):
 
     def resizeEvent(self, event):
         """Override to handle original size before maximizing."""
-        # the first resize event will have nonsense positions that we dont
+        # the first resize event will have nonsense positions that we don't
         # want to store (and potentially restore)
         if event.oldSize().isValid():
             self._old_size = event.oldSize()
@@ -540,7 +548,7 @@ class _QtMainWindow(QMainWindow):
         self._qt_viewer.dims.stop()
 
         if self._quit_app:
-            quit_app()
+            quit_app_()
 
         event.accept()
 
@@ -599,7 +607,7 @@ class Window:
         qapp = get_app()
 
         # Dictionary holding dock widgets
-        self._dock_widgets: Dict[
+        self._dock_widgets: MutableMapping[
             str, QtViewerDockWidget
         ] = WeakValueDictionary()
         self._unnamed_dockwidget_count = 1
@@ -621,7 +629,11 @@ class Window:
 
         self._add_menus()
         self._update_theme()
+        self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
+        get_settings().appearance.events.font_size.connect(
+            self._update_theme_font_size
+        )
 
         self._add_viewer_dock_widget(
             self._qt_viewer.dockConsole, tabify=False, menu=self.window_menu
@@ -738,7 +750,10 @@ class Window:
     def qt_viewer(self):
         warnings.warn(
             trans._(
-                'Public access to Window.qt_viewer is deprecated and will be removed in\nv0.5.0. It is considered an "implementation detail" of the napari\napplication, not part of the napari viewer model. If your use case\nrequires access to qt_viewer, please open an issue to discuss.',
+                'Public access to Window.qt_viewer is deprecated and will be removed in\n'
+                'v0.6.0. It is considered an "implementation detail" of the napari\napplication, '
+                'not part of the napari viewer model. If your use case\n'
+                'requires access to qt_viewer, please open an issue to discuss.',
                 deferred=True,
             ),
             category=FutureWarning,
@@ -865,6 +880,8 @@ class Window:
             Name of a widget provided by `plugin_name`. If `None`, and the
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
+        tabify : bool
+            Flag to tabify dock widget or not.
 
         Returns
         -------
@@ -874,14 +891,14 @@ class Window:
         """
         from napari.plugins import _npe2
 
-        Widget = None
+        widget_class = None
         dock_kwargs = {}
 
         if result := _npe2.get_widget_contribution(plugin_name, widget_name):
-            Widget, widget_name = result
+            widget_class, widget_name = result
 
-        if Widget is None:
-            Widget, dock_kwargs = plugin_manager.get_widget(
+        if widget_class is None:
+            widget_class, dock_kwargs = plugin_manager.get_widget(
                 plugin_name, widget_name
             )
 
@@ -899,7 +916,7 @@ class Window:
             return dock_widget, wdg
 
         wdg = _instantiate_dock_widget(
-            Widget, cast('Viewer', self._qt_viewer.viewer)
+            widget_class, cast('Viewer', self._qt_viewer.viewer)
         )
 
         # Add dock widget
@@ -959,7 +976,7 @@ class Window:
             Side of the main window to which the new dock widget will be added.
             Must be in {'left', 'right', 'top', 'bottom'}
         allowed_areas : list[str], optional
-            Areas, relative to main window, that the widget is allowed dock.
+            Areas, relative to the main window, that the widget is allowed dock.
             Each item in list must be in {'left', 'right', 'top', 'bottom'}
             By default, all areas are allowed.
         shortcut : str, optional
@@ -973,9 +990,9 @@ class Window:
 
                 The shortcut parameter is deprecated since version 0.4.8, please use
                 the action and shortcut manager APIs. The new action manager and
-                shortcut API allow user configuration and localisation.
+                shortcut API allow user configuration and localization.
         tabify : bool
-            Flag to tabify dockwidget or not.
+            Flag to tabify dock widget or not.
         menu : QMenu, optional
             Menu bar to add toggle action to. If `None` nothing added to menu.
 
@@ -1115,6 +1132,9 @@ class Window:
         ----------
         widget : QWidget | str
             If widget == 'all', all docked widgets will be removed.
+        menu : QMenu, optional
+            Menu bar to remove toggle action from. If `None` nothing removed
+            from menu.
         """
         if widget == 'all':
             for dw in list(self._dock_widgets.values()):
@@ -1341,8 +1361,16 @@ class Window:
     def _update_theme_no_event(self):
         self._update_theme()
 
-    def _update_theme(self, event=None):
+    def _update_theme_font_size(self, event=None):
+        settings = get_settings()
+        font_size = event.value if event else settings.appearance.font_size
+        extra_variables = {"font_size": f"{font_size}pt"}
+        self._update_theme(extra_variables=extra_variables)
+
+    def _update_theme(self, event=None, extra_variables=None):
         """Update widget color theme."""
+        if extra_variables is None:
+            extra_variables = {}
         settings = get_settings()
         with contextlib.suppress(AttributeError, RuntimeError):
             value = event.value if event else settings.appearance.theme
@@ -1351,8 +1379,17 @@ class Window:
             if value == "system":
                 # system isn't a theme, so get the name
                 actual_theme_name = get_system_theme()
-            # set the style sheet with the theme name
-            self._qt_window.setStyleSheet(get_stylesheet(actual_theme_name))
+            # check `font_size` value is always passed when updating style
+            if "font_size" not in extra_variables:
+                extra_variables.update(
+                    {"font_size": f"{settings.appearance.font_size}pt"}
+                )
+            # set the style sheet with the theme name and extra_variables
+            self._qt_window.setStyleSheet(
+                get_stylesheet(
+                    actual_theme_name, extra_variables=extra_variables
+                )
+            )
 
     def _status_changed(self, event):
         """Update status bar.
@@ -1411,7 +1448,8 @@ class Window:
             Size (resolution height x width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
         scale : float
-            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, the currently displayed resolution.
             Only used if `canvas_only` is True.
         canvas_only : bool
             If True, screenshot shows only the image display canvas, and
@@ -1471,14 +1509,15 @@ class Window:
             Size (resolution) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
         scale : float
-            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, the currently displayed resolution.
             Only used if `canvas_only` is True.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         canvas_only : bool
             If True, screenshot shows only the image display canvas, and
-            if False include the napari viewer frame in the screenshot,
+            if False includes the napari viewer frame in the screenshot,
             By default, True.
 
         Returns
@@ -1525,10 +1564,8 @@ class Window:
             self._qt_window.close()
             del self._qt_window
 
-    def _open_preferences_dialog(self):
+    def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""
-        from napari._qt.dialogs.preferences_dialog import PreferencesDialog
-
         if self._pref_dialog is None:
             win = PreferencesDialog(parent=self._qt_window)
             self._pref_dialog = win
@@ -1548,6 +1585,8 @@ class Window:
             win.show()
         else:
             self._pref_dialog.raise_()
+
+        return self._pref_dialog
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""

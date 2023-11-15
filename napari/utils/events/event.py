@@ -893,9 +893,9 @@ class WarningEmitter(EventEmitter):
 
     def __init__(
         self,
-        message,
-        category=FutureWarning,
-        stacklevel=3,
+        message: str,
+        category: Type[Warning] = FutureWarning,
+        stacklevel: int = 3,
         *args,
         **kwargs,
     ) -> None:
@@ -1111,7 +1111,7 @@ class EmitterGroup(EventEmitter):
 
     def connect(
         self,
-        callback: Union[Callback, CallbackRef, 'EmitterGroup'],
+        callback: Union[Callback, CallbackRef, EventEmitter, 'EmitterGroup'],
         ref: Union[bool, str] = False,
         position: Literal['first', 'last'] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
