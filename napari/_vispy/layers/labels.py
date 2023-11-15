@@ -524,6 +524,7 @@ class VispyLabelsLayer(VispyImageLayer):
                 interpolation='nearest',
             )
             self.node.shared_program['LUT_shape'] = key_texture.shape
+            self.node.shared_program['color_count'] = len(color_dict)
         else:
             self.node.cmap = VispyColormap(*colormap)
 
