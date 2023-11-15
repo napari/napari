@@ -184,14 +184,21 @@ def test_widget_types_supported(
     tmp_plugin: DynamicPlugin,
     Widget,
 ):
-    """Test all supported widget types correctly instantiated and call processor."""
-    # The 4 `Widget`s should represent varing widget constructors and signatures that
-    # we want to support.
+    """Test all supported widget types correctly instantiated and call processor.
+
+    The 4 parametrized `Widget`s represent the varing widget constructors and
+    signatures that we want to support.
+    """
+    # Using the decorator as a function on the parametrized `Widget`
+    # This allows `Widget` to be callable object that, when called, returns an
+    # instance of a widget
     tmp_plugin.contribute.widget(display_name='Widget')(Widget)
 
     app = get_app()
     viewer = make_napari_viewer()
 
+    # `side_effect` required so widget is added to window and then
+    # cleaned up, preventing widget leaks
     viewer.window.add_dock_widget = Mock(
         side_effect=viewer.window.add_dock_widget
     )
