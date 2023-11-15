@@ -401,7 +401,7 @@ def build_textures_from_dict(
     if use_selection:
         keys = np.full((1, 1), selection, dtype=vispy_texture_dtype)
         values = np.zeros((1, 1, 4), dtype=vispy_texture_dtype)
-        values[0, 0] = color_dict[selection]
+        values[0, 0] = color_dict.get(selection, color_dict[None])
         return keys, values, False
 
     if empty_val is _UNSET:
