@@ -423,6 +423,7 @@ disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = [
+    "napari.components.viewer_model",
     "napari.settings._fields",
     "napari.settings._migrations",
     "napari.settings._base",
