@@ -152,6 +152,7 @@ xarray = "xr"
 addopts = "--maxfail=5 --durations=10 -rXxs"
 console_output_style = "count"
 pystack_threshold=60
+pystack_args="--native-all"
 
 
 # NOTE: only put things that will never change in here.
