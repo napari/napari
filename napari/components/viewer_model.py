@@ -397,13 +397,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             -self.dims.ndisplay :
         ]
         center = cast(
-            Tuple[float, float, float],
+            Union[Tuple[float, float, float], Tuple[float, float]],
             tuple(
                 [0.0] * (self.dims.ndisplay - len(center_array))
                 + list(center_array)
             ),
         )
-        assert len(center) == 3
+        assert len(center) in (2, 3)
         self.camera.center = center
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
