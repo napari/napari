@@ -9,8 +9,8 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Field, parse_obj_as, validator
 
+from napari._pydantic_compat import Field, parse_obj_as, validator
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.style_encoding import (
     StyleEncoding,

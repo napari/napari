@@ -1,17 +1,19 @@
-from enum import Enum
-from typing import Optional
+from collections import defaultdict
+from typing import Optional, cast
 
+import numba
 import numpy as np
-from pydantic import PrivateAttr, validator
 
+from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
 from napari.utils.colormaps.colorbars import make_colorbar
+from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 
-class ColormapInterpolationMode(str, Enum):
+class ColormapInterpolationMode(StrEnum):
     """INTERPOLATION: Interpolation mode for colormaps.
 
     Selects an interpolation mode for the colormap.
@@ -50,7 +52,7 @@ class Colormap(EventedModel):
     name: str = 'custom'
     _display_name: Optional[str] = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array[np.float32, (-1,)] = None
+    controls: Array = Field(default_factory=lambda: cast(Array, []))
 
     def __init__(
         self, colors, display_name: Optional[str] = None, **data
@@ -142,3 +144,176 @@ class Colormap(EventedModel):
     @property
     def colorbar(self):
         return make_colorbar(self)
+
+
+class LabelColormap(Colormap):
+    """Colormap that shuffles values before mapping to colors.
+
+    Attributes
+    ----------
+    seed : float
+    use_selection : bool
+    selection : float
+    """
+
+    seed: float = 0.5
+    use_selection: bool = False
+    selection: float = 0.0
+    interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
+    background_value: int = 0
+
+    def map(self, values):
+        values = np.atleast_1d(values)
+
+        mapped = self.colors[
+            cast_labels_to_minimum_type_auto(
+                values, len(self.colors) - 1, self.background_value
+            ).astype(np.int64)
+        ]
+
+        mapped[values == self.background_value] = 0
+
+        # If using selected, disable all others
+        if self.use_selection:
+            mapped[~np.isclose(values, self.selection)] = 0
+
+        return mapped
+
+    def shuffle(self, seed: int):
+        """Shuffle the colormap colors.
+
+        Parameters
+        ----------
+        seed : int
+            Seed for the random number generator.
+        """
+        np.random.default_rng(seed).shuffle(self.colors[1:])
+        self.events.colors(value=self.colors)
+
+
+class DirectLabelColormap(Colormap):
+    """Colormap using a direct mapping from labels to color using a dict.
+
+    Attributes
+    ----------
+    color_dict: defaultdict
+        The dictionary mapping labels to colors.
+    use_selection: bool
+        Whether to color using the selected label.
+    selection: float
+        The selected label.
+    """
+
+    color_dict: defaultdict = Field(
+        default_factory=lambda: defaultdict(lambda: np.zeros(4))
+    )
+    use_selection: bool = False
+    selection: float = 0.0
+
+    def map(self, values):
+        # Convert to float32 to match the current GL shader implementation
+        values = np.atleast_1d(values).astype(np.float32)
+        mapped = np.zeros(values.shape + (4,), dtype=np.float32)
+        for idx in np.ndindex(values.shape):
+            value = values[idx]
+            if value in self.color_dict:
+                color = self.color_dict[value]
+                if len(color) == 3:
+                    color = np.append(color, 1)
+                mapped[idx] = color
+            else:
+                mapped[idx] = self.default_color
+        # If using selected, disable all others
+        if self.use_selection:
+            mapped[~np.isclose(values, self.selection)] = 0
+        return mapped
+
+    @property
+    def default_color(self):
+        if self.use_selection:
+            return 0, 0, 0, 0
+        return self.color_dict.get(None, (0, 0, 0, 0))
+        # we provided here default color for backward compatibility
+        # if someone is using DirectLabelColormap directly, not through Label layer
+
+
+def cast_labels_to_minimum_type_auto(
+    data: np.ndarray, num_colors: int, background_value: int
+) -> np.ndarray:
+    """Perform modulo operation based on number of colors
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Labels data to be casted.
+    num_colors : int
+        Number of unique colors in the data.
+    background_value : int
+        The value in ``values`` to be treated as the background.
+
+    Returns
+    -------
+    np.ndarray
+        Casted labels data.
+    """
+    dtype = minimum_dtype_for_labels(num_colors + 1)
+
+    return _modulo_plus_one(data, num_colors, dtype, background_value)
+
+
+@numba.njit(parallel=True)
+def _modulo_plus_one(
+    values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
+) -> np.ndarray:
+    """Like ``values % n + 1``, but with one specific value mapped to 0.
+
+    This ensures (1) an output value in [0, n] (inclusive), and (2) that
+    no nonzero values in the input are zero in the output, other than the
+    ``to_zero`` value.
+
+    Parameters
+    ----------
+    values : np.ndarray
+        The dividend of the modulo operator.
+    n : int
+        The divisor.
+    dtype : np.dtype
+        The desired dtype for the output array.
+    to_zero : int, optional
+        A specific value to map to 0. (By default, 0 itself.)
+
+    Returns
+    -------
+    np.ndarray
+        The result: 0 for the ``to_zero`` value, ``values % n + 1``
+        everywhere else.
+    """
+    result = np.empty_like(values, dtype=dtype)
+
+    for i in numba.prange(values.size):
+        if values.flat[i] == to_zero:
+            result.flat[i] = 0
+        else:
+            result.flat[i] = values.flat[i] % n + 1
+
+    return result
+
+
+def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
+    """Return the minimum dtype that can hold the number of colors.
+
+    Parameters
+    ----------
+    num_colors : int
+        Number of unique colors in the data.
+
+    Returns
+    -------
+    np.dtype
+        Minimum dtype that can hold the number of colors.
+    """
+    if num_colors <= np.iinfo(np.uint8).max:
+        return np.dtype(np.uint8)
+    if num_colors <= np.iinfo(np.uint16).max:
+        return np.dtype(np.uint16)
+    return np.dtype(np.float32)

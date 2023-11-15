@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import List, Optional, Tuple
 
 from psutil import virtual_memory
-from pydantic import Field, validator
 
+from napari._pydantic_compat import Field, validator
 from napari.settings._constants import BrushSizeOnMouseModifiers, LoopMode
 from napari.settings._fields import Language
 from napari.utils._base import _DEFAULT_LOCALE
@@ -221,7 +221,7 @@ class ApplicationSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = [
+        preferences_exclude = (
             "schema_version",
             "preferences_size",
             "first_time",
@@ -234,4 +234,4 @@ class ApplicationSettings(EventedModel):
             "open_history",
             "save_history",
             "ipy_interactive",
-        ]
+        )

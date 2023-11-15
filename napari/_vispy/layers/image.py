@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import warnings
+from typing import Dict, Optional
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -9,11 +12,14 @@ from napari._vispy.utils.gl import fix_data_dtype, get_gl_extensions
 from napari._vispy.visuals.image import Image as ImageNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers.base._base_constants import Blending
+from napari.layers.image.image import _ImageBase
 from napari.utils.translations import trans
 
 
 class ImageLayerNode:
-    def __init__(self, custom_node: Node = None, texture_format=None) -> None:
+    def __init__(
+        self, custom_node: Node = None, texture_format: Optional[str] = None
+    ) -> None:
         if (
             texture_format == 'auto'
             and 'texture_float' not in get_gl_extensions()
@@ -25,7 +31,9 @@ class ImageLayerNode:
 
         self._custom_node = custom_node
         self._image_node = ImageNode(
-            None,
+            None
+            if (texture_format is None or texture_format == 'auto')
+            else np.array([[0.0]], dtype=np.float32),
             method='auto',
             texture_format=texture_format,
         )
@@ -35,21 +43,39 @@ class ImageLayerNode:
             texture_format=texture_format,
         )
 
-    def get_node(self, ndisplay: int) -> Node:
+    def get_node(
+        self, ndisplay: int, dtype: Optional[np.dtype] = None
+    ) -> Node:
         # Return custom node if we have one.
         if self._custom_node is not None:
             return self._custom_node
 
         # Return Image or Volume node based on 2D or 3D.
-        if ndisplay == 2:
-            return self._image_node
-        return self._volume_node
+        res = self._image_node if ndisplay == 2 else self._volume_node
+        if (
+            res.texture_format != "auto"
+            and dtype is not None
+            and _VISPY_FORMAT_TO_DTYPE[res.texture_format] != dtype
+        ):
+            # it is a bug to hit this error — it is here to catch bugs
+            # early when we are creating the wrong nodes or
+            # textures for our data
+            raise ValueError("dtype does not match texture_format")
+        return res
 
 
-class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer, node=None, texture_format='auto') -> None:
+class VispyImageLayer(VispyBaseLayer[_ImageBase]):
+    def __init__(
+        self,
+        layer: _ImageBase,
+        node=None,
+        texture_format='auto',
+        layer_node_class=ImageLayerNode,
+    ) -> None:
         # Use custom node from caller, or our standard image/volume nodes.
-        self._layer_node = ImageLayerNode(node, texture_format=texture_format)
+        self._layer_node = layer_node_class(
+            node, texture_format=texture_format
+        )
 
         # Default to 2D (image) node.
         super().__init__(layer, self._layer_node.get_node(2))
@@ -89,14 +115,20 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_display_change(self, data=None):
+    def _on_display_change(self, data=None) -> None:
         parent = self.node.parent
         self.node.parent = None
         ndisplay = self.layer._slice_input.ndisplay
-        self.node = self._layer_node.get_node(ndisplay)
+        self.node = self._layer_node.get_node(
+            ndisplay, getattr(data, "dtype", None)
+        )
 
         if data is None:
-            data = np.zeros((1,) * ndisplay, dtype=np.float32)
+            texture_format = self.node.texture_format
+            data = np.zeros(
+                (1,) * ndisplay,
+                dtype=get_dtype_from_vispy_texture_format(texture_format),
+            )
 
         self.node.visible = not self.layer._slice.empty and self.layer.visible
 
@@ -108,10 +140,13 @@ class VispyImageLayer(VispyBaseLayer):
             overlay_visual.node.parent = self.node
         self.reset()
 
-    def _on_data_change(self):
-        node = self.node
+    def _on_data_change(self) -> None:
         data = fix_data_dtype(self.layer._data_view)
         ndisplay = self.layer._slice_input.ndisplay
+
+        node = self._layer_node.get_node(
+            ndisplay, getattr(data, "dtype", None)
+        )
 
         if ndisplay == 3 and self.layer.ndim == 2:
             data = np.expand_dims(data, axis=0)
@@ -124,43 +159,44 @@ class VispyImageLayer(VispyBaseLayer):
 
         # Check if ndisplay has changed current node type needs updating
         if (ndisplay == 3 and not isinstance(node, VolumeNode)) or (
-            ndisplay == 2 and not isinstance(node, ImageNode)
+            ndisplay == 2
+            and not isinstance(node, ImageNode)
+            or node != self.node
         ):
             self._on_display_change(data)
         else:
             node.set_data(data)
-
-        node.visible = not self.layer._slice.empty and self.layer.visible
+            node.visible = not self.layer._slice.empty and self.layer.visible
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
         node.update()
 
-    def _on_interpolation_change(self):
+    def _on_interpolation_change(self) -> None:
         self.node.interpolation = (
             self.layer.interpolation2d
             if self.layer._slice_input.ndisplay == 2
             else self.layer.interpolation3d
         )
 
-    def _on_custom_interpolation_kernel_2d_change(self):
+    def _on_custom_interpolation_kernel_2d_change(self) -> None:
         if self.layer._slice_input.ndisplay == 2:
             self.node.custom_kernel = self.layer.custom_interpolation_kernel_2d
 
-    def _on_rendering_change(self):
+    def _on_rendering_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.method = self.layer.rendering
             self._on_attenuation_change()
             self._on_iso_threshold_change()
 
-    def _on_depiction_change(self):
+    def _on_depiction_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.raycasting_mode = str(self.layer.depiction)
 
-    def _on_colormap_change(self):
+    def _on_colormap_change(self, event=None) -> None:
         self.node.cmap = VispyColormap(*self.layer.colormap)
 
-    def _update_mip_minip_cutoff(self):
+    def _update_mip_minip_cutoff(self) -> None:
         # discard fragments beyond contrast limits, but only with translucent blending
         if isinstance(self.node, VolumeNode):
             if self.layer.blending in {
@@ -173,24 +209,24 @@ class VispyImageLayer(VispyBaseLayer):
                 self.node.mip_cutoff = None
                 self.node.minip_cutoff = None
 
-    def _on_contrast_limits_change(self):
+    def _on_contrast_limits_change(self) -> None:
         self.node.clim = self.layer.contrast_limits
         # cutoffs must be updated after clims, so we can set them to the new values
         self._update_mip_minip_cutoff()
         # iso also may depend on contrast limit values
         self._on_iso_threshold_change()
 
-    def _on_blending_change(self):
+    def _on_blending_change(self, event=None) -> None:
         super()._on_blending_change()
         # cutoffs must be updated after blending, so we can know if
         # the new blending is a translucent one
         self._update_mip_minip_cutoff()
 
-    def _on_gamma_change(self):
+    def _on_gamma_change(self) -> None:
         if len(self.node.shared_program.frag._set_items) > 0:
             self.node.gamma = self.layer.gamma
 
-    def _on_iso_threshold_change(self):
+    def _on_iso_threshold_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             if self.node._texture.is_normalized:
                 cmin, cmax = self.layer.contrast_limits_range
@@ -200,23 +236,23 @@ class VispyImageLayer(VispyBaseLayer):
             else:
                 self.node.threshold = self.layer.iso_threshold
 
-    def _on_attenuation_change(self):
+    def _on_attenuation_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
 
-    def _on_plane_thickness_change(self):
+    def _on_plane_thickness_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.plane_thickness = self.layer.plane.thickness
 
-    def _on_plane_position_change(self):
+    def _on_plane_position_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.plane_position = self.layer.plane.position
 
-    def _on_plane_normal_change(self):
+    def _on_plane_normal_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.plane_normal = self.layer.plane.normal
 
-    def reset(self, event=None):
+    def reset(self, event=None) -> None:
         super().reset()
         self._on_interpolation_change()
         self._on_colormap_change()
@@ -229,7 +265,9 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_plane_thickness_change()
         self._on_custom_interpolation_kernel_2d_change()
 
-    def downsample_texture(self, data, MAX_TEXTURE_SIZE):
+    def downsample_texture(
+        self, data: np.ndarray, MAX_TEXTURE_SIZE: int
+    ) -> np.ndarray:
         """Downsample data based on maximum allowed texture size.
 
         Parameters
@@ -270,8 +308,38 @@ class VispyImageLayer(VispyBaseLayer):
             scale = np.ones(self.layer.ndim)
             for i, d in enumerate(self.layer._slice_input.displayed):
                 scale[d] = downsample[i]
+
+            # tile2data is a ScaleTransform thus is has a .scale attribute, but
+            # mypy cannot know this.
             self.layer._transforms['tile2data'].scale = scale
+
             self._on_matrix_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]
         return data
+
+
+_VISPY_FORMAT_TO_DTYPE: Dict[Optional[str], np.dtype] = {
+    "r8": np.dtype(np.uint8),
+    "r16": np.dtype(np.uint16),
+    "r32f": np.dtype(np.float32),
+    None: np.dtype(np.float32),
+}
+
+_DTYPE_TO_VISPY_FORMAT = {v: k for k, v in _VISPY_FORMAT_TO_DTYPE.items()}
+
+
+def get_dtype_from_vispy_texture_format(format_str: str) -> np.dtype:
+    """Get the numpy dtype from a vispy texture format string.
+
+    Parameters
+    ----------
+    format_str : str
+        The vispy texture format string.
+
+    Returns
+    -------
+    dtype : numpy.dtype
+        The numpy dtype corresponding to the vispy texture format string.
+    """
+    return _VISPY_FORMAT_TO_DTYPE.get(format_str, np.dtype(np.float32))

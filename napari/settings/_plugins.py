@@ -1,8 +1,8 @@
 from typing import Dict, List, Set
 
-from pydantic import Field
 from typing_extensions import TypedDict
 
+from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
 from napari.utils.translations import trans
 
@@ -61,8 +61,8 @@ class PluginsSettings(EventedSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = [
+        preferences_exclude = (
             'schema_version',
             'disabled_plugins',
             'extension2writer',
-        ]
+        )

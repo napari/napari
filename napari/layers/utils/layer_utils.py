@@ -4,6 +4,7 @@ import functools
 import inspect
 import warnings
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -22,6 +23,11 @@ from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from typing import Mapping
+
+    import numpy.typing as npt
 
 
 class Extent(NamedTuple):
@@ -54,7 +60,7 @@ def register_layer_action(
     keymapprovider,
     description: str,
     repeatable: bool = False,
-    shortcuts: str = None,
+    shortcuts: Optional[str] = None,
 ):
     """
     Convenient decorator to register an action with the current Layers
@@ -210,8 +216,8 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
 
     Returns
     -------
-    values : list of float
-        Range of values.
+    values : pair of floats
+        Minimum and maximum values in that order.
 
     Notes
     -----
@@ -219,7 +225,9 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     returned.
     """
     if data.dtype == np.uint8:
-        return 0, 255
+        return (0, 255)
+
+    center: Union[int, List[int]]
 
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
@@ -270,7 +278,7 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     if min_val == max_val:
         min_val = 0
         max_val = 1
-    return float(min_val), float(max_val)
+    return (float(min_val), float(max_val))
 
 
 def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
@@ -310,7 +318,7 @@ def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     return normal / norm
 
 
-def convert_to_uint8(data: np.ndarray) -> np.ndarray:
+def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
     """
     Convert array content to uint8, always returning a copy.
 
@@ -454,7 +462,7 @@ def _validate_property_choices(property_choices):
 
 
 def _coerce_current_properties_value(
-    value: Union[float, str, int, bool, list, tuple, np.ndarray]
+    value: Union[float, str, bool, list, tuple, np.ndarray]
 ) -> np.ndarray:
     """Coerce a value in a current_properties dictionary into the correct type.
 
@@ -484,8 +492,8 @@ def _coerce_current_properties_value(
 
 
 def coerce_current_properties(
-    current_properties: Dict[
-        str, Union[float, str, int, bool, list, tuple, np.ndarray]
+    current_properties: Mapping[
+        str, Union[float, str, int, bool, list, tuple, npt.NDArray]
     ]
 ) -> Dict[str, np.ndarray]:
     """Coerce a current_properties dictionary into the correct type.
@@ -651,11 +659,13 @@ def dims_displayed_world_to_layer(
     else:
         order = dims_displayed_world
     offset = ndim_world - ndim_layer
-    order = np.array(order)
+
+    order_arr = np.array(order)
     if offset <= 0:
-        order = list(range(-offset)) + list(order - offset)
+        order = list(range(-offset)) + list(order_arr - offset)
     else:
-        order = list(order[order >= offset] - offset)
+        order = list(order_arr[order_arr >= offset] - offset)
+
     n_display_world = len(dims_displayed_world)
     if n_display_world > ndim_layer:
         n_display_layer = ndim_layer
@@ -807,7 +817,7 @@ class _FeatureTable:
 
     def set_currents(
         self,
-        currents: Dict[str, np.ndarray],
+        currents: Dict[str, npt.NDArray],
         *,
         update_indices: Optional[List[int]] = None,
     ) -> None:
@@ -936,7 +946,7 @@ def _get_default_column(column: pd.Series) -> pd.Series:
         # store missing values, so passing None creates an np.float64 series
         # containing NaN. Therefore, use a default of 0 instead.
         value = 0
-    return pd.Series(data=value, dtype=column.dtype, index=range(1))
+    return pd.Series(data=[value], dtype=column.dtype, index=range(1))
 
 
 def _validate_features(

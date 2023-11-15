@@ -1,0 +1,37 @@
+name: Remove html In PR description
+# see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
+on:
+  # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
+  # see https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+permissions:
+  pull-requests: write
+
+jobs:
+  check_labels:
+    name: Remove html comments.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # install python and requests
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+      - name: Remove html comments
+        env:
+          GH_PR_NUMBER: ${{ github.event.number }}
+          GH_REPO_URL: ${{ github.event.repository.url}}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        run: |
+          python tools/remove_html_comments_from_pr.py

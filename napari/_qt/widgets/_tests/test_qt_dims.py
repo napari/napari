@@ -244,11 +244,16 @@ def test_order_when_changing_ndim(qtbot):
 def test_update_dims_labels(qtbot):
     """
     Test that the slider_widget axis labels are updated with the dims model
-    and vice versa.
+    and vice versa with eliding capabilites.
     """
     ndim = 4
     view = QtDims(Dims(ndim=ndim))
     qtbot.addWidget(view)
+
+    # set initial widget width and show it to be able to trigger `resizeEvent`
+    view.setFixedWidth(100)
+    view.show()
+
     view.dims.axis_labels = list('TZYX')
     assert [w.axis_label.text() for w in view.slider_widgets] == list('TZYX')
 
@@ -261,9 +266,18 @@ def test_update_dims_labels(qtbot):
     view.dims.events.axis_labels.connect(on_axis_labels_changed)
     first_label = view.slider_widgets[0].axis_label
     assert first_label.text() == view.dims.axis_labels[0]
+
+    # check that the label text corresponds with the dims model
+    # while being elided on the GUI
     first_label.setText('napari')
     assert first_label.text() == view.dims.axis_labels[0]
+    assert "…" in first_label._elidedText()
     assert observed_axis_labels_event
+
+    # increase width to check the full text is shown
+    view.setFixedWidth(250)
+    assert first_label.text() == view.dims.axis_labels[0]
+    assert first_label._elidedText() == view.dims.axis_labels[0]
 
 
 def test_slider_press_updates_last_used(qtbot):
@@ -274,7 +288,16 @@ def test_slider_press_updates_last_used(qtbot):
 
     for i, widg in enumerate(view.slider_widgets):
         widg.slider.sliderPressed.emit()
-        assert view.dims.last_used == i
+        if i in [0, 1, 2]:
+            # only the first three dims should have visible sliders
+            assert widg.isVisibleTo(view)
+            assert view.dims.last_used == i
+        else:
+            # sliders should not be visible for the follwing dims and the
+            # last_used should fallback to the first available dim with a
+            # visible slider (dim 0)
+            assert not widg.isVisibleTo(view)
+            assert view.dims.last_used == 0
 
 
 @pytest.mark.skipif(

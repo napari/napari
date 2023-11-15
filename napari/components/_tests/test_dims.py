@@ -339,6 +339,16 @@ def test_changing_focus():
     assert dims.last_used == 2
 
 
+def test_changing_focus_changing_ndisplay():
+    dims = Dims(ndim=4, ndisplay=2)
+    # simulates putting focus from slider 0 to slider 1
+    dims.last_used = 1
+    assert dims.last_used == 1
+    dims.ndisplay = 3
+    # last_used should change from 1 to 0 since dim 1 is displayed now
+    assert dims.last_used == 0
+
+
 def test_floating_point_edge_case():
     # see #4889
     dims = Dims(ndim=2)

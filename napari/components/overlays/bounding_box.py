@@ -1,3 +1,4 @@
+from napari._pydantic_compat import Field
 from napari.components.overlays.base import SceneOverlay
 from napari.utils.color import ColorValue
 
@@ -30,7 +31,7 @@ class BoundingBoxOverlay(SceneOverlay):
 
     lines: bool = True
     line_thickness: float = 1
-    line_color: ColorValue = 'red'
+    line_color: ColorValue = Field(default_factory=lambda: ColorValue('red'))
     points: bool = True
     point_size: float = 5
-    point_color: ColorValue = 'blue'
+    point_color: ColorValue = Field(default_factory=lambda: ColorValue('blue'))

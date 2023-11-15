@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QMovie
 from qtpy.QtWidgets import (
@@ -16,11 +14,11 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-import napari.resources
 from napari._qt.widgets.qt_progress_bar import (
     QtLabeledProgressBar,
     QtProgressBarGroup,
 )
+from napari.resources import LOADING_GIF_PATH
 from napari.utils.progress import progress
 from napari.utils.translations import trans
 
@@ -50,8 +48,7 @@ class ActivityToggleItem(QWidget):
         sp = self._inProgressIndicator.sizePolicy()
         sp.setRetainSizeWhenHidden(True)
         self._inProgressIndicator.setSizePolicy(sp)
-        load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
-        mov = QMovie(load_gif)
+        mov = QMovie(LOADING_GIF_PATH)
         mov.setScaledSize(QSize(18, 18))
         self._inProgressIndicator.setMovie(mov)
         self._inProgressIndicator.hide()

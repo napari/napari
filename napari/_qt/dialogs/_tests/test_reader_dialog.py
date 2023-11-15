@@ -1,10 +1,13 @@
 import os
+from unittest import mock
 
 import numpy as np
 import pytest
 from npe2 import DynamicPlugin
+from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtWidgets import QLabel, QRadioButton
 
+from napari._app_model import get_app
 from napari._qt.dialogs.qt_reader_dialog import (
     QtReaderDialog,
     open_with_dialog_choices,
@@ -124,6 +127,45 @@ def test_prepare_dialog_options_removes_plugin(tmp_plugin: DynamicPlugin):
     )
     assert tmp2.name in readers
     assert tmp_plugin.name not in readers
+
+
+def test_open_sample_data_shows_all_readers(
+    make_napari_viewer,
+    tmp_plugin: DynamicPlugin,
+):
+    """Checks that sample data callback `_add_sample` shows all readers."""
+    # Test for bug fixed in #6058
+    tmp2 = tmp_plugin.spawn(register=True)
+
+    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    my_sample = SampleDataURI(
+        key='tmp-sample',
+        display_name='Temp Sample',
+        uri='some-path/some-file.fake',
+    )
+    tmp_plugin.manifest.contributions.sample_data = [my_sample]
+
+    app = get_app()
+    # required so setup steps run in init of `Viewer` and `Window`
+    viewer = make_napari_viewer()
+    # Ensure that `handle_gui_reading`` is not passed the sample plugin name
+    with mock.patch(
+        'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
+    ) as mock_read:
+        app.commands.execute_command('tmp_plugin:tmp-sample')
+
+    mock_read.assert_called_once_with(
+        ['some-path/some-file.fake'],
+        viewer.window._qt_viewer,
+        stack=False,
+    )
 
 
 def test_open_with_dialog_choices_persist(

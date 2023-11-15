@@ -5,8 +5,8 @@ import pytest
 from npe2 import PluginManager, PluginManifest, __version__ as npe2_version
 from npe2.manifest.schema import ContributionPoints
 from packaging.version import parse as parse_version
-from pydantic import ValidationError
 
+from napari._pydantic_compat import ValidationError
 from napari.resources._icons import PLUGIN_FILE_NAME
 from napari.settings import get_settings
 from napari.utils.theme import (
@@ -130,6 +130,22 @@ def test_rebuild_theme_settings():
 def test_theme(color):
     theme = get_theme("dark")
     theme.background = color
+
+
+@pytest.mark.skipif(
+    os.getenv('CI') and sys.version_info < (3, 9),
+    reason="Testing theme on CI is extremely slow ~ 15s per test."
+    "Skip for now until we find the reason",
+)
+def test_theme_font_size():
+    theme = get_theme("dark")
+    theme.font_size = "15pt"
+    assert theme.font_size == "15pt"
+
+    with pytest.raises(ValidationError):
+        theme.font_size = "0pt"
+    with pytest.raises(ValidationError):
+        theme.font_size = "12px"
 
 
 def test_theme_syntax_highlight():

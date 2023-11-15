@@ -2,7 +2,16 @@ import sys
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Set, Union, get_origin
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Union,
+    get_origin,
+)
 
 from napari import layers, types, viewer
 from napari._app_model.injection._providers import _provide_viewer
@@ -70,6 +79,7 @@ def _add_layer_data_to_viewer(
     if data is not None and (viewer := viewer or _provide_viewer()):
         if layer_name:
             with suppress(KeyError):
+                # layerlist also allow lookup by name
                 viewer.layers[layer_name].data = data
                 return
         if get_origin(return_type) is Union:
@@ -105,7 +115,7 @@ def _add_future_data(
     return_type: Any,
     _from_tuple=True,
     viewer: Optional[viewer.Viewer] = None,
-    source: dict = None,
+    source: Optional[dict] = None,
 ):
     """Process a Future object.
 
@@ -130,19 +140,18 @@ def _add_future_data(
 
     # when the future is done, add layer data to viewer, dispatching
     # to the appropriate method based on the Future data type.
-    adder = (
-        _add_layer_data_tuples_to_viewer
-        if _from_tuple
-        else _add_layer_data_to_viewer
-    )
+
+    add_kwargs = {
+        'return_type': return_type,
+        'viewer': viewer,
+        'source': source,
+    }
 
     def _on_future_ready(f: Future):
-        adder(
-            f.result(),
-            return_type=return_type,
-            viewer=viewer,
-            source=source,
-        )
+        if _from_tuple:
+            _add_layer_data_tuples_to_viewer(f.result(), **add_kwargs)
+        else:
+            _add_layer_data_to_viewer(f.result(), **add_kwargs)
         _FUTURES.discard(future)
 
     # We need the callback to happen in the main thread...
@@ -168,6 +177,6 @@ for t in types._LayerData.__args__:  # type: ignore [attr-defined]
     PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
     if sys.version_info >= (3, 9):
-        PROCESSORS[Future[t]] = partial(
+        PROCESSORS[Future[t]] = partial(  # type: ignore [valid-type]
             _add_future_data, return_type=t, _from_tuple=False
         )

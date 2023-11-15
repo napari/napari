@@ -60,11 +60,14 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Generic,
+    Iterable,
     List,
     Literal,
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
     cast,
 )
@@ -160,7 +163,7 @@ class Event:
         return self._handled
 
     @handled.setter
-    def handled(self, val) -> bool:
+    def handled(self, val) -> None:
         self._handled = bool(val)
 
     @property
@@ -173,7 +176,7 @@ class Event:
         return self._blocked
 
     @blocked.setter
-    def blocked(self, val) -> bool:
+    def blocked(self, val) -> None:
         self._blocked = bool(val)
 
     def __repr__(self) -> str:
@@ -221,7 +224,10 @@ CallbackStr = Tuple[
 ]  # dereferenced method
 
 
-class _WeakCounter:
+_T = TypeVar("_T")
+
+
+class _WeakCounter(Generic[_T]):
     """
     Similar to collection counter but has weak keys.
 
@@ -229,17 +235,19 @@ class _WeakCounter:
     """
 
     def __init__(self) -> None:
-        self._counter = weakref.WeakKeyDictionary()
+        self._counter: weakref.WeakKeyDictionary[
+            _T, int
+        ] = weakref.WeakKeyDictionary()
         self._nonecount = 0
 
-    def update(self, iterable):
+    def update(self, iterable: Iterable[_T]):
         for it in iterable:
             if it is None:
                 self._nonecount += 1
             else:
                 self._counter[it] = self.get(it, 0) + 1
 
-    def get(self, key, default):
+    def get(self, key: _T, default: int) -> int:
         if key is None:
             return self._nonecount
         return self._counter.get(key, default)
@@ -343,12 +351,7 @@ class EventEmitter:
     @print_callback_errors.setter
     def print_callback_errors(
         self,
-        val: Union[
-            Literal['first'],
-            Literal['reminders'],
-            Literal['always'],
-            Literal['never'],
-        ],
+        val: Literal['first', 'reminders', 'always', 'never'],
     ):
         if val not in ('first', 'reminders', 'always', 'never'):
             raise ValueError(
@@ -414,7 +417,7 @@ class EventEmitter:
         self,
         callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
         ref: Union[bool, str] = False,
-        position: Union[Literal['first'], Literal['last']] = 'first',
+        position: Literal['first', 'last'] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
         until: Optional['EventEmitter'] = None,
@@ -890,9 +893,9 @@ class WarningEmitter(EventEmitter):
 
     def __init__(
         self,
-        message,
-        category=FutureWarning,
-        stacklevel=3,
+        message: str,
+        category: Type[Warning] = FutureWarning,
+        stacklevel: int = 3,
         *args,
         **kwargs,
     ) -> None:
@@ -1108,9 +1111,9 @@ class EmitterGroup(EventEmitter):
 
     def connect(
         self,
-        callback: Union[Callback, CallbackRef, 'EmitterGroup'],
+        callback: Union[Callback, CallbackRef, EventEmitter, 'EmitterGroup'],
         ref: Union[bool, str] = False,
-        position: Union[Literal['first'], Literal['last']] = 'first',
+        position: Literal['first', 'last'] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
     ):
@@ -1182,7 +1185,7 @@ class EventBlocker:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target, callback=None) -> None:
+    def __init__(self, target: EventEmitter, callback=None) -> None:
         self.target = target
         self.callback = callback
         self._base_count = target._block_counter.get(callback, 0)
@@ -1206,7 +1209,7 @@ class EventBlockerAll:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target) -> None:
+    def __init__(self, target: EmitterGroup) -> None:
         self.target = target
 
     def __enter__(self):

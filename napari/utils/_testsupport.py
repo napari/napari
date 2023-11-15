@@ -1,10 +1,10 @@
-import collections
 import gc
 import os
 import sys
 import warnings
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, List, Tuple
 from unittest.mock import patch
 from weakref import WeakSet
 
@@ -173,10 +173,12 @@ def make_napari_viewer(
     >>> def test_something_with_strict_qt_tests(make_napari_viewer):
     ...     viewer = make_napari_viewer(strict_qt=True)
     """
-    from qtpy.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication, QWidget
 
     from napari import Viewer
+    from napari._qt._qapp_model.qactions import init_qactions
     from napari._qt.qt_viewer import QtViewer
+    from napari.plugins import _initialize_plugins
     from napari.settings import get_settings
 
     global GCPASS
@@ -203,9 +205,12 @@ def make_napari_viewer(
     settings = get_settings()
     settings.reset()
 
+    _initialize_plugins.cache_clear()
+    init_qactions.cache_clear()
+
     viewers: WeakSet[Viewer] = WeakSet()
 
-    # may be overridden by using `make_napari_viewer(strict=True)`
+    # may be overridden by using the parameter `strict_qt`
     _strict = False
 
     initial = QApplication.topLevelWidgets()
@@ -217,6 +222,17 @@ def make_napari_viewer(
         "napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection",
         _empty,
     )
+
+    if "enable_console" not in request.keywords:
+
+        def _dummy_widget(*_):
+            w = QWidget()
+            w._update_theme = _empty
+            return w
+
+        monkeypatch.setattr(
+            "napari._qt.qt_viewer.QtViewer._get_console", _dummy_widget
+        )
 
     def actual_factory(
         *model_args,
@@ -278,7 +294,7 @@ def make_napari_viewer(
     assert _do_not_inline_below == 0
 
     # only check for leaked widgets if an exception was raised during the test,
-    # or "strict" mode was used.
+    # and "strict" mode was used.
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
@@ -299,7 +315,7 @@ def make_napari_viewer(
             # in particular with VisPyCanvas, it looks like if a traceback keeps
             # contains the type, then instances are still attached to the type.
             # I'm not too sure why this is the case though.
-            if _strict:
+            if _strict == 'raise':
                 raise AssertionError(msg)
             else:
                 warnings.warn(msg)
@@ -344,17 +360,20 @@ def MouseEvent():
     Returns
     -------
     Event : Type
-        A new tuple subclass named Event that can be used to create a
-        NamedTuple object with fields "type" and "is_dragging".
+        A new dataclass named Event that can be used to create an
+        object with fields "type" and "is_dragging".
     """
-    return collections.namedtuple(
-        'Event',
-        field_names=[
-            'type',
-            'is_dragging',
-            'position',
-            'view_direction',
-            'dims_displayed',
-            'dims_point',
-        ],
-    )
+
+    @dataclass
+    class Event:
+        type: str
+        position: Tuple[float]
+        is_dragging: bool = False
+        dims_displayed: Tuple[int] = (0, 1)
+        dims_point: List[float] = None
+        view_direction: List[int] = None
+        pos: List[int] = (0, 0)
+        button: int = None
+        handled: bool = False
+
+    return Event

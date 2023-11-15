@@ -20,9 +20,9 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
+from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import dims_scroll
 from napari.components.camera import Camera
@@ -256,7 +256,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
+        self.dims.events.point.connect(self._update_layers)
+        # FIXME: the next line is a temporary workaround. With #5522 and #5751 Dims.point became
+        #        the source of truth, and is now defined in world space. This exposed an existing
+        #        bug where if a field in Dims is modified by the root_validator, events won't
+        #        be fired for it. This won't happen for properties because we have dependency
+        #        checks. To fix this, we need dep checks for fileds (psygnal!) and then we
+        #        can remove the following line. Note that because of this we fire double events,
+        #        but this should be ok because we have early returns when slices are unchanged.
         self.dims.events.current_step.connect(self._update_layers)
+        self.dims.events.margin_left.connect(self._update_layers)
+        self.dims.events.margin_right.connect(self._update_layers)
         self.cursor.events.position.connect(
             self._update_status_bar_from_cursor
         )
@@ -726,6 +736,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         plane=None,
         experimental_clipping_planes=None,
         custom_interpolation_kernel_2d=None,
+        projection_mode='none',
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -903,6 +914,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'plane': plane,
             'experimental_clipping_planes': experimental_clipping_planes,
             'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
+            'projection_mode': projection_mode,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -965,8 +977,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         sample : str
             name of the sample
         reader_plugin : str, optional
-            reader plugin to pass to viewer.open (only used if the sample data
-            is a string).  by default None.
+            reader plugin to use, passed to ``viewer.open``. Only used if the
+            sample data is an URI (Uniform Resource Identifier). By default None.
         **kwargs
             additional kwargs will be passed to the sample data loader provided
             by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
@@ -1174,7 +1186,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _open_or_raise_error(
         self,
         paths: List[Union[Path, str]],
-        kwargs: Dict[str, Any] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
         layer_type: Optional[str] = None,
         stack: Union[bool, List[List[str]]] = False,
     ):
@@ -1386,7 +1398,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _add_layer_from_data(
         self,
         data,
-        meta: Dict[str, Any] = None,
+        meta: Optional[Dict[str, Any]] = None,
         layer_type: Optional[str] = None,
     ) -> List[Layer]:
         """Add arbitrary layer data to the viewer.
@@ -1526,7 +1538,7 @@ def _unify_data_and_user_kwargs(
     data: LayerData,
     kwargs: Optional[dict] = None,
     layer_type: Optional[str] = None,
-    fallback_name: str = None,
+    fallback_name: Optional[str] = None,
 ) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
 
