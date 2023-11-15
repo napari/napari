@@ -24,7 +24,6 @@ from magicgui.type_map._magicgui import MagicFactory
 from magicgui.widgets import FunctionGui, Widget
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
-from qtpy.QtWidgets import QWidget
 
 from napari.errors.reader_errors import MultipleReaderError
 from napari.utils.translations import trans
@@ -34,7 +33,7 @@ if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
-    from qtpy.QtWidgets import QMenu
+    from qtpy.QtWidgets import QMenu, QWidget
 
     from napari._app_model.constants import MenuId
     from napari.layers import Layer
@@ -511,6 +510,8 @@ def _get_samples_submenu_actions(
 
 def _get_widget_viewer_param(widget_callable, widget_name) -> str:
     """Get widget parameter name (if any) and check type."""
+    from qtpy.QtWidgets import QWidget
+
     from napari.viewer import Viewer
 
     if inspect.isclass(widget_callable) and issubclass(
