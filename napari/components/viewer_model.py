@@ -551,7 +551,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
                     self.cursor.position,
-                    view_direction=self.cursor._view_direction,
+                    view_direction=np.asarray(self.cursor._view_direction),
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
