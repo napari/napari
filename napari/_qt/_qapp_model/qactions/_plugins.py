@@ -25,7 +25,7 @@ def _plugin_manager_dialog_avail() -> bool:
     return False
 
 
-def _show_plugin_install_dialog(window: Window):
+def _show_plugin_install_dialog(window: Window) -> None:
     """Show dialog that allows users to install and enable/disable plugins."""
 
     # TODO: Once menu contributions supported, `napari_plugin_manager` should be
@@ -36,7 +36,7 @@ def _show_plugin_install_dialog(window: Window):
     QtPluginDialog(window._qt_window).exec_()
 
 
-def _show_plugin_err_reporter(window: Window):
+def _show_plugin_err_reporter(window: Window) -> None:
     """Show dialog that allows users to review and report plugin errors."""
     QtPluginErrReporter(parent=window._qt_window).exec_()  # type: ignore [attr-defined]
 
