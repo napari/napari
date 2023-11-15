@@ -58,6 +58,7 @@ from napari.utils.colormaps.colormap import (
     _cast_labels_data_to_texture_dtype_direct,
     _texture_dtype,
 )
+from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
@@ -311,6 +312,7 @@ class Labels(_ImageBase):
         self._random_colormap = label_colormap(
             self.num_colors, self.seed, self._background_label
         )
+        self._original_colormap = self._random_colormap
         self._direct_colormap = direct_colormap()
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
@@ -511,7 +513,9 @@ class Labels(_ImageBase):
                 self.num_colors, self.seed, self._background_label
             )
         else:
-            self.colormap.shuffle(self._seed_rng)
+            self._colormap = shuffle_and_extend_colormap(
+                self._original_colormap, self._seed_rng
+            )
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
@@ -553,6 +557,7 @@ class Labels(_ImageBase):
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.color_mode = color_mode
+        self._original_colormap = colormap
 
     @property
     def num_colors(self):
