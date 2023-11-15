@@ -162,14 +162,49 @@ class LabelColormap(Colormap):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
 
-    def map(self, values):
+    def map(self, values) -> np.ndarray:
+        """
+        Map values to colors.
+
+        Parameters
+        ----------
+        values : np.ndarray or float
+            Values to be mapped.
+
+        Returns
+        -------
+        np.ndarray of same shape as values, but with last dimension of size 4
+            Mapped colors.
+        """
         values = np.atleast_1d(values)
 
-        mapped = self.colors[
-            cast_labels_to_minimum_type_auto(
-                values, len(self.colors) - 1, self.background_value
-            ).astype(np.int64)
-        ]
+        casted = cast_labels_to_minimum_type_auto(
+            values, len(self.colors) - 1, self.background_value
+        )
+
+        return self.map_casted(casted)
+
+    def map_casted(self, values) -> np.ndarray:
+        """
+        Map values to colors.
+
+        Parameters
+        ----------
+        values : np.ndarray
+            Values to be mapped. It need to be already casted using
+            cast_labels_to_minimum_type_auto
+
+        Returns
+        -------
+        np.ndarray of shape (N, M, 4)
+            Mapped colors.
+
+        Notes
+        -----
+        it is implemented for thumbnail labels,
+        where we already have casted values
+        """
+        mapped = self.colors[values.astype(np.int64)]
 
         mapped[values == self.background_value] = 0
 
