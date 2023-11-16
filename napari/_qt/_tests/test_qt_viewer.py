@@ -723,6 +723,7 @@ def test_axes_labels(make_napari_viewer):
 def qt_viewer(qtbot):
     qt_viewer = QtViewer(ViewerModel())
     qt_viewer.show()
+    qt_viewer.resize(512, 512)
     yield qt_viewer
     qt_viewer.close()
     del qt_viewer
