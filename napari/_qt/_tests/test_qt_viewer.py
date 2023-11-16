@@ -742,7 +742,7 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
 
     canvas_screenshot = qt_viewer.screenshot(flash=False)
     # cut off black border
-    sh = canvas_screenshot.shape
+    sh = canvas_screenshot.shape[:2]
     short_side = min(sh)
     margin1 = (sh[0] - short_side) // 2
     margin2 = (sh[1] - short_side) // 2
