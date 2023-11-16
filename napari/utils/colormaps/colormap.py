@@ -210,7 +210,7 @@ class LabelColormap(Colormap):
 
         # If using selected, disable all others
         if self.use_selection:
-            mapped[~np.isclose(values, self.selection)] = 0
+            mapped[~np.isclose(values, self.selection + 1)] = 0
 
         return mapped
 

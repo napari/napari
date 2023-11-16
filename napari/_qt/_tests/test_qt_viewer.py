@@ -719,21 +719,28 @@ def test_axes_labels(make_napari_viewer):
     assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
 
 
-@skip_local_popups
-@pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
-def test_thumbnail_labels(qtbot, direct):
+@pytest.fixture()
+def qt_viewer512(qtbot):
     qt_viewer = QtViewer(ViewerModel())
     qt_viewer.resize(512, 512)
     qt_viewer.show()
+    yield qt_viewer
+    qt_viewer.hide()
 
+
+@skip_local_popups
+@pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
+def test_thumbnail_labels(qtbot, direct, qt_viewer512):
     # Add labels to empty viewer
-    layer = qt_viewer.viewer.add_labels(np.array([[0, 1], [2, 3]]), opacity=1)
+    layer = qt_viewer512.viewer.add_labels(
+        np.array([[0, 1], [2, 3]]), opacity=1
+    )
     if direct:
         layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
 
-    qtbot.wait(50)
+    qtbot.wait(100)
 
-    canvas_screenshot = qt_viewer.screenshot(flash=False)
+    canvas_screenshot = qt_viewer512.screenshot(flash=False)
     # cut off black border
     canvas_screenshot = canvas_screenshot[20:-20, 20:-20]
     thumbnail = layer.thumbnail
@@ -746,5 +753,3 @@ def test_thumbnail_labels(qtbot, direct):
     numpy.testing.assert_almost_equal(
         canvas_screenshot, scaled_thumbnail, decimal=1
     )
-
-    qt_viewer.hide()

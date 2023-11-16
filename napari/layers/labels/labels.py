@@ -1144,8 +1144,7 @@ class Labels(_ImageBase):
         ):
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
-            val = self._to_vispy_texture_dtype(np.array([label]))
-            col = self.colormap.map(val)[0]
+            col = self.colormap.map([label])[0]
         return col
 
     def _get_value_ray(
