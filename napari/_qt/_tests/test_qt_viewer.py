@@ -725,7 +725,9 @@ def qt_viewer512(qtbot):
     qt_viewer.resize(512, 512)
     qt_viewer.show()
     yield qt_viewer
-    qt_viewer.hide()
+    qt_viewer.close()
+    del qt_viewer
+    qtbot.wait(50)
 
 
 @skip_local_popups
