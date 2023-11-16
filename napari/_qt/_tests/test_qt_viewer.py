@@ -733,14 +733,14 @@ def qt_viewer512(qtbot):
 
 @skip_local_popups
 @pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
-def test_thumbnail_labels(qtbot, direct, qt_viewer512):
+def test_thumbnail_labels(qtbot, direct, qt_viewer512: QtViewer):
     # Add labels to empty viewer
     layer = qt_viewer512.viewer.add_labels(
         np.array([[0, 1], [2, 3]]), opacity=1
     )
     if direct:
         layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
-
+    qt_viewer512.viewer.reset_view()
     qtbot.wait(100)
 
     canvas_screenshot = qt_viewer512.screenshot(flash=False)
