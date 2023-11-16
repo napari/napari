@@ -357,7 +357,7 @@ def _get_empty_val_from_dict(color_dict):
 
 
 def build_textures_from_dict(
-    color_dict: Dict[float, ColorTuple],
+    color_dict: Dict[Optional[float], ColorTuple],
     empty_val=_UNSET,
     shape=None,
     use_selection=False,
