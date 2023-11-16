@@ -684,15 +684,14 @@ def _update_data(
 
 @pytest.fixture()
 def qt_viewer(qtbot):
-    viewer_model = ViewerModel()
-    qt_viewer = QtViewer(viewer=viewer_model)
+    qt_viewer = QtViewer(viewer=ViewerModel())
     qtbot.add_widget(qt_viewer)
     qtbot.add_widget(qt_viewer.controls)
     qt_viewer.show()
     qt_viewer.controls.show()
     yield qt_viewer
-    qt_viewer.hide()
     qt_viewer.controls.hide()
+    qt_viewer.hide()
 
 
 @skip_local_popups
