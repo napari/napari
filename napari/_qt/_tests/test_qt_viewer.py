@@ -722,8 +722,8 @@ def test_axes_labels(make_napari_viewer):
 @pytest.fixture()
 def qt_viewer512(qtbot):
     qt_viewer = QtViewer(ViewerModel())
-    qt_viewer.resize(512, 512)
     qt_viewer.show()
+    qt_viewer.resize(512, 512)
     yield qt_viewer
     qt_viewer.close()
     del qt_viewer
@@ -740,7 +740,6 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer512: QtViewer, tmp_path):
     )
     if direct:
         layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
-    qt_viewer512.viewer.reset_view()
     qtbot.wait(100)
 
     canvas_screenshot = qt_viewer512.screenshot(flash=False)
