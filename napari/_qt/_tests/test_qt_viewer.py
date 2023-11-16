@@ -672,7 +672,7 @@ def _update_data(
     layer.data = np.full((2, 2), label, dtype=np.uint64)
     layer.selected_label = label
 
-    qtbot.wait(100)  # wait for .update() to be called on QtColorBox from Qt
+    qtbot.wait(50)  # wait for .update() to be called on QtColorBox from Qt
 
     color_box_color = qt_viewer.controls.widgets[layer].colorBox.color
     screenshot = qt_viewer.screenshot(flash=False)
@@ -682,16 +682,31 @@ def _update_data(
     return color_box_color, middle_pixel
 
 
+@pytest.fixture()
+def qt_viewer(qtbot):
+    viewer_model = ViewerModel()
+    qt_viewer = QtViewer(viewer=viewer_model)
+    qtbot.add_widget(qt_viewer)
+    qtbot.add_widget(qt_viewer.controls)
+    qt_viewer.show()
+    qt_viewer.controls.show()
+    yield qt_viewer
+    qt_viewer.hide()
+    qt_viewer.controls.hide()
+
+
 @skip_local_popups
 @skip_on_win_ci
-def test_label_colors_matching_widget(qtbot, make_napari_viewer):
+@pytest.mark.parametrize("use_selection", [False])
+def test_label_colors_matching_widget(qtbot, qt_viewer, use_selection):
     """Make sure the rendered label colors match the QtColorBox widget."""
-    viewer = make_napari_viewer(show=True)
+
     # XXX TODO: this unstable! Seed = 0 fails, for example. This is due to numerical
     #           imprecision in random colormap on gpu vs cpu
     np.random.seed(1)
     data = np.ones((2, 2), dtype=np.uint64)
-    layer = viewer.add_labels(data)
+    layer = qt_viewer.viewer.add_labels(data)
+    layer.show_selected_label = use_selection
     layer.opacity = 1.0  # QtColorBox & single layer are blending differently
 
     test_colors = np.concatenate(
@@ -704,7 +719,7 @@ def test_label_colors_matching_widget(qtbot, make_napari_viewer):
     for label in test_colors:
         # Change color & selected color to the same label
         color_box_color, middle_pixel = _update_data(
-            layer, label, qtbot, viewer._window._qt_viewer
+            layer, label, qtbot, qt_viewer
         )
 
         assert np.allclose(color_box_color, middle_pixel, atol=1), label
@@ -713,13 +728,12 @@ def test_label_colors_matching_widget(qtbot, make_napari_viewer):
 
 @skip_local_popups
 @skip_on_win_ci
-def test_label_colors_matching_widget_direct(qtbot, make_napari_viewer):
+@pytest.mark.parametrize("use_selection", [True, False])
+def test_label_colors_matching_widget_direct(qtbot, qt_viewer, use_selection):
     """Make sure the rendered label colors match the QtColorBox widget."""
-    viewer = make_napari_viewer(show=True)
-    # XXX TODO: this unstable! Seed = 0 fails, for example. This is due to numerical
-    #           imprecision in random colormap on gpu vs cpu
     data = np.ones((2, 2), dtype=np.uint64)
-    layer = viewer.add_labels(data)
+    layer = qt_viewer.viewer.add_labels(data)
+    layer.show_selected_label = use_selection
     layer.opacity = 1.0  # QtColorBox & single layer are blending differently
     layer.color = {
         0: "transparent",
@@ -732,15 +746,13 @@ def test_label_colors_matching_widget_direct(qtbot, make_napari_viewer):
 
     test_colors = (1, 2, 3, 8, 1000, 50)
 
-    color_box_color, middle_pixel = _update_data(
-        layer, 0, qtbot, viewer._window._qt_viewer
-    )
+    color_box_color, middle_pixel = _update_data(layer, 0, qtbot, qt_viewer)
     assert np.allclose([0, 0, 0, 255], middle_pixel)
 
     for label in test_colors:
         # Change color & selected color to the same label
         color_box_color, middle_pixel = _update_data(
-            layer, label, qtbot, viewer._window._qt_viewer
+            layer, label, qtbot, qt_viewer
         )
         assert np.allclose(color_box_color, middle_pixel, atol=1), label
 

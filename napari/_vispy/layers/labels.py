@@ -161,7 +161,7 @@ class LabelVispyColormap(VispyColormap):
         self.glsl_map = (
             auto_lookup_shader.replace('$color_map_size', str(len(colors)))
             .replace('$use_selection', str(use_selection).lower())
-            .replace('$selection', str(selection))
+            .replace('$selection', str(selection + 1))
             .replace('$scale', str(scale))
         )
 
