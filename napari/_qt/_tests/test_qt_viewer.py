@@ -720,10 +720,9 @@ def test_axes_labels(make_napari_viewer):
 
 
 @pytest.fixture()
-def qt_viewer512(qtbot):
+def qt_viewer(qtbot):
     qt_viewer = QtViewer(ViewerModel())
     qt_viewer.show()
-    qt_viewer.resize(512, 512)
     yield qt_viewer
     qt_viewer.close()
     del qt_viewer
@@ -733,18 +732,20 @@ def qt_viewer512(qtbot):
 
 @skip_local_popups
 @pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
-def test_thumbnail_labels(qtbot, direct, qt_viewer512: QtViewer, tmp_path):
+def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     # Add labels to empty viewer
-    layer = qt_viewer512.viewer.add_labels(
-        np.array([[0, 1], [2, 3]]), opacity=1
-    )
+    layer = qt_viewer.viewer.add_labels(np.array([[0, 1], [2, 3]]), opacity=1)
     if direct:
         layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
     qtbot.wait(100)
 
-    canvas_screenshot = qt_viewer512.screenshot(flash=False)
+    canvas_screenshot = qt_viewer.screenshot(flash=False)
     # cut off black border
-    canvas_screenshot = canvas_screenshot[20:-20, 20:-20]
+    sh = canvas_screenshot.shape
+    short_side = min(sh)
+    margin1 = (sh[0] - short_side) // 2
+    margin2 = (sh[1] - short_side) // 2
+    canvas_screenshot = canvas_screenshot[margin1:-margin1, margin2:-margin2]
     thumbnail = layer.thumbnail
     scaled_thumbnail = ndi.zoom(
         thumbnail,
