@@ -177,6 +177,13 @@ jobs:
           name: upload pytest timing reports as json
           path: |
             ./report-*.json
+      - name: Upload pytest_tmp
+        uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: upload pytest_tmp
+          path: |
+            ./pytest_tmp
 
       - name: Upload coverage data
         uses: actions/upload-artifact@v3

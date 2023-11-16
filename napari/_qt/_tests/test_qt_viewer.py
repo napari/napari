@@ -733,7 +733,7 @@ def qt_viewer512(qtbot):
 
 @skip_local_popups
 @pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
-def test_thumbnail_labels(qtbot, direct, qt_viewer512: QtViewer):
+def test_thumbnail_labels(qtbot, direct, qt_viewer512: QtViewer, tmp_path):
     # Add labels to empty viewer
     layer = qt_viewer512.viewer.add_labels(
         np.array([[0, 1], [2, 3]]), opacity=1
@@ -745,13 +745,18 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer512: QtViewer):
 
     canvas_screenshot = qt_viewer512.screenshot(flash=False)
     # cut off black border
-    canvas_screenshot = canvas_screenshot[128:-128, 128:-128]
+    canvas_screenshot = canvas_screenshot[20:-20, 20:-20]
     thumbnail = layer.thumbnail
     scaled_thumbnail = ndi.zoom(
         thumbnail,
         np.array(canvas_screenshot.shape) / np.array(thumbnail.shape),
         order=0,
     )
+
+    from imageio import imwrite
+
+    imwrite(tmp_path / "canvas_screenshot.png", canvas_screenshot)
+    imwrite(tmp_path / "scaled_thumbnail.png", scaled_thumbnail)
 
     numpy.testing.assert_almost_equal(
         canvas_screenshot, scaled_thumbnail, decimal=1
