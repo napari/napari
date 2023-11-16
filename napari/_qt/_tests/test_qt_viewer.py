@@ -6,10 +6,12 @@ from typing import List
 from unittest import mock
 
 import numpy as np
+import numpy.testing
 import pytest
 from imageio import imread
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
+from scipy import ndimage as ndi
 
 from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
@@ -715,3 +717,32 @@ def test_axes_labels(make_napari_viewer):
     layer_visual_size = vispy_image_scene_size(layer_visual)
     assert tuple(layer_visual_size) == (8, 4, 2)
     assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
+
+
+@skip_local_popups
+@pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
+def test_thumbnail_labels(qtbot, direct):
+    qt_viewer = QtViewer(ViewerModel())
+    qt_viewer.resize(512, 512)
+    qt_viewer.show()
+
+    # Add labels to empty viewer
+    layer = qt_viewer.viewer.add_labels(np.array([[0, 1], [2, 3]]), opacity=1)
+    if direct:
+        layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
+
+    qtbot.wait(50)
+
+    canvas_screenshot = qt_viewer.screenshot(flash=False)[20:-20, 20:-20]
+    thumbnail = layer.thumbnail
+    scaled_thumbnail = ndi.zoom(
+        thumbnail,
+        np.array(canvas_screenshot.shape) / np.array(thumbnail.shape),
+        order=0,
+    )
+
+    numpy.testing.assert_almost_equal(
+        canvas_screenshot, scaled_thumbnail, decimal=1
+    )
+
+    qt_viewer.hide()
