@@ -728,6 +728,7 @@ def qt_viewer512(qtbot):
     qt_viewer.close()
     del qt_viewer
     qtbot.wait(50)
+    gc.collect()
 
 
 @skip_local_popups
@@ -744,7 +745,7 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer512):
 
     canvas_screenshot = qt_viewer512.screenshot(flash=False)
     # cut off black border
-    canvas_screenshot = canvas_screenshot[20:-20, 20:-20]
+    canvas_screenshot = canvas_screenshot[30:-30, 30:-30]
     thumbnail = layer.thumbnail
     scaled_thumbnail = ndi.zoom(
         thumbnail,
