@@ -163,24 +163,62 @@ class LabelColormap(Colormap):
 
     seed: float = 0.5
     use_selection: bool = False
-    selection: float = 0.0
+    selection: int = 0
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
 
-    def map(self, values):
+    def map(self, values) -> np.ndarray:
+        """Map values to colors.
+
+        Parameters
+        ----------
+        values : np.ndarray or float
+            Values to be mapped.
+
+        Returns
+        -------
+        np.ndarray of same shape as values, but with last dimension of size 4
+            Mapped colors.
+        """
         values = np.atleast_1d(values)
 
-        mapped = self.colors[
-            cast_labels_to_minimum_type_auto(
-                values, len(self.colors) - 1, self.background_value
-            ).astype(np.int64)
-        ]
+        precast = _cast_labels_to_minimum_dtype_auto(
+            values, len(self.colors) - 1, self.background_value
+        )
+
+        return self._map_precast(precast)
+
+    def _map_precast(self, values) -> np.ndarray:
+        """Map *precast* values to colors.
+
+        When mapping values, we first convert them to a smaller dtype for
+        performance reasons. This conversion changes the label values,
+        even for small labels. This method is used to map values that have
+        already been converted to the smaller dtype.
+
+        Parameters
+        ----------
+        values : np.ndarray
+            Values to be mapped. They must have already been downcast using
+            `_cast_labels_to_minimum_dtype_auto`.
+
+        Returns
+        -------
+        np.ndarray of shape (N, M, 4)
+            Mapped colors.
+        """
+        mapped = self.colors[values.astype(np.int64)]
 
         mapped[values == self.background_value] = 0
 
         # If using selected, disable all others
         if self.use_selection:
-            mapped[~np.isclose(values, self.selection)] = 0
+            cast_selection = _cast_labels_to_minimum_dtype_auto(
+                np.array([self.selection]),
+                len(self.colors) - 1,
+                self.background_value,
+            )[0]
+            mapped[values != cast_selection] = 0
 
         return mapped
 
@@ -312,7 +350,7 @@ class DirectLabelColormap(Colormap):
         # if someone is using DirectLabelColormap directly, not through Label layer
 
 
-def cast_labels_to_minimum_type_auto(
+def _cast_labels_to_minimum_dtype_auto(
     data: np.ndarray, num_colors: int, background_value: int
 ) -> np.ndarray:
     """Perform modulo operation based on number of colors

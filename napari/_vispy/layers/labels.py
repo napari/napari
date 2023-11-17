@@ -89,7 +89,7 @@ class LabelVispyColormap(VispyColormap):
         self.glsl_map = (
             auto_lookup_shader.replace('$color_map_size', str(len(colors)))
             .replace('$use_selection', str(use_selection).lower())
-            .replace('$selection', str(selection))
+            .replace('$selection', str(selection + 1))
             .replace('$scale', str(scale))
         )
 
@@ -180,7 +180,7 @@ class VispyLabelsLayer(VispyImageLayer):
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,
                 use_selection=colormap.use_selection,
-                selection=colormap.selection,
+                selection=float(colormap.selection),
                 scale=scale,
             )
             self.node.shared_program['texture2D_values'] = Texture2D(

@@ -152,6 +152,7 @@ xarray = "xr"
 addopts = "--maxfail=5 --durations=10 -rXxs"
 console_output_style = "count"
 pystack_threshold=60
+pystack_args="--native-all"
 
 
 # NOTE: only put things that will never change in here.
@@ -324,10 +325,7 @@ module = [
     'napari.layers.points._points_utils',
     'napari.layers.points._slice',
     'napari.layers.points.points',
-    'napari.layers.shapes._shape_list',
-    'napari.layers.shapes._shapes_key_bindings',
     'napari.layers.shapes._shapes_mouse_bindings',
-    'napari.layers.shapes._shapes_utils',
     'napari.layers.shapes.shapes',
     'napari.layers.utils._link_layers',
     'napari.layers.utils.color_encoding',
@@ -447,6 +445,9 @@ module = [
     "napari.layers.image._image_key_bindings",
     "napari.layers.labels._labels_key_bindings",
     "napari.layers.shapes._mesh",
+    'napari.layers.shapes._shape_list',
+    'napari.layers.shapes._shapes_key_bindings',
+    'napari.layers.shapes._shapes_utils',
     "napari.layers.surface._surface_key_bindings",
     "napari.layers.tracks._tracks_key_bindings",
     "napari.layers.utils._slice_input",

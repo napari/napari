@@ -36,6 +36,8 @@ certifi==2023.7.22
     # via
     #   napari (napari_repo/setup.cfg)
     #   requests
+cfgv==3.4.0
+    # via pre-commit
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
@@ -48,7 +50,7 @@ cloudpickle==3.0.0
     # via dask
 colorama==0.4.6
     # via sphinx-autobuild
-comm==0.1.4
+comm==0.2.0
     # via ipykernel
 contourpy==1.2.0
     # via matplotlib
@@ -58,7 +60,7 @@ coverage==7.3.2
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2023.10.1
+dask==2023.11.0
     # via
     #   dask
     #   napari (napari_repo/setup.cfg)
@@ -103,8 +105,10 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.88.3
+hypothesis==6.88.4
     # via napari (napari_repo/setup.cfg)
+identify==2.5.31
+    # via pre-commit
 idna==3.4
     # via requests
 imageio==2.32.0
@@ -156,7 +160,7 @@ jsonschema-specifications==2023.7.1
     # via jsonschema
 jupyter-cache==0.6.1
     # via myst-nb
-jupyter-client==8.5.0
+jupyter-client==8.6.0
     # via
     #   ipykernel
     #   nbclient
@@ -243,6 +247,8 @@ nibabel==5.1.0
     # via nilearn
 nilearn==0.10.2
     # via -r resources/constraints/version_denylist_examples.txt
+nodeenv==1.8.0
+    # via pre-commit
 npe2==0.7.3
     # via
     #   napari (napari_repo/setup.cfg)
@@ -292,7 +298,7 @@ packaging==23.2
     #   superqt
     #   vispy
     #   xarray
-pandas==2.1.2 ; python_version >= "3.9"
+pandas==2.1.3 ; python_version >= "3.9"
     # via
     #   napari (napari_repo/setup.cfg)
     #   nilearn
@@ -322,9 +328,11 @@ pooch==1.8.0
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
+pre-commit==3.5.0
+    # via sphinx-tags
 pretend==1.0.9
     # via napari (napari_repo/setup.cfg)
-prompt-toolkit==3.0.39
+prompt-toolkit==3.0.40
     # via ipython
 psutil==5.9.6
     # via
@@ -422,6 +430,7 @@ pyyaml==6.0.1
     #   myst-parser
     #   napari (napari_repo/setup.cfg)
     #   npe2
+    #   pre-commit
     #   sphinx-external-toc
 pyzmq==25.1.1
     # via
@@ -546,7 +555,7 @@ superqt==0.6.1
     #   napari-plugin-manager
 tabulate==0.9.0
     # via jupyter-cache
-tensorstore==0.1.47
+tensorstore==0.1.49
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/setup.cfg)
@@ -608,14 +617,16 @@ tzdata==2023.3
 urllib3==2.0.7
     # via requests
 virtualenv==20.24.6
-    # via napari (napari_repo/setup.cfg)
+    # via
+    #   napari (napari_repo/setup.cfg)
+    #   pre-commit
 vispy==0.14.1
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-svg
 wcwidth==0.2.9
     # via prompt-toolkit
-wrapt==1.15.0
+wrapt==1.16.0
     # via napari (napari_repo/setup.cfg)
 xarray==2023.10.1
     # via napari (napari_repo/setup.cfg)
@@ -628,4 +639,6 @@ zipp==3.17.0
 pip==23.3.1
     # via napari-plugin-manager
 setuptools==68.2.2
-    # via imageio-ffmpeg
+    # via
+    #   imageio-ffmpeg
+    #   nodeenv
