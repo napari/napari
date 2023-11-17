@@ -138,7 +138,7 @@ def test_cast_labels_to_minimum_type_auto(num, dtype, monkeypatch):
     data = np.zeros(10, dtype=np.uint32)
     data[1] = 10
     data[2] = 10**6 + 5
-    cast_arr = colormap.cast_labels_to_minimum_type_auto(data, num, 0)
+    cast_arr = colormap._cast_labels_to_minimum_dtype_auto(data, num, 0)
     assert cast_arr.dtype == dtype
     assert cast_arr[0] == 0
     assert cast_arr[1] == 11

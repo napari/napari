@@ -161,7 +161,7 @@ class LabelVispyColormap(VispyColormap):
         self.glsl_map = (
             auto_lookup_shader.replace('$color_map_size', str(len(colors)))
             .replace('$use_selection', str(use_selection).lower())
-            .replace('$selection', str(selection))
+            .replace('$selection', str(selection + 1))
             .replace('$scale', str(scale))
         )
 
@@ -357,7 +357,7 @@ def _get_empty_val_from_dict(color_dict):
 
 
 def build_textures_from_dict(
-    color_dict: Dict[float, ColorTuple],
+    color_dict: Dict[Optional[float], ColorTuple],
     empty_val=_UNSET,
     shape=None,
     use_selection=False,
@@ -401,7 +401,7 @@ def build_textures_from_dict(
     if use_selection:
         keys = np.full((1, 1), selection, dtype=vispy_texture_dtype)
         values = np.zeros((1, 1, 4), dtype=vispy_texture_dtype)
-        values[0, 0] = color_dict[selection]
+        values[0, 0] = color_dict.get(selection, color_dict[None])
         return keys, values, False
 
     if empty_val is _UNSET:
@@ -486,7 +486,7 @@ class VispyLabelsLayer(VispyImageLayer):
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,
                 use_selection=colormap.use_selection,
-                selection=colormap.selection,
+                selection=float(colormap.selection),
                 scale=scale,
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
@@ -504,12 +504,12 @@ class VispyLabelsLayer(VispyImageLayer):
             key_texture, val_texture, collision = build_textures_from_dict(
                 color_dict,
                 use_selection=colormap.use_selection,
-                selection=colormap.selection,
+                selection=float(colormap.selection),
             )
 
             self.node.cmap = DirectLabelVispyColormap(
                 use_selection=colormap.use_selection,
-                selection=colormap.selection,
+                selection=float(colormap.selection),
                 collision=collision,
                 default_color=colormap.default_color,
                 empty_value=_get_empty_val_from_dict(color_dict),
@@ -524,6 +524,7 @@ class VispyLabelsLayer(VispyImageLayer):
                 interpolation='nearest',
             )
             self.node.shared_program['LUT_shape'] = key_texture.shape
+            self.node.shared_program['color_count'] = len(color_dict)
         else:
             self.node.cmap = VispyColormap(*colormap)
 
