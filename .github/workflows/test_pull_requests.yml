@@ -62,6 +62,7 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     strategy:
+      fail-fast: false
       matrix:
         include:
           - python: 3.8
