@@ -219,17 +219,20 @@ class _QtMainWindow(QMainWindow):
                 else e.globalPos()
             )
             QToolTip.showText(pnt, self._qt_viewer.viewer.tooltip.text, self)
-        if e.type() == QEvent.Type.Close:
-            # when we close the MainWindow, remove it from the instance list
-            with contextlib.suppress(ValueError):
-                _QtMainWindow._instances.remove(self)
         if e.type() in {QEvent.Type.WindowActivate, QEvent.Type.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
             with contextlib.suppress(ValueError):
                 inst = _QtMainWindow._instances
                 inst.append(inst.pop(inst.index(self)))
 
-        return super().event(e)
+        res = super().event(e)
+
+        if e.type() == QEvent.Type.Close and e.isAccepted():
+            # when we close the MainWindow, remove it from the instance list
+            with contextlib.suppress(ValueError):
+                _QtMainWindow._instances.remove(self)
+
+        return res
 
     def isFullScreen(self):
         # Needed to prevent errors when going to fullscreen mode on Windows
@@ -523,6 +526,7 @@ class _QtMainWindow(QMainWindow):
             and self._qt_viewer.viewer.layers
             and ConfirmCloseDialog(self, False).exec_() != QDialog.Accepted
         ):
+            print("close event rejected")
             event.ignore()
             return
 
