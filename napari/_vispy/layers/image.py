@@ -323,10 +323,13 @@ _VISPY_FORMAT_TO_DTYPE: Dict[Optional[str], np.dtype] = {
     "r8": np.dtype(np.uint8),
     "r16": np.dtype(np.uint16),
     "r32f": np.dtype(np.float32),
-    None: np.dtype(np.float32),
 }
 
 _DTYPE_TO_VISPY_FORMAT = {v: k for k, v in _VISPY_FORMAT_TO_DTYPE.items()}
+
+# this is moved after reverse mapping is defined
+# to always have non None values in _DTYPE_TO_VISPY_FORMAT
+_VISPY_FORMAT_TO_DTYPE[None] = np.dtype(np.float32)
 
 
 def get_dtype_from_vispy_texture_format(format_str: str) -> np.dtype:
