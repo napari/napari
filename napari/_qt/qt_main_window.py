@@ -526,7 +526,6 @@ class _QtMainWindow(QMainWindow):
             and self._qt_viewer.viewer.layers
             and ConfirmCloseDialog(self, False).exec_() != QDialog.Accepted
         ):
-            print("close event rejected")
             event.ignore()
             return
 
