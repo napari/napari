@@ -6,10 +6,12 @@ from typing import List
 from unittest import mock
 
 import numpy as np
+import numpy.testing
 import pytest
 from imageio import imread
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
+from scipy import ndimage as ndi
 
 from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
@@ -748,3 +750,43 @@ def test_axes_labels(make_napari_viewer):
     layer_visual_size = vispy_image_scene_size(layer_visual)
     assert tuple(layer_visual_size) == (8, 4, 2)
     assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
+
+
+@pytest.fixture()
+def qt_viewer(qtbot):
+    qt_viewer = QtViewer(ViewerModel())
+    qt_viewer.show()
+    qt_viewer.resize(400, 400)
+    yield qt_viewer
+    qt_viewer.close()
+    del qt_viewer
+    qtbot.wait(50)
+    gc.collect()
+
+
+@skip_local_popups
+@pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
+def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer):
+    # Add labels to empty viewer
+    layer = qt_viewer.viewer.add_labels(np.array([[0, 1], [2, 3]]), opacity=1)
+    if direct:
+        layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
+    qtbot.wait(100)
+
+    canvas_screenshot = qt_viewer.screenshot(flash=False)
+    # cut off black border
+    sh = canvas_screenshot.shape[:2]
+    short_side = min(sh)
+    margin1 = (sh[0] - short_side) // 2 + 20
+    margin2 = (sh[1] - short_side) // 2 + 20
+    canvas_screenshot = canvas_screenshot[margin1:-margin1, margin2:-margin2]
+    thumbnail = layer.thumbnail
+    scaled_thumbnail = ndi.zoom(
+        thumbnail,
+        np.array(canvas_screenshot.shape) / np.array(thumbnail.shape),
+        order=0,
+    )
+
+    numpy.testing.assert_almost_equal(
+        canvas_screenshot, scaled_thumbnail, decimal=1
+    )

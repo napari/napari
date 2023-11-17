@@ -486,7 +486,7 @@ class VispyLabelsLayer(VispyImageLayer):
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,
                 use_selection=colormap.use_selection,
-                selection=colormap.selection,
+                selection=float(colormap.selection),
                 scale=scale,
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
@@ -504,12 +504,12 @@ class VispyLabelsLayer(VispyImageLayer):
             key_texture, val_texture, collision = build_textures_from_dict(
                 color_dict,
                 use_selection=colormap.use_selection,
-                selection=colormap.selection,
+                selection=float(colormap.selection),
             )
 
             self.node.cmap = DirectLabelVispyColormap(
                 use_selection=colormap.use_selection,
-                selection=colormap.selection,
+                selection=float(colormap.selection),
                 collision=collision,
                 default_color=colormap.default_color,
                 empty_value=_get_empty_val_from_dict(color_dict),
