@@ -53,7 +53,7 @@ from napari.utils.colormaps import (
     label_colormap,
 )
 from napari.utils.colormaps.colormap import (
-    cast_labels_to_minimum_type_auto,
+    _cast_labels_to_minimum_dtype_auto,
     minimum_dtype_for_labels,
 )
 from napari.utils.events import EmitterGroup, Event
@@ -1077,7 +1077,7 @@ class Labels(_ImageBase):
             return self._cached_mapped_labels[data_slice]
 
         if self.color_mode == LabelColorMode.AUTO:
-            mapped_labels = cast_labels_to_minimum_type_auto(
+            mapped_labels = _cast_labels_to_minimum_dtype_auto(
                 labels_to_map, self.num_colors, self._background_label
             )
         else:  # direct
