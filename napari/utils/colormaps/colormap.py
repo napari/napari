@@ -163,8 +163,7 @@ class LabelColormap(Colormap):
     background_value: int = 0
 
     def map(self, values) -> np.ndarray:
-        """
-        Map values to colors.
+        """Map values to colors.
 
         Parameters
         ----------
