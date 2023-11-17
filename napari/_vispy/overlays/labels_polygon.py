@@ -32,6 +32,8 @@ def _only_when_enabled(callback):
 
 
 class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
+    layer: Labels
+
     def __init__(
         self, *, layer: Labels, overlay: LabelsPolygonOverlay, parent=None
     ):
