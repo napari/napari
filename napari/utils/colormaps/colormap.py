@@ -158,7 +158,7 @@ class LabelColormap(Colormap):
 
     seed: float = 0.5
     use_selection: bool = False
-    selection: float = 0.0
+    selection: int = 0
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
 
@@ -209,8 +209,10 @@ class LabelColormap(Colormap):
         # If using selected, disable all others
         if self.use_selection:
             cast_selection = cast_labels_to_minimum_type_auto(
-                self.selection, len(self.colors) - 1, self.background_value
-            )
+                np.array([self.selection]),
+                len(self.colors) - 1,
+                self.background_value,
+            )[0]
             mapped[values != cast_selection] = 0
 
         return mapped
