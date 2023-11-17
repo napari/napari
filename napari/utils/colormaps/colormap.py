@@ -182,27 +182,26 @@ class LabelColormap(Colormap):
             values, len(self.colors) - 1, self.background_value
         )
 
-        return self.map_casted(casted)
+        return self._map_precast(casted)
 
-    def map_casted(self, values) -> np.ndarray:
-        """
-        Map values to colors.
+    def _map_precast(self, values) -> np.ndarray:
+        """Map *precast* values to colors.
+
+        When mapping values, we first convert them to a smaller dtype for
+        performance reasons. This conversion changes the label values,
+        even for small labels. This method is used to map values that have
+        already been converted to the smaller dtype.
 
         Parameters
         ----------
         values : np.ndarray
-            Values to be mapped. It need to be already casted using
-            cast_labels_to_minimum_type_auto
+            Values to be mapped. They must have already been downcast using
+            `cast_labels_to_minimum_type_auto`.
 
         Returns
         -------
         np.ndarray of shape (N, M, 4)
             Mapped colors.
-
-        Notes
-        -----
-        it is implemented for thumbnail labels,
-        where we already have casted values
         """
         mapped = self.colors[values.astype(np.int64)]
 
