@@ -744,8 +744,8 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     # cut off black border
     sh = canvas_screenshot.shape[:2]
     short_side = min(sh)
-    margin1 = (sh[0] - short_side) // 2
-    margin2 = (sh[1] - short_side) // 2
+    margin1 = (sh[0] - short_side) // 2 + 20
+    margin2 = (sh[1] - short_side) // 2 + 20
     canvas_screenshot = canvas_screenshot[margin1:-margin1, margin2:-margin2]
     thumbnail = layer.thumbnail
     scaled_thumbnail = ndi.zoom(
