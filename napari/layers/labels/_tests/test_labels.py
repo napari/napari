@@ -593,7 +593,7 @@ def test_background_label(background_num):
 
     layer = Labels(data)
     layer._background_label = background_num
-    layer.refresh()
+    layer.num_colors = 49
     np.testing.assert_array_equal(
         layer._data_view == 0, data == background_num
     )

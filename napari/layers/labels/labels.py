@@ -53,6 +53,7 @@ from napari.utils.colormaps import (
     label_colormap,
 )
 from napari.utils.colormaps.colormap import (
+    LabelColormap,
     _cast_labels_to_minimum_dtype_auto,
     minimum_dtype_for_labels,
 )
@@ -519,6 +520,10 @@ class Labels(_ImageBase):
     @_ImageBase.colormap.setter
     def colormap(self, colormap):
         super()._set_colormap(colormap)
+        if isinstance(self._colormap, LabelColormap):
+            self._random_colormap = self._colormap
+        else:
+            self._direct_colormap = self._colormap
         self._selected_color = self.get_color(self.selected_label)
 
     @property
