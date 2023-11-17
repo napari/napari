@@ -240,6 +240,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
+    events: EmitterGroup
 
     def __init__(
         self,
@@ -781,6 +782,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_data : array, shape (2, D)
         """
         raise NotImplementedError
+
+
+    @property
+    def _extent_data_augmented(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Differently from Layer._extent_data, this also includes the "size" of
+        data points; for example, Point sizes and Image pixel width are included.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        return self._extent_data
 
     @property
     def _extent_world(self) -> np.ndarray:
@@ -1423,6 +1438,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _display_bounding_box(self, dims_displayed: np.ndarray):
         """An axis aligned (ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed].T
+
+    def _display_bounding_box_augmented(
+        self, dims_displayed: List[int]
+    ) -> npt.NDArray:
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
+
+        This bounding box includes the size of the layer in best resolution, including required padding
+        """
+        return self._extent_data_augmented[:, dims_displayed].T
+
+    def _display_bounding_box_augmented_data_level(
+        self, dims_displayed: List[int]
+    ) -> npt.NDArray:
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
+
+        If the layer is multiscale layer, then returns the
+        bounding box of the data at the current level
+        """
+        return self._display_bounding_box_augmented(dims_displayed)
 
     def click_plane_from_click_data(
         self,

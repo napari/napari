@@ -779,7 +779,20 @@ class Points(Layer):
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
             extrema = np.vstack([mins, maxs])
-        return extrema
+        return extrema.astype(float)
+
+    @property
+    def _extent_data_augmented(self):
+        # _extent_data is a property that returns a new/copied array, which
+        # is safe to modify below
+        extent = self._extent_data
+        if len(self.size) == 0:
+            return extent
+
+        max_point_size = np.max(self.size)
+        extent[0] -= max_point_size / 2
+        extent[1] += max_point_size / 2
+        return extent
 
     @property
     def out_of_slice_display(self) -> bool:
@@ -1736,21 +1749,21 @@ class Points(Layer):
             selection = None
         return selection
 
-    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
-        """An augmented, axis-aligned (ndisplay, 2) bounding box.
-
-        This bounding box for includes the full size of displayed points
-        and enables calculation of intersections in `Layer._get_value_3d()`.
-        """
-        if len(self._view_size) == 0:
-            return None
-        max_point_size = np.max(self._view_size)
-        bounding_box = np.copy(
-            self._display_bounding_box(dims_displayed)
-        ).astype(float)
-        bounding_box[:, 0] -= max_point_size / 2
-        bounding_box[:, 1] += max_point_size / 2
-        return bounding_box
+    # def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
+    #     """An augmented, axis-aligned (ndisplay, 2) bounding box.
+    #
+    #     This bounding box for includes the full size of displayed points
+    #     and enables calculation of intersections in `Layer._get_value_3d()`.
+    #     """
+    #     if len(self._view_size) == 0:
+    #         return None
+    #     max_point_size = np.max(self._view_size)
+    #     bounding_box = np.copy(
+    #         self._display_bounding_box(dims_displayed)
+    #     ).astype(float)
+    #     bounding_box[:, 0] -= max_point_size / 2
+    #     bounding_box[:, 1] += max_point_size / 2
+    #     return bounding_box
 
     def get_ray_intersections(
         self,
