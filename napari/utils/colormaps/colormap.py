@@ -208,7 +208,10 @@ class LabelColormap(Colormap):
 
         # If using selected, disable all others
         if self.use_selection:
-            mapped[~np.isclose(values, self.selection + 1)] = 0
+            cast_selection = cast_labels_to_minimum_type_auto(
+                self.selection, len(self.colors) - 1, self.background_value
+            )
+            mapped[values != cast_selection] = 0
 
         return mapped
 
