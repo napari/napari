@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
+import numpy.testing as npt
 import pandas as pd
 import pytest
 import xarray as xr
@@ -1507,10 +1508,10 @@ def test_color_mapping_with_show_selected_label():
         label_mask = data == selected_label
         mapped_colors = layer.colormap.map(data)
 
-        assert np.allclose(
+        npt.assert_allclose(
             mapped_colors[label_mask], mapped_colors_all[label_mask]
         )
-        assert np.allclose(mapped_colors[np.logical_not(label_mask)], 0)
+        npt.assert_allclose(mapped_colors[np.logical_not(label_mask)], 0)
 
     layer.show_selected_label = False
     assert np.allclose(layer.colormap.map(data), mapped_colors_all)

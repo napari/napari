@@ -1106,7 +1106,7 @@ class Labels(_ImageBase):
             # Is there a nicer way to prevent this from getting called?
             return
 
-        image = self._slice.thumbnail.view
+        image = self._slice.thumbnail.raw
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             # we are only using the current slice so `image` will never be
             # bigger than 3. If we are in this clause, it is exactly 3, so we
@@ -1124,7 +1124,7 @@ class Labels(_ImageBase):
 
         downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
         if self.color_mode == LabelColorMode.AUTO:
-            color_array = self.colormap._map_precast(downsampled.ravel())
+            color_array = self.colormap.map(downsampled.ravel())
         else:  # direct
             color_array = self._direct_colormap.map(downsampled.ravel())
         colormapped = color_array.reshape(downsampled.shape + (4,))

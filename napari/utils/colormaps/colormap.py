@@ -177,11 +177,12 @@ class LabelColormap(Colormap):
         """
         values = np.atleast_1d(values)
 
-        precast = _cast_labels_to_minimum_dtype_auto(
-            values, len(self.colors) - 1, self.background_value
-        )
+        mapped = self.colors[values.astype(np.int64) % len(self.colors)]
+        mapped[values == self.background_value] = 0
+        if self.use_selection:
+            mapped[values != self.selection] = 0
 
-        return self._map_precast(precast)
+        return mapped
 
     def _map_precast(self, values) -> np.ndarray:
         """Map *precast* values to colors.
@@ -202,7 +203,7 @@ class LabelColormap(Colormap):
         np.ndarray of shape (N, M, 4)
             Mapped colors.
         """
-        mapped = self.colors[values.astype(np.int64)]
+        mapped = self.colors[values.astype(np.int64) % len(self.colors)]
 
         mapped[values == self.background_value] = 0
 
@@ -294,6 +295,13 @@ def _cast_labels_to_minimum_dtype_auto(
     np.ndarray
         Casted labels data.
     """
+    if data.dtype.itemsize == 1:
+        # for fast rendering of int8
+        return data.view(np.uint8)
+    if data.dtype.itemsize == 2:
+        # for fast rendering of int16
+        return data.view(np.uint16)
+
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
     return _modulo_plus_one(data, num_colors, dtype, background_value)
