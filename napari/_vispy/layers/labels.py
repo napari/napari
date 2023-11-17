@@ -206,7 +206,7 @@ class LabelVispyColormap(VispyColormap):
         if issubclass(data_dtype.type, np.integer):
             scale = np.iinfo(data_dtype).max + 1
         else:
-            scale = 1.0
+            scale = 1
 
         # print("data_dtype", data_dtype, scale, len(colormap.colors))
 
