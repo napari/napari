@@ -177,7 +177,7 @@ class LabelColormap(Colormap):
         """
         values = np.atleast_1d(values)
 
-        precast = cast_labels_to_minimum_type_auto(
+        precast = _cast_labels_to_minimum_dtype_auto(
             values, len(self.colors) - 1, self.background_value
         )
 
@@ -195,7 +195,7 @@ class LabelColormap(Colormap):
         ----------
         values : np.ndarray
             Values to be mapped. They must have already been downcast using
-            `cast_labels_to_minimum_type_auto`.
+            `_cast_labels_to_minimum_dtype_auto`.
 
         Returns
         -------
@@ -208,7 +208,7 @@ class LabelColormap(Colormap):
 
         # If using selected, disable all others
         if self.use_selection:
-            cast_selection = cast_labels_to_minimum_type_auto(
+            cast_selection = _cast_labels_to_minimum_dtype_auto(
                 np.array([self.selection]),
                 len(self.colors) - 1,
                 self.background_value,
@@ -275,7 +275,7 @@ class DirectLabelColormap(Colormap):
         # if someone is using DirectLabelColormap directly, not through Label layer
 
 
-def cast_labels_to_minimum_type_auto(
+def _cast_labels_to_minimum_dtype_auto(
     data: np.ndarray, num_colors: int, background_value: int
 ) -> np.ndarray:
     """Perform modulo operation based on number of colors
