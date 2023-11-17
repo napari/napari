@@ -2,13 +2,14 @@ import gc
 import os
 import weakref
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 from unittest import mock
 
 import numpy as np
 import numpy.testing
 import pytest
 from imageio import imread
+from pytestqt.qtbot import QtBot
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 from scipy import ndimage as ndi
@@ -23,7 +24,7 @@ from napari._tests.utils import (
 )
 from napari._vispy._tests.utils import vispy_image_scene_size
 from napari.components.viewer_model import ViewerModel
-from napari.layers import Points
+from napari.layers import Labels, Points
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.theme import available_themes
@@ -666,16 +667,50 @@ def test_create_non_empty_viewer_model(qtbot):
     gc.collect()
 
 
+def _update_data(
+    layer: Labels, label: int, qtbot: QtBot, qt_viewer: QtViewer
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Change layer data and return color of label and middle pixel of screenshot."""
+    layer.data = np.full((2, 2), label, dtype=np.uint64)
+    layer.selected_label = label
+
+    qtbot.wait(50)  # wait for .update() to be called on QtColorBox from Qt
+
+    color_box_color = qt_viewer.controls.widgets[layer].colorBox.color
+    screenshot = qt_viewer.screenshot(flash=False)
+    shape = np.array(screenshot.shape[:2])
+    middle_pixel = screenshot[tuple(shape // 2)]
+
+    return color_box_color, middle_pixel
+
+
+@pytest.fixture()
+def qt_viewer_with_controls(qtbot):
+    qt_viewer = QtViewer(viewer=ViewerModel())
+    qt_viewer.show()
+    qt_viewer.controls.show()
+    yield qt_viewer
+    qt_viewer.controls.hide()
+    qt_viewer.controls.close()
+    qt_viewer.hide()
+    qt_viewer.close()
+    qtbot.wait(50)
+
+
 @skip_local_popups
 @skip_on_win_ci
-def test_label_colors_matching_widget(qtbot, make_napari_viewer):
+@pytest.mark.parametrize("use_selection", [False])
+def test_label_colors_matching_widget(
+    qtbot, qt_viewer_with_controls, use_selection
+):
     """Make sure the rendered label colors match the QtColorBox widget."""
-    viewer = make_napari_viewer(show=True)
+
     # XXX TODO: this unstable! Seed = 0 fails, for example. This is due to numerical
     #           imprecision in random colormap on gpu vs cpu
     np.random.seed(1)
     data = np.ones((2, 2), dtype=np.uint64)
-    layer = viewer.add_labels(data)
+    layer = qt_viewer_with_controls.viewer.add_labels(data)
+    layer.show_selected_label = use_selection
     layer.opacity = 1.0  # QtColorBox & single layer are blending differently
 
     test_colors = np.concatenate(
@@ -687,22 +722,47 @@ def test_label_colors_matching_widget(qtbot, make_napari_viewer):
 
     for label in test_colors:
         # Change color & selected color to the same label
-        layer.data = np.full((2, 2), label, dtype=np.uint64)
-        layer.selected_label = label
-
-        qtbot.wait(
-            100
-        )  # wait for .update() to be called on QtColorBox from Qt
-
-        color_box_color = viewer.window._qt_viewer.controls.widgets[
-            layer
-        ].colorBox.color
-        screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
-        shape = np.array(screenshot.shape[:2])
-        middle_pixel = screenshot[tuple(shape // 2)]
+        color_box_color, middle_pixel = _update_data(
+            layer, label, qtbot, qt_viewer_with_controls
+        )
 
         assert np.allclose(color_box_color, middle_pixel, atol=1), label
         # there is a difference of rounding between the QtColorBox and the screenshot
+
+
+@skip_local_popups
+@skip_on_win_ci
+@pytest.mark.parametrize("use_selection", [True, False])
+def test_label_colors_matching_widget_direct(
+    qtbot, qt_viewer_with_controls, use_selection
+):
+    """Make sure the rendered label colors match the QtColorBox widget."""
+    data = np.ones((2, 2), dtype=np.uint64)
+    layer = qt_viewer_with_controls.viewer.add_labels(data)
+    layer.show_selected_label = use_selection
+    layer.opacity = 1.0  # QtColorBox & single layer are blending differently
+    layer.color = {
+        0: "transparent",
+        1: "yellow",
+        3: "blue",
+        8: "red",
+        1000: "green",
+        None: "white",
+    }
+
+    test_colors = (1, 2, 3, 8, 1000, 50)
+
+    color_box_color, middle_pixel = _update_data(
+        layer, 0, qtbot, qt_viewer_with_controls
+    )
+    assert np.allclose([0, 0, 0, 255], middle_pixel)
+
+    for label in test_colors:
+        # Change color & selected color to the same label
+        color_box_color, middle_pixel = _update_data(
+            layer, label, qtbot, qt_viewer_with_controls
+        )
+        assert np.allclose(color_box_color, middle_pixel, atol=1), label
 
 
 def test_axes_labels(make_napari_viewer):
