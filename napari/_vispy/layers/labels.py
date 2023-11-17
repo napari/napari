@@ -71,10 +71,11 @@ vec4 sample_label_color(float t) {
         return vec4(0);
     }
 
-    if (($use_selection) && ($selection != t)) {
+    t = t * $scale;
+
+    if (($use_selection) && ($selection != int(t))) {
         return vec4(0);
     }
-    t = t * $scale;
 
     return texture2D(
         texture2D_values,
@@ -87,7 +88,7 @@ auto_lookup_shader_uint8 = """
 uniform sampler2D texture2D_values;
 
 vec4 sample_label_color(float t) {
-    if (($use_selection) && ($selection != t * 256)) {
+    if (($use_selection) && ($selection != int(t * 256))) {
         return vec4(0);
     }
     return texture2D(
@@ -191,25 +192,28 @@ class LabelVispyColormap(VispyColormap):
         super().__init__(
             colors=["w", "w"], controls=None, interpolation='zero'
         )
+        selection = colormap.selection
         if dtype.itemsize == 1:
             shader = auto_lookup_shader_uint8
         elif dtype.itemsize == 2:
             shader = auto_lookup_shader_uint16
         else:
             shader = auto_lookup_shader
+            selection = int(selection) % len(colormap.colors) + 1
 
-        data_dtype = minimum_dtype_for_labels(len(colormap.colors))
+        data_dtype = minimum_dtype_for_labels(len(colormap.colors) + 1)
+
         if issubclass(data_dtype.type, np.integer):
             scale = np.iinfo(data_dtype).max + 1
         else:
             scale = 1.0
 
-        print("data_dtype", data_dtype, scale, len(colormap.colors))
+        # print("data_dtype", data_dtype, scale, len(colormap.colors))
 
         self.glsl_map = (
             shader.replace('$color_map_size', str(len(colormap.colors)))
             .replace('$use_selection', str(colormap.use_selection).lower())
-            .replace('$selection', str(colormap.selection))
+            .replace('$selection', str(selection))
             .replace('$scale', str(scale))
         )
 

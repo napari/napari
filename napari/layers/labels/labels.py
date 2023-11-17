@@ -1078,7 +1078,7 @@ class Labels(_ImageBase):
 
         if self.color_mode == LabelColorMode.AUTO:
             mapped_labels = _cast_labels_to_minimum_dtype_auto(
-                labels_to_map, self.num_colors, self._background_label
+                labels_to_map, self._random_colormap
             )
         else:  # direct
             mapped_labels = self._to_vispy_texture_dtype(labels_to_map)
@@ -1091,7 +1091,6 @@ class Labels(_ImageBase):
             else:
                 self._cached_mapped_labels[data_slice] = mapped_labels
             return self._cached_mapped_labels[data_slice]
-
         return mapped_labels
 
     def _update_thumbnail(self):

@@ -6,7 +6,7 @@ from typing import List, Tuple
 from unittest import mock
 
 import numpy as np
-import numpy.testing
+import numpy.testing as npt
 import pytest
 from imageio import imread
 from pytestqt.qtbot import QtBot
@@ -699,7 +699,9 @@ def qt_viewer_with_controls(qtbot):
 
 @skip_local_popups
 @skip_on_win_ci
-@pytest.mark.parametrize("use_selection", [False])
+@pytest.mark.parametrize(
+    "use_selection", [True, False], ids=["selected", "all"]
+)
 def test_label_colors_matching_widget(
     qtbot, qt_viewer_with_controls, use_selection
 ):
@@ -726,7 +728,9 @@ def test_label_colors_matching_widget(
             layer, label, qtbot, qt_viewer_with_controls
         )
 
-        assert np.allclose(color_box_color, middle_pixel, atol=1), label
+        npt.assert_allclose(
+            color_box_color, middle_pixel, atol=1, err_msg=f"label {label}"
+        )
         # there is a difference of rounding between the QtColorBox and the screenshot
 
 
@@ -815,6 +819,4 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
         order=0,
     )
 
-    numpy.testing.assert_almost_equal(
-        canvas_screenshot, scaled_thumbnail, decimal=1
-    )
+    npt.assert_almost_equal(canvas_screenshot, scaled_thumbnail, decimal=1)

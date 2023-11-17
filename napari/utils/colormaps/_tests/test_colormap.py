@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from napari.utils.colormaps import Colormap, colormap
+from napari.utils.colormaps.colormap_utils import label_colormap
 
 
 def test_linear_colormap():
@@ -134,11 +135,12 @@ def disable_jit(monkeypatch):
     "num,dtype", [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
 @pytest.mark.usefixtures("disable_jit")
-def test_cast_labels_to_minimum_type_auto(num, dtype, monkeypatch):
+def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
+    cmap = label_colormap(num)
     data = np.zeros(10, dtype=np.uint32)
     data[1] = 10
     data[2] = 10**6 + 5
-    cast_arr = colormap._cast_labels_to_minimum_dtype_auto(data, num, 0)
+    cast_arr = colormap._cast_labels_to_minimum_dtype_auto(data, cmap)
     assert cast_arr.dtype == dtype
     assert cast_arr[0] == 0
     assert cast_arr[1] == 11

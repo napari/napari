@@ -184,40 +184,6 @@ class LabelColormap(Colormap):
 
         return mapped
 
-    def _map_precast(self, values) -> np.ndarray:
-        """Map *precast* values to colors.
-
-        When mapping values, we first convert them to a smaller dtype for
-        performance reasons. This conversion changes the label values,
-        even for small labels. This method is used to map values that have
-        already been converted to the smaller dtype.
-
-        Parameters
-        ----------
-        values : np.ndarray
-            Values to be mapped. They must have already been downcast using
-            `_cast_labels_to_minimum_dtype_auto`.
-
-        Returns
-        -------
-        np.ndarray of shape (N, M, 4)
-            Mapped colors.
-        """
-        mapped = self.colors[values.astype(np.int64) % len(self.colors)]
-
-        mapped[values == self.background_value] = 0
-
-        # If using selected, disable all others
-        if self.use_selection:
-            cast_selection = _cast_labels_to_minimum_dtype_auto(
-                np.array([self.selection]),
-                len(self.colors) - 1,
-                self.background_value,
-            )[0]
-            mapped[values != cast_selection] = 0
-
-        return mapped
-
     def shuffle(self, seed: int):
         """Shuffle the colormap colors.
 
@@ -277,7 +243,8 @@ class DirectLabelColormap(Colormap):
 
 
 def _cast_labels_to_minimum_dtype_auto(
-    data: np.ndarray, num_colors: int, background_value: int
+    data: np.ndarray,
+    colormap: LabelColormap,
 ) -> np.ndarray:
     """Perform modulo operation based on number of colors
 
@@ -302,9 +269,16 @@ def _cast_labels_to_minimum_dtype_auto(
         # for fast rendering of int16
         return data.view(np.uint16)
 
+    num_colors = len(colormap.colors)
+
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
-    return _modulo_plus_one(data, num_colors, dtype, background_value)
+    if colormap.use_selection:
+        return (data == colormap.selection).astype(dtype) * (
+            (colormap.selection % num_colors) + 1
+        )
+
+    return _modulo_plus_one(data, num_colors, dtype, colormap.background_value)
 
 
 @numba.njit(parallel=True)
