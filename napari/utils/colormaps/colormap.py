@@ -177,11 +177,11 @@ class LabelColormap(Colormap):
         """
         values = np.atleast_1d(values)
 
-        casted = cast_labels_to_minimum_type_auto(
+        precast = cast_labels_to_minimum_type_auto(
             values, len(self.colors) - 1, self.background_value
         )
 
-        return self._map_precast(casted)
+        return self._map_precast(precast)
 
     def _map_precast(self, values) -> np.ndarray:
         """Map *precast* values to colors.
