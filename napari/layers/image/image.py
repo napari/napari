@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 import warnings
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, List, Sequence, Tuple, Union, cast
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -222,6 +222,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
+    _interpolation2d: Interpolation
+    _interpolation3d: Interpolation
 
     @rename_argument(
         from_name="interpolation",
@@ -478,6 +480,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         extent = self._extent_data
         return extent + [[-0.5], [+0.5]]
 
+    @property
     def _extent_level_data(self) -> np.ndarray:
         """Extent of layer, accounting for current multiscale level, in data coordinates.
 
@@ -603,7 +606,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @property
     def interpolation2d(self) -> InterpolationStr:
-        return str(self._interpolation2d)
+        return cast(InterpolationStr, str(self._interpolation2d))
 
     @interpolation2d.setter
     def interpolation2d(self, value: Union[InterpolationStr, Interpolation]):
@@ -626,7 +629,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @property
     def interpolation3d(self) -> InterpolationStr:
-        return str(self._interpolation3d)
+        return cast(InterpolationStr, str(self._interpolation3d))
 
     @interpolation3d.setter
     def interpolation3d(self, value: Union[InterpolationStr, Interpolation]):
