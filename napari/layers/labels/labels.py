@@ -53,7 +53,7 @@ from napari.utils.colormaps import (
     label_colormap,
 )
 from napari.utils.colormaps.colormap import (
-    cast_labels_to_minimum_type_auto,
+    _cast_labels_to_minimum_dtype_auto,
     minimum_dtype_for_labels,
 )
 from napari.utils.events import EmitterGroup, Event
@@ -1077,7 +1077,7 @@ class Labels(_ImageBase):
             return self._cached_mapped_labels[data_slice]
 
         if self.color_mode == LabelColorMode.AUTO:
-            mapped_labels = cast_labels_to_minimum_type_auto(
+            mapped_labels = _cast_labels_to_minimum_dtype_auto(
                 labels_to_map, self.num_colors, self._background_label
             )
         else:  # direct
@@ -1124,7 +1124,7 @@ class Labels(_ImageBase):
 
         downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
         if self.color_mode == LabelColorMode.AUTO:
-            color_array = self.colormap.map(downsampled.ravel())
+            color_array = self.colormap._map_precast(downsampled.ravel())
         else:  # direct
             color_array = self._direct_colormap.map(downsampled.ravel())
         colormapped = color_array.reshape(downsampled.shape + (4,))
@@ -1144,8 +1144,7 @@ class Labels(_ImageBase):
         ):
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
-            val = self._to_vispy_texture_dtype(np.array([label]))
-            col = self.colormap.map(val)[0]
+            col = self.colormap.map([label])[0]
         return col
 
     def _get_value_ray(
