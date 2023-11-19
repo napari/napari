@@ -1146,9 +1146,13 @@ class Labels(_ImageBase):
         elif label is None or (
             self.show_selected_label and label != self.selected_label
         ):
-            col = self.colormap.map([0, 0, 0, 0])[0]
+            col = self.colormap.map([self._background_label])[0]
         else:
-            col = self.colormap.map([label])[0]
+            if label < 0 and self.color_mode == LabelColorMode.AUTO:
+                val = np.array([label]).astype(self._slice.image.raw.dtype)[0]
+            else:
+                val = label
+            col = self.colormap.map(val)[0]
         return col
 
     def _get_value_ray(

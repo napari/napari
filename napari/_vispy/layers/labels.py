@@ -80,7 +80,7 @@ vec4 sample_label_color(float t) {
 
     return texture2D(
         texture2D_values,
-        vec2(0.0, (t-0.5) / $color_map_size)
+        vec2(0.0, (t+0.5) / $color_map_size)
     );
 }
 """
@@ -104,15 +104,15 @@ uniform sampler2D texture2D_values;
 
 vec4 sample_label_color(float t) {
     // uint 16
-    if (($use_selection) && ($selection != int(t * 65536))) {
+    t = t * 65535;
+    if (($use_selection) && ($selection != int(t))) {
         return vec4(0);
     }
-    t = t * 256;
-    int v = int(t);
-    int v2 = int((t - v) * 256);
+    float v = mod(t, 256);
+    float v2 = (t- v) / 256;
     return texture2D(
         texture2D_values,
-        vec2((v2 + 0.5) / 256, (v + 0.5) / 256)
+        vec2((v + 0.5) / 256, (v2 + 0.5) / 256)
     );
 }
 """
@@ -538,13 +538,13 @@ class VispyLabelsLayer(VispyImageLayer):
                 colors = colormap.map(
                     np.arange(
                         np.iinfo(np.uint8).max + 1, dtype=np.uint8
-                    ).reshape(-1, 1)
+                    ).reshape(-1, 1),
                 )
             elif itemsize == 2:
                 colors = colormap.map(
                     np.arange(
                         np.iinfo(np.uint16).max + 1, dtype=np.uint16
-                    ).reshape(256, -1)
+                    ).reshape(256, -1),
                 )
             else:
                 colors = colormap.colors.reshape(
@@ -559,6 +559,7 @@ class VispyLabelsLayer(VispyImageLayer):
                 internalformat='rgba32f',
                 interpolation='nearest',
             )
+            self.texture_data = colors
 
         elif mode == 'direct':
             color_dict = (

@@ -177,10 +177,14 @@ class LabelColormap(Colormap):
         """
         values = np.atleast_1d(values)
 
-        mapped = self.colors[values.astype(np.int64) % len(self.colors)]
+        if values.dtype.kind == 'f':
+            values = values.astype(np.int64)
+
+        mapped = self.colors[(values - 1) % (len(self.colors) - 1) + 1]
         mapped[values == self.background_value] = 0
         if self.use_selection:
-            mapped[values != self.selection] = 0
+            selection2 = np.array([self.selection]).astype(values.dtype)[0]
+            mapped[(values != self.selection) & (values != selection2)] = 0
 
         return mapped
 
@@ -269,13 +273,13 @@ def _cast_labels_to_minimum_dtype_auto(
         # for fast rendering of int16
         return data.view(np.uint16)
 
-    num_colors = len(colormap.colors)
+    num_colors = len(colormap.colors) - 1
 
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
     if colormap.use_selection:
         return (data == colormap.selection).astype(dtype) * (
-            (colormap.selection % num_colors) + 1
+            ((colormap.selection - 1) % num_colors) + 1
         )
 
     return _modulo_plus_one(data, num_colors, dtype, colormap.background_value)
@@ -314,7 +318,7 @@ def _modulo_plus_one(
         if values.flat[i] == to_zero:
             result.flat[i] = 0
         else:
-            result.flat[i] = values.flat[i] % n + 1
+            result.flat[i] = (values.flat[i] - 1) % n + 1
 
     return result
 

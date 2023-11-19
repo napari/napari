@@ -668,10 +668,14 @@ def test_create_non_empty_viewer_model(qtbot):
 
 
 def _update_data(
-    layer: Labels, label: int, qtbot: QtBot, qt_viewer: QtViewer
+    layer: Labels,
+    label: int,
+    qtbot: QtBot,
+    qt_viewer: QtViewer,
+    dtype=np.uint64,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Change layer data and return color of label and middle pixel of screenshot."""
-    layer.data = np.full((2, 2), label, dtype=np.int64)
+    layer.data = np.full((2, 2), label, dtype=dtype)
     layer.selected_label = label
 
     qtbot.wait(50)  # wait for .update() to be called on QtColorBox from Qt
@@ -702,23 +706,28 @@ def qt_viewer_with_controls(qtbot):
 @pytest.mark.parametrize(
     "use_selection", [True, False], ids=["selected", "all"]
 )
-def test_label_colors_matching_widget(
-    qtbot, qt_viewer_with_controls, use_selection
+@pytest.mark.parametrize("dtype", [np.int16, np.int64])
+def test_label_colors_matching_widget_auto(
+    qtbot, qt_viewer_with_controls, use_selection, dtype
 ):
     """Make sure the rendered label colors match the QtColorBox widget."""
 
     # XXX TODO: this unstable! Seed = 0 fails, for example. This is due to numerical
     #           imprecision in random colormap on gpu vs cpu
     np.random.seed(1)
-    data = np.ones((2, 2), dtype=np.int64)
+    data = np.ones((2, 2), dtype=dtype)
     layer = qt_viewer_with_controls.viewer.add_labels(data)
     layer.show_selected_label = use_selection
     layer.opacity = 1.0  # QtColorBox & single layer are blending differently
+    n_c = layer.num_colors
 
     test_colors = np.concatenate(
         (
-            np.arange(1, 10, dtype=np.int64),
-            np.random.randint(2**20, size=(20), dtype=np.int64),
+            np.arange(1, 10, dtype=dtype),
+            [n_c - 1, n_c, n_c + 1],
+            np.random.randint(
+                min(2**20, np.iinfo(dtype).max), size=20, dtype=dtype
+            ),
             [-2],
         )
     )
@@ -726,7 +735,7 @@ def test_label_colors_matching_widget(
     for label in test_colors:
         # Change color & selected color to the same label
         color_box_color, middle_pixel = _update_data(
-            layer, label, qtbot, qt_viewer_with_controls
+            layer, label, qtbot, qt_viewer_with_controls, dtype
         )
 
         npt.assert_allclose(
@@ -742,7 +751,7 @@ def test_label_colors_matching_widget_direct(
     qtbot, qt_viewer_with_controls, use_selection
 ):
     """Make sure the rendered label colors match the QtColorBox widget."""
-    data = np.ones((2, 2), dtype=np.int64)
+    data = np.ones((2, 2), dtype=np.uint64)
     layer = qt_viewer_with_controls.viewer.add_labels(data)
     layer.show_selected_label = use_selection
     layer.opacity = 1.0  # QtColorBox & single layer are blending differently
