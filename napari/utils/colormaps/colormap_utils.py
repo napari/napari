@@ -454,12 +454,18 @@ def label_colormap(
     )
 
     colors = colors[indices][:-2]
+    # ensure that we not need to deal with differences in float rounding for
+    # CPU and GPU.
+    colors = (colors * np.iinfo(np.uint8).max).astype(np.uint8).astype(
+        np.float32
+    ) / np.iinfo(np.uint8).max
+    colors_ = ColorArray(colors)
     # here is an ugly hack to restore classical napari color order.
 
     return LabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
-        colors=colors,
+        colors=colors_,
         controls=np.linspace(0, 1, len(colors) + 1),
         interpolation='zero',
         background_value=background_value,
