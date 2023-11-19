@@ -1148,8 +1148,14 @@ class Labels(_ImageBase):
         ):
             col = self.colormap.map([self._background_label])[0]
         else:
-            if label < 0 and self.color_mode == LabelColorMode.AUTO:
-                val = np.array([label]).astype(self._slice.image.raw.dtype)[0]
+            raw_dtype = self._slice.image.raw.dtype
+            view_dtype = self._slice.image.view.dtype
+            if (
+                label < 0
+                and self.color_mode == LabelColorMode.AUTO
+                and raw_dtype.itemsize <= 2
+            ):
+                val = np.array([label]).astype(view_dtype)[0]
             else:
                 val = label
             col = self.colormap.map(val)[0]

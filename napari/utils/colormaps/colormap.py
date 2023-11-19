@@ -205,11 +205,11 @@ class DirectLabelColormap(Colormap):
 
     Attributes
     ----------
-    color_dict: defaultdict
+    color_dict : defaultdict
         The dictionary mapping labels to colors.
-    use_selection: bool
+    use_selection : bool
         Whether to color using the selected label.
-    selection: float
+    selection : float
         The selected label.
     """
 
