@@ -454,7 +454,7 @@ def label_colormap(
     )
 
     # here is an ugly hack to restore classical napari color order.
-    colors = colors[indices][:-2]
+    colors = colors[indices][:-1]
 
     # ensure that we not need to deal with differences in float rounding for
     # CPU and GPU.
