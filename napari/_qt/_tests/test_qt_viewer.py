@@ -801,10 +801,11 @@ def qt_viewer(qtbot):
     yield qt_viewer
     qt_viewer.close()
     del qt_viewer
-    qtbot.wait(50)
+    qtbot.wait(150)
     gc.collect()
 
 
+# @pytest.mark.xfail(reason="Fails on CI, but not locally")
 @skip_local_popups
 @pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
 def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
@@ -819,8 +820,8 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     # cut off black border
     sh = canvas_screenshot.shape[:2]
     short_side = min(sh)
-    margin1 = (sh[0] - short_side) // 2 + 100
-    margin2 = (sh[1] - short_side) // 2 + 100
+    margin1 = (sh[0] - short_side) // 2 + 20
+    margin2 = (sh[1] - short_side) // 2 + 20
     canvas_screenshot = canvas_screenshot[margin1:-margin1, margin2:-margin2]
     thumbnail = layer.thumbnail
     scaled_thumbnail = ndi.zoom(
@@ -828,5 +829,10 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
         np.array(canvas_screenshot.shape) / np.array(thumbnail.shape),
         order=0,
     )
+
+    import imageio
+
+    imageio.imwrite(tmp_path / 'canvas_screenshot.png', canvas_screenshot)
+    imageio.imwrite(tmp_path / 'scaled_thumbnail.png', scaled_thumbnail)
 
     npt.assert_almost_equal(canvas_screenshot, scaled_thumbnail, decimal=1)
