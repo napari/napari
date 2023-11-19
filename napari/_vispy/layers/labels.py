@@ -20,6 +20,7 @@ from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.utils._dtype import vispy_texture_dtype
 from napari.utils.colormaps.colormap import (
     LabelColormap,
+    _cast_labels_to_minimum_dtype_auto,
     minimum_dtype_for_labels,
 )
 
@@ -192,16 +193,17 @@ class LabelVispyColormap(VispyColormap):
         super().__init__(
             colors=["w", "w"], controls=None, interpolation='zero'
         )
-        selection = colormap.selection
         if dtype.itemsize == 1:
             shader = auto_lookup_shader_uint8
         elif dtype.itemsize == 2:
             shader = auto_lookup_shader_uint16
         else:
             shader = auto_lookup_shader
-            selection = int(selection) % len(colormap.colors) + 1
 
         data_dtype = minimum_dtype_for_labels(len(colormap.colors) + 1)
+        selection = _cast_labels_to_minimum_dtype_auto(
+            np.array([colormap.selection], dtype=dtype), colormap
+        )[0]
 
         if issubclass(data_dtype.type, np.integer):
             scale = np.iinfo(data_dtype).max + 1

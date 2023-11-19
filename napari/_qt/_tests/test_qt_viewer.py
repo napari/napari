@@ -671,7 +671,7 @@ def _update_data(
     layer: Labels, label: int, qtbot: QtBot, qt_viewer: QtViewer
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Change layer data and return color of label and middle pixel of screenshot."""
-    layer.data = np.full((2, 2), label, dtype=np.uint64)
+    layer.data = np.full((2, 2), label, dtype=np.int64)
     layer.selected_label = label
 
     qtbot.wait(50)  # wait for .update() to be called on QtColorBox from Qt
@@ -710,15 +710,16 @@ def test_label_colors_matching_widget(
     # XXX TODO: this unstable! Seed = 0 fails, for example. This is due to numerical
     #           imprecision in random colormap on gpu vs cpu
     np.random.seed(1)
-    data = np.ones((2, 2), dtype=np.uint64)
+    data = np.ones((2, 2), dtype=np.int64)
     layer = qt_viewer_with_controls.viewer.add_labels(data)
     layer.show_selected_label = use_selection
     layer.opacity = 1.0  # QtColorBox & single layer are blending differently
 
     test_colors = np.concatenate(
         (
-            np.arange(1, 10, dtype=np.uint64),
-            np.random.randint(2**20, size=(20), dtype=np.uint64),
+            np.arange(1, 10, dtype=np.int64),
+            np.random.randint(2**20, size=(20), dtype=np.int64),
+            [-2],
         )
     )
 
@@ -741,7 +742,7 @@ def test_label_colors_matching_widget_direct(
     qtbot, qt_viewer_with_controls, use_selection
 ):
     """Make sure the rendered label colors match the QtColorBox widget."""
-    data = np.ones((2, 2), dtype=np.uint64)
+    data = np.ones((2, 2), dtype=np.int64)
     layer = qt_viewer_with_controls.viewer.add_labels(data)
     layer.show_selected_label = use_selection
     layer.opacity = 1.0  # QtColorBox & single layer are blending differently

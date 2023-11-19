@@ -585,11 +585,12 @@ def test_contour(input_data, expected_data_view):
         layer.contour = -1
 
 
-@pytest.mark.parametrize("background_num", [0, 1, 2])
+@pytest.mark.parametrize("background_num", [0, 1, 2, -1])
 def test_background_label(background_num):
-    data = np.zeros((10, 10), dtype=np.uint32)
+    data = np.zeros((10, 10), dtype=np.int32)
     data[1:-1, 1:-1] = 1
     data[2:-2, 2:-2] = 2
+    data[4:-4, 4:-4] = -1
 
     layer = Labels(data)
     layer._background_label = background_num
