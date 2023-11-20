@@ -510,12 +510,17 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     plugin's menus and submenus to the app model registry.
     """
     from napari._app_model import get_app
-    from napari._qt._qplugins import _get_widgets_submenu_actions
 
     app = get_app()
     actions, submenus = _npe2_manifest_to_actions(mf)
     samples_submenu, sample_actions = _get_samples_submenu_actions(mf)
-    widgets_submenu, widget_actions = _get_widgets_submenu_actions(mf)
+    try:
+        from napari._qt._qplugins import _get_widgets_submenu_actions
+    except ModuleNotFoundError:
+        widgets_submenu, widget_actions = [], []
+    else:
+        widgets_submenu, widget_actions = _get_widgets_submenu_actions(mf)
+
     context = pm.get_context(cast('PluginName', mf.name))
 
     # Register and connect dispose callback to plugin deactivate ('unregistered') event
