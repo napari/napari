@@ -20,7 +20,7 @@ from napari._app_model.injection._providers import _provide_viewer
 def _add_plugin_dock_widget(
     widget_name_tuple: Tuple[Union[FunctionGui, QWidget, Widget], str],
     viewer: Optional[viewer.Viewer] = None,
-):
+) -> None:
     if viewer is None:
         viewer = _provide_viewer()
     if viewer:
