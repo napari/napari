@@ -162,7 +162,7 @@ class LabelColormap(Colormap):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
 
-    def map(self, values) -> np.ndarray:
+    def map(self, values, apply_selection=True) -> np.ndarray:
         """Map values to colors.
 
         Parameters
@@ -182,7 +182,7 @@ class LabelColormap(Colormap):
 
         mapped = self.colors[(values - 1) % (len(self.colors) - 1) + 1]
         mapped[values == self.background_value] = 0
-        if self.use_selection:
+        if self.use_selection and apply_selection:
             selection2 = np.array([self.selection]).astype(values.dtype)[0]
             mapped[(values != self.selection) & (values != selection2)] = 0
 
