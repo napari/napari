@@ -9,8 +9,8 @@ from qtpy.QtWidgets import QWidget
 
 import napari
 from napari._app_model import get_app
+from napari._qt._qplugins._qnpe2 import _get_widget_viewer_param
 from napari._qt.qt_main_window import _instantiate_dock_widget
-from napari.plugins._npe2 import _get_widget_viewer_param
 from napari.utils._proxies import PublicOnlyProxy
 from napari.viewer import Viewer
 
