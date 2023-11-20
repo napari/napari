@@ -453,7 +453,9 @@ def label_colormap(
         len(control_points) - 1,
     )
 
-    colors = colors[indices][:-2]
+    colors = np.concatenate(
+        (np.zeros((1, 4), dtype=colors.dtype), colors[indices][:-2])
+    )
     # here is an ugly hack to restore classical napari color order.
 
     return LabelColormap(
