@@ -430,6 +430,10 @@ def cast_direct_labels_to_minimum_type(
     np.ndarray
         The casted data array.
     """
+    if data.dtype.itemsize == 1:
+        return data.view(np.uint8)
+    if data.dtype.itemsize == 2:
+        return data.view(np.uint16)
 
     dtype = minimum_dtype_for_labels(direct_colormap.unique_colors_num() + 2)
 

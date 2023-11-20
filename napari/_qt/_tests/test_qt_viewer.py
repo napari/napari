@@ -668,10 +668,14 @@ def test_create_non_empty_viewer_model(qtbot):
 
 
 def _update_data(
-    layer: Labels, label: int, qtbot: QtBot, qt_viewer: QtViewer
+    layer: Labels,
+    label: int,
+    qtbot: QtBot,
+    qt_viewer: QtViewer,
+    dtype: np.dtype = np.uint64,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Change layer data and return color of label and middle pixel of screenshot."""
-    layer.data = np.full((2, 2), label, dtype=np.uint64)
+    layer.data = np.full((2, 2), label, dtype=dtype)
     layer.selected_label = label
 
     qtbot.wait(50)  # wait for .update() to be called on QtColorBox from Qt
@@ -733,11 +737,12 @@ def test_label_colors_matching_widget(
 @skip_local_popups
 @skip_on_win_ci
 @pytest.mark.parametrize("use_selection", [True, False])
+@pytest.mark.parametrize("dtype", [np.uint64, np.uint16])
 def test_label_colors_matching_widget_direct(
-    qtbot, qt_viewer_with_controls, use_selection
+    qtbot, qt_viewer_with_controls, use_selection, dtype
 ):
     """Make sure the rendered label colors match the QtColorBox widget."""
-    data = np.ones((2, 2), dtype=np.uint64)
+    data = np.ones((2, 2), dtype=dtype)
     layer = qt_viewer_with_controls.viewer.add_labels(data)
     layer.show_selected_label = use_selection
     layer.opacity = 1.0  # QtColorBox & single layer are blending differently
@@ -786,9 +791,9 @@ def qt_viewer(qtbot):
     qt_viewer.resize(400, 400)
     yield qt_viewer
     qt_viewer.close()
+    qt_viewer._instances.clear()
     del qt_viewer
     qtbot.wait(50)
-    gc.collect()
 
 
 @skip_local_popups
@@ -798,7 +803,7 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer):
     layer = qt_viewer.viewer.add_labels(np.array([[0, 1], [2, 3]]), opacity=1)
     if direct:
         layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
-    qtbot.wait(100)
+    qtbot.wait(200)
 
     canvas_screenshot = qt_viewer.screenshot(flash=False)
     # cut off black border
