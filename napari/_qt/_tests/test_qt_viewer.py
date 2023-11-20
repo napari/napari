@@ -698,6 +698,7 @@ def qt_viewer_with_controls(qtbot):
     qt_viewer.controls.close()
     qt_viewer.hide()
     qt_viewer.close()
+    qt_viewer._instances.clear()
     qtbot.wait(50)
 
 
@@ -800,9 +801,8 @@ def qt_viewer(qtbot):
     qt_viewer.resize(460, 460)
     yield qt_viewer
     qt_viewer.close()
+    qt_viewer._instances.clear()
     del qt_viewer
-    qtbot.wait(150)
-    gc.collect()
 
 
 # @pytest.mark.xfail(reason="Fails on CI, but not locally")
