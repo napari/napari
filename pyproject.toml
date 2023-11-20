@@ -448,7 +448,9 @@ module = [
     "napari.utils.transforms.transform_utils",
     "napari.utils.translations",
     "napari.utils.tree.node",
-    "napari.viewer"
+    "napari.viewer",
+    "napari.layers.shapes._shapes_key_bindings",
+    "napari.layers.shapes._shape_list"
 ]
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
@@ -466,6 +468,7 @@ module = [
     "napari.utils.colormaps.vendored._cm",
     "napari.utils.colormaps.vendored.cm",
     "napari.utils.status_messages",
+    "napari.layers.shapes._shapes_utils"
 ]
 disallow_untyped_calls = false
 disallow_untyped_defs = false
