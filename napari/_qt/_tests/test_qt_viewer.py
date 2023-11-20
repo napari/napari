@@ -814,7 +814,10 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     qt_viewer.viewer.reset_view()
     if direct:
         layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
-    qtbot.wait(150)
+    else:
+        layer.num_colors = 49
+    qt_viewer.canvas.native.paintGL()
+    qtbot.wait(200)
 
     canvas_screenshot = qt_viewer.screenshot(flash=False)
     # cut off black border
