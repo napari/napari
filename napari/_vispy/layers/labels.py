@@ -89,7 +89,7 @@ auto_lookup_shader_uint8 = """
 uniform sampler2D texture2D_values;
 
 vec4 sample_label_color(float t) {
-    if (($use_selection) && ($selection != int(t * 256))) {
+    if (($use_selection) && ($selection != int(t * 255))) {
         return vec4(0);
     }
     return texture2D(
