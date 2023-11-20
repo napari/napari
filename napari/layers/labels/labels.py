@@ -1157,6 +1157,8 @@ class Labels(_ImageBase):
                 and self.color_mode == LabelColorMode.AUTO
                 and raw_dtype.itemsize <= 2
             ):
+                # This is casting for the data of type int8 and int16
+                # to have the same color as in canvas
                 val = np.array([label]).astype(view_dtype)[0]
             else:
                 val = label
