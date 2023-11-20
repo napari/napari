@@ -1,3 +1,7 @@
+"""Non-Qt processors.
+
+Qt processors can be found in `napari/_qt/_qapp_model/qactions/_qprocessors.py`."""
+
 import sys
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
@@ -9,13 +13,9 @@ from typing import (
     List,
     Optional,
     Set,
-    Tuple,
     Union,
     get_origin,
 )
-
-from magicgui.widgets import FunctionGui, Widget
-from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
 from napari import layers, types, viewer
 from napari._app_model.injection._providers import _provide_viewer
@@ -171,26 +171,10 @@ def _add_future_data(
     _FUTURES.add(future)
 
 
-def _add_plugin_dock_widget(
-    widget_name_tuple: Tuple[Union[FunctionGui, QWidget, Widget], str],
-    viewer: Optional[viewer.Viewer] = None,
-):
-    if viewer is None:
-        viewer = _provide_viewer()
-    if viewer:
-        widget, display_name = widget_name_tuple
-        viewer.window.add_dock_widget(widget, name=display_name)
-
-
 PROCESSORS: Dict[object, Callable] = {
-    # Layer type
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
     List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
     layers.Layer: _add_layer_to_viewer,
-    # Dock widgets
-    Optional[
-        Tuple[Union[FunctionGui, QWidget, Widget], str]
-    ]: _add_plugin_dock_widget,
 }
 # Add future and LayerData processors for each layer type.
 for t in types._LayerData.__args__:  # type: ignore [attr-defined]

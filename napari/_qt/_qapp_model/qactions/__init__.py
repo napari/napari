@@ -3,10 +3,8 @@ from __future__ import annotations
 from functools import lru_cache
 from itertools import chain
 
-from napari._qt._qapp_model.qactions._qproviders import (
-    _provide_qt_viewer,
-    _provide_window,
-)
+from napari._qt._qapp_model.qactions._qprocessors import QPROCESSORS
+from napari._qt._qapp_model.qactions._qproviders import QPROVIDERS
 
 # Submodules should be able to import from most modules, so to
 # avoid circular imports, don't import submodules at the top level here,
@@ -46,10 +44,8 @@ def init_qactions() -> None:
 
     # Qt-specific providers/processors
     app.injection_store.register(
-        providers=[
-            (_provide_qt_viewer,),
-            (_provide_window,),
-        ],
+        processors=QPROCESSORS,
+        providers=QPROVIDERS,
     )
 
     # register actions

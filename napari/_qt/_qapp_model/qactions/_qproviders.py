@@ -25,3 +25,9 @@ def _provide_window() -> Optional[Window]:
     if _qmainwin := _QtMainWindow.current():
         return _qmainwin._window
     return None
+
+
+QPROVIDERS = [
+    (_provide_qt_viewer,),
+    (_provide_window,),
+]
