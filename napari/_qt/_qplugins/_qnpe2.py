@@ -31,11 +31,14 @@ from napari.viewer import Viewer
 
 if TYPE_CHECKING:
     from npe2.manifest import PluginManifest
+    from npe2.types import WidgetCreator
 
     from napari._qt.qt_main_window import Window
 
 
-def _get_widget_viewer_param(widget_callable, widget_name) -> str:
+def _get_widget_viewer_param(
+    widget_callable: WidgetCreator, widget_name: str
+) -> str:
     """Get widget parameter name (if any) and check type."""
     if inspect.isclass(widget_callable) and issubclass(
         widget_callable,
@@ -150,7 +153,7 @@ def _get_widgets_submenu_actions(
         def _get_current_dock_status(
             window: Window,
             name: str = full_name,
-        ):
+        ) -> bool:
             if name in window._dock_widgets:
                 return window._dock_widgets[name].isVisible()
             return False
