@@ -1,3 +1,9 @@
+"""Test app-model providers.
+
+Because `_provide_viewer` needs `_QtMainWindow` (otherwise returns `None`)
+tests are here in `napari/_tests`, which are not run in headless mode.
+"""
+
 from napari._app_model.injection._providers import _provide_viewer
 from napari.utils._proxies import PublicOnlyProxy
 

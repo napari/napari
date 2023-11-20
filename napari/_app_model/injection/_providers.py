@@ -1,6 +1,10 @@
 """Non-Qt providers.
 
-Qt providers can be found in `napari/_qt/_qapp_model/qactions/_qproviders.py`."""
+Qt providers can be found in `napari/_qt/_qapp_model/qactions/_qproviders.py`.
+
+Because `_provide_viewer` needs `_QtMainWindow` (otherwise returns `None`)
+tests are in `napari/_tests/test_providers.py`, which are not run in headless mode.
+"""
 
 from typing import Optional
 
