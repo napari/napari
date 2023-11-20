@@ -514,10 +514,12 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     app = get_app()
     actions, submenus = _npe2_manifest_to_actions(mf)
     samples_submenu, sample_actions = _get_samples_submenu_actions(mf)
+    widgets_submenu: List[Any] = []
+    widget_actions: List[Any] = []
     try:
         from napari._qt._qplugins import _get_widgets_submenu_actions
     except ModuleNotFoundError:
-        widgets_submenu, widget_actions = [], []
+        pass
     else:
         widgets_submenu, widget_actions = _get_widgets_submenu_actions(mf)
 
