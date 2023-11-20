@@ -282,11 +282,13 @@ def _cast_labels_to_minimum_dtype_auto(
             ((colormap.selection - 1) % num_colors) + 1
         )
 
-    return _modulo_plus_one(data, num_colors, dtype, colormap.background_value)
+    return _zero_preserving_modulo(
+        data, num_colors, dtype, colormap.background_value
+    )
 
 
 @numba.njit(parallel=True)
-def _modulo_plus_one(
+def _zero_preserving_modulo(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
     """Like ``values % n + 1``, but with one specific value mapped to 0.
