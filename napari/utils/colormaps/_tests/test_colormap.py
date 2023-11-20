@@ -2,6 +2,7 @@ import importlib
 from unittest.mock import patch
 
 import numpy as np
+import numpy.testing as npt
 import pytest
 
 from napari.utils.colormaps import Colormap, colormap
@@ -144,4 +145,11 @@ def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
     assert cast_arr.dtype == dtype
     assert cast_arr[0] == 0
     assert cast_arr[1] == 10
-    assert cast_arr[2] == 10**6 % (num) + 5
+    assert cast_arr[2] == 10**6 % num + 5
+
+
+def test_zero_preserving_modulo_naive():
+    data = np.arange(1000, dtype=np.uint32)
+    res1 = colormap._zero_preserving_modulo_naive(data, 49, np.uint8)
+    res2 = colormap._zero_preserving_modulo(data, 49, np.uint8)
+    npt.assert_array_equal(res1, res2)

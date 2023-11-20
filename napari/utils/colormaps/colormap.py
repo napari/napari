@@ -1,7 +1,6 @@
 from collections import defaultdict
 from typing import Optional, cast
 
-import numba
 import numpy as np
 
 from napari._pydantic_compat import Field, PrivateAttr, validator
@@ -287,42 +286,56 @@ def _cast_labels_to_minimum_dtype_auto(
     )
 
 
-@numba.njit(parallel=True)
-def _zero_preserving_modulo(
+def _zero_preserving_modulo_naive(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
-    """Like ``values % n + 1``, but with one specific value mapped to 0.
+    res = ((values - 1) % n + 1).astype(dtype)
+    res[values == to_zero] = 0
+    return res
 
-    This ensures (1) an output value in [0, n] (inclusive), and (2) that
-    no nonzero values in the input are zero in the output, other than the
-    ``to_zero`` value.
 
-    Parameters
-    ----------
-    values : np.ndarray
-        The dividend of the modulo operator.
-    n : int
-        The divisor.
-    dtype : np.dtype
-        The desired dtype for the output array.
-    to_zero : int, optional
-        A specific value to map to 0. (By default, 0 itself.)
+try:
+    import numba
+except ImportError:
+    _zero_preserving_modulo = _zero_preserving_modulo_naive
+else:
 
-    Returns
-    -------
-    np.ndarray
-        The result: 0 for the ``to_zero`` value, ``values % n + 1``
-        everywhere else.
-    """
-    result = np.empty_like(values, dtype=dtype)
+    @numba.njit(parallel=True)
+    def _zero_preserving_modulo(
+        values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
+    ) -> np.ndarray:
+        """Like ``values % n + 1``, but with one specific value mapped to 0.
 
-    for i in numba.prange(values.size):
-        if values.flat[i] == to_zero:
-            result.flat[i] = 0
-        else:
-            result.flat[i] = (values.flat[i] - 1) % n + 1
+        This ensures (1) an output value in [0, n] (inclusive), and (2) that
+        no nonzero values in the input are zero in the output, other than the
+        ``to_zero`` value.
 
-    return result
+        Parameters
+        ----------
+        values : np.ndarray
+            The dividend of the modulo operator.
+        n : int
+            The divisor.
+        dtype : np.dtype
+            The desired dtype for the output array.
+        to_zero : int, optional
+            A specific value to map to 0. (By default, 0 itself.)
+
+        Returns
+        -------
+        np.ndarray
+            The result: 0 for the ``to_zero`` value, ``values % n + 1``
+            everywhere else.
+        """
+        result = np.empty_like(values, dtype=dtype)
+
+        for i in numba.prange(values.size):
+            if values.flat[i] == to_zero:
+                result.flat[i] = 0
+            else:
+                result.flat[i] = (values.flat[i] - 1) % n + 1
+
+        return result
 
 
 def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
