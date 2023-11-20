@@ -100,7 +100,7 @@ jobs:
     needs: build1
     runs-on: ubuntu-latest
     container:
-      image: quay.io/singularity/docker2singularity:v3.10.0
+      image: quay.io/singularity/docker2singularity:v3.11.5
       options: --privileged
     permissions:
       contents: read
