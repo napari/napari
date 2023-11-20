@@ -808,14 +808,16 @@ def qt_viewer(qtbot):
 # @pytest.mark.xfail(reason="Fails on CI, but not locally")
 @skip_local_popups
 @pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
-def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
+def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer):
     # Add labels to empty viewer
     layer = qt_viewer.viewer.add_labels(np.array([[0, 1], [2, 3]]), opacity=1)
-    qt_viewer.viewer.reset_view()
     if direct:
         layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
     else:
         layer.num_colors = 49
+    qt_viewer.viewer.reset_view()
+    # this test is fragile as reset view is not always working
+    # I do not know how to enforce it.
     qt_viewer.canvas.native.paintGL()
     qtbot.wait(200)
 
@@ -833,9 +835,33 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
         order=0,
     )
 
-    import imageio
-
-    imageio.imwrite(tmp_path / 'canvas_screenshot.png', canvas_screenshot)
-    imageio.imwrite(tmp_path / 'scaled_thumbnail.png', scaled_thumbnail)
-
     npt.assert_almost_equal(canvas_screenshot, scaled_thumbnail, decimal=1)
+
+
+@pytest.mark.parametrize("dtype", [np.int8, np.int32])
+def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
+    data = np.zeros((10, 10), dtype=dtype)
+    data[5:] = 10
+    layer = qt_viewer.viewer.add_labels(data, opacity=1)
+    color = layer.colormap.map(10)[0] * 255
+
+    backgrounds = (0, 2, -2)
+
+    for background in backgrounds:
+        layer._background_label = background
+        data[:5] = background
+        layer.data = data
+        layer.num_colors = 49
+        qtbot.wait(50)
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        shape = np.array(canvas_screenshot.shape[:2])
+        background_pixel = canvas_screenshot[tuple((shape * 0.25).astype(int))]
+        color_pixel = canvas_screenshot[tuple((shape * 0.75).astype(int))]
+        npt.assert_array_equal(
+            background_pixel,
+            [0, 0, 0, 255],
+            err_msg=f"background {background}",
+        )
+        npt.assert_array_equal(
+            color_pixel, color, err_msg=f"background {background}"
+        )

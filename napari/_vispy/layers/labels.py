@@ -506,16 +506,16 @@ class VispyLabelsLayer(VispyImageLayer):
 
         if mode == 'auto':
             data_dtype = self.layer._slice.image.view.dtype
+            raw_dtype = self.layer._slice.image.raw.dtype
             colors = colormap.map(
                 np.arange(
                     np.iinfo(data_dtype).max + 1, dtype=data_dtype
                 ).reshape(256, -1),
                 apply_selection=False,
+                background_is_zero=(data_dtype.itemsize != raw_dtype.itemsize),
             )
             self.node.cmap = LabelVispyColormap(
-                colormap,
-                view_dtype=data_dtype,
-                data_dtype=self.layer._slice.image.raw.dtype,
+                colormap, view_dtype=data_dtype, data_dtype=raw_dtype
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
                 colors,
