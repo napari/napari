@@ -510,7 +510,6 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     plugin's menus and submenus to the app model registry.
     """
     from napari._app_model import get_app
-    from napari._qt._qapp_model.qactions._qproviders import _provide_window
     from napari._qt._qplugins import _get_widgets_submenu_actions
 
     app = get_app()
@@ -528,19 +527,24 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
         context.register_disposable(app.menus.append_menu_items(submenus))
 
     # Register dispose functions that remove plugin widgets from widget dictionary
-    # `window._dock_widgets`
-    if window := _provide_window():
+    # `window._dock_widgets` but ONLY if Qt present.
+    try:
+        from napari._qt._qapp_model.qactions._qproviders import _provide_window
+    except ModuleNotFoundError:
+        pass
+    else:
+        if window := _provide_window():
 
-        class Event(NamedTuple):
-            value: str
+            class Event(NamedTuple):
+                value: str
 
-        for widget in mf.contributions.widgets or ():
-            widget_event = Event(widget.display_name)
+            for widget in mf.contributions.widgets or ():
+                widget_event = Event(widget.display_name)
 
-            def _remove_widget(event=widget_event):
-                window._remove_dock_widget(event)
+                def _remove_widget(event=widget_event):
+                    window._remove_dock_widget(event)
 
-            context.register_disposable(_remove_widget)
+                context.register_disposable(_remove_widget)
 
 
 def _npe2_manifest_to_actions(
