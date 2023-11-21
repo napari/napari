@@ -11,7 +11,7 @@ import pytest
 from imageio import imread
 from pytestqt.qtbot import QtBot
 from qtpy.QtGui import QGuiApplication
-from qtpy.QtWidgets import QMessageBox
+from qtpy.QtWidgets import QApplication, QMessageBox
 from scipy import ndimage as ndi
 
 from napari._qt.qt_viewer import QtViewer
@@ -819,6 +819,7 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer):
     # this test is fragile as reset view is not always working
     # I do not know how to enforce it.
     qt_viewer.canvas.native.paintGL()
+    QApplication.processEvents()
     qtbot.wait(200)
 
     canvas_screenshot = qt_viewer.screenshot(flash=False)
