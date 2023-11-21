@@ -534,7 +534,7 @@ class Labels(_ImageBase):
     @num_colors.setter
     def num_colors(self, num_colors):
         if num_colors < 1 or num_colors >= 2**16:
-            raise ValueError("num_colors must be between 1 and 2**16 - 1")
+            raise ValueError("num_colors must be between 1 and 65535")
         self._num_colors = num_colors
         self.colormap = label_colormap(
             num_colors, self.seed, self._background_label
