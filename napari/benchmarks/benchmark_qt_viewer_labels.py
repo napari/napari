@@ -2,13 +2,16 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
+import os
 from dataclasses import dataclass
 from typing import List
 
 import numpy as np
 from qtpy.QtWidgets import QApplication
+from skimage.morphology import octahedron
 
 import napari
+from napari.benchmarks.utils import Skiper
 
 
 @dataclass
@@ -83,3 +86,43 @@ class QtViewerSingleLabelsSuite:
     def time_on_mouse_move(self):
         """Time to drag paint on mouse move."""
         self.viewer.window._qt_viewer.canvas._on_mouse_move(self.event)
+
+
+class LabelRenderingSuite:
+    """Benchmarks for rendering the Labels layer."""
+
+    param_names = ["radius", "dtype"]
+    params = ([20, 100, 300], [np.uint8, np.uint16, np.uint32])
+    if "PR" in os.environ:
+        skip_params = Skiper(lambda x: x[0] >= 100)
+
+    def setup(self, radius, dtype):
+        self.app = QApplication.instance() or QApplication([])
+
+        self.data = octahedron(radius=radius, dtype=dtype)
+        self.viewer = napari.view_labels(self.data)
+        self.layer = self.viewer.layers[0]
+
+
+class LabelRenderingSuite2D(LabelRenderingSuite):
+    def setup(self, radius, dtype):
+        super().setup(radius, dtype)
+        self.viewer.dims.ndisplay = 2
+
+    def time_iterate_over_z(self, radius, dtype):
+        """Time to render the layer."""
+        for i in range(0, radius * 2, radius // 10):
+            self.viewer.dims.set_point(0, i)
+            self.app.processEvents()
+
+
+class LabelRenderingSuite3D(LabelRenderingSuite):
+    def setup(self, radius, dtype):
+        super().setup(radius, dtype)
+        self.viewer.dims.ndisplay = 3
+
+    def time_rotate(self, radius, dtype):
+        """Time to rotate the layer."""
+        for i in range(0, 360, 5):
+            self.viewer.camera.angles = (0, i / 2, i)
+            self.app.processEvents()
