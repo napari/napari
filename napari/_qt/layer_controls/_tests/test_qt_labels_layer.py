@@ -118,7 +118,7 @@ def test_preserve_labels_checkbox(make_labels_controls):
 
 
 def test_change_label_selector_range(make_labels_controls):
-    """Tests that changing the label selector range updates the layer."""
+    """Changing the label layer dtype should update label selector range."""
     layer, qtctrl = make_labels_controls()
     assert layer.data.dtype == np.uint8
     assert qtctrl.selectionSpinBox.minimum() == 0
