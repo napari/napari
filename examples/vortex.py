@@ -52,8 +52,8 @@ vectors_field = np.transpose(  # transpose required — skimage bug?
         )
 
 #######################################################################
-# Finally, we create a viewer, add the vortex frames, an overlay for the flow
-# magnitude, and the vectors field.
+# Finally, we create a viewer, and add the vortex frames, the flow
+# magnitude, and the vector field.
 
 viewer, vortex_layer = napari.imshow(vortex_im)
 mag_layer = viewer.add_image(magnitude, colormap='magma', opacity=0.3)
