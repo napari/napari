@@ -45,8 +45,16 @@ def test_nD_rectangle():
 def test_polygon():
     """Test creating Shape with a random polygon."""
     # Test a single six vertex polygon
-    np.random.seed(0)
-    data = 20 * np.random.random((6, 2))
+    data = np.array(
+        [
+            [10.97627008, 14.30378733],
+            [12.05526752, 10.89766366],
+            [8.47309599, 12.91788226],
+            [8.75174423, 17.83546002],
+            [19.27325521, 7.66883038],
+            [15.83450076, 10.5778984],
+        ]
+    )
     shape = Polygon(data)
     np.testing.assert_array_equal(shape.data, data)
     assert shape.data_displayed.shape == (6, 2)
