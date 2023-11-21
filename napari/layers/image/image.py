@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 import warnings
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Tuple, Union
+from typing import TYPE_CHECKING, List, Sequence, Tuple, Union, cast
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -17,6 +17,7 @@ from napari.layers.image._image_constants import (
     ImageProjectionMode,
     ImageRendering,
     Interpolation,
+    InterpolationStr,
     VolumeDepiction,
 )
 from napari.layers.image._image_mouse_bindings import (
@@ -221,6 +222,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
+    _interpolation2d: Interpolation
+    _interpolation3d: Interpolation
 
     @rename_argument(
         from_name="interpolation",
@@ -406,7 +409,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.refresh()
 
     @property
-    def _data_view(self):
+    def _data_view(self) -> np.ndarray:
         """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
 
@@ -435,7 +438,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._data.dtype
 
     @property
-    def data_raw(self):
+    def data_raw(
+        self,
+    ) -> Union[LayerDataProtocol, Sequence[LayerDataProtocol]]:
         """Data, exactly as provided by the user."""
         return self._data_raw
 
@@ -455,7 +460,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self.reset_contrast_limits()
         self._reset_editable()
 
-    def _get_ndim(self):
+    def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return len(self.level_shapes[0])
 
@@ -492,12 +497,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return extent + [[-0.5], [+0.5]]
 
     @property
-    def data_level(self):
+    def data_level(self) -> int:
         """int: Current level of multiscale, or 0 if image."""
         return self._data_level
 
     @data_level.setter
-    def data_level(self, level):
+    def data_level(self, level: int):
         if self._data_level == level:
             return
         self._data_level = level
@@ -600,11 +605,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self.interpolation2d = interpolation
 
     @property
-    def interpolation2d(self):
-        return str(self._interpolation2d)
+    def interpolation2d(self) -> InterpolationStr:
+        return cast(InterpolationStr, str(self._interpolation2d))
 
     @interpolation2d.setter
-    def interpolation2d(self, value):
+    def interpolation2d(self, value: Union[InterpolationStr, Interpolation]):
         if value == 'bilinear':
             raise ValueError(
                 trans._(
@@ -623,11 +628,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.interpolation(value=self._interpolation2d)
 
     @property
-    def interpolation3d(self):
-        return str(self._interpolation3d)
+    def interpolation3d(self) -> InterpolationStr:
+        return cast(InterpolationStr, str(self._interpolation3d))
 
     @interpolation3d.setter
-    def interpolation3d(self, value):
+    def interpolation3d(self, value: Union[InterpolationStr, Interpolation]):
         if value == 'custom':
             raise NotImplementedError(
                 'custom interpolation is not implemented yet for 3D rendering'

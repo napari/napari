@@ -317,7 +317,6 @@ module = [
     'napari._vispy.overlays.base',
     'napari._vispy.utils.cursor',
     'napari.components.layerlist',
-    'napari.components.viewer_model',
     'napari.layers._layer_actions',
     'napari.layers._multiscale_data',
     'napari.layers.intensity_mixin',
@@ -422,6 +421,7 @@ disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = [
+    "napari.components.viewer_model",
     "napari.settings._fields",
     "napari.settings._migrations",
     "napari.settings._base",
