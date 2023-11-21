@@ -126,6 +126,7 @@ def test_minimum_dtype_for_labels(num, dtype):
 
 @pytest.fixture()
 def disable_jit(monkeypatch):
+    pytest.importorskip("numba")
     with patch("numba.core.config.DISABLE_JIT", True):
         importlib.reload(colormap)
         yield
@@ -135,7 +136,6 @@ def disable_jit(monkeypatch):
 @pytest.mark.parametrize(
     "num,dtype", [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
-@pytest.importorskip("numba")
 @pytest.mark.usefixtures("disable_jit")
 def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
     cmap = label_colormap(num)
@@ -149,8 +149,8 @@ def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
     assert cast_arr[2] == 10**6 % num + 5
 
 
-@pytest.importorskip("numba")
 def test_zero_preserving_modulo_naive():
+    pytest.importorskip("numba")
     data = np.arange(1000, dtype=np.uint32)
     res1 = colormap._zero_preserving_modulo_naive(data, 49, np.uint8)
     res2 = colormap._zero_preserving_modulo(data, 49, np.uint8)
