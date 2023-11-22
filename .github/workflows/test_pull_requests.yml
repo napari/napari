@@ -142,7 +142,7 @@ jobs:
 
 
   test_pip_install:
-#    needs: test_initial
+    needs: test_initial
     name: pip install
     uses: ./.github/workflows/reusable_pip_test.yml
 
