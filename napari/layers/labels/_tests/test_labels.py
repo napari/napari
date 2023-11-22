@@ -490,11 +490,11 @@ def test_n_edit_dimensions():
                 [
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
-                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
-                    [0, 0, 1, 0, 1, 5, 0, 5, 0, 0],
-                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
-                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 6, 6, 6, 0, 0],
+                    [0, 0, 2, 2, 2, 6, 0, 6, 0, 0],
+                    [0, 0, 2, 0, 2, 6, 0, 6, 0, 0],
+                    [0, 0, 2, 2, 2, 6, 0, 6, 0, 0],
+                    [0, 0, 0, 0, 0, 6, 6, 6, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 ],
@@ -518,15 +518,15 @@ def test_n_edit_dimensions():
             ),
             np.array(
                 [
-                    [0, 1, 0, 0, 0, 0, 0, 2, 0, 0],
-                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [0, 2, 0, 0, 0, 0, 0, 3, 0, 0],
+                    [2, 2, 0, 0, 0, 0, 0, 3, 3, 3],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-                    [3, 3, 3, 0, 0, 0, 4, 0, 0, 0],
-                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
-                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 5, 5, 5, 5],
+                    [4, 4, 4, 0, 0, 0, 5, 0, 0, 0],
+                    [0, 0, 4, 0, 0, 0, 5, 0, 0, 0],
+                    [0, 0, 4, 0, 0, 0, 5, 0, 0, 0],
                 ],
                 dtype=np.int_,
             ),
@@ -536,6 +536,7 @@ def test_n_edit_dimensions():
             np.zeros((9, 10), dtype=np.uint32),
         ),
     ],
+    ids=['touching objects', 'touching border', 'full array'],
 )
 def test_contour(input_data, expected_data_view):
     """Test changing contour."""
@@ -581,6 +582,23 @@ def test_contour(input_data, expected_data_view):
 
     with pytest.raises(ValueError, match='contour value must be >= 0'):
         layer.contour = -1
+
+
+@pytest.mark.parametrize("background_num", [0, 1, 2])
+def test_background_label(background_num):
+    data = np.zeros((10, 10), dtype=np.uint32)
+    data[1:-1, 1:-1] = 1
+    data[2:-2, 2:-2] = 2
+
+    layer = Labels(data)
+    layer._background_label = background_num
+    layer.refresh()
+    np.testing.assert_array_equal(
+        layer._data_view == 0, data == background_num
+    )
+    np.testing.assert_array_equal(
+        layer._data_view != 0, data != background_num
+    )
 
 
 def test_contour_large_new_labels():
@@ -1444,7 +1462,7 @@ def test_invalidate_cache_when_change_color_mode():
     layer = Labels(data)
     layer.selected_label = 0
     gt_auto = layer._raw_to_displayed(layer._slice.image.raw)
-    assert gt_auto.dtype == np.float32
+    assert gt_auto.dtype == np.uint8
 
     layer.color_mode = 'direct'
     layer._cached_labels = None
