@@ -8,7 +8,7 @@ from typing import List
 
 import numpy as np
 from qtpy.QtWidgets import QApplication
-from skimage.morphology import octahedron
+from skimage.morphology import diamond, octahedron
 
 import napari
 from napari.benchmarks.utils import Skiper
@@ -92,16 +92,37 @@ class LabelRenderingSuite:
     """Benchmarks for rendering the Labels layer."""
 
     param_names = ["radius", "dtype"]
-    params = ([20, 100, 300], [np.uint8, np.uint16, np.uint32])
+    params = ([20, 400, 2000], [np.uint8, np.uint16, np.uint32])
     if "PR" in os.environ:
         skip_params = Skiper(lambda x: x[0] >= 100)
 
     def setup(self, radius, dtype):
         self.app = QApplication.instance() or QApplication([])
 
-        self.data = octahedron(radius=radius, dtype=dtype)
-        self.viewer = napari.view_labels(self.data)
+        if radius < 1000:
+            self.data = octahedron(radius=radius, dtype=dtype)
+        else:
+            self.data = np.zeros(
+                (radius // 50, radius * 2, radius * 2), dtype=dtype
+            )
+            for i in range(1, self.data.shape[0] // 2):
+                part = diamond(radius=(i) * 100, dtype=dtype)
+                shift = (self.data.shape[1] - part.shape[0]) // 2
+                self.data[i, shift : -shift - 1, shift : -shift - 1] = part
+                self.data[
+                    -i - 1, shift : -shift - 1, shift : -shift - 1
+                ] = part
+
+        count = np.count_nonzero(self.data)
+        self.data[self.data > 0] = np.random.randint(
+            1, min(2000, np.iinfo(dtype).max), size=count, dtype=dtype
+        )
+        scale = self.data.shape[-1] / np.array(self.data.shape)
+        self.viewer = napari.view_labels(self.data, scale=scale)
         self.layer = self.viewer.layers[0]
+
+    def teardown(self, *_):
+        self.viewer.window.close()
 
 
 class LabelRenderingSuite2D(LabelRenderingSuite):
@@ -111,7 +132,8 @@ class LabelRenderingSuite2D(LabelRenderingSuite):
 
     def time_iterate_over_z(self, radius, dtype):
         """Time to render the layer."""
-        for i in range(0, radius * 2, radius // 10):
+        z_size = self.data.shape[0]
+        for i in range(0, z_size, z_size // 20):
             self.viewer.dims.set_point(0, i)
             self.app.processEvents()
 
