@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from app_model.backends.qt import QModelMenu
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.QtWidgets import QWidget
 
 
 def build_qmodel_menu(
