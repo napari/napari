@@ -185,17 +185,6 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install asv[virtualenv]
-          pip install traceback-with-variables
-          pip install -e .[testing,pyqt]
-
-      - name: Create script
-        run: echo "from OpenGL.GL import *" > script.py
-
-      - name: Run script
-        uses: aganders3/headless-gui@v1
-        with:
-          run: traceback-with-variables script.py
-
 
       - name: Run benchmarks
         uses: aganders3/headless-gui@v1
