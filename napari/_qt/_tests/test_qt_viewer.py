@@ -809,7 +809,7 @@ def qt_viewer(qtbot):
 # @pytest.mark.xfail(reason="Fails on CI, but not locally")
 @skip_local_popups
 @pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
-def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer):
+def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     # Add labels to empty viewer
     layer = qt_viewer.viewer.add_labels(np.array([[0, 1], [2, 3]]), opacity=1)
     if direct:
@@ -836,6 +836,11 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer):
         np.array(canvas_screenshot.shape) / np.array(thumbnail.shape),
         order=0,
     )
+
+    import imageio
+
+    imageio.imwrite(str(tmp_path / 'canvas_screenshot.png'), canvas_screenshot)
+    imageio.imwrite(str(tmp_path / 'scaled_thumbnail.png'), scaled_thumbnail)
 
     npt.assert_almost_equal(canvas_screenshot, scaled_thumbnail, decimal=1)
 
