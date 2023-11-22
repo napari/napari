@@ -7,7 +7,6 @@ from __future__ import annotations
 import inspect
 from typing import (
     TYPE_CHECKING,
-    Any,
     List,
     Optional,
     Tuple,
@@ -15,7 +14,7 @@ from typing import (
 )
 
 from app_model import Action
-from app_model.types import ToggleRule
+from app_model.types import SubmenuItem, ToggleRule
 from magicgui.type_map._magicgui import MagicFactory
 from magicgui.widgets import FunctionGui, Widget
 from qtpy.QtWidgets import QWidget
@@ -109,7 +108,7 @@ def _get_widget_callback(
 
 def _get_widgets_submenu_actions(
     mf: PluginManifest,
-) -> Tuple[List[Any], List[Any]]:
+) -> Tuple[List[Tuple[str, SubmenuItem]], List[Action]]:
     """Get widget submenu and actions for a single npe2 plugin manifest."""
     # If no widgets, return
     if not mf.contributions.widgets:

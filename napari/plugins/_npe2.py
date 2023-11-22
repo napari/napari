@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
-    Any,
     DefaultDict,
     Dict,
     Iterator,
@@ -421,7 +420,7 @@ def _get_contrib_parent_menu(
     parent_menu: MenuId,
     mf: PluginManifest,
     group: Optional[str] = None,
-) -> Tuple[str, List[Any]]:
+) -> Tuple[str, List[Tuple[str, SubmenuItem]]]:
     """Get parent menu of plugin contribution (samples/widgets).
 
     If plugin provides multiple contributions, create a new submenu item."""
@@ -445,7 +444,7 @@ def _get_contrib_parent_menu(
 
 def _get_samples_submenu_actions(
     mf: PluginManifest,
-) -> Tuple[List[Any], List[Any]]:
+) -> Tuple[List[Tuple[str, SubmenuItem]], List[Action]]:
     """Get sample data submenu and actions for a single npe2 plugin manifest."""
     from napari._app_model.constants import MenuGroup, MenuId
     from napari.plugins import menu_item_template
