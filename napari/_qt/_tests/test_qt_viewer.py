@@ -707,7 +707,7 @@ def qt_viewer_with_controls(qtbot):
 @pytest.mark.parametrize(
     "use_selection", [True, False], ids=["selected", "all"]
 )
-@pytest.mark.parametrize("dtype", [np.int16, np.int64])
+@pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int64])
 def test_label_colors_matching_widget_auto(
     qtbot, qt_viewer_with_controls, use_selection, dtype
 ):
@@ -727,9 +727,9 @@ def test_label_colors_matching_widget_auto(
             np.arange(1, 10, dtype=dtype),
             [n_c - 1, n_c, n_c + 1],
             np.random.randint(
-                min(2**20, np.iinfo(dtype).max), size=20, dtype=dtype
+                1, min(2**20, np.iinfo(dtype).max), size=20, dtype=dtype
             ),
-            [-2],
+            [-1, -2, -10],
         )
     )
 
@@ -849,7 +849,7 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     npt.assert_almost_equal(canvas_screenshot, scaled_thumbnail, decimal=1)
 
 
-@pytest.mark.parametrize("dtype", [np.int8, np.int32])
+@pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int32])
 def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
     data = np.zeros((10, 10), dtype=dtype)
     data[5:] = 10
