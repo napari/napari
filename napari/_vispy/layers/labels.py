@@ -69,7 +69,7 @@ vec4 sample_label_color(float t) {
     }
     return texture2D(
         texture2D_values,
-        vec2(0.0, t + (0.5 / 256))
+        vec2(0.0, t)
     );
 }
 """
@@ -507,12 +507,19 @@ class VispyLabelsLayer(VispyImageLayer):
         if mode == 'auto':
             data_dtype = self.layer._slice.image.view.dtype
             raw_dtype = self.layer._slice.image.raw.dtype
-            colors = colormap.map(
-                np.arange(
-                    np.iinfo(data_dtype).max + 1, dtype=data_dtype
-                ).reshape(256, -1),
-                apply_selection=False,
-                background_is_zero=(data_dtype.itemsize != raw_dtype.itemsize),
+            if data_dtype != raw_dtype:
+                colormap = LabelColormap(**colormap.dict())
+                colormap.background_value = _cast_labels_to_minimum_dtype_auto(
+                    np.array([colormap.background_value]).astype(raw_dtype),
+                    colormap,
+                )[0]
+            colors = np.array(
+                colormap.map(
+                    np.arange(
+                        np.iinfo(data_dtype).max + 1, dtype=data_dtype
+                    ).reshape(256, -1),
+                    apply_selection=False,
+                )
             )
             self.node.cmap = LabelVispyColormap(
                 colormap, view_dtype=data_dtype, data_dtype=raw_dtype
