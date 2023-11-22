@@ -1,4 +1,5 @@
 import numpy as np
+from vispy.geometry import PolygonData
 
 from napari.layers.shapes._shapes_models import (
     Ellipse,
@@ -40,6 +41,22 @@ def test_nD_rectangle():
 
     shape.ndisplay = 3
     assert shape.data_displayed.shape == (4, 3)
+
+
+def test_polygon_data_triangle():
+    data = np.array(
+        [
+            [10.97627008, 14.30378733],
+            [12.05526752, 10.89766366],
+            [8.47309599, 12.91788226],
+            [8.75174423, 17.83546002],
+            [19.27325521, 7.66883038],
+            [15.83450076, 10.5778984],
+        ]
+    )
+    vertices, _triangles = PolygonData(vertices=data).triangulate()
+
+    assert vertices.shape == (8, 2)
 
 
 def test_polygon(tmp_path):
