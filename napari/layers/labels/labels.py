@@ -55,6 +55,7 @@ from napari.utils.colormaps import (
 from napari.utils.colormaps.colormap import (
     LabelColormap,
     _cast_labels_to_minimum_dtype_auto,
+    _convert_small_ints_to_unsigned,
     minimum_dtype_for_labels,
 )
 from napari.utils.events import EmitterGroup, Event
@@ -1151,17 +1152,9 @@ class Labels(_ImageBase):
             col = self.colormap.map([self._background_label])[0]
         else:
             raw_dtype = self._slice.image.raw.dtype
-            view_dtype = self._slice.image.view.dtype
-            if (
-                label < 0
-                and self.color_mode == LabelColorMode.AUTO
-                and raw_dtype.itemsize <= 2
-            ):
-                # This is casting for the data of type int8 and int16
-                # to have the same color as in canvas
-                val = np.array([label]).astype(view_dtype)[0]
-            else:
-                val = label
+            val = _convert_small_ints_to_unsigned(
+                np.array([label]).astype(raw_dtype)
+            )
             col = self.colormap.map(val)[0]
         return col
 

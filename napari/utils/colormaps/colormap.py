@@ -253,6 +253,30 @@ class DirectLabelColormap(Colormap):
         # if someone is using DirectLabelColormap directly, not through Label layer
 
 
+def _convert_small_ints_to_unsigned(data: np.ndarray) -> np.ndarray:
+    """
+    Convert int8 to uint8 and int16 to uint16.
+    Otherwise, return the original array.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Data to be converted.
+
+    Returns
+    -------
+    np.ndarray
+        Converted data.
+    """
+    if data.dtype.itemsize == 1:
+        # for fast rendering of int8
+        return data.view(np.uint8)
+    if data.dtype.itemsize == 2:
+        # for fast rendering of int16
+        return data.view(np.uint16)
+    return data
+
+
 def _cast_labels_to_minimum_dtype_auto(
     data: np.ndarray,
     colormap: LabelColormap,
@@ -273,12 +297,10 @@ def _cast_labels_to_minimum_dtype_auto(
     np.ndarray
         Casted labels data.
     """
-    if data.dtype.itemsize == 1:
-        # for fast rendering of int8
-        return data.view(np.uint8)
-    if data.dtype.itemsize == 2:
-        # for fast rendering of int16
-        return data.view(np.uint16)
+    data = _convert_small_ints_to_unsigned(data)
+
+    if data.itemsize <= 2:
+        return data
 
     num_colors = len(colormap.colors) - 1
 
