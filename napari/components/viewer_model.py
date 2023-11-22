@@ -1171,7 +1171,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if isinstance(stack, bool) and stack:
             paths = [paths_]
         # If stack is a list and True, extend the paths with the inner lists.
-        elif isinstance(stack, list):
+        elif isinstance(stack, list) and stack:
             paths = [paths_]
             paths.extend(stack)
 
