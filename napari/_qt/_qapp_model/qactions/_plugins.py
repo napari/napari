@@ -38,7 +38,7 @@ def _show_plugin_install_dialog(window: Window) -> None:
 
 def _show_plugin_err_reporter(window: Window) -> None:
     """Show dialog that allows users to review and report plugin errors."""
-    QtPluginErrReporter(parent=window._qt_window).exec_()
+    QtPluginErrReporter(parent=window._qt_window).exec_()  # type: ignore [attr-defined]
 
 
 Q_PLUGINS_ACTIONS: List[Action] = [
