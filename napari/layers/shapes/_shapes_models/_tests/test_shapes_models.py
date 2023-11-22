@@ -42,7 +42,7 @@ def test_nD_rectangle():
     assert shape.data_displayed.shape == (4, 3)
 
 
-def test_polygon():
+def test_polygon(tmp_path):
     """Test creating Shape with a random polygon."""
     # Test a single six vertex polygon
     np.random.seed(0)
@@ -52,6 +52,10 @@ def test_polygon():
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
     # should get few triangles
+
+    np.savetxt(tmp_path / "edge.txt", shape._edge_vertices)
+    np.savetxt(tmp_path / "face.txt", shape._face_vertices)
+
     assert shape._edge_vertices.shape == (16, 2)
     assert shape._face_vertices.shape == (8, 2)
 
