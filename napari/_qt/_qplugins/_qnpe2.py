@@ -53,10 +53,7 @@ def _get_widget_viewer_param(
             pass
         else:
             for param in sig.parameters.values():
-                if param.name == 'napari_viewer':
-                    widget_param = param.name
-                    break
-                if param.annotation in (
+                if param.name == 'napari_viewer' or param.annotation in (
                     'napari.viewer.Viewer',
                     Viewer,
                 ):
@@ -91,12 +88,8 @@ def _get_widget_callback(
     `magicgui.register_type`.
     """
     window = napari_viewer.window
-    if name in window._dock_widgets:
-        dock_widget = window._dock_widgets[name]
-        if dock_widget.isVisible():
-            dock_widget.hide()
-        else:
-            dock_widget.show()
+    if dock_widget := window._dock_widgets.get(name):
+        dock_widget.setVisible(not dock_widget.isVisible())
         return None
 
     # Get widget param name (if any) and check type
