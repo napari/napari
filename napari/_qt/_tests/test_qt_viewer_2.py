@@ -47,3 +47,10 @@ def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     # also check that vispy gets (almost) the same data
     datamean = np.mean(fix_data_dtype(data))
     assert np.allclose(datamean, imean, rtol=5e-04)
+
+
+def test_fix_data_dtype_big_values():
+    data = np.array([0, 2, 2**17], dtype=np.uint32)
+    casted = fix_data_dtype(data)
+    assert np.allclose(casted, data)
+    assert casted.dtype == np.float32

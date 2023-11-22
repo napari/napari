@@ -307,27 +307,28 @@ class StringEnumMeta(EnumMeta):
             start=start,
         )
 
-    def keys(self):
+    def keys(self) -> List[str]:
         return list(map(str, self))
 
 
 class StringEnum(Enum, metaclass=StringEnumMeta):
+    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         """autonaming function assigns each value its own name as a value"""
         return name.lower()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """String representation: The string method returns the lowercase
         string of the Enum name
         """
         return self.value
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if type(self) is type(other):
             return self is other
         if isinstance(other, str):
             return str(self) == other
-        return NotImplemented
+        return False
 
     def __hash__(self):
         return hash(str(self))

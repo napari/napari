@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from contextlib import contextmanager
 from functools import wraps
-from typing import Sequence, Union
+from typing import List, Sequence, Union
 
 import numpy as np
 
@@ -84,11 +84,11 @@ class ShapeList:
 
     def __init__(self, data=(), ndisplay=2) -> None:
         self._ndisplay = ndisplay
-        self.shapes = []
-        self._displayed = []
-        self._slice_key = []
-        self.displayed_vertices = []
-        self.displayed_index = []
+        self.shapes: List[Shape] = []
+        self._displayed = np.array([])
+        self._slice_key = np.array([])
+        self.displayed_vertices = np.array([])
+        self.displayed_index = np.array([])
         self._vertices = np.empty((0, self.ndisplay))
         self._index = np.empty((0), dtype=int)
         self._z_index = np.empty((0), dtype=int)
@@ -273,7 +273,7 @@ class ShapeList:
         if len(self.shapes) > 0:
             self._displayed = np.all(self.slice_keys == slice_key, axis=(1, 2))
         else:
-            self._displayed = []
+            self._displayed = np.array([])
         disp_indices = np.where(self._displayed)[0]
 
         z_order = self._mesh.triangles_z_order
