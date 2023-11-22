@@ -829,6 +829,7 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     short_side = min(sh)
     margin1 = (sh[0] - short_side) // 2 + 40
     margin2 = (sh[1] - short_side) // 2 + 10
+    canvas_screenshot_ = canvas_screenshot
     canvas_screenshot = canvas_screenshot[margin1:-margin1, margin2:-margin2]
     thumbnail = layer.thumbnail
     scaled_thumbnail = ndi.zoom(
@@ -840,6 +841,9 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     import imageio
 
     imageio.imwrite(str(tmp_path / 'canvas_screenshot.png'), canvas_screenshot)
+    imageio.imwrite(
+        str(tmp_path / 'canvas_screenshot_.png'), canvas_screenshot_
+    )
     imageio.imwrite(str(tmp_path / 'scaled_thumbnail.png'), scaled_thumbnail)
 
     npt.assert_almost_equal(canvas_screenshot, scaled_thumbnail, decimal=1)
