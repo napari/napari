@@ -178,9 +178,6 @@ jobs:
 
       - uses: tlambert03/setup-qt-libs@v1
 
-      - name: Install opengl
-        run: sudo apt-get install -y libopengl0
-
       - name: install dependencies
         run: |
           pip install --upgrade pip
