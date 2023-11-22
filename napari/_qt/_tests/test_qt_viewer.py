@@ -799,6 +799,7 @@ def qt_viewer(qtbot):
     qt_viewer = QtViewer(ViewerModel())
     qt_viewer.show()
     qt_viewer.resize(460, 460)
+    QApplication.processEvents()
     yield qt_viewer
     qt_viewer.close()
     qt_viewer._instances.clear()
