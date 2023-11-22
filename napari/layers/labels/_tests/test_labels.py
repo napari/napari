@@ -943,6 +943,17 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
+@pytest.mark.parametrize("value", [1, 10, 50, -2, -10])
+@pytest.mark.parametrize("dtype", [np.int8, np.int32])
+def test_thumbnail_single_color(value, dtype):
+    labels = Labels(np.full((10, 10), value, dtype=dtype), opacity=1)
+    labels._update_thumbnail()
+    mid_point = tuple(np.array(labels.thumbnail.shape[:2]) // 2)
+    npt.assert_array_equal(
+        labels.thumbnail[mid_point], labels.get_color(value) * 255
+    )
+
+
 def test_world_data_extent():
     """Test extent after applying transforms."""
     np.random.seed(0)

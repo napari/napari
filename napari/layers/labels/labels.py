@@ -1129,7 +1129,9 @@ class Labels(_ImageBase):
         )
         zoom_factor = tuple(new_shape / imshape)
 
-        downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
+        downsampled = _convert_small_ints_to_unsigned(
+            ndi.zoom(image, zoom_factor, prefilter=False, order=0)
+        )
         if self.color_mode == LabelColorMode.AUTO:
             color_array = self.colormap.map(downsampled.ravel())
         else:  # direct
