@@ -80,7 +80,7 @@ def test_polygon_data_triangle_module():
     assert vertices.shape == (6, 2)
 
 
-def test_polygon(tmp_path):
+def test_polygon():
     """Test creating Shape with a random polygon."""
     # Test a single six vertex polygon
     data = np.array(
@@ -98,12 +98,7 @@ def test_polygon(tmp_path):
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
     # should get few triangles
-
-    np.savetxt(tmp_path / "edge.txt", shape._edge_vertices)
-    np.savetxt(tmp_path / "face.txt", shape._face_vertices)
-
     expected_face = (6, 2) if "triangle" in sys.modules else (8, 2)
-
     assert shape._edge_vertices.shape == (16, 2)
     assert shape._face_vertices.shape == expected_face
 
