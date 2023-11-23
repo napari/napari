@@ -2,6 +2,7 @@ import gc
 import os
 import weakref
 from dataclasses import dataclass
+from itertools import takewhile
 from typing import List, Tuple
 from unittest import mock
 
@@ -806,6 +807,17 @@ def qt_viewer(qtbot):
     del qt_viewer
 
 
+def _find_margin(data: np.ndarray, additional_margin: int) -> Tuple[int, int]:
+    """
+    helper function to determine margins in test_thumbnail_labels
+    """
+
+    mid_x, mid_y = data.shape[0] // 2, data.shape[1] // 2
+    x_margin = len(list(takewhile(lambda x: x == 0, data[:, mid_y, 0][::-1])))
+    y_margin = len(list(takewhile(lambda x: x == 0, data[mid_x, :, 0][::-1])))
+    return x_margin + additional_margin, y_margin + additional_margin
+
+
 # @pytest.mark.xfail(reason="Fails on CI, but not locally")
 @skip_local_popups
 @pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
@@ -817,34 +829,21 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     else:
         layer.num_colors = 49
     qt_viewer.viewer.reset_view()
-    # this test is fragile as reset view is not always working
-    # I do not know how to enforce it.
     qt_viewer.canvas.native.paintGL()
     QApplication.processEvents()
-    qtbot.wait(200)
+    qtbot.wait(50)
 
     canvas_screenshot = qt_viewer.screenshot(flash=False)
     # cut off black border
-    sh = canvas_screenshot.shape[:2]
-    short_side = min(sh)
-    margin1 = (sh[0] - short_side) // 2 + 40
-    margin2 = (sh[1] - short_side) // 2 + 40
-    canvas_screenshot_ = canvas_screenshot
+    margin1, margin2 = _find_margin(canvas_screenshot, 10)
     canvas_screenshot = canvas_screenshot[margin1:-margin1, margin2:-margin2]
     thumbnail = layer.thumbnail
     scaled_thumbnail = ndi.zoom(
         thumbnail,
         np.array(canvas_screenshot.shape) / np.array(thumbnail.shape),
         order=0,
+        mode="nearest",
     )
-
-    import imageio
-
-    imageio.imwrite(str(tmp_path / 'canvas_screenshot.png'), canvas_screenshot)
-    imageio.imwrite(
-        str(tmp_path / 'canvas_screenshot_.png'), canvas_screenshot_
-    )
-    imageio.imwrite(str(tmp_path / 'scaled_thumbnail.png'), scaled_thumbnail)
 
     npt.assert_almost_equal(canvas_screenshot, scaled_thumbnail, decimal=1)
 
