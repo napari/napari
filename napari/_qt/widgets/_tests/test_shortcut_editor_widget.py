@@ -1,6 +1,7 @@
 import sys
 from unittest.mock import patch
 
+import pyautogui
 import pytest
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication, QMessageBox
@@ -201,3 +202,71 @@ def test_keybinding_with_only_modifiers(
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     for key_symbol in key_symbols:
         assert key_symbol in shortcut
+
+
+@pytest.mark.parametrize(
+    "modifier_key, modifiers, key_symbols",
+    [
+        (
+            "shift",
+            None,
+            [KEY_SYMBOLS["Shift"]],
+        ),
+        (
+            "ctrl",
+            "shift",
+            [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Shift"]],
+        ),
+    ],
+)
+def test_keybinding_editor_modifier_key_detection(
+    shortcut_editor_widget,
+    qtbot,
+    recwarn,
+    modifier_key,
+    modifiers,
+    key_symbols,
+):
+    widget = shortcut_editor_widget()
+    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    assert shortcut == KEY_SYMBOLS["Ctrl"]
+
+    x = widget._table.columnViewportPosition(widget._shortcut_col)
+    y = widget._table.rowViewportPosition(0)
+    item_pos = QPoint(x, y)
+    qtbot.mouseClick(
+        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    )
+    qtbot.mouseDClick(
+        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    )
+    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
+
+    line_edit = QApplication.focusWidget()
+    with pyautogui.hold(modifier_key):
+        if modifiers:
+            pyautogui.keyDown(modifiers)
+
+        def press_check():
+            line_edit.selectAll()
+            shortcut = line_edit.selectedText()
+            all_pressed = True
+            for key_symbol in key_symbols:
+                all_pressed &= key_symbol in shortcut
+            return all_pressed
+
+        qtbot.waitUntil(lambda: press_check())
+
+        if modifiers:
+            pyautogui.keyUp(modifiers)
+
+    def release_check():
+        line_edit.selectAll()
+        shortcut = line_edit.selectedText()
+        return shortcut == ""
+
+    qtbot.waitUntil(lambda: release_check())
+
+    qtbot.keyClick(line_edit, Qt.Key_Escape)
+    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    assert shortcut == KEY_SYMBOLS["Ctrl"]

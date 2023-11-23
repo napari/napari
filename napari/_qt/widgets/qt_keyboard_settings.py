@@ -572,6 +572,12 @@ class EditorWidget(QLineEdit):
             self.keyPressEvent(event)
             return True
         if event.type() in [QEvent.Type.KeyPress, QEvent.Type.Shortcut]:
+            # if event.key() not in (
+            #     Qt.Key.Key_Control,
+            #     Qt.Key.Key_Shift,
+            #     Qt.Key.Key_Alt,
+            #     Qt.Key.Key_Meta,
+            # ):
             return True
 
         return super().event(event)
