@@ -7,7 +7,6 @@ from typing import (
     Dict,
     Iterator,
     List,
-    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -330,6 +329,12 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
         # actually a registered plugin.
         if plugin_name in pm.instance():
             _register_manifest_actions(pm.get_manifest(plugin_name))
+            try:
+                from napari._qt._qplugins import _register_widget_actions
+            except ModuleNotFoundError:
+                pass
+            else:
+                _register_widget_actions(pm.get_manifest(plugin_name))
 
 
 def on_plugins_registered(manifests: Set[PluginManifest]):
@@ -340,6 +345,12 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
     for mf in manifests:
         if not pm.is_disabled(mf.name):
             _register_manifest_actions(mf)
+            try:
+                from napari._qt._qplugins import _register_widget_actions
+            except ModuleNotFoundError:
+                pass
+            else:
+                _register_widget_actions(pm.get_manifest(mf))
 
 
 # TODO: This is a separate function from `_get_samples_submenu_actions` so it
@@ -513,44 +524,16 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     app = get_app()
     actions, submenus = _npe2_manifest_to_actions(mf)
     samples_submenu, sample_actions = _get_samples_submenu_actions(mf)
-    widgets_submenu: List[Tuple[str, SubmenuItem]] = []
-    widget_actions: List[Action] = []
-    try:
-        from napari._qt._qplugins import _get_widgets_submenu_actions
-    except ModuleNotFoundError:
-        pass
-    else:
-        widgets_submenu, widget_actions = _get_widgets_submenu_actions(mf)
 
     context = pm.get_context(cast('PluginName', mf.name))
 
     # Register and connect dispose callback to plugin deactivate ('unregistered') event
-    actions = actions + sample_actions + widget_actions
+    actions = actions + sample_actions
     if actions:
         context.register_disposable(app.register_actions(actions))
-    submenus = submenus + samples_submenu + widgets_submenu
+    submenus = submenus + samples_submenu
     if submenus:
         context.register_disposable(app.menus.append_menu_items(submenus))
-
-    # Register dispose functions that remove plugin widgets from widget dictionary
-    # `window._dock_widgets` but ONLY if Qt present.
-    try:
-        from napari._qt._qapp_model.qactions._qproviders import _provide_window
-    except ModuleNotFoundError:
-        pass
-    else:
-        if window := _provide_window():
-
-            class Event(NamedTuple):
-                value: str
-
-            for widget in mf.contributions.widgets or ():
-                widget_event = Event(widget.display_name)
-
-                def _remove_widget(event=widget_event):
-                    window._remove_dock_widget(event)
-
-                context.register_disposable(_remove_widget)
 
 
 def _npe2_manifest_to_actions(

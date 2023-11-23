@@ -1,6 +1,6 @@
-"""Plugin related functions that require Qt or a GUI.
+"""Plugin related functions that require Qt.
 
-Non-Qt/GUI plugin functions can be found in: `napari/plugins/_npe2.py`
+Non-Qt plugin functions can be found in: `napari/plugins/_npe2.py`
 """
 from __future__ import annotations
 
@@ -8,18 +8,23 @@ import inspect
 from typing import (
     TYPE_CHECKING,
     List,
+    NamedTuple,
     Optional,
     Tuple,
     Union,
+    cast,
 )
 
 from app_model import Action
 from app_model.types import SubmenuItem, ToggleRule
 from magicgui.type_map._magicgui import MagicFactory
 from magicgui.widgets import FunctionGui, Widget
+from npe2 import plugin_manager as pm
 from qtpy.QtWidgets import QWidget
 
+from napari._app_model import get_app
 from napari._app_model.constants import MenuGroup, MenuId
+from napari._qt._qapp_model.qactions._qproviders import _provide_window
 from napari.plugins import menu_item_template
 from napari.plugins._npe2 import (
     _get_contrib_parent_menu,
@@ -30,6 +35,7 @@ from napari.viewer import Viewer
 
 if TYPE_CHECKING:
     from npe2.manifest import PluginManifest
+    from npe2.plugin_manager import PluginName
     from npe2.types import WidgetCreator
 
     from napari._qt.qt_main_window import Window
@@ -171,3 +177,36 @@ def _get_widgets_submenu_actions(
             )
         )
     return submenu, widget_actions
+
+
+def _register_widget_actions(mf: PluginManifest) -> None:
+    """Register widget actions and submenus from a manifest.
+
+    This is called when a plugin is registered or enabled and it adds the
+    plugin's widget actions and submenus to the app model registry.
+    """
+    app = get_app()
+    widgets_submenu, widget_actions = _get_widgets_submenu_actions(mf)
+
+    context = pm.get_context(cast('PluginName', mf.name))
+    if widget_actions:
+        context.register_disposable(app.register_actions(widget_actions))
+    if widgets_submenu:
+        context.register_disposable(
+            app.menus.append_menu_items(widgets_submenu)
+        )
+
+    # Register dispose functions that remove plugin widgets from widget dictionary
+    # `window._dock_widgets` but ONLY if Qt present.
+    if window := _provide_window():
+
+        class Event(NamedTuple):
+            value: str
+
+        for widget in mf.contributions.widgets or ():
+            widget_event = Event(widget.display_name)
+
+            def _remove_widget(event=widget_event):
+                window._remove_dock_widget(event)
+
+            context.register_disposable(_remove_widget)
