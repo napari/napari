@@ -12,10 +12,19 @@ if TYPE_CHECKING:
 
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 
+    from napari._qt.containers import (
+        QtLayerList,
+        QtLayerListModel,
+        QtListModel,
+        QtListView,
+        QtNodeTreeModel,
+        QtNodeTreeView,
+    )
+
 
 def create_view(
     obj: Union[SelectableEventedList, Group], parent: Optional[QWidget] = None
-):
+) -> Union[QtLayerList, QtNodeTreeView, QtListView]:
     """Create a `QtListView`, or `QtNodeTreeView` for `obj`.
 
     Parameters
@@ -49,7 +58,7 @@ def create_view(
 
 def create_model(
     obj: Union[SelectableEventedList, Group], parent: Optional[QWidget] = None
-):
+) -> Union[QtLayerListModel, QtListModel, QtNodeTreeModel]:
     """Create a `QtListModel`, or `QtNodeTreeModel` for `obj`.
 
     Parameters

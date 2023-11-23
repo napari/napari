@@ -482,7 +482,6 @@ module = [
     "napari._app_model.context._context",
     "napari._qt.containers._factory"
 ]
-disallow_incomplete_defs = false
 disallow_untyped_defs = false
 warn_unused_ignores = false
 
@@ -535,11 +534,9 @@ disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari.utils.events.containers._typed",
     "napari.layers.base.base",
 ]
 check_untyped_defs = false
-disallow_incomplete_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = false
 warn_unused_ignores = false
@@ -558,7 +555,6 @@ module = [
     "napari.layers.base.base",
 ]
 check_untyped_defs = false
-disallow_incomplete_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = false
 warn_unused_ignores = false
@@ -594,9 +590,3 @@ module = [
 ]
 check_untyped_defs = false
 disallow_untyped_defs = false
-
-[[tool.mypy.overrides]]
-module = [
-    "napari._qt._qapp_model._menus"
-]
-warn_unused_ignores = false

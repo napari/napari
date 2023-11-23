@@ -31,7 +31,7 @@ class SettingsAwareContext(Context):
         self._settings = get_settings()
         self._settings.events.changed.connect(self._update_key)
 
-    def _update_key(self, event: Event):
+    def _update_key(self, event: Event) -> None:
         self.changed.emit({f'{self._PREFIX}{event.key}'})
 
     def __del__(self):

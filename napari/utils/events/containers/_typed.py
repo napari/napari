@@ -71,7 +71,7 @@ class TypedMutableSequence(MutableSequence[_T]):
     def __repr__(self) -> str:
         return repr(self._list)
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         return self._list == other
 
     def __hash__(self) -> int:
@@ -80,14 +80,16 @@ class TypedMutableSequence(MutableSequence[_T]):
         return id(self)
 
     @overload
-    def __setitem__(self, key: int, value: _T):
+    def __setitem__(self, key: int, value: _T) -> None:
         ...  # pragma: no cover
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[_T]):
+    def __setitem__(self, key: slice, value: Iterable[_T]) -> None:
         ...  # pragma: no cover
 
-    def __setitem__(self, key, value):
+    def __setitem__(
+        self, key: Union[int, slice], value: Union[_T, Iterable[_T]]
+    ) -> None:
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError(
@@ -100,7 +102,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         else:
             self._list[key] = self._type_check(value)
 
-    def insert(self, index: int, value: _T):
+    def insert(self, index: int, value: _T) -> None:
         self._list.insert(index, self._type_check(value))
 
     def __contains__(self, key):
@@ -173,7 +175,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             )
         return e
 
-    def __newlike__(self, iterable: Iterable[_T]):
+    def __newlike__(self, iterable: Iterable[_T]) -> Self:
         new = self.__class__()
         # seperating this allows subclasses to omit these from their `__init__`
         new._basetypes = self._basetypes
@@ -246,7 +248,9 @@ class TypedMutableSequence(MutableSequence[_T]):
             )
         )
 
-    def _iter_indices(self, start=0, stop=None) -> Iterable[int]:
+    def _iter_indices(
+        self, start: int = 0, stop: Optional[int] = None
+    ) -> Iterable[int]:
         """Iter indices from start to stop.
 
         While this is trivial for this basic sequence type, this method lets

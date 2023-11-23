@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     ClassVar,
     Dict,
@@ -273,27 +274,28 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Mode.TRANSFORM: 'standard',
     }
     events: EmitterGroup
+    _cursor: str
 
     def __init__(
         self,
-        data,
-        ndim,
+        data: Any,
+        ndim: int,
         *,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        rotate=None,
-        shear=None,
-        affine=None,
-        opacity=1,
-        blending='translucent',
-        visible=True,
-        multiscale=False,
-        cache=True,  # this should move to future "data source" object.
-        experimental_clipping_planes=None,
-        mode='pan_zoom',
-        projection_mode='none',
+        name: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        scale: Optional[Tuple[float, ...]] = None,
+        translate: Optional[Tuple[float, ...]] = None,
+        rotate: Union[Tuple[float, ...], np.ndarray, None] = None,
+        shear: Optional[np.ndarray] = None,
+        affine: Union[np.ndarray, Affine, None] = None,
+        opacity: float = 1.0,
+        blending: str = 'translucent',
+        visible: bool = True,
+        multiscale: bool = False,
+        cache: bool = True,  # this should move to future "data source" object.
+        experimental_clipping_planes: Optional[List[Any]] = None,
+        mode: str = 'pan_zoom',
+        projection_mode: str = 'none',
     ) -> None:
         super().__init__()
 
@@ -359,9 +361,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # 4. `world2grid`: An additional transform mapping world-coordinates
         #   into a grid for looking at layers side-by-side.
         if scale is None:
-            scale = [1] * ndim
+            scale = tuple([1.0] * ndim)
         if translate is None:
-            translate = [0] * ndim
+            translate = tuple([0.0] * ndim)
         self._transforms: TransformChain[Affine] = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
@@ -689,7 +691,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._visible
 
     @visible.setter
-    def visible(self, visible: bool):
+    def visible(self, visible: bool) -> None:
         self._visible = visible
         self.refresh()
         self.events.visible()
@@ -700,7 +702,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._editable
 
     @editable.setter
-    def editable(self, editable: bool):
+    def editable(self, editable: bool) -> None:
         if self._editable == editable:
             return
         self._editable = editable
@@ -1055,7 +1057,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self.mouse_pan or self.mouse_zoom
 
     @interactive.setter
-    def interactive(self, interactive: bool):
+    def interactive(self, interactive: bool) -> None:
         warnings.warn(
             trans._(
                 "Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
@@ -1073,7 +1075,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._mouse_pan
 
     @mouse_pan.setter
-    def mouse_pan(self, mouse_pan: bool):
+    def mouse_pan(self, mouse_pan: bool) -> None:
         if mouse_pan == self._mouse_pan:
             return
         self._mouse_pan = mouse_pan
@@ -1088,7 +1090,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._mouse_zoom
 
     @mouse_zoom.setter
-    def mouse_zoom(self, mouse_zoom: bool):
+    def mouse_zoom(self, mouse_zoom: bool) -> None:
         if mouse_zoom == self._mouse_zoom:
             return
         self._mouse_zoom = mouse_zoom
@@ -1098,7 +1100,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )  # Deprecated since 0.5.0
 
     @property
-    def cursor(self):
+    def cursor(self) -> str:
         """str: String identifying cursor displayed over canvas."""
         return self._cursor
 
@@ -1134,7 +1136,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             List[Union[ClippingPlane, dict]],
             ClippingPlaneList,
         ],
-    ):
+    ) -> None:
         self._experimental_clipping_planes.clear()
         if value is None:
             return
@@ -1162,7 +1164,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self,
         dims: Dims,
         force: bool = False,
-    ):
+    ) -> None:
         """Slice data with values from a global dims model.
 
         Note this will likely be moved off the base layer soon.
@@ -1243,7 +1245,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         view_direction: Optional[npt.ArrayLike] = None,
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
-    ):
+    ) -> Union[Tuple[Any, ...], None]:
         """Value of the data at a position.
 
         If the layer is not visible, return None.
@@ -1342,7 +1344,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         view_direction: npt.ArrayLike,
         vector: np.ndarray,
         dims_displayed: List[int],
-    ):
+    ) -> npt.NDArray:
         """Calculate the length of the projection of a line between two mouse
         clicks onto a vector (or array of vectors) in data coordinates.
 
@@ -1609,7 +1611,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @staticmethod
     def _world_to_layer_dims_impl(
         world_dims: npt.NDArray, ndim_world: int, ndim: int
-    ):
+    ) -> npt.NDArray:
         """
         Static for ease of testing
         """
@@ -1905,7 +1907,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
 
-    def _get_source_info(self):
+    def _get_source_info(self) -> Dict[str, Any]:
         components = {}
         if self.source.reader_plugin:
             components['layer_base'] = os.path.basename(self.source.path or '')
@@ -1940,7 +1942,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         components['plugin'] = ''
         return components
 
-    def get_source_str(self):
+    def get_source_str(self) -> Dict[str, Any]:
         source_info = self._get_source_info()
 
         return (
@@ -1957,8 +1959,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         *,
         view_direction: Optional[npt.ArrayLike] = None,
         dims_displayed: Optional[List[int]] = None,
-        world=False,
-    ):
+        world: bool = False,
+    ) -> Dict[str, Any]:
         """
         Status message information of the data at a coordinate position.
 
@@ -2061,7 +2063,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @classmethod
     def create(
         cls,
-        data,
+        data: Any,
         meta: Optional[dict] = None,
         layer_type: Optional[str] = None,
     ) -> Layer:
