@@ -350,7 +350,7 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
             except ModuleNotFoundError:
                 pass
             else:
-                _register_widget_actions(pm.get_manifest(mf))
+                _register_widget_actions(mf)
 
 
 # TODO: This is a separate function from `_get_samples_submenu_actions` so it

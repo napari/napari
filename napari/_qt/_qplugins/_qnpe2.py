@@ -206,7 +206,7 @@ def _register_widget_actions(mf: PluginManifest) -> None:
         for widget in mf.contributions.widgets or ():
             widget_event = Event(widget.display_name)
 
-            def _remove_widget(event=widget_event):
+            def _remove_widget(event: Event = widget_event):
                 window._remove_dock_widget(event)
 
             context.register_disposable(_remove_widget)
