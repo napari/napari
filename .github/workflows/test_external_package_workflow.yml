@@ -1,0 +1,65 @@
+name: Test external package compatibility against main and last release
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/reusable_tox_run.yml"
+      - ".github/workflows/test_external_package_compatibility.yml"
+  workflow_call:
+    inputs:
+      package_to_test:
+        required: false
+        type: string
+        default: ""
+      package_to_test_ref:
+        required: false
+        type: string
+        default: ""
+      python_version:
+        required: false
+        type: string
+        default: "3.10"
+      platform:
+        required: false
+        type: string
+        default: "ubuntu-latest"
+      backend:
+        required: false
+        type: string
+        default: "headless"
+      pytest_path:
+        required: false
+        type: string
+        default: ""
+      pytest_extra_args:
+        required: false
+        type: string
+        default: "-W ignore"
+
+jobs:
+  test:
+    name: External
+    uses: ./.github/workflows/reusable_run_tox_test.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: ${{ inputs.python_version }}
+            platform: ${{ inputs.platform }}
+            backend: ${{ inputs.backend }}
+            napari_version: "main_test"
+          - python: ${{ inputs.python_version }}
+            platform: ${{ inputs.platform }}
+            backend: ${{ inputs.backend }}
+            napari_version: "v0.4.19x"
+    with:
+      python_version: ${{ matrix.python }}
+      platform: ${{ matrix.platform }}
+      qt_backend: ${{ matrix.backend }}
+      coverage: no_cov
+      package_to_test: ${{ github.repository == 'napari/napari' && github.event_name == 'pull_request' && 'napari/npe2' || inputs.package_to_test == '' && github.repository || inputs.package_to_test }}
+      package_to_test_ref: ${{  github.repository == 'napari/napari' && github.event_name == 'pull_request' && 'main' ||  inputs.package_to_test_ref }}
+      napari_version: ${{ matrix.napari_version }}
+      pytest_path: ${{ inputs.pytest_path }}
+      workflow_name: ${{ matrix.napari_version }}
+      pytest_extra_args: ${{ inputs.pytest_extra_args }}
