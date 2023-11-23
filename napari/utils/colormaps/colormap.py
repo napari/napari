@@ -182,7 +182,7 @@ class LabelColormap(Colormap):
         background = int(
             np.array([self.background_value]).astype(values.dtype)[0]
         )
-        casted_values = _zero_preserving_modulo(
+        casted_values = _zero_preserving_modulo_naive(
             values, len(self.colors) - 1, values.dtype, background
         )
         mapped = self.colors[casted_values]
@@ -306,7 +306,7 @@ def _cast_labels_to_minimum_dtype_auto(
 
     if colormap.use_selection:
         return (data == colormap.selection).astype(dtype) * (
-            _zero_preserving_modulo(
+            _zero_preserving_modulo_naive(
                 np.array([colormap.selection]), num_colors, dtype
             )
         )
