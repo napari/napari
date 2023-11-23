@@ -2,7 +2,7 @@
 """
 import collections.abc
 import contextlib
-from typing import Callable, ContextManager, Optional, Tuple
+from typing import Any, Callable, ContextManager, Iterator, Optional, Tuple
 
 import dask
 import dask.array as da
@@ -76,7 +76,7 @@ def resize_dask_cache(
     return _DASK_CACHE
 
 
-def _is_dask_data(data) -> bool:
+def _is_dask_data(data: Any) -> bool:
     """Return True if data is a dask array or a list/tuple of dask arrays."""
     return isinstance(data, da.Array) or (
         isinstance(data, collections.abc.Sequence)
@@ -84,7 +84,7 @@ def _is_dask_data(data) -> bool:
     )
 
 
-def configure_dask(data, cache=True) -> DaskIndexer:
+def configure_dask(data: Any, cache: bool = True) -> DaskIndexer:
     """Spin up cache and return context manager that optimizes Dask indexing.
 
     This function determines whether data is a dask array or list of dask
@@ -137,7 +137,9 @@ def configure_dask(data, cache=True) -> DaskIndexer:
     _cache = resize_dask_cache() if cache else contextlib.nullcontext()
 
     @contextlib.contextmanager
-    def dask_optimized_slicing(memfrac=0.5):
+    def dask_optimized_slicing(
+        memfrac: float = 0.5,
+    ) -> Iterator[Tuple[Any, Any]]:
         opts = {"optimization.fuse.active": False}
         with dask.config.set(opts) as cfg, _cache as c:
             yield cfg, c
