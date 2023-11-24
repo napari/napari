@@ -907,7 +907,7 @@ class Labels(_ImageBase):
         # See https://github.com/napari/napari/pull/6112/files#r1291613760
         # and https://github.com/napari/napari/issues/6185
         self._slice.image.view[updated_slice] = colors_sliced
-        
+
         self.events.labels_update(data=colors_sliced, offset=offset)
         self._updated_slice = None
 
