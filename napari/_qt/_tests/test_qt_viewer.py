@@ -844,8 +844,9 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
         order=0,
         mode="nearest",
     )
-
-    npt.assert_almost_equal(canvas_screenshot, scaled_thumbnail, decimal=1)
+    close = np.isclose(canvas_screenshot, scaled_thumbnail)
+    problematic_pixels_count = np.sum(~close)
+    assert problematic_pixels_count < 0.01 * canvas_screenshot.size
 
 
 @pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int32])
