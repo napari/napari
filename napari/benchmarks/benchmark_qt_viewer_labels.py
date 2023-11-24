@@ -11,7 +11,8 @@ from qtpy.QtWidgets import QApplication
 from skimage.morphology import diamond, octahedron
 
 import napari
-from napari.benchmarks.utils import Skiper
+
+from .utils import Skiper
 
 
 @dataclass
@@ -136,6 +137,14 @@ class LabelRenderingSuite2D(LabelRenderingSuite):
         for i in range(0, z_size, z_size // 20):
             self.viewer.dims.set_point(0, i)
             self.app.processEvents()
+
+    def time_load_3d(self, radius, dtype):
+        """Time to first render of the layer in 3D."""
+        self.app.processEvents()
+        self.viewer.dims.ndisplay = 3
+        self.app.processEvents()
+        self.viewer.dims.ndisplay = 2
+        self.app.processEvents()
 
 
 class LabelRenderingSuite3D(LabelRenderingSuite):
