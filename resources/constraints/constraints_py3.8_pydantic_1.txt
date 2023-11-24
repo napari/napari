@@ -21,7 +21,7 @@ attrs==23.1.0
     #   hypothesis
     #   jsonschema
     #   referencing
-babel==2.13.0
+babel==2.13.1
     # via
     #   napari (napari_repo/setup.cfg)
     #   sphinx
@@ -65,7 +65,7 @@ distlib==0.3.7
     # via virtualenv
 docstring-parser==0.15
     # via magicgui
-docutils==0.17.1
+docutils==0.20.1
     # via sphinx
 exceptiongroup==1.1.3
     # via
@@ -119,7 +119,7 @@ in-n-out==0.1.9
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.25.2
+ipykernel==6.26.0
     # via
     #   napari-console
     #   qtconsole
@@ -141,7 +141,7 @@ jsonschema==4.19.1
     # via napari (napari_repo/setup.cfg)
 jsonschema-specifications==2023.7.1
     # via jsonschema
-jupyter-client==8.4.0
+jupyter-client==8.5.0
     # via
     #   ipykernel
     #   qtconsole
@@ -220,7 +220,7 @@ numpy==1.24.4
     #   vispy
     #   xarray
     #   zarr
-numpydoc==1.5.0
+numpydoc==1.6.0
     # via napari (napari_repo/setup.cfg)
 nvidia-cublas-cu12==12.1.3.1
     # via
@@ -297,7 +297,7 @@ platformdirs==3.11.0
     #   virtualenv
 pluggy==1.3.0
     # via pytest
-pooch==1.7.0
+pooch==1.8.0
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
@@ -317,7 +317,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyconify==0.1.5
+pyconify==0.1.6
     # via superqt
 pydantic==1.10.13
     # via
@@ -365,7 +365,7 @@ pyside6-essentials==6.3.1
     # via
     #   pyside6
     #   pyside6-addons
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   napari (napari_repo/setup.cfg)
     #   pytest-cov
@@ -410,7 +410,7 @@ qtconsole==5.4.4
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-console
-qtpy==2.4.0
+qtpy==2.4.1
     # via
     #   magicgui
     #   napari (napari_repo/setup.cfg)
@@ -459,10 +459,8 @@ snowballstemmer==2.2.0
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
-sphinx==4.5.0
-    # via
-    #   napari (napari_repo/setup.cfg)
-    #   numpydoc
+sphinx==7.1.2
+    # via numpydoc
 sphinxcontrib-applehelp==1.0.4
     # via sphinx
 sphinxcontrib-devhelp==1.0.2
@@ -484,6 +482,8 @@ superqt==0.6.1
     #   napari-plugin-manager
 sympy==1.12
     # via torch
+tabulate==0.9.0
+    # via numpydoc
 tensorstore==0.1.45
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
@@ -497,6 +497,7 @@ tomli==2.0.1
     #   build
     #   coverage
     #   npe2
+    #   numpydoc
     #   pyproject-hooks
     #   pytest
 tomli-w==1.0.0
@@ -514,7 +515,7 @@ tornado==6.3.3
     #   jupyter-client
 tqdm==4.66.1
     # via napari (napari_repo/setup.cfg)
-traitlets==5.11.2
+traitlets==5.12.0
     # via
     #   comm
     #   ipykernel

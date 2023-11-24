@@ -435,7 +435,15 @@ def _maybe_rerun_with_macos_fixes():
        This requires relaunching the app from a symlink to the
        desired python executable, conveniently named 'napari'.
     """
-    if sys.platform != "darwin":
+    from napari._qt import API_NAME
+
+    # This import mus be here to raise exception about PySide6 problem
+
+    if (
+        sys.platform != "darwin"
+        or "pdb" in sys.modules
+        or "pydevd" in sys.modules
+    ):
         return
 
     if "_NAPARI_RERUN_WITH_FIXES" in os.environ:
@@ -449,8 +457,6 @@ def _maybe_rerun_with_macos_fixes():
     import platform
     import subprocess
     from tempfile import mkdtemp
-
-    from qtpy import API_NAME
 
     # In principle, we will relaunch to the same python we were using
     executable = sys.executable

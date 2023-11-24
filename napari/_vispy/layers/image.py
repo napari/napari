@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import warnings
+from typing import Dict, Optional
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -37,15 +40,25 @@ class ImageLayerNode:
             texture_format=texture_format,
         )
 
-    def get_node(self, ndisplay: int) -> Node:
+    def get_node(
+        self, ndisplay: int, dtype: Optional[np.dtype] = None
+    ) -> Node:
         # Return custom node if we have one.
         if self._custom_node is not None:
             return self._custom_node
 
         # Return Image or Volume node based on 2D or 3D.
-        if ndisplay == 2:
-            return self._image_node
-        return self._volume_node
+        res = self._image_node if ndisplay == 2 else self._volume_node
+        if (
+            res.texture_format != "auto"
+            and dtype is not None
+            and _VISPY_FORMAT_TO_DTYPE[res.texture_format] != dtype
+        ):
+            # it is a bug to hit this error — it is here to catch bugs
+            # early when we are creating the wrong nodes or
+            # textures for our data
+            raise ValueError("dtype does not match texture_format")
+        return res
 
 
 class VispyImageLayer(VispyBaseLayer):
@@ -103,10 +116,16 @@ class VispyImageLayer(VispyBaseLayer):
         parent = self.node.parent
         self.node.parent = None
         ndisplay = self.layer._slice_input.ndisplay
-        self.node = self._layer_node.get_node(ndisplay)
+        self.node = self._layer_node.get_node(
+            ndisplay, getattr(data, "dtype", None)
+        )
 
         if data is None:
-            data = np.zeros((1,) * ndisplay, dtype=np.float32)
+            texture_format = self.node.texture_format
+            data = np.zeros(
+                (1,) * ndisplay,
+                dtype=get_dtype_from_vispy_texture_format(texture_format),
+            )
 
         if self.layer._empty:
             self.node.visible = False
@@ -136,6 +155,10 @@ class VispyImageLayer(VispyBaseLayer):
         data = fix_data_dtype(data)
         ndisplay = self.layer._slice_input.ndisplay
 
+        node = self._layer_node.get_node(
+            ndisplay, getattr(data, "dtype", None)
+        )
+
         if ndisplay == 3 and self.layer.ndim == 2:
             data = np.expand_dims(data, axis=0)
 
@@ -147,7 +170,9 @@ class VispyImageLayer(VispyBaseLayer):
 
         # Check if ndisplay has changed current node type needs updating
         if (ndisplay == 3 and not isinstance(node, VolumeNode)) or (
-            ndisplay == 2 and not isinstance(node, ImageNode)
+            ndisplay == 2
+            and not isinstance(node, ImageNode)
+            or node != self.node
         ):
             self._on_display_change(data)
         else:
@@ -301,3 +326,32 @@ class VispyImageLayer(VispyBaseLayer):
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]
         return data
+
+
+_VISPY_FORMAT_TO_DTYPE: Dict[Optional[str], np.dtype] = {
+    "r8": np.dtype(np.uint8),
+    "r16": np.dtype(np.uint16),
+    "r32f": np.dtype(np.float32),
+}
+
+_DTYPE_TO_VISPY_FORMAT = {v: k for k, v in _VISPY_FORMAT_TO_DTYPE.items()}
+
+# this is moved after reverse mapping is defined
+# to always have non None values in _DTYPE_TO_VISPY_FORMAT
+_VISPY_FORMAT_TO_DTYPE[None] = np.dtype(np.float32)
+
+
+def get_dtype_from_vispy_texture_format(format_str: str) -> np.dtype:
+    """Get the numpy dtype from a vispy texture format string.
+
+    Parameters
+    ----------
+    format_str : str
+        The vispy texture format string.
+
+    Returns
+    -------
+    dtype : numpy.dtype
+        The numpy dtype corresponding to the vispy texture format string.
+    """
+    return _VISPY_FORMAT_TO_DTYPE.get(format_str, np.dtype(np.float32))

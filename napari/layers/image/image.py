@@ -39,6 +39,7 @@ from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import napari.types as npt
     from napari.components.experimental.chunk import ChunkRequest
 
 
@@ -490,6 +491,27 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         shape = self.level_shapes[0]
         return np.vstack([np.zeros(len(shape)), shape])
+
+    @property
+    def _extent_data_augmented(self) -> np.ndarray:
+        extent = self._extent_data
+        return extent + [[-0.5], [+0.5]]
+
+    @property
+    def _extent_level_data(self) -> np.ndarray:
+        """Extent of layer, accounting for current multiscale level, in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        shape = self.level_shapes[self.data_level]
+        return np.vstack([np.zeros(len(shape)), shape - 1])
+
+    @property
+    def _extent_level_data_augmented(self) -> np.ndarray:
+        extent = self._extent_level_data
+        return extent + [[-0.5], [+0.5]]
 
     @property
     def data_level(self):
@@ -1020,6 +1042,23 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         shift the position by 0.5 pixels on each axis.
         """
         return [p + 0.5 for p in position]
+
+    def _display_bounding_box_at_level(
+        self, dims_displayed: List[int], data_level: int
+    ) -> npt.NDArray:
+        """An axis aligned (ndisplay, 2) bounding box around the data at a given level"""
+        shape = self.level_shapes[data_level]
+        extent_at_level = np.vstack([np.zeros(len(shape)), shape - 1])
+        return extent_at_level[:, dims_displayed].T
+
+    def _display_bounding_box_augmented_data_level(
+        self, dims_displayed: List[int]
+    ) -> npt.NDArray:
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
+        If the layer is multiscale layer, then returns the
+        bounding box of the data at the current level
+        """
+        return self._extent_level_data_augmented[:, dims_displayed].T
 
     # For async we add an on_chunk_loaded() method.
     if config.async_loading:
