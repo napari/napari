@@ -833,10 +833,14 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     QApplication.processEvents()
     qtbot.wait(50)
 
-    canvas_screenshot = qt_viewer.screenshot(flash=False)
+    canvas_screenshot_ = qt_viewer.screenshot(flash=False)
     # cut off black border
-    margin1, margin2 = _find_margin(canvas_screenshot, 10)
-    canvas_screenshot = canvas_screenshot[margin1:-margin1, margin2:-margin2]
+    margin1, margin2 = _find_margin(canvas_screenshot_, 10)
+    canvas_screenshot = canvas_screenshot_[margin1:-margin1, margin2:-margin2]
+    assert (
+        canvas_screenshot.size > 0
+    ), f"{canvas_screenshot_.shape}, {margin1=}, {margin2=}"
+
     thumbnail = layer.thumbnail
     scaled_thumbnail = ndi.zoom(
         thumbnail,
