@@ -437,7 +437,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             np.round(s / sc).astype('int') + 1
             for s, sc in zip(scene_size, scale)
         ]
-        empty_labels = np.zeros(shape, dtype=int)
+        empty_labels = np.zeros(shape, dtype=np.uint8)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
     def _on_layer_reload(self, event: Event) -> None:
@@ -1171,7 +1171,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if isinstance(stack, bool) and stack:
             paths = [paths_]
         # If stack is a list and True, extend the paths with the inner lists.
-        elif isinstance(stack, list):
+        elif isinstance(stack, list) and stack:
             paths = [paths_]
             paths.extend(stack)
 
