@@ -2,7 +2,6 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
-import os
 import time
 
 import numpy as np
@@ -12,7 +11,7 @@ from qtpy.QtWidgets import QApplication
 import napari
 from napari.layers import Image
 
-from .utils import Skiper
+from .utils import Skipper
 
 SAMPLE_PARAMS = {
     'skin_data': {
@@ -50,10 +49,6 @@ class SlowMemoryStore(zarr.storage.MemoryStore):
 
 
 class AsyncImage2DSuite:
-    """TODO: these benchmarks are skipped. Remove the NotImplementedError in
-    setup to enable.
-    """
-
     params = get_image_params()
     timeout = 300
 
@@ -71,7 +66,6 @@ class AsyncImage2DSuite:
         )
 
         self.layer = Image(self.data)
-        raise NotImplementedError
 
     def time_create_layer(self, *args):
         """Time to create an image layer."""
@@ -87,11 +81,12 @@ class AsyncImage2DSuite:
 
 
 class QtViewerAsyncImage2DSuite:
-    """TODO: these benchmarks are skipped. Remove the NotImplementedError in
-    setup to enable.
+    """
+    TODO: these benchmarks are skipped. Remove func_always=lambda x: True in Skipper to enable.
     """
 
     params = get_image_params()
+    skip_params = Skipper(func_always=lambda x: True)
     timeout = 300
 
     def setup(self, latency, dataname):
@@ -103,6 +98,7 @@ class QtViewerAsyncImage2DSuite:
             # Skip 2D RGB tests -- scrolling does not apply
             self.viewer = None
             raise NotImplementedError
+            # TODO when enabled move this to skipper
 
         store = SlowMemoryStore(load_delay=latency)
         _ = QApplication.instance() or QApplication([])
@@ -115,7 +111,6 @@ class QtViewerAsyncImage2DSuite:
 
         self.viewer = napari.Viewer()
         self.viewer.add_image(self.data)
-        raise NotImplementedError
 
     def time_z_scroll(self, *args):
         layers_to_scroll = 4
@@ -129,12 +124,13 @@ class QtViewerAsyncImage2DSuite:
 
 
 class QtViewerAsyncPointsSuite:
-    """TODO: these benchmarks are skipped. Remove the NotImplementedError in
-    setup to enable.
+    """
+    TODO: these benchmarks are skipped. Remove func_always=lambda x: True in Skipper to enable.
     """
 
     n_points = [2**i for i in range(12, 18)]
     params = n_points
+    skip_params = Skipper(func_always=lambda x: True)
 
     def setup(self, n_points):
         _ = QApplication.instance() or QApplication([])
@@ -146,7 +142,6 @@ class QtViewerAsyncPointsSuite:
         self.viewer.add_image(self.empty_image)
         self.point_data = np.random.randint(512, size=(n_points, 3))
         self.viewer.add_points(self.point_data)
-        raise NotImplementedError
 
     def time_z_scroll(self, *args):
         for z in range(self.empty_image.shape[0]):
@@ -157,8 +152,8 @@ class QtViewerAsyncPointsSuite:
 
 
 class QtViewerAsyncPointsAndImage2DSuite:
-    """TODO: these benchmarks are skipped. Remove the NotImplementedError in
-    setup to enable.
+    """
+    TODO: these benchmarks are skipped. Remove func_always=lambda x: True in Skipper to enable.
     """
 
     n_points = [2**i for i in range(12, 18, 2)]
@@ -167,10 +162,10 @@ class QtViewerAsyncPointsAndImage2DSuite:
     params = (n_points, latency, chunksize)
     timeout = 600
 
-    if "PR" in os.environ:
-        skip_params = Skiper(
-            lambda x: x[0] > 2**14 or x[2] > 512 or x[1] > 0.05
-        )
+    skip_params = Skipper(
+        func_pr=lambda x: x[0] > 2**14 or x[2] > 512 or x[1] > 0.05,
+        func_always=lambda x: True,
+    )
 
     def setup(self, n_points, latency, chunksize):
         store = SlowMemoryStore(load_delay=latency)
@@ -189,7 +184,6 @@ class QtViewerAsyncPointsAndImage2DSuite:
         self.viewer.add_image(self.image_data)
         self.point_data = np.random.randint(512, size=(n_points, 3))
         self.viewer.add_points(self.point_data)
-        raise NotImplementedError
 
     def time_z_scroll(self, *args):
         for z in range(self.image_data.shape[0]):

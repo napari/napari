@@ -9,7 +9,7 @@ import numpy as np
 from napari.components.dims import Dims
 from napari.layers import Labels
 
-from .utils import Skiper
+from .utils import Skipper
 
 
 class Labels2DSuite:
@@ -76,9 +76,7 @@ class LabelsDrawing2DSuite:
 
     param_names = ['n', 'brush_size', 'color_mode', 'contour']
     params = ([512, 3072], [8, 64, 256], ['auto', 'direct'], [0, 1])
-
-    if "PR" in os.environ:
-        skip_params = Skiper(lambda x: x[0] > 512 or x[1] > 64)
+    skip_params = Skipper(func_pr=lambda x: x[0] > 512 or x[1] > 64)
 
     def setup(self, n, brush_size, color_mode, contour):
         np.random.seed(0)
@@ -110,9 +108,9 @@ class LabelsDrawing2DSuite:
 
 
 class Labels2DColorDirectSuite(Labels2DSuite):
+    skip_params = Skipper(func_pr=lambda x: x[0] > 32)
+
     def setup(self, n):
-        if "PR" in os.environ and n > 32:
-            raise NotImplementedError("Skip on PR (speedup)")
         np.random.seed(0)
         self.data = np.random.randint(low=-10000, high=10000, size=(n, n))
         random_label_ids = np.random.randint(low=-10000, high=10000, size=20)
@@ -127,13 +125,13 @@ class Labels3DSuite:
     """Benchmarks for the Labels layer with 3D data."""
 
     params = [2**i for i in range(4, 11)]
-    if "PR" in os.environ:
-        skip_params = [(2**i,) for i in range(6, 11)]
+
+    skip_params = Skipper(
+        func_pr=lambda x: x[0] > 2**6, func_ci=lambda x: x[0] > 2**9
+    )
+    # CI skip above 2**9 because of memory limits
 
     def setup(self, n):
-        if "CI" in os.environ and n > 512:
-            raise NotImplementedError("Skip on CI (not enough memory)")
-
         np.random.seed(0)
         self.data = np.random.randint(20, size=(n, n, n))
         self.layer = Labels(self.data)

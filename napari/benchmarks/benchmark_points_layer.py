@@ -9,7 +9,7 @@ import numpy as np
 from napari.components import Dims
 from napari.layers import Points
 
-from .utils import Skiper
+from .utils import Skipper
 
 
 class Points2DSuite:
@@ -136,8 +136,7 @@ class PointsToMaskSuite:
         [5, 10],
     ]
 
-    if "PR" in os.environ:
-        skip_params = Skiper(lambda x: x[0] > 256 or x[1][0] > 512)
+    skip_params = Skipper(func_pr=lambda x: x[0] > 256 or x[1][0] > 512)
 
     def setup(self, num_points, mask_shape, point_size):
         np.random.seed(0)
