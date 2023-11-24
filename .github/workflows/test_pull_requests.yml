@@ -179,6 +179,15 @@ jobs:
 
       - uses: tlambert03/setup-qt-libs@v1
 
+      - uses: octokit/request-action@v2.x
+        id: latest_release
+        with:
+          route: GET /repos/{owner}/{repo}/releases/latest
+          owner: napari
+          repo: napari
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: install dependencies
         run: |
           pip install --upgrade pip
@@ -190,5 +199,6 @@ jobs:
           run: |
             asv machine --yes
             asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
+            asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
         env:
           PR: 1
