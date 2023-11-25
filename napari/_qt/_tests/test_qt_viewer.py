@@ -838,6 +838,12 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     qtbot.wait(50)
 
     canvas_screenshot_ = qt_viewer.screenshot(flash=False)
+
+    import imageio
+
+    imageio.imwrite(tmp_path / "canvas_screenshot_.png", canvas_screenshot_)
+    np.savez(tmp_path / "canvas_screenshot_.npz", canvas_screenshot_)
+
     # cut off black border
     margin1, margin2 = _find_margin(canvas_screenshot_, 10)
     canvas_screenshot = canvas_screenshot_[margin1:-margin1, margin2:-margin2]
