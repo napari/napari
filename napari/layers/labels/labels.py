@@ -53,7 +53,9 @@ from napari.utils.colormaps import (
     label_colormap,
 )
 from napari.utils.colormaps.colormap import (
+    LabelColormap,
     _cast_labels_to_minimum_dtype_auto,
+    _convert_small_ints_to_unsigned,
     cast_direct_labels_to_minimum_type,
     minimum_dtype_for_labels,
 )
@@ -520,6 +522,10 @@ class Labels(_ImageBase):
     @_ImageBase.colormap.setter
     def colormap(self, colormap):
         super()._set_colormap(colormap)
+        if isinstance(self._colormap, LabelColormap):
+            self._random_colormap = self._colormap
+        else:
+            self._direct_colormap = self._colormap
         self._selected_color = self.get_color(self.selected_label)
 
     @property
@@ -529,6 +535,8 @@ class Labels(_ImageBase):
 
     @num_colors.setter
     def num_colors(self, num_colors):
+        if num_colors < 1 or num_colors >= 2**16:
+            raise ValueError("num_colors must be between 1 and 65535")
         self._num_colors = num_colors
         self.colormap = label_colormap(
             num_colors, self.seed, self._background_label
@@ -1081,7 +1089,7 @@ class Labels(_ImageBase):
 
         if self.color_mode == LabelColorMode.AUTO:
             mapped_labels = _cast_labels_to_minimum_dtype_auto(
-                labels_to_map, self.num_colors, self._background_label
+                labels_to_map, self._random_colormap
             )
         else:  # direct
             mapped_labels = cast_direct_labels_to_minimum_type(
@@ -1096,7 +1104,6 @@ class Labels(_ImageBase):
             else:
                 self._cached_mapped_labels[data_slice] = mapped_labels
             return self._cached_mapped_labels[data_slice]
-
         return mapped_labels
 
     def _update_thumbnail(self):
@@ -1111,7 +1118,7 @@ class Labels(_ImageBase):
             # Is there a nicer way to prevent this from getting called?
             return
 
-        image = self._slice.thumbnail.view
+        image = self._slice.thumbnail.raw
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             # we are only using the current slice so `image` will never be
             # bigger than 3. If we are in this clause, it is exactly 3, so we
@@ -1127,9 +1134,11 @@ class Labels(_ImageBase):
         )
         zoom_factor = tuple(new_shape / imshape)
 
-        downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
+        downsampled = _convert_small_ints_to_unsigned(
+            ndi.zoom(image, zoom_factor, prefilter=False, order=0)
+        )
         if self.color_mode == LabelColorMode.AUTO:
-            color_array = self.colormap._map_precast(downsampled.ravel())
+            color_array = self.colormap.map(downsampled.ravel())
         else:  # direct
             color_array = self._direct_colormap.map_casted(downsampled.ravel())
         colormapped = color_array.reshape(downsampled.shape + (4,))
@@ -1147,9 +1156,13 @@ class Labels(_ImageBase):
         elif label is None or (
             self.show_selected_label and label != self.selected_label
         ):
-            col = self.colormap.map([0, 0, 0, 0])[0]
+            col = self.colormap.map([self._background_label])[0]
         else:
-            col = self.colormap.map([label])[0]
+            raw_dtype = self._slice.image.raw.dtype
+            val = _convert_small_ints_to_unsigned(
+                np.array([label]).astype(raw_dtype)
+            )
+            col = self.colormap.map(val)[0]
         return col
 
     def _get_value_ray(

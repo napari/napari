@@ -3,12 +3,14 @@ from itertools import product
 from unittest.mock import patch
 
 import numpy as np
+import numpy.testing as npt
 import pytest
 
 from napari.utils.colormaps import Colormap, DirectLabelColormap, colormap
 from napari.utils.colormaps.colormap import (
     DEFAULT_VALUE,
     cast_direct_labels_to_minimum_type,
+    label_colormap,
 )
 
 
@@ -129,6 +131,7 @@ def test_minimum_dtype_for_labels(num, dtype):
 
 @pytest.fixture()
 def disable_jit(monkeypatch):
+    pytest.importorskip("numba")
     with patch("numba.core.config.DISABLE_JIT", True):
         importlib.reload(colormap)
         yield
@@ -139,15 +142,16 @@ def disable_jit(monkeypatch):
     "num,dtype", [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
 @pytest.mark.usefixtures("disable_jit")
-def test_cast_labels_to_minimum_type_auto(num, dtype, monkeypatch):
-    data = np.zeros(10, dtype=np.uint32)
+def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
+    cmap = label_colormap(num)
+    data = np.zeros(3, dtype=np.uint32)
     data[1] = 10
     data[2] = 10**6 + 5
-    cast_arr = colormap._cast_labels_to_minimum_dtype_auto(data, num, 0)
+    cast_arr = colormap._cast_labels_to_minimum_dtype_auto(data, cmap)
     assert cast_arr.dtype == dtype
     assert cast_arr[0] == 0
-    assert cast_arr[1] == 11
-    assert cast_arr[2] == 10**6 % num + 6
+    assert cast_arr[1] == 10
+    assert cast_arr[2] == 10**6 % num + 5
 
 
 @pytest.fixture
@@ -255,3 +259,11 @@ def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     data[2] = 80005
     casted = cast_direct_labels_to_minimum_type(data, cmap)
     assert casted.dtype == dtype
+
+
+def test_zero_preserving_modulo_naive():
+    pytest.importorskip("numba")
+    data = np.arange(1000, dtype=np.uint32)
+    res1 = colormap._zero_preserving_modulo_naive(data, 49, np.uint8)
+    res2 = colormap._zero_preserving_modulo(data, 49, np.uint8)
+    npt.assert_array_equal(res1, res2)

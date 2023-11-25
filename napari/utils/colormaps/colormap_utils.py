@@ -453,10 +453,14 @@ def label_colormap(
         len(control_points) - 1,
     )
 
-    colors = np.concatenate(
-        (np.zeros((1, 4), dtype=colors.dtype), colors[indices][:-2])
-    )
     # here is an ugly hack to restore classical napari color order.
+    colors = colors[indices][:-1]
+
+    # ensure that we not need to deal with differences in float rounding for
+    # CPU and GPU.
+    colors = (colors * np.iinfo(np.uint8).max).astype(np.uint8).astype(
+        np.float32
+    ) / np.iinfo(np.uint8).max
 
     return LabelColormap(
         name='label_colormap',

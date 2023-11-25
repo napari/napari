@@ -3,7 +3,6 @@ import math
 from collections import defaultdict
 from typing import DefaultDict, Dict, List, Optional, Tuple, cast
 
-import numba
 import numpy as np
 
 from napari._pydantic_compat import Field, PrivateAttr, validator
@@ -167,7 +166,7 @@ class LabelColormap(Colormap):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
 
-    def map(self, values) -> np.ndarray:
+    def map(self, values, apply_selection=True) -> np.ndarray:
         """Map values to colors.
 
         Parameters
@@ -182,43 +181,20 @@ class LabelColormap(Colormap):
         """
         values = np.atleast_1d(values)
 
-        precast = _cast_labels_to_minimum_dtype_auto(
-            values, len(self.colors) - 1, self.background_value
+        if values.dtype.kind == 'f':
+            values = values.astype(np.int64)
+
+        background = int(
+            np.array([self.background_value]).astype(values.dtype)[0]
         )
-
-        return self._map_precast(precast)
-
-    def _map_precast(self, values) -> np.ndarray:
-        """Map *precast* values to colors.
-
-        When mapping values, we first convert them to a smaller dtype for
-        performance reasons. This conversion changes the label values,
-        even for small labels. This method is used to map values that have
-        already been converted to the smaller dtype.
-
-        Parameters
-        ----------
-        values : np.ndarray
-            Values to be mapped. They must have already been downcast using
-            `_cast_labels_to_minimum_dtype_auto`.
-
-        Returns
-        -------
-        np.ndarray of shape (N, M, 4)
-            Mapped colors.
-        """
-        mapped = self.colors[values.astype(np.int64)]
-
-        mapped[values == self.background_value] = 0
-
-        # If using selected, disable all others
-        if self.use_selection:
-            cast_selection = _cast_labels_to_minimum_dtype_auto(
-                np.array([self.selection]),
-                len(self.colors) - 1,
-                self.background_value,
-            )[0]
-            mapped[values != cast_selection] = 0
+        casted_values = _zero_preserving_modulo_naive(
+            values, len(self.colors) - 1, values.dtype, background
+        )
+        mapped = self.colors[casted_values]
+        mapped[casted_values == 0] = 0
+        if self.use_selection and apply_selection:
+            selection2 = np.array([self.selection]).astype(values.dtype)[0]
+            mapped[(values != self.selection) & (values != selection2)] = 0
 
         return mapped
 
@@ -241,9 +217,9 @@ class DirectLabelColormap(Colormap):
     ----------
     color_dict: dict from int to (3,) or (4,) array
         The dictionary mapping labels to colors.
-    use_selection: bool
+    use_selection : bool
         Whether to color using the selected label.
-    selection: float
+    selection : float
         The selected label.
     """
 
@@ -350,8 +326,33 @@ class DirectLabelColormap(Colormap):
         # if someone is using DirectLabelColormap directly, not through Label layer
 
 
+def _convert_small_ints_to_unsigned(data: np.ndarray) -> np.ndarray:
+    """
+    Convert int8 to uint8 and int16 to uint16.
+    Otherwise, return the original array.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Data to be converted.
+
+    Returns
+    -------
+    np.ndarray
+        Converted data.
+    """
+    if data.dtype.itemsize == 1:
+        # for fast rendering of int8
+        return data.view(np.uint8)
+    if data.dtype.itemsize == 2:
+        # for fast rendering of int16
+        return data.view(np.uint16)
+    return data
+
+
 def _cast_labels_to_minimum_dtype_auto(
-    data: np.ndarray, num_colors: int, background_value: int
+    data: np.ndarray,
+    colormap: LabelColormap,
 ) -> np.ndarray:
     """Perform modulo operation based on number of colors
 
@@ -369,47 +370,77 @@ def _cast_labels_to_minimum_dtype_auto(
     np.ndarray
         Casted labels data.
     """
+    data = _convert_small_ints_to_unsigned(data)
+
+    if data.itemsize <= 2:
+        return data
+
+    num_colors = len(colormap.colors) - 1
+
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
-    return _modulo_plus_one(data, num_colors, dtype, background_value)
+    if colormap.use_selection:
+        return (data == colormap.selection).astype(dtype) * (
+            _zero_preserving_modulo_naive(
+                np.array([colormap.selection]), num_colors, dtype
+            )
+        )
+
+    return _zero_preserving_modulo(
+        data, num_colors, dtype, colormap.background_value
+    )
 
 
-@numba.njit(parallel=True)
-def _modulo_plus_one(
+def _zero_preserving_modulo_naive(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
-    """Like ``values % n + 1``, but with one specific value mapped to 0.
+    res = ((values - 1) % n + 1).astype(dtype)
+    res[values == to_zero] = 0
+    return res
 
-    This ensures (1) an output value in [0, n] (inclusive), and (2) that
-    no nonzero values in the input are zero in the output, other than the
-    ``to_zero`` value.
 
-    Parameters
-    ----------
-    values : np.ndarray
-        The dividend of the modulo operator.
-    n : int
-        The divisor.
-    dtype : np.dtype
-        The desired dtype for the output array.
-    to_zero : int, optional
-        A specific value to map to 0. (By default, 0 itself.)
+try:
+    import numba
+except ImportError:
+    _zero_preserving_modulo = _zero_preserving_modulo_naive
+else:
 
-    Returns
-    -------
-    np.ndarray
-        The result: 0 for the ``to_zero`` value, ``values % n + 1``
-        everywhere else.
-    """
-    result = np.empty_like(values, dtype=dtype)
+    @numba.njit(parallel=True)
+    def _zero_preserving_modulo(
+        values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
+    ) -> np.ndarray:
+        """Like ``values % n + 1``, but with one specific value mapped to 0.
 
-    for i in numba.prange(values.size):
-        if values.flat[i] == to_zero:
-            result.flat[i] = 0
-        else:
-            result.flat[i] = values.flat[i] % n + 1
+        This ensures (1) an output value in [0, n] (inclusive), and (2) that
+        no nonzero values in the input are zero in the output, other than the
+        ``to_zero`` value.
 
-    return result
+        Parameters
+        ----------
+        values : np.ndarray
+            The dividend of the modulo operator.
+        n : int
+            The divisor.
+        dtype : np.dtype
+            The desired dtype for the output array.
+        to_zero : int, optional
+            A specific value to map to 0. (By default, 0 itself.)
+
+        Returns
+        -------
+        np.ndarray
+            The result: 0 for the ``to_zero`` value, ``values % n + 1``
+            everywhere else.
+        """
+        result = np.empty_like(values, dtype=dtype)
+
+        for i in numba.prange(values.size):
+            if values.flat[i] == to_zero:
+                result.flat[i] = 0
+            else:
+                result.flat[i] = (values.flat[i] - 1) % n + 1
+
+        return result
 
 
 def cast_direct_labels_to_minimum_type(

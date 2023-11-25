@@ -397,7 +397,7 @@ def _rebuild_npe1_samples_menu() -> None:
                     qt_viewer.viewer.open_sample(plugin, sample)
                 except MultipleReaderError as e:
                     handle_gui_reading(
-                        e.paths,
+                        [str(p) for p in e.paths],
                         qt_viewer,
                         stack=False,
                     )
@@ -466,7 +466,7 @@ def _get_samples_submenu_actions(
                 qt_viewer.viewer.open_sample(plugin, sample)
             except MultipleReaderError as e:
                 handle_gui_reading(
-                    e.paths,
+                    [str(p) for p in e.paths],
                     qt_viewer,
                     stack=False,
                 )

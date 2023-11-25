@@ -6,7 +6,7 @@ from napari.layers import Labels
 from napari.utils.colormaps import colormap_utils
 
 np.random.seed(0)
-_LABELS = np.random.randint(5, size=(10, 15))
+_LABELS = np.random.randint(5, size=(10, 15), dtype=np.uint8)
 _COLOR = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'}
 
 
@@ -115,3 +115,16 @@ def test_preserve_labels_checkbox(make_labels_controls):
     assert not layer.preserve_labels
     qtctrl.preserveLabelsCheckBox.setChecked(True)
     assert layer.preserve_labels
+
+
+def test_change_label_selector_range(make_labels_controls):
+    """Changing the label layer dtype should update label selector range."""
+    layer, qtctrl = make_labels_controls()
+    assert layer.data.dtype == np.uint8
+    assert qtctrl.selectionSpinBox.minimum() == 0
+    assert qtctrl.selectionSpinBox.maximum() == 255
+
+    layer.data = layer.data.astype(np.int8)
+
+    assert qtctrl.selectionSpinBox.minimum() == -128
+    assert qtctrl.selectionSpinBox.maximum() == 127

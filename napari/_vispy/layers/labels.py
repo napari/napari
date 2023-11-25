@@ -16,7 +16,11 @@ from napari._vispy.layers.image import (
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
-from napari.utils.colormaps.colormap import minimum_dtype_for_labels
+from napari.utils.colormaps.colormap import (
+    LabelColormap,
+    _cast_labels_to_minimum_dtype_auto,
+    minimum_dtype_for_labels,
+)
 
 if TYPE_CHECKING:
     from napari.layers import Labels
@@ -25,21 +29,34 @@ if TYPE_CHECKING:
 ColorTuple = Tuple[float, float, float, float]
 
 
-auto_lookup_shader = """
+auto_lookup_shader_uint8 = """
 uniform sampler2D texture2D_values;
 
 vec4 sample_label_color(float t) {
-    // VisPy automatically scales uint8 and uint16 to [0, 1].
-    // this line fixes returns values to their original range.
-    t = t * $scale;
-
-    if (($use_selection) && ($selection != t)) {
+    if (($use_selection) && ($selection != int(t * 255))) {
         return vec4(0);
     }
-    t = mod(t, $color_map_size);
     return texture2D(
         texture2D_values,
-        vec2(0.0, (t + 0.5) / $color_map_size)
+        vec2(0.0, t)
+    );
+}
+"""
+
+auto_lookup_shader_uint16 = """
+uniform sampler2D texture2D_values;
+
+vec4 sample_label_color(float t) {
+    // uint 16
+    t = t * 65535;
+    if (($use_selection) && ($selection != int(t))) {
+        return vec4(0);
+    }
+    float v = mod(t, 256);
+    float v2 = (t- v) / 256;
+    return texture2D(
+        texture2D_values,
+        vec2((v + 0.5) / 256, (v2 + 0.5) / 256)
     );
 }
 """
@@ -78,19 +95,30 @@ vec4 sample_label_color(float t) {
 class LabelVispyColormap(VispyColormap):
     def __init__(
         self,
-        colors,
-        use_selection=False,
-        selection=0.0,
-        scale=1.0,
+        colormap: LabelColormap,
+        view_dtype: np.dtype,
+        data_dtype: np.dtype,
     ):
         super().__init__(
             colors=["w", "w"], controls=None, interpolation='zero'
         )
+        if view_dtype.itemsize == 1:
+            shader = auto_lookup_shader_uint8
+        elif view_dtype.itemsize == 2:
+            shader = auto_lookup_shader_uint16
+        else:
+            raise ValueError(
+                f"Cannot use dtype {view_dtype} with LabelVispyColormap"
+            )
+
+        selection = _cast_labels_to_minimum_dtype_auto(
+            np.array([colormap.selection]).astype(data_dtype), colormap
+        )[0]
+
         self.glsl_map = (
-            auto_lookup_shader.replace('$color_map_size', str(len(colors)))
-            .replace('$use_selection', str(use_selection).lower())
-            .replace('$selection', str(selection + 1))
-            .replace('$scale', str(scale))
+            shader.replace('$color_map_size', str(len(colormap.colors)))
+            .replace('$use_selection', str(colormap.use_selection).lower())
+            .replace('$selection', str(selection))
         )
 
 
@@ -172,24 +200,31 @@ class VispyLabelsLayer(VispyImageLayer):
         mode = self.layer.color_mode
 
         if mode == 'auto':
-            dtype = minimum_dtype_for_labels(self.layer.num_colors + 1)
-            if issubclass(dtype.type, np.integer):
-                scale = np.iinfo(dtype).max
-            else:  # float32 texture
-                scale = 1.0
+            data_dtype = self.layer._slice.image.view.dtype
+            raw_dtype = self.layer._slice.image.raw.dtype
+            if data_dtype != raw_dtype:
+                colormap = LabelColormap(**colormap.dict())
+                colormap.background_value = _cast_labels_to_minimum_dtype_auto(
+                    np.array([colormap.background_value]).astype(raw_dtype),
+                    colormap,
+                )[0]
+            colors = np.array(
+                colormap.map(
+                    np.arange(
+                        np.iinfo(data_dtype).max + 1, dtype=data_dtype
+                    ).reshape(256, -1),
+                    apply_selection=False,
+                )
+            )
             self.node.cmap = LabelVispyColormap(
-                colors=colormap.colors,
-                use_selection=colormap.use_selection,
-                selection=float(colormap.selection),
-                scale=scale,
+                colormap, view_dtype=data_dtype, data_dtype=raw_dtype
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
-                colormap.colors.reshape(
-                    (colormap.colors.shape[0], 1, 4)
-                ).astype(np.float32),
+                colors,
                 internalformat='rgba32f',
                 interpolation='nearest',
             )
+            self.texture_data = colors
 
         elif mode == 'direct':
             color_dict = self.layer._direct_colormap.values_mapping_to_minimum_values_set()[
@@ -252,8 +287,8 @@ class LabelLayerNode(ImageLayerNode):
         self._image_node = LabelNode(
             None
             if (texture_format is None or texture_format == 'auto')
-            else np.array(
-                [[0.0]],
+            else np.zeros(
+                (1, 1),
                 dtype=get_dtype_from_vispy_texture_format(texture_format),
             ),
             method='auto',

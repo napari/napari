@@ -31,9 +31,11 @@ jobs:
         run: pip install --upgrade pip
       - name: Install Napari dev
         run: pip install -e .[build]
-      - name: Check Manifest
+      - name: Make Typestubs
         run: |
           make typestubs
+      - name: Check Manifest
+        run: |
           make check-manifest
 
   localization_syntax:
@@ -117,6 +119,7 @@ jobs:
             backend: pyqt5
             coverage: cov
             pydantic: ""
+            tox_extras: "optional"
           # test without any Qt backends
           - python: 3.9
             platform: ubuntu-20.04
@@ -172,7 +175,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11
-          cache-dependency-path: napari-from-github/setup.cfg
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
