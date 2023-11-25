@@ -813,8 +813,12 @@ def _find_margin(data: np.ndarray, additional_margin: int) -> Tuple[int, int]:
     """
 
     mid_x, mid_y = data.shape[0] // 2, data.shape[1] // 2
-    x_margin = len(list(takewhile(lambda x: x == 0, data[:, mid_y, 0][::-1])))
-    y_margin = len(list(takewhile(lambda x: x == 0, data[mid_x, :, 0][::-1])))
+    x_margin = len(
+        list(takewhile(lambda x: np.all(x == 0), data[:, mid_y, :3][::-1]))
+    )
+    y_margin = len(
+        list(takewhile(lambda x: np.all(x == 0), data[mid_x, :, :3][::-1]))
+    )
     return x_margin + additional_margin, y_margin + additional_margin
 
 
