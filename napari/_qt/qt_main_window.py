@@ -1116,7 +1116,7 @@ class Window:
         # see #3663, to fix #3624 more generally
         dock_widget.setFloating(False)
 
-    def _remove_dock_widget(self, event=None):
+    def _remove_dock_widget(self, event):
         names = list(self._dock_widgets.keys())
         for widget_name in names:
             if event.value in widget_name:
