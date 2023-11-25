@@ -1669,7 +1669,7 @@ def test_message_3d():
     layer = Points(data)
     layer._slice_input = _SliceInput(
         ndisplay=3,
-        point=(0,0, 0),
+        point=(0, 0, 0),
         order=(0, 1, 2),
     )
     msg = layer.get_status(

@@ -783,7 +783,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         raise NotImplementedError
 
-
     @property
     def _extent_data_augmented(self) -> np.ndarray:
         """Extent of layer in data coordinates.
