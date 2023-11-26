@@ -198,11 +198,10 @@ class VispyLabelsLayer(VispyImageLayer):
             return
         colormap = self.layer.colormap
         mode = self.layer.color_mode
-
-        if mode == 'auto':
-            data_dtype = self.layer._slice.image.view.dtype
-            raw_dtype = self.layer._slice.image.raw.dtype
-            if data_dtype != raw_dtype:
+        data_dtype = self.layer._slice.image.view.dtype
+        raw_dtype = self.layer._slice.image.raw.dtype
+        if mode == 'auto' or data_dtype == raw_dtype:
+            if data_dtype != raw_dtype and isinstance(colormap, LabelColormap):
                 colormap = LabelColormap(**colormap.dict())
                 colormap.background_value = _cast_labels_to_minimum_dtype_auto(
                     np.array([colormap.background_value]).astype(raw_dtype),

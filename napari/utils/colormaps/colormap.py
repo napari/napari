@@ -229,7 +229,7 @@ class DirectLabelColormap(Colormap):
     use_selection: bool = False
     selection: int = 0
 
-    def map(self, values):
+    def map(self, values, apply_selection=True) -> np.ndarray:
         """
         Map values to colors.
         Parameters
@@ -243,10 +243,23 @@ class DirectLabelColormap(Colormap):
         """
         # Convert to float32 to match the current GL shader implementation
         values = np.atleast_1d(values)
-        casted = cast_direct_labels_to_minimum_type(values, self)
-        return self.map_casted(casted)
+        if values.dtype.itemsize <= 2:
+            return self._map_direct(values)
+        casted = _cast_direct_labels_to_minimum_type(values, self)
+        return self._map_casted(casted, apply_selection)
 
-    def map_casted(self, values):
+    def _map_direct(self, values) -> np.ndarray:
+        info = np.iinfo(values.dtype)
+        result = np.zeros(values.shape + (4,), dtype=np.float32)
+        result[..., :] = self.default_color
+        for value, color in self.color_dict.items():
+            if value is None:
+                continue
+            if info.min <= value <= info.max:
+                result[values == value] = color
+        return result
+
+    def _map_casted(self, values, apply_selection) -> np.ndarray:
         """
         Map values to colors.
         Parameters
@@ -264,7 +277,7 @@ class DirectLabelColormap(Colormap):
         where we already have casted values
         """
         mapped = np.zeros(values.shape + (4,), dtype=np.float32)
-        colors = self.values_mapping_to_minimum_values_set()[1]
+        colors = self.values_mapping_to_minimum_values_set(apply_selection)[1]
         for idx in np.ndindex(values.shape):
             value = values[idx]
             mapped[idx] = colors[value]
@@ -275,7 +288,7 @@ class DirectLabelColormap(Colormap):
         return len({tuple(x) for x in self.color_dict.values()})
 
     def values_mapping_to_minimum_values_set(
-        self,
+        self, apply_selection=True
     ) -> Tuple[Dict[Optional[int], int], Dict[int, np.ndarray]]:
         """Create mapping from original values to minimum values set.
         To use minimum possible dtype for labels.
@@ -288,7 +301,7 @@ class DirectLabelColormap(Colormap):
             Mapping from new values to colors.
 
         """
-        if self.use_selection:
+        if self.use_selection and apply_selection:
             return {self.selection: 1, None: 0}, {
                 0: np.array((0, 0, 0, 0)),
                 1: self.color_dict.get(
@@ -399,10 +412,62 @@ def _zero_preserving_modulo_naive(
     return res
 
 
+def _cast_direct_labels_to_minimum_type_auto(
+    data: np.ndarray, direct_colormap: DirectLabelColormap
+) -> np.ndarray:
+    data = _convert_small_ints_to_unsigned(data)
+
+    if data.itemsize <= 2:
+        return data
+
+    return _cast_direct_labels_to_minimum_type(data, direct_colormap)
+
+
+def _cast_direct_labels_to_minimum_type_naive(
+    data: np.ndarray, direct_colormap: DirectLabelColormap
+) -> np.ndarray:
+    """
+    Cast direct labels to the minimum type.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The input data array.
+    direct_colormap : DirectLabelColormap
+        The direct colormap.
+
+    Returns
+    -------
+    np.ndarray
+        The casted data array.
+    """
+    max_value = max(x for x in direct_colormap.color_dict if x is not None)
+    if max_value > 2**16:
+        raise RuntimeError(
+            "Cannot use naive implementation for large values of lables "
+            "direct colormap. Please install numba."
+        )
+    dtype = minimum_dtype_for_labels(direct_colormap.unique_colors_num() + 2)
+    label_mapping = direct_colormap.values_mapping_to_minimum_values_set()[0]
+
+    mapper = np.full((max_value + 2), DEFAULT_VALUE, dtype=dtype)
+    for key, val in label_mapping.items():
+        if key is None:
+            continue
+        mapper[key] = val
+
+    if data.dtype.itemsize > 2:
+        data = np.clip(data, 0, max_value + 1)
+    return mapper[data]
+
+
 try:
     import numba
 except ImportError:
     _zero_preserving_modulo = _zero_preserving_modulo_naive
+    _cast_direct_labels_to_minimum_type = (
+        _cast_direct_labels_to_minimum_type_naive
+    )
 else:
 
     @numba.njit(parallel=True)
@@ -442,82 +507,84 @@ else:
 
         return result
 
+    def _cast_direct_labels_to_minimum_type(
+        data: np.ndarray, direct_colormap: DirectLabelColormap
+    ) -> np.ndarray:
+        """
+        Cast direct labels to the minimum type.
 
-def cast_direct_labels_to_minimum_type(
-    data: np.ndarray, direct_colormap: DirectLabelColormap
-) -> np.ndarray:
-    """
-    Cast direct labels to the minimum type.
+        Parameters
+        ----------
+        data : np.ndarray
+            The input data array.
+        direct_colormap : DirectLabelColormap
+            The direct colormap.
 
-    Parameters
-    ----------
-    data : np.ndarray
-        The input data array.
-    direct_colormap : DirectLabelColormap
-        The direct colormap.
+        Returns
+        -------
+        np.ndarray
+            The casted data array.
+        """
+        if data.dtype.itemsize == 1:
+            return data.view(np.uint8)
+        if data.dtype.itemsize == 2:
+            return data.view(np.uint16)
 
-    Returns
-    -------
-    np.ndarray
-        The casted data array.
-    """
-    if data.dtype.itemsize == 1:
-        return data.view(np.uint8)
-    if data.dtype.itemsize == 2:
-        return data.view(np.uint16)
+        dtype = minimum_dtype_for_labels(
+            direct_colormap.unique_colors_num() + 2
+        )
 
-    dtype = minimum_dtype_for_labels(direct_colormap.unique_colors_num() + 2)
+        label_mapping = direct_colormap.values_mapping_to_minimum_values_set()[
+            0
+        ]
+        pos = bisect.bisect_left(PRIME_NUM_TABLE, len(label_mapping) * 2)
+        if pos < len(PRIME_NUM_TABLE):
+            hash_size = PRIME_NUM_TABLE[pos]
+        else:
+            hash_size = 2 ** (math.ceil(math.log2(len(label_mapping))) + 1)
 
-    label_mapping = direct_colormap.values_mapping_to_minimum_values_set()[0]
-    pos = bisect.bisect_left(PRIME_NUM_TABLE, len(label_mapping) * 2)
-    if pos < len(PRIME_NUM_TABLE):
-        hash_size = PRIME_NUM_TABLE[pos]
-    else:
-        hash_size = 2 ** (math.ceil(math.log2(len(label_mapping))) + 1)
+        hash_table_key = np.zeros(hash_size, dtype=np.uint64)
+        hash_table_val = np.zeros(hash_size, dtype=dtype)
 
-    hash_table_key = np.zeros(hash_size, dtype=np.uint64)
-    hash_table_val = np.zeros(hash_size, dtype=dtype)
+        for key, val in label_mapping.items():
+            if key is None:
+                continue
+            new_key = key % hash_size
+            while hash_table_key[new_key] != 0:
+                new_key = (new_key + 1) % hash_size
 
-    for key, val in label_mapping.items():
-        if key is None:
-            continue
-        new_key = key % hash_size
-        while hash_table_key[new_key] != 0:
-            new_key = (new_key + 1) % hash_size
+            hash_table_key[new_key] = key
+            hash_table_val[new_key] = val
 
-        hash_table_key[new_key] = key
-        hash_table_val[new_key] = val
+        return _cast_direct_labels_to_minimum_type_jit(
+            data, hash_table_key, hash_table_val, dtype
+        )
 
-    return _cast_direct_labels_to_minimum_type_auto(
-        data, hash_table_key, hash_table_val, dtype
-    )
+    @numba.njit(parallel=True)
+    def _cast_direct_labels_to_minimum_type_jit(
+        data: np.ndarray,
+        hash_table_key: np.ndarray,
+        hash_table_val: np.ndarray,
+        dtype: np.dtype,
+    ) -> np.ndarray:
+        result_array = np.zeros_like(data, dtype=dtype)
 
+        # iterate over data and calculate modulo num_colors assigning to result_array
 
-@numba.njit(parallel=True)
-def _cast_direct_labels_to_minimum_type_auto(
-    data: np.ndarray,
-    hash_table_key: np.ndarray,
-    hash_table_val: np.ndarray,
-    dtype: np.dtype,
-) -> np.ndarray:
-    result_array = np.zeros_like(data, dtype=dtype)
+        hash_size = hash_table_key.size
 
-    # iterate over data and calculate modulo num_colors assigning to result_array
+        for i in numba.prange(data.size):
+            key = data.flat[i]
+            new_key = int(key % hash_size)
+            while hash_table_key[new_key] != key:
+                if hash_table_key[new_key] == 0:
+                    result_array.flat[i] = DEFAULT_VALUE
+                    break
+                # This will stop because half of the hash table is empty
+                new_key = (new_key + 1) % hash_size
+            result_array.flat[i] = hash_table_val[new_key]
 
-    hash_size = hash_table_key.size
-
-    for i in numba.prange(data.size):
-        key = data.flat[i]
-        new_key = int(key % hash_size)
-        while hash_table_key[new_key] != key:
-            if hash_table_key[new_key] == 0:
-                result_array.flat[i] = DEFAULT_VALUE
-                break
-            # This will stop because half of the hash table is empty
-            new_key = (new_key + 1) % hash_size
-        result_array.flat[i] = hash_table_val[new_key]
-
-    return result_array
+        return result_array
 
 
 def minimum_dtype_for_labels(num_colors: int) -> np.dtype:

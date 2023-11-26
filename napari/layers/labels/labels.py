@@ -54,9 +54,9 @@ from napari.utils.colormaps import (
 )
 from napari.utils.colormaps.colormap import (
     LabelColormap,
+    _cast_direct_labels_to_minimum_type_auto,
     _cast_labels_to_minimum_dtype_auto,
     _convert_small_ints_to_unsigned,
-    cast_direct_labels_to_minimum_type,
     minimum_dtype_for_labels,
 )
 from napari.utils.events import EmitterGroup, Event
@@ -1092,7 +1092,7 @@ class Labels(_ImageBase):
                 labels_to_map, self._random_colormap
             )
         else:  # direct
-            mapped_labels = cast_direct_labels_to_minimum_type(
+            mapped_labels = _cast_direct_labels_to_minimum_type_auto(
                 labels_to_map, self._direct_colormap
             )
 

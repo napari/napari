@@ -749,7 +749,7 @@ def test_label_colors_matching_widget_auto(
 @skip_local_popups
 @skip_on_win_ci
 @pytest.mark.parametrize("use_selection", [True, False])
-@pytest.mark.parametrize("dtype", [np.uint64, np.uint16])
+@pytest.mark.parametrize("dtype", [np.uint64, np.uint8])
 def test_label_colors_matching_widget_direct(
     qtbot, qt_viewer_with_controls, use_selection, dtype
 ):
@@ -763,23 +763,28 @@ def test_label_colors_matching_widget_direct(
         1: "yellow",
         3: "blue",
         8: "red",
-        1000: "green",
+        150: "green",
         None: "white",
     }
 
-    test_colors = (1, 2, 3, 8, 1000, 50)
+    test_colors = (1, 2, 3, 8, 150, 50)
 
     color_box_color, middle_pixel = _update_data(
-        layer, 0, qtbot, qt_viewer_with_controls
+        layer, 0, qtbot, qt_viewer_with_controls, dtype
     )
     assert np.allclose([0, 0, 0, 255], middle_pixel)
 
     for label in test_colors:
         # Change color & selected color to the same label
         color_box_color, middle_pixel = _update_data(
-            layer, label, qtbot, qt_viewer_with_controls
+            layer, label, qtbot, qt_viewer_with_controls, dtype
         )
         assert np.allclose(color_box_color, middle_pixel, atol=1), label
+        assert np.allclose(
+            color_box_color,
+            layer.color.get(label, layer.color[None]) * 255,
+            atol=1,
+        ), label
 
 
 def test_axes_labels(make_napari_viewer):

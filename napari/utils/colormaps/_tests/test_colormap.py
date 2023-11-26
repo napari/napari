@@ -9,7 +9,6 @@ import pytest
 from napari.utils.colormaps import Colormap, DirectLabelColormap, colormap
 from napari.utils.colormaps.colormap import (
     DEFAULT_VALUE,
-    cast_direct_labels_to_minimum_type,
 )
 from napari.utils.colormaps.colormap_utils import label_colormap
 
@@ -213,7 +212,9 @@ def test_direct_label_colormap_selection(direct_label_colormap):
 
 def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
     data = np.arange(15, dtype=np.uint32)
-    casted = cast_direct_labels_to_minimum_type(data, direct_label_colormap)
+    casted = colormap._cast_direct_labels_to_minimum_type(
+        data, direct_label_colormap
+    )
     label_mapping = (
         direct_label_colormap.values_mapping_to_minimum_values_set()[0]
     )
@@ -257,7 +258,7 @@ def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     cmap.color_dict[None] = np.array([255, 255, 255, 255])
     data = np.arange(10, dtype=np.uint32)
     data[2] = 80005
-    casted = cast_direct_labels_to_minimum_type(data, cmap)
+    casted = colormap._cast_direct_labels_to_minimum_type(data, cmap)
     assert casted.dtype == dtype
 
 
@@ -267,3 +268,23 @@ def test_zero_preserving_modulo_naive():
     res1 = colormap._zero_preserving_modulo_naive(data, 49, np.uint8)
     res2 = colormap._zero_preserving_modulo(data, 49, np.uint8)
     npt.assert_array_equal(res1, res2)
+
+
+@pytest.mark.parametrize("size", [100, 1000])
+def test_cast_direct_labels_to_minimum_type_naive(size):
+    pytest.importorskip("numba")
+    data = np.arange(size, dtype=np.uint32)
+    dtype = colormap.minimum_dtype_for_labels(size)
+    cmap = DirectLabelColormap(
+        np.zeros(3),
+        color_dict={
+            k: np.array([*v, 255])
+            for k, v in zip(range(size - 2), product(range(256), repeat=3))
+        },
+    )
+    cmap.color_dict[None] = np.array([255, 255, 255, 255])
+    res1 = colormap._cast_direct_labels_to_minimum_type(data, cmap)
+    res2 = colormap._cast_direct_labels_to_minimum_type_naive(data, cmap)
+    npt.assert_array_equal(res1, res2)
+    assert res1.dtype == dtype
+    assert res2.dtype == dtype
