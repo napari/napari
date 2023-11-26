@@ -7,7 +7,7 @@ import types
 import warnings
 from abc import ABC
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, List, Literal, Sequence, Tuple, Union, cast
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -199,7 +199,7 @@ class _ImageBase(Layer, ABC):
         shear=None,
         translate=None,
         visible=True,
-    ) -> None:
+    ):
         if name is None and data is not None:
             name = magic_name(data)
 
@@ -366,7 +366,7 @@ class _ImageBase(Layer, ABC):
         return self._data_level
 
     @data_level.setter
-    def data_level(self, level: int):
+    def data_level(self, level: int) -> None:
         if self._data_level == level:
             return
         self._data_level = level
@@ -403,7 +403,7 @@ class _ImageBase(Layer, ABC):
         return str(self._depiction)
 
     @depiction.setter
-    def depiction(self, depiction: Union[str, VolumeDepiction]):
+    def depiction(self, depiction: Union[str, VolumeDepiction]) -> None:
         """Set the current 3D depiction mode."""
         self._depiction = VolumeDepiction(depiction)
         self._update_plane_callbacks()
@@ -442,7 +442,7 @@ class _ImageBase(Layer, ABC):
         return self._plane
 
     @plane.setter
-    def plane(self, value: Union[dict, SlicingPlane]):
+    def plane(self, value: Union[dict, SlicingPlane]) -> None:
         self._plane.update(value)
         self.events.plane()
 
@@ -832,7 +832,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         shear=None,
         translate=None,
         visible=True,
-    ) -> None:
+    ):
         # Determine if rgb
         data_shape = data.shape if hasattr(data, 'shape') else data[0].shape
         rgb_guess = guess_rgb(data_shape)
@@ -988,7 +988,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return self._attenuation
 
     @attenuation.setter
-    def attenuation(self, value: float):
+    def attenuation(self, value: float) -> None:
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
@@ -999,7 +999,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return self._data
 
     @data.setter
-    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
+    def data(self, data: Union[LayerDataProtocol, MultiScaleData]) -> None:
         self._data_raw = data
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
@@ -1071,7 +1071,9 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return cast(InterpolationStr, str(self._interpolation2d))
 
     @interpolation2d.setter
-    def interpolation2d(self, value: Union[InterpolationStr, Interpolation]):
+    def interpolation2d(
+        self, value: Union[InterpolationStr, Interpolation]
+    ) -> None:
         if value == 'bilinear':
             raise ValueError(
                 trans._(
@@ -1094,7 +1096,9 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return cast(InterpolationStr, str(self._interpolation3d))
 
     @interpolation3d.setter
-    def interpolation3d(self, value: Union[InterpolationStr, Interpolation]):
+    def interpolation3d(
+        self, value: Union[InterpolationStr, Interpolation]
+    ) -> None:
         if value == 'custom':
             raise NotImplementedError(
                 'custom interpolation is not implemented yet for 3D rendering'
@@ -1116,7 +1120,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         return self._iso_threshold
 
     @iso_threshold.setter
-    def iso_threshold(self, value: float):
+    def iso_threshold(self, value: float) -> None:
         self._iso_threshold = value
         self._update_thumbnail()
         self.events.iso_threshold()
@@ -1182,7 +1186,9 @@ class Image(IntensityVisualizationMixin, _ImageBase):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _calc_data_range(self, mode='data') -> Tuple[float, float]:
+    def _calc_data_range(
+        self, mode: Literal['data', 'slice'] = 'data'
+    ) -> Tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
         or full data array
