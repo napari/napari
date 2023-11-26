@@ -399,7 +399,6 @@ module = [
     "napari.components.overlays.base",
     "napari.components.overlays.interaction_box",
     "napari.layers.base._base_constants",
-    "napari.layers.image._image_constants",
     "napari.utils.colormaps.categorical_colormap_utils",
     "napari.utils.perf._event",
     "napari.utils.perf._trace_file",

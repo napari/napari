@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from enum import auto
-from typing import Literal
+from typing import Literal, Tuple
 
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
@@ -52,7 +52,15 @@ class Interpolation(StringEnum):
     CUSTOM = auto()
 
     @classmethod
-    def view_subset(cls):
+    def view_subset(
+        cls,
+    ) -> Tuple[
+        "Interpolation",
+        "Interpolation",
+        "Interpolation",
+        "Interpolation",
+        "Interpolation",
+    ]:
         return (
             cls.CUBIC,
             cls.LINEAR,
