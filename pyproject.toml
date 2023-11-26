@@ -365,7 +365,6 @@ module = [
     "napari._vispy.visuals.surface",
     "napari.layers._data_protocols",
     "napari.layers._source",
-    "napari.layers.image._image_mouse_bindings",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
     "napari.layers.utils.interactivity_utils",
