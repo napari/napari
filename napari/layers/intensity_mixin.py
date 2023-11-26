@@ -4,6 +4,7 @@ import numpy as np
 
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import ensure_colormap
+from napari.utils.colormaps.colormap_utils import ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.status_messages import format_float
 from napari.utils.validators import _validate_increasing, validate_n_seq
@@ -57,7 +58,7 @@ class IntensityVisualizationMixin:
     def _calc_data_range(self, mode):
         raise NotImplementedError
 
-    def reset_contrast_limits_range(self, mode=None):
+    def reset_contrast_limits_range(self, mode=None) -> None:
         """Scale contrast limits range to data type if dtype is an integer,
         or use the current maximum data range otherwise.
         """
@@ -78,7 +79,7 @@ class IntensityVisualizationMixin:
     def colormap(self, colormap):
         self._set_colormap(colormap)
 
-    def _set_colormap(self, colormap):
+    def _set_colormap(self, colormap: ValidColormapArg) -> None:
         self._colormap = ensure_colormap(colormap)
         self._update_thumbnail()
         self.events.colormap()

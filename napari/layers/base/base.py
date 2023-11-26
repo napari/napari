@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     ClassVar,
     Dict,
@@ -818,7 +819,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             assert self._moving_coordinates is not None
         self._private_is_moving = value
 
-    def _update_dims(self):
+    def _update_dims(self) -> None:
         """Update the dimensionality of transforms and slices when data changes."""
         ndim = self._get_ndim()
 
@@ -979,7 +980,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _get_ndim(self):
         raise NotImplementedError
 
-    def _get_base_state(self):
+    def _get_base_state(self) -> Dict[str, Any]:
         """Get dictionary of attributes on base layer.
 
         Returns
@@ -1430,7 +1431,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         finally:
             self._refresh_blocked = previous
 
-    def refresh(self, event=None):
+    def refresh(self, event: Optional[Event] = None) -> None:
         """Refresh all layer data based on current view slice."""
         if self._refresh_blocked:
             logger.debug('Layer.refresh blocked: %s', self)

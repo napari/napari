@@ -38,7 +38,7 @@ import sys
 import time
 from collections import ChainMap
 from types import MethodType
-from typing import Callable, Mapping, Union
+from typing import Any, Callable, Mapping, Union
 
 from app_model.types import KeyBinding, KeyCode, KeyMod
 from vispy.util import keys
@@ -318,7 +318,7 @@ class KeymapProvider:
     def keymap(self, value):
         self._keymap = {coerce_keybinding(k): v for k, v in value.items()}
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
         if 'class_keymap' not in cls.__dict__:

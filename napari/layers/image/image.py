@@ -7,7 +7,16 @@ import types
 import warnings
 from abc import ABC
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, List, Literal, Sequence, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -372,12 +381,12 @@ class _ImageBase(Layer, ABC):
         self._data_level = level
         self.refresh()
 
-    def _get_level_shapes(self):
+    def _get_level_shapes(self) -> Tuple[Tuple[int, ...], ...]:
         data = self.data
         if isinstance(data, MultiScaleData):
             shapes = data.shapes
         else:
-            shapes = [self.data.shape]
+            shapes = (self.data.shape,)
         return shapes
 
     @property
@@ -391,7 +400,7 @@ class _ImageBase(Layer, ABC):
         return np.divide(self.level_shapes[0], self.level_shapes)
 
     @property
-    def depiction(self):
+    def depiction(self) -> str:
         """The current 3D depiction mode.
 
         Selects a preset depiction mode in vispy
@@ -409,12 +418,12 @@ class _ImageBase(Layer, ABC):
         self._update_plane_callbacks()
         self.events.depiction()
 
-    def _reset_plane_parameters(self):
+    def _reset_plane_parameters(self) -> None:
         """Set plane attributes to something valid."""
-        self.plane.position = np.array(self.data.shape) / 2
+        self.plane.position = tuple(d / 2 for d in self.data.shape)
         self.plane.normal = (1, 0, 0)
 
-    def _update_plane_callbacks(self):
+    def _update_plane_callbacks(self) -> None:
         """Set plane callbacks depending on depiction mode."""
         plane_drag_callback_connected = (
             plane_drag_callback in self.mouse_drag_callbacks
@@ -438,7 +447,7 @@ class _ImageBase(Layer, ABC):
                 )
 
     @property
-    def plane(self):
+    def plane(self) -> SlicingPlane:
         return self._plane
 
     @plane.setter
@@ -447,11 +456,13 @@ class _ImageBase(Layer, ABC):
         self.events.plane()
 
     @property
-    def custom_interpolation_kernel_2d(self):
+    def custom_interpolation_kernel_2d(self) -> npt.NDArray:
         return self._custom_interpolation_kernel_2d
 
     @custom_interpolation_kernel_2d.setter
-    def custom_interpolation_kernel_2d(self, value):
+    def custom_interpolation_kernel_2d(
+        self, value: Optional[npt.ArrayLike]
+    ) -> None:
         if value is None:
             value = [[1]]
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
@@ -1128,10 +1139,10 @@ class Image(IntensityVisualizationMixin, _ImageBase):
     def _get_level_shapes(self):
         shapes = super()._get_level_shapes()
         if self.rgb:
-            shapes = [s[:-1] for s in shapes]
+            shapes = tuple(s[:-1] for s in shapes)
         return shapes
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update thumbnail with current image data and colormap."""
         image = self._slice.thumbnail.raw
 

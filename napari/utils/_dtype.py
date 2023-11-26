@@ -1,6 +1,7 @@
 from typing import Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 
 _np_uints = {
     8: np.uint8,
@@ -52,7 +53,7 @@ def _normalize_str_by_bit_depth(dtype_str, kind):
     return None
 
 
-def normalize_dtype(dtype_spec):
+def normalize_dtype(dtype_spec: npt.DTypeLike):
     """Return a proper NumPy type given ~any duck array dtype.
 
     Parameters
