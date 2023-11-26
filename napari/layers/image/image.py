@@ -238,7 +238,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         rgb=None,
         colormap='gray',
         contrast_limits=None,
-        gamma=1,
+        gamma=1.0,
         interpolation2d='nearest',
         interpolation3d='linear',
         rendering='mip',
