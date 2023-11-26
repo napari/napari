@@ -10,8 +10,8 @@ from napari.utils.colormaps import Colormap, DirectLabelColormap, colormap
 from napari.utils.colormaps.colormap import (
     DEFAULT_VALUE,
     cast_direct_labels_to_minimum_type,
-    label_colormap,
 )
+from napari.utils.colormaps.colormap_utils import label_colormap
 
 
 def test_linear_colormap():
