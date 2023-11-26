@@ -313,7 +313,7 @@ class _ImageBase(Layer, ABC):
         connect_no_arg(self.plane.events, self.events, 'plane')
         self.custom_interpolation_kernel_2d = custom_interpolation_kernel_2d
 
-    def _post_init(self):
+    def _post_init(self) -> None:
         # Trigger generation of view slice and thumbnail
         self.refresh()
 
@@ -323,7 +323,7 @@ class _ImageBase(Layer, ABC):
         return self._slice.image.view
 
     @property
-    def dtype(self):
+    def dtype(self) -> np.dtype:
         return self._data.dtype
 
     @property
@@ -912,7 +912,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
             self._iso_threshold = iso_threshold
 
     @property
-    def rendering(self):
+    def rendering(self) -> str:
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how
@@ -1021,7 +1021,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         self._reset_editable()
 
     @property
-    def interpolation(self):
+    def interpolation(self) -> str:
         """Return current interpolation mode.
 
         Selects a preset interpolation mode in vispy that determines how volume
@@ -1136,7 +1136,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         self._update_thumbnail()
         self.events.iso_threshold()
 
-    def _get_level_shapes(self):
+    def _get_level_shapes(self) -> Tuple[Tuple[int, ...], ...]:
         shapes = super()._get_level_shapes()
         if self.rgb:
             shapes = tuple(s[:-1] for s in shapes)
