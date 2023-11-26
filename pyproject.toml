@@ -461,6 +461,7 @@ module = [
     "napari._vispy.layers.base",
     "napari._vispy.visuals.axes",
     "napari.layers.labels._labels_mouse_bindings",
+    "napari.layers.image.image",
     "napari.layers.utils.color_manager_utils",
     "napari.layers.vectors._slice",
     "napari.utils.colormaps.vendored._cm",
@@ -550,7 +551,6 @@ warn_unused_ignores = false
 module = [
     "napari.__main__",
     "napari.utils.colormaps.vendored.colors",
-    "napari.layers.image.image"
 ]
 check_untyped_defs = false
 disallow_untyped_calls = false
