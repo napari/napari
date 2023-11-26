@@ -499,7 +499,6 @@ module = [
     "napari._vispy.layers.shapes",
     "napari._vispy.layers.surface",
     "napari.components._viewer_key_bindings",
-    "napari.layers.image.image",
     "napari.layers.labels.labels",
     "napari.layers.surface.surface",
     "napari.layers.tracks.tracks",
@@ -550,7 +549,8 @@ warn_unused_ignores = false
 [[tool.mypy.overrides]]
 module = [
     "napari.__main__",
-    "napari.utils.colormaps.vendored.colors"
+    "napari.utils.colormaps.vendored.colors",
+    "napari.layers.image.image"
 ]
 check_untyped_defs = false
 disallow_untyped_calls = false
