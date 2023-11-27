@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 def _get_widget_viewer_param(
     widget_callable: WidgetCreator, widget_name: str
 ) -> str:
-    """Get widget parameter name (if any) and check type."""
+    """Get widget parameter name for `viewer` (if any) and check type."""
     if inspect.isclass(widget_callable) and issubclass(
         widget_callable,
         (QWidget, Widget),
@@ -65,6 +65,8 @@ def _get_widget_viewer_param(
                     widget_param = param.name
                     break
 
+    # For magicgui type widget contributions, `Viewer` injection is done by
+    # `magicgui.register_type`.
     elif isinstance(widget_callable, MagicFactory) or inspect.isfunction(
         widget_callable
     ):
@@ -90,7 +92,7 @@ def _get_widget_callback(
 
     Returned widget will be added to main window by a processor.
     Note for magicgui type widget contributions, `Viewer` injection is done by
-    `magicgui.register_type`.
+    `magicgui.register_type` instead of a provider via annnotation.
     """
     window = napari_viewer.window
     if dock_widget := window._dock_widgets.get(name):
