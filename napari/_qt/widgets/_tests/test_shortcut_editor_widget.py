@@ -7,6 +7,7 @@ from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication, QMessageBox
 
 from napari._qt.widgets.qt_keyboard_settings import ShortcutEditor, WarnPopup
+from napari._tests.utils import skip_on_mac_ci
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import KEY_SYMBOLS
@@ -204,6 +205,7 @@ def test_keybinding_with_only_modifiers(
         assert key_symbol in shortcut
 
 
+@skip_on_mac_ci
 @pytest.mark.parametrize(
     "modifier_key, modifiers, key_symbols",
     [
@@ -227,6 +229,13 @@ def test_keybinding_editor_modifier_key_detection(
     modifiers,
     key_symbols,
 ):
+    """
+    Test modifier keys detection with pyautogui to trigger keyboard events
+    from the OS.
+
+    Note: Skipped on macOS CI due to accessibility permissions not being
+    settable on macOS GitHub Actions runners
+    """
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     assert shortcut == KEY_SYMBOLS["Ctrl"]
