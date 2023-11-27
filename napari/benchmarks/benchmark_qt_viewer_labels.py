@@ -40,7 +40,7 @@ class QtViewerSingleLabelsSuite:
         self.event = MouseEvent(
             type='mouse_move',
             is_dragging=True,
-            pos=(500, 500),
+            pos=[500, 500],
             view_direction=None,
         )
 
@@ -104,33 +104,28 @@ class LabelRendering:
     def setup(self, radius, dtype, label_mode):
         self.app = QApplication.instance() or QApplication([])
 
-        if label_mode == "auto":
-            self.data = self.setup_auto_data(radius, dtype)
-        else:
-            self.data = self.setup_direct_data(radius, dtype)
+        self.data = self.setup_data(radius, dtype)
 
         scale = self.data.shape[-1] / np.array(self.data.shape)
         self.viewer = napari.view_labels(self.data, scale=scale)
         self.layer = self.viewer.layers[0]
 
-    def setup_direct_data(self, radius, dtype):
-        raise NotImplementedError("Direct mode not implemented yet")
-
-    def setup_auto_data(self, radius, dtype):
+    @staticmethod
+    def setup_data(radius, dtype):
         if radius < 1000:
             data = octahedron(radius=radius, dtype=dtype)
         else:
             data = np.zeros(
                 (radius // 50, radius * 2, radius * 2), dtype=dtype
             )
-            for i in range(1, self.data.shape[0] // 2):
-                part = diamond(radius=(i) * 100, dtype=dtype)
+            for i in range(1, data.shape[0] // 2):
+                part = diamond(radius=i * 100, dtype=dtype)
                 shift = (data.shape[1] - part.shape[0]) // 2
                 data[i, shift : -shift - 1, shift : -shift - 1] = part
                 data[-i - 1, shift : -shift - 1, shift : -shift - 1] = part
 
-        count = np.count_nonzero(self.data)
-        data[self.data > 0] = np.random.randint(
+        count = np.count_nonzero(data)
+        data[data > 0] = np.random.randint(
             1, min(2000, np.iinfo(dtype).max), size=count, dtype=dtype
         )
 
