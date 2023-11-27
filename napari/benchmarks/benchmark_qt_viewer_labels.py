@@ -4,7 +4,8 @@
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import os
 from dataclasses import dataclass
-from itertools import cycle, lru_cache
+from functools import lru_cache
+from itertools import cycle
 from typing import List
 
 import numpy as np
