@@ -182,6 +182,8 @@ class LabelColormap(Colormap):
         ----------
         values : np.ndarray or float
             Values to be mapped.
+        apply_selection : bool
+            Whether to apply selection if self.use_selection is True.
 
         Returns
         -------
