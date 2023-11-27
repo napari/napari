@@ -1,6 +1,6 @@
 """Non-Qt processors.
 
-Qt processors can be found in `napari/_qt/_qapp_model/qactions/_qprocessors.py`.
+Qt processors can be found in `napari/_qt/_qapp_model/injection/_qprocessors.py`.
 """
 
 import sys

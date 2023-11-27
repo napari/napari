@@ -3,8 +3,8 @@ from __future__ import annotations
 from functools import lru_cache
 from itertools import chain
 
-from napari._qt._qapp_model.qactions._qprocessors import QPROCESSORS
-from napari._qt._qapp_model.qactions._qproviders import QPROVIDERS
+from napari._qt._qapp_model.injection._qprocessors import QPROCESSORS
+from napari._qt._qapp_model.injection._qproviders import QPROVIDERS
 
 # Submodules should be able to import from most modules, so to
 # avoid circular imports, don't import submodules at the top level here,

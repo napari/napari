@@ -24,7 +24,7 @@ from qtpy.QtWidgets import QWidget
 
 from napari._app_model import get_app
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._qt._qapp_model.qactions._qproviders import _provide_window
+from napari._qt._qapp_model.injection._qproviders import _provide_window
 from napari.plugins import menu_item_template
 from napari.plugins._npe2 import (
     _get_contrib_parent_menu,
