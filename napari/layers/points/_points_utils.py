@@ -1,6 +1,7 @@
 from typing import Iterable, List, Optional, Tuple
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers.points._points_constants import SYMBOL_ALIAS, Symbol
 from napari.utils.geometry import project_points_onto_plane
@@ -50,7 +51,7 @@ def _create_box_from_corners_3d(
     return box
 
 
-def create_box(data):
+def create_box(data: npt.NDArray) -> npt.NDArray:
     """Create the axis aligned interaction box of a list of points
 
     Parameters
@@ -73,7 +74,7 @@ def create_box(data):
     return box
 
 
-def points_to_squares(points, sizes):
+def points_to_squares(points: npt.NDArray, sizes: npt.NDArray) -> npt.NDArray:
     """Expand points to squares defined by their size
 
     Parameters
@@ -210,7 +211,7 @@ def points_in_box(
 
 def fix_data_points(
     points: Optional[np.ndarray], ndim: Optional[int]
-) -> Tuple[np.ndarray, int]:
+) -> Tuple[npt.NDArray, int]:
     """
     Ensure that points array is 2d and have second dimension of size ndim (default 2 for empty arrays)
 
@@ -236,10 +237,10 @@ def fix_data_points(
     if points is None or len(points) == 0:
         if ndim is None:
             ndim = 2
-        points = np.empty((0, ndim))
+        points_out = np.empty((0, ndim))
     else:
-        points = np.atleast_2d(points)
-        data_ndim = points.shape[1]
+        points_out = np.atleast_2d(points)
+        data_ndim = points_out.shape[1]
         if ndim is not None and ndim != data_ndim:
             raise ValueError(
                 trans._(
@@ -248,7 +249,7 @@ def fix_data_points(
                 )
             )
         ndim = data_ndim
-    return points, ndim
+    return points_out, ndim
 
 
 def coerce_symbols(array: Iterable) -> np.ndarray:
