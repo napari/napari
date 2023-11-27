@@ -102,31 +102,39 @@ class LabelRendering:
         skip_params = Skiper(lambda x: x[0] >= 100)
 
     def setup(self, radius, dtype, label_mode):
-        if label_mode == "direct":
-            raise NotImplementedError("Direct mode not implemented yet")
         self.app = QApplication.instance() or QApplication([])
 
-        if radius < 1000:
-            self.data = octahedron(radius=radius, dtype=dtype)
+        if label_mode == "auto":
+            self.data = self.setup_auto_data(radius, dtype)
         else:
-            self.data = np.zeros(
+            self.data = self.setup_direct_data(radius, dtype)
+
+        scale = self.data.shape[-1] / np.array(self.data.shape)
+        self.viewer = napari.view_labels(self.data, scale=scale)
+        self.layer = self.viewer.layers[0]
+
+    def setup_direct_data(self, radius, dtype):
+        raise NotImplementedError("Direct mode not implemented yet")
+
+    def setup_auto_data(self, radius, dtype):
+        if radius < 1000:
+            data = octahedron(radius=radius, dtype=dtype)
+        else:
+            data = np.zeros(
                 (radius // 50, radius * 2, radius * 2), dtype=dtype
             )
             for i in range(1, self.data.shape[0] // 2):
                 part = diamond(radius=(i) * 100, dtype=dtype)
-                shift = (self.data.shape[1] - part.shape[0]) // 2
-                self.data[i, shift : -shift - 1, shift : -shift - 1] = part
-                self.data[
-                    -i - 1, shift : -shift - 1, shift : -shift - 1
-                ] = part
+                shift = (data.shape[1] - part.shape[0]) // 2
+                data[i, shift : -shift - 1, shift : -shift - 1] = part
+                data[-i - 1, shift : -shift - 1, shift : -shift - 1] = part
 
         count = np.count_nonzero(self.data)
-        self.data[self.data > 0] = np.random.randint(
+        data[self.data > 0] = np.random.randint(
             1, min(2000, np.iinfo(dtype).max), size=count, dtype=dtype
         )
-        scale = self.data.shape[-1] / np.array(self.data.shape)
-        self.viewer = napari.view_labels(self.data, scale=scale)
-        self.layer = self.viewer.layers[0]
+
+        return data
 
     def teardown(self, *_):
         if hasattr(self, "viewer"):
