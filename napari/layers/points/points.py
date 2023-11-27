@@ -1990,7 +1990,7 @@ class Points(Layer):
         )
         self.selected_data = set(np.arange(cur_points, len(self.data)))
 
-    def remove_selected(self):
+    def remove_selected(self) -> None:
         """Removes selected points if any."""
         index = list(self.selected_data)
         index.sort()
@@ -2094,7 +2094,7 @@ class Points(Layer):
                 ].mean(axis=0)
                 self._drag_start -= center
 
-    def _paste_data(self):
+    def _paste_data(self) -> None:
         """Paste any point from clipboard and select them."""
         npoints = len(self._view_data)
         totpoints = len(self.data)
@@ -2148,7 +2148,7 @@ class Points(Layer):
             )
             self.refresh()
 
-    def _copy_data(self):
+    def _copy_data(self) -> None:
         """Copy selected points to clipboard."""
         if len(self.selected_data) > 0:
             index = list(self.selected_data)

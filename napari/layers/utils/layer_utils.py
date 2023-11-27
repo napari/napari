@@ -120,7 +120,7 @@ def register_layer_attr_action(
     description: str,
     attribute_name: str,
     shortcuts=None,
-):
+) -> Callable[[Callable], Callable]:
     """
     Convenient decorator to register an action with the current Layers.
     This will get and restore attribute from function first argument.
@@ -149,7 +149,7 @@ def register_layer_attr_action(
 
     """
 
-    def _handle(func):
+    def _handle(func: Callable) -> Callable:
         sig = inspect.signature(func)
         try:
             first_variable_name = next(iter(sig.parameters))
