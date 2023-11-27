@@ -24,6 +24,7 @@ class Labels2DSuite:
         np.random.seed(0)
         self.data = np.random.randint(20, size=(n, n))
         self.layer = Labels(self.data)
+        self.layer._raw_to_displayed(self.data, (slice(0, n), slice(0, n)))
 
     def time_create_layer(self, n):
         """Time to create layer."""

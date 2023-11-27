@@ -1,6 +1,7 @@
 import bisect
 import math
 from collections import defaultdict
+from functools import cached_property
 from typing import DefaultDict, Dict, List, Optional, Tuple, cast
 
 import numpy as np
@@ -166,6 +167,19 @@ class LabelColormap(Colormap):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
 
+    class Config:
+        keep_untouched = (cached_property,)
+
+    @cached_property
+    def _uint8_colors(self) -> np.ndarray:
+        data = np.arange(256, dtype=np.uint8)
+        return self.map(data, apply_selection=False)
+
+    @cached_property
+    def _uint16_colors(self) -> np.ndarray:
+        data = np.arange(65536, dtype=np.uint16)
+        return self.map(data, apply_selection=False)
+
     def map(self, values, apply_selection=True) -> np.ndarray:
         """Map values to colors.
 
@@ -184,14 +198,19 @@ class LabelColormap(Colormap):
         if values.dtype.kind == 'f':
             values = values.astype(np.int64)
 
-        background = int(
-            np.array([self.background_value]).astype(values.dtype)[0]
-        )
-        casted_values = _zero_preserving_modulo_naive(
-            values, len(self.colors) - 1, values.dtype, background
-        )
-        mapped = self.colors[casted_values]
-        mapped[casted_values == 0] = 0
+        if values.dtype == np.uint8 and "_uint8_colors" in self.__dict__:
+            mapped = self._uint8_colors[values]
+        elif values.dtype == np.uint16 and "_uint16_colors" in self.__dict__:
+            mapped = self._uint16_colors[values]
+        else:
+            background = int(
+                np.array([self.background_value]).astype(values.dtype)[0]
+            )
+            casted_values = _zero_preserving_modulo_naive(
+                values, len(self.colors) - 1, values.dtype, background
+            )
+            mapped = self.colors[casted_values]
+            mapped[casted_values == 0] = 0
         if self.use_selection and apply_selection:
             selection2 = np.array([self.selection]).astype(values.dtype)[0]
             mapped[(values != self.selection) & (values != selection2)] = 0

@@ -89,15 +89,21 @@ class QtViewerSingleLabelsSuite:
         self.viewer.window._qt_viewer.canvas._on_mouse_move(self.event)
 
 
-class LabelRenderingSuite:
+class LabelRendering:
     """Benchmarks for rendering the Labels layer."""
 
     param_names = ["radius", "dtype"]
-    params = ([20, 400, 2000], [np.uint8, np.uint16, np.uint32])
+    params = (
+        [20, 400, 2000],
+        [np.uint8, np.uint16, np.uint32],
+        ["auto"],  # "direct"],
+    )
     if "PR" in os.environ:
         skip_params = Skiper(lambda x: x[0] >= 100)
 
-    def setup(self, radius, dtype):
+    def setup(self, radius, dtype, label_mode):
+        if label_mode == "direct":
+            raise NotImplementedError("Direct mode not implemented yet")
         self.app = QApplication.instance() or QApplication([])
 
         if radius < 1000:
@@ -123,22 +129,38 @@ class LabelRenderingSuite:
         self.layer = self.viewer.layers[0]
 
     def teardown(self, *_):
-        self.viewer.window.close()
+        if hasattr(self, "viewer"):
+            self.viewer.window.close()
+
+    def _time_iterate_components(self, *_):
+        """Time to iterate over components."""
+        self.layer.show_selected_label = True
+        for i in range(0, 200, 10):
+            self.layer.selected_label = i
+            self.app.processEvents()
+
+    def _time_zoom_change(self, *_):
+        """Time to zoom in and zoom out."""
+        initial_zoom = self.viewer.camera.zoom
+        self.viewer.camera.zoom = 0.5 * initial_zoom
+        self.app.processEvents()
+        self.viewer.camera.zoom = 2 * initial_zoom
+        self.app.processEvents()
 
 
-class LabelRenderingSuite2D(LabelRenderingSuite):
-    def setup(self, radius, dtype):
-        super().setup(radius, dtype)
+class LabelRenderingSuite2D(LabelRendering):
+    def setup(self, radius, dtype, label_mode):
+        super().setup(radius, dtype, label_mode)
         self.viewer.dims.ndisplay = 2
 
-    def time_iterate_over_z(self, radius, dtype):
+    def time_iterate_over_z(self, *_):
         """Time to render the layer."""
         z_size = self.data.shape[0]
         for i in range(0, z_size, z_size // 20):
             self.viewer.dims.set_point(0, i)
             self.app.processEvents()
 
-    def time_load_3d(self, radius, dtype):
+    def time_load_3d(self, *_):
         """Time to first render of the layer in 3D."""
         self.app.processEvents()
         self.viewer.dims.ndisplay = 3
@@ -146,14 +168,26 @@ class LabelRenderingSuite2D(LabelRenderingSuite):
         self.viewer.dims.ndisplay = 2
         self.app.processEvents()
 
+    def time_iterate_components(self, *args):
+        self._time_iterate_components(*args)
 
-class LabelRenderingSuite3D(LabelRenderingSuite):
-    def setup(self, radius, dtype):
-        super().setup(radius, dtype)
+    def time_zoom_change(self, *args):
+        self._time_zoom_change(*args)
+
+
+class LabelRenderingSuite3D(LabelRendering):
+    def setup(self, radius, dtype, label_mode):
+        super().setup(radius, dtype, label_mode)
         self.viewer.dims.ndisplay = 3
 
-    def time_rotate(self, radius, dtype):
+    def time_rotate(self, *_):
         """Time to rotate the layer."""
         for i in range(0, 360, 5):
             self.viewer.camera.angles = (0, i / 2, i)
             self.app.processEvents()
+
+    def time_iterate_components(self, *args):
+        self._time_iterate_components(*args)
+
+    def time_zoom_change(self, *args):
+        self._time_zoom_change(*args)

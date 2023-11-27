@@ -207,14 +207,10 @@ class VispyLabelsLayer(VispyImageLayer):
                     np.array([colormap.background_value]).astype(raw_dtype),
                     colormap,
                 )[0]
-            colors = np.array(
-                colormap.map(
-                    np.arange(
-                        np.iinfo(data_dtype).max + 1, dtype=data_dtype
-                    ).reshape(256, -1),
-                    apply_selection=False,
-                )
-            )
+            if data_dtype == np.uint8:
+                colors = colormap._uint8_colors.reshape(256, -1, 4)
+            else:
+                colors = colormap._uint16_colors.reshape(256, -1, 4)
             self.node.cmap = LabelVispyColormap(
                 colormap, view_dtype=data_dtype, data_dtype=raw_dtype
             )
