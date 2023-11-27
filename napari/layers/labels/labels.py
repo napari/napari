@@ -54,6 +54,7 @@ from napari.utils.colormaps import (
 )
 from napari.utils.colormaps.colormap import (
     LabelColormap,
+    LabelColormapBase,
     _cast_direct_labels_to_minimum_type_auto,
     _cast_labels_to_minimum_dtype_auto,
     _convert_small_ints_to_unsigned,
@@ -236,6 +237,7 @@ class Labels(_ImageBase):
     """
 
     events: EmitterGroup
+    _colormap: LabelColormapBase
 
     _modeclass = Mode
 
@@ -519,9 +521,13 @@ class Labels(_ImageBase):
 
         self.refresh()
 
-    @_ImageBase.colormap.setter
-    def colormap(self, colormap):
-        super()._set_colormap(colormap)
+    @property
+    def colormap(self) -> LabelColormapBase:
+        return self._colormap
+
+    @colormap.setter
+    def colormap(self, colormap: LabelColormapBase):
+        self._set_colormap(colormap)
         if isinstance(self._colormap, LabelColormap):
             self._random_colormap = self._colormap
         else:

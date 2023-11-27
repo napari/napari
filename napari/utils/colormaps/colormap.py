@@ -151,7 +151,25 @@ class Colormap(EventedModel):
         return make_colorbar(self)
 
 
-class LabelColormap(Colormap):
+class LabelColormapBase(Colormap):
+    class Config:
+        keep_untouched = (cached_property,)
+
+    @cached_property
+    def _uint8_colors(self) -> np.ndarray:
+        data = np.arange(256, dtype=np.uint8)
+        return self.map(data, apply_selection=False)
+
+    @cached_property
+    def _uint16_colors(self) -> np.ndarray:
+        data = np.arange(65536, dtype=np.uint16)
+        return self.map(data, apply_selection=False)
+
+    def map(self, values, apply_selection=True):
+        raise NotImplementedError
+
+
+class LabelColormap(LabelColormapBase):
     """Colormap that shuffles values before mapping to colors.
 
     Attributes
@@ -166,19 +184,6 @@ class LabelColormap(Colormap):
     selection: int = 0
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
-
-    class Config:
-        keep_untouched = (cached_property,)
-
-    @cached_property
-    def _uint8_colors(self) -> np.ndarray:
-        data = np.arange(256, dtype=np.uint8)
-        return self.map(data, apply_selection=False)
-
-    @cached_property
-    def _uint16_colors(self) -> np.ndarray:
-        data = np.arange(65536, dtype=np.uint16)
-        return self.map(data, apply_selection=False)
 
     def map(self, values, apply_selection=True) -> np.ndarray:
         """Map values to colors.
@@ -229,7 +234,7 @@ class LabelColormap(Colormap):
         self.events.colors(value=self.colors)
 
 
-class DirectLabelColormap(Colormap):
+class DirectLabelColormap(LabelColormapBase):
     """Colormap using a direct mapping from labels to color using a dict.
 
     Attributes
