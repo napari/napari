@@ -329,12 +329,7 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
         # actually a registered plugin.
         if plugin_name in pm.instance():
             _register_manifest_actions(pm.get_manifest(plugin_name))
-            try:
-                from napari._qt._qplugins import _register_widget_actions
-            except ModuleNotFoundError:
-                pass
-            else:
-                _register_widget_actions(pm.get_manifest(plugin_name))
+            _safe_register_widget_actions(pm.get_manifest(plugin_name))
 
 
 def on_plugins_registered(manifests: Set[PluginManifest]):
@@ -345,12 +340,7 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
     for mf in manifests:
         if not pm.is_disabled(mf.name):
             _register_manifest_actions(mf)
-            try:
-                from napari._qt._qplugins import _register_widget_actions
-            except ModuleNotFoundError:
-                pass
-            else:
-                _register_widget_actions(mf)
+            _safe_register_widget_actions(mf)
 
 
 # TODO: This is a separate function from `_get_samples_submenu_actions` so it
@@ -534,6 +524,16 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
     submenus = submenus + samples_submenu
     if submenus:
         context.register_disposable(app.menus.append_menu_items(submenus))
+
+
+def _safe_register_widget_actions(mf: PluginManifest) -> None:
+    """`_register_widget_actions` if Qt available."""
+    try:
+        from napari._qt._qplugins import _register_widget_actions
+    except ModuleNotFoundError:
+        pass
+    else:
+        _register_widget_actions(mf)
 
 
 def _npe2_manifest_to_actions(
