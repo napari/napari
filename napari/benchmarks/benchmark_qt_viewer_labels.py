@@ -4,7 +4,7 @@
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import os
 from dataclasses import dataclass
-from itertools import cycle
+from itertools import cycle, lru_cache
 from typing import List
 
 import numpy as np
@@ -12,6 +12,8 @@ from qtpy.QtWidgets import QApplication
 from skimage.morphology import diamond, octahedron
 
 import napari
+from napari.components.viewer_model import ViewerModel
+from napari.qt import QtViewer
 
 from .utils import Skiper
 
@@ -90,12 +92,32 @@ class QtViewerSingleLabelsSuite:
         self.viewer.window._qt_viewer.canvas._on_mouse_move(self.event)
 
 
+@lru_cache
+def setup_rendering_data(radius, dtype):
+    if radius < 1000:
+        data = octahedron(radius=radius, dtype=dtype)
+    else:
+        data = np.zeros((radius // 50, radius * 2, radius * 2), dtype=dtype)
+        for i in range(1, data.shape[0] // 2):
+            part = diamond(radius=i * 100, dtype=dtype)
+            shift = (data.shape[1] - part.shape[0]) // 2
+            data[i, shift : -shift - 1, shift : -shift - 1] = part
+            data[-i - 1, shift : -shift - 1, shift : -shift - 1] = part
+
+    count = np.count_nonzero(data)
+    data[data > 0] = np.random.randint(
+        1, min(2000, np.iinfo(dtype).max), size=count, dtype=dtype
+    )
+
+    return data
+
+
 class LabelRendering:
     """Benchmarks for rendering the Labels layer."""
 
-    param_names = ["radius", "dtype"]
+    param_names = ["radius", "dtype", "mode"]
     params = (
-        [20, 400, 2000],
+        [20, 300, 1500],
         [np.uint8, np.uint16, np.uint32],
         ["auto", "direct"],
     )
@@ -104,11 +126,11 @@ class LabelRendering:
 
     def setup(self, radius, dtype, label_mode):
         self.app = QApplication.instance() or QApplication([])
-
-        self.data = self.setup_data(radius, dtype)
-
+        self.data = setup_rendering_data(radius, dtype)
         scale = self.data.shape[-1] / np.array(self.data.shape)
-        self.viewer = napari.view_labels(self.data, scale=scale)
+        self.viewer = ViewerModel()
+        self.qt_viewr = QtViewer(self.viewer)
+        self.layer = self.viewer.add_labels(self.data, scale=scale)
         if label_mode == "direct":
             colors = dict(
                 zip(
@@ -118,38 +140,18 @@ class LabelRendering:
             )
             colors[None] = "yellow"
             colors[0] = "transparent"
-            self.viewer.layers[0].color = colors
-        self.layer = self.viewer.layers[0]
+            self.layer.color = colors
+        self.qt_viewr.show()
 
     @staticmethod
-    def setup_data(radius, dtype):
-        if radius < 1000:
-            data = octahedron(radius=radius, dtype=dtype)
-        else:
-            data = np.zeros(
-                (radius // 50, radius * 2, radius * 2), dtype=dtype
-            )
-            for i in range(1, data.shape[0] // 2):
-                part = diamond(radius=i * 100, dtype=dtype)
-                shift = (data.shape[1] - part.shape[0]) // 2
-                data[i, shift : -shift - 1, shift : -shift - 1] = part
-                data[-i - 1, shift : -shift - 1, shift : -shift - 1] = part
-
-        count = np.count_nonzero(data)
-        data[data > 0] = np.random.randint(
-            1, min(2000, np.iinfo(dtype).max), size=count, dtype=dtype
-        )
-
-        return data
-
     def teardown(self, *_):
         if hasattr(self, "viewer"):
-            self.viewer.window.close()
+            self.qt_viewr.close()
 
     def _time_iterate_components(self, *_):
         """Time to iterate over components."""
         self.layer.show_selected_label = True
-        for i in range(0, 200, 10):
+        for i in range(0, 201, 20):
             self.layer.selected_label = i
             self.app.processEvents()
 
@@ -198,7 +200,7 @@ class LabelRenderingSuite3D(LabelRendering):
 
     def time_rotate(self, *_):
         """Time to rotate the layer."""
-        for i in range(0, 360, 5):
+        for i in range(0, 180, 5):
             self.viewer.camera.angles = (0, i / 2, i)
             self.app.processEvents()
 
