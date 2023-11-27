@@ -96,7 +96,7 @@ class LabelRendering:
     params = (
         [20, 400, 2000],
         [np.uint8, np.uint16, np.uint32],
-        ["auto", "direct"],
+        ["auto"],  # "direct"],
     )
     if "PR" in os.environ:
         skip_params = Skiper(lambda x: x[0] >= 100)
