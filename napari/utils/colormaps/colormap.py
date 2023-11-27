@@ -245,7 +245,7 @@ class DirectLabelColormap(LabelColormapBase):
         The dictionary mapping labels to colors.
     use_selection : bool
         Whether to color using the selected label.
-    selection : float
+    selection : int
         The selected label.
     """
 
@@ -262,6 +262,8 @@ class DirectLabelColormap(LabelColormapBase):
         ----------
         values : np.ndarray or float
             Values to be mapped.
+        apply_selection : bool
+            Whether to apply selection if self.use_selection is True.
         Returns
         -------
         np.ndarray of same shape as values, but with last dimension of size 4
