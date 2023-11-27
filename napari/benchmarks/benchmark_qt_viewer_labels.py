@@ -4,6 +4,7 @@
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import os
 from dataclasses import dataclass
+from itertools import cycle
 from typing import List
 
 import numpy as np
@@ -96,7 +97,7 @@ class LabelRendering:
     params = (
         [20, 400, 2000],
         [np.uint8, np.uint16, np.uint32],
-        ["auto"],  # "direct"],
+        ["auto", "direct"],
     )
     if "PR" in os.environ:
         skip_params = Skiper(lambda x: x[0] >= 100)
@@ -108,6 +109,16 @@ class LabelRendering:
 
         scale = self.data.shape[-1] / np.array(self.data.shape)
         self.viewer = napari.view_labels(self.data, scale=scale)
+        if label_mode == "direct":
+            colors = dict(
+                zip(
+                    range(10, 2000),
+                    cycle(["red", "green", "blue", "pink", "magenta"]),
+                )
+            )
+            colors[None] = "yellow"
+            colors[0] = "transparent"
+            self.viewer.layers[0].color = colors
         self.layer = self.viewer.layers[0]
 
     @staticmethod
