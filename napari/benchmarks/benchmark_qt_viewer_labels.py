@@ -11,6 +11,8 @@ from qtpy.QtWidgets import QApplication
 from skimage.morphology import diamond, octahedron
 
 import napari
+from napari.components.viewer_model import ViewerModel
+from napari.qt import QtViewer
 
 from .utils import Skiper
 
@@ -107,8 +109,10 @@ class LabelRendering:
         self.data = self.setup_data(radius, dtype)
 
         scale = self.data.shape[-1] / np.array(self.data.shape)
-        self.viewer = napari.view_labels(self.data, scale=scale)
-        self.layer = self.viewer.layers[0]
+        self.viewer = ViewerModel()
+        self.qt_viewr = QtViewer(self.viewer)
+        self.layer = self.viewer.add_labels(self.data, scale=scale)
+        self.qt_viewr.show()
 
     @staticmethod
     def setup_data(radius, dtype):
@@ -133,7 +137,7 @@ class LabelRendering:
 
     def teardown(self, *_):
         if hasattr(self, "viewer"):
-            self.viewer.window.close()
+            self.qt_viewr.close()
 
     def _time_iterate_components(self, *_):
         """Time to iterate over components."""
