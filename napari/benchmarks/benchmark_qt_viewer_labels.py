@@ -166,6 +166,7 @@ class LabelRenderingSuite2D(LabelRendering):
     def setup(self, radius, dtype, label_mode):
         super().setup(radius, dtype, label_mode)
         self.viewer.dims.ndisplay = 2
+        self.app.processEvents()
 
     def time_iterate_over_z(self, *_):
         """Time to render the layer."""
@@ -193,6 +194,7 @@ class LabelRenderingSuite3D(LabelRendering):
     def setup(self, radius, dtype, label_mode):
         super().setup(radius, dtype, label_mode)
         self.viewer.dims.ndisplay = 3
+        self.app.processEvents()
 
     def time_rotate(self, *_):
         """Time to rotate the layer."""
