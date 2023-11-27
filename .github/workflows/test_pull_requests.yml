@@ -193,12 +193,21 @@ jobs:
           pip install --upgrade pip
           pip install asv[virtualenv]
 
-      - name: Run benchmarks
+      - name: asv machine
+        run: asv machine --yes
+
+      - name: Run benchmarks PR
         uses: aganders3/headless-gui@v1
         with:
           run: |
-            asv machine --yes
             asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
+        env:
+          PR: 1
+
+      - name: Run benchmarks release
+        uses: aganders3/headless-gui@v1
+        with:
+          run: |
             asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
         env:
           PR: 1
