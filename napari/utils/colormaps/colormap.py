@@ -176,7 +176,7 @@ class LabelColormap(LabelColormapBase):
     ----------
     seed : float
     use_selection : bool
-    selection : float
+    selection : int
     """
 
     seed: float = 0.5
