@@ -121,7 +121,9 @@ class Labels2DColorDirectSuite(Labels2DSuite):
             self.data,
             color={i + 1: np.random.random(4) for i in random_label_ids},
         )
-        self.layer._raw_to_displayed(self.layer._slice.image.raw)
+        self.layer._raw_to_displayed(
+            self.layer._slice.image.raw, (slice(0, n), slice(0, n))
+        )
 
 
 class Labels3DSuite:
@@ -139,6 +141,10 @@ class Labels3DSuite:
         self.data = np.random.randint(20, size=(n, n, n))
         self.layer = Labels(self.data)
         self.layer._slice_dims(Dims(ndim=3, ndisplay=3))
+        self.layer._raw_to_displayed(
+            self.layer._slice.image.raw,
+            (slice(0, n), slice(0, n), slice(0, n)),
+        )
 
     # @mark.skip_params_if([(2**i,) for i in range(6, 11)], condition="PR" in os.environ)
     def time_create_layer(self, n):
