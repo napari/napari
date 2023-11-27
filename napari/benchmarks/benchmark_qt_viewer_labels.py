@@ -115,7 +115,7 @@ def setup_rendering_data(radius, dtype):
 class LabelRendering:
     """Benchmarks for rendering the Labels layer."""
 
-    param_names = ["radius", "dtype"]
+    param_names = ["radius", "dtype", "mode"]
     params = (
         [20, 300, 1500],
         [np.uint8, np.uint16, np.uint32],
