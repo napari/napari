@@ -521,7 +521,6 @@ module = [
     "napari.components.dims",
     "napari.conftest",
     "napari.layers.labels._labels_utils",
-    "napari.layers.points._points_mouse_bindings",
     "napari.layers.shapes._shapes_models._polgyon_base",
     "napari.layers.shapes._shapes_models.ellipse",
     "napari.layers.shapes._shapes_models.line",

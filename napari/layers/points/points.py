@@ -15,6 +15,7 @@ from typing import (
 )
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from psygnal.containers import Selection
 from scipy.stats import gmean
@@ -402,14 +403,14 @@ class Points(Layer):
         self._highlight_box = None
 
         self._drag_start = None
-        self._drag_normal = None
-        self._drag_up = None
+        self._drag_normal: Optional[npt.NDArray] = None
+        self._drag_up: Optional[npt.NDArray] = None
 
         # initialize view data
         self.__indices_view = np.empty(0, int)
         self._view_size_scale = []
 
-        self._drag_box = None
+        self._drag_box: Optional[npt.NDArray] = None
         self._drag_box_stored = None
         self._is_selecting = False
         self._clipboard = {}
@@ -1854,7 +1855,7 @@ class Points(Layer):
         with self.events.highlight.blocker():
             self._set_highlight(force=True)
 
-    def _set_highlight(self, force=False):
+    def _set_highlight(self, force: bool = False) -> None:
         """Render highlights of shapes including boundaries, vertices,
         interaction boxes, and the drag selection box when appropriate.
         Highlighting only occurs in Mode.SELECT.
@@ -1965,7 +1966,7 @@ class Points(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def add(self, coords):
+    def add(self, coords: npt.NDArray) -> None:
         """Adds points at coordinates.
 
         Parameters
@@ -2036,14 +2037,14 @@ class Points(Layer):
 
     def _move(
         self,
-        selection_indices: Sequence[int],
-        position: Sequence[Union[int, float]],
+        selection_indices: Selection[int],
+        position: npt.ArrayLike,
     ) -> None:
         """Move points relative to drag start location.
 
         Parameters
         ----------
-        selection_indices : Sequence[int]
+        selection_indices : Selection[int]
             Integer indices of points to move in self.data
         position : tuple
             Position to move points to in data coordinates.
@@ -2067,15 +2068,15 @@ class Points(Layer):
 
     def _set_drag_start(
         self,
-        selection_indices: Sequence[int],
-        position: Sequence[Union[int, float]],
+        selection_indices: Selection[int],
+        position: npt.ArrayLike,
         center_by_data: bool = True,
     ) -> None:
         """Store the initial position at the start of a drag event.
 
         Parameters
         ----------
-        selection_indices : set of int
+        selection_indices : selection of int
             integer indices of selected data used to index into self.data
         position : Sequence of numbers
             position of the drag start in data coordinates.

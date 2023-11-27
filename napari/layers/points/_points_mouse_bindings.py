@@ -1,12 +1,17 @@
-from typing import Set, TypeVar
+from typing import TYPE_CHECKING, Generator, TypeVar
 
 import numpy as np
+from psygnal.containers import Selection
 
 from napari.layers.base import ActionType
 from napari.layers.points._points_utils import _points_in_box_3d, points_in_box
+from napari.utils.events import Event
+
+if TYPE_CHECKING:
+    from napari.layers.points import Points
 
 
-def select(layer, event):
+def select(layer: "Points", event: Event) -> Generator[None, None, None]:
     """Select points.
 
     Clicking on a point will select that point. If holding shift while clicking
@@ -45,9 +50,9 @@ def select(layer, event):
             # index selected, otherwise don't change the selection so that
             # the current selection can be dragged together.
             if value not in layer.selected_data:
-                layer.selected_data = {value}
+                layer.selected_data = Selection({value})
         else:
-            layer.selected_data = set()
+            layer.selected_data = Selection()
     layer._set_highlight()
 
     # Set _drag_start value here to prevent an offset when mouse_move happens
@@ -120,10 +125,10 @@ def select(layer, event):
 DRAG_DIST_THRESHOLD = 5
 
 
-def add(layer, event):
+def add(layer: "Points", event: Event) -> Generator[None, None, None]:
     """Add a new point at the clicked position."""
     start_pos = event.pos
-    dist = 0
+    dist = np.float32(0)
     yield
 
     while event.type == 'mouse_move':
@@ -141,7 +146,7 @@ def add(layer, event):
         layer.add(coordinates)
 
 
-def highlight(layer, event):
+def highlight(layer: "Points", event: Event) -> None:
     """Highlight hovered points."""
     layer._set_highlight()
 
@@ -149,24 +154,23 @@ def highlight(layer, event):
 _T = TypeVar("_T")
 
 
-def _toggle_selected(selection: Set[_T], value: _T) -> Set[_T]:
-    """Add or remove value from the selection set.
+def _toggle_selected(selection: Selection[_T], value: _T) -> Selection[_T]:
+    """Add or remove value from the selection.
 
     This function returns a copy of the existing selection.
 
     Parameters
     ----------
-    selection : set
+    selection : pysgnal.containers.Selection
         Set of selected data points to be modified.
     value : int
         Index of point to add or remove from selected data set.
 
     Returns
     -------
-    selection: set
+    selection: pysygnal.containers.Selection
         Updated selection.
     """
-    selection = set(selection)
     if value in selection:
         selection.remove(value)
     else:
@@ -174,7 +178,7 @@ def _toggle_selected(selection: Set[_T], value: _T) -> Set[_T]:
     return selection
 
 
-def _update_drag_vectors_from_event(layer, event):
+def _update_drag_vectors_from_event(layer: "Points", event: Event) -> None:
     """Update the drag normal and up vectors on layer from a mouse event.
 
     Note that in 2D mode, the layer._drag_normal and layer._drag_up
@@ -212,7 +216,9 @@ def _update_drag_vectors_from_event(layer, event):
         layer._drag_up = None
 
 
-def _select_points_from_drag(layer, modify_selection: bool, n_display: int):
+def _select_points_from_drag(
+    layer: "Points", modify_selection: bool, n_display: int
+) -> None:
     """Select points on a Points layer after a drag event.
 
     Parameters
@@ -227,14 +233,18 @@ def _select_points_from_drag(layer, modify_selection: bool, n_display: int):
     """
     if len(layer._view_data) == 0:
         # if no data in view, there isn't any data to select
-        layer.selected_data = set()
+        layer.selected_data = Selection()
 
     # if there is data in view, find the points in the drag box
-    if n_display == 2:
+    if n_display == 2 and layer._drag_box is not None:
         selection = points_in_box(
             layer._drag_box, layer._view_data, layer._view_size
         )
-    else:
+    elif (
+        layer._drag_box is not None
+        and layer._drag_normal is not None
+        and layer._drag_up is not None
+    ):
         selection = _points_in_box_3d(
             layer._drag_box,
             layer._view_data,
@@ -249,6 +259,6 @@ def _select_points_from_drag(layer, modify_selection: bool, n_display: int):
         target = set(layer.selected_data).symmetric_difference(
             set(new_selected)
         )
-        layer.selected_data = list(target)
+        layer.selected_data = Selection(target)
     else:
         layer.selected_data = layer._indices_view[selection]
