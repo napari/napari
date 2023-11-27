@@ -2,16 +2,22 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
+import collections
 import os
 
 import numpy as np
 
 from napari.layers import Shapes
-from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import (
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
+)
+
+# from napari.utils._test_utils import read_only_mouse_event
+# could be uncommented after release 0.4.19
+read_only_mouse_event = collections.namedtuple(  # noqa: PYI024
+    'Event', field_names=['type', 'is_dragging', 'modifiers', 'position']
 )
 
 
