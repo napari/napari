@@ -165,7 +165,7 @@ class LabelColormapBase(Colormap):
         data = np.arange(65536, dtype=np.uint16)
         return self.map(data, apply_selection=False)
 
-    def map(self, values, apply_selection=True):
+    def map(self, values, apply_selection: bool = True) -> np.ndarray:
         raise NotImplementedError
 
 
