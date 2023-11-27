@@ -8,7 +8,6 @@ import inspect
 from typing import (
     TYPE_CHECKING,
     List,
-    NamedTuple,
     Optional,
     Tuple,
     Union,
@@ -30,6 +29,7 @@ from napari.plugins._npe2 import (
     _get_contrib_parent_menu,
     get_widget_contribution,
 )
+from napari.utils.events import Event
 from napari.utils.translations import trans
 from napari.viewer import Viewer
 
@@ -199,14 +199,10 @@ def _register_widget_actions(mf: PluginManifest) -> None:
         )
 
     # Register dispose functions that remove plugin widgets from widget dictionary
-    # `window._dock_widgets` but ONLY if Qt present.
+    # `window._dock_widgets`
     if window := _provide_window():
-
-        class Event(NamedTuple):
-            value: str
-
         for widget in mf.contributions.widgets or ():
-            widget_event = Event(widget.display_name)
+            widget_event = Event(type_name="", value=widget.display_name)
 
             def _remove_widget(event: Event = widget_event) -> None:
                 window._remove_dock_widget(event)
