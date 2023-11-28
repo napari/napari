@@ -118,7 +118,7 @@ class LabelRendering:
 
     param_names = ["radius", "dtype", "mode"]
     params = (
-        [20, 50, 300, 1500],
+        [20, 30, 300, 1500],
         [np.uint8, np.uint16, np.uint32],
         ["auto", "direct"],
     )
