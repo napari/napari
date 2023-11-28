@@ -183,7 +183,7 @@ class LabelVispyColormap(VispyColormap):
             # of that size, but when we have higher bits, we convert
             # to 8-bit on the CPU before sending to the shader.
             # It should thus be impossible to reach this condition.
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 f"Cannot use dtype {view_dtype} with LabelVispyColormap"
             )
 
