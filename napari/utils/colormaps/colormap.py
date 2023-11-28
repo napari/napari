@@ -316,10 +316,8 @@ def _cast_labels_to_minimum_dtype_auto(
     np.ndarray
         Casted labels data.
     """
-    data = _convert_small_ints_to_unsigned(data)
-
     if data.itemsize <= 2:
-        return data
+        return _convert_small_ints_to_unsigned(data)
 
     num_colors = len(colormap.colors) - 1
 

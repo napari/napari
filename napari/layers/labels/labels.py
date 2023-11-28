@@ -1151,7 +1151,7 @@ class Labels(_ImageBase):
         elif label is None or (
             self.show_selected_label and label != self.selected_label
         ):
-            col = self.colormap.map([self._background_label])[0]
+            col = self.colormap.map(self._background_label)[0]
         else:
             raw_dtype = self._slice.image.raw.dtype
             val = _convert_small_ints_to_unsigned(
