@@ -168,6 +168,9 @@ class LabelColormapBase(Colormap):
     def map(self, values, apply_selection: bool = True) -> np.ndarray:
         raise NotImplementedError
 
+    def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
+        raise NotImplementedError
+
 
 class LabelColormap(LabelColormapBase):
     """Colormap that shuffles values before mapping to colors.
@@ -361,8 +364,27 @@ class DirectLabelColormap(LabelColormapBase):
         values = np.atleast_1d(values)
         if values.dtype.itemsize <= 2:
             return self._map_direct(values)
-        casted = _cast_direct_labels_to_minimum_type(values, self)
+        casted = _cast_labels_to_minimum_dtype_direct(values, self)
         return self._map_casted(casted, apply_selection)
+
+    def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
+        """Treat selection as given dtype and calculate its
+        value to minimum dtype using _cast_labels_to_minimum_dtype_auto
+        function.
+
+        Parameters
+        ----------
+        dtype : np.dtype
+            The dtype to convert the selection to.
+
+        Returns
+        -------
+        int
+            The selection converted.
+        """
+        return _cast_labels_to_minimum_dtype_direct(
+            np.array([self.selection]).astype(dtype), self
+        )[0]
 
     def _map_direct(self, values) -> np.ndarray:
         info = np.iinfo(values.dtype)
@@ -526,7 +548,7 @@ def _zero_preserving_modulo_naive(
     return res
 
 
-def _cast_direct_labels_to_minimum_type_auto(
+def _cast_labels_to_minimum_dtype_direct(
     data: np.ndarray, direct_colormap: DirectLabelColormap
 ) -> np.ndarray:
     data = _convert_small_ints_to_unsigned(data)
@@ -534,7 +556,7 @@ def _cast_direct_labels_to_minimum_type_auto(
     if data.itemsize <= 2:
         return data
 
-    return _cast_direct_labels_to_minimum_type(data, direct_colormap)
+    return _cast_direct_labels_to_minimum_type_impl(data, direct_colormap)
 
 
 def _cast_direct_labels_to_minimum_type_naive(
@@ -558,7 +580,7 @@ def _cast_direct_labels_to_minimum_type_naive(
     max_value = max(x for x in direct_colormap.color_dict if x is not None)
     if max_value > 2**16:
         raise RuntimeError(
-            "Cannot use naive implementation for large values of lables "
+            "Cannot use naive implementation for large values of labels "
             "direct colormap. Please install numba."
         )
     dtype = minimum_dtype_for_labels(direct_colormap.unique_colors_num() + 2)
@@ -579,7 +601,7 @@ try:
     import numba
 except ModuleNotFoundError:
     _zero_preserving_modulo = _zero_preserving_modulo_naive
-    _cast_direct_labels_to_minimum_type = (
+    _cast_direct_labels_to_minimum_type_impl = (
         _cast_direct_labels_to_minimum_type_naive
     )
 else:
@@ -621,7 +643,7 @@ else:
 
         return result
 
-    def _cast_direct_labels_to_minimum_type(
+    def _cast_direct_labels_to_minimum_type_impl(
         data: np.ndarray, direct_colormap: DirectLabelColormap
     ) -> np.ndarray:
         """

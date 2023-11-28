@@ -213,7 +213,7 @@ def test_direct_label_colormap_selection(direct_label_colormap):
 
 def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
     data = np.arange(15, dtype=np.uint32)
-    casted = colormap._cast_direct_labels_to_minimum_type(
+    casted = colormap._cast_direct_labels_to_minimum_type_impl(
         data, direct_label_colormap
     )
     label_mapping = (
@@ -259,7 +259,7 @@ def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     cmap.color_dict[None] = np.array([255, 255, 255, 255])
     data = np.arange(10, dtype=np.uint32)
     data[2] = 80005
-    casted = colormap._cast_direct_labels_to_minimum_type(data, cmap)
+    casted = colormap._cast_direct_labels_to_minimum_type_impl(data, cmap)
     assert casted.dtype == dtype
 
 
@@ -340,7 +340,7 @@ def test_cast_direct_labels_to_minimum_type_naive(size):
         },
     )
     cmap.color_dict[None] = np.array([255, 255, 255, 255])
-    res1 = colormap._cast_direct_labels_to_minimum_type(data, cmap)
+    res1 = colormap._cast_direct_labels_to_minimum_type_impl(data, cmap)
     res2 = colormap._cast_direct_labels_to_minimum_type_naive(data, cmap)
     npt.assert_array_equal(res1, res2)
     assert res1.dtype == dtype
