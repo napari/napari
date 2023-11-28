@@ -20,7 +20,6 @@ from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.utils._dtype import vispy_texture_dtype
 from napari.utils.colormaps.colormap import (
     LabelColormap,
-    _cast_labels_to_minimum_dtype_auto,
 )
 
 if TYPE_CHECKING:
@@ -168,7 +167,7 @@ class LabelVispyColormap(VispyColormap):
         self,
         colormap: LabelColormap,
         view_dtype: np.dtype,
-        data_dtype: np.dtype,
+        raw_dtype: np.dtype,
     ):
         super().__init__(
             colors=["w", "w"], controls=None, interpolation='zero'
@@ -188,9 +187,7 @@ class LabelVispyColormap(VispyColormap):
                 f"Cannot use dtype {view_dtype} with LabelVispyColormap"
             )
 
-        selection = _cast_labels_to_minimum_dtype_auto(
-            np.array([colormap.selection]).astype(data_dtype), colormap
-        )[0]
+        selection = colormap.selection_as_minimum_dtype(raw_dtype)
 
         self.glsl_map = (
             shader.replace('$color_map_size', str(len(colormap.colors)))
@@ -511,27 +508,34 @@ class VispyLabelsLayer(VispyImageLayer):
         mode = self.layer.color_mode
 
         if mode == 'auto':
-            data_dtype = self.layer._slice.image.view.dtype
+            view_dtype = self.layer._slice.image.view.dtype
             raw_dtype = self.layer._slice.image.raw.dtype
-            if data_dtype != raw_dtype:
+            if view_dtype != raw_dtype:
+                # If the view dtype is different from the raw dtype, it is possible
+                # that background pixels are not the same value as the `background_value`.
+                # For example, if raw_dtype is int8 and background_value is `-1`
+                # then in view dtype uint8, the background pixels will be 255
+                # For data types with more than 16 bits we always cast
+                # to uint8 or uint16 and background_value is always 0 in a view array.
+                # The LabelColormap is EventedModel, so we need to make
+                # a copy instead of temporary overwrite the background_value
                 colormap = LabelColormap(**colormap.dict())
-                colormap.background_value = _cast_labels_to_minimum_dtype_auto(
-                    np.array([colormap.background_value]).astype(raw_dtype),
-                    colormap,
-                )[0]
-            if data_dtype == np.uint8:
-                colors = colormap._uint8_colors.reshape(256, -1, 4)
+                colormap.background_value = (
+                    colormap.background_as_minimum_dtype(raw_dtype)
+                )
+            if view_dtype == np.uint8:
+                color_texture = colormap._uint8_colors.reshape(256, -1, 4)
             else:
-                colors = colormap._uint16_colors.reshape(256, -1, 4)
+                color_texture = colormap._uint16_colors.reshape(256, -1, 4)
             self.node.cmap = LabelVispyColormap(
-                colormap, view_dtype=data_dtype, data_dtype=raw_dtype
+                colormap, view_dtype=view_dtype, raw_dtype=raw_dtype
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
-                colors,
+                color_texture,
                 internalformat='rgba32f',
                 interpolation='nearest',
             )
-            self.texture_data = colors
+            self.texture_data = color_texture
 
         elif mode == 'direct':
             color_dict = (

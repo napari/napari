@@ -175,6 +175,81 @@ class LabelColormap(Colormap):
         data = np.arange(65536, dtype=np.uint16)
         return self.map(data, apply_selection=False)
 
+    def selection_as_type(self, dtype: np.dtype) -> int:
+        """
+        Convert the selection value to a specified data type.
+
+        It is for handle negative selection value for int8 and int16.
+
+        Parameters
+        ----------
+        dtype : np.dtype
+            The desired data type to convert the selection value to.
+
+        Returns
+        -------
+        int
+            The selection value converted to the specified data type.
+        """
+
+        return np.array([self.selection]).astype(dtype)[0]
+
+    def background_as_type(self, dtype: np.dtype) -> int:
+        """
+        Convert the background value to a specified data type.
+
+        It is for handle negative background value for int8 and int16.
+
+        Parameters
+        ----------
+        dtype : np.dtype
+            The desired data type to convert the background value to.
+
+        Returns
+        -------
+        int
+            The background value converted to the specified data type.
+        """
+        return np.array([self.background_value]).astype(dtype)[0]
+
+    def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
+        """Treat selection as given dtype and calculate its
+        value to minimum dtype using _cast_labels_to_minimum_dtype_auto
+        function.
+
+        Parameters
+        ----------
+        dtype : np.dtype
+            The dtype to convert the selection to.
+
+        Returns
+        -------
+        int
+            The selection converted.
+        """
+        return _cast_labels_to_minimum_dtype_auto(
+            np.array([self.selection]).astype(dtype), self
+        )[0]
+
+    def background_as_minimum_dtype(self, dtype: np.dtype) -> int:
+        """Treat selection as given dtype and calculate its
+        value to minimum dtype using _cast_labels_to_minimum_dtype_auto
+        function.
+
+        Parameters
+        ----------
+        dtype : np.dtype
+            The dtype to convert the background to.
+
+        Returns
+        -------
+        int
+            The background converted.
+        """
+        return _cast_labels_to_minimum_dtype_auto(
+            np.array([self.background_value]).astype(dtype), self
+        )[0]
+
     def map(self, values, apply_selection=True) -> np.ndarray:
         """Map values to colors.
 
@@ -200,17 +275,17 @@ class LabelColormap(Colormap):
         elif values.dtype == np.uint16 and "_uint16_colors" in self.__dict__:
             mapped = self._uint16_colors[values]
         else:
-            background = int(
-                np.array([self.background_value]).astype(values.dtype)[0]
-            )
+            background = self.background_as_type(values.dtype)
+            # cast background to values dtype is to support int8 and int16 negative backgrounds
             casted_values = _zero_preserving_modulo_naive(
                 values, len(self.colors) - 1, values.dtype, background
             )
             mapped = self.colors[casted_values]
             mapped[casted_values == 0] = 0
         if self.use_selection and apply_selection:
-            selection2 = np.array([self.selection]).astype(values.dtype)[0]
-            mapped[(values != self.selection) & (values != selection2)] = 0
+            selection = self.selection_as_type(values.dtype)
+            # cast selection to values dtype is to support int8 and int16 negative selection
+            mapped[(values != selection)] = 0
 
         return mapped
 
@@ -324,11 +399,11 @@ def _cast_labels_to_minimum_dtype_auto(
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
     if colormap.use_selection:
-        return (data == colormap.selection).astype(dtype) * (
-            _zero_preserving_modulo_naive(
-                np.array([colormap.selection]), num_colors, dtype
-            )
+        casted_selection = _zero_preserving_modulo_naive(
+            np.array([colormap.selection]), num_colors, dtype
         )
+        selection_pos = np.array(data == colormap.selection)
+        return selection_pos.astype(dtype) * casted_selection
 
     return _zero_preserving_modulo(
         data, num_colors, dtype, colormap.background_value
@@ -345,7 +420,7 @@ def _zero_preserving_modulo_naive(
 
 try:
     import numba
-except ImportError:
+except ModuleNotFoundError:
     _zero_preserving_modulo = _zero_preserving_modulo_naive
 else:
 
