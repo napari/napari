@@ -198,7 +198,7 @@ def _register_widget_actions(mf: PluginManifest) -> None:
             app.menus.append_menu_items(widgets_submenu)
         )
 
-    # Register dispose functions that remove plugin widgets from widget dictionary
+    # Register dispose functions to remove plugin widgets from widget dictionary
     # `window._dock_widgets`
     if window := _provide_window():
         for widget in mf.contributions.widgets or ():
