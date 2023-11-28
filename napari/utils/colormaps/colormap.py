@@ -277,11 +277,11 @@ class LabelColormap(Colormap):
         else:
             background = self.background_as_type(values.dtype)
             # cast background to values dtype is to support int8 and int16 negative backgrounds
-            casted_values = _zero_preserving_modulo_naive(
+            texture_dtype_values = _zero_preserving_modulo_naive(
                 values, len(self.colors) - 1, values.dtype, background
             )
-            mapped = self.colors[casted_values]
-            mapped[casted_values == 0] = 0
+            mapped = self.colors[texture_dtype_values]
+            mapped[texture_dtype_values == 0] = 0
         if self.use_selection and apply_selection:
             selection = self.selection_as_type(values.dtype)
             # cast selection to values dtype is to support int8 and int16 negative selection
