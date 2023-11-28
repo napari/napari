@@ -18,7 +18,6 @@ from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.utils.colormaps.colormap import (
     LabelColormap,
-    _cast_labels_to_minimum_dtype_auto,
     minimum_dtype_for_labels,
 )
 
@@ -53,7 +52,7 @@ vec4 sample_label_color(float t) {
         return vec4(0);
     }
     float v = mod(t, 256);
-    float v2 = (t- v) / 256;
+    float v2 = (t - v) / 256;
     return texture2D(
         texture2D_values,
         vec2((v + 0.5) / 256, (v2 + 0.5) / 256)
@@ -97,7 +96,7 @@ class LabelVispyColormap(VispyColormap):
         self,
         colormap: LabelColormap,
         view_dtype: np.dtype,
-        data_dtype: np.dtype,
+        raw_dtype: np.dtype,
     ):
         super().__init__(
             colors=["w", "w"], controls=None, interpolation='zero'
@@ -107,13 +106,17 @@ class LabelVispyColormap(VispyColormap):
         elif view_dtype.itemsize == 2:
             shader = auto_lookup_shader_uint16
         else:
-            raise ValueError(
+            # See https://github.com/napari/napari/issues/6397
+            # Using f32 dtype for textures resulted in very slow fps
+            # Therefore, when we have {u,}int{8,16}, we use a texture
+            # of that size, but when we have higher bits, we convert
+            # to 8-bit on the CPU before sending to the shader.
+            # It should thus be impossible to reach this condition.
+            raise ValueError(  # pragma: no cover
                 f"Cannot use dtype {view_dtype} with LabelVispyColormap"
             )
 
-        selection = _cast_labels_to_minimum_dtype_auto(
-            np.array([colormap.selection]).astype(data_dtype), colormap
-        )[0]
+        selection = colormap.selection_as_minimum_dtype(raw_dtype)
 
         self.glsl_map = (
             shader.replace('$color_map_size', str(len(colormap.colors)))
@@ -198,28 +201,35 @@ class VispyLabelsLayer(VispyImageLayer):
             return
         colormap = self.layer.colormap
         mode = self.layer.color_mode
-        data_dtype = self.layer._slice.image.view.dtype
+        view_dtype = self.layer._slice.image.view.dtype
         raw_dtype = self.layer._slice.image.raw.dtype
-        if mode == 'auto' or data_dtype == raw_dtype:
-            if data_dtype != raw_dtype and isinstance(colormap, LabelColormap):
+        if mode == 'auto' or view_dtype == raw_dtype:
+            if view_dtype != raw_dtype and isinstance(colormap, LabelColormap):
+                # If the view dtype is different from the raw dtype, it is possible
+                # that background pixels are not the same value as the `background_value`.
+                # For example, if raw_dtype is int8 and background_value is `-1`
+                # then in view dtype uint8, the background pixels will be 255
+                # For data types with more than 16 bits we always cast
+                # to uint8 or uint16 and background_value is always 0 in a view array.
+                # The LabelColormap is EventedModel, so we need to make
+                # a copy instead of temporary overwrite the background_value
                 colormap = LabelColormap(**colormap.dict())
-                colormap.background_value = _cast_labels_to_minimum_dtype_auto(
-                    np.array([colormap.background_value]).astype(raw_dtype),
-                    colormap,
-                )[0]
-            if data_dtype == np.uint8:
-                colors = colormap._uint8_colors.reshape(256, -1, 4)
+                colormap.background_value = (
+                    colormap.background_as_minimum_dtype(raw_dtype)
+                )
+            if view_dtype == np.uint8:
+                color_texture = colormap._uint8_colors.reshape(256, -1, 4)
             else:
-                colors = colormap._uint16_colors.reshape(256, -1, 4)
+                color_texture = colormap._uint16_colors.reshape(256, -1, 4)
             self.node.cmap = LabelVispyColormap(
-                colormap, view_dtype=data_dtype, data_dtype=raw_dtype
+                colormap, view_dtype=view_dtype, raw_dtype=raw_dtype
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
-                colors,
+                color_texture,
                 internalformat='rgba32f',
                 interpolation='nearest',
             )
-            self.texture_data = colors
+            self.texture_data = color_texture
 
         elif mode == 'direct':
             color_dict = self.layer._direct_colormap.values_mapping_to_minimum_values_set()[

@@ -1144,9 +1144,9 @@ class Labels(_ImageBase):
             ndi.zoom(image, zoom_factor, prefilter=False, order=0)
         )
         if self.color_mode == LabelColorMode.AUTO:
-            color_array = self.colormap.map(downsampled.ravel())
+            color_array = self.colormap.map(downsampled)
         else:  # direct
-            color_array = self._direct_colormap.map(downsampled.ravel())
+            color_array = self._direct_colormap.map(downsampled)
         colormapped = color_array.reshape(downsampled.shape + (4,))
         colormapped[..., 3] *= self.opacity
 
@@ -1162,7 +1162,7 @@ class Labels(_ImageBase):
         elif label is None or (
             self.show_selected_label and label != self.selected_label
         ):
-            col = self.colormap.map([self._background_label])[0]
+            col = self.colormap.map(self._background_label)[0]
         else:
             raw_dtype = self._slice.image.raw.dtype
             val = _convert_small_ints_to_unsigned(

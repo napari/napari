@@ -458,9 +458,9 @@ def label_colormap(
 
     # ensure that we not need to deal with differences in float rounding for
     # CPU and GPU.
-    colors = (colors * np.iinfo(np.uint8).max).astype(np.uint8).astype(
-        np.float32
-    ) / np.iinfo(np.uint8).max
+    uint8_max = np.iinfo(np.uint8).max
+    rgb8_colors = (colors * uint8_max).astype(np.uint8)
+    colors = rgb8_colors.astype(np.float32) / uint8_max
 
     return LabelColormap(
         name='label_colormap',
