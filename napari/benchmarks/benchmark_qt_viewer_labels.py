@@ -123,6 +123,8 @@ class LabelRendering:
     )
     if "PR" in os.environ:
         skip_params = Skiper(lambda x: x[0] >= 100)
+    if "CI" in os.environ:
+        skip_params = Skiper(lambda x: x[0] >= 400)
 
     def setup(self, radius, dtype, label_mode):
         self.app = QApplication.instance() or QApplication([])
