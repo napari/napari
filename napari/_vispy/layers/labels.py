@@ -84,7 +84,7 @@ vec4 sample_label_color(float t) {
         return vec4(0);
     }
     float v = mod(t, 256);
-    float v2 = (t- v) / 256;
+    float v2 = (t - v) / 256;
     return texture2D(
         texture2D_values,
         vec2((v + 0.5) / 256, (v2 + 0.5) / 256)
@@ -178,6 +178,12 @@ class LabelVispyColormap(VispyColormap):
         elif view_dtype.itemsize == 2:
             shader = auto_lookup_shader_uint16
         else:
+            # See https://github.com/napari/napari/issues/6397
+            # Using f32 dtype for textures resulted in very slow fps
+            # Therefore, when we have {u,}int{8,16}, we use a texture
+            # of that size, but when we have higher bits, we convert
+            # to 8-bit on the CPU before sending to the shader.
+            # It should thus be impossible to reach this condition.
             raise ValueError(
                 f"Cannot use dtype {view_dtype} with LabelVispyColormap"
             )
