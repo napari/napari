@@ -35,7 +35,7 @@ class Ellipse(Shape):
         data,
         *,
         edge_width=1,
-        opacity=1,
+        opacity=1.0,
         z_index=0,
         dims_order=None,
         ndisplay=2,
