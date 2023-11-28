@@ -437,7 +437,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             np.round(s / sc).astype('int') + 1
             for s, sc in zip(scene_size, scale)
         ]
-        empty_labels = np.zeros(shape, dtype=int)
+        empty_labels = np.zeros(shape, dtype=np.uint8)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
     def _on_layer_reload(self, event: Event) -> None:
@@ -736,7 +736,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         rgb=None,
         colormap=None,
         contrast_limits=None,
-        gamma=1,
+        gamma=1.0,
         interpolation2d='nearest',
         interpolation3d='linear',
         rendering='mip',
@@ -750,7 +750,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending=None,
         visible=True,
         multiscale=None,

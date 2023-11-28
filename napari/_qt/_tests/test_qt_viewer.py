@@ -795,7 +795,9 @@ def qt_viewer(qtbot):
 @pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
 def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer):
     # Add labels to empty viewer
-    layer = qt_viewer.viewer.add_labels(np.array([[0, 1], [2, 3]]), opacity=1)
+    layer = qt_viewer.viewer.add_labels(
+        np.array([[0, 1], [2, 3]]), opacity=1.0
+    )
     if direct:
         layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
     qtbot.wait(100)

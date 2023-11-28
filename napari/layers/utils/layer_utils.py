@@ -6,6 +6,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     NamedTuple,
@@ -60,8 +61,8 @@ def register_layer_action(
     keymapprovider,
     description: str,
     repeatable: bool = False,
-    shortcuts: Optional[str] = None,
-):
+    shortcuts: Optional[Union[str, List[str]]] = None,
+) -> Callable[[Callable], Callable]:
     """
     Convenient decorator to register an action with the current Layers
 
@@ -90,7 +91,7 @@ def register_layer_action(
 
     """
 
-    def _inner(func):
+    def _inner(func: Callable) -> Callable:
         nonlocal shortcuts
         name = 'napari:' + func.__name__
 
