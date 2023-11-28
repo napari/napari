@@ -251,7 +251,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending='translucent',
         visible=True,
         multiscale=None,

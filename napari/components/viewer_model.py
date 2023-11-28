@@ -750,7 +750,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending=None,
         visible=True,
         multiscale=None,
