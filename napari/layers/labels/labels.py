@@ -523,16 +523,32 @@ class Labels(_ImageBase):
 
     @property
     def colormap(self) -> LabelColormapBase:
-        return self._colormap
+        if self.color_mode == LabelColorMode.AUTO:
+            return self._random_colormap
+        return self._direct_colormap
 
     @colormap.setter
     def colormap(self, colormap: LabelColormapBase):
         self._set_colormap(colormap)
         if isinstance(self._colormap, LabelColormap):
             self._random_colormap = self._colormap
+            color_mode = LabelColorMode.AUTO
         else:
             self._direct_colormap = self._colormap
+            # `self._direct_colormap.color_dict` may contain just the default None and background label
+            # colors, in which case we need to be in AUTO color mode. Otherwise,
+            # `self._direct_colormap.color_dict` contains colors for all labels, and we should be in DIRECT
+            # mode.
+
+            # For more information
+            # - https://github.com/napari/napari/issues/2479
+            # - https://github.com/napari/napari/issues/2953
+            if self._is_default_colors(self._direct_colormap.color_dict):
+                color_mode = LabelColorMode.AUTO
+            else:
+                color_mode = LabelColorMode.DIRECT
         self._selected_color = self.get_color(self.selected_label)
+        self.color_mode = color_mode
 
     @property
     def num_colors(self):
@@ -613,9 +629,9 @@ class Labels(_ImageBase):
         return label_index
 
     @property
-    def color(self):
+    def color(self) -> dict:
         """dict: custom color dict for label coloring"""
-        return self._color
+        return {**self._direct_colormap.color_dict}
 
     @color.setter
     def color(self, color):
@@ -639,22 +655,7 @@ class Labels(_ImageBase):
         }
 
         self._color = colors
-        self._direct_colormap = direct_colormap(colors)
-
-        # `colors` may contain just the default None and background label
-        # colors, in which case we need to be in AUTO color mode. Otherwise,
-        # `colors` contains colors for all labels, and we should be in DIRECT
-        # mode.
-
-        # For more information
-        # - https://github.com/napari/napari/issues/2479
-        # - https://github.com/napari/napari/issues/2953
-        if self._is_default_colors(colors):
-            color_mode = LabelColorMode.AUTO
-        else:
-            color_mode = LabelColorMode.DIRECT
-
-        self.color_mode = color_mode
+        self.colormap = direct_colormap(colors)
 
     @classmethod
     def _validate_colors(cls, labels: Iterable[int]):
