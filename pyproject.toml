@@ -403,6 +403,7 @@ module = [
     "napari.layers.base._base_constants",
     "napari.layers.image.image",
     "napari.utils.colormaps.categorical_colormap_utils",
+    "napari.layers.image.image",
     "napari.utils.perf._event",
     "napari.utils.perf._trace_file",
 ]
