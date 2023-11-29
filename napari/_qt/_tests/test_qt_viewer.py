@@ -8,7 +8,8 @@ from unittest import mock
 import numpy as np
 import pytest
 from imageio import imread
-from qtpy.QtGui import QGuiApplication
+from qtpy.QtCore import QEvent, Qt
+from qtpy.QtGui import QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QMessageBox
 
 from napari._qt.qt_viewer import QtViewer
@@ -714,3 +715,25 @@ def test_axes_labels(make_napari_viewer):
     layer_visual_size = vispy_image_scene_size(layer_visual)
     assert tuple(layer_visual_size) == (8, 4, 2)
     assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
+
+
+def test_shortcut_passing(make_napari_viewer):
+    viewer = make_napari_viewer(ndisplay=3)
+    layer = viewer.add_labels(
+        np.zeros((2, 2, 2), dtype=np.uint8), scale=(1, 2, 4)
+    )
+    layer.mode = "fill"
+
+    qt_window = viewer.window._qt_window
+
+    qt_window.keyPressEvent(
+        QKeyEvent(
+            QEvent.Type.KeyPress, Qt.Key.Key_1, Qt.KeyboardModifier.NoModifier
+        )
+    )
+    qt_window.keyReleaseEvent(
+        QKeyEvent(
+            QEvent.Type.KeyPress, Qt.Key.Key_1, Qt.KeyboardModifier.NoModifier
+        )
+    )
+    assert layer.mode == "erase"
