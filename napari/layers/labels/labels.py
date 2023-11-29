@@ -1148,10 +1148,9 @@ class Labels(_ImageBase):
             color_array = self.colormap.map(downsampled)
         else:  # direct
             color_array = self._direct_colormap.map(downsampled)
-        colormapped = color_array.reshape(downsampled.shape + (4,))
-        colormapped[..., 3] *= self.opacity
+        color_array[..., 3] *= self.opacity
 
-        self.thumbnail = colormapped
+        self.thumbnail = color_array
 
     def new_colormap(self):
         self.seed_rng = np.random.default_rng().integers(2**32 - 1)
