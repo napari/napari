@@ -10,7 +10,8 @@ import numpy.testing
 import pytest
 from imageio import imread
 from pytestqt.qtbot import QtBot
-from qtpy.QtGui import QGuiApplication
+from qtpy.QtCore import QEvent, Qt
+from qtpy.QtGui import QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QMessageBox
 from scipy import ndimage as ndi
 
@@ -850,3 +851,25 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer):
     numpy.testing.assert_almost_equal(
         canvas_screenshot, scaled_thumbnail, decimal=1
     )
+
+
+def test_shortcut_passing(make_napari_viewer):
+    viewer = make_napari_viewer(ndisplay=3)
+    layer = viewer.add_labels(
+        np.zeros((2, 2, 2), dtype=np.uint8), scale=(1, 2, 4)
+    )
+    layer.mode = "fill"
+
+    qt_window = viewer.window._qt_window
+
+    qt_window.keyPressEvent(
+        QKeyEvent(
+            QEvent.Type.KeyPress, Qt.Key.Key_1, Qt.KeyboardModifier.NoModifier
+        )
+    )
+    qt_window.keyReleaseEvent(
+        QKeyEvent(
+            QEvent.Type.KeyPress, Qt.Key.Key_1, Qt.KeyboardModifier.NoModifier
+        )
+    )
+    assert layer.mode == "erase"
