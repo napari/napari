@@ -153,7 +153,7 @@ def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
 def test_zero_preserving_modulo_naive():
     pytest.importorskip("numba")
     data = np.arange(1000, dtype=np.uint32)
-    res1 = colormap._zero_preserving_modulo_naive(data, 49, np.uint8)
+    res1 = colormap._zero_preserving_modulo_numpy(data, 49, np.uint8)
     res2 = colormap._zero_preserving_modulo(data, 49, np.uint8)
     npt.assert_array_equal(res1, res2)
 

@@ -281,7 +281,7 @@ class LabelColormap(Colormap):
         else:
             background = self.background_as_type(values.dtype)
             # cast background to values dtype is to support int8 and int16 negative backgrounds
-            texture_dtype_values = _zero_preserving_modulo_naive(
+            texture_dtype_values = _zero_preserving_modulo_numpy(
                 values, len(self.colors) - 1, values.dtype, background
             )
             mapped = self.colors[texture_dtype_values]
@@ -403,7 +403,7 @@ def _cast_labels_to_minimum_dtype_auto(
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
     if colormap.use_selection:
-        casted_selection = _zero_preserving_modulo_naive(
+        casted_selection = _zero_preserving_modulo_numpy(
             np.array([colormap.selection]), num_colors, dtype
         )
         selection_pos = np.array(data == colormap.selection)
@@ -414,7 +414,7 @@ def _cast_labels_to_minimum_dtype_auto(
     )
 
 
-def _zero_preserving_modulo_naive(
+def _zero_preserving_modulo_numpy(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
     res = ((values - 1) % n + 1).astype(dtype)
@@ -425,7 +425,7 @@ def _zero_preserving_modulo_naive(
 try:
     import numba
 except ModuleNotFoundError:
-    _zero_preserving_modulo = _zero_preserving_modulo_naive
+    _zero_preserving_modulo = _zero_preserving_modulo_numpy
 else:
 
     @numba.njit(parallel=True)
