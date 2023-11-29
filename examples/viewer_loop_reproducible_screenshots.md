@@ -73,7 +73,7 @@ viewer.text_overlay.text = "Hello World!"
 # Not yet implemented, but can be added as soon as this feature exisits (syntax might change): 
 # viewer.controls.visible = False
 
-viewer.add_labels(myball, name="result" , opacity=1)
+viewer.add_labels(myball, name="result" , opacity=1.0)
 viewer.camera.angles = (19, -33, -121)
 viewer.camera.zoom = 1.3
 ```
