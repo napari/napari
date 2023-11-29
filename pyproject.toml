@@ -152,6 +152,7 @@ xarray = "xr"
 addopts = "--maxfail=5 --durations=10 -rXxs"
 console_output_style = "count"
 pystack_threshold=60
+pystack_args="--native-all"
 
 
 # NOTE: only put things that will never change in here.
@@ -193,6 +194,12 @@ plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
 ignore_missing_imports = true
 show_error_codes = true
 warn_redundant_casts = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+warn_unused_ignores = true
+check_untyped_defs = true
+no_implicit_optional = true
 disable_error_code = [
   # See discussion at https://github.com/python/mypy/issues/2427;
   # mypy cannot run type checking on method assignment, but we use
@@ -217,21 +224,6 @@ module = [
 ignore_errors = true
 
 
-[[tool.mypy.overrides]]
-module = [
-  'napari.plugins.*',
-  'napari.settings.*',
-  'napari.types.*',
-]
-ignore_errors = false
-no_implicit_optional = true
-warn_unused_ignores = true
-check_untyped_defs = true
-
-# # maybe someday :)
-# disallow_any_generics = true
-# no_implicit_reexport = true
-# disallow_untyped_defs = true
 
 
 # individual ignore error
@@ -319,7 +311,6 @@ module = [
     'napari._vispy.overlays.base',
     'napari._vispy.utils.cursor',
     'napari.components.layerlist',
-    'napari.components.viewer_model',
     'napari.layers._layer_actions',
     'napari.layers._multiscale_data',
     'napari.layers.intensity_mixin',
@@ -327,10 +318,7 @@ module = [
     'napari.layers.points._points_utils',
     'napari.layers.points._slice',
     'napari.layers.points.points',
-    'napari.layers.shapes._shape_list',
-    'napari.layers.shapes._shapes_key_bindings',
     'napari.layers.shapes._shapes_mouse_bindings',
-    'napari.layers.shapes._shapes_utils',
     'napari.layers.shapes.shapes',
     'napari.layers.utils._link_layers',
     'napari.layers.utils.color_encoding',
@@ -358,5 +346,243 @@ module = [
     'napari.utils.stubgen',
     'napari.utils.transforms.transforms',
     'napari.utils.tree.group',
+    'napari.view_layers',
+    'napari._app_model.injection._processors',
 ]
 ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.settings",
+    "napari.settings._yaml",
+    "napari.plugins.exceptions",
+    "napari._app_model.actions._toggle_action",
+    "napari._vispy.filters.tracks",
+    "napari._vispy.utils.text",
+    "napari._vispy.utils.visual",
+    "napari._vispy.visuals.clipping_planes_mixin",
+    "napari._vispy.visuals.markers",
+    "napari._vispy.visuals.surface",
+    "napari.layers._data_protocols",
+    "napari.layers._source",
+    "napari.layers.shapes._shapes_models.path",
+    "napari.layers.shapes._shapes_models.polygon",
+    "napari.layers.utils.interactivity_utils",
+    "napari.layers.vectors._vector_utils",
+    "napari.resources._icons",
+    "napari.utils.events.containers._dict",
+    "napari.utils.events.event_utils",
+    "napari.utils.migrations",
+    "napari.utils.perf._patcher",
+    "napari.utils.validators",
+    "napari.window"
+]
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.settings._utils",
+    "napari.settings._appearance",
+    "napari.settings._shortcuts",
+    "napari.settings._application",
+    "napari._app_model.actions._view_actions",
+    "napari._event_loop",
+    "napari._vispy.utils.quaternion",
+    "napari._vispy.visuals.bounding_box",
+    "napari._vispy.visuals.image",
+    "napari._vispy.visuals.interaction_box",
+    "napari._vispy.visuals.points",
+    "napari._vispy.visuals.scale_bar",
+    "napari.components._layer_slicer",
+    "napari.components._viewer_mouse_bindings",
+    "napari.components.overlays.base",
+    "napari.components.overlays.interaction_box",
+    "napari.layers.base._base_constants",
+    "napari.utils.colormaps.categorical_colormap_utils",
+    "napari.utils.perf._event",
+    "napari.utils.perf._trace_file",
+]
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.components.viewer_model",
+    "napari.settings._fields",
+    "napari.settings._migrations",
+    "napari.settings._base",
+    "napari.types",
+    "napari.plugins._npe2",
+    "napari.settings._napari_settings",
+    "napari.plugins._plugin_manager",
+    "napari.plugins.utils",
+    "napari._qt._qapp_model.qactions._file",
+    "napari._qt._qapp_model.qactions._help",
+    "napari._qt._qapp_model.qactions._view",
+    "napari._vispy.camera",
+    "napari._vispy.layers.image",
+    "napari._vispy.layers.tracks",
+    "napari._vispy.layers.vectors",
+    "napari._vispy.overlays.axes",
+    "napari._vispy.overlays.interaction_box",
+    "napari._vispy.overlays.labels_polygon",
+    "napari._vispy.overlays.scale_bar",
+    "napari._vispy.overlays.text",
+    "napari.layers.labels._labels_key_bindings",
+    "napari.layers.shapes._mesh",
+    "napari.layers.surface._surface_key_bindings",
+    "napari.layers.tracks._tracks_key_bindings",
+    "napari.layers.utils._slice_input",
+    "napari.layers.vectors._vectors_key_bindings",
+    "napari.utils._register",
+    "napari.utils.colormaps.categorical_colormap",
+    "napari.utils.colormaps.standardize_color",
+    "napari.utils.events.containers._set",
+    "napari.utils.geometry",
+    "napari.utils.io",
+    "napari.utils.notebook_display",
+    "napari.utils.perf._config",
+    "napari.utils.transforms.transform_utils",
+    "napari.utils.translations",
+    "napari.utils.tree.node",
+    "napari.viewer",
+    "napari.layers.shapes._shapes_key_bindings",
+    "napari.layers.shapes._shape_list"
+]
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.plugins",
+    "napari._vispy.layers.base",
+    "napari._vispy.visuals.axes",
+    "napari.layers.labels._labels_mouse_bindings",
+    "napari.layers.utils.color_manager_utils",
+    "napari.layers.vectors._slice",
+    "napari.utils.colormaps.vendored._cm",
+    "napari.utils.colormaps.vendored.cm",
+    "napari.utils.status_messages",
+    "napari.layers.shapes._shapes_utils"
+]
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari._app_model._app",
+    "napari.utils.events.containers._selection",
+    "napari.utils.theme",
+]
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari._app_model.context._context",
+    "napari._qt.containers._factory"
+]
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari._qt.menus.plugins_menu",
+    "napari._vispy.layers.labels",
+    "napari._vispy.layers.points",
+    "napari._vispy.layers.shapes",
+    "napari._vispy.layers.surface",
+    "napari.components._viewer_key_bindings",
+    "napari.layers.image.image",
+    "napari.layers.labels.labels",
+    "napari.layers.surface.surface",
+    "napari.layers.tracks.tracks",
+    "napari.layers.utils.layer_utils",
+    "napari.layers.vectors.vectors",
+    "napari.utils._dtype",
+    "napari.utils._proxies",
+    "napari.utils.colormaps.colormap_utils",
+    "napari.utils.misc",
+    "napari.utils.perf._timers"
+]
+check_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.components.camera",
+    "napari.components.dims",
+    "napari.conftest",
+    "napari.layers.labels._labels_utils",
+    "napari.layers.points._points_mouse_bindings",
+    "napari.layers.shapes._shapes_models._polgyon_base",
+    "napari.layers.shapes._shapes_models.ellipse",
+    "napari.layers.shapes._shapes_models.line",
+    "napari.layers.shapes._shapes_models.rectangle",
+    "napari.layers.shapes._shapes_models.shape",
+    "napari.layers.tracks._track_utils",
+    "napari.utils.colormaps.colormap",
+    "napari.utils.events.containers._selectable_list",
+    "napari.utils.notifications",
+]
+check_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.utils.events.containers._typed",
+    "napari.layers.base.base",
+]
+check_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.__main__",
+    "napari.utils.colormaps.vendored.colors"
+]
+check_untyped_defs = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari._app_model.context._layerlist_context",
+    "napari.components.overlays.labels_polygon",
+    "napari.plugins.io",
+    "napari.utils.colormaps.vendored._cm_listed"
+]
+disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari._qt.containers.qt_layer_list"
+]
+check_untyped_defs = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari._vispy.overlays.bounding_box",
+    "napari._vispy.overlays.brush_circle",
+    "napari._vispy.utils.gl",
+    "napari.layers.base._base_mouse_bindings",
+    "napari.layers.utils.plane",
+    "napari.utils._test_utils",
+    "napari.utils.info",
+    "napari.utils.naming"
+]
+check_untyped_defs = false
+disallow_untyped_defs = false

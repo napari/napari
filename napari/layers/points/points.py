@@ -366,7 +366,7 @@ class Points(Layer):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending='translucent',
         visible=True,
         cache=True,
@@ -1607,10 +1607,12 @@ class Points(Layer):
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
+        prev_scale = self.scale_factor
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
         )
-        self._set_highlight(force=True)
+        # update highlight only if scale has changed, otherwise causes a cycle
+        self._set_highlight(force=(prev_scale != self.scale_factor))
 
     def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.

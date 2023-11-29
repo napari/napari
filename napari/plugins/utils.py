@@ -5,12 +5,13 @@ from enum import IntFlag
 from fnmatch import fnmatch
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from npe2 import PluginManifest
 
 from napari.plugins import _npe2, plugin_manager
 from napari.settings import get_settings
+from napari.types import PathLike
 
 
 class MatchFlag(IntFlag):
@@ -70,7 +71,7 @@ def score_specificity(pattern: str) -> Tuple[bool, int, List[MatchFlag]]:
     return not osp.isabs(pattern), 1 - len(score), score
 
 
-def _get_preferred_readers(path: str) -> Iterable[Tuple[str, str]]:
+def _get_preferred_readers(path: PathLike) -> List[Tuple[str, str]]:
     """Given filepath, find matching readers from preferences.
 
     Parameters
@@ -80,18 +81,24 @@ def _get_preferred_readers(path: str) -> Iterable[Tuple[str, str]]:
 
     Returns
     -------
-    filtered_preferences : Iterable[Tuple[str, str]]
+    filtered_preferences : List[Tuple[str, str]]
         Filtered patterns and their corresponding readers.
     """
+    path = str(path)
 
     if osp.isdir(path) and not path.endswith(os.sep):
         path = path + os.sep
 
     reader_settings = get_settings().plugins.extension2reader
-    return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())
+
+    def filter_fn(kv: Tuple[str, str]) -> bool:
+        return fnmatch(path, kv[0])
+
+    ret = list(filter(filter_fn, reader_settings.items()))
+    return ret
 
 
-def get_preferred_reader(path: str) -> Optional[str]:
+def get_preferred_reader(path: PathLike) -> Optional[str]:
     """Given filepath, find the best matching reader from the preferences.
 
     Parameters
@@ -115,7 +122,7 @@ def get_preferred_reader(path: str) -> Optional[str]:
     return None
 
 
-def get_potential_readers(filename: str) -> Dict[str, str]:
+def get_potential_readers(filename: PathLike) -> Dict[str, str]:
     """Given filename, returns all readers that may read the file.
 
     Original plugin engine readers are checked based on returning
