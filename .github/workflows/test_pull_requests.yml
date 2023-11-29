@@ -30,7 +30,7 @@ jobs:
           pip install --upgrade pip
           pip install tox
       - name: Run import lint
-        run: tox -e import-lint -- --timeout=8
+        run: tox -e import-lint
 
   manifest:
     # make sure all necessary files will be bundled in the release
