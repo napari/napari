@@ -249,10 +249,7 @@ class VispyLabelsLayer(VispyImageLayer):
             color_dict = self.layer._direct_colormap.values_mapping_to_minimum_values_set()[
                 1
             ]  # TODO: should probably account for non-given labels
-            if isinstance(self.node, VolumeNode):
-                max_size = get_max_texture_sizes()[1]
-            else:
-                max_size = get_max_texture_sizes()[0]
+            max_size = get_max_texture_sizes()[0]
             val_texture = build_textures_from_dict(color_dict, max_size)
 
             dtype = minimum_dtype_for_labels(
