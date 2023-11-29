@@ -512,8 +512,8 @@ class _QtMainWindow(QMainWindow):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        self._qt_viewer.canvas._backend._keyEvent(
-            self._qt_viewer.canvas.events.key_release, event
+        self._qt_viewer.canvas._scene_canvas._backend._keyEvent(
+            self._qt_viewer.canvas._scene_canvas.events.key_release, event
         )
         event.accept()
 
