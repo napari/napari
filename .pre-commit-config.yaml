@@ -19,6 +19,7 @@ repos:
   rev: 0.27.1
   hooks:
   - id: check-github-workflows
+    args: ["--verbose"]
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.5.0
   # .py files are skipped cause already checked by other hooks

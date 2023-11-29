@@ -15,6 +15,23 @@ env:
   COLUMNS: 120
 
 jobs:
+  import_lint:
+    name: Import lint
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install tox
+      - name: Run import lint
+        run: tox -e import-lint -- --timeout=8
+
   manifest:
     # make sure all necessary files will be bundled in the release
     name: Check Manifest
