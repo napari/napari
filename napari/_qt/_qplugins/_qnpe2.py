@@ -82,7 +82,7 @@ def _get_widget_viewer_param(
     return widget_param
 
 
-def _get_widget_callback(
+def _toggle_or_get_widget(
     napari_viewer: Viewer,
     mf: PluginManifest,
     widget_name: str,
@@ -143,7 +143,7 @@ def _get_widgets_submenu_actions(
             widget_name: str = widget.display_name,
             name: str = full_name,
         ) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
-            return _get_widget_callback(
+            return _toggle_or_get_widget(
                 napari_viewer=napari_viewer,
                 mf=mf,
                 widget_name=widget_name,
