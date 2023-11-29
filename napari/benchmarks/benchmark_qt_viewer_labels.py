@@ -121,12 +121,13 @@ class LabelRendering:
         [np.uint8, np.uint16, np.uint32],
         ["auto"],  # "direct"],
     )
-    if "CI" in os.environ:
+    if "GITHUB_ACTIONS" in os.environ:
         skip_params = Skiper(lambda x: x[0] > 20)
     if "PR" in os.environ:
         skip_params = Skiper(lambda x: x[0] > 20)
 
     def setup(self, radius, dtype, label_mode):
+        self.steps = 4 if "GITHUB_ACTIONS" in os.environ else 10
         self.app = QApplication.instance() or QApplication([])
         self.data = setup_rendering_data(radius, dtype)
         scale = self.data.shape[-1] / np.array(self.data.shape)
@@ -143,7 +144,7 @@ class LabelRendering:
     def _time_iterate_components(self, *_):
         """Time to iterate over components."""
         self.layer.show_selected_label = True
-        for i in range(0, 201, 20):
+        for i in range(0, 201, (200 // self.steps) or 1):
             self.layer.selected_label = i
             self.app.processEvents()
 
@@ -165,7 +166,7 @@ class LabelRenderingSuite2D(LabelRendering):
     def time_iterate_over_z(self, *_):
         """Time to render the layer."""
         z_size = self.data.shape[0]
-        for i in range(0, z_size, z_size // 20):
+        for i in range(0, z_size, z_size // (self.steps * 2)):
             self.viewer.dims.set_point(0, i)
             self.app.processEvents()
 
@@ -192,7 +193,7 @@ class LabelRenderingSuite3D(LabelRendering):
 
     def time_rotate(self, *_):
         """Time to rotate the layer."""
-        for i in range(0, 180, 5):
+        for i in range(0, (self.steps * 20), 5):
             self.viewer.camera.angles = (0, i / 2, i)
             self.app.processEvents()
 
