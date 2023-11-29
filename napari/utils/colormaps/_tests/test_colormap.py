@@ -341,7 +341,7 @@ def test_cast_direct_labels_to_minimum_type_naive(size):
     )
     cmap.color_dict[None] = np.array([255, 255, 255, 255])
     res1 = colormap._cast_direct_labels_to_minimum_type_impl(data, cmap)
-    res2 = colormap._cast_direct_labels_to_minimum_type_naive(data, cmap)
+    res2 = colormap._cast_direct_labels_to_minimum_type_numpy(data, cmap)
     npt.assert_array_equal(res1, res2)
     assert res1.dtype == dtype
     assert res2.dtype == dtype

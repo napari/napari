@@ -573,7 +573,7 @@ def _cast_labels_to_minimum_dtype_direct(
     return _cast_direct_labels_to_minimum_type_impl(data, direct_colormap)
 
 
-def _cast_direct_labels_to_minimum_type_naive(
+def _cast_direct_labels_to_minimum_type_numpy(
     data: np.ndarray, direct_colormap: DirectLabelColormap
 ) -> np.ndarray:
     """
@@ -594,7 +594,7 @@ def _cast_direct_labels_to_minimum_type_naive(
     max_value = max(x for x in direct_colormap.color_dict if x is not None)
     if max_value > 2**16:
         raise RuntimeError(
-            "Cannot use naive implementation for large values of labels "
+            "Cannot use numpy implementation for large values of labels "
             "direct colormap. Please install numba."
         )
     dtype = minimum_dtype_for_labels(direct_colormap.unique_colors_num() + 2)
@@ -616,7 +616,7 @@ try:
 except ModuleNotFoundError:
     _zero_preserving_modulo = _zero_preserving_modulo_numpy
     _cast_direct_labels_to_minimum_type_impl = (
-        _cast_direct_labels_to_minimum_type_naive
+        _cast_direct_labels_to_minimum_type_numpy
     )
 else:
 
