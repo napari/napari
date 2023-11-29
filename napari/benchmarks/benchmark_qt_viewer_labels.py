@@ -117,14 +117,14 @@ class LabelRendering:
 
     param_names = ["radius", "dtype", "mode"]
     params = (
-        [20, 30, 300, 1500],
+        [10, 30, 300, 1500],
         [np.uint8, np.uint16, np.uint32],
         ["auto"],  # "direct"],
     )
+    if "CI" in os.environ:
+        skip_params = Skiper(lambda x: x[0] > 20)
     if "PR" in os.environ:
         skip_params = Skiper(lambda x: x[0] > 20)
-    if "CI" in os.environ:
-        skip_params = Skiper(lambda x: x[0] >= 100)
 
     def setup(self, radius, dtype, label_mode):
         self.app = QApplication.instance() or QApplication([])
