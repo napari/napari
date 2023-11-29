@@ -162,14 +162,35 @@ class LabelColormapBase(Colormap):
     @cached_property
     def _uint8_colors(self) -> np.ndarray:
         data = np.arange(256, dtype=np.uint8)
-        return self.map(data, apply_selection=False)
+        return self.map(data, raw_colormap=True)
 
     @cached_property
     def _uint16_colors(self) -> np.ndarray:
         data = np.arange(65536, dtype=np.uint16)
-        return self.map(data, apply_selection=False)
+        return self.map(data, raw_colormap=True)
 
-    def map(self, values, apply_selection: bool = True) -> np.ndarray:
+    @cached_property
+    def _int8_colors(self) -> np.ndarray:
+        data = np.arange(256, dtype=np.uint8).astype(np.int8)
+        return self.map(data, raw_colormap=True)
+
+    @cached_property
+    def _int16_colors(self) -> np.ndarray:
+        data = np.arange(65536, dtype=np.uint16).astype(np.int16)
+        return self.map(data, raw_colormap=True)
+
+    def _get_from_cache(self, values: np.ndarray) -> Optional[np.ndarray]:
+        if values.dtype == np.uint8:
+            return self._uint8_colors[values]
+        if values.dtype == np.uint16:
+            return self._uint16_colors[values]
+        if values.dtype == np.int8:
+            return self._int8_colors[values]
+        if values.dtype == np.int16:
+            return self._int16_colors[values]
+        return None
+
+    def map(self, values, raw_colormap: bool = True) -> np.ndarray:
         raise NotImplementedError
 
     def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
@@ -192,16 +213,6 @@ class LabelColormap(LabelColormapBase):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
 
-    @cached_property
-    def _uint8_colors(self) -> np.ndarray:
-        data = np.arange(256, dtype=np.uint8)
-        return self.map(data, apply_selection=False)
-
-    @cached_property
-    def _uint16_colors(self) -> np.ndarray:
-        data = np.arange(65536, dtype=np.uint16)
-        return self.map(data, apply_selection=False)
-
     def selection_as_type(self, dtype: np.dtype) -> int:
         """
         Convert the selection value to a specified data type.
@@ -219,7 +230,7 @@ class LabelColormap(LabelColormapBase):
             The selection value converted to the specified data type.
         """
 
-        return np.array([self.selection]).astype(dtype)[0]
+        return int(np.array([self.selection]).astype(dtype)[0])
 
     def background_as_type(self, dtype: np.dtype) -> int:
         """
@@ -237,7 +248,7 @@ class LabelColormap(LabelColormapBase):
         int
             The background value converted to the specified data type.
         """
-        return np.array([self.background_value]).astype(dtype)[0]
+        return int(np.array([self.background_value]).astype(dtype)[0])
 
     def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat selection as given dtype and calculate its
@@ -254,9 +265,11 @@ class LabelColormap(LabelColormapBase):
         int
             The selection converted.
         """
-        return _cast_labels_to_minimum_dtype_auto(
-            np.array([self.selection]).astype(dtype), self
-        )[0]
+        return int(
+            _cast_labels_to_minimum_dtype_auto(
+                np.array([self.selection]).astype(dtype), self
+            )[0]
+        )
 
     def background_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat selection as given dtype and calculate its
@@ -273,18 +286,20 @@ class LabelColormap(LabelColormapBase):
         int
             The background converted.
         """
-        return _cast_labels_to_minimum_dtype_auto(
-            np.array([self.background_value]).astype(dtype), self
-        )[0]
+        return int(
+            _cast_labels_to_minimum_dtype_auto(
+                np.array([self.background_value]).astype(dtype), self
+            )[0]
+        )
 
-    def map(self, values, apply_selection=True) -> np.ndarray:
+    def map(self, values, raw_colormap=False) -> np.ndarray:
         """Map values to colors.
 
         Parameters
         ----------
         values : np.ndarray or float
             Values to be mapped.
-        apply_selection : bool
+        raw_colormap : bool
             Whether to apply selection if self.use_selection is True.
 
         Returns
@@ -296,12 +311,10 @@ class LabelColormap(LabelColormapBase):
 
         if values.dtype.kind == 'f':
             values = values.astype(np.int64)
-
-        if values.dtype == np.uint8 and "_uint8_colors" in self.__dict__:
-            mapped = self._uint8_colors[values]
-        elif values.dtype == np.uint16 and "_uint16_colors" in self.__dict__:
-            mapped = self._uint16_colors[values]
-        else:
+        mapped = None
+        if not raw_colormap:
+            mapped = self._get_from_cache(values)
+        if mapped is None:
             background = self.background_as_type(values.dtype)
             # cast background to values dtype is to support int8 and int16 negative backgrounds
             texture_dtype_values = _zero_preserving_modulo_numpy(
@@ -309,7 +322,7 @@ class LabelColormap(LabelColormapBase):
             )
             mapped = self.colors[texture_dtype_values]
             mapped[texture_dtype_values == 0] = 0
-        if self.use_selection and apply_selection:
+        if self.use_selection and not raw_colormap:
             selection = self.selection_as_type(values.dtype)
             # cast selection to values dtype is to support int8 and int16 negative selection
             mapped[(values != selection)] = 0
@@ -347,14 +360,14 @@ class DirectLabelColormap(LabelColormapBase):
     use_selection: bool = False
     selection: int = 0
 
-    def map(self, values, apply_selection=True) -> np.ndarray:
+    def map(self, values, raw_colormap=True) -> np.ndarray:
         """
         Map values to colors.
         Parameters
         ----------
         values : np.ndarray or float
             Values to be mapped.
-        apply_selection : bool
+        raw_colormap : bool
             Whether to apply selection if self.use_selection is True.
         Returns
         -------
@@ -366,7 +379,7 @@ class DirectLabelColormap(LabelColormapBase):
         if values.dtype.itemsize <= 2:
             return self._map_direct(values)
         casted = _cast_labels_to_minimum_dtype_direct(values, self)
-        return self._map_casted(casted, apply_selection)
+        return self._map_casted(casted, raw_colormap)
 
     def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat selection as given dtype and calculate its

@@ -57,7 +57,6 @@ from napari.utils.colormaps.colormap import (
     LabelColormapBase,
     _cast_labels_to_minimum_dtype_auto,
     _cast_labels_to_minimum_dtype_direct,
-    _convert_small_ints_to_unsigned,
     minimum_dtype_for_labels,
 )
 from napari.utils.events import EmitterGroup, Event
@@ -1141,9 +1140,7 @@ class Labels(_ImageBase):
         )
         zoom_factor = tuple(new_shape / imshape)
 
-        downsampled = _convert_small_ints_to_unsigned(
-            ndi.zoom(image, zoom_factor, prefilter=False, order=0)
-        )
+        downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
         if self.color_mode == LabelColorMode.AUTO:
             color_array = self.colormap.map(downsampled)
         else:  # direct
@@ -1164,11 +1161,11 @@ class Labels(_ImageBase):
         ):
             col = self.colormap.map(self._background_label)[0]
         else:
-            raw_dtype = self._slice.image.raw.dtype
-            val = _convert_small_ints_to_unsigned(
-                np.array([label]).astype(raw_dtype)
-            )
-            col = self.colormap.map(val)[0]
+            # raw_dtype = self._slice.image.raw.dtype
+            # val = _convert_small_ints_to_unsigned(
+            #     np.array([label]).astype(raw_dtype)
+            # )
+            col = self.colormap.map(label)[0]
         return col
 
     def _get_value_ray(

@@ -161,6 +161,21 @@ def build_textures_from_dict(
     return data
 
 
+def _select_colormap_texture(
+    colormap: LabelColormap, view_dtype, raw_dtype
+) -> np.ndarray:
+    if raw_dtype == np.int8:
+        color_texture = colormap._int8_colors
+    elif raw_dtype == np.int16:
+        color_texture = colormap._int16_colors
+    elif view_dtype == np.uint8:
+        color_texture = colormap._uint8_colors
+    else:
+        color_texture = colormap._uint16_colors
+
+    return color_texture.reshape(256, -1, 4)
+
+
 class VispyLabelsLayer(VispyImageLayer):
     layer: 'Labels'
 
@@ -203,7 +218,7 @@ class VispyLabelsLayer(VispyImageLayer):
         mode = self.layer.color_mode
         view_dtype = self.layer._slice.image.view.dtype
         raw_dtype = self.layer._slice.image.raw.dtype
-        if mode == 'auto' or view_dtype == raw_dtype:
+        if mode == 'auto' or (mode == "direct" and raw_dtype.itemsize <= 2):
             if view_dtype != raw_dtype and isinstance(colormap, LabelColormap):
                 # If the view dtype is different from the raw dtype, it is possible
                 # that background pixels are not the same value as the `background_value`.
@@ -217,10 +232,9 @@ class VispyLabelsLayer(VispyImageLayer):
                 colormap.background_value = (
                     colormap.background_as_minimum_dtype(raw_dtype)
                 )
-            if view_dtype == np.uint8:
-                color_texture = colormap._uint8_colors.reshape(256, -1, 4)
-            else:
-                color_texture = colormap._uint16_colors.reshape(256, -1, 4)
+            color_texture = _select_colormap_texture(
+                colormap, view_dtype, raw_dtype
+            )
             self.node.cmap = LabelVispyColormap(
                 colormap, view_dtype=view_dtype, raw_dtype=raw_dtype
             )
