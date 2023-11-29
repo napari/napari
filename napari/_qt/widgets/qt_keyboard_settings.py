@@ -582,11 +582,11 @@ class EditorWidget(QLineEdit):
         ):
             # Need to let pass events for modifier keys in order to be able to
             # set them as shortcuts on some OS/binding combinations
-            # (for eexample macOS + PyQt6).
+            # (for example macOS + PyQt6).
             # Only single modifiers are valid as shortcuts, for more context
-            # see `ShortcutEditor,_set_keybinding`.
+            # see `ShortcutEditor._set_keybinding`.
             # Other keys/shortcut events apparently don't need this handling
-            # and can be marked as reconginized and processed (returning True)
+            # and can be marked as recognized and processed (returning True)
             return True
 
         return super().event(event)
