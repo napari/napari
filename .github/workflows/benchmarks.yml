@@ -121,9 +121,8 @@ jobs:
 
           # Run benchmarks for current commit against base
           asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_REF} ${CONTENDER_REF} \
+          | sed -E "/Traceback | failed$|PERFORMANCE DECREASED/ s/^/::error:: /" \
           | tee asv_continuous.log
-
-          # | sed -E "/Traceback | failed$|PERFORMANCE DECREASED/ s/^/::error:: /" \
 
           # Report and export results for subsequent steps
           if grep "Traceback \|failed\|PERFORMANCE DECREASED" asv_continuous.log > /dev/null ; then
