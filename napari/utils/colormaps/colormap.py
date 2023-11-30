@@ -417,6 +417,29 @@ def _cast_labels_to_minimum_dtype_auto(
 def _zero_preserving_modulo_numpy(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
+    """``(values - 1) % n + 1``, but with one specific value mapped to 0.
+
+    This ensures (1) an output value in [0, n] (inclusive), and (2) that
+    no nonzero values in the input are zero in the output, other than the
+    ``to_zero`` value.
+
+    Parameters
+    ----------
+    values : np.ndarray
+        The dividend of the modulo operator.
+    n : int
+        The divisor.
+    dtype : np.dtype
+        The desired dtype for the output array.
+    to_zero : int, optional
+        A specific value to map to 0. (By default, 0 itself.)
+
+    Returns
+    -------
+    np.ndarray
+        The result: 0 for the ``to_zero`` value, ``values % n + 1``
+        everywhere else.
+    """
     res = ((values - 1) % n + 1).astype(dtype)
     res[values == to_zero] = 0
     return res
@@ -432,7 +455,7 @@ else:
     def _zero_preserving_modulo(
         values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
     ) -> np.ndarray:
-        """Like ``values % n + 1``, but with one specific value mapped to 0.
+        """``(values - 1) % n + 1``, but with one specific value mapped to 0.
 
         This ensures (1) an output value in [0, n] (inclusive), and (2) that
         no nonzero values in the input are zero in the output, other than the
