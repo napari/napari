@@ -574,7 +574,6 @@ warn_unused_ignores = false
 module = [
     "napari._vispy.overlays.bounding_box",
     "napari._vispy.overlays.brush_circle",
-    "napari.layers.base._base_mouse_bindings",
     "napari.utils._test_utils",
 ]
 check_untyped_defs = false
