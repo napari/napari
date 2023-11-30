@@ -218,7 +218,7 @@ class LabelColormap(Colormap):
 
     def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat selection as given dtype and calculate its
-        value to minimum dtype using _cast_labels_to_minimum_dtype_auto
+        value to minimum dtype using _cast_labels_data_to_texture_dtype
         function.
 
         Parameters
@@ -231,13 +231,13 @@ class LabelColormap(Colormap):
         int
             The selection converted.
         """
-        return _cast_labels_to_minimum_dtype_auto(
+        return _cast_labels_data_to_texture_dtype(
             np.array([self.selection]).astype(dtype), self
         )[0]
 
     def background_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat selection as given dtype and calculate its
-        value to minimum dtype using _cast_labels_to_minimum_dtype_auto
+        value to minimum dtype using _cast_labels_data_to_texture_dtype
         function.
 
         Parameters
@@ -250,7 +250,7 @@ class LabelColormap(Colormap):
         int
             The background converted.
         """
-        return _cast_labels_to_minimum_dtype_auto(
+        return _cast_labels_data_to_texture_dtype(
             np.array([self.background_value]).astype(dtype), self
         )[0]
 
@@ -375,25 +375,36 @@ def _convert_small_ints_to_unsigned(data: np.ndarray) -> np.ndarray:
     return data
 
 
-def _cast_labels_to_minimum_dtype_auto(
+def _cast_labels_data_to_texture_dtype(
     data: np.ndarray,
     colormap: LabelColormap,
 ) -> np.ndarray:
-    """Perform modulo operation based on number of colors
+    """Convert labels data to the data type used in the texture.
+
+    In https://github.com/napari/napari/issues/6397, we noticed that using
+    float32 textures was much slower than uint8 or uint16 textures. Here we
+    convert the labels data to uint8 or uint16, based on the following rules:
+
+    - uint8 and uint16 labels data are unchanged. (No copy of the arrays.)
+    - int8 and int16 data are converted with a *view* to uint8 and uint16.
+      (This again does not involve a copy so is fast, and lossless.)
+    - higher precision integer data (u)int{32,64} are hashed to uint8, uint16,
+      or float32, depending on the number of colors in the input colormap. (See
+      `minimum_dtype_for_labels`.) Since the hashing can result in collisions,
+      this conversion *has* to happen in the CPU to correctly map the
+      background and selection values.
 
     Parameters
     ----------
     data : np.ndarray
-        Labels data to be casted.
-    num_colors : int
-        Number of unique colors in the data.
-    background_value : int
-        The value in ``values`` to be treated as the background.
+        Labels data to be converted.
+    colormap : LabelColormap
+        Colormap used to display the labels data.
 
     Returns
     -------
     np.ndarray
-        Casted labels data.
+        Converted labels data.
     """
     if data.itemsize <= 2:
         return _convert_small_ints_to_unsigned(data)
