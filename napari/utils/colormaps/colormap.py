@@ -352,8 +352,8 @@ class DirectLabelColormap(Colormap):
 
 
 def _convert_small_ints_to_unsigned(data: np.ndarray) -> np.ndarray:
-    """
-    Convert int8 to uint8 and int16 to uint16.
+    """Convert (u)int8 to uint8 and (u)int16 to uint16.
+
     Otherwise, return the original array.
 
     Parameters
