@@ -539,7 +539,6 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari.utils.events.containers._typed",
-    "napari.layers.base.base",
 ]
 check_untyped_defs = false
 disallow_incomplete_defs = false
@@ -567,7 +566,8 @@ disallow_untyped_calls = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari._qt.containers.qt_layer_list"
+    "napari._qt.containers.qt_layer_list",
+    "napari.layers.base.base"
 ]
 check_untyped_defs = false
 disallow_untyped_calls = false

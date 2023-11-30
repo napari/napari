@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     ClassVar,
     Dict,
@@ -309,7 +310,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         experimental_clipping_planes=None,
         mode='pan_zoom',
         projection_mode='none',
-    ) -> None:
+    ):
         super().__init__()
 
         if name is None and data is not None:
@@ -708,7 +709,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._visible
 
     @visible.setter
-    def visible(self, visible: bool):
+    def visible(self, visible: bool) -> None:
         self._visible = visible
         self.refresh()
         self.events.visible()
@@ -719,7 +720,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._editable
 
     @editable.setter
-    def editable(self, editable: bool):
+    def editable(self, editable: bool) -> None:
         if self._editable == editable:
             return
         self._editable = editable
@@ -1074,7 +1075,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self.mouse_pan or self.mouse_zoom
 
     @interactive.setter
-    def interactive(self, interactive: bool):
+    def interactive(self, interactive: bool) -> None:
         warnings.warn(
             trans._(
                 "Layer.interactive is deprecated since napari 0.4.18 and will be removed in 0.6.0. Please use Layer.mouse_pan and Layer.mouse_zoom instead"
@@ -1092,7 +1093,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._mouse_pan
 
     @mouse_pan.setter
-    def mouse_pan(self, mouse_pan: bool):
+    def mouse_pan(self, mouse_pan: bool) -> None:
         if mouse_pan == self._mouse_pan:
             return
         self._mouse_pan = mouse_pan
@@ -1107,7 +1108,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._mouse_zoom
 
     @mouse_zoom.setter
-    def mouse_zoom(self, mouse_zoom: bool):
+    def mouse_zoom(self, mouse_zoom: bool) -> None:
         if mouse_zoom == self._mouse_zoom:
             return
         self._mouse_zoom = mouse_zoom
@@ -1153,7 +1154,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             List[Union[ClippingPlane, dict]],
             ClippingPlaneList,
         ],
-    ):
+    ) -> None:
         self._experimental_clipping_planes.clear()
         if value is None:
             return
@@ -1181,7 +1182,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         dims: Dims,
         force: bool = False,
-    ):
+    ) -> None:
         """Slice data with values from a global dims model.
 
         Note this will likely be moved off the base layer soon.
@@ -1262,7 +1263,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         view_direction: Optional[npt.ArrayLike] = None,
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
-    ):
+    ) -> Optional[Tuple]:
         """Value of the data at a position.
 
         If the layer is not visible, return None.
@@ -1361,7 +1362,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         view_direction: npt.ArrayLike,
         vector: np.ndarray,
         dims_displayed: List[int],
-    ):
+    ) -> npt.NDArray:
         """Calculate the length of the projection of a line between two mouse
         clicks onto a vector (or array of vectors) in data coordinates.
 
@@ -1641,7 +1642,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @staticmethod
     def _world_to_layer_dims_impl(
         world_dims: npt.NDArray, ndim_world: int, ndim: int
-    ):
+    ) -> npt.NDArray:
         """
         Static for ease of testing
         """
@@ -1989,8 +1990,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         *,
         view_direction: Optional[npt.ArrayLike] = None,
         dims_displayed: Optional[List[int]] = None,
-        world=False,
-    ):
+        world: bool = False,
+    ) -> Dict:
         """
         Status message information of the data at a coordinate position.
 
@@ -2116,7 +2117,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @classmethod
     def create(
         cls,
-        data,
+        data: Any,
         meta: Optional[dict] = None,
         layer_type: Optional[str] = None,
     ) -> Layer:

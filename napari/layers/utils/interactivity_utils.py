@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.utils.geometry import (
     point_in_bounding_box,
@@ -51,7 +52,7 @@ def displayed_plane_from_nd_line_segment(
 
 def drag_data_to_projected_distance(
     start_position, end_position, view_direction, vector
-):
+) -> npt.NDArray:
     """Calculate the projected distance between two mouse events.
 
     Project the drag vector between two mouse events onto a 3D vector
