@@ -252,7 +252,7 @@ class LabelColormap(LabelColormapBase):
 
     def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat selection as given dtype and calculate its
-        value to minimum dtype using _cast_labels_to_minimum_dtype_auto
+        value to minimum dtype using _cast_labels_data_to_texture_dtype
         function.
 
         Parameters
@@ -266,14 +266,14 @@ class LabelColormap(LabelColormapBase):
             The selection converted.
         """
         return int(
-            _cast_labels_to_minimum_dtype_auto(
+            _cast_labels_data_to_texture_dtype(
                 np.array([self.selection]).astype(dtype), self
             )[0]
         )
 
     def background_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat selection as given dtype and calculate its
-        value to minimum dtype using _cast_labels_to_minimum_dtype_auto
+        value to minimum dtype using _cast_labels_data_to_texture_dtype
         function.
 
         Parameters
@@ -287,7 +287,7 @@ class LabelColormap(LabelColormapBase):
             The background converted.
         """
         return int(
-            _cast_labels_to_minimum_dtype_auto(
+            _cast_labels_data_to_texture_dtype(
                 np.array([self.background_value]).astype(dtype), self
             )[0]
         )
@@ -492,8 +492,8 @@ class DirectLabelColormap(LabelColormapBase):
 
 
 def _convert_small_ints_to_unsigned(data: np.ndarray) -> np.ndarray:
-    """
-    Convert int8 to uint8 and int16 to uint16.
+    """Convert (u)int8 to uint8 and (u)int16 to uint16.
+
     Otherwise, return the original array.
 
     Parameters
@@ -515,25 +515,36 @@ def _convert_small_ints_to_unsigned(data: np.ndarray) -> np.ndarray:
     return data
 
 
-def _cast_labels_to_minimum_dtype_auto(
+def _cast_labels_data_to_texture_dtype(
     data: np.ndarray,
     colormap: LabelColormap,
 ) -> np.ndarray:
-    """Perform modulo operation based on number of colors
+    """Convert labels data to the data type used in the texture.
+
+    In https://github.com/napari/napari/issues/6397, we noticed that using
+    float32 textures was much slower than uint8 or uint16 textures. Here we
+    convert the labels data to uint8 or uint16, based on the following rules:
+
+    - uint8 and uint16 labels data are unchanged. (No copy of the arrays.)
+    - int8 and int16 data are converted with a *view* to uint8 and uint16.
+      (This again does not involve a copy so is fast, and lossless.)
+    - higher precision integer data (u)int{32,64} are hashed to uint8, uint16,
+      or float32, depending on the number of colors in the input colormap. (See
+      `minimum_dtype_for_labels`.) Since the hashing can result in collisions,
+      this conversion *has* to happen in the CPU to correctly map the
+      background and selection values.
 
     Parameters
     ----------
     data : np.ndarray
-        Labels data to be casted.
-    num_colors : int
-        Number of unique colors in the data.
-    background_value : int
-        The value in ``values`` to be treated as the background.
+        Labels data to be converted.
+    colormap : LabelColormap
+        Colormap used to display the labels data.
 
     Returns
     -------
     np.ndarray
-        Casted labels data.
+        Converted labels data.
     """
     if data.itemsize <= 2:
         return _convert_small_ints_to_unsigned(data)
@@ -543,20 +554,46 @@ def _cast_labels_to_minimum_dtype_auto(
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
     if colormap.use_selection:
-        casted_selection = _zero_preserving_modulo_numpy(
+        selection_in_texture = _zero_preserving_modulo(
             np.array([colormap.selection]), num_colors, dtype
         )
-        selection_pos = np.array(data == colormap.selection)
-        return selection_pos.astype(dtype) * casted_selection
+        converted = np.where(
+            data == colormap.selection, selection_in_texture, dtype.type(0)
+        )
+    else:
+        converted = _zero_preserving_modulo(
+            data, num_colors, dtype, colormap.background_value
+        )
 
-    return _zero_preserving_modulo(
-        data, num_colors, dtype, colormap.background_value
-    )
+    return converted
 
 
 def _zero_preserving_modulo_numpy(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
+    """``(values - 1) % n + 1``, but with one specific value mapped to 0.
+
+    This ensures (1) an output value in [0, n] (inclusive), and (2) that
+    no nonzero values in the input are zero in the output, other than the
+    ``to_zero`` value.
+
+    Parameters
+    ----------
+    values : np.ndarray
+        The dividend of the modulo operator.
+    n : int
+        The divisor.
+    dtype : np.dtype
+        The desired dtype for the output array.
+    to_zero : int, optional
+        A specific value to map to 0. (By default, 0 itself.)
+
+    Returns
+    -------
+    np.ndarray
+        The result: 0 for the ``to_zero`` value, ``values % n + 1``
+        everywhere else.
+    """
     res = ((values - 1) % n + 1).astype(dtype)
     res[values == to_zero] = 0
     return res
@@ -624,7 +661,7 @@ else:
     def _zero_preserving_modulo(
         values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
     ) -> np.ndarray:
-        """Like ``values % n + 1``, but with one specific value mapped to 0.
+        """``(values - 1) % n + 1``, but with one specific value mapped to 0.
 
         This ensures (1) an output value in [0, n] (inclusive), and (2) that
         no nonzero values in the input are zero in the output, other than the
