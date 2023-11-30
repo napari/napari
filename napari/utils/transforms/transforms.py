@@ -217,7 +217,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         """
         return TransformChain([tf.set_slice(axes) for tf in self])
 
-    def expand_dims(self, axes: Sequence[int]) -> 'Transform':
+    def expand_dims(self, axes: Sequence[int]) -> 'TransformChain':
         """Return a transform chain with added axes for non-visible dimensions.
 
         Parameters

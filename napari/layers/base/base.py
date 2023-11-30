@@ -16,6 +16,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Generator,
     List,
     Optional,
     Tuple,
@@ -76,6 +77,7 @@ if TYPE_CHECKING:
 
     from napari.components.dims import Dims
     from napari.components.overlays.base import Overlay
+    from napari.layers._source import Source
 
 
 logger = logging.getLogger("napari.layers.base.base")
@@ -468,11 +470,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _post_init(self):
         """Post init hook for subclasses to use."""
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return self.name."""
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cls = type(self)
         return f"<{cls.__name__} layer {self.name!r} at {hex(id(self))}>"
 
@@ -555,13 +557,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return str(self._mode)
 
     @mode.setter
-    def mode(self, mode):
-        mode = self._mode_setter_helper(mode)
-        if mode == self._mode:
+    def mode(self, mode: Union[Mode, str]) -> None:
+        mode_enum = self._mode_setter_helper(mode)
+        if mode_enum == self._mode:
             return
-        self._mode = mode
+        self._mode = mode_enum
 
-        self.events.mode(mode=str(mode))
+        self.events.mode(mode=str(mode_enum))
 
     @property
     def projection_mode(self):
@@ -582,16 +584,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.refresh()
 
     @classmethod
-    def _basename(cls):
+    def _basename(cls) -> str:
         return f'{cls.__name__}'
 
     @property
-    def name(self):
+    def name(self) -> str:
         """str: Unique name of the layer."""
         return self._name
 
     @name.setter
-    def name(self, name):
+    def name(self, name: Optional[str]) -> None:
         if name == self.name:
             return
         if not name:
@@ -610,7 +612,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._metadata.update(value)
 
     @property
-    def source(self):
+    def source(self) -> Source:
         return self._source
 
     @property
@@ -648,12 +650,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._set_loaded(True)
 
     @property
-    def opacity(self):
+    def opacity(self) -> float:
         """float: Opacity value between 0.0 and 1.0."""
         return self._opacity
 
     @opacity.setter
-    def opacity(self, opacity):
+    def opacity(self, opacity: float) -> None:
         if not 0.0 <= opacity <= 1.0:
             raise ValueError(
                 trans._(
@@ -668,7 +670,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.opacity()
 
     @property
-    def blending(self):
+    def blending(self) -> str:
         """Blending mode: Determines how RGB and alpha values get mixed.
 
         Blending.OPAQUE
@@ -735,58 +737,58 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """Executes side-effects on this layer related to changes of the editable state."""
 
     @property
-    def scale(self):
-        """list: Anisotropy factors to scale data into world coordinates."""
+    def scale(self) -> npt.NDArray:
+        """array: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2physical'].scale
 
     @scale.setter
-    def scale(self, scale):
+    def scale(self, scale: Optional[npt.NDArray]) -> None:
         if scale is None:
-            scale = [1] * self.ndim
+            scale = np.array([1]) * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
         self._clear_extents_and_refresh()
         self.events.scale()
 
     @property
-    def translate(self):
-        """list: Factors to shift the layer by in units of world coordinates."""
+    def translate(self) -> npt.NDArray:
+        """array: Factors to shift the layer by in units of world coordinates."""
         return self._transforms['data2physical'].translate
 
     @translate.setter
-    def translate(self, translate):
+    def translate(self, translate: npt.ArrayLike) -> None:
         self._transforms['data2physical'].translate = np.array(translate)
         self._clear_extents_and_refresh()
         self.events.translate()
 
     @property
-    def rotate(self):
+    def rotate(self) -> npt.NDArray:
         """array: Rotation matrix in world coordinates."""
         return self._transforms['data2physical'].rotate
 
     @rotate.setter
-    def rotate(self, rotate):
+    def rotate(self, rotate: npt.NDArray) -> None:
         self._transforms['data2physical'].rotate = rotate
         self._clear_extents_and_refresh()
         self.events.rotate()
 
     @property
-    def shear(self):
+    def shear(self) -> npt.NDArray:
         """array: Shear matrix in world coordinates."""
         return self._transforms['data2physical'].shear
 
     @shear.setter
-    def shear(self, shear):
+    def shear(self, shear: npt.NDArray) -> None:
         self._transforms['data2physical'].shear = shear
         self._clear_extents_and_refresh()
         self.events.shear()
 
     @property
-    def affine(self):
+    def affine(self) -> Affine:
         """napari.utils.transforms.Affine: Extra affine transform to go from physical to world coordinates."""
         return self._transforms['physical2world']
 
     @affine.setter
-    def affine(self, affine):
+    def affine(self, affine: Union[npt.ArrayLike, Affine]) -> None:
         # Assignment by transform name is not supported by TransformChain and
         # EventedList, so use the integer index instead. For more details, see:
         # https://github.com/napari/napari/issues/3058
@@ -797,19 +799,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.affine()
 
     @property
-    def _translate_grid(self):
-        """list: Factors to shift the layer by."""
+    def _translate_grid(self) -> npt.NDArray:
+        """array: Factors to shift the layer by."""
         return self._transforms['world2grid'].translate
 
     @_translate_grid.setter
-    def _translate_grid(self, translate_grid):
+    def _translate_grid(self, translate_grid: npt.NDArray) -> None:
         if np.array_equal(self._translate_grid, translate_grid):
             return
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
 
     @property
-    def _is_moving(self):
+    def _is_moving(self) -> bool:
         return self._private_is_moving
 
     @_is_moving.setter
@@ -819,7 +821,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             assert self._moving_coordinates is not None
         self._private_is_moving = value
 
-    def _update_dims(self):
+    def _update_dims(self) -> None:
         """Update the dimensionality of transforms and slices when data changes."""
         ndim = self._get_ndim()
 
@@ -941,19 +943,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             step=abs(data_to_world.scale),
         )
 
-    def _clear_extent(self):
+    def _clear_extent(self) -> None:
         """Clear extent cache and emit extent event."""
         if 'extent' in self.__dict__:
             del self.extent
         self.events.extent()
 
-    def _clear_extent_augmented(self):
+    def _clear_extent_augmented(self) -> None:
         """Clear extent_augmented cache and emit extent_augmented event."""
         if '_extent_augmented' in self.__dict__:
             del self._extent_augmented
         self.events._extent_augmented()
 
-    def _clear_extents_and_refresh(self):
+    def _clear_extents_and_refresh(self) -> None:
         """Clears the cached extents, emits events and refreshes the layer.
 
         This should be called whenever this data or transform information
@@ -977,10 +979,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
 
     @abstractmethod
-    def _get_ndim(self):
+    def _get_ndim(self) -> int:
         raise NotImplementedError
 
-    def _get_base_state(self):
+    def _get_base_state(self) -> dict:
         """Get dictionary of attributes on base layer.
 
         Returns
@@ -1011,7 +1013,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         raise NotImplementedError
 
     @property
-    def _type_string(self):
+    def _type_string(self) -> str:
         return self.__class__.__name__.lower()
 
     def as_layer_data_tuple(self):
@@ -1020,12 +1022,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self.data, state, self._type_string
 
     @property
-    def thumbnail(self):
+    def thumbnail(self) -> npt.NDArray[np.uint8]:
         """array: Integer array of thumbnail for the layer"""
         return self._thumbnail
 
     @thumbnail.setter
-    def thumbnail(self, thumbnail):
+    def thumbnail(self, thumbnail: npt.NDArray) -> None:
         if 0 in thumbnail.shape:
             thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         if thumbnail.dtype != np.uint8:
@@ -1047,17 +1049,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.thumbnail()
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         """int: Number of dimensions in the data."""
         return self._ndim
 
     @property
-    def help(self):
+    def help(self) -> str:
         """str: displayed in status bar bottom right."""
         return self._help
 
     @help.setter
-    def help(self, help_text):
+    def help(self, help_text: str) -> None:
         if help_text == self.help:
             return
         self._help = help_text
@@ -1118,31 +1120,31 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )  # Deprecated since 0.5.0
 
     @property
-    def cursor(self):
+    def cursor(self) -> str:
         """str: String identifying cursor displayed over canvas."""
         return self._cursor
 
     @cursor.setter
-    def cursor(self, cursor):
+    def cursor(self, cursor: str) -> None:
         if cursor == self.cursor:
             return
         self._cursor = cursor
         self.events.cursor(cursor=cursor)
 
     @property
-    def cursor_size(self):
-        """int | None: Size of cursor if custom. None yields default size."""
+    def cursor_size(self) -> int:
+        """int: Size of cursor if custom. None yields default size."""
         return self._cursor_size
 
     @cursor_size.setter
-    def cursor_size(self, cursor_size):
+    def cursor_size(self, cursor_size: int) -> None:
         if cursor_size == self.cursor_size:
             return
         self._cursor_size = cursor_size
         self.events.cursor_size(cursor_size=cursor_size)
 
     @property
-    def experimental_clipping_planes(self):
+    def experimental_clipping_planes(self) -> ClippingPlaneList:
         return self._experimental_clipping_planes
 
     @experimental_clipping_planes.setter
@@ -1167,10 +1169,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._experimental_clipping_planes.append(plane)
 
     @property
-    def bounding_box(self):
+    def bounding_box(self) -> Overlay:
         return self._overlays['bounding_box']
 
-    def set_view_slice(self):
+    def set_view_slice(self) -> None:
         with self.dask_optimized_slicing():
             self._set_view_slice()
 
@@ -1404,7 +1406,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
 
     @contextmanager
-    def block_update_properties(self):
+    def block_update_properties(self) -> Generator[None, None, None]:
         previous = self._update_properties
         self._update_properties = False
         try:
@@ -1412,7 +1414,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         finally:
             self._update_properties = previous
 
-    def _set_highlight(self, force=False):
+    def _set_highlight(self, force: bool = False) -> None:
         """Render layer highlights when appropriate.
 
         Parameters
@@ -1431,7 +1433,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         finally:
             self._refresh_blocked = previous
 
-    def refresh(self, event=None):
+    def refresh(self, event: Optional[Event] = None) -> None:
         """Refresh all layer data based on current view slice."""
         if self._refresh_blocked:
             logger.debug('Layer.refresh blocked: %s', self)
@@ -1444,7 +1446,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         else:
             self._refresh_sync()
 
-    def _refresh_sync(self, event=None):
+    def _refresh_sync(self, event: Optional[Event] = None) -> None:
         logger.debug('Layer._refresh_sync: %s', self)
         if self.visible:
             self.set_view_slice()
@@ -1938,7 +1940,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
 
-    def _get_source_info(self):
+    def _get_source_info(self) -> dict:
         components = {}
         if self.source.reader_plugin:
             components['layer_base'] = os.path.basename(self.source.path or '')
@@ -1973,7 +1975,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         components['plugin'] = ''
         return components
 
-    def get_source_str(self):
+    def get_source_str(self) -> str:
         source_info = self._get_source_info()
 
         return (
