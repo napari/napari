@@ -414,11 +414,13 @@ def _cast_labels_data_to_texture_dtype(
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
     if colormap.use_selection:
-        casted_selection = _zero_preserving_modulo_numpy(
+        selection_in_texture = _zero_preserving_modulo_numpy(
             np.array([colormap.selection]), num_colors, dtype
         )
-        selection_pos = np.array(data == colormap.selection)
-        return selection_pos.astype(dtype) * casted_selection
+        converted = np.where(
+            data == colormap.selection, selection_in_texture, dtype.type(0)
+        )
+        return converted
 
     return _zero_preserving_modulo(
         data, num_colors, dtype, colormap.background_value
