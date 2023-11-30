@@ -276,12 +276,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     _modeclass: Type[StringEnum] = Mode
     _projectionclass: Type[StringEnum] = BaseProjectionMode
 
-    _drag_modes: ClassVar[Dict[StringEnum, Callable[[Layer, Event], None]]] = {
+    ModeCallable = Callable[
+        ['Layer', Event], Union[None, Generator[None, None, None]]
+    ]
+
+    _drag_modes: ClassVar[Dict[StringEnum, ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes: ClassVar[Dict[StringEnum, Callable[[Layer, Event], None]]] = {
+    _move_modes: ClassVar[Dict[StringEnum, ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
