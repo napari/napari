@@ -180,10 +180,10 @@ class LabelColormap(Colormap):
         return self.map(data, apply_selection=False)
 
     def selection_as_type(self, dtype: np.dtype) -> int:
-        """
-        Convert the selection value to a specified data type.
+        """Convert the selection value to a specified data type.
 
-        It is for handle negative selection value for int8 and int16.
+        This maps negative background values in int8 and int16 to their
+        corresponding view in uint8 and uint16.
 
         Parameters
         ----------
@@ -195,14 +195,13 @@ class LabelColormap(Colormap):
         int
             The selection value converted to the specified data type.
         """
-
         return np.array([self.selection]).astype(dtype)[0]
 
     def background_as_type(self, dtype: np.dtype) -> int:
-        """
-        Convert the background value to a specified data type.
+        """Convert the background value to a specified data type.
 
-        It is for handle negative background value for int8 and int16.
+        This maps negative background values in int8 and int16 to their
+        corresponding view in uint8 and uint16.
 
         Parameters
         ----------
@@ -217,9 +216,7 @@ class LabelColormap(Colormap):
         return np.array([self.background_value]).astype(dtype)[0]
 
     def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        """Treat selection as given dtype and calculate its
-        value to minimum dtype using _cast_labels_data_to_texture_dtype
-        function.
+        """Treat selection as given dtype and calculate value with min dtype.
 
         Parameters
         ----------
@@ -236,9 +233,7 @@ class LabelColormap(Colormap):
         )[0]
 
     def background_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        """Treat selection as given dtype and calculate its
-        value to minimum dtype using _cast_labels_data_to_texture_dtype
-        function.
+        """Treat background as given dtype and calculate value with min dtype.
 
         Parameters
         ----------
