@@ -271,12 +271,17 @@ class LabelColormap(Colormap):
             values = values.astype(np.int64)
 
         if values.dtype == np.uint8 and "_uint8_colors" in self.__dict__:
+            # __dict__ checks whether _uint8_colors is cached — if not, it
+            # falls back on else to map all the colors, avoiding an infinite
+            # recursion.
             mapped = self._uint8_colors[values]
         elif values.dtype == np.uint16 and "_uint16_colors" in self.__dict__:
+            # same as above uint8 clause.
             mapped = self._uint16_colors[values]
         else:
             background = self.background_as_type(values.dtype)
-            # cast background to values dtype is to support int8 and int16 negative backgrounds
+            # cast background to values dtype to support int8 and int16
+            # negative backgrounds
             texture_dtype_values = _zero_preserving_modulo_numpy(
                 values, len(self.colors) - 1, values.dtype, background
             )
@@ -284,7 +289,8 @@ class LabelColormap(Colormap):
             mapped[texture_dtype_values == 0] = 0
         if self.use_selection and apply_selection:
             selection = self.selection_as_type(values.dtype)
-            # cast selection to values dtype is to support int8 and int16 negative selection
+            # cast selection to values dtype to support int8 and int16
+            # negative backgrounds
             mapped[(values != selection)] = 0
 
         return np.reshape(mapped, original_shape + (4,))
