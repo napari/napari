@@ -301,12 +301,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._ndim = ndim
 
-        self._slice_input = _SliceInput(
-            ndisplay=2,
-            point=(0,) * ndim,
-            order=tuple(range(ndim)),
-        )
-
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
         #   of an image. It maps pixels of the tile into the coordinate space
@@ -340,6 +334,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 coerce_affine(affine, ndim=ndim, name='physical2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
+        )
+
+        self._slice_input = _SliceInput(
+            ndisplay=2,
+            point=self.data_to_world((0,) * ndim),
+            order=tuple(range(ndim)),
         )
 
         self.corner_pixels = np.zeros((2, ndim), dtype=int)

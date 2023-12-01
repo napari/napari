@@ -410,9 +410,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded."""
         if self.rgb:
-            return np.zeros((1,) * self._slice_input.ndisplay + (3,))
+            return np.zeros(
+                (1,) * self._slice_input.ndisplay + (3,), dtype=np.uint8
+            )
 
-        return np.zeros((1,) * self._slice_input.ndisplay)
+        return np.zeros((1,) * self._slice_input.ndisplay, dtype=np.uint8)
 
     def _get_order(self) -> Tuple[int]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""

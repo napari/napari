@@ -78,6 +78,9 @@ class ColorArray(np.ndarray):
     use the ``validate`` method to coerce a value to an array of colors.
     """
 
+    def __new__(cls, value) -> 'ColorArray':
+        return cls.validate(value)
+
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
