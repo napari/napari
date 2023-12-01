@@ -526,14 +526,13 @@ class Labels(_ImageBase):
             return self._random_colormap
         return self._direct_colormap
 
-    @colormap.setter
-    def colormap(self, colormap: LabelColormapBase):
-        self._set_colormap(colormap)
-        if isinstance(self._colormap, LabelColormap):
-            self._random_colormap = self._colormap
+    def _set_colormap(self, colormap):
+        if isinstance(colormap, LabelColormap):
+            self._random_colormap = colormap
+            self._colormap = self._random_colormap
             color_mode = LabelColorMode.AUTO
         else:
-            self._direct_colormap = self._colormap
+            self._direct_colormap = colormap
             # `self._direct_colormap.color_dict` may contain just the default None and background label
             # colors, in which case we need to be in AUTO color mode. Otherwise,
             # `self._direct_colormap.color_dict` contains colors for all labels, and we should be in DIRECT
@@ -544,10 +543,17 @@ class Labels(_ImageBase):
             # - https://github.com/napari/napari/issues/2953
             if self._is_default_colors(self._direct_colormap.color_dict):
                 color_mode = LabelColorMode.AUTO
+                self._colormap = self._random_colormap
             else:
                 color_mode = LabelColorMode.DIRECT
+                self._colormap = self._direct_colormap
         self._selected_color = self.get_color(self.selected_label)
+        self.events.colormap()  # Will update the LabelVispyColormap shader
         self.color_mode = color_mode
+
+    @colormap.setter
+    def colormap(self, colormap: LabelColormapBase):
+        self._set_colormap(colormap)
 
     @property
     def num_colors(self):
