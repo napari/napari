@@ -149,7 +149,7 @@ def build_textures_from_dict(
     color_dict: Dict[int, ColorTuple], max_size: int
 ) -> np.ndarray:
     if len(color_dict) > 2**23:
-        raise ValueError(
+        raise ValueError(  # pragma: no cover
             f"Cannot build a texture with more than 2**23 colors, got {len(color_dict)}"
         )
     if len(color_dict) > max_size**2:

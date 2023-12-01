@@ -958,7 +958,7 @@ def test_world_data_extent():
     """Test extent after applying transforms."""
     np.random.seed(0)
     shape = (6, 10, 15)
-    data = np.random.randint(20, size=(shape))
+    data = np.random.randint(20, size=shape)
     layer = Labels(data)
     extent = np.array(((0,) * 3, [s - 1 for s in shape]))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
