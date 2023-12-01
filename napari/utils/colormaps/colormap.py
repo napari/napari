@@ -264,7 +264,6 @@ class LabelColormap(Colormap):
         np.ndarray of same shape as values, but with last dimension of size 4
             Mapped colors.
         """
-        original_shape = np.shape(values)
         values = np.atleast_1d(values)
 
         if values.dtype.kind == 'f':
@@ -293,7 +292,7 @@ class LabelColormap(Colormap):
             # negative backgrounds
             mapped[(values != selection)] = 0
 
-        return np.reshape(mapped, original_shape + (4,))
+        return mapped
 
     def shuffle(self, seed: int):
         """Shuffle the colormap colors.
