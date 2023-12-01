@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
+import numpy.testing as npt
 import pandas as pd
 import pytest
 import xarray as xr
@@ -272,6 +273,9 @@ def test_num_colors():
     layer = Labels(data, num_colors=60)
     assert layer.num_colors == 60
 
+    with pytest.raises(ValueError, match="must be between 1 and 65535"):
+        layer.num_colors = 2**17
+
 
 def test_properties():
     """Test adding labels with properties."""
@@ -490,11 +494,11 @@ def test_n_edit_dimensions():
                 [
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                    [0, 0, 0, 0, 0, 6, 6, 6, 0, 0],
-                    [0, 0, 2, 2, 2, 6, 0, 6, 0, 0],
-                    [0, 0, 2, 0, 2, 6, 0, 6, 0, 0],
-                    [0, 0, 2, 2, 2, 6, 0, 6, 0, 0],
-                    [0, 0, 0, 0, 0, 6, 6, 6, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 0, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 ],
@@ -518,15 +522,15 @@ def test_n_edit_dimensions():
             ),
             np.array(
                 [
-                    [0, 2, 0, 0, 0, 0, 0, 3, 0, 0],
-                    [2, 2, 0, 0, 0, 0, 0, 3, 3, 3],
+                    [0, 1, 0, 0, 0, 0, 0, 2, 0, 0],
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                    [0, 0, 0, 0, 0, 0, 5, 5, 5, 5],
-                    [4, 4, 4, 0, 0, 0, 5, 0, 0, 0],
-                    [0, 0, 4, 0, 0, 0, 5, 0, 0, 0],
-                    [0, 0, 4, 0, 0, 0, 5, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 0, 0, 0],
+                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
+                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
                 ],
                 dtype=np.int_,
             ),
@@ -584,15 +588,16 @@ def test_contour(input_data, expected_data_view):
         layer.contour = -1
 
 
-@pytest.mark.parametrize("background_num", [0, 1, 2])
+@pytest.mark.parametrize("background_num", [0, 1, 2, -1])
 def test_background_label(background_num):
-    data = np.zeros((10, 10), dtype=np.uint32)
+    data = np.zeros((10, 10), dtype=np.int32)
     data[1:-1, 1:-1] = 1
     data[2:-2, 2:-2] = 2
+    data[4:-4, 4:-4] = -1
 
     layer = Labels(data)
     layer._background_label = background_num
-    layer.refresh()
+    layer.num_colors = 49
     np.testing.assert_array_equal(
         layer._data_view == 0, data == background_num
     )
@@ -936,6 +941,17 @@ def test_thumbnail():
     layer = Labels(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+@pytest.mark.parametrize("value", [1, 10, 50, -2, -10])
+@pytest.mark.parametrize("dtype", [np.int8, np.int32])
+def test_thumbnail_single_color(value, dtype):
+    labels = Labels(np.full((10, 10), value, dtype=dtype), opacity=1)
+    labels._update_thumbnail()
+    mid_point = tuple(np.array(labels.thumbnail.shape[:2]) // 2)
+    npt.assert_array_equal(
+        labels.thumbnail[mid_point], labels.get_color(value) * 255
+    )
 
 
 def test_world_data_extent():
@@ -1507,10 +1523,10 @@ def test_color_mapping_with_show_selected_label():
         label_mask = data == selected_label
         mapped_colors = layer.colormap.map(data)
 
-        assert np.allclose(
+        npt.assert_allclose(
             mapped_colors[label_mask], mapped_colors_all[label_mask]
         )
-        assert np.allclose(mapped_colors[np.logical_not(label_mask)], 0)
+        npt.assert_allclose(mapped_colors[np.logical_not(label_mask)], 0)
 
     layer.show_selected_label = False
     assert np.allclose(layer.colormap.map(data), mapped_colors_all)

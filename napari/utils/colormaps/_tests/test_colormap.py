@@ -2,9 +2,12 @@ import importlib
 from unittest.mock import patch
 
 import numpy as np
+import numpy.testing as npt
 import pytest
 
+from napari.utils.color import ColorArray
 from napari.utils.colormaps import Colormap, colormap
+from napari.utils.colormaps.colormap_utils import label_colormap
 
 
 def test_linear_colormap():
@@ -124,6 +127,7 @@ def test_minimum_dtype_for_labels(num, dtype):
 
 @pytest.fixture()
 def disable_jit(monkeypatch):
+    pytest.importorskip("numba")
     with patch("numba.core.config.DISABLE_JIT", True):
         importlib.reload(colormap)
         yield
@@ -134,12 +138,77 @@ def disable_jit(monkeypatch):
     "num,dtype", [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
 @pytest.mark.usefixtures("disable_jit")
-def test_cast_labels_to_minimum_type_auto(num, dtype, monkeypatch):
-    data = np.zeros(10, dtype=np.uint32)
+def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
+    cmap = label_colormap(num)
+    data = np.zeros(3, dtype=np.uint32)
     data[1] = 10
     data[2] = 10**6 + 5
-    cast_arr = colormap._cast_labels_to_minimum_dtype_auto(data, num, 0)
+    cast_arr = colormap._cast_labels_data_to_texture_dtype(data, cmap)
     assert cast_arr.dtype == dtype
     assert cast_arr[0] == 0
-    assert cast_arr[1] == 11
-    assert cast_arr[2] == 10**6 % num + 6
+    assert cast_arr[1] == 10
+    assert cast_arr[2] == 10**6 % num + 5
+
+
+def test_zero_preserving_modulo_naive():
+    pytest.importorskip("numba")
+    data = np.arange(1000, dtype=np.uint32)
+    res1 = colormap._zero_preserving_modulo_numpy(data, 49, np.uint8)
+    res2 = colormap._zero_preserving_modulo(data, 49, np.uint8)
+    npt.assert_array_equal(res1, res2)
+
+
+@pytest.mark.parametrize(
+    'dtype', [np.uint8, np.uint16, np.int8, np.int16, np.float32, np.float64]
+)
+def test_label_colormap_map_with_uint8_values(dtype):
+    cmap = colormap.LabelColormap(
+        colors=ColorArray(np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]]))
+    )
+    values = np.array([0, 1, 2], dtype=dtype)
+    expected = np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]])
+    npt.assert_array_equal(cmap.map(values), expected)
+
+
+@pytest.mark.parametrize("selection", [1, -1])
+@pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int32, np.int64])
+def test_label_colormap_map_with_selection(selection, dtype):
+    cmap = colormap.LabelColormap(
+        colors=ColorArray(
+            np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]])
+        ),
+        use_selection=True,
+        selection=selection,
+    )
+    values = np.array([0, selection, 2], dtype=np.int8)
+    expected = np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 0, 0, 0]])
+    npt.assert_array_equal(cmap.map(values), expected)
+
+
+@pytest.mark.parametrize("background", [1, -1])
+@pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int32, np.int64])
+def test_label_colormap_map_with_background(background, dtype):
+    cmap = colormap.LabelColormap(
+        colors=ColorArray(
+            np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]])
+        ),
+        background_value=background,
+    )
+    values = np.array([3, background, 2], dtype=dtype)
+    expected = np.array([[1, 0, 0, 1], [0, 0, 0, 0], [0, 1, 0, 1]])
+    npt.assert_array_equal(cmap.map(values), expected)
+
+
+@pytest.mark.parametrize("dtype", [np.uint8, np.uint16])
+def test_label_colormap_using_cache(dtype, monkeypatch):
+    cmap = colormap.LabelColormap(
+        colors=ColorArray(np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]]))
+    )
+    values = np.array([0, 1, 2], dtype=dtype)
+    expected = np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]])
+    map1 = cmap.map(values)
+    npt.assert_array_equal(map1, expected)
+    getattr(cmap, f"_{dtype.__name__}_colors")
+    monkeypatch.setattr(colormap, '_zero_preserving_modulo_numpy', None)
+    map2 = cmap.map(values)
+    npt.assert_array_equal(map1, map2)
