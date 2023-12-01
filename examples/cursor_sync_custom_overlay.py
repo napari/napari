@@ -1,14 +1,13 @@
-import napari
 import warnings
+
 import numpy as np
-
 from vispy.scene.visuals import Ellipse
-from napari._vispy.utils.visual import overlay_to_visual
 
-from napari.utils.events import Event
-from napari.components.overlays import CanvasOverlay
+import napari
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
-
+from napari._vispy.utils.visual import overlay_to_visual
+from napari.components.overlays import CanvasOverlay
+from napari.utils.events import Event
 
 #
 #   Create a cursor overlay
