@@ -7,9 +7,10 @@ import numpy.testing as npt
 import pytest
 
 from napari.utils.color import ColorArray
-from napari.utils.colormaps import Colormap, DirectLabelColormap, colormap
+from napari.utils.colormaps import Colormap, colormap
 from napari.utils.colormaps.colormap import (
     DEFAULT_VALUE,
+    DirectLabelColormap,
 )
 from napari.utils.colormaps.colormap_utils import label_colormap
 
