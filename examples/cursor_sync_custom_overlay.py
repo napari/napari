@@ -10,7 +10,6 @@ Read up on the view model here: https://napari.org/stable/guides/napari_models.h
 .. tags:: visualization-basic, gui
 """
 
-import napari
 import warnings
 
 import numpy as np
