@@ -214,10 +214,10 @@ class LabelColormap(LabelColormapBase):
     background_value: int = 0
 
     def selection_as_type(self, dtype: np.dtype) -> int:
-        """
-        Convert the selection value to a specified data type.
+        """Convert the selection value to a specified data type.
 
-        It is for handle negative selection value for int8 and int16.
+        This maps negative background values in int8 and int16 to their
+        corresponding view in uint8 and uint16.
 
         Parameters
         ----------
@@ -233,10 +233,10 @@ class LabelColormap(LabelColormapBase):
         return int(np.array([self.selection]).astype(dtype)[0])
 
     def background_as_type(self, dtype: np.dtype) -> int:
-        """
-        Convert the background value to a specified data type.
+        """Convert the background value to a specified data type.
 
-        It is for handle negative background value for int8 and int16.
+        This maps negative background values in int8 and int16 to their
+        corresponding view in uint8 and uint16.
 
         Parameters
         ----------
@@ -251,9 +251,7 @@ class LabelColormap(LabelColormapBase):
         return int(np.array([self.background_value]).astype(dtype)[0])
 
     def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        """Treat selection as given dtype and calculate its
-        value to minimum dtype using _cast_labels_data_to_texture_dtype
-        function.
+        """Treat selection as given dtype and calculate value with min dtype.
 
         Parameters
         ----------
@@ -272,9 +270,7 @@ class LabelColormap(LabelColormapBase):
         )
 
     def background_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        """Treat selection as given dtype and calculate its
-        value to minimum dtype using _cast_labels_data_to_texture_dtype
-        function.
+        """Treat background as given dtype and calculate value with min dtype.
 
         Parameters
         ----------
@@ -316,7 +312,8 @@ class LabelColormap(LabelColormapBase):
             mapped = self._get_from_cache(values)
         if mapped is None:
             background = self.background_as_type(values.dtype)
-            # cast background to values dtype is to support int8 and int16 negative backgrounds
+            # cast background to values dtype to support int8 and int16
+            # negative backgrounds
             texture_dtype_values = _zero_preserving_modulo_numpy(
                 values, len(self.colors) - 1, values.dtype, background
             )
@@ -324,7 +321,8 @@ class LabelColormap(LabelColormapBase):
             mapped[texture_dtype_values == 0] = 0
         if self.use_selection and not raw_colormap:
             selection = self.selection_as_type(values.dtype)
-            # cast selection to values dtype is to support int8 and int16 negative selection
+            # cast selection to values dtype to support int8 and int16
+            # negative backgrounds
             mapped[(values != selection)] = 0
 
         return mapped
