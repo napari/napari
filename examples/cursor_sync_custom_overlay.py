@@ -1,3 +1,16 @@
+"""
+Cursor sync via custom overlay
+==============================
+
+Create 2 seperate viewers and mirror the position of the cursor between the
+parent and the child via a vispy overlay.
+
+Read up on the view model here: https://napari.org/stable/guides/napari_models.html
+
+.. tags:: visualization-basic, gui
+"""
+
+import napari
 import warnings
 
 import numpy as np
@@ -12,6 +25,10 @@ from napari.utils.events import Event
 #
 #   Create a cursor overlay
 #
+
+#   NOTE:
+#   Read up on the view model to understand the reasons for this:
+#   https://napari.org/stable/guides/napari_models.html
 
 
 class CursorOverlay(CanvasOverlay):
