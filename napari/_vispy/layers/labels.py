@@ -230,7 +230,7 @@ class VispyLabelsLayer(VispyImageLayer):
         view_dtype = self.layer._slice.image.view.dtype
         raw_dtype = self.layer._slice.image.raw.dtype
         if mode == 'auto' or (mode == "direct" and raw_dtype.itemsize <= 2):
-            if view_dtype != raw_dtype and isinstance(colormap, LabelColormap):
+            if raw_dtype.itemsize > 2 and isinstance(colormap, LabelColormap):
                 # If the view dtype is different from the raw dtype, it is possible
                 # that background pixels are not the same value as the `background_value`.
                 # For example, if raw_dtype is int8 and background_value is `-1`
@@ -241,7 +241,7 @@ class VispyLabelsLayer(VispyImageLayer):
                 # a copy instead of temporary overwrite the background_value
                 colormap = LabelColormap(**colormap.dict())
                 colormap.background_value = (
-                    colormap.background_as_minimum_dtype(raw_dtype)
+                    colormap._background_as_minimum_dtype(raw_dtype)
                 )
             color_texture = _select_colormap_texture(
                 colormap, view_dtype, raw_dtype

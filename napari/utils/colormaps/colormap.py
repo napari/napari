@@ -193,7 +193,7 @@ class LabelColormapBase(Colormap):
     def map(self, values, raw_colormap: bool = True) -> np.ndarray:
         raise NotImplementedError
 
-    def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
+    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         raise NotImplementedError
 
 
@@ -213,44 +213,7 @@ class LabelColormap(LabelColormapBase):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
 
-    def selection_as_type(self, dtype: np.dtype) -> int:
-        """Convert the selection value to a specified data type.
-
-        This maps negative background values in int8 and int16 to their
-        corresponding view in uint8 and uint16.
-
-        Parameters
-        ----------
-        dtype : np.dtype
-            The desired data type to convert the selection value to.
-
-        Returns
-        -------
-        int
-            The selection value converted to the specified data type.
-        """
-
-        return int(np.array([self.selection]).astype(dtype)[0])
-
-    def background_as_type(self, dtype: np.dtype) -> int:
-        """Convert the background value to a specified data type.
-
-        This maps negative background values in int8 and int16 to their
-        corresponding view in uint8 and uint16.
-
-        Parameters
-        ----------
-        dtype : np.dtype
-            The desired data type to convert the background value to.
-
-        Returns
-        -------
-        int
-            The background value converted to the specified data type.
-        """
-        return int(np.array([self.background_value]).astype(dtype)[0])
-
-    def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
+    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat selection as given dtype and calculate value with min dtype.
 
         Parameters
@@ -269,7 +232,7 @@ class LabelColormap(LabelColormapBase):
             )[0]
         )
 
-    def background_as_minimum_dtype(self, dtype: np.dtype) -> int:
+    def _background_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat background as given dtype and calculate value with min dtype.
 
         Parameters
@@ -311,19 +274,16 @@ class LabelColormap(LabelColormapBase):
         if not raw_colormap:
             mapped = self._get_from_cache(values)
         if mapped is None:
-            background = self.background_as_type(values.dtype)
-            # cast background to values dtype to support int8 and int16
-            # negative backgrounds
             texture_dtype_values = _zero_preserving_modulo_numpy(
-                values, len(self.colors) - 1, values.dtype, background
+                values,
+                len(self.colors) - 1,
+                values.dtype,
+                self.background_value,
             )
             mapped = self.colors[texture_dtype_values]
             mapped[texture_dtype_values == 0] = 0
         if self.use_selection and not raw_colormap:
-            selection = self.selection_as_type(values.dtype)
-            # cast selection to values dtype to support int8 and int16
-            # negative backgrounds
-            mapped[(values != selection)] = 0
+            mapped[(values != self.selection)] = 0
 
         return mapped
 
@@ -379,7 +339,7 @@ class DirectLabelColormap(LabelColormapBase):
         casted = _cast_labels_to_minimum_dtype_direct(values, self)
         return self._map_casted(casted, raw_colormap)
 
-    def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
+    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat selection as given dtype and calculate its
         value to minimum dtype using _cast_labels_to_minimum_dtype_auto
         function.
