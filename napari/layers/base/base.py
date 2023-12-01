@@ -286,7 +286,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending='translucent',
         visible=True,
         multiscale=False,
@@ -643,7 +643,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 )
             )
 
-        self._opacity = opacity
+        self._opacity = float(opacity)
         self._update_thumbnail()
         self.events.opacity()
 
