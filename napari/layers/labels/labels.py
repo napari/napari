@@ -526,6 +526,10 @@ class Labels(_ImageBase):
             return self._random_colormap
         return self._direct_colormap
 
+    @colormap.setter
+    def colormap(self, colormap: LabelColormapBase):
+        self._set_colormap(colormap)
+
     def _set_colormap(self, colormap):
         if isinstance(colormap, LabelColormap):
             self._random_colormap = colormap
@@ -550,10 +554,6 @@ class Labels(_ImageBase):
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.color_mode = color_mode
-
-    @colormap.setter
-    def colormap(self, colormap: LabelColormapBase):
-        self._set_colormap(colormap)
 
     @property
     def num_colors(self):
