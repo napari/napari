@@ -900,6 +900,38 @@ def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
         )
 
 
+@pytest.mark.parametrize("mode", ["direct", "random"])
+def test_selection_collision(qt_viewer: QtViewer, mode):
+    data = np.zeros((10, 10), dtype=np.uint8)
+    data[:5] = 10
+    data[5:] = 10 + 49
+    layer = qt_viewer.viewer.add_labels(data, opacity=1)
+    layer.selected_label = 10
+    if mode == "direct":
+        layer.color = {10: "red", 10 + 49: "red"}
+
+    for dtype in np.sctypes['int'] + np.sctypes['uint']:
+        layer.data = data.astype(dtype)
+        layer.show_selected_label = False
+        QApplication.processEvents()
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        shape = np.array(canvas_screenshot.shape[:2])
+        pixel_10 = canvas_screenshot[tuple((shape * 0.25).astype(int))]
+        pixel_59 = canvas_screenshot[tuple((shape * 0.75).astype(int))]
+        npt.assert_array_equal(pixel_10, pixel_59, err_msg=f"{dtype}")
+        assert not np.all(pixel_10 == [0, 0, 0, 255]), dtype
+
+        layer.show_selected_label = True
+
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        shape = np.array(canvas_screenshot.shape[:2])
+        pixel_10_2 = canvas_screenshot[tuple((shape * 0.25).astype(int))]
+        pixel_59_2 = canvas_screenshot[tuple((shape * 0.75).astype(int))]
+
+        npt.assert_array_equal(pixel_59_2, [0, 0, 0, 255], err_msg=f"{dtype}")
+        npt.assert_array_equal(pixel_10_2, pixel_10, err_msg=f"{dtype}")
+
+
 def test_all_supported_dtypes(qt_viewer):
     data = np.zeros((10, 10), dtype=np.uint8)
     layer = qt_viewer.viewer.add_labels(data, opacity=1)
