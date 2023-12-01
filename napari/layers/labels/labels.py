@@ -57,7 +57,6 @@ from napari.utils.colormaps.colormap import (
     LabelColormapBase,
     _cast_labels_data_to_texture_dtype,
     _cast_labels_to_minimum_dtype_direct,
-    _convert_small_ints_to_unsigned,
     minimum_dtype_for_labels,
 )
 from napari.utils.events import EmitterGroup, Event
@@ -1141,13 +1140,8 @@ class Labels(_ImageBase):
         )
         zoom_factor = tuple(new_shape / imshape)
 
-        downsampled = _convert_small_ints_to_unsigned(
-            ndi.zoom(image, zoom_factor, prefilter=False, order=0)
-        )
-        if self.color_mode == LabelColorMode.AUTO:
-            color_array = self.colormap.map(downsampled)
-        else:  # direct
-            color_array = self._direct_colormap.map(downsampled)
+        downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
+        color_array = self.colormap.map(downsampled)
         color_array[..., 3] *= self.opacity
 
         self.thumbnail = color_array
