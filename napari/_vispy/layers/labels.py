@@ -116,7 +116,7 @@ class LabelVispyColormap(VispyColormap):
                 f"Cannot use dtype {view_dtype} with LabelVispyColormap"
             )
 
-        selection = colormap.selection_as_minimum_dtype(raw_dtype)
+        selection = colormap._selection_as_minimum_dtype(raw_dtype)
 
         self.glsl_map = (
             shader.replace('$color_map_size', str(len(colormap.colors)))
@@ -199,6 +199,9 @@ class VispyLabelsLayer(VispyImageLayer):
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
         self.layer.events.selected_label.connect(self._on_colormap_change)
         self.layer.events.show_selected_label.connect(self._on_colormap_change)
+        self.layer.events.data.connect(self._on_colormap_change)
+        # as we generate colormap texture based on the data type, we need to
+        # update it when the data type changes
 
     def _on_rendering_change(self):
         # overriding the Image method, so we can maintain the same old rendering name

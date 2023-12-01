@@ -2,7 +2,7 @@ import gc
 import os
 import weakref
 from dataclasses import dataclass
-from itertools import takewhile
+from itertools import product, takewhile
 from typing import List, Tuple
 from unittest import mock
 
@@ -897,4 +897,73 @@ def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
         )
         npt.assert_array_equal(
             color_pixel, color, err_msg=f"background {background}"
+        )
+
+
+def test_all_supported_dtypes(qt_viewer):
+    data = np.zeros((10, 10), dtype=np.uint8)
+    layer = qt_viewer.viewer.add_labels(data, opacity=1)
+
+    for i, dtype in enumerate(np.sctypes['int'] + np.sctypes['uint'], start=1):
+        data = np.full((10, 10), i, dtype=dtype)
+        layer.data = data
+        QApplication.processEvents()
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        midd_pixel = canvas_screenshot[
+            tuple(np.array(canvas_screenshot.shape[:2]) // 2)
+        ]
+        npt.assert_equal(
+            midd_pixel, layer.colormap.map(i)[0] * 255, err_msg=f"{dtype} {i}"
+        )
+
+    layer.color = {
+        0: 'red',
+        1: 'green',
+        2: 'blue',
+        3: 'yellow',
+        4: 'magenta',
+        5: 'cyan',
+        6: 'white',
+        7: 'pink',
+        8: 'orange',
+        9: 'purple',
+        10: 'brown',
+        11: 'gray',
+    }
+
+    for i, dtype in enumerate(np.sctypes['int'] + np.sctypes['uint'], start=1):
+        data = np.full((10, 10), i, dtype=dtype)
+        layer.data = data
+        QApplication.processEvents()
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        midd_pixel = canvas_screenshot[
+            tuple(np.array(canvas_screenshot.shape[:2]) // 2)
+        ]
+        npt.assert_equal(
+            midd_pixel, layer.colormap.map(i)[0] * 255, err_msg=f"{dtype} {i}"
+        )
+
+
+def test_more_than_uint16_colors(qt_viewer):
+    # this test is slow (10s locally)
+    data = np.zeros((10, 10), dtype=np.uint32)
+    colors = {
+        i: (x, y, z, 1)
+        for i, (x, y, z) in zip(
+            range(256**2 + 20),
+            product(np.linspace(0, 1, 256, endpoint=True), repeat=3),
+        )
+    }
+    layer = qt_viewer.viewer.add_labels(data, opacity=1, color=colors)
+    assert layer._slice.image.view.dtype == np.float32
+
+    for i in [1, 1000, 100000]:
+        data = np.full((10, 10), i, dtype=np.uint32)
+        layer.data = data
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        midd_pixel = canvas_screenshot[
+            tuple(np.array(canvas_screenshot.shape[:2]) // 2)
+        ]
+        npt.assert_equal(
+            midd_pixel, layer.colormap.map(i)[0] * 255, err_msg=f"{i}"
         )
