@@ -332,7 +332,6 @@ class DirectLabelColormap(LabelColormapBase):
         np.ndarray of same shape as values, but with last dimension of size 4
             Mapped colors.
         """
-        # Convert to float32 to match the current GL shader implementation
         values = np.atleast_1d(values)
         if values.dtype.itemsize <= 2:
             return self._map_direct(values)
