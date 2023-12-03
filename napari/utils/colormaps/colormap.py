@@ -2,7 +2,14 @@ import bisect
 import math
 from collections import defaultdict
 from functools import cached_property
-from typing import DefaultDict, Dict, List, Optional, Tuple, cast
+from typing import (
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    cast,
+)
 
 import numpy as np
 
@@ -716,9 +723,9 @@ def _cast_direct_labels_to_minimum_type_jit(
 
 def _dtype_for_labels(num_colors: int, dtype: np.dtype) -> np.dtype:
     if dtype.itemsize == 1:
-        return np.uint8
+        return np.dtype(np.uint8)
     if dtype.itemsize == 2:
-        return np.uint16
+        return np.dtype(np.uint16)
     return minimum_dtype_for_labels(num_colors)
 
 
@@ -775,6 +782,6 @@ else:
     _cast_direct_labels_to_minimum_type_jit = numba.njit(parallel=True)(
         _cast_direct_labels_to_minimum_type_jit
     )
-    prange = numba.prange
+    prange = numba.prange  # type: ignore [misc]
 
     del numba
