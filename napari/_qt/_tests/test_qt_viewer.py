@@ -749,7 +749,7 @@ def test_label_colors_matching_widget_auto(
 @skip_local_popups
 @skip_on_win_ci
 @pytest.mark.parametrize("use_selection", [True, False])
-@pytest.mark.parametrize("dtype", [np.uint64, np.uint8])
+@pytest.mark.parametrize("dtype", [np.uint64, np.uint16, np.uint8])
 def test_label_colors_matching_widget_direct(
     qtbot, qt_viewer_with_controls, use_selection, dtype
 ):

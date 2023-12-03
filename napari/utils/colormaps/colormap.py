@@ -729,6 +729,14 @@ else:
         return result_array
 
 
+def _dtype_for_labels(num_colors: int, dtype: np.dtype) -> np.dtype:
+    if dtype.itemsize == 1:
+        return np.uint8
+    if dtype.itemsize == 2:
+        return np.uint16
+    return minimum_dtype_for_labels(num_colors)
+
+
 def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
     """Return the minimum dtype that can hold the number of colors.
 

@@ -57,7 +57,7 @@ from napari.utils.colormaps.colormap import (
     LabelColormapBase,
     _cast_labels_data_to_texture_dtype,
     _cast_labels_to_minimum_dtype_direct,
-    minimum_dtype_for_labels,
+    _dtype_for_labels,
 )
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
@@ -1019,12 +1019,13 @@ class Labels(_ImageBase):
         )
         return sliced_labels[delta_slice]
 
-    def _get_cache_dtype(self) -> np.dtype:
+    def _get_cache_dtype(self, raw_dtype: np.dtype) -> np.dtype:
         if self.color_mode == LabelColorMode.DIRECT:
-            return minimum_dtype_for_labels(
-                self._direct_colormap.unique_colors_num() + 2
+            return _dtype_for_labels(
+                self._direct_colormap.unique_colors_num() + 2,
+                raw_dtype,
             )
-        return minimum_dtype_for_labels(self.num_colors)
+        return _dtype_for_labels(self.num_colors, raw_dtype)
 
     def _setup_cache(self, labels):
         """
@@ -1040,7 +1041,7 @@ class Labels(_ImageBase):
 
         self._cached_labels = np.zeros_like(labels)
         self._cached_mapped_labels = np.zeros_like(
-            labels, dtype=self._get_cache_dtype()
+            labels, dtype=self._get_cache_dtype(labels.dtype)
         )
 
     def _raw_to_displayed(
