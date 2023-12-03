@@ -1164,10 +1164,6 @@ class Labels(_ImageBase):
         ):
             col = self.colormap.map(self._background_label)[0]
         else:
-            # raw_dtype = self._slice.image.raw.dtype
-            # val = _convert_small_ints_to_unsigned(
-            #     np.array([label]).astype(raw_dtype)
-            # )
             col = self.colormap.map(label)[0]
         return col
 
