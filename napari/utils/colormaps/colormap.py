@@ -605,126 +605,113 @@ def _cast_direct_labels_to_minimum_type_numpy(
     return mapper[data]
 
 
-try:
-    import numba
-except ModuleNotFoundError:
-    _zero_preserving_modulo = _zero_preserving_modulo_numpy
-    _cast_direct_labels_to_minimum_type_impl = (
-        _cast_direct_labels_to_minimum_type_numpy
-    )
-else:
+def _zero_preserving_modulo_jit(
+    values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
+) -> np.ndarray:
+    """``(values - 1) % n + 1``, but with one specific value mapped to 0.
 
-    @numba.njit(parallel=True)
-    def _zero_preserving_modulo(
-        values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
-    ) -> np.ndarray:
-        """``(values - 1) % n + 1``, but with one specific value mapped to 0.
+    This ensures (1) an output value in [0, n] (inclusive), and (2) that
+    no nonzero values in the input are zero in the output, other than the
+    ``to_zero`` value.
 
-        This ensures (1) an output value in [0, n] (inclusive), and (2) that
-        no nonzero values in the input are zero in the output, other than the
-        ``to_zero`` value.
+    Parameters
+    ----------
+    values : np.ndarray
+        The dividend of the modulo operator.
+    n : int
+        The divisor.
+    dtype : np.dtype
+        The desired dtype for the output array.
+    to_zero : int, optional
+        A specific value to map to 0. (By default, 0 itself.)
 
-        Parameters
-        ----------
-        values : np.ndarray
-            The dividend of the modulo operator.
-        n : int
-            The divisor.
-        dtype : np.dtype
-            The desired dtype for the output array.
-        to_zero : int, optional
-            A specific value to map to 0. (By default, 0 itself.)
+    Returns
+    -------
+    np.ndarray
+        The result: 0 for the ``to_zero`` value, ``values % n + 1``
+        everywhere else.
+    """
+    result = np.empty_like(values, dtype=dtype)
 
-        Returns
-        -------
-        np.ndarray
-            The result: 0 for the ``to_zero`` value, ``values % n + 1``
-            everywhere else.
-        """
-        result = np.empty_like(values, dtype=dtype)
-
-        for i in numba.prange(values.size):
-            if values.flat[i] == to_zero:
-                result.flat[i] = 0
-            else:
-                result.flat[i] = (values.flat[i] - 1) % n + 1
-
-        return result
-
-    def _cast_direct_labels_to_minimum_type_impl(
-        data: np.ndarray, direct_colormap: DirectLabelColormap
-    ) -> np.ndarray:
-        """
-        Cast direct labels to the minimum type.
-
-        Parameters
-        ----------
-        data : np.ndarray
-            The input data array.
-        direct_colormap : DirectLabelColormap
-            The direct colormap.
-
-        Returns
-        -------
-        np.ndarray
-            The casted data array.
-        """
-
-        dtype = minimum_dtype_for_labels(
-            direct_colormap.unique_colors_num() + 2
-        )
-
-        label_mapping = direct_colormap.values_mapping_to_minimum_values_set()[
-            0
-        ]
-        pos = bisect.bisect_left(PRIME_NUM_TABLE, len(label_mapping) * 2)
-        if pos < len(PRIME_NUM_TABLE):
-            hash_size = PRIME_NUM_TABLE[pos]
+    for i in prange(values.size):
+        if values.flat[i] == to_zero:
+            result.flat[i] = 0
         else:
-            hash_size = 2 ** (math.ceil(math.log2(len(label_mapping))) + 1)
+            result.flat[i] = (values.flat[i] - 1) % n + 1
 
-        hash_table_key = np.zeros(hash_size, dtype=np.uint64)
-        hash_table_val = np.zeros(hash_size, dtype=dtype)
+    return result
 
-        for key, val in label_mapping.items():
-            if key is None:
-                continue
-            new_key = key % hash_size
-            while hash_table_key[new_key] != 0:
-                new_key = (new_key + 1) % hash_size
 
-            hash_table_key[new_key] = key
-            hash_table_val[new_key] = val
+def _cast_direct_labels_to_minimum_type_for_jit(
+    data: np.ndarray, direct_colormap: DirectLabelColormap
+) -> np.ndarray:
+    """
+    Cast direct labels to the minimum type.
 
-        return _cast_direct_labels_to_minimum_type_jit(
-            data, hash_table_key, hash_table_val, dtype
-        )
+    Parameters
+    ----------
+    data : np.ndarray
+        The input data array.
+    direct_colormap : DirectLabelColormap
+        The direct colormap.
 
-    @numba.njit(parallel=True)
-    def _cast_direct_labels_to_minimum_type_jit(
-        data: np.ndarray,
-        hash_table_key: np.ndarray,
-        hash_table_val: np.ndarray,
-        dtype: np.dtype,
-    ) -> np.ndarray:
-        result_array = np.zeros_like(data, dtype=dtype)
+    Returns
+    -------
+    np.ndarray
+        The casted data array.
+    """
 
-        # iterate over data and calculate modulo num_colors assigning to result_array
+    dtype = minimum_dtype_for_labels(direct_colormap.unique_colors_num() + 2)
 
-        hash_size = hash_table_key.size
+    label_mapping = direct_colormap.values_mapping_to_minimum_values_set()[0]
+    pos = bisect.bisect_left(PRIME_NUM_TABLE, len(label_mapping) * 2)
+    if pos < len(PRIME_NUM_TABLE):
+        hash_size = PRIME_NUM_TABLE[pos]
+    else:
+        hash_size = 2 ** (math.ceil(math.log2(len(label_mapping))) + 1)
 
-        for i in numba.prange(data.size):
-            key = data.flat[i]
-            new_key = int(key % hash_size)
-            while hash_table_key[new_key] != key:
-                if hash_table_key[new_key] == 0:
-                    result_array.flat[i] = DEFAULT_VALUE
-                    break
-                # This will stop because half of the hash table is empty
-                new_key = (new_key + 1) % hash_size
-            result_array.flat[i] = hash_table_val[new_key]
+    hash_table_key = np.zeros(hash_size, dtype=np.uint64)
+    hash_table_val = np.zeros(hash_size, dtype=dtype)
 
-        return result_array
+    for key, val in label_mapping.items():
+        if key is None:
+            continue
+        new_key = key % hash_size
+        while hash_table_key[new_key] != 0:
+            new_key = (new_key + 1) % hash_size
+
+        hash_table_key[new_key] = key
+        hash_table_val[new_key] = val
+
+    return _cast_direct_labels_to_minimum_type_jit(
+        data, hash_table_key, hash_table_val, dtype
+    )
+
+
+def _cast_direct_labels_to_minimum_type_jit(
+    data: np.ndarray,
+    hash_table_key: np.ndarray,
+    hash_table_val: np.ndarray,
+    dtype: np.dtype,
+) -> np.ndarray:
+    result_array = np.zeros_like(data, dtype=dtype)
+
+    # iterate over data and calculate modulo num_colors assigning to result_array
+
+    hash_size = hash_table_key.size
+
+    for i in prange(data.size):
+        key = data.flat[i]
+        new_key = int(key % hash_size)
+        while hash_table_key[new_key] != key:
+            if hash_table_key[new_key] == 0:
+                result_array.flat[i] = DEFAULT_VALUE
+                break
+            # This will stop because half of the hash table is empty
+            new_key = (new_key + 1) % hash_size
+        result_array.flat[i] = hash_table_val[new_key]
+
+    return result_array
 
 
 def _dtype_for_labels(num_colors: int, dtype: np.dtype) -> np.dtype:
@@ -769,3 +756,25 @@ PRIME_NUM_TABLE = [
     32749,
     65521,
 ]
+
+try:
+    import numba
+except ModuleNotFoundError:
+    _zero_preserving_modulo = _zero_preserving_modulo_numpy
+    _cast_direct_labels_to_minimum_type_impl = (
+        _cast_direct_labels_to_minimum_type_numpy
+    )
+    prange = range
+else:
+    _zero_preserving_modulo = numba.njit(parallel=True)(
+        _zero_preserving_modulo_jit
+    )
+    _cast_direct_labels_to_minimum_type_impl = (
+        _cast_direct_labels_to_minimum_type_for_jit
+    )
+    _cast_direct_labels_to_minimum_type_jit = numba.njit(parallel=True)(
+        _cast_direct_labels_to_minimum_type_jit
+    )
+    prange = numba.prange
+
+    del numba
