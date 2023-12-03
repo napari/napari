@@ -2,14 +2,7 @@ import bisect
 import math
 from collections import defaultdict
 from functools import cached_property
-from typing import (
-    DefaultDict,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    cast,
-)
+from typing import DefaultDict, Dict, List, Optional, Tuple, cast
 
 import numpy as np
 
