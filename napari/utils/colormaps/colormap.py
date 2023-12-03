@@ -587,7 +587,7 @@ def _cast_direct_labels_to_minimum_type_numpy(
     """
     max_value = max(x for x in direct_colormap.color_dict if x is not None)
     if max_value > 2**16:
-        raise RuntimeError(
+        raise RuntimeError(  # pragma: no cover
             "Cannot use numpy implementation for large values of labels "
             "direct colormap. Please install numba."
         )
@@ -669,8 +669,6 @@ else:
         np.ndarray
             The casted data array.
         """
-        if data.dtype.itemsize <= 2:
-            return _convert_small_ints_to_unsigned(data)
 
         dtype = minimum_dtype_for_labels(
             direct_colormap.unique_colors_num() + 2
