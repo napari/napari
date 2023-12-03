@@ -98,7 +98,7 @@ def fix_data_dtype(data: npt.NDArray) -> npt.NDArray:
 
     try:
         dtype_ = cast(
-            'type[Union[np.signedinteger[Any], np.floating[Any]]]',
+            'type[Union[np.unsignedinteger[Any], np.floating[Any]]]',
             {
                 "i": np.float32,
                 "f": np.float32,
