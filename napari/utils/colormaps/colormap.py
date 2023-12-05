@@ -330,6 +330,11 @@ class DirectLabelColormap(LabelColormapBase):
     use_selection: bool = False
     selection: int = 0
 
+    def __init__(self, *args, **kwargs) -> None:
+        if "colors" not in kwargs and len(args) == 0:
+            kwargs["colors"] = np.zeros(3)
+        super().__init__(*args, **kwargs)
+
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         return int(
             _cast_labels_data_to_texture_dtype_direct(
@@ -342,7 +347,7 @@ class DirectLabelColormap(LabelColormapBase):
         Map values to colors.
         Parameters
         ----------
-        values : np.ndarray or float
+        values : np.ndarray or int
             Values to be mapped.
 
         Returns
@@ -351,6 +356,8 @@ class DirectLabelColormap(LabelColormapBase):
             Mapped colors.
         """
         values = np.atleast_1d(values)
+        if values.dtype.kind in {'f', 'U'}:
+            raise TypeError("DirectLabelColormap can only be used with int")
         mapped = self._get_from_cache(values)
         if mapped is None:
             casted = _cast_labels_data_to_texture_dtype_direct_impl(

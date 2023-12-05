@@ -158,7 +158,6 @@ def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
 @pytest.fixture
 def direct_label_colormap():
     return DirectLabelColormap(
-        np.zeros(3),
         color_dict={
             0: np.array([0, 0, 0, 0]),
             1: np.array([255, 0, 0, 255]),
@@ -251,7 +250,6 @@ def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
 @pytest.mark.usefixtures("disable_jit")
 def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     cmap = DirectLabelColormap(
-        np.zeros(3),
         color_dict={
             k: np.array([*v, 255])
             for k, v in zip(range(num), product(range(256), repeat=3))
@@ -336,7 +334,6 @@ def test_cast_direct_labels_to_minimum_type_naive(size):
     data = np.arange(size, dtype=np.uint32)
     dtype = colormap.minimum_dtype_for_labels(size)
     cmap = DirectLabelColormap(
-        np.zeros(3),
         color_dict={
             k: np.array([*v, 255])
             for k, v in zip(range(size - 2), product(range(256), repeat=3))
@@ -348,3 +345,80 @@ def test_cast_direct_labels_to_minimum_type_naive(size):
     npt.assert_array_equal(res1, res2)
     assert res1.dtype == dtype
     assert res2.dtype == dtype
+
+
+def test_direct_colormap_with_no_selection():
+    # Create a DirectLabelColormap with a simple color_dict
+    color_dict = {1: np.array([1, 0, 0, 1]), 2: np.array([0, 1, 0, 1])}
+    cmap = DirectLabelColormap(color_dict=color_dict)
+
+    # Map a single value
+    mapped = cmap.map(1)
+    npt.assert_array_equal(mapped[0], np.array([1, 0, 0, 1]))
+
+    # Map multiple values
+    mapped = cmap.map(np.array([1, 2]))
+    npt.assert_array_equal(mapped, np.array([[1, 0, 0, 1], [0, 1, 0, 1]]))
+
+
+def test_direct_colormap_with_selection():
+    # Create a DirectLabelColormap with a simple color_dict and a selection
+    color_dict = {1: np.array([1, 0, 0, 1]), 2: np.array([0, 1, 0, 1])}
+    cmap = DirectLabelColormap(
+        color_dict=color_dict, use_selection=True, selection=1
+    )
+
+    # Map a single value
+    mapped = cmap.map(1)
+    npt.assert_array_equal(mapped[0], np.array([1, 0, 0, 1]))
+
+    # Map a value that is not the selection
+    mapped = cmap.map(2)
+    npt.assert_array_equal(mapped[0], np.array([0, 0, 0, 0]))
+
+
+def test_direct_colormap_with_invalid_values():
+    # Create a DirectLabelColormap with a simple color_dict
+    color_dict = {1: np.array([1, 0, 0, 1]), 2: np.array([0, 1, 0, 1])}
+    cmap = DirectLabelColormap(color_dict=color_dict)
+
+    # Map a value that is not in the color_dict
+    mapped = cmap.map(3)
+    npt.assert_array_equal(mapped[0], np.array([0, 0, 0, 0]))
+
+
+def test_direct_colormap_with_empty_color_dict():
+    # Create a DirectLabelColormap with an empty color_dict
+    cmap = DirectLabelColormap(color_dict={})
+
+    # Map a value
+    mapped = cmap.map(1)
+    npt.assert_array_equal(mapped[0], np.array([0, 0, 0, 0]))
+
+
+def test_direct_colormap_with_non_integer_values():
+    # Create a DirectLabelColormap with a simple color_dict
+    color_dict = {1: np.array([1, 0, 0, 1]), 2: np.array([0, 1, 0, 1])}
+    cmap = DirectLabelColormap(color_dict=color_dict)
+
+    # Map a float value
+    with pytest.raises(TypeError, match='DirectLabelColormap can only'):
+        cmap.map(1.5)
+
+    # Map a string value
+    with pytest.raises(TypeError, match='DirectLabelColormap can only'):
+        cmap.map('1')
+
+
+def test_direct_colormap_with_collision():
+    # tis test assumes that the smallest prime number used for cache is 37)
+    color_dict = {
+        1: np.array([1, 0, 0, 1]),
+        38: np.array([0, 1, 0, 1]),
+        75: np.array([0, 0, 1, 1]),
+    }
+    cmap = DirectLabelColormap(color_dict=color_dict)
+
+    npt.assert_array_equal(cmap.map(1)[0], np.array([1, 0, 0, 1]))
+    npt.assert_array_equal(cmap.map(38)[0], np.array([0, 1, 0, 1]))
+    npt.assert_array_equal(cmap.map(75)[0], np.array([0, 0, 1, 1]))
