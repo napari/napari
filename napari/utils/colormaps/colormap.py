@@ -190,12 +190,41 @@ class LabelColormapBase(Colormap):
             return self._int16_colors[values]
         return None
 
+    def _clean_cache(self):
+        """Mechanism to clean cached properties"""
+        if "_uint8_colors" in self.__dict__:
+            del self.__dict__["_uint8_colors"]
+        if "_uint16_colors" in self.__dict__:
+            del self.__dict__["_uint16_colors"]
+        if "_int8_colors" in self.__dict__:
+            del self.__dict__["_int8_colors"]
+        if "_int16_colors" in self.__dict__:
+            del self.__dict__["_int16_colors"]
+
     def _raw_map(self, values: np.ndarray) -> np.ndarray:
         """Function that maps values to colors without selection or cache"""
         raise NotImplementedError
 
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        raise NotImplementedError
+        """Treat selection as given dtype and calculate its
+        value to minimum dtype using _cast_labels_to_minimum_dtype_auto
+        function.
+
+        Parameters
+        ----------
+        dtype : np.dtype
+            The dtype to convert the selection to.
+
+        Returns
+        -------
+        int
+            The selection converted.
+        """
+        return int(
+            _cast_labels_to_minimum_dtype_direct(
+                np.array([self.selection]).astype(dtype), self
+            )[0]
+        )
 
 
 class LabelColormap(LabelColormapBase):
@@ -213,25 +242,6 @@ class LabelColormap(LabelColormapBase):
     selection: int = 0
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
-
-    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        """Treat selection as given dtype and calculate value with min dtype.
-
-        Parameters
-        ----------
-        dtype : np.dtype
-            The dtype to convert the selection to.
-
-        Returns
-        -------
-        int
-            The selection converted.
-        """
-        return int(
-            _cast_labels_data_to_texture_dtype(
-                np.array([self.selection]).astype(dtype), self
-            )[0]
-        )
 
     def _background_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat background as given dtype and calculate value with min dtype.
@@ -263,15 +273,13 @@ class LabelColormap(LabelColormapBase):
         mapped[texture_dtype_values == 0] = 0
         return mapped
 
-    def map(self, values, raw_colormap=False) -> np.ndarray:
+    def map(self, values) -> np.ndarray:
         """Map values to colors.
 
         Parameters
         ----------
         values : np.ndarray or float
             Values to be mapped.
-        raw_colormap : bool
-            Whether to apply selection if self.use_selection is True.
 
         Returns
         -------
@@ -321,27 +329,6 @@ class DirectLabelColormap(LabelColormapBase):
     use_selection: bool = False
     selection: int = 0
 
-    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        """Treat selection as given dtype and calculate its
-        value to minimum dtype using _cast_labels_to_minimum_dtype_auto
-        function.
-
-        Parameters
-        ----------
-        dtype : np.dtype
-            The dtype to convert the selection to.
-
-        Returns
-        -------
-        int
-            The selection converted.
-        """
-        return int(
-            _cast_labels_to_minimum_dtype_direct(
-                np.array([self.selection]).astype(dtype), self
-            )[0]
-        )
-
     def map(self, values) -> np.ndarray:
         """
         Map values to colors.
@@ -349,8 +336,6 @@ class DirectLabelColormap(LabelColormapBase):
         ----------
         values : np.ndarray or float
             Values to be mapped.
-        raw_colormap : bool
-            Whether to apply selection if self.use_selection is True.
         Returns
         -------
         np.ndarray of same shape as values, but with last dimension of size 4
