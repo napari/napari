@@ -673,9 +673,9 @@ def _generate_hash_map_for_direct_colormap(
     Generate hash map for direct colormap.
     """
     label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
-    pos = bisect.bisect_left(PRIME_NUM_TABLE, len(label_mapping) * 2)
-    if pos < len(PRIME_NUM_TABLE):
-        hash_size = PRIME_NUM_TABLE[pos]
+    pos = bisect.bisect_left(_PRIME_NUM_TABLE, len(label_mapping) * 2)
+    if pos < len(_PRIME_NUM_TABLE):
+        hash_size = _PRIME_NUM_TABLE[pos]
     else:
         hash_size = 2 ** (math.ceil(math.log2(len(label_mapping))) + 1)
 
@@ -785,7 +785,7 @@ def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
     return np.dtype(np.float32)
 
 
-PRIME_NUM_TABLE = [
+_PRIME_NUM_TABLE = [
     37,
     61,
     127,
