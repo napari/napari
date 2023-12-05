@@ -383,7 +383,7 @@ class DirectLabelColormap(LabelColormapBase):
         where we already have casted values
         """
         mapped = np.zeros(values.shape + (4,), dtype=np.float32)
-        colors = self.values_mapping_to_minimum_values_set(apply_selection)[1]
+        colors = self._values_mapping_to_minimum_values_set(apply_selection)[1]
         for idx in np.ndindex(values.shape):
             value = values[idx]
             mapped[idx] = colors[value]
@@ -399,7 +399,7 @@ class DirectLabelColormap(LabelColormapBase):
         if "_unique_colors_num" in self.__dict__:
             del self.__dict__["_unique_colors_num"]
 
-    def values_mapping_to_minimum_values_set(
+    def _values_mapping_to_minimum_values_set(
         self, apply_selection=True
     ) -> Tuple[Dict[Optional[int], int], Dict[int, np.ndarray]]:
         """Create mapping from original values to minimum values set.
@@ -595,7 +595,7 @@ def _cast_direct_labels_to_minimum_type_numpy(
             "direct colormap. Please install numba."
         )
     dtype = minimum_dtype_for_labels(direct_colormap._unique_colors_num + 2)
-    label_mapping = direct_colormap.values_mapping_to_minimum_values_set()[0]
+    label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
 
     mapper = np.full((max_value + 2), DEFAULT_VALUE, dtype=dtype)
     for key, val in label_mapping.items():
@@ -661,12 +661,12 @@ def _cast_direct_labels_to_minimum_type_for_jit(
     Returns
     -------
     np.ndarray
-        The casted data array.
+        The cast data array.
     """
 
     dtype = minimum_dtype_for_labels(direct_colormap._unique_colors_num + 2)
 
-    label_mapping = direct_colormap.values_mapping_to_minimum_values_set()[0]
+    label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
     pos = bisect.bisect_left(PRIME_NUM_TABLE, len(label_mapping) * 2)
     if pos < len(PRIME_NUM_TABLE):
         hash_size = PRIME_NUM_TABLE[pos]

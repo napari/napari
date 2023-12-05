@@ -180,7 +180,7 @@ def test_direct_label_colormap_simple(direct_label_colormap):
     (
         label_mapping,
         color_dict,
-    ) = direct_label_colormap.values_mapping_to_minimum_values_set()
+    ) = direct_label_colormap._values_mapping_to_minimum_values_set()
 
     assert len(label_mapping) == 6
     assert len(color_dict) == 5
@@ -206,7 +206,7 @@ def test_direct_label_colormap_selection(direct_label_colormap):
     (
         label_mapping,
         color_dict,
-    ) = direct_label_colormap.values_mapping_to_minimum_values_set()
+    ) = direct_label_colormap._values_mapping_to_minimum_values_set()
 
     assert len(label_mapping) == 2
     assert len(color_dict) == 2
@@ -218,7 +218,7 @@ def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
         data, direct_label_colormap
     )
     label_mapping = (
-        direct_label_colormap.values_mapping_to_minimum_values_set()[0]
+        direct_label_colormap._values_mapping_to_minimum_values_set()[0]
     )
     assert casted.dtype == np.uint8
     np.testing.assert_array_equal(

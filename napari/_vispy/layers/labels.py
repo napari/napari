@@ -257,7 +257,7 @@ class VispyLabelsLayer(VispyImageLayer):
             self.texture_data = color_texture
 
         elif mode == 'direct':
-            color_dict = self.layer._direct_colormap.values_mapping_to_minimum_values_set()[
+            color_dict = self.layer._direct_colormap._values_mapping_to_minimum_values_set()[
                 1
             ]  # TODO: should probably account for non-given labels
             max_size = get_max_texture_sizes()[0]
