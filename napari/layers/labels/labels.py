@@ -55,8 +55,8 @@ from napari.utils.colormaps import (
 from napari.utils.colormaps.colormap import (
     LabelColormap,
     LabelColormapBase,
-    _cast_labels_data_to_texture_dtype,
-    _cast_labels_to_minimum_dtype_direct,
+    _cast_labels_data_to_texture_dtype_auto,
+    _cast_labels_data_to_texture_dtype_direct,
     _dtype_for_labels,
 )
 from napari.utils.events import EmitterGroup, Event
@@ -1101,11 +1101,11 @@ class Labels(_ImageBase):
             return self._cached_mapped_labels[data_slice]
 
         if self.color_mode == LabelColorMode.AUTO:
-            mapped_labels = _cast_labels_data_to_texture_dtype(
+            mapped_labels = _cast_labels_data_to_texture_dtype_auto(
                 labels_to_map, self._random_colormap
             )
         else:  # direct
-            mapped_labels = _cast_labels_to_minimum_dtype_direct(
+            mapped_labels = _cast_labels_data_to_texture_dtype_direct(
                 labels_to_map, self._direct_colormap
             )
 

@@ -239,7 +239,7 @@ class LabelColormap(LabelColormapBase):
 
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         return int(
-            _cast_labels_data_to_texture_dtype(
+            _cast_labels_data_to_texture_dtype_auto(
                 np.array([self.selection]).astype(dtype), self
             )[0]
         )
@@ -258,7 +258,7 @@ class LabelColormap(LabelColormapBase):
             The background converted.
         """
         return int(
-            _cast_labels_data_to_texture_dtype(
+            _cast_labels_data_to_texture_dtype_auto(
                 np.array([self.background_value]).astype(dtype), self
             )[0]
         )
@@ -332,7 +332,7 @@ class DirectLabelColormap(LabelColormapBase):
 
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         return int(
-            _cast_labels_to_minimum_dtype_direct(
+            _cast_labels_data_to_texture_dtype_direct(
                 np.array([self.selection]).astype(dtype), self
             )[0]
         )
@@ -352,17 +352,20 @@ class DirectLabelColormap(LabelColormapBase):
         """
         values = np.atleast_1d(values)
         mapped = self._get_from_cache(values)
-        if mapped is not None:
-            if self.use_selection:
-                mapped[(values != self.selection)] = 0
-            return mapped
-        casted = _cast_direct_labels_to_minimum_type_impl(values, self)
-        return self._map_casted(casted, apply_selection=True)
+        if mapped is None:
+            casted = _cast_labels_data_to_texture_dtype_direct_impl(
+                values, self
+            )
+            mapped = self._map_casted(casted, apply_selection=True)
+
+        if self.use_selection:
+            mapped[(values != self.selection)] = 0
+        return mapped
 
     def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
         cmap = self.__class__(**self.dict())
         cmap.use_selection = False
-        casted = _cast_direct_labels_to_minimum_type_impl(values, cmap)
+        casted = _cast_labels_data_to_texture_dtype_direct_impl(values, cmap)
         return self._map_casted(casted, apply_selection=False)
 
     def _map_casted(self, values, apply_selection) -> np.ndarray:
@@ -398,6 +401,8 @@ class DirectLabelColormap(LabelColormapBase):
         super()._clean_cache()
         if "_unique_colors_num" in self.__dict__:
             del self.__dict__["_unique_colors_num"]
+        if "_label_mapping_and_color_dict" in self.__dict__:
+            del self.__dict__["_label_mapping_and_color_dict"]
 
     def _values_mapping_to_minimum_values_set(
         self, apply_selection=True
@@ -422,6 +427,12 @@ class DirectLabelColormap(LabelColormapBase):
                 ),
             }
 
+        return self._label_mapping_and_color_dict
+
+    @cached_property
+    def _label_mapping_and_color_dict(
+        self,
+    ) -> Tuple[Dict[Optional[int], int], Dict[int, np.ndarray]]:
         color_to_labels: Dict[Tuple[int, ...], List[Optional[int]]] = {}
         labels_to_new_labels: Dict[Optional[int], int] = {None: 0}
         new_color_dict: Dict[int, np.ndarray] = {
@@ -475,7 +486,7 @@ def _convert_small_ints_to_unsigned(data: np.ndarray) -> np.ndarray:
     return data
 
 
-def _cast_labels_data_to_texture_dtype(
+def _cast_labels_data_to_texture_dtype_auto(
     data: np.ndarray,
     colormap: LabelColormap,
 ) -> np.ndarray:
@@ -559,55 +570,6 @@ def _zero_preserving_modulo_numpy(
     return res
 
 
-def _cast_labels_to_minimum_dtype_direct(
-    data: np.ndarray, direct_colormap: DirectLabelColormap
-) -> np.ndarray:
-    data = _convert_small_ints_to_unsigned(data)
-
-    if data.itemsize <= 2:
-        return data
-
-    return _cast_direct_labels_to_minimum_type_impl(data, direct_colormap)
-
-
-def _cast_direct_labels_to_minimum_type_numpy(
-    data: np.ndarray, direct_colormap: DirectLabelColormap
-) -> np.ndarray:
-    """
-    Cast direct labels to the minimum type.
-
-    Parameters
-    ----------
-    data : np.ndarray
-        The input data array.
-    direct_colormap : DirectLabelColormap
-        The direct colormap.
-
-    Returns
-    -------
-    np.ndarray
-        The casted data array.
-    """
-    max_value = max(x for x in direct_colormap.color_dict if x is not None)
-    if max_value > 2**16:
-        raise RuntimeError(  # pragma: no cover
-            "Cannot use numpy implementation for large values of labels "
-            "direct colormap. Please install numba."
-        )
-    dtype = minimum_dtype_for_labels(direct_colormap._unique_colors_num + 2)
-    label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
-
-    mapper = np.full((max_value + 2), DEFAULT_VALUE, dtype=dtype)
-    for key, val in label_mapping.items():
-        if key is None:
-            continue
-        mapper[key] = val
-
-    if data.dtype.itemsize > 2:
-        data = np.clip(data, 0, max_value + 1)
-    return mapper[data]
-
-
 def _zero_preserving_modulo_jit(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
@@ -645,7 +607,20 @@ def _zero_preserving_modulo_jit(
     return result
 
 
-def _cast_direct_labels_to_minimum_type_for_jit(
+def _cast_labels_data_to_texture_dtype_direct(
+    data: np.ndarray, direct_colormap: DirectLabelColormap
+) -> np.ndarray:
+    data = _convert_small_ints_to_unsigned(data)
+
+    if data.itemsize <= 2:
+        return data
+
+    return _cast_labels_data_to_texture_dtype_direct_impl(
+        data, direct_colormap
+    )
+
+
+def _cast_labels_data_to_texture_dtype_direct_numpy(
     data: np.ndarray, direct_colormap: DirectLabelColormap
 ) -> np.ndarray:
     """
@@ -661,11 +636,35 @@ def _cast_direct_labels_to_minimum_type_for_jit(
     Returns
     -------
     np.ndarray
-        The cast data array.
+        The casted data array.
     """
-
+    max_value = max(x for x in direct_colormap.color_dict if x is not None)
+    if max_value > 2**16:
+        raise RuntimeError(  # pragma: no cover
+            "Cannot use numpy implementation for large values of labels "
+            "direct colormap. Please install numba."
+        )
     dtype = minimum_dtype_for_labels(direct_colormap._unique_colors_num + 2)
+    label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
 
+    mapper = np.full((max_value + 2), DEFAULT_VALUE, dtype=dtype)
+    for key, val in label_mapping.items():
+        if key is None:
+            continue
+        mapper[key] = val
+
+    if data.dtype.itemsize > 2:
+        data = np.clip(data, 0, max_value + 1)
+    return mapper[data]
+
+
+def _generate_hash_map_for_direct_colormap(
+    direct_colormap: DirectLabelColormap,
+    dtype: np.dtype,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Generate hash map for direct colormap.
+    """
     label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
     pos = bisect.bisect_left(PRIME_NUM_TABLE, len(label_mapping) * 2)
     if pos < len(PRIME_NUM_TABLE):
@@ -685,6 +684,33 @@ def _cast_direct_labels_to_minimum_type_for_jit(
 
         hash_table_key[new_key] = key
         hash_table_val[new_key] = val
+
+    return hash_table_key, hash_table_val
+
+
+def _generate_hash_map_and_cast_labrls_data_to_texture_dtype_direct(
+    data: np.ndarray, direct_colormap: DirectLabelColormap
+) -> np.ndarray:
+    """
+    Cast direct labels to the minimum type.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The input data array.
+    direct_colormap : DirectLabelColormap
+        The direct colormap.
+
+    Returns
+    -------
+    np.ndarray
+        The cast data array.
+    """
+
+    dtype = minimum_dtype_for_labels(direct_colormap._unique_colors_num + 2)
+    hash_table_key, hash_table_val = _generate_hash_map_for_direct_colormap(
+        direct_colormap, dtype
+    )
 
     return _cast_direct_labels_to_minimum_type_jit(
         data, hash_table_key, hash_table_val, dtype
@@ -718,6 +744,13 @@ def _cast_direct_labels_to_minimum_type_jit(
 
 
 def _dtype_for_labels(num_colors: int, dtype: np.dtype) -> np.dtype:
+    """
+    Return dtype for given number of colors and data dtype.
+
+    For data of type int8 and uint8 we can use uint8,
+    for int16 and uint16 we can use uint16.
+    For another type of data, we fall back to minimum_dtype_for_labels function.
+    """
     if dtype.itemsize == 1:
         return np.dtype(np.uint8)
     if dtype.itemsize == 2:
@@ -764,16 +797,16 @@ try:
     import numba
 except ModuleNotFoundError:
     _zero_preserving_modulo = _zero_preserving_modulo_numpy
-    _cast_direct_labels_to_minimum_type_impl = (
-        _cast_direct_labels_to_minimum_type_numpy
+    _cast_labels_data_to_texture_dtype_direct_impl = (
+        _cast_labels_data_to_texture_dtype_direct_numpy
     )
     prange = range
 else:
     _zero_preserving_modulo = numba.njit(parallel=True)(
         _zero_preserving_modulo_jit
     )
-    _cast_direct_labels_to_minimum_type_impl = (
-        _cast_direct_labels_to_minimum_type_for_jit
+    _cast_labels_data_to_texture_dtype_direct_impl = (
+        _generate_hash_map_and_cast_labrls_data_to_texture_dtype_direct
     )
     _cast_direct_labels_to_minimum_type_jit = numba.njit(parallel=True)(
         _cast_direct_labels_to_minimum_type_jit
