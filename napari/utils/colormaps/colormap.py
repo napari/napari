@@ -162,22 +162,22 @@ class LabelColormapBase(Colormap):
     @cached_property
     def _uint8_colors(self) -> np.ndarray:
         data = np.arange(256, dtype=np.uint8)
-        return self._raw_map(data)
+        return self._map_without_cache(data)
 
     @cached_property
     def _uint16_colors(self) -> np.ndarray:
         data = np.arange(65536, dtype=np.uint16)
-        return self._raw_map(data)
+        return self._map_without_cache(data)
 
     @cached_property
     def _int8_colors(self) -> np.ndarray:
         data = np.arange(256, dtype=np.uint8).astype(np.int8)
-        return self._raw_map(data)
+        return self._map_without_cache(data)
 
     @cached_property
     def _int16_colors(self) -> np.ndarray:
         data = np.arange(65536, dtype=np.uint16).astype(np.int16)
-        return self._raw_map(data)
+        return self._map_without_cache(data)
 
     def _get_from_cache(self, values: np.ndarray) -> Optional[np.ndarray]:
         if values.dtype == np.uint8:
@@ -201,7 +201,7 @@ class LabelColormapBase(Colormap):
         if "_int16_colors" in self.__dict__:
             del self.__dict__["_int16_colors"]
 
-    def _raw_map(self, values: np.ndarray) -> np.ndarray:
+    def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
         """Function that maps values to colors without selection or cache"""
         raise NotImplementedError
 
@@ -263,7 +263,7 @@ class LabelColormap(LabelColormapBase):
             )[0]
         )
 
-    def _raw_map(self, values) -> np.ndarray:
+    def _map_without_cache(self, values) -> np.ndarray:
         texture_dtype_values = _zero_preserving_modulo_numpy(
             values,
             len(self.colors) - 1,
@@ -293,7 +293,7 @@ class LabelColormap(LabelColormapBase):
             values = values.astype(np.int64)
         mapped = self._get_from_cache(values)
         if mapped is None:
-            mapped = self._raw_map(values)
+            mapped = self._map_without_cache(values)
         if self.use_selection:
             mapped[(values != self.selection)] = 0
 
@@ -356,7 +356,7 @@ class DirectLabelColormap(LabelColormapBase):
         casted = _cast_labels_to_minimum_dtype_direct(values, self)
         return self._map_casted(casted, apply_selection=True)
 
-    def _raw_map(self, values: np.ndarray) -> np.ndarray:
+    def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
         if values.dtype.itemsize <= 2:
             return self._map_direct(values)
         casted = _cast_labels_to_minimum_dtype_direct(values, self)
