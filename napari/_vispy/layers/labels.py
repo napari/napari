@@ -264,7 +264,7 @@ class VispyLabelsLayer(VispyImageLayer):
             val_texture = build_textures_from_dict(color_dict, max_size)
 
             dtype = _dtype_for_labels(
-                self.layer._direct_colormap.unique_colors_num() + 2,
+                self.layer._direct_colormap._unique_colors_num + 2,
                 raw_dtype,
             )
             if issubclass(dtype.type, np.integer):

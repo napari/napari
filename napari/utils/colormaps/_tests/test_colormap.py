@@ -175,7 +175,7 @@ def test_direct_label_colormap_simple(direct_label_colormap):
         direct_label_colormap.map([0, 2, 7]),
         np.array([[0, 0, 0, 0], [0, 255, 0, 255], [255, 255, 255, 255]]),
     )
-    assert direct_label_colormap.unique_colors_num() == 5
+    assert direct_label_colormap._unique_colors_num == 5
 
     (
         label_mapping,
