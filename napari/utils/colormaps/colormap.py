@@ -206,9 +206,7 @@ class LabelColormapBase(Colormap):
         raise NotImplementedError
 
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        """Treat selection as given dtype and calculate its
-        value to minimum dtype using _cast_labels_to_minimum_dtype_auto
-        function.
+        """Treat selection as given dtype and calculate value with min dtype.
 
         Parameters
         ----------
@@ -220,11 +218,7 @@ class LabelColormapBase(Colormap):
         int
             The selection converted.
         """
-        return int(
-            _cast_labels_to_minimum_dtype_direct(
-                np.array([self.selection]).astype(dtype), self
-            )[0]
-        )
+        raise NotImplementedError
 
 
 class LabelColormap(LabelColormapBase):
@@ -242,6 +236,13 @@ class LabelColormap(LabelColormapBase):
     selection: int = 0
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
+
+    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
+        return int(
+            _cast_labels_data_to_texture_dtype(
+                np.array([self.selection]).astype(dtype), self
+            )[0]
+        )
 
     def _background_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat background as given dtype and calculate value with min dtype.
@@ -329,6 +330,13 @@ class DirectLabelColormap(LabelColormapBase):
     use_selection: bool = False
     selection: int = 0
 
+    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
+        return int(
+            _cast_labels_to_minimum_dtype_direct(
+                np.array([self.selection]).astype(dtype), self
+            )[0]
+        )
+
     def map(self, values) -> np.ndarray:
         """
         Map values to colors.
@@ -336,6 +344,7 @@ class DirectLabelColormap(LabelColormapBase):
         ----------
         values : np.ndarray or float
             Values to be mapped.
+
         Returns
         -------
         np.ndarray of same shape as values, but with last dimension of size 4
