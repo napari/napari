@@ -49,8 +49,21 @@ def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     assert np.allclose(datamean, imean, rtol=5e-04)
 
 
-def test_fix_data_dtype_big_values():
-    data = np.array([0, 2, 2**17], dtype=np.uint32)
+@pytest.mark.parametrize(
+    "dtype,expected",
+    [
+        (np.bool_, np.uint8),
+        (np.int8, np.float32),
+        (np.uint8, np.uint8),
+        (np.int16, np.float32),
+        (np.uint16, np.uint16),
+        (np.uint32, np.float32),
+        (np.float32, np.float32),
+        (np.float64, np.float32),
+    ],
+)
+def test_fix_data_dtype_big_values(dtype, expected):
+    data = np.array([0, 2, 2**17], dtype=np.int32).astype(dtype)
     casted = fix_data_dtype(data)
     assert np.allclose(casted, data)
-    assert casted.dtype == np.float32
+    assert casted.dtype == expected
