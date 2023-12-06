@@ -211,6 +211,7 @@ def test_direct_label_colormap_selection(direct_label_colormap):
     assert len(color_dict) == 2
 
 
+@pytest.mark.usefixtures("disable_jit")
 def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
     data = np.arange(15, dtype=np.uint32)
     casted = colormap._cast_labels_data_to_texture_dtype_direct_impl(
@@ -411,17 +412,17 @@ def test_direct_colormap_with_non_integer_values():
 
 
 def test_direct_colormap_with_collision():
-    # tis test assumes that the smallest prime number used for cache is 37)
+    # this test assumes that the the selected prime number for hash map size is 11
     color_dict = {
         1: np.array([1, 0, 0, 1]),
-        38: np.array([0, 1, 0, 1]),
-        75: np.array([0, 0, 1, 1]),
+        12: np.array([0, 1, 0, 1]),
+        23: np.array([0, 0, 1, 1]),
     }
     cmap = DirectLabelColormap(color_dict=color_dict)
 
     npt.assert_array_equal(cmap.map(1)[0], np.array([1, 0, 0, 1]))
-    npt.assert_array_equal(cmap.map(38)[0], np.array([0, 1, 0, 1]))
-    npt.assert_array_equal(cmap.map(75)[0], np.array([0, 0, 1, 1]))
+    npt.assert_array_equal(cmap.map(12)[0], np.array([0, 1, 0, 1]))
+    npt.assert_array_equal(cmap.map(23)[0], np.array([0, 0, 1, 1]))
 
 
 def test_direct_colormap_negative_values():

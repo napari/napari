@@ -1,7 +1,7 @@
 import bisect
 import math
 from collections import defaultdict
-from functools import cached_property
+from functools import cached_property, lru_cache
 from typing import DefaultDict, Dict, List, Optional, Tuple, cast
 
 import numpy as np
@@ -714,9 +714,10 @@ def _generate_hash_map_for_direct_colormap(
         direct_colormap._unique_colors_num + 2
     )
     label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
-    pos = bisect.bisect_left(_PRIME_NUM_TABLE, len(label_mapping) * 2)
-    if pos < len(_PRIME_NUM_TABLE):
-        hash_size = _PRIME_NUM_TABLE[pos]
+    prime_num_array = _primes(upto=2**16)
+    pos = bisect.bisect_left(prime_num_array, len(label_mapping) * 2)
+    if pos < len(prime_num_array):
+        hash_size = prime_num_array[pos]
     else:
         hash_size = 2 ** (math.ceil(math.log2(len(label_mapping))) + 1)
 
@@ -797,7 +798,8 @@ def _cast_direct_labels_to_minimum_type_jit(
                 break
             # This will stop because half of the hash table is empty
             new_key = (new_key + 1) % hash_size
-        result_array.flat[i] = hash_table_val[new_key]
+        else:
+            result_array.flat[i] = hash_table_val[new_key]
 
     return result_array
 
@@ -837,21 +839,6 @@ def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
     return np.dtype(np.float32)
 
 
-_PRIME_NUM_TABLE = [
-    37,
-    61,
-    127,
-    251,
-    509,
-    1021,
-    2039,
-    4093,
-    8191,
-    16381,
-    32749,
-    65521,
-]
-
 try:
     import numba
 except ModuleNotFoundError:
@@ -873,3 +860,24 @@ else:
     prange = numba.prange  # type: ignore [misc]
 
     del numba
+
+
+@lru_cache(maxsize=128)
+def _primes(upto):
+    """Generate primes up to a given number.
+    Parameters
+    ----------
+    upto : int
+        The upper limit of the primes to generate.
+    Returns
+    -------
+    primes : np.ndarray
+        The primes up to the upper limit.
+    """
+    primes = np.arange(3, upto + 1, 2)
+    isprime = np.ones((upto - 1) // 2, dtype=bool)
+    max_factor = int(np.sqrt(upto))
+    for factor in primes[: max_factor // 2]:
+        if isprime[(factor - 2) // 2]:
+            isprime[(factor * 3 - 2) // 2 : None : factor] = 0
+    return np.concatenate(([2], primes[isprime]))
