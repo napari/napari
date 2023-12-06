@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -23,6 +24,19 @@ def test_random_surface():
     assert np.array_equal(layer.vertex_values, values)
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
+
+
+def test_random_surface_features():
+    """Test instantiating surface layer with features."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    features = pd.DataFrame({'feature': np.random.random(10)})
+
+    data = (vertices, faces, values)
+    layer = Surface(data, features=features)
+    assert 'feature' in layer.features.columns
 
 
 def test_random_surface_no_values():
