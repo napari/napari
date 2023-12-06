@@ -342,6 +342,21 @@ class DirectLabelColormap(LabelColormapBase):
             )[0]
         )
 
+    @cached_property
+    def _uint32_colors(self) -> np.ndarray:
+        dtype = minimum_dtype_for_labels(self._unique_colors_num + 2)
+        data = np.arange(np.iinfo(dtype).max + 1, dtype=dtype)
+        return self._map_without_cache(data)
+
+    def _get_from_cache(self, values: np.ndarray) -> Optional[np.ndarray]:
+        if (
+            values.dtype == np.uint32
+            and not self.use_selection
+            and self._unique_colors_num < 2**16
+        ):
+            return self._uint32_colors[values]
+        return super()._get_from_cache(values)
+
     def map(self, values) -> np.ndarray:
         """
         Map values to colors.
@@ -410,6 +425,8 @@ class DirectLabelColormap(LabelColormapBase):
             del self.__dict__["_unique_colors_num"]
         if "_label_mapping_and_color_dict" in self.__dict__:
             del self.__dict__["_label_mapping_and_color_dict"]
+        if "_uint32_colors" in self.__dict__:
+            del self.__dict__["_uint32_colors"]
 
     def _values_mapping_to_minimum_values_set(
         self, apply_selection=True
