@@ -422,3 +422,17 @@ def test_direct_colormap_with_collision():
     npt.assert_array_equal(cmap.map(1)[0], np.array([1, 0, 0, 1]))
     npt.assert_array_equal(cmap.map(38)[0], np.array([0, 1, 0, 1]))
     npt.assert_array_equal(cmap.map(75)[0], np.array([0, 0, 1, 1]))
+
+
+def test_direct_colormap_negative_values():
+    # Create a DirectLabelColormap with a simple color_dict
+    color_dict = {-1: np.array([1, 0, 0, 1]), -2: np.array([0, 1, 0, 1])}
+    cmap = DirectLabelColormap(color_dict=color_dict)
+
+    # Map a single value
+    mapped = cmap.map(np.int8(-1))
+    npt.assert_array_equal(mapped[0], np.array([1, 0, 0, 1]))
+
+    # Map multiple values
+    mapped = cmap.map(np.array([-1, -2], dtype=np.int8))
+    npt.assert_array_equal(mapped, np.array([[1, 0, 0, 1], [0, 1, 0, 1]]))

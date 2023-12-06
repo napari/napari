@@ -750,7 +750,7 @@ def test_label_colors_matching_widget_auto(
 @skip_local_popups
 @skip_on_win_ci
 @pytest.mark.parametrize("use_selection", [True, False])
-@pytest.mark.parametrize("dtype", [np.uint64, np.uint16, np.uint8])
+@pytest.mark.parametrize("dtype", [np.uint64, np.uint16, np.uint8, np.int16])
 def test_label_colors_matching_widget_direct(
     qtbot, qt_viewer_with_controls, use_selection, dtype
 ):
@@ -759,7 +759,7 @@ def test_label_colors_matching_widget_direct(
     layer = qt_viewer_with_controls.viewer.add_labels(data)
     layer.show_selected_label = use_selection
     layer.opacity = 1.0  # QtColorBox & single layer are blending differently
-    layer.color = {
+    color = {
         0: "transparent",
         1: "yellow",
         3: "blue",
@@ -767,8 +767,14 @@ def test_label_colors_matching_widget_direct(
         150: "green",
         None: "white",
     }
-
     test_colors = (1, 2, 3, 8, 150, 50)
+
+    if np.iinfo(dtype).min < 0:
+        color[-1] = "pink"
+        color[-2] = "orange"
+        test_colors = test_colors + (-1, -2, -10)
+
+    layer.color = color
 
     color_box_color, middle_pixel = _update_data(
         layer, 0, qtbot, qt_viewer_with_controls, dtype

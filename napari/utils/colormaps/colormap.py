@@ -152,7 +152,7 @@ class Colormap(EventedModel):
 
 
 class LabelColormapBase(Colormap):
-    class Config:
+    class Config(Colormap.Config):
         # this config is to avoid deepcopy of cached_property
         # see https://github.com/pydantic/pydantic/issues/2763
         # it is required until drop pydantic 1 or pythin 3.11 and older
@@ -178,6 +178,13 @@ class LabelColormapBase(Colormap):
     def _int16_colors(self) -> np.ndarray:
         data = np.arange(65536, dtype=np.uint16).astype(np.int16)
         return self._map_without_cache(data)
+
+    def _cmap_without_selection(self) -> "LabelColormapBase":
+        if self.use_selection:
+            cmap = self.__class__(**self.dict())
+            cmap.use_selection = False
+            return cmap
+        return self
 
     def _get_from_cache(self, values: np.ndarray) -> Optional[np.ndarray]:
         if values.dtype == np.uint8:
@@ -343,19 +350,28 @@ class DirectLabelColormap(LabelColormapBase):
         )
 
     @cached_property
-    def _uint32_colors(self) -> np.ndarray:
-        dtype = minimum_dtype_for_labels(self._unique_colors_num + 2)
-        data = np.arange(np.iinfo(dtype).max + 1, dtype=dtype)
-        return self._map_without_cache(data)
+    def _uint32_hash_cache(self):
+        return _generate_hash_map_for_direct_colormap(
+            self._cmap_without_selection(), np.uint32
+        )
 
-    def _get_from_cache(self, values: np.ndarray) -> Optional[np.ndarray]:
-        if (
-            values.dtype == np.uint32
-            and not self.use_selection
-            and self._unique_colors_num < 2**16
-        ):
-            return self._uint32_colors[values]
-        return super()._get_from_cache(values)
+    @cached_property
+    def _int32_hash_cache(self):
+        return _generate_hash_map_for_direct_colormap(
+            self._cmap_without_selection(), np.int32
+        )
+
+    @cached_property
+    def _uint64_hash_cache(self):
+        return _generate_hash_map_for_direct_colormap(
+            self._cmap_without_selection(), np.uint64
+        )
+
+    @cached_property
+    def _int64_hash_cache(self):
+        return _generate_hash_map_for_direct_colormap(
+            self._cmap_without_selection(), np.int64
+        )
 
     def map(self, values) -> np.ndarray:
         """
@@ -385,8 +401,7 @@ class DirectLabelColormap(LabelColormapBase):
         return mapped
 
     def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
-        cmap = self.__class__(**self.dict())
-        cmap.use_selection = False
+        cmap = self._cmap_without_selection()
         casted = _cast_labels_data_to_texture_dtype_direct_impl(values, cmap)
         return self._map_casted(casted, apply_selection=False)
 
@@ -425,8 +440,14 @@ class DirectLabelColormap(LabelColormapBase):
             del self.__dict__["_unique_colors_num"]
         if "_label_mapping_and_color_dict" in self.__dict__:
             del self.__dict__["_label_mapping_and_color_dict"]
-        if "_uint32_colors" in self.__dict__:
-            del self.__dict__["_uint32_colors"]
+        if "_uint32_hash_cache" in self.__dict__:
+            del self.__dict__["_uint32_hash_cache"]
+        if "_int32_hash_cache" in self.__dict__:
+            del self.__dict__["_int32_hash_cache"]
+        if "_uint64_hash_cache" in self.__dict__:
+            del self.__dict__["_uint32_hash_cache"]
+        if "_int64_hash_cache" in self.__dict__:
+            del self.__dict__["_int32_hash_cache"]
 
     def _values_mapping_to_minimum_values_set(
         self, apply_selection=True
@@ -684,11 +705,14 @@ def _cast_labels_data_to_texture_dtype_direct_numpy(
 
 def _generate_hash_map_for_direct_colormap(
     direct_colormap: DirectLabelColormap,
-    dtype: np.dtype,
+    data_dtype: np.dtype,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Generate hash map for direct colormap.
     """
+    target_dtype = minimum_dtype_for_labels(
+        direct_colormap._unique_colors_num + 2
+    )
     label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
     pos = bisect.bisect_left(_PRIME_NUM_TABLE, len(label_mapping) * 2)
     if pos < len(_PRIME_NUM_TABLE):
@@ -696,11 +720,16 @@ def _generate_hash_map_for_direct_colormap(
     else:
         hash_size = 2 ** (math.ceil(math.log2(len(label_mapping))) + 1)
 
-    hash_table_key = np.zeros(hash_size, dtype=np.uint64)
-    hash_table_val = np.zeros(hash_size, dtype=dtype)
+    hash_table_key = np.zeros(hash_size, dtype=data_dtype)
+    hash_table_val = np.zeros(hash_size, dtype=target_dtype)
+
+    data_min = np.iinfo(data_dtype).min
+    data_max = np.iinfo(data_dtype).max
 
     for key, val in label_mapping.items():
         if key is None:
+            continue
+        if key > data_max or key < data_min:
             continue
         new_key = key % hash_size
         while hash_table_key[new_key] != 0:
@@ -712,7 +741,7 @@ def _generate_hash_map_for_direct_colormap(
     return hash_table_key, hash_table_val
 
 
-def _generate_hash_map_and_cast_labrls_data_to_texture_dtype_direct(
+def _generate_hash_map_and_cast_labels_data_to_texture_dtype_direct(
     data: np.ndarray, direct_colormap: DirectLabelColormap
 ) -> np.ndarray:
     """
@@ -730,14 +759,21 @@ def _generate_hash_map_and_cast_labrls_data_to_texture_dtype_direct(
     np.ndarray
         The cast data array.
     """
-
-    dtype = minimum_dtype_for_labels(direct_colormap._unique_colors_num + 2)
-    hash_table_key, hash_table_val = _generate_hash_map_for_direct_colormap(
-        direct_colormap, dtype
-    )
+    if (
+        hasattr(direct_colormap, f"_{data.dtype}_hash_cache")
+        and not direct_colormap.use_selection
+    ):
+        hash_table_key, hash_table_val = getattr(
+            direct_colormap, f"_{data.dtype}_hash_cache"
+        )
+    else:
+        (
+            hash_table_key,
+            hash_table_val,
+        ) = _generate_hash_map_for_direct_colormap(direct_colormap, data.dtype)
 
     return _cast_direct_labels_to_minimum_type_jit(
-        data, hash_table_key, hash_table_val, dtype
+        data, hash_table_key, hash_table_val
     )
 
 
@@ -745,9 +781,8 @@ def _cast_direct_labels_to_minimum_type_jit(
     data: np.ndarray,
     hash_table_key: np.ndarray,
     hash_table_val: np.ndarray,
-    dtype: np.dtype,
 ) -> np.ndarray:
-    result_array = np.zeros_like(data, dtype=dtype)
+    result_array = np.zeros_like(data, dtype=hash_table_val.dtype)
 
     # iterate over data and calculate modulo num_colors assigning to result_array
 
@@ -830,7 +865,7 @@ else:
         _zero_preserving_modulo_jit
     )
     _cast_labels_data_to_texture_dtype_direct_impl = (
-        _generate_hash_map_and_cast_labrls_data_to_texture_dtype_direct
+        _generate_hash_map_and_cast_labels_data_to_texture_dtype_direct
     )
     _cast_direct_labels_to_minimum_type_jit = numba.njit(parallel=True)(
         _cast_direct_labels_to_minimum_type_jit
