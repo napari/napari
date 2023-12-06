@@ -51,6 +51,9 @@ class VispyPointsLayer(VispyBaseLayer):
             face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
             np.zeros(1)
             symbol = ['o']
+            border_color = 'dimgray'
+            border_width = 0.05
+
         else:
             data = self.layer._view_data
             size = self.layer._view_size
@@ -66,13 +69,13 @@ class VispyPointsLayer(VispyBaseLayer):
 
         if self.layer.border_width_is_relative:
             border_kw = {
-                'border_width': None,
-                'border_width_rel': border_width,
+                'edge_width': None,
+                'edge_width_rel': border_width,
             }
         else:
             border_kw = {
-                'border_width': border_width * scale,
-                'border_width_rel': None,
+                'edge_width': border_width * scale,
+                'edge_width_rel': None,
             }
 
         set_data(

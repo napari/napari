@@ -977,7 +977,7 @@ def test_border_width():
     layer = Points(data)
     np.testing.assert_array_equal(layer.border_width, 0.05)
 
-    layer.edge_width = 0.5
+    layer.border_width = 0.5
     np.testing.assert_array_equal(layer.border_width, 0.5)
 
     # fail outside of range 0, 1 if relative is enabled (default)
