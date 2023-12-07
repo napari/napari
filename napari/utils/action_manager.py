@@ -3,7 +3,6 @@ from __future__ import annotations
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
-from functools import cached_property
 from inspect import isgeneratorfunction
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
@@ -40,7 +39,7 @@ class Action:
     keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
     repeatable: bool = False
 
-    @cached_property
+    @property
     def injected(self) -> Callable[..., Future]:
         """command with napari objects injected.
 
