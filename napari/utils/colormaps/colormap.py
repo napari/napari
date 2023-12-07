@@ -336,13 +336,13 @@ class DirectLabelColormap(LabelColormapBase):
             )[0]
         )
 
-    def _get_hash_cache(self, data_dtype: np.dtype) -> Optional[np.ndarray]:
+    def _get_hash_cache(self, data_dtype: np.dtype) -> np.ndarray:
         key = f"_{data_dtype}_hash_cache"
         if key not in self._cache_other:
             self._cache_other[key] = _generate_hash_map_for_direct_colormap(
                 self._cmap_without_selection(), data_dtype
             )
-        return self._cache_other.get(key)
+        return self._cache_other[key]
 
     def map(self, values) -> np.ndarray:
         """
