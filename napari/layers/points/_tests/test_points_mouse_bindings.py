@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
+from psygnal.containers import Selection
 
 from napari.components.dims import Dims
 from napari.layers import Points
@@ -267,7 +268,7 @@ def test_unselect_by_click_point_3d(create_known_points_layer_3d):
     mouse_release_callbacks(layer, event)
 
     # Check clicked point selected
-    assert layer.selected_data == {0}
+    assert layer.selected_data == Selection({0})
 
 
 def test_select_by_shift_click_3d(create_known_points_layer_3d):
@@ -296,7 +297,7 @@ def test_select_by_shift_click_3d(create_known_points_layer_3d):
     mouse_release_callbacks(layer, event)
 
     # Check clicked point selected
-    assert layer.selected_data == {0, 1}
+    assert layer.selected_data == Selection({0, 1})
 
 
 def test_unselect_by_click_empty_3d(create_known_points_layer_3d):
@@ -664,7 +665,7 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
 
 
 @pytest.mark.parametrize(
-    'pre_selection,on_point,modifier',
+    'pre_selection_set,on_point,modifier',
     [
         (set(), True, []),
         ({0}, True, []),
@@ -685,8 +686,10 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
     ],
 )
 def test_drag_start_selection(
-    create_known_points_layer_2d, pre_selection, on_point, modifier
+    create_known_points_layer_2d, pre_selection_set, on_point, modifier
 ):
+    pre_selection: Selection = Selection(pre_selection_set)
+    del pre_selection_set
     """Check layer drag start and drag box behave as expected."""
     layer, n_points, known_non_point = create_known_points_layer_2d
     layer.mode = 'select'
@@ -713,15 +716,15 @@ def test_drag_start_selection(
         if not on_point:
             assert layer.selected_data == pre_selection
         elif 0 in pre_selection:
-            assert layer.selected_data == pre_selection - {0}
+            assert layer.selected_data == pre_selection - Selection({0})
         else:
-            assert layer.selected_data == pre_selection | {0}
+            assert layer.selected_data == pre_selection | Selection({0})
     elif not on_point:
         assert layer.selected_data == set()
     elif 0 in pre_selection:
         assert layer.selected_data == pre_selection
     else:
-        assert layer.selected_data == {0}
+        assert layer.selected_data == Selection({0})
 
     if len(layer.selected_data) > 0:
         center = layer.data[list(layer.selected_data), :].mean(axis=0)

@@ -161,7 +161,7 @@ def _toggle_selected(selection: Selection[_T], value: _T) -> Selection[_T]:
 
     Parameters
     ----------
-    selection : pysgnal.containers.Selection
+    selection : psgnal.containers.Selection
         Set of selected data points to be modified.
     value : int
         Index of point to add or remove from selected data set.
