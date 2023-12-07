@@ -172,15 +172,15 @@ def build_textures_from_dict(
 def _select_colormap_texture(
     colormap: LabelColormap, view_dtype, raw_dtype
 ) -> np.ndarray:
-    if raw_dtype == np.int8:
-        color_texture = colormap._int8_colors
-    elif raw_dtype == np.int16:
-        color_texture = colormap._int16_colors
-    elif view_dtype == np.uint8:
-        color_texture = colormap._uint8_colors
+    if raw_dtype.itemsize > 2:
+        color_texture = colormap._get_mapping_from_cache(view_dtype)
     else:
-        color_texture = colormap._uint16_colors
+        color_texture = colormap._get_mapping_from_cache(raw_dtype)
 
+    if color_texture is None:
+        raise ValueError(  # pragma: no cover
+            f"Cannot build a texture for dtype {raw_dtype=} and {view_dtype=}"
+        )
     return color_texture.reshape(256, -1, 4)
 
 

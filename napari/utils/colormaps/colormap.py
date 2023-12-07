@@ -2,7 +2,7 @@ import bisect
 import math
 from collections import defaultdict
 from functools import cached_property, lru_cache
-from typing import DefaultDict, Dict, List, Optional, Tuple, cast
+from typing import Any, DefaultDict, Dict, List, Optional, Tuple, cast
 
 import numpy as np
 
@@ -152,32 +152,17 @@ class Colormap(EventedModel):
 
 
 class LabelColormapBase(Colormap):
+    _cache_mapping: Dict[Tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
+        default={}
+    )
+    _cache_other: Dict[str, Any] = PrivateAttr(default={})
+
     class Config(Colormap.Config):
         # this config is to avoid deepcopy of cached_property
         # see https://github.com/pydantic/pydantic/issues/2763
         # it is required until drop pydantic 1 or pythin 3.11 and older
         # need to validate after drop pydantic 1
         keep_untouched = (cached_property,)
-
-    @cached_property
-    def _uint8_colors(self) -> np.ndarray:
-        data = np.arange(256, dtype=np.uint8)
-        return self._map_without_cache(data)
-
-    @cached_property
-    def _uint16_colors(self) -> np.ndarray:
-        data = np.arange(65536, dtype=np.uint16)
-        return self._map_without_cache(data)
-
-    @cached_property
-    def _int8_colors(self) -> np.ndarray:
-        data = np.arange(256, dtype=np.uint8).astype(np.int8)
-        return self._map_without_cache(data)
-
-    @cached_property
-    def _int16_colors(self) -> np.ndarray:
-        data = np.arange(65536, dtype=np.uint16).astype(np.int16)
-        return self._map_without_cache(data)
 
     def _cmap_without_selection(self) -> "LabelColormapBase":
         if self.use_selection:
@@ -186,27 +171,27 @@ class LabelColormapBase(Colormap):
             return cmap
         return self
 
-    def _get_from_cache(self, values: np.ndarray) -> Optional[np.ndarray]:
-        if values.dtype == np.uint8:
-            return self._uint8_colors[values]
-        if values.dtype == np.uint16:
-            return self._uint16_colors[values]
-        if values.dtype == np.int8:
-            return self._int8_colors[values]
-        if values.dtype == np.int16:
-            return self._int16_colors[values]
-        return None
+    def _get_mapping_from_cache(
+        self, data_dtype: np.dtype
+    ) -> Optional[np.ndarray]:
+        target_dtype = _dtype_for_labels(self._unique_colors_num, data_dtype)
+        key = (data_dtype, target_dtype)
+        if key not in self._cache_mapping and data_dtype.itemsize <= 2:
+            data = np.arange(
+                np.iinfo(target_dtype).max + 1, dtype=target_dtype
+            ).astype(data_dtype)
+            self._cache_mapping[key] = self._map_without_cache(data)
+        return self._cache_mapping.get(key)
 
     def _clean_cache(self):
         """Mechanism to clean cached properties"""
-        if "_uint8_colors" in self.__dict__:
-            del self.__dict__["_uint8_colors"]
-        if "_uint16_colors" in self.__dict__:
-            del self.__dict__["_uint16_colors"]
-        if "_int8_colors" in self.__dict__:
-            del self.__dict__["_int8_colors"]
-        if "_int16_colors" in self.__dict__:
-            del self.__dict__["_int16_colors"]
+        self._cache_mapping = {}
+        self._cache_other = {}
+
+    @property
+    def _unique_colors_num(self) -> int:
+        """Count the number of unique colors in the colormap."""
+        return len(self.colors) - 1
 
     def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
         """Function that maps values to colors without selection or cache"""
@@ -298,8 +283,10 @@ class LabelColormap(LabelColormapBase):
 
         if values.dtype.kind == 'f':
             values = values.astype(np.int64)
-        mapped = self._get_from_cache(values)
-        if mapped is None:
+        mapper = self._get_mapping_from_cache(values.dtype)
+        if mapper is not None:
+            mapped = mapper[values]
+        else:
             mapped = self._map_without_cache(values)
         if self.use_selection:
             mapped[(values != self.selection)] = 0
@@ -338,7 +325,7 @@ class DirectLabelColormap(LabelColormapBase):
     selection: int = 0
 
     def __init__(self, *args, **kwargs) -> None:
-        if "colors" not in kwargs and len(args) == 0:
+        if "colors" not in kwargs and not args:
             kwargs["colors"] = np.zeros(3)
         super().__init__(*args, **kwargs)
 
@@ -349,29 +336,13 @@ class DirectLabelColormap(LabelColormapBase):
             )[0]
         )
 
-    @cached_property
-    def _uint32_hash_cache(self):
-        return _generate_hash_map_for_direct_colormap(
-            self._cmap_without_selection(), np.uint32
-        )
-
-    @cached_property
-    def _int32_hash_cache(self):
-        return _generate_hash_map_for_direct_colormap(
-            self._cmap_without_selection(), np.int32
-        )
-
-    @cached_property
-    def _uint64_hash_cache(self):
-        return _generate_hash_map_for_direct_colormap(
-            self._cmap_without_selection(), np.uint64
-        )
-
-    @cached_property
-    def _int64_hash_cache(self):
-        return _generate_hash_map_for_direct_colormap(
-            self._cmap_without_selection(), np.int64
-        )
+    def _get_hash_cache(self, data_dtype: np.dtype) -> Optional[np.ndarray]:
+        key = f"_{data_dtype}_hash_cache"
+        if key not in self._cache_other:
+            self._cache_other[key] = _generate_hash_map_for_direct_colormap(
+                self._cmap_without_selection(), data_dtype
+            )
+        return self._cache_other.get(key)
 
     def map(self, values) -> np.ndarray:
         """
@@ -389,8 +360,10 @@ class DirectLabelColormap(LabelColormapBase):
         values = np.atleast_1d(values)
         if values.dtype.kind in {'f', 'U'}:
             raise TypeError("DirectLabelColormap can only be used with int")
-        mapped = self._get_from_cache(values)
-        if mapped is None:
+        mapper = self._get_mapping_from_cache(values.dtype)
+        if mapper is not None:
+            mapped = mapper[values]
+        else:
             casted = _cast_labels_data_to_texture_dtype_direct_impl(
                 values, self
             )
@@ -440,14 +413,6 @@ class DirectLabelColormap(LabelColormapBase):
             del self.__dict__["_unique_colors_num"]
         if "_label_mapping_and_color_dict" in self.__dict__:
             del self.__dict__["_label_mapping_and_color_dict"]
-        if "_uint32_hash_cache" in self.__dict__:
-            del self.__dict__["_uint32_hash_cache"]
-        if "_int32_hash_cache" in self.__dict__:
-            del self.__dict__["_int32_hash_cache"]
-        if "_uint64_hash_cache" in self.__dict__:
-            del self.__dict__["_uint32_hash_cache"]
-        if "_int64_hash_cache" in self.__dict__:
-            del self.__dict__["_int32_hash_cache"]
 
     def _values_mapping_to_minimum_values_set(
         self, apply_selection=True
@@ -760,12 +725,9 @@ def _generate_hash_map_and_cast_labels_data_to_texture_dtype_direct(
     np.ndarray
         The cast data array.
     """
-    if (
-        hasattr(direct_colormap, f"_{data.dtype}_hash_cache")
-        and not direct_colormap.use_selection
-    ):
-        hash_table_key, hash_table_val = getattr(
-            direct_colormap, f"_{data.dtype}_hash_cache"
+    if not direct_colormap.use_selection:
+        hash_table_key, hash_table_val = direct_colormap._get_hash_cache(
+            data.dtype
         )
     else:
         (

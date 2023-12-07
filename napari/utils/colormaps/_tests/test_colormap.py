@@ -323,7 +323,6 @@ def test_label_colormap_using_cache(dtype, monkeypatch):
     expected = np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]])
     map1 = cmap.map(values)
     npt.assert_array_equal(map1, expected)
-    getattr(cmap, f"_{dtype.__name__}_colors")
     monkeypatch.setattr(colormap, '_zero_preserving_modulo_numpy', None)
     map2 = cmap.map(values)
     npt.assert_array_equal(map1, map2)
