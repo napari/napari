@@ -146,9 +146,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         is a feature.
     feature_defaults : DataFrame-like
         Stores the default value of each feature in a table with one row.
-    properties : dict {str: array (N,)} or DataFrame
-        Annotations for each point. Each property should be an array of length N,
-        where N is the number of points.
     colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -194,8 +191,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         *,
         features=None,
         feature_defaults=None,
-        properties=None,
-        property_choices=None,
         colormap='gray',
         contrast_limits=None,
         gamma=1.0,
@@ -268,8 +263,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._feature_table = _FeatureTable.from_layer(
             features=features,
             feature_defaults=feature_defaults,
-            properties=properties,
-            property_choices=property_choices,
             num_data=len(data[0]),
         )
 
