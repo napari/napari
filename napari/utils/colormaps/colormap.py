@@ -174,7 +174,7 @@ class LabelColormapBase(Colormap):
     def _get_mapping_from_cache(
         self, data_dtype: np.dtype
     ) -> Optional[np.ndarray]:
-        target_dtype = _dtype_for_labels(self._unique_colors_num, data_dtype)
+        target_dtype = _dtype_for_labels(self._num_unique_colors, data_dtype)
         key = (data_dtype, target_dtype)
         if key not in self._cache_mapping and data_dtype.itemsize <= 2:
             data = np.arange(
@@ -189,8 +189,8 @@ class LabelColormapBase(Colormap):
         self._cache_other = {}
 
     @property
-    def _unique_colors_num(self) -> int:
-        """Count the number of unique colors in the colormap."""
+    def _num_unique_colors(self) -> int:
+        """Number of unique colors, not counting transparent black."""
         return len(self.colors) - 1
 
     def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
@@ -403,14 +403,14 @@ class DirectLabelColormap(LabelColormapBase):
         return mapped
 
     @cached_property
-    def _unique_colors_num(self) -> int:
+    def _num_unique_colors(self) -> int:
         """Count the number of unique colors in the colormap."""
         return len({tuple(x) for x in self.color_dict.values()})
 
     def _clear_cache(self):
         super()._clear_cache()
-        if "_unique_colors_num" in self.__dict__:
-            del self.__dict__["_unique_colors_num"]
+        if "_num_unique_colors" in self.__dict__:
+            del self.__dict__["_num_unique_colors"]
         if "_label_mapping_and_color_dict" in self.__dict__:
             del self.__dict__["_label_mapping_and_color_dict"]
 
@@ -654,7 +654,7 @@ def _cast_labels_data_to_texture_dtype_direct_numpy(
             "Cannot use numpy implementation for large values of labels "
             "direct colormap. Please install numba."
         )
-    dtype = minimum_dtype_for_labels(direct_colormap._unique_colors_num + 2)
+    dtype = minimum_dtype_for_labels(direct_colormap._num_unique_colors + 2)
     label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
 
     mapper = np.full((max_value + 2), DEFAULT_VALUE, dtype=dtype)
@@ -676,7 +676,7 @@ def _generate_hash_map_for_direct_colormap(
     Generate hash map for direct colormap.
     """
     target_dtype = minimum_dtype_for_labels(
-        direct_colormap._unique_colors_num + 2
+        direct_colormap._num_unique_colors + 2
     )
     label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
     prime_num_array = _primes(upto=2**16)

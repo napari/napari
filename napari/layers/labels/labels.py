@@ -1022,7 +1022,7 @@ class Labels(_ImageBase):
     def _get_cache_dtype(self, raw_dtype: np.dtype) -> np.dtype:
         if self.color_mode == LabelColorMode.DIRECT:
             return _dtype_for_labels(
-                self._direct_colormap._unique_colors_num + 2,
+                self._direct_colormap._num_unique_colors + 2,
                 raw_dtype,
             )
         return _dtype_for_labels(self.num_colors, raw_dtype)
