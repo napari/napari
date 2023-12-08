@@ -18,7 +18,7 @@ from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.utils.colormaps.colormap import (
     LabelColormap,
-    _dtype_for_labels,
+    _texture_dtype,
 )
 
 if TYPE_CHECKING:
@@ -263,7 +263,7 @@ class VispyLabelsLayer(VispyImageLayer):
             max_size = get_max_texture_sizes()[0]
             val_texture = build_textures_from_dict(color_dict, max_size)
 
-            dtype = _dtype_for_labels(
+            dtype = _texture_dtype(
                 self.layer._direct_colormap._num_unique_colors + 2,
                 raw_dtype,
             )

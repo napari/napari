@@ -174,7 +174,7 @@ class LabelColormapBase(Colormap):
     def _get_mapping_from_cache(
         self, data_dtype: np.dtype
     ) -> Optional[np.ndarray]:
-        target_dtype = _dtype_for_labels(self._num_unique_colors, data_dtype)
+        target_dtype = _texture_dtype(self._num_unique_colors, data_dtype)
         key = (data_dtype, target_dtype)
         if key not in self._cache_mapping and data_dtype.itemsize <= 2:
             data = np.arange(
@@ -766,13 +766,13 @@ def _cast_direct_labels_to_minimum_type_jit(
     return result_array
 
 
-def _dtype_for_labels(num_colors: int, dtype: np.dtype) -> np.dtype:
-    """
-    Return dtype for given number of colors and data dtype.
+def _texture_dtype(num_colors: int, dtype: np.dtype) -> np.dtype:
+    """Compute VisPy texture dtype given number of colors and raw data dtype.
 
-    For data of type int8 and uint8 we can use uint8,
-    for int16 and uint16 we can use uint16.
-    For another type of data, we fall back to minimum_dtype_for_labels function.
+    - for data of type int8 and uint8 we can use uint8 directly, with no copy.
+    - for int16 and uint16 we can use uint16 with no copy.
+    - for any other dtype, we fall back on `minimum_dtype_for_labels`, which
+      will require on-CPU mapping between the raw data and the texture dtype.
     """
     if dtype.itemsize == 1:
         return np.dtype(np.uint8)

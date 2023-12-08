@@ -57,7 +57,7 @@ from napari.utils.colormaps.colormap import (
     LabelColormapBase,
     _cast_labels_data_to_texture_dtype_auto,
     _cast_labels_data_to_texture_dtype_direct,
-    _dtype_for_labels,
+    _texture_dtype,
 )
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
@@ -1021,11 +1021,11 @@ class Labels(_ImageBase):
 
     def _get_cache_dtype(self, raw_dtype: np.dtype) -> np.dtype:
         if self.color_mode == LabelColorMode.DIRECT:
-            return _dtype_for_labels(
+            return _texture_dtype(
                 self._direct_colormap._num_unique_colors + 2,
                 raw_dtype,
             )
-        return _dtype_for_labels(self.num_colors, raw_dtype)
+        return _texture_dtype(self.num_colors, raw_dtype)
 
     def _setup_cache(self, labels):
         """
