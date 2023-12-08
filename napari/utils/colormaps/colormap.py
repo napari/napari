@@ -2,7 +2,16 @@ import bisect
 import math
 from collections import defaultdict
 from functools import cached_property, lru_cache
-from typing import Any, DefaultDict, Dict, List, Optional, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    cast,
+)
 
 import numpy as np
 
@@ -13,6 +22,9 @@ from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from numba import typed
 
 DEFAULT_VALUE = 0
 
@@ -463,6 +475,38 @@ class DirectLabelColormap(LabelColormapBase):
 
         return labels_to_new_labels, new_color_dict
 
+    def _get_typed_dict_mapping(self, data_dtype: np.dtype) -> 'typed.Dict':
+        """
+        Create mapping from original values to minimum values set.
+        To use minimum possible dtype for labels.
+
+        Returns
+        -------
+        Dict[Optional[int], int]
+            Mapping from original values to minimum values set.
+        """
+
+        key = f"_{data_dtype}_typed_dict"
+        if key in self._cache_other:
+            return self._cache_other[key]
+
+        from numba import typed, types
+
+        target_type = minimum_dtype_for_labels(self._num_unique_colors + 2)
+
+        dkt = typed.Dict.empty(
+            key_type=getattr(types, data_dtype.name),
+            value_type=getattr(types, target_type.name),
+        )
+        for k, v in self._label_mapping_and_color_dict[0].items():
+            if k is None:
+                continue
+            dkt[data_dtype.type(k)] = target_type.type(v)
+
+        self._cache_other[key] = dkt
+
+        return dkt
+
     @property
     def default_color(self) -> np.ndarray:
         return self.color_dict.get(None, np.array((0, 0, 0, 0)))
@@ -703,6 +747,53 @@ def _generate_hash_map_for_direct_colormap(
     return hash_table_key, hash_table_val
 
 
+def _labels_raw_to_texture_direct_typed_dict(
+    data: np.ndarray, direct_colormap: DirectLabelColormap
+) -> np.ndarray:
+    """
+    Cast direct labels to the minimum type.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The input data array.
+    direct_colormap : DirectLabelColormap
+        The direct colormap.
+
+    Returns
+    -------
+    np.ndarray
+        The cast data array.
+    """
+    if direct_colormap.use_selection:
+        return (data == direct_colormap.selection).astype(np.uint8)
+
+    dkt = direct_colormap._get_typed_dict_mapping(data.dtype)
+    target_dtype = minimum_dtype_for_labels(
+        direct_colormap._num_unique_colors + 2
+    )
+    return _labels_raw_to_texture_direct_typed_dict_impl(
+        data, dkt, target_dtype
+    )
+
+
+def _labels_raw_to_texture_direct_typed_dict_impl(
+    data: np.ndarray, dkt: 'typed.Dict', target_dtype: np.dtype
+) -> np.ndarray:
+    """
+    Relabel data using typed dict with mapping unknown labels to default value
+    """
+    # The numba typed dict does not provide official Api for
+    # determine key and value types
+    result_array = np.zeros_like(data, dtype=target_dtype)
+    default_value = target_dtype.type(DEFAULT_VALUE)
+
+    for i in prange(data.size):
+        result_array.flat[i] = dkt.get(data.flat[i], default_value)
+
+    return result_array
+
+
 def _labels_raw_to_texture_direct_loop(
     data: np.ndarray, direct_colormap: DirectLabelColormap
 ) -> np.ndarray:
@@ -797,25 +888,6 @@ def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
     return np.dtype(np.float32)
 
 
-try:
-    import numba
-except ModuleNotFoundError:
-    _zero_preserving_modulo = _zero_preserving_modulo_numpy
-    _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
-    prange = range
-else:
-    _zero_preserving_modulo = numba.njit(parallel=True)(
-        _zero_preserving_modulo_jit
-    )
-    _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_loop
-    _cast_direct_labels_to_minimum_type_jit = numba.njit(parallel=True)(
-        _cast_direct_labels_to_minimum_type_jit
-    )
-    prange = numba.prange  # type: ignore [misc]
-
-    del numba
-
-
 @lru_cache(maxsize=128)
 def _primes(upto):
     """Generate primes up to a given number.
@@ -844,3 +916,25 @@ def _primes(upto):
         if isprime[(factor - 2) // 2]:
             isprime[(factor * 3 - 2) // 2 : None : factor] = 0
     return np.concatenate(([2], primes[isprime]))
+
+
+try:
+    import numba
+except ModuleNotFoundError:
+    _zero_preserving_modulo = _zero_preserving_modulo_numpy
+    _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
+    prange = range
+else:
+    _zero_preserving_modulo = numba.njit(parallel=True)(
+        _zero_preserving_modulo_jit
+    )
+    _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_typed_dict
+    _cast_direct_labels_to_minimum_type_jit = numba.njit(parallel=True)(
+        _cast_direct_labels_to_minimum_type_jit
+    )
+    _labels_raw_to_texture_direct_typed_dict_impl = numba.njit(parallel=True)(
+        _labels_raw_to_texture_direct_typed_dict_impl
+    )
+    prange = numba.prange  # type: ignore [misc]
+
+    del numba
