@@ -214,15 +214,13 @@ def test_direct_label_colormap_selection(direct_label_colormap):
 @pytest.mark.usefixtures("disable_jit")
 def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
     data = np.arange(15, dtype=np.uint32)
-    casted = colormap._cast_labels_data_to_texture_dtype_direct_impl(
-        data, direct_label_colormap
-    )
+    cast = colormap._labels_raw_to_texture_direct(data, direct_label_colormap)
     label_mapping = (
         direct_label_colormap._values_mapping_to_minimum_values_set()[0]
     )
-    assert casted.dtype == np.uint8
+    assert cast.dtype == np.uint8
     np.testing.assert_array_equal(
-        casted,
+        cast,
         np.array(
             [
                 label_mapping[0],
@@ -259,10 +257,8 @@ def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     cmap.color_dict[None] = np.array([255, 255, 255, 255])
     data = np.arange(10, dtype=np.uint32)
     data[2] = 80005
-    casted = colormap._cast_labels_data_to_texture_dtype_direct_impl(
-        data, cmap
-    )
-    assert casted.dtype == dtype
+    cast = colormap._labels_raw_to_texture_direct(data, cmap)
+    assert cast.dtype == dtype
 
 
 def test_zero_preserving_modulo_naive():
@@ -340,8 +336,8 @@ def test_cast_direct_labels_to_minimum_type_naive(size):
         },
     )
     cmap.color_dict[None] = np.array([255, 255, 255, 255])
-    res1 = colormap._cast_labels_data_to_texture_dtype_direct_impl(data, cmap)
-    res2 = colormap._cast_labels_data_to_texture_dtype_direct_numpy(data, cmap)
+    res1 = colormap._labels_raw_to_texture_direct(data, cmap)
+    res2 = colormap._labels_raw_to_texture_direct_numpy(data, cmap)
     npt.assert_array_equal(res1, res2)
     assert res1.dtype == dtype
     assert res2.dtype == dtype
