@@ -507,6 +507,24 @@ class DirectLabelColormap(LabelColormapBase):
 
         return dkt
 
+    @cached_property
+    def _numpy_mapper(self):
+        max_value = max(x for x in self.color_dict if x is not None)
+        if max_value > 2**16:
+            raise RuntimeError(  # pragma: no cover
+                "Cannot use numpy implementation for large values of labels "
+                "direct colormap. Please install numba."
+            )
+        dtype = minimum_dtype_for_labels(self._num_unique_colors + 2)
+        label_mapping = self._values_mapping_to_minimum_values_set()[0]
+
+        mapper = np.full((max_value + 2), DEFAULT_VALUE, dtype=dtype)
+        for key, val in label_mapping.items():
+            if key is None:
+                continue
+            mapper[key] = val
+        return mapper
+
     @property
     def default_color(self) -> np.ndarray:
         return self.color_dict.get(None, np.array((0, 0, 0, 0)))
@@ -688,23 +706,10 @@ def _labels_raw_to_texture_direct_numpy(
     np.ndarray
         The cast data array.
     """
-    max_value = max(x for x in direct_colormap.color_dict if x is not None)
-    if max_value > 2**16:
-        raise RuntimeError(  # pragma: no cover
-            "Cannot use numpy implementation for large values of labels "
-            "direct colormap. Please install numba."
-        )
-    dtype = minimum_dtype_for_labels(direct_colormap._num_unique_colors + 2)
-    label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
-
-    mapper = np.full((max_value + 2), DEFAULT_VALUE, dtype=dtype)
-    for key, val in label_mapping.items():
-        if key is None:
-            continue
-        mapper[key] = val
+    mapper = direct_colormap._numpy_mapper
 
     if data.dtype.itemsize > 2:
-        data = np.clip(data, 0, max_value + 1)
+        data = np.clip(data, 0, mapper.shape[0] - 1)
     return mapper[data]
 
 
