@@ -1,7 +1,5 @@
-import bisect
-import math
 from collections import defaultdict
-from functools import cached_property, lru_cache
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -348,14 +346,6 @@ class DirectLabelColormap(LabelColormapBase):
             )[0]
         )
 
-    def _get_hash_cache(self, data_dtype: np.dtype) -> np.ndarray:
-        key = f"_{data_dtype}_hash_cache"
-        if key not in self._cache_other:
-            self._cache_other[key] = _generate_hash_map_for_direct_colormap(
-                self._cmap_without_selection(), data_dtype
-            )
-        return self._cache_other[key]
-
     def map(self, values) -> np.ndarray:
         """
         Map values to colors.
@@ -423,6 +413,8 @@ class DirectLabelColormap(LabelColormapBase):
             del self.__dict__["_num_unique_colors"]
         if "_label_mapping_and_color_dict" in self.__dict__:
             del self.__dict__["_label_mapping_and_color_dict"]
+        if "_numpy_mapper" in self.__dict__:
+            del self.__dict__["_numpy_mapper"]
 
     def _values_mapping_to_minimum_values_set(
         self, apply_selection=True
@@ -713,45 +705,6 @@ def _labels_raw_to_texture_direct_numpy(
     return mapper[data]
 
 
-def _generate_hash_map_for_direct_colormap(
-    direct_colormap: DirectLabelColormap,
-    data_dtype: np.dtype,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Generate hash map for direct colormap.
-    """
-    target_dtype = minimum_dtype_for_labels(
-        direct_colormap._num_unique_colors + 2
-    )
-    label_mapping = direct_colormap._values_mapping_to_minimum_values_set()[0]
-    prime_num_array = _primes(upto=2**16)
-    pos = bisect.bisect_left(prime_num_array, len(label_mapping) * 2)
-    if pos < len(prime_num_array):
-        hash_size = prime_num_array[pos]
-    else:
-        hash_size = 2 ** (math.ceil(math.log2(len(label_mapping))) + 1)
-
-    hash_table_key = np.zeros(hash_size, dtype=data_dtype)
-    hash_table_val = np.zeros(hash_size, dtype=target_dtype)
-
-    data_min = np.iinfo(data_dtype).min
-    data_max = np.iinfo(data_dtype).max
-
-    for key, val in label_mapping.items():
-        if key is None:
-            continue
-        if key > data_max or key < data_min:
-            continue
-        new_key = key % hash_size
-        while hash_table_key[new_key] != 0:
-            new_key = (new_key + 1) % hash_size
-
-        hash_table_key[new_key] = key
-        hash_table_val[new_key] = val
-
-    return hash_table_key, hash_table_val
-
-
 def _labels_raw_to_texture_direct_typed_dict(
     data: np.ndarray, direct_colormap: DirectLabelColormap
 ) -> np.ndarray:
@@ -791,69 +744,11 @@ def _labels_raw_to_texture_direct_typed_dict_impl(
     # The numba typed dict does not provide official Api for
     # determine key and value types
     result_array = np.zeros_like(data, dtype=target_dtype)
-    default_value = target_dtype.type(DEFAULT_VALUE)
 
     for i in prange(data.size):
-        result_array.flat[i] = dkt.get(data.flat[i], default_value)
-
-    return result_array
-
-
-def _labels_raw_to_texture_direct_loop(
-    data: np.ndarray, direct_colormap: DirectLabelColormap
-) -> np.ndarray:
-    """
-    Cast direct labels to the minimum type.
-
-    Parameters
-    ----------
-    data : np.ndarray
-        The input data array.
-    direct_colormap : DirectLabelColormap
-        The direct colormap.
-
-    Returns
-    -------
-    np.ndarray
-        The cast data array.
-    """
-    if not direct_colormap.use_selection:
-        hash_table_key, hash_table_val = direct_colormap._get_hash_cache(
-            data.dtype
-        )
-    else:
-        (
-            hash_table_key,
-            hash_table_val,
-        ) = _generate_hash_map_for_direct_colormap(direct_colormap, data.dtype)
-
-    return _cast_direct_labels_to_minimum_type_jit(
-        data, hash_table_key, hash_table_val
-    )
-
-
-def _cast_direct_labels_to_minimum_type_jit(
-    data: np.ndarray,
-    hash_table_key: np.ndarray,
-    hash_table_val: np.ndarray,
-) -> np.ndarray:
-    result_array = np.zeros_like(data, dtype=hash_table_val.dtype)
-
-    # iterate over data and calculate modulo num_colors assigning to result_array
-
-    hash_size = hash_table_key.size
-
-    for i in prange(data.size):
-        key = data.flat[i]
-        new_key = int(key % hash_size)
-        while hash_table_key[new_key] != key:
-            if hash_table_key[new_key] == 0:
-                result_array.flat[i] = DEFAULT_VALUE
-                break
-            # This will stop because half of the hash table is empty
-            new_key = (new_key + 1) % hash_size
-        else:
-            result_array.flat[i] = hash_table_val[new_key]
+        val = data.flat[i]
+        if val in dkt:
+            result_array.flat[i] = dkt[data.flat[i]]
 
     return result_array
 
@@ -893,36 +788,6 @@ def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
     return np.dtype(np.float32)
 
 
-@lru_cache(maxsize=128)
-def _primes(upto):
-    """Generate primes up to a given number.
-
-    This runs a modified Sieve of Eratosthenes [1]_ on odd numbers up to
-    `upto`.
-
-    Parameters
-    ----------
-    upto : int
-        The upper limit of the primes to generate.
-
-    Returns
-    -------
-    primes : np.ndarray
-        The primes up to the upper limit.
-
-    References
-    ----------
-    .. [1]: https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
-    """
-    primes = np.arange(3, upto + 1, 2)
-    isprime = np.ones((upto - 1) // 2, dtype=bool)
-    max_factor = int(np.sqrt(upto))
-    for factor in primes[: max_factor // 2]:
-        if isprime[(factor - 2) // 2]:
-            isprime[(factor * 3 - 2) // 2 : None : factor] = 0
-    return np.concatenate(([2], primes[isprime]))
-
-
 try:
     import numba
 except ModuleNotFoundError:
@@ -934,9 +799,6 @@ else:
         _zero_preserving_modulo_jit
     )
     _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_typed_dict
-    _cast_direct_labels_to_minimum_type_jit = numba.njit(parallel=True)(
-        _cast_direct_labels_to_minimum_type_jit
-    )
     _labels_raw_to_texture_direct_typed_dict_impl = numba.njit(parallel=True)(
         _labels_raw_to_texture_direct_typed_dict_impl
     )
