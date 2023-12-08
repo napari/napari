@@ -819,14 +819,23 @@ else:
 @lru_cache(maxsize=128)
 def _primes(upto):
     """Generate primes up to a given number.
+
+    This runs a modified Sieve of Eratosthenes [1]_ on odd numbers up to
+    `upto`.
+
     Parameters
     ----------
     upto : int
         The upper limit of the primes to generate.
+
     Returns
     -------
     primes : np.ndarray
         The primes up to the upper limit.
+
+    References
+    ----------
+    .. [1]: https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
     """
     primes = np.arange(3, upto + 1, 2)
     isprime = np.ones((upto - 1) // 2, dtype=bool)
