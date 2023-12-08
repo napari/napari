@@ -782,7 +782,7 @@ def _texture_dtype(num_colors: int, dtype: np.dtype) -> np.dtype:
 
 
 def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
-    """Return the minimum dtype that can hold the number of colors.
+    """Return the minimum texture dtype that can hold given number of colors.
 
     Parameters
     ----------
