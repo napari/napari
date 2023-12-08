@@ -242,6 +242,8 @@ class Surface(IntensityVisualizationMixin, Layer):
             normals=Event,
             texture=Event,
             texcoords=Event,
+            features=Event,
+            feature_defaults=Event,
         )
 
         # assign mesh data and establish default behavior
