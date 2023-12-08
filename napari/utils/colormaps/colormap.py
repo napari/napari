@@ -170,7 +170,7 @@ class LabelColormapBase(Colormap):
     class Config(Colormap.Config):
         # this config is to avoid deepcopy of cached_property
         # see https://github.com/pydantic/pydantic/issues/2763
-        # it is required until drop pydantic 1 or pythin 3.11 and older
+        # it is required until we drop Pydantic 1 or Python 3.11 and older
         # need to validate after drop pydantic 1
         keep_untouched = (cached_property,)
 
