@@ -183,7 +183,7 @@ class LabelColormapBase(Colormap):
             self._cache_mapping[key] = self._map_without_cache(data)
         return self._cache_mapping.get(key)
 
-    def _clean_cache(self):
+    def _clear_cache(self):
         """Mechanism to clean cached properties"""
         self._cache_mapping = {}
         self._cache_other = {}
@@ -407,8 +407,8 @@ class DirectLabelColormap(LabelColormapBase):
         """Count the number of unique colors in the colormap."""
         return len({tuple(x) for x in self.color_dict.values()})
 
-    def _clean_cache(self):
-        super()._clean_cache()
+    def _clear_cache(self):
+        super()._clear_cache()
         if "_unique_colors_num" in self.__dict__:
             del self.__dict__["_unique_colors_num"]
         if "_label_mapping_and_color_dict" in self.__dict__:
