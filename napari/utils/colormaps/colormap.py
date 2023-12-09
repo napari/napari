@@ -713,20 +713,11 @@ def _cast_labels_data_to_texture_dtype_direct(
 def _labels_raw_to_texture_direct_numpy(
     data: np.ndarray, direct_colormap: DirectLabelColormap
 ) -> np.ndarray:
-    """
-    Cast direct labels to the minimum type.
+    """Convert labels data to the data type used in the texture.
 
-    Parameters
-    ----------
-    data : np.ndarray
-        The input data array.
-    direct_colormap : DirectLabelColormap
-        The direct colormap.
+    This implementation uses numpy vectorized operations.
 
-    Returns
-    -------
-    np.ndarray
-        The cast data array.
+    See `_cast_labels_data_to_texture_dtype_direct` for more details.
     """
     mapper = direct_colormap._numpy_mapper
 
