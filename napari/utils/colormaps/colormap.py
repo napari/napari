@@ -347,8 +347,8 @@ class DirectLabelColormap(LabelColormapBase):
         )
 
     def map(self, values) -> np.ndarray:
-        """
-        Map values to colors.
+        """Map values to colors.
+
         Parameters
         ----------
         values : np.ndarray or int
