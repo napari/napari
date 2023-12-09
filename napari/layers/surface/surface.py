@@ -466,6 +466,21 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.events.features()
 
     @property
+    def feature_defaults(self):
+        """Dataframe-like with one row of feature default values.
+
+        See `features` for more details on the type of this property.
+        """
+        return self._feature_table.defaults
+
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        self._feature_table.set_defaults(defaults)
+        self.events.feature_defaults()
+
+    @property
     def shading(self):
         return str(self._shading)
 
@@ -563,6 +578,8 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'gamma': self.gamma,
                 'shading': self.shading,
                 'data': self.data,
+                'features': self.features,
+                'feature_defaults': self.feature_defaults,
                 'wireframe': self.wireframe.dict(),
                 'normals': self.normals.dict(),
                 'texture': self.texture,
