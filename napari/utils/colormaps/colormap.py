@@ -379,17 +379,19 @@ class DirectLabelColormap(LabelColormapBase):
         return self._map_precast(cast, apply_selection=False)
 
     def _map_precast(self, values, apply_selection) -> np.ndarray:
-        """
-        Map values to colors.
+        """Map values to colors.
+
         Parameters
         ----------
         values : np.ndarray
             Values to be mapped. It need to be already cast using
             cast_labels_to_minimum_type_auto
+
         Returns
         -------
         np.ndarray of shape (N, M, 4)
             Mapped colors.
+
         Notes
         -----
         it is implemented for thumbnail labels,
