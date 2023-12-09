@@ -674,6 +674,34 @@ def _zero_preserving_modulo_jit(
 def _cast_labels_data_to_texture_dtype_direct(
     data: np.ndarray, direct_colormap: DirectLabelColormap
 ) -> np.ndarray:
+    """Convert labels data to the data type used in the texture.
+
+    In https://github.com/napari/napari/issues/6397, we noticed that using
+    float32 textures was much slower than uint8 or uint16 textures. Here we
+    convert the labels data to uint8 or uint16, based on the following rules:
+
+    - uint8 and uint16 labels data are unchanged. (No copy of the arrays.)
+    - int8 and int16 data are converted with a *view* to uint8 and uint16.
+      (This again does not involve a copy so is fast, and lossless.)
+    - higher precision integer data (u)int{32,64} are mapped to an intermediate
+      space of sequential values based on the colors they map to. As an
+      example, if the values are [1, 2**25, and 2**50], and the direct
+      colormap maps them to ['red', 'green', 'red'], then the intermediate map
+      is {1: 1, 2**25: 2, 2**50: 1}. The labels can then be converted to a
+      uint8 texture and a smaller direct colormap with only two values.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Labels data to be converted.
+    colormap : LabelColormap
+        Colormap used to display the labels data.
+
+    Returns
+    -------
+    np.ndarray
+        Converted labels data.
+    """
     data = _convert_small_ints_to_unsigned(data)
 
     if data.itemsize <= 2:
