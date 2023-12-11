@@ -332,6 +332,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._experimental_clipping_planes = ClippingPlaneList()
         self._mode = self._modeclass('pan_zoom')
         self._projection_mode = self._projectionclass(str(projection_mode))
+        self._refresh_blocked = False
 
         self._ndim = ndim
 
@@ -1401,8 +1402,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Bool that forces a redraw to occur when `True`.
         """
 
+    @contextmanager
+    def _block_refresh(self):
+        previous = self._refresh_blocked
+        self._refresh_blocked = True
+        try:
+            yield
+        finally:
+            self._refresh_blocked = previous
+
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
+        if self._refresh_blocked:
+            logger.debug('Layer.refresh blocked: %s', self)
+            return
         logger.debug('Layer.refresh: %s', self)
         # If async is enabled then emit an event that the viewer should handle.
         if get_settings().experimental.async_:
