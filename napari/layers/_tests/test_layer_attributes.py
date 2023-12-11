@@ -158,6 +158,7 @@ def test_sync_refresh_block(Layer, data, ndim):
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
 def test_async_refresh_block(Layer, data, ndim):
     from napari import settings
+
     settings.get_settings().experimental.async_ = True
 
     my_layer = Layer(data)
