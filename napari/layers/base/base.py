@@ -2058,6 +2058,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return save_layers(path, [self], plugin=plugin)
 
+    def __copy__(self):
+        """Create a copy of this layer.
+
+        Returns
+        -------
+        layer : napari.layers.Layer
+            Copy of this layer.
+        """
+        data, meta, layer_type = self.as_layer_data_tuple()
+        return self.create(np.copy(data), meta=meta, layer_type=layer_type)
+
     @classmethod
     def create(
         cls,
