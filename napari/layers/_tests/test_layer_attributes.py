@@ -155,9 +155,11 @@ def test_sync_refresh_block(Layer, data, ndim):
     my_layer.set_view_slice.assert_called_once()
 
 
-@pytest.mark.usefixtures('enable_async')
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
 def test_async_refresh_block(Layer, data, ndim):
+    from napari import settings
+    settings.get_settings().experimental.async_ = True
+
     my_layer = Layer(data)
 
     class MyCounter:

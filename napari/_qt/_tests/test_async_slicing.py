@@ -23,6 +23,17 @@ def rng() -> np.random.Generator:
     return np.random.default_rng(0)
 
 
+@pytest.fixture()
+def enable_async(fresh_settings, make_napari_viewer):
+    """
+    This fixture depends on fresh_settings and make_napari_viewer
+    to enforce proper order of fixture execution.
+    """
+    from napari import settings
+
+    settings.get_settings().experimental.async_ = True
+
+
 @pytest.mark.usefixtures("enable_async")
 def test_async_slice_image_on_current_step_change(
     make_napari_viewer, qtbot, rng

@@ -786,14 +786,3 @@ def pytest_configure(config):
         custom_reporter._session = standard_reporter._session
     config.pluginmanager.unregister(standard_reporter)
     config.pluginmanager.register(custom_reporter, 'terminalreporter')
-
-
-@pytest.fixture()
-def enable_async(fresh_settings, make_napari_viewer):
-    """
-    This fixture depends on fresh_settings and make_napari_viewer
-    to enforce proper order of fixture execution.
-    """
-    from napari import settings
-
-    settings.get_settings().experimental.async_ = True
