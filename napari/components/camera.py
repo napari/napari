@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -38,7 +38,11 @@ class Camera(EventedModel):
     """
 
     # fields
-    center: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    center: Union[Tuple[float, float, float], Tuple[float, float]] = (
+        0.0,
+        0.0,
+        0.0,
+    )
     zoom: float = 1.0
     angles: Tuple[float, float, float] = (0.0, 0.0, 90.0)
     perspective: float = 0

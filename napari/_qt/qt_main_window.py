@@ -501,6 +501,32 @@ class _QtMainWindow(QMainWindow):
 
         super().changeEvent(event)
 
+    def keyPressEvent(self, event):
+        """Called whenever a key is pressed.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        self._qt_viewer.canvas._scene_canvas._backend._keyEvent(
+            self._qt_viewer.canvas._scene_canvas.events.key_press, event
+        )
+        event.accept()
+
+    def keyReleaseEvent(self, event):
+        """Called whenever a key is released.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        self._qt_viewer.canvas._scene_canvas._backend._keyEvent(
+            self._qt_viewer.canvas._scene_canvas.events.key_release, event
+        )
+        event.accept()
+
     def resizeEvent(self, event):
         """Override to handle original size before maximizing."""
         # the first resize event will have nonsense positions that we don't
@@ -1116,7 +1142,7 @@ class Window:
         # see #3663, to fix #3624 more generally
         dock_widget.setFloating(False)
 
-    def _remove_dock_widget(self, event=None):
+    def _remove_dock_widget(self, event):
         names = list(self._dock_widgets.keys())
         for widget_name in names:
             if event.value in widget_name:

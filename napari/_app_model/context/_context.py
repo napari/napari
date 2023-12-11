@@ -79,7 +79,7 @@ def create_context(
     max_depth: int = 20,
     start: int = 2,
     root: Optional[Context] = None,
-) -> Optional[Context]:
+) -> Context:
     return _create_context(
         obj=obj,
         max_depth=max_depth,
