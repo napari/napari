@@ -142,7 +142,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     vertex_values : (K0, ..., KL, N) array
         Values used to color vertices.
     features : DataFrame-like
-        Features table where each row corresponds to a point and each column
+        Features table where each row corresponds to a vertex and each column
         is a feature.
     feature_defaults : DataFrame-like
         Stores the default value of each feature in a table with one row.
