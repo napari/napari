@@ -1,7 +1,7 @@
 from collections import defaultdict
+from functools import cached_property
 from typing import Optional, cast
 
-import numba
 import numpy as np
 
 from napari._pydantic_compat import Field, PrivateAttr, validator
@@ -153,7 +153,7 @@ class LabelColormap(Colormap):
     ----------
     seed : float
     use_selection : bool
-    selection : float
+    selection : int
     """
 
     seed: float = 0.5
@@ -162,13 +162,102 @@ class LabelColormap(Colormap):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     background_value: int = 0
 
-    def map(self, values) -> np.ndarray:
+    class Config:
+        # this config is to avoid deepcopy of cached_property
+        # see https://github.com/pydantic/pydantic/issues/2763
+        # it is required until drop pydantic 1 or pythin 3.11 and older
+        # need to validate after drop pydantic 1
+        keep_untouched = (cached_property,)
+
+    @cached_property
+    def _uint8_colors(self) -> np.ndarray:
+        data = np.arange(256, dtype=np.uint8)
+        return self.map(data, apply_selection=False)
+
+    @cached_property
+    def _uint16_colors(self) -> np.ndarray:
+        data = np.arange(65536, dtype=np.uint16)
+        return self.map(data, apply_selection=False)
+
+    def selection_as_type(self, dtype: np.dtype) -> int:
+        """Convert the selection value to a specified data type.
+
+        This maps negative background values in int8 and int16 to their
+        corresponding view in uint8 and uint16.
+
+        Parameters
+        ----------
+        dtype : np.dtype
+            The desired data type to convert the selection value to.
+
+        Returns
+        -------
+        int
+            The selection value converted to the specified data type.
+        """
+        return np.array([self.selection]).astype(dtype)[0]
+
+    def background_as_type(self, dtype: np.dtype) -> int:
+        """Convert the background value to a specified data type.
+
+        This maps negative background values in int8 and int16 to their
+        corresponding view in uint8 and uint16.
+
+        Parameters
+        ----------
+        dtype : np.dtype
+            The desired data type to convert the background value to.
+
+        Returns
+        -------
+        int
+            The background value converted to the specified data type.
+        """
+        return np.array([self.background_value]).astype(dtype)[0]
+
+    def selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
+        """Treat selection as given dtype and calculate value with min dtype.
+
+        Parameters
+        ----------
+        dtype : np.dtype
+            The dtype to convert the selection to.
+
+        Returns
+        -------
+        int
+            The selection converted.
+        """
+        return _cast_labels_data_to_texture_dtype(
+            np.array([self.selection]).astype(dtype), self
+        )[0]
+
+    def background_as_minimum_dtype(self, dtype: np.dtype) -> int:
+        """Treat background as given dtype and calculate value with min dtype.
+
+        Parameters
+        ----------
+        dtype : np.dtype
+            The dtype to convert the background to.
+
+        Returns
+        -------
+        int
+            The background converted.
+        """
+        return _cast_labels_data_to_texture_dtype(
+            np.array([self.background_value]).astype(dtype), self
+        )[0]
+
+    def map(self, values, apply_selection=True) -> np.ndarray:
         """Map values to colors.
 
         Parameters
         ----------
         values : np.ndarray or float
             Values to be mapped.
+        apply_selection : bool
+            Whether to apply selection if self.use_selection is True.
 
         Returns
         -------
@@ -177,43 +266,31 @@ class LabelColormap(Colormap):
         """
         values = np.atleast_1d(values)
 
-        precast = _cast_labels_to_minimum_dtype_auto(
-            values, len(self.colors) - 1, self.background_value
-        )
+        if values.dtype.kind == 'f':
+            values = values.astype(np.int64)
 
-        return self._map_precast(precast)
-
-    def _map_precast(self, values) -> np.ndarray:
-        """Map *precast* values to colors.
-
-        When mapping values, we first convert them to a smaller dtype for
-        performance reasons. This conversion changes the label values,
-        even for small labels. This method is used to map values that have
-        already been converted to the smaller dtype.
-
-        Parameters
-        ----------
-        values : np.ndarray
-            Values to be mapped. They must have already been downcast using
-            `_cast_labels_to_minimum_dtype_auto`.
-
-        Returns
-        -------
-        np.ndarray of shape (N, M, 4)
-            Mapped colors.
-        """
-        mapped = self.colors[values.astype(np.int64)]
-
-        mapped[values == self.background_value] = 0
-
-        # If using selected, disable all others
-        if self.use_selection:
-            cast_selection = _cast_labels_to_minimum_dtype_auto(
-                np.array([self.selection]),
-                len(self.colors) - 1,
-                self.background_value,
-            )[0]
-            mapped[values != cast_selection] = 0
+        if values.dtype == np.uint8 and "_uint8_colors" in self.__dict__:
+            # __dict__ checks whether _uint8_colors is cached — if not, it
+            # falls back on else to map all the colors, avoiding an infinite
+            # recursion.
+            mapped = self._uint8_colors[values]
+        elif values.dtype == np.uint16 and "_uint16_colors" in self.__dict__:
+            # same as above uint8 clause.
+            mapped = self._uint16_colors[values]
+        else:
+            background = self.background_as_type(values.dtype)
+            # cast background to values dtype to support int8 and int16
+            # negative backgrounds
+            texture_dtype_values = _zero_preserving_modulo_numpy(
+                values, len(self.colors) - 1, values.dtype, background
+            )
+            mapped = self.colors[texture_dtype_values]
+            mapped[texture_dtype_values == 0] = 0
+        if self.use_selection and apply_selection:
+            selection = self.selection_as_type(values.dtype)
+            # cast selection to values dtype to support int8 and int16
+            # negative backgrounds
+            mapped[(values != selection)] = 0
 
         return mapped
 
@@ -234,11 +311,11 @@ class DirectLabelColormap(Colormap):
 
     Attributes
     ----------
-    color_dict: defaultdict
+    color_dict : defaultdict
         The dictionary mapping labels to colors.
-    use_selection: bool
+    use_selection : bool
         Whether to color using the selected label.
-    selection: float
+    selection : float
         The selected label.
     """
 
@@ -275,35 +352,87 @@ class DirectLabelColormap(Colormap):
         # if someone is using DirectLabelColormap directly, not through Label layer
 
 
-def _cast_labels_to_minimum_dtype_auto(
-    data: np.ndarray, num_colors: int, background_value: int
-) -> np.ndarray:
-    """Perform modulo operation based on number of colors
+def _convert_small_ints_to_unsigned(data: np.ndarray) -> np.ndarray:
+    """Convert (u)int8 to uint8 and (u)int16 to uint16.
+
+    Otherwise, return the original array.
 
     Parameters
     ----------
     data : np.ndarray
-        Labels data to be casted.
-    num_colors : int
-        Number of unique colors in the data.
-    background_value : int
-        The value in ``values`` to be treated as the background.
+        Data to be converted.
 
     Returns
     -------
     np.ndarray
-        Casted labels data.
+        Converted data.
     """
+    if data.dtype.itemsize == 1:
+        # for fast rendering of int8
+        return data.view(np.uint8)
+    if data.dtype.itemsize == 2:
+        # for fast rendering of int16
+        return data.view(np.uint16)
+    return data
+
+
+def _cast_labels_data_to_texture_dtype(
+    data: np.ndarray,
+    colormap: LabelColormap,
+) -> np.ndarray:
+    """Convert labels data to the data type used in the texture.
+
+    In https://github.com/napari/napari/issues/6397, we noticed that using
+    float32 textures was much slower than uint8 or uint16 textures. Here we
+    convert the labels data to uint8 or uint16, based on the following rules:
+
+    - uint8 and uint16 labels data are unchanged. (No copy of the arrays.)
+    - int8 and int16 data are converted with a *view* to uint8 and uint16.
+      (This again does not involve a copy so is fast, and lossless.)
+    - higher precision integer data (u)int{32,64} are hashed to uint8, uint16,
+      or float32, depending on the number of colors in the input colormap. (See
+      `minimum_dtype_for_labels`.) Since the hashing can result in collisions,
+      this conversion *has* to happen in the CPU to correctly map the
+      background and selection values.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Labels data to be converted.
+    colormap : LabelColormap
+        Colormap used to display the labels data.
+
+    Returns
+    -------
+    np.ndarray
+        Converted labels data.
+    """
+    if data.itemsize <= 2:
+        return _convert_small_ints_to_unsigned(data)
+
+    num_colors = len(colormap.colors) - 1
+
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
-    return _modulo_plus_one(data, num_colors, dtype, background_value)
+    if colormap.use_selection:
+        selection_in_texture = _zero_preserving_modulo(
+            np.array([colormap.selection]), num_colors, dtype
+        )
+        converted = np.where(
+            data == colormap.selection, selection_in_texture, dtype.type(0)
+        )
+    else:
+        converted = _zero_preserving_modulo(
+            data, num_colors, dtype, colormap.background_value
+        )
+
+    return converted
 
 
-@numba.njit(parallel=True)
-def _modulo_plus_one(
+def _zero_preserving_modulo_numpy(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
-    """Like ``values % n + 1``, but with one specific value mapped to 0.
+    """``(values - 1) % n + 1``, but with one specific value mapped to 0.
 
     This ensures (1) an output value in [0, n] (inclusive), and (2) that
     no nonzero values in the input are zero in the output, other than the
@@ -326,15 +455,53 @@ def _modulo_plus_one(
         The result: 0 for the ``to_zero`` value, ``values % n + 1``
         everywhere else.
     """
-    result = np.empty_like(values, dtype=dtype)
+    res = ((values - 1) % n + 1).astype(dtype)
+    res[values == to_zero] = 0
+    return res
 
-    for i in numba.prange(values.size):
-        if values.flat[i] == to_zero:
-            result.flat[i] = 0
-        else:
-            result.flat[i] = values.flat[i] % n + 1
 
-    return result
+try:
+    import numba
+except ModuleNotFoundError:
+    _zero_preserving_modulo = _zero_preserving_modulo_numpy
+else:
+
+    @numba.njit(parallel=True)
+    def _zero_preserving_modulo(
+        values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
+    ) -> np.ndarray:
+        """``(values - 1) % n + 1``, but with one specific value mapped to 0.
+
+        This ensures (1) an output value in [0, n] (inclusive), and (2) that
+        no nonzero values in the input are zero in the output, other than the
+        ``to_zero`` value.
+
+        Parameters
+        ----------
+        values : np.ndarray
+            The dividend of the modulo operator.
+        n : int
+            The divisor.
+        dtype : np.dtype
+            The desired dtype for the output array.
+        to_zero : int, optional
+            A specific value to map to 0. (By default, 0 itself.)
+
+        Returns
+        -------
+        np.ndarray
+            The result: 0 for the ``to_zero`` value, ``values % n + 1``
+            everywhere else.
+        """
+        result = np.empty_like(values, dtype=dtype)
+
+        for i in numba.prange(values.size):
+            if values.flat[i] == to_zero:
+                result.flat[i] = 0
+            else:
+                result.flat[i] = (values.flat[i] - 1) % n + 1
+
+        return result
 
 
 def minimum_dtype_for_labels(num_colors: int) -> np.dtype:
