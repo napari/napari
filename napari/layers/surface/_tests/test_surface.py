@@ -39,6 +39,38 @@ def test_random_surface_features():
     assert 'feature' in layer.features.columns
 
 
+def test_set_features_and_defaults():
+    """Test setting features and defaults."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+
+    data = (vertices, faces, values)
+    layer = Surface(data)
+
+    assert layer.features.shape[1] == layer.feature_defaults.shape[1] == 0
+
+    features = pd.DataFrame(
+        {
+            'str': ('a', 'b') * 5,
+            'float': np.random.random(10),
+        }
+    )
+    feature_defaults = pd.DataFrame(
+        {
+            'str': ('b',),
+            'float': (0.5,),
+        }
+    )
+
+    layer.features = features
+    layer.feature_defaults = feature_defaults
+
+    pd.testing.assert_frame_equal(layer.features, features)
+    pd.testing.assert_frame_equal(layer.feature_defaults, feature_defaults)
+
+
 def test_random_surface_no_values():
     """Test instantiating Surface layer with random 2D data but no vertex values."""
     np.random.seed(0)

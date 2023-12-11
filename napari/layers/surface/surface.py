@@ -462,7 +462,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._feature_table.set_values(features, num_data=len(self.data))
+        self._feature_table.set_values(features, num_data=len(self.data[0]))
         self.events.features()
 
     @property
