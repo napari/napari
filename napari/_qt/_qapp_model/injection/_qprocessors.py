@@ -15,6 +15,7 @@ from qtpy.QtWidgets import QWidget
 
 from napari import viewer
 from napari._app_model.injection._providers import _provide_viewer
+from napari.utils.translations import trans
 
 
 def _add_plugin_dock_widget(
@@ -26,6 +27,13 @@ def _add_plugin_dock_widget(
     if viewer:
         widget, display_name = widget_name_tuple
         viewer.window.add_dock_widget(widget, name=display_name)
+    else:
+        raise RuntimeError(
+            trans._(
+                "No current `Viewer` found. Widgets cannot be opened in headless mode.",
+                deferred=True,
+            )
+        )
 
 
 QPROCESSORS: Dict[object, Callable] = {

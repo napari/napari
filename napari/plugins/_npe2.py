@@ -530,7 +530,7 @@ def _safe_register_widget_actions(mf: PluginManifest) -> None:
     """`_register_widget_actions` if Qt available."""
     try:
         from napari._qt._qplugins import _register_widget_actions
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         pass
     else:
         _register_widget_actions(mf)

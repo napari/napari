@@ -111,7 +111,14 @@ def _toggle_or_get_widget(
         if widget_param:
             kwargs[widget_param] = napari_viewer
         return widget_callable(**kwargs), name
-    return None
+    raise RuntimeError(
+        trans._(
+            "{widget} from {plugin} was not found. Check widget implemented correctly by plugin.",
+            deferred=True,
+            widget=widget_name,
+            plugin=mf.name,
+        )
+    )
 
 
 def _get_widgets_submenu_actions(

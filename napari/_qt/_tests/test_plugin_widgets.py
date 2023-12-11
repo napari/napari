@@ -36,13 +36,13 @@ class Container_example(Container):
 
 @magic_factory
 def magic_widget_example():
-    pass
+    """Example magic factory widget."""
 
 
 def callable_example():
     @magicgui
     def magic_widget_example():
-        pass
+        """Example magic factory widget."""
 
     return magic_widget_example
 

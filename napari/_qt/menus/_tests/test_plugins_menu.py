@@ -81,11 +81,11 @@ def test_plugin_menu_plugin_state_change(
 
     @tmp_plugin.contribute.widget(display_name='Widget 1')
     def widget1():
-        return DummyWidget()
+        """Dummy widget."""
 
     @tmp_plugin.contribute.widget(display_name='Widget 2')
     def widget2():
-        return DummyWidget()
+        """Dummy widget."""
 
     # Configures `app`, registers actions and initializes plugins
     make_napari_viewer()
