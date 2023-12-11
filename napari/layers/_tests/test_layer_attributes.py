@@ -1,11 +1,11 @@
 from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
-from napari import settings
 
 from napari._tests.utils import layer_test_data
 from napari.components.dims import Dims
-from napari.layers import Image, Labels, Points
+from napari.layers import Image, Labels
 
 
 @pytest.mark.parametrize(
@@ -141,6 +141,7 @@ def test_zero_scale_layer():
     with pytest.raises(ValueError, match='scale values of 0'):
         Image(np.zeros((64, 64)), scale=(0, 1))
 
+
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
 def test_sync_refresh_block(Layer, data, ndim):
     my_layer = Layer(data)
@@ -161,13 +162,15 @@ def test_async_refresh_block(Layer, data, ndim):
 
     class MyCounter:
         count = 0
+
     def counter_increment(ev):
         MyCounter.count += 1
+
     my_layer.events.reload.connect(counter_increment)
 
     with my_layer._block_refresh():
         my_layer.refresh()
-    assert MyCounter.count == 0    
+    assert MyCounter.count == 0
 
     my_layer.refresh()
     assert MyCounter.count == 1

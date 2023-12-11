@@ -787,6 +787,7 @@ def pytest_configure(config):
     config.pluginmanager.unregister(standard_reporter)
     config.pluginmanager.register(custom_reporter, 'terminalreporter')
 
+
 @pytest.fixture()
 def enable_async(fresh_settings, make_napari_viewer):
     """
