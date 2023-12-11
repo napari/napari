@@ -1404,6 +1404,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @contextmanager
     def _block_refresh(self):
+        """Prevent refresh calls from updating view."""
         previous = self._refresh_blocked
         self._refresh_blocked = True
         try:
