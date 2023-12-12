@@ -3,6 +3,7 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import os
+from copy import copy
 
 import numpy as np
 
@@ -66,7 +67,7 @@ class Labels2DSuite:
 
     def mem_layer(self, *_):
         """Memory used by layer."""
-        return self.layer
+        return copy(self.layer)
 
     def mem_data(self, *_):
         """Memory used by raw data."""
@@ -196,7 +197,7 @@ class Labels3DSuite:
 
     def mem_layer(self, *_):
         """Memory used by layer."""
-        return self.layer
+        return copy(self.layer)
 
     def mem_data(self, *_):
         """Memory used by raw data."""
