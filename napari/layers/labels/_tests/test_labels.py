@@ -1,3 +1,4 @@
+import copy
 import itertools
 import time
 import warnings
@@ -1574,6 +1575,14 @@ def test_invalidate_cache_when_change_slice():
     assert layer._cached_labels is not None
     layer._set_view_slice()
     assert layer._cached_labels is None
+
+
+def test_copy():
+    l1 = Labels(np.zeros((2, 4, 5), dtype=np.uint8))
+    l2 = copy.copy(l1)
+    l3 = Labels.create(*l1.as_layer_data_tuple())
+    assert l1.data is not l2.data
+    assert l1.data is l3.data
 
 
 class TestLabels:
