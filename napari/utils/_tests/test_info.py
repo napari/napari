@@ -1,5 +1,6 @@
 import subprocess
 from typing import NamedTuple
+from unittest.mock import patch
 
 from napari.utils import info
 
@@ -62,3 +63,16 @@ def test_linux_os_name_lsb(monkeypatch, tmp_path):
     assert info._linux_sys_name() == "Ubuntu Test 20.04"
     monkeypatch.setattr(subprocess, "run", _lsb_mock2)
     assert info._linux_sys_name() == "Ubuntu Test 20.05"
+
+
+@patch("subprocess.run")
+def test_sys_name_darwin(run_mock, monkeypatch):
+    monkeypatch.setattr("sys.platform", "darwin")
+    run_mock.return_value = _CompletedProcessMock(stdout=b"13.6.1")
+    assert info._sys_name() == "MacOS 13.6.1"
+    assert run_mock.call_args[0][0] == ["sw_vers", "-productVersion"]
+
+
+def test_sys_name_windows(monkeypatch):
+    monkeypatch.setattr("sys.platform", "windows")
+    assert info._sys_name() == ""

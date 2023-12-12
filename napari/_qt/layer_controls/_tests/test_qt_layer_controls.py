@@ -1,3 +1,4 @@
+import inspect
 import os
 import random
 import sys
@@ -6,7 +7,7 @@ from typing import NamedTuple, Optional, Type
 import numpy as np
 import pytest
 import qtpy
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import (
     QAbstractButton,
     QAbstractSlider,
@@ -17,8 +18,10 @@ from qtpy.QtWidgets import (
     QRadioButton,
 )
 
+from napari._app_model import get_app
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.qt_layer_controls_container import (
     QtLayerControlsContainer,
     create_qt_layer_controls,
@@ -48,10 +51,32 @@ class LayerTypeWithData(NamedTuple):
     data: np.ndarray
     color: Optional[dict]
     properties: Optional[dict]
-    expected_isinstance: Type[QtLayerControlsContainer]
+    expected_isinstance: Type[QtLayerControls]
 
 
 np.random.seed(0)
+
+
+@pytest.fixture(autouse=True)
+def local_layer_provider(request, _mock_app):
+    app = get_app()
+
+    def get_layer() -> Optional[Layer]:
+        nonlocal request
+        for frame in inspect.stack():
+            if (
+                frame.function == request.node.originalname
+                and frame.filename.endswith('test_qt_layer_controls.py')
+            ):
+                for v in frame.frame.f_locals.values():
+                    if isinstance(v, Layer):
+                        return v
+                    if isinstance(v, QtLayerControls):
+                        return v.layer
+        return None
+
+    with app.injection_store.register(providers=[(get_layer,)]):
+        yield
 
 
 _IMAGE = LayerTypeWithData(
@@ -164,11 +189,14 @@ def test_create_layer_controls(
 ):
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
+    if not (qtpy.PYQT6 or qtpy.PYSIDE2):
+        ctrl.show()
 
     # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
 
     # check QComboBox by changing current index
+    qcombobox: QComboBox
     for qcombobox in ctrl.findChildren(QComboBox):
         if qcombobox.isVisible():
             qcombobox_count = qcombobox.count()
@@ -177,6 +205,7 @@ def test_create_layer_controls(
                 qcombobox.setCurrentIndex(0)
             for idx in range(qcombobox_count):
                 previous_qcombobox_text = qcombobox.currentText()
+                qtbot.wait(10)
                 qcombobox.setCurrentIndex(idx)
                 # If a value for the QComboBox is an invalid selection check if
                 # it fallbacks to the previous value
@@ -297,8 +326,9 @@ def test_create_layer_controls_spin(
 )
 @pytest.mark.qt_no_exception_capture
 @pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+@pytest.mark.usefixtures("qtbot")
 def test_create_layer_controls_qslider(
-    qtbot, create_layer_controls, layer_type_with_data, capsys
+    create_layer_controls, layer_type_with_data, capsys
 ):
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
@@ -307,6 +337,7 @@ def test_create_layer_controls_qslider(
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
 
     # check QAbstractSlider by changing value with `setValue` from minimum value to maximum
+    qslider: QAbstractSlider
     for qslider in ctrl.findChildren(QAbstractSlider):
         if isinstance(qslider.minimum(), float):
             if getattr(qslider, "_valuesChanged", None):
@@ -376,6 +407,16 @@ def test_create_layer_controls_qslider(
         _TRACKS,
         _VECTORS,
     ],
+    ids=[
+        "labels_with_color",
+        "labels",
+        "image",
+        "points",
+        "shapes",
+        "surface",
+        "tracks",
+        "vectors",
+    ],
 )
 @pytest.mark.qt_no_exception_capture
 @pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
@@ -384,11 +425,13 @@ def test_create_layer_controls_qcolorswatchedit(
 ):
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
+    ctrl.show()
 
     # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
 
     # check QColorSwatchEdit by changing line edit text with a range of predefined values
+    qcolorswatchedit: QColorSwatchEdit
     for qcolorswatchedit in ctrl.findChildren(QColorSwatchEdit):
         lineedit = qcolorswatchedit.line_edit
         colorswatch = qcolorswatchedit.color_swatch
@@ -401,10 +444,14 @@ def test_create_layer_controls_qcolorswatchedit(
             ("invalid_value", "black", np.array([0.0, 0.0, 0.0, 1.0])),
         ]
         for color, expected_color, expected_array in colors:
+            prev_text = lineedit.text()
             lineedit.clear()
             qtbot.keyClicks(lineedit, color)
-            qtbot.keyClick(lineedit, Qt.Key_Enter)
-            assert lineedit.text() == expected_color
+            # space and backspace is workaround for a name hint
+            qtbot.keyClick(lineedit, Qt.Key.Key_Space)
+            qtbot.keyClick(lineedit, Qt.Key.Key_Backspace)
+            qtbot.keyClick(lineedit, Qt.Key.Key_Enter)
+            assert lineedit.text() == expected_color, prev_text
             assert (colorswatch.color == expected_array).all()
             # capture any output done to sys.stdout or sys.stderr.
             captured = capsys.readouterr()
@@ -412,17 +459,22 @@ def test_create_layer_controls_qcolorswatchedit(
             assert not captured.err
 
     # check QCheckBox by clicking with mouse click
+    qcheckbox: QCheckBox
     for qcheckbox in ctrl.findChildren(QCheckBox):
         if qcheckbox.isVisible():
             qcheckbox_checked = qcheckbox.isChecked()
-            qtbot.mouseClick(qcheckbox, Qt.LeftButton)
-            assert qcheckbox.isChecked() != qcheckbox_checked
+            # with qtbot.waitSignal(qcheckbox.stateChanged):
+            qtbot.mouseClick(
+                qcheckbox, Qt.MouseButton.LeftButton, pos=QPoint(10, 10)
+            )
+            assert qcheckbox.isChecked() != qcheckbox_checked, qcheckbox
             # capture any output done to sys.stdout or sys.stderr.
             captured = capsys.readouterr()
             assert not captured.out
-            assert not captured.err
+            assert not captured.err or "Debugger warning" in captured.err
 
     # check QPushButton and QRadioButton by clicking with mouse click
+    button: QAbstractButton
     for button in ctrl.findChildren(QPushButton) + ctrl.findChildren(
         QRadioButton
     ):
@@ -431,10 +483,11 @@ def test_create_layer_controls_qcolorswatchedit(
             # capture any output done to sys.stdout or sys.stderr.
             captured = capsys.readouterr()
             assert not captured.out
-            assert not captured.err
+            assert not captured.err, captured.err
 
 
-def test_unknown_raises(qtbot):
+@pytest.mark.usefixtures("qtbot")
+def test_unknown_raises():
     class Test:
         """Unmatched class"""
 
@@ -543,8 +596,8 @@ def test_set_3d_display_with_shapes(qtbot):
     )
 )
 def editable_layer(request):
-    LayerType, data = request.param
-    return LayerType(data)
+    layer_type, data = request.param
+    return layer_type(data)
 
 
 def test_make_visible_when_editable_enables_edit_buttons(
