@@ -24,7 +24,9 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from numba import typed
 
-DEFAULT_VALUE = 0
+MAPPING_OF_UNKNOWN_VALUE = 0
+# For direct mode we map all unknown values to single value
+# for simplicity of implementation we select 0
 
 
 class ColormapInterpolationMode(StrEnum):
@@ -448,9 +450,11 @@ class DirectLabelColormap(LabelColormapBase):
         self,
     ) -> Tuple[Dict[Optional[int], int], Dict[int, np.ndarray]]:
         color_to_labels: Dict[Tuple[int, ...], List[Optional[int]]] = {}
-        labels_to_new_labels: Dict[Optional[int], int] = {None: 0}
+        labels_to_new_labels: Dict[Optional[int], int] = {
+            None: MAPPING_OF_UNKNOWN_VALUE
+        }
         new_color_dict: Dict[int, np.ndarray] = {
-            DEFAULT_VALUE: self.default_color,
+            MAPPING_OF_UNKNOWN_VALUE: self.default_color,
         }
 
         for label, color in self.color_dict.items():
@@ -512,7 +516,9 @@ class DirectLabelColormap(LabelColormapBase):
         dtype = minimum_dtype_for_labels(self._num_unique_colors + 2)
         label_mapping = self._values_mapping_to_minimum_values_set()[0]
 
-        mapper = np.full((max_value + 2), DEFAULT_VALUE, dtype=dtype)
+        mapper = np.full(
+            (max_value + 2), MAPPING_OF_UNKNOWN_VALUE, dtype=dtype
+        )
         for key, val in label_mapping.items():
             if key is None:
                 continue

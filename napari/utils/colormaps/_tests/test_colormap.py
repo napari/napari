@@ -9,7 +9,7 @@ import pytest
 from napari.utils.color import ColorArray
 from napari.utils.colormaps import Colormap, colormap
 from napari.utils.colormaps.colormap import (
-    DEFAULT_VALUE,
+    MAPPING_OF_UNKNOWN_VALUE,
     DirectLabelColormap,
 )
 from napari.utils.colormaps.colormap_utils import label_colormap
@@ -183,7 +183,7 @@ def test_direct_label_colormap_simple(direct_label_colormap):
 
     assert len(label_mapping) == 6
     assert len(color_dict) == 5
-    assert label_mapping[None] == DEFAULT_VALUE
+    assert label_mapping[None] == MAPPING_OF_UNKNOWN_VALUE
     assert label_mapping[12] == label_mapping[3]
     np.testing.assert_array_equal(
         color_dict[label_mapping[0]], direct_label_colormap.color_dict[0]
@@ -227,17 +227,17 @@ def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
                 label_mapping[1],
                 label_mapping[2],
                 label_mapping[3],
-                DEFAULT_VALUE,
-                DEFAULT_VALUE,
-                DEFAULT_VALUE,
-                DEFAULT_VALUE,
-                DEFAULT_VALUE,
-                DEFAULT_VALUE,
-                DEFAULT_VALUE,
-                DEFAULT_VALUE,
+                MAPPING_OF_UNKNOWN_VALUE,
+                MAPPING_OF_UNKNOWN_VALUE,
+                MAPPING_OF_UNKNOWN_VALUE,
+                MAPPING_OF_UNKNOWN_VALUE,
+                MAPPING_OF_UNKNOWN_VALUE,
+                MAPPING_OF_UNKNOWN_VALUE,
+                MAPPING_OF_UNKNOWN_VALUE,
+                MAPPING_OF_UNKNOWN_VALUE,
                 label_mapping[3],
-                DEFAULT_VALUE,
-                DEFAULT_VALUE,
+                MAPPING_OF_UNKNOWN_VALUE,
+                MAPPING_OF_UNKNOWN_VALUE,
             ]
         ),
     )
