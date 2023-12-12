@@ -1028,6 +1028,16 @@ class QtViewer(QSplitter):
             'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
         )
 
+    def _image_from_clipboard(self):
+        """Insert image from clipboard as a new layer if clipboard contains image."""
+        cb = QGuiApplication.clipboard()
+        if cb.mimeData().hasImage():
+            image = cb.image()
+            if image.isNull():
+                return
+            arr = QImg2array(image)
+            self.viewer.add_image(arr)
+
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop.
 

@@ -91,6 +91,12 @@ Q_FILE_ACTIONS: List[Action] = [
         ],
     ),
     Action(
+        id=CommandId.IMAGE_FROM_CLIPBOARD,
+        title=CommandId.IMAGE_FROM_CLIPBOARD.command_title,
+        callback=QtViewer._image_from_clipboard,
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
+    ),
+    Action(
         id=CommandId.DLG_SHOW_PREFERENCES,
         title=CommandId.DLG_SHOW_PREFERENCES.command_title,
         callback=Window._open_preferences_dialog,
