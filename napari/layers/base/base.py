@@ -2066,6 +2066,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         -------
         layer : napari.layers.Layer
             Copy of this layer.
+
+        Notes
+        -----
+        This method is defined for purpose of asv memory benchmarks.
+        The copy of data is intentional for properly estimating memory
+        usage for layer.
+
+        If you want a to copy a layer without coping the data please use
+        `layer.create(*layer.as_layer_data_tuple())`
+
+        If you change this method, validate if memory benchmarks are still
+        working properly.
         """
         data, meta, layer_type = self.as_layer_data_tuple()
         return self.create(copy.copy(data), meta=meta, layer_type=layer_type)
