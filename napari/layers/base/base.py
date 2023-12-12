@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import itertools
 import logging
 import os.path
@@ -2067,7 +2068,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Copy of this layer.
         """
         data, meta, layer_type = self.as_layer_data_tuple()
-        return self.create(np.copy(data), meta=meta, layer_type=layer_type)
+        return self.create(copy.copy(data), meta=meta, layer_type=layer_type)
 
     @classmethod
     def create(
