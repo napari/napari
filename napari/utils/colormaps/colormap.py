@@ -474,22 +474,34 @@ class DirectLabelColormap(LabelColormapBase):
         return labels_to_new_labels, new_color_dict
 
     def _get_typed_dict_mapping(self, data_dtype: np.dtype) -> 'typed.Dict':
-        """
-        Create mapping from original values to minimum values set.
-        To use minimum possible dtype for labels.
+        """Create mapping from label values to texture values of smaller dtype.
+
+        In https://github.com/napari/napari/issues/6397, we noticed that using
+        float32 textures was much slower than uint8 or uint16 textures. When
+        labels data is (u)int(8,16), we simply use the labels data directly.
+        But when it is higher-precision, we need to compress the labels into
+        the smallest dtype that can still achieve the goal of the
+        visualisation. This corresponds to the smallest dtype that can map to
+        the number of unique colors in the colormap. Even if we have a
+        million labels, if they map to one of two colors, we can map them to
+        a uint8 array with values 1 and 2; then, the texture can map those
+        two values to each of the two possible colors.
 
         Returns
         -------
         Dict[Optional[int], int]
-            Mapping from original values to minimum values set.
+            Mapping from original values to minimal texture value set.
         """
 
+        # we cache the result to avoid recomputing it on each slice;
+        # check first if it's already in the cache.
         key = f"_{data_dtype}_typed_dict"
         if key in self._cache_other:
             return self._cache_other[key]
 
         from numba import typed, types
 
+        # num_unique_colors + 2 because we need to map None and background
         target_type = minimum_dtype_for_labels(self._num_unique_colors + 2)
 
         dkt = typed.Dict.empty(
