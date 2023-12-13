@@ -656,7 +656,7 @@ def _zero_preserving_modulo_numpy(
     return res
 
 
-def _zero_preserving_modulo_impl(
+def _zero_preserving_modulo_loop(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
     """``(values - 1) % n + 1``, but with one specific value mapped to 0.
@@ -684,11 +684,11 @@ def _zero_preserving_modulo_impl(
     """
     result = np.empty_like(values, dtype=dtype)
     # need to preallocate numpy array for asv memory benchmarks
-    return _zero_preserving_modulo_jit(values, n, result, to_zero)
+    return _zero_preserving_modulo_inner_loop(values, n, to_zero, out=result)
 
 
-def _zero_preserving_modulo_jit(
-    values: np.ndarray, n: int, out: np.ndarray, to_zero: int = 0
+def _zero_preserving_modulo_inner_loop(
+    values: np.ndarray, n: int, to_zero: int, out: np.ndarray
 ) -> np.ndarray:
     """``(values - 1) % n + 1``, but with one specific value mapped to 0.
 
@@ -702,10 +702,10 @@ def _zero_preserving_modulo_jit(
         The dividend of the modulo operator.
     n : int
         The divisor.
+    to_zero : int
+        A specific value to map to 0. (Usually, 0 itself.)
     out : np.ndarray
-        preallocated output array
-    to_zero : int, optional
-        A specific value to map to 0. (By default, 0 itself.)
+        Preallocated output array
 
     Returns
     -------
@@ -785,7 +785,7 @@ def _labels_raw_to_texture_direct_numpy(
     return mapper[data]
 
 
-def _labels_raw_to_texture_direct_typed_dict(
+def _labels_raw_to_texture_direct_loop(
     data: np.ndarray, direct_colormap: DirectLabelColormap
 ) -> np.ndarray:
     """
@@ -811,12 +811,10 @@ def _labels_raw_to_texture_direct_typed_dict(
         direct_colormap._num_unique_colors + 2
     )
     result_array = np.zeros_like(data, dtype=target_dtype)
-    return _labels_raw_to_texture_direct_typed_dict_impl(
-        data, dkt, result_array
-    )
+    return _labels_raw_to_texture_direct_inner_loop(data, dkt, result_array)
 
 
-def _labels_raw_to_texture_direct_typed_dict_impl(
+def _labels_raw_to_texture_direct_inner_loop(
     data: np.ndarray, dkt: 'typed.Dict', out: np.ndarray
 ) -> np.ndarray:
     """
@@ -874,13 +872,13 @@ except ModuleNotFoundError:
     _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
     prange = range
 else:
-    _zero_preserving_modulo_jit = numba.njit(parallel=True)(
-        _zero_preserving_modulo_jit
+    _zero_preserving_modulo_inner_loop = numba.njit(parallel=True)(
+        _zero_preserving_modulo_inner_loop
     )
-    _zero_preserving_modulo = _zero_preserving_modulo_impl
-    _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_typed_dict
-    _labels_raw_to_texture_direct_typed_dict_impl = numba.njit(parallel=True)(
-        _labels_raw_to_texture_direct_typed_dict_impl
+    _zero_preserving_modulo = _zero_preserving_modulo_loop
+    _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_loop
+    _labels_raw_to_texture_direct_inner_loop = numba.njit(parallel=True)(
+        _labels_raw_to_texture_direct_inner_loop
     )
     prange = numba.prange  # type: ignore [misc]
 
