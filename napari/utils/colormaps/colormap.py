@@ -544,19 +544,21 @@ class DirectLabelColormap(LabelColormapBase):
         # if someone is using DirectLabelColormap directly, not through Label layer
 
 
-def _convert_small_ints_to_unsigned(data: np.ndarray) -> np.ndarray:
+def _convert_small_ints_to_unsigned(
+    data: np.ndarray | np.integer,
+) -> np.ndarray | np.integer:
     """Convert (u)int8 to uint8 and (u)int16 to uint16.
 
     Otherwise, return the original array.
 
     Parameters
     ----------
-    data : np.ndarray
+    data : np.ndarray | np.integer
         Data to be converted.
 
     Returns
     -------
-    np.ndarray
+    np.ndarray | np.integer
         Converted data.
     """
     if data.dtype.itemsize == 1:
@@ -569,9 +571,9 @@ def _convert_small_ints_to_unsigned(data: np.ndarray) -> np.ndarray:
 
 
 def _cast_labels_data_to_texture_dtype_auto(
-    data: np.ndarray,
+    data: np.ndarray | np.integer,
     colormap: LabelColormap,
-) -> np.ndarray:
+) -> np.ndarray | np.integer:
     """Convert labels data to the data type used in the texture.
 
     In https://github.com/napari/napari/issues/6397, we noticed that using
