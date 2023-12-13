@@ -285,9 +285,8 @@ class VispyLabelsLayer(VispyImageLayer):
                 color_map_size=val_texture.shape[0],
                 multi=val_texture.shape[1] > 1,
             )
-            # note that textures have to be transposed here!
             self.node.shared_program['texture2D_values'] = Texture2D(
-                val_texture,  # .swapaxes(0, 1),
+                val_texture,
                 internalformat='rgba32f',
                 interpolation='nearest',
             )
