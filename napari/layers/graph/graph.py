@@ -403,9 +403,7 @@ class Graph(_BasePoints):
         self.events.data(
             value=self.data,
             action=ActionType.ADDING,
-            data_indices=tuple(
-                self.selected_data,
-            ),
+            data_indices=(-1,),
             vertex_indices=((),),
         )
 
