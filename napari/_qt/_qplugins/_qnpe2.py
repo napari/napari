@@ -5,6 +5,7 @@ Non-Qt plugin functions can be found in: `napari/plugins/_npe2.py`
 from __future__ import annotations
 
 import inspect
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     List,
@@ -23,6 +24,7 @@ from qtpy.QtWidgets import QWidget
 
 from napari._app_model import get_app
 from napari._app_model.constants import MenuGroup, MenuId
+from napari._app_model.injection._providers import _provide_viewer
 from napari._qt._qapp_model.injection._qproviders import _provide_window
 from napari.plugins import menu_item_template
 from napari.plugins._npe2 import (
@@ -37,8 +39,6 @@ if TYPE_CHECKING:
     from npe2.manifest import PluginManifest
     from npe2.plugin_manager import PluginName
     from npe2.types import WidgetCreator
-
-    from napari._qt.qt_main_window import Window
 
 
 def _get_widget_viewer_param(
@@ -83,8 +83,7 @@ def _get_widget_viewer_param(
 
 
 def _toggle_or_get_widget(
-    napari_viewer: Viewer,
-    mf: PluginManifest,
+    plugin: str,
     widget_name: str,
     name: str,
 ) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
@@ -94,14 +93,23 @@ def _toggle_or_get_widget(
     Note for magicgui type widget contributions, `Viewer` injection is done by
     `magicgui.register_type` instead of a provider via annnotation.
     """
-    window = napari_viewer.window
-    if dock_widget := window._dock_widgets.get(name):
+    viewer = _provide_viewer()
+    if viewer is None:
+        raise RuntimeError(
+            trans._(
+                "No current `Viewer` found. Note that widgets cannot be opened in headless mode.",
+                deferred=True,
+            )
+        )
+
+    window = viewer.window
+    if window and (dock_widget := window._dock_widgets.get(name)):
         dock_widget.setVisible(not dock_widget.isVisible())
         return None
 
     # Get widget param name (if any) and check type
     if widget_contribution := get_widget_contribution(
-        mf.name,
+        plugin,
         widget_name,
     ):
         widget_callable, _ = widget_contribution
@@ -109,16 +117,30 @@ def _toggle_or_get_widget(
 
         kwargs = {}
         if widget_param:
-            kwargs[widget_param] = napari_viewer
+            kwargs[widget_param] = viewer
         return widget_callable(**kwargs), name
     raise RuntimeError(
         trans._(
             "{widget} from {plugin} was not found. Check widget implemented correctly by plugin.",
             deferred=True,
             widget=widget_name,
-            plugin=mf.name,
+            plugin=plugin,
         )
     )
+
+
+def _get_current_dock_status(name: str) -> bool:
+    window = _provide_window()
+    if window is None:
+        raise RuntimeError(
+            trans._(
+                "No current `Window` found. Note that widgets cannot be opened in headless mode.",
+                deferred=True,
+            )
+        )
+    if name in window._dock_widgets:
+        return window._dock_widgets[name].isVisible()
+    return False
 
 
 def _get_widgets_submenu_actions(
@@ -145,25 +167,16 @@ def _get_widgets_submenu_actions(
             widget.display_name,
         )
 
-        def _widget_callback(
-            napari_viewer: Viewer,
-            widget_name: str = widget.display_name,
-            name: str = full_name,
-        ) -> Optional[Tuple[Union[FunctionGui, QWidget, Widget], str]]:
-            return _toggle_or_get_widget(
-                napari_viewer=napari_viewer,
-                mf=mf,
-                widget_name=widget_name,
-                name=name,
-            )
-
-        def _get_current_dock_status(
-            window: Window,
-            name: str = full_name,
-        ) -> bool:
-            if name in window._dock_widgets:
-                return window._dock_widgets[name].isVisible()
-            return False
+        _widget_callback = partial(
+            _toggle_or_get_widget,
+            plugin=mf.name,
+            widget_name=widget.display_name,
+            name=full_name,
+        )
+        _get_current_dock_status_partial = partial(
+            _get_current_dock_status,
+            name=full_name,
+        )
 
         title = full_name
         if multiprovider:
@@ -182,7 +195,9 @@ def _get_widgets_submenu_actions(
                         'group': MenuGroup.PLUGIN_SINGLE_CONTRIBUTIONS,
                     }
                 ],
-                toggled=ToggleRule(get_current=_get_current_dock_status),
+                toggled=ToggleRule(
+                    get_current=_get_current_dock_status_partial
+                ),
             )
         )
     return submenu, widget_actions

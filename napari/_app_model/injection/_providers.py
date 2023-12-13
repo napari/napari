@@ -10,19 +10,15 @@ from typing import Optional
 
 from napari import components, layers, viewer
 from napari.utils._proxies import PublicOnlyProxy
-from napari.utils.translations import trans
 
 
-def _provide_viewer() -> Optional[viewer.Viewer]:
+def _provide_viewer(public_proxy: bool = True) -> Optional[viewer.Viewer]:
     """Provide `PublicOnlyProxy` (allows internal napari access) of current viewer."""
     if current_viewer := viewer.current_viewer():
-        return PublicOnlyProxy(current_viewer)
-    raise RuntimeError(
-        trans._(
-            "No current `Viewer` found. You can create one with `napari.Viewer()`.",
-            deferred=True,
-        )
-    )
+        if public_proxy:
+            return PublicOnlyProxy(current_viewer)
+        return current_viewer
+    return None
 
 
 def _provide_active_layer() -> Optional[layers.Layer]:
