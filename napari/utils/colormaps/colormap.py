@@ -164,6 +164,10 @@ class Colormap(EventedModel):
 
 
 class LabelColormapBase(Colormap):
+    use_selection: bool = False
+    selection: int = 0
+    background_value: int = 0
+    interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
     _cache_mapping: Dict[Tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
         default={}
     )
@@ -236,10 +240,6 @@ class LabelColormap(LabelColormapBase):
     """
 
     seed: float = 0.5
-    use_selection: bool = False
-    selection: int = 0
-    interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
-    background_value: int = 0
 
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         return int(
