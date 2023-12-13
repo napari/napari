@@ -4,6 +4,7 @@ from typing import Generic, Iterable, Optional, Sequence, TypeVar, overload
 import numpy as np
 import numpy.typing as npt
 import toolz as tz
+from psygnal import Signal
 
 from napari.utils.events import EventedList
 from napari.utils.transforms.transform_utils import (
@@ -34,6 +35,8 @@ class Transform:
     name : string
         A string name for the transform.
     """
+
+    changed = Signal()
 
     def __init__(self, func=tz.identity, inverse=None, name=None) -> None:
         self.func = func
@@ -113,6 +116,7 @@ class Transform:
         self._cache_dict.clear()
         cached_properties = ('_is_diagonal',)
         [self.__dict__.pop(p, None) for p in cached_properties]
+        self.changed.emit()
 
 
 _T = TypeVar('_T', bound=Transform)
@@ -133,6 +137,9 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         # For that to work every __init__() called using super() needs to
         # in turn call super().__init__(). So we call it explicitly here.
         Transform.__init__(self)
+        for tr in self:
+            if hasattr(tr, "changed"):
+                tr.changed.connect(self._clean_cache)
 
     def __call__(self, coords):
         return tz.pipe(coords, *self)
@@ -159,9 +166,14 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
 
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
+        if hasattr(value, "changed"):
+            value.changed.connect(self._clean_cache)
         self._clean_cache()
 
     def __delitem__(self, key):
+        val = self[key]
+        if hasattr(val, "changed"):
+            val.changed.disconnect(self._clean_cache)
         super().__delitem__(key)
         self._clean_cache()
 
@@ -494,6 +506,7 @@ class Affine(Transform):
                 self.linear_matrix, upper_triangular=self._upper_triangular
             )
             self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        self._clean_cache()
 
     @property
     def translate(self) -> npt.NDArray:
@@ -504,6 +517,7 @@ class Affine(Transform):
     def translate(self, translate):
         """Set the translation of the transform."""
         self._translate = translate_to_vector(translate, ndim=self.ndim)
+        self._clean_cache()
 
     @property
     def rotate(self) -> npt.NDArray:
@@ -770,6 +784,7 @@ class CompositeAffine(Affine):
         """Set the scale of the transform."""
         self._scale = scale_to_vector(scale, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
+        self._clean_cache()
 
     @property
     def rotate(self) -> npt.NDArray:
