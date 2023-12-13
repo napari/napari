@@ -163,17 +163,14 @@ def test_async_refresh_block(Layer, data, ndim):
 
     my_layer = Layer(data)
 
-    class MyCounter:
-        count = 0
+    mock = MagicMock()
 
-    def counter_increment(ev):
-        MyCounter.count += 1
-
-    my_layer.events.reload.connect(counter_increment)
+    my_layer.events.reload.connect(mock)
 
     with my_layer._block_refresh():
         my_layer.refresh()
-    assert MyCounter.count == 0
+        
+    mock.assert_not_called()
 
     my_layer.refresh()
-    assert MyCounter.count == 1
+	mock.assert_called_once()
