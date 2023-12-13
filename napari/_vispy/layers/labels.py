@@ -148,6 +148,11 @@ class DirectLabelVispyColormap(VispyColormap):
 def build_textures_from_dict(
     color_dict: Dict[int, ColorTuple], max_size: int
 ) -> np.ndarray:
+    """This code assumes that the keys in the color_dict are sequential from 0.
+
+    If any keys are larger than the size of the dictionary, they will
+    overwrite earlier keys in the best case, or it might just crash.
+    """
     if len(color_dict) > 2**23:
         raise ValueError(  # pragma: no cover
             "Cannot map more than 2**23 colors because of float32 precision. "

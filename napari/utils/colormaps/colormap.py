@@ -190,6 +190,10 @@ class LabelColormapBase(Colormap):
     def _get_mapping_from_cache(
         self, data_dtype: np.dtype
     ) -> Optional[np.ndarray]:
+        """For given dtype, return precomputed array mapping values to colors.
+
+        Returns None if the dtype itemsize is greater than 2.
+        """
         target_dtype = _texture_dtype(self._num_unique_colors, data_dtype)
         key = (data_dtype, target_dtype)
         if key not in self._cache_mapping and data_dtype.itemsize <= 2:
