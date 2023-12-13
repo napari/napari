@@ -244,8 +244,8 @@ class LabelColormap(LabelColormapBase):
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         return int(
             _cast_labels_data_to_texture_dtype_auto(
-                np.array([self.selection]).astype(dtype), self
-            )[0]
+                dtype.type(self.selection), self
+            )
         )
 
     def _background_as_minimum_dtype(self, dtype: np.dtype) -> int:
@@ -263,8 +263,8 @@ class LabelColormap(LabelColormapBase):
         """
         return int(
             _cast_labels_data_to_texture_dtype_auto(
-                np.array([self.background_value]).astype(dtype), self
-            )[0]
+                dtype.type(self.background_value), self
+            )
         )
 
     def _map_without_cache(self, values) -> np.ndarray:
@@ -344,8 +344,8 @@ class DirectLabelColormap(LabelColormapBase):
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         return int(
             _cast_labels_data_to_texture_dtype_direct(
-                np.array([self.selection]).astype(dtype), self
-            )[0]
+                dtype.type(self.selection), self
+            )
         )
 
     def map(self, values) -> np.ndarray:
@@ -598,12 +598,14 @@ def _cast_labels_data_to_texture_dtype_auto(
 
     Returns
     -------
-    np.ndarray
+    np.ndarray | np.integer
         Converted labels data.
     """
+    original_shape = np.shape(data)
     if data.itemsize <= 2:
         return _convert_small_ints_to_unsigned(data)
 
+    data = np.atleast_1d(data)
     num_colors = len(colormap.colors) - 1
 
     dtype = minimum_dtype_for_labels(num_colors + 1)
@@ -620,7 +622,7 @@ def _cast_labels_data_to_texture_dtype_auto(
             data, num_colors, dtype, colormap.background_value
         )
 
-    return converted
+    return np.reshape(converted, original_shape)
 
 
 def _zero_preserving_modulo_numpy(
@@ -721,8 +723,8 @@ def _zero_preserving_modulo_jit(
 
 
 def _cast_labels_data_to_texture_dtype_direct(
-    data: np.ndarray, direct_colormap: DirectLabelColormap
-) -> np.ndarray:
+    data: np.ndarray | np.integer, direct_colormap: DirectLabelColormap
+) -> np.ndarray | np.integer:
     """Convert labels data to the data type used in the texture.
 
     In https://github.com/napari/napari/issues/6397, we noticed that using
@@ -739,16 +741,19 @@ def _cast_labels_data_to_texture_dtype_direct(
       is {1: 1, 2**25: 2, 2**50: 1}. The labels can then be converted to a
       uint8 texture and a smaller direct colormap with only two values.
 
+    This function calls `_labels_raw_to_texture_direct`, but makes sure that
+    signed ints are first viewed as their unsigned counterparts.
+
     Parameters
     ----------
-    data : np.ndarray
+    data : np.ndarray | np.integer
         Labels data to be converted.
     colormap : LabelColormap
         Colormap used to display the labels data.
 
     Returns
     -------
-    np.ndarray
+    np.ndarray | np.integer
         Converted labels data.
     """
     data = _convert_small_ints_to_unsigned(data)
@@ -756,7 +761,12 @@ def _cast_labels_data_to_texture_dtype_direct(
     if data.itemsize <= 2:
         return data
 
-    return _labels_raw_to_texture_direct(data, direct_colormap)
+    original_shape = np.shape(data)
+    array_data = np.atleast_1d(data)
+    return np.reshape(
+        _labels_raw_to_texture_direct(array_data, direct_colormap),
+        original_shape,
+    )
 
 
 def _labels_raw_to_texture_direct_numpy(
