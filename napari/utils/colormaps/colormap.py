@@ -815,7 +815,9 @@ def _labels_raw_to_texture_direct_loop(
     target_dtype = minimum_dtype_for_labels(
         direct_colormap._num_unique_colors + 2
     )
-    result_array = np.zeros_like(data, dtype=target_dtype)
+    result_array = np.full_like(
+        data, MAPPING_OF_UNKNOWN_VALUE, dtype=target_dtype
+    )
     return _labels_raw_to_texture_direct_inner_loop(data, dkt, result_array)
 
 
