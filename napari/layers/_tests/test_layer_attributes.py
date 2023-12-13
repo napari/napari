@@ -173,4 +173,4 @@ def test_async_refresh_block(Layer, data, ndim):
     mock.assert_not_called()
 
     my_layer.refresh()
-	mock.assert_called_once()
+    mock.assert_called_once()
