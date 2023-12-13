@@ -150,11 +150,14 @@ def build_textures_from_dict(
 ) -> np.ndarray:
     if len(color_dict) > 2**23:
         raise ValueError(  # pragma: no cover
-            f"Cannot build a texture with more than 2**23 colors, got {len(color_dict)}"
+            "Cannot map more than 2**23 colors because of float32 precision. "
+            f"Got {len(color_dict)}"
         )
     if len(color_dict) > max_size**2:
         raise ValueError(
-            f"Cannot build a texture with more than {max_size ** 2} colors, got {len(color_dict)}"
+            "Cannot create a 2D texture holding more than "
+            f"{max_size}**2={max_size ** 2} colors."
+            f"Got {len(color_dict)}"
         )
     data = np.zeros(
         (

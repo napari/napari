@@ -17,7 +17,7 @@ def test_build_textures_from_dict():
 
 
 def test_build_textures_from_dict_exc():
-    with pytest.raises(ValueError, match="Cannot build a texture"):
+    with pytest.raises(ValueError, match="Cannot create a 2D texture"):
         build_textures_from_dict(
             {0: (0, 0, 0, 0), 1: (1, 1, 1, 1), 2: (2, 2, 2, 2)},
             max_size=1,
