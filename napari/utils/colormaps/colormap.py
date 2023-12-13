@@ -614,7 +614,7 @@ def _cast_labels_data_to_texture_dtype_auto(
     if data.itemsize <= 2:
         return _convert_small_ints_to_unsigned(data)
 
-    data = np.atleast_1d(data)
+    data_arr = np.atleast_1d(data)
     num_colors = len(colormap.colors) - 1
 
     dtype = minimum_dtype_for_labels(num_colors + 1)
@@ -624,11 +624,11 @@ def _cast_labels_data_to_texture_dtype_auto(
             np.array([colormap.selection]), num_colors, dtype
         )
         converted = np.where(
-            data == colormap.selection, selection_in_texture, dtype.type(0)
+            data_arr == colormap.selection, selection_in_texture, dtype.type(0)
         )
     else:
         converted = _zero_preserving_modulo(
-            data, num_colors, dtype, colormap.background_value
+            data_arr, num_colors, dtype, colormap.background_value
         )
 
     return np.reshape(converted, original_shape)
