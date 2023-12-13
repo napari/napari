@@ -6,7 +6,6 @@ from numpy.typing import ArrayLike
 from psygnal.containers import Selection
 
 from napari.layers.base._base_constants import ActionType
-
 from napari.layers.graph._slice import _GraphSliceRequest, _GraphSliceResponse
 from napari.layers.points.points import _BasePoints
 from napari.layers.utils._slice_input import _SliceInput
@@ -402,9 +401,9 @@ class Graph(_BasePoints):
         indices : optional indices of the newly inserted nodes.
         """
         self.events.data(
-        value=self.data,
-        action=ActionType.ADDING,
-        data_indices=tuple(
+            value=self.data,
+            action=ActionType.ADDING,
+            data_indices=tuple(
                 self.selected_data,
             ),
             vertex_indices=((),),
@@ -418,11 +417,11 @@ class Graph(_BasePoints):
             value=self.data,
             action=ActionType.ADDED,
             data_indices=tuple(
-                    self.selected_data,
-                ),
+                self.selected_data,
+            ),
             vertex_indices=((),),
         )
-        
+
     def remove_selected(self) -> None:
         """Removes selected points if any."""
         if len(self.selected_data):
@@ -450,9 +449,9 @@ class Graph(_BasePoints):
             value=self.data,
             action=ActionType.REMOVING,
             data_indices=tuple(
-                    self.selected_data,
-                ),
-                vertex_indices=((),),
+                self.selected_data,
+            ),
+            vertex_indices=((),),
         )
 
         indices = np.atleast_1d(indices)
@@ -476,9 +475,9 @@ class Graph(_BasePoints):
             value=self.data,
             action=ActionType.REMOVED,
             data_indices=tuple(
-                    self.selected_data,
-                ),
-                vertex_indices=((),),
+                self.selected_data,
+            ),
+            vertex_indices=((),),
         )
 
     def _move_points(
