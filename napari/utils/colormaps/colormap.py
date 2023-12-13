@@ -417,8 +417,8 @@ class DirectLabelColormap(LabelColormapBase):
             del self.__dict__["_num_unique_colors"]
         if "_label_mapping_and_color_dict" in self.__dict__:
             del self.__dict__["_label_mapping_and_color_dict"]
-        if "_numpy_mapper" in self.__dict__:
-            del self.__dict__["_numpy_mapper"]
+        if "_array_map" in self.__dict__:
+            del self.__dict__["_array_map"]
 
     def _values_mapping_to_minimum_values_set(
         self, apply_selection=True
@@ -518,7 +518,8 @@ class DirectLabelColormap(LabelColormapBase):
         return dkt
 
     @cached_property
-    def _numpy_mapper(self):
+    def _array_map(self):
+        """Create an array to map labels to texture values of smaller dtype."""
         max_value = max(x for x in self.color_dict if x is not None)
         if max_value > 2**16:
             raise RuntimeError(  # pragma: no cover
@@ -528,6 +529,10 @@ class DirectLabelColormap(LabelColormapBase):
         dtype = minimum_dtype_for_labels(self._num_unique_colors + 2)
         label_mapping = self._values_mapping_to_minimum_values_set()[0]
 
+        # We need 2 + the max value: one because we will be indexing with the
+        # max value, and an extra one so that higher values get clipped to
+        # that index and map to the default value, rather than to the max
+        # value in the map.
         mapper = np.full(
             (max_value + 2), MAPPING_OF_UNKNOWN_VALUE, dtype=dtype
         )
@@ -778,7 +783,7 @@ def _labels_raw_to_texture_direct_numpy(
 
     See `_cast_labels_data_to_texture_dtype_direct` for more details.
     """
-    mapper = direct_colormap._numpy_mapper
+    mapper = direct_colormap._array_map
 
     if data.dtype.itemsize > 2:
         data = np.clip(data, 0, mapper.shape[0] - 1)
