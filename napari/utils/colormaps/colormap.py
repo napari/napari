@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Tuple,
     cast,
+    overload,
 )
 
 import numpy as np
@@ -579,6 +580,22 @@ def _convert_small_ints_to_unsigned(
     return data
 
 
+@overload
+def _cast_labels_data_to_texture_dtype_auto(
+    data: np.ndarray,
+    colormap: LabelColormap,
+) -> np.ndarray:
+    ...
+
+
+@overload
+def _cast_labels_data_to_texture_dtype_auto(
+    data: np.integer,
+    colormap: LabelColormap,
+) -> np.integer:
+    ...
+
+
 def _cast_labels_data_to_texture_dtype_auto(
     data: np.ndarray | np.integer,
     colormap: LabelColormap,
@@ -729,6 +746,20 @@ def _zero_preserving_modulo_inner_loop(
             out.flat[i] = (values.flat[i] - 1) % n + 1
 
     return out
+
+
+@overload
+def _cast_labels_data_to_texture_dtype_direct(
+    data: np.ndarray, direct_colormap: DirectLabelColormap
+) -> np.ndarray:
+    ...
+
+
+@overload
+def _cast_labels_data_to_texture_dtype_direct(
+    data: np.integer, direct_colormap: DirectLabelColormap
+) -> np.integer:
+    ...
 
 
 def _cast_labels_data_to_texture_dtype_direct(
