@@ -39,6 +39,7 @@ class Transform:
         self.func = func
         self._inverse_func = inverse
         self.name = name
+        self._cache_dict = {}
 
         if func is tz.identity:
             self._inverse_func = tz.identity
@@ -49,12 +50,15 @@ class Transform:
 
     @property
     def inverse(self) -> 'Transform':
-        if self._inverse_func is not None:
-            return Transform(self._inverse_func, self.func)
-
-        raise ValueError(
-            trans._('Inverse function was not provided.', deferred=True)
-        )
+        if self._inverse_func is None:
+            raise ValueError(
+                trans._('Inverse function was not provided.', deferred=True)
+            )
+        if "inverse" not in self._cache_dict:
+            self._cache_dict["inverse"] = Transform(
+                self._inverse_func, self.func
+            )
+        return self._cache_dict["inverse"]
 
     def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
@@ -106,6 +110,7 @@ class Transform:
         return False
 
     def _clean_cache(self):
+        self._cache_dict.clear()
         cached_properties = ('_is_diagonal',)
         [self.__dict__.pop(p, None) for p in cached_properties]
 
@@ -148,12 +153,26 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         ...
 
     def __getitem__(self, value):
-        return super().__getitem__(value)
+        if f"getitem_{value}" not in self._cache_dict:
+            self._cache_dict[f"getitem_{value}"] = super().__getitem__(value)
+        return self._cache_dict[f"getitem_{value}"]
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self._clean_cache()
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        self._clean_cache()
 
     @property
     def inverse(self) -> 'TransformChain':
         """Return the inverse transform chain."""
-        return TransformChain([tf.inverse for tf in self[::-1]])
+        if "inverse" not in self._cache_dict:
+            self._cache_dict["inverse"] = TransformChain(
+                [tf.inverse for tf in self[::-1]]
+            )
+        return self._cache_dict["inverse"]
 
     @property
     def _is_diagonal(self):
@@ -169,7 +188,11 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         if len(self) == 1:
             return self[0]
 
-        return tz.pipe(self[0], *[tf.compose for tf in self[1:]])
+        if "simplified" not in self._cache_dict:
+            self._cache_dict["simplified"] = tz.pipe(
+                self[0], *[tf.compose for tf in self[1:]]
+            )
+        return self._cache_dict["simplified"]
 
     def set_slice(self, axes: Sequence[int]) -> 'TransformChain':
         """Return a transform chain subset to the visible dimensions.
@@ -565,7 +588,11 @@ class Affine(Transform):
     @property
     def inverse(self) -> 'Affine':
         """Return the inverse transform."""
-        return Affine(affine_matrix=np.linalg.inv(self.affine_matrix))
+        if "inverse" not in self._cache_dict:
+            self._cache_dict["inverse"] = Affine(
+                affine_matrix=np.linalg.inv(self.affine_matrix)
+            )
+        return self._cache_dict["inverse"]
 
     def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
