@@ -463,7 +463,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.data(value=self.data)
         self._reset_editable()
 
-    @IntensityVisualizationMixin.contrast_limits.setter
+    @IntensityVisualizationMixin.contrast_limits.setter  # type: ignore [attr-defined]
     def contrast_limits(self, contrast_limits):
         IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)
         if not np.allclose(
