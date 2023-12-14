@@ -460,13 +460,22 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._update_dims()
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
-            if not np.allclose(
-                _coerce_contrast_limits(self.contrast_limits).contrast_limits,
-                self.contrast_limits,
-            ):
-                self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
+
+    @IntensityVisualizationMixin.contrast_limits.setter
+    def contrast_limits(self, contrast_limits):
+        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)
+        if not np.allclose(
+            _coerce_contrast_limits(self.contrast_limits).contrast_limits,
+            self.contrast_limits,
+        ):
+            prev = self._keep_auto_contrast
+            self._keep_auto_contrast = False
+            try:
+                self.refresh()
+            finally:
+                self._keep_auto_contrast = prev
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
