@@ -840,12 +840,12 @@ def scale_down(contrast_limits: Tuple[float, float]):
     # the image is not displayed correctly.
     vispy_min = float(np.finfo(np.float32).min / 8)
     scale = min(
-        1,
+        1.0,
         (vispy_max - vispy_min) / (contrast_limits[1] - contrast_limits[0]),
     )
-    ctrl_lim = np.array(contrast_limits) * scale
-    left_shift = max(0, vispy_min - ctrl_lim[0])
-    right_shift = max(0, ctrl_lim[1] - vispy_max)
+    ctrl_lim = contrast_limits[0] * scale, contrast_limits[1] * scale
+    left_shift = max(0.0, vispy_min - ctrl_lim[0])
+    right_shift = max(0.0, ctrl_lim[1] - vispy_max)
     offset = left_shift - right_shift
     ctrl_lim = (ctrl_lim[0] + offset, ctrl_lim[1] + offset)
     return CoercedContrastLimits(ctrl_lim, offset, scale)
