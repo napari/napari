@@ -8,6 +8,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Union,
     cast,
     overload,
 )
@@ -373,8 +374,8 @@ class DirectLabelColormap(LabelColormapBase):
         if mapper is not None:
             mapped = mapper[values]
         else:
-            cast = _labels_raw_to_texture_direct(values, self)
-            mapped = self._map_precast(cast, apply_selection=True)
+            values_cast = _labels_raw_to_texture_direct(values, self)
+            mapped = self._map_precast(values_cast, apply_selection=True)
 
         if self.use_selection:
             mapped[(values != self.selection)] = 0
@@ -555,8 +556,8 @@ class DirectLabelColormap(LabelColormapBase):
 
 
 def _convert_small_ints_to_unsigned(
-    data: np.ndarray | np.integer,
-) -> np.ndarray | np.integer:
+    data: Union[np.ndarray, np.integer],
+) -> Union[np.ndarray, np.integer]:
     """Convert (u)int8 to uint8 and (u)int16 to uint16.
 
     Otherwise, return the original array.
@@ -597,9 +598,9 @@ def _cast_labels_data_to_texture_dtype_auto(
 
 
 def _cast_labels_data_to_texture_dtype_auto(
-    data: np.ndarray | np.integer,
+    data: Union[np.ndarray, np.integer],
     colormap: LabelColormap,
-) -> np.ndarray | np.integer:
+) -> Union[np.ndarray, np.integer]:
     """Convert labels data to the data type used in the texture.
 
     In https://github.com/napari/napari/issues/6397, we noticed that using
@@ -763,8 +764,8 @@ def _cast_labels_data_to_texture_dtype_direct(
 
 
 def _cast_labels_data_to_texture_dtype_direct(
-    data: np.ndarray | np.integer, direct_colormap: DirectLabelColormap
-) -> np.ndarray | np.integer:
+    data: Union[np.ndarray, np.integer], direct_colormap: DirectLabelColormap
+) -> Union[np.ndarray, np.integer]:
     """Convert labels data to the data type used in the texture.
 
     In https://github.com/napari/napari/issues/6397, we noticed that using
@@ -788,7 +789,7 @@ def _cast_labels_data_to_texture_dtype_direct(
     ----------
     data : np.ndarray | np.integer
         Labels data to be converted.
-    colormap : LabelColormap
+    direct_colormap : LabelColormap
         Colormap used to display the labels data.
 
     Returns
