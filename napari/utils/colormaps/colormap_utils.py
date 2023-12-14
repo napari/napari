@@ -1,7 +1,7 @@
 import warnings
 from collections import OrderedDict
 from threading import Lock
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import skimage.color as colorconv
@@ -809,3 +809,26 @@ def display_name_to_name(display_name):
     return display_name_map.get(
         display_name, next(iter(AVAILABLE_COLORMAPS.keys()))
     )
+
+
+class CoercedContrastLimits(NamedTuple):
+    contrast_limits: Tuple[float, float]
+    offset: float
+    scale: float
+
+
+def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
+    """Coerce contrast limits to be in the float32 range."""
+    float32_max = float(np.finfo(np.float32).max / 8)
+    float32_min = float(np.finfo(np.float32).min / 8)
+    scale = min(
+        1,
+        (float32_max - float32_min)
+        / (contrast_limits[1] - contrast_limits[0]),
+    )
+    ctrl_lim = np.array(contrast_limits) * scale
+    left_shift = max(0, float32_min - ctrl_lim[0])
+    right_shift = max(0, ctrl_lim[1] - float32_max)
+    offset = left_shift - right_shift
+    ctrl_lim = (ctrl_lim[0] + offset, ctrl_lim[1] + offset)
+    return CoercedContrastLimits(ctrl_lim, offset, scale)

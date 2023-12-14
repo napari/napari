@@ -14,6 +14,7 @@ from napari._vispy.visuals.image import Image as ImageNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers.base._base_constants import Blending
 from napari.layers.image.image import _ImageBase
+from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 from napari.utils.translations import trans
 
 
@@ -211,7 +212,8 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
                 self.node.minip_cutoff = None
 
     def _on_contrast_limits_change(self) -> None:
-        self.node.clim = self.layer.contrast_limits
+        lim_tup = _coerce_contrast_limits(self.layer.contrast_limits)
+        self.node.clim = lim_tup.contrast_limits
         # cutoffs must be updated after clims, so we can set them to the new values
         self._update_mip_minip_cutoff()
         # iso also may depend on contrast limit values

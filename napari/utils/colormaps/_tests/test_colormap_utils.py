@@ -1,7 +1,11 @@
 import numpy as np
 import pytest
 
-from napari.utils.colormaps.colormap_utils import label_colormap
+from napari.utils.colormaps.colormap_utils import (
+    CoercedContrastLimits,
+    _coerce_contrast_limits,
+    label_colormap,
+)
 
 FIRST_COLORS = [
     [0.47058824, 0.14509805, 0.02352941, 1.0],
@@ -25,3 +29,42 @@ def test_label_colormap(index, expected):
     to past versions, for UX consistency.
     """
     np.testing.assert_almost_equal(label_colormap(49).map(index), [expected])
+
+
+def test_coerce_contrast_limits_with_valid_input():
+    contrast_limits = (0.0, 1.0)
+    result = _coerce_contrast_limits(contrast_limits)
+    assert isinstance(result, CoercedContrastLimits)
+    assert np.allclose(result.contrast_limits, contrast_limits)
+    assert result.offset == 0
+    assert np.isclose(result.scale, 1.0)
+
+
+def test_coerce_contrast_limits_with_large_values():
+    contrast_limits = (0, 1e40)
+    result = _coerce_contrast_limits(contrast_limits)
+    assert isinstance(result, CoercedContrastLimits)
+    assert np.isclose(result.contrast_limits[0], np.finfo(np.float32).min / 8)
+    assert np.isclose(result.contrast_limits[1], np.finfo(np.float32).max / 8)
+    assert result.offset < 0
+    assert result.scale < 1.0
+
+
+def test_coerce_contrast_limits_with_large_values_symetric():
+    contrast_limits = (-1e40, 1e40)
+    result = _coerce_contrast_limits(contrast_limits)
+    assert isinstance(result, CoercedContrastLimits)
+    assert np.isclose(result.contrast_limits[0], np.finfo(np.float32).min / 8)
+    assert np.isclose(result.contrast_limits[1], np.finfo(np.float32).max / 8)
+    assert result.offset == 0
+    assert result.scale < 1.0
+
+
+def test_coerce_contrast_limits_with_large_values_above_limit():
+    contrast_limits = (1e39, 9e40)
+    result = _coerce_contrast_limits(contrast_limits)
+    assert isinstance(result, CoercedContrastLimits)
+    assert np.isclose(result.contrast_limits[0], np.finfo(np.float32).min / 8)
+    assert np.isclose(result.contrast_limits[1], np.finfo(np.float32).max / 8)
+    assert result.offset < 0
+    assert result.scale < 1.0

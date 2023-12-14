@@ -32,7 +32,10 @@ from napari.layers.utils.layer_utils import calc_data_range
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
-from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.colormaps.colormap_utils import (
+    AVAILABLE_COLORMAPS,
+    _coerce_contrast_limits,
+)
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
@@ -421,7 +424,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if mode == 'data':
             input_data = self.data[-1] if self.multiscale else self.data
         elif mode == 'slice':
-            data = self._slice.image.view  # ugh
+            data = self._slice.image.raw  # ugh
             input_data = data[-1] if self.multiscale else data
         else:
             raise ValueError(
@@ -455,9 +458,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
         self._update_dims()
-        self.events.data(value=self.data)
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
+            if not np.allclose(
+                _coerce_contrast_limits(self.contrast_limits).contrast_limits,
+                self.contrast_limits,
+            ):
+                self._update_dims()
+        self.events.data(value=self.data)
         self._reset_editable()
 
     def _get_ndim(self) -> int:
@@ -715,7 +723,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
         self.events.custom_interpolation_kernel_2d()
 
-    def _raw_to_displayed(self, raw):
+    def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
         """Determine displayed image from raw image.
 
         For normal image layers, just return the actual image.
@@ -730,7 +738,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         image : array
             Displayed array.
         """
-        image = raw
+
+        lim_tup = _coerce_contrast_limits(self.contrast_limits)
+        if np.allclose(lim_tup.contrast_limits, self.contrast_limits):
+            return raw
+
+        image = raw * lim_tup.scale + lim_tup.offset
+
         return image
 
     def _set_view_slice(self) -> None:
@@ -794,6 +808,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Update the slice output state currently on the layer. Currently used
         for both sync and async slicing.
         """
+        response = response.to_displayed(self._raw_to_displayed)
         self._slice_input = response.slice_input
         self._transforms[0] = response.tile_to_data
         self._slice = response
@@ -808,7 +823,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        image = self._slice.thumbnail.view
+        image = self._slice.thumbnail.raw
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
