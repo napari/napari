@@ -819,16 +819,38 @@ class CoercedContrastLimits(NamedTuple):
 
 def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
     """Coerce contrast limits to be in the float32 range."""
-    float32_max = float(np.finfo(np.float32).max / 8)
-    float32_min = float(np.finfo(np.float32).min / 8)
+    vispy_max = float(np.finfo(np.float32).max / 8)
+    if np.abs(contrast_limits).max() > vispy_max:
+        return scale_down(contrast_limits)
+
+    if (
+        contrast_limits[1] - contrast_limits[0]
+        < np.finfo(np.float32).smallest_normal * 8
+    ):
+        return scale_up(contrast_limits)
+
+    return CoercedContrastLimits(contrast_limits, 0, 1)
+
+
+def scale_down(contrast_limits: Tuple[float, float]):
+    """Scale down contrast limits to be in the float32 range."""
+    vispy_max = float(np.finfo(np.float32).max / 8)
+    vispy_min = float(np.finfo(np.float32).min / 8)
     scale = min(
         1,
-        (float32_max - float32_min)
-        / (contrast_limits[1] - contrast_limits[0]),
+        (vispy_max - vispy_min) / (contrast_limits[1] - contrast_limits[0]),
     )
     ctrl_lim = np.array(contrast_limits) * scale
-    left_shift = max(0, float32_min - ctrl_lim[0])
-    right_shift = max(0, ctrl_lim[1] - float32_max)
+    left_shift = max(0, vispy_min - ctrl_lim[0])
+    right_shift = max(0, ctrl_lim[1] - vispy_max)
     offset = left_shift - right_shift
     ctrl_lim = (ctrl_lim[0] + offset, ctrl_lim[1] + offset)
     return CoercedContrastLimits(ctrl_lim, offset, scale)
+
+
+def scale_up(contrast_limits: Tuple[float, float]):
+    """Scale up contrast limits to be in the float32 precision."""
+    scale = 1 / (contrast_limits[1] - contrast_limits[0])
+    shift = -contrast_limits[0] * scale
+
+    return CoercedContrastLimits((0, 1), shift, scale)
