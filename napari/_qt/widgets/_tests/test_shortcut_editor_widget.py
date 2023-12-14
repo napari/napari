@@ -233,8 +233,15 @@ def test_keybinding_editor_modifier_key_detection(
     Test modifier keys detection with pyautogui to trigger keyboard events
     from the OS.
 
-    Note: Skipped on macOS CI due to accessibility permissions not being
-    settable on macOS GitHub Actions runners
+    Notes:
+        * Skipped on macOS CI due to accessibility permissions not being
+          settable on macOS GitHub Actions runners.
+        * For this test to pass locally, you need to give the Terminal/iTerm
+          application accessibility permissions:
+              `System Settings > Privacy & Security > Accessibility`
+
+        See https://github.com/asweigart/pyautogui/issues/247 and
+        https://github.com/asweigart/pyautogui/issues/247#issuecomment-437668855
     """
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
