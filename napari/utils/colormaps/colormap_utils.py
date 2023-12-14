@@ -835,6 +835,9 @@ def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
 def scale_down(contrast_limits: Tuple[float, float]):
     """Scale down contrast limits to be in the float32 range."""
     vispy_max = float(np.finfo(np.float32).max / 8)
+    # Using 8 as divisor comes from experiments.
+    # For some reason if use smaller number,
+    # the image is not displayed correctly.
     vispy_min = float(np.finfo(np.float32).min / 8)
     scale = min(
         1,
