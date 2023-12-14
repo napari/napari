@@ -738,6 +738,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         image : array
             Displayed array.
         """
+        if raw.dtype != np.float64:
+            return raw
 
         lim_tup = _coerce_contrast_limits(self.contrast_limits)
         if np.allclose(lim_tup.contrast_limits, self.contrast_limits):
