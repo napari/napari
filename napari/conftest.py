@@ -638,7 +638,10 @@ def dangling_qtimers(monkeypatch, request):
     else:
 
         def my_start(self, msec=None):
-            timer_dkt[self] = _get_calling_place()
+            calling_place = _get_calling_place()
+            if "superqt" in calling_place and "throttler" in calling_place:
+                calling_place += f" - {_get_calling_place(2)}"
+            timer_dkt[self] = calling_place
             if msec is not None:
                 base_start(self, msec)
             else:
@@ -651,6 +654,9 @@ def dangling_qtimers(monkeypatch, request):
                 t.timeout.connect(reciver)
             else:
                 t.timeout.connect(getattr(reciver, method))
+            calling_place = _get_calling_place(2)
+            if "superqt" in calling_place and "throttler" in calling_place:
+                calling_place += f" - {_get_calling_place(3)}"
             single_shot_list.append((t, _get_calling_place(2)))
             base_start(t, msec)
 

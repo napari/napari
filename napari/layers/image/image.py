@@ -29,7 +29,7 @@ from napari.layers.utils.layer_utils import calc_data_range
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils import config
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
-from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
@@ -383,7 +383,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # _set_colormap method. This is important for Labels layers, because
         # we don't want to use get_color before set_view_slice has been
         # triggered (self.refresh(), below).
-        self._set_colormap(colormap)
+        self._colormap = ensure_colormap(colormap)
         self.contrast_limits = self._contrast_limits
         self._interpolation2d = Interpolation.NEAREST
         self._interpolation3d = Interpolation.NEAREST
@@ -410,9 +410,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded."""
         if self.rgb:
-            return np.zeros((1,) * self._slice_input.ndisplay + (3,))
+            return np.zeros(
+                (1,) * self._slice_input.ndisplay + (3,), dtype=np.uint8
+            )
 
-        return np.zeros((1,) * self._slice_input.ndisplay)
+        return np.zeros((1,) * self._slice_input.ndisplay, dtype=np.uint8)
 
     def _get_order(self) -> Tuple[int]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""

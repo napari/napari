@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import itertools
 import os.path
 import warnings
@@ -301,12 +302,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._ndim = ndim
 
-        self._slice_input = _SliceInput(
-            ndisplay=2,
-            point=(0,) * ndim,
-            order=tuple(range(ndim)),
-        )
-
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
         #   of an image. It maps pixels of the tile into the coordinate space
@@ -340,6 +335,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 coerce_affine(affine, ndim=ndim, name='physical2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
+        )
+
+        self._slice_input = _SliceInput(
+            ndisplay=2,
+            point=self.data_to_world((0,) * ndim),
+            order=tuple(range(ndim)),
         )
 
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
@@ -1872,6 +1873,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self.events.select()
         else:
             self.events.deselect()
+
+    def __copy__(self):
+        """Create a copy of this layer.
+
+        Returns
+        -------
+        layer : napari.layers.Layer
+            Copy of this layer.
+
+        Notes
+        -----
+        This method is defined for purpose of asv memory benchmarks.
+        The copy of data is intentional for properly estimating memory
+        usage for layer.
+
+        If you want a to copy a layer without coping the data please use
+        `layer.create(*layer.as_layer_data_tuple())`
+
+        If you change this method, validate if memory benchmarks are still
+        working properly.
+        """
+        data, meta, layer_type = self.as_layer_data_tuple()
+        return self.create(copy.copy(data), meta=meta, layer_type=layer_type)
 
     @classmethod
     def create(
