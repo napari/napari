@@ -50,11 +50,11 @@ def _get_widget_viewer_param(
         (QWidget, Widget),
     ):
         widget_param = ""
-        # Inspection can fail when adding to bundle as it thinks widget is
-        # a builtin
         try:
             sig = inspect.signature(widget_callable.__init__)
         except ValueError:
+            # Inspection can fail when adding to bundled viewer as it thinks widget is
+            # a builtin
             pass
         else:
             for param in sig.parameters.values():
