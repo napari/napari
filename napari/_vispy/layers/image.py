@@ -300,7 +300,9 @@ class VispyImageLayer(VispyBaseLayer):
             if self.layer.multiscale:
                 raise ValueError(
                     trans._(
-                        "Shape of in dividual tiles in multiscale {shape} cannot exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is currently in {ndisplay}D mode.",
+                        "Shape of individual tiles in multiscale {shape} cannot "
+                        "exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is "
+                        "currently in {ndisplay}D mode.",
                         deferred=True,
                         shape=data.shape,
                         texture_size=MAX_TEXTURE_SIZE,
@@ -309,7 +311,9 @@ class VispyImageLayer(VispyBaseLayer):
                 )
             warnings.warn(
                 trans._(
-                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size} in at least one axis and will be downsampled. Rendering is currently in {ndisplay}D mode.",
+                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size}"
+                    " in at least one axis and will be downsampled."
+                    " Rendering is currently in {ndisplay}D mode.",
                     deferred=True,
                     shape=data.shape,
                     texture_size=MAX_TEXTURE_SIZE,
