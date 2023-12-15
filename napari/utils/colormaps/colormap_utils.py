@@ -1,5 +1,6 @@
 import warnings
 from collections import OrderedDict
+from functools import lru_cache
 from threading import Lock
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
@@ -473,6 +474,7 @@ def label_colormap(
     )
 
 
+@lru_cache
 def _primes(upto=2**16):
     """Generate primes up to a given number.
 
