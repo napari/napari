@@ -245,3 +245,17 @@ def test_graph_from_data_tuple_non_empty(graph_class: Type[BaseGraph]) -> None:
     assert layer.name == new_layer.name
     assert len(layer.data) == len(new_layer.data)
     assert layer.ndim == new_layer.ndim
+
+
+@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+def test_add_nodes_buffer_resize(graph_class):
+    coords = np.asarray([(0, 0, 0)])
+
+    graph = graph_class(coords=coords)
+    layer = Graph(graph, out_of_slice_display=True)
+
+    # adding will cause buffer to resize
+    layer.add([(1, 1, 1)])
+    assert len(layer.data) == coords.shape[0] + 1
+    assert graph.n_nodes == coords.shape[0] + 1
+
