@@ -1562,7 +1562,9 @@ def test_color_mapping_when_seed_is_changed():
     assert not np.allclose(mapped_colors1, mapped_colors2)
 
 
-@pytest.mark.parametrize('num_colors', [49, 50, 254, 255, 60000, 65534])
+@pytest.mark.parametrize(
+    'num_colors', [49, 50, 254, 255, 60000, 65534, 2**17]
+)
 def test_color_shuffling_above_num_colors(num_colors):
     """Check that the color shuffle does not result in the same collisions.
 

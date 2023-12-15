@@ -534,7 +534,9 @@ def shuffle_and_extend_colormap(
     rng.shuffle(indices)
     shuffled_colors = colormap.colors[indices]
 
-    primes = _primes(np.iinfo(dtype).max)
+    primes = _primes(
+        np.iinfo(dtype).max if np.issubdtype(dtype, np.integer) else 2**24
+    )
     valid_primes = primes[primes > n_colors_prev]
     if len(valid_primes) < min_random_choices:
         valid_primes = primes[-min_random_choices:]
