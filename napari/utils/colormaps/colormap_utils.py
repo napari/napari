@@ -539,13 +539,12 @@ def shuffle_and_extend_colormap(
     if len(valid_primes) < min_random_choices:
         valid_primes = primes[-min_random_choices:]
     n_colors = rng.choice(valid_primes)
+    n_color_diff = n_colors - n_colors_prev
 
     extended_colors = np.concatenate(
         (
-            shuffled_colors,
-            shuffled_colors[
-                rng.choice(indices, size=n_colors - n_colors_prev)
-            ],
+            shuffled_colors[: min(n_color_diff, 0) or None],
+            shuffled_colors[rng.choice(indices, size=max(n_color_diff, 0))],
         ),
         axis=0,
     )
