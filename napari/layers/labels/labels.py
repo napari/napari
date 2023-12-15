@@ -312,7 +312,7 @@ class Labels(_ImageBase):
         self._random_colormap = label_colormap(
             self.num_colors, self.seed, self._background_label
         )
-        self._original_colormap = self._random_colormap
+        self._original_random_colormap = self._random_colormap
         self._direct_colormap = direct_colormap()
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
@@ -513,8 +513,8 @@ class Labels(_ImageBase):
                 self.num_colors, self.seed, self._background_label
             )
         else:
-            self._colormap = shuffle_and_extend_colormap(
-                self._original_colormap, self._seed_rng
+            self._random_colormap = shuffle_and_extend_colormap(
+                self._original_random_colormap, self._seed_rng
             )
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
@@ -536,6 +536,7 @@ class Labels(_ImageBase):
     def _set_colormap(self, colormap):
         if isinstance(colormap, LabelColormap):
             self._random_colormap = colormap
+            self._original_random_colormap = colormap
             self._colormap = self._random_colormap
             color_mode = LabelColorMode.AUTO
         else:
@@ -557,7 +558,6 @@ class Labels(_ImageBase):
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.color_mode = color_mode
-        self._original_colormap = colormap
 
     @property
     def num_colors(self):
