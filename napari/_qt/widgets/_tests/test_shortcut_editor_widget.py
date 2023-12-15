@@ -205,6 +205,35 @@ def test_keybinding_with_only_modifiers(
         assert key_symbol in shortcut
 
 
+@pytest.mark.parametrize(
+    "removal_trigger_key",
+    [
+        Qt.Key.Key_Delete,
+        Qt.Key.Key_Backspace,
+    ],
+)
+def test_remove_shortcut(shortcut_editor_widget, qtbot, removal_trigger_key):
+    widget = shortcut_editor_widget()
+    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    assert shortcut == KEY_SYMBOLS["Ctrl"]
+
+    x = widget._table.columnViewportPosition(widget._shortcut_col)
+    y = widget._table.rowViewportPosition(0)
+    item_pos = QPoint(x, y)
+    qtbot.mouseClick(
+        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    )
+    qtbot.mouseDClick(
+        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    )
+    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
+    qtbot.keyClick(QApplication.focusWidget(), removal_trigger_key)
+    qtbot.keyClick(QApplication.focusWidget(), Qt.Key.Key_Enter)
+
+    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    assert shortcut == ""
+
+
 @skip_on_mac_ci
 @pytest.mark.parametrize(
     "modifier_key, modifiers, key_symbols",

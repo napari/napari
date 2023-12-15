@@ -581,22 +581,16 @@ class EditorWidget(QLineEdit):
         if event.type() == QEvent.Type.ShortcutOverride:
             self.keyPressEvent(event)
             return True
-        if event.type() in [
-            QEvent.Type.KeyPress,
-            QEvent.Type.Shortcut,
-        ] and event.key() not in (
-            Qt.Key.Key_Control,
-            Qt.Key.Key_Shift,
-            Qt.Key.Key_Alt,
-            Qt.Key.Key_Meta,
+        if event.type() == QEvent.Type.Shortcut:
+            return True
+        if event.type() == QEvent.Type.KeyPress and event.key() in (
+            Qt.Key.Key_Delete,
+            Qt.Key.Key_Backspace,
         ):
-            # Need to let pass events for modifier keys in order to be able to
-            # set them as shortcuts on some OS/binding combinations
-            # (for example macOS + PyQt6).
-            # Only single modifiers are valid as shortcuts, for more context
-            # see `ShortcutEditor._set_keybinding`.
-            # Other keys/shortcut events apparently don't need this handling
-            # and can be marked as recognized and processed (returning True)
+            # Need to mark as handled `Delete` and `Backspace` `KeyPress` events
+            # in order to be able to use those keys to remove shortcuts.
+            # To check the logic to remove shortcuts you can check the
+            # `KeyPressEvent` method
             return True
 
         return super().event(event)
