@@ -496,7 +496,7 @@ def _primes(upto=2**16):
 
 
 def shuffle_and_extend_colormap(
-    colormap: LabelColormap, seed: int
+    colormap: LabelColormap, seed: int, min_random_choices: int = 5
 ) -> LabelColormap:
     """Shuffle the colormap colors and extend it to more colors.
 
@@ -509,6 +509,16 @@ def shuffle_and_extend_colormap(
         Colormap to shuffle and extend.
     seed : int
         Seed for the random number generator.
+    min_random_choices : int
+        Minimum number of new table sizes to choose from. When choosing table
+        sizes, every choice gives a 1/size chance of two labels being mapped
+        to the same color. Since we try to stay within the same dtype as the
+        original colormap, if the number of original colors is close to the
+        maximum value for the dtype, there will not be enough prime numbers
+        up to the dtype max to ensure that two labels can always be
+        distinguished after one or few shuffles. In that case, we discard
+        some colors and choose the `min_random_choices` largest primes to fit
+        within the dtype.
 
     Returns
     -------
@@ -524,6 +534,8 @@ def shuffle_and_extend_colormap(
 
     primes = _primes(np.iinfo(dtype).max)
     valid_primes = primes[primes > n_colors_prev]
+    if len(valid_primes) < min_random_choices:
+        valid_primes = primes[-min_random_choices:]
     n_colors = rng.choice(valid_primes)
 
     extended_colors = np.concatenate(
