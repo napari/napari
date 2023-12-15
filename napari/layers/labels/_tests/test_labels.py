@@ -1562,15 +1562,14 @@ def test_color_mapping_when_seed_is_changed():
     assert not np.allclose(mapped_colors1, mapped_colors2)
 
 
-def test_color_shuffling_above_num_colors():
+@pytest.mark.parametrize('num_colors', [49, 50, 254, 255, 60000, 65534])
+def test_color_shuffling_above_num_colors(num_colors):
     """Check that the color shuffle does not result in the same collisions.
 
     See https://github.com/napari/napari/issues/6448.
     """
-    # period: this is the number of non-background colors in the colormap
-    period = 50 - 1
-    labels = np.arange(1, 1 + 2 * period).reshape((2, period))
-    layer = Labels(labels)
+    labels = np.arange(1, 1 + 2 * num_colors).reshape((2, num_colors))
+    layer = Labels(labels, num_colors=num_colors)
     colors0 = layer.colormap.map(labels)
     assert np.all(colors0[0] == colors0[1])
     layer.new_colormap()
