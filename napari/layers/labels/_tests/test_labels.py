@@ -1562,6 +1562,22 @@ def test_color_mapping_when_seed_is_changed():
     assert not np.allclose(mapped_colors1, mapped_colors2)
 
 
+def test_color_shuffling_above_num_colors():
+    """Check that the color shuffle does not result in the same collisions.
+
+    See https://github.com/napari/napari/issues/6448.
+    """
+    # period: this is the number of non-background colors in the colormap
+    period = 50 - 1
+    labels = np.arange(1, 1 + 2 * period).reshape((2, period))
+    layer = Labels(labels)
+    colors0 = layer.colormap.map(labels)
+    assert np.all(colors0[0] == colors0[1])
+    layer.new_colormap()
+    colors1 = layer.colormap.map(labels)
+    assert not np.all(colors1[0] == colors1[1])
+
+
 def test_negative_label():
     """Test negative label values are supported."""
     data = np.random.randint(low=-1, high=20, size=(10, 10))
