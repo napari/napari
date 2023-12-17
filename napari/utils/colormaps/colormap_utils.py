@@ -826,7 +826,7 @@ def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
     c_min = np.float32(contrast_limits[0])
     if (
         np.float32(contrast_limits[1]) - c_min
-        < (np.nextafter(c_min, np.inf) - c_min) * 64
+        < (np.nextafter(c_min, np.float32(np.inf)) - c_min) * 64
     ):
         return scale_up(contrast_limits)
 
