@@ -71,7 +71,7 @@ def test_coerce_contrast_limits_with_large_values_above_limit():
 
 
 def test_coerce_contrast_limits_small_values():
-    contrast_limits = (1e-39, 9e-39)
+    contrast_limits = (1e-45, 9e-45)
     result = _coerce_contrast_limits(contrast_limits)
     assert isinstance(result, CoercedContrastLimits)
     assert np.isclose(result.contrast_limits[0], 0)
