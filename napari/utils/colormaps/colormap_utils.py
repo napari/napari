@@ -823,9 +823,10 @@ def _coerce_contrast_limits(contrast_limits: Tuple[float, float]):
     if np.abs(contrast_limits).max() > vispy_max:
         return scale_down(contrast_limits)
 
+    c_min = np.float32(contrast_limits[0])
     if (
-        np.float32(contrast_limits[1]) - np.float32(contrast_limits[0])
-        < np.finfo(np.float32).smallest_normal * 8
+        np.float32(contrast_limits[1]) - c_min
+        < (np.nextafter(c_min, np.inf) - c_min) * 64
     ):
         return scale_up(contrast_limits)
 
