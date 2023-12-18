@@ -2,9 +2,20 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Any, Callable, ClassVar, Dict, List, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from vispy.color import get_color_names
 
@@ -324,6 +335,15 @@ class Shapes(Layer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
 
+    _face_color_property: str
+    _edge_color_property: str
+    _face_color_cycle: npt.NDArray
+    _edge_color_cycle: npt.NDArray
+    _face_color_cycle_values: npt.NDArray
+    _edge_color_cycle_values: npt.NDArray
+    _face_color_mode: str
+    _edge_color_mode: str
+
     # If more shapes are present then they are randomly subsampled
     # in the thumbnail
     _max_shapes_thumbnail = 100
@@ -505,7 +525,7 @@ class Shapes(Layer):
 
         self._value = (None, None)
         self._value_stored = (None, None)
-        self._moving_value = (None, None)
+        self._moving_value: Tuple[Optional[int], Optional[int]] = (None, None)
         self._selected_data = set()
         self._selected_data_stored = set()
         self._selected_data_history = set()
@@ -529,7 +549,7 @@ class Shapes(Layer):
         self._drag_box = None
         self._drag_box_stored = None
         self._is_creating = False
-        self._clipboard = {}
+        self._clipboard: Dict[str, Shapes] = {}
 
         self._status = self.mode
 
@@ -943,10 +963,10 @@ class Shapes(Layer):
 
     @edge_color_cycle.setter
     def edge_color_cycle(self, edge_color_cycle: Union[list, np.ndarray]):
-        self._set_color_cycle(edge_color_cycle, 'edge')
+        self._set_color_cycle(np.asarray(edge_color_cycle), 'edge')
 
     @property
-    def edge_colormap(self) -> Tuple[str, Colormap]:
+    def edge_colormap(self) -> Colormap:
         """Return the colormap to be applied to a property to get the edge color.
 
         Returns
@@ -961,7 +981,7 @@ class Shapes(Layer):
         self._edge_colormap = ensure_colormap(colormap)
 
     @property
-    def edge_contrast_limits(self) -> Tuple[float, float]:
+    def edge_contrast_limits(self) -> Union[Tuple[float, float], None]:
         """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
@@ -1012,7 +1032,7 @@ class Shapes(Layer):
         self._set_color_cycle(face_color_cycle, 'face')
 
     @property
-    def face_colormap(self) -> Tuple[str, Colormap]:
+    def face_colormap(self) -> Colormap:
         """Return the colormap to be applied to a property to get the face color.
 
         Returns
@@ -1114,7 +1134,9 @@ class Shapes(Layer):
             setattr(self, f'_{attribute}_color_mode', color_mode)
             self.refresh_colors()
 
-    def _set_color_cycle(self, color_cycle: np.ndarray, attribute: str):
+    def _set_color_cycle(
+        self, color_cycle: Union[np.ndarray, cycle], attribute: str
+    ):
         """Set the face_color_cycle or edge_color_cycle property
 
         Parameters
@@ -1613,7 +1635,8 @@ class Shapes(Layer):
             position[:, self._slice_input.displayed]
             for position in in_view_shapes_coords
         ]
-
+        # TODO: fix types here with np.asarray(sliced_in_view_coords)
+        # but blocked by https://github.com/napari/napari/issues/6294
         return self.text.compute_text_coords(
             sliced_in_view_coords, ndisplay, order
         )
@@ -1624,7 +1647,7 @@ class Shapes(Layer):
         self.text.color._apply(self.features)
         return self.text._view_color(self._indices_view)
 
-    @Layer.mode.getter
+    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -1645,8 +1668,8 @@ class Shapes(Layer):
         return str(self._mode)
 
     @mode.setter
-    def mode(self, mode: Union[str, Mode]):
-        mode = self._mode_setter_helper(mode)
+    def mode(self, val: Union[str, Mode]):
+        mode = self._mode_setter_helper(val)
         if mode == self._mode:
             return
 
@@ -2520,7 +2543,7 @@ class Shapes(Layer):
 
         return vertices, face_color, edge_color, pos, width
 
-    def _set_highlight(self, force=False):
+    def _set_highlight(self, force=False) -> None:
         """Render highlights of shapes.
 
         Includes boundaries, vertices, interaction boxes, and the drag
@@ -2730,10 +2753,12 @@ class Shapes(Layer):
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
+        prev_scale = self.scale_factor
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
         )
-        self._set_highlight(force=True)
+        # update highlight only if scale has changed, otherwise causes a cycle
+        self._set_highlight(force=(prev_scale != self.scale_factor))
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.
@@ -2815,7 +2840,7 @@ class Shapes(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Tuple[Union[float, int], None]:
+    ) -> Tuple[Union[float, int, None], None]:
         """Get the layer data value along a ray
 
         Parameters
@@ -2902,7 +2927,7 @@ class Shapes(Layer):
         position: np.ndarray,
         view_direction: np.ndarray,
         dims_displayed: List[int],
-    ) -> Tuple[Union[float, int], None]:
+    ) -> Tuple[Union[float, int, None], Union[npt.NDArray, None]]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) "under" a mouse click.
 
@@ -2938,7 +2963,7 @@ class Shapes(Layer):
                 dims_displayed=dims_displayed,
             )
         else:
-            shape_index = (None,)
+            shape_index = None
             intersection_point = None
         return shape_index, intersection_point
 

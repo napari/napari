@@ -76,7 +76,7 @@ class QtLayerButtons(QFrame):
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
             trans._('New labels layer'),
-            lambda: self.viewer._new_labels(),
+            self.viewer._new_labels,
         )
 
         layout = QHBoxLayout()

@@ -15,6 +15,23 @@ env:
   COLUMNS: 120
 
 jobs:
+  import_lint:
+    name: Import lint
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install tox
+      - name: Run import lint
+        run: tox -e import-lint
+
   manifest:
     # make sure all necessary files will be bundled in the release
     name: Check Manifest
@@ -31,9 +48,11 @@ jobs:
         run: pip install --upgrade pip
       - name: Install Napari dev
         run: pip install -e .[build]
-      - name: Check Manifest
+      - name: Make Typestubs
         run: |
           make typestubs
+      - name: Check Manifest
+        run: |
           make check-manifest
 
   localization_syntax:
@@ -62,6 +81,7 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     strategy:
+      fail-fast: false
       matrix:
         include:
           - python: 3.8
@@ -116,6 +136,7 @@ jobs:
             backend: pyqt5
             coverage: cov
             pydantic: ""
+            tox_extras: "optional"
           # test without any Qt backends
           - python: 3.9
             platform: ubuntu-20.04
@@ -171,7 +192,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11
-          cache-dependency-path: napari-from-github/setup.cfg
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 

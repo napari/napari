@@ -1,4 +1,6 @@
-"""Visualizing optical flow in napari.
+"""
+Visualizing optical flow in napari
+==================================
 
 Adapted from the scikit-image gallery [1]_.
 
@@ -33,14 +35,7 @@ u, v = optical_flow_ilk(vortex_im[0], vortex_im[1], radius=15)
 magnitude = np.sqrt(u ** 2 + v ** 2)
 
 #######################################################################
-# Create a viewer, add the vortex frames, and overlay the flow
-# magnitude.
-
-viewer, vortex_layer = napari.imshow(vortex_im)
-mag_layer = viewer.add_image(magnitude, colormap='magma', opacity=0.3)
-
-#######################################################################
-# Finally, we subsample the vector field to display it — it's too
+# We subsample the vector field to display it — it's too
 # messy otherwise! And we transpose the rows/columns axes to match the
 # current scikit-image output.
 
@@ -56,6 +51,12 @@ vectors_field = np.transpose(  # transpose required — skimage bug?
         (1, 0, 2),
         )
 
+#######################################################################
+# Finally, we create a viewer, and add the vortex frames, the flow
+# magnitude, and the vector field.
+
+viewer, vortex_layer = napari.imshow(vortex_im)
+mag_layer = viewer.add_image(magnitude, colormap='magma', opacity=0.3)
 flow_layer = viewer.add_vectors(
         vectors_field,
         name='optical flow',

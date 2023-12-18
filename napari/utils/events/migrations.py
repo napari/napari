@@ -37,6 +37,7 @@ def deprecation_warning_event(
     return WarningEmitter(
         trans._(
             "{previous_path} is deprecated since {since_version} and will be removed in {version}. Please use {new_path}",
+            deferred=True,
             previous_path=previous_path,
             since_version=since_version,
             version=version,

@@ -173,7 +173,7 @@ def make_napari_viewer(
     >>> def test_something_with_strict_qt_tests(make_napari_viewer):
     ...     viewer = make_napari_viewer(strict_qt=True)
     """
-    from qtpy.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication, QWidget
 
     from napari import Viewer
     from napari._qt._qapp_model.qactions import init_qactions
@@ -222,6 +222,17 @@ def make_napari_viewer(
         "napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection",
         _empty,
     )
+
+    if "enable_console" not in request.keywords:
+
+        def _dummy_widget(*_):
+            w = QWidget()
+            w._update_theme = _empty
+            return w
+
+        monkeypatch.setattr(
+            "napari._qt.qt_viewer.QtViewer._get_console", _dummy_widget
+        )
 
     def actual_factory(
         *model_args,
