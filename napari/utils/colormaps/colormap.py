@@ -113,7 +113,7 @@ class Colormap(EventedModel):
             )
 
         # Check number of control points is correct
-        n_controls_target = len(values['colors']) + int(
+        n_controls_target = len(values.get('colors', [])) + int(
             values['interpolation'] == ColormapInterpolationMode.ZERO
         )
         n_controls = len(v)
@@ -246,6 +246,14 @@ class LabelColormap(LabelColormapBase):
     """
 
     seed: float = 0.5
+
+    @validator('colors')
+    def _validate_color(cls, v):
+        if len(v) > 2**16:
+            raise ValueError(
+                "Only up to 2**16=65535 colors are supported for LabelColormap"
+            )
+        return v
 
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         return int(

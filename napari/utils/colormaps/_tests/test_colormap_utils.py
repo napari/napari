@@ -34,5 +34,7 @@ def test_label_colormap_exception():
     with pytest.raises(ValueError, match="num_colors must be >= 1"):
         label_colormap(-1)
 
-    with pytest.raises(ValueError, match="Because of implementation details"):
+    with pytest.raises(
+        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
+    ):
         label_colormap(2**16 + 1)

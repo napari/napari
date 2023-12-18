@@ -429,10 +429,6 @@ def label_colormap(
     """
     if num_colors < 1:
         raise ValueError("num_colors must be >= 1")
-    if num_colors > 2**16:
-        raise ValueError(
-            "Because of implementation details, we do not support more than 2**16 colors."
-        )
 
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
