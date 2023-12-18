@@ -47,13 +47,10 @@ class VispyPointsLayer(VispyBaseLayer):
             # always pass one invisible point to avoid issues
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = np.zeros(1)
-            np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
+            border_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
             face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
-            np.zeros(1)
+            border_width = np.zeros(1)
             symbol = ['o']
-            border_color = 'dimgray'
-            border_width = 0.05
-
         else:
             data = self.layer._view_data
             size = self.layer._view_size
