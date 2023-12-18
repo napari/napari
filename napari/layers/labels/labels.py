@@ -564,7 +564,7 @@ class Labels(_ImageBase):
         warnings.warn(
             trans._(
                 'Labels.num_colors is deprecated since 0.4.19 and will be '
-                'removed in 0.5.0, please use len(Labels.colormap) - 1 '
+                'removed in 0.5.0, please use len(Labels.colormap) '
                 'instead.',
                 deferred=True,
             ),
