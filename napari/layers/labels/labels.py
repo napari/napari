@@ -279,7 +279,7 @@ class Labels(_ImageBase):
         self,
         data,
         *,
-        num_colors=49,
+        num_colors=50,
         features=None,
         properties=None,
         color=None,
@@ -308,9 +308,8 @@ class Labels(_ImageBase):
         self._seed = 0.5
         self._seed_rng: Optional[int] = seed_rng
         self._background_label = 0
-        self._num_colors = num_colors
         self._random_colormap = label_colormap(
-            self.num_colors, self.seed, self._background_label
+            num_colors - 1, self._seed, self._background_label
         )
         self._original_random_colormap = self._random_colormap
         self._direct_colormap = direct_colormap()
@@ -490,7 +489,7 @@ class Labels(_ImageBase):
 
         self._seed = seed
         self.colormap = label_colormap(
-            self.num_colors, self.seed, self._background_label
+            len(self.colormap) - 1, self.seed, self._background_label
         )
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
@@ -510,7 +509,7 @@ class Labels(_ImageBase):
 
         if self._seed_rng is None:
             self.colormap = label_colormap(
-                self.num_colors, self.seed, self._background_label
+                len(self.colormap) - 1, self.seed, self._background_label
             )
         else:
             self._random_colormap = shuffle_and_extend_colormap(
@@ -562,12 +561,32 @@ class Labels(_ImageBase):
     @property
     def num_colors(self):
         """int: Number of unique colors to use in colormap."""
-        return self._num_colors
+        warnings.warn(
+            trans._(
+                'Labels.num_colors is deprecated since 0.4.19 and will be '
+                'removed in 0.5.0, please use len(Labels.colormap) - 1 '
+                'instead.',
+                deferred=True,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        return len(self.colormap)
 
     @num_colors.setter
     def num_colors(self, num_colors):
+        warnings.warn(
+            trans._(
+                'Setting Labels.num_colors is deprecated since 0.4.19 and '
+                'will be removed in 0.5.0, please set Labels.colormap '
+                'instead.',
+                deferred=True,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
         self.colormap = label_colormap(
-            num_colors, self.seed, self._background_label
+            num_colors - 1, self.seed, self._background_label
         )
         self._num_colors = num_colors
         self._cached_labels = None  # invalidate the cached color mapping
@@ -732,7 +751,6 @@ class Labels(_ImageBase):
         state.update(
             {
                 'multiscale': self.multiscale,
-                'num_colors': self.num_colors,
                 'properties': self.properties,
                 'rendering': self.rendering,
                 'depiction': self.depiction,
@@ -987,7 +1005,7 @@ class Labels(_ImageBase):
                 self._direct_colormap._num_unique_colors + 2,
                 raw_dtype,
             )
-        return _texture_dtype(self.num_colors, raw_dtype)
+        return _texture_dtype(len(self.colormap), raw_dtype)
 
     def _setup_cache(self, labels):
         """

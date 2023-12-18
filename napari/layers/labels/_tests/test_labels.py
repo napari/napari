@@ -262,21 +262,22 @@ def test_seed():
 
 def test_num_colors():
     """Test setting number of colors in colormap."""
-    np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
-    layer = Labels(data)
-    assert layer.num_colors == 49
+    with pytest.warns(FutureWarning, match='num_colors is deprecated'):
+        np.random.seed(0)
+        data = np.random.randint(20, size=(10, 15))
+        layer = Labels(data)
+        assert layer.num_colors == 50
 
-    layer.num_colors = 80
-    assert layer.num_colors == 80
+        layer.num_colors = 80
+        assert layer.num_colors == 80
 
-    layer = Labels(data, num_colors=60)
-    assert layer.num_colors == 60
+        layer = Labels(data, num_colors=60)
+        assert layer.num_colors == 60
 
-    with pytest.raises(
-        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
-    ):
-        layer.num_colors = 2**17
+        with pytest.raises(
+            ValueError, match=r".*Only up to 2\*\*16=65535 colors"
+        ):
+            layer.num_colors = 2**17
 
     with pytest.raises(
         ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
@@ -604,7 +605,7 @@ def test_background_label(background_num):
 
     layer = Labels(data)
     layer._background_label = background_num
-    layer.num_colors = 49
+    layer.colormap = label_colormap(49, background_value=background_num)
     np.testing.assert_array_equal(
         layer._data_view == 0, data == background_num
     )
@@ -1578,7 +1579,7 @@ def test_color_shuffling_above_num_colors(num_colors):
     Note that we don't support more than 2\ :sup:`16` colors, and behavior
     with more colors is undefined, so we don't test it here.
     """
-    labels = np.arange(1, 1 + 2 * num_colors).reshape((2, num_colors))
+    labels = np.arange(1, 1 + 2 * (num_colors - 1)).reshape((2, -1))
     layer = Labels(labels, num_colors=num_colors)
     colors0 = layer.colormap.map(labels)
     assert np.all(colors0[0] == colors0[1])

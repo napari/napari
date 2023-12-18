@@ -132,6 +132,9 @@ class Colormap(EventedModel):
     def __iter__(self):
         yield from (self.colors, self.controls, self.interpolation)
 
+    def __len__(self):
+        return len(self.colors)
+
     def map(self, values):
         values = np.atleast_1d(values)
         if self.interpolation == ColormapInterpolationMode.LINEAR:

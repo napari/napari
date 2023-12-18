@@ -28,6 +28,7 @@ from napari._vispy._tests.utils import vispy_image_scene_size
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Labels, Points
 from napari.settings import get_settings
+from napari.utils.colormaps import label_colormap
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.theme import available_themes
 
@@ -722,7 +723,7 @@ def test_label_colors_matching_widget_auto(
     layer = qt_viewer_with_controls.viewer.add_labels(data)
     layer.show_selected_label = use_selection
     layer.opacity = 1.0  # QtColorBox & single layer are blending differently
-    n_c = layer.num_colors
+    n_c = len(layer.colormap)
 
     test_colors = np.concatenate(
         (
@@ -846,7 +847,7 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     if direct:
         layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
     else:
-        layer.num_colors = 49
+        layer.colormap = label_colormap(49)
     qt_viewer.viewer.reset_view()
     qt_viewer.canvas.native.paintGL()
     QApplication.processEvents()
@@ -891,7 +892,7 @@ def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
         layer._background_label = background
         data[:5] = background
         layer.data = data
-        layer.num_colors = 49
+        layer.colormap = label_colormap(49)
         qtbot.wait(50)
         canvas_screenshot = qt_viewer.screenshot(flash=False)
         shape = np.array(canvas_screenshot.shape[:2])
