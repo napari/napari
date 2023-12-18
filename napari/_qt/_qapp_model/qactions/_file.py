@@ -95,6 +95,7 @@ Q_FILE_ACTIONS: List[Action] = [
         title=CommandId.IMAGE_FROM_CLIPBOARD.command_title,
         callback=QtViewer._image_from_clipboard,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
+        keybindings=[{"primary": KeyMod.CtrlCmd | KeyCode.KeyN}],
     ),
     Action(
         id=CommandId.DLG_SHOW_PREFERENCES,
