@@ -133,7 +133,7 @@ _COMMAND_INFO = {
     CommandId.DLG_CLOSE: _i(trans._('Close Window')),
     CommandId.DLG_QUIT: _i(trans._('Exit')),
     CommandId.RESTART: _i(trans._('Restart')),
-    CommandId.IMAGE_FROM_CLIPBOARD: _i(trans._("Image from Clipboard")),
+    CommandId.IMAGE_FROM_CLIPBOARD: _i(trans._("New Image from Clipboard")),
 
     # View menubar
     CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen')),
