@@ -38,7 +38,7 @@ def make_widget(
             "size": blobs[:, -1],
             "border_color": "red",
             "border_width": 2,
-            "edge_width_is_relative": False,
+            "border_width_is_relative": False,
             "face_color": "transparent",
         }
         # return a "LayerDataTuple"
