@@ -247,7 +247,7 @@ class LabelColormap(LabelColormapBase):
 
     seed: float = 0.5
 
-    @validator('colors')
+    @validator('colors', allow_reuse=True)
     def _validate_color(cls, v):
         if len(v) > 2**16:
             raise ValueError(
