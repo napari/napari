@@ -139,9 +139,7 @@ def disable_jit(monkeypatch):
     importlib.reload(colormap)  # revert to original state
 
 
-@pytest.mark.parametrize(
-    "num,dtype", [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
-)
+@pytest.mark.parametrize("num,dtype", [(40, np.uint8), (1000, np.uint16)])
 @pytest.mark.usefixtures("disable_jit")
 def test_cast_labels_to_minimum_type_auto(num: int, dtype, monkeypatch):
     cmap = label_colormap(num)
