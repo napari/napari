@@ -343,7 +343,7 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
             _safe_register_widget_actions(mf)
 
 
-# TODO: This is a separate function from `_get_samples_submenu_actions` so it
+# TODO: This is a separate function from `_build_samples_submenu_actions` so it
 # can be easily deleted once npe1 is no longer supported.
 def _rebuild_npe1_samples_menu() -> None:
     """Register submenu and actions for all npe1 plugins, clearing all first."""
@@ -443,10 +443,10 @@ def _get_contrib_parent_menu(
     return submenu_id, submenu
 
 
-def _get_samples_submenu_actions(
+def _build_samples_submenu_actions(
     mf: PluginManifest,
 ) -> Tuple[List[Tuple[str, SubmenuItem]], List[Action]]:
-    """Get sample data submenu and actions for a single npe2 plugin manifest."""
+    """Build sample data submenu and actions for a single npe2 plugin manifest."""
     from napari._app_model.constants import MenuGroup, MenuId
     from napari.plugins import menu_item_template
 
@@ -513,7 +513,7 @@ def _register_manifest_actions(mf: PluginManifest) -> None:
 
     app = get_app()
     actions, submenus = _npe2_manifest_to_actions(mf)
-    samples_submenu, sample_actions = _get_samples_submenu_actions(mf)
+    samples_submenu, sample_actions = _build_samples_submenu_actions(mf)
 
     context = pm.get_context(cast('PluginName', mf.name))
 
@@ -557,7 +557,7 @@ def _npe2_manifest_to_actions(
                     submenus.append((menu_id, subitem))
 
     # Filter sample data commands (not URIs) as they are registered via
-    # `_get_samples_submenu_actions`
+    # `_build_samples_submenu_actions`
     sample_data_ids = {
         contrib.command
         for contrib in mf.contributions.sample_data or ()

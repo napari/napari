@@ -52,7 +52,7 @@ def _get_widget_viewer_param(
         widget_param = ""
         try:
             sig = inspect.signature(widget_callable.__init__)
-        except ValueError:
+        except ValueError:  # pragma: no cover
             # Inspection can fail when adding to bundled viewer as it thinks widget is
             # a builtin
             pass
@@ -95,7 +95,7 @@ def _toggle_or_get_widget(
     """
     viewer = _provide_viewer()
     if viewer is None:
-        raise RuntimeError(
+        raise RuntimeError(  # pragma: no cover
             trans._(
                 "No current `Viewer` found. Note that widgets cannot be opened in headless mode.",
                 deferred=True,
@@ -108,31 +108,19 @@ def _toggle_or_get_widget(
         return None
 
     # Get widget param name (if any) and check type
-    if widget_contribution := get_widget_contribution(
-        plugin,
-        widget_name,
-    ):
-        widget_callable, _ = widget_contribution
-        widget_param = _get_widget_viewer_param(widget_callable, widget_name)
+    widget_callable, _ = get_widget_contribution(plugin, widget_name)
+    widget_param = _get_widget_viewer_param(widget_callable, widget_name)
 
-        kwargs = {}
-        if widget_param:
-            kwargs[widget_param] = viewer
-        return widget_callable(**kwargs), name
-    raise RuntimeError(
-        trans._(
-            "{widget} from {plugin} was not found. Check widget implemented correctly by plugin.",
-            deferred=True,
-            widget=widget_name,
-            plugin=plugin,
-        )
-    )
+    kwargs = {}
+    if widget_param:
+        kwargs[widget_param] = viewer
+    return widget_callable(**kwargs), name
 
 
 def _get_current_dock_status(name: str) -> bool:
     window = _provide_window()
     if window is None:
-        raise RuntimeError(
+        raise RuntimeError(  # pragma: no cover
             trans._(
                 "No current `Window` found. Note that widgets cannot be opened in headless mode.",
                 deferred=True,
@@ -143,10 +131,10 @@ def _get_current_dock_status(name: str) -> bool:
     return False
 
 
-def _get_widgets_submenu_actions(
+def _build_widgets_submenu_actions(
     mf: PluginManifest,
 ) -> Tuple[List[Tuple[str, SubmenuItem]], List[Action]]:
-    """Get widget submenu and actions for a single npe2 plugin manifest."""
+    """Build widget submenu and actions for a single npe2 plugin manifest."""
     # If no widgets, return
     if not mf.contributions.widgets:
         return [], []
@@ -210,7 +198,7 @@ def _register_widget_actions(mf: PluginManifest) -> None:
     plugin's widget actions and submenus to the app model registry.
     """
     app = get_app()
-    widgets_submenu, widget_actions = _get_widgets_submenu_actions(mf)
+    widgets_submenu, widget_actions = _build_widgets_submenu_actions(mf)
 
     context = pm.get_context(cast('PluginName', mf.name))
     if widget_actions:

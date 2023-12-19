@@ -829,9 +829,11 @@ class Window:
             title=trans._('&Plugins'),
             parent=self._qt_window,
         )
-        self.plugins_menu.aboutToShow.connect(
-            lambda: self._update_menu_state('plugins_menu')
-        )
+
+        def _update_plugin_menu_state(self):
+            self._update_menu_state('plugins_menu')
+
+        self.plugins_menu.aboutToShow.connect(_update_plugin_menu_state)
         self.main_menu.addMenu(self.plugins_menu)
         # window menu
         self.window_menu = menus.WindowMenu(self)

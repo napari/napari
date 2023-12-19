@@ -26,7 +26,7 @@ class QWidget_example(QWidget):
 
 class QWidget_string_annnot(QWidget):
     def __init__(self, test: "napari.viewer.Viewer"):
-        super().__init__()
+        super().__init__()  # pragma: no cover
 
 
 class Container_example(Container):
