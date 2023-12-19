@@ -889,10 +889,9 @@ def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
     backgrounds = (0, 2, -2)
 
     for background in backgrounds:
-        layer._background_label = background
         data[:5] = background
         layer.data = data
-        layer.colormap = label_colormap(49)
+        layer.colormap = label_colormap(49, background_value=background)
         qtbot.wait(50)
         canvas_screenshot = qt_viewer.screenshot(flash=False)
         shape = np.array(canvas_screenshot.shape[:2])

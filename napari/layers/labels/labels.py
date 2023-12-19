@@ -307,9 +307,8 @@ class Labels(_ImageBase):
 
         self._seed = 0.5
         self._seed_rng: Optional[int] = seed_rng
-        self._background_label = 0
         self._random_colormap = label_colormap(
-            num_colors - 1, self._seed, self._background_label
+            num_colors - 1, self._seed, background_value=0
         )
         self._original_random_colormap = self._random_colormap
         self._direct_colormap = direct_colormap()
@@ -489,7 +488,9 @@ class Labels(_ImageBase):
 
         self._seed = seed
         self.colormap = label_colormap(
-            len(self.colormap) - 1, self.seed, self._background_label
+            len(self.colormap) - 1,
+            seed=self.seed,
+            background_value=self.colormap.background_value,
         )
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
@@ -509,7 +510,9 @@ class Labels(_ImageBase):
 
         if self._seed_rng is None:
             self.colormap = label_colormap(
-                len(self.colormap) - 1, self.seed, self._background_label
+                len(self.colormap) - 1,
+                seed=self.seed,
+                background_value=self.colormap.background_value,
             )
         else:
             self._random_colormap = shuffle_and_extend_colormap(
@@ -586,7 +589,9 @@ class Labels(_ImageBase):
             stacklevel=2,
         )
         self.colormap = label_colormap(
-            num_colors - 1, self.seed, self._background_label
+            num_colors - 1,
+            seed=self.seed,
+            background_value=self.colormap.background_value,
         )
         self._num_colors = num_colors
         self._cached_labels = None  # invalidate the cached color mapping
@@ -664,8 +669,8 @@ class Labels(_ImageBase):
         if not color:
             color = {}
 
-        if self._background_label not in color:
-            color[self._background_label] = 'transparent'
+        if self.colormap.background_value not in color:
+            color[self.colormap.background_value] = 'transparent'
 
         default_color = color.pop(None, 'black')
         # this is default color for label that is not in the color dict
@@ -686,7 +691,7 @@ class Labels(_ImageBase):
         """Returns True if color contains only default colors, otherwise False.
 
         Default colors are black for `None` and transparent for
-        `self._background_label`.
+        `self.colormap.background_value`.
 
         Parameters
         ----------
@@ -704,7 +709,7 @@ class Labels(_ImageBase):
         if not hasattr(self, '_color'):
             return False
 
-        default_keys = [None, self._background_label]
+        default_keys = [None, self.colormap.background_value]
         if set(default_keys) != set(color.keys()):
             return False
 
@@ -789,8 +794,8 @@ class Labels(_ImageBase):
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
-        if self.selected_label != self._background_label:
-            self.selected_label = self._background_label
+        if self.selected_label != self.colormap.background_value:
+            self.selected_label = self.colormap.background_value
         else:
             self.selected_label = self._prev_selected_label
 
@@ -989,7 +994,7 @@ class Labels(_ImageBase):
         sliced_labels = get_contours(
             labels[expanded_slice],
             self.contour,
-            self._background_label,
+            self.colormap.background_value,
         )
 
         # Remove the latest one-pixel border from the result
@@ -1140,12 +1145,12 @@ class Labels(_ImageBase):
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""
-        if label == self._background_label:
+        if label == self.colormap.background_value:
             col = None
         elif label is None or (
             self.show_selected_label and label != self.selected_label
         ):
-            col = self.colormap.map(self._background_label)[0]
+            col = self.colormap.map(self.colormap.background_value)[0]
         else:
             col = self.colormap.map(label)[0]
         return col
@@ -1384,7 +1389,8 @@ class Labels(_ImageBase):
         # If requested new label doesn't change old label then return
         old_label = np.asarray(self.data[int_coord]).item()
         if old_label == new_label or (
-            self.preserve_labels and old_label != self._background_label
+            self.preserve_labels
+            and old_label != self.colormap.background_value
         ):
             return
 
@@ -1581,10 +1587,12 @@ class Labels(_ImageBase):
         # subset it if we want to only paint into background/only erase
         # current label
         if self.preserve_labels:
-            if new_label == self._background_label:
+            if new_label == self.colormap.background_value:
                 keep_coords = self.data[slice_coord] == self.selected_label
             else:
-                keep_coords = self.data[slice_coord] == self._background_label
+                keep_coords = (
+                    self.data[slice_coord] == self.colormap.background_value
+                )
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         self.data_setitem(slice_coord, new_label, refresh)

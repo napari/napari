@@ -604,7 +604,6 @@ def test_background_label(background_num):
     data[4:-4, 4:-4] = -1
 
     layer = Labels(data)
-    layer._background_label = background_num
     layer.colormap = label_colormap(49, background_value=background_num)
     np.testing.assert_array_equal(
         layer._data_view == 0, data == background_num
@@ -697,14 +696,16 @@ def test_show_selected_label():
     original_color = layer.get_color(1)
 
     layer.show_selected_label = True
-    original_background_color = layer.get_color(layer._background_label)
+    original_background_color = layer.get_color(
+        layer.colormap.background_value
+    )
     none_color = layer.get_color(None)
     layer.selected_label = 1
 
     # color of selected label has not changed
     assert np.allclose(layer.get_color(layer.selected_label), original_color)
 
-    current_background_color = layer.get_color(layer._background_label)
+    current_background_color = layer.get_color(layer.colormap.background_value)
     # color of background is background color
     assert current_background_color == original_background_color
 
