@@ -48,7 +48,6 @@ from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
 from napari.utils.colormaps import (
     direct_colormap,
-    ensure_colormap,
     label_colormap,
 )
 from napari.utils.colormaps.colormap import (
@@ -61,6 +60,7 @@ from napari.utils.colormaps.colormap import (
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.indexing import index_in_slice
 from napari.utils.migrations import deprecated_constructor_arg_by_attr
@@ -355,7 +355,15 @@ class Labels(_ImageBase):
             contiguous=Event,
             brush_size=Event,
             selected_label=Event,
-            color_mode=Event,
+            color_mode=WarningEmitter(
+                trans._(
+                    'Labels.events.color_mode is deprecated since 0.4.19 and '
+                    'will be removed in 0.5.0, please use '
+                    'Labels.events.colormap.',
+                    deferred=True,
+                ),
+                type_name='color_mode',
+            ),
             brush_shape=Event,
             contour=Event,
             features=Event,
@@ -559,7 +567,7 @@ class Labels(_ImageBase):
                 self._colormap = self._direct_colormap
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.color_mode = color_mode
+        self._color_mode = color_mode
 
     @property
     def num_colors(self):
@@ -807,17 +815,37 @@ class Labels(_ImageBase):
 
         DIRECT allows color of each label to be set directly by a color dict.
         """
+        warnings.warn(
+            trans._(
+                'Labels.color_mode is deprecated since 0.4.19 and will be '
+                'removed in 0.5.0. Please check type(Labels.colormap) '
+                'instead. LabelColormap corresponds to AUTO color mode, and '
+                'DirectLabelColormap corresponds to DIRECT color mode.',
+                deferred=True,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
         return str(self._color_mode)
 
     @color_mode.setter
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
+        warnings.warn(
+            trans._(
+                'Labels.color_mode is deprecated since 0.4.19 and will be '
+                'removed in 0.5.0. Please set Labels.colormap instead.',
+                deferred=True,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
         color_mode = LabelColorMode(color_mode)
         self._cached_labels = None  # invalidates labels cache
         self._color_mode = color_mode
         if color_mode == LabelColorMode.AUTO:
-            self._colormap = ensure_colormap(self._random_colormap)
+            self._colormap = self._random_colormap
         else:
-            self._colormap = ensure_colormap(self._direct_colormap)
+            self._colormap = self._direct_colormap
         self._selected_color = self.get_color(self.selected_label)
         self.events.color_mode()
         self.events.colormap()  # If remove this emitting, connect shader update to color_mode
