@@ -30,7 +30,7 @@ def test_swap_background_label(labels_data_4d):
     labels = Labels(labels_data_4d)
     labels.selected_label = 10
     swap_selected_and_background_labels(labels)
-    assert labels.selected_label == labels._background_label
+    assert labels.selected_label == labels.colormap.background_value
     swap_selected_and_background_labels(labels)
     assert labels.selected_label == 10
 
