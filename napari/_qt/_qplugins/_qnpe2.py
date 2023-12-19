@@ -73,9 +73,9 @@ def _rebuild_npe1_samples_menu() -> None:
 
             def _add_sample(
                 qt_viewer: QtViewer,
-                plugin=plugin_name,
-                sample=sample_name,
-            ):
+                plugin: str = plugin_name,
+                sample: str = sample_name,
+            ) -> None:
                 from napari._qt.dialogs.qt_reader_dialog import (
                     handle_gui_reading,
                 )
@@ -111,7 +111,7 @@ def _rebuild_npe1_samples_menu() -> None:
 
 # Note `QtViewer` gets added to `injection_store.namespace` during
 # `init_qactions` so does not need to be imported for type annotation resolution
-def _add_sample(qt_viewer: QtViewer, plugin=str, sample=str) -> None:
+def _add_sample(qt_viewer: QtViewer, plugin: str, sample: str) -> None:
     from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 
     try:
