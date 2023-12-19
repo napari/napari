@@ -108,7 +108,7 @@ def _toggle_or_get_widget(
         return None
 
     # Get widget param name (if any) and check type
-    widget_callable, _ = get_widget_contribution(plugin, widget_name)
+    widget_callable, _ = get_widget_contribution(plugin, widget_name)  # type: ignore [misc]
     widget_param = _get_widget_viewer_param(widget_callable, widget_name)
 
     kwargs = {}
