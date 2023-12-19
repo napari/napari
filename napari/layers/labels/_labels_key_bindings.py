@@ -79,7 +79,7 @@ def new_label(layer: Labels):
     if layer.selected_label == new_selected_label:
         show_info(
             trans._(
-                "Largest label already selected",
+                "Highest unused label already set as current selected label",
             )
         )
     else:
