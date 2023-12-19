@@ -429,6 +429,9 @@ def label_colormap(
     -----
     0 always maps to fully transparent.
     """
+    if num_colors < 1:
+        raise ValueError("num_colors must be >= 1")
+
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
     midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors + 1)
