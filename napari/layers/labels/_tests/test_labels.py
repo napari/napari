@@ -273,8 +273,15 @@ def test_num_colors():
     layer = Labels(data, num_colors=60)
     assert layer.num_colors == 60
 
-    with pytest.raises(ValueError, match="must be between 1 and 65535"):
+    with pytest.raises(
+        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
+    ):
         layer.num_colors = 2**17
+
+    with pytest.raises(
+        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
+    ):
+        Labels(data, num_colors=2**17)
 
 
 def test_properties():
