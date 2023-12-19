@@ -52,6 +52,7 @@ from napari._app_model.context import get_context
 from napari._qt import menus
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt._qplugins import _rebuild_npe1_samples_menu
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
@@ -73,7 +74,6 @@ from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
     plugin_manager,
 )
-from napari.plugins._npe2 import _rebuild_npe1_samples_menu
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
@@ -806,6 +806,9 @@ class Window:
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
+    def _update_plugin_menu_state(self):
+        self._update_menu_state('plugins_menu')
+
     def _setup_npe1_samples_menu(self):
         """Register npe1 sample data, build menu and connect to events."""
         plugin_manager.discover_sample_data()
@@ -856,10 +859,7 @@ class Window:
             parent=self._qt_window,
         )
 
-        def _update_plugin_menu_state(self):
-            self._update_menu_state('plugins_menu')
-
-        self.plugins_menu.aboutToShow.connect(_update_plugin_menu_state)
+        self.plugins_menu.aboutToShow.connect(self._update_plugin_menu_state)
         self.main_menu.addMenu(self.plugins_menu)
         # window menu
         self.window_menu = menus.WindowMenu(self)
