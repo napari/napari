@@ -32,7 +32,7 @@ from napari.layers.utils.layer_utils import calc_data_range
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
-from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
@@ -238,7 +238,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         rgb=None,
         colormap='gray',
         contrast_limits=None,
-        gamma=1,
+        gamma=1.0,
         interpolation2d='nearest',
         interpolation3d='linear',
         rendering='mip',
@@ -251,7 +251,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending='translucent',
         visible=True,
         multiscale=None,
@@ -392,7 +392,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # _set_colormap method. This is important for Labels layers, because
         # we don't want to use get_color before set_view_slice has been
         # triggered (self.refresh(), below).
-        self._set_colormap(colormap)
+        self._colormap = ensure_colormap(colormap)
         self.contrast_limits = self._contrast_limits
         self._interpolation2d = Interpolation.NEAREST
         self._interpolation3d = Interpolation.NEAREST

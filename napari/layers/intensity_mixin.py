@@ -152,6 +152,6 @@ class IntensityVisualizationMixin:
 
     @gamma.setter
     def gamma(self, value):
-        self._gamma = value
+        self._gamma = float(value)
         self._update_thumbnail()
         self.events.gamma()

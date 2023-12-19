@@ -6,6 +6,7 @@ from typing import Dict, Optional
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
+from vispy.visuals import ImageVisual
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import fix_data_dtype, get_gl_extensions
@@ -160,7 +161,7 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
         # Check if ndisplay has changed current node type needs updating
         if (ndisplay == 3 and not isinstance(node, VolumeNode)) or (
             ndisplay == 2
-            and not isinstance(node, ImageNode)
+            and not isinstance(node, ImageVisual)
             or node != self.node
         ):
             self._on_display_change(data)
@@ -286,7 +287,9 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
             if self.layer.multiscale:
                 raise ValueError(
                     trans._(
-                        "Shape of in dividual tiles in multiscale {shape} cannot exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is currently in {ndisplay}D mode.",
+                        "Shape of individual tiles in multiscale {shape} cannot "
+                        "exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is "
+                        "currently in {ndisplay}D mode.",
                         deferred=True,
                         shape=data.shape,
                         texture_size=MAX_TEXTURE_SIZE,
@@ -295,7 +298,9 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
                 )
             warnings.warn(
                 trans._(
-                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size} in at least one axis and will be downsampled. Rendering is currently in {ndisplay}D mode.",
+                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size}"
+                    " in at least one axis and will be downsampled."
+                    " Rendering is currently in {ndisplay}D mode.",
                     deferred=True,
                     shape=data.shape,
                     texture_size=MAX_TEXTURE_SIZE,
