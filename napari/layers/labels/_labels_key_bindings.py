@@ -7,6 +7,7 @@ from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
+from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 
 MIN_BRUSH_SIZE = 1
@@ -74,7 +75,15 @@ labels_fun_to_mode = [
 )
 def new_label(layer: Labels):
     """Set the currently selected label to the largest used label plus one."""
-    layer.selected_label = np.max(layer.data) + 1
+    new_selected_label = np.max(layer.data) + 1
+    if layer.selected_label == new_selected_label:
+        show_info(
+            trans._(
+                "Largest label already selected",
+            )
+        )
+    else:
+        layer.selected_label = new_selected_label
 
 
 @register_label_action(
