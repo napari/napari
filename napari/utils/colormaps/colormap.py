@@ -358,6 +358,10 @@ class DirectLabelColormap(LabelColormapBase):
             kwargs["colors"] = np.zeros(3)
         super().__init__(*args, **kwargs)
 
+    def __len__(self):
+        """Overwrite from base class because .color is a dummy array."""
+        return len(self.color_dict)
+
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         return int(
             _cast_labels_data_to_texture_dtype_direct(
