@@ -107,9 +107,8 @@ class Shape(ABC):
         self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
         self._box = np.empty((9, 2))
 
-        self._closed = False
         self._filled = True
-        self._use_face_vertices = False
+        self._closed = self._use_face_vertices = False
         self.edge_width = edge_width
         self.z_index = z_index
         self.name = ''
