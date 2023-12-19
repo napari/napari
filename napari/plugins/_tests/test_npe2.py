@@ -119,7 +119,7 @@ def test_get_widget_contribution_no_widgets(tmp_plugin: DynamicPlugin):
     """Test error raised when `widget_name` provided but plugin provides no widgets."""
     with pytest.raises(KeyError) as e:
         _npe2.get_widget_contribution('tmp_plugin', 'No widgets')
-    assert "Plugin 'tmp_plugin' does not provide any widgets" in e
+    assert "Plugin 'tmp_plugin' does not provide any widgets" in str(e.value)
 
 
 def test_populate_qmenu(mock_pm: 'TestPluginManager'):
