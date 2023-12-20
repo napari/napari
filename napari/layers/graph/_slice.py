@@ -7,7 +7,7 @@ from numpy.typing import ArrayLike
 
 from napari.layers.base._slice import _next_request_id
 from napari.layers.points._slice import _PointSliceResponse
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
 
 @dataclass(frozen=True)
@@ -23,7 +23,7 @@ class _GraphSliceResponse(_PointSliceResponse):
     scale: array like or none
         Used to scale the sliced points for visualization.
         Should be broadcastable to indices.
-    dims : _SliceInput
+    slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
     request_id : int
         The identifier of the request from which this was generated.
@@ -49,17 +49,17 @@ class _GraphSliceRequest:
         Describes the slicing plane or bounding box in the layer's dimensions.
     data : BaseGraph
         The layer's data field, which is the main input to slicing.
-    dims_indices : tuple of ints or slices
-        The slice indices in the layer's data space.
+    data_slice : _ThickNDSlice
+        The slicing coordinates and margins in data space.
     size : array like
         Size of each node. This is used in calculating visibility.
     others
         See the corresponding attributes in `Layer` and `Image`.
     """
 
-    dims: _SliceInput
+    slice_input: _SliceInput
     data: BaseGraph = field(repr=False)
-    dims_indices: Any = field(repr=False)
+    data_slice: _ThickNDSlice = field(repr=False)
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
     id: int = field(default_factory=_next_request_id)
@@ -71,11 +71,11 @@ class _GraphSliceRequest:
                 indices=[],
                 edges_indices=[],
                 scale=np.empty(0),
-                dims=self.dims,
+                slice_input=self.slice_input,
                 request_id=self.id,
             )
 
-        not_disp = list(self.dims.not_displayed)
+        not_disp = list(self.slice_input.not_displayed)
         if not not_disp:
             # If we want to display everything, then use all indices.
             # scale is only impacted by not displayed data, therefore 1
@@ -86,7 +86,7 @@ class _GraphSliceRequest:
                 indices=node_indices,
                 edges_indices=edges,
                 scale=1,
-                dims=self.dims,
+                slice_input=self.slice_input,
                 request_id=self.id,
             )
 
@@ -95,9 +95,11 @@ class _GraphSliceRequest:
         # objects, the array has dtype=object which is then very slow for the
         # arithmetic below. As Points._round_index is always False, we can safely
         # convert to float to get a major performance improvement.
-        not_disp_indices = np.array(self.dims_indices)[not_disp].astype(float)
+        not_disp_indices, m_left, m_right = self.data_slice[
+            not_disp
+        ].as_array()
 
-        if self.out_of_slice_display and self.dims.ndim > 2:
+        if self.out_of_slice_display and self.slice_input.ndim > 2:
             (
                 node_indices,
                 edges_indices,
@@ -112,7 +114,7 @@ class _GraphSliceRequest:
             indices=node_indices,
             edges_indices=edges_indices,
             scale=scale,
-            dims=self.dims,
+            slice_input=self.slice_input,
             request_id=self.id,
         )
 

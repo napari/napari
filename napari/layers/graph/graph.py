@@ -7,7 +7,7 @@ from psygnal.containers import Selection
 
 from napari.layers.graph._slice import _GraphSliceRequest, _GraphSliceResponse
 from napari.layers.points.points import _BasePoints
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.utils.events import Event
 from napari.utils.translations import trans
 
@@ -370,12 +370,13 @@ class Graph(_BasePoints):
         return self.data.ndim
 
     def _make_slice_request_internal(
-        self, slice_input: _SliceInput, dims_indices: ArrayLike
+        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
     ) -> _GraphSliceRequest:
+        print(data_slice)
         return _GraphSliceRequest(
-            dims=slice_input,
+            slice_input=slice_input,
             data=self.data,
-            dims_indices=dims_indices,
+            data_slice=data_slice,
             out_of_slice_display=self.out_of_slice_display,
             size=self.size,
         )
@@ -488,17 +489,25 @@ class Graph(_BasePoints):
                 self._border._add(n_colors=adding)
                 self._face._update_current_properties(current_properties)
                 self._face._add(n_colors=adding)
-                
+
                 # ensure each attribute is updated before refreshing
                 with self._block_refresh():
-                    for attribute in ("shown", "size", "symbol", "border_width"):
+                    for attribute in (
+                        "shown",
+                        "size",
+                        "symbol",
+                        "border_width",
+                    ):
                         if attribute == "shown":
                             default_value = True
                         else:
-                            default_value = getattr(self, f"current_{attribute}")
+                            default_value = getattr(
+                                self, f"current_{attribute}"
+                            )
                         new_values = np.repeat([default_value], adding, axis=0)
                         values = np.concatenate(
-                            (getattr(self, f"_{attribute}"), new_values), axis=0
+                            (getattr(self, f"_{attribute}"), new_values),
+                            axis=0,
                         )
                         setattr(self, attribute, values)
 
@@ -512,4 +521,3 @@ class Graph(_BasePoints):
         state.pop("properties", None)
         state.pop("property_choices", None)
         return state
-    
