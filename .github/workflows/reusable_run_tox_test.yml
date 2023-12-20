@@ -52,7 +52,7 @@ jobs:
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v3
         with:
@@ -126,7 +126,7 @@ jobs:
           shell: bash
           run: |
             echo ${{ env.MAIN }}
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
@@ -139,7 +139,7 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
@@ -152,7 +152,7 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
@@ -165,11 +165,18 @@ jobs:
         with:
           shell: bash
           run: |
-            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
             rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}
           NAPARI_TEST_SUBSET: qt
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          path: .pytest_tmp
 
       - name: Upload pytest timing reports as json
         uses: actions/upload-artifact@v3

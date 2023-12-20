@@ -181,5 +181,6 @@ Q_FILE_ACTIONS: List[Action] = [
         title=CommandId.DLG_QUIT.command_title,
         callback=_close_app,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
+        keybindings=[StandardKeyBinding.Quit],
     ),
 ]

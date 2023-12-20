@@ -172,11 +172,7 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     dw = viewer.window._dock_widgets['magic (TestP3)']
     # make sure that it contains a magicgui widget
     magic_widget = dw.widget()._magic_widget
-    FGui = getattr(magicgui.widgets, 'FunctionGui', None)
-    if FGui is None:
-        # pre magicgui 0.2.6
-        FGui = magicgui.FunctionGui
-    assert isinstance(magic_widget, FGui)
+    assert isinstance(magic_widget, magicgui.widgets.FunctionGui)
     # This magicgui widget uses the parameter annotation to receive a viewer
     assert isinstance(magic_widget.viewer.value, napari.Viewer)
     # The function just returns the viewer... make sure we can call it

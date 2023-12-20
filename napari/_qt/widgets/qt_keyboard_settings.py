@@ -11,6 +11,7 @@ from qtpy.QtCore import QEvent, QPoint, Qt, Signal
 from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QComboBox,
     QHBoxLayout,
     QItemDelegate,
@@ -174,13 +175,22 @@ class ShortcutEditor(QWidget):
 
     def restore_defaults(self):
         """Launches dialog to confirm restore choice."""
-
+        prev = QApplication.instance().testAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs
+        )
+        QApplication.instance().setAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs, True
+        )
         response = QMessageBox.question(
             self,
             trans._("Restore Shortcuts"),
             trans._("Are you sure you want to restore default shortcuts?"),
-            QMessageBox.RestoreDefaults | QMessageBox.Cancel,
-            QMessageBox.RestoreDefaults,
+            QMessageBox.StandardButton.RestoreDefaults
+            | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.RestoreDefaults,
+        )
+        QApplication.instance().setAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs, prev
         )
 
         if response == QMessageBox.RestoreDefaults:
@@ -435,6 +445,15 @@ class ShortcutEditor(QWidget):
 
             # get the original shortcuts
             current_shortcuts = self._find_shortcuts(current_action)
+            for mod in {"Shift", "Ctrl", "Alt", "Cmd", "Super", 'Meta'}:
+                if new_shortcut.endswith('-' + mod):
+                    self._show_bind_shortcut_error(
+                        current_action,
+                        current_shortcuts,
+                        row,
+                        new_shortcut,
+                    )
+                    return
 
             # FIXME change conflict detection method to match new system
             shortcut_str = kb2str(coerce_keybinding(new_shortcut))
@@ -696,6 +715,8 @@ class EditorWidget(QLineEdit):
             Qt.Key.Key_Enter,
         }:
             # Do not allow user to set these keys as shortcut.
+            # Use them as a save trigger for modifier only shortcuts.
+            self.clearFocus()
             return
 
         # Translate key value to key string.

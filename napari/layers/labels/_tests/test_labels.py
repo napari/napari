@@ -1,18 +1,19 @@
+import copy
 import itertools
 import time
-import warnings
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
+import numpy.testing as npt
 import pandas as pd
 import pytest
 import xarray as xr
 import zarr
 from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
-from skimage import data
+from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.components import ViewerModel
@@ -271,6 +272,16 @@ def test_num_colors():
 
     layer = Labels(data, num_colors=60)
     assert layer.num_colors == 60
+
+    with pytest.raises(
+        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
+    ):
+        layer.num_colors = 2**17
+
+    with pytest.raises(
+        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
+    ):
+        Labels(data, num_colors=2**17)
 
 
 def test_properties():
@@ -536,6 +547,7 @@ def test_n_edit_dimensions():
             np.zeros((9, 10), dtype=np.uint32),
         ),
     ],
+    ids=['touching objects', 'touching border', 'full array'],
 )
 def test_contour(input_data, expected_data_view):
     """Test changing contour."""
@@ -581,6 +593,24 @@ def test_contour(input_data, expected_data_view):
 
     with pytest.raises(ValueError, match='contour value must be >= 0'):
         layer.contour = -1
+
+
+@pytest.mark.parametrize("background_num", [0, 1, 2, -1])
+def test_background_label(background_num):
+    data = np.zeros((10, 10), dtype=np.int32)
+    data[1:-1, 1:-1] = 1
+    data[2:-2, 2:-2] = 2
+    data[4:-4, 4:-4] = -1
+
+    layer = Labels(data)
+    layer._background_label = background_num
+    layer.num_colors = 49
+    np.testing.assert_array_equal(
+        layer._data_view == 0, data == background_num
+    )
+    np.testing.assert_array_equal(
+        layer._data_view != 0, data != background_num
+    )
 
 
 def test_contour_large_new_labels():
@@ -920,11 +950,22 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
+@pytest.mark.parametrize("value", [1, 10, 50, -2, -10])
+@pytest.mark.parametrize("dtype", [np.int8, np.int32])
+def test_thumbnail_single_color(value, dtype):
+    labels = Labels(np.full((10, 10), value, dtype=dtype), opacity=1)
+    labels._update_thumbnail()
+    mid_point = tuple(np.array(labels.thumbnail.shape[:2]) // 2)
+    npt.assert_array_equal(
+        labels.thumbnail[mid_point], labels.get_color(value) * 255
+    )
+
+
 def test_world_data_extent():
     """Test extent after applying transforms."""
     np.random.seed(0)
     shape = (6, 10, 15)
-    data = np.random.randint(20, size=(shape))
+    data = np.random.randint(20, size=shape)
     layer = Labels(data)
     extent = np.array(((0,) * 3, [s - 1 for s in shape]))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
@@ -949,7 +990,7 @@ def test_undo_redo(
     preserve_labels,
     n_dimensional,
 ):
-    blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
+    blobs = sk_data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
     data_history = [blobs.copy()]
     layer.brush_size = brush_size
@@ -1444,11 +1485,11 @@ def test_invalidate_cache_when_change_color_mode():
     layer = Labels(data)
     layer.selected_label = 0
     gt_auto = layer._raw_to_displayed(layer._slice.image.raw)
-    assert gt_auto.dtype == np.float32
+    assert gt_auto.dtype == np.uint8
 
     layer.color_mode = 'direct'
     layer._cached_labels = None
-    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.uint8
 
     layer.color_mode = 'auto'
     # If the cache is not invalidated, it returns colors for
@@ -1456,6 +1497,20 @@ def test_invalidate_cache_when_change_color_mode():
     assert np.allclose(
         layer._raw_to_displayed(layer._slice.image.raw), gt_auto
     )
+
+
+@pytest.mark.parametrize("dtype", np.sctypes['int'] + np.sctypes['uint'])
+@pytest.mark.parametrize("mode", ["auto", "direct"])
+def test_cache_for_dtypes(dtype, mode):
+    data = np.zeros((10, 10), dtype=dtype)
+    labels = Labels(data)
+    labels.color_mode = mode
+    assert labels._cached_labels is None
+    labels._raw_to_displayed(
+        labels._slice.image.raw, (slice(None), slice(None))
+    )
+    assert labels._cached_labels is not None
+    assert labels._cached_mapped_labels.dtype == labels._slice.image.view.dtype
 
 
 def test_color_mapping_when_color_is_changed():
@@ -1467,7 +1522,7 @@ def test_color_mapping_when_color_is_changed():
     gt_direct_3colors = layer._raw_to_displayed(layer._slice.image.raw)
 
     layer = Labels(data, color={1: 'green', 2: 'red'})
-    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.uint8
     layer.color = {1: 'green', 2: 'red', 3: 'white'}
 
     assert np.allclose(
@@ -1489,10 +1544,10 @@ def test_color_mapping_with_show_selected_label():
         label_mask = data == selected_label
         mapped_colors = layer.colormap.map(data)
 
-        assert np.allclose(
+        npt.assert_allclose(
             mapped_colors[label_mask], mapped_colors_all[label_mask]
         )
-        assert np.allclose(mapped_colors[np.logical_not(label_mask)], 0)
+        npt.assert_allclose(mapped_colors[np.logical_not(label_mask)], 0)
 
     layer.show_selected_label = False
     assert np.allclose(layer.colormap.map(data), mapped_colors_all)
@@ -1512,6 +1567,24 @@ def test_color_mapping_when_seed_is_changed():
     )
 
     assert not np.allclose(mapped_colors1, mapped_colors2)
+
+
+@pytest.mark.parametrize('num_colors', [49, 50, 254, 255, 60000, 65534])
+def test_color_shuffling_above_num_colors(num_colors):
+    r"""Check that the color shuffle does not result in the same collisions.
+
+    See https://github.com/napari/napari/issues/6448.
+
+    Note that we don't support more than 2\ :sup:`16` colors, and behavior
+    with more colors is undefined, so we don't test it here.
+    """
+    labels = np.arange(1, 1 + 2 * num_colors).reshape((2, num_colors))
+    layer = Labels(labels, num_colors=num_colors)
+    colors0 = layer.colormap.map(labels)
+    assert np.all(colors0[0] == colors0[1])
+    layer.new_colormap()
+    colors1 = layer.colormap.map(labels)
+    assert not np.all(colors1[0] == colors1[1])
 
 
 def test_negative_label():
@@ -1579,17 +1652,6 @@ def test_get_status_with_custom_index():
     )
 
 
-def test_collision_warning():
-    label = Labels(data=np.zeros((10, 10), dtype=np.uint8))
-    with pytest.warns(
-        RuntimeWarning, match="Because integer labels are cast to less-precise"
-    ):
-        label.color = {2**25 + 1: 'red', 2**25 + 2: 'blue'}
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        label.color = {1: 'red', 2: 'blue'}
-
-
 def test_labels_features_event():
     event_emitted = False
 
@@ -1603,6 +1665,23 @@ def test_labels_features_event():
     layer.features = {'some_feature': []}
 
     assert event_emitted
+
+
+def test_invalidate_cache_when_change_slice():
+    layer = Labels(np.zeros((2, 4, 5), dtype=np.uint8))
+    assert layer._cached_labels is None
+    layer._setup_cache(layer._slice.image.raw)
+    assert layer._cached_labels is not None
+    layer._set_view_slice()
+    assert layer._cached_labels is None
+
+
+def test_copy():
+    l1 = Labels(np.zeros((2, 4, 5), dtype=np.uint8))
+    l2 = copy.copy(l1)
+    l3 = Labels.create(*l1.as_layer_data_tuple())
+    assert l1.data is not l2.data
+    assert l1.data is l3.data
 
 
 class TestLabels:

@@ -589,7 +589,7 @@ class VispyCanvas:
     ) -> None:
         """Maps a napari layer to its corresponding vispy layer and sets the parent scene of the vispy layer.
 
-        Paremeters
+        Parameters
         ----------
         napari_layer :
             Any napari layer, the layer type is the same as the vispy layer.
@@ -612,9 +612,9 @@ class VispyCanvas:
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
 
-         Parameters
-         ----------
-         event: napari.utils.events.event.Event
+        Parameters
+        ----------
+        event : napari.utils.events.event.Event
             The event causing a particular layer to be removed
 
         Returns

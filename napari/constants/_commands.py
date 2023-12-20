@@ -79,6 +79,11 @@ class CommandId(StrEnum):
     LAYER_UNLINK_SELECTED = 'napari:layer:unlink_selected_layers'
     LAYER_SELECT_LINKED = 'napari:layer:select_linked_layers'
 
+    SHOW_SELECTED_LAYERS = 'napari:layer:show_selected'
+    HIDE_SELECTED_LAYERS = 'napari:layer:hide_selected'
+    SHOW_UNSELECTED_LAYERS = 'napari:layer:show_unselected'
+    HIDE_UNSELECTED_LAYERS = 'napari:layer:hide_unselected'
+
     LAYER_CONVERT_TO_LABELS = 'napari:layer:convert_to_labels'
     LAYER_CONVERT_TO_IMAGE = 'napari:layer:convert_to_image'
 
@@ -257,6 +262,10 @@ _COMMAND_INFO = {
     CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB')),
     CommandId.LAYER_MERGE_STACK: _i(trans._('Merge to Stack')),
     CommandId.LAYER_TOGGLE_VISIBILITY: _i(trans._('Toggle visibility')),
+    CommandId.SHOW_SELECTED_LAYERS: _i(trans._('Show All Selected Layers')),
+    CommandId.HIDE_SELECTED_LAYERS: _i(trans._('Hide All Selected Layers')),
+    CommandId.SHOW_UNSELECTED_LAYERS: _i(trans._('Show All Unselected Layers')),
+    CommandId.HIDE_UNSELECTED_LAYERS: _i(trans._('Hide All Unselected Layers')),
     CommandId.LAYER_LINK_SELECTED: _i(trans._('Link Layers')),
     CommandId.LAYER_UNLINK_SELECTED: _i(trans._('Unlink Layers')),
     CommandId.LAYER_SELECT_LINKED: _i(trans._('Select Linked Layers')),

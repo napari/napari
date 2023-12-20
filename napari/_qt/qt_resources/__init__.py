@@ -20,7 +20,7 @@ def get_stylesheet(
 
     Parameters
     ----------
-    theme : str, optional
+    theme_id : str, optional
         Theme to apply to the stylesheet. If no theme is provided, the returned
         stylesheet will still have ``{{ template_variables }}`` that need to be
         replaced using the :func:`napari.utils.theme.template` function prior
