@@ -372,7 +372,6 @@ class Graph(_BasePoints):
     def _make_slice_request_internal(
         self, slice_input: _SliceInput, data_slice: _ThickNDSlice
     ) -> _GraphSliceRequest:
-        print(data_slice)
         return _GraphSliceRequest(
             slice_input=slice_input,
             data=self.data,
