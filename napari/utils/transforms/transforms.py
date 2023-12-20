@@ -114,8 +114,6 @@ class Transform:
 
     def _clean_cache(self):
         self._cache_dict.clear()
-        cached_properties = ('_is_diagonal',)
-        [self.__dict__.pop(p, None) for p in cached_properties]
         self.changed.emit()
 
 
@@ -159,12 +157,14 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
     def __getitem__(self, key: slice) -> 'TransformChain[_T]':
         ...
 
-    def __getitem__(self, value):
-        if f"getitem_{value}" not in self._cache_dict:
-            self._cache_dict[f"getitem_{value}"] = super().__getitem__(value)
-        return self._cache_dict[f"getitem_{value}"]
+    def __getitem__(self, key):
+        if f"getitem_{key}" not in self._cache_dict:
+            self._cache_dict[f"getitem_{key}"] = super().__getitem__(key)
+        return self._cache_dict[f"getitem_{key}"]
 
     def __setitem__(self, key, value):
+        if key in self:
+            self[key].changed.disconnect(self._clean_cache)
         super().__setitem__(key, value)
         if hasattr(value, "changed"):
             value.changed.connect(self._clean_cache)
@@ -712,7 +712,11 @@ class Affine(Transform):
         Since only `self.linear_matrix` is checked, affines with a translation
         component can still be considered diagonal.
         """
-        return is_diagonal(self.linear_matrix, tol=1e-8)
+        if "_is_diagonal" not in self._cache_dict:
+            self._cache_dict["_is_diagonal"] = is_diagonal(
+                self.linear_matrix, tol=1e-8
+            )
+        return self._cache_dict["_is_diagonal"]
 
 
 class CompositeAffine(Affine):
