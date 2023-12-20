@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 # It is important to contain at least one abstractmethod to properly exclude this class
 # in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer
-class _ImageBase(IntensityVisualizationMixin, Layer):
+class _ImageBase(Layer):
     """Image layer.
 
     Parameters
@@ -237,7 +237,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         *,
         rgb=None,
         colormap='gray',
-        contrast_limits=None,
         gamma=1.0,
         interpolation2d='nearest',
         interpolation3d='linear',
@@ -369,31 +368,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._plane = SlicingPlane(thickness=1, enabled=False, draggable=True)
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
-        if contrast_limits is None:
-            if not isinstance(data, np.ndarray):
-                dtype = normalize_dtype(getattr(data, 'dtype', None))
-                if np.issubdtype(dtype, np.integer):
-                    self.contrast_limits_range = get_dtype_limits(dtype)
-                else:
-                    self.contrast_limits_range = (0, 1)
-                self._should_calc_clims = dtype != np.uint8
-            else:
-                self.contrast_limits_range = self._calc_data_range()
-        else:
-            self.contrast_limits_range = contrast_limits
-        self._contrast_limits: Tuple[float, float] = self.contrast_limits_range
-        if iso_threshold is None:
-            cmin, cmax = self.contrast_limits_range
-            self._iso_threshold = cmin + (cmax - cmin) / 2
-        else:
-            self._iso_threshold = iso_threshold
         # using self.colormap = colormap uses the setter in *derived* classes,
         # where the intention here is to use the base setter, so we use the
         # _set_colormap method. This is important for Labels layers, because
         # we don't want to use get_color before set_view_slice has been
         # triggered (self.refresh(), below).
         self._colormap = ensure_colormap(colormap)
-        self.contrast_limits = self._contrast_limits
         self._interpolation2d = Interpolation.NEAREST
         self._interpolation3d = Interpolation.NEAREST
         self.interpolation2d = interpolation2d
@@ -405,6 +385,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         connect_no_arg(self.plane.events, self.events, 'plane')
         self.custom_interpolation_kernel_2d = custom_interpolation_kernel_2d
 
+    def _post_init(self):
         # Trigger generation of view slice and thumbnail
         self.refresh()
 
@@ -798,14 +779,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._transforms[0] = response.tile_to_data
         self._slice = response
 
-        # Maybe reset the contrast limits based on the new slice.
-        if self._should_calc_clims:
-            self.reset_contrast_limits_range()
-            self.reset_contrast_limits()
-            self._should_calc_clims = False
-        elif self._keep_auto_contrast:
-            self.reset_contrast_limits()
-
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
         image = self._slice.thumbnail.view
@@ -931,8 +904,33 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._extent_level_data_augmented[:, dims_displayed].T
 
 
-class Image(_ImageBase):
+class Image(IntensityVisualizationMixin, _ImageBase):
     _projectionclass = ImageProjectionMode
+
+    def __init__(self, data, **kwargs):
+        contrast_limits = kwargs.pop('contrast_limits', None)
+        iso_threshold = kwargs.pop('iso_threshold', None)
+        super().__init__(data, **kwargs)
+        if contrast_limits is None:
+            if not isinstance(data, np.ndarray):
+                dtype = normalize_dtype(getattr(data, 'dtype', None))
+                if np.issubdtype(dtype, np.integer):
+                    self.contrast_limits_range = get_dtype_limits(dtype)
+                else:
+                    self.contrast_limits_range = (0, 1)
+                self._should_calc_clims = dtype != np.uint8
+            else:
+                self.contrast_limits_range = self._calc_data_range()
+        else:
+            self.contrast_limits_range = contrast_limits
+        self._contrast_limits: Tuple[float, float] = self.contrast_limits_range
+        self.contrast_limits = self._contrast_limits
+
+        if iso_threshold is None:
+            cmin, cmax = self.contrast_limits_range
+            self._iso_threshold = cmin + (cmax - cmin) / 2
+        else:
+            self._iso_threshold = iso_threshold
 
     @property
     def rendering(self):
@@ -999,6 +997,17 @@ class Image(_ImageBase):
             }
         )
         return state
+
+    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+        super()._update_slice_response(response)
+
+        # Maybe reset the contrast limits based on the new slice.
+        if self._should_calc_clims:
+            self.reset_contrast_limits_range()
+            self.reset_contrast_limits()
+            self._should_calc_clims = False
+        elif self._keep_auto_contrast:
+            self.reset_contrast_limits()
 
 
 Image.__doc__ = _ImageBase.__doc__

@@ -326,7 +326,6 @@ class Labels(_ImageBase):
             data,
             rgb=False,
             colormap=self._random_colormap,
-            contrast_limits=[0.0, 2**23 - 1.0],
             interpolation2d='nearest',
             interpolation3d='nearest',
             rendering=rendering,
@@ -350,6 +349,7 @@ class Labels(_ImageBase):
         )
 
         self.events.add(
+            colormap=Event,
             preserve_labels=Event,
             show_selected_label=Event,
             properties=Event,

@@ -13,7 +13,7 @@ from napari._vispy.utils.gl import fix_data_dtype, get_gl_extensions
 from napari._vispy.visuals.image import Image as ImageNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers.base._base_constants import Blending
-from napari.layers.image.image import _ImageBase
+from napari.layers.image.image import Image, _ImageBase
 from napari.utils.translations import trans
 
 
@@ -92,10 +92,11 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
             self._on_interpolation_change
         )
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.contrast_limits.connect(
-            self._on_contrast_limits_change
-        )
-        self.layer.events.gamma.connect(self._on_gamma_change)
+        if isinstance(self.layer, Image):
+            self.layer.events.contrast_limits.connect(
+                self._on_contrast_limits_change
+            )
+            self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
         self.layer.plane.events.position.connect(
