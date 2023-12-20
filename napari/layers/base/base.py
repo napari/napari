@@ -101,7 +101,16 @@ def no_op(layer: Layer, event: Event) -> None:
     return
 
 
-@mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
+class PostInit(type):
+    def __call__(self, *args, **kwargs):
+        obj = super().__call__(*args, **kwargs)
+        obj._post_init()
+        return obj
+
+
+@mgui.register_type(
+    choices=get_layers, return_callback=add_layer_to_viewer, metaclass=PostInit
+)
 class Layer(KeymapProvider, MousemapProvider, ABC):
     """Base layer class.
 
@@ -449,6 +458,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # TODO: we try to avoid inner event connection, but this might be the only way
         #       until we figure out nested evented objects
         self._overlays.events.connect(self.events._overlays)
+
+    def _post_init(self):
+        """Post init hook for subclasses to use."""
 
     def __str__(self):
         """Return self.name."""
