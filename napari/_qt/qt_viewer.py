@@ -57,6 +57,7 @@ from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
+from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
 
@@ -1037,6 +1038,12 @@ class QtViewer(QSplitter):
                 return
             arr = QImg2array(image)
             self.viewer.add_image(arr)
+        elif cb.mimeData().hasUrls():
+            self._open_from_mime_data(
+                cb.mimeData(), stack=False, choose_plugin=False
+            )
+        else:
+            show_info("No image in clipboard.")
 
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop.
@@ -1060,8 +1067,17 @@ class QtViewer(QSplitter):
             QGuiApplication.keyboardModifiers()
             & Qt.KeyboardModifier.AltModifier
         )
+        self._open_from_mime_data(
+            event.mimeData(),
+            stack=bool(shift_down),
+            choose_plugin=bool(alt_down),
+        )
+
+    def _open_from_mime_data(
+        self, mime_data, stack: bool, choose_plugin: bool
+    ):
         filenames = []
-        for url in event.mimeData().urls():
+        for url in mime_data.urls():
             if url.isLocalFile():
                 # directories get a trailing "/", Path conversion removes it
                 filenames.append(str(Path(url.toLocalFile())))
@@ -1070,8 +1086,8 @@ class QtViewer(QSplitter):
 
         self._qt_open(
             filenames,
-            stack=bool(shift_down),
-            choose_plugin=bool(alt_down),
+            stack=stack,
+            choose_plugin=choose_plugin,
         )
 
     def closeEvent(self, event):
