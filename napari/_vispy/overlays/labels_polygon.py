@@ -73,7 +73,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         layer.events.selected_label.connect(self._update_color)
         layer.events.colormap.connect(self._update_color)
-        layer.events.color_mode.connect(self._update_color)
         layer.events.opacity.connect(self._update_color)
 
         self._first_point_pos = np.zeros(2)

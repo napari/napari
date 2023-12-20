@@ -203,7 +203,6 @@ class VispyLabelsLayer(VispyImageLayer):
             layer_node_class=LabelLayerNode,
         )
 
-        # self.layer.events.color_mode.connect(self._on_colormap_change)
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
         self.layer.events.selected_label.connect(self._on_colormap_change)
         self.layer.events.show_selected_label.connect(self._on_colormap_change)
@@ -234,11 +233,11 @@ class VispyLabelsLayer(VispyImageLayer):
         ):
             return
         colormap = self.layer.colormap
-        mode = self.layer.color_mode
+        auto_mode = isinstance(colormap, LabelColormap)
         view_dtype = self.layer._slice.image.view.dtype
         raw_dtype = self.layer._slice.image.raw.dtype
-        if mode == 'auto' or (mode == "direct" and raw_dtype.itemsize <= 2):
-            if raw_dtype.itemsize > 2 and isinstance(colormap, LabelColormap):
+        if auto_mode or raw_dtype.itemsize <= 2:
+            if raw_dtype.itemsize > 2:
                 # If the view dtype is different from the raw dtype, it is possible
                 # that background pixels are not the same value as the `background_value`.
                 # For example, if raw_dtype is int8 and background_value is `-1`
@@ -264,7 +263,7 @@ class VispyLabelsLayer(VispyImageLayer):
             )
             self.texture_data = color_texture
 
-        elif mode == 'direct':  # only for raw_dtype.itemsize > 2
+        elif not auto_mode:  # only for raw_dtype.itemsize > 2
             color_dict = colormap._values_mapping_to_minimum_values_set()[1]
             max_size = get_max_texture_sizes()[0]
             val_texture = build_textures_from_dict(color_dict, max_size)

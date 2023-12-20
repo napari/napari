@@ -535,9 +535,7 @@ class Labels(_ImageBase):
 
     @property
     def colormap(self) -> LabelColormapBase:
-        if self.color_mode == LabelColorMode.AUTO:
-            return self._random_colormap
-        return self._direct_colormap
+        return self._colormap
 
     @colormap.setter
     def colormap(self, colormap: LabelColormapBase):
@@ -1107,11 +1105,11 @@ class Labels(_ImageBase):
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
-        if self.color_mode == LabelColorMode.AUTO:
+        if isinstance(self.colormap, LabelColormap):
             mapped_labels = _cast_labels_data_to_texture_dtype_auto(
                 labels_to_map, self._random_colormap
             )
-        else:  # direct
+        else:  # DirectLabelColormap
             mapped_labels = _cast_labels_data_to_texture_dtype_direct(
                 labels_to_map, self._direct_colormap
             )
