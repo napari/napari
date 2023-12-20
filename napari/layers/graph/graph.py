@@ -447,24 +447,24 @@ class Graph(_BasePoints):
             value=self.data,
             action=ActionType.REMOVING,
             data_indices=tuple(
-                self.selected_data,
+                indices,
             ),
             vertex_indices=((),),
         )
 
-        indices = np.atleast_1d(indices)
-        if indices.ndim > 1:
+        indices_1d = np.atleast_1d(indices)
+        if indices_1d.ndim > 1:
             raise ValueError(
                 trans._(
                     "Indices for removal must be 1-dim. Found {ndim}",
-                    ndim=indices.ndim,
+                    ndim=indices_1d.ndim,
                 )
             )
 
         prev_size = self.data.n_allocated_nodes
 
         # it got error missing __iter__ attribute, but we guarantee by np.atleast_1d call
-        for idx in indices:  # type: ignore[union-attr]
+        for idx in indices_1d:  # type: ignore[union-attr]
             self.data.remove_node(idx, is_buffer_domain)
 
         self._data_changed(prev_size)
@@ -473,7 +473,7 @@ class Graph(_BasePoints):
             value=self.data,
             action=ActionType.REMOVED,
             data_indices=tuple(
-                self.selected_data,
+                indices,
             ),
             vertex_indices=((),),
         )
