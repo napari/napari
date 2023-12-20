@@ -1,14 +1,17 @@
+import os
 import sys
 
 import pytest
+from qtpy.QtCore import QPointF
+from qtpy.QtGui import QEnterEvent
 from qtpy.QtWidgets import QToolTip
 
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith('linux') or sys.platform == 'darwin',
-    reason='Timeouts when running on CI with Linux or macOS',
+    os.environ.get("CI", False) and sys.platform == "darwin",
+    reason="Timeouts when running on macOS CI",
 )
 def test_qt_tooltip_label(qtbot):
     tooltip_text = "Test QtToolTipLabel showing a tooltip"
@@ -18,6 +21,9 @@ def test_qt_tooltip_label(qtbot):
     widget.show()
 
     assert QToolTip.text() == ""
-    qtbot.mouseMove(widget)
+    # simulate movement mouse from outside the widget to the center
+    pos = QPointF(widget.rect().center())
+    event = QEnterEvent(pos, pos, QPointF(widget.pos()) + pos)
+    widget.enterEvent(event)
     qtbot.waitUntil(lambda: QToolTip.isVisible())
     qtbot.waitUntil(lambda: QToolTip.text() == tooltip_text)

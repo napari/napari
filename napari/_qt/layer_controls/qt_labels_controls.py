@@ -110,6 +110,7 @@ class QtLabelsControls(QtLayerControls):
             self._on_show_selected_label_change
         )
         self.layer.events.color_mode.connect(self._on_color_mode_change)
+        self.layer.events.data.connect(self._on_data_change)
 
         # selection spinbox
         self.selectionSpinBox = QLargeIntSpinBox()
@@ -304,6 +305,11 @@ class QtLabelsControls(QtLayerControls):
         self.layout().addRow(
             trans._('show\nselected:'), self.selectedColorCheckbox
         )
+
+    def _on_data_change(self):
+        """Update label selection spinbox min/max when data changes."""
+        dtype_lims = get_dtype_limits(get_dtype(self.layer))
+        self.selectionSpinBox.setRange(*dtype_lims)
 
     def _on_mode_change(self, event):
         """Receive layer model mode change event and update checkbox ticks.
@@ -535,7 +541,7 @@ class QtColorBox(QWidget):
 
     Parameters
     ----------
-    layer : napari.layers.Layer
+    layer : napari.layers.Labels
         An instance of a napari layer.
     """
 

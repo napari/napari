@@ -51,10 +51,12 @@ def test_deprecated_property() -> None:
 
     instance.new_property = 1
 
-    with pytest.warns(FutureWarning):
+    msg = "Dummy.old_property is deprecated since 0.0.0 and will be removed in 0.1.0. Please use new_property"
+
+    with pytest.warns(FutureWarning, match=msg):
         assert instance.old_property == 1
 
-    with pytest.warns(FutureWarning):
+    with pytest.warns(FutureWarning, match=msg):
         instance.old_property = 2
 
     assert instance.new_property == 2

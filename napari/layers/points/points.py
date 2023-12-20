@@ -19,7 +19,6 @@ import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
 from psygnal.containers import Selection
-from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_constants import ActionType
@@ -27,7 +26,11 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
-from napari.layers.points._points_constants import Mode, Shading
+from napari.layers.points._points_constants import (
+    Mode,
+    PointsProjectionMode,
+    Shading,
+)
 from napari.layers.points._points_mouse_bindings import add, highlight, select
 from napari.layers.points._points_utils import (
     _create_box_from_corners_3d,
@@ -38,7 +41,7 @@ from napari.layers.points._points_utils import (
 )
 from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
 from napari.layers.utils._color_manager_constants import ColorMode
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.interactivity_utils import (
@@ -58,7 +61,6 @@ from napari.utils.events.migrations import deprecation_warning_event
 from napari.utils.geometry import project_points_onto_plane, rotate_points
 from napari.utils.migrations import add_deprecated_property, rename_argument
 from napari.utils.status_messages import generate_layer_coords_status
-from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
@@ -73,6 +75,7 @@ class _BasePoints(Layer):
     """
 
     _modeclass = Mode
+    _projectionclass = PointsProjectionMode
 
     _drag_modes: ClassVar[Dict[Mode, Callable[["Points", Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
@@ -130,7 +133,7 @@ class _BasePoints(Layer):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending='translucent',
         visible=True,
         cache=True,
@@ -140,6 +143,7 @@ class _BasePoints(Layer):
         canvas_size_limits=(2, 10000),
         antialiasing=1,
         shown=True,
+        projection_mode='none',
     ) -> None:
         # Indices of selected points
         self._selected_data_stored = set()
@@ -164,7 +168,6 @@ class _BasePoints(Layer):
         self._drag_box_stored = None
         self._is_selecting = False
         self._clipboard = {}
-        self._round_index = False
 
         super().__init__(
             data,
@@ -181,6 +184,7 @@ class _BasePoints(Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(
@@ -706,7 +710,7 @@ class _BasePoints(Layer):
 
     @border_width.setter
     def border_width(
-        self, border_width: Union[int, float, np.ndarray, list]
+        self, border_width: Union[float, np.ndarray, list]
     ) -> None:
         # broadcast to np.array
         border_width = np.broadcast_to(
@@ -1323,10 +1327,12 @@ class _BasePoints(Layer):
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
+        prev_scale = self.scale_factor
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
         )
-        self._set_highlight(force=True)
+        # update highlight only if scale has changed, otherwise causes a cycle
+        self._set_highlight(force=(prev_scale != self.scale_factor))
 
     def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.
@@ -1503,32 +1509,28 @@ class _BasePoints(Layer):
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request_internal(
-            self._slice_input, self._slice_indices
+            self._slice_input, self._data_slice
         )
         response = request()
         self._update_slice_response(response)
 
     def _make_slice_request(self, dims) -> Any:
         """Make a Points slice request based on the given dims and these data."""
-        slice_input = self._make_slice_input(
-            dims.point, dims.ndisplay, dims.order
-        )
+        slice_input = self._make_slice_input(dims)
         # See Image._make_slice_request to understand why we evaluate this here
-        # instead of using `self._slice_indices`.
-        slice_indices = slice_input.data_indices(
-            self._data_to_world.inverse, round_index=False
-        )
-        return self._make_slice_request_internal(slice_input, slice_indices)
+        # instead of using `self._data_slice`.
+        data_slice = slice_input.data_slice(self._data_to_world.inverse)
+        return self._make_slice_request_internal(slice_input, data_slice)
 
     @abstractmethod
     def _make_slice_request_internal(
-        self, slice_input: _SliceInput, dims_indices: ArrayLike
+        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
     ):
         raise NotImplementedError
 
     def _update_slice_response(self, response: _PointSliceResponse):
         """Handle a slicing response."""
-        self._slice_input = response.dims
+        self._slice_input = response.slice_input
         indices = response.indices
         scale = response.scale
 
@@ -2373,12 +2375,13 @@ class Points(_BasePoints):
         return self.data.shape[1]
 
     def _make_slice_request_internal(
-        self, slice_input: _SliceInput, dims_indices: ArrayLike
+        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
     ) -> _PointSliceRequest:
         return _PointSliceRequest(
-            dims=slice_input,
+            slice_input=slice_input,
             data=self.data,
-            dims_indices=dims_indices,
+            data_slice=data_slice,
+            projection_mode=self.projection_mode,
             out_of_slice_display=self.out_of_slice_display,
             size=self.size,
         )
@@ -2469,13 +2472,13 @@ class Points(_BasePoints):
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
         npoints = len(self._view_data)
-        totpoints = len(self._points_data)
+        totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
             not_disp = self._slice_input.not_displayed
             data = deepcopy(self._clipboard['data'])
             offset = [
-                self._slice_indices[i] - self._clipboard['indices'][i]
+                self._data_slice[i] - self._clipboard['indices'][i]
                 for i in not_disp
             ]
             data[:, not_disp] = data[:, not_disp] + np.array(offset)
@@ -2494,13 +2497,13 @@ class Points(_BasePoints):
 
             self.text._paste(**self._clipboard['text'])
 
-            self._border_width = np.append(
-                self.border_width,
-                deepcopy(self._clipboard['border_width']),
+            self._edge_width = np.append(
+                self.edge_width,
+                deepcopy(self._clipboard['edge_width']),
                 axis=0,
             )
-            self._border._paste(
-                colors=self._clipboard['border_color'],
+            self._edge._paste(
+                colors=self._clipboard['edge_color'],
                 properties=_features_to_properties(
                     self._clipboard['features']
                 ),
@@ -2526,14 +2529,14 @@ class Points(_BasePoints):
             index = list(self.selected_data)
             self._clipboard = {
                 'data': deepcopy(self.data[index]),
-                'border_color': deepcopy(self.border_color[index]),
+                'edge_color': deepcopy(self.edge_color[index]),
                 'face_color': deepcopy(self.face_color[index]),
                 'shown': deepcopy(self.shown[index]),
                 'size': deepcopy(self.size[index]),
                 'symbol': deepcopy(self.symbol[index]),
-                'border_width': deepcopy(self.border_width[index]),
+                'edge_width': deepcopy(self.edge_width[index]),
                 'features': deepcopy(self.features.iloc[index]),
-                'indices': self._slice_indices,
+                'indices': self._data_slice,
                 'text': self.text._copy(index),
             }
         else:
@@ -2541,86 +2544,59 @@ class Points(_BasePoints):
 
     def to_mask(
         self,
+        position: Optional[Tuple] = None,
         *,
-        shape: tuple,
-        data_to_world: Optional[Affine] = None,
-        isotropic_output: bool = True,
-    ):
-        """Return a binary mask array of all the points as balls.
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ) -> dict:
+        """Status message information of the data at a coordinate position.
 
         Parameters
         ----------
-        shape : tuple
-            The shape of the mask to be generated.
-        data_to_world : Optional[Affine]
-            The data-to-world transform of the output mask image. This likely comes from a reference image.
-            If None, then this is the same as this layer's data-to-world transform.
-        isotropic_output : bool
-            If True, then force the output mask to always contain isotropic balls in data/pixel coordinates.
-            Otherwise, allow the anisotropy in the data-to-world transform to squash the balls in certain dimensions.
-            By default this is True, but you should set it to False if you are going to create a napari image
-            layer from the result with the same data-to-world transform and want the visualized balls to be
-            roughly isotropic.
+        position : tuple
+            Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
 
         Returns
         -------
-        np.ndarray
-            The output binary mask array of the given shape containing this layer's points as balls.
+        source_info : dict
+            Dict containing information that can be used in a status update.
         """
-        if data_to_world is None:
-            data_to_world = self._data_to_world
-        mask = np.zeros(shape, dtype=bool)
-        mask_world_to_data = data_to_world.inverse
-        points_data_to_mask_data = self._data_to_world.compose(
-            mask_world_to_data
-        )
-        points_in_mask_data_coords = np.atleast_2d(
-            points_data_to_mask_data(self.data)
-        )
-
-        # Calculating the radii of the output points in the mask is complex.
-        radii = self.size / 2
-
-        # Scale each radius by the geometric mean scale of the Points layer to
-        # keep the balls isotropic when visualized in world coordinates.
-        # The geometric means are used instead of the arithmetic mean
-        # to maintain the volume scaling factor of the transforms.
-        point_data_to_world_scale = gmean(np.abs(self._data_to_world.scale))
-        mask_world_to_data_scale = (
-            gmean(np.abs(mask_world_to_data.scale))
-            if isotropic_output
-            else np.abs(mask_world_to_data.scale)
-        )
-        radii_scale = point_data_to_world_scale * mask_world_to_data_scale
-
-        output_data_radii = radii[:, np.newaxis] * np.atleast_2d(radii_scale)
-
-        for coords, radii in zip(
-            points_in_mask_data_coords, output_data_radii
-        ):
-            # Define a minimal set of coordinates where the mask could be present
-            # by defining an inclusive lower and exclusive upper bound for each dimension.
-            lower_coords = np.maximum(np.floor(coords - radii), 0).astype(int)
-            upper_coords = np.minimum(
-                np.ceil(coords + radii) + 1, shape
-            ).astype(int)
-            # Generate every possible coordinate within the bounds defined above
-            # in a grid of size D1 x D2 x ... x Dd x D (e.g. for D=2, this might be 4x5x2).
-            submask_coords = [
-                range(lower_coords[i], upper_coords[i])
-                for i in range(self.ndim)
-            ]
-            submask_grids = np.stack(
-                np.meshgrid(*submask_coords, copy=False, indexing='ij'),
-                axis=-1,
+        if position is not None:
+            value = self.get_value(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
             )
-            # Update the mask coordinates based on the normalized square distance
-            # using a logical or to maintain any existing positive mask locations.
-            normalized_square_distances = np.sum(
-                ((submask_grids - coords) / radii) ** 2, axis=-1
-            )
-            mask[np.ix_(*submask_coords)] |= normalized_square_distances <= 1
-        return mask
+        else:
+            value = None
+
+        source_info = self._get_source_info()
+        source_info['coordinates'] = generate_layer_coords_status(
+            position[-self.ndim :], value
+        )
+
+        # if this points layer has properties
+        properties = self._get_properties(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+        if properties:
+            source_info['coordinates'] += "; " + ", ".join(properties)
+
+        return source_info
 
 
 Points._add_deprecated_properties()

@@ -186,30 +186,38 @@ def test_create_layer_controls(
             qcombobox.setCurrentIndex(qcombobox_initial_idx)
 
 
-if sys.version_info[:2] == (3, 11) and (
+skip_predicate = sys.version_info >= (3, 11) and (
     qtpy.API == 'pyqt5' or qtpy.API == 'pyqt6'
-):
-    test_data = []
-else:
-    # those 2 fail on 3.11 + pyqt5 and pyqt6 with a segfault that can't be caught by
-    # pytest in qspinbox.setValue(value)
-    # See: https://github.com/napari/napari/pull/5439
-    test_data = [_LABELS_WITH_COLOR, _LABELS]
-
-
-test_data += [
-    _IMAGE,
-    _POINTS,
-    _SHAPES,
-    _SURFACE,
-    _TRACKS,
-    _VECTORS,
-]
+)
 
 
 @pytest.mark.parametrize(
     'layer_type_with_data',
-    test_data,
+    [
+        # those 2 fail on 3.11 + pyqt5 and pyqt6 with a segfault that can't be caught by
+        # pytest in qspinbox.setValue(value)
+        # See: https://github.com/napari/napari/pull/5439
+        pytest.param(
+            _LABELS_WITH_COLOR,
+            marks=pytest.mark.skipif(
+                skip_predicate,
+                reason='segfault on Python 3.11+ and pyqt5 or Pyqt6',
+            ),
+        ),
+        pytest.param(
+            _LABELS,
+            marks=pytest.mark.skipif(
+                skip_predicate,
+                reason='segfault on Python 3.11+ and pyqt5 or Pyqt6',
+            ),
+        ),
+        _IMAGE,
+        _POINTS,
+        _SHAPES,
+        _SURFACE,
+        _TRACKS,
+        _VECTORS,
+    ],
 )
 @pytest.mark.qt_no_exception_capture
 @pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
@@ -218,6 +226,7 @@ def test_create_layer_controls_spin(
 ):
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
+    qtbot.addWidget(ctrl)
 
     # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
@@ -267,7 +276,7 @@ def test_create_layer_controls_spin(
                 assert any(
                     expected_error in captured.err
                     for expected_error in expected_errors
-                ), captured.err
+                ), f"value: {value}, range {value_range}\nerr: {captured.err}"
 
         assert qspinbox.value() in [qspinbox_max, qspinbox_max - 1]
         qspinbox.setValue(qspinbox_initial_value)

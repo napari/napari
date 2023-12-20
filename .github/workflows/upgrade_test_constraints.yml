@@ -57,6 +57,9 @@ on:
 
 jobs:
   upgrade:
+    permissions:
+      pull-requests: write
+      issues: write
     name: Upgrade & Open Pull Request
     if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')) || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -82,10 +85,10 @@ jobs:
               -H "Accept: application/vnd.github.v3+json" \
               "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_number" \
           )
-          
+
           FULL_NAME=$(echo $PR_data  | jq -r .head.repo.full_name)
           echo "FULL_NAME=$FULL_NAME" >> $GITHUB_ENV
-          
+
           BRANCH=$(echo $PR_data  | jq -r .head.ref)
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
 
@@ -167,7 +170,7 @@ jobs:
         # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
         run: |
           flags=""
-          # Explanation of below commands 
+          # Explanation of below commands
           # python3.8 -m piptools compile - call pip-compile but ensure proper interpreter
           # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
           # -o resources/constraints/constraints_py3.8.txt - output file
@@ -179,6 +182,8 @@ jobs:
           flags+=" --extra pyside2"
           flags+=" --extra pyside6_experimental"
           flags+=" --extra testing"
+          flags+=" --extra testing_extra"
+          flags+=" --extra optional"
           prefix="napari_repo"
           setup_cfg="${prefix}/setup.cfg"
           constraints="${prefix}/resources/constraints"
@@ -196,10 +201,11 @@ jobs:
           for pyv in 3.8 3.9 3.10 3.11; do
             python${pyv}  -m pip install -U pip pip-tools
             python${pyv}  -m piptools compile --upgrade -o $constraints/constraints_py${pyv}.txt  $setup_cfg $constraints/version_denylist.txt ${flags}
+            python${pyv}  -m piptools compile --upgrade -o $constraints/constraints_py${pyv}_pydantic_1.txt  $setup_cfg $constraints/version_denylist.txt $constraints/pydantic_le_2.txt ${flags}
           done
 
           python3.9 -m piptools compile --upgrade -o $constraints/constraints_py3.9_examples.txt $setup_cfg $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
-          python3.10 -m piptools compile --upgrade -o $constraints/constraints_py3.10_docs.txt $setup_cfg $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt ${flags}
+          python3.10 -m piptools compile --upgrade -o $constraints/constraints_py3.10_docs.txt $setup_cfg $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt $constraints/pydantic_le_2.txt ${flags}
           python3.11 -m piptools compile --upgrade -o resources/requirements_mypy.txt resources/requirements_mypy.in --resolver=backtracking
 
       # END PYTHON DEPENDENCIES
@@ -231,4 +237,3 @@ jobs:
             GHA_TOKEN_MAIN_REPO: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
             PR_NUMBER: ${{ github.event.issue.number }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

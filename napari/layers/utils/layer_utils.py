@@ -6,6 +6,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     NamedTuple,
@@ -60,8 +61,8 @@ def register_layer_action(
     keymapprovider,
     description: str,
     repeatable: bool = False,
-    shortcuts: Optional[str] = None,
-):
+    shortcuts: Optional[Union[str, List[str]]] = None,
+) -> Callable[[Callable], Callable]:
     """
     Convenient decorator to register an action with the current Layers
 
@@ -90,7 +91,7 @@ def register_layer_action(
 
     """
 
-    def _inner(func):
+    def _inner(func: Callable) -> Callable:
         nonlocal shortcuts
         name = 'napari:' + func.__name__
 
@@ -281,7 +282,7 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
     return (float(min_val), float(max_val))
 
 
-def segment_normal(a, b, p=(0, 0, 1)):
+def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     """Determines the unit normal of the vector from a to b.
 
     Parameters
@@ -301,6 +302,8 @@ def segment_normal(a, b, p=(0, 0, 1)):
     """
     d = b - a
 
+    norm: Any  # float or array or float, mypy has some difficulities.
+
     if d.ndim == 1:
         normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
         norm = np.linalg.norm(normal)
@@ -315,9 +318,7 @@ def segment_normal(a, b, p=(0, 0, 1)):
         norm = np.linalg.norm(normal, axis=1, keepdims=True)
         ind = norm == 0
         norm[ind] = 1
-    unit_norm = normal / norm
-
-    return unit_norm
+    return normal / norm
 
 
 def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
@@ -367,7 +368,7 @@ def convert_to_uint8(data: np.ndarray) -> Optional[np.ndarray]:
         return np.right_shift(data, (data.dtype.itemsize - 1) * 8 - 1).astype(
             out_dtype
         )
-    return None
+    raise NotImplementedError
 
 
 def get_current_properties(

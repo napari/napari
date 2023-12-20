@@ -114,6 +114,10 @@ class TypedMutableSequence(MutableSequence[_T]):
         return super().__contains__(key)
 
     @overload
+    def __getitem__(self, key: str) -> _T:
+        ...  # pragma: no cover
+
+    @overload
     def __getitem__(self, key: int) -> _T:
         ...  # pragma: no cover
 
@@ -242,7 +246,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             )
         )
 
-    def _iter_indices(self, start=0, stop=None):
+    def _iter_indices(self, start=0, stop=None) -> Iterable[int]:
         """Iter indices from start to stop.
 
         While this is trivial for this basic sequence type, this method lets

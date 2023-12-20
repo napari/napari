@@ -1,21 +1,23 @@
+import copy
 import itertools
 import time
-import warnings
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
+import numpy.testing as npt
 import pandas as pd
 import pytest
 import xarray as xr
 import zarr
 from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
-from skimage import data
+from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.components import ViewerModel
+from napari.components.dims import Dims
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
@@ -59,8 +61,7 @@ def test_3D_labels():
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
-    layer._slice_dims(ndisplay=3)
-    assert layer._slice_input.ndisplay == 3
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     assert layer.editable is True
     assert layer.mode == 'pan_zoom'
 
@@ -236,6 +237,7 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
+@pytest.mark.filterwarnings("ignore:.*seed is deprecated.*")
 def test_seed():
     """Test setting seed."""
     np.random.seed(0)
@@ -250,9 +252,9 @@ def test_seed():
     assert layer.seed == 0.7
 
     # ensure setting seed updates the random colormap
-    mapped_07 = layer._random_colormap.map(layer.data)
+    mapped_07 = layer.colormap.map(layer.data)
     layer.seed = 0.4
-    mapped_04 = layer._random_colormap.map(layer.data)
+    mapped_04 = layer.colormap.map(layer.data)
     assert_raises(
         AssertionError, assert_array_almost_equal, mapped_07, mapped_04
     )
@@ -270,6 +272,16 @@ def test_num_colors():
 
     layer = Labels(data, num_colors=60)
     assert layer.num_colors == 60
+
+    with pytest.raises(
+        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
+    ):
+        layer.num_colors = 2**17
+
+    with pytest.raises(
+        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
+    ):
+        Labels(data, num_colors=2**17)
 
 
 def test_properties():
@@ -535,6 +547,7 @@ def test_n_edit_dimensions():
             np.zeros((9, 10), dtype=np.uint32),
         ),
     ],
+    ids=['touching objects', 'touching border', 'full array'],
 )
 def test_contour(input_data, expected_data_view):
     """Test changing contour."""
@@ -582,6 +595,24 @@ def test_contour(input_data, expected_data_view):
         layer.contour = -1
 
 
+@pytest.mark.parametrize("background_num", [0, 1, 2, -1])
+def test_background_label(background_num):
+    data = np.zeros((10, 10), dtype=np.int32)
+    data[1:-1, 1:-1] = 1
+    data[2:-2, 2:-2] = 2
+    data[4:-4, 4:-4] = -1
+
+    layer = Labels(data)
+    layer._background_label = background_num
+    layer.num_colors = 49
+    np.testing.assert_array_equal(
+        layer._data_view == 0, data == background_num
+    )
+    np.testing.assert_array_equal(
+        layer._data_view != 0, data != background_num
+    )
+
+
 def test_contour_large_new_labels():
     """Check that new labels larger than the lookup table work in contour mode.
 
@@ -627,8 +658,8 @@ def test_contour_local_updates():
 
     layer.data_setitem(np.nonzero(painting_mask), 1, refresh=True)
 
-    assert np.alltrue(
-        (layer._slice.image.view > 0) == get_contours(painting_mask, 1, 0)
+    assert np.array_equiv(
+        (layer._slice.image.view > 0), get_contours(painting_mask, 1, 0)
     )
 
 
@@ -801,13 +832,15 @@ def test_paint_polygon():
     layer = Labels(data)
 
     layer.paint_polygon([[0, 0], [0, 5], [5, 5], [5, 0]], 2)
-    assert np.alltrue(layer.data[:5, :5] == 2)
-    assert np.alltrue(layer.data[:10, 6:10] == 1)
-    assert np.alltrue(layer.data[6:10, :10] == 1)
+    assert np.array_equiv(layer.data[:5, :5], 2)
+    assert np.array_equiv(layer.data[:10, 6:10], 1)
+    assert np.array_equiv(layer.data[6:10, :10], 1)
 
     layer.paint_polygon([[7, 7], [7, 7], [7, 7]], 3)
     assert layer.data[7, 7] == 3
-    assert np.alltrue(layer.data[[6, 7, 8, 7, 8, 6], [7, 6, 7, 8, 8, 6]] == 1)
+    assert np.array_equiv(
+        layer.data[[6, 7, 8, 7, 8, 6], [7, 6, 7, 8, 8, 6]], 1
+    )
 
     data[:10, :10] = 0
     gt_pattern = np.array(
@@ -848,8 +881,8 @@ def test_paint_polygon_2d_in_3d():
 
     layer.paint_polygon([[1, 0, 0], [1, 0, 9], [1, 9, 9], [1, 9, 0]], 1)
 
-    assert np.alltrue(data[1, :] == 1)
-    assert np.alltrue(data[[0, 2], :] == 0)
+    assert np.array_equiv(data[1, :], 1)
+    assert np.array_equiv(data[[0, 2], :], 0)
 
 
 def test_fill():
@@ -889,7 +922,7 @@ def test_value_3d(position, view_direction, dims_displayed, world):
     data = np.zeros((20, 20, 20), dtype=int)
     data[0:10, 0:10, 0:10] = 1
     layer = Labels(data)
-    layer._slice_dims([0, 0, 0], ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     value = layer.get_value(
         position,
         view_direction=view_direction,
@@ -917,11 +950,22 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
+@pytest.mark.parametrize("value", [1, 10, 50, -2, -10])
+@pytest.mark.parametrize("dtype", [np.int8, np.int32])
+def test_thumbnail_single_color(value, dtype):
+    labels = Labels(np.full((10, 10), value, dtype=dtype), opacity=1)
+    labels._update_thumbnail()
+    mid_point = tuple(np.array(labels.thumbnail.shape[:2]) // 2)
+    npt.assert_array_equal(
+        labels.thumbnail[mid_point], labels.get_color(value) * 255
+    )
+
+
 def test_world_data_extent():
     """Test extent after applying transforms."""
     np.random.seed(0)
     shape = (6, 10, 15)
-    data = np.random.randint(20, size=(shape))
+    data = np.random.randint(20, size=shape)
     layer = Labels(data)
     extent = np.array(((0,) * 3, [s - 1 for s in shape]))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
@@ -946,7 +990,7 @@ def test_undo_redo(
     preserve_labels,
     n_dimensional,
 ):
-    blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
+    blobs = sk_data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
     data_history = [blobs.copy()]
     layer.brush_size = brush_size
@@ -1002,7 +1046,7 @@ def test_ndim_paint():
     assert not np.any(layer.data[0]) and not np.any(layer.data[2:])
 
     layer.n_edit_dimensions = 2  # 3x3 square
-    layer._slice_dims(order=[1, 2, 0, 3])
+    layer._slice_dims(Dims(ndim=4, order=(1, 2, 0, 3)))
     layer.paint((4, 5, 6, 7), 8)
     assert len(np.flatnonzero(layer.data == 8)) == 4  # 2D square is in corner
     np.testing.assert_array_equal(
@@ -1146,7 +1190,7 @@ def test_get_value_ray_3d():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
 
     # set the dims to the slice with labels
-    labels._slice_dims([1, 0, 0, 0], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(1, 0, 0, 0)))
 
     value = labels._get_value_ray(
         start_point=np.array([1, 0, 5, 5]),
@@ -1164,7 +1208,7 @@ def test_get_value_ray_3d():
     assert value is None
 
     # set the dims to a slice without labels
-    labels._slice_dims([0, 0, 0, 0], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(0, 0, 0, 0)))
 
     value = labels._get_value_ray(
         start_point=np.array([0, 0, 5, 5]),
@@ -1191,7 +1235,9 @@ def test_get_value_ray_3d_rolled():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
 
     # set the dims to the slice with labels
-    labels._slice_dims((0, 0, 0, 1), ndisplay=3, order=(3, 0, 1, 2))
+    labels._slice_dims(
+        Dims(ndim=4, ndisplay=3, order=(3, 0, 1, 2), point=(0, 0, 0, 1))
+    )
     labels.set_view_slice()
 
     value = labels._get_value_ray(
@@ -1219,7 +1265,9 @@ def test_get_value_ray_3d_transposed():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(0, 5, 5, 5))
 
     # set the dims to the slice with labels
-    labels._slice_dims((1, 0, 0, 0), ndisplay=3, order=(0, 1, 3, 2))
+    labels._slice_dims(
+        Dims(ndim=4, ndisplay=3, order=(0, 1, 3, 2), point=(1, 0, 0, 0))
+    )
     labels.set_view_slice()
 
     value = labels._get_value_ray(
@@ -1247,7 +1295,7 @@ def test_get_value_ray_2d():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
 
     # set the dims to the slice with labels, but 2D
-    labels._slice_dims([1, 10, 0, 0], ndisplay=2)
+    labels._slice_dims(Dims(ndim=4, ndisplay=2, point=(1, 10, 0, 0)))
 
     value = labels._get_value_ray(
         start_point=np.empty([]),
@@ -1271,7 +1319,7 @@ def test_cursor_ray_3d():
     labels = Labels(data, scale=(1, 1, 2, 1), translate=(5, 5, 5))
 
     # set the slice to one with data and the view to 3D
-    labels._slice_dims([1, 0, 0, 0], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(1, 0, 0, 0)))
 
     # axis 0 : [0, 20], bounding box extents along view axis, [1, 0, 0]
     # click is transformed: (value - translation) / scale
@@ -1309,7 +1357,7 @@ def test_cursor_ray_3d():
         dims_displayed=[1, 2, 3],
         view_direction=[0, 1, 0, 0],
     )
-    labels._slice_dims([0, 0, 0, 0], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3))
     start_point, end_point = labels.get_ray_intersections(
         mouse_event_3.position,
         mouse_event_3.view_direction,
@@ -1336,7 +1384,7 @@ def test_cursor_ray_3d_rolled():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
 
     # set the slice to one with data and the view to 3D
-    labels._slice_dims([0, 0, 0, 1], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(0, 0, 0, 1)))
 
     start_point, end_point = labels.get_ray_intersections(
         mouse_event_1.position,
@@ -1364,7 +1412,7 @@ def test_cursor_ray_3d_transposed():
     labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
 
     # set the slice to one with data and the view to 3D
-    labels._slice_dims([0, 0, 0, 1], ndisplay=3)
+    labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(0, 0, 0, 1)))
 
     start_point, end_point = labels.get_ray_intersections(
         mouse_event_1.position,
@@ -1437,11 +1485,11 @@ def test_invalidate_cache_when_change_color_mode():
     layer = Labels(data)
     layer.selected_label = 0
     gt_auto = layer._raw_to_displayed(layer._slice.image.raw)
-    assert gt_auto.dtype == np.float32
+    assert gt_auto.dtype == np.uint8
 
     layer.color_mode = 'direct'
     layer._cached_labels = None
-    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.uint8
 
     layer.color_mode = 'auto'
     # If the cache is not invalidated, it returns colors for
@@ -1449,6 +1497,20 @@ def test_invalidate_cache_when_change_color_mode():
     assert np.allclose(
         layer._raw_to_displayed(layer._slice.image.raw), gt_auto
     )
+
+
+@pytest.mark.parametrize("dtype", np.sctypes['int'] + np.sctypes['uint'])
+@pytest.mark.parametrize("mode", ["auto", "direct"])
+def test_cache_for_dtypes(dtype, mode):
+    data = np.zeros((10, 10), dtype=dtype)
+    labels = Labels(data)
+    labels.color_mode = mode
+    assert labels._cached_labels is None
+    labels._raw_to_displayed(
+        labels._slice.image.raw, (slice(None), slice(None))
+    )
+    assert labels._cached_labels is not None
+    assert labels._cached_mapped_labels.dtype == labels._slice.image.view.dtype
 
 
 def test_color_mapping_when_color_is_changed():
@@ -1460,7 +1522,7 @@ def test_color_mapping_when_color_is_changed():
     gt_direct_3colors = layer._raw_to_displayed(layer._slice.image.raw)
 
     layer = Labels(data, color={1: 'green', 2: 'red'})
-    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.float32
+    assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.uint8
     layer.color = {1: 'green', 2: 'red', 3: 'white'}
 
     assert np.allclose(
@@ -1482,10 +1544,10 @@ def test_color_mapping_with_show_selected_label():
         label_mask = data == selected_label
         mapped_colors = layer.colormap.map(data)
 
-        assert np.allclose(
+        npt.assert_allclose(
             mapped_colors[label_mask], mapped_colors_all[label_mask]
         )
-        assert np.allclose(mapped_colors[np.logical_not(label_mask)], 0)
+        npt.assert_allclose(mapped_colors[np.logical_not(label_mask)], 0)
 
     layer.show_selected_label = False
     assert np.allclose(layer.colormap.map(data), mapped_colors_all)
@@ -1507,6 +1569,24 @@ def test_color_mapping_when_seed_is_changed():
     assert not np.allclose(mapped_colors1, mapped_colors2)
 
 
+@pytest.mark.parametrize('num_colors', [49, 50, 254, 255, 60000, 65534])
+def test_color_shuffling_above_num_colors(num_colors):
+    r"""Check that the color shuffle does not result in the same collisions.
+
+    See https://github.com/napari/napari/issues/6448.
+
+    Note that we don't support more than 2\ :sup:`16` colors, and behavior
+    with more colors is undefined, so we don't test it here.
+    """
+    labels = np.arange(1, 1 + 2 * num_colors).reshape((2, num_colors))
+    layer = Labels(labels, num_colors=num_colors)
+    colors0 = layer.colormap.map(labels)
+    assert np.all(colors0[0] == colors0[1])
+    layer.new_colormap()
+    colors1 = layer.colormap.map(labels)
+    assert not np.all(colors1[0] == colors1[1])
+
+
 def test_negative_label():
     """Test negative label values are supported."""
     data = np.random.randint(low=-1, high=20, size=(10, 10))
@@ -1525,7 +1605,7 @@ def test_negative_label_slicing():
     data = np.array([[[0, 1], [-1, -1]], [[100, 100], [-1, -2]]])
     layer = Labels(data)
     assert tuple(layer.get_color(1)) != tuple(layer.get_color(-1))
-    layer._slice_dims(point=(1, 0, 0))
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     assert tuple(layer.get_color(-1)) != tuple(layer.get_color(100))
     assert tuple(layer.get_color(-2)) != tuple(layer.get_color(100))
 
@@ -1539,7 +1619,7 @@ def test_negative_label_doesnt_flicker():
         ]
     )
     layer = Labels(data)
-    layer._slice_dims(point=(1, 0, 0))
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     # This used to fail when negative values were used to index into _all_vals.
     assert tuple(layer.get_color(-1)) != tuple(layer.get_color(5))
     minus_one_color_original = tuple(layer.get_color(-1))
@@ -1572,17 +1652,6 @@ def test_get_status_with_custom_index():
     )
 
 
-def test_collision_warning():
-    label = Labels(data=np.zeros((10, 10), dtype=np.uint8))
-    with pytest.warns(
-        RuntimeWarning, match="Because integer labels are cast to less-precise"
-    ):
-        label.color = {2**25 + 1: 'red', 2**25 + 2: 'blue'}
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        label.color = {1: 'red', 2: 'blue'}
-
-
 def test_labels_features_event():
     event_emitted = False
 
@@ -1598,6 +1667,23 @@ def test_labels_features_event():
     assert event_emitted
 
 
+def test_invalidate_cache_when_change_slice():
+    layer = Labels(np.zeros((2, 4, 5), dtype=np.uint8))
+    assert layer._cached_labels is None
+    layer._setup_cache(layer._slice.image.raw)
+    assert layer._cached_labels is not None
+    layer._set_view_slice()
+    assert layer._cached_labels is None
+
+
+def test_copy():
+    l1 = Labels(np.zeros((2, 4, 5), dtype=np.uint8))
+    l2 = copy.copy(l1)
+    l3 = Labels.create(*l1.as_layer_data_tuple())
+    assert l1.data is not l2.data
+    assert l1.data is l3.data
+
+
 class TestLabels:
     @staticmethod
     def get_objects():
@@ -1606,5 +1692,5 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {"seed", "num_colors", "color"},
+            {"seed", "num_colors", "color", "seed_rng"},
         )

@@ -1,10 +1,13 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Tuple, Union
+from typing import Any, Callable, List, Tuple, Union
 
 import numpy as np
 
 from napari.layers.base._slice import _next_request_id
-from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.image._image_constants import ImageProjectionMode
+from napari.layers.image._image_utils import project_slice
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.types import ArrayLike
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
@@ -65,7 +68,7 @@ class _ImageSliceResponse:
     tile_to_data: Affine
         The affine transform from the sliced data to the full data at the highest resolution.
         For single-scale images, this will be the identity matrix.
-    dims : _SliceInput
+    slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
     request_id : int
         The identifier of the request from which this was generated.
@@ -74,13 +77,13 @@ class _ImageSliceResponse:
     image: _ImageView = field(repr=False)
     thumbnail: _ImageView = field(repr=False)
     tile_to_data: Affine = field(repr=False)
-    dims: _SliceInput
+    slice_input: _SliceInput
     request_id: int
     empty: bool = False
 
     @classmethod
     def make_empty(
-        cls, *, dims: _SliceInput, rgb: bool
+        cls, *, slice_input: _SliceInput, rgb: bool
     ) -> '_ImageSliceResponse':
         """Returns an empty image slice response.
 
@@ -90,19 +93,19 @@ class _ImageSliceResponse:
 
         Parameters
         ----------
-        dims : _SliceInput
+        slice_input : _SliceInput
             Describes the slicing plane or bounding box in the layer's dimensions.
         rgb : bool
             True if the underlying image is an RGB or RGBA image (i.e. that the
             last dimension represents a color channel that should not be sliced),
             False otherwise.
         """
-        shape = (1,) * dims.ndisplay
+        shape = (1,) * slice_input.ndisplay
         if rgb:
             shape = shape + (3,)
         data = np.zeros(shape)
         image = _ImageView.from_view(data)
-        ndim = dims.ndim
+        ndim = slice_input.ndim
         tile_to_data = Affine(
             name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
         )
@@ -110,7 +113,7 @@ class _ImageSliceResponse:
             image=image,
             thumbnail=image,
             tile_to_data=tile_to_data,
-            dims=dims,
+            slice_input=slice_input,
             request_id=_next_request_id(),
             empty=True,
         )
@@ -129,7 +132,7 @@ class _ImageSliceResponse:
             image=image,
             thumbnail=thumbnail,
             tile_to_data=self.tile_to_data,
-            dims=self.dims,
+            slice_input=self.slice_input,
             request_id=self.request_id,
         )
 
@@ -147,22 +150,23 @@ class _ImageSliceRequest:
 
     Attributes
     ----------
-    dims : _SliceInput
+    slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
     data : Any
         The layer's data field, which is the main input to slicing.
-    indices : tuple of ints or slices
-        The slice indices in the layer's data space.
+    data_slice : _ThickNDSlice
+        The slicing coordinates and margins in data space.
     others
         See the corresponding attributes in `Layer` and `Image`.
     id : int
         The identifier of this slice request.
     """
 
-    dims: _SliceInput
+    slice_input: _SliceInput
     data: Any = field(repr=False)
     dask_indexer: DaskIndexer
-    indices: Tuple[Union[int, slice], ...]
+    data_slice: _ThickNDSlice
+    projection_mode: ImageProjectionMode
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray
     rgb: bool = field(repr=False)
@@ -173,6 +177,10 @@ class _ImageSliceRequest:
     id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _ImageSliceResponse:
+        if self._slice_out_of_bounds():
+            return _ImageSliceResponse.make_empty(
+                slice_input=self.slice_input, rgb=self.rgb
+            )
         with self.dask_indexer():
             return (
                 self._call_multi_scale()
@@ -182,12 +190,12 @@ class _ImageSliceRequest:
 
     def _call_single_scale(self) -> _ImageSliceResponse:
         order = self._get_order()
-        data = np.asarray(self.data[self.indices])
+        data = self._project_thick_slice(self.data, self.data_slice)
         data = np.transpose(data, order)
         image = _ImageView.from_view(data)
         # `Layer.multiscale` is mutable so we need to pass back the identity
         # transform to ensure `tile2data` is properly set on the layer.
-        ndim = self.dims.ndim
+        ndim = self.slice_input.ndim
         tile_to_data = Affine(
             name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
         )
@@ -195,27 +203,28 @@ class _ImageSliceRequest:
             image=image,
             thumbnail=image,
             tile_to_data=tile_to_data,
-            dims=self.dims,
+            slice_input=self.slice_input,
             request_id=self.id,
         )
 
     def _call_multi_scale(self) -> _ImageSliceResponse:
-        if self.dims.ndisplay == 3:
+        if self.slice_input.ndisplay == 3:
             level = len(self.data) - 1
         else:
             level = self.data_level
 
-        indices = self._slice_indices_at_level(level)
-
         # Calculate the tile-to-data transform.
-        scale = np.ones(self.dims.ndim)
-        for d in self.dims.displayed:
+        scale = np.ones(self.slice_input.ndim)
+        for d in self.slice_input.displayed:
             scale[d] = self.downsample_factors[level][d]
 
-        translate = np.zeros(self.dims.ndim)
-        if self.dims.ndisplay == 2:
-            for d in self.dims.displayed:
-                indices[d] = slice(
+        data = self.data[level]
+
+        translate = np.zeros(self.slice_input.ndim)
+        disp_slice = [slice(None) for _ in data.shape]
+        if self.slice_input.ndisplay == 2:
+            for d in self.slice_input.displayed:
+                disp_slice[d] = slice(
                     self.corner_pixels[0, d],
                     self.corner_pixels[1, d] + 1,
                     1,
@@ -228,17 +237,22 @@ class _ImageSliceRequest:
             name='tile2data',
             scale=scale,
             translate=translate,
-            ndim=self.dims.ndim,
+            ndim=self.slice_input.ndim,
         )
 
+        # slice displayed dimensions to get the right tile data
+        data = np.asarray(data[tuple(disp_slice)])
+        # project the thick slice
+        data_slice = self._thick_slice_at_level(level)
+        data = self._project_thick_slice(data, data_slice)
+
         order = self._get_order()
-        data = np.asarray(self.data[level][tuple(indices)])
         data = np.transpose(data, order)
         image = _ImageView.from_view(data)
 
-        thumbnail_indices = self._slice_indices_at_level(self.thumbnail_level)
-        thumbnail_data = np.asarray(
-            self.data[self.thumbnail_level][tuple(thumbnail_indices)]
+        thumbnail_data_slice = self._thick_slice_at_level(self.thumbnail_level)
+        thumbnail_data = self._project_thick_slice(
+            self.data[self.thumbnail_level], thumbnail_data_slice
         )
         thumbnail_data = np.transpose(thumbnail_data, order)
         thumbnail = _ImageView.from_view(thumbnail_data)
@@ -247,25 +261,110 @@ class _ImageSliceRequest:
             image=image,
             thumbnail=thumbnail,
             tile_to_data=tile_to_data,
-            dims=self.dims,
+            slice_input=self.slice_input,
             request_id=self.id,
         )
 
-    def _slice_indices_at_level(self, level: int) -> np.ndarray:
-        indices = np.array(self.indices)
-        axes = self.dims.not_displayed
-        ds_indices = indices[axes] / self.downsample_factors[level][axes]
-        ds_indices = np.round(ds_indices.astype(float)).astype(int)
-        ds_indices = np.clip(ds_indices, 0, self.level_shapes[level][axes] - 1)
-        indices[axes] = ds_indices
-        return indices
+    def _thick_slice_at_level(self, level: int) -> _ThickNDSlice:
+        """
+        Get the data_slice rescaled for a specific level.
+        """
+        slice_arr = self.data_slice.as_array()
+        # downsample based on level
+        slice_arr /= self.downsample_factors[level]
+        slice_arr[0] = np.clip(slice_arr[0], 0, self.level_shapes[level] - 1)
+        return _ThickNDSlice.from_array(slice_arr)
+
+    def _project_thick_slice(
+        self, data: ArrayLike, data_slice: _ThickNDSlice
+    ) -> ArrayLike:
+        """
+        Slice the given data with the given data slice and project the extra dims.
+        """
+
+        if self.projection_mode == 'none':
+            # early return with only the dims point being used
+            slices = self._point_to_slices(data_slice.point)
+            return np.asarray(data[slices])
+
+        slices = self._data_slice_to_slices(
+            data_slice, self.slice_input.displayed
+        )
+
+        return project_slice(
+            data=np.asarray(data[slices]),
+            axis=tuple(self.slice_input.not_displayed),
+            mode=self.projection_mode,
+        )
 
     def _get_order(self) -> Tuple[int, ...]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
-        order = reorder_after_dim_reduction(self.dims.displayed)
+        order = reorder_after_dim_reduction(self.slice_input.displayed)
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
             return (*order, max(order) + 1)
         return order
+
+    def _slice_out_of_bounds(self) -> bool:
+        """Check if the data slice is out of bounds for any dimension."""
+        data = self.data[0] if self.multiscale else self.data
+        for d in self.slice_input.not_displayed:
+            pt = self.data_slice.point[d]
+            max_idx = data.shape[d] - 1
+            if self.projection_mode == 'none':
+                if np.round(pt) < 0 or np.round(pt) > max_idx:
+                    return True
+            else:
+                pt = self.data_slice.point[d]
+                low = np.round(pt - self.data_slice.margin_left[d])
+                high = np.round(pt + self.data_slice.margin_right[d])
+                if high < 0 or low > max_idx:
+                    return True
+        return False
+
+    @staticmethod
+    def _point_to_slices(
+        point: Tuple[float, ...]
+    ) -> Tuple[Union[slice, int], ...]:
+        # no need to check out of bounds here cause it's guaranteed
+
+        # values in point and margins are np.nan if no slicing should happen along that dimension
+        # which is always the case for displayed dims, so that becomes `slice(None)` for actually
+        # indexing the layer.
+        # For the rest, indices are rounded to the closest integer
+        return tuple(
+            slice(None) if np.isnan(p) else int(np.round(p)) for p in point
+        )
+
+    @staticmethod
+    def _data_slice_to_slices(
+        data_slice: _ThickNDSlice, dims_displayed: List[int]
+    ) -> Tuple[slice, ...]:
+        slices = [slice(None) for _ in range(data_slice.ndim)]
+
+        for dim, (point, m_left, m_right) in enumerate(data_slice):
+            if dim in dims_displayed:
+                # leave slice(None) for displayed dimensions
+                # point and margin values here are np.nan; if np.nans pass through this check,
+                # something is likely wrong with the data_slice creation at a previous step!
+                continue
+
+            # max here ensures we don't start slicing from negative values (=end of array)
+            low = max(int(np.round(point - m_left)), 0)
+            high = max(int(np.round(point + m_right)), 0)
+
+            # if high is already exactly at an integer value, we need to round up
+            # to next integer because slices have non-inclusive stop
+            if np.isclose(high, point + m_right):
+                high += 1
+
+            # ensure we always get at least 1 slice (we're guaranteed to be
+            # in bounds from a previous check)
+            if low == high:
+                high += 1
+
+            slices[dim] = slice(low, high)
+
+        return tuple(slices)

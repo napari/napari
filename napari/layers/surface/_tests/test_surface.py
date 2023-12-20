@@ -1,7 +1,10 @@
+import copy
+
 import numpy as np
 import pytest
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components.dims import Dims
 from napari.layers import Surface
 from napari.layers.surface.normals import SurfaceNormals
 from napari.layers.surface.wireframe import SurfaceWireframe
@@ -66,7 +69,7 @@ def test_random_3D_surface():
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
@@ -84,7 +87,7 @@ def test_random_4D_surface():
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=4, ndisplay=3))
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
@@ -103,14 +106,14 @@ def test_random_3D_timeseries_surface():
     assert layer._view_vertex_values.ndim == 1
     assert layer.extent.data[1][0] == 21
 
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=4, ndisplay=3))
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
     # If a values axis is made to be a displayed axis then no data should be
     # shown
     with pytest.warns(UserWarning):
-        layer._slice_dims(ndisplay=3, order=[3, 0, 1, 2])
+        layer._slice_dims(Dims(ndim=4, ndisplay=3, order=(3, 0, 1, 2)))
         assert len(layer._data_view) == 0
 
 
@@ -129,7 +132,7 @@ def test_random_3D_multitimeseries_surface():
     assert layer.extent.data[1][0] == 15
     assert layer.extent.data[1][1] == 21
 
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=5, ndisplay=3))
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
@@ -153,7 +156,7 @@ def test_changing_surface():
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
-    layer._slice_dims(ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
@@ -299,7 +302,7 @@ def test_get_value_3d(
     values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
     surface_layer = Surface((vertices, faces, values))
 
-    surface_layer._slice_dims([0, 0, 0], ndisplay=3)
+    surface_layer._slice_dims(Dims(ndim=3, ndisplay=3))
     value, index = surface_layer.get_value(
         position=ray_start,
         view_direction=ray_direction,
@@ -337,7 +340,7 @@ def test_get_value_3d_nd(
     values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
     surface_layer = Surface((vertices, faces, values))
 
-    surface_layer._slice_dims([0, 0, 0, 0], ndisplay=3)
+    surface_layer._slice_dims(Dims(ndim=4, ndisplay=3))
     value, index = surface_layer.get_value(
         position=ray_start,
         view_direction=ray_direction,
@@ -416,3 +419,25 @@ def test_surface_wireframe():
     assert isinstance(surface_layer.wireframe, SurfaceWireframe)
     assert surface_layer.wireframe.visible is True
     assert np.array_equal(surface_layer.wireframe.color, (1, 0, 0, 1))
+
+
+def test_surface_copy():
+    vertices = np.array(
+        [
+            [3, 0, 0],
+            [3, 0, 3],
+            [3, 3, 0],
+            [5, 0, 0],
+            [5, 0, 3],
+            [5, 3, 0],
+            [2, 50, 50],
+            [2, 50, 100],
+            [2, 100, 50],
+        ]
+    )
+    faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
+
+    l1 = Surface((vertices, faces, values))
+    l2 = copy.copy(l1)
+    assert l1.data[0] is not l2.data[0]

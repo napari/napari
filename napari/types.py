@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     import dask.array  # noqa: ICN001
     import zarr
     from magicgui.widgets import FunctionGui
-    from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
+    from qtpy.QtWidgets import QWidget
 
 
 __all__ = [
@@ -73,7 +73,7 @@ FullLayerData = Tuple[Any, Dict, LayerTypeName]
 LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
 PathLike = Union[str, Path]
-PathOrPaths = Union[str, Sequence[str]]
+PathOrPaths = Union[PathLike, Sequence[PathLike]]
 ReaderFunction = Callable[[PathOrPaths], List[LayerData]]
 WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
 

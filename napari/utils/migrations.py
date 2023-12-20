@@ -1,13 +1,15 @@
 import warnings
 from functools import wraps
-from typing import Any
+from typing import Any, Callable
 
 from napari.utils.translations import trans
+
+_UNSET = object()
 
 
 def rename_argument(
     from_name: str, to_name: str, version: str, since_version: str = ""
-):
+) -> Callable:
     """
     This is decorator for simple rename function argument
     without break backward compatibility.
@@ -27,7 +29,10 @@ def rename_argument(
     if not since_version:
         since_version = "unknown"
         warnings.warn(
-            "The since_version argument was added in napari 0.4.18 and will be mandatory since 0.6.0 release.",
+            trans._(
+                "The since_version argument was added in napari 0.4.18 and will be mandatory since 0.6.0 release.",
+                deferred=True,
+            ),
             stacklevel=2,
             category=FutureWarning,
         )
@@ -79,9 +84,9 @@ def add_deprecated_property(
     obj:
         Class instances to add property
     previous_name : str
-        Name of previous property, it methods must be removed.
+        Name of previous property, its methods must be removed.
     new_name : str
-        Name of new property, must have its setter and getter implemented.
+        Name of new property, must have its getter (and setter if applicable) implemented.
     version : str
         Version where deprecated property will be removed.
     since_version : str
@@ -89,14 +94,31 @@ def add_deprecated_property(
     """
 
     if hasattr(obj, previous_name):
-        raise RuntimeError(f"{previous_name} attribute already exists.")
+        raise RuntimeError(
+            trans._(
+                "{previous_name} property already exists.",
+                deferred=True,
+                previous_name=previous_name,
+            )
+        )
 
     if not hasattr(obj, new_name):
-        raise RuntimeError(f"{new_name} property must exists.")
+        raise RuntimeError(
+            trans._(
+                "{new_name} property must exist.",
+                deferred=True,
+                new_name=new_name,
+            )
+        )
 
+    name = f"{obj.__name__}.{previous_name}"
     msg = trans._(
-        f"{previous_name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}",
+        "{name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}",
         deferred=True,
+        name=name,
+        since_version=since_version,
+        version=version,
+        new_name=new_name,
     )
 
     def _getter(instance) -> Any:
@@ -108,3 +130,38 @@ def add_deprecated_property(
         setattr(instance, new_name, value)
 
     setattr(obj, previous_name, property(_getter, _setter))
+
+
+def deprecated_constructor_arg_by_attr(name: str) -> Callable:
+    """
+    Decorator to deprecate a constructor argument and remove it from the signature.
+
+    It works by popping the argument from kwargs, and setting it later via setattr.
+    The property setter should take care of issuing the deprecation warning.
+
+    Parameters
+    ----------
+    name : str
+        Name of the argument to deprecate.
+
+    Returns
+    -------
+    function
+        decorated function
+    """
+
+    def wrapper(func):
+        @wraps(func)
+        def _wrapper(*args, **kwargs):
+            value = _UNSET
+            if name in kwargs:
+                value = kwargs.pop(name)
+            res = func(*args, **kwargs)
+
+            if value is not _UNSET:
+                setattr(args[0], name, value)
+            return res
+
+        return _wrapper
+
+    return wrapper

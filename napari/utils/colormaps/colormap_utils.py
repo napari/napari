@@ -1,5 +1,6 @@
 import warnings
 from collections import OrderedDict
+from functools import lru_cache
 from threading import Lock
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
@@ -20,6 +21,7 @@ from napari.utils.colormaps.colormap import (
     ColormapInterpolationMode,
     DirectLabelColormap,
     LabelColormap,
+    minimum_dtype_for_labels,
 )
 from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
@@ -237,7 +239,7 @@ def _validate_rgb(colors, *, tolerance=0.0):
     return filtered_colors
 
 
-def low_discrepancy_image(image, seed=0.5, margin=1 / 256):
+def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
     """Generate a 1d low discrepancy sequence of coordinates.
 
     Parameters
@@ -405,7 +407,9 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
     return rgb[:n]
 
 
-def label_colormap(num_colors=256, seed=0.5):
+def label_colormap(
+    num_colors=256, seed=0.5, background_value=0
+) -> LabelColormap:
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
@@ -418,18 +422,24 @@ def label_colormap(num_colors=256, seed=0.5):
 
     Returns
     -------
-    colormap : napari.utils.Colormap
+    colormap : napari.utils.LabelColormap
         A colormap for use with labels remapped to [0, 1].
 
     Notes
     -----
     0 always maps to fully transparent.
     """
+    if num_colors < 1:
+        raise ValueError("num_colors must be >= 1")
+
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
     midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors + 1)
-    control_points = np.concatenate(([0], midpoints, [1.0]))
+    control_points = np.concatenate(
+        (np.array([0]), midpoints, np.array([1.0]))
+    )
     # make sure to add an alpha channel to the colors
+
     colors = np.concatenate(
         (
             _color_random(num_colors + 2, seed=seed),
@@ -437,16 +447,121 @@ def label_colormap(num_colors=256, seed=0.5):
         ),
         axis=1,
     )
-    # Insert alpha at layer 0
-    colors[0, :] = 0  # ensure alpha is 0 for label 0
+
+    # from here
+    values_ = np.arange(num_colors + 2)
+    randomized_values = low_discrepancy_image(values_, seed=seed)
+
+    indices = np.clip(
+        np.searchsorted(control_points, randomized_values, side="right") - 1,
+        0,
+        len(control_points) - 1,
+    )
+
+    # here is an ugly hack to restore classical napari color order.
+    colors = colors[indices][:-1]
+
+    # ensure that we not need to deal with differences in float rounding for
+    # CPU and GPU.
+    uint8_max = np.iinfo(np.uint8).max
+    rgb8_colors = (colors * uint8_max).astype(np.uint8)
+    colors = rgb8_colors.astype(np.float32) / uint8_max
+
     return LabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
         colors=colors,
-        controls=control_points,
+        controls=np.linspace(0, 1, len(colors) + 1),
         interpolation='zero',
-        seed=seed,
+        background_value=background_value,
     )
+
+
+@lru_cache
+def _primes(upto=2**16):
+    """Generate primes up to a given number.
+
+    Parameters
+    ----------
+    upto : int
+        The upper limit of the primes to generate.
+
+    Returns
+    -------
+    primes : np.ndarray
+        The primes up to the upper limit.
+    """
+    primes = np.arange(3, upto + 1, 2)
+    isprime = np.ones((upto - 1) // 2, dtype=bool)
+    max_factor = int(np.sqrt(upto))
+    for factor in primes[: max_factor // 2]:
+        if isprime[(factor - 2) // 2]:
+            isprime[(factor * 3 - 2) // 2 : None : factor] = 0
+    return np.concatenate(([2], primes[isprime]))
+
+
+def shuffle_and_extend_colormap(
+    colormap: LabelColormap, seed: int, min_random_choices: int = 5
+) -> LabelColormap:
+    """Shuffle the colormap colors and extend it to more colors.
+
+    The new number of colors will be a prime number that fits into the same
+    dtype as the current number of colors in the colormap.
+
+    Parameters
+    ----------
+    colormap : napari.utils.LabelColormap
+        Colormap to shuffle and extend.
+    seed : int
+        Seed for the random number generator.
+    min_random_choices : int
+        Minimum number of new table sizes to choose from. When choosing table
+        sizes, every choice gives a 1/size chance of two labels being mapped
+        to the same color. Since we try to stay within the same dtype as the
+        original colormap, if the number of original colors is close to the
+        maximum value for the dtype, there will not be enough prime numbers
+        up to the dtype max to ensure that two labels can always be
+        distinguished after one or few shuffles. In that case, we discard
+        some colors and choose the `min_random_choices` largest primes to fit
+        within the dtype.
+
+    Returns
+    -------
+    colormap : napari.utils.LabelColormap
+        Shuffled and extended colormap.
+    """
+    rng = np.random.default_rng(seed)
+    n_colors_prev = len(colormap.colors)
+    dtype = minimum_dtype_for_labels(n_colors_prev)
+    indices = np.arange(n_colors_prev)
+    rng.shuffle(indices)
+    shuffled_colors = colormap.colors[indices]
+
+    primes = _primes(
+        np.iinfo(dtype).max if np.issubdtype(dtype, np.integer) else 2**24
+    )
+    valid_primes = primes[primes > n_colors_prev]
+    if len(valid_primes) < min_random_choices:
+        valid_primes = primes[-min_random_choices:]
+    n_colors = rng.choice(valid_primes)
+    n_color_diff = n_colors - n_colors_prev
+
+    extended_colors = np.concatenate(
+        (
+            shuffled_colors[: min(n_color_diff, 0) or None],
+            shuffled_colors[rng.choice(indices, size=max(n_color_diff, 0))],
+        ),
+        axis=0,
+    )
+
+    new_colormap = LabelColormap(
+        name=colormap.name,
+        colors=extended_colors,
+        controls=np.linspace(0, 1, len(extended_colors) + 1),
+        interpolation='zero',
+        background_value=colormap.background_value,
+    )
+    return new_colormap
 
 
 def direct_colormap(color_dict=None):

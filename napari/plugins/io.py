@@ -10,7 +10,7 @@ from napari_plugin_engine import HookImplementation, PluginCallError
 
 from napari.layers import Layer
 from napari.plugins import _npe2, plugin_manager
-from napari.types import LayerData
+from napari.types import LayerData, PathLike
 from napari.utils.misc import abspath_or_url
 from napari.utils.translations import trans
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 def read_data_with_plugins(
-    paths: Sequence[str],
+    paths: Sequence[PathLike],
     plugin: Optional[str] = None,
     stack: bool = False,
 ) -> Tuple[Optional[List[LayerData]], Optional[HookImplementation]]:

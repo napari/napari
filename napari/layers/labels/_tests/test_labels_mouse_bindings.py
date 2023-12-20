@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import ndimage as ndi
 
+from napari.components.dims import Dims
 from napari.layers import Labels
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
@@ -392,7 +393,7 @@ def test_paint_3d(MouseEvent):
     data = np.zeros((21, 21, 21), dtype=np.int32)
     data[10, 10, 10] = 1
     layer = Labels(data)
-    layer._slice_dims(point=(0, 0, 0), ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
 
     layer.n_edit_dimensions = 3
     layer.mode = 'paint'
@@ -445,7 +446,7 @@ def test_erase_3d_undo(MouseEvent):
     layer = Labels(data)
     layer.brush_size = 5
     layer.mode = 'erase'
-    layer._slice_dims(point=(0, 0, 0), ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     layer.n_edit_dimensions = 3
 
     # Simulate click
@@ -514,7 +515,7 @@ def test_erase_3d_undo_empty(MouseEvent):
     layer = Labels(data)
     layer.brush_size = 5
     layer.mode = 'erase'
-    layer._slice_dims(point=(0, 0, 0), ndisplay=3)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
     layer.n_edit_dimensions = 3
 
     # Simulate click, outside data

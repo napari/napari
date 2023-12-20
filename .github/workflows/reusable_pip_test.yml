@@ -1,0 +1,42 @@
+on:
+  workflow_call:
+
+jobs:
+  test_pip_install:
+    name: ubuntu-latest 3.9 pip install
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: napari-from-github
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache: "pip"
+          cache-dependency-path: napari-from-github/setup.cfg
+
+      - uses: tlambert03/setup-qt-libs@v1
+
+      - name: Install this commit
+        run: |
+          pip install --upgrade pip
+          pip install ./napari-from-github[pyqt,testing]
+        env:
+          PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
+
+      - name: Test
+        uses: aganders3/headless-gui@v1
+        with:
+          run: |
+            python -m pytest --pyargs napari --color=yes --basetemp=.pytest_tmp
+            python -m pytest --pyargs napari_builtins --color=yes --basetemp=.pytest_tmp
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test artifacts pip install
+          path: .pytest_tmp
