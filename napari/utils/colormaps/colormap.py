@@ -359,8 +359,12 @@ class DirectLabelColormap(LabelColormapBase):
         super().__init__(*args, **kwargs)
 
     def __len__(self):
-        """Overwrite from base class because .color is a dummy array."""
-        return len(self.color_dict)
+        """Overwrite from base class because .color is a dummy array.
+
+        This returns the number of colors in the colormap, including
+        background and unmapped labels.
+        """
+        return self._num_unique_colors + 2
 
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         return int(
@@ -429,7 +433,11 @@ class DirectLabelColormap(LabelColormapBase):
 
     @cached_property
     def _num_unique_colors(self) -> int:
-        """Count the number of unique colors in the colormap."""
+        """Count the number of unique colors in the colormap.
+
+        This number does not include background or the default color for
+        unmapped labels.
+        """
         return len({tuple(x) for x in self.color_dict.values()})
 
     def _clear_cache(self):

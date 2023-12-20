@@ -1032,14 +1032,6 @@ class Labels(_ImageBase):
         )
         return sliced_labels[delta_slice]
 
-    def _get_cache_dtype(self, raw_dtype: np.dtype) -> np.dtype:
-        if self.color_mode == LabelColorMode.DIRECT:
-            return _texture_dtype(
-                self._direct_colormap._num_unique_colors + 2,
-                raw_dtype,
-            )
-        return _texture_dtype(len(self.colormap), raw_dtype)
-
     def _setup_cache(self, labels):
         """
         Initializes the cache for the Labels layer
@@ -1054,7 +1046,7 @@ class Labels(_ImageBase):
 
         self._cached_labels = np.zeros_like(labels)
         self._cached_mapped_labels = np.zeros_like(
-            labels, dtype=self._get_cache_dtype(labels.dtype)
+            labels, dtype=_texture_dtype(len(self.colormap), labels.dtype)
         )
 
     def _raw_to_displayed(
