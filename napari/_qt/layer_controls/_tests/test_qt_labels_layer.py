@@ -21,17 +21,6 @@ def make_labels_controls(qtbot, color=None):
     return _make_labels_controls
 
 
-def test_changing_layer_color_mode_updates_combo_box(make_labels_controls):
-    """Updating layer color mode changes the combo box selection"""
-    layer, qtctrl = make_labels_controls(color=_COLOR)
-
-    original_color_mode = layer.color_mode
-    assert original_color_mode == qtctrl.colorModeComboBox.currentText()
-
-    layer.color_mode = 'auto'
-    assert layer.color_mode == qtctrl.colorModeComboBox.currentText()
-
-
 def test_changing_layer_show_selected_label_updates_check_box(
     make_labels_controls,
 ):

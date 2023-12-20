@@ -22,7 +22,6 @@ from napari._qt.widgets.qt_mode_buttons import (
     QtModeRadioButton,
 )
 from napari.layers.labels._labels_constants import (
-    LABEL_COLOR_MODE_TRANSLATIONS,
     LabelsRendering,
     Mode,
 )
@@ -109,7 +108,6 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.show_selected_label.connect(
             self._on_show_selected_label_change
         )
-        self.layer.events.color_mode.connect(self._on_color_mode_change)
         self.layer.events.data.connect(self._on_data_change)
 
         # selection spinbox
@@ -270,20 +268,6 @@ class QtLabelsControls(QtLayerControls):
 
         self._on_ndisplay_changed()
 
-        color_mode_comboBox = QComboBox(self)
-        for index, (data, text) in enumerate(
-            LABEL_COLOR_MODE_TRANSLATIONS.items()
-        ):
-            data = data.value
-            color_mode_comboBox.addItem(text, data)
-
-            if self.layer.color_mode == data:
-                color_mode_comboBox.setCurrentIndex(index)
-
-        color_mode_comboBox.activated.connect(self.change_color_mode)
-        self.colorModeComboBox = color_mode_comboBox
-        self._on_color_mode_change()
-
         color_layout = QHBoxLayout()
         self.colorBox = QtColorBox(layer)
         color_layout.addWidget(self.colorBox)
@@ -295,7 +279,6 @@ class QtLabelsControls(QtLayerControls):
         self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(self.renderLabel, self.renderComboBox)
-        self.layout().addRow(trans._('color mode:'), self.colorModeComboBox)
         self.layout().addRow(trans._('contour:'), self.contourSpinBox)
         self.layout().addRow(trans._('n edit dim:'), self.ndimSpinBox)
         self.layout().addRow(trans._('contiguous:'), self.contigCheckBox)
@@ -443,10 +426,6 @@ class QtLabelsControls(QtLayerControls):
             Qt.CheckState(state) == Qt.CheckState.Checked
         )
 
-    def change_color_mode(self):
-        """Change color mode of label layer"""
-        self.layer.color_mode = self.colorModeComboBox.currentData()
-
     def _on_contour_change(self):
         """Receive layer model contour value change event and update spinbox."""
         with self.layer.events.contour.blocker():
@@ -491,13 +470,6 @@ class QtLabelsControls(QtLayerControls):
         with self.layer.events.show_selected_label.blocker():
             self.selectedColorCheckbox.setChecked(
                 self.layer.show_selected_label
-            )
-
-    def _on_color_mode_change(self):
-        """Receive layer model color."""
-        with self.layer.events.color_mode.blocker():
-            self.colorModeComboBox.setCurrentIndex(
-                self.colorModeComboBox.findData(self.layer.color_mode)
             )
 
     def _on_editable_or_visible_change(self):
