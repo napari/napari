@@ -17,7 +17,6 @@ def test_random_multiscale():
     np.testing.assert_array_equal(
         layer.extent.data[1], [s - 1 for s in shapes[0]]
     )
-    assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
 
@@ -34,7 +33,6 @@ def test_infer_multiscale():
     np.testing.assert_array_equal(
         layer.extent.data[1], [s - 1 for s in shapes[0]]
     )
-    assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
 
@@ -49,7 +47,6 @@ def test_3D_multiscale_labels_in_2D():
     np.testing.assert_array_equal(
         layer.extent.data[1], np.array(data_multiscale[0].shape) - 1
     )
-    assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
     # check corner pixels, should be tuple of highest resolution level

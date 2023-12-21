@@ -225,41 +225,29 @@ class _ImageBase(Layer):
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
 
-    @rename_argument(
-        from_name="interpolation",
-        to_name="interpolation2d",
-        version="0.6.0",
-        since_version="0.4.17",
-    )
     def __init__(
         self,
         data,
         *,
-        rgb=None,
-        colormap='gray',
-        gamma=1.0,
-        interpolation2d='nearest',
-        interpolation3d='linear',
-        rendering='mip',
-        iso_threshold=None,
-        attenuation=0.05,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        rotate=None,
-        shear=None,
         affine=None,
-        opacity=1.0,
         blending='translucent',
-        visible=True,
-        multiscale=None,
         cache=True,
-        depiction='volume',
-        plane=None,
-        experimental_clipping_planes=None,
         custom_interpolation_kernel_2d=None,
+        depiction='volume',
+        experimental_clipping_planes=None,
+        metadata=None,
+        multiscale=None,
+        name=None,
+        ndim=None,
+        opacity=1.0,
+        plane=None,
         projection_mode='none',
+        rendering='mip',
+        rotate=None,
+        scale=None,
+        shear=None,
+        translate=None,
+        visible=True,
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -272,29 +260,16 @@ class _ImageBase(Layer):
                 trans._('Image data must have at least 2 dimensions.')
             )
 
-        # Determine if data is a multiscale
+        # Deter
         self._data_raw = data
         if multiscale is None:
             multiscale, data = guess_multiscale(data)
         elif multiscale and not isinstance(data, MultiScaleData):
             data = MultiScaleData(data)
 
-        # Determine if rgb
-        rgb_guess = guess_rgb(data.shape)
-        if rgb and not rgb_guess:
-            raise ValueError(
-                trans._(
-                    "'rgb' was set to True but data does not have suitable dimensions."
-                )
-            )
-        if rgb is None:
-            rgb = rgb_guess
-        self.rgb = rgb
-
         # Determine dimensionality of the data
-        ndim = len(data.shape)
-        if rgb:
-            ndim -= 1
+        if ndim is None:
+            ndim = len(data.shape)
 
         super().__init__(
             data,
@@ -316,6 +291,9 @@ class _ImageBase(Layer):
         )
 
         self.events.add(
+            attenuation=Event,
+            custom_interpolation_kernel_2d=Event,
+            depiction=Event,
             interpolation=WarningEmitter(
                 trans._(
                     "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
@@ -325,12 +303,9 @@ class _ImageBase(Layer):
             ),
             interpolation2d=Event,
             interpolation3d=Event,
-            rendering=Event,
-            plane=Event,
-            depiction=Event,
             iso_threshold=Event,
-            attenuation=Event,
-            custom_interpolation_kernel_2d=Event,
+            plane=Event,
+            rendering=Event,
         )
 
         self._array_like = True
@@ -359,12 +334,10 @@ class _ImageBase(Layer):
         )
 
         self._slice = _ImageSliceResponse.make_empty(
-            slice_input=self._slice_input, rgb=self.rgb
+            slice_input=self._slice_input,
+            rgb=len(self.data.shape) != self.ndim,
         )
 
-        # Set contrast limits, colormaps and plane parameters
-        self._gamma = gamma
-        self._attenuation = attenuation
         self._plane = SlicingPlane(thickness=1, enabled=False, draggable=True)
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
@@ -373,11 +346,6 @@ class _ImageBase(Layer):
         # _set_colormap method. This is important for Labels layers, because
         # we don't want to use get_color before set_view_slice has been
         # triggered (self.refresh(), below).
-        self._colormap = ensure_colormap(colormap)
-        self._interpolation2d = Interpolation.NEAREST
-        self._interpolation3d = Interpolation.NEAREST
-        self.interpolation2d = interpolation2d
-        self.interpolation3d = interpolation3d
         self.rendering = rendering
         self.depiction = depiction
         if plane is not None:
@@ -497,7 +465,7 @@ class _ImageBase(Layer):
             shapes = data.shapes
         else:
             shapes = [self.data.shape]
-        if self.rgb:
+        if getattr(self, "rgb", False):
             shapes = [s[:-1] for s in shapes]
         return np.array(shapes)
 
@@ -505,129 +473,6 @@ class _ImageBase(Layer):
     def downsample_factors(self) -> np.ndarray:
         """list: Downsample factors for each level of the multiscale."""
         return np.divide(self.level_shapes[0], self.level_shapes)
-
-    @property
-    def iso_threshold(self):
-        """float: threshold for isosurface."""
-        return self._iso_threshold
-
-    @iso_threshold.setter
-    def iso_threshold(self, value):
-        self._iso_threshold = value
-        self._update_thumbnail()
-        self.events.iso_threshold()
-
-    @property
-    def attenuation(self):
-        """float: attenuation rate for attenuated_mip rendering."""
-        return self._attenuation
-
-    @attenuation.setter
-    def attenuation(self, value):
-        self._attenuation = value
-        self._update_thumbnail()
-        self.events.attenuation()
-
-    @property
-    def interpolation(self):
-        """Return current interpolation mode.
-
-        Selects a preset interpolation mode in vispy that determines how volume
-        is displayed.  Makes use of the two Texture2D interpolation methods and
-        the available interpolation methods defined in
-        vispy/gloo/glsl/misc/spatial_filters.frag
-
-        Options include:
-        'bessel', 'cubic', 'linear', 'blackman', 'catrom', 'gaussian',
-        'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
-        'nearest', 'spline16', 'spline36'
-
-        Returns
-        -------
-        str
-            The current interpolation mode
-        """
-        warnings.warn(
-            trans._(
-                "Interpolation attribute is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return str(
-            self._interpolation2d
-            if self._slice_input.ndisplay == 2
-            else self._interpolation3d
-        )
-
-    @interpolation.setter
-    def interpolation(self, interpolation):
-        """Set current interpolation mode."""
-        warnings.warn(
-            trans._(
-                "Interpolation setting is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        if self._slice_input.ndisplay == 3:
-            self.interpolation3d = interpolation
-        else:
-            if interpolation == 'bilinear':
-                interpolation = 'linear'
-                warnings.warn(
-                    trans._(
-                        "'bilinear' is invalid for interpolation2d (introduced in napari 0.4.17). "
-                        "Please use 'linear' instead, and please set directly the 'interpolation2d' attribute'.",
-                    ),
-                    category=DeprecationWarning,
-                    stacklevel=2,
-                )
-            self.interpolation2d = interpolation
-
-    @property
-    def interpolation2d(self) -> InterpolationStr:
-        return cast(InterpolationStr, str(self._interpolation2d))
-
-    @interpolation2d.setter
-    def interpolation2d(self, value: Union[InterpolationStr, Interpolation]):
-        if value == 'bilinear':
-            raise ValueError(
-                trans._(
-                    "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
-                ),
-            )
-        if value == 'bicubic':
-            value = 'cubic'
-            warnings.warn(
-                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-        self._interpolation2d = Interpolation(value)
-        self.events.interpolation2d(value=self._interpolation2d)
-        self.events.interpolation(value=self._interpolation2d)
-
-    @property
-    def interpolation3d(self) -> InterpolationStr:
-        return cast(InterpolationStr, str(self._interpolation3d))
-
-    @interpolation3d.setter
-    def interpolation3d(self, value: Union[InterpolationStr, Interpolation]):
-        if value == 'custom':
-            raise NotImplementedError(
-                'custom interpolation is not implemented yet for 3D rendering'
-            )
-        if value == 'bicubic':
-            value = 'cubic'
-            warnings.warn(
-                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-        self._interpolation3d = Interpolation(value)
-        self.events.interpolation3d(value=self._interpolation3d)
-        self.events.interpolation(value=self._interpolation3d)
 
     @property
     def depiction(self):
@@ -764,7 +609,7 @@ class _ImageBase(Layer):
             projection_mode=self.projection_mode,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,
-            rgb=self.rgb,
+            rgb=len(self.data.shape) != self.ndim,
             data_level=self.data_level,
             thumbnail_level=self._thumbnail_level,
             level_shapes=self.level_shapes,
@@ -778,61 +623,6 @@ class _ImageBase(Layer):
         self._slice_input = response.slice_input
         self._transforms[0] = response.tile_to_data
         self._slice = response
-
-    def _update_thumbnail(self):
-        """Update thumbnail with current image data and colormap."""
-        image = self._slice.thumbnail.view
-
-        if self._slice_input.ndisplay == 3 and self.ndim > 2:
-            image = np.max(image, axis=0)
-
-        # float16 not supported by ndi.zoom
-        dtype = np.dtype(image.dtype)
-        if dtype in [np.dtype(np.float16)]:
-            image = image.astype(np.float32)
-
-        raw_zoom_factor = np.divide(
-            self._thumbnail_shape[:2], image.shape[:2]
-        ).min()
-        new_shape = np.clip(
-            raw_zoom_factor * np.array(image.shape[:2]),
-            1,  # smallest side should be 1 pixel wide
-            self._thumbnail_shape[:2],
-        )
-        zoom_factor = tuple(new_shape / image.shape[:2])
-        if self.rgb:
-            downsampled = ndi.zoom(
-                image, zoom_factor + (1,), prefilter=False, order=0
-            )
-            if image.shape[2] == 4:  # image is RGBA
-                colormapped = np.copy(downsampled)
-                colormapped[..., 3] = downsampled[..., 3] * self.opacity
-                if downsampled.dtype == np.uint8:
-                    colormapped = colormapped.astype(np.uint8)
-            else:  # image is RGB
-                if downsampled.dtype == np.uint8:
-                    alpha = np.full(
-                        downsampled.shape[:2] + (1,),
-                        int(255 * self.opacity),
-                        dtype=np.uint8,
-                    )
-                else:
-                    alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
-                colormapped = np.concatenate([downsampled, alpha], axis=2)
-        else:
-            downsampled = ndi.zoom(
-                image, zoom_factor, prefilter=False, order=0
-            )
-            low, high = self.contrast_limits
-            downsampled = np.clip(downsampled, low, high)
-            color_range = high - low
-            if color_range != 0:
-                downsampled = (downsampled - low) / color_range
-            downsampled = downsampled**self.gamma
-            color_array = self.colormap.map(downsampled.ravel())
-            colormapped = color_array.reshape((*downsampled.shape, 4))
-            colormapped[..., 3] *= self.opacity
-        self.thumbnail = colormapped
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.
@@ -857,7 +647,9 @@ class _ImageBase(Layer):
         coord = np.round(coord).astype(int)
 
         raw = self._slice.image.raw
-        shape = raw.shape[:-1] if self.rgb else raw.shape
+        shape = (
+            raw.shape[:-1] if self.ndim != len(self._data.shape) else raw.shape
+        )
 
         if self.ndim < len(coord):
             # handle 3D views of 2D data by omitting extra coordinate
@@ -907,10 +699,93 @@ class _ImageBase(Layer):
 class Image(IntensityVisualizationMixin, _ImageBase):
     _projectionclass = ImageProjectionMode
 
-    def __init__(self, data, **kwargs):
-        contrast_limits = kwargs.pop('contrast_limits', None)
-        iso_threshold = kwargs.pop('iso_threshold', None)
-        super().__init__(data, **kwargs)
+    @rename_argument(
+        from_name="interpolation",
+        to_name="interpolation2d",
+        version="0.6.0",
+        since_version="0.4.17",
+    )
+    def __init__(
+        self,
+        data,
+        *,
+        affine=None,
+        attenuation=0.05,
+        blending='translucent',
+        cache=True,
+        colormap='gray',
+        contrast_limits=None,
+        custom_interpolation_kernel_2d=None,
+        depiction='volume',
+        experimental_clipping_planes=None,
+        gamma=1.0,
+        interpolation2d='nearest',
+        interpolation3d='linear',
+        iso_threshold=None,
+        metadata=None,
+        multiscale=None,
+        name=None,
+        opacity=1.0,
+        plane=None,
+        projection_mode='none',
+        rendering='mip',
+        rgb=None,
+        rotate=None,
+        scale=None,
+        shear=None,
+        translate=None,
+        visible=True,
+    ):
+        data_ = data
+        if multiscale is None:
+            multiscale_, data_ = guess_multiscale(data)
+        elif multiscale and not isinstance(data, MultiScaleData):
+            data_ = MultiScaleData(data)
+
+        # Determine if rgb
+        rgb_guess = guess_rgb(data_.shape)
+        if rgb and not rgb_guess:
+            raise ValueError(
+                trans._(
+                    "'rgb' was set to True but data does not have suitable dimensions."
+                )
+            )
+        if rgb is None:
+            rgb = rgb_guess
+
+        super().__init__(
+            data,
+            affine=affine,
+            blending=blending,
+            cache=cache,
+            custom_interpolation_kernel_2d=custom_interpolation_kernel_2d,
+            depiction=depiction,
+            experimental_clipping_planes=experimental_clipping_planes,
+            metadata=metadata,
+            multiscale=multiscale,
+            name=name,
+            ndim=len(data_.shape) - 1 if rgb else len(data_.shape),
+            opacity=opacity,
+            plane=plane,
+            projection_mode=projection_mode,
+            rendering=rendering,
+            rotate=rotate,
+            scale=scale,
+            shear=shear,
+            translate=translate,
+            visible=visible,
+        )
+
+        self.rgb = rgb
+        self._colormap = ensure_colormap(colormap)
+        self._gamma = gamma
+        self._interpolation2d = Interpolation.NEAREST
+        self._interpolation3d = Interpolation.NEAREST
+        self.interpolation2d = interpolation2d
+        self.interpolation3d = interpolation3d
+        self._attenuation = attenuation
+
+        # Set contrast limits, colormaps and plane parameters
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
                 dtype = normalize_dtype(getattr(data, 'dtype', None))
@@ -1008,6 +883,184 @@ class Image(IntensityVisualizationMixin, _ImageBase):
             self._should_calc_clims = False
         elif self._keep_auto_contrast:
             self.reset_contrast_limits()
+
+    @property
+    def attenuation(self) -> float:
+        """float: attenuation rate for attenuated_mip rendering."""
+        return self._attenuation
+
+    @attenuation.setter
+    def attenuation(self, value: float):
+        self._attenuation = value
+        self._update_thumbnail()
+        self.events.attenuation()
+
+    @property
+    def interpolation(self):
+        """Return current interpolation mode.
+
+        Selects a preset interpolation mode in vispy that determines how volume
+        is displayed.  Makes use of the two Texture2D interpolation methods and
+        the available interpolation methods defined in
+        vispy/gloo/glsl/misc/spatial_filters.frag
+
+        Options include:
+        'bessel', 'cubic', 'linear', 'blackman', 'catrom', 'gaussian',
+        'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
+        'nearest', 'spline16', 'spline36'
+
+        Returns
+        -------
+        str
+            The current interpolation mode
+        """
+        warnings.warn(
+            trans._(
+                "Interpolation attribute is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return str(
+            self._interpolation2d
+            if self._slice_input.ndisplay == 2
+            else self._interpolation3d
+        )
+
+    @interpolation.setter
+    def interpolation(self, interpolation):
+        """Set current interpolation mode."""
+        warnings.warn(
+            trans._(
+                "Interpolation setting is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        if self._slice_input.ndisplay == 3:
+            self.interpolation3d = interpolation
+        else:
+            if interpolation == 'bilinear':
+                interpolation = 'linear'
+                warnings.warn(
+                    trans._(
+                        "'bilinear' is invalid for interpolation2d (introduced in napari 0.4.17). "
+                        "Please use 'linear' instead, and please set directly the 'interpolation2d' attribute'.",
+                    ),
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+            self.interpolation2d = interpolation
+
+    @property
+    def interpolation2d(self) -> InterpolationStr:
+        return cast(InterpolationStr, str(self._interpolation2d))
+
+    @interpolation2d.setter
+    def interpolation2d(self, value: Union[InterpolationStr, Interpolation]):
+        if value == 'bilinear':
+            raise ValueError(
+                trans._(
+                    "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
+                ),
+            )
+        if value == 'bicubic':
+            value = 'cubic'
+            warnings.warn(
+                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        self._interpolation2d = Interpolation(value)
+        self.events.interpolation2d(value=self._interpolation2d)
+        self.events.interpolation(value=self._interpolation2d)
+
+    @property
+    def interpolation3d(self) -> InterpolationStr:
+        return cast(InterpolationStr, str(self._interpolation3d))
+
+    @interpolation3d.setter
+    def interpolation3d(self, value: Union[InterpolationStr, Interpolation]):
+        if value == 'custom':
+            raise NotImplementedError(
+                'custom interpolation is not implemented yet for 3D rendering'
+            )
+        if value == 'bicubic':
+            value = 'cubic'
+            warnings.warn(
+                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        self._interpolation3d = Interpolation(value)
+        self.events.interpolation3d(value=self._interpolation3d)
+        self.events.interpolation(value=self._interpolation3d)
+
+    @property
+    def iso_threshold(self) -> float:
+        """float: threshold for isosurface."""
+        return self._iso_threshold
+
+    @iso_threshold.setter
+    def iso_threshold(self, value: float):
+        self._iso_threshold = value
+        self._update_thumbnail()
+        self.events.iso_threshold()
+
+    def _update_thumbnail(self):
+        """Update thumbnail with current image data and colormap."""
+        image = self._slice.thumbnail.view
+
+        if self._slice_input.ndisplay == 3 and self.ndim > 2:
+            image = np.max(image, axis=0)
+
+        # float16 not supported by ndi.zoom
+        dtype = np.dtype(image.dtype)
+        if dtype in [np.dtype(np.float16)]:
+            image = image.astype(np.float32)
+
+        raw_zoom_factor = np.divide(
+            self._thumbnail_shape[:2], image.shape[:2]
+        ).min()
+        new_shape = np.clip(
+            raw_zoom_factor * np.array(image.shape[:2]),
+            1,  # smallest side should be 1 pixel wide
+            self._thumbnail_shape[:2],
+        )
+        zoom_factor = tuple(new_shape / image.shape[:2])
+        if self.rgb:
+            downsampled = ndi.zoom(
+                image, zoom_factor + (1,), prefilter=False, order=0
+            )
+            if image.shape[2] == 4:  # image is RGBA
+                colormapped = np.copy(downsampled)
+                colormapped[..., 3] = downsampled[..., 3] * self.opacity
+                if downsampled.dtype == np.uint8:
+                    colormapped = colormapped.astype(np.uint8)
+            else:  # image is RGB
+                if downsampled.dtype == np.uint8:
+                    alpha = np.full(
+                        downsampled.shape[:2] + (1,),
+                        int(255 * self.opacity),
+                        dtype=np.uint8,
+                    )
+                else:
+                    alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
+                colormapped = np.concatenate([downsampled, alpha], axis=2)
+        else:
+            downsampled = ndi.zoom(
+                image, zoom_factor, prefilter=False, order=0
+            )
+            low, high = self.contrast_limits
+            downsampled = np.clip(downsampled, low, high)
+            color_range = high - low
+            if color_range != 0:
+                downsampled = (downsampled - low) / color_range
+            downsampled = downsampled**self.gamma
+            color_array = self.colormap.map(downsampled.ravel())
+            colormapped = color_array.reshape((*downsampled.shape, 4))
+            colormapped[..., 3] *= self.opacity
+        self.thumbnail = colormapped
 
 
 Image.__doc__ = _ImageBase.__doc__

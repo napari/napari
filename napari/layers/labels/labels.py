@@ -324,13 +324,8 @@ class Labels(_ImageBase):
 
         super().__init__(
             data,
-            rgb=False,
-            colormap=self._random_colormap,
-            interpolation2d='nearest',
-            interpolation3d='nearest',
             rendering=rendering,
             depiction=depiction,
-            iso_threshold=0,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -349,20 +344,20 @@ class Labels(_ImageBase):
         )
 
         self.events.add(
-            colormap=Event,
-            preserve_labels=Event,
-            show_selected_label=Event,
-            properties=Event,
-            n_edit_dimensions=Event,
-            contiguous=Event,
-            brush_size=Event,
-            selected_label=Event,
-            color_mode=Event,
             brush_shape=Event,
+            brush_size=Event,
+            color_mode=Event,
+            colormap=Event,
+            contiguous=Event,
             contour=Event,
             features=Event,
-            paint=Event,
             labels_update=Event,
+            n_edit_dimensions=Event,
+            paint=Event,
+            preserve_labels=Event,
+            properties=Event,
+            selected_label=Event,
+            show_selected_label=Event,
         )
 
         from napari.components.overlays.labels_polygon import (
@@ -391,8 +386,8 @@ class Labels(_ImageBase):
         self._status = self.mode
         self._preserve_labels = False
 
+    def _post_init(self):
         self._reset_history()
-
         # Trigger generation of view slice and thumbnail
         self.refresh()
         self._reset_editable()
@@ -585,6 +580,7 @@ class Labels(_ImageBase):
     def data(self, data):
         data = self._ensure_int_labels(data)
         self._data = data
+        self._ndim = len(self._data.shape)
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
