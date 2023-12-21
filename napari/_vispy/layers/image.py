@@ -65,7 +65,7 @@ class ImageLayerNode:
         return res
 
 
-class VispyImageLayer(VispyBaseLayer[_ImageBase]):
+class VispyImageBaseLayer(VispyBaseLayer[_ImageBase]):
     def __init__(
         self,
         layer: _ImageBase,
@@ -85,20 +85,7 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
-        self.layer.events.interpolation2d.connect(
-            self._on_interpolation_change
-        )
-        self.layer.events.interpolation3d.connect(
-            self._on_interpolation_change
-        )
         self.layer.events.colormap.connect(self._on_colormap_change)
-        if isinstance(self.layer, Image):
-            self.layer.events.contrast_limits.connect(
-                self._on_contrast_limits_change
-            )
-            self.layer.events.gamma.connect(self._on_gamma_change)
-        self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
-        self.layer.events.attenuation.connect(self._on_attenuation_change)
         self.layer.plane.events.position.connect(
             self._on_plane_position_change
         )
@@ -110,9 +97,10 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
             self._on_custom_interpolation_kernel_2d_change
         )
 
-        # display_change is special (like data_change) because it requires a self.reset()
-        # this means that we have to call it manually. Also, it must be called before reset
-        # in order to set the appropriate node first
+        # display_change is special (like data_change) because it requires a
+        # self.reset(). This means that we have to call it manually. Also,
+        # it must be called before reset in order to set the appropriate node
+        # first
         self._on_display_change()
         self.reset()
         self._on_data_change()
@@ -174,13 +162,6 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
         self._on_matrix_change()
         node.update()
 
-    def _on_interpolation_change(self) -> None:
-        self.node.interpolation = (
-            self.layer.interpolation2d
-            if self.layer._slice_input.ndisplay == 2
-            else self.layer.interpolation3d
-        )
-
     def _on_custom_interpolation_kernel_2d_change(self) -> None:
         if self.layer._slice_input.ndisplay == 2:
             self.node.custom_kernel = self.layer.custom_interpolation_kernel_2d
@@ -188,59 +169,13 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
     def _on_rendering_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.method = self.layer.rendering
-            self._on_attenuation_change()
-            self._on_iso_threshold_change()
 
     def _on_depiction_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.raycasting_mode = str(self.layer.depiction)
 
-    def _on_colormap_change(self, event=None) -> None:
-        self.node.cmap = VispyColormap(*self.layer.colormap)
-
-    def _update_mip_minip_cutoff(self) -> None:
-        # discard fragments beyond contrast limits, but only with translucent blending
-        if isinstance(self.node, VolumeNode):
-            if self.layer.blending in {
-                Blending.TRANSLUCENT,
-                Blending.TRANSLUCENT_NO_DEPTH,
-            }:
-                self.node.mip_cutoff = self.node._texture.clim_normalized[0]
-                self.node.minip_cutoff = self.node._texture.clim_normalized[1]
-            else:
-                self.node.mip_cutoff = None
-                self.node.minip_cutoff = None
-
-    def _on_contrast_limits_change(self) -> None:
-        self.node.clim = self.layer.contrast_limits
-        # cutoffs must be updated after clims, so we can set them to the new values
-        self._update_mip_minip_cutoff()
-        # iso also may depend on contrast limit values
-        self._on_iso_threshold_change()
-
     def _on_blending_change(self, event=None) -> None:
         super()._on_blending_change()
-        # cutoffs must be updated after blending, so we can know if
-        # the new blending is a translucent one
-        self._update_mip_minip_cutoff()
-
-    def _on_gamma_change(self) -> None:
-        if len(self.node.shared_program.frag._set_items) > 0:
-            self.node.gamma = self.layer.gamma
-
-    def _on_iso_threshold_change(self) -> None:
-        if isinstance(self.node, VolumeNode):
-            if self.node._texture.is_normalized:
-                cmin, cmax = self.layer.contrast_limits_range
-                self.node.threshold = (self.layer.iso_threshold - cmin) / (
-                    cmax - cmin
-                )
-            else:
-                self.node.threshold = self.layer.iso_threshold
-
-    def _on_attenuation_change(self) -> None:
-        if isinstance(self.node, VolumeNode):
-            self.node.attenuation = self.layer.attenuation
 
     def _on_plane_thickness_change(self) -> None:
         if isinstance(self.node, VolumeNode):
@@ -256,10 +191,6 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
 
     def reset(self, event=None) -> None:
         super().reset()
-        self._on_interpolation_change()
-        self._on_colormap_change()
-        self._on_contrast_limits_change()
-        self._on_gamma_change()
         self._on_rendering_change()
         self._on_depiction_change()
         self._on_plane_position_change()
@@ -323,6 +254,110 @@ class VispyImageLayer(VispyBaseLayer[_ImageBase]):
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]
         return data
+
+
+class VispyImageLayer(VispyImageBaseLayer):
+    def __init__(
+        self,
+        layer: Image,
+        node=None,
+        texture_format='auto',
+        layer_node_class=ImageLayerNode,
+    ) -> None:
+        super().__init__(
+            layer,
+            node=node,
+            texture_format=texture_format,
+            layer_node_class=layer_node_class,
+        )
+
+        self.layer.events.interpolation2d.connect(
+            self._on_interpolation_change
+        )
+        self.layer.events.interpolation3d.connect(
+            self._on_interpolation_change
+        )
+        self.layer.events.contrast_limits.connect(
+            self._on_contrast_limits_change
+        )
+        self.layer.events.gamma.connect(self._on_gamma_change)
+        self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
+        self.layer.events.attenuation.connect(self._on_attenuation_change)
+
+        # display_change is special (like data_change) because it requires a
+        # self.reset(). This means that we have to call it manually. Also,
+        # it must be called before reset in order to set the appropriate node
+        # first
+        self._on_display_change()
+        self.reset()
+        self._on_data_change()
+
+    def _on_interpolation_change(self) -> None:
+        self.node.interpolation = (
+            self.layer.interpolation2d
+            if self.layer._slice_input.ndisplay == 2
+            else self.layer.interpolation3d
+        )
+
+    def _on_rendering_change(self) -> None:
+        super()._on_rendering_change()
+        if isinstance(self.node, ImageNode):
+            self._on_attenuation_change()
+            self._on_iso_threshold_change()
+
+    def _on_colormap_change(self, event=None) -> None:
+        self.node.cmap = VispyColormap(*self.layer.colormap)
+
+    def _update_mip_minip_cutoff(self) -> None:
+        # discard fragments beyond contrast limits, but only with translucent blending
+        if isinstance(self.node, VolumeNode):
+            if self.layer.blending in {
+                Blending.TRANSLUCENT,
+                Blending.TRANSLUCENT_NO_DEPTH,
+            }:
+                self.node.mip_cutoff = self.node._texture.clim_normalized[0]
+                self.node.minip_cutoff = self.node._texture.clim_normalized[1]
+            else:
+                self.node.mip_cutoff = None
+                self.node.minip_cutoff = None
+
+    def _on_contrast_limits_change(self) -> None:
+        self.node.clim = self.layer.contrast_limits
+        # cutoffs must be updated after clims, so we can set them to the new values
+        self._update_mip_minip_cutoff()
+        # iso also may depend on contrast limit values
+        self._on_iso_threshold_change()
+
+    def _on_blending_change(self, event=None) -> None:
+        super()._on_blending_change()
+        # cutoffs must be updated after blending, so we can know if
+        # the new blending is a translucent one
+        self._update_mip_minip_cutoff()
+
+    def _on_gamma_change(self) -> None:
+        if len(self.node.shared_program.frag._set_items) > 0:
+            self.node.gamma = self.layer.gamma
+
+    def _on_iso_threshold_change(self) -> None:
+        if isinstance(self.node, VolumeNode):
+            if self.node._texture.is_normalized:
+                cmin, cmax = self.layer.contrast_limits_range
+                self.node.threshold = (self.layer.iso_threshold - cmin) / (
+                    cmax - cmin
+                )
+            else:
+                self.node.threshold = self.layer.iso_threshold
+
+    def _on_attenuation_change(self) -> None:
+        if isinstance(self.node, VolumeNode):
+            self.node.attenuation = self.layer.attenuation
+
+    def reset(self, event=None) -> None:
+        super().reset()
+        self._on_interpolation_change()
+        self._on_colormap_change()
+        self._on_contrast_limits_change()
+        self._on_gamma_change()
 
 
 _VISPY_FORMAT_TO_DTYPE: Dict[Optional[str], np.dtype] = {
