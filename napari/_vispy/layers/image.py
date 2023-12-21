@@ -189,6 +189,9 @@ class VispyVolumeBaseLayer(VispyBaseLayer[_ImageBase]):
         if isinstance(self.node, VolumeNode):
             self.node.plane_normal = self.layer.plane.normal
 
+    def _on_colormap_change(self, event=None) -> None:
+        raise NotImplementedError
+
     def reset(self, event=None) -> None:
         super().reset()
         self._on_rendering_change()
@@ -257,6 +260,8 @@ class VispyVolumeBaseLayer(VispyBaseLayer[_ImageBase]):
 
 
 class VispyImageLayer(VispyVolumeBaseLayer):
+    layer: Image
+
     def __init__(
         self,
         layer: Image,

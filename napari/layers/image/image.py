@@ -827,7 +827,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         shear=None,
         translate=None,
         visible=True,
-    ):
+    ) -> None:
         # Determine if rgb
         data_shape = data.shape if hasattr(data, 'shape') else data[0].shape
         rgb_guess = guess_rgb(data_shape)

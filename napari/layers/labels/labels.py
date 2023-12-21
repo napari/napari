@@ -1564,7 +1564,7 @@ class Labels(_ImageBase):
 
     def _get_shape_and_dims_to_paint(self) -> Tuple[list, list]:
         dims_to_paint = sorted(self._get_dims_to_paint())
-        shape = self.data.shape
+        shape = list(self.data.shape)
 
         if self.n_edit_dimensions < self.ndim:
             shape = [shape[i] for i in dims_to_paint]
