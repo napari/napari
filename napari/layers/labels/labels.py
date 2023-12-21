@@ -526,6 +526,7 @@ class Labels(_ImageBase):
             self._random_colormap = shuffle_and_extend_colormap(
                 self._original_random_colormap, self._seed_rng
             )
+            self._colormap = self._random_colormap
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
