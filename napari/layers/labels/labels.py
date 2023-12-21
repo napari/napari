@@ -484,12 +484,20 @@ class Labels(_ImageBase):
     @property
     def seed(self):
         """float: Seed for colormap random generator."""
+        warnings.warn(
+            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, "
+            "please check Labels.colormap directly.",
+            FutureWarning,
+            stacklevel=2,
+        )
         return self._seed
 
     @seed.setter
     def seed(self, seed):
         warnings.warn(
-            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, please use seed_rng instead",
+            "seed is deprecated since 0.4.19 and will be removed in 0.5.0, "
+            "please use the new_colormap method instead, or set the colormap "
+            "directly.",
             FutureWarning,
             stacklevel=2,
         )
@@ -503,30 +511,18 @@ class Labels(_ImageBase):
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.refresh()
         self.events.selected_label()
 
-    @property
-    def seed_rng(self) -> Optional[int]:
-        return self._seed_rng
+        self.refresh()
 
-    @seed_rng.setter
-    def seed_rng(self, seed_rng: Optional[int]) -> None:
-        if seed_rng == self._seed_rng:
-            return
-        self._seed_rng = seed_rng
+    def new_colormap(self, seed: Optional[int] = None):
+        if seed is None:
+            seed = np.random.default_rng().integers(2**32 - 1)
 
-        if self._seed_rng is None:
-            self.colormap = label_colormap(
-                len(self.colormap) - 1,
-                seed=self.seed,
-                background_value=self.colormap.background_value,
-            )
-        else:
-            self._random_colormap = shuffle_and_extend_colormap(
-                self._original_random_colormap, self._seed_rng
-            )
-            self._colormap = self._random_colormap
+        self._random_colormap = shuffle_and_extend_colormap(
+            self._original_random_colormap, seed
+        )
+        self._colormap = self._random_colormap
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
@@ -1148,9 +1144,6 @@ class Labels(_ImageBase):
         color_array[..., 3] *= self.opacity
 
         self.thumbnail = color_array
-
-    def new_colormap(self):
-        self.seed_rng = np.random.default_rng().integers(2**32 - 1)
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""
