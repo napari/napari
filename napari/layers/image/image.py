@@ -457,17 +457,18 @@ class _ImageBase(Layer):
         self._data_level = level
         self.refresh()
 
-    @property
-    def level_shapes(self) -> np.ndarray:
-        """array: Shapes of each level of the multiscale or just of image."""
+    def _get_level_shapes(self):
         data = self.data
         if isinstance(data, MultiScaleData):
             shapes = data.shapes
         else:
             shapes = [self.data.shape]
-        if getattr(self, "rgb", False):
-            shapes = [s[:-1] for s in shapes]
-        return np.array(shapes)
+        return shapes
+
+    @property
+    def level_shapes(self) -> np.ndarray:
+        """array: Shapes of each level of the multiscale or just of image."""
+        return np.array(self._get_level_shapes())
 
     @property
     def downsample_factors(self) -> np.ndarray:
@@ -736,14 +737,9 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         translate=None,
         visible=True,
     ):
-        data_ = data
-        if multiscale is None:
-            multiscale_, data_ = guess_multiscale(data)
-        elif multiscale and not isinstance(data, MultiScaleData):
-            data_ = MultiScaleData(data)
-
         # Determine if rgb
-        rgb_guess = guess_rgb(data_.shape)
+        data_shape = data.shape if hasattr(data, 'shape') else data[0].shape
+        rgb_guess = guess_rgb(data_shape)
         if rgb and not rgb_guess:
             raise ValueError(
                 trans._(
@@ -753,6 +749,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         if rgb is None:
             rgb = rgb_guess
 
+        self.rgb = rgb
         super().__init__(
             data,
             affine=affine,
@@ -764,7 +761,7 @@ class Image(IntensityVisualizationMixin, _ImageBase):
             metadata=metadata,
             multiscale=multiscale,
             name=name,
-            ndim=len(data_.shape) - 1 if rgb else len(data_.shape),
+            ndim=len(data_shape) - 1 if rgb else len(data_shape),
             opacity=opacity,
             plane=plane,
             projection_mode=projection_mode,
@@ -1006,6 +1003,12 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         self._iso_threshold = value
         self._update_thumbnail()
         self.events.iso_threshold()
+
+    def _get_level_shapes(self):
+        shapes = super()._get_level_shapes()
+        if self.rgb:
+            shapes = [s[:-1] for s in shapes]
+        return shapes
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
