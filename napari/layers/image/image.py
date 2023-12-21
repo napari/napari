@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
+from abc import ABC
 from contextlib import nullcontext
 from typing import TYPE_CHECKING, List, Sequence, Tuple, Union, cast
 
@@ -49,8 +50,8 @@ if TYPE_CHECKING:
 # It is important to contain at least one abstractmethod to properly exclude this class
 # in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer
-class _ImageBase(Layer):
-    """Image layer.
+class _ImageBase(Layer, ABC):
+    """Base class for volumetric layers.
 
     Parameters
     ----------
@@ -61,70 +62,30 @@ class _ImageBase(Layer):
         a multiscale image. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    rgb : bool
-        Whether the image is rgb RGB or RGBA. If not specified by user and
-        the last dimension of the data has length 3 or 4 it will be set as
-        `True`. If `False` the image is interpreted as a luminance image.
-    colormap : str, napari.utils.Colormap, tuple, dict
-        Colormap to use for luminance images. If a string must be the name
-        of a supported colormap from vispy or matplotlib. If a tuple the
-        first value must be a string to assign as a name to a colormap and
-        the second item must be a Colormap. If a dict the key must be a
-        string to assign as a name to a colormap and the value must be a
-        Colormap.
-    contrast_limits : list (2,)
-        Color limits to be used for determining the colormap bounds for
-        luminance images. If not passed is calculated as the min and max of
-        the image.
-    gamma : float
-        Gamma correction for determining colormap linearity. Defaults to 1.
-    interpolation : str
-        Interpolation mode used by vispy. Must be one of our supported modes.
-        'custom' is a special mode for 2D interpolation in which a regular grid
-        of samples are taken from the texture around a position using 'linear'
-        interpolation before being multiplied with a custom interpolation kernel
-        (provided with 'custom_interpolation_kernel_2d').
-    rendering : str
-        Rendering mode used by vispy. Must be one of our supported
-        modes.
-    depiction : str
-        3D Depiction mode. Must be one of {'volume', 'plane'}.
-        The default value is 'volume'.
-    iso_threshold : float
-        Threshold for isosurface.
-    attenuation : float
-        Attenuation rate for attenuated maximum intensity projection.
-    name : str
-        Name of the layer.
-    metadata : dict
-        Layer metadata.
-    scale : tuple of float
-        Scale factors for the layer.
-    translate : tuple of float
-        Translation values for the layer.
-    rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotation matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angles are
-        assumed to be in degrees. They can be converted from radians with
-        np.degrees if needed.
-    shear : 1-D array or n-D array
-        Either a vector of upper triangular values, or an nD shear matrix with
-        ones along the main diagonal.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
-    opacity : float
-        Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', and 'additive'}.
-    visible : bool
-        Whether the layer visual is currently being displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
+    custom_interpolation_kernel_2d : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+    depiction : str
+        3D Depiction mode. Must be one of {'volume', 'plane'}.
+        The default value is 'volume'.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
+    metadata : dict
+        Layer metadata.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. If not specified by
@@ -133,19 +94,38 @@ class _ImageBase(Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    cache : bool
-        Whether slices of out-of-core datasets should be cached upon retrieval.
-        Currently, this only applies to dask arrays.
+    name : str
+        Name of the layer.
+    ndim : int
+        Number of dimensions in the data.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
     plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
-    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
-        Each dict defines a clipping plane in 3D in data coordinates.
-        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
-        Values on the negative side of the normal are discarded if the plane is enabled.
-    custom_interpolation_kernel_2d : np.ndarray
-        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimensions. Must fit to cls._projectionclass
+    rendering : str
+        Rendering mode used by vispy. Must be one of our supported
+        modes.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    translate : tuple of float
+        Translation values for the layer.
+    visible : bool
+        Whether the layer visual is currently being displayed.
+
 
     Attributes
     ----------
@@ -158,11 +138,6 @@ class _ImageBase(Layer):
         displayed.
     metadata : dict
         Image metadata.
-    rgb : bool
-        Whether the image is rgb RGB or RGBA if rgb. If not
-        specified by user and the last dimension of the data has length 3 or 4
-        it will be set as `True`. If `False` the image is interpreted as a
-        luminance image.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
@@ -174,35 +149,11 @@ class _ImageBase(Layer):
         allows for normal interactivity with the canvas.
 
         In TRANSFORM mode the image can be transformed interactively.
-    colormap : 2-tuple of str, napari.utils.Colormap
-        The first is the name of the current colormap, and the second value is
-        the colormap. Colormaps are used for luminance images, if the image is
-        rgb the colormap is ignored.
-    colormaps : tuple of str
-        Names of the available colormaps.
-    contrast_limits : list (2,) of float
-        Color limits to be used for determining the colormap bounds for
-        luminance images. If the image is rgb the contrast_limits is ignored.
-    contrast_limits_range : list (2,) of float
-        Range for the color limits for luminance images. If the image is
-        rgb the contrast_limits_range is ignored.
-    gamma : float
-        Gamma correction for determining colormap linearity.
-    interpolation : str
-        Interpolation mode used by vispy. Must be one of our supported modes.
-        'custom' is a special mode for 2D interpolation in which a regular grid
-        of samples are taken from the texture around a position using 'linear'
-        interpolation before being multiplied with a custom interpolation kernel
-        (provided with 'custom_interpolation_kernel_2d').
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
     depiction : str
         3D Depiction mode used by vispy. Must be one of our supported modes.
-    iso_threshold : float
-        Threshold for isosurface.
-    attenuation : float
-        Attenuation rate for attenuated maximum intensity projection.
     plane : SlicingPlane or dict
         Properties defining plane rendering in 3D. Valid dictionary keys are
         {'position', 'normal', 'thickness'}.
@@ -217,8 +168,6 @@ class _ImageBase(Layer):
         Image data for the currently viewed slice. Must be 2D image data, but
         can be multidimensional for RGB or RGBA images if multidimensional is
         `True`.
-    _colorbar : array
-        Colorbar for current colormap.
     """
 
     _colormaps = AVAILABLE_COLORMAPS
@@ -338,7 +287,7 @@ class _ImageBase(Layer):
             rgb=len(self.data.shape) != self.ndim,
         )
 
-        self._plane = SlicingPlane(thickness=1, enabled=False, draggable=True)
+        self._plane = SlicingPlane(thickness=1)
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
         # using self.colormap = colormap uses the setter in *derived* classes,
@@ -362,26 +311,6 @@ class _ImageBase(Layer):
         """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
 
-    def _calc_data_range(self, mode='data') -> Tuple[float, float]:
-        """
-        Calculate the range of the data values in the currently viewed slice
-        or full data array
-        """
-        if mode == 'data':
-            input_data = self.data[-1] if self.multiscale else self.data
-        elif mode == 'slice':
-            data = self._slice.image.view  # ugh
-            input_data = data[-1] if self.multiscale else data
-        else:
-            raise ValueError(
-                trans._(
-                    "mode must be either 'data' or 'slice', got {mode!r}",
-                    deferred=True,
-                    mode=mode,
-                )
-            )
-        return calc_data_range(input_data, rgb=self.rgb)
-
     @property
     def dtype(self):
         return self._data.dtype
@@ -392,22 +321,6 @@ class _ImageBase(Layer):
     ) -> Union[LayerDataProtocol, Sequence[LayerDataProtocol]]:
         """Data, exactly as provided by the user."""
         return self._data_raw
-
-    @property
-    def data(self) -> LayerDataProtocol:
-        """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
-        return self._data
-
-    @data.setter
-    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
-        self._data_raw = data
-        # note, we don't support changing multiscale in an Image instance
-        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
-        self._update_dims()
-        self.events.data(value=self.data)
-        if self._keep_auto_contrast:
-            self.reset_contrast_limits()
-        self._reset_editable()
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
@@ -698,6 +611,184 @@ class _ImageBase(Layer):
 
 
 class Image(IntensityVisualizationMixin, _ImageBase):
+    """Image layer.
+
+    Parameters
+    ----------
+    data : array or list of array
+        Image data. Can be N >= 2 dimensional. If the last dimension has length
+        3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
+        list and arrays are decreasing in shape then the data is treated as
+        a multiscale image. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
+    affine : n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
+    attenuation : float
+        Attenuation rate for attenuated maximum intensity projection.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
+    colormap : str, napari.utils.Colormap, tuple, dict
+        Colormap to use for luminance images. If a string must be the name
+        of a supported colormap from vispy or matplotlib. If a tuple the
+        first value must be a string to assign as a name to a colormap and
+        the second item must be a Colormap. If a dict the key must be a
+        string to assign as a name to a colormap and the value must be a
+        Colormap.
+    contrast_limits : list (2,)
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If not passed is calculated as the min and max of
+        the image.
+    custom_interpolation_kernel_2d : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+    depiction : str
+        3D Depiction mode. Must be one of {'volume', 'plane'}.
+        The default value is 'volume'.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
+    gamma : float
+        Gamma correction for determining colormap linearity. Defaults to 1.
+    interpolation2d : str
+        Interpolation mode used by vispy for rendering 2d data.
+        Must be one of our supported modes.
+        (for list of supported modes see Interpolation enum)
+        'custom' is a special mode for 2D interpolation in which a regular grid
+        of samples are taken from the texture around a position using 'linear'
+        interpolation before being multiplied with a custom interpolation kernel
+        (provided with 'custom_interpolation_kernel_2d').
+    interpolation3d : str
+        Same as 'interpolation2d' but for 3D rendering.
+    iso_threshold : float
+        Threshold for isosurface.
+    metadata : dict
+        Layer metadata.
+    multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
+        represented by a list of array like image data. If not specified by
+        the user and if the data is a list of arrays that decrease in shape
+        then it will be taken to be multiscale. The first image in the list
+        should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
+    name : str
+        Name of the layer.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    plane : dict or SlicingPlane
+        Properties defining plane rendering in 3D. Properties are defined in
+        data coordinates. Valid dictionary keys are
+        {'position', 'normal', 'thickness', and 'enabled'}.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimensions. Must fit to ImageProjectionMode
+    rendering : str
+        Rendering mode used by vispy. Must be one of our supported
+        modes.
+    rgb : bool
+        Whether the image is rgb RGB or RGBA. If not specified by user and
+        the last dimension of the data has length 3 or 4 it will be set as
+        `True`. If `False` the image is interpreted as a luminance image.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    translate : tuple of float
+        Translation values for the layer.
+    visible : bool
+        Whether the layer visual is currently being displayed.
+
+    Attributes
+    ----------
+    data : array or list of array
+        Image data. Can be N dimensional. If the last dimension has length
+        3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
+        and arrays are decreasing in shape then the data is treated as a
+        multiscale image. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
+    metadata : dict
+        Image metadata.
+    rgb : bool
+        Whether the image is rgb RGB or RGBA if rgb. If not
+        specified by user and the last dimension of the data has length 3 or 4
+        it will be set as `True`. If `False` the image is interpreted as a
+        luminance image.
+    multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
+        represented by a list of array like image data. The first image in the
+        list should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
+    mode : str
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        In TRANSFORM mode the image can be transformed interactively.
+    colormap : 2-tuple of str, napari.utils.Colormap
+        The first is the name of the current colormap, and the second value is
+        the colormap. Colormaps are used for luminance images, if the image is
+        rgb the colormap is ignored.
+    colormaps : tuple of str
+        Names of the available colormaps.
+    contrast_limits : list (2,) of float
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If the image is rgb the contrast_limits is ignored.
+    contrast_limits_range : list (2,) of float
+        Range for the color limits for luminance images. If the image is
+        rgb the contrast_limits_range is ignored.
+    gamma : float
+        Gamma correction for determining colormap linearity.
+    interpolation2d : str
+        Interpolation mode used by vispy. Must be one of our supported modes.
+        'custom' is a special mode for 2D interpolation in which a regular grid
+        of samples are taken from the texture around a position using 'linear'
+        interpolation before being multiplied with a custom interpolation kernel
+        (provided with 'custom_interpolation_kernel_2d').
+    interpolation3d : str
+        Same as 'interpolation2d' but for 3D rendering.
+    rendering : str
+        Rendering mode used by vispy. Must be one of our supported
+        modes.
+    depiction : str
+        3D Depiction mode used by vispy. Must be one of our supported modes.
+    iso_threshold : float
+        Threshold for isosurface.
+    attenuation : float
+        Attenuation rate for attenuated maximum intensity projection.
+    plane : SlicingPlane or dict
+        Properties defining plane rendering in 3D. Valid dictionary keys are
+        {'position', 'normal', 'thickness'}.
+    experimental_clipping_planes : ClippingPlaneList
+        Clipping planes defined in data coordinates, used to clip the volume.
+    custom_interpolation_kernel_2d : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
+
+    Notes
+    -----
+    _data_view : array (N, M), (N, M, 3), or (N, M, 4)
+        Image data for the currently viewed slice. Must be 2D image data, but
+        can be multidimensional for RGB or RGBA images if multidimensional is
+        `True`.
+    """
+
     _projectionclass = ImageProjectionMode
 
     @rename_argument(
@@ -893,6 +984,22 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         self.events.attenuation()
 
     @property
+    def data(self) -> LayerDataProtocol:
+        """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
+        return self._data
+
+    @data.setter
+    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
+        self._data_raw = data
+        # note, we don't support changing multiscale in an Image instance
+        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
+        self._update_dims()
+        self.events.data(value=self.data)
+        if self._keep_auto_contrast:
+            self.reset_contrast_limits()
+        self._reset_editable()
+
+    @property
     def interpolation(self):
         """Return current interpolation mode.
 
@@ -1064,6 +1171,26 @@ class Image(IntensityVisualizationMixin, _ImageBase):
             colormapped = color_array.reshape((*downsampled.shape, 4))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
+
+    def _calc_data_range(self, mode='data') -> Tuple[float, float]:
+        """
+        Calculate the range of the data values in the currently viewed slice
+        or full data array
+        """
+        if mode == 'data':
+            input_data = self.data[-1] if self.multiscale else self.data
+        elif mode == 'slice':
+            data = self._slice.image.view  # ugh
+            input_data = data[-1] if self.multiscale else data
+        else:
+            raise ValueError(
+                trans._(
+                    "mode must be either 'data' or 'slice', got {mode!r}",
+                    deferred=True,
+                    mode=mode,
+                )
+            )
+        return calc_data_range(input_data, rgb=self.rgb)
 
 
 Image.__doc__ = _ImageBase.__doc__

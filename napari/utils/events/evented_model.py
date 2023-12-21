@@ -8,6 +8,7 @@ from app_model.types import KeyBinding
 
 from napari._pydantic_compat import (
     BaseModel,
+    Extra,
     ModelMetaclass,
     PrivateAttr,
     main,
@@ -249,6 +250,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
         json_encoders = _BASE_JSON_ENCODERS
+        extra = Extra.forbid
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)

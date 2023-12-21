@@ -18,6 +18,8 @@ import pandas as pd
 from scipy import ndimage as ndi
 from skimage.draw import polygon2mask
 
+from napari.layers._data_protocols import LayerDataProtocol
+from napari.layers._multiscale_data import MultiScaleData
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -572,12 +574,12 @@ class Labels(_ImageBase):
         self.events.selected_label()
 
     @property
-    def data(self):
+    def data(self) -> LayerDataProtocol:
         """array: Image data."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
         data = self._ensure_int_labels(data)
         self._data = data
         self._ndim = len(self._data.shape)
