@@ -1191,6 +1191,3 @@ class Image(IntensityVisualizationMixin, _ImageBase):
                 )
             )
         return calc_data_range(input_data, rgb=self.rgb)
-
-
-Image.__doc__ = _ImageBase.__doc__
