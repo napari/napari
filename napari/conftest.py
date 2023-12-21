@@ -434,7 +434,20 @@ def _mock_app():
             Application.destroy('test_app')
 
 
-def _get_calling_place(depth=1):
+def _get_calling_stack():  # pragma: no cover
+    stack = []
+    i = 2
+    while True:
+        try:
+            frame = sys._getframe(i)
+        except ValueError:
+            break
+        stack.append(f"{frame.f_code.co_filename}:{frame.f_lineno}")
+        i += 1
+    return "\n".join(stack)
+
+
+def _get_calling_place(depth=1):  # pragma: no cover
     if not hasattr(sys, "_getframe"):
         return ""
     frame = sys._getframe(1 + depth)
@@ -613,7 +626,7 @@ def dangling_qtimers(monkeypatch, request):
                 t.timeout.connect(getattr(reciver, method))
             calling_place = _get_calling_place(2)
             if "superqt" in calling_place and "throttler" in calling_place:
-                calling_place += f" - {_get_calling_place(3)}"
+                calling_place += _get_calling_stack()
             single_shot_list.append((t, _get_calling_place(2)))
             base_start(t, msec)
 
