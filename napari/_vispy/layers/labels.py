@@ -10,7 +10,7 @@ from napari._vispy.layers.image import (
     _DTYPE_TO_VISPY_FORMAT,
     _VISPY_FORMAT_TO_DTYPE,
     ImageLayerNode,
-    VispyImageLayer,
+    VispyImageBaseLayer,
     get_dtype_from_vispy_texture_format,
 )
 from napari._vispy.utils.gl import get_max_texture_sizes
@@ -192,7 +192,7 @@ def _select_colormap_texture(
     return color_texture.reshape(256, -1, 4)
 
 
-class VispyLabelsLayer(VispyImageLayer):
+class VispyLabelsLayer(VispyImageBaseLayer):
     layer: 'Labels'
 
     def __init__(self, layer, node=None, texture_format='r8') -> None:
@@ -219,8 +219,6 @@ class VispyLabelsLayer(VispyImageLayer):
                 if rendering != 'translucent'
                 else 'translucent_categorical'
             )
-            self._on_attenuation_change()
-            self._on_iso_threshold_change()
 
     def _on_colormap_change(self, event=None):
         # self.layer.colormap is a labels_colormap, which is an evented model
@@ -308,6 +306,10 @@ class VispyLabelsLayer(VispyImageLayer):
             event.data, copy=False, offset=event.offset
         )
         self.node.update()
+
+    def reset(self, event=None) -> None:
+        super().reset()
+        self._on_colormap_change()
 
 
 class LabelLayerNode(ImageLayerNode):
