@@ -79,7 +79,8 @@ def new_label(layer: Labels):
     if layer.selected_label == new_selected_label:
         show_info(
             trans._(
-                "Highest used label plus one already set as current selected label",
+                "Current selected label is not being used. You will need to use it first "
+                "to be able to set the current select label to the next one available",
             )
         )
     else:
