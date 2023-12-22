@@ -1030,7 +1030,7 @@ class QtViewer(QSplitter):
         )
 
     def _image_from_clipboard(self):
-        """Insert image from clipboard as a new layer if clipboard contains image."""
+        """Insert image from clipboard as a new layer if clipboard contains an image or link."""
         cb = QGuiApplication.clipboard()
         if cb.mimeData().hasImage():
             image = cb.image()
@@ -1039,11 +1039,12 @@ class QtViewer(QSplitter):
             arr = QImg2array(image)
             self.viewer.add_image(arr)
         elif cb.mimeData().hasUrls():
+            show_info("No image in clipboard, trying to open link instead.")
             self._open_from_mime_data(
                 cb.mimeData(), stack=False, choose_plugin=False
             )
         else:
-            show_info("No image in clipboard.")
+            show_info("No image or link in clipboard.")
 
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop.
