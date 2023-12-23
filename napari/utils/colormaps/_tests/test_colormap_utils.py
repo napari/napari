@@ -31,6 +31,19 @@ def test_label_colormap(index, expected):
     np.testing.assert_almost_equal(label_colormap(49).map(index), [expected])
 
 
+def test_label_colormap_exception():
+    with pytest.raises(ValueError, match="num_colors must be >= 1"):
+        label_colormap(0)
+
+    with pytest.raises(ValueError, match="num_colors must be >= 1"):
+        label_colormap(-1)
+
+    with pytest.raises(
+        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
+    ):
+        label_colormap(2**16 + 1)
+
+
 def test_coerce_contrast_limits_with_valid_input():
     contrast_limits = (0.0, 1.0)
     result = _coerce_contrast_limits(contrast_limits)
