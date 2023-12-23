@@ -209,7 +209,7 @@ class _ImageBase(Layer, ABC):
                 trans._('Image data must have at least 2 dimensions.')
             )
 
-        # Deter
+        # Determine if data is a multiscale
         self._data_raw = data
         if multiscale is None:
             multiscale, data = guess_multiscale(data)
