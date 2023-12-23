@@ -35,6 +35,7 @@ import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from importlib.util import find_spec
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -789,3 +790,13 @@ def pytest_configure(config):
         custom_reporter._session = standard_reporter._session
     config.pluginmanager.unregister(standard_reporter)
     config.pluginmanager.register(custom_reporter, 'terminalreporter')
+
+
+@pytest.hookimpl
+def pytest_addoption(parser):
+    if find_spec("pytest_pystack") is not None:
+        # if pytest-pystack is installed, there is no need to mock config
+        return
+    # Add options to not fail proces when using --strict-config option
+    parser.addini("pystack_threshold", "mock")
+    parser.addini("pystack_args", "mock")

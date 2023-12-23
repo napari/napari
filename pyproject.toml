@@ -1,7 +1,6 @@
 [build-system]
 requires = [
   "setuptools >= 56",
-  "wheel",
   "setuptools_scm[toml]>=3.4"
 ]
 build-backend = "setuptools.build_meta"
@@ -149,10 +148,14 @@ xarray = "xr"
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
-addopts = "--maxfail=5 --durations=10 -rXxs"
+addopts = ["--maxfail=5",  "--durations=10",  "-ra", "--strict-markers", "--strict-config"]
 console_output_style = "count"
 pystack_threshold=60
 pystack_args="--native-all"
+minversion = "7"
+log_cli_level = "INFO"
+xfail_strict = true
+testpaths = ["napari"]
 
 
 # NOTE: only put things that will never change in here.

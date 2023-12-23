@@ -1069,9 +1069,6 @@ def test_cursor_size_with_negative_scale():
     assert layer.cursor_size > 0
 
 
-@pytest.mark.xfail(
-    reason="labels are converted to float32 before being mapped"
-)
 def test_large_label_values():
     label_array = 2**23 + np.arange(4, dtype=np.uint64).reshape((2, 2))
     layer = Labels(label_array)
