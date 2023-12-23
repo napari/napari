@@ -65,7 +65,7 @@ class ImageLayerNode:
         return res
 
 
-class VispyVolumeBaseLayer(VispyBaseLayer[_ImageBase]):
+class VispyScalarFieldBaseLayer(VispyBaseLayer[_ImageBase]):
     def __init__(
         self,
         layer: _ImageBase,
@@ -259,7 +259,7 @@ class VispyVolumeBaseLayer(VispyBaseLayer[_ImageBase]):
         return data
 
 
-class VispyImageLayer(VispyVolumeBaseLayer):
+class VispyImageLayer(VispyScalarFieldBaseLayer):
     layer: Image
 
     def __init__(
