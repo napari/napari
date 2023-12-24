@@ -122,6 +122,13 @@ def _active_shape(s: LayerSel) -> Optional[Tuple[int, ...]]:
 
 
 def _same_shape(s: LayerSel) -> bool:
+    """Return true when all given layers have the same shape.
+
+    Notes
+    -----
+    The cast to tuple() is needed because some array libraries return a list,
+    which is not hashable and thus causes the set (``{}``) to fail.
+    """
     return len({tuple(getattr(x.data, "shape", ())) for x in s}) == 1
 
 
