@@ -886,6 +886,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Properties defining plane rendering in 3D. Properties are defined in
             data coordinates. Valid dictionary keys are
             {'position', 'normal', 'thickness', and 'enabled'}.
+        projection_mode : str
+            How data outside the viewed dimensions but inside the thick Dims slice will
+            be projected onto the viewed dimensions. Must fit to cls._projectionclass
         experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
             Each dict defines a clipping plane in 3D in data coordinates.
             Valid dictionary keys are {'position', 'normal', and 'enabled'}.
