@@ -471,13 +471,7 @@ class _ImageBase(Layer, ABC):
         image : array
             Displayed array.
         """
-        lim_tup = _coerce_contrast_limits(self.contrast_limits)
-        if np.allclose(lim_tup.contrast_limits, self.contrast_limits):
-            return raw
-
-        image = raw * lim_tup.scale + lim_tup.offset
-
-        return image
+        raise NotImplementedError
 
     def _set_view_slice(self) -> None:
         """Set the slice output based on this layer's current state."""
@@ -1198,3 +1192,26 @@ class Image(IntensityVisualizationMixin, _ImageBase):
                 )
             )
         return calc_data_range(input_data, rgb=self.rgb)
+
+    def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
+        """Determine displayed image from raw image.
+
+        For normal image layers, just return the actual image.
+
+        Parameters
+        ----------
+        raw : array
+            Raw array.
+
+        Returns
+        -------
+        image : array
+            Displayed array.
+        """
+        lim_tup = _coerce_contrast_limits(self.contrast_limits)
+        if np.allclose(lim_tup.contrast_limits, self.contrast_limits):
+            return raw
+
+        image = raw * lim_tup.scale + lim_tup.offset
+
+        return image
