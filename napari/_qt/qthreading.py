@@ -14,7 +14,6 @@ from typing import (
 )
 
 from superqt.utils import _qthreading
-from typing_extensions import ParamSpec
 
 from napari.utils.progress import progress
 from napari.utils.translations import trans
@@ -50,7 +49,6 @@ class _NotifyingMixin:
 _Y = TypeVar("_Y")
 _S = TypeVar("_S")
 _R = TypeVar("_R")
-_P = ParamSpec("_P")
 
 
 class FunctionWorker(_qthreading.FunctionWorker[_R], _NotifyingMixin):
