@@ -6,7 +6,7 @@
 #
 alabaster==0.7.13
     # via sphinx
-app-model==0.2.2
+app-model==0.2.4
     # via napari (napari_repo/setup.cfg)
 appdirs==1.4.4
     # via
@@ -21,7 +21,7 @@ attrs==23.1.0
     #   hypothesis
     #   jsonschema
     #   referencing
-babel==2.13.1
+babel==2.14.0
     # via
     #   napari (napari_repo/setup.cfg)
     #   sphinx
@@ -45,13 +45,13 @@ comm==0.2.0
     # via ipykernel
 contourpy==1.2.0
     # via matplotlib
-coverage==7.3.2
+coverage==7.3.4
     # via
     #   napari (napari_repo/setup.cfg)
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2023.11.0
+dask==2023.12.1
     # via
     #   dask
     #   napari (napari_repo/setup.cfg)
@@ -59,7 +59,7 @@ debugpy==1.8.0
     # via ipykernel
 decorator==5.1.1
     # via ipython
-distlib==0.3.7
+distlib==0.3.8
     # via virtualenv
 docstring-parser==0.15
     # via magicgui
@@ -79,11 +79,11 @@ filelock==3.13.1
     #   torch
     #   triton
     #   virtualenv
-fonttools==4.45.0
+fonttools==4.47.0
     # via matplotlib
 freetype-py==2.4.0
     # via vispy
-fsspec==2023.10.0
+fsspec==2023.12.2
     # via
     #   dask
     #   napari (napari_repo/setup.cfg)
@@ -92,18 +92,18 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.90.0
+hypothesis==6.92.1
     # via napari (napari_repo/setup.cfg)
-idna==3.4
+idna==3.6
     # via requests
-imageio==2.33.0
+imageio==2.33.1
     # via
     #   napari (napari_repo/setup.cfg)
     #   napari-svg
     #   scikit-image
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==6.8.0
+importlib-metadata==7.0.1
     # via
     #   build
     #   dask
@@ -115,11 +115,11 @@ in-n-out==0.1.9
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.27.0
+ipykernel==6.27.1
     # via
     #   napari-console
     #   qtconsole
-ipython==8.17.2
+ipython==8.18.1
     # via
     #   ipykernel
     #   napari (napari_repo/setup.cfg)
@@ -133,13 +133,13 @@ jinja2==3.1.2
     #   torch
 jsonschema==4.20.0
     # via napari (napari_repo/setup.cfg)
-jsonschema-specifications==2023.11.1
+jsonschema-specifications==2023.11.2
     # via jsonschema
 jupyter-client==8.6.0
     # via
     #   ipykernel
     #   qtconsole
-jupyter-core==5.5.0
+jupyter-core==5.5.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -156,9 +156,9 @@ llvmlite==0.41.1
     # via numba
 locket==1.0.0
     # via partd
-lxml==4.9.3
+lxml==4.9.4
     # via napari (napari_repo/setup.cfg)
-magicgui==0.8.0
+magicgui==0.8.1
     # via napari (napari_repo/setup.cfg)
 markdown-it-py==3.0.0
     # via rich
@@ -270,7 +270,7 @@ packaging==23.2
     #   superqt
     #   vispy
     #   xarray
-pandas==2.1.3 ; python_version >= "3.9"
+pandas==2.1.4 ; python_version >= "3.9"
     # via
     #   napari (napari_repo/setup.cfg)
     #   xarray
@@ -278,7 +278,7 @@ parso==0.8.3
     # via jedi
 partd==1.4.1
     # via dask
-pexpect==4.8.0
+pexpect==4.9.0
     # via ipython
 pillow==10.1.0
     # via
@@ -286,9 +286,9 @@ pillow==10.1.0
     #   matplotlib
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
-pint==0.22
+pint==0.23
     # via napari (napari_repo/setup.cfg)
-platformdirs==4.0.0
+platformdirs==4.1.0
     # via
     #   jupyter-core
     #   pooch
@@ -301,9 +301,9 @@ pooch==1.8.0
     #   scikit-image
 pretend==1.0.9
     # via napari (napari_repo/setup.cfg)
-prompt-toolkit==3.0.41
+prompt-toolkit==3.0.43
     # via ipython
-psutil==5.9.6
+psutil==5.9.7
     # via
     #   ipykernel
     #   napari (napari_repo/setup.cfg)
@@ -325,6 +325,9 @@ pydantic==1.10.13
     #   app-model
     #   napari (napari_repo/setup.cfg)
     #   npe2
+    #   pydantic-compat
+pydantic-compat==0.1.2
+    # via app-model
 pygments==2.17.2
     # via
     #   ipython
@@ -347,9 +350,9 @@ pyqt5-qt5==5.15.2
     # via pyqt5
 pyqt5-sip==12.13.0
     # via pyqt5
-pyqt6==6.6.0
+pyqt6==6.6.1
     # via napari (napari_repo/setup.cfg)
-pyqt6-qt6==6.6.0
+pyqt6-qt6==6.6.1
     # via pyqt6
 pyqt6-sip==13.6.0
     # via pyqt6
@@ -381,7 +384,7 @@ pytest-metadata==3.0.0
     # via pytest-json-report
 pytest-pretty==1.2.0
     # via napari (napari_repo/setup.cfg)
-pytest-qt==4.2.0
+pytest-qt==4.3.1
     # via napari (napari_repo/setup.cfg)
 python-dateutil==2.8.2
     # via
@@ -395,7 +398,7 @@ pyyaml==6.0.1
     #   dask
     #   napari (napari_repo/setup.cfg)
     #   npe2
-pyzmq==25.1.1
+pyzmq==25.1.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -412,7 +415,7 @@ qtpy==2.4.1
     #   napari-plugin-manager
     #   qtconsole
     #   superqt
-referencing==0.31.0
+referencing==0.32.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -426,7 +429,7 @@ rich==13.7.0
     #   napari (napari_repo/setup.cfg)
     #   npe2
     #   pytest-pretty
-rpds-py==0.13.1
+rpds-py==0.15.2
     # via
     #   jsonschema
     #   referencing
@@ -484,11 +487,11 @@ sympy==1.12
     # via torch
 tabulate==0.9.0
     # via numpydoc
-tensorstore==0.1.50
+tensorstore==0.1.51
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/setup.cfg)
-tifffile==2023.9.26
+tifffile==2023.12.9
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
@@ -507,15 +510,15 @@ toolz==0.12.0
     #   dask
     #   napari (napari_repo/setup.cfg)
     #   partd
-torch==2.1.1
+torch==2.1.2
     # via napari (napari_repo/setup.cfg)
-tornado==6.3.3
+tornado==6.4
     # via
     #   ipykernel
     #   jupyter-client
 tqdm==4.66.1
     # via napari (napari_repo/setup.cfg)
-traitlets==5.13.0
+traitlets==5.14.0
     # via
     #   comm
     #   ipykernel
@@ -530,7 +533,7 @@ triton==2.1.0
     # via torch
 typer==0.9.0
     # via npe2
-typing-extensions==4.8.0
+typing-extensions==4.9.0
     # via
     #   app-model
     #   ipython
@@ -546,7 +549,7 @@ tzdata==2023.3
     # via pandas
 urllib3==2.1.0
     # via requests
-virtualenv==20.24.7
+virtualenv==20.25.0
     # via napari (napari_repo/setup.cfg)
 vispy==0.14.1
     # via
@@ -556,7 +559,7 @@ wcwidth==0.2.12
     # via prompt-toolkit
 wrapt==1.16.0
     # via napari (napari_repo/setup.cfg)
-xarray==2023.11.0
+xarray==2023.12.0
     # via napari (napari_repo/setup.cfg)
 zarr==2.16.1
     # via napari (napari_repo/setup.cfg)
@@ -566,5 +569,5 @@ zipp==3.17.0
     #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.3.1
+pip==23.3.2
     # via napari-plugin-manager
