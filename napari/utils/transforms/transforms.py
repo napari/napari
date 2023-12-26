@@ -1,4 +1,3 @@
-from functools import cached_property
 from typing import Generic, Iterable, Optional, Sequence, TypeVar, overload
 
 import numpy as np
@@ -107,7 +106,7 @@ class Transform:
     def _is_diagonal(self):
         """Indicate when a transform does not mix or permute dimensions.
 
-        Can be overriden in subclasses to enable performance optimizations
+        Can be overridden in subclasses to enable performance optimizations
         that are specific to this case.
         """
         return False
@@ -705,7 +704,7 @@ class Affine(Transform):
             name=self.name,
         )
 
-    @cached_property
+    @property
     def _is_diagonal(self):
         """Determine whether linear_matrix is diagonal up to some tolerance.
 
