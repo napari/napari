@@ -21,7 +21,7 @@ from typing import (
 )
 from weakref import WeakSet, ref
 
-from qtpy.QtCore import QCoreApplication, QObject, Qt
+from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
@@ -1038,13 +1038,31 @@ class QtViewer(QSplitter):
                 return
             arr = QImg2array(image)
             self.viewer.add_image(arr)
-        elif cb.mimeData().hasUrls():
+            return
+        if cb.mimeData().hasUrls():
             show_info("No image in clipboard, trying to open link instead.")
-            self._open_from_mime_data(
-                cb.mimeData(), stack=False, choose_plugin=False
+            self._open_from_list_of_urls_data(
+                cb.mimeData().urls(), stack=False, choose_plugin=False
             )
-        else:
-            show_info("No image or link in clipboard.")
+            return
+        if cb.mimeData().hasText():
+            show_info(
+                "No image in clipboard, trying to parse text in clipboard as a link."
+            )
+            url_list = []
+            for line in cb.mimeData().text().split("\n"):
+                url = QUrl(line.strip())
+                if url.scheme() == '':
+                    url.setScheme('file')
+                if url.isLocalFile() and not Path(url.toLocalFile()).exists():
+                    break
+                url_list.append(url)
+            else:
+                self._open_from_list_of_urls_data(
+                    url_list, stack=False, choose_plugin=False
+                )
+                return
+        show_info("No image or link in clipboard.")
 
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop.
@@ -1068,17 +1086,17 @@ class QtViewer(QSplitter):
             QGuiApplication.keyboardModifiers()
             & Qt.KeyboardModifier.AltModifier
         )
-        self._open_from_mime_data(
-            event.mimeData(),
+        self._open_from_list_of_urls_data(
+            event.mimeData().urls(),
             stack=bool(shift_down),
             choose_plugin=bool(alt_down),
         )
 
-    def _open_from_mime_data(
-        self, mime_data, stack: bool, choose_plugin: bool
+    def _open_from_list_of_urls_data(
+        self, urls_list: List[QUrl], stack: bool, choose_plugin: bool
     ):
         filenames = []
-        for url in mime_data.urls():
+        for url in urls_list:
             if url.isLocalFile():
                 # directories get a trailing "/", Path conversion removes it
                 filenames.append(str(Path(url.toLocalFile())))
