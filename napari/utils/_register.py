@@ -42,6 +42,8 @@ def create_func(cls, name=None, doc=None, filename: str = '<string>'):
         doc = getdoc(cls)
         start = doc.find('\n\nParameters\n----------\n')
         end = doc.find('\n\nAttributes\n----------\n')
+        if end == -1:
+            end = None
         if start > 0:
             doc = doc[start:end]
 
