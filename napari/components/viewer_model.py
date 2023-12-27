@@ -1556,7 +1556,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
             )
     else:
         _data.append(guess_labels(_data[0]))
-    return tuple(_data)  # type: ignore
+    return tuple(_data)
 
 
 def _unify_data_and_user_kwargs(
