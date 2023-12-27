@@ -5,6 +5,7 @@ import numpy as np
 from napari.layers.shapes._shapes_utils import (
     is_collinear,
     path_to_mask,
+    edges_to_mask,
     poly_to_mask,
     triangulate_edge,
     triangulate_face,
@@ -407,7 +408,7 @@ class Shape(ABC):
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
         else:
-            mask_p = path_to_mask(shape_plane, (data - offset) * zoom_factor)
+            mask_p = edges_to_mask(shape_plane, (data - offset) * zoom_factor)
 
         # If the mask is to be embedded in a larger array, compute array
         # and embed as a slice.
