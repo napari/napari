@@ -140,9 +140,9 @@ def test_string_enum():
 
     # test direct comparison with a string
     assert TestEnum.THING == 'thing'
-    assert 'thing' == TestEnum.THING
+    assert TestEnum.THING == 'thing'
     assert TestEnum.THING != 'notathing'
-    assert 'notathing' != TestEnum.THING
+    assert TestEnum.THING != 'notathing'
 
     # test comparison with another enum with same value names
     class AnotherTestEnum(StringEnum):
