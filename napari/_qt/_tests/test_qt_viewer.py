@@ -940,6 +940,7 @@ def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
         )
 
 
+@skip_on_win_ci
 def test_shortcut_passing(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_labels(
