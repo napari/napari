@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Optional, Sequence, Tuple, Union
 
 import numpy as np
 from skimage import morphology
@@ -12,33 +13,121 @@ class Skiper:
         return self.func(item)
 
 
-@lru_cache
-def gen_blobs(shape, dtype, blob_count=144):
-    np.random.seed(1)
-    balls_ = np.zeros(shape, dtype=dtype)
-    gen = np.random.default_rng(1)
-    points = (
-        gen.random((len(shape), blob_count)) * np.array(shape).reshape((-1, 1))
-    ).astype(int)
-    values = gen.integers(
-        np.iinfo(dtype).min, np.iinfo(dtype).max, size=blob_count, dtype=dtype
-    )
-    sigma = int(np.array(shape).max() / (4.0 * blob_count ** (1 / len(shape))))
-    if len(shape) == 2:
-        ball = morphology.disk(sigma)
-    else:
-        ball = morphology.ball(sigma)
+def _generate_ball(radius: int, ndim: int) -> np.ndarray:
+    """
+    Generate a ball of given radius and dimension.
+
+    Parameters
+    ----------
+    radius : int
+        Radius of the ball.
+    ndim : int
+        Dimension of the ball.
+
+    Returns
+    -------
+    ball : ndarray of uint8
+        Binary array of the hyper ball.
+    """
+
+    if ndim == 2:
+        return morphology.disk(radius)
+    if ndim == 3:
+        return morphology.ball(radius)
+    shape = (2 * radius + 1,) * ndim
+    radius_sq = radius**2
+    coords = np.indices(shape) - radius
+    return (np.sum(coords**2, axis=0) <= radius_sq).astype(np.uint8)
+
+
+def _generate_density(radius: int, ndim: int) -> np.ndarray:
+    shape = (2 * radius + 1,) * ndim
+    coords = np.indices(shape) - radius
+    dist = np.sqrt(np.sum(coords**2 / ((radius / 4) ** 2), axis=0))
+    return np.exp(-dist)
+
+
+def _add_structure_on_coordinates(
+    data, points, shape, structure, values, assign_operator
+):
+    radius = (structure.shape[0] - 1) // 2
+
     for j, point in enumerate(points.T):
         slice_im = []
         slice_ball = []
         for i, p in enumerate(point):
             slice_im.append(
-                slice(max(0, p - sigma), min(shape[i], p + sigma + 1))
+                slice(max(0, p - radius), min(shape[i], p + radius + 1))
             )
-            ball_base = max(0, sigma - p)
+            ball_base = max(0, radius - p)
             bal_end = slice_im[-1].stop - slice_im[-1].start + ball_base
             slice_ball.append(slice(ball_base, bal_end))
+        assign_operator(
+            data[tuple(slice_im)], structure[tuple(slice_ball)], values[j]
+        )
+    return data
 
-        balls_[tuple(slice_im)][ball[tuple(slice_ball)] > 0] = values[j]
 
+def _update_data_with_mask(data, struct, value):
+    data[struct > 0] = value
+    return data
+
+
+def _add_value_to_data(data, struct, _value):
+    data[...] = np.max([data, struct], axis=0)
+    return data
+
+
+@lru_cache
+def labeled_particles(
+    shape: Sequence[int],
+    dtype: Optional[np.dtype] = None,
+    n: int = 144,
+    seed: Optional[int] = None,
+    return_density: bool = False,
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    """
+    Generate labeled blobs of given shape and dtype.
+
+    Parameters
+    ----------
+    shape : Sequence[int]
+        Shape of the resulting array.
+    dtype : np.dtype
+        Dtype of the resulting array.
+    n : int
+        Number of blobs to generate.
+    seed : Optional[int]
+        Seed for the random number generator.
+    """
+    if dtype is None:
+        for dtype_ in [np.uint8, np.uint16, np.uint32, np.uint64]:
+            if np.iinfo(dtype_).max >= n:
+                dtype = dtype_
+                break
+        else:
+            raise ValueError(f"n is too large for any dtype: {n=}")
+    rng = np.random.default_rng(seed)
+    points = (
+        rng.random((len(shape), n)) * np.array(shape).reshape((-1, 1))
+    ).astype(int)
+    values = rng.integers(
+        np.iinfo(dtype).min, np.iinfo(dtype).max, size=n, dtype=dtype
+    )
+    sigma = int(np.array(shape).max() / (4.0 * n ** (1 / len(shape))))
+    ball = _generate_ball(sigma, len(shape))
+    balls_ = np.zeros(shape, dtype=dtype)
+
+    _add_structure_on_coordinates(
+        balls_, points, shape, ball, values, _update_data_with_mask
+    )
+
+    if return_density:
+        particles = np.zeros(shape, dtype=np.float32)
+        dens = _generate_density(sigma * 2, len(shape))
+        _add_structure_on_coordinates(
+            particles, points, shape, dens, values, _add_value_to_data
+        )
+
+        return balls_, particles, points.T
     return balls_
