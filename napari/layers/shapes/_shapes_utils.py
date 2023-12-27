@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
+from itertools import zip_longest
 from skimage.draw import line, polygon2mask
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
@@ -887,6 +888,44 @@ def path_to_mask(mask_shape, vertices):
 
     iis, jjs = [], []
     for v1, v2 in zip(vertices, vertices[1:]):
+        ii, jj = line(*v1, *v2)
+        iis.extend(ii.tolist())
+        jjs.extend(jj.tolist())
+
+    mask[iis, jjs] = 1
+
+    return mask
+
+
+def edges_to_mask(mask_shape, vertices):
+    """Converts the edges of a shape to a boolean mask with `True` for points lying along
+    each edge.
+
+    Parameters
+    ----------
+    mask_shape : array (2,)
+        Shape of mask to be generated.
+    vertices : array (N, 2)
+        Vertices of the shape.
+
+    Returns
+    -------
+    mask : np.ndarray
+        Boolean array with `True` for points along the edges.
+
+    """
+    mask_shape = np.asarray(mask_shape, dtype=int)
+    mask = np.zeros(mask_shape, dtype=bool)
+
+    vertices = np.round(np.clip(vertices, 0, mask_shape - 1)).astype(int)
+
+    # remove identical, consecutive vertices
+    duplicates = np.all(np.diff(vertices, axis=0) == 0, axis=-1)
+    duplicates = np.concatenate(([False], duplicates))
+    vertices = vertices[~duplicates]
+
+    iis, jjs = [], []
+    for v1, v2 in zip_longest(vertices, vertices[1:], fillvalue=vertices[0]):
         ii, jj = line(*v1, *v2)
         iis.extend(ii.tolist())
         jjs.extend(jj.tolist())
