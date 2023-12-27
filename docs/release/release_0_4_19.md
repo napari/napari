@@ -51,6 +51,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Use a shader for low discrepancy label conversion ([napari/napari/#3308](https://github.com/napari/napari/pull/3308))
 - Fix lagging 3d view for big data in auto color mode ([napari/napari/#6411](https://github.com/napari/napari/pull/6411))
 - Fix cycle in _update_draw/_set_highlight for Points and Shapes (high CPU background usage) ([napari/napari/#6425](https://github.com/napari/napari/pull/6425))
+- Update performance and reduce memory usage for big Labels layer in direct color mode ([napari/napari/#6439](https://github.com/napari/napari/pull/6439))
 
 ## Bug Fixes
 
@@ -83,11 +84,26 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Bugfix: Account for multiscale for labels in 3d ([napari/napari/#6317](https://github.com/napari/napari/pull/6317))
 - Update example scripts (magicgui with threads) ([napari/napari/#6353](https://github.com/napari/napari/pull/6353))
 - Exclude the loaded property when linking two layers ([napari/napari/#6377](https://github.com/napari/napari/pull/6377))
+- Fix problem with transform box of multiscale image  ([napari/napari/#6390](https://github.com/napari/napari/pull/6390))
 - Fix cycle in _update_draw/_set_highlight for Points and Shapes (high CPU background usage) ([napari/napari/#6425](https://github.com/napari/napari/pull/6425))
 - Do not run macos process renaming if debugger is loaded ([napari/napari/#6437](https://github.com/napari/napari/pull/6437))
 - Fix bounding box transforms when multiscale layer corner goes below zero ([napari/napari/#6438](https://github.com/napari/napari/pull/6438))
+- Update performance and reduce memory usage for big Labels layer in direct color mode ([napari/napari/#6439](https://github.com/napari/napari/pull/6439))
 - Fix `breakpoint()` function after console import ([napari/napari/#6443](https://github.com/napari/napari/pull/6443))
 - fix problem with alligned overlay ([napari/napari/#6445](https://github.com/napari/napari/pull/6445))
+- Fix guess_continuous to not assign continuous for string categories ([napari/napari/#6452](https://github.com/napari/napari/pull/6452))
+- Fix casting uint32 to vispy dtype for image layers ([napari/napari/#6456](https://github.com/napari/napari/pull/6456))
+- Fix thumbnail for auto color mode in labels ([napari/napari/#6459](https://github.com/napari/napari/pull/6459))
+- Fix label color shuffling by also updating colormap size ([napari/napari/#6460](https://github.com/napari/napari/pull/6460))
+- Fix direct colormap ([napari/napari/#6461](https://github.com/napari/napari/pull/6461))
+- Use views rather than CPU-based hashing for 8- and 16-bit Labels data ([napari/napari/#6467](https://github.com/napari/napari/pull/6467))
+- remove main window from instances list only if close event is accepted ([napari/napari/#6468](https://github.com/napari/napari/pull/6468))
+- Update allowed selected_label range when data dtype changes ([napari/napari/#6479](https://github.com/napari/napari/pull/6479))
+- Run test suite with optional dependencies and fix tests when `triangle` is installed ([napari/napari/#6488](https://github.com/napari/napari/pull/6488))
+- Do not use native dialog for reset shortcuts ([napari/napari/#6493](https://github.com/napari/napari/pull/6493))
+- Pass key event from Main window to our internal mechanism v0.4.19 ([napari/napari/#6507](https://github.com/napari/napari/pull/6507))
+- Fix problem with invalidate cache  ([napari/napari/#6520](https://github.com/napari/napari/pull/6520))
+- Reset single step and decimals on reset range slider in popup ([napari/napari/#6523](https://github.com/napari/napari/pull/6523))
 
 ## API Changes
 
@@ -116,6 +132,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Add instructions on how to use docs-xvfb ([napari/docs/#138](https://github.com/napari/docs/pull/138))
 - Add more information to the documentation contribution guide ([napari/docs/#157](https://github.com/napari/docs/pull/157))
 - Add instructions to build napari docs on Windows ([napari/docs/#158](https://github.com/napari/docs/pull/158))
+- Add information about constraint usage to install older napari release ([napari/docs/#193](https://github.com/napari/docs/pull/193))
 - Fix typo of points instead of shapes ([napari/docs/#195](https://github.com/napari/docs/pull/195))
 - Improve titles of fundamentals tutorials ([napari/docs/#196](https://github.com/napari/docs/pull/196))
 - NAP 7: Key Binding Dispatch ([napari/docs/#200](https://github.com/napari/docs/pull/200))
@@ -139,6 +156,8 @@ If you have any questions or suggestions regarding napari core, for example on h
 - [Fix error] Image layers can't have converted data type using contextual menu, only Labels ([napari/docs/#252](https://github.com/napari/docs/pull/252))
 - Installation guide: Mention slow first launch time ([napari/docs/#253](https://github.com/napari/docs/pull/253))
 - [NAP-8] delete :orphan: ([napari/docs/#269](https://github.com/napari/docs/pull/269))
+- add link to video from EMBO workshop ([napari/docs/#273](https://github.com/napari/docs/pull/273))
+- Improve flow of install page ([napari/docs/#274](https://github.com/napari/docs/pull/274))
 
 ## Other Pull Requests
 
@@ -162,6 +181,11 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Fix drawing timer ([napari/napari/#6400](https://github.com/napari/napari/pull/6400))
 - Reraise warnings in proxy ([napari/napari/#6408](https://github.com/napari/napari/pull/6408))
 - Bump napari console to ensure users get latest bug fixes ([napari/napari/#6442](https://github.com/napari/napari/pull/6442))
+- [maint] update Dockerfile with current installation of Xpra ([napari/napari/#6463](https://github.com/napari/napari/pull/6463))
+- [Maint, v0.4.19] Use python 3.11 for manifest check ([napari/napari/#6497](https://github.com/napari/napari/pull/6497))
+- Add copy operator to fix memory benchmarks ([napari/napari/#6530](https://github.com/napari/napari/pull/6530))
+- Check in LabelColormap that fewer than 2**16 colors are requested ([napari/napari/#6540](https://github.com/napari/napari/pull/6540))
+- Moving IntensityVisualizationMixin from _ImageBase to Image ([napari/napari/#6548](https://github.com/napari/napari/pull/6548))
 - Update docs to suggest python 3.10 install ([napari/docs/#246](https://github.com/napari/docs/pull/246))
 
 
@@ -208,7 +232,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
 
 
-## 14 docs authors added to this release (alphabetical)
+## 15 docs authors added to this release (alphabetical)
 
 - [Ashley Anderson](https://github.com/napari/docs/commits?author=aganders3) - @aganders3
 - [chili-chiu](https://github.com/napari/docs/commits?author=chili-chiu) - @chili-chiu
@@ -221,6 +245,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 - [Lucy Liu](https://github.com/napari/docs/commits?author=lucyleeow) - @lucyleeow
 - [Melissa Weber Mendonça](https://github.com/napari/docs/commits?author=melissawm) - @melissawm
 - [Peter Sobolewski](https://github.com/napari/docs/commits?author=psobolewskiPhD) - @psobolewskiPhD
+- [Robert Haase](https://github.com/napari/docs/commits?author=haesleinhuepf) - @haesleinhuepf
 - [Sean Martin](https://github.com/napari/docs/commits?author=seankmartin) - @seankmartin
 - [Talley Lambert](https://github.com/napari/docs/commits?author=tlambert03) - @tlambert03
 - [Wouter-Michiel Vierdag](https://github.com/napari/docs/commits?author=melonora) - @melonora
