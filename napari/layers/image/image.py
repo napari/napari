@@ -995,9 +995,9 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
         self._update_dims()
-        self.events.data(value=self.data)
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
+        self.events.data(value=self.data)
         self._reset_editable()
 
     @property
@@ -1215,3 +1215,17 @@ class Image(IntensityVisualizationMixin, _ImageBase):
         image = raw * lim_tup.scale + lim_tup.offset
 
         return image
+
+    @IntensityVisualizationMixin.contrast_limits.setter  # type: ignore [attr-defined]
+    def contrast_limits(self, contrast_limits):
+        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)
+        if not np.allclose(
+            _coerce_contrast_limits(self.contrast_limits).contrast_limits,
+            self.contrast_limits,
+        ):
+            prev = self._keep_auto_contrast
+            self._keep_auto_contrast = False
+            try:
+                self.refresh()
+            finally:
+                self._keep_auto_contrast = prev
