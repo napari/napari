@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Optional, Sequence, Tuple, Union
+from typing import Literal, Optional, Sequence, Tuple, Union, overload
 
 import numpy as np
 from skimage import morphology
@@ -41,6 +41,9 @@ def _generate_ball(radius: int, ndim: int) -> np.ndarray:
 
 
 def _generate_density(radius: int, ndim: int) -> np.ndarray:
+    """
+    Generate gaussian density of given radius and dimension.
+    """
     shape = (2 * radius + 1,) * ndim
     coords = np.indices(shape) - radius
     dist = np.sqrt(np.sum(coords**2 / ((radius / 4) ** 2), axis=0))
@@ -50,6 +53,9 @@ def _generate_density(radius: int, ndim: int) -> np.ndarray:
 def _add_structure_on_coordinates(
     data, points, shape, structure, values, assign_operator
 ):
+    """
+    helper function to update data with structure at given coordinates
+    """
     radius = (structure.shape[0] - 1) // 2
 
     for j, point in enumerate(points.T):
@@ -69,13 +75,37 @@ def _add_structure_on_coordinates(
 
 
 def _update_data_with_mask(data, struct, value):
+    """Helper function to generate labeling array"""
     data[struct > 0] = value
     return data
 
 
 def _add_value_to_data(data, struct, _value):
+    """Helper function to generate nice density array"""
     data[...] = np.max([data, struct], axis=0)
     return data
+
+
+@overload
+def labeled_particles(
+    shape: Sequence[int],
+    dtype: Optional[np.dtype] = None,
+    n: int = 144,
+    seed: Optional[int] = None,
+    return_density: Literal[False] = False,
+) -> np.ndarray:
+    ...
+
+
+@overload
+def labeled_particles(
+    shape: Sequence[int],
+    dtype: Optional[np.dtype] = None,
+    n: int = 144,
+    seed: Optional[int] = None,
+    return_density: Literal[True] = True,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ...
 
 
 @lru_cache
@@ -99,6 +129,8 @@ def labeled_particles(
         Number of blobs to generate.
     seed : Optional[int]
         Seed for the random number generator.
+    return_density : bool
+        Whether to return the density array and center coordinates.
     """
     if dtype is None:
         for dtype_ in [np.uint8, np.uint16, np.uint32, np.uint64]:
