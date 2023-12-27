@@ -25,3 +25,16 @@ def test_label_colormap(index, expected):
     to past versions, for UX consistency.
     """
     np.testing.assert_almost_equal(label_colormap(49).map(index), [expected])
+
+
+def test_label_colormap_exception():
+    with pytest.raises(ValueError, match="num_colors must be >= 1"):
+        label_colormap(0)
+
+    with pytest.raises(ValueError, match="num_colors must be >= 1"):
+        label_colormap(-1)
+
+    with pytest.raises(
+        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
+    ):
+        label_colormap(2**16 + 1)

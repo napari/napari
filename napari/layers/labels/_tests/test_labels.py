@@ -265,8 +265,15 @@ def test_num_colors():
     layer = Labels(data, num_colors=60)
     assert layer.num_colors == 60
 
-    with pytest.raises(ValueError, match="must be between 1 and 65535"):
+    with pytest.raises(
+        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
+    ):
         layer.num_colors = 2**17
+
+    with pytest.raises(
+        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
+    ):
+        Labels(data, num_colors=2**17)
 
 
 def test_properties():
@@ -1488,6 +1495,24 @@ def test_color_mapping_when_seed_is_changed():
     )
 
     assert not np.allclose(mapped_colors1, mapped_colors2)
+
+
+@pytest.mark.parametrize('num_colors', [49, 50, 254, 255, 60000, 65534])
+def test_color_shuffling_above_num_colors(num_colors):
+    r"""Check that the color shuffle does not result in the same collisions.
+
+    See https://github.com/napari/napari/issues/6448.
+
+    Note that we don't support more than 2\ :sup:`16` colors, and behavior
+    with more colors is undefined, so we don't test it here.
+    """
+    labels = np.arange(1, 1 + 2 * num_colors).reshape((2, num_colors))
+    layer = Labels(labels, num_colors=num_colors)
+    colors0 = layer.colormap.map(labels)
+    assert np.all(colors0[0] == colors0[1])
+    layer.new_colormap()
+    colors1 = layer.colormap.map(labels)
+    assert not np.all(colors1[0] == colors1[1])
 
 
 def test_negative_label():
