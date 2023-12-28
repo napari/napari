@@ -28,7 +28,6 @@ class Labels2DSuite:
         self.data = labeled_particles(
             (n, n), dtype=dtype, n=int(np.log2(n) ** 2), seed=1
         )
-        # np.random.randint(20, size=(n, n), dtype=dtype)
         self.layer = Labels(self.data)
         self.layer._raw_to_displayed(self.data, (slice(0, n), slice(0, n)))
 
