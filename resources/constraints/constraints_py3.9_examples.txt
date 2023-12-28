@@ -8,8 +8,10 @@ alabaster==0.7.13
     # via sphinx
 annotated-types==0.6.0
     # via pydantic
-app-model==0.2.4
-    # via napari (napari_repo/setup.cfg)
+app-model==0.2.3
+    # via
+    #   -r napari_repo/resources/constraints/version_denylist.txt
+    #   napari (napari_repo/setup.cfg)
 appdirs==1.4.4
     # via
     #   napari (napari_repo/setup.cfg)
@@ -47,7 +49,7 @@ comm==0.2.0
     # via ipykernel
 contourpy==1.2.0
     # via matplotlib
-coverage==7.3.4
+coverage==7.4.0
     # via
     #   napari (napari_repo/setup.cfg)
     #   pytest-cov
@@ -94,7 +96,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.92.1
+hypothesis==6.92.2
     # via napari (napari_repo/setup.cfg)
 idna==3.6
     # via requests
@@ -117,7 +119,7 @@ in-n-out==0.1.9
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.27.1
+ipykernel==6.28.0
     # via
     #   napari-console
     #   qtconsole
@@ -139,13 +141,13 @@ joblib==1.3.2
     #   scikit-learn
 jsonschema==4.20.0
     # via napari (napari_repo/setup.cfg)
-jsonschema-specifications==2023.11.2
+jsonschema-specifications==2023.12.1
     # via jsonschema
 jupyter-client==8.6.0
     # via
     #   ipykernel
     #   qtconsole
-jupyter-core==5.5.1
+jupyter-core==5.6.0
     # via
     #   ipykernel
     #   jupyter-client
