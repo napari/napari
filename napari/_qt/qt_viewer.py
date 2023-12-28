@@ -1052,6 +1052,8 @@ class QtViewer(QSplitter):
             url_list = []
             for line in cb.mimeData().text().split("\n"):
                 url = QUrl(line.strip())
+                if url.isEmpty():
+                    continue
                 if url.scheme() == '':
                     url.setScheme('file')
                 if url.isLocalFile() and not Path(url.toLocalFile()).exists():
