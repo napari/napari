@@ -254,6 +254,11 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         def reset():
             layer.reset_contrast_limits()
             layer.contrast_limits_range = layer.contrast_limits
+            decimals_ = range_to_decimals(
+                layer.contrast_limits_range, layer.dtype
+            )
+            self.slider.setDecimals(decimals_)
+            self.slider.setSingleStep(10**-decimals_)
 
         reset_btn = QPushButton("reset")
         reset_btn.setObjectName("reset_clims_button")
@@ -296,10 +301,7 @@ def range_to_decimals(range_, dtype):
     int
         Decimals of precision.
     """
-
-    if hasattr(dtype, 'numpy_dtype'):
-        # retrieve the corresponding numpy.dtype from a tensorstore.dtype
-        dtype = dtype.numpy_dtype
+    dtype = normalize_dtype(dtype)
 
     if np.issubdtype(dtype, np.integer):
         return 0
