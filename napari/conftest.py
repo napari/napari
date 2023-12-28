@@ -436,14 +436,12 @@ def _mock_app():
 
 def _get_calling_stack():  # pragma: no cover
     stack = []
-    i = 2
-    while True:
+    for i in range(2, sys.getrecursionlimit()):
         try:
             frame = sys._getframe(i)
         except ValueError:
             break
         stack.append(f"{frame.f_code.co_filename}:{frame.f_lineno}")
-        i += 1
     return "\n".join(stack)
 
 
