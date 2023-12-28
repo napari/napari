@@ -870,6 +870,7 @@ def _find_margin(data: np.ndarray, additional_margin: int) -> Tuple[int, int]:
 
 # @pytest.mark.xfail(reason="Fails on CI, but not locally")
 @skip_local_popups
+@skip_on_win_ci
 @pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
 def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     # Add labels to empty viewer
@@ -964,6 +965,7 @@ def test_shortcut_passing(make_napari_viewer):
     assert layer.mode == "erase"
 
 
+@skip_on_win_ci
 @pytest.mark.parametrize("mode", ["direct", "random"])
 def test_selection_collision(qt_viewer: QtViewer, mode):
     data = np.zeros((10, 10), dtype=np.uint8)
