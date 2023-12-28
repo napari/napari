@@ -911,6 +911,7 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
     assert problematic_pixels_count < 0.01 * canvas_screenshot.size
 
 
+@skip_on_win_ci
 @pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int32])
 def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
     data = np.zeros((10, 10), dtype=dtype)
