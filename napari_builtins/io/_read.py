@@ -488,7 +488,8 @@ def _csv_reader(path: Union[str, Sequence[str]]) -> List["LayerData"]:
 
 
 def _magic_imreader(path: str) -> List["LayerData"]:
-    return [(magic_imread(path),)]
+    meta = {"name": os.path.splitext(os.path.basename(path))[0]}
+    return [(magic_imread(path), meta)]
 
 
 def napari_get_reader(
