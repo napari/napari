@@ -9,7 +9,11 @@ from hypothesis import given
 from hypothesis.extra.numpy import array_shapes
 from skimage.transform import pyramid_gaussian
 
-from napari.layers.image._image_utils import guess_multiscale, guess_rgb
+from napari.layers.image._image_utils import (
+    guess_labels,
+    guess_multiscale,
+    guess_rgb,
+)
 from napari.layers.image._slice import _ImageSliceRequest
 from napari.layers.utils._slice_input import _ThickNDSlice
 
@@ -141,3 +145,26 @@ def test_create_data_indexing():
         slice(0, 1),
     )
     assert idx == expected
+
+
+def test_guess_labels():
+    data = np.empty((10, 10), dtype=np.uint8)
+    assert guess_labels(data, '') == 'image'
+    assert guess_labels(data.astype(np.uint16), '') == 'image'
+    assert guess_labels(data.astype(np.int32), '') == 'labels'
+
+    assert guess_labels(data, 'label') == 'labels'
+    assert guess_labels(data, 'data label 3') == 'labels'
+    assert guess_labels(data, 'data Segmentation') == 'labels'
+    assert guess_labels(data, 'data MASK') == 'labels'
+    assert guess_labels(data, 'data ROI') == 'labels'
+
+
+def test_guess_labels_tensorstore():
+    ts = pytest.importorskip('tensorstore')
+    data = ts.array(
+        np.full(shape=(1024, 1024), fill_value=255, dtype=np.uint8)
+    )
+
+    assert guess_labels(data, '') == 'image'
+    assert guess_labels(data.astype("uint32"), '') == 'labels'
