@@ -1,5 +1,14 @@
 from functools import lru_cache
-from typing import Literal, Optional, Sequence, Tuple, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    overload,
+)
 
 import numpy as np
 from skimage import morphology
@@ -53,12 +62,31 @@ def _generate_density(radius: int, ndim: int) -> np.ndarray:
 
 
 def _add_structure_on_coordinates(
-    data, points, shape, structure, values, assign_operator
+    data: np.ndarray,
+    points: np.ndarray,
+    structure: np.ndarray,
+    values: Sequence,
+    assign_operator: Callable[[np.ndarray, np.ndarray, Any], np.ndarray],
 ):
     """
     helper function to update data with structure at given coordinates
+
+    Parameters
+    ----------
+    data : ndarray
+        Array to update.
+    points : ndarray
+        Coordinates of the points. The structures will be added at these points (center).
+    structure : ndarray
+        Array with encoded structure. For example, ball (boolean) or density (0,1) float.
+    values : ndarray
+        Values to assign to the structure. It is passed to the assign_operator.
+        Could be used for labeling.
+    assign_operator : function
+        Function to assign structure to the data. It takes clipped data, structure and value as arguments.
     """
     radius = (structure.shape[0] - 1) // 2
+    shape = data.shape
 
     for j, point in enumerate(points.T):
         slice_im = []
@@ -153,14 +181,14 @@ def labeled_particles(
     balls_ = np.zeros(shape, dtype=dtype)
 
     _add_structure_on_coordinates(
-        balls_, points, shape, ball, values, _update_data_with_mask
+        balls_, points, ball, values, _update_data_with_mask
     )
 
     if return_density:
         particles = np.zeros(shape, dtype=np.float32)
         dens = _generate_density(sigma * 2, len(shape))
         _add_structure_on_coordinates(
-            particles, points, shape, dens, values, _add_value_to_data
+            particles, points, dens, values, _add_value_to_data
         )
 
         return balls_, particles, points.T
