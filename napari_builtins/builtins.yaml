@@ -204,6 +204,12 @@ contributions:
     - display_name: Astronaut (RGB)
       key: astronaut
       command: napari.data.astronaut
+    - display_name: Balls
+      key: balls_2d
+      command: napari.data.balls_2d
+    - display_name: Balls (3D)
+      key: balls_3d
+      command: napari.data.balls_3d
     - display_name: Binary Blobs
       key: binary_blobs
       command: napari.data.binary_blobs
@@ -297,9 +303,3 @@ contributions:
     - display_name: Text
       key: text
       command: napari.data.text
-    - display_name: 2D Balls
-      key: balls_2d
-      command: napari.data.balls_2d
-    - display_name: 3D Balls
-      key: balls_3d
-      command: napari.data.balls_3d

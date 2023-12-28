@@ -47,7 +47,9 @@ def _generate_density(radius: int, ndim: int) -> np.ndarray:
     shape = (2 * radius + 1,) * ndim
     coords = np.indices(shape) - radius
     dist = np.sqrt(np.sum(coords**2 / ((radius / 4) ** 2), axis=0))
-    return np.exp(-dist)
+    res = np.exp(-dist)
+    res[res < 0.02] = 0
+    return res
 
 
 def _add_structure_on_coordinates(
