@@ -439,13 +439,13 @@ pyqt6-sip==13.6.0
     # via pyqt6
 pyside2==5.15.2.1 ; python_version != "3.8"
     # via napari (napari_repo/setup.cfg)
-pyside6==6.6.1 ; python_version >= "3.10"
+pyside6==6.4.2 ; python_version >= "3.10"
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/setup.cfg)
-pyside6-addons==6.6.1
+pyside6-addons==6.4.2
     # via pyside6
-pyside6-essentials==6.6.1
+pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -534,7 +534,7 @@ scipy==1.11.4 ; python_version >= "3.9"
     #   scikit-learn
 shiboken2==5.15.2.1
     # via pyside2
-shiboken6==6.6.1
+shiboken6==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
