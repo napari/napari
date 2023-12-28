@@ -1478,7 +1478,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         if layer_type is None or layer_type == '':
             # assumes that big integer type arrays are likely labels.
-            layer_type = guess_labels(data)
+            layer_type = guess_labels(data, (meta or {}).get('name', ""))
         else:
             layer_type = layer_type.lower()
 
@@ -1558,7 +1558,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
                 )
             )
     else:
-        _data.append(guess_labels(_data[0]))
+        _data.append(guess_labels(_data[0], _data[1].get('name', '')))
     return tuple(_data)  # type: ignore
 
 

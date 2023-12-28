@@ -2167,7 +2167,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         # assumes that big integer type arrays are likely labels.
         if not layer_type:
-            layer_type = guess_labels(data)
+            layer_type = guess_labels(data, (meta or {}).get('name', ""))
 
         if layer_type is None or layer_type not in layers.NAMES:
             raise ValueError(
