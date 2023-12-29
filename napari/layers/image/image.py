@@ -663,71 +663,6 @@ class _ImageBase(Layer):
             self.events.set_data(value=self._slice)  # update vispy
             self._update_thumbnail()
 
-    def _update_thumbnail(self):
-        """Update thumbnail with current image data and colormap."""
-        if not self.loaded:
-            # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
-            # Is there a nicer way to prevent this from getting called?
-            return
-
-        image = self._slice.thumbnail.view
-
-        if self._slice_input.ndisplay == 3 and self.ndim > 2:
-            image = np.max(image, axis=0)
-
-        # float16 not supported by ndi.zoom
-        try:
-            dtype = np.dtype(image.dtype)
-        except TypeError:
-            # tensorstore case
-            dtype = np.dtype(image.dtype.type)
-
-        if dtype in [np.dtype(np.float16)]:
-            image = image.astype(np.float32)
-
-        raw_zoom_factor = np.divide(
-            self._thumbnail_shape[:2], image.shape[:2]
-        ).min()
-        new_shape = np.clip(
-            raw_zoom_factor * np.array(image.shape[:2]),
-            1,  # smallest side should be 1 pixel wide
-            self._thumbnail_shape[:2],
-        )
-        zoom_factor = tuple(new_shape / image.shape[:2])
-        if len(self.data.shape) != self.ndim:
-            downsampled = ndi.zoom(
-                image, zoom_factor + (1,), prefilter=False, order=0
-            )
-            if image.shape[2] == 4:  # image is RGBA
-                colormapped = np.copy(downsampled)
-                colormapped[..., 3] = downsampled[..., 3] * self.opacity
-                if downsampled.dtype == np.uint8:
-                    colormapped = colormapped.astype(np.uint8)
-            else:  # image is RGB
-                if downsampled.dtype == np.uint8:
-                    alpha = np.full(
-                        downsampled.shape[:2] + (1,),
-                        int(255 * self.opacity),
-                        dtype=np.uint8,
-                    )
-                else:
-                    alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
-                colormapped = np.concatenate([downsampled, alpha], axis=2)
-        else:
-            downsampled = ndi.zoom(
-                image, zoom_factor, prefilter=False, order=0
-            )
-            low, high = self.contrast_limits
-            downsampled = np.clip(downsampled, low, high)
-            color_range = high - low
-            if color_range != 0:
-                downsampled = (downsampled - low) / color_range
-            downsampled = downsampled**self.gamma
-            color_array = self.colormap.map(downsampled.ravel())
-            colormapped = color_array.reshape((*downsampled.shape, 4))
-            colormapped[..., 3] *= self.opacity
-        self.thumbnail = colormapped
-
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.
 
@@ -1306,12 +1241,21 @@ class Image(IntensityVisualizationMixin, _ImageBase):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        image = self._slice.thumbnail.view
+        if not self.loaded:
+            # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
+            # Is there a nicer way to prevent this from getting called?
+            return
+        image = self._slice.image.raw
 
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
+        try:
+            dtype = np.dtype(image.dtype)
+        except TypeError:
+            # tensorstore case
+            dtype = np.dtype(image.dtype.type)
         dtype = np.dtype(image.dtype)
         if dtype in [np.dtype(np.float16)]:
             image = image.astype(np.float32)

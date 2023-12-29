@@ -22,6 +22,9 @@ concurrency:
 
 jobs:
   upgrade:
+    permissions:
+      pull-requests: write
+      issues: write
     name: Upgrade & Open Pull Request
     runs-on: ubuntu-latest
     steps:
@@ -79,6 +82,9 @@ jobs:
           flags+=" --extra pyside2"
           flags+=" --extra pyside6_experimental"
           flags+=" --extra testing"
+          prefix="."
+          setup_cfg="${prefix}/setup.cfg"
+          constraints="${prefix}/resources/constraints"
 
 
           # allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
