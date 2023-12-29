@@ -23,8 +23,7 @@ class Skiper:
 
 
 def _generate_ball(radius: int, ndim: int) -> np.ndarray:
-    """
-    Generate a ball of given radius and dimension.
+    """Generate a ball of given radius and dimension.
 
     Parameters
     ----------
@@ -50,9 +49,7 @@ def _generate_ball(radius: int, ndim: int) -> np.ndarray:
 
 
 def _generate_density(radius: int, ndim: int) -> np.ndarray:
-    """
-    Generate gaussian density of given radius and dimension.
-    """
+    """Generate gaussian density of given radius and dimension."""
     shape = (2 * radius + 1,) * ndim
     coords = np.indices(shape) - radius
     dist = np.sqrt(np.sum(coords**2 / ((radius / 4) ** 2), axis=0))
@@ -68,22 +65,24 @@ def _add_structure_on_coordinates(
     values: Sequence,
     assign_operator: Callable[[np.ndarray, np.ndarray, Any], np.ndarray],
 ):
-    """
-    helper function to update data with structure at given coordinates
+    """Update data with structure at given coordinates.
 
     Parameters
     ----------
     data : ndarray
         Array to update.
     points : ndarray
-        Coordinates of the points. The structures will be added at these points (center).
+        Coordinates of the points. The structures will be added at these
+        points (center).
     structure : ndarray
-        Array with encoded structure. For example, ball (boolean) or density (0,1) float.
+        Array with encoded structure. For example, ball (boolean) or density
+        (0,1) float.
     values : ndarray
         Values to assign to the structure. It is passed to the assign_operator.
         Could be used for labeling.
     assign_operator : function
-        Function to assign structure to the data. It takes clipped data, structure and value as arguments.
+        Function to assign structure to the data. It takes clipped data,
+        structure and value as arguments.
     """
     radius = (structure.shape[0] - 1) // 2
     shape = data.shape
@@ -146,8 +145,7 @@ def labeled_particles(
     seed: Optional[int] = None,
     return_density: bool = False,
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
-    """
-    Generate labeled blobs of given shape and dtype.
+    """Generate labeled blobs of given shape and dtype.
 
     Parameters
     ----------
