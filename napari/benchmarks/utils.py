@@ -151,7 +151,7 @@ def labeled_particles(
     ----------
     shape : Sequence[int]
         Shape of the resulting array.
-    dtype : np.dtype
+    dtype : Optional[np.dtype]
         Dtype of the resulting array.
     n : int
         Number of blobs to generate.
