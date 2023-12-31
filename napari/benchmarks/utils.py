@@ -115,6 +115,16 @@ def _add_value_to_data(data, struct, _value):
     return data
 
 
+def _smallest_dtype(n: int) -> np.dtype:
+    """Find the smallest dtype that can hold n values."""
+    for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
+        if np.iinfo(dtype).max >= n:
+            return dtype
+            break
+    else:
+        raise ValueError(f"{n=} is too large for any dtype.")
+
+
 @overload
 def labeled_particles(
     shape: Sequence[int],
@@ -161,12 +171,7 @@ def labeled_particles(
         Whether to return the density array and center coordinates.
     """
     if dtype is None:
-        for dtype_ in [np.uint8, np.uint16, np.uint32, np.uint64]:
-            if np.iinfo(dtype_).max >= n:
-                dtype = dtype_
-                break
-        else:
-            raise ValueError(f"n is too large for any dtype: {n=}")
+        dtype = _smallest_dtype(n)
     rng = np.random.default_rng(seed)
     points = (
         rng.random((len(shape), n)) * np.array(shape).reshape((-1, 1))
