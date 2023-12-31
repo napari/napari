@@ -178,12 +178,12 @@ def labeled_particles(
     values = rng.integers(
         np.iinfo(dtype).min, np.iinfo(dtype).max, size=n, dtype=dtype
     )
-    balls_ = np.zeros(shape, dtype=dtype)
     sigma = int(max(shape) / (4.0 * n ** (1 / ndim)))
     ball = _generate_ball(sigma, ndim)
+    labels = np.zeros(shape, dtype=dtype)
 
     _add_structure_on_coordinates(
-        balls_, points, ball, values, _update_data_with_mask
+        labels, points, ball, values, _update_data_with_mask
     )
 
     if return_density:
@@ -193,5 +193,5 @@ def labeled_particles(
             particles, points, dens, values, _add_value_to_data
         )
 
-        return balls_, particles, points.T
-    return balls_
+        return labels, particles, points.T
+    return labels
