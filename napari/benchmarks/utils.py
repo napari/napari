@@ -111,7 +111,7 @@ def _update_data_with_mask(data, struct, value):
 
 def _add_value_to_data(data, struct, _value):
     """Helper function to generate nice density array"""
-    data[...] = np.max([data, struct], axis=0)
+    data[...] = np.maximum(data, struct)
     return data
 
 
