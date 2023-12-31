@@ -173,15 +173,14 @@ def labeled_particles(
     if dtype is None:
         dtype = _smallest_dtype(n)
     rng = np.random.default_rng(seed)
-    points = (
-        rng.random((len(shape), n)) * np.array(shape).reshape((-1, 1))
-    ).astype(int)
+    ndim = len(shape)
+    points = rng.integers(shape, size=(n, ndim)).T
     values = rng.integers(
         np.iinfo(dtype).min, np.iinfo(dtype).max, size=n, dtype=dtype
     )
-    sigma = int(np.array(shape).max() / (4.0 * n ** (1 / len(shape))))
-    ball = _generate_ball(sigma, len(shape))
     balls_ = np.zeros(shape, dtype=dtype)
+    sigma = int(max(shape) / (4.0 * n ** (1 / ndim)))
+    ball = _generate_ball(sigma, ndim)
 
     _add_structure_on_coordinates(
         balls_, points, ball, values, _update_data_with_mask
@@ -189,7 +188,7 @@ def labeled_particles(
 
     if return_density:
         particles = np.zeros(shape, dtype=np.float32)
-        dens = _generate_density(sigma * 2, len(shape))
+        dens = _generate_density(sigma * 2, ndim)
         _add_structure_on_coordinates(
             particles, points, dens, values, _add_value_to_data
         )
