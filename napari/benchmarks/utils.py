@@ -1,6 +1,5 @@
 from functools import lru_cache
 from typing import (
-    Any,
     Callable,
     Literal,
     Optional,
@@ -58,12 +57,14 @@ def _generate_density(radius: int, ndim: int) -> np.ndarray:
     return res
 
 
-def _add_structure_on_coordinates(
+def _stamp_structure_at_coordinates(
     data: np.ndarray,
     points: np.ndarray,
     structure: np.ndarray,
     values: Sequence,
-    assign_operator: Callable[[np.ndarray, np.ndarray, Any], np.ndarray],
+    reduce_fn: Callable[
+        [np.ndarray, np.ndarray, Optional[np.ndarray]], np.ndarray
+    ],
 ):
     """Update data with structure at given coordinates.
 
@@ -80,39 +81,43 @@ def _add_structure_on_coordinates(
     values : ndarray
         Values to assign to the structure. It is passed to the assign_operator.
         Could be used for labeling.
-    assign_operator : function
-        Function to assign structure to the data. It takes clipped data,
-        structure and value as arguments.
+    reduce_fn : function
+        Function with which to update the array at a particular position. It
+        should take two arrays as input and an optional output array.
     """
     radius = (structure.shape[0] - 1) // 2
     shape = data.shape
 
-    for j, point in enumerate(points):
-        slice_im = []
-        slice_ball = []
-        for i, p in enumerate(point):
-            slice_im.append(
-                slice(max(0, p - radius), min(shape[i], p + radius + 1))
-            )
-            ball_base = max(0, radius - p)
-            bal_end = slice_im[-1].stop - slice_im[-1].start + ball_base
-            slice_ball.append(slice(ball_base, bal_end))
-        assign_operator(
-            data[tuple(slice_im)], structure[tuple(slice_ball)], values[j]
+    for point, value in zip(points, values):
+        slice_im, slice_ball = _get_slices_at(shape, point, radius)
+        reduce_fn(
+            data[slice_im], value * structure[slice_ball], out=data[slice_im]
         )
     return data
 
 
-def _update_data_with_mask(data, struct, value):
-    """Helper function to generate labeling array"""
-    data[struct > 0] = value
-    return data
+def _get_slices_at(shape, point, radius):
+    slice_im = []
+    slice_ball = []
+    for i, p in enumerate(point):
+        slice_im.append(
+            slice(max(0, p - radius), min(shape[i], p + radius + 1))
+        )
+        ball_start = max(0, radius - p)
+        ball_stop = slice_im[-1].stop - slice_im[-1].start + ball_start
+        slice_ball.append(slice(ball_start, ball_stop))
+    return tuple(slice_im), tuple(slice_ball)
 
 
-def _add_value_to_data(data, struct, _value):
-    """Helper function to generate nice density array"""
-    data[...] = np.maximum(data, struct)
-    return data
+def _update_data_with_mask(data, struct, out=None):
+    """Update ``data`` with ``struct`` where ``struct`` is nonzero."""
+    # these branches are needed because np.where does not support
+    # an out= keyword argument
+    if out is None:
+        return np.where(struct, struct, data)
+    else:  # noqa: RET505
+        out[nz] = struct[nz := (struct != 0)]
+        return out
 
 
 def _smallest_dtype(n: int) -> np.dtype:
@@ -182,15 +187,15 @@ def labeled_particles(
     ball = _generate_ball(sigma, ndim)
     labels = np.zeros(shape, dtype=dtype)
 
-    _add_structure_on_coordinates(
+    _stamp_structure_at_coordinates(
         labels, points, ball, values, _update_data_with_mask
     )
 
     if return_density:
         densities = np.zeros(shape, dtype=np.float32)
         dens = _generate_density(sigma * 2, ndim)
-        _add_structure_on_coordinates(
-            densities, points, dens, values, _add_value_to_data
+        _stamp_structure_at_coordinates(
+            densities, points, dens, np.ones(n), reduce_fn=np.maximum
         )
 
         return labels, densities, points
