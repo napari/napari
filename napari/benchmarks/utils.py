@@ -1,3 +1,4 @@
+import itertools
 from functools import lru_cache
 from typing import (
     Callable,
@@ -57,11 +58,13 @@ def _generate_density(radius: int, ndim: int) -> np.ndarray:
     return res
 
 
-def _stamp_structure_at_coordinates(
-    data: np.ndarray,
-    points: np.ndarray,
+def _structure_at_coordinates(
+    shape: Tuple[int],
+    coordinates: np.ndarray,
     structure: np.ndarray,
-    values: Sequence,
+    *,
+    multipliers: Sequence = itertools.repeat(1),
+    dtype=None,
     reduce_fn: Callable[
         [np.ndarray, np.ndarray, Optional[np.ndarray]], np.ndarray
     ],
@@ -72,13 +75,13 @@ def _stamp_structure_at_coordinates(
     ----------
     data : ndarray
         Array to update.
-    points : ndarray
+    coordinates : ndarray
         Coordinates of the points. The structures will be added at these
         points (center).
     structure : ndarray
         Array with encoded structure. For example, ball (boolean) or density
         (0,1) float.
-    values : ndarray
+    multipliers : ndarray
         Values to assign to the structure. It is passed to the assign_operator.
         Could be used for labeling.
     reduce_fn : function
@@ -86,9 +89,9 @@ def _stamp_structure_at_coordinates(
         should take two arrays as input and an optional output array.
     """
     radius = (structure.shape[0] - 1) // 2
-    shape = data.shape
+    data = np.zeros(shape, dtype=dtype)
 
-    for point, value in zip(points, values):
+    for point, value in zip(coordinates, multipliers):
         slice_im, slice_ball = _get_slices_at(shape, point, radius)
         reduce_fn(
             data[slice_im], value * structure[slice_ball], out=data[slice_im]
@@ -185,17 +188,20 @@ def labeled_particles(
     )
     sigma = int(max(shape) / (4.0 * n ** (1 / ndim)))
     ball = _generate_ball(sigma, ndim)
-    labels = np.zeros(shape, dtype=dtype)
 
-    _stamp_structure_at_coordinates(
-        labels, points, ball, values, _update_data_with_mask
+    labels = _structure_at_coordinates(
+        shape,
+        points,
+        ball,
+        multipliers=values,
+        reduce_fn=_update_data_with_mask,
+        dtype=dtype,
     )
 
     if return_density:
-        densities = np.zeros(shape, dtype=np.float32)
         dens = _generate_density(sigma * 2, ndim)
-        _stamp_structure_at_coordinates(
-            densities, points, dens, np.ones(n), reduce_fn=np.maximum
+        densities = _structure_at_coordinates(
+            shape, points, dens, reduce_fn=np.maximum, dtype=np.float32
         )
 
         return labels, densities, points
