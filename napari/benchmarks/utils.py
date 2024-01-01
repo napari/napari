@@ -186,9 +186,7 @@ def labeled_particles(
         labels, points, ball, values, _update_data_with_mask
     )
 
-    if not return_density:
-        return labels
-    else:  # noqa: RET505
+    if return_density:
         densities = np.zeros(shape, dtype=np.float32)
         dens = _generate_density(sigma * 2, ndim)
         _add_structure_on_coordinates(
@@ -196,3 +194,5 @@ def labeled_particles(
         )
 
         return labels, densities, points.T
+    else:  # noqa: RET505
+        return labels
