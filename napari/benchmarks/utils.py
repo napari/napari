@@ -82,8 +82,9 @@ def _structure_at_coordinates(
         Array with encoded structure. For example, ball (boolean) or density
         (0,1) float.
     multipliers : ndarray
-        Values to assign to the structure. It is passed to the assign_operator.
-        Could be used for labeling.
+        These values are multiplied by the values in the structure before
+        updating the array. Can be used to generate different labels, or to
+        vary the intensity of floating point gaussian densities.
     reduce_fn : function
         Function with which to update the array at a particular position. It
         should take two arrays as input and an optional output array.
