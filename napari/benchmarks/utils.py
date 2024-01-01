@@ -87,7 +87,7 @@ def _add_structure_on_coordinates(
     radius = (structure.shape[0] - 1) // 2
     shape = data.shape
 
-    for j, point in enumerate(points.T):
+    for j, point in enumerate(points):
         slice_im = []
         slice_ball = []
         for i, p in enumerate(point):
@@ -174,7 +174,7 @@ def labeled_particles(
         dtype = _smallest_dtype(n)
     rng = np.random.default_rng(seed)
     ndim = len(shape)
-    points = rng.integers(shape, size=(n, ndim)).T
+    points = rng.integers(shape, size=(n, ndim))
     values = rng.integers(
         np.iinfo(dtype).min, np.iinfo(dtype).max, size=n, dtype=dtype
     )
@@ -193,6 +193,6 @@ def labeled_particles(
             densities, points, dens, values, _add_value_to_data
         )
 
-        return labels, densities, points.T
+        return labels, densities, points
     else:  # noqa: RET505
         return labels
