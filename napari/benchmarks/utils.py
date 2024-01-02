@@ -120,7 +120,8 @@ def _update_data_with_mask(data, struct, out=None):
     if out is None:
         return np.where(struct, struct, data)
     else:  # noqa: RET505
-        out[nz] = struct[nz := (struct != 0)]
+        nz = struct != 0
+        out[nz] = struct[nz]
         return out
 
 
