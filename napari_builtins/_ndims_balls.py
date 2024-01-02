@@ -10,9 +10,9 @@ def labeled_particles2d():
     )
 
     return [
-        (density, {"name": "density"}, "image"),
-        (labels, {"name": "labels"}, "labels"),
-        (points, {"name": "points"}, "points"),
+        (density, {"name": "density", "metadata": {"seed": seed}}, "image"),
+        (labels, {"name": "labels", "metadata": {"seed": seed}}, "labels"),
+        (points, {"name": "points", "metadata": {"seed": seed}}, "points"),
     ]
 
 
