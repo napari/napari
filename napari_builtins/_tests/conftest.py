@@ -56,5 +56,5 @@ def some_layer(request):
 
 
 @pytest.fixture()
-def all_layers():
+def layers_list():
     return LAYERS

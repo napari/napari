@@ -54,16 +54,18 @@ def test_no_write_layer_bad_extension(some_layer: 'layers.Layer'):
 
 
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
-def test_get_writer_succeeds(tmp_path: Path, all_layers: 'List[layers.Layer]'):
+def test_get_writer_succeeds(
+    tmp_path: Path, layers_list: 'List[layers.Layer]'
+):
     """Test writing layers data."""
 
     path = tmp_path / 'layers_folder'
-    written = npe2.write(path=str(path), layer_data=all_layers)  # type: ignore
+    written = npe2.write(path=str(path), layer_data=layers_list)  # type: ignore
 
     # check expected files were written
     expected = {
         str(path / f'{layer.name}{_EXTENSION_MAP[layer._type_string]}')
-        for layer in all_layers
+        for layer in layers_list
     }
     assert path.is_dir()
     assert set(written) == expected
