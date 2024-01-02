@@ -154,7 +154,7 @@ console_output_style = "count"
 minversion = "7"
 log_cli_level = "INFO"
 xfail_strict = true
-testpaths = ["napari"]
+testpaths = ["napari", "napari_builtins"]
 
 
 # NOTE: only put things that will never change in here.
