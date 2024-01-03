@@ -10,7 +10,7 @@ from napari._vispy.layers.image import (
     _DTYPE_TO_VISPY_FORMAT,
     _VISPY_FORMAT_TO_DTYPE,
     ImageLayerNode,
-    VispyImageBaseLayer,
+    VispyScalarFieldBaseLayer,
     get_dtype_from_vispy_texture_format,
 )
 from napari._vispy.utils.gl import get_max_texture_sizes
@@ -192,7 +192,7 @@ def _select_colormap_texture(
     return color_texture.reshape(256, -1, 4)
 
 
-class VispyLabelsLayer(VispyImageBaseLayer):
+class VispyLabelsLayer(VispyScalarFieldBaseLayer):
     layer: 'Labels'
 
     def __init__(self, layer, node=None, texture_format='r8') -> None:

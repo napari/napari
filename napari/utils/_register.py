@@ -14,6 +14,11 @@ template = """def {name}{signature}:
 
 
 def create_func(cls, name=None, doc=None, filename: str = '<string>'):
+    """
+    Creates a function (such as `add_<layer>`) to add a layer to the viewer
+
+    The functionality is inherited from the corresponding `<layer>` class.
+    """
     cls_name = cls.__name__
 
     if name is None:
@@ -31,10 +36,16 @@ def create_func(cls, name=None, doc=None, filename: str = '<string>'):
     name = 'add_' + name
 
     if doc is None:
+        # While the original class may have Attributes in its docstring, the
+        # generated function should not have an Attributes section.
+        # See https://numpydoc.readthedocs.io/en/latest/format.html#documenting-classes
         doc = getdoc(cls)
-        cutoff = doc.find('\n\nParameters\n----------\n')
-        if cutoff > 0:
-            doc = doc[cutoff:]
+        start = doc.find('\n\nParameters\n----------\n')
+        end = doc.find('\n\nAttributes\n----------\n')
+        if end == -1:
+            end = None
+        if start > 0:
+            doc = doc[start:end]
 
         n = 'n' if cls_name[0].lower() in 'aeiou' else ''
         doc = f'Add a{n} {cls_name} layer to the layer list. ' + doc

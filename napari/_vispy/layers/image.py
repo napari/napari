@@ -65,7 +65,7 @@ class ImageLayerNode:
         return res
 
 
-class VispyImageBaseLayer(VispyBaseLayer[_ImageBase]):
+class VispyScalarFieldBaseLayer(VispyBaseLayer[_ImageBase]):
     def __init__(
         self,
         layer: _ImageBase,
@@ -189,6 +189,9 @@ class VispyImageBaseLayer(VispyBaseLayer[_ImageBase]):
         if isinstance(self.node, VolumeNode):
             self.node.plane_normal = self.layer.plane.normal
 
+    def _on_colormap_change(self, event=None) -> None:
+        raise NotImplementedError
+
     def reset(self, event=None) -> None:
         super().reset()
         self._on_rendering_change()
@@ -256,7 +259,9 @@ class VispyImageBaseLayer(VispyBaseLayer[_ImageBase]):
         return data
 
 
-class VispyImageLayer(VispyImageBaseLayer):
+class VispyImageLayer(VispyScalarFieldBaseLayer):
+    layer: Image
+
     def __init__(
         self,
         layer: Image,
@@ -301,9 +306,8 @@ class VispyImageLayer(VispyImageBaseLayer):
 
     def _on_rendering_change(self) -> None:
         super()._on_rendering_change()
-        if isinstance(self.node, ImageNode):
-            self._on_attenuation_change()
-            self._on_iso_threshold_change()
+        self._on_attenuation_change()
+        self._on_iso_threshold_change()
 
     def _on_colormap_change(self, event=None) -> None:
         self.node.cmap = VispyColormap(*self.layer.colormap)

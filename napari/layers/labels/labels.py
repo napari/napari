@@ -18,6 +18,8 @@ import pandas as pd
 from scipy import ndimage as ndi
 from skimage.draw import polygon2mask
 
+from napari.layers._data_protocols import LayerDataProtocol
+from napari.layers._multiscale_data import MultiScaleData
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -82,59 +84,34 @@ class Labels(_ImageBase):
         Labels data as an array or multiscale. Must be integer type or bools.
         Please note multiscale rendering is only supported in 2D. In 3D, only
         the lowest resolution scale is displayed.
-    num_colors : int
-        Number of unique colors to use in colormap.
-    features : dict[str, array-like] or DataFrame
-        Features table where each row corresponds to a label and each column
-        is a feature. The first row corresponds to the background label.
-    properties : dict {str: array (N,)} or DataFrame
-        Properties for each label. Each property should be an array of length
-        N, where N is the number of labels, and the first property corresponds
-        to background.
-    color : dict of int to str or array
-        Custom label to color mapping. Values must be valid color names or RGBA
-        arrays.
-    seed : float
-        Seed for colormap random generator.
-    name : str
-        Name of the layer.
-    metadata : dict
-        Layer metadata.
-    scale : tuple of float
-        Scale factors for the layer.
-    translate : tuple of float
-        Translation values for the layer.
-    rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotation matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angles are
-        assumed to be in degrees. They can be converted from radians with
-        np.degrees if needed.
-    shear : 1-D array or n-D array
-        Either a vector of upper triangular values, or an nD shear matrix with
-        ones along the main diagonal.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
-    opacity : float
-        Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', and 'additive'}.
-    rendering : str
-        3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
-        'translucent' renders without lighting. 'iso_categorical' uses isosurface
-        rendering to calculate lighting effects on labeled surfaces.
-        The default value is 'iso_categorical'.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
+    color : dict of int or None to str or array
+        Custom label to color mapping. Values must be valid color names or RGBA
+        arrays. None is used when no color is specified for a label.
     depiction : str
         3D Depiction mode. Must be one of {'volume', 'plane'}.
         The default value is 'volume'.
-    visible : bool
-        Whether the layer visual is currently being displayed.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
+    features : dict[str, array-like] or DataFrame
+        Features table where each row corresponds to a label and each column
+        is a feature. The first row corresponds to the background label.
+    metadata : dict
+        Layer metadata.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. If not specified by
@@ -143,17 +120,45 @@ class Labels(_ImageBase):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    cache : bool
-        Whether slices of out-of-core datasets should be cached upon retrieval.
-        Currently, this only applies to dask arrays.
+    name : str
+        Name of the layer.
+    num_colors : int
+        Number of unique colors to use in colormap.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
     plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
-    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
-        Each dict defines a clipping plane in 3D in data coordinates.
-        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
-        Values on the negative side of the normal are discarded if the plane is enabled.
+    properties : dict {str: array (N,)} or DataFrame
+        Properties for each label. Each property should be an array of length
+        N, where N is the number of labels, and the first property corresponds
+        to background.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimensions
+    rendering : str
+        3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
+        'translucent' renders without lighting. 'iso_categorical' uses isosurface
+        rendering to calculate lighting effects on labeled surfaces.
+        The default value is 'iso_categorical'.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
+    seed_rng : int
+        Seed for colormap shuffle random generator.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    translate : tuple of float
+        Translation values for the layer.
+    visible : bool
+        Whether the layer visual is currently being displayed.
 
     Attributes
     ----------
@@ -279,28 +284,28 @@ class Labels(_ImageBase):
         self,
         data,
         *,
-        num_colors=50,
-        features=None,
-        properties=None,
-        color=None,
-        seed_rng=None,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        rotate=None,
-        shear=None,
         affine=None,
-        opacity=0.7,
         blending='translucent',
-        rendering='iso_categorical',
-        depiction='volume',
-        visible=True,
-        multiscale=None,
         cache=True,
-        plane=None,
+        color=None,
+        depiction='volume',
         experimental_clipping_planes=None,
+        features=None,
+        metadata=None,
+        multiscale=None,
+        name=None,
+        num_colors=49,
+        opacity=0.7,
+        plane=None,
+        properties=None,
         projection_mode='none',
+        rendering='iso_categorical',
+        rotate=None,
+        scale=None,
+        seed_rng=None,
+        shear=None,
+        translate=None,
+        visible=True,
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -322,13 +327,8 @@ class Labels(_ImageBase):
 
         super().__init__(
             data,
-            rgb=False,
-            colormap=self._random_colormap,
-            interpolation2d='nearest',
-            interpolation3d='nearest',
             rendering=rendering,
             depiction=depiction,
-            iso_threshold=0,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -347,14 +347,8 @@ class Labels(_ImageBase):
         )
 
         self.events.add(
-            colormap=Event,
-            preserve_labels=Event,
-            show_selected_label=Event,
-            properties=Event,
-            n_edit_dimensions=Event,
-            contiguous=Event,
+            brush_shape=Event,
             brush_size=Event,
-            selected_label=Event,
             color_mode=WarningEmitter(
                 trans._(
                     'Labels.events.color_mode is deprecated since 0.4.19 and '
@@ -364,11 +358,17 @@ class Labels(_ImageBase):
                 ),
                 type_name='color_mode',
             ),
-            brush_shape=Event,
+            colormap=Event,
+            contiguous=Event,
             contour=Event,
             features=Event,
-            paint=Event,
             labels_update=Event,
+            n_edit_dimensions=Event,
+            paint=Event,
+            preserve_labels=Event,
+            properties=Event,
+            selected_label=Event,
+            show_selected_label=Event,
         )
 
         from napari.components.overlays.labels_polygon import (
@@ -397,8 +397,8 @@ class Labels(_ImageBase):
         self._status = self.mode
         self._preserve_labels = False
 
+    def _post_init(self):
         self._reset_history()
-
         # Trigger generation of view slice and thumbnail
         self.refresh()
         self._reset_editable()
@@ -604,14 +604,15 @@ class Labels(_ImageBase):
         self.events.selected_label()
 
     @property
-    def data(self):
+    def data(self) -> LayerDataProtocol:
         """array: Image data."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: Union[LayerDataProtocol, MultiScaleData]):
         data = self._ensure_int_labels(data)
         self._data = data
+        self._ndim = len(self._data.shape)
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
@@ -1601,7 +1602,7 @@ class Labels(_ImageBase):
 
     def _get_shape_and_dims_to_paint(self) -> Tuple[list, list]:
         dims_to_paint = sorted(self._get_dims_to_paint())
-        shape = self.data.shape
+        shape = list(self.data.shape)
 
         if self.n_edit_dimensions < self.ndim:
             shape = [shape[i] for i in dims_to_paint]
