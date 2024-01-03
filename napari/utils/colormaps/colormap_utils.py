@@ -1,5 +1,5 @@
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from functools import lru_cache
 from threading import Lock
 from typing import Dict, Iterable, List, Optional, Tuple, Union
@@ -474,6 +474,7 @@ def label_colormap(
         controls=np.linspace(0, 1, len(colors) + 1),
         interpolation='zero',
         background_value=background_value,
+        seed=seed,
     )
 
 
@@ -579,10 +580,9 @@ def direct_colormap(color_dict=None):
         to an array.
     """
     # we don't actually use the color array, so pass dummy.
-    d = DirectLabelColormap(np.zeros(3))
-    if color_dict is not None:
-        d.color_dict.update(color_dict)
-    return d
+    return DirectLabelColormap(
+        color_dict=color_dict or defaultdict(lambda: np.zeros(4)),
+    )
 
 
 def vispy_or_mpl_colormap(name) -> Colormap:

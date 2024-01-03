@@ -158,11 +158,11 @@ def direct_label_colormap():
     return DirectLabelColormap(
         color_dict={
             0: np.array([0, 0, 0, 0]),
-            1: np.array([255, 0, 0, 255]),
-            2: np.array([0, 255, 0, 255]),
-            3: np.array([0, 0, 255, 255]),
-            12: np.array([0, 0, 255, 255]),
-            None: np.array([255, 255, 255, 255]),
+            1: np.array([1, 0, 0, 1]),
+            2: np.array([0, 1, 0, 1]),
+            3: np.array([0, 0, 1, 1]),
+            12: np.array([0, 0, 1, 1]),
+            None: np.array([1, 1, 1, 1]),
         },
     )
 
@@ -170,7 +170,7 @@ def direct_label_colormap():
 def test_direct_label_colormap_simple(direct_label_colormap):
     np.testing.assert_array_equal(
         direct_label_colormap.map([0, 2, 7]),
-        np.array([[0, 0, 0, 0], [0, 255, 0, 255], [255, 255, 255, 255]]),
+        np.array([[0, 0, 0, 0], [0, 1, 0, 1], [1, 1, 1, 1]]),
     )
     assert direct_label_colormap._num_unique_colors == 5
 
@@ -197,7 +197,7 @@ def test_direct_label_colormap_selection(direct_label_colormap):
 
     np.testing.assert_array_equal(
         direct_label_colormap.map([0, 2, 7]),
-        np.array([[0, 0, 0, 0], [0, 255, 0, 255], [0, 0, 0, 0]]),
+        np.array([[0, 0, 0, 0], [0, 1, 0, 1], [0, 0, 0, 0]]),
     )
 
     (
@@ -248,11 +248,16 @@ def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
 def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     cmap = DirectLabelColormap(
         color_dict={
-            k: np.array([*v, 255])
-            for k, v in zip(range(num), product(range(256), repeat=3))
+            None: np.array([1, 1, 1, 1]),
+            **{
+                k: np.array([*v, 1])
+                for k, v in zip(
+                    range(num), product(np.linspace(0, 1, num=256), repeat=3)
+                )
+            },
         },
     )
-    cmap.color_dict[None] = np.array([255, 255, 255, 255])
+    cmap.color_dict[None] = np.array([1, 1, 1, 1])
     data = np.arange(10, dtype=np.uint32)
     data[2] = 80005
     cast = colormap._labels_raw_to_texture_direct(data, cmap)
@@ -329,8 +334,14 @@ def test_cast_direct_labels_to_minimum_type_naive(size):
     dtype = colormap.minimum_dtype_for_labels(size)
     cmap = DirectLabelColormap(
         color_dict={
-            k: np.array([*v, 255])
-            for k, v in zip(range(size - 2), product(range(256), repeat=3))
+            None: np.array([1, 1, 1, 1]),
+            **{
+                k: np.array([*v, 1])
+                for k, v in zip(
+                    range(size - 2),
+                    product(np.linspace(0, 1, num=256), repeat=3),
+                )
+            },
         },
     )
     cmap.color_dict[None] = np.array([255, 255, 255, 255])
@@ -343,7 +354,11 @@ def test_cast_direct_labels_to_minimum_type_naive(size):
 
 def test_direct_colormap_with_no_selection():
     # Create a DirectLabelColormap with a simple color_dict
-    color_dict = {1: np.array([1, 0, 0, 1]), 2: np.array([0, 1, 0, 1])}
+    color_dict = {
+        1: np.array([1, 0, 0, 1]),
+        2: np.array([0, 1, 0, 1]),
+        None: np.array([0, 0, 0, 0]),
+    }
     cmap = DirectLabelColormap(color_dict=color_dict)
 
     # Map a single value
@@ -357,7 +372,11 @@ def test_direct_colormap_with_no_selection():
 
 def test_direct_colormap_with_selection():
     # Create a DirectLabelColormap with a simple color_dict and a selection
-    color_dict = {1: np.array([1, 0, 0, 1]), 2: np.array([0, 1, 0, 1])}
+    color_dict = {
+        1: np.array([1, 0, 0, 1]),
+        2: np.array([0, 1, 0, 1]),
+        None: np.array([0, 0, 0, 0]),
+    }
     cmap = DirectLabelColormap(
         color_dict=color_dict, use_selection=True, selection=1
     )
@@ -373,7 +392,11 @@ def test_direct_colormap_with_selection():
 
 def test_direct_colormap_with_invalid_values():
     # Create a DirectLabelColormap with a simple color_dict
-    color_dict = {1: np.array([1, 0, 0, 1]), 2: np.array([0, 1, 0, 1])}
+    color_dict = {
+        1: np.array([1, 0, 0, 1]),
+        2: np.array([0, 1, 0, 1]),
+        None: np.array([0, 0, 0, 0]),
+    }
     cmap = DirectLabelColormap(color_dict=color_dict)
 
     # Map a value that is not in the color_dict
@@ -383,16 +406,17 @@ def test_direct_colormap_with_invalid_values():
 
 def test_direct_colormap_with_empty_color_dict():
     # Create a DirectLabelColormap with an empty color_dict
-    cmap = DirectLabelColormap(color_dict={})
-
-    # Map a value
-    mapped = cmap.map(1)
-    npt.assert_array_equal(mapped[0], np.array([0, 0, 0, 0]))
+    with pytest.raises(ValueError, match='color_dict must contain None'):
+        DirectLabelColormap(color_dict={})
 
 
 def test_direct_colormap_with_non_integer_values():
     # Create a DirectLabelColormap with a simple color_dict
-    color_dict = {1: np.array([1, 0, 0, 1]), 2: np.array([0, 1, 0, 1])}
+    color_dict = {
+        1: np.array([1, 0, 0, 1]),
+        2: np.array([0, 1, 0, 1]),
+        None: np.array([0, 0, 0, 0]),
+    }
     cmap = DirectLabelColormap(color_dict=color_dict)
 
     # Map a float value
@@ -410,6 +434,7 @@ def test_direct_colormap_with_collision():
         1: np.array([1, 0, 0, 1]),
         12: np.array([0, 1, 0, 1]),
         23: np.array([0, 0, 1, 1]),
+        None: np.array([0, 0, 0, 0]),
     }
     cmap = DirectLabelColormap(color_dict=color_dict)
 
@@ -420,7 +445,11 @@ def test_direct_colormap_with_collision():
 
 def test_direct_colormap_negative_values():
     # Create a DirectLabelColormap with a simple color_dict
-    color_dict = {-1: np.array([1, 0, 0, 1]), -2: np.array([0, 1, 0, 1])}
+    color_dict = {
+        -1: np.array([1, 0, 0, 1]),
+        -2: np.array([0, 1, 0, 1]),
+        None: np.array([0, 0, 0, 0]),
+    }
     cmap = DirectLabelColormap(color_dict=color_dict)
 
     # Map a single value

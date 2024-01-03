@@ -18,6 +18,7 @@ import numpy as np
 from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray
 from napari.utils.colormaps.colorbars import make_colorbar
+from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
@@ -365,6 +366,20 @@ class DirectLabelColormap(LabelColormapBase):
         background and unmapped labels.
         """
         return self._num_unique_colors + 2
+
+    @validator("color_dict", pre=True, always=True, allow_reuse=True)
+    def _validate_color_dict(cls, v):
+        if not isinstance(v, defaultdict) and None not in v:
+            raise ValueError(
+                "color_dict must contain None or be defaultdict instance"
+            )
+        res = {
+            label: transform_color(color_str)[0]
+            for label, color_str in v.items()
+        }
+        if isinstance(v, defaultdict):
+            res = defaultdict(v.default_factory, res)
+        return res
 
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         return int(

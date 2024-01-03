@@ -22,7 +22,30 @@ from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
 from napari.utils import Colormap
-from napari.utils.colormaps import label_colormap
+from napari.utils.colormaps import (
+    DirectLabelColormap,
+    LabelColormap,
+    label_colormap,
+)
+
+
+@pytest.fixture
+def direct_colormap():
+    """Return a DirectLabelColormap."""
+    return DirectLabelColormap(
+        color_dict={
+            0: [0, 0, 0, 0],
+            1: [1, 0, 0, 1],
+            2: [0, 1, 0, 1],
+            None: [0, 0, 1, 1],
+        }
+    )
+
+
+@pytest.fixture
+def random_colormap():
+    """Return a LabelColormap."""
+    return label_colormap(50)
 
 
 def test_random_labels():
@@ -282,7 +305,8 @@ def test_num_colors():
     with pytest.raises(
         ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
     ):
-        Labels(data, num_colors=2**17)
+        with pytest.warns(FutureWarning, match='Setting Labels.num_colors'):
+            Labels(data, num_colors=2**17)
 
 
 def test_properties():
@@ -421,9 +445,11 @@ def test_custom_color_dict():
     """Test custom color dict."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
-    layer = Labels(
-        data, color={2: 'white', 4: 'red', 8: 'blue', 16: 'red', 32: 'blue'}
-    )
+    with pytest.warns(FutureWarning, match='Labels.color is deprecated'):
+        layer = Labels(
+            data,
+            color={2: 'white', 4: 'red', 8: 'blue', 16: 'red', 32: 'blue'},
+        )
 
     # test with custom color dict
     assert isinstance(layer.get_color(2), np.ndarray)
@@ -434,7 +460,8 @@ def test_custom_color_dict():
 
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
-    layer.color_mode = 'auto'
+    with pytest.warns(FutureWarning, match='Labels.color_mode is deprecated'):
+        layer.color_mode = 'auto'
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
 
@@ -1453,19 +1480,23 @@ def test_is_default_color():
     layer = Labels(data)
 
     # layer gets instantiated with defaults
-    current_color = layer.color
+    current_color = layer._direct_colormap.color_dict
     assert layer._is_default_colors(current_color)
 
     # setting color to default colors doesn't update color mode
-    layer.color = current_color
-    assert layer.color_mode == 'auto'
+    layer.colormap = DirectLabelColormap(color_dict=current_color)
+    assert isinstance(layer.colormap, LabelColormap)
+    with pytest.warns(FutureWarning, match='Labels.color_mode is deprecated'):
+        assert layer.color_mode == 'auto'
 
     # new colors are not default
-    new_color = {0: 'white', 1: 'red', 3: 'green'}
+    new_color = {0: 'white', 1: 'red', 3: 'green', None: 'blue'}
     assert not layer._is_default_colors(new_color)
     # setting the color with non-default colors updates color mode
-    layer.color = new_color
-    assert layer.color_mode == 'direct'
+    layer.colormap = DirectLabelColormap(color_dict=new_color)
+    assert isinstance(layer.colormap, DirectLabelColormap)
+    with pytest.warns(FutureWarning, match='Labels.color_mode is deprecated'):
+        assert layer.color_mode == 'direct'
 
 
 def test_large_labels_direct_color():
@@ -1473,13 +1504,17 @@ def test_large_labels_direct_color():
     data = np.array([[0, 1], [2**16, 2**20]], dtype=np.uint32)
     colors = {1: 'white', 2**16: 'green', 2**20: 'magenta'}
     layer = Labels(data)
-    layer.color = colors
+    with pytest.warns(FutureWarning, match='Labels.color is deprecated'):
+        layer.color = colors
 
-    assert layer.color_mode == 'direct'
+    with pytest.warns(FutureWarning, match='Labels.color_mode is deprecated'):
+        assert layer.color_mode == 'direct'
     np.testing.assert_allclose(layer.get_color(2**20), [1.0, 0.0, 1.0, 1.0])
 
 
-def test_invalidate_cache_when_change_color_mode():
+def test_invalidate_cache_when_change_color_mode(
+    direct_colormap, random_colormap
+):
     """Checks if the cache is invalidated when color mode is changed."""
     data = np.zeros((4, 10), dtype=np.int32)
     data[1, :] = np.arange(0, 10)
@@ -1489,11 +1524,11 @@ def test_invalidate_cache_when_change_color_mode():
     gt_auto = layer._raw_to_displayed(layer._slice.image.raw)
     assert gt_auto.dtype == np.uint8
 
-    layer.color_mode = 'direct'
+    layer.colormap = direct_colormap
     layer._cached_labels = None
     assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.uint8
 
-    layer.color_mode = 'auto'
+    layer.colormap = random_colormap
     # If the cache is not invalidated, it returns colors for
     # the direct color mode instead of the color for the auto mode
     assert np.allclose(
@@ -1503,10 +1538,10 @@ def test_invalidate_cache_when_change_color_mode():
 
 @pytest.mark.parametrize("dtype", np.sctypes['int'] + np.sctypes['uint'])
 @pytest.mark.parametrize("mode", ["auto", "direct"])
-def test_cache_for_dtypes(dtype, mode):
+def test_cache_for_dtypes(dtype, mode, random_colormap, direct_colormap):
     data = np.zeros((10, 10), dtype=dtype)
     labels = Labels(data)
-    labels.color_mode = mode
+    labels.colormap = random_colormap if mode == "auto" else direct_colormap
     assert labels._cached_labels is None
     labels._raw_to_displayed(
         labels._slice.image.raw, (slice(None), slice(None))
@@ -1520,12 +1555,24 @@ def test_color_mapping_when_color_is_changed():
 
     data = np.zeros((4, 5), dtype=np.int32)
     data[1, :] = np.arange(0, 5)
-    layer = Labels(data, color={1: 'green', 2: 'red', 3: 'white'})
+    layer = Labels(
+        data,
+        colormap=DirectLabelColormap(
+            color_dict={1: 'green', 2: 'red', 3: 'white', None: 'black'}
+        ),
+    )
     gt_direct_3colors = layer._raw_to_displayed(layer._slice.image.raw)
 
-    layer = Labels(data, color={1: 'green', 2: 'red'})
+    layer = Labels(
+        data,
+        colormap=DirectLabelColormap(
+            color_dict={1: 'green', 2: 'red', None: 'black'}
+        ),
+    )
     assert layer._raw_to_displayed(layer._slice.image.raw).dtype == np.uint8
-    layer.color = {1: 'green', 2: 'red', 3: 'white'}
+    layer.colormap = DirectLabelColormap(
+        color_dict={1: 'green', 2: 'red', 3: 'white', None: 'black'}
+    )
 
     assert np.allclose(
         layer._raw_to_displayed(layer._slice.image.raw), gt_direct_3colors
@@ -1581,7 +1628,7 @@ def test_color_shuffling_above_num_colors(num_colors):
     with more colors is undefined, so we don't test it here.
     """
     labels = np.arange(1, 1 + 2 * (num_colors - 1)).reshape((2, -1))
-    layer = Labels(labels, num_colors=num_colors)
+    layer = Labels(labels, colormap=label_colormap(num_colors - 1))
     colors0 = layer.colormap.map(labels)
     assert np.all(colors0[0] == colors0[1])
     layer.new_colormap()
