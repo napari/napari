@@ -5,23 +5,18 @@ import pytest
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication, QMessageBox
 
+from napari._app_model import get_app
 from napari._qt.widgets.qt_keyboard_settings import ShortcutEditor, WarnPopup
 from napari.settings import get_settings
-from napari.utils.action_manager import action_manager
 from napari.utils.interactions import KEY_SYMBOLS
+
+FIRST_ENTRY = KEY_SYMBOLS['Space']
 
 
 @pytest.fixture
 def shortcut_editor_widget(qtbot):
-    # Always reset shortcuts (settings and action manager)
+    # always reset shortcuts
     get_settings().shortcuts.reset()
-    for (
-        action,
-        shortcuts,
-    ) in get_settings().shortcuts.shortcuts.items():
-        action_manager.unbind_shortcut(action)
-        for shortcut in shortcuts:
-            action_manager.bind_shortcut(action, shortcut)
 
     def _shortcut_editor_widget(**kwargs):
         widget = ShortcutEditor(**kwargs)
@@ -51,12 +46,16 @@ def test_layer_actions(shortcut_editor_widget):
 
 
 def test_mark_conflicts(shortcut_editor_widget, qtbot):
+    get_app()._connect_settings_callbacks()
     widget = shortcut_editor_widget()
+    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    assert shortcut == FIRST_ENTRY
     widget._table.item(0, widget._shortcut_col).setText("U")
     act = widget._table.item(0, widget._action_col).text()
-    assert action_manager._shortcuts[act][0] == "U"
+    entry = widget._find_shortcuts(act)[0]
+    assert str(entry.keybinding) == "U"
     with patch.object(WarnPopup, "exec_") as mock:
-        assert not widget._mark_conflicts(action_manager._shortcuts[act][0], 1)
+        assert not widget._mark_conflicts(str(entry.keybinding), 1)
         assert mock.called
     assert widget._mark_conflicts("Y", 1)
     # "Y" is arbitrary chosen and on conflict with existing shortcut should be changed
@@ -64,9 +63,10 @@ def test_mark_conflicts(shortcut_editor_widget, qtbot):
 
 
 def test_restore_defaults(shortcut_editor_widget):
+    get_app()._connect_settings_callbacks()
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS["Ctrl"]
+    assert shortcut == FIRST_ENTRY
     widget._table.item(0, widget._shortcut_col).setText("R")
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     assert shortcut == "R"
@@ -77,7 +77,7 @@ def test_restore_defaults(shortcut_editor_widget):
         widget._restore_button.click()
         assert mock.called
     shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS["Ctrl"]
+    assert shortcut == FIRST_ENTRY
 
 
 @pytest.mark.parametrize(
@@ -104,9 +104,10 @@ def test_restore_defaults(shortcut_editor_widget):
 def test_keybinding_with_modifiers(
     shortcut_editor_widget, qtbot, recwarn, key, modifier, key_symbols
 ):
+    get_app()._connect_settings_callbacks()
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS["Ctrl"]
+    assert shortcut == FIRST_ENTRY
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
     y = widget._table.rowViewportPosition(0)
@@ -137,7 +138,7 @@ def test_keybinding_with_modifiers(
         (
             Qt.KeyboardModifier.AltModifier
             | Qt.KeyboardModifier.ShiftModifier,
-            [KEY_SYMBOLS["Ctrl"]],
+            None,
             False,
         ),
     ],
@@ -145,9 +146,10 @@ def test_keybinding_with_modifiers(
 def test_keybinding_with_only_modifiers(
     shortcut_editor_widget, qtbot, recwarn, modifiers, key_symbols, valid
 ):
+    get_app()._connect_settings_callbacks()
     widget = shortcut_editor_widget()
     shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS["Ctrl"]
+    assert shortcut == FIRST_ENTRY
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
     y = widget._table.rowViewportPosition(0)
@@ -170,5 +172,8 @@ def test_keybinding_with_only_modifiers(
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
-    for key_symbol in key_symbols:
-        assert key_symbol in shortcut
+    if valid:
+        for key_symbol in key_symbols:
+            assert key_symbol in shortcut
+    else:
+        assert shortcut == FIRST_ENTRY

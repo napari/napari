@@ -359,7 +359,7 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
 def _rebuild_npe1_samples_menu() -> None:
     """Register submenu and actions for all npe1 plugins, clearing all first."""
     from napari._app_model import get_app
-    from napari._app_model.constants import MenuGroup, MenuId
+    from napari.constants import MenuGroup, MenuId
     from napari.plugins import menu_item_template, plugin_manager
 
     app = get_app()

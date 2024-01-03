@@ -2,7 +2,6 @@ from typing import Dict, List, Union
 
 from app_model.types import (
     KeyBindingRule,
-    KeyBindingRuleDict,
     KeyChord,
     KeyCode,
     KeyMod,
@@ -11,7 +10,7 @@ from app_model.types import (
 from napari.constants._commands import CommandId
 from napari.utils.key_bindings import KeyBindingWeights
 
-_default_shortcuts: Dict[str, List[Union[int, KeyBindingRuleDict]]] = {
+_default_shortcuts: Dict[str, List[Union[int, KeyBindingRule]]] = {
     # viewer
     CommandId.VIEWER_TOGGLE_CONSOLE_VISIBILITY: [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC

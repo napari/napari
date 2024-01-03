@@ -98,10 +98,7 @@ class NapariApplication(Application):
 
         self.menus.append_menu_items(SUBMENUS)
 
-        self._on_shortcuts_changed(None)
-        get_settings().shortcuts.events.shortcuts.connect(
-            self._on_shortcuts_changed
-        )
+        self._connect_settings_callbacks()
 
     def _register_action_manager_shim(self, action: Action, keymapprovider):
         """Shim from app-model Action to action_manager for keybinding.
@@ -194,13 +191,18 @@ class NapariApplication(Application):
         """
         return action_id in self._repeatable_actions
 
-    def _on_shortcuts_changed(self, _):
+    def _connect_settings_callbacks(self):
+        get_settings().shortcuts.events.shortcuts.connect(
+            self._on_shortcuts_changed
+        )
+
+    def _on_shortcuts_changed(self, event):
         self.keybindings.discard_entries(KeyBindingWeights.USER)
-        for entry in get_settings().shortcuts.shortcuts:
+        for entry in event.value:
             self.keybindings.register_keybinding_rule(
                 entry.command,
                 KeyBindingRule(
-                    primary=KeyBinding.from_str(entry.key),
+                    primary=KeyBinding.from_str(entry.key).to_int(),
                     weight=KeyBindingWeights.USER,
                     when=parse_expression(entry.when) if entry.when else None,
                 ),

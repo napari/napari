@@ -372,7 +372,7 @@ class ShortcutEditor(QWidget):
                 for shortcut in self._find_shortcuts(action_name)
             ]
 
-            if new_shortcut not in shortcuts:
+            if new_shortcut.lower() not in shortcuts:
                 continue
             # Shortcut is here (either same action or not), don't replace in settings.
             if action_name != current_action:
