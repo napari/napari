@@ -666,6 +666,11 @@ RGB = ['red', 'green', 'blue']
 CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
 
 
+AVAILABLE_LABELS_COLORMAPS = {
+    'lodisc-50': label_colormap(50),
+}
+
+
 def _increment_unnamed_colormap(
     existing: Iterable[str], name: str = '[unnamed colormap]'
 ) -> Tuple[str, str]:

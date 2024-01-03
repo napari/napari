@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
 )
 from superqt import QLargeIntSpinBox
 
+from napari._qt.layer_controls.qt_colormap_combobox import QtColormapComboBox
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets._slider_compat import QSlider
@@ -28,6 +29,7 @@ from napari.layers.labels._labels_constants import (
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.action_manager import action_manager
+from napari.utils.colormaps.colormap_utils import AVAILABLE_LABELS_COLORMAPS
 from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
 
@@ -91,6 +93,7 @@ class QtLabelsControls(QtLayerControls):
 
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
+        self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.selected_label.connect(
             self._on_selected_label_change
         )
@@ -127,6 +130,21 @@ class QtLabelsControls(QtLayerControls):
         sld.valueChanged.connect(self.changeSize)
         self.brushSizeSlider = sld
         self._on_brush_size_change()
+
+        comboBox = QtColormapComboBox(self)
+        comboBox.setObjectName("colormapComboBox")
+        comboBox._allitems = set(self.layer.colormaps)
+
+        for name, cm in AVAILABLE_LABELS_COLORMAPS.items():
+            if name in self.layer.colormaps:
+                comboBox.addItem(cm._display_name, name)
+
+        comboBox.currentTextChanged.connect(self.changeColor)
+        self.colormapComboBox = comboBox
+        colormap_layout = QHBoxLayout()
+        colormap_layout.addWidget(self.colorbarLabel)
+        colormap_layout.addWidget(self.colormapComboBox)
+        colormap_layout.addStretch(1)
 
         contig_cb = QCheckBox()
         contig_cb.setToolTip(trans._('contiguous editing'))
@@ -277,6 +295,7 @@ class QtLabelsControls(QtLayerControls):
         self.layout().addRow(trans._('label:'), color_layout)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
+        self.layout().addRow(trans._('colormap:'), colormap_layout)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(self.renderLabel, self.renderComboBox)
         self.layout().addRow(trans._('contour:'), self.contourSpinBox)
