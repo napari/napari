@@ -16,6 +16,7 @@ from skimage.morphology import closing, remove_small_objects, square
 from skimage.segmentation import clear_border
 
 import napari
+from napari.utils.colormaps import DirectLabelColormap
 
 image = data.coins()[50:-50, 50:-50]
 
@@ -56,7 +57,7 @@ label_layer = viewer.add_labels(
     label_image,
     name='segmentation',
     features=label_features,
-    color=color,
+    colormap=DirectLabelColormap(color_dict=color),
 )
 
 if __name__ == '__main__':
