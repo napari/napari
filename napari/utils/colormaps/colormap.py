@@ -6,6 +6,7 @@ from typing import (
     DefaultDict,
     Dict,
     List,
+    Literal,
     Optional,
     Tuple,
     Union,
@@ -173,7 +174,9 @@ class LabelColormapBase(Colormap):
     use_selection: bool = False
     selection: int = 0
     background_value: int = 0
-    interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
+    interpolation: Literal[
+        ColormapInterpolationMode.ZERO
+    ] = ColormapInterpolationMode.ZERO
     _cache_mapping: Dict[Tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
         default={}
     )
@@ -240,13 +243,27 @@ class LabelColormapBase(Colormap):
 
 
 class LabelColormap(LabelColormapBase):
-    """Colormap that shuffles values before mapping to colors.
+    """Colormap color values using cycle of colors .
 
     Attributes
     ----------
-    seed : float
+    colors : ColorArray
+        Colors to be used for mapping.
+        For values above the number of colors,
+        the colors will be cycled.
     use_selection : bool
+        Whether map only selected label.
+        If `True` only selected label will be mapped to not transparent color.
     selection : int
+        The selected label.
+    background_value : int
+        Which value should be treated as a background
+        and mapped to transparent color.
+    interpolation : Literal['zero']
+        required by implementation, please do not set value
+    seed : float
+        seed used for random color generation. Used for reproducibility.
+        It will be removed in the future release.
     """
 
     seed: float = 0.5
@@ -342,10 +359,14 @@ class DirectLabelColormap(LabelColormapBase):
     ----------
     color_dict: dict from int to (3,) or (4,) array
         The dictionary mapping labels to colors.
+
     use_selection : bool
-        Whether to color using the selected label.
+        Whether map only selected label.
+        If `True` only selected label will be mapped to not transparent color..
     selection : int
         The selected label.
+    colors : ColorArray
+        Exist because of implementation details. Please do not use it.
     """
 
     color_dict: DefaultDict[Optional[int], np.ndarray] = Field(
