@@ -660,7 +660,7 @@ class Labels(_ImageBase):
         return {**self._direct_colormap.color_dict}
 
     @color.setter
-    def color(self, color):
+    def color(self, color: Dict[Optional[int], Union[str, np.ndarray]]):
         warnings.warn(
             "Labels.color is deprecated since 0.4.19 and will be removed in "
             "0.5.0, please set Labels.colormap directly with instance "

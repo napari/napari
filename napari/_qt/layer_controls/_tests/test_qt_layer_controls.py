@@ -41,12 +41,13 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.utils.colormaps import DirectLabelColormap
 
 
 class LayerTypeWithData(NamedTuple):
     type: Type[Layer]
     data: np.ndarray
-    color: Optional[dict]
+    colormap: Optional[DirectLabelColormap]
     properties: Optional[dict]
     expected_isinstance: Type[QtLayerControlsContainer]
 
@@ -57,35 +58,44 @@ np.random.seed(0)
 _IMAGE = LayerTypeWithData(
     type=Image,
     data=np.random.rand(8, 8),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtImageControls,
 )
-_LABELS_WITH_COLOR = LayerTypeWithData(
+_LABELS_WITH_DIRECT_COLORMAP = LayerTypeWithData(
     type=Labels,
     data=np.random.randint(5, size=(10, 15)),
-    color={1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'},
+    colormap=DirectLabelColormap(
+        color_dict={
+            1: 'white',
+            2: 'blue',
+            3: 'green',
+            4: 'red',
+            5: 'yellow',
+            None: "black",
+        }
+    ),
     properties=None,
     expected_isinstance=QtLabelsControls,
 )
 _LABELS = LayerTypeWithData(
     type=Labels,
     data=np.random.randint(5, size=(10, 15)),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtLabelsControls,
 )
 _POINTS = LayerTypeWithData(
     type=Points,
     data=np.random.random((5, 2)),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtPointsControls,
 )
 _SHAPES = LayerTypeWithData(
     type=Shapes,
     data=np.random.random((10, 4, 2)),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtShapesControls,
 )
@@ -96,14 +106,14 @@ _SURFACE = LayerTypeWithData(
         np.random.randint(10, size=(6, 3)),
         np.random.random(10),
     ),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtSurfaceControls,
 )
 _TRACKS = LayerTypeWithData(
     type=Tracks,
     data=np.zeros((2, 4)),
-    color=None,
+    colormap=None,
     properties={
         'track_id': [0, 0],
         'time': [0, 0],
@@ -114,7 +124,7 @@ _TRACKS = LayerTypeWithData(
 _VECTORS = LayerTypeWithData(
     type=Vectors,
     data=np.zeros((2, 2, 2)),
-    color=None,
+    colormap=None,
     properties=None,
     expected_isinstance=QtVectorsControls,
 )
@@ -124,9 +134,10 @@ _LINES_DATA = np.random.random((6, 2, 2))
 @pytest.fixture
 def create_layer_controls(qtbot):
     def _create_layer_controls(layer_type_with_data):
-        if layer_type_with_data.color:
+        if layer_type_with_data.colormap:
             layer = layer_type_with_data.type(
-                layer_type_with_data.data, color=layer_type_with_data.color
+                layer_type_with_data.data,
+                colormap=layer_type_with_data.colormap,
             )
         elif layer_type_with_data.properties:
             layer = layer_type_with_data.type(
@@ -147,7 +158,7 @@ def create_layer_controls(qtbot):
 @pytest.mark.parametrize(
     'layer_type_with_data',
     [
-        _LABELS_WITH_COLOR,
+        _LABELS_WITH_DIRECT_COLORMAP,
         _LABELS,
         _IMAGE,
         _POINTS,
@@ -155,6 +166,16 @@ def create_layer_controls(qtbot):
         _SURFACE,
         _TRACKS,
         _VECTORS,
+    ],
+    ids=[
+        "labels_with_color",
+        "labels",
+        "image",
+        "points",
+        "shapes",
+        "surface",
+        "tracks",
+        "vectors",
     ],
 )
 @pytest.mark.qt_no_exception_capture
@@ -198,7 +219,7 @@ skip_predicate = sys.version_info >= (3, 11) and (
         # pytest in qspinbox.setValue(value)
         # See: https://github.com/napari/napari/pull/5439
         pytest.param(
-            _LABELS_WITH_COLOR,
+            _LABELS_WITH_DIRECT_COLORMAP,
             marks=pytest.mark.skipif(
                 skip_predicate,
                 reason='segfault on Python 3.11+ and pyqt5 or Pyqt6',
@@ -285,7 +306,7 @@ def test_create_layer_controls_spin(
 @pytest.mark.parametrize(
     'layer_type_with_data',
     [
-        _LABELS_WITH_COLOR,
+        _LABELS_WITH_DIRECT_COLORMAP,
         _LABELS,
         _IMAGE,
         _POINTS,
@@ -367,7 +388,7 @@ def test_create_layer_controls_qslider(
 @pytest.mark.parametrize(
     'layer_type_with_data',
     [
-        _LABELS_WITH_COLOR,
+        _LABELS_WITH_DIRECT_COLORMAP,
         _LABELS,
         _IMAGE,
         _POINTS,

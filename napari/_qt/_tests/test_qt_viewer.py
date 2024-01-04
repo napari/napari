@@ -28,7 +28,7 @@ from napari._vispy._tests.utils import vispy_image_scene_size
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Labels, Points
 from napari.settings import get_settings
-from napari.utils.colormaps import label_colormap
+from napari.utils.colormaps import DirectLabelColormap, label_colormap
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.theme import available_themes
 
@@ -757,9 +757,8 @@ def test_label_colors_matching_widget_direct(
 ):
     """Make sure the rendered label colors match the QtColorBox widget."""
     data = np.ones((2, 2), dtype=dtype)
-    layer = qt_viewer_with_controls.viewer.add_labels(data)
-    layer.show_selected_label = use_selection
-    layer.opacity = 1.0  # QtColorBox & single layer are blending differently
+
+    test_colors = (1, 2, 3, 8, 150, 50)
     color = {
         0: "transparent",
         1: "yellow",
@@ -768,14 +767,16 @@ def test_label_colors_matching_widget_direct(
         150: "green",
         None: "white",
     }
-    test_colors = (1, 2, 3, 8, 150, 50)
-
     if np.iinfo(dtype).min < 0:
         color[-1] = "pink"
         color[-2] = "orange"
         test_colors = test_colors + (-1, -2, -10)
 
-    layer.color = color
+    colormap = DirectLabelColormap(color_dict=color)
+    layer = qt_viewer_with_controls.viewer.add_labels(
+        data, opacity=1, colormap=colormap
+    )
+    layer.show_selected_label = use_selection
 
     color_box_color, middle_pixel = _update_data(
         layer, 0, qtbot, qt_viewer_with_controls, dtype
@@ -790,7 +791,7 @@ def test_label_colors_matching_widget_direct(
         assert np.allclose(color_box_color, middle_pixel, atol=1), label
         assert np.allclose(
             color_box_color,
-            layer.color.get(label, layer.color[None]) * 255,
+            colormap.color_dict.get(label, colormap.color_dict[None]) * 255,
             atol=1,
         ), label
 
@@ -845,7 +846,15 @@ def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
         np.array([[0, 1], [2, 3]]), opacity=1.0
     )
     if direct:
-        layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
+        layer.colormap = DirectLabelColormap(
+            color_dict={
+                0: 'red',
+                1: 'green',
+                2: 'blue',
+                3: 'yellow',
+                None: 'black',
+            }
+        )
     else:
         layer.colormap = label_colormap(49)
     qt_viewer.viewer.reset_view()
@@ -937,7 +946,9 @@ def test_selection_collision(qt_viewer: QtViewer, mode):
     layer = qt_viewer.viewer.add_labels(data, opacity=1)
     layer.selected_label = 10
     if mode == "direct":
-        layer.color = {10: "red", 10 + 49: "red"}
+        layer.colormap = DirectLabelColormap(
+            color_dict={10: "red", 10 + 49: "red", None: "black"}
+        )
 
     for dtype in np.sctypes['int'] + np.sctypes['uint']:
         layer.data = data.astype(dtype)
@@ -977,20 +988,23 @@ def test_all_supported_dtypes(qt_viewer):
             midd_pixel, layer.colormap.map(i)[0] * 255, err_msg=f"{dtype} {i}"
         )
 
-    layer.color = {
-        0: 'red',
-        1: 'green',
-        2: 'blue',
-        3: 'yellow',
-        4: 'magenta',
-        5: 'cyan',
-        6: 'white',
-        7: 'pink',
-        8: 'orange',
-        9: 'purple',
-        10: 'brown',
-        11: 'gray',
-    }
+    layer.colormap = DirectLabelColormap(
+        color_dict={
+            0: 'red',
+            1: 'green',
+            2: 'blue',
+            3: 'yellow',
+            4: 'magenta',
+            5: 'cyan',
+            6: 'white',
+            7: 'pink',
+            8: 'orange',
+            9: 'purple',
+            10: 'brown',
+            11: 'gray',
+            None: 'black',
+        }
+    )
 
     for i, dtype in enumerate(np.sctypes['int'] + np.sctypes['uint'], start=1):
         data = np.full((10, 10), i, dtype=dtype)
@@ -1015,7 +1029,10 @@ def test_more_than_uint16_colors(qt_viewer):
             product(np.linspace(0, 1, 256, endpoint=True), repeat=3),
         )
     }
-    layer = qt_viewer.viewer.add_labels(data, opacity=1, color=colors)
+    colors[None] = (0, 0, 0, 1)
+    layer = qt_viewer.viewer.add_labels(
+        data, opacity=1, colormap=DirectLabelColormap(color_dict=colors)
+    )
     assert layer._slice.image.view.dtype == np.float32
 
     for i in [1, 1000, 100000]:
