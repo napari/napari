@@ -355,7 +355,7 @@ pyqt6-qt6==6.6.1
     # via pyqt6
 pyqt6-sip==13.6.0
     # via pyqt6
-pyside2==5.15.2.1 ; python_version != "3.8"
+pyside2==5.15.2 ; python_version != "3.8"
     # via napari (napari_repo/setup.cfg)
 pyside6==6.4.2 ; python_version >= "3.10"
     # via
@@ -440,7 +440,7 @@ scipy==1.11.4 ; python_version >= "3.9"
     # via
     #   napari (napari_repo/setup.cfg)
     #   scikit-image
-shiboken2==5.15.2.1
+shiboken2==5.15.2
     # via pyside2
 shiboken6==6.4.2
     # via
