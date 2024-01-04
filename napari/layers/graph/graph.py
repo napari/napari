@@ -526,18 +526,19 @@ class Graph(_BasePoints):
                 self._border._add(n_colors=adding)
                 self._face._update_current_properties(current_properties)
                 self._face._add(n_colors=adding)
-
-                # `shown` must be first due to "refresh" calls inside `attribute`.setters
-                for attribute in ("shown", "size", "symbol", "border_width"):
-                    if attribute == "shown":
-                        default_value = True
-                    else:
-                        default_value = getattr(self, f"current_{attribute}")
-                    new_values = np.repeat([default_value], adding, axis=0)
-                    values = np.concatenate(
-                        (getattr(self, f"_{attribute}"), new_values), axis=0
-                    )
-                    setattr(self, attribute, values)
+                
+                # ensure each attribute is updated before refreshing
+                with self._block_refresh():
+                    for attribute in ("shown", "size", "symbol", "border_width"):
+                        if attribute == "shown":
+                            default_value = True
+                        else:
+                            default_value = getattr(self, f"current_{attribute}")
+                        new_values = np.repeat([default_value], adding, axis=0)
+                        values = np.concatenate(
+                            (getattr(self, f"_{attribute}"), new_values), axis=0
+                        )
+                        setattr(self, attribute, values)
 
     def _data_changed(self, prev_size: int) -> None:
         self._update_props_and_style(self.data.n_allocated_nodes, prev_size)
@@ -549,3 +550,4 @@ class Graph(_BasePoints):
         state.pop("properties", None)
         state.pop("property_choices", None)
         return state
+    

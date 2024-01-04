@@ -429,6 +429,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         #       until we figure out nested evented objects
         self._overlays.events.connect(self.events._overlays)
 
+        self._refresh_blocked = False
+
     def __str__(self):
         """Return self.name."""
         return self.name
@@ -1357,8 +1359,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Bool that forces a redraw to occur when `True`.
         """
 
+    @contextmanager
+    def _block_refresh(self):
+        previous = self._refresh_blocked
+        self._refresh_blocked = True
+        try:
+            yield
+        finally:
+            self._refresh_blocked = previous
+
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
+        if self._refresh_blocked:
+             return
         logger.debug('Layer.refresh: %s', self)
         # If async is enabled then emit an event that the viewer should handle.
         if get_settings().experimental.async_:
