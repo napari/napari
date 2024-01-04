@@ -397,25 +397,28 @@ class Graph(_BasePoints):
         """Adds nodes at coordinates.
         Parameters
         ----------
-        coords : sequence of indices to add point at
+        coords : sequence of coordinates for each new node.
         indices : optional indices of the newly inserted nodes.
         """
+        if indices is None:
+            count_adding = len(np.atleast_2d(coords))
+            indices = self.data.get_next_valid_indices(count_adding)
         self.events.data(
             value=self.data,
             action=ActionType.ADDING,
-            data_indices=(-1,),
+            data_indices=tuple(indices),
             vertex_indices=((),),
         )
 
         prev_size = self.data.n_allocated_nodes
-        self.data.add_nodes(indices=indices, coords=coords)
+        added_indices = self.data.add_nodes(indices=indices, coords=coords)
         self._data_changed(prev_size)
 
         self.events.data(
             value=self.data,
             action=ActionType.ADDED,
             data_indices=tuple(
-                self.selected_data,
+                added_indices,
             ),
             vertex_indices=((),),
         )
