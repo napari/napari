@@ -1006,6 +1006,7 @@ def test_all_supported_dtypes(qt_viewer):
 
 
 def test_more_than_uint16_colors(qt_viewer):
+    pytest.importorskip("numba")
     # this test is slow (10s locally)
     data = np.zeros((10, 10), dtype=np.uint32)
     colors = {
