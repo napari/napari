@@ -403,6 +403,15 @@ class Graph(_BasePoints):
         if indices is None:
             count_adding = len(np.atleast_2d(coords))
             indices = self.data.get_next_valid_indices(count_adding)
+        indices = np.atleast_1d(indices)
+        if indices.ndim > 1:
+            raise ValueError(
+                trans._(
+                    "Indices for removal must be 1-dim. Found {ndim}",
+                    ndim=indices.ndim,
+                )
+            )
+
         self.events.data(
             value=self.data,
             action=ActionType.ADDING,
@@ -446,6 +455,15 @@ class Graph(_BasePoints):
         is_buffer_domain : bool
             Indicates if node indices are on world or buffer domain.
         """
+        indices = np.atleast_1d(indices)
+        if indices.ndim > 1:
+            raise ValueError(
+                trans._(
+                    "Indices for removal must be 1-dim. Found {ndim}",
+                    ndim=indices.ndim,
+                )
+            )
+
         self.events.data(
             value=self.data,
             action=ActionType.REMOVING,
@@ -455,19 +473,10 @@ class Graph(_BasePoints):
             vertex_indices=((),),
         )
 
-        indices_1d = np.atleast_1d(indices)
-        if indices_1d.ndim > 1:
-            raise ValueError(
-                trans._(
-                    "Indices for removal must be 1-dim. Found {ndim}",
-                    ndim=indices_1d.ndim,
-                )
-            )
-
         prev_size = self.data.n_allocated_nodes
 
         # it got error missing __iter__ attribute, but we guarantee by np.atleast_1d call
-        for idx in indices_1d:  # type: ignore[union-attr]
+        for idx in indices:  # type: ignore[union-attr]
             self.data.remove_node(idx, is_buffer_domain)
 
         self._data_changed(prev_size)
@@ -526,17 +535,25 @@ class Graph(_BasePoints):
                 self._border._add(n_colors=adding)
                 self._face._update_current_properties(current_properties)
                 self._face._add(n_colors=adding)
-                
+
                 # ensure each attribute is updated before refreshing
                 with self._block_refresh():
-                    for attribute in ("shown", "size", "symbol", "border_width"):
+                    for attribute in (
+                        "shown",
+                        "size",
+                        "symbol",
+                        "border_width",
+                    ):
                         if attribute == "shown":
                             default_value = True
                         else:
-                            default_value = getattr(self, f"current_{attribute}")
+                            default_value = getattr(
+                                self, f"current_{attribute}"
+                            )
                         new_values = np.repeat([default_value], adding, axis=0)
                         values = np.concatenate(
-                            (getattr(self, f"_{attribute}"), new_values), axis=0
+                            (getattr(self, f"_{attribute}"), new_values),
+                            axis=0,
                         )
                         setattr(self, attribute, values)
 
@@ -550,4 +567,3 @@ class Graph(_BasePoints):
         state.pop("properties", None)
         state.pop("property_choices", None)
         return state
-    

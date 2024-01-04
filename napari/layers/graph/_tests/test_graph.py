@@ -301,12 +301,11 @@ def test_add_data_event(graph_class):
 def test_remove_data_event(graph_class):
     coords = np.asarray([[0, 0], [1, 1], [2, 2], [3, 3]])
 
-    graph = graph_class(edges=[[0, 1]], coords=coords)
+    graph = graph_class(edges=[[0, 1], [1, 2]], coords=coords)
     layer = Graph(graph)
     layer.events.data = Mock()
-    print(layer.data._edges_buffer)
 
-    layer.remove([1])
+    layer.remove(1)
     calls = layer.events.data.call_args_list
     assert len(calls) == 2
 
