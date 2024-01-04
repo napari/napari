@@ -829,8 +829,7 @@ def _labels_raw_to_texture_direct_numpy(
     """
     mapper = direct_colormap._array_map
 
-    if data.dtype.itemsize > 2:
-        data = np.clip(data, 0, mapper.shape[0] - 1)
+    data = np.clip(data, 0, mapper.shape[0] - 1)
     return mapper[data]
 
 
