@@ -749,7 +749,9 @@ def test_label_colors_matching_widget_auto(
 
 @skip_local_popups
 @skip_on_win_ci
-@pytest.mark.parametrize("use_selection", [True, False])
+@pytest.mark.parametrize(
+    "use_selection", [True, False], ids=["selected", "all"]
+)
 @pytest.mark.parametrize("dtype", [np.uint64, np.uint16, np.uint8, np.int16])
 def test_label_colors_matching_widget_direct(
     qtbot, qt_viewer_with_controls, use_selection, dtype
@@ -786,12 +788,14 @@ def test_label_colors_matching_widget_direct(
         color_box_color, middle_pixel = _update_data(
             layer, label, qtbot, qt_viewer_with_controls, dtype
         )
-        assert np.allclose(color_box_color, middle_pixel, atol=1), label
-        assert np.allclose(
+        npt.assert_almost_equal(
+            color_box_color, middle_pixel, err_msg=f"{label=}"
+        )
+        npt.assert_almost_equal(
             color_box_color,
             layer.color.get(label, layer.color[None]) * 255,
-            atol=1,
-        ), label
+            err_msg=f"{label=}",
+        )
 
 
 def test_axes_labels(make_napari_viewer):

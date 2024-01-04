@@ -832,6 +832,8 @@ def _labels_raw_to_texture_direct_numpy(
 
     See `_cast_labels_data_to_texture_dtype_direct` for more details.
     """
+    if direct_colormap.use_selection:
+        return (data == direct_colormap.selection).astype(np.uint8)
     mapper = direct_colormap._array_map
     if any(x < 0 for x in direct_colormap.color_dict if x is not None):
         half_shape = mapper.shape[0] // 2 - 1
