@@ -2,6 +2,7 @@ import numpy as np
 
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels.labels import Labels
+from napari.utils.notifications import show_info
 
 MIN_BRUSH_SIZE = 1
 
@@ -48,7 +49,12 @@ labels_fun_to_mode = [
 
 def new_label(layer: Labels):
     """Set the currently selected label to the largest used label plus one."""
-    layer.selected_label = np.max(layer.data) + 1
+    if isinstance(layer.data, np.ndarray):
+        layer.selected_label = np.max(layer.data) + 1
+    else:
+        show_info(
+            "Calculating empty label on non-numpy array is not supported"
+        )
 
 
 def swap_selected_and_background_labels(layer: Labels):

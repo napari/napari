@@ -37,6 +37,7 @@ class CommandId(StrEnum):
     DLG_CLOSE = 'napari:window:file:close_dialog'
     DLG_QUIT = 'napari:window:file:quit_dialog'
     RESTART = 'napari:window:file:restart'
+    IMAGE_FROM_CLIPBOARD = 'napari:window:file:_image_from_clipboard'
 
     # View menubar
     TOGGLE_FULLSCREEN = 'napari:window:view:toggle_fullscreen'
@@ -226,6 +227,7 @@ _COMMAND_INFO = {
     CommandId.DLG_CLOSE: _i(trans._('Close Window')),
     CommandId.DLG_QUIT: _i(trans._('Exit')),
     CommandId.RESTART: _i(trans._('Restart')),
+    CommandId.IMAGE_FROM_CLIPBOARD: _i(trans._("New Image from Clipboard")),
 
     # View menubar
     CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen')),
