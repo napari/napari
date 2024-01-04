@@ -534,7 +534,12 @@ class DirectLabelColormap(LabelColormapBase):
     @cached_property
     def _array_map(self):
         """Create an array to map labels to texture values of smaller dtype."""
-        max_value = max(x for x in self.color_dict if x is not None)
+
+        max_value = max(
+            (abs(x) for x in self.color_dict if x is not None), default=0
+        )
+        if any(x < 0 for x in self.color_dict if x is not None):
+            max_value *= 2
         if max_value > 2**16:
             raise RuntimeError(  # pragma: no cover
                 "Cannot use numpy implementation for large values of labels "
@@ -828,8 +833,12 @@ def _labels_raw_to_texture_direct_numpy(
     See `_cast_labels_data_to_texture_dtype_direct` for more details.
     """
     mapper = direct_colormap._array_map
+    if any(x < 0 for x in direct_colormap.color_dict if x is not None):
+        half_shape = mapper.shape[0] // 2 - 1
+        data = np.clip(data, -half_shape, half_shape)
+    else:
+        data = np.clip(data, 0, mapper.shape[0] - 1)
 
-    data = np.clip(data, 0, mapper.shape[0] - 1)
     return mapper[data]
 
 
