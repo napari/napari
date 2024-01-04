@@ -111,7 +111,7 @@ class Tracks(Layer):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending='additive',
         visible=True,
         colormap='turbo',

@@ -81,10 +81,10 @@ def test_transform_chain_expanded(Transform):
 
     transform_chain_a = TransformChain([transform_a, transform_b])
     transform_chain_b = TransformChain([transform_c, transform_d])
-    transform_chain_expandded = transform_chain_b.expand_dims([1])
+    transform_chain_expanded = transform_chain_b.expand_dims([1])
 
     new_coord_2 = transform_chain_a(coord)
-    new_coord_1 = transform_chain_expandded(coord)
+    new_coord_1 = transform_chain_expanded(coord)
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
@@ -94,3 +94,30 @@ def test_base_transform_init_is_called():
     # no attribute 'name'.
     chain = TransformChain()
     assert chain.name is None
+
+
+def test_setitem_invalidates_cache():
+    chain = TransformChain((Affine(scale=(2, 3)), Affine(scale=(4, 5))))
+
+    chain[0] = Affine(scale=(1, -1))
+
+    npt.assert_array_equal(chain((1, 1)), (4, -5))
+    npt.assert_array_equal(chain.inverse((1, 1)), (1 / 4, -1 / 5))
+
+
+def test_delitem_invalidates_cache():
+    chain = TransformChain((Affine(scale=(2, 3)), Affine(scale=(4, 5))))
+
+    del chain[1]
+
+    npt.assert_array_equal(chain((1, 1)), (2, 3))
+    npt.assert_array_equal(chain.inverse((1, 1)), (1 / 2, 1 / 3))
+
+
+def test_mutate_item_invalidates_cache():
+    chain = TransformChain((Affine(scale=(2, 3)), Affine(scale=(4, 5))))
+
+    chain[0].scale = (1, -1)
+
+    npt.assert_array_equal(chain((1, 1)), (4, -5))
+    npt.assert_array_equal(chain.inverse((1, 1)), (1 / 4, -1 / 5))

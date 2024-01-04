@@ -7,6 +7,7 @@ from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
+from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 
 MIN_BRUSH_SIZE = 1
@@ -74,7 +75,12 @@ labels_fun_to_mode = [
 )
 def new_label(layer: Labels):
     """Set the currently selected label to the largest used label plus one."""
-    layer.selected_label = np.max(layer.data) + 1
+    if isinstance(layer.data, np.ndarray):
+        layer.selected_label = np.max(layer.data) + 1
+    else:
+        show_info(
+            "Calculating empty label on non-numpy array is not supported"
+        )
 
 
 @register_label_action(
@@ -156,4 +162,4 @@ def complete_polygon(layer: Labels):
     # Because layer._overlays has type Overlay, mypy doesn't know that
     # ._overlays["polygon"] has type LabelsPolygonOverlay, so type ignore for now
     # TODO: Improve typing of layer._overlays to fix this
-    layer._overlays["polygon"].add_polygon_to_labels(layer)  # type: ignore[attr-defined]
+    layer._overlays["polygon"].add_polygon_to_labels(layer)

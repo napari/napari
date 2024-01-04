@@ -39,7 +39,7 @@ from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from weakref import WeakKeyDictionary
 
 from npe2 import PackageMetadata
@@ -61,7 +61,6 @@ from pytest_pretty import CustomTerminalReporter
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.misc import ROOT_DIR
-from napari.viewer import Viewer
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
@@ -404,38 +403,6 @@ def single_threaded_executor():
     executor.shutdown()
 
 
-@pytest.fixture()
-def mock_console(request):
-    """Mock the qtconsole to avoid starting an interactive IPython session.
-    In-process IPython kernels can interfere with other tests and are difficult
-    (impossible?) to shutdown.
-
-    This fixture is configured to be applied automatically to tests unless they
-    use the `enable_console` marker. It's not autouse to avoid use on headless
-    tests (without Qt); instead it's enabled in `pytest_runtest_setup`.
-    """
-    if "enable_console" in request.keywords:
-        yield
-        return
-
-    from napari_console import QtConsole
-    from qtconsole.rich_jupyter_widget import RichJupyterWidget
-
-    class FakeQtConsole(RichJupyterWidget):
-        def __init__(self, viewer: Viewer):
-            super().__init__()
-            self.viewer = viewer
-            self.kernel_client = None
-            self.kernel_manager = None
-
-        _update_theme = Mock()
-        push = Mock()
-        closeEvent = QtConsole.closeEvent
-
-    with patch("napari_console.QtConsole", FakeQtConsole):
-        yield
-
-
 @pytest.fixture(autouse=True)
 def _mock_app():
     """Mock clean 'test_app' `NapariApplication` instance.
@@ -467,7 +434,18 @@ def _mock_app():
             Application.destroy('test_app')
 
 
-def _get_calling_place(depth=1):
+def _get_calling_stack():  # pragma: no cover
+    stack = []
+    for i in range(2, sys.getrecursionlimit()):
+        try:
+            frame = sys._getframe(i)
+        except ValueError:
+            break
+        stack.append(f"{frame.f_code.co_filename}:{frame.f_lineno}")
+    return "\n".join(stack)
+
+
+def _get_calling_place(depth=1):  # pragma: no cover
     if not hasattr(sys, "_getframe"):
         return ""
     frame = sys._getframe(1 + depth)
@@ -628,7 +606,10 @@ def dangling_qtimers(monkeypatch, request):
     else:
 
         def my_start(self, msec=None):
-            timer_dkt[self] = _get_calling_place()
+            calling_place = _get_calling_place()
+            if "superqt" in calling_place and "throttler" in calling_place:
+                calling_place += f" - {_get_calling_place(2)}"
+            timer_dkt[self] = calling_place
             if msec is not None:
                 base_start(self, msec)
             else:
@@ -641,6 +622,9 @@ def dangling_qtimers(monkeypatch, request):
                 t.timeout.connect(reciver)
             else:
                 t.timeout.connect(getattr(reciver, method))
+            calling_place = _get_calling_place(2)
+            if "superqt" in calling_place and "throttler" in calling_place:
+                calling_place += _get_calling_stack()
             single_shot_list.append((t, _get_calling_place(2)))
             base_start(t, msec)
 
@@ -775,7 +759,6 @@ def pytest_runtest_setup(item):
                 "dangling_qanimations",
                 "dangling_qthreads",
                 "dangling_qtimers",
-                "mock_console",
             ]
         )
 

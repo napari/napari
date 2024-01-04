@@ -67,7 +67,7 @@ class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
 
     def _on_bounds_change(self):
         if self.layer._slice_input.ndisplay == 2:
-            bounds = self.layer._display_bounding_box_augmented(
+            bounds = self.layer._display_bounding_box_augmented_data_level(
                 self.layer._slice_input.displayed
             )
             # invert axes for vispy

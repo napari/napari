@@ -67,6 +67,9 @@ def test_viewer_open():
     expected_source = Source(path='mock_path.tif', reader_plugin='testimpl')
     assert all(lay.source == expected_source for lay in viewer.layers)
 
+    viewer.open([], stack=[], plugin=None)
+    assert len(viewer.layers) == 2
+
 
 def test_viewer_open_no_plugin(tmp_path):
     viewer = ViewerModel()
