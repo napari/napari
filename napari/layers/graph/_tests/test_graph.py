@@ -1,4 +1,5 @@
 from typing import Type
+from unittest.mock import Mock
 
 import networkx as nx
 import numpy as np
@@ -11,6 +12,7 @@ from napari_graph import (
 )
 
 from napari.layers import Graph
+from napari.layers.base._base_constants import ActionType
 
 
 def test_empty_graph() -> None:
@@ -259,3 +261,73 @@ def test_add_nodes_buffer_resize(graph_class):
     assert len(layer.data) == coords.shape[0] + 1
     assert graph.n_nodes == coords.shape[0] + 1
 
+
+@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+def test_add_data_event(graph_class):
+    coords = np.asarray([[0, 0], [1, 1]])
+
+    graph = graph_class(edges=[[0, 1]], coords=coords)
+    layer = Graph(graph)
+    layer.events.data = Mock()
+
+    layer.add([5, 5])
+    calls = layer.events.data.call_args_list
+    assert len(calls) == 2
+
+    first_call = calls[0]
+    assert first_call[1]['action'] == ActionType.ADDING
+    assert len(first_call[1]['data_indices']) == 1
+    # 3rd node added at index 2
+    assert first_call[1]['data_indices'] == (2,)
+
+    second_call = calls[1]
+    assert second_call[1]['action'] == ActionType.ADDED
+    assert second_call[1]['data_indices'] == (2,)
+
+    new_node = [3, 3]
+    layer.add(new_node, [7])
+    calls = layer.events.data.call_args_list
+    last_call = calls[-1]
+    assert last_call[1]['data_indices'] == (7,)
+
+    new_nodes = [[4, 4], [5, 5]]
+    layer.add(new_nodes)
+    calls = layer.events.data.call_args_list
+    last_call = calls[-1]
+    assert last_call[1]['data_indices'] == (8, 9)
+
+
+@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+def test_remove_data_event(graph_class):
+    coords = np.asarray([[0, 0], [1, 1], [2, 2], [3, 3]])
+
+    graph = graph_class(edges=[[0, 1]], coords=coords)
+    layer = Graph(graph)
+    layer.events.data = Mock()
+    print(layer.data._edges_buffer)
+
+    layer.remove([1])
+    calls = layer.events.data.call_args_list
+    assert len(calls) == 2
+
+    first_call = calls[0]
+    assert first_call[1]['action'] == ActionType.REMOVING
+    assert len(first_call[1]['data_indices']) == 1
+    # 3rd node added at index 2
+    assert first_call[1]['data_indices'] == (1,)
+
+    second_call = calls[1]
+    assert second_call[1]['action'] == ActionType.REMOVED
+    assert second_call[1]['data_indices'] == (1,)
+
+    # new_node = [3,3]
+    # layer.add(new_node, [7])
+    # calls =  layer.events.data.call_args_list
+    # last_call = calls[-1]
+    # assert last_call[1]['data_indices'] == (7,)
+
+    # new_nodes = [[4,4],[5,5]]
+    # layer.add(new_nodes)
+    # calls =  layer.events.data.call_args_list
+    # last_call = calls[-1]
+    # assert last_call[1]['data_indices'] == (8,9)
