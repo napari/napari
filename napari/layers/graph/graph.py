@@ -265,6 +265,7 @@ class Graph(_BasePoints):
         canvas_size_limits=(2, 10000),
         antialiasing=1,
         shown=True,
+        projection_mode='none',
     ) -> None:
         self._data = self._fix_data(data, ndim)
         self._edges_indices_view: ArrayLike = []
@@ -305,6 +306,7 @@ class Graph(_BasePoints):
             canvas_size_limits=canvas_size_limits,
             antialiasing=antialiasing,
             shown=shown,
+            projection_mode=projection_mode,
         )
 
         # TODO:
