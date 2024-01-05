@@ -65,6 +65,8 @@ from napari.utils.misc import ROOT_DIR
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
 
+    from napari import Viewer
+
 
 @pytest.fixture
 def layer_data_and_types():
@@ -401,6 +403,44 @@ def single_threaded_executor():
     executor = ThreadPoolExecutor(max_workers=1)
     yield executor
     executor.shutdown()
+
+
+@pytest.fixture()
+def mock_console(request, qapp):
+    """Mock the qtconsole to avoid starting an interactive IPython session.
+    In-process IPython kernels can interfere with other tests and are difficult
+    (impossible?) to shutdown.
+
+    This fixture is configured to be applied automatically to tests unless they
+    use the `enable_console` marker. It's not autouse to avoid use on headless
+    tests (without Qt); instead it's enabled in `pytest_runtest_setup`.
+    """
+    if "enable_console" in request.keywords:
+        yield
+        return
+
+    from qtconsole.rich_jupyter_widget import RichJupyterWidget
+
+    class FakeQtConsole(RichJupyterWidget):
+        def __init__(self, viewer: Viewer):
+            super().__init__()
+            self.viewer = viewer
+            self.kernel_client = None
+            self.kernel_manager = None
+
+        def _update_theme(self, event):
+            pass
+
+        def push(self, variables):
+            pass
+
+        def closeEvent(self, event):
+            """Clean up the integrated console in napari."""
+            # Disconnect theme update
+            self.viewer.events.theme.disconnect(self._update_theme)
+
+    with patch("napari_console.QtConsole", FakeQtConsole):
+        yield
 
 
 @pytest.fixture(autouse=True)
@@ -759,6 +799,7 @@ def pytest_runtest_setup(item):
                 "dangling_qanimations",
                 "dangling_qthreads",
                 "dangling_qtimers",
+                "mock_console",
             ]
         )
 
