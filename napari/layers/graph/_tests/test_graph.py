@@ -351,3 +351,18 @@ def test_remove_selected_data_event(graph_class):
     layer.remove_selected()
     last_call = calls[-1]
     assert last_call[1]['data_indices'] == (1, 2)
+
+    # refresh layer to make index reasoning more straightforward
+    graph = graph_class(edges=[[0, 1], [1, 2]], coords=coords)
+    layer = Graph(graph)
+    layer.events.data = Mock()
+
+    layer.add([1, 1], 7)
+
+    # buffer index, not node id
+    layer.selected_data = {4}
+    layer.remove_selected()
+    calls = layer.events.data.call_args_list
+
+    last_call = calls[-1]
+    assert last_call[1]['data_indices'] == (4,)
