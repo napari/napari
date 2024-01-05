@@ -171,7 +171,7 @@ class KeyBindingDispatcher:
         self._refresh_cache()
         logger.debug('current context: %s', self.context)
 
-    def _refresh_cache(self):
+    def _refresh_cache(self) -> None:
         logger.info('clearing cache')
         self._active_match_cache.clear()
         self._conflicts_cache.clear()
@@ -229,7 +229,9 @@ class KeyBindingDispatcher:
             logger.info('saved conflict cache for %s: %s', key, conflicts)
         return conflicts
 
-    def on_key_press(self, mods: KeyMod, key: KeyCode, is_auto_repeat=False):
+    def on_key_press(
+        self, mods: KeyMod, key: KeyCode, is_auto_repeat: bool = False
+    ) -> None:
         """Processes a key press.
 
         See `NAP 7 <https://napari.org/dev/naps/7-key-binding-dispatch.html#key-binding-properties>`_.
@@ -302,7 +304,7 @@ class KeyBindingDispatcher:
         self.dispatch(flags, command_id)
         logger.info('dispatching %s with flags %s', command_id, flags)
 
-    def on_key_release(self, mods: KeyMod, key: KeyCode):
+    def on_key_release(self, mods: KeyMod, key: KeyCode) -> None:
         """Processes a key release.
 
         See `NAP 7 <https://napari.org/dev/naps/7-key-binding-dispatch.html#key-binding-properties>`_.

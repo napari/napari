@@ -44,7 +44,7 @@ class KeyBindingEntry:
     block_rule: bool = field(init=False)
     negate_rule: bool = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.block_rule = self.command_id == ''
         self.negate_rule = self.command_id.startswith('-')
 
@@ -123,7 +123,7 @@ class NapariKeyBindingsRegistry(KeyBindingsRegistry):
         self,
         command_id: str,
         rule: KeyBindingRule,
-        warn=True,
+        warn: bool = True,
     ) -> Optional[Callable[[], None]]:
         """Register a new keybinding rule.
 

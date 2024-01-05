@@ -1,3 +1,4 @@
+# type: ignore
 """Key combinations are represented in the form ``[modifier-]key``,
 e.g. ``a``, ``Control-c``, or ``Control-Alt-Delete``.
 Valid modifiers are Control, Alt, Shift, and Meta.
@@ -257,7 +258,7 @@ class KeymapProvider:
                     title=_func.__name__,
                     keybindings=[
                         KeyBindingRule(
-                            primary=kb,
+                            primary=kb.to_int(),
                             when=when,
                             weight=KeyBindingWeights.USER,
                         )

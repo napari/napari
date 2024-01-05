@@ -1,7 +1,7 @@
 import functools
 import inspect
 import weakref
-from typing import Callable
+from typing import Any, Callable, Dict, Generator, Tuple
 
 from app_model.types import Action
 from pydantic import Field
@@ -24,7 +24,7 @@ class GeneratorCallback:
     as-needed.
     """
 
-    def __init__(self, func: Callable):
+    def __init__(self, func: Callable[[Any], Generator]):
         if not inspect.isgeneratorfunction(func):
             raise TypeError(f"'{func.__name__}' is not a generator function")
         self.func = func
@@ -32,7 +32,7 @@ class GeneratorCallback:
         functools.update_wrapper(self, func)
         self._gen = None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> None:
         if self._gen is None:
             self._gen = self.func(*args, **kwargs)
         try:
@@ -40,7 +40,7 @@ class GeneratorCallback:
         except StopIteration:
             self._gen = None
 
-    def reset(self):
+    def reset(self) -> None:
         self._gen = None
 
 
@@ -69,7 +69,7 @@ class AttrRestoreCallback:
         # create a wrapper that stores the previous state of obj.attribute_name
         # and returns a callback to restore it
         @functools.wraps(func)
-        def _wrapper(*args, **kwargs):
+        def _wrapper(*args: Tuple[Any], **kwargs: Dict[str, Any]) -> None:
             obj = args[0] if args else kwargs[first_variable_name]
             prev_mode = getattr(obj, attribute_name)
             func(*args, **kwargs)
@@ -85,5 +85,5 @@ class AttrRestoreCallback:
         self.func = _wrapper
         self.__signature__ = inspect.signature(_wrapper)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> Any:
         return self.func(*args, **kwargs)

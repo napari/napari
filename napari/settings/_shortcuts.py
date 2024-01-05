@@ -32,7 +32,9 @@ class ShortcutsSettings(EventedModel):
         # Napari specific configuration
         preferences_exclude = ('schema_version',)
 
-    def remove_shortcut(self, key, command, when=None):
+    def remove_shortcut(
+        self, key: str, command: str, when: Optional[str] = None
+    ):
         add_rule = ShortcutRule(key=key, command=command, when=when)
         negate_rule = ShortcutRule(key=key, command=f'-{command}', when=when)
 
@@ -43,7 +45,7 @@ class ShortcutsSettings(EventedModel):
                 self.shortcuts.append(negate_rule)
             self.events.shortcuts(value=self.shortcuts)
 
-    def add_shortcut(self, key, command, when=None):
+    def add_shortcut(self, key: str, command: str, when: Optional[str] = None):
         add_rule = ShortcutRule(key=key, command=command, when=when)
         negate_rule = ShortcutRule(key=key, command=f'-{command}', when=when)
 
@@ -60,7 +62,13 @@ class ShortcutsSettings(EventedModel):
         if changed:
             self.events.shortcuts(value=self.shortcuts)
 
-    def overwrite_shortcut(self, old_key, new_key, command, when=None):
+    def overwrite_shortcut(
+        self,
+        old_key: str,
+        new_key: str,
+        command: str,
+        when: Optional[str] = None,
+    ):
         with self.events.shortcuts.blocker():
             self.remove_shortcut(old_key, command, when)
             self.add_shortcut(new_key, command, when)
