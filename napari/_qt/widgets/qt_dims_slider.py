@@ -163,12 +163,12 @@ class QtDimSliderWidget(QWidget):
         # Listener to be used for sending events back to model:
         slider.valueChanged.connect(self._on_value_changed)
 
-        def slider_focused_listener():
-            self.dims.last_used = self.axis
-
         # linking focus listener to the last used:
-        slider.sliderPressed.connect(slider_focused_listener)
+        slider.sliderPressed.connect(self.slider_focused_listener)
         self.slider = slider
+
+    def slider_focused_listener(self):
+        self.dims.last_used = self.axis
 
     def _create_play_button_widget(self):
         """Creates the actual play button, which has the modal popup."""
