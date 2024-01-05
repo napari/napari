@@ -130,16 +130,20 @@ def test_add_nodes(graph_class: Type[BaseGraph]) -> None:
     layer.add([2, 2])
     assert len(layer.data) == coords.shape[0] + 1
     assert graph.n_nodes == coords.shape[0] + 1
+    assert set(layer.selected_data) == {2}
 
     # adding with index
     layer.add([3, 3], 13)
     assert len(layer.data) == coords.shape[0] + 2
     assert graph.n_nodes == coords.shape[0] + 2
+    # buffer index not node index
+    assert set(layer.selected_data) == {3}
 
     # adding multiple with indices
     layer.add([[4, 4], [5, 5]], [24, 25])
     assert len(layer.data) == coords.shape[0] + 4
     assert graph.n_nodes == coords.shape[0] + 4
+    assert set(layer.selected_data) == {4, 5}
 
 
 @pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])

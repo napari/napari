@@ -431,6 +431,10 @@ class Graph(_BasePoints):
             ),
             vertex_indices=((),),
         )
+        buffer_indices = {
+            self.data._world2buffer[idx] for idx in added_indices
+        }
+        self.selected_data = buffer_indices
 
     def remove_selected(self) -> None:
         """Removes selected points if any."""
