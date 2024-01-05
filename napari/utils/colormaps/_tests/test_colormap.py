@@ -445,3 +445,11 @@ def test_direct_colormap_negative_values_numpy():
         np.array([-1, -2, 5], dtype=np.int8), cmap
     )
     npt.assert_array_equal(res, [1, 2, 0])
+
+    cmap.selection = -2
+    cmap.use_selection = True
+
+    res = _labels_raw_to_texture_direct_numpy(
+        np.array([-1, -2, 5], dtype=np.int8), cmap
+    )
+    npt.assert_array_equal(res, [0, 1, 0])
