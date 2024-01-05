@@ -11,6 +11,7 @@ from napari.utils.colormaps import Colormap, colormap
 from napari.utils.colormaps.colormap import (
     MAPPING_OF_UNKNOWN_VALUE,
     DirectLabelColormap,
+    _labels_raw_to_texture_direct_numpy,
 )
 from napari.utils.colormaps.colormap_utils import label_colormap
 
@@ -430,3 +431,17 @@ def test_direct_colormap_negative_values():
     # Map multiple values
     mapped = cmap.map(np.array([-1, -2], dtype=np.int8))
     npt.assert_array_equal(mapped, np.array([[1, 0, 0, 1], [0, 1, 0, 1]]))
+
+
+def test_direct_colormap_negative_values_numpy():
+    color_dict = {
+        -1: np.array([1, 0, 0, 1]),
+        -2: np.array([0, 1, 0, 1]),
+        None: np.array([0, 0, 0, 1]),
+    }
+    cmap = DirectLabelColormap(color_dict=color_dict)
+
+    res = _labels_raw_to_texture_direct_numpy(
+        np.array([-1, -2, 5], dtype=np.int8), cmap
+    )
+    npt.assert_array_equal(res, [1, 2, 0])
