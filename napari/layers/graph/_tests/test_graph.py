@@ -322,3 +322,32 @@ def test_remove_data_event(graph_class):
     layer.remove([2, 3])
     last_call = calls[-1]
     assert last_call[1]['data_indices'] == (2, 3)
+
+
+@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+def test_remove_selected_data_event(graph_class):
+    coords = np.asarray([[0, 0], [1, 1], [2, 2], [3, 3]])
+
+    graph = graph_class(edges=[[0, 1], [1, 2]], coords=coords)
+    layer = Graph(graph)
+    layer.events.data = Mock()
+
+    layer.selected_data = {0}
+    layer.remove_selected()
+
+    calls = layer.events.data.call_args_list
+    assert len(calls) == 2
+
+    first_call = calls[0]
+    assert first_call[1]['action'] == ActionType.REMOVING
+    assert len(first_call[1]['data_indices']) == 1
+    assert first_call[1]['data_indices'] == (0,)
+
+    second_call = calls[1]
+    assert second_call[1]['action'] == ActionType.REMOVED
+    assert second_call[1]['data_indices'] == (0,)
+
+    layer.selected_data = {1, 2}
+    layer.remove_selected()
+    last_call = calls[-1]
+    assert last_call[1]['data_indices'] == (1, 2)
