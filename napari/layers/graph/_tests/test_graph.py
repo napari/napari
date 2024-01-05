@@ -284,15 +284,15 @@ def test_add_data_event(graph_class):
     assert second_call[1]['action'] == ActionType.ADDED
     assert second_call[1]['data_indices'] == (2,)
 
+    # specifying index
     new_node = [3, 3]
     layer.add(new_node, [7])
-    calls = layer.events.data.call_args_list
     last_call = calls[-1]
     assert last_call[1]['data_indices'] == (7,)
 
+    # adding multiple at once
     new_nodes = [[4, 4], [5, 5]]
     layer.add(new_nodes)
-    calls = layer.events.data.call_args_list
     last_call = calls[-1]
     assert last_call[1]['data_indices'] == (8, 9)
 
@@ -312,35 +312,13 @@ def test_remove_data_event(graph_class):
     first_call = calls[0]
     assert first_call[1]['action'] == ActionType.REMOVING
     assert len(first_call[1]['data_indices']) == 1
-    # 3rd node added at index 2
     assert first_call[1]['data_indices'] == (1,)
 
     second_call = calls[1]
     assert second_call[1]['action'] == ActionType.REMOVED
     assert second_call[1]['data_indices'] == (1,)
 
+    # make sure data indices are old values
     layer.remove([2, 3])
-    calls = layer.events.data.call_args_list
-    assert len(calls) == 2
-
-    first_call = calls[0]
-    assert first_call[1]['action'] == ActionType.REMOVING
-    assert len(first_call[1]['data_indices']) == 1
-    # 3rd node added at index 2
-    assert first_call[1]['data_indices'] == (1,)
-
-    second_call = calls[1]
-    assert second_call[1]['action'] == ActionType.REMOVED
-    assert second_call[1]['data_indices'] == (1,)
-
-    # new_node = [3,3]
-    # layer.add(new_node, [7])
-    # calls =  layer.events.data.call_args_list
-    # last_call = calls[-1]
-    # assert last_call[1]['data_indices'] == (7,)
-
-    # new_nodes = [[4,4],[5,5]]
-    # layer.add(new_nodes)
-    # calls =  layer.events.data.call_args_list
-    # last_call = calls[-1]
-    # assert last_call[1]['data_indices'] == (8,9)
+    last_call = calls[-1]
+    assert last_call[1]['data_indices'] == (2, 3)
