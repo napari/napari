@@ -14,6 +14,7 @@ from typing import (
     Iterable,
     MutableSequence,
     NewType,
+    Optional,
     Tuple,
     TypeVar,
     Union,
@@ -205,7 +206,7 @@ class NestableEventedList(EventedList[_T]):
         self, key: slice, value: Iterable[_T]
     ): ...  # pragma: no cover
 
-    def __setitem__(self, key: MaybeNestedIndex, value):
+    def __setitem__(self, key: MaybeNestedIndex, value) -> None:
         # NOTE: if we check isinstance(..., MutableList), then we'll actually
         # clobber object of specialized classes being inserted into the list
         # (for instance, subclasses of NestableEventedList)
@@ -233,7 +234,7 @@ class NestableEventedList(EventedList[_T]):
             return [(self[parent_i], i) for i in indices]
         return super()._delitem_indices(key)
 
-    def insert(self, index: int, value: _T):
+    def insert(self, index: int, value: _T) -> None:
         """Insert object before index."""
         # this is delicate, we want to preserve the evented list when nesting
         # but there is a high risk here of clobbering attributes of a special
@@ -242,7 +243,7 @@ class NestableEventedList(EventedList[_T]):
             value = self.__newlike__(value)
         super().insert(index, value)
 
-    def _reemit_child_event(self, event: Event):
+    def _reemit_child_event(self, event: Event) -> None:
         """An item in the list emitted an event.  Re-emit with index"""
         if hasattr(event, 'index'):
             # This event is coming from a nested List...
@@ -478,7 +479,9 @@ class NestableEventedList(EventedList[_T]):
                 )
         return e
 
-    def _iter_indices(self, start=0, stop=None, root=()):
+    def _iter_indices(
+        self, start: int = 0, stop: Optional[int] = None, root=()
+    ):
         """Iter indices from start to stop.
 
         Depth first traversal of the tree

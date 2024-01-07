@@ -35,7 +35,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
 
     # #### START Required Abstract Methods
 
-    def __setitem__(self, key: _K, value: _T):
+    def __setitem__(self, key: _K, value: _T) -> None:
         self._dict[key] = self._type_check(value)
 
     def __delitem__(self, key: _K) -> None:
@@ -50,7 +50,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
     def __iter__(self) -> Iterator[_K]:
         return iter(self._dict)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self._dict)
 
     def _type_check(self, e: Any) -> _T:
@@ -62,7 +62,9 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
             )
         return e
 
-    def __newlike__(self, iterable: MutableMapping[_K, _T]):
+    def __newlike__(
+        self, iterable: MutableMapping[_K, _T]
+    ) -> "TypedMutableMapping[_K, _T]":
         new = self.__class__()
         # separating this allows subclasses to omit these from their `__init__`
         new._basetypes = self._basetypes

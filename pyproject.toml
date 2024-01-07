@@ -439,7 +439,6 @@ module = [
     "napari.utils._register",
     "napari.utils.colormaps.categorical_colormap",
     "napari.utils.colormaps.standardize_color",
-    "napari.utils.events.containers._set",
     "napari.utils.geometry",
     "napari.utils.io",
     "napari.utils.notebook_display",
@@ -474,7 +473,6 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari._app_model._app",
-    "napari.utils.events.containers._selection",
     "napari.utils.theme",
 ]
 disallow_incomplete_defs = false
@@ -529,7 +527,6 @@ module = [
     "napari.layers.shapes._shapes_models.shape",
     "napari.layers.tracks._track_utils",
     "napari.utils.colormaps.colormap",
-    "napari.utils.events.containers._selectable_list",
     "napari.utils.notifications",
 ]
 check_untyped_defs = false

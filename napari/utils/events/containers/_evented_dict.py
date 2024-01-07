@@ -68,7 +68,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             )
         super().__init__(data, basetype)
 
-    def __setitem__(self, key: _K, value: _T):
+    def __setitem__(self, key: _K, value: _T) -> None:
         old = self._dict.get(key)
         if value is old or value == old:
             return
@@ -82,13 +82,13 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             super().__setitem__(key, value)
             self.events.changed(key=key, old_value=old, value=value)
 
-    def __delitem__(self, key: _K):
+    def __delitem__(self, key: _K) -> None:
         self.events.removing(key=key)
         self._disconnect_child_emitters(self[key])
         item = self._dict.pop(key)
         self.events.removed(key=key, value=item)
 
-    def _reemit_child_event(self, event: Event):
+    def _reemit_child_event(self, event: Event) -> None:
         """An item in the dict emitted an event.  Re-emit with key"""
         if not hasattr(event, "key"):
             event.key = self.key(event.source)
@@ -96,12 +96,12 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         # re-emit with this object's EventEmitter
         self.events(event)
 
-    def _disconnect_child_emitters(self, child: _T):
+    def _disconnect_child_emitters(self, child: _T) -> None:
         """Disconnect all events from the child from the re-emitter."""
         if isinstance(child, SupportsEvents):
             child.events.disconnect(self._reemit_child_event)
 
-    def _connect_child_emitters(self, child: _T):
+    def _connect_child_emitters(self, child: _T) -> None:
         """Connect all events from the child to be re-emitted."""
         if isinstance(child, SupportsEvents):
             # make sure the event source has been set on the child
@@ -109,7 +109,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
                 child.events.source = child
             child.events.connect(self._reemit_child_event)
 
-    def key(self, value: _T):
+    def key(self, value: _T) -> Optional[_K]:
         """Return first instance of value."""
         for k, v in self._dict.items():
             if v is value or v == value:
