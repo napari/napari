@@ -382,7 +382,6 @@ module = [
     "napari.utils.events.containers._dict",
     "napari.utils.events.event_utils",
     "napari.utils.migrations",
-    "napari.utils.perf._patcher",
     "napari.utils.validators",
     "napari.window"
 ]
@@ -403,8 +402,6 @@ module = [
     "napari.components.overlays.base",
     "napari.components.overlays.interaction_box",
     "napari.utils.colormaps.categorical_colormap_utils",
-    "napari.utils.perf._event",
-    "napari.utils.perf._trace_file",
 ]
 disallow_untyped_defs = false
 
@@ -444,7 +441,6 @@ module = [
     "napari.utils.geometry",
     "napari.utils.io",
     "napari.utils.notebook_display",
-    "napari.utils.perf._config",
     "napari.utils.transforms.transform_utils",
     "napari.utils.translations",
     "napari.utils.tree.node",
@@ -508,7 +504,6 @@ module = [
     "napari.utils._dtype",
     "napari.utils.colormaps.colormap_utils",
     "napari.utils.misc",
-    "napari.utils.perf._timers"
 ]
 check_untyped_defs = false
 disallow_incomplete_defs = false
