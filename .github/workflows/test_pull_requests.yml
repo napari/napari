@@ -112,8 +112,8 @@ jobs:
         coverage: [ cov ]
         pydantic: ["_pydantic_1"]
         include:
-          # Windows py38
-          - python: 3.8
+          # Windows py39
+          - python: 3.9
             platform: windows-latest
             backend: pyqt5,pyside2
             coverage: no_cov
