@@ -237,20 +237,18 @@ def update_pr(branch_name: str):
     pr_number = get_pr_number()
 
     target_repo = os.environ.get('FULL_NAME')
+    trigger_repo = os.environ.get('GITHUB_REPOSITORY', 'napari/napari')
 
     new_branch_name = f"auto-update-dependencies/{target_repo}/{branch_name}"
 
-    if (
-        target_repo == os.environ.get("GITHUB_REPOSITORY", "napari/napari")
-        and branch_name == DEFAULT_BRANCH_NAME
-    ):
+    if target_repo == trigger_repo and branch_name == DEFAULT_BRANCH_NAME:
         new_branch_name = DEFAULT_BRANCH_NAME
 
     create_commit(commit_message(branch_name), branch_name=new_branch_name)
     comment_content = long_description(f"origin/{branch_name}")
 
     try:
-        push(new_branch_name, update=branch_name != DEFAULT_BRANCH_NAME)
+        push(new_branch_name, update=target_repo != trigger_repo)
     except subprocess.CalledProcessError as e:
         if "create or update workflow" in e.stderr.decode():
             logging.info("Workflow file changed. Skip PR create.")
