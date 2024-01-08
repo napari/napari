@@ -104,6 +104,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
+          path: trigger_repo
           fetch-depth: 0
 
       - name: Clone docs repo
@@ -184,9 +185,11 @@ jobs:
           flags+=" --extra testing"
           flags+=" --extra testing_extra"
           flags+=" --extra optional"
-          prefix="napari_repo"
-          setup_cfg="${prefix}/setup.cfg"
-          constraints="${prefix}/resources/constraints"
+          target_repo="napari_repo"
+          tigger_repo="trigger_repo"
+          setup_cfg="${trigger_repo}/setup.cfg"
+          constraints_source="${trigger_repo}/resources/constraints"
+          constraints_target="${prefix}/resources/constraints"
 
 
           # allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
@@ -200,13 +203,13 @@ jobs:
 
           for pyv in 3.8 3.9 3.10 3.11; do
             python${pyv}  -m pip install -U pip pip-tools
-            python${pyv}  -m piptools compile --upgrade -o $constraints/constraints_py${pyv}.txt  $setup_cfg $constraints/version_denylist.txt ${flags}
-            python${pyv}  -m piptools compile --upgrade -o $constraints/constraints_py${pyv}_pydantic_1.txt  $setup_cfg $constraints/version_denylist.txt $constraints/pydantic_le_2.txt ${flags}
+            python${pyv}  -m piptools compile --upgrade -o ${constraints_target}/constraints_py${pyv}.txt  $setup_cfg ${constraints_source}/version_denylist.txt ${flags}
+            python${pyv}  -m piptools compile --upgrade -o ${constraints_target}/constraints_py${pyv}_pydantic_1.txt  $setup_cfg ${constraints_source}/version_denylist.txt ${constraints_source}/pydantic_le_2.txt ${flags}
           done
 
-          python3.9 -m piptools compile --upgrade -o $constraints/constraints_py3.9_examples.txt $setup_cfg $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
-          python3.10 -m piptools compile --upgrade -o $constraints/constraints_py3.10_docs.txt $setup_cfg $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt $constraints/pydantic_le_2.txt ${flags}
-          python3.11 -m piptools compile --upgrade -o resources/requirements_mypy.txt resources/requirements_mypy.in --resolver=backtracking
+          python3.9 -m piptools compile --upgrade -o ${constraints_target}/constraints_py3.9_examples.txt $setup_cfg ${constraints_target}/version_denylist.txt ${constraints_source}/version_denylist_examples.txt ${flags}
+          python3.10 -m piptools compile --upgrade -o ${constraints_target}/constraints_py3.10_docs.txt $setup_cfg ${constraints_target}/version_denylist.txt ${constraints_source}/version_denylist_examples.txt docs/requirements.txt ${constraints_source}/pydantic_le_2.txt ${flags}
+          python3.11 -m piptools compile --upgrade -o ${constraints_target}/resources/requirements_mypy.txt ${constraints_source}/requirements_mypy.in --resolver=backtracking
 
       # END PYTHON DEPENDENCIES
 
