@@ -6,7 +6,7 @@
 #
 alabaster==0.7.13
     # via sphinx
-app-model==0.2.3
+app-model==0.2.4
     # via
     #   -r napari_repo/resources/constraints/version_denylist.txt
     #   napari (napari_repo/setup.cfg)

@@ -1501,6 +1501,7 @@ def test_is_default_color():
 
 def test_large_labels_direct_color():
     """Make sure direct color works with large label ranges"""
+    pytest.importorskip('numba')
     data = np.array([[0, 1], [2**16, 2**20]], dtype=np.uint32)
     colors = {1: 'white', 2**16: 'green', 2**20: 'magenta'}
     layer = Labels(data)
