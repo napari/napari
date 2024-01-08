@@ -241,7 +241,9 @@ def update_pr(branch_name: str):
     logging.info("pr_source_repo: %s", pr_source_repo)
     logging.info("pr_source_repo: %s", pr_source_repo)
 
-    new_branch_name = f"auto-update-dependencies/{pr_source_repo}/{branch_name}"
+    new_branch_name = (
+        f"auto-update-dependencies/{pr_source_repo}/{branch_name}"
+    )
 
     if pr_source_repo == pr_trget_repo and branch_name == DEFAULT_BRANCH_NAME:
         new_branch_name = DEFAULT_BRANCH_NAME
@@ -264,8 +266,7 @@ def update_pr(branch_name: str):
     else:
         if new_branch_name != DEFAULT_BRANCH_NAME:
             comment_content += update_external_pr_comment(
-                pr_source_repo
-        , branch_name, new_branch_name
+                pr_source_repo, branch_name, new_branch_name
             )
 
     add_comment_to_pr(
