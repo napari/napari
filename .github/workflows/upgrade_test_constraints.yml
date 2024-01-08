@@ -189,7 +189,7 @@ jobs:
           tigger_repo="trigger_repo"
           setup_cfg="${trigger_repo}/setup.cfg"
           constraints_source="${trigger_repo}/resources/constraints"
-          constraints_target="${prefix}/resources/constraints"
+          constraints_target="${target_repo}/resources/constraints"
 
 
           # allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
