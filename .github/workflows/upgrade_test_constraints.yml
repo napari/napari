@@ -189,7 +189,7 @@ jobs:
           set -x # run verbose
 
           target_repo="napari_repo"
-          tigger_repo="trigger_repo"
+          trigger_repo="trigger_repo"
           setup_cfg="${trigger_repo}/setup.cfg"
           constraints_source=${trigger_repo}/resources/constraints
           constraints_target=${target_repo}/resources/constraints
