@@ -168,8 +168,8 @@ def create_layer_controls(qtbot):
         _VECTORS,
     ],
     ids=[
-        "labels_with_color",
-        "labels",
+        "labels_with_direct_colormap",
+        "labels_with_auto_colormap",
         "image",
         "points",
         "shapes",
