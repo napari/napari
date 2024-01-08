@@ -53,7 +53,7 @@ jobs:
 
       - name: Test with tox
         # run tests using pip install --pre
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         with:
           run: python -m tox -v --pre
         env:

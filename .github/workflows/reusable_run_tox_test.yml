@@ -121,7 +121,7 @@ jobs:
 
       - name: Test with tox main
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         with:
           shell: bash
           run: |
@@ -134,7 +134,7 @@ jobs:
 
       - name: Test with tox second
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         if : ${{ env.SECOND != 'none' }}
         with:
           shell: bash
@@ -147,7 +147,7 @@ jobs:
 
       - name: Test with tox third
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         if : ${{ env.THIRD != 'none' }}
         with:
           shell: bash
@@ -160,7 +160,7 @@ jobs:
 
       - name: Test with tox fourth
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v1
+        uses: aganders3/headless-gui@v2
         if: ${{ env.FOURTH != 'none' }}
         with:
           shell: bash
