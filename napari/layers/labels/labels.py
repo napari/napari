@@ -173,7 +173,8 @@ class Labels(_ImageBase):
     metadata : dict
         Labels metadata.
     num_colors : int
-        Number of unique colors to use in colormap. DEPRECATED
+        Number of unique colors to use in colormap. DEPRECATED: set
+        ``colormap`` directly, using `napari.utils.colormaps.label_colormap`.
     features : Dataframe-like
         Features table where each row corresponds to a label and each column
         is a feature. The first row corresponds to the background label.
@@ -185,9 +186,11 @@ class Labels(_ImageBase):
         Custom label to color mapping. Values must be valid color names or RGBA
         arrays. While there is no limit to the number of custom labels, the
         the layer will render incorrectly if they map to more than 1024 distinct
-        colors. DEPRECATED
+        colors. DEPRECATED: set ``colormap`` directly, using
+        `napari.utils.colormaps.direct_colormap`.
     seed : float
-        Seed for colormap random generator. DEPRECATED
+        Seed for colormap random generator. DEPRECATED: set ``colormap``
+        directly, using `napari.utils.colormaps.label_colormap`.
     opacity : float
         Opacity of the labels, must be between 0 and 1.
     contiguous : bool
