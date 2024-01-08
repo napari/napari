@@ -236,19 +236,21 @@ def update_pr(branch_name: str):
     """
     pr_number = get_pr_number()
 
-    target_repo = os.environ.get('FULL_NAME')
-    trigger_repo = os.environ.get('GITHUB_REPOSITORY', 'napari/napari')
+    pr_source_repo = os.environ.get('FULL_NAME')
+    pr_target_repo = os.environ.get('GITHUB_REPOSITORY', 'napari/napari')
+    logging.info("pr_source_repo: %s", pr_source_repo)
+    logging.info("pr_source_repo: %s", pr_source_repo)
 
-    new_branch_name = f"auto-update-dependencies/{target_repo}/{branch_name}"
+    new_branch_name = f"auto-update-dependencies/{pr_source_repo}/{branch_name}"
 
-    if target_repo == trigger_repo and branch_name == DEFAULT_BRANCH_NAME:
+    if pr_source_repo == pr_trget_repo and branch_name == DEFAULT_BRANCH_NAME:
         new_branch_name = DEFAULT_BRANCH_NAME
 
     create_commit(commit_message(branch_name), branch_name=new_branch_name)
     comment_content = long_description(f"origin/{branch_name}")
 
     try:
-        push(new_branch_name, update=target_repo != trigger_repo)
+        push(new_branch_name, update=branch_name != new_branch_name)
     except subprocess.CalledProcessError as e:
         if "create or update workflow" in e.stderr.decode():
             logging.info("Workflow file changed. Skip PR create.")
@@ -262,7 +264,8 @@ def update_pr(branch_name: str):
     else:
         if new_branch_name != DEFAULT_BRANCH_NAME:
             comment_content += update_external_pr_comment(
-                target_repo, branch_name, new_branch_name
+                pr_source_repo
+        , branch_name, new_branch_name
             )
 
     add_comment_to_pr(
@@ -274,11 +277,11 @@ def update_pr(branch_name: str):
 
 
 def update_external_pr_comment(
-    target_repo: str, branch_name: str, new_branch_name: str
+    pr_source_repo: str, branch_name: str, new_branch_name: str
 ) -> str:
     comment = "\n\nThis workflow cannot automatically update your PR or create PR to your repository. "
     comment += "But you could open such PR by clicking the link: "
-    comment += f"https://github.com/{target_repo}/compare/{branch_name}...napari-bot:{new_branch_name}."
+    comment += f"https://github.com/{pr_source_repo}/compare/{branch_name}...napari-bot:{new_branch_name}."
     comment += "\n\n"
     comment += "You could also get the updated files from the "
     comment += f"https://github.com/napari-bot/napari/tree/{new_branch_name}/resources/constraints. "
