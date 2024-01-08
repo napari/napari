@@ -243,7 +243,7 @@ class LabelColormapBase(Colormap):
 
 
 class LabelColormap(LabelColormapBase):
-    """Colormap color values using cycle of colors .
+    """Color cycle with a background value.
 
     Attributes
     ----------
