@@ -99,6 +99,7 @@ class Labels(_ImageBase):
         Currently, this only applies to dask arrays.
     colormap : LabelColormap or DirectLabelColormap or None
         Colormap to use for the labels. If None, a random colormap will be
+        used.
     depiction : str
         3D Depiction mode. Must be one of {'volume', 'plane'}.
         The default value is 'volume'.
