@@ -88,7 +88,9 @@ def new_label(layer: Labels):
             layer.selected_label = new_selected_label
     else:
         show_info(
-            trans._("Calculating empty label on non-numpy array is not supported")
+            trans._(
+                "Calculating empty label on non-numpy array is not supported"
+            )
         )
 
 
