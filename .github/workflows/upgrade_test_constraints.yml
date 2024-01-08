@@ -185,12 +185,14 @@ jobs:
           flags+=" --extra testing"
           flags+=" --extra testing_extra"
           flags+=" --extra optional"
+
+          set -x # run verbose
+
           target_repo="napari_repo"
           tigger_repo="trigger_repo"
           setup_cfg="${trigger_repo}/setup.cfg"
           constraints_source="${trigger_repo}/resources/constraints"
           constraints_target="${target_repo}/resources/constraints"
-
 
           # allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
           flags+=" --allow-unsafe"
@@ -200,8 +202,6 @@ jobs:
 
           # future default resolver. It is faster. Lower probability of long CI run.
           flags+=" --resolver=backtracking"
-
-          set -x # run verbose
 
           for pyv in 3.8 3.9 3.10 3.11; do
             python${pyv}  -m pip install -U pip pip-tools
