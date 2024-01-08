@@ -201,6 +201,8 @@ jobs:
           # future default resolver. It is faster. Lower probability of long CI run.
           flags+=" --resolver=backtracking"
 
+          set -x # run verbose
+
           for pyv in 3.8 3.9 3.10 3.11; do
             python${pyv}  -m pip install -U pip pip-tools
             python${pyv}  -m piptools compile --upgrade -o ${constraints_target}/constraints_py${pyv}.txt  $setup_cfg ${constraints_source}/version_denylist.txt ${flags}
