@@ -147,8 +147,6 @@ class Labels(_ImageBase):
         np.degrees if needed.
     scale : tuple of float
         Scale factors for the layer.
-    seed_rng : int
-        Seed for colormap shuffle random generator.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
