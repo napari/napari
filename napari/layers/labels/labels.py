@@ -992,9 +992,20 @@ class Labels(_ImageBase):
         if self._cached_labels is not None:
             return
 
+        if self.color_mode == LabelColorMode.AUTO:
+            mapped_labels = _cast_labels_data_to_texture_dtype_auto(
+                np.array([self.colormap.background_value], dtype=labels.dtype),
+                self._random_colormap,
+            )
+        else:  # direct
+            mapped_labels = _cast_labels_data_to_texture_dtype_direct(
+                np.array([self.colormap.background_value], dtype=labels.dtype),
+                self._direct_colormap,
+            )
+
         self._cached_labels = np.zeros_like(labels)
-        self._cached_mapped_labels = np.zeros_like(
-            labels, dtype=self._get_cache_dtype(labels.dtype)
+        self._cached_mapped_labels = np.full_like(
+            labels, mapped_labels[0], dtype=self._get_cache_dtype(labels.dtype)
         )
 
     def _raw_to_displayed(
