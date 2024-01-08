@@ -235,7 +235,7 @@ jobs:
       - name: Create commit
         run: |
           pip install requests
-          python tools/create_pr_or_update_existing_one.py
+          python napari_repo/tools/create_pr_or_update_existing_one.py
         env:
             GHA_TOKEN_MAIN_REPO: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
             PR_NUMBER: ${{ github.event.issue.number }}
