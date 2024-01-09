@@ -174,9 +174,9 @@ class LabelColormapBase(Colormap):
     use_selection: bool = False
     selection: int = 0
     background_value: int = 0
-    interpolation: Literal[
-        ColormapInterpolationMode.ZERO
-    ] = ColormapInterpolationMode.ZERO
+    interpolation: Literal[ColormapInterpolationMode.ZERO] = Field(
+        ColormapInterpolationMode.ZERO, frozen=True
+    )
     _cache_mapping: Dict[Tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
         default={}
     )
