@@ -587,10 +587,12 @@ class EditorWidget(QLineEdit):
             Qt.Key.Key_Delete,
             Qt.Key.Key_Backspace,
         ):
-            # Need to mark as handled `Delete` and `Backspace` `KeyPress` events
-            # in order to be able to use those keys to remove shortcuts.
-            # To check the logic to remove shortcuts you can check the
-            # `KeyPressEvent` method
+            # If there is a shortcut set already, two events are being emitted when
+            # pressing `Delete` or `Backspace`. First a `ShortcutOverride` event and
+            # then a `KeyPress` event. We need to mark the second event (`KeyPress`)
+            # as handled for those keys to not end up processing it multiple times.
+            # Without that, pressing `Backspace` or `Delete` will set those keys as shortcuts
+            # instead of just cleaning/removing the previous shortcut that was set.
             return True
 
         return super().event(event)

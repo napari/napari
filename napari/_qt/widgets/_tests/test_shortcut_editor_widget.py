@@ -12,6 +12,10 @@ from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import KEY_SYMBOLS
 
+META_CONTROL_KEY = Qt.KeyboardModifier.ControlModifier
+if sys.platform == "darwin":
+    META_CONTROL_KEY = Qt.KeyboardModifier.MetaModifier
+
 
 @pytest.fixture
 def shortcut_editor_widget(qtbot):
@@ -87,43 +91,27 @@ def test_restore_defaults(shortcut_editor_widget):
     [
         (
             Qt.Key.Key_U,
-            Qt.KeyboardModifier.MetaModifier
-            if sys.platform == "darwin"
-            else Qt.KeyboardModifier.ControlModifier,
+            META_CONTROL_KEY,
             [KEY_SYMBOLS["Ctrl"], "U"],
         ),
         (
             Qt.Key.Key_Y,
-            Qt.KeyboardModifier.MetaModifier
-            | Qt.KeyboardModifier.ShiftModifier
-            if sys.platform == "darwin"
-            else Qt.KeyboardModifier.ControlModifier
-            | Qt.KeyboardModifier.ShiftModifier,
+            META_CONTROL_KEY | Qt.KeyboardModifier.ShiftModifier,
             [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Shift"], "Y"],
         ),
         (
             Qt.Key.Key_Backspace,
-            Qt.KeyboardModifier.MetaModifier
-            if sys.platform == "darwin"
-            else Qt.KeyboardModifier.ControlModifier,
+            META_CONTROL_KEY,
             [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Backspace"]],
         ),
         (
             Qt.Key.Key_Delete,
-            Qt.KeyboardModifier.MetaModifier
-            | Qt.KeyboardModifier.ShiftModifier
-            if sys.platform == "darwin"
-            else Qt.KeyboardModifier.ControlModifier
-            | Qt.KeyboardModifier.ShiftModifier,
+            META_CONTROL_KEY | Qt.KeyboardModifier.ShiftModifier,
             [KEY_SYMBOLS["Ctrl"], KEY_SYMBOLS["Shift"], KEY_SYMBOLS["Delete"]],
         ),
         (
             Qt.Key.Key_Backspace,
-            Qt.KeyboardModifier.MetaModifier
-            | Qt.KeyboardModifier.ShiftModifier
-            if sys.platform == "darwin"
-            else Qt.KeyboardModifier.ControlModifier
-            | Qt.KeyboardModifier.ShiftModifier,
+            META_CONTROL_KEY | Qt.KeyboardModifier.ShiftModifier,
             [
                 KEY_SYMBOLS["Ctrl"],
                 KEY_SYMBOLS["Shift"],
