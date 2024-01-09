@@ -992,7 +992,7 @@ class Labels(_ImageBase):
         if self._cached_labels is not None:
             return
 
-        if self.color_mode == LabelColorMode.AUTO:
+        if isinstance(self._colormap, LabelColormap):
             mapped_labels = _cast_labels_data_to_texture_dtype_auto(
                 np.array([self.colormap.background_value], dtype=labels.dtype),
                 self._random_colormap,
