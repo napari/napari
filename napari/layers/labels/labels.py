@@ -324,6 +324,7 @@ class Labels(_ImageBase):
         self._contour = 0
         self._cached_labels = None
         self._cached_mapped_labels = np.zeros((0, 4), dtype=np.uint8)
+        self._cached_labels_mapping = {}
 
         data = self._ensure_int_labels(data)
 
@@ -493,6 +494,7 @@ class Labels(_ImageBase):
             self.num_colors, self.seed, self._background_label
         )
         self._cached_labels = None  # invalidate the cached color mapping
+        self._cached_labels_mapping = {}
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.refresh()
@@ -517,6 +519,7 @@ class Labels(_ImageBase):
                 self._original_random_colormap, self._seed_rng
             )
         self._cached_labels = None  # invalidate the cached color mapping
+        self._cached_labels_mapping = {}
         self._selected_color = self.get_color(self.selected_label)
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.events.selected_label()
@@ -556,6 +559,8 @@ class Labels(_ImageBase):
                 color_mode = LabelColorMode.DIRECT
                 self._colormap = self._direct_colormap
         self._selected_color = self.get_color(self.selected_label)
+        self._cached_labels = None  # invalidate the cached color mapping
+        self._cached_labels_mapping = {}
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.color_mode = color_mode
 
@@ -571,7 +576,7 @@ class Labels(_ImageBase):
         )
         self._num_colors = num_colors
         self._cached_labels = None  # invalidate the cached color mapping
-        self._cached_mapped_labels = None
+        self._cached_labels_mapping = {}
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
@@ -768,6 +773,7 @@ class Labels(_ImageBase):
 
         if self.show_selected_label:
             self._cached_labels = None  # invalidates labels cache
+            self._cached_labels_mapping = {}
             self.refresh()
 
     def swap_selected_and_background_labels(self):
@@ -791,6 +797,7 @@ class Labels(_ImageBase):
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         self._cached_labels = None  # invalidates labels cache
+        self._cached_labels_mapping = {}
         self._color_mode = color_mode
         if color_mode == LabelColorMode.AUTO:
             self._colormap = ensure_colormap(self._random_colormap)
@@ -814,6 +821,7 @@ class Labels(_ImageBase):
         self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
         self._cached_labels = None
+        self._cached_labels_mapping = {}
         self.refresh()
 
     # Only overriding to change the docstring
@@ -898,7 +906,7 @@ class Labels(_ImageBase):
         response = response.to_displayed(self._raw_to_displayed)
         super()._update_slice_response(response)
 
-    def _partial_labels_refresh(self):
+    def _partial_labels_refresh(self, new_label: Optional[int] = None) -> None:
         """Prepares and displays only an updated part of the labels."""
 
         if self._updated_slice is None or not self.loaded:
@@ -915,7 +923,7 @@ class Labels(_ImageBase):
         offset = [axis_slice.start for axis_slice in updated_slice]
 
         colors_sliced = self._raw_to_displayed(
-            raw_displayed, data_slice=updated_slice
+            raw_displayed, data_slice=updated_slice, new_label=new_label
         )
         # The next line is needed to make the following tests pass in
         # napari/_vispy/_tests/:
@@ -998,7 +1006,10 @@ class Labels(_ImageBase):
         )
 
     def _raw_to_displayed(
-        self, raw, data_slice: Optional[Tuple[slice, ...]] = None
+        self,
+        raw,
+        data_slice: Optional[Tuple[slice, ...]] = None,
+        new_label: Optional[int] = None,
     ) -> np.ndarray:
         """Determine displayed image from a saved raw image and a saved seed.
 
@@ -1024,6 +1035,7 @@ class Labels(_ImageBase):
         if data_slice is None:
             data_slice = tuple(slice(0, size) for size in raw.shape)
             self._cached_labels = None
+            self._cached_labels_mapping = {}
         else:
             self._setup_cache(raw)
 
@@ -1055,14 +1067,17 @@ class Labels(_ImageBase):
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
-        if self.color_mode == LabelColorMode.AUTO:
-            mapped_labels = _cast_labels_data_to_texture_dtype_auto(
-                labels_to_map, self._random_colormap
+        if new_label is not None and self.contour < 1:
+            if new_label not in self._cached_labels_mapping:
+                self._cached_labels_mapping[
+                    new_label
+                ] = self._cast_labels_using_colormap(np.array([new_label]))
+            val = self._cached_labels_mapping[new_label]
+            mapped_labels = np.full_like(
+                labels_to_map, val[0], dtype=val.dtype
             )
         else:  # direct
-            mapped_labels = _cast_labels_data_to_texture_dtype_direct(
-                labels_to_map, self._direct_colormap
-            )
+            mapped_labels = self._cast_labels_using_colormap(labels_to_map)
 
         if self._cached_labels is not None:
             if update_mask is not None:
@@ -1073,6 +1088,15 @@ class Labels(_ImageBase):
                 self._cached_mapped_labels[data_slice] = mapped_labels
             return self._cached_mapped_labels[data_slice]
         return mapped_labels
+
+    def _cast_labels_using_colormap(self, labels):
+        if self.color_mode == LabelColorMode.AUTO:
+            return _cast_labels_data_to_texture_dtype_auto(
+                labels, self._random_colormap
+            )
+        return _cast_labels_data_to_texture_dtype_direct(
+            labels, self._direct_colormap
+        )
 
     def _update_thumbnail(self):
         """Update the thumbnail with current data and colormap.
@@ -1430,7 +1454,7 @@ class Labels(_ImageBase):
                 self.paint(c, new_label, refresh=False)
             elif self._mode == Mode.FILL:
                 self.fill(c, new_label, refresh=False)
-        self._partial_labels_refresh()
+        self._partial_labels_refresh(new_label)
 
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected
