@@ -1000,10 +1000,10 @@ class Labels(_ImageBase):
         if self._cached_labels is not None:
             return
 
-        self._cached_labels = np.zeros_like(labels)
-        self._cached_mapped_labels = np.zeros_like(
-            labels, dtype=self._get_cache_dtype(labels.dtype)
-        )
+        self._cached_labels = np.copy(labels)
+        self._cached_mapped_labels = np.copy(
+            self._slice.image.view
+        )  # ugly hack to reduce computation
 
     def _raw_to_displayed(
         self,
@@ -1020,11 +1020,13 @@ class Labels(_ImageBase):
         ----------
         raw : array or int
             Raw integer input image.
-
         data_slice : numpy array slice
             Slice that specifies the portion of the input image that
             should be computed and displayed.
             If None, the whole input image will be processed.
+        new_label : int or None
+            inform that all changed labels should be mapped to this value.
+            Used for speedup when painting
 
         Returns
         -------
