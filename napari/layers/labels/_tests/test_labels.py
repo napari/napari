@@ -1671,7 +1671,7 @@ def test_labels_features_event():
 def test_invalidate_cache_when_change_slice():
     layer = Labels(np.zeros((2, 4, 5), dtype=np.uint8))
     assert layer._cached_labels is None
-    layer._setup_cache(layer._slice.image.raw)
+    layer._setup_cache(layer._slice.image.raw, (slice(None),))
     assert layer._cached_labels is not None
     layer._set_view_slice()
     assert layer._cached_labels is None

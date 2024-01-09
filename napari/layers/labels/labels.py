@@ -324,7 +324,7 @@ class Labels(_ImageBase):
         self._contour = 0
         self._cached_labels = None
         self._cached_mapped_labels = np.zeros((0, 4), dtype=np.uint8)
-        self._cached_labels_mapping = {}
+        self._cached_labels_mapping: Dict[int, int] = {}
 
         data = self._ensure_int_labels(data)
 
