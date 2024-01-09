@@ -324,7 +324,7 @@ class Labels(_ImageBase):
         self._contour = 0
         self._cached_labels = None
         self._cached_mapped_labels = np.zeros((0, 4), dtype=np.uint8)
-        self._cached_labels_mapping: Dict[int, int] = {}
+        self._cached_labels_mapping: Dict[int, Tuple[int, np.dtype]] = {}
 
         data = self._ensure_int_labels(data)
 
@@ -1074,13 +1074,10 @@ class Labels(_ImageBase):
 
         if new_label is not None and self.contour < 1:
             if new_label not in self._cached_labels_mapping:
-                self._cached_labels_mapping[
-                    new_label
-                ] = self._cast_labels_using_colormap(np.array([new_label]))
+                map_ = self._cast_labels_using_colormap(np.array([new_label]))
+                self._cached_labels_mapping[new_label] = map_[0], map_.dtype
             val = self._cached_labels_mapping[new_label]
-            mapped_labels = np.full_like(
-                labels_to_map, val[0], dtype=val.dtype
-            )
+            mapped_labels = np.full_like(labels_to_map, val[0], dtype=val[1])
         else:  # direct
             mapped_labels = self._cast_labels_using_colormap(labels_to_map)
 
@@ -1094,7 +1091,7 @@ class Labels(_ImageBase):
             return self._cached_mapped_labels[data_slice]
         return mapped_labels
 
-    def _cast_labels_using_colormap(self, labels):
+    def _cast_labels_using_colormap(self, labels: np.ndarray) -> np.ndarray:
         if self.color_mode == LabelColorMode.AUTO:
             return _cast_labels_data_to_texture_dtype_auto(
                 labels, self._random_colormap
