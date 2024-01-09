@@ -239,13 +239,13 @@ def update_pr(branch_name: str):
     pr_source_repo = os.environ.get('FULL_NAME')
     pr_target_repo = os.environ.get('GITHUB_REPOSITORY', 'napari/napari')
     logging.info("pr_source_repo: %s", pr_source_repo)
-    logging.info("pr_source_repo: %s", pr_source_repo)
+    logging.info("pr_target_repo: %s", pr_target_repo)
 
     new_branch_name = (
         f"auto-update-dependencies/{pr_source_repo}/{branch_name}"
     )
 
-    if pr_source_repo == pr_trget_repo and branch_name == DEFAULT_BRANCH_NAME:
+    if pr_source_repo == pr_target_repo and branch_name == DEFAULT_BRANCH_NAME:
         new_branch_name = DEFAULT_BRANCH_NAME
 
     create_commit(commit_message(branch_name), branch_name=new_branch_name)
