@@ -988,7 +988,7 @@ class Labels(_ImageBase):
             )
         return _texture_dtype(self.num_colors, raw_dtype)
 
-    def _setup_cache(self, labels):
+    def _setup_cache(self, labels, data_slice):
         """
         Initializes the cache for the Labels layer
 
@@ -1004,6 +1004,9 @@ class Labels(_ImageBase):
         self._cached_mapped_labels = np.copy(
             self._slice.image.view
         )  # ugly hack to reduce computation
+        self._cached_mapped_labels[
+            data_slice
+        ] = self._cast_labels_using_colormap(self._cached_labels[data_slice])
 
     def _raw_to_displayed(
         self,
@@ -1039,7 +1042,7 @@ class Labels(_ImageBase):
             self._cached_labels = None
             self._cached_labels_mapping = {}
         else:
-            self._setup_cache(raw)
+            self._setup_cache(raw, data_slice)
 
         labels = raw  # for readability
 
