@@ -368,5 +368,6 @@ def test_remove_selected_data_event(graph_class):
     layer.remove_selected()
     calls = layer.events.data.call_args_list
 
+    # selected_data uses buffer id, events will always emit world id
     last_call = calls[-1]
-    assert last_call[1]['data_indices'] == (4,)
+    assert last_call[1]['data_indices'] == (7,)

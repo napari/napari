@@ -431,10 +431,7 @@ class Graph(_BasePoints):
             ),
             vertex_indices=((),),
         )
-        buffer_indices = {
-            self.data._world2buffer[idx] for idx in added_indices
-        }
-        self.selected_data = buffer_indices
+        self.selected_data = self.data._map_world2buffer(added_indices)
 
     def remove_selected(self) -> None:
         """Removes selected points if any."""
@@ -467,12 +464,15 @@ class Graph(_BasePoints):
                     ndim=indices.ndim,
                 )
             )
-
+        # TODO: should know nothing about buffer
+        world_indices = (
+            self.data._buffer2world[indices] if is_buffer_domain else indices
+        )
         self.events.data(
             value=self.data,
             action=ActionType.REMOVING,
             data_indices=tuple(
-                indices,
+                world_indices,
             ),
             vertex_indices=((),),
         )
@@ -489,7 +489,7 @@ class Graph(_BasePoints):
             value=self.data,
             action=ActionType.REMOVED,
             data_indices=tuple(
-                indices,
+                world_indices,
             ),
             vertex_indices=((),),
         )
