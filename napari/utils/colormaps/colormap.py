@@ -657,6 +657,10 @@ def _cast_labels_data_to_texture_dtype_auto(
         converted = np.where(
             data_arr == colormap.selection, selection_in_texture, dtype.type(0)
         )
+    elif data.size < 1000:
+        converted = _zero_preserving_modulo_numpy(
+            data_arr, num_colors, dtype, colormap.background_value
+        )
     else:
         converted = _zero_preserving_modulo(
             data_arr, num_colors, dtype, colormap.background_value
