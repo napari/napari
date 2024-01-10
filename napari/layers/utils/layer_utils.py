@@ -30,6 +30,8 @@ if TYPE_CHECKING:
 
     import numpy.typing as npt
 
+    from napari.layers._data_protocols import LayerDataProtocol
+
 
 class Extent(NamedTuple):
     """Extent of coordinates in a local data space and world space.
@@ -205,7 +207,9 @@ def _nanmax(array):
     return max_value
 
 
-def calc_data_range(data, rgb=False) -> Tuple[float, float]:
+def calc_data_range(
+    data: LayerDataProtocol, rgb: bool = False
+) -> Tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
@@ -229,7 +233,7 @@ def calc_data_range(data, rgb=False) -> Tuple[float, float]:
         return (0, 255)
 
     center: Union[int, List[int]]
-
+    reduced_data: Union[List, LayerDataProtocol]
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
         center = int(data.shape[0] // 2)
