@@ -10,6 +10,7 @@ from typing import (
     Tuple,
     Union,
     cast,
+    overload,
 )
 
 import numpy as np
@@ -1065,7 +1066,9 @@ class Labels(_ImageBase):
 
         if new_label is not None and self.contour < 1:
             if new_label not in self._cached_labels_mapping:
-                map_ = self._cast_labels_using_colormap(new_label)
+                map_ = self._cast_labels_using_colormap(
+                    self._slice.image.raw.dtype(new_label)
+                )
                 self._cached_labels_mapping[new_label] = map_, map_.dtype
             val, dt = self._cached_labels_mapping[new_label]
             mapped_labels = np.full_like(labels_to_map, val, dtype=dt)
@@ -1082,7 +1085,17 @@ class Labels(_ImageBase):
             return self._cached_mapped_labels[data_slice]
         return mapped_labels
 
+    @overload
     def _cast_labels_using_colormap(self, labels: np.ndarray) -> np.ndarray:
+        pass
+
+    @overload
+    def _cast_labels_using_colormap(self, labels: np.integer) -> np.integer:
+        pass
+
+    def _cast_labels_using_colormap(
+        self, labels: Union[np.ndarray, np.integer]
+    ) -> Union[np.ndarray, np.integer]:
         if isinstance(self.colormap, LabelColormap):
             return _cast_labels_data_to_texture_dtype_auto(
                 labels, self._random_colormap
