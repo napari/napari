@@ -2607,3 +2607,28 @@ def test_thick_slice():
     # it will take in the other point
     layer._slice_dims(Dims(ndim=3, point=(0, 0, 0), margin_right=(10, 0, 0)))
     np.testing.assert_array_equal(layer._view_data, data[:, -2:])
+
+
+@pytest.mark.parametrize(
+    'old_name, new_name, value',
+    [
+        ('edge_width', 'border_width', 0.9),
+        ('edge_width_is_relative', 'border_width_is_relative', False),
+        ('current_edge_width', 'current_border_width', 0.9),
+        ('edge_color', 'border_color', 'blue'),
+        ('current_edge_color', 'current_border_color', 'pink'),
+    ],
+)
+def test_events_callback(old_name, new_name, value):
+    data = np.array([[0, 0, 0], [10, 10, 10]])
+    layer = Points(data)
+    old_name_callback = Mock()
+    new_name_callback = Mock()
+    with pytest.warns(FutureWarning):
+        getattr(layer.events, old_name).connect(old_name_callback)
+    getattr(layer.events, new_name).connect(new_name_callback)
+
+    setattr(layer, new_name, value)
+
+    new_name_callback.assert_called_once()
+    old_name_callback.assert_called_once()

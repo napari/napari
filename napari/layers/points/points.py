@@ -58,7 +58,7 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.events.migrations import deprecation_warning_event
 from napari.utils.geometry import project_points_onto_plane, rotate_points
-from napari.utils.migrations import rename_argument
+from napari.utils.migrations import add_deprecated_property, rename_argument
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
@@ -481,35 +481,27 @@ class Points(Layer):
             feature_defaults=Event,
         )
 
-        self.events.add(
-            edge_width=deprecation_warning_event(
-                "Points.events", "edge_width", "border_width", "0.6.0", "0.5.0"
-            ),
-            current_edge_width=deprecation_warning_event(
-                "Points.events",
-                "current_edge_width",
-                "current_border_width",
-                "0.6.0",
-                "0.5.0",
-            ),
-            edge_width_is_relative=deprecation_warning_event(
-                "Points.events",
-                "edge_width_is_relative",
-                "border_width_is_relative",
-                "0.6.0",
-                "0.5.0",
-            ),
-            edge_color=deprecation_warning_event(
-                "Points.events", "edge_color", "border_color", "0.6.0", "0.5.0"
-            ),
-            current_edge_color=deprecation_warning_event(
-                "Points.events",
-                "current_edge_color",
-                "current_border_color",
-                "0.6.0",
-                "0.5.0",
-            ),
-        )
+        deprecated_events = {}
+        for attr in [
+            "{}_width",
+            "current_{}_width",
+            "{}_width_is_relative",
+            "{}_color",
+            "current_{}_color",
+        ]:
+            old_attr = attr.format("edge")
+            new_attr = attr.format("border")
+            old_emitter = deprecation_warning_event(
+                "layer.events",
+                old_attr,
+                new_attr,
+                since_version="0.5.0",
+                version="0.6.0",
+            )
+            getattr(self.events, new_attr).connect(old_emitter)
+            deprecated_events[old_attr] = old_emitter
+
+        self.events.add(**deprecated_events)
 
         # Save the point coordinates
         self._data = np.asarray(data)
@@ -595,6 +587,30 @@ class Points(Layer):
 
         # Trigger generation of view slice and thumbnail
         self.refresh()
+
+    @classmethod
+    def _add_deprecated_properties(cls) -> None:
+        """Adds deprecated properties to class."""
+        deprecated_properties = [
+            "edge_width",
+            "edge_width_is_relative",
+            "current_edge_width",
+            "edge_color",
+            "edge_color_cycle",
+            "edge_colormap",
+            "edge_contrast_limits",
+            "current_edge_color",
+            "edge_color_mode",
+        ]
+        for old_property in deprecated_properties:
+            new_property = old_property.replace("edge", "border")
+            add_deprecated_property(
+                cls,
+                old_property,
+                new_property,
+                since_version="0.5.0",
+                version="0.6.0",
+            )
 
     @property
     def data(self) -> np.ndarray:
@@ -1085,6 +1101,7 @@ class Points(Layer):
             )
 
         self._border_width = border_width
+        self.events.border_width(value=border_width)
         self.refresh()
 
     @property
@@ -2430,3 +2447,6 @@ class Points(Layer):
             and v[value] is not None
             and not (isinstance(v[value], float) and np.isnan(v[value]))
         ]
+
+
+Points._add_deprecated_properties()
