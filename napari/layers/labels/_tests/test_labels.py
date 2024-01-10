@@ -23,6 +23,7 @@ from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
 from napari.utils import Colormap
 from napari.utils.colormaps import label_colormap
+from napari.utils.colormaps.colormap import DirectLabelColormap
 
 
 def test_random_labels():
@@ -1683,6 +1684,35 @@ def test_copy():
     l3 = Labels.create(*l1.as_layer_data_tuple())
     assert l1.data is not l2.data
     assert l1.data is l3.data
+
+
+@pytest.mark.parametrize(
+    "colormap,expected",
+    [
+        (label_colormap(49, 0.5), [0, 1]),
+        (
+            DirectLabelColormap(
+                color_dict={
+                    0: np.array([0, 0, 0, 0]),
+                    1: np.array([1, 0, 0, 1]),
+                    None: np.array([1, 1, 0, 1]),
+                }
+            ),
+            [1, 2],
+        ),
+    ],
+    ids=["auto", "direct"],
+)
+def test_draw(colormap, expected):
+    labels = Labels(np.zeros((30, 30), dtype=np.uint32))
+    labels.mode = "paint"
+    labels.colormap = colormap
+    labels.selected_label = 1
+    npt.assert_array_equal(np.unique(labels._slice.image.raw), [0])
+    npt.assert_array_equal(np.unique(labels._slice.image.view), expected[:1])
+    labels._draw(1, (15, 15), (15, 15))
+    npt.assert_array_equal(np.unique(labels._slice.image.raw), [0, 1])
+    npt.assert_array_equal(np.unique(labels._slice.image.view), expected)
 
 
 class TestLabels:
