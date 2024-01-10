@@ -1092,7 +1092,7 @@ class Labels(_ImageBase):
         return mapped_labels
 
     def _cast_labels_using_colormap(self, labels: np.ndarray) -> np.ndarray:
-        if self.color_mode == LabelColorMode.AUTO:
+        if isinstance(self.colormap, LabelColormap):
             return _cast_labels_data_to_texture_dtype_auto(
                 labels, self._random_colormap
             )
