@@ -657,7 +657,8 @@ class Labels(_ImageBase):
         """dict: custom color dict for label coloring"""
         warnings.warn(
             "Labels.color is deprecated since 0.4.19 and will be removed in "
-            "0.5.0, please use Labels.colormap.color_dict instead.",
+            "0.5.0, please use Labels.colormap.color_dict instead. Note: this"
+            "will only work when the colormap is a DirectLabelsColormap.",
             FutureWarning,
             stacklevel=2,
         )
@@ -667,7 +668,7 @@ class Labels(_ImageBase):
     def color(self, color: Dict[Optional[int], Union[str, np.ndarray]]):
         warnings.warn(
             "Labels.color is deprecated since 0.4.19 and will be removed in "
-            "0.5.0, please set Labels.colormap directly with instance "
+            "0.5.0, please set Labels.colormap directly with an instance "
             "of napari.utils.colormaps.DirectLabelColormap instead.",
             FutureWarning,
             stacklevel=2,
@@ -814,7 +815,10 @@ class Labels(_ImageBase):
         warnings.warn(
             trans._(
                 'Labels.color_mode is deprecated since 0.4.19 and will be '
-                'removed in 0.5.0. Please set Labels.colormap instead.',
+                'removed in 0.5.0. Please set Labels.colormap instead, to an'
+                'instance of napari.utils.colormaps.LabelColormap for "auto"'
+                'mode, or napari.utils.colormaps.DirectLabelColormap for '
+                '"direct" mode.',
                 deferred=True,
             ),
             FutureWarning,
