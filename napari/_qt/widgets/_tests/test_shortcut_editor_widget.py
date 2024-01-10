@@ -7,7 +7,7 @@ from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication, QMessageBox
 
 from napari._qt.widgets.qt_keyboard_settings import ShortcutEditor, WarnPopup
-from napari._tests.utils import skip_on_mac_ci
+from napari._tests.utils import skip_local_focus, skip_on_mac_ci
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import KEY_SYMBOLS
@@ -86,6 +86,7 @@ def test_restore_defaults(shortcut_editor_widget):
     assert shortcut == KEY_SYMBOLS["Ctrl"]
 
 
+@skip_local_focus
 @pytest.mark.parametrize(
     "key, modifier, key_symbols",
     [
@@ -145,6 +146,7 @@ def test_keybinding_with_modifiers(
         assert key_symbol in shortcut
 
 
+@skip_local_focus
 @pytest.mark.parametrize(
     "modifiers, key_symbols, valid",
     [
@@ -193,6 +195,7 @@ def test_keybinding_with_only_modifiers(
         assert key_symbol in shortcut
 
 
+@skip_local_focus
 @pytest.mark.parametrize(
     "removal_trigger_key",
     [
@@ -222,6 +225,7 @@ def test_remove_shortcut(shortcut_editor_widget, qtbot, removal_trigger_key):
     assert shortcut == ""
 
 
+@skip_local_focus
 @skip_on_mac_ci
 @pytest.mark.parametrize(
     "modifier_key, modifiers, key_symbols",

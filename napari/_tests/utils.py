@@ -39,6 +39,12 @@ skip_local_popups = pytest.mark.skipif(
     ' Set NAPARI_POPUP_TESTS=1 environment variable to enable.',
 )
 
+skip_local_focus = pytest.mark.skipif(
+    not os.getenv('CI') and os.getenv('NAPARI_FOCUS_TESTS', '0') == '0',
+    reason='Tests requiring GUI windows focus are skipped locally by default.'
+    ' Set NAPARI_FOCUS_TESTS=1 environment variable to enable.',
+)
+
 """
 The default timeout duration in seconds when waiting on tasks running in non-main threads.
 The value was chosen to be consistent with `QtBot.waitSignal` and `QtBot.waitUntil`.
