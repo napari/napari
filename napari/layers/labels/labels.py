@@ -310,6 +310,8 @@ class Labels(_ImageBase):
             name = magic_name(data)
 
         self._seed = 0.5
+        # We use 50 colors (49 + transparency) by default for historical
+        # consistency. This may change in future versions.
         self._random_colormap = label_colormap(
             49, self._seed, background_value=0
         )
