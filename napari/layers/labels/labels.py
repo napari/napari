@@ -57,6 +57,7 @@ from napari.utils.colormaps.colormap import (
     LabelColormapBase,
     _cast_labels_data_to_texture_dtype_auto,
     _cast_labels_data_to_texture_dtype_direct,
+    _texture_dtype,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
@@ -1005,6 +1006,14 @@ class Labels(_ImageBase):
             for s1, s2 in zip(data_slice, expanded_slice)
         )
         return sliced_labels[delta_slice]
+
+    def _get_cache_dtype(self, raw_dtype: np.dtype) -> np.dtype:
+        if self.color_mode == LabelColorMode.DIRECT:
+            return _texture_dtype(
+                self._direct_colormap._num_unique_colors + 2,
+                raw_dtype,
+            )
+        return _texture_dtype(self.num_colors, raw_dtype)
 
     def _setup_cache(self, labels):
         """
