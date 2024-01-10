@@ -1067,7 +1067,7 @@ class Labels(_ImageBase):
         if new_label is not None and self.contour < 1:
             if new_label not in self._cached_labels_mapping:
                 map_ = self._cast_labels_using_colormap(
-                    self._slice.image.raw.dtype(new_label)
+                    self._slice.image.raw.dtype.type(new_label)
                 )
                 self._cached_labels_mapping[new_label] = map_, map_.dtype
             val, dt = self._cached_labels_mapping[new_label]
