@@ -1074,10 +1074,10 @@ class Labels(_ImageBase):
 
         if new_label is not None and self.contour < 1:
             if new_label not in self._cached_labels_mapping:
-                map_ = self._cast_labels_using_colormap(np.array([new_label]))
-                self._cached_labels_mapping[new_label] = map_[0], map_.dtype
-            val = self._cached_labels_mapping[new_label]
-            mapped_labels = np.full_like(labels_to_map, val[0], dtype=val[1])
+                map_ = self._cast_labels_using_colormap(new_label)
+                self._cached_labels_mapping[new_label] = map_, map_.dtype
+            val, dt = self._cached_labels_mapping[new_label]
+            mapped_labels = np.full_like(labels_to_map, val, dtype=dt)
         else:  # direct
             mapped_labels = self._cast_labels_using_colormap(labels_to_map)
 
