@@ -324,7 +324,9 @@ class Labels(_ImageBase):
         self._contour = 0
         self._cached_labels = None
         self._cached_mapped_labels = np.zeros((0, 4), dtype=np.uint8)
-        self._cached_labels_mapping: Dict[int, Tuple[int, np.dtype]] = {}
+        self._label_to_texture_value_cache: Dict[
+            int, Tuple[int, np.dtype]
+        ] = {}
 
         data = self._ensure_int_labels(data)
 
@@ -493,9 +495,7 @@ class Labels(_ImageBase):
         self.colormap = label_colormap(
             self.num_colors, self.seed, self._background_label
         )
-        self._cached_labels = None  # invalidate the cached color mapping
-        self._cached_labels_mapping = {}
-        self._selected_color = self.get_color(self.selected_label)
+        self._clean_cache()
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.refresh()
         self.events.selected_label()
@@ -518,9 +518,7 @@ class Labels(_ImageBase):
             self._random_colormap = shuffle_and_extend_colormap(
                 self._original_random_colormap, self._seed_rng
             )
-        self._cached_labels = None  # invalidate the cached color mapping
-        self._cached_labels_mapping = {}
-        self._selected_color = self.get_color(self.selected_label)
+        self._clean_cache()
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.events.selected_label()
 
@@ -558,9 +556,7 @@ class Labels(_ImageBase):
             else:
                 color_mode = LabelColorMode.DIRECT
                 self._colormap = self._direct_colormap
-        self._selected_color = self.get_color(self.selected_label)
-        self._cached_labels = None  # invalidate the cached color mapping
-        self._cached_labels_mapping = {}
+        self._clean_cache()
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.color_mode = color_mode
 
@@ -575,10 +571,8 @@ class Labels(_ImageBase):
             num_colors, self.seed, self._background_label
         )
         self._num_colors = num_colors
-        self._cached_labels = None  # invalidate the cached color mapping
-        self._cached_labels_mapping = {}
+        self._clean_cache()
         self.refresh()
-        self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
 
     @property
@@ -772,8 +766,7 @@ class Labels(_ImageBase):
         self.events.selected_label()
 
         if self.show_selected_label:
-            self._cached_labels = None  # invalidates labels cache
-            self._cached_labels_mapping = {}
+            self._clean_cache()
             self.refresh()
 
     def swap_selected_and_background_labels(self):
@@ -796,8 +789,7 @@ class Labels(_ImageBase):
     @color_mode.setter
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
-        self._cached_labels = None  # invalidates labels cache
-        self._cached_labels_mapping = {}
+        self._clean_cache()
         self._color_mode = color_mode
         if color_mode == LabelColorMode.AUTO:
             self._colormap = ensure_colormap(self._random_colormap)
@@ -820,8 +812,7 @@ class Labels(_ImageBase):
         self.colormap.use_selection = show_selected
         self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
-        self._cached_labels = None
-        self._cached_labels_mapping = {}
+        self._clean_cache()
         self.refresh()
 
     # Only overriding to change the docstring
@@ -1040,7 +1031,7 @@ class Labels(_ImageBase):
         if data_slice is None:
             data_slice = tuple(slice(0, size) for size in raw.shape)
             self._cached_labels = None
-            self._cached_labels_mapping = {}
+            self._label_to_texture_value_cache = {}
         else:
             self._setup_cache(raw, data_slice)
 
@@ -1816,6 +1807,12 @@ class Labels(_ImageBase):
             and v[idx] is not None
             and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
+
+    def _clean_cache(self):
+        self._cached_labels = None
+        self._cached_mapped_labels = np.zeros((0, 4), dtype=np.uint8)
+        self._cached_labels_mapping = {}
+        self._selected_color = self.get_color(self.selected_label)
 
 
 def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
