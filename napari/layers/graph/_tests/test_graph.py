@@ -1,4 +1,5 @@
 from typing import Type
+from unittest.mock import Mock
 
 import networkx as nx
 import numpy as np
@@ -11,6 +12,7 @@ from napari_graph import (
 )
 
 from napari.layers import Graph
+from napari.layers.base._base_constants import ActionType
 
 
 def test_empty_graph() -> None:
@@ -128,16 +130,20 @@ def test_add_nodes(graph_class: Type[BaseGraph]) -> None:
     layer.add([2, 2])
     assert len(layer.data) == coords.shape[0] + 1
     assert graph.n_nodes == coords.shape[0] + 1
+    assert set(layer.selected_data) == {2}
 
     # adding with index
     layer.add([3, 3], 13)
     assert len(layer.data) == coords.shape[0] + 2
     assert graph.n_nodes == coords.shape[0] + 2
+    # buffer index not node index
+    assert set(layer.selected_data) == {3}
 
     # adding multiple with indices
     layer.add([[4, 4], [5, 5]], [24, 25])
     assert len(layer.data) == coords.shape[0] + 4
     assert graph.n_nodes == coords.shape[0] + 4
+    assert set(layer.selected_data) == {4, 5}
 
 
 @pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
@@ -259,3 +265,109 @@ def test_add_nodes_buffer_resize(graph_class):
     assert len(layer.data) == coords.shape[0] + 1
     assert graph.n_nodes == coords.shape[0] + 1
 
+
+@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+def test_add_data_event(graph_class):
+    coords = np.asarray([[0, 0], [1, 1]])
+
+    graph = graph_class(edges=[[0, 1]], coords=coords)
+    layer = Graph(graph)
+    layer.events.data = Mock()
+
+    layer.add([5, 5])
+    calls = layer.events.data.call_args_list
+    assert len(calls) == 2
+
+    first_call = calls[0]
+    assert first_call[1]['action'] == ActionType.ADDING
+    assert len(first_call[1]['data_indices']) == 1
+    # 3rd node added at index 2
+    assert first_call[1]['data_indices'] == (2,)
+
+    second_call = calls[1]
+    assert second_call[1]['action'] == ActionType.ADDED
+    assert second_call[1]['data_indices'] == (2,)
+
+    # specifying index
+    new_node = [3, 3]
+    layer.add(new_node, [7])
+    last_call = calls[-1]
+    assert last_call[1]['data_indices'] == (7,)
+
+    # adding multiple at once
+    new_nodes = [[4, 4], [5, 5]]
+    layer.add(new_nodes)
+    last_call = calls[-1]
+    assert last_call[1]['data_indices'] == (8, 9)
+
+
+@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+def test_remove_data_event(graph_class):
+    coords = np.asarray([[0, 0], [1, 1], [2, 2], [3, 3]])
+
+    graph = graph_class(edges=[[0, 1], [1, 2]], coords=coords)
+    layer = Graph(graph)
+    layer.events.data = Mock()
+
+    layer.remove(1)
+    calls = layer.events.data.call_args_list
+    assert len(calls) == 2
+
+    first_call = calls[0]
+    assert first_call[1]['action'] == ActionType.REMOVING
+    assert len(first_call[1]['data_indices']) == 1
+    assert first_call[1]['data_indices'] == (1,)
+
+    second_call = calls[1]
+    assert second_call[1]['action'] == ActionType.REMOVED
+    assert second_call[1]['data_indices'] == (1,)
+
+    # make sure data indices are old values
+    layer.remove([2, 3])
+    last_call = calls[-1]
+    assert last_call[1]['data_indices'] == (2, 3)
+
+
+@pytest.mark.parametrize("graph_class", [UndirectedGraph, DirectedGraph])
+def test_remove_selected_data_event(graph_class):
+    coords = np.asarray([[0, 0], [1, 1], [2, 2], [3, 3]])
+
+    graph = graph_class(edges=[[0, 1], [1, 2]], coords=coords)
+    layer = Graph(graph)
+    layer.events.data = Mock()
+
+    layer.selected_data = {0}
+    layer.remove_selected()
+
+    calls = layer.events.data.call_args_list
+    assert len(calls) == 2
+
+    first_call = calls[0]
+    assert first_call[1]['action'] == ActionType.REMOVING
+    assert len(first_call[1]['data_indices']) == 1
+    assert first_call[1]['data_indices'] == (0,)
+
+    second_call = calls[1]
+    assert second_call[1]['action'] == ActionType.REMOVED
+    assert second_call[1]['data_indices'] == (0,)
+
+    layer.selected_data = {1, 2}
+    layer.remove_selected()
+    last_call = calls[-1]
+    assert last_call[1]['data_indices'] == (1, 2)
+
+    # refresh layer to make index reasoning more straightforward
+    graph = graph_class(edges=[[0, 1], [1, 2]], coords=coords)
+    layer = Graph(graph)
+    layer.events.data = Mock()
+
+    layer.add([1, 1], 7)
+
+    # buffer index, not node id
+    layer.selected_data = {4}
+    layer.remove_selected()
+    calls = layer.events.data.call_args_list
+
+    # selected_data uses buffer id, events will always emit world id
+    last_call = calls[-1]
+    assert last_call[1]['data_indices'] == (7,)
