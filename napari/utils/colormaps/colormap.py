@@ -657,6 +657,9 @@ def _cast_labels_data_to_texture_dtype_auto(
         converted = np.where(
             data_arr == colormap.selection, selection_in_texture, dtype.type(0)
         )
+    # For small arrays, just using NumPy is faster than the Numba overhead
+    # We chose 1000 more or less at random, but for the most common use
+    # case (painting), the data will be just 1 value (the label being painted)
     elif data.size < 1000:
         converted = _zero_preserving_modulo_numpy(
             data_arr, num_colors, dtype, colormap.background_value
