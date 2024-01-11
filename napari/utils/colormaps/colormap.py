@@ -658,9 +658,9 @@ def _cast_labels_data_to_texture_dtype_auto(
             data_arr == colormap.selection, selection_in_texture, dtype.type(0)
         )
     # For small arrays, just using NumPy is faster than the Numba overhead
-    # We chose 1000 more or less at random, but for the most common use
-    # case (painting), the data will be just 1 value (the label being painted)
-    elif data.size < 1000:
+    # We chose 50000 based on the results of benchmarks in this comment
+    # https://github.com/napari/napari/pull/6583#issuecomment-1887335545
+    elif data.size < 50000:
         converted = _zero_preserving_modulo_numpy(
             data_arr, num_colors, dtype, colormap.background_value
         )
