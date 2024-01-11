@@ -142,7 +142,7 @@ def _ndisplay_toggle(viewer: Viewer) -> None:
     viewer.dims.ndisplay = 2 + (viewer.dims.ndisplay == 2)  # type: ignore
 
 
-def _get_current_ndisplay_is_3D(viewer: Viewer) -> None:
+def _get_current_ndisplay_is_3D(viewer: Viewer) -> bool:
     return viewer.dims.ndisplay == 3
 
 

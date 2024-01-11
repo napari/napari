@@ -1,4 +1,3 @@
-# type: ignore
 """Key combinations are represented in the form ``[modifier-]key``,
 e.g. ``a``, ``Control-c``, or ``Control-Alt-Delete``.
 Valid modifiers are Control, Alt, Shift, and Meta.
@@ -36,7 +35,7 @@ To create a keymap that will block others, ``bind_key(..., ...)```.
 
 import sys
 import warnings
-from typing import Callable, Mapping, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 from app_model.expressions import parse_expression
 from app_model.types import Action, KeyBinding, KeyBindingRule, KeyCode
@@ -47,7 +46,7 @@ from napari.utils.translations import trans
 if sys.version_info >= (3, 10):
     from types import EllipsisType
 else:
-    EllipsisType = type(Ellipsis)
+    EllipsisType = Any
 
 KeyBindingLike = Union[KeyBinding, str, int]
 Keymap = Mapping[
@@ -98,10 +97,10 @@ def coerce_keybinding(key_bind: KeyBindingLike) -> KeyBinding:
 def bind_key(
     keymap: Keymap,
     key_bind: Union[KeyBindingLike, EllipsisType],
-    func=_UNDEFINED,
+    func: Any = _UNDEFINED,
     *,
-    overwrite=False,
-):
+    overwrite: bool = False,
+) -> Optional[Callable]:
     """This function is deprecated and will be removed in a future version.
 
     Bind a key combination to a keymap.
@@ -171,7 +170,9 @@ def bind_key(
         stacklevel=2,
     )
 
-    return func
+    if func is not _UNDEFINED:
+        return func
+    return None
 
 
 class KeymapProvider:
@@ -187,11 +188,13 @@ class KeymapProvider:
         Instance keymap.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    class_keymap: Keymap
+
+    def __init__(self, *args: List[Any], **kwargs: Dict[str, Any]) -> None:
         super().__init__(*args, **kwargs)
         self.keymap = {}  # type: ignore
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Dict[str, Any]) -> None:
         super().__init_subclass__(**kwargs)
 
         if 'class_keymap' not in cls.__dict__:
@@ -206,10 +209,10 @@ class KeymapProvider:
     def bind_key(
         cls,
         key_bind: Union[KeyBindingLike, EllipsisType],
-        func=_UNDEFINED,
+        func: Any = _UNDEFINED,
         *,
-        overwrite=False,
-    ):
+        overwrite: bool = False,
+    ) -> Optional[Callable]:
         warnings.warn(
             trans._(
                 'This function is deprecated and will be removed in version 0.6.0. Shortcuts set via the GUI will overwrite this.'

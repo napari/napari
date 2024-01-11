@@ -1,7 +1,7 @@
 import functools
 import inspect
 import weakref
-from typing import Any, Callable, Dict, Generator, Tuple
+from typing import Any, Callable, Dict, Generator, Optional, Tuple
 
 from app_model.types import Action
 from pydantic import Field
@@ -24,13 +24,13 @@ class GeneratorCallback:
     as-needed.
     """
 
-    def __init__(self, func: Callable[[Any], Generator]):
+    def __init__(self, func: Callable):
         if not inspect.isgeneratorfunction(func):
             raise TypeError(f"'{func.__name__}' is not a generator function")
-        self.func = func
+        self.func: Callable[[Any], Generator] = func
         # make this callable object look more like func (copy the signature, docstring, etc.)
         functools.update_wrapper(self, func)
-        self._gen = None
+        self._gen: Optional[Generator] = None
 
     def __call__(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> None:
         if self._gen is None:
@@ -69,13 +69,15 @@ class AttrRestoreCallback:
         # create a wrapper that stores the previous state of obj.attribute_name
         # and returns a callback to restore it
         @functools.wraps(func)
-        def _wrapper(*args: Tuple[Any], **kwargs: Dict[str, Any]) -> None:
+        def _wrapper(
+            *args: Tuple[Any], **kwargs: Dict[str, Any]
+        ) -> Callable[[], None]:
             obj = args[0] if args else kwargs[first_variable_name]
             prev_mode = getattr(obj, attribute_name)
             func(*args, **kwargs)
             obj_ref = weakref.ref(obj)
 
-            def _callback():
+            def _callback() -> None:
                 if (concrete := obj_ref()) is not None:
                     setattr(concrete, attribute_name, prev_mode)
 

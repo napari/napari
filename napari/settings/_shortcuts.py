@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from app_model.types import KeyBinding
 
@@ -34,7 +34,7 @@ class ShortcutsSettings(EventedModel):
 
     def remove_shortcut(
         self, key: str, command: str, when: Optional[str] = None
-    ):
+    ) -> None:
         add_rule = ShortcutRule(key=key, command=command, when=when)
         negate_rule = ShortcutRule(key=key, command=f'-{command}', when=when)
 
@@ -45,7 +45,9 @@ class ShortcutsSettings(EventedModel):
                 self.shortcuts.append(negate_rule)
             self.events.shortcuts(value=self.shortcuts)
 
-    def add_shortcut(self, key: str, command: str, when: Optional[str] = None):
+    def add_shortcut(
+        self, key: str, command: str, when: Optional[str] = None
+    ) -> None:
         add_rule = ShortcutRule(key=key, command=command, when=when)
         negate_rule = ShortcutRule(key=key, command=f'-{command}', when=when)
 
@@ -68,14 +70,14 @@ class ShortcutsSettings(EventedModel):
         new_key: str,
         command: str,
         when: Optional[str] = None,
-    ):
+    ) -> None:
         with self.events.shortcuts.blocker():
             self.remove_shortcut(old_key, command, when)
             self.add_shortcut(new_key, command, when)
         self.events.shortcuts(value=self.shortcuts)
 
     @validator('shortcuts', allow_reuse=True, pre=True)
-    def shortcut_validate(cls, shortcuts):
+    def shortcut_validate(cls, shortcuts: Any) -> List[ShortcutRule]:
         if isinstance(shortcuts, dict):
             # legacy case
             from napari.constants import DEFAULT_SHORTCUTS

@@ -166,7 +166,7 @@ class KeyBindingDispatcher:
         self.registry.registered.connect(self._refresh_cache)
         self.registry.unregistered.connect(self._refresh_cache)
 
-    def _on_context_change(self, changes: Set[str]):
+    def _on_context_change(self, changes: Set[str]) -> None:
         logger.info('context change detected for keys %s', changes)
         self._refresh_cache()
         logger.debug('current context: %s', self.context)
