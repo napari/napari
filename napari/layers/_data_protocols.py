@@ -81,6 +81,14 @@ class LayerDataProtocol(Protocol):
     ) -> LayerDataProtocol:
         """Returns self[key]."""
 
+    @property
+    def size(self) -> int:
+        """The size is necessary to calculate the data range"""
+
+    @property
+    def ndim(self) -> int:
+        """The number of dimension of the underlying data"""
+
 
 def assert_protocol(obj: Any, protocol: type = LayerDataProtocol):
     """Assert `obj` is an instance of `protocol` or raise helpful error."""

@@ -192,7 +192,15 @@ class KeymapProvider:
 
     def __init__(self, *args: List[Any], **kwargs: Dict[str, Any]) -> None:
         super().__init__(*args, **kwargs)
-        self.keymap = {}  # type: ignore
+        self._keymap: Keymap = {}
+
+    @property
+    def keymap(self) -> Keymap:
+        return self._keymap
+
+    @keymap.setter
+    def keymap(self, value: Dict) -> None:
+        self._keymap = {coerce_keybinding(k): v for k, v in value.items()}
 
     def __init_subclass__(cls, **kwargs: Dict[str, Any]) -> None:
         super().__init_subclass__(**kwargs)
