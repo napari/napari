@@ -5,6 +5,7 @@ from napari_graph import BaseGraph, UndirectedGraph, to_napari_graph
 from numpy.typing import ArrayLike
 from psygnal.containers import Selection
 
+from napari.layers.base._base_constants import ActionType
 from napari.layers.graph._slice import _GraphSliceRequest, _GraphSliceResponse
 from napari.layers.points.points import _BasePoints
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
@@ -398,12 +399,41 @@ class Graph(_BasePoints):
         """Adds nodes at coordinates.
         Parameters
         ----------
-        coords : sequence of indices to add point at
+        coords : sequence of coordinates for each new node.
         indices : optional indices of the newly inserted nodes.
         """
+        if indices is None:
+            count_adding = len(np.atleast_2d(coords))
+            indices = self.data.get_next_valid_indices(count_adding)
+        indices = np.atleast_1d(indices)
+        if indices.ndim > 1:
+            raise ValueError(
+                trans._(
+                    "Indices for removal must be 1-dim. Found {ndim}",
+                    ndim=indices.ndim,
+                )
+            )
+
+        self.events.data(
+            value=self.data,
+            action=ActionType.ADDING,
+            data_indices=tuple(indices),
+            vertex_indices=((),),
+        )
+
         prev_size = self.data.n_allocated_nodes
-        self.data.add_nodes(indices=indices, coords=coords)
+        added_indices = self.data.add_nodes(indices=indices, coords=coords)
         self._data_changed(prev_size)
+
+        self.events.data(
+            value=self.data,
+            action=ActionType.ADDED,
+            data_indices=tuple(
+                added_indices,
+            ),
+            vertex_indices=((),),
+        )
+        self.selected_data = self.data._map_world2buffer(added_indices)
 
     def remove_selected(self) -> None:
         """Removes selected points if any."""
@@ -436,6 +466,18 @@ class Graph(_BasePoints):
                     ndim=indices.ndim,
                 )
             )
+        # TODO: should know nothing about buffer
+        world_indices = (
+            self.data._buffer2world[indices] if is_buffer_domain else indices
+        )
+        self.events.data(
+            value=self.data,
+            action=ActionType.REMOVING,
+            data_indices=tuple(
+                world_indices,
+            ),
+            vertex_indices=((),),
+        )
 
         prev_size = self.data.n_allocated_nodes
 
@@ -444,6 +486,15 @@ class Graph(_BasePoints):
             self.data.remove_node(idx, is_buffer_domain)
 
         self._data_changed(prev_size)
+
+        self.events.data(
+            value=self.data,
+            action=ActionType.REMOVED,
+            data_indices=tuple(
+                world_indices,
+            ),
+            vertex_indices=((),),
+        )
 
     def _move_points(
         self, ixgrid: Tuple[np.ndarray, np.ndarray], shift: np.ndarray
