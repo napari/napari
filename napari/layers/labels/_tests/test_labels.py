@@ -23,7 +23,10 @@ from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
 from napari.utils import Colormap
 from napari.utils.colormaps import label_colormap
-from napari.utils.colormaps.colormap import DirectLabelColormap
+from napari.utils.colormaps.colormap import (
+    DirectLabelColormap,
+    _zero_preserving_modulo,
+)
 
 
 def test_random_labels():
@@ -787,11 +790,18 @@ def test_paint_2d():
     assert np.sum(layer.data[5:26, 17:38] == 7) == 349
 
 
+@pytest.fixture()
+def _warmup_numba():
+    data = np.zeros((40, 40), dtype=np.uint32)
+    _zero_preserving_modulo(data, 10, np.uint8)
+    _zero_preserving_modulo(data, 10, np.uint8)
+
+
+@pytest.mark.usefixtures("_warmup_numba")
 def test_paint_2d_xarray():
     """Test the memory usage of painting an xarray indirectly via timeout."""
     now = time.monotonic()
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
-
     layer = Labels(data)
     layer.brush_size = 12
     layer.mode = 'paint'
