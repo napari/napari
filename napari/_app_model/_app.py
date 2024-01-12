@@ -195,10 +195,17 @@ class NapariApplication(Application):
         get_settings().shortcuts.events.shortcuts.connect(
             self._on_shortcuts_changed
         )
+        self._on_shortcuts_changed(None)
 
     def _on_shortcuts_changed(self, event):
         self.keybindings.discard_entries(KeyBindingWeights.USER)
-        for entry in event.value:
+
+        if event is None:
+            kbs = get_settings().shortcuts.shortcuts
+        else:
+            kbs = event.value
+
+        for entry in kbs:
             self.keybindings.register_keybinding_rule(
                 entry.command,
                 KeyBindingRule(
