@@ -157,8 +157,37 @@ def labeled_particles(
     ...
 
 
-@lru_cache
 def labeled_particles(
+    shape: Sequence[int],
+    dtype: Optional[np.dtype] = None,
+    n: int = 144,
+    seed: Optional[int] = None,
+    return_density: bool = False,
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    """Generate labeled blobs of given shape and dtype.
+
+    Parameters
+    ----------
+    shape : Sequence[int]
+        Shape of the resulting array.
+    dtype : Optional[np.dtype]
+        Dtype of the resulting array.
+    n : int
+        Number of blobs to generate.
+    seed : Optional[int]
+        Seed for the random number generator.
+    return_density : bool
+        Whether to return the density array and center coordinates.
+    """
+    res = _labeled_particles(shape, dtype, n, seed, return_density)
+    if isinstance(res, tuple):
+        return np.copy(res[0]), np.copy(res[1]), np.copy(res[2])
+
+    return np.copy(res)
+
+
+@lru_cache
+def _labeled_particles(
     shape: Sequence[int],
     dtype: Optional[np.dtype] = None,
     n: int = 144,
