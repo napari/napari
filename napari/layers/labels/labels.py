@@ -1088,11 +1088,11 @@ class Labels(_ImageBase):
 
     @overload
     def _cast_labels_using_colormap(self, labels: np.ndarray) -> np.ndarray:
-        pass
+        ...
 
     @overload
     def _cast_labels_using_colormap(self, labels: np.integer) -> np.integer:
-        pass
+        ...
 
     def _cast_labels_using_colormap(
         self, labels: Union[np.ndarray, np.integer]
