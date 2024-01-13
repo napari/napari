@@ -568,6 +568,20 @@ class DirectLabelColormap(LabelColormapBase):
         # if someone is using DirectLabelColormap directly, not through Label layer
 
 
+@overload
+def _convert_small_ints_to_unsigned(
+    data: np.ndarray,
+) -> np.ndarray:
+    ...
+
+
+@overload
+def _convert_small_ints_to_unsigned(
+    data: np.integer,
+) -> np.integer:
+    ...
+
+
 def _convert_small_ints_to_unsigned(
     data: Union[np.ndarray, np.integer],
 ) -> Union[np.ndarray, np.integer]:
