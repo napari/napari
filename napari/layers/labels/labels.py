@@ -59,6 +59,7 @@ from napari.utils.colormaps.colormap import (
     LabelColormapBase,
     _cast_labels_data_to_texture_dtype_auto,
     _cast_labels_data_to_texture_dtype_direct,
+    _convert_small_ints_to_unsigned,
     _texture_dtype,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
@@ -1033,8 +1034,9 @@ class Labels(_ImageBase):
             data_slice = tuple(slice(0, size) for size in raw.shape)
             self._cached_labels = None
             self._label_to_texture_value_cache = {}
+            setup_cache = False
         else:
-            self._setup_cache(raw, data_slice)
+            setup_cache = True
 
         labels = raw  # for readability
 
@@ -1044,6 +1046,12 @@ class Labels(_ImageBase):
 
         if sliced_labels is None:
             sliced_labels = labels[data_slice]
+
+        if raw.dtype.itemsize <= 2:
+            return _convert_small_ints_to_unsigned(sliced_labels)
+
+        if setup_cache:
+            self._setup_cache(raw, data_slice)
 
         # cache the labels and keep track of when values are changed
         update_mask = None

@@ -1511,9 +1511,16 @@ def test_invalidate_cache_when_change_color_mode():
     )
 
 
-@pytest.mark.parametrize("dtype", np.sctypes['int'] + np.sctypes['uint'])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        x
+        for x in np.sctypes['int'] + np.sctypes['uint']
+        if np.dtype(x).itemsize > 2
+    ],
+)
 @pytest.mark.parametrize("mode", ["auto", "direct"])
-def test_cache_for_dtypes(dtype, mode):
+def test_cache_for_dtypes_big_int(dtype, mode):
     data = np.zeros((10, 10), dtype=dtype)
     labels = Labels(data)
     labels.color_mode = mode
@@ -1523,6 +1530,26 @@ def test_cache_for_dtypes(dtype, mode):
     )
     assert labels._cached_labels is not None
     assert labels._cached_mapped_labels.dtype == labels._slice.image.view.dtype
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        x
+        for x in np.sctypes['int'] + np.sctypes['uint']
+        if np.dtype(x).itemsize <= 2
+    ],
+)
+@pytest.mark.parametrize("mode", ["auto", "direct"])
+def test_cache_for_dtypes_small_int(dtype, mode):
+    data = np.zeros((10, 10), dtype=dtype)
+    labels = Labels(data)
+    labels.color_mode = mode
+    assert labels._cached_labels is None
+    labels._raw_to_displayed(
+        labels._slice.image.raw, (slice(None), slice(None))
+    )
+    assert labels._cached_labels is None
 
 
 def test_color_mapping_when_color_is_changed():
