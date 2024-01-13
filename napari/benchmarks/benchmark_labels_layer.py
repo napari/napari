@@ -59,7 +59,8 @@ class Labels2DSuite:
 
     def time_paint_circle(self, *_):
         """Time to paint circle."""
-        self.layer.paint((0,) * 2, self.layer.selected_label)
+        self.layer.mode = "paint"
+        self.layer._draw(self.layer.selected_label, (0, 0), (0, 0))
 
     def time_fill(self, *_):
         """Time to fill."""

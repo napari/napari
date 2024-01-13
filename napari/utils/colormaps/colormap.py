@@ -822,6 +822,15 @@ def _cast_labels_data_to_texture_dtype_direct(
     if data.itemsize <= 2:
         return data
 
+    if isinstance(data, np.integer):
+        target_type = minimum_dtype_for_labels(
+            direct_colormap._num_unique_colors + 2
+        )
+        mapping_dict = direct_colormap._label_mapping_and_color_dict[0]
+        return target_type.type(
+            mapping_dict.get(int(data), mapping_dict[None])
+        )
+
     original_shape = np.shape(data)
     array_data = np.atleast_1d(data)
     return np.reshape(

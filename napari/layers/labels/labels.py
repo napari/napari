@@ -60,7 +60,6 @@ from napari.utils.colormaps.colormap import (
     _cast_labels_data_to_texture_dtype_auto,
     _cast_labels_data_to_texture_dtype_direct,
     _texture_dtype,
-    minimum_dtype_for_labels,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
@@ -1100,16 +1099,6 @@ class Labels(_ImageBase):
         if isinstance(self.colormap, LabelColormap):
             return _cast_labels_data_to_texture_dtype_auto(
                 labels, self._random_colormap
-            )
-        if isinstance(labels, np.integer):
-            target_type = minimum_dtype_for_labels(
-                self._direct_colormap._num_unique_colors + 2
-            )
-            mapping_dict = self._direct_colormap._label_mapping_and_color_dict[
-                0
-            ]
-            return target_type.type(
-                mapping_dict.get(int(labels), mapping_dict[None])
             )
         return _cast_labels_data_to_texture_dtype_direct(
             labels, self._direct_colormap
