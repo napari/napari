@@ -134,6 +134,25 @@ def toggle_selected_visibility(viewer: Viewer):
     viewer.layers.toggle_selected_visibility()
 
 
+@register_viewer_action(trans._("Toggle visibility of unselected layers"))
+def toggle_unselected_visibility(viewer: Viewer):
+    for layer in viewer.layers:
+        if layer not in viewer.layers.selection:
+            layer.visible = not layer.visible
+
+
+@register_viewer_action(trans._("Select and show only layer above."))
+def show_only_layer_above(viewer):
+    viewer.layers.select_next()
+    _show_only_selected_layer(viewer)
+
+
+@register_viewer_action(trans._("Select and show only layer below."))
+def show_only_layer_below(viewer):
+    viewer.layers.select_previous()
+    _show_only_selected_layer(viewer)
+
+
 @register_viewer_action(
     trans._(
         "Show/Hide IPython console (only available when napari started as standalone application)"
@@ -168,3 +187,12 @@ def show_shortcuts(viewer: Viewer):
     for i in range(pref_list.count()):
         if (item := pref_list.item(i)) and item.text() == "Shortcuts":
             pref_list.setCurrentRow(i)
+
+
+def _show_only_selected_layer(viewer):
+    """Helper function to show only selected layer"""
+    for layer in viewer.layers:
+        if layer not in viewer.layers.selection:
+            layer.visible = False
+        else:
+            layer.visible = True
