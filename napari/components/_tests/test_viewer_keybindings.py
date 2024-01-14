@@ -83,16 +83,24 @@ def test_selected_visibility_toggle():
     viewer = make_viewer_with_three_layers()
     viewer.layers.selection.active = viewer.layers[0]
     assert viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
     toggle_selected_visibility(viewer)
     assert not viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
     toggle_selected_visibility(viewer)
     assert viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
 
 
 def test_unselected_visibility_toggle():
     viewer = make_viewer_with_three_layers()
     viewer.layers.selection.active = viewer.layers[0]
     assert viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
     toggle_unselected_visibility(viewer)
     assert viewer.layers[0].visible
     assert not viewer.layers[1].visible
@@ -107,9 +115,12 @@ def test_show_only_layer_above():
     viewer = make_viewer_with_three_layers()
     viewer.layers.selection.active = viewer.layers[0]
     assert viewer.layers[0].visible
+    assert viewer.layers[1].visible
+    assert viewer.layers[2].visible
     show_only_layer_above(viewer)
     assert not viewer.layers[0].visible
     assert viewer.layers[1].visible
+    assert not viewer.layers[2].visible
     show_only_layer_above(viewer)
     assert not viewer.layers[0].visible
     assert not viewer.layers[1].visible
@@ -119,6 +130,8 @@ def test_show_only_layer_above():
 def test_show_only_layer_below():
     viewer = make_viewer_with_three_layers()
     viewer.layers.selection.active = viewer.layers[2]
+    assert viewer.layers[0].visible
+    assert viewer.layers[1].visible
     assert viewer.layers[2].visible
     show_only_layer_below(viewer)
     assert not viewer.layers[2].visible
