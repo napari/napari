@@ -10,7 +10,6 @@ from typing import (
     Tuple,
     Union,
     cast,
-    overload,
 )
 
 import numpy as np
@@ -57,8 +56,6 @@ from napari.utils.colormaps import (
 from napari.utils.colormaps.colormap import (
     LabelColormap,
     LabelColormapBase,
-    _cast_labels_data_to_texture_dtype_auto,
-    _cast_labels_data_to_texture_dtype_direct,
     _convert_small_ints_to_unsigned,
     _texture_dtype,
 )
@@ -997,9 +994,9 @@ class Labels(_ImageBase):
         self._cached_mapped_labels = np.copy(
             self._slice.image.view
         )  # ugly hack to reduce computation
-        self._cached_mapped_labels[
-            data_slice
-        ] = self._cast_labels_using_colormap(self._cached_labels[data_slice])
+        self._cached_mapped_labels[data_slice] = self.colormap._map_to_gpu(
+            self._cached_labels[data_slice]
+        )
 
     def _raw_to_displayed(
         self,
@@ -1074,14 +1071,14 @@ class Labels(_ImageBase):
 
         if new_label is not None and self.contour < 1:
             if new_label not in self._cached_labels_mapping:
-                map_ = self._cast_labels_using_colormap(
+                map_ = self.colormap._map_to_gpu(
                     self._slice.image.raw.dtype.type(new_label)
                 )
                 self._cached_labels_mapping[new_label] = map_, map_.dtype
             val, dt = self._cached_labels_mapping[new_label]
             mapped_labels = np.full_like(labels_to_map, val, dtype=dt)
         else:  # direct
-            mapped_labels = self._cast_labels_using_colormap(labels_to_map)
+            mapped_labels = self.colormap._map_to_gpu(labels_to_map)
 
         if self._cached_labels is not None:
             if update_mask is not None:
@@ -1092,25 +1089,6 @@ class Labels(_ImageBase):
                 self._cached_mapped_labels[data_slice] = mapped_labels
             return self._cached_mapped_labels[data_slice]
         return mapped_labels
-
-    @overload
-    def _cast_labels_using_colormap(self, labels: np.ndarray) -> np.ndarray:
-        ...
-
-    @overload
-    def _cast_labels_using_colormap(self, labels: np.integer) -> np.integer:
-        ...
-
-    def _cast_labels_using_colormap(
-        self, labels: Union[np.ndarray, np.integer]
-    ) -> Union[np.ndarray, np.integer]:
-        if isinstance(self.colormap, LabelColormap):
-            return _cast_labels_data_to_texture_dtype_auto(
-                labels, self._random_colormap
-            )
-        return _cast_labels_data_to_texture_dtype_direct(
-            labels, self._direct_colormap
-        )
 
     def _update_thumbnail(self):
         """Update the thumbnail with current data and colormap.

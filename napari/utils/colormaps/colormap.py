@@ -182,6 +182,20 @@ class LabelColormapBase(Colormap):
         # need to validate after drop pydantic 1
         keep_untouched = (cached_property,)
 
+    @overload
+    def _map_to_gpu(self, values: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
+    def _map_to_gpu(self, values: np.integer) -> np.integer:
+        ...
+
+    def _map_to_gpu(
+        self, values: Union[np.ndarray, np.integer]
+    ) -> Union[np.ndarray, np.integer]:
+        """Map input values to values for send to GPU."""
+        raise NotImplementedError
+
     def _cmap_without_selection(self) -> "LabelColormapBase":
         if self.use_selection:
             cmap = self.__class__(**self.dict())
@@ -232,7 +246,7 @@ class LabelColormapBase(Colormap):
         int
             The selection converted.
         """
-        raise NotImplementedError
+        return int(self._map_to_gpu(dtype.type(self.selection)))
 
 
 class LabelColormap(LabelColormapBase):
@@ -255,13 +269,6 @@ class LabelColormap(LabelColormapBase):
             )
         return v
 
-    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        return int(
-            _cast_labels_data_to_texture_dtype_auto(
-                dtype.type(self.selection), self
-            )
-        )
-
     def _background_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat background as given dtype and calculate value with min dtype.
 
@@ -275,11 +282,21 @@ class LabelColormap(LabelColormapBase):
         int
             The background converted.
         """
-        return int(
-            _cast_labels_data_to_texture_dtype_auto(
-                dtype.type(self.background_value), self
-            )
-        )
+        return int(self._map_to_gpu(dtype.type(self.background_value)))
+
+    @overload
+    def _map_to_gpu(self, values: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
+    def _map_to_gpu(self, values: np.integer) -> np.integer:
+        ...
+
+    def _map_to_gpu(
+        self, values: Union[np.ndarray, np.integer]
+    ) -> Union[np.ndarray, np.integer]:
+        """Map input values to values for send to GPU."""
+        return _cast_labels_data_to_texture_dtype_auto(values, self)
 
     def _map_without_cache(self, values) -> np.ndarray:
         texture_dtype_values = _zero_preserving_modulo_numpy(
@@ -355,11 +372,21 @@ class DirectLabelColormap(LabelColormapBase):
             kwargs["colors"] = np.zeros(3)
         super().__init__(*args, **kwargs)
 
-    def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
-        return int(
-            _cast_labels_data_to_texture_dtype_direct(
-                dtype.type(self.selection), self
-            )
+    @overload
+    def _map_to_gpu(self, values: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
+    def _map_to_gpu(self, values: np.integer) -> np.integer:
+        ...
+
+    def _map_to_gpu(
+        self, values: Union[np.ndarray, np.integer]
+    ) -> Union[np.ndarray, np.integer]:
+        """Map input values to values for send to GPU."""
+        values2 = np.atleast_1d(values)
+        return _labels_raw_to_texture_direct(values2, self).reshape(
+            np.shape(values)
         )
 
     def map(self, values) -> np.ndarray:
@@ -909,7 +936,13 @@ def _labels_raw_to_texture_direct_loop(
     result_array = np.full_like(
         data, MAPPING_OF_UNKNOWN_VALUE, dtype=target_dtype
     )
-    return _labels_raw_to_texture_direct_inner_loop(data, dkt, result_array)
+    if data.size < 50000:
+        return _labels_raw_to_texture_direct_inner_loop(
+            data, dkt, result_array
+        )
+    return _labels_raw_to_texture_direct_inner_loop_par(
+        data, dkt, out=result_array
+    )
 
 
 def _labels_raw_to_texture_direct_inner_loop(
@@ -926,6 +959,11 @@ def _labels_raw_to_texture_direct_inner_loop(
             out.flat[i] = dkt[data.flat[i]]
 
     return out
+
+
+_labels_raw_to_texture_direct_inner_loop_par = (
+    _labels_raw_to_texture_direct_inner_loop
+)
 
 
 def _texture_dtype(num_colors: int, dtype: np.dtype) -> np.dtype:
@@ -978,7 +1016,10 @@ else:
     )
     _zero_preserving_modulo = _zero_preserving_modulo_loop
     _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_loop
-    _labels_raw_to_texture_direct_inner_loop = numba.njit(parallel=True)(
+    _labels_raw_to_texture_direct_inner_loop_par = numba.njit(parallel=True)(
+        _labels_raw_to_texture_direct_inner_loop
+    )
+    _labels_raw_to_texture_direct_inner_loop = numba.njit(parallel=False)(
         _labels_raw_to_texture_direct_inner_loop
     )
     prange = numba.prange  # type: ignore [misc]
