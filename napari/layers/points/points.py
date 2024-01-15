@@ -379,10 +379,11 @@ class Points(Layer):
         shown=True,
         projection_mode='none',
     ) -> None:
+        settings = get_settings()
         if edge_color is None:
-            edge_color = get_settings().appearance.edge_color
+            edge_color = settings.appearance.edge_color
         if face_color is None:
-            face_color = get_settings().appearance.face_color
+            face_color = settings.appearance.face_color
 
         if ndim is None and scale is not None:
             ndim = len(scale)
