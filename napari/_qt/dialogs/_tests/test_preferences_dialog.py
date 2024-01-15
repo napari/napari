@@ -9,6 +9,7 @@ from napari._qt.dialogs.preferences_dialog import (
     QMessageBox,
 )
 from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
+    ColorSchemaWidget,
     FontSizeSchemaWidget,
     HorizontalObjectSchemaWidget,
 )
@@ -68,6 +69,35 @@ def test_font_size_widget(qtbot, pref):
     font_size_widget._reset_button.click()
     assert get_settings().appearance.font_size == def_font_size
     assert font_size_widget.state == def_font_size
+
+
+def test_color_widgets(qtbot, pref):
+    face_color_widget = (
+        pref._stack.widget(1).widget().widget.widgets['face_color']
+    )
+    edge_color_widget = (
+        pref._stack.widget(1).widget().widget.widgets['edge_color']
+    )
+
+    assert isinstance(
+        face_color_widget,
+        ColorSchemaWidget,
+    )
+    assert isinstance(
+        edge_color_widget,
+        ColorSchemaWidget,
+    )
+
+    # Check defaults are correct
+    assert get_settings().appearance.face_color == 'white'
+    assert get_settings().appearance.edge_color == 'dimgrey'
+
+    # Check setting new color defaults
+    face_color_widget.state = 'red'
+    edge_color_widget.state = 'blue'
+
+    assert get_settings().appearance.face_color == 'red'
+    assert get_settings().appearance.edge_color == 'blue'
 
 
 def test_preferences_dialog_accept(qtbot, pref):
