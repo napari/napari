@@ -790,18 +790,12 @@ def test_paint_2d():
     assert np.sum(layer.data[5:26, 17:38] == 7) == 349
 
 
-@pytest.fixture()
-def _warmup_numba():
-    data = np.zeros((40, 40), dtype=np.uint32)
-    _zero_preserving_modulo(data, 10, np.uint8)
-    _zero_preserving_modulo(data, 10, np.uint8)
-
-
-@pytest.mark.usefixtures("_warmup_numba")
 def test_paint_2d_xarray():
     """Test the memory usage of painting an xarray indirectly via timeout."""
+    data_np = np.zeros((3, 3, 1024, 1024), dtype=np.uint32)
+    _zero_preserving_modulo(data_np, 10, np.uint8)
     now = time.monotonic()
-    data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
+    data = xr.DataArray(data_np)
     layer = Labels(data)
     layer.brush_size = 12
     layer.mode = 'paint'
