@@ -745,7 +745,11 @@ def _zero_preserving_modulo_loop(
     """
     result = np.empty_like(values, dtype=dtype)
     # need to preallocate numpy array for asv memory benchmarks
-    return _zero_preserving_modulo_inner_loop(values, n, to_zero, out=result)
+    if values.size < 50000:
+        return _zero_preserving_modulo_inner_loop(values, n, to_zero, result)
+    return _zero_preserving_modulo_inner_loop_par(
+        values, n, to_zero, out=result
+    )
 
 
 def _zero_preserving_modulo_inner_loop(
@@ -781,6 +785,9 @@ def _zero_preserving_modulo_inner_loop(
             out.flat[i] = (values.flat[i] - 1) % n + 1
 
     return out
+
+
+_zero_preserving_modulo_inner_loop_par = _zero_preserving_modulo_inner_loop
 
 
 @overload
@@ -963,7 +970,10 @@ except ModuleNotFoundError:
     _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
     prange = range
 else:
-    _zero_preserving_modulo_inner_loop = numba.njit(parallel=True)(
+    _zero_preserving_modulo_inner_loop_par = numba.njit(parallel=True)(
+        _zero_preserving_modulo_inner_loop
+    )
+    _zero_preserving_modulo_inner_loop = numba.njit(parallel=False)(
         _zero_preserving_modulo_inner_loop
     )
     _zero_preserving_modulo = _zero_preserving_modulo_loop
