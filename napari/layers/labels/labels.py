@@ -56,7 +56,6 @@ from napari.utils.colormaps import (
 from napari.utils.colormaps.colormap import (
     LabelColormap,
     LabelColormapBase,
-    _convert_small_ints_to_unsigned,
     _texture_dtype,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
@@ -1045,7 +1044,7 @@ class Labels(_ImageBase):
             sliced_labels = labels[data_slice]
 
         if raw.dtype.itemsize <= 2:
-            return _convert_small_ints_to_unsigned(sliced_labels)
+            return self.colormap._map_to_gpu(sliced_labels)
 
         if setup_cache:
             self._setup_cache(raw, data_slice)

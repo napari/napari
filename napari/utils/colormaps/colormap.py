@@ -385,9 +385,9 @@ class DirectLabelColormap(LabelColormapBase):
     ) -> Union[np.ndarray, np.integer]:
         """Map input values to values for send to GPU."""
         values2 = np.atleast_1d(values)
-        return _labels_raw_to_texture_direct(values2, self).reshape(
-            np.shape(values)
-        )
+        return _cast_labels_data_to_texture_dtype_direct(
+            values2, self
+        ).reshape(np.shape(values))
 
     def map(self, values) -> np.ndarray:
         """Map values to colors.
@@ -701,7 +701,7 @@ def _cast_labels_data_to_texture_dtype_auto(
     # For small arrays, just using NumPy is faster than the Numba overhead
     # We chose 50000 based on the results of benchmarks in this comment
     # https://github.com/napari/napari/pull/6583#issuecomment-1887335545
-    elif data.size < 50000:
+    elif data.size < 100:
         converted = _zero_preserving_modulo_numpy(
             data_arr, num_colors, dtype, colormap.background_value
         )
