@@ -30,6 +30,16 @@ class AppearanceSettings(EventedModel):
         ge=1,
         le=10,
     )
+    face_color: str = Field(
+        "white",
+        title=trans._("Default face color"),
+        description=trans._("Select the default face color."),
+    )
+    edge_color: str = Field(
+        "dimgrey",
+        title=trans._("Default edge color"),
+        description=trans._("Select the default edge color."),
+    )
     layer_tooltip_visibility: bool = Field(
         False,
         title=trans._("Show layer tooltips"),
