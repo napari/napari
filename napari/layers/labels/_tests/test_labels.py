@@ -25,7 +25,6 @@ from napari.utils import Colormap
 from napari.utils.colormaps import label_colormap
 from napari.utils.colormaps.colormap import (
     DirectLabelColormap,
-    _zero_preserving_modulo,
 )
 
 
@@ -792,11 +791,9 @@ def test_paint_2d():
 
 def test_paint_2d_xarray():
     """Test the memory usage of painting an xarray indirectly via timeout."""
-    data_np = np.zeros((3, 3, 1024, 1024), dtype=np.uint32)
-    _zero_preserving_modulo(data_np, 10, np.uint8)
-    now = time.monotonic()
-    data = xr.DataArray(data_np)
+    data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
     layer = Labels(data)
+    now = time.monotonic()
     layer.brush_size = 12
     layer.mode = 'paint'
     layer.paint((1, 1, 512, 512), 3)
