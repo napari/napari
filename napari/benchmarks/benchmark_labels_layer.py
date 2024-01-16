@@ -62,6 +62,22 @@ class Labels2DSuite:
         self.layer.mode = "paint"
         self.layer._draw(self.layer.selected_label, (0, 0), (0, 0))
 
+    def time_paint_circle_mult(self, n, *_):
+        """Time to paint circle."""
+        self.layer.mode = "paint"
+        self.layer._draw(self.layer.selected_label, (0, 0), (0, 0))
+        self.layer._draw(
+            self.layer.selected_label, (n // 2, n // 2), (n // 2, n // 2)
+        )
+        self.layer._draw(
+            self.layer.selected_label, (n - 1, n - 1), (n - 1, n - 1)
+        )
+
+    def time_paint_line(self, n, *_):
+        """Time to paint circle."""
+        self.layer.mode = "paint"
+        self.layer._draw(self.layer.selected_label, (0, 0), (n - 1, n - 1))
+
     def time_fill(self, *_):
         """Time to fill."""
         self.layer.fill(
