@@ -2,6 +2,7 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
+import inspect
 import os
 from copy import copy
 
@@ -52,10 +53,29 @@ class Labels2DSuite:
         """Time to get current value."""
         self.layer.get_value((0,) * 2)
 
-    def time_raw_to_displayed(self, *_):
+    def time_raw_to_displayed_full(self, *_):
         """Time to convert raw to displayed."""
         self.layer._slice.image.raw[0, :] += 1  # simulate changes
         self.layer._raw_to_displayed(self.layer._slice.image.raw)
+
+    def time_raw_to_displayed_sliced(self, *_):
+        self.layer._slice.image.raw[0, :] += 1  # simulate changes
+        self.layer._raw_to_displayed(
+            self.layer._slice.image.raw, (slice(0, 10), slice(0, 10))
+        )
+
+    def time_raw_to_displayed_sliced_num(self, *_):
+        self.layer._slice.image.raw[0, :] = 1  # simulate changes
+        if inspect.signature(self.layer._raw_to_displayed).parameters.get(
+            'num_colors'
+        ):
+            self.layer._raw_to_displayed(
+                self.layer._slice.image.raw, (slice(0, 10), slice(0, 10)), 1
+            )
+        else:
+            self.layer._raw_to_displayed(
+                self.layer._slice.image.raw, (slice(0, 10), slice(0, 10))
+            )
 
     def time_paint_circle(self, *_):
         """Time to paint circle."""
