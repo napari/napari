@@ -381,7 +381,11 @@ class Points(Layer):
         if ndim is None:
             if scale is not None:
                 ndim = len(scale)
-            elif data is not None and len(data.shape) == 2:
+            elif (
+                data is not None
+                and hasattr(data, 'shape')
+                and len(data.shape) == 2
+            ):
                 ndim = data.shape[1]
 
         data, ndim = fix_data_points(data, ndim)
