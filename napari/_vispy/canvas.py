@@ -409,9 +409,13 @@ class VispyCanvas:
         )
         mouse_callbacks(self.viewer, read_only_event)
 
-        layer = self.viewer.layers.selection.active
-        if layer is not None:
-            mouse_callbacks(layer, read_only_event)
+        layers = list(self.viewer.layers.selection)
+        if not layers:
+            active = self.viewer.layers.selection.active
+            layers = [] if active is None else [active]
+
+        for layer in layers:
+            mouse_callbacks(layer, event)
 
     def _on_mouse_double_click(self, event: MouseEvent) -> None:
         """Called whenever a mouse double-click happen on the canvas
