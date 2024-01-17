@@ -10,10 +10,23 @@ import numpy as np
 
 from napari.components.dims import Dims
 from napari.layers import Labels
+from napari.utils.colormaps import direct_colormap
+from napari.utils.colormaps.colormap import (
+    _cast_labels_data_to_texture_dtype_direct,
+)
 
 from .utils import Skiper, labeled_particles
 
 MAX_VAL = 2**23
+
+
+def _warm_numba(dkt):
+    cmap = direct_colormap(dkt)
+    data1 = np.empty((10, 10), dtype=np.uint32)
+    data2 = np.empty((10,), dtype=np.uint32)
+    for _ in range(3):
+        _cast_labels_data_to_texture_dtype_direct(data1, cmap)
+        _cast_labels_data_to_texture_dtype_direct(data2, cmap)
 
 
 class Labels2DSuite:
@@ -31,6 +44,7 @@ class Labels2DSuite:
             (n, n), dtype=dtype, n=int(np.log2(n) ** 2), seed=1
         )
         self.layer = Labels(self.data)
+        _warm_numba()
         self.layer._raw_to_displayed(self.data, (slice(0, n), slice(0, n)))
 
     def time_create_layer(self, *_):
@@ -171,6 +185,7 @@ class Labels2DColorDirectSuite(Labels2DSuite):
             self.data,
             color={i + 1: np.random.random(4) for i in random_label_ids},
         )
+        _warm_numba(self.layer.colormap.color_dict)
         self.layer._raw_to_displayed(
             self.layer._slice.image.raw, (slice(0, n), slice(0, n))
         )
