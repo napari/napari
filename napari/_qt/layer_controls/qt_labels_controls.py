@@ -28,7 +28,7 @@ from napari.layers.labels._labels_constants import (
     Mode,
 )
 from napari.layers.labels._labels_utils import get_dtype
-from napari.utils import LabelColormap
+from napari.utils import CycleLabelColormap
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
@@ -311,7 +311,7 @@ class QtLabelsControls(QtLayerControls):
             self.layer.colormap = self.layer._direct_colormap
 
     def _on_colormap_change(self):
-        if isinstance(self.layer.colormap, LabelColormap):
+        if isinstance(self.layer.colormap, CycleLabelColormap):
             self.colorModeComboBox.setCurrentIndex(
                 self.colorModeComboBox.findData(LabelColorMode.AUTO.value)
             )

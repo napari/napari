@@ -52,8 +52,8 @@ from napari.utils.colormaps import (
     label_colormap,
 )
 from napari.utils.colormaps.colormap import (
+    CycleLabelColormap,
     DirectLabelColormap,
-    LabelColormap,
     LabelColormapBase,
     _cast_labels_data_to_texture_dtype_auto,
     _cast_labels_data_to_texture_dtype_direct,
@@ -97,7 +97,7 @@ class Labels(_ImageBase):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    colormap : LabelColormap or DirectLabelColormap or None
+    colormap : CycleLabelColormap or DirectLabelColormap or None
         Colormap to use for the labels. If None, a random colormap will be
         used.
     depiction : str
@@ -531,7 +531,7 @@ class Labels(_ImageBase):
         self._set_colormap(colormap)
 
     def _set_colormap(self, colormap):
-        if isinstance(colormap, LabelColormap):
+        if isinstance(colormap, CycleLabelColormap):
             self._random_colormap = colormap
             self._original_random_colormap = colormap
             self._colormap = self._random_colormap
@@ -1022,7 +1022,7 @@ class Labels(_ImageBase):
         if self._cached_labels is not None:
             return
 
-        if isinstance(self._colormap, LabelColormap):
+        if isinstance(self._colormap, CycleLabelColormap):
             mapped_background = _cast_labels_data_to_texture_dtype_auto(
                 labels.dtype.type(self.colormap.background_value),
                 self._random_colormap,
@@ -1098,7 +1098,7 @@ class Labels(_ImageBase):
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
-        if isinstance(self.colormap, LabelColormap):
+        if isinstance(self.colormap, CycleLabelColormap):
             mapped_labels = _cast_labels_data_to_texture_dtype_auto(
                 labels_to_map, self._random_colormap
             )

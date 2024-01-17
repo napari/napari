@@ -1,8 +1,8 @@
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.colormaps.colormap import (
     Colormap,
+    CycleLabelColormap,
     DirectLabelColormap,
-    LabelColormap,
 )
 from napari.utils.colormaps.colormap_utils import (
     ALL_COLORMAPS,
@@ -29,7 +29,7 @@ __all__ = (
     'Colormap',
     'DirectLabelColormap',
     'INVERSE_COLORMAPS',
-    'LabelColormap',
+    'CycleLabelColormap',
     'MAGENTA_GREEN',
     'RGB',
     'SIMPLE_COLORMAPS',

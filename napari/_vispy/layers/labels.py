@@ -17,7 +17,7 @@ from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.utils.colormaps.colormap import (
-    LabelColormap,
+    CycleLabelColormap,
     _texture_dtype,
 )
 
@@ -94,7 +94,7 @@ vec4 sample_label_color(float t) {
 class LabelVispyColormap(VispyColormap):
     def __init__(
         self,
-        colormap: LabelColormap,
+        colormap: CycleLabelColormap,
         view_dtype: np.dtype,
         raw_dtype: np.dtype,
     ):
@@ -178,7 +178,7 @@ def build_textures_from_dict(
 
 
 def _select_colormap_texture(
-    colormap: LabelColormap, view_dtype, raw_dtype
+    colormap: CycleLabelColormap, view_dtype, raw_dtype
 ) -> np.ndarray:
     if raw_dtype.itemsize > 2:
         color_texture = colormap._get_mapping_from_cache(view_dtype)
@@ -231,7 +231,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         ):
             return
         colormap = self.layer.colormap
-        auto_mode = isinstance(colormap, LabelColormap)
+        auto_mode = isinstance(colormap, CycleLabelColormap)
         view_dtype = self.layer._slice.image.view.dtype
         raw_dtype = self.layer._slice.image.raw.dtype
         if auto_mode or raw_dtype.itemsize <= 2:
@@ -244,7 +244,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
                 # to uint8 or uint16 and background_value is always 0 in a view array.
                 # The LabelColormap is EventedModel, so we need to make
                 # a copy instead of temporary overwrite the background_value
-                colormap = LabelColormap(**colormap.dict())
+                colormap = CycleLabelColormap(**colormap.dict())
                 colormap.background_value = (
                     colormap._background_as_minimum_dtype(raw_dtype)
                 )

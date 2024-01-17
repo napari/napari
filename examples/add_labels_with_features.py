@@ -48,7 +48,8 @@ label_features = {
     'size': ["none", *coin_sizes],  # background is size: none
 }
 
-color = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow', None: 'magenta'}
+colors = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow',
+          None: 'magenta'}
 # Here we provide a dict with color mappings for a subset of labels;
 # we also provide a default color (`None` key) which will be used by all other labels
 
@@ -57,7 +58,7 @@ label_layer = viewer.add_labels(
     label_image,
     name='segmentation',
     features=label_features,
-    colormap=DirectLabelColormap(color_dict=color),
+    colormap=DirectLabelColormap(color_dict=colors),
 )
 
 if __name__ == '__main__':
