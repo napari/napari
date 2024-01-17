@@ -322,6 +322,7 @@ class LabelColormap(LabelColormapBase):
         np.ndarray of same shape as values, but with last dimension of size 4
             Mapped colors.
         """
+        original_shape = np.shape(values)
         values = np.atleast_1d(values)
 
         if values.dtype.kind == 'f':
@@ -334,7 +335,7 @@ class LabelColormap(LabelColormapBase):
         if self.use_selection:
             mapped[(values != self.selection)] = 0
 
-        return mapped
+        return mapped.reshape(original_shape + (4,))
 
     def shuffle(self, seed: int):
         """Shuffle the colormap colors.
@@ -399,7 +400,18 @@ class DirectLabelColormap(LabelColormapBase):
         np.ndarray of same shape as values, but with last dimension of size 4
             Mapped colors.
         """
-        if values.dtype.kind in {'f', 'U'}:
+        if isinstance(values, np.integer):
+            values = int(values)
+        if isinstance(values, int):
+            if self.use_selection and values != self.selection:
+                return np.array((0, 0, 0, 0))
+            return self.color_dict.get(values, self.default_color)
+        if isinstance(values, (list, tuple)):
+            values = np.array(values)
+        if not isinstance(values, np.ndarray) or values.dtype.kind in {
+            'f',
+            'U',
+        }:
             raise TypeError("DirectLabelColormap can only be used with int")
         mapper = self._get_mapping_from_cache(values.dtype)
         if mapper is not None:

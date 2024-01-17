@@ -1135,7 +1135,7 @@ class Labels(_ImageBase):
         ):
             col = self.colormap.map(self._background_label)[0]
         else:
-            col = self.colormap.map(self._slice.image.raw.dtype.type(label))
+            col = self.colormap.map(label)
         return col
 
     def _get_value_ray(
