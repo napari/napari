@@ -399,7 +399,6 @@ class DirectLabelColormap(LabelColormapBase):
         np.ndarray of same shape as values, but with last dimension of size 4
             Mapped colors.
         """
-        values = np.atleast_1d(values)
         if values.dtype.kind in {'f', 'U'}:
             raise TypeError("DirectLabelColormap can only be used with int")
         mapper = self._get_mapping_from_cache(values.dtype)
