@@ -15,6 +15,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import re
+import os
 from importlib import import_module
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
@@ -78,7 +79,7 @@ tags_extension = ["md", "rst"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'napari'
+html_theme = 'napari_sphinx_theme'
 
 # Define the json_url for our version switcher.
 json_url = "https://napari.org/dev/_static/version_switcher.json"
@@ -90,12 +91,17 @@ html_theme_options = {
         {"name": "napari hub", "url": "https://napari-hub.org"}
     ],
     "github_url": "https://github.com/napari/napari",
-    "navbar_start": ["navbar-project"],
+    "navbar_start": ["navbar-logo", "navbar-project"],
     "navbar_end": ["version-switcher", "navbar-icon-links"],
     "switcher": {
         "json_url": json_url,
         "version_match": version_match,
     },
+    "navbar_persistent": [],
+    "header_links_before_dropdown": 6,
+    "secondary_sidebar_items": ["page-toc"],
+    "pygment_light_style": "napari",
+    "pygment_dark_style": "napari",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -260,15 +266,31 @@ sphinx_gallery_conf = {
     'within_subsection_order': ExampleTitleSortKey,
 }
 
+GOOGLE_CALENDAR_API_KEY = os.environ.get('GOOGLE_CALENDAR_API_KEY', '')
+
+
+def add_google_calendar_secrets(app, docname, source):
+    """Add google calendar api key to meeting schedule page.
+
+    The source argument is a list whose single element is the contents of the
+    source file. You can process the contents and replace this item to implement
+    source-level transformations.
+    """
+    if docname == 'community/meeting_schedule':
+        source[0] = source[0].replace('{API_KEY}', GOOGLE_CALENDAR_API_KEY)
+
 
 def setup(app):
-    """Ignore .ipynb files.
+    """Set up docs build.
 
-    Prevents sphinx from complaining about multiple files found for document
-    when generating the gallery.
+    * Ignores .ipynb files to prevent sphinx from complaining about multiple
+      files found for document when generating the gallery
+    * Rewrites github anchors to be comparable
+    * Adds google calendar api key to meetings schedule page
 
     """
     app.registry.source_suffix.pop(".ipynb", None)
+    app.connect('source-read', add_google_calendar_secrets)
     app.connect('linkcheck-process-uri', rewrite_github_anchor)
 
 
