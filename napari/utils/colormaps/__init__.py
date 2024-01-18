@@ -3,6 +3,7 @@ from napari.utils.colormaps.colormap import (
     Colormap,
     CycleLabelColormap,
     DirectLabelColormap,
+    LabelColormap,
 )
 from napari.utils.colormaps.colormap_utils import (
     ALL_COLORMAPS,
@@ -27,9 +28,10 @@ __all__ = (
     'AVAILABLE_COLORMAPS',
     'CYMRGB',
     'Colormap',
-    'DirectLabelColormap',
-    'INVERSE_COLORMAPS',
     'CycleLabelColormap',
+    'DirectLabelColormap',
+    'LabelColormap',
+    'INVERSE_COLORMAPS',
     'MAGENTA_GREEN',
     'RGB',
     'SIMPLE_COLORMAPS',
