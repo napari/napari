@@ -311,6 +311,15 @@ class QtLabelsControls(QtLayerControls):
             self.layer.colormap = self.layer._direct_colormap
 
     def _on_colormap_change(self):
+        enable_combobox = not self.layer._is_default_colors(
+            self.layer._direct_colormap.color_dict
+        )
+        self.colorModeComboBox.setEnabled(enable_combobox)
+        if not enable_combobox:
+            self.colorModeComboBox.setToolTip(
+                'Layer needs a user-set DirectLabelColormap to enable direct '
+                'mode.'
+            )
         if isinstance(self.layer.colormap, CycleLabelColormap):
             self.colorModeComboBox.setCurrentIndex(
                 self.colorModeComboBox.findData(LabelColorMode.AUTO.value)
