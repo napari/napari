@@ -23,6 +23,7 @@ from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
+from napari.utils.migrations import deprecated_class_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -350,6 +351,14 @@ class CycleLabelColormap(LabelColormapBase):
         """
         np.random.default_rng(seed).shuffle(self.colors[1:])
         self.events.colors(value=self.colors)
+
+
+LabelColormap = deprecated_class_name(
+    CycleLabelColormap,
+    'LabelColormap',
+    version='0.5.0',
+    since_version='0.4.19',
+)
 
 
 class DirectLabelColormap(LabelColormapBase):
