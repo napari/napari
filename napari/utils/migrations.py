@@ -165,3 +165,39 @@ def deprecated_constructor_arg_by_attr(name: str) -> Callable:
         return _wrapper
 
     return wrapper
+
+
+def deprecated_class_name(
+    new_class: type,
+    previous_name: str,
+    version: str,
+    since_version: str,
+) -> type:
+    """Function to deprecate a class.
+
+    Usage:
+
+        class NewName:
+            pass
+
+        OldName = deprecated_class_name(
+            NewName, 'OldName', version='0.5.0', since_version='0.4.19'
+        )
+    """
+    msg = (
+        f"{previous_name} is deprecated since {since_version} and will be "
+        f"removed in {version}. Please use {new_class.__name__}."
+    )
+
+    class _NewClass(new_class):
+        def __new__(cls, *args, **kwargs):
+            warnings.warn(msg, FutureWarning, stacklevel=2)
+            return super().__new__(cls, *args, **kwargs)
+
+        def __init_subclass__(cls, **kwargs):
+            warnings.warn(msg, FutureWarning, stacklevel=2)
+
+    _NewClass.__module__ = None
+    _NewClass.__name__ = previous_name
+
+    return _NewClass
