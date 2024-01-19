@@ -30,7 +30,7 @@ MAPPING_OF_UNKNOWN_VALUE = 0
 # For direct mode we map all unknown values to single value
 # for simplicity of implementation we select 0
 
-SINGLE_THREAD_THRESHOLD = 50000
+SINGLE_THREAD_THRESHOLD = 0  # 50000
 
 
 class ColormapInterpolationMode(StrEnum):
