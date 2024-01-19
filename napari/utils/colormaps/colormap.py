@@ -30,6 +30,8 @@ MAPPING_OF_UNKNOWN_VALUE = 0
 # For direct mode we map all unknown values to single value
 # for simplicity of implementation we select 0
 
+SINGLE_THREAD_THRESHOLD = 50000
+
 
 class ColormapInterpolationMode(StrEnum):
     """INTERPOLATION: Interpolation mode for colormaps.
@@ -780,7 +782,7 @@ def _zero_preserving_modulo_loop(
     """
     result = np.empty_like(values, dtype=dtype)
     # need to preallocate numpy array for asv memory benchmarks
-    if values.size < 50000:
+    if values.size < SINGLE_THREAD_THRESHOLD:
         return _zero_preserving_modulo_inner_loop(values, n, to_zero, result)
     return _zero_preserving_modulo_inner_loop_par(
         values, n, to_zero, out=result
@@ -944,7 +946,7 @@ def _labels_raw_to_texture_direct_loop(
     result_array = np.full_like(
         data, MAPPING_OF_UNKNOWN_VALUE, dtype=target_dtype
     )
-    if data.size < 50000:
+    if data.size < SINGLE_THREAD_THRESHOLD:
         return _labels_raw_to_texture_direct_inner_loop(
             data, dkt, result_array
         )

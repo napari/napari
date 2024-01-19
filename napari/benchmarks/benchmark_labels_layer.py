@@ -5,6 +5,7 @@
 import inspect
 import os
 from copy import copy
+from unittest.mock import patch
 
 import numpy as np
 
@@ -24,11 +25,21 @@ def _warm_numba(dkt, dtype):
     cmap = direct_colormap(dkt)
     data1 = np.empty((10, 10), dtype=dtype)
     data2 = np.empty((10,), dtype=dtype)
-    data3 = np.empty((250, 250), dtype=dtype)
     for _ in range(3):
-        _cast_labels_data_to_texture_dtype_direct(data1, cmap)
-        _cast_labels_data_to_texture_dtype_direct(data2, cmap)
-        _cast_labels_data_to_texture_dtype_direct(data3, cmap)
+        with patch(
+            'napari.utils.colormaps.colormap.SINGLE_THREAD_THRESHOLD',
+            500,
+            create=True,
+        ):
+            _cast_labels_data_to_texture_dtype_direct(data1, cmap)
+            _cast_labels_data_to_texture_dtype_direct(data2, cmap)
+        with patch(
+            'napari.utils.colormaps.colormap.SINGLE_THREAD_THRESHOLD',
+            5,
+            create=True,
+        ):
+            _cast_labels_data_to_texture_dtype_direct(data1, cmap)
+            _cast_labels_data_to_texture_dtype_direct(data2, cmap)
 
 
 class Labels2DSuite:
