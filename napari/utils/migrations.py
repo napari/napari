@@ -189,7 +189,7 @@ def deprecated_class_name(
         f"removed in {version}. Please use {new_class.__name__}."
     )
 
-    class _NewClass(new_class):
+    class _OldClass(new_class):
         def __new__(cls, *args, **kwargs):
             warnings.warn(msg, FutureWarning, stacklevel=2)
             return super().__new__(cls, *args, **kwargs)
@@ -197,7 +197,7 @@ def deprecated_class_name(
         def __init_subclass__(cls, **kwargs):
             warnings.warn(msg, FutureWarning, stacklevel=2)
 
-    _NewClass.__module__ = None
-    _NewClass.__name__ = previous_name
+    _OldClass.__module__ = new_class.__module__
+    _OldClass.__name__ = previous_name
 
-    return _NewClass
+    return _OldClass
