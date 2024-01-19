@@ -24,7 +24,7 @@ def test_label_colormap(index, expected):
     Make sure that the default label colormap colors are identical
     to past versions, for UX consistency.
     """
-    np.testing.assert_almost_equal(label_colormap(49).map(index), [expected])
+    np.testing.assert_almost_equal(label_colormap(49).map(index), expected)
 
 
 def test_label_colormap_exception():
