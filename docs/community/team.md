@@ -4,7 +4,6 @@ napari is a consensus-based community project. Anyone with an interest in the pr
 
 ## Current Core Developers
 
-- [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - [@alisterburt](https://github.com/alisterburt)
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - [@andy-sweet](https://github.com/andy-sweet)
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - [@DragaDoncila](https://github.com/DragaDoncila)*
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - [@GenevieveBuckley](https://github.com/GenevieveBuckley)
@@ -27,6 +26,8 @@ napari is a consensus-based community project. Anyone with an interest in the pr
 - [Justine Larsen](https://github.com/napari/napari/commits?author=justinelarsen) - [@justinelarsen](https://github.com/justinelarsen)
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=potating-potato) - [@potating-potato](https://github.com/potating-potato)
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - [@AhmetCanSolak](https://github.com/AhmetCanSolak)
+- [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - [@alisterburt](https://github.com/alisterburt)
+
 
 <sub>* on the napari [steering council](https://napari.org/community/governance.html#steering-council).</sub>
 
