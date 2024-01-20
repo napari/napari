@@ -449,11 +449,10 @@ class Shapes(Layer):
         experimental_clipping_planes=None,
         projection_mode='none',
     ) -> None:
-        settings = get_settings()
         if edge_color is None:
-            edge_color = settings.appearance.edge_color
+            edge_color = get_settings().appearance.edge_color
         if face_color is None:
-            face_color = settings.appearance.face_color
+            face_color = get_settings().appearance.face_color
 
         if data is None or len(data) == 0:
             if ndim is None:
