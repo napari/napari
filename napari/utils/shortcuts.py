@@ -21,12 +21,12 @@ _default_shortcuts = {
     'napari:transpose_axes': [KeyMod.CtrlCmd | KeyCode.KeyT],
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyV],
-    'napari:toggle_unselected_visibility': [KeyMod.Alt | KeyCode.KeyV],
+    'napari:toggle_unselected_visibility': [KeyMod.Shift | KeyCode.KeyV],
     'napari:show_only_layer_above': [
-        KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.UpArrow
+        KeyMod.Shift | KeyMod.Alt | KeyCode.UpArrow
     ],
     'napari:show_only_layer_below': [
-        KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.DownArrow
+        KeyMod.Shift | KeyMod.Alt | KeyCode.DownArrow
     ],
     'napari:hold_for_pan_zoom': [KeyCode.Space],
     # labels
