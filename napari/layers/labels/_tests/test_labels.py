@@ -1513,20 +1513,6 @@ def test_invalidate_cache_when_change_color_mode():
     )
 
 
-@pytest.mark.parametrize("dtype", np.sctypes['int'] + np.sctypes['uint'])
-@pytest.mark.parametrize("mode", ["auto", "direct"])
-def test_cache_for_dtypes(dtype, mode):
-    data = np.zeros((10, 10), dtype=dtype)
-    labels = Labels(data)
-    labels.color_mode = mode
-    assert labels._cached_labels is None
-    labels._raw_to_displayed(
-        labels._slice.image.raw, (slice(None), slice(None))
-    )
-    assert labels._cached_labels is not None
-    assert labels._cached_mapped_labels.dtype == labels._slice.image.view.dtype
-
-
 def test_color_mapping_when_color_is_changed():
     """Checks if the color mapping is computed correctly when the color palette is changed."""
 
@@ -1679,15 +1665,6 @@ def test_labels_features_event():
     layer.features = {'some_feature': []}
 
     assert event_emitted
-
-
-def test_invalidate_cache_when_change_slice():
-    layer = Labels(np.zeros((2, 4, 5), dtype=np.uint8))
-    assert layer._cached_labels is None
-    layer._setup_cache(layer._slice.image.raw)
-    assert layer._cached_labels is not None
-    layer._set_view_slice()
-    assert layer._cached_labels is None
 
 
 def test_copy():
