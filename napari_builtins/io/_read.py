@@ -10,8 +10,10 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 from urllib.error import HTTPError, URLError
 
 import dask.array as da
+import imageio.v3 as iio
 import numpy as np
 from dask import delayed
+from imageio import formats
 
 from napari.utils.misc import abspath_or_url
 from napari.utils.translations import trans
@@ -19,12 +21,8 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from napari.types import FullLayerData, LayerData, ReaderFunction
 
-try:
-    import imageio.v2 as imageio
-except ModuleNotFoundError:
-    import imageio  # type: ignore
 
-IMAGEIO_EXTENSIONS = {x for f in imageio.formats for x in f.extensions}
+IMAGEIO_EXTENSIONS = {x for f in formats for x in f.extensions}
 READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({'.zarr', '.lsm', '.npy'})
 
 
@@ -91,7 +89,7 @@ def imread(filename: str) -> np.ndarray:
     if ext.lower() in ('.npy',):
         return np.load(filename)
     if ext.lower() not in [".tif", ".tiff", ".lsm"]:
-        return imageio.imread(filename)
+        return iio.imread(filename)
     import tifffile
 
     # Pre-download urls before loading them with tifffile
