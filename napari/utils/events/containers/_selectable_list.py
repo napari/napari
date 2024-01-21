@@ -134,8 +134,12 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
             if len(self) > idx >= 0:
                 next_layer = self[idx]
                 if shift:
-                    self.selection.add(next_layer)
-                    self.selection._current = next_layer
+                    if next_layer in self.selection:
+                        self.selection.remove(self.selection._current)
+                        self.selection._current = next_layer
+                    else:
+                        self.selection.add(next_layer)
+                        self.selection._current = next_layer
                 else:
                     self.selection.active = next_layer
         elif len(self) > 0:
