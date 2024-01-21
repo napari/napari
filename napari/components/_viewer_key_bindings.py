@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app_model.types import KeyCode, KeyMod
+
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
 from napari.utils.theme import available_themes, get_system_theme
@@ -29,6 +31,16 @@ def register_viewer_action(description):
         return func
 
     return _inner
+
+
+@ViewerModel.bind_key(KeyMod.Shift | KeyCode.UpArrow, overwrite=True)
+def extend_selection_to_layer_above(viewer: Viewer):
+    viewer.layers.select_next(shift=True)
+
+
+@ViewerModel.bind_key(KeyMod.Shift | KeyCode.DownArrow, overwrite=True)
+def extend_selection_to_layer_below(viewer: Viewer):
+    viewer.layers.select_previous(shift=True)
 
 
 @register_viewer_action(trans._("Reset scroll."))
