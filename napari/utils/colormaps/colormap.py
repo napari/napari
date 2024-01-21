@@ -983,14 +983,14 @@ except ModuleNotFoundError:
     _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
     prange = range
 else:
-    _zero_preserving_modulo_inner_loop = numba.njit(parallel=True)(
+    _zero_preserving_modulo_inner_loop = numba.njit(parallel=True, cache=True)(
         _zero_preserving_modulo_inner_loop
     )
     _zero_preserving_modulo = _zero_preserving_modulo_loop
     _labels_raw_to_texture_direct = _labels_raw_to_texture_direct_loop
-    _labels_raw_to_texture_direct_inner_loop = numba.njit(parallel=True)(
-        _labels_raw_to_texture_direct_inner_loop
-    )
+    _labels_raw_to_texture_direct_inner_loop = numba.njit(
+        parallel=True, cache=True
+    )(_labels_raw_to_texture_direct_inner_loop)
     prange = numba.prange  # type: ignore [misc]
 
     del numba
