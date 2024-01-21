@@ -14,8 +14,8 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import re
 import os
+import re
 from importlib import import_module
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
