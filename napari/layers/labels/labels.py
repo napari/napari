@@ -7,6 +7,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Sequence,
     Tuple,
     Union,
     cast,
@@ -64,7 +65,7 @@ from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
-from napari.utils.indexing import index_in_slice
+from napari.utils.indexing import index_in_slice, visible_items_in_slice
 from napari.utils.migrations import deprecated_constructor_arg_by_attr
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
@@ -1588,6 +1589,13 @@ class Labels(_ImageBase):
     def _get_dims_to_paint(self) -> list:
         return list(self._slice_input.order[-self.n_edit_dimensions :])
 
+    def _get_pt_not_disp(self, indices, values):
+        slice_input = self._slice.slice_input
+        point = np.round(
+            self.world_to_data(slice_input.world_slice.point)
+        ).astype(int)
+        return {dim: point[dim] for dim in slice_input.not_displayed}
+
     def data_setitem(self, indices, value, refresh=True):
         """Set `indices` in `data` to `value`, while writing to edit history.
 
@@ -1607,7 +1615,12 @@ class Labels(_ImageBase):
         ..[1] https://numpy.org/doc/stable/user/basics.indexing.html
         """
         changed_indices = self.data[indices] != value
-        indices = tuple([x[changed_indices] for x in indices])
+        indices = tuple(x[changed_indices] for x in indices)
+
+        if isinstance(value, Sequence):
+            value = np.asarray(value, dtype=self._slice.image.raw.dtype)
+        else:
+            value = self._slice.image.raw.dtype.type(value)
 
         if not indices or indices[0].size == 0:
             return
@@ -1623,6 +1636,15 @@ class Labels(_ImageBase):
         # update the labels image
         self.data[indices] = value
 
+        pt_not_disp = self._get_pt_not_disp(indices, value)
+        displayed_indices = index_in_slice(indices, pt_not_disp)
+        if isinstance(value, np.ndarray):
+            visible_values = value[
+                visible_items_in_slice(indices, pt_not_disp)
+            ]
+        else:
+            visible_values = value
+
         if not (  # if not a numpy array or numpy-backed xarray
             isinstance(self.data, np.ndarray)
             or isinstance(getattr(self.data, 'data', None), np.ndarray)
@@ -1632,15 +1654,8 @@ class Labels(_ImageBase):
             # array, or a NumPy-array-backed Xarray, is the slice a view and
             # therefore updated automatically.
             # For other types, we update it manually here.
-            slice_input = self._slice.slice_input
-            point = np.round(
-                self.world_to_data(slice_input.world_slice.point)
-            ).astype(int)
-            pt_not_disp = {
-                dim: point[dim] for dim in slice_input.not_displayed
-            }
-            displayed_indices = index_in_slice(indices, pt_not_disp)
-            self._slice.image.raw[displayed_indices] = value
+            self._slice.image.raw[displayed_indices] = visible_values
+            # self._slice.image.view[displayed_indices] = self.colormap._map_to_gpu(value)
 
         # tensorstore and xarray do not return their indices in
         # np.ndarray format, so they need to be converted explicitly
@@ -1659,6 +1674,11 @@ class Labels(_ImageBase):
             # the original slice because of the morphological dilation
             # (1 pixel because get_countours always applies 1 pixel dilation)
             updated_slice = expand_slice(updated_slice, self.data.shape, 1)
+        else:
+            # update data view
+            self._slice.image.view[
+                displayed_indices
+            ] = self.colormap._map_to_gpu(visible_values)
 
         if self._updated_slice is None:
             self._updated_slice = updated_slice

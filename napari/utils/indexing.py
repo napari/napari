@@ -4,6 +4,15 @@ import numpy as np
 import numpy.typing as npt
 
 
+def visible_items_in_slice(
+    index: Tuple[npt.NDArray[np.int_], ...], position_in_axes: Dict[int, int]
+) -> npt.NDArray[np.bool_]:
+    queries = [
+        index[ax] == position for ax, position in position_in_axes.items()
+    ]
+    return np.logical_and.reduce(queries, axis=0)
+
+
 def index_in_slice(
     index: Tuple[npt.NDArray[np.int_], ...], position_in_axes: Dict[int, int]
 ) -> Tuple[npt.NDArray[np.int_], ...]:
@@ -34,10 +43,7 @@ def index_in_slice(
     ----------
     [1]: https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing
     """
-    queries = [
-        index[ax] == position for ax, position in position_in_axes.items()
-    ]
-    index_in_slice = np.logical_and.reduce(queries, axis=0)
+    index_in_slice = visible_items_in_slice(index, position_in_axes)
     return tuple(
         ix[index_in_slice]
         for i, ix in enumerate(index)
