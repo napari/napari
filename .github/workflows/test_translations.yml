@@ -10,12 +10,15 @@ jobs:
   translations:
     name: Check missing translations
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.8
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: "3.11"
           cache-dependency-path: setup.cfg
       - name: Install napari
         run: |

@@ -55,7 +55,7 @@ def test_track_layer_data():
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
     layer = Tracks(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
 
 
 @pytest.mark.parametrize(
@@ -66,7 +66,7 @@ def test_track_layer_data_nonzero_starting_time(timestamps):
     data = np.zeros((100, 4))
     data[:, 1] = timestamps
     layer = Tracks(data)
-    assert np.all(layer.data == data)
+    np.testing.assert_array_equal(layer.data, data)
 
 
 def test_track_layer_data_flipped():
@@ -76,7 +76,7 @@ def test_track_layer_data_flipped():
     data[:, 0] = np.arange(100)
     data = np.flip(data, axis=0)
     layer = Tracks(data)
-    assert np.all(layer.data == np.flip(data, axis=0))
+    np.testing.assert_array_equal(layer.data, np.flip(data, axis=0))
 
 
 properties_dict = {'time': np.arange(100)}
@@ -111,7 +111,7 @@ def test_track_layer_colorby_nonexistent():
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
     non_existant_property = 'not_a_valid_key'
-    assert non_existant_property not in properties_dict.keys()
+    assert non_existant_property not in properties_dict
     with pytest.raises(ValueError):
         Tracks(
             data, properties=properties_dict, color_by=non_existant_property
@@ -153,7 +153,7 @@ def test_track_layer_reset_data():
     layer = Tracks(data, graph=graph, properties=properties)
     cropped_data = data[:10, :]
     layer.data = cropped_data
-    assert np.all(layer.data == cropped_data)
+    np.testing.assert_array_equal(layer.data, cropped_data)
     assert layer.graph == {}
 
 
@@ -218,7 +218,7 @@ def test_fast_points_lookup() -> None:
         assert points_lookup[t].stop == e
         assert points_lookup[t].stop - points_lookup[t].start == r
         unique_time = sorted_time[points_lookup[t]]
-        assert np.all(unique_time[0] == unique_time)
+        np.testing.assert_array_equal(unique_time[0], unique_time)
         total_length += len(unique_time)
 
     assert total_length == len(sorted_time)
@@ -231,7 +231,7 @@ def test_single_time_tracks() -> None:
     tracks = [[0, 5, 2, 3], [1, 5, 3, 4], [2, 5, 4, 5]]
     layer = Tracks(tracks)
 
-    assert np.all(layer.data == tracks)
+    np.testing.assert_array_equal(layer.data, tracks)
 
 
 def test_track_ids_ordering() -> None:
@@ -243,4 +243,4 @@ def test_track_ids_ordering() -> None:
     sorted_track_ids = [0, 0, 1, 1, 2]  # track_ids after sorting
 
     layer = Tracks(unsorted_data)
-    assert np.all(sorted_track_ids == layer.features["track_id"])
+    np.testing.assert_array_equal(sorted_track_ids, layer.features["track_id"])

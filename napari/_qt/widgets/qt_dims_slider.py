@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 from weakref import ref
 
 import numpy as np
@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QWidget,
 )
-from superqt import ensure_object_thread
+from superqt import QElidingLineEdit, ensure_object_thread
 
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.qthreading import _new_worker_qthread
@@ -26,6 +26,9 @@ from napari.settings import get_settings
 from napari.settings._constants import LoopMode
 from napari.utils.events.event_utils import connect_setattr_value
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari._qt.widgets.qt_dims import QtDims
 
 
 class QtDimSliderWidget(QWidget):
@@ -38,13 +41,14 @@ class QtDimSliderWidget(QWidget):
     fps_changed = Signal(float)
     mode_changed = Signal(str)
     range_changed = Signal(tuple)
+    size_changed = Signal()
     play_started = Signal()
     play_stopped = Signal()
 
     def __init__(self, parent: QWidget, axis: int) -> None:
         super().__init__(parent=parent)
         self.axis = axis
-        self.qt_dims = parent
+        self.qt_dims: QtDims = parent
         self.dims = parent.dims
         self.axis_label = None
         self.slider = None
@@ -121,8 +125,10 @@ class QtDimSliderWidget(QWidget):
 
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider."""
-        label = QLineEdit(self)
+        label = QElidingLineEdit(self)
         label.setObjectName('axis_label')  # needed for _update_label
+        fm = label.fontMetrics()
+        label.setEllipsesWidth(int(fm.averageCharWidth() * 3))
         label.setText(self.dims.axis_labels[self.axis])
         label.home(False)
         label.setToolTip(trans._('Edit to change axis label'))
@@ -252,6 +258,8 @@ class QtDimSliderWidget(QWidget):
         value : float
             Frames per second for animation.
         """
+        if self._fps == value:
+            return
         self._fps = value
         self.play_button.fpsspin.setValue(abs(value))
         self.play_button.reverse_check.setChecked(value < 0)
@@ -414,6 +422,11 @@ class QtDimSliderWidget(QWidget):
         thread.finished.connect(self.play_stopped)
         self.play_started.emit()
         return worker, thread
+
+    def resizeEvent(self, event):
+        """Emit a signal to inform about a size change."""
+        self.size_changed.emit()
+        super().resizeEvent(event)
 
 
 class QtCustomDoubleSpinBox(QDoubleSpinBox):

@@ -27,9 +27,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     moved (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: int, old_value: T, value: T)
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
 
@@ -45,7 +45,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     def __init__(self, *args, **kwargs) -> None:
         self._activate_on_insert = True
         super().__init__(*args, **kwargs)
-        self.selection._pre_add_hook = self._preselect_hook
+        # bound/unbound methods are ambiguous for mypy so we need to ignore
+        # https://mypy.readthedocs.io/en/stable/error_code_list.html?highlight=method-assign#check-that-assignment-target-is-not-a-method-method-assign
+        self.selection._pre_add_hook = self._preselect_hook  # type: ignore[method-assign]
 
     def _preselect_hook(self, value):
         """Called before adding an item to the selection."""

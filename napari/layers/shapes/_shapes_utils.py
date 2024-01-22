@@ -1,4 +1,6 @@
-from typing import Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 from skimage.draw import line, polygon2mask
@@ -7,6 +9,9 @@ from vispy.visuals.tube import _frenet_frames
 
 from napari.layers.utils.layer_utils import segment_normal
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 try:
     # see https://github.com/vispy/vispy/issues/1029
@@ -39,9 +44,9 @@ def inside_boxes(boxes):
     BCBM = np.multiply(BC, BM).sum(1)
     BCBC = np.multiply(BC, BC).sum(1)
 
-    c1 = 0 <= ABAM
+    c1 = ABAM >= 0
     c2 = ABAM <= ABAB
-    c3 = 0 <= BCBM
+    c3 = BCBM >= 0
     c4 = BCBM <= BCBC
 
     inside = np.all(np.array([c1, c2, c3, c4]), axis=0)
@@ -809,7 +814,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     """
     points = np.array(path).astype(float)
 
-    if closed and not np.all(points[0] == points[-1]):
+    if closed and not np.array_equal(points[0], points[-1]):
         points = np.concatenate([points, [points[0]]], axis=0)
 
     tangents, normals, binormals = _frenet_frames(points, closed)
@@ -1002,11 +1007,11 @@ def extract_shape_type(data, shape_type=None):
         type of each shape in data, or None if none was passed
     """
     # Tuple for one shape or list of shapes with shape_type
-    if isinstance(data, Tuple):
+    if isinstance(data, tuple):
         shape_type = data[1]
         data = data[0]
     # List of (vertices, shape_type) tuples
-    elif len(data) != 0 and all(isinstance(datum, Tuple) for datum in data):
+    elif len(data) != 0 and all(isinstance(datum, tuple) for datum in data):
         shape_type = [datum[1] for datum in data]
         data = [datum[0] for datum in data]
     return data, shape_type
@@ -1140,3 +1145,79 @@ def validate_num_vertices(
                     shape_length=len(shape),
                 )
             )
+
+
+def perpendicular_distance(
+    point: npt.NDArray, line_start: npt.NDArray, line_end: npt.NDArray
+) -> float:
+    """Calculate the perpendicular distance of a point to a given euclidean line.
+
+    Calculates the shortest distance of a point to a euclidean line defined by a line_start point and a line_end point.
+    Works up to any dimension.
+
+    Parameters
+    ---------
+    point : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  which is part of a polygon shape.
+    line_start : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  used to define the starting point of a line.
+    line_end : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  used to define the end point of a line.
+
+    Returns
+    -------
+    float
+        A float number representing the distance of point to a euclidean line defined by line_start and line_end.
+    """
+
+    if np.array_equal(line_start, line_end):
+        return float(np.linalg.norm(point - line_start))
+
+    t = np.dot(point - line_end, line_start - line_end) / np.dot(
+        line_start - line_end, line_start - line_end
+    )
+    return float(
+        np.linalg.norm(t * (line_start - line_end) + line_end - point)
+    )
+
+
+def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
+    """Reduce the number of vertices that make up a polygon.
+
+    Implementation of the Ramer-Douglas-Peucker algorithm based on:
+    https://github.com/fhirschmann/rdp/blob/master/rdp. This algorithm reduces the amounts of points in a polyline or
+    in this case reduces the number of vertices in a polygon shape.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        A numpy array of shape (n, viewer.ndims) containing the vertices of a polygon shape.
+    epsilon : float
+        A float representing the maximum distance threshold. When the perpendicular distance of a point to a given line
+        is higher, subsequent refinement occurs.
+
+    Returns
+    -------
+    np.ndarray
+        A numpy array of shape (n, viewer.ndims) containing the vertices of a polygon shape.
+    """
+    max_distance_index = -1
+    max_distance = 0.0
+
+    for i in range(1, vertices.shape[0]):
+        d = perpendicular_distance(vertices[i], vertices[0], vertices[-1])
+        if d > max_distance:
+            max_distance_index = i
+            max_distance = d
+
+    if epsilon != 0:
+        if max_distance > epsilon and epsilon:
+            l1 = rdp(vertices[: max_distance_index + 1], epsilon)
+            l2 = rdp(vertices[max_distance_index:], epsilon)
+            return np.vstack((l1[:-1], l2))
+
+        # This part of the algorithm is actually responsible for removing the datapoints.
+        return np.vstack((vertices[0], vertices[-1]))
+
+    # When epsilon is 0, avoid removing datapoints
+    return vertices

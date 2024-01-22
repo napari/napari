@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import zarr
 
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels, Points, Shapes
@@ -7,8 +8,12 @@ from napari.layers._layer_actions import (
     _convert,
     _convert_dtype,
     _duplicate_layer,
+    _hide_selected,
+    _hide_unselected,
     _link_selected_layers,
     _project,
+    _show_selected,
+    _show_unselected,
     _toggle_visibility,
 )
 from napari.layers.layergroup import LayerGroup
@@ -75,6 +80,84 @@ def test_duplicate_layers(layer_type):
     assert layer_list[1].source.parent() is layer_list[0]
 
 
+def test_hide_unselected_layers():
+    layer_list = make_three_layer_layerlist()
+    layer_list[0].visible = True
+    layer_list[1].visible = True
+    layer_list[2].visible = True
+
+    layer_list.selection.active = layer_list[1]
+
+    assert layer_list[0].visible is True
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+    _hide_unselected(layer_list)
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is False
+
+
+def test_show_unselected_layers():
+    layer_list = make_three_layer_layerlist()
+    layer_list[0].visible = False
+    layer_list[1].visible = True
+    layer_list[2].visible = True
+
+    layer_list.selection.active = layer_list[1]
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+    _show_unselected(layer_list)
+
+    assert layer_list[0].visible is True
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+
+def test_hide_selected_layers():
+    layer_list = make_three_layer_layerlist()
+    layer_list[0].visible = False
+    layer_list[1].visible = True
+    layer_list[2].visible = True
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+    _hide_selected(layer_list)
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is False
+    assert layer_list[2].visible is True
+
+
+def test_show_selected_layers():
+    layer_list = make_three_layer_layerlist()
+    layer_list[0].visible = False
+    layer_list[1].visible = True
+    layer_list[2].visible = True
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+    _show_selected(layer_list)
+
+    assert layer_list[0].visible is True
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+
 @pytest.mark.parametrize(
     'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
 )
@@ -120,6 +203,11 @@ def test_convert_dtype(mode, LayersClass):
     'layer, type_',
     [
         (Image(np.random.rand(10, 10)), 'labels'),
+        (Image(np.array([[1, 2], [3, 4]], dtype=(int))), 'labels'),
+        (
+            Image(zarr.array([[1, 2], [3, 4]], dtype=(int), chunks=(1, 2))),
+            'labels',
+        ),
         (Labels(np.ones((10, 10), dtype=int)), 'image'),
         (Shapes([np.array([[0, 0], [0, 10], [10, 0], [10, 10]])]), 'labels'),
     ],
@@ -134,3 +222,21 @@ def test_convert_layer(layer, type_, LayersClass):
     _convert(ll, type_)
     assert ll[0]._type_string == type_
     assert np.array_equal(ll[0].scale, original_scale)
+
+    if (
+        type_ == "labels"
+        and isinstance(layer, Image)
+        and np.issubdtype(layer.data.dtype, np.integer)
+    ):
+        assert (
+            layer.data is ll[0].data
+        )  # check array data not copied unnecessarily
+
+
+def make_three_layer_layerlist():
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]], name="test"))
+    layer_list.append(Image(np.random.rand(8, 8, 8)))
+    layer_list.append(Image(np.random.rand(8, 8, 8)))
+
+    return layer_list

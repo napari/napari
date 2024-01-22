@@ -1,6 +1,8 @@
 from functools import lru_cache
+from typing import Tuple
 
 import numpy as np
+from scipy import ndimage as ndi
 
 
 def interpolate_coordinates(old_coord, new_coord, brush_size):
@@ -45,7 +47,7 @@ def sphere_indices(radius, scale):
     """Generate centered indices within circle or n-dim ellipsoid.
 
     Parameters
-    -------
+    ----------
     radius : float
         Radius of circle/sphere
     scale : tuple of float
@@ -201,3 +203,50 @@ def mouse_event_to_labels_coordinate(layer, event):
             return None
         coordinates = first_nonzero_coordinate(layer.data, start, end)
     return coordinates
+
+
+def get_contours(labels: np.ndarray, thickness: int, background_label: int):
+    """Computes the contours of a 2D label image.
+
+    Parameters
+    ----------
+    labels : array of integers
+        An input labels image.
+    thickness : int
+        It controls the thickness of the inner boundaries. The outside thickness is always 1.
+        The final thickness of the contours will be `thickness + 1`.
+    background_label : int
+        That label is used to fill everything outside the boundaries.
+
+    Returns
+    -------
+    A new label image in which only the boundaries of the input image are kept.
+    """
+    struct_elem = ndi.generate_binary_structure(labels.ndim, 1)
+
+    thick_struct_elem = ndi.iterate_structure(struct_elem, thickness).astype(
+        bool
+    )
+
+    dilated_labels = ndi.grey_dilation(labels, footprint=struct_elem)
+    eroded_labels = ndi.grey_erosion(labels, footprint=thick_struct_elem)
+    not_boundaries = dilated_labels == eroded_labels
+
+    contours = labels.copy()
+    contours[not_boundaries] = background_label
+
+    return contours
+
+
+def expand_slice(
+    axes_slice: Tuple[slice, ...], shape: tuple, offset: int
+) -> Tuple[slice, ...]:
+    """Expands or shrinks a provided multi-axis slice by a given offset"""
+    return tuple(
+        slice(
+            max(0, min(max_size, s.start - offset)),
+            max(0, min(max_size, s.stop + offset)),
+            s.step,
+        )
+        for s, max_size in zip(axes_slice, shape)
+    )

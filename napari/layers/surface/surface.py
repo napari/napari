@@ -1,7 +1,9 @@
+import copy
 import warnings
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import pandas as pd
 
 from napari.layers.base import Layer
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
@@ -14,7 +16,7 @@ from napari.layers.surface.wireframe import SurfaceWireframe
 from napari.layers.utils.interactivity_utils import (
     nd_line_segment_to_displayed_data_ray,
 )
-from napari.layers.utils.layer_utils import calc_data_range
+from napari.layers.utils.layer_utils import _FeatureTable, calc_data_range
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
@@ -140,6 +142,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         Indices of mesh triangles.
     vertex_values : (K0, ..., KL, N) array
         Values used to color vertices.
+    features : DataFrame-like
+        Features table where each row corresponds to a vertex and each column
+        is a feature.
+    feature_defaults : DataFrame-like
+        Stores the default value of each feature in a table with one row.
     colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -183,9 +190,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         self,
         data,
         *,
+        features=None,
+        feature_defaults=None,
         colormap='gray',
         contrast_limits=None,
-        gamma=1,
+        gamma=1.0,
         name=None,
         metadata=None,
         scale=None,
@@ -193,7 +202,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending='translucent',
         shading='flat',
         visible=True,
@@ -204,6 +213,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         texture=None,
         texcoords=None,
         vertex_colors=None,
+        projection_mode='none',
     ) -> None:
         ndim = data[0].shape[1]
 
@@ -222,6 +232,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection_mode=projection_mode,
         )
 
         self.events.add(
@@ -232,6 +243,8 @@ class Surface(IntensityVisualizationMixin, Layer):
             normals=Event,
             texture=Event,
             texcoords=Event,
+            features=Event,
+            feature_defaults=Event,
         )
 
         # assign mesh data and establish default behavior
@@ -250,25 +263,32 @@ class Surface(IntensityVisualizationMixin, Layer):
         else:
             self._vertex_values = np.ones(len(self._vertices))
 
+        self._feature_table = _FeatureTable.from_layer(
+            features=features,
+            feature_defaults=feature_defaults,
+            num_data=len(data[0]),
+        )
+
         self._texture = texture
         self._texcoords = texcoords
         self._vertex_colors = vertex_colors
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
-        if contrast_limits is None:
-            self._contrast_limits_range = calc_data_range(self._vertex_values)
-        else:
+        if contrast_limits is not None:
             self._contrast_limits_range = contrast_limits
-        self._contrast_limits = tuple(self._contrast_limits_range)
+        else:
+            self._contrast_limits_range = calc_data_range(self._vertex_values)
+
+        self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
 
         # Data containing vectors in the currently viewed slice
         self._data_view = np.zeros((0, self._slice_input.ndisplay))
         self._view_faces = np.zeros((0, 3))
-        self._view_vertex_values = []
-        self._view_vertex_colors = []
+        self._view_vertex_values: Union[List[Any], np.ndarray] = []
+        self._view_vertex_colors: Union[List[Any], np.ndarray] = []
 
         # Trigger generation of view slice and thumbnail.
         # Use _update_dims instead of refresh here because _get_ndim is
@@ -421,6 +441,47 @@ class Surface(IntensityVisualizationMixin, Layer):
         return extrema
 
     @property
+    def features(self):
+        """Dataframe-like features table.
+
+        It is an implementation detail that this is a `pandas.DataFrame`. In the future,
+        we will target the currently-in-development Data API dataframe protocol [1].
+        This will enable us to use alternate libraries such as xarray or cuDF for
+        additional features without breaking existing usage of this.
+
+        If you need to specifically rely on the pandas API, please coerce this to a
+        `pandas.DataFrame` using `features_to_pandas_dataframe`.
+
+        References
+        ----------
+        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        """
+        return self._feature_table.values
+
+    @features.setter
+    def features(
+        self,
+        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+    ) -> None:
+        self._feature_table.set_values(features, num_data=len(self.data[0]))
+        self.events.features()
+
+    @property
+    def feature_defaults(self):
+        """Dataframe-like with one row of feature default values.
+
+        See `features` for more details on the type of this property.
+        """
+        return self._feature_table.defaults
+
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        self._feature_table.set_defaults(defaults)
+        self.events.feature_defaults()
+
+    @property
     def shading(self):
         return str(self._shading)
 
@@ -513,11 +574,13 @@ class Surface(IntensityVisualizationMixin, Layer):
         state = self._get_base_state()
         state.update(
             {
-                'colormap': self.colormap.name,
+                'colormap': self.colormap.dict(),
                 'contrast_limits': self.contrast_limits,
                 'gamma': self.gamma,
                 'shading': self.shading,
                 'data': self.data,
+                'features': self.features,
+                'feature_defaults': self.feature_defaults,
                 'wireframe': self.wireframe.dict(),
                 'normals': self.normals.dict(),
                 'texture': self.texture,
@@ -542,7 +605,10 @@ class Surface(IntensityVisualizationMixin, Layer):
         data_ndim = data.ndim - 1
         if data_ndim >= dims:
             # Get indices for axes corresponding to data dimensions
-            data_indices = self._slice_indices[:-vertex_ndim]
+            data_indices: Tuple[Union[int, slice], ...] = tuple(
+                slice(None) if np.isnan(idx) else int(np.round(idx))
+                for idx in self._data_slice.point[:-vertex_ndim]
+            )
             data = data[data_indices]
             if data.ndim > dims:
                 warnings.warn(
@@ -581,7 +647,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             return
 
         if values_ndim > 0:
-            indices = np.array(self._slice_indices[-vertex_ndim:])
+            indices = np.array(self._data_slice.point[-vertex_ndim:])
             disp = [
                 d
                 for d in np.subtract(self._slice_input.displayed, values_ndim)
@@ -595,7 +661,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                 if d >= 0
             ]
         else:
-            indices = np.array(self._slice_indices)
+            indices = np.array(self._data_slice.point)
             not_disp = list(self._slice_input.not_displayed)
             disp = list(self._slice_input.displayed)
 
@@ -637,8 +703,8 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     def _get_value_3d(
         self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
+        start_point: Optional[np.ndarray],
+        end_point: Optional[np.ndarray],
         dims_displayed: List[int],
     ) -> Tuple[Union[None, float, int], Optional[int]]:
         """Get the layer data value along a ray
@@ -682,7 +748,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             triangles=mesh_triangles,
         )
 
-        if intersection_index is None:
+        if intersection_index is None or intersection is None:
             return None, None
 
         # add the full nD coords to intersection
@@ -699,3 +765,30 @@ class Surface(IntensityVisualizationMixin, Layer):
         intersection_value = (barycentric_coordinates * vertex_values).sum()
 
         return intersection_value, intersection_index
+
+    def __copy__(self):
+        """Create a copy of this layer.
+
+        Returns
+        -------
+        layer : napari.layers.Layer
+            Copy of this layer.
+
+        Notes
+        -----
+        This method is defined for purpose of asv memory benchmarks.
+        The copy of data is intentional for properly estimating memory
+        usage for layer.
+
+        If you want a to copy a layer without coping the data please use
+        `layer.create(*layer.as_layer_data_tuple())`
+
+        If you change this method, validate if memory benchmarks are still
+        working properly.
+        """
+        data, meta, layer_type = self.as_layer_data_tuple()
+        return self.create(
+            tuple(copy.copy(x) for x in self.data),
+            meta=meta,
+            layer_type=layer_type,
+        )

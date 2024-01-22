@@ -1,10 +1,13 @@
+from typing import Tuple
+
 import numpy as np
+import numpy.typing as npt
 import scipy.linalg
 
 from napari.utils.translations import trans
 
 
-def compose_linear_matrix(rotate, scale, shear) -> np.array:
+def compose_linear_matrix(rotate, scale, shear) -> npt.NDArray:
     """Compose linear transform matrix from rotate, shear, scale.
 
     Parameters
@@ -339,7 +342,7 @@ def embed_in_identity_matrix(matrix, ndim):
 
 def decompose_linear_matrix(
     matrix, upper_triangular=True
-) -> (np.array, np.array, np.array):
+) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
     """Decompose linear transform matrix into rotate, scale, shear.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.

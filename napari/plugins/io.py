@@ -10,7 +10,7 @@ from napari_plugin_engine import HookImplementation, PluginCallError
 
 from napari.layers import Layer
 from napari.plugins import _npe2, plugin_manager
-from napari.types import LayerData
+from napari.types import LayerData, PathLike
 from napari.utils.misc import abspath_or_url
 from napari.utils.translations import trans
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 def read_data_with_plugins(
-    paths: Sequence[str],
+    paths: Sequence[PathLike],
     plugin: Optional[str] = None,
     stack: bool = False,
 ) -> Tuple[Optional[List[LayerData]], Optional[HookImplementation]]:
@@ -77,7 +77,7 @@ def read_data_with_plugins(
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
         _ld, hookimpl = res
-        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl  # type: ignore [return-value]
+        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl
 
     hook_caller = plugin_manager.hook.napari_get_reader
     paths = [abspath_or_url(p, must_exist=True) for p in paths]
@@ -100,13 +100,27 @@ def read_data_with_plugins(
             raise ValueError(message)
 
         if plugin not in plugin_manager.plugins:
-            names = {i.plugin_name for i in hook_caller.get_hookimpls()}
+            names = set(_npe2.get_readers().keys()).union(
+                {i.plugin_name for i in hook_caller.get_hookimpls()}
+            )
+            err_helper = (
+                trans._(
+                    "No readers are available. "
+                    "Do you have any plugins installed?",
+                    deferred=True,
+                )
+                if len(names) <= 1
+                else trans._(
+                    f"\nNames of plugins offering readers are: {names}.",
+                    deferred=True,
+                )
+            )
             raise ValueError(
                 trans._(
-                    "There is no registered plugin named '{plugin}'.\nNames of plugins offering readers are: {names}",
+                    "There is no registered plugin named '{plugin}'. {err_helper}",
                     deferred=True,
                     plugin=plugin,
-                    names=names,
+                    err_helper=err_helper,
                 )
             )
         reader = hook_caller._call_plugin(plugin, path=npe1_path)

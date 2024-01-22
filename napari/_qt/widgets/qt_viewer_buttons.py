@@ -77,7 +77,7 @@ class QtLayerButtons(QFrame):
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
             trans._('New labels layer'),
-            lambda: self.viewer._new_labels(),
+            self.viewer._new_labels,
         )
 
         layout = QHBoxLayout()
@@ -193,10 +193,11 @@ class QtViewerButtons(QFrame):
         # make slider connected to perspective parameter
         sld = QSlider(Qt.Orientation.Horizontal, self)
         sld.setRange(0, max(90, int(self.viewer.camera.perspective)))
-        sld.setValue(self.viewer.camera.perspective)
+        sld.setValue(int(self.viewer.camera.perspective))
         sld.valueChanged.connect(
             lambda v: setattr(self.viewer.camera, 'perspective', v)
         )
+        self.perspective_slider = sld
 
         # make layout
         layout = QHBoxLayout()

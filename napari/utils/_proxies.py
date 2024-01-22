@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import warnings
-from typing import Any, Callable, Generic, TypeVar, Union
+from typing import Any, Callable, Generic, List, Tuple, TypeVar, Union
 
 import wrapt
 
@@ -17,11 +17,11 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     Disable item and attribute setting with the exception of  ``__wrapped__``.
     """
 
-    def __init__(self, wrapped, exceptions=()):
+    def __init__(self, wrapped: Any, exceptions: Tuple[str, ...] = ()):
         super().__init__(wrapped)
         self._self_exceptions = exceptions
 
-    def __setattr__(self, name, val):
+    def __setattr__(self, name: str, val: Any) -> None:
         if (
             name not in ('__wrapped__', '_self_exceptions')
             and name not in self._self_exceptions
@@ -36,7 +36,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
 
         super().__setattr__(name, val)
 
-    def __setitem__(self, name, val):
+    def __setitem__(self, name: str, val: Any) -> None:
         if name not in self._self_exceptions:
             raise TypeError(
                 trans._('cannot set item {name}', deferred=True, name=name)
@@ -59,7 +59,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         )
 
     @staticmethod
-    def _private_attr_warning(name: str, typ: str):
+    def _private_attr_warning(name: str, typ: str) -> None:
         warnings.warn(
             trans._(
                 "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.5.0",
@@ -82,7 +82,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         # )
 
     @staticmethod
-    def _is_called_from_napari():
+    def _is_called_from_napari() -> bool:
         """
         Check if the getter or setter is called from inner napari.
         """
@@ -91,7 +91,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             return frame.f_code.co_filename.startswith(misc.ROOT_DIR)
         return False
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Any:
         if self._is_private_attr(name):
             # allow napari to access private attributes and get an non-proxy
             if self._is_called_from_napari():
@@ -100,10 +100,14 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             typ = type(self.__wrapped__).__name__
 
             self._private_attr_warning(name, typ)
+        with warnings.catch_warnings(record=True) as cx_manager:
+            data = self.create(super().__getattr__(name))
+        for warning in cx_manager:
+            warnings.warn(warning.message, warning.category, stacklevel=2)
 
-        return self.create(super().__getattr__(name))
+        return data
 
-    def __setattr__(self, name: str, value: Any):
+    def __setattr__(self, name: str, value: Any) -> None:
         if (
             os.environ.get("NAPARI_ENSURE_PLUGIN_MAIN_THREAD", "0")
             not in ("0", "False")
@@ -119,22 +123,48 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             typ = type(self.__wrapped__).__name__
             self._private_attr_warning(name, typ)
 
+        if isinstance(value, PublicOnlyProxy):
+            # if we want to set an attribute on a PublicOnlyProxy *and* the
+            # value that we want to set is itself a PublicOnlyProxy, we unwrap
+            # the value. This has two benefits:
+            #
+            # 1. Checking the attribute later will incur a significant
+            # performance cost, because _is_called_from_napari() will be
+            # checked on each attribute access and it involves inspecting the
+            # calling frame, which is expensive.
+            # 2. Certain equality checks fail when objects are
+            # PublicOnlyProxies. Notably, equality checks fail when such
+            # objects are included in a Qt data model. For example, plugins can
+            # grab a layer from the viewer; this layer will be wrapped by the
+            # PublicOnlyProxy, and then using this object to set the current
+            # layer selection will not propagate the selection to the Viewer.
+            # See https://github.com/napari/napari/issues/5767
+            value = value.__wrapped__
+
         setattr(self.__wrapped__, name, value)
         return None
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         return self.create(super().__getitem__(key))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.__wrapped__)
 
-    def __dir__(self):
+    def __dir__(self) -> List[str]:
         return [x for x in dir(self.__wrapped__) if not _SUNDER.match(x)]
 
     @classmethod
     def create(cls, obj: Any) -> Union['PublicOnlyProxy', Any]:
         # restrict the scope of this proxy to napari objects
-        mod = getattr(type(obj), '__module__', None) or ''
+        if type(obj).__name__ == 'method':
+            # If the given object is a method, we check the module *of the
+            # object to which that method is bound*. Otherwise, the module of a
+            # method is just builtins!
+            mod = getattr(type(obj.__self__), '__module__', None) or ''
+        else:
+            # Otherwise, the module is of an object just given by the
+            # __module__ attribute.
+            mod = getattr(type(obj), '__module__', None) or ''
         if not mod.startswith('napari'):
             return obj
         if isinstance(obj, PublicOnlyProxy):
@@ -145,8 +175,21 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
 
 class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
-    def __call__(self, *args, **kwargs):
-        return self.__wrapped__(*args, **kwargs)
+    def __call__(self, *args, **kwargs):  # type: ignore [no-untyped-def]
+        # if a PublicOnlyProxy is callable, then when we call it we:
+        # - unwrap the arguments, to avoid performance issues detailed in
+        #   PublicOnlyProxy.__setattr__,
+        # - call the unwrapped callable on the unwrapped arguments
+        # - wrap the result in a PublicOnlyProxy
+        args = tuple(
+            arg.__wrapped__ if isinstance(arg, PublicOnlyProxy) else arg
+            for arg in args
+        )
+        kwargs = {
+            k: v.__wrapped__ if isinstance(v, PublicOnlyProxy) else v
+            for k, v in kwargs.items()
+        }
+        return self.create(self.__wrapped__(*args, **kwargs))
 
 
 def in_main_thread_py() -> bool:

@@ -1,13 +1,18 @@
-import operator
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Set, Union
+from typing import Any, Callable, ClassVar, Dict, Set, Tuple, Union
 
 import numpy as np
 from app_model.types import KeyBinding
-from pydantic import BaseModel, PrivateAttr, main, utils
 
+from napari._pydantic_compat import (
+    BaseModel,
+    ModelMetaclass,
+    PrivateAttr,
+    main,
+    utils,
+)
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.misc import pick_equality_operator
 from napari.utils.translations import trans
@@ -67,7 +72,7 @@ def no_class_attributes():
         main.ClassAttribute = utils.ClassAttribute
 
 
-class EventedMetaclass(main.ModelMetaclass):
+class EventedMetaclass(ModelMetaclass):
     """pydantic ModelMetaclass that preps "equality checking" operations.
 
     A metaclass is the thing that "constructs" a class, and ``ModelMetaclass``
@@ -104,6 +109,18 @@ class EventedMetaclass(main.ModelMetaclass):
         for name, attr in namespace.items():
             if isinstance(attr, property):
                 cls.__properties__[name] = attr
+                # determine compare operator
+                if (
+                    hasattr(attr.fget, "__annotations__")
+                    and "return" in attr.fget.__annotations__
+                    and not isinstance(
+                        attr.fget.__annotations__["return"], str
+                    )
+                ):
+                    cls.__eq_operators__[name] = pick_equality_operator(
+                        attr.fget.__annotations__["return"]
+                    )
+
         cls.__field_dependents__ = _get_field_dependents(cls)
         return cls
 
@@ -209,6 +226,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     # when field is changed, an event for dependent properties will be emitted.
     __field_dependents__: ClassVar[Dict[str, Set[str]]]
     __eq_operators__: ClassVar[Dict[str, Callable[[Any, Any], bool]]]
+    _changes_queue: Dict[str, Any] = PrivateAttr(default_factory=dict)
+    _primary_changes: Set[str] = PrivateAttr(default_factory=set)
+    _delay_check_semaphore: int = PrivateAttr(0)
     __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
 
     # pydantic BaseModel configuration.  see:
@@ -229,6 +249,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
         json_encoders = _BASE_JSON_ENCODERS
+        # extra = Extra.forbid
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -264,45 +285,101 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         else:
             super().__setattr__(name, value)
 
+    def _check_if_differ(self, name: str, old_value: Any) -> Tuple[bool, Any]:
+        """
+        Check new value of a field and emit event if it is different from the old one.
+
+        Returns True if data changed, else False. Return current value.
+        """
+        new_value = getattr(self, name, object())
+        if name in self.__eq_operators__:
+            are_equal = self.__eq_operators__[name]
+        else:
+            are_equal = pick_equality_operator(new_value)
+        return not are_equal(new_value, old_value), new_value
+
     def __setattr__(self, name: str, value: Any) -> None:
+        if name not in getattr(self, 'events', {}):
+            # This is a workaround needed because `EventedConfigFileSettings` uses
+            # `_config_path` before calling the superclass constructor
+            super().__setattr__(name, value)
+            return
+        with ComparisonDelayer(self):
+            self._primary_changes.add(name)
+            self._setattr_impl(name, value)
+
+    def _check_if_values_changed_and_emit_if_needed(self):
+        """
+        Check if field values changed and emit events if needed.
+
+        The advantage of moving this to the end of all the modifications is
+        that comparisons will be performed only once for every potential change.
+        """
+        if self._delay_check_semaphore > 0 or len(self._changes_queue) == 0:
+            # do not run whole machinery if there is no need
+            return
+        to_emit = []
+        for name in self._primary_changes:
+            # primary changes should contains only fields that are changed directly by assigment
+            if name not in self._changes_queue:
+                continue
+            old_value = self._changes_queue[name]
+            if (res := self._check_if_differ(name, old_value))[0]:
+                to_emit.append((name, res[1]))
+            self._changes_queue.pop(name)
+        if not to_emit:
+            # If no direct changes was made then we can skip whole machinery
+            self._changes_queue.clear()
+            self._primary_changes.clear()
+            return
+        for name, old_value in self._changes_queue.items():
+            # check if any of dependent properties changed
+            if (res := self._check_if_differ(name, old_value))[0]:
+                to_emit.append((name, res[1]))
+        self._changes_queue.clear()
+        self._primary_changes.clear()
+
+        with ComparisonDelayer(self):
+            # Again delay comparison to avoid having events caused by callback functions
+            for name, new_value in to_emit:
+                getattr(self.events, name)(value=new_value)
+
+    def _setattr_impl(self, name: str, value: Any) -> None:
         if name not in getattr(self, 'events', {}):
             # fallback to default behavior
             self._super_setattr_(name, value)
             return
 
         # grab current value
-        before = getattr(self, name, object())
-        before_deps = {}
-        with warnings.catch_warnings():
-            # we still need to check for deprecated properties
-            warnings.simplefilter("ignore", DeprecationWarning)
-            for dep in self.__field_dependents__.get(name, {}):
-                before_deps[dep] = getattr(self, dep, object())
+        field_dep = self.__field_dependents__.get(name, set())
+        has_callbacks = {
+            name: bool(getattr(self.events, name).callbacks)
+            for name in field_dep
+        }
+        emitter = getattr(self.events, name)
+        # equality comparisons may be expensive, so just avoid them if
+        # event has no callbacks connected
+        if not (
+            emitter.callbacks
+            or self._events.callbacks
+            or any(has_callbacks.values())
+        ):
+            self._super_setattr_(name, value)
+            return
+
+        dep_with_callbacks = [
+            dep for dep, has_cb in has_callbacks.items() if has_cb
+        ]
+
+        if name not in self._changes_queue:
+            self._changes_queue[name] = getattr(self, name, object())
+
+        for dep in dep_with_callbacks:
+            if dep not in self._changes_queue:
+                self._changes_queue[dep] = getattr(self, dep, object())
 
         # set value using original setter
         self._super_setattr_(name, value)
-
-        # if different we emit the event with new value
-        after = getattr(self, name)
-        after_deps = {}
-        with warnings.catch_warnings():
-            # we still need to check for deprecated properties
-            warnings.simplefilter("ignore", DeprecationWarning)
-            for dep in self.__field_dependents__.get(name, {}):
-                after_deps[dep] = getattr(self, dep, object())
-
-        are_equal = self.__eq_operators__.get(name, operator.eq)
-        if not are_equal(after, before):
-            getattr(self.events, name)(value=after)  # emit event
-
-            # emit events for any dependent computed properties as well
-            for dep in before_deps:
-                # NOTE: this comparison might be expensive! If it is too much, we
-                #       can always remove the are_equal check and fire events for
-                #       all dependents indiscriminately
-                are_equal = pick_equality_operator(after_deps[dep])
-                if not are_equal(after_deps[dep], before_deps[dep]):
-                    getattr(self.events, dep)(value=after_deps[dep])
 
     # expose the private EmitterGroup publically
     @property
@@ -390,15 +467,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return True
         if not isinstance(other, EventedModel):
             return self.dict() == other
-
-        for f_name, eq in self.__eq_operators__.items():
-            if f_name not in other.__eq_operators__:
-                return False
-            if (
-                hasattr(self, f_name)
-                and hasattr(other, f_name)
-                and not eq(getattr(self, f_name), getattr(other, f_name))
-            ):
+        if self.__class__ != other.__class__:
+            return False
+        for f_name in self.__fields__:
+            eq = self.__eq_operators__[f_name]
+            if not eq(getattr(self, f_name), getattr(other, f_name)):
                 return False
         return True
 
@@ -433,3 +506,15 @@ def get_defaults(obj: BaseModel):
             d = get_defaults(v.type_)
         dflt[k] = d
     return dflt
+
+
+class ComparisonDelayer:
+    def __init__(self, target: EventedModel):
+        self._target = target
+
+    def __enter__(self):
+        self._target._delay_check_semaphore += 1
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._target._delay_check_semaphore -= 1
+        self._target._check_if_values_changed_and_emit_if_needed()

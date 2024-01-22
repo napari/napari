@@ -146,9 +146,14 @@ def set_widgets_enabled_with_opacity(
 ):
     """Set enabled state on some widgets. If not enabled, decrease opacity."""
     for widget in widgets:
-        widget.setEnabled(enabled)
         op = QGraphicsOpacityEffect(parent)
-        op.setOpacity(1 if enabled else 0.5)
+        op.setOpacity(0.5)
+        # Only enable opacity effect when needed. That prevents layout changes
+        # when setting the color effect for the whole window with the flash
+        # animation option.
+        # See https://github.com/napari/napari/issues/6147
+        op.setEnabled(not enabled)
+        widget.setEnabled(enabled)
         widget.setGraphicsEffect(op)
 
 
@@ -370,7 +375,7 @@ def qt_might_be_rich_text(text) -> bool:
         return bool(RICH_TEXT_PATTERN.search(text))
 
 
-def in_qt_main_thread():
+def in_qt_main_thread() -> bool:
     """
     Check if we are in the thread in which QApplication object was created.
 

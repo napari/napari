@@ -32,9 +32,7 @@ def _user_agent() -> str:
     from napari import __version__
     from napari.utils import misc
 
-    if misc.running_as_bundled_app():
-        env = 'briefcase'
-    elif misc.running_as_constructor_app():
+    if misc.running_as_constructor_app():
         env = 'constructor'
     elif misc.in_jupyter():
         env = 'jupyter'
@@ -52,16 +50,19 @@ def _user_agent() -> str:
     return ' '.join(f'{k}/{v}' for k, v in parts)
 
 
-class SummaryDict(TypedDict):
+class _ShortSummaryDict(TypedDict):
     """Objects returned at https://npe2api.vercel.app/api/extended_summary ."""
 
     name: NotRequired[PyPIname]
     version: str
-    display_name: NotRequired[str]
     summary: str
     author: str
     license: str
     home_page: str
+
+
+class SummaryDict(_ShortSummaryDict):
+    display_name: NotRequired[str]
     pypi_versions: NotRequired[List[str]]
     conda_versions: NotRequired[List[str]]
 
@@ -89,22 +90,26 @@ def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool, dict]]:
         _conda = executor.submit(conda_map)
 
     conda = _conda.result()
+    conda_set = {normalized_name(x) for x in conda}
     for info in data.result():
-        info_ = cast(SummaryDict, dict(info))
+        info_copy = dict(info)
+        info_copy.pop("display_name", None)
+        pypi_versions = info_copy.pop("pypi_versions")
+        conda_versions = info_copy.pop("conda_versions")
+        info_ = cast(_ShortSummaryDict, info_copy)
 
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
         # receive
-        info_.pop("display_name", None)
 
         # TODO: once the new version of npe2 is out, this can be refactored
         # to all the metadata includes the conda and pypi versions.
         extra_info = {
             'home_page': info_.get("home_page", ""),
-            'pypi_versions': info_.pop("pypi_versions"),
-            'conda_versions': info_.pop("conda_versions"),
+            'pypi_versions': pypi_versions,
+            'conda_versions': conda_versions,
         }
         info_["name"] = normalized_name(info_["name"])
         meta = PackageMetadata(**info_)
 
-        yield meta, (info_["name"] in conda), extra_info
+        yield meta, (info_["name"] in conda_set), extra_info

@@ -2,7 +2,7 @@
 
 Notes for using the plugin-related fixtures here:
 
-1. The `_mock_npe2_pm` fixture is always used, and it mocks the global npe2 plugin
+1. The `_npe2pm` fixture is always used, and it mocks the global npe2 plugin
    manager instance with a discovery-deficient plugin manager.  No plugins should be
    discovered in tests without explicit registration.
 2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
@@ -37,46 +37,34 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from itertools import chain
 from multiprocessing.pool import ThreadPool
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 from unittest.mock import patch
 from weakref import WeakKeyDictionary
+
+from npe2 import PackageMetadata
 
 with suppress(ModuleNotFoundError):
     __import__('dotenv').load_dotenv()
 
+from datetime import timedelta
+from time import perf_counter
+
 import dask.threaded
 import numpy as np
 import pytest
+from _pytest.pathlib import bestrelpath
 from IPython.core.history import HistoryManager
+from packaging.version import parse as parse_version
+from pytest_pretty import CustomTerminalReporter
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.layers.layergroup import LayerGroup
-from napari.utils.config import async_loading
 from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
-
-
-def pytest_addoption(parser):
-    """Add napari specific command line options.
-
-    --aysnc_only
-        Run only asynchronous tests, not sync ones.
-
-    Notes
-    -----
-    Due to the placement of this conftest.py file, you must specifically name
-    the napari folder such as "pytest napari --aysnc_only"
-    """
-
-    parser.addoption(
-        "--async_only",
-        action="store_true",
-        default=False,
-        help="run only asynchronous tests",
-    )
 
 
 @pytest.fixture
@@ -181,56 +169,6 @@ def layers(request):
     return request.param(list_of_layers)
 
 
-# Currently we cannot run async and async in the invocation of pytest
-# because we get a segfault for unknown reasons. So for now:
-# "pytest" runs sync_only
-# "pytest napari --async_only" runs async only
-@pytest.fixture(scope="session", autouse=True)
-def configure_loading(request):
-    """Configure async/async loading."""
-    if request.config.getoption("--async_only"):
-        # Late import so we don't import experimental code unless using it.
-        from napari.components.experimental.chunk import synchronous_loading
-
-        with synchronous_loading(False):
-            yield
-    else:
-        yield  # Sync so do nothing.
-
-
-def _is_async_mode() -> bool:
-    """Return True if we are currently loading chunks asynchronously
-
-    Returns
-    -------
-    bool
-        True if we are currently loading chunks asynchronously.
-    """
-    if not async_loading:
-        return False  # Not enabled at all.
-
-    # Late import so we don't import experimental code unless using it.
-    from napari.components.experimental.chunk import chunk_loader
-
-    return not chunk_loader.force_synchronous
-
-
-@pytest.fixture(autouse=True)
-def skip_sync_only(request):
-    """Skip async_only tests if running async."""
-    sync_only = request.node.get_closest_marker('sync_only')
-    if _is_async_mode() and sync_only:
-        pytest.skip("running with --async_only")
-
-
-@pytest.fixture(autouse=True)
-def skip_async_only(request):
-    """Skip async_only tests if running sync."""
-    async_only = request.node.get_closest_marker('async_only')
-    if not _is_async_mode() and async_only:
-        pytest.skip("not running with --async_only")
-
-
 @pytest.fixture(autouse=True)
 def skip_examples(request):
     """Skip examples test if ."""
@@ -315,9 +253,9 @@ HistoryManager.enabled = False
 @pytest.fixture
 def napari_svg_name():
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
-    from importlib.metadata import metadata
+    from importlib.metadata import version
 
-    if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
+    if parse_version(version('napari-svg')) < parse_version('0.1.6'):
         return 'svg'
 
     return 'napari-svg'
@@ -337,7 +275,7 @@ def _no_error_reports():
 
 @pytest.fixture(autouse=True)
 def _npe2pm(npe2pm, monkeypatch):
-    """Autouse the npe2 mock plugin manager with no registered plugins."""
+    """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
     from napari.plugins import NapariPluginManager
 
     monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
@@ -353,7 +291,9 @@ def builtins(_npe2pm: TestPluginManager):
 @pytest.fixture
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
+        plugin.manifest.package_metadata = PackageMetadata(
+            version='0.1.0', name='test'
+        )
         plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
 
@@ -397,6 +337,8 @@ def pytest_generate_tests(metafunc):
 
 
 def pytest_collection_modifyitems(session, config, items):
+    test_subset = os.environ.get("NAPARI_TEST_SUBSET")
+
     test_order_prefix = [
         os.path.join("napari", "utils"),
         os.path.join("napari", "layers"),
@@ -412,6 +354,17 @@ def pytest_collection_modifyitems(session, config, items):
     test_order = [[] for _ in test_order_prefix]
     test_order.append([])  # for not matching tests
     for item in items:
+        if test_subset:
+            if test_subset.lower() == "qt" and "qapp" not in item.fixturenames:
+                # Skip non Qt tests
+                continue
+            if (
+                test_subset.lower() == "headless"
+                and "qapp" in item.fixturenames
+            ):
+                # Skip Qt tests
+                continue
+
         index = -1
         for i, prefix in enumerate(test_order_prefix):
             if prefix in str(item.fspath):
@@ -462,9 +415,12 @@ def _mock_app():
     Note that `NapariApplication` registers app-model actions, providers and
     processors. If this is not desired, please create a clean
     `app_model.Application` in the test. It does not however, register Qt
-    related actions or providers. If this is required for a unit test,
-    `napari._qt._qapp_model.qactions.init_qactions()` can be used within
-    the test.
+    related actions or providers or register plugins.
+    If these are required, the `make_napari_viewer` fixture can be used, which
+    will run both these function and automatically clear the lru cache.
+    Alternatively, you can specifically run `init_qactions()` or
+    `_initialize_plugins` within the test, ensuring that you `cache_clear()`
+    first.
     """
     from app_model import Application
 
@@ -479,7 +435,18 @@ def _mock_app():
             Application.destroy('test_app')
 
 
-def _get_calling_place(depth=1):
+def _get_calling_stack():  # pragma: no cover
+    stack = []
+    for i in range(2, sys.getrecursionlimit()):
+        try:
+            frame = sys._getframe(i)
+        except ValueError:
+            break
+        stack.append(f"{frame.f_code.co_filename}:{frame.f_lineno}")
+    return "\n".join(stack)
+
+
+def _get_calling_place(depth=1):  # pragma: no cover
     if not hasattr(sys, "_getframe"):
         return ""
     frame = sys._getframe(1 + depth)
@@ -505,7 +472,7 @@ def dangling_qthreads(monkeypatch, qtbot, request):
 
     if "disable_qthread_start" in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self, priority=QThread.InheritPriority):
             """dummy function to prevent thread start"""
 
     else:
@@ -565,7 +532,7 @@ def dangling_qthread_pool(monkeypatch, request):
 
     if "disable_qthread_pool_start" in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self, runnable, priority=0):
             """dummy function to prevent thread start"""
 
     else:
@@ -582,6 +549,8 @@ def dangling_qthread_pool(monkeypatch, request):
     dangling_threads_pools = []
 
     for thread_pool, calling in threadpool_dict.items():
+        thread_pool.clear()
+        thread_pool.waitForDone(20)
         if thread_pool.activeThreadCount():
             dangling_threads_pools.append((thread_pool, calling))
 
@@ -620,7 +589,7 @@ def dangling_qtimers(monkeypatch, request):
     if "disable_qtimer_start" in request.keywords:
         from pytestqt.qt_compat import qt_api
 
-        def my_start(*_, **__):
+        def my_start(self, msec=None):
             """dummy function to prevent timer start"""
 
         _single_shot = my_start
@@ -638,7 +607,10 @@ def dangling_qtimers(monkeypatch, request):
     else:
 
         def my_start(self, msec=None):
-            timer_dkt[self] = _get_calling_place()
+            calling_place = _get_calling_place()
+            if "superqt" in calling_place and "throttler" in calling_place:
+                calling_place += f" - {_get_calling_place(2)}"
+            timer_dkt[self] = calling_place
             if msec is not None:
                 base_start(self, msec)
             else:
@@ -651,6 +623,9 @@ def dangling_qtimers(monkeypatch, request):
                 t.timeout.connect(reciver)
             else:
                 t.timeout.connect(getattr(reciver, method))
+            calling_place = _get_calling_place(2)
+            if "superqt" in calling_place and "throttler" in calling_place:
+                calling_place += _get_calling_stack()
             single_shot_list.append((t, _get_calling_place(2)))
             base_start(t, msec)
 
@@ -685,8 +660,44 @@ def dangling_qtimers(monkeypatch, request):
         long_desc += "The QTimers were started in:\n"
     else:
         long_desc += "The QTimer was started in:\n"
+
+    def _check_throttle_info(path):
+        if "superqt" in path and "throttler" in path:
+            return (
+                path
+                + " it's possible that there was a problem with unfinished work by a "
+                "qthrottler; to solve this, you can either try to wait (such as with "
+                "`qtbot.wait`) or disable throttling with the disable_throttling fixture"
+            )
+        return path
+
     assert not dangling_timers, long_desc + "\n".join(
-        x[1] for x in dangling_timers
+        _check_throttle_info(x[1]) for x in dangling_timers
+    )
+
+
+def _throttle_mock(self):
+    self.triggered.emit()
+
+
+def _flush_mock(self):
+    """There are no waiting events."""
+
+
+@pytest.fixture
+def disable_throttling(monkeypatch):
+    """Disable qthrottler from superqt.
+
+    This is sometimes necessary to avoid flaky failures in tests
+    due to dangling qt timers.
+    """
+    # if this monkeypath fails then you should update path to GenericSignalThrottler
+    monkeypatch.setattr(
+        "superqt.utils._throttler.GenericSignalThrottler.throttle",
+        _throttle_mock,
+    )
+    monkeypatch.setattr(
+        "superqt.utils._throttler.GenericSignalThrottler.flush", _flush_mock
     )
 
 
@@ -699,7 +710,7 @@ def dangling_qanimations(monkeypatch, request):
 
     if "disable_qanimation_start" in request.keywords:
 
-        def my_start(*_, **__):
+        def my_start(self):
             """dummy function to prevent thread start"""
 
     else:
@@ -751,3 +762,42 @@ def pytest_runtest_setup(item):
                 "dangling_qtimers",
             ]
         )
+
+
+class NapariTerminalReporter(CustomTerminalReporter):
+    """
+    This ia s custom terminal reporter to how long it takes to finish given part of tests.
+    It prints time each time when test from different file is started.
+
+    It is created to be able to see if timeout is caused by long time execution, or it is just hanging.
+    """
+
+    currentfspath: Optional[Path]
+
+    def write_fspath_result(self, nodeid: str, res, **markup: bool) -> None:
+        if getattr(self, "_start_time", None) is None:
+            self._start_time = perf_counter()
+        fspath = self.config.rootpath / nodeid.split("::")[0]
+        if self.currentfspath is None or fspath != self.currentfspath:
+            if self.currentfspath is not None and self._show_progress_info:
+                self._write_progress_information_filling_space()
+                if os.environ.get("CI", False):
+                    self.write(
+                        f" [{timedelta(seconds=int(perf_counter() - self._start_time))}]"
+                    )
+            self.currentfspath = fspath
+            relfspath = bestrelpath(self.startpath, fspath)
+            self._tw.line()
+            self.write(relfspath + " ")
+        self.write(res, flush=True, **markup)
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config):
+    # Get the standard terminal reporter plugin and replace it with our
+    standard_reporter = config.pluginmanager.getplugin('terminalreporter')
+    custom_reporter = NapariTerminalReporter(config, sys.stdout)
+    if standard_reporter._session is not None:
+        custom_reporter._session = standard_reporter._session
+    config.pluginmanager.unregister(standard_reporter)
+    config.pluginmanager.register(custom_reporter, 'terminalreporter')

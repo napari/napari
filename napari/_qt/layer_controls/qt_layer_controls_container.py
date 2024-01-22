@@ -20,7 +20,6 @@ from napari.layers import (
     Vectors,
 )
 from napari.layers.layergroup import LayerGroup
-from napari.utils import config
 from napari.utils.translations import trans
 
 layer_to_controls = {
@@ -33,13 +32,6 @@ layer_to_controls = {
     Tracks: QtTracksControls,
     LayerGroup: QtLayerGroupControls,
 }
-
-if config.async_loading:
-    from napari.layers.image.experimental.octree_image import _OctreeImageBase
-
-    # The user visible layer controls for OctreeImage layers are identical
-    # to the regular image layer controls, for now.
-    layer_to_controls[_OctreeImageBase] = QtImageControls
 
 
 def create_qt_layer_controls(layer):

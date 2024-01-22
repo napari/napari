@@ -10,7 +10,7 @@ jobs:
     name: Vendored
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
@@ -20,7 +20,7 @@ jobs:
         run: python tools/check_vendored_modules.py --ci
 
       - name: Create PR updating vendored modules
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         with:
           commit-message: Update vendored modules.
           branch: update-vendored-examples
@@ -32,6 +32,7 @@ jobs:
 
             It look like ${{ steps.check_v.outputs.vendored }} has a new version.
           token: ${{ secrets.GHA_TOKEN }}
+          author: napari-bot <napari-bot@users.noreply.github.com>
           # Token permissions required by the action:
           # * pull requests: write and read
           # * repository contents: read and write

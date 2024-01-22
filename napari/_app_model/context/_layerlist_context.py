@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 from app_model.expressions import ContextKey
 
@@ -12,14 +12,29 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
 
+    from napari.components.layerlist import LayerList
     from napari.layers import Layer
     from napari.utils.events import Selection
 
     LayerSel = Selection[Layer]
 
 
-def _len(s: LayerSel) -> int:
-    return len(s)
+def _len(layers: Union[LayerSel, LayerList]) -> int:
+    return len(layers)
+
+
+class LayerListContextKeys(ContextNamespace['Layer']):
+    """These are the available context keys relating to a LayerList.
+
+    Consists of a default value, a description, and a function to retrieve the
+    current value from `layers`.
+    """
+
+    num_layers = ContextKey(
+        0,
+        trans._("Number of layers."),
+        _len,
+    )
 
 
 def _all_linked(s: LayerSel) -> bool:
@@ -107,7 +122,24 @@ def _active_shape(s: LayerSel) -> Optional[Tuple[int, ...]]:
 
 
 def _same_shape(s: LayerSel) -> bool:
-    return len({getattr(x.data, "shape", ()) for x in s}) == 1
+    """Return true when all given layers have the same shape.
+
+    Notes
+    -----
+    The cast to tuple() is needed because some array libraries, specifically
+    Apple's mlx [1]_, return a list, which is not hashable and thus causes the
+    set (``{}``) to fail.
+
+    The Data APIs Array spec specifies that ``.shape`` should be a tuple, or,
+    if a custom type, it should be an immutable type [2]_, so in time, the cast
+    to tuple could be removed, once all major libraries support the spec.
+
+    References
+    ----------
+    .. [1] https://github.com/ml-explore/mlx
+    .. [2] https://data-apis.org/array-api/latest/API_specification/generated/array_api.array.shape.html
+    """
+    return len({tuple(getattr(x.data, "shape", ())) for x in s}) == 1
 
 
 def _active_dtype(s: LayerSel) -> DTypeLike:
@@ -123,10 +155,11 @@ def _same_type(s: LayerSel) -> bool:
 
 
 def _active_is_image_3d(s: LayerSel) -> bool:
+    _activ_ndim = _active_ndim(s)
     return (
         _active_type(s) == "image"
-        and _active_ndim(s) is not None
-        and (_active_ndim(s) > 3 or (_active_ndim(s) > 2 and not _is_rgb(s)))
+        and _activ_ndim is not None
+        and (_activ_ndim > 3 or (_activ_ndim) > 2 and not _is_rgb(s))
     )
 
 
@@ -134,11 +167,11 @@ def _empty_shapes_layer_selected(s: LayerSel) -> bool:
     return any(x._type_string == "shapes" and not len(x.data) for x in s)
 
 
-class LayerListContextKeys(ContextNamespace['LayerSel']):
-    """These are the available context keys relating to a LayerList.
+class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
+    """Available context keys relating to the selection in a LayerList.
 
-    along with default value, a description, and a function to retrieve the
-    current value from layers.selection
+    Consists of a default value, a description, and a function to retrieve the
+    current value from `layers.selection`.
     """
 
     num_selected_layers = ContextKey(

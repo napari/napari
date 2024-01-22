@@ -20,8 +20,12 @@ from napari.utils.colormaps.vendored import cm
 
 @pytest.mark.parametrize("name", list(AVAILABLE_COLORMAPS.keys()))
 def test_colormap(name):
-    np.random.seed(0)
+    if name in {'label_colormap', 'custom'}:
+        pytest.skip(
+            'label_colormap  and custom are inadvertantly added to AVAILABLE_COLORMAPS but is not a normal colormap'
+        )
 
+    np.random.seed(0)
     cmap = AVAILABLE_COLORMAPS[name]
 
     # Test can map random 0-1 values
@@ -231,3 +235,42 @@ def test_ensure_colormap_with_multi_colors(colors):
     expected_colors = transform_color(colors)
     np.testing.assert_array_equal(colormap.colors, expected_colors)
     assert re.match(r'\[unnamed colormap \d+\]', colormap.name) is not None
+
+
+@pytest.mark.parametrize('color', ['#abc', '#abcd', '#abcdef', '#00ABCDEF'])
+def test_ensure_colormap_with_hex_color_string(color):
+    """
+    Test all the accepted hex color representations (single/double digit rgb with/without alpha)
+    """
+    cmap = ensure_colormap(color)
+    assert isinstance(cmap, Colormap)
+    assert cmap.name == color.lower()
+
+
+@pytest.mark.parametrize('color', ['#f0f', '#f0fF', '#ff00ff', '#ff00ffFF'])
+def test_ensure_colormap_with_recognized_hex_color_string(color):
+    """
+    Test that a hex color string for magenta is associated with the existing magenta colormap
+    """
+    cmap = ensure_colormap(color)
+    assert isinstance(cmap, Colormap)
+    assert cmap.name == 'magenta'
+
+
+def test_ensure_colormap_error_with_invalid_hex_color_string():
+    """
+    Test that ensure_colormap errors when using an invalid hex color string
+    """
+    color = '#ff'
+    with pytest.raises(KeyError, match=rf"{color}.*Recognized colormaps are"):
+        ensure_colormap(color)
+
+
+@pytest.mark.parametrize('mpl_name', ['chartreuse', 'chocolate', 'lavender'])
+def test_ensure_colormap_with_recognized_mpl_color_name(mpl_name):
+    """
+    Test that the colormap name is identical to the the mpl color name passed to ensure_colormap
+    """
+    cmap = ensure_colormap(mpl_name)
+    assert isinstance(cmap, Colormap)
+    assert cmap.name == mpl_name

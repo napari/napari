@@ -2,11 +2,11 @@
 import os
 from pathlib import Path
 
-import pydantic
 import pytest
 from yaml import safe_load
 
 from napari import settings
+from napari._pydantic_compat import Field, ValidationError
 from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
@@ -74,7 +74,7 @@ def test_settings_load_strict(tmp_path, monkeypatch):
     data = "appearance:\n   theme: 1"
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(ValidationError):
         NapariSettings(fake_path)
 
 
@@ -108,8 +108,8 @@ def test_settings_load_invalid_section(tmp_path):
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
 
-    settings = NapariSettings(fake_path)
-    assert getattr(settings, "non_existing_section", None) is None
+    settings_ = NapariSettings(fake_path)
+    assert getattr(settings_, "non_existing_section", None) is None
 
 
 def test_settings_to_dict(test_settings):
@@ -145,11 +145,11 @@ def test_settings_reset(test_settings):
 
 
 def test_settings_model(test_settings):
-    with pytest.raises(pydantic.error_wrappers.ValidationError):
+    with pytest.raises(ValidationError):
         # Should be string
         test_settings.appearance.theme = 1
 
-    with pytest.raises(pydantic.error_wrappers.ValidationError):
+    with pytest.raises(ValidationError):
         # Should be a valid string
         test_settings.appearance.theme = "vaporwave"
 
@@ -159,10 +159,10 @@ def test_custom_theme_settings(test_settings):
     custom_theme_name = "_test_blue_"
 
     # No theme registered yet, this should fail
-    with pytest.raises(pydantic.error_wrappers.ValidationError):
+    with pytest.raises(ValidationError):
         test_settings.appearance.theme = custom_theme_name
 
-    blue_theme = get_theme('dark', True)
+    blue_theme = get_theme('dark').to_rgb_dict()
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
@@ -219,7 +219,7 @@ def test_settings_env_variables(monkeypatch):
 
 def test_settings_env_variables_fails(monkeypatch):
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'FOOBAR')
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(ValidationError):
         NapariSettings()
 
 
@@ -228,7 +228,7 @@ def test_subfield_env_field(monkeypatch):
     from napari.settings._base import EventedSettings
 
     class Sub(EventedSettings):
-        x: int = pydantic.Field(1, env='varname')
+        x: int = Field(1, env='varname')
 
     class T(NapariSettings):
         sub: Sub

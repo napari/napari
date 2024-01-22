@@ -17,6 +17,9 @@ from typing import (
 )
 
 import numpy as np
+
+# TODO decide where types should be defined to have single place for them
+from npe2.types import LayerName as LayerTypeName
 from typing_extensions import TypedDict, get_args
 
 if TYPE_CHECKING:
@@ -26,8 +29,34 @@ if TYPE_CHECKING:
     import dask.array  # noqa: ICN001
     import zarr
     from magicgui.widgets import FunctionGui
-    from qtpy.QtWidgets import QWidget  # type: ignore [attr-defined]
+    from qtpy.QtWidgets import QWidget
 
+
+__all__ = [
+    'ArrayLike',
+    'LayerTypeName',
+    'FullLayerData',
+    'LayerData',
+    'PathLike',
+    'PathOrPaths',
+    'ReaderFunction',
+    'WriterFunction',
+    'ExcInfo',
+    'WidgetCallable',
+    'AugmentedWidget',
+    'SampleData',
+    'SampleDict',
+    'ArrayBase',
+    'ImageData',
+    'LabelsData',
+    'PointsData',
+    'ShapesData',
+    'SurfaceData',
+    'TracksData',
+    'VectorsData',
+    'LayerDataTuple',
+    'image_reader_to_layerdata_reader',
+]
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
@@ -37,14 +66,13 @@ if TYPE_CHECKING:
 # since it includes all valid arguments for np.array() ( int, float, str...)
 ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 
-
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
-FullLayerData = Tuple[Any, Dict, str]
+FullLayerData = Tuple[Any, Dict, LayerTypeName]
 LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
 PathLike = Union[str, Path]
-PathOrPaths = Union[str, Sequence[str]]
+PathOrPaths = Union[PathLike, Sequence[PathLike]]
 ReaderFunction = Callable[[PathOrPaths], List[LayerData]]
 WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
 

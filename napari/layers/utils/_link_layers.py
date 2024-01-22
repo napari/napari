@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Callable, DefaultDict, Iterable, Set, Tuple
 from weakref import ReferenceType, ref
 
 if TYPE_CHECKING:
+    from collections import abc
+
     from napari.layers import Layer
 
 from napari.utils.events.event import WarningEmitter
@@ -35,9 +37,10 @@ def get_linked_layers(*layers: Layer) -> Set[Layer]:
     directly linked to each other.  This is useful for context menu generation.
     """
     if not layers:
-        return {}
+        return set()
     refs = set.union(*(_LINKED_LAYERS.get(ref(x), set()) for x in layers))
-    return {x() for x in refs if x() is not None}
+    linked_layers = {x() for x in refs}
+    return {x for x in linked_layers if x is not None}
 
 
 def link_layers(
@@ -127,7 +130,7 @@ def link_layers(
             setter.__qualname__ = f"set_{attr}_on_layer_{id(l2)}"
             return setter
 
-        # acually make the connection
+        # actually make the connection
         callback = _make_l2_setter()
         emitter_group = getattr(lay1.events, attribute)
         emitter_group.connect(callback)
@@ -187,8 +190,8 @@ def layers_linked(layers: Iterable[Layer], attributes: Iterable[str] = ()):
 
 def _get_common_evented_attributes(
     layers: Iterable[Layer],
-    exclude: set[str] = frozenset(
-        ('thumbnail', 'status', 'name', 'data', 'extent')
+    exclude: abc.Set[str] = frozenset(
+        ('thumbnail', 'status', 'name', 'data', 'extent', 'loaded')
     ),
     with_private=False,
 ) -> set[str]:

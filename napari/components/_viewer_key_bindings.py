@@ -44,9 +44,12 @@ def reset_scroll_progress(viewer: Viewer):
 reset_scroll_progress.__doc__ = trans._("Reset dims scroll progress")
 
 
-@register_viewer_action(trans._("Toggle ndisplay."))
+@register_viewer_action(trans._("Toggle 2D/3D view."))
 def toggle_ndisplay(viewer: Viewer):
-    viewer.dims.ndisplay = 2 + (viewer.dims.ndisplay == 2)
+    if viewer.dims.ndisplay == 2:
+        viewer.dims.ndisplay = 3
+    else:
+        viewer.dims.ndisplay = 2
 
 
 # Making this an action makes vispy really unhappy during the tests
@@ -101,16 +104,20 @@ def focus_axes_down(viewer: Viewer):
     viewer.dims._focus_down()
 
 
+# Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
-    trans._("Change order of the visible axes, e.g. [0, 1, 2] -> [2, 0, 1]."),
+    trans._(
+        "Change order of the visible axes, e.g.\u00A0[0,\u00A01,\u00A02]\u00A0\u2011>\u00A0[2,\u00A00,\u00A01]."
+    ),
 )
 def roll_axes(viewer: Viewer):
     viewer.dims._roll()
 
 
+# Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        "Transpose order of the last two visible axes, e.g. [0, 1] -> [1, 0]."
+        "Transpose order of the last two visible axes, e.g.\u00A0[0,\u00A01]\u00A0\u2011>\u00A0[1,\u00A00]."
     ),
 )
 def transpose_axes(viewer: Viewer):
@@ -143,8 +150,21 @@ def hold_for_pan_zoom(viewer: ViewerModel):
         yield
         return
     previous_mode = selected_layer.mode
-    if previous_mode != selected_layer._modeclass.PAN_ZOOM:
-        selected_layer.mode = selected_layer._modeclass.PAN_ZOOM
+    # Each layer has its own Mode enum class with different values,
+    # but they should all have a PAN_ZOOM value. At the time of writing
+    # these enums do not share a base class or protocol, so ignore the
+    # attribute check for now.
+    pan_zoom = selected_layer._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
+    if previous_mode != pan_zoom:
+        selected_layer.mode = pan_zoom
         yield
 
         selected_layer.mode = previous_mode
+
+
+@register_viewer_action(trans._("Show all key bindings"))
+def show_shortcuts(viewer: Viewer):
+    pref_list = viewer.window._open_preferences_dialog()._list
+    for i in range(pref_list.count()):
+        if (item := pref_list.item(i)) and item.text() == "Shortcuts":
+            pref_list.setCurrentRow(i)

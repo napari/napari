@@ -8,21 +8,40 @@ documentation.
 CommandId values should be namespaced, e.g. 'napari:layer:something' for a command
 that operates on layers.
 """
-from enum import Enum
 from typing import NamedTuple, Optional
 
+from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
 
 
 # fmt: off
-class CommandId(str, Enum):
+class CommandId(StrEnum):
     """Id representing a napari command."""
+    # File menubar
+    DLG_OPEN_FILES = 'napari:window:file:open_files_dialog'
+    DLG_OPEN_FILES_AS_STACK = 'napari:window:file:open_files_as_stack_dialog'
+    DLG_OPEN_FOLDER = 'napari:window:file:open_folder_dialog'
+    DLG_OPEN_FILES_WITH_PLUGIN = 'napari:window:file:_open_files_with_plugin'
+    DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN = 'napari:window:file:_open_files_as_stack_with_plugin'
+    DLG_OPEN_FOLDER_WITH_PLUGIN = 'napari:window:file:_open_folder_with_plugin'
+    DLG_SHOW_PREFERENCES = 'napari:window:file:show_preferences_dialog'
+    DLG_SAVE_LAYERS = 'napari:window:file:save_layers_dialog'
+    # `DLG_SAVE_SELECTED_LAYERS` uses the same callback as `DLG_SAVE_LAYERS`,
+    # just with different kwarg
+    DLG_SAVE_SELECTED_LAYERS = 'napari:window:file:save_layers_dialog:selected'
+    DLG_SAVE_CANVAS_SCREENSHOT = 'napari:window:file:save_canvas_screenshot_dialog'
+    DLG_SAVE_VIEWER_SCREENSHOT = 'napari:window:file:save_viewer_screenshot_dialog'
+    COPY_CANVAS_SCREENSHOT = 'napari:window:file:copy_canvas_screenshot'
+    COPY_VIEWER_SCREENSHOT = 'napari:window:file:copy_viewer_screenshot'
+    DLG_CLOSE = 'napari:window:file:close_dialog'
+    DLG_QUIT = 'napari:window:file:quit_dialog'
+    RESTART = 'napari:window:file:restart'
+    IMAGE_FROM_CLIPBOARD = 'napari:window:file:_image_from_clipboard'
 
     # View menubar
     TOGGLE_FULLSCREEN = 'napari:window:view:toggle_fullscreen'
     TOGGLE_MENUBAR = 'napari:window:view:toggle_menubar'
     TOGGLE_PLAY = 'napari:window:view:toggle_play'
-    TOGGLE_OCTREE_CHUNK_OUTLINES = 'napari:window:view:toggle_octree_chunk_outlines'
     TOGGLE_LAYER_TOOLTIPS = 'napari:window:view:toggle_layer_tooltips'
     TOGGLE_ACTIVITY_DOCK = 'napari:window:view:toggle_activity_dock'
 
@@ -52,6 +71,10 @@ class CommandId(str, Enum):
     LAYER_SPLIT_RGB = 'napari:layer:split_rgb'
     LAYER_MERGE_STACK = 'napari:layer:merge_stack'
     LAYER_TOGGLE_VISIBILITY = 'napari:layer:toggle_visibility'
+    SHOW_SELECTED_LAYERS = 'napari:layer:show_selected'
+    HIDE_SELECTED_LAYERS = 'napari:layer:hide_selected'
+    SHOW_UNSELECTED_LAYERS = 'napari:layer:show_unselected'
+    HIDE_UNSELECTED_LAYERS = 'napari:layer:hide_unselected'
 
     LAYER_LINK_SELECTED = 'napari:layer:link_selected_layers'
     LAYER_UNLINK_SELECTED = 'napari:layer:unlink_selected_layers'
@@ -77,7 +100,7 @@ class CommandId(str, Enum):
     LAYER_PROJECT_MEDIAN = 'napari:layer:project_median'
 
     @property
-    def title(self) -> str:
+    def command_title(self) -> str:
         return _COMMAND_INFO[self].title
 
     @property
@@ -93,11 +116,29 @@ class _i(NamedTuple):
 
 
 _COMMAND_INFO = {
+    # File menubar
+    CommandId.DLG_OPEN_FILES: _i(trans._('Open File(s)...')),
+    CommandId.DLG_OPEN_FILES_AS_STACK: _i(trans._('Open Files as Stack...')),
+    CommandId.DLG_OPEN_FOLDER: _i(trans._('Open Folder...')),
+    CommandId.DLG_OPEN_FILES_WITH_PLUGIN: _i(trans._('Open File(s)...')),
+    CommandId.DLG_OPEN_FILES_AS_STACK_WITH_PLUGIN: _i(trans._('Open Files as Stack...')),
+    CommandId.DLG_OPEN_FOLDER_WITH_PLUGIN: _i(trans._('Open Folder...')),
+    CommandId.DLG_SHOW_PREFERENCES: _i(trans._('Preferences')),
+    CommandId.DLG_SAVE_LAYERS: _i(trans._('Save All Layers...')),
+    CommandId.DLG_SAVE_SELECTED_LAYERS: _i(trans._('Save Selected Layers...')),
+    CommandId.DLG_SAVE_CANVAS_SCREENSHOT: _i(trans._('Save Screenshot...')),
+    CommandId.DLG_SAVE_VIEWER_SCREENSHOT: _i(trans._('Save Screenshot with Viewer...')),
+    CommandId.COPY_CANVAS_SCREENSHOT: _i(trans._('Copy Screenshot to Clipboard')),
+    CommandId.COPY_VIEWER_SCREENSHOT: _i(trans._('Copy Screenshot with Viewer to Clipboard')),
+    CommandId.DLG_CLOSE: _i(trans._('Close Window')),
+    CommandId.DLG_QUIT: _i(trans._('Exit')),
+    CommandId.RESTART: _i(trans._('Restart')),
+    CommandId.IMAGE_FROM_CLIPBOARD: _i(trans._("New Image from Clipboard")),
+
     # View menubar
     CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen')),
     CommandId.TOGGLE_MENUBAR: _i(trans._('Toggle Menubar Visibility')),
     CommandId.TOGGLE_PLAY: _i(trans._('Toggle Play')),
-    CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES: _i(trans._('Toggle Chunk Outlines')),
     CommandId.TOGGLE_LAYER_TOOLTIPS: _i(trans._('Toggle Layer Tooltips')),
     CommandId.TOGGLE_ACTIVITY_DOCK: _i(trans._('Toggle Activity Dock')),
     CommandId.TOGGLE_VIEWER_AXES: _i(trans._('Axes Visible')),
@@ -126,6 +167,10 @@ _COMMAND_INFO = {
     CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB')),
     CommandId.LAYER_MERGE_STACK: _i(trans._('Merge to Stack')),
     CommandId.LAYER_TOGGLE_VISIBILITY: _i(trans._('Toggle visibility')),
+    CommandId.SHOW_SELECTED_LAYERS: _i(trans._('Show All Selected Layers')),
+    CommandId.HIDE_SELECTED_LAYERS: _i(trans._('Hide All Selected Layers')),
+    CommandId.SHOW_UNSELECTED_LAYERS: _i(trans._('Show All Unselected Layers')),
+    CommandId.HIDE_UNSELECTED_LAYERS: _i(trans._('Hide All Unselected Layers')),
     CommandId.LAYER_LINK_SELECTED: _i(trans._('Link Layers')),
     CommandId.LAYER_UNLINK_SELECTED: _i(trans._('Unlink Layers')),
     CommandId.LAYER_SELECT_LINKED: _i(trans._('Select Linked Layers')),

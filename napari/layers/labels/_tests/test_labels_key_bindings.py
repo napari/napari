@@ -1,8 +1,5 @@
-from tempfile import TemporaryDirectory
-
 import numpy as np
 import pytest
-import zarr
 
 from napari.layers import Labels
 from napari.layers.labels._labels_key_bindings import (
@@ -33,31 +30,3 @@ def test_swap_background_label(labels_data_4d):
     assert labels.selected_label == labels._background_label
     swap_selected_and_background_labels(labels)
     assert labels.selected_label == 10
-
-
-def test_max_label_tensorstore(labels_data_4d):
-    ts = pytest.importorskip('tensorstore')
-
-    with TemporaryDirectory(suffix='.zarr') as fout:
-        labels_temp = zarr.open(
-            fout,
-            mode='w',
-            shape=labels_data_4d.shape,
-            dtype=np.uint32,
-            chunks=(1, 1, 8, 9),
-        )
-        labels_temp[:] = labels_data_4d
-        labels_ts_spec = {
-            'driver': 'zarr',
-            'kvstore': {'driver': 'file', 'path': fout},
-            'path': '',
-            'metadata': {
-                'dtype': labels_temp.dtype.str,
-                'order': labels_temp.order,
-                'shape': labels_data_4d.shape,
-            },
-        }
-        data = ts.open(labels_ts_spec, create=False, open=True).result()
-        layer = Labels(data)
-        new_label(layer)
-        assert layer.selected_label == 4

@@ -13,7 +13,10 @@ class BrushCircleOverlay(CanvasOverlay):
         The diameter of the brush circle in canvas pixels.
     position : Tuple[int, int]
         The position (x, y) of the center of the brush circle on the canvas.
+    position_is_frozen : bool
+        If True, the overlay does not respond to mouse movements.
     """
 
     size: int = 10
     position: Tuple[int, int] = (0, 0)
+    position_is_frozen: bool = False

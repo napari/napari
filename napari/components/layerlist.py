@@ -1,21 +1,29 @@
+from __future__ import annotations
+
 import itertools
+import typing
 import warnings
-from collections import namedtuple
 from functools import cached_property
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
+from napari.components.dims import RangeTuple
 from napari.layers import Layer
 from napari.layers.image.image import _ImageBase
+from napari.layers.utils.layer_utils import Extent
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
 from napari.utils.translations import trans
 
-Extent = namedtuple('Extent', 'data world step')
-
 if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
+    from typing_extensions import Self
+
+
+def get_name(layer: Layer) -> str:
+    """Return the name of a layer."""
+    return layer.name
 
 
 class _LayerListMixin:
@@ -186,9 +194,9 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
     moved : (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed : (index: int, old_value: T, value: T)
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     changed <OVERLOAD> : (index: slice, old_value: List[_T], value: List[_T])
-        emitted when ``index`` is set from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
     reordered : (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     selection.events.changed : (added: Set[_T], removed: Set[_T])
@@ -205,26 +213,63 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
         super().__init__(
             data=data,
             basetype=Layer,
-            lookup={str: lambda e: e.name},
+            lookup={str: get_name},
         )
+        self._create_contexts()
+
+    def _create_contexts(self):
+        """Create contexts to manage enabled/visible action/menu states.
+
+        Connects LayerList and Selection[Layer] to their context keys to allow
+        actions and menu items (in the GUI) to be dynamically enabled/disabled
+        and visible/hidden based on the state of layers in the list.
+        """
 
         # TODO: figure out how to move this context creation bit.
         # Ideally, the app should be aware of the layerlist, but not vice versa.
-        # This could probably be done by having the layerlist emit events that the app
-        # connects to, then the `_ctx` object would live on the app, (not here)
+        # This could probably be done by having the layerlist emit events that
+        # the app connects to, then the `_ctx` object would live on the app,
+        # (not here)
         from napari._app_model.context import create_context
         from napari._app_model.context._layerlist_context import (
             LayerListContextKeys,
+            LayerListSelectionContextKeys,
         )
 
         self._ctx = create_context(self)
         if self._ctx is not None:  # happens during Viewer type creation
             self._ctx_keys = LayerListContextKeys(self._ctx)
+            self.events.inserted.connect(self._ctx_keys.update)
+            self.events.removed.connect(self._ctx_keys.update)
 
-            self.selection.events.changed.connect(self._ctx_keys.update)
+        self._selection_ctx = create_context(self)
+        if (
+            self._selection_ctx is not None
+        ):  # happens during Viewer type creation
+            self._selection_ctx_keys = LayerListSelectionContextKeys(
+                self._selection_ctx
+            )
+            self.selection.events.changed.connect(
+                self._selection_ctx_keys.update
+            )
 
-        # temporary: see note in _on_selection_event
-        self.selection.events.changed.connect(self._on_selection_changed)
+    def _process_delete_item(self, item: Layer):
+        super()._process_delete_item(item)
+        item.events.extent.disconnect(self._clean_cache)
+        item.events._extent_augmented.disconnect(self._clean_cache)
+        self._clean_cache()
+
+    def _clean_cache(self):
+        cached_properties = (
+            'extent',
+            '_extent_world',
+            '_extent_world_augmented',
+            '_step_size',
+        )
+        [self.__dict__.pop(p, None) for p in cached_properties]
+
+    def __newlike__(self, data):
+        return LayerList(data)
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.
@@ -266,6 +311,17 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
                 )
         return values
 
+    @typing.overload
+    def __getitem__(self, item: Union[int, str]) -> Layer:
+        ...
+
+    @typing.overload
+    def __getitem__(self, item: slice) -> Self:
+        ...
+
+    def __getitem__(self, item):
+        return super().__getitem__(item)
+
     def __setitem__(self, key, value):
         old = self._list[key]
         if isinstance(key, slice):
@@ -281,6 +337,7 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
         new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
         new_layer.events.extent.connect(self._clean_cache)
+        new_layer.events._extent_augmented.connect(self._clean_cache)
         super().insert(index, new_layer)
 
     def _process_delete_item(self, item: Layer):
@@ -310,7 +367,8 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
         """
         return self._get_extent_world([layer.extent for layer in self])
 
-    def _get_extent_world(self, layer_extent_list):
+    @cached_property
+    def _extent_world_augmented(self) -> np.ndarray:
         """Extent of layers in world coordinates.
 
         Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
@@ -320,9 +378,62 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
         -------
         extent_world : array, shape (2, D)
         """
+        return self._get_extent_world(
+            [layer._extent_augmented for layer in self],
+            augmented=True,
+        )
+
+    def _get_min_and_max(self, mins_list, maxes_list):
+        # Reverse dimensions since it is the last dimensions that are
+        # displayed.
+        mins_list = [mins[::-1] for mins in mins_list]
+        maxes_list = [maxes[::-1] for maxes in maxes_list]
+
+        with warnings.catch_warnings():
+            # Taking the nanmin and nanmax of an axis of all nan
+            # raises a warning and returns nan for that axis
+            # as we have do an explicit nan_to_num below this
+            # behaviour is acceptable and we can filter the
+            # warning
+            warnings.filterwarnings(
+                'ignore',
+                message=str(
+                    trans._('All-NaN axis encountered', deferred=True)
+                ),
+            )
+            min_v = np.nanmin(
+                list(itertools.zip_longest(*mins_list, fillvalue=np.nan)),
+                axis=1,
+            )
+            max_v = np.nanmax(
+                list(itertools.zip_longest(*maxes_list, fillvalue=np.nan)),
+                axis=1,
+            )
+
+        # 512 element default extent as documented in `_get_extent_world`
+        min_v = np.nan_to_num(min_v, nan=-0.5)
+        max_v = np.nan_to_num(max_v, nan=511.5)
+
+        # switch back to original order
+        return min_v[::-1], max_v[::-1]
+
+    def _get_extent_world(self, layer_extent_list, augmented=False):
+        """Extent of layers in world coordinates.
+
+        Default to 2D image-like with (0, 511) min/ max values if no data is present.
+        Corresponds to image with 512 pixels in each dimension.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
         if len(self) == 0:
-            min_v = np.asarray([-0.5] * self.ndim)
-            max_v = np.asarray([511.5] * self.ndim)
+            min_v = np.zeros(self.ndim)
+            max_v = np.full(self.ndim, 511.0)
+            # image-like augmented extent is actually expanded by 0.5
+            if augmented:
+                min_v -= 0.5
+                max_v += 0.5
         else:
             extrema = [extent.world for extent in layer_extent_list]
             mins = [e[0] for e in extrema]
@@ -355,8 +466,9 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
     def get_extent(self, layers: Iterable[Layer]) -> Extent:
         """
         Return extent for a given layer list.
-        This function is useful for calculating the extent of a subset of layers
-        when preparing and updating some supplementary layers.
+
+        Extent bounds are inclusive. This function is useful for calculating the extent
+        of a subset of layers when preparing and updating some supplementary layers.
         For example see the cross Vectors layer in the `multiple_viewer_widget` example.
 
         Parameters
@@ -367,7 +479,7 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
         Returns
         -------
         extent : Extent
-             extent for selected layers
+            extent for selected layers
         """
         extent_list = [layer.extent for layer in layers]
         return Extent(
@@ -378,8 +490,21 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
 
     @cached_property
     def extent(self) -> Extent:
-        """Extent of layers in data and world coordinates."""
+        """
+        Extent of layers in data and world coordinates.
+
+        Extent bounds are inclusive. See Layer.extent for a detailed explanation
+        of how extents are calculated.
+        """
         return self.get_extent(list(self))
+
+    @property
+    def _ranges(self) -> Tuple[RangeTuple, ...]:
+        """Get ranges for Dims.range in world coordinates."""
+        ext = self.extent
+        return tuple(
+            RangeTuple(*x) for x in zip(ext.world[0], ext.world[1], ext.step)
+        )
 
     @property
     def ndim(self) -> int:
@@ -399,7 +524,7 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
         *,
         selected: bool = False,
         plugin: Optional[str] = None,
-        _writer: Optional['WriterContribution'] = None,
+        _writer: Optional[WriterContribution] = None,
     ) -> List[str]:
         """Save all or only selected layers to a path using writer plugins.
 

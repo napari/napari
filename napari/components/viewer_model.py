@@ -10,23 +10,29 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Iterator,
     List,
-    Mapping,
     Optional,
     Sequence,
     Set,
     Tuple,
+    Type,
     Union,
+    cast,
 )
 
 import numpy as np
-from pydantic import Extra, Field, PrivateAttr, validator
+
+# This cannot be condition to TYPE_CHEKCKING or the stubgen fails
+# with underfined Context.
+from app_model.expressions import Context
 
 from napari import layers
+from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import dims_scroll
 from napari.components.camera import Camera
-from napari.components.cursor import Cursor
+from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.grid import GridCanvas
 from napari.components.overlays import (
@@ -65,6 +71,14 @@ from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
 from napari.settings import get_settings
+from napari.types import (
+    FullLayerData,
+    LayerData,
+    LayerTypeName,
+    PathLike,
+    PathOrPaths,
+    SampleData,
+)
 from napari.utils._register import create_func as create_add_method
 from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
@@ -83,6 +97,10 @@ from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from npe2.types import SampleDataCreator
+
+
 DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
     'keymap',
@@ -95,11 +113,6 @@ EXCLUDE_DICT = {
 }
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
-if TYPE_CHECKING:
-    from napari.types import FullLayerData, LayerData
-
-PathLike = Union[str, Path]
-PathOrPaths = Union[PathLike, Sequence[PathLike]]
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
@@ -189,7 +202,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     )
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (800, 600)
-    _ctx: Mapping
+    _ctx: Context
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
@@ -235,6 +248,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         settings.application.events.grid_height.connect(
             self._update_viewer_grid
         )
+        settings.experimental.events.async_.connect(self._update_async)
 
         # Add extra events - ideally these will be removed too!
         self.events.add(
@@ -255,7 +269,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
+        self.dims.events.point.connect(self._update_layers)
+        # FIXME: the next line is a temporary workaround. With #5522 and #5751 Dims.point became
+        #        the source of truth, and is now defined in world space. This exposed an existing
+        #        bug where if a field in Dims is modified by the root_validator, events won't
+        #        be fired for it. This won't happen for properties because we have dependency
+        #        checks. To fix this, we need dep checks for fileds (psygnal!) and then we
+        #        can remove the following line. Note that because of this we fire double events,
+        #        but this should be ok because we have early returns when slices are unchanged.
         self.dims.events.current_step.connect(self._update_layers)
+        self.dims.events.margin_left.connect(self._update_layers)
+        self.dims.events.margin_right.connect(self._update_layers)
         self.cursor.events.position.connect(
             self._update_status_bar_from_cursor
         )
@@ -343,7 +367,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return f'napari.Viewer: {self.title}'
 
     @property
-    def _sliced_extent_world(self) -> np.ndarray:
+    def _sliced_extent_world_augmented(self) -> np.ndarray:
         """Extent of layers in world coordinates after slicing.
 
         D is either 2 or 3 depending on if the displayed data is 2D or 3D.
@@ -352,28 +376,34 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         -------
         sliced_extent_world : array, shape (2, D)
         """
-        if len(self.layers) == 0 and self.dims.ndim != 2:
-            # If no data is present and dims model has not been reset to 0
-            # than someone has passed more than two axis labels which are
-            # being saved and so default values are used.
+        # if not layers are present, assume image-like with dimensions of size 512
+        if len(self.layers) == 0:
             return np.vstack(
-                [np.zeros(self.dims.ndim), np.repeat(512, self.dims.ndim)]
+                [np.full(self.dims.ndim, -0.5), np.full(self.dims.ndim, 511.5)]
             )
+        return self.layers._extent_world_augmented[:, self.dims.displayed]
 
-        return self.layers.extent.world[:, self.dims.displayed]
-
-    def reset_view(self):
+    def reset_view(self) -> None:
         """Reset the camera view."""
 
-        extent = self._sliced_extent_world
+        extent = self._sliced_extent_world_augmented
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         grid_size = list(self.grid.actual_shape(len(self.layers)))
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
-        center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
-        center = [0] * (self.dims.ndisplay - len(center)) + list(center)
+        center_array = np.add(corner, np.divide(size, 2))[
+            -self.dims.ndisplay :
+        ]
+        center = cast(
+            Union[Tuple[float, float, float], Tuple[float, float]],
+            tuple(
+                [0.0] * (self.dims.ndisplay - len(center_array))
+                + list(center_array)
+            ),
+        )
+        assert len(center) in (2, 3)
         self.camera.center = center
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
@@ -402,12 +432,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         extent = layers_extent.world
         scale = layers_extent.step
         scene_size = extent[1] - extent[0]
-        corner = extent[0] + 0.5 * layers_extent.step
+        corner = extent[0]
         shape = [
-            np.round(s / sc).astype('int') if s > 0 else 1
+            np.round(s / sc).astype('int') + 1
             for s, sc in zip(scene_size, scale)
         ]
-        empty_labels = np.zeros(shape, dtype=int)
+        empty_labels = np.zeros(shape, dtype=np.uint8)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
     def _on_layer_reload(self, event: Event) -> None:
@@ -431,14 +461,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         position = list(self.cursor.position)
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]
-        self.cursor.position = position
+        self.cursor.position = tuple(position)
 
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""
         active_layer = event.value
         if active_layer is None:
             self.help = ''
-            self.cursor.style = 'standard'
+            self.cursor.style = CursorStyle.STANDARD
         else:
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
@@ -449,6 +479,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     @staticmethod
     def rounded_division(min_val, max_val, precision):
+        warnings.warn(
+            trans._(
+                'Viewer.rounded_division is deprecated since v0.4.18 and will be removed in 0.6.0.'
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
         return int(((min_val + max_val) / 2) / precision) * precision
 
     def _on_layers_change(self):
@@ -489,6 +526,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
 
+    def _update_async(self, event: Event) -> None:
+        """Set layer slicer to force synchronous if async is disabled."""
+        self._layer_slicer._force_sync = not event.value
+
     def _update_status_bar_from_cursor(self, event=None):
         """Update the status bar based on the current cursor position.
 
@@ -509,8 +550,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
-                    self.cursor.position,
-                    view_direction=self.cursor._view_direction,
+                    np.asarray(self.cursor.position),
+                    view_direction=np.asarray(self.cursor._view_direction),
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
@@ -519,7 +560,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
-        extent = self._sliced_extent_world
+        extent = self._sliced_extent_world_augmented
         n_layers = len(self.layers)
         for i, layer in enumerate(self.layers):
             i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
@@ -591,20 +632,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
+            # set dims slider to the middle of all dimensions
             self.reset_view()
-            ranges = self.layers._ranges
-            midpoint = [
-                self.rounded_division(low, high, step)
-                for low, high, step in ranges
-            ]
-            self.dims.current_step = midpoint
+            self.dims._go_to_center_step()
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):
         """
         Update layer help text base on layer mode.
         """
-        layer_to_func_and_mode = {
+        layer_to_func_and_mode: Dict[Type[Layer], List] = {
             Points: points_fun_to_mode,
             Labels: labels_fun_to_mode,
             Shapes: shapes_fun_to_mode,
@@ -658,6 +695,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
+        # Clean up overlays
+        for overlay in list(layer._overlays):
+            del layer._overlays[overlay]
+
         self._on_layers_change()
         self._on_grid_change()
 
@@ -681,7 +722,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.append(layer)
         return layer
 
-    @rename_argument("interpolation", "interpolation2d", "0.6.0")
+    @rename_argument(
+        from_name="interpolation",
+        to_name="interpolation2d",
+        version="0.6.0",
+        since_version="0.4.17",
+    )
     def add_image(
         self,
         data=None,
@@ -690,7 +736,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         rgb=None,
         colormap=None,
         contrast_limits=None,
-        gamma=1,
+        gamma=1.0,
         interpolation2d='nearest',
         interpolation3d='linear',
         rendering='mip',
@@ -704,7 +750,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         rotate=None,
         shear=None,
         affine=None,
-        opacity=1,
+        opacity=1.0,
         blending=None,
         visible=True,
         multiscale=None,
@@ -712,6 +758,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         plane=None,
         experimental_clipping_planes=None,
         custom_interpolation_kernel_2d=None,
+        projection_mode='none',
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -839,6 +886,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Properties defining plane rendering in 3D. Properties are defined in
             data coordinates. Valid dictionary keys are
             {'position', 'normal', 'thickness', and 'enabled'}.
+        projection_mode : str
+            How data outside the viewed dimensions but inside the thick Dims slice will
+            be projected onto the viewed dimensions. Must fit to cls._projectionclass
         experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
             Each dict defines a clipping plane in 3D in data coordinates.
             Valid dictionary keys are {'position', 'normal', and 'enabled'}.
@@ -889,6 +939,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'plane': plane,
             'experimental_clipping_planes': experimental_clipping_planes,
             'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
+            'projection_mode': projection_mode,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -951,8 +1002,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         sample : str
             name of the sample
         reader_plugin : str, optional
-            reader plugin to pass to viewer.open (only used if the sample data
-            is a string).  by default None.
+            reader plugin to use, passed to ``viewer.open``. Only used if the
+            sample data is an URI (Uniform Resource Identifier). By default None.
         **kwargs
             additional kwargs will be passed to the sample data loader provided
             by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
@@ -970,6 +1021,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         from napari.plugins import _npe2, plugin_manager
 
+        plugin_spec_reader = None
+        data: Union[None, SampleDataCreator, SampleData]
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
 
@@ -980,7 +1033,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             except KeyError:
                 available += list(plugin_manager.available_samples())
         # npe2 uri sample data, extract the path so we can use viewer.open
-        elif hasattr(data.__self__, 'uri'):
+        elif hasattr(data, "__self__") and hasattr(data.__self__, 'uri'):
+            if (
+                hasattr(data.__self__, 'reader_plugin')
+                and data.__self__.reader_plugin != reader_plugin
+            ):
+                # if the user chose a reader_plugin, we use their choice
+                # but we remember what the plugin declared so we can inform the user if it fails
+                plugin_spec_reader = data.__self__.reader_plugin
+                reader_plugin = reader_plugin or plugin_spec_reader
             data = data.__self__.uri
 
         if data is None:
@@ -1015,7 +1076,25 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     added.extend(self._add_layer_from_data(*datum))
                 return added
             if isinstance(data, (str, Path)):
-                return self.open(data, plugin=reader_plugin)
+                try:
+                    return self.open(data, plugin=reader_plugin)
+                except Exception as e:
+                    # user chose a different reader to the one specified by the plugin
+                    # and it failed - let them know the plugin declared something else
+                    if (
+                        plugin_spec_reader is not None
+                        and reader_plugin != plugin_spec_reader
+                    ):
+                        raise ValueError(
+                            trans._(
+                                "Chosen reader {chosen_reader} failed to open sample. Plugin {plugin} declares {original_reader} as the reader for this sample - try calling `open_sample` with no `reader_plugin` or passing {original_reader} explicitly.",
+                                deferred=True,
+                                plugin=plugin,
+                                chosen_reader=reader_plugin,
+                                original_reader=plugin_spec_reader,
+                            )
+                        ) from e
+                    raise e  # noqa: TRY201
 
             raise TypeError(
                 trans._(
@@ -1031,9 +1110,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self,
         path: PathOrPaths,
         *,
-        stack: Union[bool, List[List[str]]] = False,
+        stack: Union[bool, List[List[PathLike]]] = False,
         plugin: Optional[str] = 'napari',
-        layer_type: Optional[str] = None,
+        layer_type: Optional[LayerTypeName] = None,
         **kwargs,
     ) -> List[Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
@@ -1084,18 +1163,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
             plugin = 'napari'
 
-        paths: List[str | Path | List[str | Path]] = (
+        paths_: List[PathLike] = (
             [os.fspath(path)]
             if isinstance(path, (Path, str))
             else [os.fspath(p) for p in path]
         )
 
+        paths: Sequence[PathOrPaths] = paths_
         # If stack is a bool and True, add an additional layer of nesting.
         if isinstance(stack, bool) and stack:
-            paths = [paths]
-
+            paths = [paths_]
         # If stack is a list and True, extend the paths with the inner lists.
         elif isinstance(stack, list) and stack:
+            paths = [paths_]
             paths.extend(stack)
 
         added: List[Layer] = []  # for layers that get added
@@ -1133,9 +1213,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _open_or_raise_error(
         self,
         paths: List[Union[Path, str]],
-        kwargs: Dict[str, Any] = None,
-        layer_type: Optional[str] = None,
-        stack: Union[bool, List[List[str]]] = False,
+        kwargs: Optional[Dict[str, Any]] = None,
+        layer_type: Optional[LayerTypeName] = None,
+        stack: bool = False,
     ):
         """Open paths if plugin choice is unambiguous, raising any errors.
 
@@ -1258,12 +1338,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _add_layers_with_plugins(
         self,
-        paths: List[str],
+        paths: List[PathLike],
         *,
         stack: bool,
-        kwargs: Optional[dict] = None,
+        kwargs: Optional[Dict] = None,
         plugin: Optional[str] = None,
-        layer_type: Optional[str] = None,
+        layer_type: Optional[LayerTypeName] = None,
     ) -> List[Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
@@ -1317,9 +1397,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 paths, plugin=plugin, stack=stack
             )
 
+        if layer_data is None:
+            return []
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.
-        filenames = []
+        filenames: Iterator[PathLike]
 
         if len(paths) == len(layer_data):
             filenames = iter(paths)
@@ -1345,7 +1427,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _add_layer_from_data(
         self,
         data,
-        meta: Dict[str, Any] = None,
+        meta: Optional[Dict[str, Any]] = None,
         layer_type: Optional[str] = None,
     ) -> List[Layer]:
         """Add arbitrary layer data to the viewer.
@@ -1394,12 +1476,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         >>> viewer._add_layer_from_data(*data)
 
         """
-
-        layer_type = (layer_type or '').lower()
-
-        # assumes that big integer type arrays are likely labels.
-        if not layer_type:
+        if layer_type is None or layer_type == '':
+            # assumes that big integer type arrays are likely labels.
             layer_type = guess_labels(data)
+        else:
+            layer_type = layer_type.lower()
 
         if layer_type not in layers.NAMES:
             raise ValueError(
@@ -1478,14 +1559,14 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
             )
     else:
         _data.append(guess_labels(_data[0]))
-    return tuple(_data)  # type: ignore
+    return tuple(_data)
 
 
 def _unify_data_and_user_kwargs(
     data: LayerData,
     kwargs: Optional[dict] = None,
-    layer_type: Optional[str] = None,
-    fallback_name: str = None,
+    layer_type: Optional[LayerTypeName] = None,
+    fallback_name: Optional[str] = None,
 ) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
 

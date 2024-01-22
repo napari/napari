@@ -1,15 +1,17 @@
 """guess_rgb, guess_multiscale, guess_labels.
 """
-from typing import Tuple
+from typing import Any, Callable, Literal, Sequence, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
+from napari.layers.image._image_constants import ImageProjectionMode
 from napari.utils.translations import trans
 
 
-def guess_rgb(shape):
+def guess_rgb(shape: Tuple[int, ...]) -> bool:
     """Guess if the passed shape comes from rgb data.
 
     If last dim is 3 or 4 assume the data is rgb, including rgba.
@@ -30,7 +32,9 @@ def guess_rgb(shape):
     return ndim > 2 and last_dim in (3, 4)
 
 
-def guess_multiscale(data) -> Tuple[bool, LayerDataProtocol]:
+def guess_multiscale(
+    data: Union[MultiScaleData, list, tuple],
+) -> Tuple[bool, Union[LayerDataProtocol, Sequence[LayerDataProtocol]]]:
     """Guess whether the passed data is multiscale, process it accordingly.
 
     If shape of arrays along first axis is strictly decreasing, the data is
@@ -64,35 +68,34 @@ def guess_multiscale(data) -> Tuple[bool, LayerDataProtocol]:
         # pyramid with only one level, unwrap
         return False, data[0]
 
-    shapes = [d.shape for d in data]
-    sizes = np.array([np.prod(shape, dtype=np.uint64) for shape in shapes])
+    sizes = [d.size for d in data]
     if len(sizes) <= 1:
         return False, data
 
-    consistent = bool(np.all(sizes[:-1] > sizes[1:]))
-    if np.all(sizes == sizes[0]):
+    consistent = all(s1 > s2 for s1, s2 in zip(sizes[:-1], sizes[1:]))
+    if all(s == sizes[0] for s in sizes):
         # note: the individual array case should be caught by the first
         # code line in this function, hasattr(ndim) and ndim > 1.
         raise ValueError(
             trans._(
-                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single shape: {shape}',
+                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single size: {size}',
                 deferred=True,
-                shape=shapes[0],
+                size=sizes[0],
             )
         )
     if not consistent:
         raise ValueError(
             trans._(
-                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, shapes: {shapes}',
+                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, sizes: {sizes}',
                 deferred=True,
-                shapes=shapes,
+                sizes=sizes,
             )
         )
 
     return True, MultiScaleData(data)
 
 
-def guess_labels(data):
+def guess_labels(data: Any) -> Literal["labels", "image"]:
     """Guess if array contains labels data."""
 
     if hasattr(data, 'dtype') and data.dtype in (
@@ -104,3 +107,21 @@ def guess_labels(data):
         return 'labels'
 
     return 'image'
+
+
+def project_slice(
+    data: npt.NDArray, axis: Tuple[int, ...], mode: ImageProjectionMode
+) -> float:
+    """Project a thick slice along axis based on mode."""
+    func: Callable
+    if mode == ImageProjectionMode.SUM:
+        func = np.sum
+    elif mode == ImageProjectionMode.MEAN:
+        func = np.mean
+    elif mode == ImageProjectionMode.MAX:
+        func = np.max
+    elif mode == ImageProjectionMode.MIN:
+        func = np.min
+    else:
+        raise NotImplementedError(f'unimplemented projection: {mode}')
+    return func(data, tuple(axis))

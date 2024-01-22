@@ -1,10 +1,11 @@
 import os
 from pathlib import Path
+from typing import List
 
 from napari.settings import get_settings
 
 
-def update_open_history(filename):
+def update_open_history(filename: str) -> None:
     """Updates open history of files in settings.
 
     Parameters
@@ -24,7 +25,7 @@ def update_open_history(filename):
     settings.application.open_history = folders
 
 
-def update_save_history(filename):
+def update_save_history(filename: str) -> None:
     """Updates save history of files in settings.
 
     Parameters
@@ -44,7 +45,7 @@ def update_save_history(filename):
     settings.application.save_history = folders
 
 
-def get_open_history():
+def get_open_history() -> List[str]:
     """A helper for history handling."""
     settings = get_settings()
     folders = settings.application.open_history
@@ -52,7 +53,7 @@ def get_open_history():
     return folders or [str(Path.home())]
 
 
-def get_save_history():
+def get_save_history() -> List[str]:
     """A helper for history handling."""
     settings = get_settings()
     folders = settings.application.save_history

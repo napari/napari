@@ -1,8 +1,10 @@
 from enum import auto
+from importlib.metadata import version as package_version
 from os.path import abspath, expanduser, sep
 from pathlib import Path
 
 import pytest
+from packaging.version import parse as parse_version
 
 from napari.utils.misc import (
     StringEnum,
@@ -138,9 +140,9 @@ def test_string_enum():
 
     # test direct comparison with a string
     assert TestEnum.THING == 'thing'
-    assert 'thing' == TestEnum.THING
+    assert TestEnum.THING == 'thing'
     assert TestEnum.THING != 'notathing'
-    assert 'notathing' != TestEnum.THING
+    assert TestEnum.THING != 'notathing'
 
     # test comparison with another enum with same value names
     class AnotherTestEnum(StringEnum):
@@ -198,6 +200,15 @@ def test_equality_operator():
         pick_equality_operator(xr.DataArray(np.ones((1, 1))))
         == _quiet_array_equal
     )
+
+
+@pytest.mark.skipif(
+    parse_version(package_version("numpy")) >= parse_version("1.25.0"),
+    reason="Numpy 1.25.0 return true for below comparison",
+)
+def test_equality_operator_silence():
+    import numpy as np
+
     eq = pick_equality_operator(np.asarray([]))
     # make sure this doesn't warn
     assert not eq(np.asarray([]), np.asarray([], '<U32'))

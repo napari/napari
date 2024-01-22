@@ -2,14 +2,19 @@ import gc
 import os
 import weakref
 from dataclasses import dataclass
-from typing import List
+from itertools import product, takewhile
+from typing import List, Tuple
 from unittest import mock
 
 import numpy as np
+import numpy.testing as npt
 import pytest
 from imageio import imread
-from qtpy.QtGui import QGuiApplication
-from qtpy.QtWidgets import QMessageBox
+from pytestqt.qtbot import QtBot
+from qtpy.QtCore import QEvent, Qt
+from qtpy.QtGui import QGuiApplication, QKeyEvent
+from qtpy.QtWidgets import QApplication, QMessageBox
+from scipy import ndimage as ndi
 
 from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
@@ -20,9 +25,8 @@ from napari._tests.utils import (
     skip_on_win_ci,
 )
 from napari._vispy._tests.utils import vispy_image_scene_size
-from napari._vispy.utils.gl import fix_data_dtype
 from napari.components.viewer_model import ViewerModel
-from napari.layers import Points
+from napari.layers import Labels, Points
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.theme import available_themes
@@ -298,45 +302,6 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
     assert np.allclose(output_data, expected_data)
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        'int8',
-        'uint8',
-        'int16',
-        'uint16',
-        'int32',
-        'float16',
-        'float32',
-        'float64',
-    ],
-)
-def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
-    """Test that the viewer doesn't change the underlying array."""
-    image = np.random.rand(10, 32, 32)
-    image *= 200 if dtype.endswith('8') else 2**14
-    image = image.astype(dtype)
-    imean = image.mean()
-
-    viewer = make_napari_viewer()
-    layer = viewer.add_image(image.copy())
-    data = layer.data
-
-    datamean = np.mean(data)
-    assert datamean == imean
-    # toggle dimensions
-    viewer.dims.ndisplay = 3
-    datamean = np.mean(data)
-    assert datamean == imean
-    # back to 2D
-    viewer.dims.ndisplay = 2
-    datamean = np.mean(data)
-    assert datamean == imean
-    # also check that vispy gets (almost) the same data
-    datamean = np.mean(fix_data_dtype(data))
-    assert np.allclose(datamean, imean, rtol=5e-04)
-
-
 def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     viewer = make_napari_viewer()
     data = np.zeros((60, 60, 60))
@@ -589,7 +554,7 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     img = np.ones((512, 256))
     # canvas size must be large enough that img fits in the canvas
     canvas_size = tuple(3 * s for s in img.shape)
-    expected_corner_pixels = np.asarray([[0, 0], [img.shape[0], img.shape[1]]])
+    expected_corner_pixels = np.asarray([[0, 0], [s - 1 for s in img.shape]])
 
     vol = np.stack([img] * 8, axis=0)
     if multiscale:
@@ -601,15 +566,21 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     viewer.dims.order = (0, 1, 2)
     viewer.window._qt_viewer.canvas.size = canvas_size
     viewer.window._qt_viewer.canvas.on_draw(None)
-    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
+    np.testing.assert_array_equal(
+        img_multi_layer.corner_pixels, expected_corner_pixels
+    )
 
     viewer.dims.order = (2, 0, 1)
     viewer.window._qt_viewer.canvas.on_draw(None)
-    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
+    np.testing.assert_array_equal(
+        img_multi_layer.corner_pixels, expected_corner_pixels
+    )
 
     viewer.dims.order = (1, 2, 0)
     viewer.window._qt_viewer.canvas.on_draw(None)
-    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
+    np.testing.assert_array_equal(
+        img_multi_layer.corner_pixels, expected_corner_pixels
+    )
 
 
 def test_remove_add_image_3D(make_napari_viewer):
@@ -698,6 +669,135 @@ def test_create_non_empty_viewer_model(qtbot):
     gc.collect()
 
 
+def _update_data(
+    layer: Labels,
+    label: int,
+    qtbot: QtBot,
+    qt_viewer: QtViewer,
+    dtype: np.dtype = np.uint64,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Change layer data and return color of label and middle pixel of screenshot."""
+    layer.data = np.full((2, 2), label, dtype=dtype)
+    layer.selected_label = label
+
+    qtbot.wait(50)  # wait for .update() to be called on QtColorBox from Qt
+
+    color_box_color = qt_viewer.controls.widgets[layer].colorBox.color
+    screenshot = qt_viewer.screenshot(flash=False)
+    shape = np.array(screenshot.shape[:2])
+    middle_pixel = screenshot[tuple(shape // 2)]
+
+    return color_box_color, middle_pixel
+
+
+@pytest.fixture()
+def qt_viewer_with_controls(qtbot):
+    qt_viewer = QtViewer(viewer=ViewerModel())
+    qt_viewer.show()
+    qt_viewer.controls.show()
+    yield qt_viewer
+    qt_viewer.controls.hide()
+    qt_viewer.controls.close()
+    qt_viewer.hide()
+    qt_viewer.close()
+    qt_viewer._instances.clear()
+    qtbot.wait(50)
+
+
+@skip_local_popups
+@skip_on_win_ci
+@pytest.mark.parametrize(
+    "use_selection", [True, False], ids=["selected", "all"]
+)
+@pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int64])
+def test_label_colors_matching_widget_auto(
+    qtbot, qt_viewer_with_controls, use_selection, dtype
+):
+    """Make sure the rendered label colors match the QtColorBox widget."""
+
+    # XXX TODO: this unstable! Seed = 0 fails, for example. This is due to numerical
+    #           imprecision in random colormap on gpu vs cpu
+    np.random.seed(1)
+    data = np.ones((2, 2), dtype=dtype)
+    layer = qt_viewer_with_controls.viewer.add_labels(data)
+    layer.show_selected_label = use_selection
+    layer.opacity = 1.0  # QtColorBox & single layer are blending differently
+    n_c = layer.num_colors
+
+    test_colors = np.concatenate(
+        (
+            np.arange(1, 10, dtype=dtype),
+            [n_c - 1, n_c, n_c + 1],
+            np.random.randint(
+                1, min(2**20, np.iinfo(dtype).max), size=20, dtype=dtype
+            ),
+            [-1, -2, -10],
+        )
+    )
+
+    for label in test_colors:
+        # Change color & selected color to the same label
+        color_box_color, middle_pixel = _update_data(
+            layer, label, qtbot, qt_viewer_with_controls, dtype
+        )
+
+        npt.assert_allclose(
+            color_box_color, middle_pixel, atol=1, err_msg=f"label {label}"
+        )
+        # there is a difference of rounding between the QtColorBox and the screenshot
+
+
+@skip_local_popups
+@skip_on_win_ci
+@pytest.mark.parametrize(
+    "use_selection", [True, False], ids=["selected", "all"]
+)
+@pytest.mark.parametrize("dtype", [np.uint64, np.uint16, np.uint8, np.int16])
+def test_label_colors_matching_widget_direct(
+    qtbot, qt_viewer_with_controls, use_selection, dtype
+):
+    """Make sure the rendered label colors match the QtColorBox widget."""
+    data = np.ones((2, 2), dtype=dtype)
+    layer = qt_viewer_with_controls.viewer.add_labels(data)
+    layer.show_selected_label = use_selection
+    layer.opacity = 1.0  # QtColorBox & single layer are blending differently
+    color = {
+        0: "transparent",
+        1: "yellow",
+        3: "blue",
+        8: "red",
+        150: "green",
+        None: "white",
+    }
+    test_colors = (1, 2, 3, 8, 150, 50)
+
+    if np.iinfo(dtype).min < 0:
+        color[-1] = "pink"
+        color[-2] = "orange"
+        test_colors = test_colors + (-1, -2, -10)
+
+    layer.color = color
+
+    color_box_color, middle_pixel = _update_data(
+        layer, 0, qtbot, qt_viewer_with_controls, dtype
+    )
+    assert np.allclose([0, 0, 0, 255], middle_pixel)
+
+    for label in test_colors:
+        # Change color & selected color to the same label
+        color_box_color, middle_pixel = _update_data(
+            layer, label, qtbot, qt_viewer_with_controls, dtype
+        )
+        npt.assert_almost_equal(
+            color_box_color, middle_pixel, err_msg=f"{label=}"
+        )
+        npt.assert_almost_equal(
+            color_box_color,
+            layer.color.get(label, layer.color[None]) * 255,
+            err_msg=f"{label=}",
+        )
+
+
 def test_axes_labels(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
@@ -710,3 +810,226 @@ def test_axes_labels(make_napari_viewer):
     layer_visual_size = vispy_image_scene_size(layer_visual)
     assert tuple(layer_visual_size) == (8, 4, 2)
     assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
+
+
+@pytest.fixture()
+def qt_viewer(qtbot):
+    qt_viewer = QtViewer(ViewerModel())
+    qt_viewer.show()
+    qt_viewer.resize(460, 460)
+    QApplication.processEvents()
+    yield qt_viewer
+    qt_viewer.close()
+    qt_viewer._instances.clear()
+    del qt_viewer
+
+
+def _find_margin(data: np.ndarray, additional_margin: int) -> Tuple[int, int]:
+    """
+    helper function to determine margins in test_thumbnail_labels
+    """
+
+    mid_x, mid_y = data.shape[0] // 2, data.shape[1] // 2
+    x_margin = len(
+        list(takewhile(lambda x: np.all(x == 0), data[:, mid_y, :3][::-1]))
+    )
+    y_margin = len(
+        list(takewhile(lambda x: np.all(x == 0), data[mid_x, :, :3][::-1]))
+    )
+    return x_margin + additional_margin, y_margin + additional_margin
+
+
+# @pytest.mark.xfail(reason="Fails on CI, but not locally")
+@skip_local_popups
+@pytest.mark.parametrize('direct', [True, False], ids=["direct", "auto"])
+def test_thumbnail_labels(qtbot, direct, qt_viewer: QtViewer, tmp_path):
+    # Add labels to empty viewer
+    layer = qt_viewer.viewer.add_labels(
+        np.array([[0, 1], [2, 3]]), opacity=1.0
+    )
+    if direct:
+        layer.color = {0: 'red', 1: 'green', 2: 'blue', 3: 'yellow'}
+    else:
+        layer.num_colors = 49
+    qt_viewer.viewer.reset_view()
+    qt_viewer.canvas.native.paintGL()
+    QApplication.processEvents()
+    qtbot.wait(50)
+
+    canvas_screenshot_ = qt_viewer.screenshot(flash=False)
+
+    import imageio
+
+    imageio.imwrite(tmp_path / "canvas_screenshot_.png", canvas_screenshot_)
+    np.savez(tmp_path / "canvas_screenshot_.npz", canvas_screenshot_)
+
+    # cut off black border
+    margin1, margin2 = _find_margin(canvas_screenshot_, 10)
+    canvas_screenshot = canvas_screenshot_[margin1:-margin1, margin2:-margin2]
+    assert (
+        canvas_screenshot.size > 0
+    ), f"{canvas_screenshot_.shape}, {margin1=}, {margin2=}"
+
+    thumbnail = layer.thumbnail
+    scaled_thumbnail = ndi.zoom(
+        thumbnail,
+        np.array(canvas_screenshot.shape) / np.array(thumbnail.shape),
+        order=0,
+        mode="nearest",
+    )
+    close = np.isclose(canvas_screenshot, scaled_thumbnail)
+    problematic_pixels_count = np.sum(~close)
+    assert problematic_pixels_count < 0.01 * canvas_screenshot.size
+
+
+@pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int32])
+def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
+    data = np.zeros((10, 10), dtype=dtype)
+    data[5:] = 10
+    layer = qt_viewer.viewer.add_labels(data, opacity=1)
+    color = layer.colormap.map(10) * 255
+
+    backgrounds = (0, 2, -2)
+
+    for background in backgrounds:
+        layer._background_label = background
+        data[:5] = background
+        layer.data = data
+        layer.num_colors = 49
+        qtbot.wait(50)
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        shape = np.array(canvas_screenshot.shape[:2])
+        background_pixel = canvas_screenshot[tuple((shape * 0.25).astype(int))]
+        color_pixel = canvas_screenshot[tuple((shape * 0.75).astype(int))]
+        npt.assert_array_equal(
+            background_pixel,
+            [0, 0, 0, 255],
+            err_msg=f"background {background}",
+        )
+        npt.assert_array_equal(
+            color_pixel, color, err_msg=f"background {background}"
+        )
+
+
+def test_shortcut_passing(make_napari_viewer):
+    viewer = make_napari_viewer(ndisplay=3)
+    layer = viewer.add_labels(
+        np.zeros((2, 2, 2), dtype=np.uint8), scale=(1, 2, 4)
+    )
+    layer.mode = "fill"
+
+    qt_window = viewer.window._qt_window
+
+    qt_window.keyPressEvent(
+        QKeyEvent(
+            QEvent.Type.KeyPress, Qt.Key.Key_1, Qt.KeyboardModifier.NoModifier
+        )
+    )
+    qt_window.keyReleaseEvent(
+        QKeyEvent(
+            QEvent.Type.KeyPress, Qt.Key.Key_1, Qt.KeyboardModifier.NoModifier
+        )
+    )
+    assert layer.mode == "erase"
+
+
+@pytest.mark.parametrize("mode", ["direct", "random"])
+def test_selection_collision(qt_viewer: QtViewer, mode):
+    data = np.zeros((10, 10), dtype=np.uint8)
+    data[:5] = 10
+    data[5:] = 10 + 49
+    layer = qt_viewer.viewer.add_labels(data, opacity=1)
+    layer.selected_label = 10
+    if mode == "direct":
+        layer.color = {10: "red", 10 + 49: "red"}
+
+    for dtype in np.sctypes['int'] + np.sctypes['uint']:
+        layer.data = data.astype(dtype)
+        layer.show_selected_label = False
+        QApplication.processEvents()
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        shape = np.array(canvas_screenshot.shape[:2])
+        pixel_10 = canvas_screenshot[tuple((shape * 0.25).astype(int))]
+        pixel_59 = canvas_screenshot[tuple((shape * 0.75).astype(int))]
+        npt.assert_array_equal(pixel_10, pixel_59, err_msg=f"{dtype}")
+        assert not np.all(pixel_10 == [0, 0, 0, 255]), dtype
+
+        layer.show_selected_label = True
+
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        shape = np.array(canvas_screenshot.shape[:2])
+        pixel_10_2 = canvas_screenshot[tuple((shape * 0.25).astype(int))]
+        pixel_59_2 = canvas_screenshot[tuple((shape * 0.75).astype(int))]
+
+        npt.assert_array_equal(pixel_59_2, [0, 0, 0, 255], err_msg=f"{dtype}")
+        npt.assert_array_equal(pixel_10_2, pixel_10, err_msg=f"{dtype}")
+
+
+def test_all_supported_dtypes(qt_viewer):
+    data = np.zeros((10, 10), dtype=np.uint8)
+    layer = qt_viewer.viewer.add_labels(data, opacity=1)
+
+    for i, dtype in enumerate(np.sctypes['int'] + np.sctypes['uint'], start=1):
+        data = np.full((10, 10), i, dtype=dtype)
+        layer.data = data
+        QApplication.processEvents()
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        midd_pixel = canvas_screenshot[
+            tuple(np.array(canvas_screenshot.shape[:2]) // 2)
+        ]
+        npt.assert_equal(
+            midd_pixel, layer.colormap.map(i) * 255, err_msg=f"{dtype} {i}"
+        )
+
+    layer.color = {
+        0: 'red',
+        1: 'green',
+        2: 'blue',
+        3: 'yellow',
+        4: 'magenta',
+        5: 'cyan',
+        6: 'white',
+        7: 'pink',
+        8: 'orange',
+        9: 'purple',
+        10: 'brown',
+        11: 'gray',
+    }
+
+    for i, dtype in enumerate(np.sctypes['int'] + np.sctypes['uint'], start=1):
+        data = np.full((10, 10), i, dtype=dtype)
+        layer.data = data
+        QApplication.processEvents()
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        midd_pixel = canvas_screenshot[
+            tuple(np.array(canvas_screenshot.shape[:2]) // 2)
+        ]
+        npt.assert_equal(
+            midd_pixel, layer.colormap.map(i) * 255, err_msg=f"{dtype} {i}"
+        )
+
+
+def test_more_than_uint16_colors(qt_viewer):
+    pytest.importorskip("numba")
+    # this test is slow (10s locally)
+    data = np.zeros((10, 10), dtype=np.uint32)
+    colors = {
+        i: (x, y, z, 1)
+        for i, (x, y, z) in zip(
+            range(256**2 + 20),
+            product(np.linspace(0, 1, 256, endpoint=True), repeat=3),
+        )
+    }
+    layer = qt_viewer.viewer.add_labels(data, opacity=1, color=colors)
+    assert layer._slice.image.view.dtype == np.float32
+
+    for i in [1, 1000, 100000]:
+        data = np.full((10, 10), i, dtype=np.uint32)
+        layer.data = data
+        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        midd_pixel = canvas_screenshot[
+            tuple(np.array(canvas_screenshot.shape[:2]) // 2)
+        ]
+        npt.assert_equal(
+            midd_pixel, layer.colormap.map(i) * 255, err_msg=f"{i}"
+        )

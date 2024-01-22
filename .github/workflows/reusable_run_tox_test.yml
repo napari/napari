@@ -1,0 +1,194 @@
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        required: true
+        type: string
+      platform:
+        required: false
+        type: string
+        default: "ubuntu-latest"
+      toxenv:
+        required: false
+        type: string
+        default: ""
+      qt_backend:
+        required: false
+        type: string
+        default: "headless"
+      min_req:
+        required: false
+        type: string
+        default: ""
+      coverage:
+        required: false
+        type: string
+        default: no_cov
+      timeout:
+        required: false
+        type: number
+        default: 40
+      constraints_suffix:
+        required: false
+        type: string
+        default: ""
+      tox_extras:
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  test:
+    name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.MIN_REQ && 'min_req' }} ${{ inputs.coverage }}
+    runs-on: ${{ inputs.platform }}
+    env:
+      TOXENV: ${{ inputs.toxenv }}
+      NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
+      PYVISTA_OFF_SCREEN: True
+      MIN_REQ: ${{ inputs.min_req }}
+      FORCE_COLOR: 1
+      PIP_CONSTRAINT: resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      COVERAGE: ${{ inputs.coverage }}
+      TOX_WORK_DIR: .tox
+      TOX_EXTRAS: ${{ inputs.tox_extras }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: dist
+
+      - name: Set up Python ${{ inputs.python_version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python_version }}
+          cache: "pip"
+          cache-dependency-path: setup.cfg
+
+      - uses: tlambert03/setup-qt-libs@v1
+
+      # strategy borrowed from vispy for installing opengl libs on windows
+      - name: Install Windows OpenGL
+        if: runner.os == 'Windows'
+        run: |
+          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
+          powershell gl-ci-helpers/appveyor/install_opengl.ps1
+          if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
+
+      - name: Disable ptrace security restrictions
+        if: runner.os == 'Linux'
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+
+      # tox and tox-gh-actions will take care of the "actual" installation
+      # of python dependendencies into a virtualenv.  see tox.ini for more
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install setuptools tox tox-gh-actions tox-min-req
+
+      - name: create _version.py file
+        # workaround for not using src layout
+        run: |
+          echo "__version__ = version = '0.5.0a2.dev364'" > napari/_version.py
+          echo "__version_tuple__ = version_tuple = (0, 5, 0, 'dev364', '')" >> napari/_version.py
+
+      # here we pass off control of environment creation and running of tests to tox
+      # tox-gh-actions, installed above, helps to convert environment variables into
+      # tox "factors" ... limiting the scope of what gets tested on each platform
+      # for instance, on ubuntu-latest with python 3.8, it would be equivalent to this command:
+      # `tox -e py38-linux-pyqt,py38-linux-pyside`
+      # see tox.ini for more
+
+      - name: Split qt backend
+        # This is a hack to split the qt_backend variable into four parts
+        # This is required as github actions allow setting only one environment variable in
+        # a single line (redirection to $GITHUB_ENV).
+        #
+        # For example, if qt_backend is set to "pyqt5,pyside2", then the following four
+        # environment variables will be set:
+        # MAIN=pyqt5
+        # SECOND=pyside2
+        # THIRD=none
+        # FOURTH=none
+        shell: bash
+        run: |
+          python tools/split_qt_backend.py 0 ${{ inputs.qt_backend }} >> $GITHUB_ENV
+          python tools/split_qt_backend.py 1 ${{ inputs.qt_backend }} >> $GITHUB_ENV
+          python tools/split_qt_backend.py 2 ${{ inputs.qt_backend }} >> $GITHUB_ENV
+          python tools/split_qt_backend.py 3 ${{ inputs.qt_backend }} >> $GITHUB_ENV
+
+      - name: Test with tox main
+        timeout-minutes: ${{ inputs.timeout }}
+        uses: aganders3/headless-gui@v1
+        with:
+          shell: bash
+          run: |
+            echo ${{ env.MAIN }}
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
+            rm -r .tox
+        env:
+          BACKEND: ${{ env.MAIN }}
+          TOX_WORK_DIR: .tox
+
+      - name: Test with tox second
+        timeout-minutes: ${{ inputs.timeout }}
+        uses: aganders3/headless-gui@v1
+        if : ${{ env.SECOND != 'none' }}
+        with:
+          shell: bash
+          run: |
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
+            rm -r .tox
+        env:
+          BACKEND: ${{ env.SECOND }}
+          NAPARI_TEST_SUBSET: qt
+
+      - name: Test with tox third
+        timeout-minutes: ${{ inputs.timeout }}
+        uses: aganders3/headless-gui@v1
+        if : ${{ env.THIRD != 'none' }}
+        with:
+          shell: bash
+          run: |
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
+            rm -r .tox
+        env:
+          BACKEND: ${{ env.THIRD }}
+          NAPARI_TEST_SUBSET: qt
+
+      - name: Test with tox fourth
+        timeout-minutes: ${{ inputs.timeout }}
+        uses: aganders3/headless-gui@v1
+        if: ${{ env.FOURTH != 'none' }}
+        with:
+          shell: bash
+          run: |
+            python -m tox run --installpkg dist/napari-0.0.1-py3-none-any.whl -- --basetemp=.pytest_tmp
+            rm -r .tox
+        env:
+          BACKEND: ${{ env.FOURTH }}
+          NAPARI_TEST_SUBSET: qt
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          path: .pytest_tmp
+
+      - name: Upload pytest timing reports as json
+        uses: actions/upload-artifact@v3
+        with:
+          name: upload pytest timing reports as json
+          path: |
+            ./report-*.json
+
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v3
+        if: ${{ inputs.coverage == 'cov' }}
+        with:
+          name: coverage reports
+          path: |
+            ./.coverage.*

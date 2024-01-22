@@ -7,7 +7,7 @@ QtViewerPushButton{
    min-height : 28px;
    max-height : 28px;
    padding: 0px;
-   
+
 }
 
 QtViewerPushButton[mode="delete_button"] {
@@ -126,6 +126,14 @@ QtModeRadioButton[mode="path"]::indicator {
 
 QtModeRadioButton[mode="polygon"]::indicator {
   image: url("theme_{{ id }}:/polygon.svg");
+}
+
+QtModeRadioButton[mode="labels_polygon"]::indicator {
+  image: url("theme_{{ id }}:/polygon_lasso.svg");
+}
+
+QtModeRadioButton[mode="polygon_lasso"]::indicator {
+  image: url("theme_{{ id }}:/polygon_lasso.svg");
 }
 
 QtModeRadioButton[mode="vertex_insert"]::indicator {

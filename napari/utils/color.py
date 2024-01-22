@@ -1,10 +1,13 @@
 """Contains napari color constants and utilities."""
 
-from typing import Union
+from typing import Callable, Iterator, Union
 
 import numpy as np
 
 from napari.utils.colormaps.standardize_color import transform_color
+
+ColorValueParam = Union[np.ndarray, list, tuple, str, None]
+ColorArrayParam = Union[np.ndarray, list, tuple, None]
 
 
 class ColorValue(np.ndarray):
@@ -15,14 +18,17 @@ class ColorValue(np.ndarray):
     use the ``validate`` method to coerce a value to a single color.
     """
 
+    def __new__(cls, value: ColorValueParam) -> 'ColorValue':
+        return cls.validate(value)
+
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(
+        cls,
+    ) -> Iterator[Callable[[ColorValueParam], 'ColorValue']]:
         yield cls.validate
 
     @classmethod
-    def validate(
-        cls, value: Union[np.ndarray, list, tuple, str, None]
-    ) -> np.ndarray:
+    def validate(cls, value: ColorValueParam) -> 'ColorValue':
         """Validates and coerces the given value into an array storing one color.
 
         Parameters
@@ -67,7 +73,7 @@ class ColorValue(np.ndarray):
         >>> ColorValue.validate('#ff0000')
         array([1., 0., 0., 1.], dtype=float32)
         """
-        return transform_color(value)[0]
+        return transform_color(value)[0].view(cls)
 
 
 class ColorArray(np.ndarray):
@@ -78,14 +84,20 @@ class ColorArray(np.ndarray):
     use the ``validate`` method to coerce a value to an array of colors.
     """
 
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __new__(cls, value: ColorArrayParam) -> 'ColorArray':
+        return cls.validate(value)
 
     @classmethod
-    def validate(
-        cls, value: Union[np.ndarray, list, tuple, None]
-    ) -> np.ndarray:
+    def __get_validators__(
+        cls,
+    ) -> Iterator[Callable[[ColorArrayParam], 'ColorArray']]:
+        yield cls.validate
+
+    def __sizeof__(self) -> int:
+        return super().__sizeof__() + self.nbytes
+
+    @classmethod
+    def validate(cls, value: ColorArrayParam) -> 'ColorArray':
         """Validates and coerces the given value into an array storing many colors.
 
         Parameters
@@ -124,5 +136,5 @@ class ColorArray(np.ndarray):
         # Special case an empty supported sequence because transform_color
         # warns and returns an array containing a default color in that case.
         if isinstance(value, (np.ndarray, list, tuple)) and len(value) == 0:
-            return np.empty((0, 4), np.float32)
-        return transform_color(value)
+            return np.empty((0, 4), np.float32).view(cls)
+        return transform_color(value).view(cls)

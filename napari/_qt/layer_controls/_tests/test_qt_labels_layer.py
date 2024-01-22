@@ -6,7 +6,7 @@ from napari.layers import Labels
 from napari.utils.colormaps import colormap_utils
 
 np.random.seed(0)
-_LABELS = np.random.randint(5, size=(10, 15))
+_LABELS = np.random.randint(5, size=(10, 15), dtype=np.uint8)
 _COLOR = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'}
 
 
@@ -30,6 +30,19 @@ def test_changing_layer_color_mode_updates_combo_box(make_labels_controls):
 
     layer.color_mode = 'auto'
     assert layer.color_mode == qtctrl.colorModeComboBox.currentText()
+
+
+def test_changing_layer_show_selected_label_updates_check_box(
+    make_labels_controls,
+):
+    """See https://github.com/napari/napari/issues/5371"""
+    layer, qtctrl = make_labels_controls()
+    assert not qtctrl.selectedColorCheckbox.isChecked()
+    assert not layer.show_selected_label
+
+    layer.show_selected_label = True
+
+    assert qtctrl.selectedColorCheckbox.isChecked()
 
 
 def test_rendering_combobox(make_labels_controls):
@@ -57,7 +70,7 @@ def test_changing_colormap_updates_colorbox(make_labels_controls):
 
     np.testing.assert_equal(
         color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255 * layer.opacity),
+        np.round(np.asarray(layer._selected_color) * 255),
     )
 
     layer.colormap = colormap_utils.label_colormap(num_colors=5)
@@ -67,7 +80,7 @@ def test_changing_colormap_updates_colorbox(make_labels_controls):
 
     np.testing.assert_equal(
         color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255 * layer.opacity),
+        np.round(np.asarray(layer._selected_color) * 255),
     )
 
 
@@ -102,3 +115,16 @@ def test_preserve_labels_checkbox(make_labels_controls):
     assert not layer.preserve_labels
     qtctrl.preserveLabelsCheckBox.setChecked(True)
     assert layer.preserve_labels
+
+
+def test_change_label_selector_range(make_labels_controls):
+    """Changing the label layer dtype should update label selector range."""
+    layer, qtctrl = make_labels_controls()
+    assert layer.data.dtype == np.uint8
+    assert qtctrl.selectionSpinBox.minimum() == 0
+    assert qtctrl.selectionSpinBox.maximum() == 255
+
+    layer.data = layer.data.astype(np.int8)
+
+    assert qtctrl.selectionSpinBox.minimum() == -128
+    assert qtctrl.selectionSpinBox.maximum() == 127

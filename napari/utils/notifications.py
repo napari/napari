@@ -7,7 +7,7 @@ import warnings
 from datetime import datetime
 from enum import auto
 from types import TracebackType
-from typing import Callable, List, Optional, Sequence, Tuple, Type, Union
+from typing import Callable, List, Optional, Sequence, Set, Tuple, Type, Union
 
 from napari.utils.events import Event, EventEmitter
 from napari.utils.misc import StringEnum
@@ -242,9 +242,10 @@ class NotificationManager:
         self.notification_ready = self.changed = EventEmitter(
             source=self, event_class=Notification
         )
-        self._originals_except_hooks = []
-        self._original_showwarnings_hooks = []
-        self._originals_thread_except_hooks = []
+        self._originals_except_hooks: List[Callable] = []
+        self._original_showwarnings_hooks: List[Callable] = []
+        self._originals_thread_except_hooks: List[Callable] = []
+        self._seen_warnings: Set[Tuple[str, Type, str, int]] = set()
 
     def __enter__(self):
         self.install_hooks()
@@ -289,13 +290,21 @@ class NotificationManager:
         self.records.append(notification)
         self.notification_ready(notification)
 
-    def receive_thread_error(self, args: threading.ExceptHookArgs):
+    def receive_thread_error(
+        self,
+        args: Tuple[
+            Type[BaseException],
+            BaseException,
+            Optional[TracebackType],
+            Optional[threading.Thread],
+        ],
+    ):
         self.receive_error(*args)
 
     def receive_error(
         self,
-        exctype: Optional[Type[BaseException]] = None,
-        value: Optional[BaseException] = None,
+        exctype: Type[BaseException],
+        value: BaseException,
         traceback: Optional[TracebackType] = None,
         thread: Optional[threading.Thread] = None,
     ):
@@ -321,6 +330,10 @@ class NotificationManager:
         file=None,
         line=None,
     ):
+        msg = message if isinstance(message, str) else message.args[0]
+        if (msg, category, filename, lineno) in self._seen_warnings:
+            return
+        self._seen_warnings.add((msg, category, filename, lineno))
         self.dispatch(
             Notification.from_warning(
                 message, filename=filename, lineno=lineno

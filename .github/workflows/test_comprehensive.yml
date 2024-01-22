@@ -23,11 +23,11 @@ jobs:
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.8
+      - uses: actions/checkout@v4
+      - name: "Set up Python 3.11"
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: "3.11"
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -35,152 +35,99 @@ jobs:
       - name: Check Manifest
         run: check-manifest
 
+  build_wheel:
+    name: Build wheel
+    uses: ./.github/workflows/reusable_build_wheel.yml
+
   test:
-    name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
-    timeout-minutes: 60
-    runs-on: ${{ matrix.platform }}
+    name: ${{ matrix.platform }}
+    uses: ./.github/workflows/reusable_run_tox_test.yml
+    needs: build_wheel
     strategy:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
-        python: ["3.8", "3.9", "3.10"]
+        python: ["3.8", "3.9", "3.10", "3.11"]
         backend: [pyqt5, pyside2]
         include:
-          - python: 3.9
+          - python: "3.9"
             platform: macos-latest
             backend: pyqt5
           # test with minimum specified requirements
-          - python: 3.8
+          - python: "3.8"
             platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
-          # test with --async_only
-          - python: 3.8
-            platform: ubuntu-20.04
-            toxenv: async-py38-linux-pyqt5
           # test without any Qt backends
-          - python: 3.8
+          - python: "3.8"
             platform: ubuntu-20.04
-            toxenv: headless-py38-linux
+            backend: headless
+          - python: "3.11"
+            platform: ubuntu-latest
+            backend: pyqt6
+            tox_extras: "testing_extra"
+          - python: "3.11"
+            platform: ubuntu-latest
+            backend: pyside6
+            tox_extras: "testing_extra"
+        exclude:
+          - python: "3.11"
+            backend: pyside2
+    with:
+      python_version: ${{ matrix.python }}
+      platform: ${{ matrix.platform }}
+      qt_backend: ${{ matrix.backend }}
+      min_req: ${{ matrix.MIN_REQ }}
+      coverage: cov
+      toxenv: ${{ matrix.toxenv }}
+      tox_extras: ${{ matrix.tox_extras }}
 
+  test_pip_install:
+    name: pip install
+    uses: ./.github/workflows/reusable_pip_test.yml
 
+  test_examples:
+    name: test examples
+    uses: ./.github/workflows/reusable_run_tox_test.yml
+    needs: build_wheel
+    with:
+        toxenv: py39-linux-pyside2-examples-cov
+        timeout: 60
+        python_version: 3.9
+        constraints_suffix: _examples
+        coverage: cov
+
+  coverage_report:
+    if: ${{ always() }}
+    needs:
+      - test
+      - test_examples
+    uses: ./.github/workflows/reusable_coverage_upload.yml
+
+  synchronize_bot_repository:
+    name: Synchronize bot repository
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.repository == 'napari/napari'
+    permissions:
+      contents: read
+      issues: write
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.11.0
+      - uses: actions/checkout@v4
         with:
-          access_token: ${{ github.token }}
-
-      - uses: actions/checkout@v3
-
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: setup.cfg
-
-      - uses: tlambert03/setup-qt-libs@v1
-
-      # strategy borrowed from vispy for installing opengl libs on windows
-      - name: Install Windows OpenGL
-        if: runner.os == 'Windows'
+          token: ${{ secrets.GHA_TOKEN_BOT_REPO_WORKFLOW }}
+      - name: Synchronize bot repository
         run: |
-          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
-          powershell gl-ci-helpers/appveyor/install_opengl.ps1
-          if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions
-          python tools/minreq.py  # no-op if MIN_REQ is not set
-        env:
-          MIN_REQ: ${{ matrix.MIN_REQ }}
-
-      # here we pass off control of environment creation and running of tests to tox
-      # tox-gh-actions, installed above, helps to convert environment variables into
-      # tox "factors" ... limiting the scope of what gets tested on each platform
-      # The one exception is if the "toxenv" environment variable has been set,
-      # in which case we are declaring one specific tox environment to run.
-      # see tox.ini for more
-      - name: Test with tox
-        uses: aganders3/headless-gui@v1
-        with:
-          run: python -m tox
-        env:
-          PLATFORM: ${{ matrix.platform }}
-          BACKEND: ${{ matrix.backend }}
-          TOXENV: ${{ matrix.toxenv }}
-          NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
-          PYVISTA_OFF_SCREEN: True
-          MIN_REQ: ${{ matrix.MIN_REQ }}
-          PIP_CONSTRAINT: resources/constraints/constraints_py${{ matrix.python }}.txt
-
-      - name: Coverage
-        uses: codecov/codecov-action@v3
-
+          git remote add napari-bot https://github.com/napari-bot/napari.git
+          git fetch napari-bot
+          git push --force --set-upstream napari-bot main
       - name: Report Failures
+
         if: ${{ failure() }}
         uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PLATFORM: ${{ matrix.platform }}
-          PYTHON: ${{ matrix.python }}
-          BACKEND: ${{ matrix.toxenv }}
           RUN_ID: ${{ github.run_id }}
-          TITLE: "[test-bot] Comprehensive tests failing"
+          TITLE: '[bot-repo] bot repo update is failing'
         with:
-          filename: .github/TEST_FAIL_TEMPLATE.md
+          filename: .github/BOT_REPO_UPDATE_FAIL_TEMPLATE.md
           update_existing: true
-
-  test_pip_install:
-    name: ubuntu-latest 3.9 pip install
-    timeout-minutes: 60
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          path: napari-from-github
-
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-          cache: "pip"
-          cache-dependency-path: napari-from-github/setup.cfg
-
-      - uses: tlambert03/setup-qt-libs@v1
-
-      - name: Install this commit
-        run: |
-          pip install --upgrade pip
-          pip install ./napari-from-github[all,testing]
-        env:
-          PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.9.txt
-
-      - name: Test
-        uses: aganders3/headless-gui@v1
-        with:
-          run: python -m pytest --pyargs napari --color=yes
-
-  test_examples:
-    name: test examples
-    timeout-minutes: 60
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-      - uses: tlambert03/setup-qt-libs@v1
-      - name: Install this commit
-        run: |
-          pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions
-
-      - name: Test
-        uses: aganders3/headless-gui@v1
-        with:
-          run: tox -e py39-linux-pyside2-examples
-        env:
-          PIP_CONSTRAINT: resources/constraints/constraints_py3.9.txt
