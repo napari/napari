@@ -370,8 +370,8 @@ class DirectLabelColormap(LabelColormapBase):
         The dictionary mapping labels to colors.
 
     use_selection : bool
-        Whether map only selected label.
-        If `True` only selected label will be mapped to not transparent color..
+        Whether to map only the selected label to a color.
+        If `True` only selected label will be not transparent.
     selection : int
         The selected label.
     colors : ColorArray
