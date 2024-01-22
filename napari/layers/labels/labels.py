@@ -1010,7 +1010,7 @@ class Labels(_ImageBase):
             sliced_labels = labels[data_slice]
 
         if sliced_labels.dtype.itemsize <= 2:
-            self.colormap._map_to_gpu(sliced_labels)
+            return self.colormap._data_to_texture_dtype(sliced_labels)
 
         return self.colormap._map_to_gpu(sliced_labels)
 
