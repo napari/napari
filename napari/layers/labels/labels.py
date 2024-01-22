@@ -1036,9 +1036,9 @@ class Labels(_ImageBase):
 
         if data_slice is None:
             data_slice = tuple(slice(0, size) for size in raw.shape)
-            self._cached_labels = None
+            setup_cache = False
         else:
-            self._setup_cache(raw)
+            setup_cache = True
 
         labels = raw  # for readability
 
@@ -1048,6 +1048,14 @@ class Labels(_ImageBase):
 
         if sliced_labels is None:
             sliced_labels = labels[data_slice]
+
+        if sliced_labels.dtype.itemsize <= 2:
+            return self.colormap._data_to_texture(sliced_labels)
+
+        if setup_cache:
+            self._setup_cache(raw)
+        else:
+            self._cached_labels = None
 
         # cache the labels and keep track of when values are changed
         update_mask = None
@@ -1068,14 +1076,7 @@ class Labels(_ImageBase):
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
-        if self.color_mode == LabelColorMode.AUTO:
-            mapped_labels = _cast_labels_data_to_texture_dtype_auto(
-                labels_to_map, self._random_colormap
-            )
-        else:  # direct
-            mapped_labels = _cast_labels_data_to_texture_dtype_direct(
-                labels_to_map, self._direct_colormap
-            )
+        mapped_labels = self.colormap._data_to_texture(labels_to_map)
 
         if self._cached_labels is not None:
             if update_mask is not None:
@@ -1131,9 +1132,9 @@ class Labels(_ImageBase):
         elif label is None or (
             self.show_selected_label and label != self.selected_label
         ):
-            col = self.colormap.map(self._background_label)[0]
+            col = self.colormap.map(self._background_label)
         else:
-            col = self.colormap.map(label)[0]
+            col = self.colormap.map(label)
         return col
 
     def _get_value_ray(
