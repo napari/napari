@@ -547,6 +547,11 @@ class VispyCanvas:
         vispy_layer.node.parent = self.view.scene
         self.layer_to_visual[napari_layer] = vispy_layer
 
+        if napari_layer.is_group():
+            for child in napari_layer:
+                self.layer_to_visual[child] = vispy_layer
+                child.events.visible.connect(self._reorder_layers)
+
         napari_layer.events.visible.connect(self._reorder_layers)
 
         self._reorder_layers()

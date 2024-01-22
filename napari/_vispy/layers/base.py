@@ -154,7 +154,8 @@ class VispyBaseLayer(ABC):
                 "blend_equation": 'func_add',
             }
 
-        self.node.set_gl_state(**blending_kwargs)
+        if hasattr(self.node, "set_gl_state"):
+            self.node.set_gl_state(**blending_kwargs)
         self.node.update()
 
     def _on_overlays_change(self):
