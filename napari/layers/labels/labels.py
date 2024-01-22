@@ -1009,10 +1009,7 @@ class Labels(_ImageBase):
         if sliced_labels is None:
             sliced_labels = labels[data_slice]
 
-        if sliced_labels.dtype.itemsize <= 2:
-            return self.colormap._data_to_texture_dtype(sliced_labels)
-
-        return self.colormap._map_to_gpu(sliced_labels)
+        return self.colormap._data_to_texture_dtype(sliced_labels)
 
     def _update_thumbnail(self):
         """Update the thumbnail with current data and colormap.
