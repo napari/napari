@@ -713,7 +713,7 @@ def _cast_labels_data_to_texture_dtype_auto(
         )
 
     if isinstance(data, np.integer):
-        return dtype.type(converted)
+        return dtype.type(converted[0])
 
     return np.reshape(converted, original_shape)
 
