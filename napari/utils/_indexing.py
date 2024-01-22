@@ -4,12 +4,17 @@ import numpy as np
 import numpy.typing as npt
 
 
-def visible_items_in_slice(
+def elements_in_slice(
     index: Tuple[npt.NDArray[np.int_], ...], position_in_axes: Dict[int, int]
 ) -> npt.NDArray[np.bool_]:
-    """
-    Return a boolean array indicating which items are visible in the current
-    view based on its indices and the current slice.
+    """Mask elements from a multi-dimensional index not in a given slice.
+
+    Some n-D operations may edit data that is not visible in the current slice.
+    Given slice position information (as a dictionary mapping axis to index on that
+    axis), this function returns a boolean mask for the possibly higher-dimensional
+    multi-index so that elements not currently visible are masked out. The
+    resulting multi-index can then be subset and used to index into a texture or
+    other lower-dimensional view.
 
     Parameters
     ----------
@@ -59,7 +64,7 @@ def index_in_slice(
     ----------
     [1]: https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing
     """
-    index_in_slice = visible_items_in_slice(index, position_in_axes)
+    index_in_slice = elements_in_slice(index, position_in_axes)
     return tuple(
         ix[index_in_slice]
         for i, ix in enumerate(index)

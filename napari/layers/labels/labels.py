@@ -49,7 +49,7 @@ from napari.layers.labels._labels_utils import (
 from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
-from napari.utils._indexing import index_in_slice, visible_items_in_slice
+from napari.utils._indexing import elements_in_slice, index_in_slice
 from napari.utils.colormaps import (
     direct_colormap,
     ensure_colormap,
@@ -1565,7 +1565,7 @@ class Labels(_ImageBase):
         displayed_indices = index_in_slice(indices, pt_not_disp)
         if isinstance(value, np.ndarray):
             visible_values = value[
-                visible_items_in_slice(indices, pt_not_disp)
+                elements_in_slice(indices, pt_not_disp)
             ]
         else:
             visible_values = value
