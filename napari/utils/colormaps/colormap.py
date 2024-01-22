@@ -409,10 +409,7 @@ class DirectLabelColormap(LabelColormapBase):
             return self.color_dict.get(values, self.default_color)
         if isinstance(values, (list, tuple)):
             values = np.array(values)
-        if not isinstance(values, np.ndarray) or values.dtype.kind in {
-            'f',
-            'U',
-        }:
+        if not isinstance(values, np.ndarray) or values.dtype.kind in 'fU':
             raise TypeError("DirectLabelColormap can only be used with int")
         mapper = self._get_mapping_from_cache(values.dtype)
         if mapper is not None:
