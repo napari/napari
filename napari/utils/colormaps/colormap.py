@@ -786,20 +786,26 @@ def _cast_labels_data_to_texture_dtype_auto(
 
     data_arr = np.atleast_1d(data)
     num_colors = len(colormap.colors) - 1
+    zero_preserving_modulo_func = _zero_preserving_modulo
+    if isinstance(data, np.integer):
+        zero_preserving_modulo_func = _zero_preserving_modulo_numpy
 
     dtype = minimum_dtype_for_labels(num_colors + 1)
 
     if colormap.use_selection:
-        selection_in_texture = _zero_preserving_modulo(
+        selection_in_texture = _zero_preserving_modulo_numpy(
             np.array([colormap.selection]), num_colors, dtype
         )
         converted = np.where(
             data_arr == colormap.selection, selection_in_texture, dtype.type(0)
         )
     else:
-        converted = _zero_preserving_modulo(
+        converted = zero_preserving_modulo_func(
             data_arr, num_colors, dtype, colormap.background_value
         )
+
+    if isinstance(data, np.integer):
+        return dtype.type(converted[0])
 
     return np.reshape(converted, original_shape)
 
@@ -953,6 +959,15 @@ def _cast_labels_data_to_texture_dtype_direct(
 
     if data.itemsize <= 2:
         return data
+
+    if isinstance(data, np.integer):
+        mapper = direct_colormap._label_mapping_and_color_dict[0]
+        target_dtype = minimum_dtype_for_labels(
+            direct_colormap._num_unique_colors + 2
+        )
+        return target_dtype.type(
+            mapper.get(int(data), MAPPING_OF_UNKNOWN_VALUE)
+        )
 
     original_shape = np.shape(data)
     array_data = np.atleast_1d(data)

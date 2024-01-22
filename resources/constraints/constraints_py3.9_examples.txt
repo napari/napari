@@ -291,7 +291,7 @@ packaging==23.2
     #   superqt
     #   vispy
     #   xarray
-pandas==2.1.4 ; python_version >= "3.9"
+pandas==2.2.0 ; python_version >= "3.9"
     # via
     #   napari (napari_repo/setup.cfg)
     #   nilearn
