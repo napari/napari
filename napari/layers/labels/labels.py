@@ -800,8 +800,9 @@ class Labels(_ImageBase):
             trans._(
                 'Labels.color_mode is deprecated since 0.4.19 and will be '
                 'removed in 0.5.0. Please check type(Labels.colormap) '
-                'instead. napari.utils.colormaps.LabelColormap corresponds to '
-                'AUTO color mode, and napari.utils.colormaps.DirectLabelColormap'
+                'instead. napari.utils.colormaps.CycleLabelColormap '
+                'corresponds to AUTO color mode, and '
+                'napari.utils.colormaps.DirectLabelColormap'
                 ' corresponds to DIRECT color mode.',
                 deferred=True,
             ),
@@ -816,9 +817,9 @@ class Labels(_ImageBase):
             trans._(
                 'Labels.color_mode is deprecated since 0.4.19 and will be '
                 'removed in 0.5.0. Please set Labels.colormap instead, to an'
-                'instance of napari.utils.colormaps.LabelColormap for "auto"'
-                'mode, or napari.utils.colormaps.DirectLabelColormap for '
-                '"direct" mode.',
+                'instance of napari.utils.colormaps.CycleLabelColormap for '
+                '"auto" mode, or napari.utils.colormaps.DirectLabelColormap '
+                'for "direct" mode.',
                 deferred=True,
             ),
             FutureWarning,
