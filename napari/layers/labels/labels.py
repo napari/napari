@@ -1577,7 +1577,6 @@ class Labels(_ImageBase):
             # therefore updated automatically.
             # For other types, we update it manually here.
             self._slice.image.raw[displayed_indices] = visible_values
-            # self._slice.image.view[displayed_indices] = self.colormap._map_to_gpu(value)
 
         # tensorstore and xarray do not return their indices in
         # np.ndarray format, so they need to be converted explicitly
@@ -1600,7 +1599,7 @@ class Labels(_ImageBase):
             # update data view
             self._slice.image.view[
                 displayed_indices
-            ] = self.colormap._map_to_gpu(visible_values)
+            ] = self.colormap._data_to_texture(visible_values)
 
         if self._updated_slice is None:
             self._updated_slice = updated_slice
