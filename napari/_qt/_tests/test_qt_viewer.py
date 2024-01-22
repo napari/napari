@@ -897,7 +897,7 @@ def test_background_color(qtbot, qt_viewer: QtViewer, dtype):
     data = np.zeros((10, 10), dtype=dtype)
     data[5:] = 10
     layer = qt_viewer.viewer.add_labels(data, opacity=1)
-    color = layer.colormap.map(10)[0] * 255
+    color = layer.colormap.map(10) * 255
 
     backgrounds = (0, 2, -2)
 
@@ -989,7 +989,7 @@ def test_all_supported_dtypes(qt_viewer):
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
         npt.assert_equal(
-            midd_pixel, layer.colormap.map(i)[0] * 255, err_msg=f"{dtype} {i}"
+            midd_pixel, layer.colormap.map(i) * 255, err_msg=f"{dtype} {i}"
         )
 
     layer.colormap = DirectLabelColormap(
@@ -1019,7 +1019,7 @@ def test_all_supported_dtypes(qt_viewer):
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
         npt.assert_equal(
-            midd_pixel, layer.colormap.map(i)[0] * 255, err_msg=f"{dtype} {i}"
+            midd_pixel, layer.colormap.map(i) * 255, err_msg=f"{dtype} {i}"
         )
 
 
@@ -1048,5 +1048,5 @@ def test_more_than_uint16_colors(qt_viewer):
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
         npt.assert_equal(
-            midd_pixel, layer.colormap.map(i)[0] * 255, err_msg=f"{i}"
+            midd_pixel, layer.colormap.map(i) * 255, err_msg=f"{i}"
         )
