@@ -91,5 +91,12 @@ def create_func(cls, name=None, doc=None, filename: str = '<string>'):
     func = execdict[name]
 
     func.__doc__ = doc
+    func.__signature__ = sig.replace(
+        parameters=[
+            Parameter("self", Parameter.POSITIONAL_OR_KEYWORD),
+            *list(sig.parameters.values()),
+        ],
+        return_annotation=cls,
+    )
 
     return func
