@@ -183,14 +183,14 @@ class LabelColormapBase(Colormap):
         keep_untouched = (cached_property,)
 
     @overload
-    def _map_to_gpu(self, values: np.ndarray) -> np.ndarray:
+    def _data_to_texture_dtype(self, values: np.ndarray) -> np.ndarray:
         ...
 
     @overload
-    def _map_to_gpu(self, values: np.integer) -> np.integer:
+    def _data_to_texture_dtype(self, values: np.integer) -> np.integer:
         ...
 
-    def _map_to_gpu(
+    def _data_to_texture_dtype(
         self, values: Union[np.ndarray, np.integer]
     ) -> Union[np.ndarray, np.integer]:
         """Map input values to values for send to GPU."""
@@ -246,7 +246,7 @@ class LabelColormapBase(Colormap):
         int
             The selection converted.
         """
-        return int(self._map_to_gpu(dtype.type(self.selection)))
+        return int(self._data_to_texture_dtype(dtype.type(self.selection)))
 
 
 class LabelColormap(LabelColormapBase):
@@ -282,17 +282,19 @@ class LabelColormap(LabelColormapBase):
         int
             The background converted.
         """
-        return int(self._map_to_gpu(dtype.type(self.background_value)))
+        return int(
+            self._data_to_texture_dtype(dtype.type(self.background_value))
+        )
 
     @overload
-    def _map_to_gpu(self, values: np.ndarray) -> np.ndarray:
+    def _data_to_texture_dtype(self, values: np.ndarray) -> np.ndarray:
         ...
 
     @overload
-    def _map_to_gpu(self, values: np.integer) -> np.integer:
+    def _data_to_texture_dtype(self, values: np.integer) -> np.integer:
         ...
 
-    def _map_to_gpu(
+    def _data_to_texture_dtype(
         self, values: Union[np.ndarray, np.integer]
     ) -> Union[np.ndarray, np.integer]:
         """Map input values to values for send to GPU."""
@@ -375,14 +377,14 @@ class DirectLabelColormap(LabelColormapBase):
         super().__init__(*args, **kwargs)
 
     @overload
-    def _map_to_gpu(self, values: np.ndarray) -> np.ndarray:
+    def _data_to_texture_dtype(self, values: np.ndarray) -> np.ndarray:
         ...
 
     @overload
-    def _map_to_gpu(self, values: np.integer) -> np.integer:
+    def _data_to_texture_dtype(self, values: np.integer) -> np.integer:
         ...
 
-    def _map_to_gpu(
+    def _data_to_texture_dtype(
         self, values: Union[np.ndarray, np.integer]
     ) -> Union[np.ndarray, np.integer]:
         """Map input values to values for send to GPU."""

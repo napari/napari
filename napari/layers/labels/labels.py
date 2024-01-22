@@ -1050,7 +1050,7 @@ class Labels(_ImageBase):
             sliced_labels = labels[data_slice]
 
         if sliced_labels.dtype.itemsize <= 2:
-            return self.colormap._map_to_gpu(sliced_labels)
+            return self.colormap._data_to_texture_dtype(sliced_labels)
 
         if setup_cache:
             self._setup_cache(raw)
@@ -1076,7 +1076,7 @@ class Labels(_ImageBase):
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
-        mapped_labels = self.colormap._map_to_gpu(labels_to_map)
+        mapped_labels = self.colormap._data_to_texture_dtype(labels_to_map)
 
         if self._cached_labels is not None:
             if update_mask is not None:
