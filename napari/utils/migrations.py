@@ -204,6 +204,6 @@ def deprecated_class_name(
     _OldClass.__module__ = new_class.__module__
     _OldClass.__name__ = previous_name
     _OldClass.__qualname__ = previous_name
-    _OldClass.__new__.__signature__ = prealloc_signature  # type: ignore
+    _OldClass.__new__.__signature__ = prealloc_signature  # type: ignore [attr-defined]
 
     return _OldClass
