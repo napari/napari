@@ -426,11 +426,11 @@ class Shapes(Layer):
         text=None,
         shape_type='rectangle',
         edge_width=1,
-        edge_color='#777777',
+        edge_color=None,
         edge_color_cycle=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
-        face_color='white',
+        face_color=None,
         face_color_cycle=None,
         face_colormap='viridis',
         face_contrast_limits=None,
@@ -449,6 +449,11 @@ class Shapes(Layer):
         experimental_clipping_planes=None,
         projection_mode='none',
     ) -> None:
+        if edge_color is None:
+            edge_color = get_settings().appearance.edge_color
+        if face_color is None:
+            face_color = get_settings().appearance.face_color
+
         if data is None or len(data) == 0:
             if ndim is None:
                 ndim = 2

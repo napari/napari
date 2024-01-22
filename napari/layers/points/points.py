@@ -52,6 +52,7 @@ from napari.layers.utils.layer_utils import (
     _unique_element,
 )
 from napari.layers.utils.text_manager import TextManager
+from napari.settings import get_settings
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
@@ -349,11 +350,11 @@ class Points(Layer):
         size=10,
         edge_width=0.05,
         edge_width_is_relative=True,
-        edge_color='dimgray',
+        edge_color=None,
         edge_color_cycle=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
-        face_color='white',
+        face_color=None,
         face_color_cycle=None,
         face_colormap='viridis',
         face_contrast_limits=None,
@@ -378,6 +379,11 @@ class Points(Layer):
         shown=True,
         projection_mode='none',
     ) -> None:
+        if edge_color is None:
+            edge_color = get_settings().appearance.edge_color
+        if face_color is None:
+            face_color = get_settings().appearance.face_color
+
         if ndim is None and scale is not None:
             ndim = len(scale)
 
