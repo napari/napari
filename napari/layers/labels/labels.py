@@ -1511,7 +1511,10 @@ class Labels(_ImageBase):
     def _get_dims_to_paint(self) -> list:
         return list(self._slice_input.order[-self.n_edit_dimensions :])
 
-    def _get_pt_not_disp(self, indices, values):
+    def _get_pt_not_disp(self) -> Dict[int, int]:
+        """
+        Get coordinates of current visible  slice.
+        """
         slice_input = self._slice.slice_input
         point = np.round(
             self.world_to_data(slice_input.world_slice.point)
@@ -1558,7 +1561,7 @@ class Labels(_ImageBase):
         # update the labels image
         self.data[indices] = value
 
-        pt_not_disp = self._get_pt_not_disp(indices, value)
+        pt_not_disp = self._get_pt_not_disp()
         displayed_indices = index_in_slice(indices, pt_not_disp)
         if isinstance(value, np.ndarray):
             visible_values = value[

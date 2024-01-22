@@ -7,6 +7,22 @@ import numpy.typing as npt
 def visible_items_in_slice(
     index: Tuple[npt.NDArray[np.int_], ...], position_in_axes: Dict[int, int]
 ) -> npt.NDArray[np.bool_]:
+    """
+    Return a boolean array indicating which items are visible in the current
+    view based on its indices and the current slice.
+
+    Parameters
+    ----------
+    index : tuple of array of int
+        A NumPy fancy indexing expression [1]_.
+    position_in_axes : dict[int, int]
+        A dictionary mapping sliced (non-displayed) axes to a slice position.
+
+    Returns
+    -------
+    visible : array of bool
+        A boolean array indicating which items are visible in the current view.
+    """
     queries = [
         index[ax] == position for ax, position in position_in_axes.items()
     ]
