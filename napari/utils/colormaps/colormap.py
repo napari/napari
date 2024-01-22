@@ -399,7 +399,7 @@ class DirectLabelColormap(LabelColormapBase):
 
     @validator("color_dict", pre=True, always=True, allow_reuse=True)
     def _validate_color_dict(cls, v, values):
-        """Ensure colors are RGB tuples, not strings.
+        """Ensure colors are RGBA arrays, not strings.
 
         Parameters
         ----------
@@ -413,6 +413,11 @@ class DirectLabelColormap(LabelColormapBase):
             A dictionary mapping previously-validated attributes to their
             validated values. Attributes are validated in the order in which
             they are defined.
+
+        Returns
+        -------
+        res : (default)dict[int, np.ndarray[float]]
+            A properly-formatted dictionary mapping labels to RGBA arrays.
         """
         if not isinstance(v, defaultdict) and None not in v:
             raise ValueError(
