@@ -588,7 +588,7 @@ class Labels(_ImageBase):
         )
         self.colormap = label_colormap(
             num_colors - 1,
-            seed=self.seed,
+            seed=self._random_colormap.seed,
             background_value=self.colormap.background_value,
         )
 

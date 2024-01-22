@@ -152,6 +152,10 @@ def deprecated_constructor_arg_by_attr(name: str) -> Callable:
     """
 
     def wrapper(func):
+        if not hasattr(func, '_deprecated_constructor_args'):
+            func._deprecated_constructor_args = []
+        func._deprecated_constructor_args.append(name)
+
         @wraps(func)
         def _wrapper(*args, **kwargs):
             value = _UNSET
