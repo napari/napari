@@ -1513,7 +1513,7 @@ class Labels(_ImageBase):
 
     def _get_pt_not_disp(self) -> Dict[int, int]:
         """
-        Get coordinates of current visible  slice.
+        Get indices of current visible slice.
         """
         slice_input = self._slice.slice_input
         point = np.round(
