@@ -243,7 +243,7 @@ class LabelColormapBase(Colormap):
         raise NotImplementedError
 
 
-class CycleLabelColormap(LabelColormapBase):
+class CyclicLabelColormap(LabelColormapBase):
     """Color cycle with a background value.
 
     Attributes
@@ -354,7 +354,7 @@ class CycleLabelColormap(LabelColormapBase):
 
 
 LabelColormap = deprecated_class_name(
-    CycleLabelColormap,
+    CyclicLabelColormap,
     'LabelColormap',
     version='0.5.0',
     since_version='0.4.19',
@@ -682,7 +682,7 @@ def _convert_small_ints_to_unsigned(
 @overload
 def _cast_labels_data_to_texture_dtype_auto(
     data: np.ndarray,
-    colormap: CycleLabelColormap,
+    colormap: CyclicLabelColormap,
 ) -> np.ndarray:
     ...
 
@@ -690,14 +690,14 @@ def _cast_labels_data_to_texture_dtype_auto(
 @overload
 def _cast_labels_data_to_texture_dtype_auto(
     data: np.integer,
-    colormap: CycleLabelColormap,
+    colormap: CyclicLabelColormap,
 ) -> np.integer:
     ...
 
 
 def _cast_labels_data_to_texture_dtype_auto(
     data: Union[np.ndarray, np.integer],
-    colormap: CycleLabelColormap,
+    colormap: CyclicLabelColormap,
 ) -> Union[np.ndarray, np.integer]:
     """Convert labels data to the data type used in the texture.
 
@@ -718,7 +718,7 @@ def _cast_labels_data_to_texture_dtype_auto(
     ----------
     data : np.ndarray
         Labels data to be converted.
-    colormap : CycleLabelColormap
+    colormap : CyclicLabelColormap
         Colormap used to display the labels data.
 
     Returns
@@ -887,7 +887,7 @@ def _cast_labels_data_to_texture_dtype_direct(
     ----------
     data : np.ndarray | np.integer
         Labels data to be converted.
-    direct_colormap : CycleLabelColormap
+    direct_colormap : CyclicLabelColormap
         Colormap used to display the labels data.
 
     Returns

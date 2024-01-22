@@ -52,7 +52,7 @@ from napari.utils.colormaps import (
     label_colormap,
 )
 from napari.utils.colormaps.colormap import (
-    CycleLabelColormap,
+    CyclicLabelColormap,
     DirectLabelColormap,
     LabelColormapBase,
     _cast_labels_data_to_texture_dtype_auto,
@@ -97,7 +97,7 @@ class Labels(_ImageBase):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    colormap : CycleLabelColormap or DirectLabelColormap or None
+    colormap : CyclicLabelColormap or DirectLabelColormap or None
         Colormap to use for the labels. If None, a random colormap will be
         used.
     depiction : str
@@ -531,7 +531,7 @@ class Labels(_ImageBase):
         self._set_colormap(colormap)
 
     def _set_colormap(self, colormap):
-        if isinstance(colormap, CycleLabelColormap):
+        if isinstance(colormap, CyclicLabelColormap):
             self._random_colormap = colormap
             self._original_random_colormap = colormap
             self._colormap = self._random_colormap
@@ -800,7 +800,7 @@ class Labels(_ImageBase):
             trans._(
                 'Labels.color_mode is deprecated since 0.4.19 and will be '
                 'removed in 0.5.0. Please check type(Labels.colormap) '
-                'instead. napari.utils.colormaps.CycleLabelColormap '
+                'instead. napari.utils.colormaps.CyclicLabelColormap '
                 'corresponds to AUTO color mode, and '
                 'napari.utils.colormaps.DirectLabelColormap'
                 ' corresponds to DIRECT color mode.',
@@ -817,7 +817,7 @@ class Labels(_ImageBase):
             trans._(
                 'Labels.color_mode is deprecated since 0.4.19 and will be '
                 'removed in 0.5.0. Please set Labels.colormap instead, to an'
-                'instance of napari.utils.colormaps.CycleLabelColormap for '
+                'instance of napari.utils.colormaps.CyclicLabelColormap for '
                 '"auto" mode, or napari.utils.colormaps.DirectLabelColormap '
                 'for "direct" mode.',
                 deferred=True,
@@ -1023,7 +1023,7 @@ class Labels(_ImageBase):
         if self._cached_labels is not None:
             return
 
-        if isinstance(self._colormap, CycleLabelColormap):
+        if isinstance(self._colormap, CyclicLabelColormap):
             mapped_background = _cast_labels_data_to_texture_dtype_auto(
                 labels.dtype.type(self.colormap.background_value),
                 self._random_colormap,
@@ -1099,7 +1099,7 @@ class Labels(_ImageBase):
         if labels_to_map.size == 0:
             return self._cached_mapped_labels[data_slice]
 
-        if isinstance(self.colormap, CycleLabelColormap):
+        if isinstance(self.colormap, CyclicLabelColormap):
             mapped_labels = _cast_labels_data_to_texture_dtype_auto(
                 labels_to_map, self._random_colormap
             )

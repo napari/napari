@@ -28,7 +28,7 @@ from napari.layers.labels._labels_constants import (
     Mode,
 )
 from napari.layers.labels._labels_utils import get_dtype
-from napari.utils import CycleLabelColormap
+from napari.utils import CyclicLabelColormap
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
@@ -320,7 +320,7 @@ class QtLabelsControls(QtLayerControls):
                 'Layer needs a user-set DirectLabelColormap to enable direct '
                 'mode.'
             )
-        if isinstance(self.layer.colormap, CycleLabelColormap):
+        if isinstance(self.layer.colormap, CyclicLabelColormap):
             self.colorModeComboBox.setCurrentIndex(
                 self.colorModeComboBox.findData(LabelColorMode.AUTO.value)
             )

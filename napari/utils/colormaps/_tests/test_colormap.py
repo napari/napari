@@ -277,7 +277,7 @@ def test_zero_preserving_modulo_naive():
     'dtype', [np.uint8, np.uint16, np.int8, np.int16, np.float32, np.float64]
 )
 def test_label_colormap_map_with_uint8_values(dtype):
-    cmap = colormap.CycleLabelColormap(
+    cmap = colormap.CyclicLabelColormap(
         colors=ColorArray(np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]]))
     )
     values = np.array([0, 1, 2], dtype=dtype)
@@ -288,7 +288,7 @@ def test_label_colormap_map_with_uint8_values(dtype):
 @pytest.mark.parametrize("selection", [1, -1])
 @pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int32, np.int64])
 def test_label_colormap_map_with_selection(selection, dtype):
-    cmap = colormap.CycleLabelColormap(
+    cmap = colormap.CyclicLabelColormap(
         colors=ColorArray(
             np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]])
         ),
@@ -303,7 +303,7 @@ def test_label_colormap_map_with_selection(selection, dtype):
 @pytest.mark.parametrize("background", [1, -1])
 @pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int32, np.int64])
 def test_label_colormap_map_with_background(background, dtype):
-    cmap = colormap.CycleLabelColormap(
+    cmap = colormap.CyclicLabelColormap(
         colors=ColorArray(
             np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]])
         ),
@@ -316,7 +316,7 @@ def test_label_colormap_map_with_background(background, dtype):
 
 @pytest.mark.parametrize("dtype", [np.uint8, np.uint16])
 def test_label_colormap_using_cache(dtype, monkeypatch):
-    cmap = colormap.CycleLabelColormap(
+    cmap = colormap.CyclicLabelColormap(
         colors=ColorArray(np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]]))
     )
     values = np.array([0, 1, 2], dtype=dtype)

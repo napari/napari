@@ -23,7 +23,7 @@ from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
 from napari.utils import Colormap
 from napari.utils.colormaps import (
-    CycleLabelColormap,
+    CyclicLabelColormap,
     DirectLabelColormap,
     label_colormap,
 )
@@ -1485,7 +1485,7 @@ def test_is_default_color():
 
     # setting color to default colors doesn't update color mode
     layer.colormap = DirectLabelColormap(color_dict=current_color)
-    assert isinstance(layer.colormap, CycleLabelColormap)
+    assert isinstance(layer.colormap, CyclicLabelColormap)
     with pytest.warns(FutureWarning, match='Labels.color_mode is deprecated'):
         assert layer.color_mode == 'auto'
 

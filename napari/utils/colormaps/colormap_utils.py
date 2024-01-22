@@ -19,7 +19,7 @@ from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
     Colormap,
     ColormapInterpolationMode,
-    CycleLabelColormap,
+    CyclicLabelColormap,
     DirectLabelColormap,
     minimum_dtype_for_labels,
 )
@@ -409,7 +409,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
 
 def label_colormap(
     num_colors=256, seed=0.5, background_value=0
-) -> CycleLabelColormap:
+) -> CyclicLabelColormap:
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
@@ -422,7 +422,7 @@ def label_colormap(
 
     Returns
     -------
-    colormap : napari.utils.CycleLabelColormap
+    colormap : napari.utils.CyclicLabelColormap
         A colormap for use with labels remapped to [0, 1].
 
     Notes
@@ -467,7 +467,7 @@ def label_colormap(
     rgb8_colors = (colors * uint8_max).astype(np.uint8)
     colors = rgb8_colors.astype(np.float32) / uint8_max
 
-    return CycleLabelColormap(
+    return CyclicLabelColormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
         colors=colors,
@@ -502,8 +502,8 @@ def _primes(upto=2**16):
 
 
 def shuffle_and_extend_colormap(
-    colormap: CycleLabelColormap, seed: int, min_random_choices: int = 5
-) -> CycleLabelColormap:
+    colormap: CyclicLabelColormap, seed: int, min_random_choices: int = 5
+) -> CyclicLabelColormap:
     """Shuffle the colormap colors and extend it to more colors.
 
     The new number of colors will be a prime number that fits into the same
@@ -511,7 +511,7 @@ def shuffle_and_extend_colormap(
 
     Parameters
     ----------
-    colormap : napari.utils.CycleLabelColormap
+    colormap : napari.utils.CyclicLabelColormap
         Colormap to shuffle and extend.
     seed : int
         Seed for the random number generator.
@@ -528,7 +528,7 @@ def shuffle_and_extend_colormap(
 
     Returns
     -------
-    colormap : napari.utils.CycleLabelColormap
+    colormap : napari.utils.CyclicLabelColormap
         Shuffled and extended colormap.
     """
     rng = np.random.default_rng(seed)
@@ -555,7 +555,7 @@ def shuffle_and_extend_colormap(
         axis=0,
     )
 
-    new_colormap = CycleLabelColormap(
+    new_colormap = CyclicLabelColormap(
         name=colormap.name,
         colors=extended_colors,
         controls=np.linspace(0, 1, len(extended_colors) + 1),
