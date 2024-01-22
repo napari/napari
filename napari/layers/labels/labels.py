@@ -49,6 +49,7 @@ from napari.layers.labels._labels_utils import (
 from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
+from napari.utils._indexing import index_in_slice, visible_items_in_slice
 from napari.utils.colormaps import (
     direct_colormap,
     ensure_colormap,
@@ -63,7 +64,6 @@ from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
-from napari.utils.indexing import index_in_slice, visible_items_in_slice
 from napari.utils.migrations import deprecated_constructor_arg_by_attr
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
