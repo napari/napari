@@ -48,6 +48,12 @@ def _make_cycled_properties(values, length):
 def test_empty_points():
     pts = Points()
     assert pts.data.shape == (0, 2)
+    assert pts.ndim == 2
+
+
+def test_3d_empty_points():
+    pts = Points(np.empty((0, 3)))
+    assert pts.ndim == 3
 
 
 def test_empty_points_with_features():
