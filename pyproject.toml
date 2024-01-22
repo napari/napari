@@ -175,7 +175,7 @@ filterwarnings = [
   "ignore:Alternative shading modes are only available in 3D, defaulting to none",
   "ignore:distutils Version classes are deprecated::",
   "ignore:There is no current event loop:DeprecationWarning:",
-  "ignore::DeprecationWarning:napari.layers.utils.layer_utils",  # pandas pyarrow (pandas<3.0), workaround for empty line in warning message
+  "ignore:(?s).*Pyarrow will become a required dependency of pandas:DeprecationWarning",  # pandas pyarrow (pandas<3.0),
 ]
 markers = [
     "examples: Test of examples",
