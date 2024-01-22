@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from functools import wraps
 from typing import Any, Callable
@@ -188,10 +189,13 @@ def deprecated_class_name(
         f"{previous_name} is deprecated since {since_version} and will be "
         f"removed in {version}. Please use {new_class.__name__}."
     )
+    prealloc_signature = inspect.signature(new_class.__new__)
 
     class _OldClass(new_class):
         def __new__(cls, *args, **kwargs):
             warnings.warn(msg, FutureWarning, stacklevel=2)
+            if super().__new__ is object.__new__:
+                return super().__new__(cls)
             return super().__new__(cls, *args, **kwargs)
 
         def __init_subclass__(cls, **kwargs):
@@ -199,5 +203,7 @@ def deprecated_class_name(
 
     _OldClass.__module__ = new_class.__module__
     _OldClass.__name__ = previous_name
+    _OldClass.__qualname__ = previous_name
+    _OldClass.__new__.__signature__ = prealloc_signature
 
     return _OldClass
