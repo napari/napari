@@ -187,7 +187,7 @@ class Labels(_ImageBase):
         arrays. While there is no limit to the number of custom labels, the
         the layer will render incorrectly if they map to more than 1024 distinct
         colors. DEPRECATED: set ``colormap`` directly, using
-        `napari.utils.colormaps.direct_colormap`.
+        `napari.utils.colormaps.DirectLabelColormap`.
     seed : float
         Seed for colormap random generator. DEPRECATED: set ``colormap``
         directly, using `napari.utils.colormaps.label_colormap`.
