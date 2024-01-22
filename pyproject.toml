@@ -177,6 +177,7 @@ filterwarnings = [
   "ignore:Alternative shading modes are only available in 3D, defaulting to none",
   "ignore:distutils Version classes are deprecated::",
   "ignore:There is no current event loop:DeprecationWarning:",
+  "ignore:(?s).*Pyarrow will become a required dependency of pandas:DeprecationWarning",  # pandas pyarrow (pandas<3.0),
 ]
 markers = [
     "sync_only: Test should only be run synchronously",
