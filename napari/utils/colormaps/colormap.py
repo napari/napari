@@ -398,7 +398,22 @@ class DirectLabelColormap(LabelColormapBase):
         return self._num_unique_colors + 2
 
     @validator("color_dict", pre=True, always=True, allow_reuse=True)
-    def _validate_color_dict(cls, v):
+    def _validate_color_dict(cls, v, values):
+        """Ensure colors are RGB tuples, not strings.
+
+        Parameters
+        ----------
+        cls : type
+            The class of the object being instantiated.
+        v : MutableMapping
+            A mapping from integers to colors. It *may* have None as a key,
+            which indicates the color to map items not in the dictionary.
+            Alternatively, it could be a defaultdict.
+        values : dict[str, Any]
+            A dictionary mapping previously-validated attributes to their
+            validated values. Attributes are validated in the order in which
+            they are defined.
+        """
         if not isinstance(v, defaultdict) and None not in v:
             raise ValueError(
                 "color_dict must contain None or be defaultdict instance"
@@ -407,6 +422,11 @@ class DirectLabelColormap(LabelColormapBase):
             label: transform_color(color_str)[0]
             for label, color_str in v.items()
         }
+        if (
+            'background_value' in values
+            and (bg := values['background_value']) not in res
+        ):
+            res[bg] = transform_color('transparent')[0]
         if isinstance(v, defaultdict):
             res = defaultdict(v.default_factory, res)
         return res
