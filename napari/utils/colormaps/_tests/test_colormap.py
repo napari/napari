@@ -349,7 +349,7 @@ def test_direct_colormap_with_no_selection():
 
     # Map a single value
     mapped = cmap.map(1)
-    npt.assert_array_equal(mapped[0], np.array([1, 0, 0, 1]))
+    npt.assert_array_equal(mapped, np.array([1, 0, 0, 1]))
 
     # Map multiple values
     mapped = cmap.map(np.array([1, 2]))
@@ -365,11 +365,11 @@ def test_direct_colormap_with_selection():
 
     # Map a single value
     mapped = cmap.map(1)
-    npt.assert_array_equal(mapped[0], np.array([1, 0, 0, 1]))
+    npt.assert_array_equal(mapped, np.array([1, 0, 0, 1]))
 
     # Map a value that is not the selection
     mapped = cmap.map(2)
-    npt.assert_array_equal(mapped[0], np.array([0, 0, 0, 0]))
+    npt.assert_array_equal(mapped, np.array([0, 0, 0, 0]))
 
 
 def test_direct_colormap_with_invalid_values():
@@ -379,7 +379,7 @@ def test_direct_colormap_with_invalid_values():
 
     # Map a value that is not in the color_dict
     mapped = cmap.map(3)
-    npt.assert_array_equal(mapped[0], np.array([0, 0, 0, 0]))
+    npt.assert_array_equal(mapped, np.array([0, 0, 0, 0]))
 
 
 def test_direct_colormap_with_empty_color_dict():
@@ -414,9 +414,9 @@ def test_direct_colormap_with_collision():
     }
     cmap = DirectLabelColormap(color_dict=color_dict)
 
-    npt.assert_array_equal(cmap.map(1)[0], np.array([1, 0, 0, 1]))
-    npt.assert_array_equal(cmap.map(12)[0], np.array([0, 1, 0, 1]))
-    npt.assert_array_equal(cmap.map(23)[0], np.array([0, 0, 1, 1]))
+    npt.assert_array_equal(cmap.map(1), np.array([1, 0, 0, 1]))
+    npt.assert_array_equal(cmap.map(12), np.array([0, 1, 0, 1]))
+    npt.assert_array_equal(cmap.map(23), np.array([0, 0, 1, 1]))
 
 
 def test_direct_colormap_negative_values():
@@ -426,7 +426,7 @@ def test_direct_colormap_negative_values():
 
     # Map a single value
     mapped = cmap.map(np.int8(-1))
-    npt.assert_array_equal(mapped[0], np.array([1, 0, 0, 1]))
+    npt.assert_array_equal(mapped, np.array([1, 0, 0, 1]))
 
     # Map multiple values
     mapped = cmap.map(np.array([-1, -2], dtype=np.int8))

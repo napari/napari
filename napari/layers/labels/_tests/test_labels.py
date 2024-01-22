@@ -1432,6 +1432,8 @@ def test_invalidate_cache_when_change_color_mode():
 @pytest.mark.parametrize("dtype", np.sctypes['int'] + np.sctypes['uint'])
 @pytest.mark.parametrize("mode", ["auto", "direct"])
 def test_cache_for_dtypes(dtype, mode):
+    if np.dtype(dtype).itemsize <= 2:
+        pytest.skip("No cache")
     data = np.zeros((10, 10), dtype=dtype)
     labels = Labels(data)
     labels.color_mode = mode
@@ -1598,7 +1600,7 @@ def test_labels_features_event():
 
 
 def test_invalidate_cache_when_change_slice():
-    layer = Labels(np.zeros((2, 4, 5), dtype=np.uint8))
+    layer = Labels(np.zeros((2, 4, 5), dtype=np.uint32))
     assert layer._cached_labels is None
     layer._setup_cache(layer._slice.image.raw)
     assert layer._cached_labels is not None
