@@ -1160,7 +1160,7 @@ class Labels(_ImageBase):
         elif label is None or (
             self.show_selected_label and label != self.selected_label
         ):
-            col = self.colormap.map(self._background_label)
+            col = self.colormap.map(self.colormap.background_value)
         else:
             col = self.colormap.map(label)
         return col
