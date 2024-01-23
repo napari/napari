@@ -284,28 +284,30 @@ def test_seed():
 
 
 def test_num_colors():
-    """Test setting number of colors in colormap."""
+    """Test setting number of colors in colormap with deprecated API."""
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+
     with pytest.warns(FutureWarning, match='num_colors is deprecated'):
-        np.random.seed(0)
-        data = np.random.randint(20, size=(10, 15))
-        layer = Labels(data)
         assert layer.num_colors == 50
 
+    with pytest.warns(FutureWarning, match='num_colors is deprecated'):
         layer.num_colors = 80
-        assert layer.num_colors == 80
 
+    assert len(layer.colormap) == 80
+
+    with pytest.warns(FutureWarning, match='num_colors is deprecated'):
         layer = Labels(data, num_colors=60)
-        assert layer.num_colors == 60
 
-        with pytest.raises(
-            ValueError, match=r".*Only up to 2\*\*16=65535 colors"
-        ):
+    assert len(layer.colormap) == 60
+
+    with pytest.raises(ValueError, match=r".*Only up to 2\*\*16=65535 colors"):
+        with pytest.warns(FutureWarning, match='num_colors is deprecated'):
             layer.num_colors = 2**17
 
-    with pytest.raises(
-        ValueError, match=r".*Only up to 2\*\*16=65535 colors are supported"
-    ):
-        with pytest.warns(FutureWarning, match='Setting Labels.num_colors'):
+    with pytest.raises(ValueError, match=r".*Only up to 2\*\*16=65535 colors"):
+        with pytest.warns(FutureWarning, match='num_colors is deprecated'):
             Labels(data, num_colors=2**17)
 
 
