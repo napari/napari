@@ -23,13 +23,33 @@ we expect that in the next release we will ship the bundle with pydantic v2.
 Please, if you are a plugin developer and your plugin uses pydantic, ensure
 that it is compatible with pydantic v2 ([napari/napari/#6358](https://github.com/napari/napari/pull/6358)).
 
-Performance of the `Labels` layer is drastically improved for many labels by moving part of calculations to the GPU ([napari/napari/#3308](https://github.com/napari/napari/pull/3308)).
+We have fixed problems with rendering some labels in incorrect color by sequence of Pull Requests:
+[napari/napari/#3308](https://github.com/napari/napari/pull/3308),
+[napari/napari/#6411](https://github.com/napari/napari/pull/6411),
+[napari/napari/#6467](https://github.com/napari/napari/pull/6467),
+[napari/napari/#6439](https://github.com/napari/napari/pull/6439).
+This also improves performance of rendering labels.
+However, there are still some limitations.
+Best performance is for labels encoded as (u)int8.
+As GPU API accept 8 and 16 bits int textures and float textures,
+for labels stored as (u)int8 and (u)int16 we could transfer data to GPU without preprocessing.
 
-If you have any questions or suggestions regarding napari core, for example on how to adapt your plugin to be compatible with future napari versions, please get in touch! We have weekly community meetings, for which you can find the schedule [here](https://napari.org/stable/community/meeting_schedule.html). We would like to hear from you.
+For bigger data types we need to convert data, so it leads to bigger memory usage.
+Also best performance for bigger data requires to install numba library.
+
+So if you wold like for best user performance, please try to use the minimal possible data type.
+Even if, in the future, we'll use more advanced techniques for rendering labels on GPU, that will allow
+transferring any data without preprocessing, the GPU often offers less VRAM that computer has RAM.
+Also we experiment a little with current options and increase the size of
+send data (uint8, uint16 and float32) decrease performance of rendering on GPU.
+The test was performed on NVIDIA GeForce RTX 3060 with 12GB VRAM.
+
+If you have any questions or suggestions regarding napari core, for example, on how to adapt your plugin to be compatible with future napari versions, please get in touch! We have weekly community meetings, for which you can find the schedule [here](https://napari.org/stable/community/meeting_schedule.html). We would like to hear from you.
 
 - Use a shader for low discrepancy label conversion ([napari/napari/#3308](https://github.com/napari/napari/pull/3308))
 - Postpone qt_viewer deprecation to 0.6.0 ([napari/napari/#6283](https://github.com/napari/napari/pull/6283))
 - Pydantic 2 compatibility using `pydantic.v1`  ([napari/napari/#6358](https://github.com/napari/napari/pull/6358))
+- Initial deprecations for Labels API ([napari/napari/#6542](https://github.com/napari/napari/pull/6542))
 
 ## New Features
 
@@ -52,6 +72,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Fix lagging 3d view for big data in auto color mode ([napari/napari/#6411](https://github.com/napari/napari/pull/6411))
 - Fix cycle in _update_draw/_set_highlight for Points and Shapes (high CPU background usage) ([napari/napari/#6425](https://github.com/napari/napari/pull/6425))
 - Update performance and reduce memory usage for big Labels layer in direct color mode ([napari/napari/#6439](https://github.com/napari/napari/pull/6439))
+- Add _data_to_texture method to LabelColormap and remove caching of (u)int8 and (uint16) ([napari/napari/#6602](https://github.com/napari/napari/pull/6602))
 
 ## Bug Fixes
 
@@ -104,6 +125,10 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Pass key event from Main window to our internal mechanism v0.4.19 ([napari/napari/#6507](https://github.com/napari/napari/pull/6507))
 - Fix problem with invalidate cache  ([napari/napari/#6520](https://github.com/napari/napari/pull/6520))
 - Reset single step and decimals on reset range slider in popup ([napari/napari/#6523](https://github.com/napari/napari/pull/6523))
+- Fix label direct mode for installation without numba ([napari/napari/#6571](https://github.com/napari/napari/pull/6571))
+- Fix labels mapping cache by filling it with background, not 0 ([napari/napari/#6580](https://github.com/napari/napari/pull/6580))
+- Initialize ndim value for Points layer using data shape if available ([napari/napari/#6593](https://github.com/napari/napari/pull/6593))
+- Fix wrong working interpolation of labels in 3d ([napari/napari/#6596](https://github.com/napari/napari/pull/6596))
 
 ## API Changes
 
@@ -112,6 +137,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 ## Deprecations
 
 - Postpone qt_viewer deprecation to 0.6.0 ([napari/napari/#6283](https://github.com/napari/napari/pull/6283))
+- Initial deprecations for Labels API ([napari/napari/#6542](https://github.com/napari/napari/pull/6542))
 
 ## Build Tools
 
@@ -122,6 +148,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Add HIP workshop to documentation/workshops ([napari/napari/#5117](https://github.com/napari/napari/pull/5117))
 - Update README.md for conda install change ([napari/napari/#6123](https://github.com/napari/napari/pull/6123))
 - Add 0.4.19 release notes ([napari/napari/#6376](https://github.com/napari/napari/pull/6376))
+- Cherry-pick docs for 0.4.19 release  ([napari/napari/#6384](https://github.com/napari/napari/pull/6384))
 - Update docs contribution guide for two-repo setup ([napari/docs/#5](https://github.com/napari/docs/pull/5))
 - Improve makefile ([napari/docs/#41](https://github.com/napari/docs/pull/41))
 - add foundation grant onboarding workshop ([napari/docs/#55](https://github.com/napari/docs/pull/55))
@@ -130,6 +157,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Move napari workshop template link to top of page ([napari/docs/#90](https://github.com/napari/docs/pull/90))
 - Explain how to add new examples to the gallery ([napari/docs/#137](https://github.com/napari/docs/pull/137))
 - Add instructions on how to use docs-xvfb ([napari/docs/#138](https://github.com/napari/docs/pull/138))
+- Update annotate_points.md ([napari/docs/#145](https://github.com/napari/docs/pull/145))
 - Add more information to the documentation contribution guide ([napari/docs/#157](https://github.com/napari/docs/pull/157))
 - Add instructions to build napari docs on Windows ([napari/docs/#158](https://github.com/napari/docs/pull/158))
 - Add information about constraint usage to install older napari release ([napari/docs/#193](https://github.com/napari/docs/pull/193))
@@ -155,9 +183,13 @@ If you have any questions or suggestions regarding napari core, for example on h
 - Update napari-workshops.md ([napari/docs/#243](https://github.com/napari/docs/pull/243))
 - [Fix error] Image layers can't have converted data type using contextual menu, only Labels ([napari/docs/#252](https://github.com/napari/docs/pull/252))
 - Installation guide: Mention slow first launch time ([napari/docs/#253](https://github.com/napari/docs/pull/253))
+- Update to use napari-sphinx-theme 0.3.0 ([napari/docs/#267](https://github.com/napari/docs/pull/267))
 - [NAP-8] delete :orphan: ([napari/docs/#269](https://github.com/napari/docs/pull/269))
 - add link to video from EMBO workshop ([napari/docs/#273](https://github.com/napari/docs/pull/273))
 - Improve flow of install page ([napari/docs/#274](https://github.com/napari/docs/pull/274))
+- Add Kyle to steering council, make Talley emeritus ([napari/docs/#322](https://github.com/napari/docs/pull/322))
+- move self to emeritus ([napari/docs/#323](https://github.com/napari/docs/pull/323))
+- Update working groups leads ([napari/docs/#327](https://github.com/napari/docs/pull/327))
 
 ## Other Pull Requests
 
@@ -185,7 +217,12 @@ If you have any questions or suggestions regarding napari core, for example on h
 - [Maint, v0.4.19] Use python 3.11 for manifest check ([napari/napari/#6497](https://github.com/napari/napari/pull/6497))
 - Add copy operator to fix memory benchmarks ([napari/napari/#6530](https://github.com/napari/napari/pull/6530))
 - Check in LabelColormap that fewer than 2**16 colors are requested ([napari/napari/#6540](https://github.com/napari/napari/pull/6540))
+- [Maint] Update build_docs workflow to match napari/docs ([napari/napari/#6547](https://github.com/napari/napari/pull/6547))
 - Moving IntensityVisualizationMixin from _ImageBase to Image ([napari/napari/#6548](https://github.com/napari/napari/pull/6548))
+- test: [Automatic] Constraints upgrades: `app-model`, `babel`, `certifi`, `dask`, `fsspec`, `hypothesis`, `imageio`, `ipython`, `jsonschema`, `lxml`, `magicgui`, `matplotlib`, `numba`, `numpy`, `pandas`, `pillow`, `pint`, `psutil`, `psygnal`, `pydantic`, `pygments`, `pyqt6`, `pytest-qt`, `qtconsole`, `rich`, `scipy`, `tensorstore`, `tifffile`, `torch`, `virtualenv`, `wrapt`, `xarray` ([napari/napari/#6559](https://github.com/napari/napari/pull/6559))
+- Do not require triangle on macos arm ([napari/napari/#6603](https://github.com/napari/napari/pull/6603))
+- No-cache fast painting ([napari/napari/#6607](https://github.com/napari/napari/pull/6607))
+- Ignore pandas pyarrow warning ([napari/napari/#6609](https://github.com/napari/napari/pull/6609))
 - Update docs to suggest python 3.10 install ([napari/docs/#246](https://github.com/napari/docs/pull/246))
 
 
@@ -212,7 +249,7 @@ If you have any questions or suggestions regarding napari core, for example on h
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
 
 
-## 16 reviewers added to this release (alphabetical)
+## 17 reviewers added to this release (alphabetical)
 
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andrew Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
@@ -228,14 +265,17 @@ If you have any questions or suggestions regarding napari core, for example on h
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
+- [Melissa Weber Mendonça](https://github.com/napari/napari/commits?author=melissawm) - @melissawm
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
 - [Wouter-Michiel Vierdag](https://github.com/napari/napari/commits?author=melonora) - @melonora
 
 
-## 15 docs authors added to this release (alphabetical)
+## 17 docs authors added to this release (alphabetical)
 
+- [Alister Burt](https://github.com/napari/docs/commits?author=alisterburt) - @alisterburt
 - [Ashley Anderson](https://github.com/napari/docs/commits?author=aganders3) - @aganders3
 - [chili-chiu](https://github.com/napari/docs/commits?author=chili-chiu) - @chili-chiu
+- [Constantin Pape](https://github.com/napari/docs/commits?author=constantinpape) - @constantinpape
 - [David Stansby](https://github.com/napari/docs/commits?author=dstansby) - @dstansby
 - [dgmccart](https://github.com/napari/docs/commits?author=dgmccart) - @dgmccart
 - [Grzegorz Bokota](https://github.com/napari/docs/commits?author=Czaki) - @Czaki
@@ -251,12 +291,14 @@ If you have any questions or suggestions regarding napari core, for example on h
 - [Wouter-Michiel Vierdag](https://github.com/napari/docs/commits?author=melonora) - @melonora
 
 
-## 15 docs reviewers added to this release (alphabetical)
+## 17 docs reviewers added to this release (alphabetical)
 
 - [Andrew Sweet](https://github.com/napari/docs/commits?author=andy-sweet) - @andy-sweet
+- [Constantin Pape](https://github.com/napari/docs/commits?author=constantinpape) - @constantinpape
 - [David Stansby](https://github.com/napari/docs/commits?author=dstansby) - @dstansby
 - [Draga Doncila Pop](https://github.com/napari/docs/commits?author=DragaDoncila) - @DragaDoncila
 - [Egor Panfilov](https://github.com/napari/docs/commits?author=soupault) - @soupault
+- [Genevieve Buckley](https://github.com/napari/docs/commits?author=GenevieveBuckley) - @GenevieveBuckley
 - [Grzegorz Bokota](https://github.com/napari/docs/commits?author=Czaki) - @Czaki
 - [Jaime Rodríguez-Guerra](https://github.com/napari/docs/commits?author=jaimergp) - @jaimergp
 - [Juan Nunez-Iglesias](https://github.com/napari/docs/commits?author=jni) - @jni
