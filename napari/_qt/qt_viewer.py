@@ -21,6 +21,7 @@ from typing import (
 )
 from weakref import WeakSet, ref
 
+import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
@@ -791,7 +792,7 @@ class QtViewer(QSplitter):
             add_flash_animation(self._welcome_widget)
         return img
 
-    def screenshot(self, path=None, flash=True):
+    def screenshot(self, path=None, flash=True) -> np.ndarray:
         """Take currently displayed screen and convert to an image array.
 
         Parameters

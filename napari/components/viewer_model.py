@@ -1652,14 +1652,14 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     >>> test_kwargs = {
     ...     'scale': (0.75, 1),
     ...     'blending': 'additive',
-    ...     'num_colors': 10,
+    ...     'size': 10,
     ... }
     >>> prune_kwargs(test_kwargs, 'image')
     {'scale': (0.75, 1), 'blending': 'additive'}
 
     >>> # only labels has the ``num_colors`` argument
-    >>> prune_kwargs(test_kwargs, 'labels')
-    {'scale': (0.75, 1), 'blending': 'additive', 'num_colors': 10}
+    >>> prune_kwargs(test_kwargs, 'points')
+    {'scale': (0.75, 1), 'blending': 'additive', 'size': 10}
     """
     add_method = getattr(ViewerModel, 'add_' + layer_type, None)
     if not add_method or layer_type == 'layer':
