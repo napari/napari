@@ -12,6 +12,7 @@ from napari._qt.containers._layer_delegate import LayerDelegate
 from napari._qt.containers.qt_tree_model import QtNodeTreeModel
 from napari._qt.containers.qt_tree_view import QtNodeTreeView
 from napari.layers import Layer
+from napari.layers.layergroup import LayerGroup
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QModelIndex
@@ -48,8 +49,11 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
             if layer.visible:
-                parents_visible = all(p._visible for p in layer.iter_parents())
-                return Qt.Checked if parents_visible else Qt.PartiallyChecked
+                if isinstance(layer, LayerGroup):
+                    parents_visible = all(p._visible for p in layer.iter_parents())
+                    return Qt.Checked if parents_visible else Qt.PartiallyChecked
+                else:
+                    return Qt.Checked
             else:
                 return Qt.Unchecked
         if role == Qt.ItemDataRole.SizeHintRole:  # determines size of item

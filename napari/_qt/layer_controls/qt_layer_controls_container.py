@@ -145,7 +145,7 @@ class QtLayerControlsContainer(QStackedWidget):
         """
 
         def add_children(layer):
-            if layer.is_group():
+            if isinstance(layer, LayerGroup):
                 for child in layer:
                     add_children(child)
             controls = create_qt_layer_controls(layer)
@@ -165,7 +165,7 @@ class QtLayerControlsContainer(QStackedWidget):
         """
 
         def remove_children(layer):
-            if layer.is_group():
+            if isinstance(layer, LayerGroup):
                 for child in layer:
                     remove_children(child)
             controls = self.widgets[layer]

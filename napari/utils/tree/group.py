@@ -113,7 +113,10 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         if not leaves_only:
             yield obj
         for child in obj:
-            yield from child.traverse(leaves_only)
+            if isinstance(child, Group):
+                yield from child.traverse(leaves_only)
+            else:
+                yield child
 
     def _render(self) -> List[str]:
         """Recursively return list of strings that can render ascii tree."""

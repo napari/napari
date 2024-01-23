@@ -125,6 +125,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
     ) -> None:
         if transforms is None:
             transforms = []
+        Transform.__init__(self)
         super().__init__(
             data=transforms,
             basetype=Transform,
@@ -133,7 +134,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         # The above super().__init__() will not call Transform.__init__().
         # For that to work every __init__() called using super() needs to
         # in turn call super().__init__(). So we call it explicitly here.
-        Transform.__init__(self)
+
         for tr in self:
             if hasattr(tr, "changed"):
                 tr.changed.connect(self._clean_cache)

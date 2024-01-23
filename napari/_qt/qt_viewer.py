@@ -43,6 +43,7 @@ from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.layers.base.base import Layer
+from napari.layers.layergroup import LayerGroup
 from napari.plugins import _npe2
 from napari.settings import get_settings
 from napari.settings._application import DaskSettings
@@ -685,7 +686,7 @@ class QtViewer(QSplitter):
 
             self.canvas.add_layer_visual_mapping(layer, vispy_layer)
 
-            if layer.is_group():
+            if isinstance(layer, LayerGroup):
                 for child in layer:
                     add_children(child)
 
