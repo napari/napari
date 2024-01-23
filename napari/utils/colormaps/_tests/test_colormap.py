@@ -6,12 +6,15 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
+import napari.utils.colormaps._colormap_numpy
 from napari.utils.color import ColorArray
 from napari.utils.colormaps import Colormap, colormap
-from napari.utils.colormaps.colormap import (
+from napari.utils.colormaps._colormap_numpy import (
     MAPPING_OF_UNKNOWN_VALUE,
+    labels_raw_to_texture_direct,
+)
+from napari.utils.colormaps.colormap import (
     DirectLabelColormap,
-    _labels_raw_to_texture_direct_numpy,
 )
 from napari.utils.colormaps.colormap_utils import label_colormap
 
@@ -128,7 +131,10 @@ def test_mapped_shape(ndim):
     "num,dtype", [(40, np.uint8), (1000, np.uint16), (80000, np.float32)]
 )
 def test_minimum_dtype_for_labels(num, dtype):
-    assert colormap.minimum_dtype_for_labels(num) == dtype
+    assert (
+        napari.utils.colormaps._colormap_numpy.minimum_dtype_for_labels(num)
+        == dtype
+    )
 
 
 @pytest.fixture()
@@ -268,7 +274,9 @@ def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
 def test_zero_preserving_modulo_naive():
     pytest.importorskip("numba")
     data = np.arange(1000, dtype=np.uint32)
-    res1 = colormap._zero_preserving_modulo_numpy(data, 49, np.uint8)
+    res1 = napari.utils.colormaps._colormap_numpy.zero_preserving_modulo(
+        data, 49, np.uint8
+    )
     res2 = colormap._zero_preserving_modulo(data, 49, np.uint8)
     npt.assert_array_equal(res1, res2)
 
@@ -332,7 +340,9 @@ def test_label_colormap_using_cache(dtype, monkeypatch):
 def test_cast_direct_labels_to_minimum_type_naive(size):
     pytest.importorskip("numba")
     data = np.arange(size, dtype=np.uint32)
-    dtype = colormap.minimum_dtype_for_labels(size)
+    dtype = napari.utils.colormaps._colormap_numpy.minimum_dtype_for_labels(
+        size
+    )
     cmap = DirectLabelColormap(
         color_dict={
             None: np.array([1, 1, 1, 1]),
@@ -347,7 +357,9 @@ def test_cast_direct_labels_to_minimum_type_naive(size):
     )
     cmap.color_dict[None] = np.array([255, 255, 255, 255])
     res1 = colormap._labels_raw_to_texture_direct(data, cmap)
-    res2 = colormap._labels_raw_to_texture_direct_numpy(data, cmap)
+    res2 = napari.utils.colormaps._colormap_numpy.labels_raw_to_texture_direct(
+        data, cmap
+    )
     npt.assert_array_equal(res1, res2)
     assert res1.dtype == dtype
     assert res2.dtype == dtype
@@ -470,7 +482,7 @@ def test_direct_colormap_negative_values_numpy():
     }
     cmap = DirectLabelColormap(color_dict=color_dict)
 
-    res = _labels_raw_to_texture_direct_numpy(
+    res = labels_raw_to_texture_direct(
         np.array([-1, -2, 5], dtype=np.int8), cmap
     )
     npt.assert_array_equal(res, [1, 2, 0])
@@ -478,7 +490,7 @@ def test_direct_colormap_negative_values_numpy():
     cmap.selection = -2
     cmap.use_selection = True
 
-    res = _labels_raw_to_texture_direct_numpy(
+    res = labels_raw_to_texture_direct(
         np.array([-1, -2, 5], dtype=np.int8), cmap
     )
     npt.assert_array_equal(res, [0, 1, 0])
