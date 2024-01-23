@@ -44,9 +44,9 @@ def inside_boxes(boxes):
     BCBM = np.multiply(BC, BM).sum(1)
     BCBC = np.multiply(BC, BC).sum(1)
 
-    c1 = 0 <= ABAM
+    c1 = ABAM >= 0
     c2 = ABAM <= ABAB
-    c3 = 0 <= BCBM
+    c3 = BCBM >= 0
     c4 = BCBM <= BCBC
 
     inside = np.all(np.array([c1, c2, c3, c4]), axis=0)
