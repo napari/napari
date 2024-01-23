@@ -130,6 +130,16 @@ def test_add_labels():
     assert viewer.dims.ndim == 2
 
 
+def test_add_labels_warnings():
+    """Test adding labels image."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    with pytest.warns(
+        FutureWarning, match="Setting Labels.num_colors is deprecated since"
+    ):
+        viewer.add_labels(np.zeros((10, 15), dtype=np.uint8), num_colors=20)
+
+
 def test_add_points():
     """Test adding points."""
     viewer = ViewerModel()

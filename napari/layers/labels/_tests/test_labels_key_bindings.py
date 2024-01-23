@@ -2,7 +2,9 @@ import numpy as np
 import pytest
 
 from napari.layers import Labels
-from napari.layers.labels._labels_key_bindings import new_label
+from napari.layers.labels._labels_key_bindings import (
+    new_label,
+)
 
 
 @pytest.fixture
