@@ -4,7 +4,7 @@
 #
 #    pip-compile --allow-unsafe --extra=pyqt5 --extra=pyqt6_experimental --extra=pyside2 --extra=pyside6_experimental --extra=testing --output-file=./resources/constraints/constraints_py3.10_docs.txt --strip-extras ./resources/constraints/pydantic_le_2.txt ./resources/constraints/version_denylist.txt ./setup.cfg docs/requirements.txt resources/constraints/version_denylist_examples.txt
 #
-alabaster==0.7.13
+alabaster==0.7.16
     # via sphinx
 app-model==0.2.4
     # via napari (./setup.cfg)
@@ -16,7 +16,7 @@ asciitree==0.3.3
     # via zarr
 asttokens==2.4.1
     # via stack-data
-attrs==23.1.0
+attrs==23.2.0
     # via
     #   hypothesis
     #   jsonschema
@@ -26,7 +26,7 @@ babel==2.14.0
     # via
     #   napari (./setup.cfg)
     #   sphinx
-beautifulsoup4==4.12.2
+beautifulsoup4==4.12.3
     # via napari-sphinx-theme
 build==1.0.3
     # via npe2
@@ -48,17 +48,19 @@ click==8.1.7
     #   typer
 cloudpickle==3.0.0
     # via dask
-comm==0.2.0
+colorama==0.4.6
+    # via sphinx-autobuild
+comm==0.2.1
     # via ipykernel
 contourpy==1.2.0
     # via matplotlib
-coverage==7.3.4
+coverage==7.4.0
     # via
     #   coverage
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2023.12.1
+dask==2024.1.0
     # via
     #   dask
     #   napari (./setup.cfg)
@@ -75,7 +77,7 @@ docutils==0.17.1
     #   myst-parser
     #   napari-sphinx-theme
     #   sphinx
-    #   sphinx-rtd-theme
+    #   sphinx-tabs
 exceptiongroup==1.2.0
     # via
     #   hypothesis
@@ -85,14 +87,14 @@ executing==2.0.1
     # via stack-data
 fasteners==0.19
     # via zarr
-fastjsonschema==2.19.0
+fastjsonschema==2.19.1
     # via nbformat
 filelock==3.13.1
     # via
     #   torch
     #   triton
     #   virtualenv
-fonttools==4.47.0
+fonttools==4.47.2
     # via matplotlib
 freetype-py==2.4.0
     # via vispy
@@ -107,7 +109,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.92.2
+hypothesis==6.96.3
     # via napari (./setup.cfg)
 identify==2.5.33
     # via pre-commit
@@ -131,12 +133,12 @@ in-n-out==0.1.9
     # via app-model
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.28.0
+ipykernel==6.29.0
     # via
     #   myst-nb
     #   napari-console
     #   qtconsole
-ipython==8.19.0
+ipython==8.20.0
     # via
     #   ipykernel
     #   myst-nb
@@ -144,7 +146,7 @@ ipython==8.19.0
     #   napari-console
 jedi==0.19.1
     # via ipython
-jinja2==3.1.2
+jinja2==3.1.3
     # via
     #   myst-parser
     #   numpydoc
@@ -154,7 +156,7 @@ joblib==1.3.2
     # via
     #   nilearn
     #   scikit-learn
-jsonschema==4.20.0
+jsonschema==4.21.1
     # via
     #   napari (./setup.cfg)
     #   nbformat
@@ -167,7 +169,7 @@ jupyter-client==8.6.0
     #   ipykernel
     #   nbclient
     #   qtconsole
-jupyter-core==5.6.0
+jupyter-core==5.7.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -182,11 +184,13 @@ lazy-loader==0.3
     # via
     #   napari (./setup.cfg)
     #   scikit-image
+livereload==2.6.3
+    # via sphinx-autobuild
 llvmlite==0.41.1
     # via numba
 locket==1.0.0
     # via partd
-lxml==4.9.4
+lxml==5.1.0
     # via
     #   -r docs/requirements.txt
     #   napari (./setup.cfg)
@@ -198,7 +202,7 @@ markdown-it-py==2.2.0
     #   mdit-py-plugins
     #   myst-parser
     #   rich
-markupsafe==2.1.3
+markupsafe==2.1.4
     # via jinja2
 matplotlib==3.8.2
     # via
@@ -212,7 +216,7 @@ mdit-py-plugins==0.3.5
     # via myst-parser
 mdurl==0.1.2
     # via markdown-it-py
-ml-dtypes==0.3.1
+ml-dtypes==0.3.2
     # via tensorstore
 mpmath==1.3.0
     # via sympy
@@ -230,7 +234,7 @@ napari-plugin-engine==0.2.0
     #   napari-svg
 napari-plugin-manager==0.1.0a2
     # via napari (./setup.cfg)
-napari-sphinx-theme==0.3.0
+napari-sphinx-theme==0.2.1
     # via -r docs/requirements.txt
 napari-svg==0.1.10
     # via napari (./setup.cfg)
@@ -243,7 +247,7 @@ nbformat==5.9.2
     #   jupyter-cache
     #   myst-nb
     #   nbclient
-nest-asyncio==1.5.8
+nest-asyncio==1.6.0
     # via ipykernel
 networkx==3.2.1
     # via
@@ -349,12 +353,11 @@ partd==1.4.1
     # via dask
 pexpect==4.9.0
     # via ipython
-pillow==10.1.0
+pillow==10.2.0
     # via
     #   imageio
     #   matplotlib
     #   napari (./setup.cfg)
-    #   qtgallery
     #   scikit-image
     #   sphinx-gallery
 pint==0.23
@@ -374,7 +377,7 @@ pre-commit==3.6.0
     # via sphinx-tags
 prompt-toolkit==3.0.43
     # via ipython
-psutil==5.9.7
+psutil==5.9.8
     # via
     #   ipykernel
     #   napari (./setup.cfg)
@@ -390,7 +393,7 @@ pure-eval==0.2.2
     # via stack-data
 pyconify==0.1.6
     # via superqt
-pydantic==1.10.13
+pydantic==1.10.14
     # via
     #   -r ./resources/constraints/pydantic_le_2.txt
     #   app-model
@@ -399,8 +402,6 @@ pydantic==1.10.13
     #   pydantic-compat
 pydantic-compat==0.1.2
     # via app-model
-pydata-sphinx-theme==0.14.4
-    # via napari-sphinx-theme
 pygments==2.17.2
     # via
     #   ipython
@@ -408,6 +409,7 @@ pygments==2.17.2
     #   qtconsole
     #   rich
     #   sphinx
+    #   sphinx-tabs
     #   superqt
 pyopengl==3.1.6
     # via
@@ -441,7 +443,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==7.4.3
+pytest==7.4.4
     # via
     #   napari (./setup.cfg)
     #   pytest-cov
@@ -468,8 +470,6 @@ python-dateutil==2.8.2
     #   pandas
 pytz==2023.3.post1
     # via pandas
-pyvirtualdisplay==3.0
-    # via qtgallery
 pyyaml==6.0.1
     # via
     #   dask
@@ -489,8 +489,6 @@ qtconsole==5.5.1
     # via
     #   napari (./setup.cfg)
     #   napari-console
-qtgallery==0.0.2
-    # via -r docs/requirements.txt
 qtpy==2.4.1
     # via
     #   magicgui
@@ -498,9 +496,8 @@ qtpy==2.4.1
     #   napari-console
     #   napari-plugin-manager
     #   qtconsole
-    #   qtgallery
     #   superqt
-referencing==0.32.0
+referencing==0.32.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -515,7 +512,7 @@ rich==13.7.0
     #   napari (./setup.cfg)
     #   npe2
     #   pytest-pretty
-rpds-py==0.15.2
+rpds-py==0.17.1
     # via
     #   jsonschema
     #   referencing
@@ -523,9 +520,9 @@ scikit-image==0.22.0
     # via
     #   napari (./setup.cfg)
     #   scikit-image
-scikit-learn==1.3.2
+scikit-learn==1.4.0
     # via nilearn
-scipy==1.11.4 ; python_version >= "3.9"
+scipy==1.12.0 ; python_version >= "3.9"
     # via
     #   napari (./setup.cfg)
     #   nilearn
@@ -541,6 +538,7 @@ shiboken6==6.4.2
 six==1.16.0
     # via
     #   asttokens
+    #   livereload
     #   python-dateutil
 snowballstemmer==2.2.0
     # via sphinx
@@ -548,21 +546,23 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.5
     # via beautifulsoup4
-sphinx==5.3.0
+sphinx==4.5.0
     # via
     #   -r docs/requirements.txt
     #   myst-nb
     #   myst-parser
     #   napari-sphinx-theme
     #   numpydoc
+    #   sphinx-autobuild
     #   sphinx-autodoc-typehints
     #   sphinx-design
     #   sphinx-external-toc
     #   sphinx-favicon
     #   sphinx-gallery
-    #   sphinx-rtd-theme
+    #   sphinx-tabs
     #   sphinx-tags
-    #   sphinxcontrib-jquery
+sphinx-autobuild==2021.3.14
+    # via -r docs/requirements.txt
 sphinx-autodoc-typehints==1.12.0
     # via -r docs/requirements.txt
 sphinx-design==0.4.1
@@ -572,28 +572,24 @@ sphinx-external-toc==0.3.1
 sphinx-favicon==1.0.1
     # via -r docs/requirements.txt
 sphinx-gallery==0.15.0
-    # via
-    #   -r docs/requirements.txt
-    #   qtgallery
-sphinx-rtd-theme==1.3.0
-    # via qtgallery
+    # via -r docs/requirements.txt
+sphinx-tabs==3.4.5
+    # via -r docs/requirements.txt
 sphinx-tags==0.2.1
     # via -r docs/requirements.txt
-sphinxcontrib-applehelp==1.0.4
+sphinxcontrib-applehelp==1.0.8
     # via sphinx
-sphinxcontrib-devhelp==1.0.2
+sphinxcontrib-devhelp==1.0.6
     # via sphinx
-sphinxcontrib-htmlhelp==2.0.1
+sphinxcontrib-htmlhelp==2.0.5
     # via sphinx
-sphinxcontrib-jquery==4.1
-    # via sphinx-rtd-theme
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-qthelp==1.0.3
+sphinxcontrib-qthelp==1.0.7
     # via sphinx
-sphinxcontrib-serializinghtml==1.1.5
+sphinxcontrib-serializinghtml==1.1.10
     # via sphinx
-sqlalchemy==2.0.23
+sqlalchemy==2.0.25
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
@@ -606,7 +602,7 @@ sympy==1.12
     # via torch
 tabulate==0.9.0
     # via jupyter-cache
-tensorstore==0.1.51
+tensorstore==0.1.52
     # via
     #   -r ./resources/constraints/version_denylist.txt
     #   napari (./setup.cfg)
@@ -636,9 +632,10 @@ tornado==6.4
     # via
     #   ipykernel
     #   jupyter-client
+    #   livereload
 tqdm==4.66.1
     # via napari (./setup.cfg)
-traitlets==5.14.0
+traitlets==5.14.1
     # via
     #   comm
     #   ipykernel
@@ -667,7 +664,7 @@ typing-extensions==4.9.0
     #   superqt
     #   torch
     #   typer
-tzdata==2023.3
+tzdata==2023.4
     # via pandas
 urllib3==2.1.0
     # via requests
@@ -679,11 +676,11 @@ vispy==0.14.1
     # via
     #   napari (./setup.cfg)
     #   napari-svg
-wcwidth==0.2.12
+wcwidth==0.2.13
     # via prompt-toolkit
 wrapt==1.16.0
     # via napari (./setup.cfg)
-xarray==2023.12.0
+xarray==2024.1.0
     # via napari (./setup.cfg)
 zarr==2.16.1
     # via napari (./setup.cfg)
