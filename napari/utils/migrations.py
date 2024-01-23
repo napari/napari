@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from functools import wraps
 
@@ -79,6 +80,10 @@ def deprecated_constructor_arg_by_attr(name):
     """
 
     def wrapper(func):
+        if not hasattr(func, '_deprecated_constructor_args'):
+            func._deprecated_constructor_args = []
+        func._deprecated_constructor_args.append(name)
+
         @wraps(func)
         def _wrapper(*args, **kwargs):
             value = _UNSET
@@ -93,3 +98,44 @@ def deprecated_constructor_arg_by_attr(name):
         return _wrapper
 
     return wrapper
+
+
+def deprecated_class_name(
+    new_class: type,
+    previous_name: str,
+    version: str,
+    since_version: str,
+) -> type:
+    """Function to deprecate a class.
+
+    Usage:
+
+        class NewName:
+            pass
+
+        OldName = deprecated_class_name(
+            NewName, 'OldName', version='0.5.0', since_version='0.4.19'
+        )
+    """
+    msg = (
+        f"{previous_name} is deprecated since {since_version} and will be "
+        f"removed in {version}. Please use {new_class.__name__}."
+    )
+    prealloc_signature = inspect.signature(new_class.__new__)
+
+    class _OldClass(new_class):
+        def __new__(cls, *args, **kwargs):
+            warnings.warn(msg, FutureWarning, stacklevel=2)
+            if super().__new__ is object.__new__:
+                return super().__new__(cls)
+            return super().__new__(cls, *args, **kwargs)
+
+        def __init_subclass__(cls, **kwargs):
+            warnings.warn(msg, FutureWarning, stacklevel=2)
+
+    _OldClass.__module__ = new_class.__module__
+    _OldClass.__name__ = previous_name
+    _OldClass.__qualname__ = previous_name
+    _OldClass.__new__.__signature__ = prealloc_signature  # type: ignore [attr-defined]
+
+    return _OldClass
