@@ -327,8 +327,9 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
                 self.node.minip_cutoff = None
 
     def _on_contrast_limits_change(self) -> None:
-        lim_tup = _coerce_contrast_limits(self.layer.contrast_limits)
-        self.node.clim = lim_tup.contrast_limits
+        self.node.clim = _coerce_contrast_limits(
+            self.layer.contrast_limits
+        ).contrast_limits
         # cutoffs must be updated after clims, so we can set them to the new values
         self._update_mip_minip_cutoff()
         # iso also may depend on contrast limit values
